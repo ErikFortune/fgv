@@ -61,8 +61,7 @@ async function unlockWorkspaceIfNeeded(workspace: IWorkspace): Promise<Result<vo
  */
 async function loadEditWorkspace(options: IEditCommandOptions): Promise<IWorkspace | undefined> {
   const workspaceResult = await loadWorkspace({
-    workspacePath: options.workspace,
-    deviceName: options.deviceName
+    workspacePath: options.workspace
   });
 
   if (workspaceResult.isFailure()) {

@@ -87,7 +87,5 @@ export {
   initializeWorkspace,
   createWorkspaceDirectories,
   writeBootstrapSettings,
-  writePreferencesSettings,
-  writeCommonSettings,
-  writeDeviceSettings
+  writePreferencesSettings
 } from './workspaceInit';

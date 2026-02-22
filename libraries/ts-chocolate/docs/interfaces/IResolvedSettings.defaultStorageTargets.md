@@ -2,7 +2,7 @@
 
 ## IResolvedSettings.defaultStorageTargets property
 
-Default storage root targets for new collections (from common settings)
+Default storage root targets for new collections
 
 **Signature:**
 

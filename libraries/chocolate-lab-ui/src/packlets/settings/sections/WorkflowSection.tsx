@@ -1,10 +1,10 @@
 import React from 'react';
 
-import type { ICommonSettingsDraft } from '../useSettingsDraft';
+import type { IPreferencesDraft } from '../useSettingsDraft';
 
 export interface IWorkflowSectionProps {
-  readonly workflow: ICommonSettingsDraft['workflow'];
-  readonly onChange: (updates: Partial<ICommonSettingsDraft>) => void;
+  readonly workflow: IPreferencesDraft['workflow'];
+  readonly onChange: (updates: Partial<IPreferencesDraft>) => void;
 }
 
 export function WorkflowSection(props: IWorkflowSectionProps): React.ReactElement {

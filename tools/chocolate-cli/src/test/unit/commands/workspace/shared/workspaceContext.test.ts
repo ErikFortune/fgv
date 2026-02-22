@@ -90,8 +90,7 @@ describe('workspaceContext', () => {
         layout: { mode: 'single-root', rootPath: '/test/workspace' },
         builtin: true,
         preWarm: false,
-        startupMode: 'fail-on-error',
-        deviceName: undefined
+        startupMode: 'fail-on-error'
       });
     });
 
@@ -103,16 +102,14 @@ describe('workspaceContext', () => {
         workspacePath: '/custom/path',
         builtin: false,
         preWarm: true,
-        startupMode: 'ignore-errors',
-        deviceName: 'test-device'
+        startupMode: 'ignore-errors'
       });
 
       expect(mockCreateNodeWorkspace).toHaveBeenCalledWith({
         layout: { mode: 'single-root', rootPath: '/custom/path' },
         builtin: false,
         preWarm: true,
-        startupMode: 'ignore-errors',
-        deviceName: 'test-device'
+        startupMode: 'ignore-errors'
       });
     });
 

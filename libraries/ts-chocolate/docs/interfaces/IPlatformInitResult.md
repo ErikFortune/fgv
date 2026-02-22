@@ -112,40 +112,6 @@ The bootstrap settings loaded during platform init.
 </td></tr>
 <tr><td>
 
-[commonSettings](./IPlatformInitResult.commonSettings.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[ICommonSettings](ICommonSettings.md)
-
-</td><td>
-
-The common settings (loaded from file or defaults).
-
-</td></tr>
-<tr><td>
-
-[deviceSettings](./IPlatformInitResult.deviceSettings.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IDeviceSettings](IDeviceSettings.md)
-
-</td><td>
-
-The device settings (loaded from file or defaults).
-
-</td></tr>
-<tr><td>
-
 [resolvedSettings](./IPlatformInitResult.resolvedSettings.md)
 
 </td><td>

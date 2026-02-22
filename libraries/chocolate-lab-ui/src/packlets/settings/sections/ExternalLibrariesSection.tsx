@@ -1,10 +1,10 @@
 import React from 'react';
 
-import type { ICommonSettingsDraft } from '../useSettingsDraft';
+import type { IPreferencesDraft } from '../useSettingsDraft';
 
 export interface IExternalLibrariesSectionProps {
-  readonly externalLibraries: ICommonSettingsDraft['externalLibraries'];
-  readonly onChange: (updates: Partial<ICommonSettingsDraft>) => void;
+  readonly externalLibraries: IPreferencesDraft['externalLibraries'];
+  readonly onChange: (updates: Partial<IPreferencesDraft>) => void;
 }
 
 export function ExternalLibrariesSection(props: IExternalLibrariesSectionProps): React.ReactElement {

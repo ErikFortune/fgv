@@ -9,10 +9,6 @@ Settings are stored in a directory structure with:
 - `bootstrap.json` - Preload configuration (what data sources to set up)
 - `preferences.json` - Runtime preferences (defaults, tools, etc.)
 
-Legacy files (deprecated, migration only):
-- `common.json` - Previously shared across all devices
-- `device-{deviceId}.json` - Previously device-specific overrides
-
 ## Namespaces
 
 <table><thead><tr><th>
@@ -172,24 +168,6 @@ Runtime preferences that don't affect what data is loaded.
 </td></tr>
 <tr><td>
 
-[ICommonSettings](./interfaces/ICommonSettings.md)
-
-</td><td>
-
-Settings that are shared across all devices.
-
-</td></tr>
-<tr><td>
-
-[IDeviceSettings](./interfaces/IDeviceSettings.md)
-
-</td><td>
-
-Settings specific to a device/platform instance.
-
-</td></tr>
-<tr><td>
-
 [IDeviceFileTreeOverrides](./interfaces/IDeviceFileTreeOverrides.md)
 
 </td><td>
@@ -203,7 +181,7 @@ Platform-specific file tree reference overrides.
 
 </td><td>
 
-Fully resolved settings after merging common and device-specific settings.
+Fully resolved settings after merging preferences.
 
 </td></tr>
 <tr><td>
@@ -221,16 +199,7 @@ Interface for managing workspace settings.
 
 </td><td>
 
-Parameters for creating a SettingsManager with bootstrap/preferences.
-
-</td></tr>
-<tr><td>
-
-[ISettingsManagerParams](./interfaces/ISettingsManagerParams.md)
-
-</td><td>
-
-Parameters for creating a SettingsManager (legacy).
+Parameters for creating a SettingsManager.
 
 </td></tr>
 </tbody></table>
@@ -333,51 +302,6 @@ Creates default preferences settings for first run.
 Resolves settings from preferences (new two-phase model).
 
 </td></tr>
-<tr><td>
-
-[splitCommonSettings](./functions/splitCommonSettings.md)
-
-</td><td>
-
-Splits a legacy ICommonSettings into bootstrap + preferences.
-
-</td></tr>
-<tr><td>
-
-[resolveSettings](./functions/resolveSettings.md)
-
-</td><td>
-
-Resolves settings by merging common and device-specific settings.
-
-</td></tr>
-<tr><td>
-
-[createDefaultCommonSettings](./functions/createDefaultCommonSettings.md)
-
-</td><td>
-
-Creates default common settings for first run.
-
-</td></tr>
-<tr><td>
-
-[createDefaultDeviceSettings](./functions/createDefaultDeviceSettings.md)
-
-</td><td>
-
-Creates default device settings for first run.
-
-</td></tr>
-<tr><td>
-
-[getDeviceSettingsFilename](./functions/getDeviceSettingsFilename.md)
-
-</td><td>
-
-Generates the filename for device-specific settings.
-
-</td></tr>
 </tbody></table>
 
 ## Variables
@@ -453,33 +377,6 @@ Filename for bootstrap settings.
 </td><td>
 
 Filename for preferences settings.
-
-</td></tr>
-<tr><td>
-
-[COMMON_SETTINGS_FILENAME](./variables/COMMON_SETTINGS_FILENAME.md)
-
-</td><td>
-
-Filename for common settings.
-
-</td></tr>
-<tr><td>
-
-[DEVICE_SETTINGS_PREFIX](./variables/DEVICE_SETTINGS_PREFIX.md)
-
-</td><td>
-
-Filename prefix for device settings.
-
-</td></tr>
-<tr><td>
-
-[DEVICE_SETTINGS_SUFFIX](./variables/DEVICE_SETTINGS_SUFFIX.md)
-
-</td><td>
-
-Filename suffix for device settings.
 
 </td></tr>
 </tbody></table>

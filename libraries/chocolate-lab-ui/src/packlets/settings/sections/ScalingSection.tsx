@@ -1,10 +1,10 @@
 import React from 'react';
 
-import type { ICommonSettingsDraft } from '../useSettingsDraft';
+import type { IPreferencesDraft } from '../useSettingsDraft';
 
 export interface IScalingSectionProps {
-  readonly scaling: ICommonSettingsDraft['scaling'];
-  readonly onChange: (updates: Partial<ICommonSettingsDraft>) => void;
+  readonly scaling: IPreferencesDraft['scaling'];
+  readonly onChange: (updates: Partial<IPreferencesDraft>) => void;
 }
 
 const WEIGHT_UNITS = ['g', 'oz', 'lb', 'kg'] as const;

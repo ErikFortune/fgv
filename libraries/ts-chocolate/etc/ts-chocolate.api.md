@@ -825,19 +825,6 @@ function collectionSourceFile<T>(itemConverter: Converter<T> | Validator<T>): Co
 // @public
 function collectionYamlConverter<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "BOOTSTRAP_SETTINGS_FILENAME"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PREFERENCES_SETTINGS_FILENAME"
-//
-// @public @deprecated
-const COMMON_SETTINGS_FILENAME: string;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ICommonSettings"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "bootstrapSettings"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "preferencesSettings"
-//
-// @public @deprecated
-const commonSettings: Converter<ICommonSettings>;
-
 // @public
 type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
 
@@ -1313,10 +1300,8 @@ declare namespace Converters_12 {
         storageRootId,
         localDirectoryRef,
         defaultStorageTargets,
-        commonSettings,
         deviceFileTreeOverrides,
         partialToolSettings,
-        deviceSettings,
         settingsFileLocation,
         localStorageConfig,
         reporterLogLevel,
@@ -1467,15 +1452,6 @@ function createConfectionRecipeVariationId(parts: {
 
 // @public
 function createDefaultBootstrapSettings(): IBootstrapSettings;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "createDefaultBootstrapSettings"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "createDefaultPreferencesSettings"
-//
-// @public @deprecated
-function createDefaultCommonSettings(): ICommonSettings;
-
-// @public @deprecated
-function createDefaultDeviceSettings(deviceId: DeviceId, deviceName?: string): IDeviceSettings;
 
 // @public
 function createDefaultLibraryDirectories(rootPath: string): Result<void>;
@@ -1676,12 +1652,6 @@ const degreesMacMichael: Converter<DegreesMacMichael>;
 // @public
 const DEVICE_ID_PATTERN: RegExp;
 
-// @public @deprecated
-const DEVICE_SETTINGS_PREFIX: string;
-
-// @public @deprecated
-const DEVICE_SETTINGS_SUFFIX: string;
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IDeviceFileTreeOverrides"
 //
 // @public
@@ -1694,13 +1664,6 @@ type DeviceId = Brand<string, 'DeviceId'>;
 //
 // @public
 const deviceId: Converter<DeviceId>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IDeviceSettings"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "bootstrapSettings"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "preferencesSettings"
-//
-// @public @deprecated
-const deviceSettings: Converter<IDeviceSettings>;
 
 // @public
 export type DirectoryLayoutMode = 'single-root' | 'dual-root' | 'multi-root';
@@ -2687,9 +2650,6 @@ function getCurrentTimestamp(): string;
 function getDecorationsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
-function getDeviceSettingsFilename(deviceId: DeviceId): string;
-
-// @public
 function getFillingBaseId(id: FillingId): BaseFillingId;
 
 // @public
@@ -2897,6 +2857,7 @@ interface IBonBonDimensions {
 
 // @public
 interface IBootstrapSettings {
+    readonly deviceName?: string;
     readonly externalLibraries?: ReadonlyArray<IExternalLibraryRefConfig>;
     readonly fileTreeOverrides?: IDeviceFileTreeOverrides;
     readonly includeBuiltIn?: boolean;
@@ -3123,18 +3084,6 @@ interface ICollectionSet<TCollectionId extends string = string> {
 interface ICollectionSourceFile<T = JsonObject> {
     readonly items: Record<string, T>;
     readonly metadata?: ICollectionFileMetadata;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IBootstrapSettings"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IPreferencesSettings"
-//
-// @public @deprecated
-interface ICommonSettings {
-    readonly defaultStorageTargets?: IDefaultStorageTargets;
-    readonly defaultTargets?: IDefaultCollectionTargets;
-    readonly externalLibraries?: ReadonlyArray<IExternalLibraryRefConfig>;
-    readonly schemaVersion: SettingsSchemaVersion;
-    readonly tools?: IToolSettings;
 }
 
 // @public
@@ -3388,7 +3337,6 @@ interface ICreateFillingSessionOptions {
 export interface ICreateNodeWorkspaceParams {
     readonly builtin?: boolean;
     readonly deviceId?: DeviceId;
-    readonly deviceName?: string;
     readonly layout: DirectoryLayoutParams;
     readonly missingFileBehavior?: MissingFileBehavior;
     readonly preWarm?: boolean;
@@ -3516,18 +3464,6 @@ interface IDefaultStorageTargets {
 interface IDeviceFileTreeOverrides {
     readonly keyStorePath?: string;
     readonly userLibraryPath?: string;
-}
-
-// @public @deprecated
-interface IDeviceSettings {
-    readonly defaultTargetsOverride?: Partial<IDefaultCollectionTargets>;
-    readonly deviceId: DeviceId;
-    readonly deviceName?: string;
-    readonly fileTreeOverrides?: IDeviceFileTreeOverrides;
-    readonly lastActiveSessionId?: string;
-    readonly localDirectories?: ReadonlyArray<ILocalDirectoryRef>;
-    readonly schemaVersion: SettingsSchemaVersion;
-    readonly toolsOverride?: Partial<IToolSettings>;
 }
 
 // @internal
@@ -4982,7 +4918,6 @@ export interface IPlatformInitializer {
 // @public
 export interface IPlatformInitOptions {
     readonly deviceId?: DeviceId;
-    readonly deviceName?: string;
     readonly keyStorePath?: string;
     readonly userLibraryPath: string;
 }
@@ -4990,12 +4925,8 @@ export interface IPlatformInitOptions {
 // @public
 export interface IPlatformInitResult {
     readonly bootstrapSettings?: IBootstrapSettings;
-    // @deprecated
-    readonly commonSettings: ICommonSettings;
     readonly cryptoProvider: CryptoUtils.ICryptoProvider;
     readonly deviceId: DeviceId;
-    // @deprecated
-    readonly deviceSettings: IDeviceSettings;
     readonly externalLibraries: ReadonlyArray<IResolvedExternalLibrary>;
     readonly keyStoreFile?: CryptoUtils.KeyStore.IKeyStoreFile;
     readonly resolvedSettings: IResolvedSettings;
@@ -5407,7 +5338,6 @@ interface IResolvedSettings {
     readonly defaultStorageTargets?: IDefaultStorageTargets;
     readonly defaultTargets: IDefaultCollectionTargets;
     readonly deviceId: DeviceId;
-    readonly lastActiveSessionId?: string;
     readonly tools: IToolSettings;
 }
 
@@ -5709,45 +5639,20 @@ type ISettingsFileLocation = {
 // @public
 interface ISettingsManager {
     readonly deviceId: DeviceId;
-    getBootstrapSettings(): IBootstrapSettings | undefined;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "getBootstrapSettings"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "getPreferencesSettings"
-    //
-    // @deprecated
-    getCommonSettings(): ICommonSettings;
-    // @deprecated
-    getDeviceSettings(): IDeviceSettings;
-    getPreferencesSettings(): IPreferencesSettings | undefined;
+    getBootstrapSettings(): IBootstrapSettings;
+    getPreferencesSettings(): IPreferencesSettings;
     getResolvedSettings(): IResolvedSettings;
     readonly isDirty: boolean;
     save(): Promise<Result<boolean>>;
     updateBootstrapSettings(updates: Partial<Omit<IBootstrapSettings, 'schemaVersion'>>): Result<IBootstrapSettings>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "updateBootstrapSettings"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "updatePreferencesSettings"
-    //
-    // @deprecated
-    updateCommonSettings(updates: Partial<Omit<ICommonSettings, 'schemaVersion'>>): Result<ICommonSettings>;
     updateDefaultStorageTargets(targets: Partial<IDefaultStorageTargets>): Result<IDefaultStorageTargets>;
     updateDefaultTargets(targets: Partial<IDefaultCollectionTargets>): Result<IDefaultCollectionTargets>;
-    // @deprecated
-    updateDeviceSettings(updates: Partial<Omit<IDeviceSettings, 'schemaVersion' | 'deviceId'>>): Result<IDeviceSettings>;
-    // @deprecated
-    updateLastActiveSessionId(sessionId: string | undefined): Result<string | undefined>;
     updatePreferencesSettings(updates: Partial<Omit<IPreferencesSettings, 'schemaVersion'>>): Result<IPreferencesSettings>;
 }
 
 // @public
 interface ISettingsManagerBootstrapParams {
     readonly deviceId: DeviceId;
-    readonly fileTree: FileTree.IFileTreeDirectoryItem;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManagerBootstrapParams"
-//
-// @public @deprecated
-interface ISettingsManagerParams {
-    readonly deviceId: DeviceId;
-    readonly deviceName?: string;
     readonly fileTree: FileTree.IFileTreeDirectoryItem;
 }
 
@@ -6247,8 +6152,6 @@ export interface IWorkspaceInitParams {
 // @public
 export interface IWorkspaceInitResult {
     readonly bootstrapSettings: IBootstrapSettings;
-    readonly commonSettings: ICommonSettings;
-    readonly deviceSettings: IDeviceSettings;
     readonly preferencesSettings: IPreferencesSettings;
     readonly workspacePath: string;
 }
@@ -7504,11 +7407,6 @@ function resolveImportRootForSubLibrary(root: FileTree.IFileTreeDirectoryItem, s
 // @public
 function resolvePreferencesSettings(preferences: IPreferencesSettings, deviceId: DeviceId): IResolvedSettings;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "resolvePreferencesSettings"
-//
-// @public @deprecated
-function resolveSettings(common: ICommonSettings, device: IDeviceSettings): IResolvedSettings;
-
 // @public
 function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;
 
@@ -7766,17 +7664,11 @@ declare namespace Settings {
         createDefaultBootstrapSettings,
         createDefaultPreferencesSettings,
         resolvePreferencesSettings,
-        splitCommonSettings,
-        ICommonSettings,
-        IDeviceSettings,
         IDeviceFileTreeOverrides,
         IResolvedSettings,
         DEFAULT_SCALING,
         DEFAULT_WORKFLOW,
         DEFAULT_TOOL_SETTINGS,
-        resolveSettings,
-        createDefaultCommonSettings,
-        createDefaultDeviceSettings,
         Converters_12 as Converters,
         DEVICE_ID_PATTERN,
         ISettingsValidationWarning,
@@ -7787,15 +7679,10 @@ declare namespace Settings {
         validateResolvedSettings,
         ISettingsManager,
         ISettingsManagerBootstrapParams,
-        ISettingsManagerParams,
         SettingsManager,
         SETTINGS_DIR_PATH,
         BOOTSTRAP_SETTINGS_FILENAME,
-        PREFERENCES_SETTINGS_FILENAME,
-        COMMON_SETTINGS_FILENAME,
-        DEVICE_SETTINGS_PREFIX,
-        DEVICE_SETTINGS_SUFFIX,
-        getDeviceSettingsFilename
+        PREFERENCES_SETTINGS_FILENAME
     }
 }
 export { Settings }
@@ -7813,10 +7700,6 @@ const settingsFileLocation: Converter<ISettingsFileLocation>;
 
 // @public
 class SettingsManager implements ISettingsManager {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "createFromBootstrap"
-    //
-    // @deprecated
-    static create(params: ISettingsManagerParams): Result<SettingsManager>;
     static createFromBootstrap(params: ISettingsManagerBootstrapParams): Result<SettingsManager>;
     static createFromBootstrapWithMigration(params: ISettingsManagerBootstrapParams): Result<SettingsManager>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
@@ -7826,19 +7709,11 @@ class SettingsManager implements ISettingsManager {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
     //
     // (undocumented)
-    getBootstrapSettings(): IBootstrapSettings | undefined;
+    getBootstrapSettings(): IBootstrapSettings;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
     //
     // (undocumented)
-    getCommonSettings(): ICommonSettings;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
-    //
-    // (undocumented)
-    getDeviceSettings(): IDeviceSettings;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
-    //
-    // (undocumented)
-    getPreferencesSettings(): IPreferencesSettings | undefined;
+    getPreferencesSettings(): IPreferencesSettings;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
     //
     // (undocumented)
@@ -7858,24 +7733,11 @@ class SettingsManager implements ISettingsManager {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
     //
     // (undocumented)
-    updateCommonSettings(updates: Partial<Omit<ICommonSettings, 'schemaVersion'>>): Result<ICommonSettings>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
-    //
-    // (undocumented)
     updateDefaultStorageTargets(targets: Partial<IDefaultStorageTargets>): Result<IDefaultStorageTargets>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
     //
     // (undocumented)
     updateDefaultTargets(targets: Partial<IDefaultCollectionTargets>): Result<IDefaultCollectionTargets>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
-    //
-    // (undocumented)
-    updateDeviceSettings(updates: Partial<Omit<IDeviceSettings, 'schemaVersion' | 'deviceId'>>): Result<IDeviceSettings>;
-    updateDeviceToolsOverride(tools: Partial<IToolSettings>): Result<Partial<IToolSettings>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
-    //
-    // (undocumented)
-    updateLastActiveSessionId(sessionId: string | undefined): Result<string | undefined>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
     //
     // (undocumented)
@@ -7894,14 +7756,6 @@ const slotId: Converter<SlotId>;
 
 // @public
 function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TCollectionId>, mutable?: MutabilitySpec): ILoadCollectionFromFileTreeParams<TCollectionId> | undefined;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ICommonSettings"
-//
-// @public
-function splitCommonSettings(common: ICommonSettings): {
-    bootstrap: IBootstrapSettings;
-    preferences: IPreferencesSettings;
-};
 
 // @public
 export type SpoonLevel = 'level' | 'heaping';

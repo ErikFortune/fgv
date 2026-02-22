@@ -31,11 +31,9 @@ import {
   DeviceId,
   ExternalLibraryRef,
   IBootstrapSettings,
-  ICommonSettings,
   IDefaultCollectionTargets,
   IDefaultStorageTargets,
   IDeviceFileTreeOverrides,
-  IDeviceSettings,
   IExternalLibraryRefConfig,
   ILocalDirectoryRef,
   ILocalStorageConfig,
@@ -286,24 +284,7 @@ export const defaultStorageTargets: Converter<IDefaultStorageTargets> =
   });
 
 // ============================================================================
-// Common Settings Converter (Legacy)
-// ============================================================================
-
-/**
- * Converter for {@link ICommonSettings}.
- * @deprecated Use {@link bootstrapSettings} and {@link preferencesSettings} instead.
- * @public
- */
-export const commonSettings: Converter<ICommonSettings> = Converters.object<ICommonSettings>({
-  schemaVersion: schemaVersion,
-  defaultTargets: defaultCollectionTargets.optional(),
-  tools: toolSettings.optional(),
-  externalLibraries: Converters.arrayOf(externalLibraryRefConfig).optional(),
-  defaultStorageTargets: defaultStorageTargets.optional()
-});
-
-// ============================================================================
-// Device Settings Converter (Legacy)
+// Device File Tree Overrides Converter
 // ============================================================================
 
 /**
@@ -325,22 +306,6 @@ export const partialToolSettings: Converter<Partial<IToolSettings>> = Converters
 >({
   scaling: scalingDefaults.optional(),
   workflow: workflowPreferences.optional()
-});
-
-/**
- * Converter for {@link IDeviceSettings}.
- * @deprecated Use {@link bootstrapSettings} and {@link preferencesSettings} instead.
- * @public
- */
-export const deviceSettings: Converter<IDeviceSettings> = Converters.object<IDeviceSettings>({
-  schemaVersion: schemaVersion,
-  deviceId: deviceId,
-  deviceName: Converters.string.optional(),
-  lastActiveSessionId: Converters.string.optional(),
-  defaultTargetsOverride: defaultCollectionTargets.optional(),
-  toolsOverride: partialToolSettings.optional(),
-  fileTreeOverrides: deviceFileTreeOverrides.optional(),
-  localDirectories: Converters.arrayOf(localDirectoryRef).optional()
 });
 
 // ============================================================================
@@ -426,7 +391,8 @@ export const bootstrapSettings: Converter<IBootstrapSettings> = Converters.objec
   preferencesLocation: settingsFileLocation.optional(),
   keystoreLocation: settingsFileLocation.optional(),
   fileTreeOverrides: deviceFileTreeOverrides.optional(),
-  logging: logSettings.optional()
+  logging: logSettings.optional(),
+  deviceName: Converters.string.optional()
 });
 
 // ============================================================================

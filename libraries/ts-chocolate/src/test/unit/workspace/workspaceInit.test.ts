@@ -28,20 +28,14 @@ import {
   createWorkspaceDirectories,
   writeBootstrapSettings,
   writePreferencesSettings,
-  writeCommonSettings,
-  writeDeviceSettings,
   initializeWorkspace,
   IWorkspaceInitParams
 } from '../../../packlets/workspace';
 import {
   createDefaultBootstrapSettings,
   createDefaultPreferencesSettings,
-  createDefaultCommonSettings,
-  createDefaultDeviceSettings,
   DeviceId,
   IBootstrapSettings,
-  ICommonSettings,
-  IDeviceSettings,
   IPreferencesSettings
 } from '../../../packlets/settings';
 import { LibraryPaths } from '../../../packlets/library-data';
@@ -122,78 +116,6 @@ describe('workspaceInit', () => {
       // Use /dev/null as a path that can't have subdirectories
       const invalidPath = path.join('/dev/null', 'invalid');
       expect(createWorkspaceDirectories(invalidPath)).toFailWith(/failed to create workspace directories/i);
-    });
-  });
-
-  // ============================================================================
-  // writeCommonSettings
-  // ============================================================================
-
-  describe('writeCommonSettings', () => {
-    let commonSettings: ICommonSettings;
-
-    beforeEach(() => {
-      // Create workspace directories first
-      createWorkspaceDirectories(tempDir).orThrow();
-      commonSettings = createDefaultCommonSettings();
-    });
-
-    test('writes valid common settings JSON to correct path', () => {
-      expect(writeCommonSettings(tempDir, commonSettings)).toSucceed();
-
-      const settingsPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsCommon);
-      expect(fs.existsSync(settingsPath)).toBe(true);
-
-      // Verify file is readable and valid JSON
-      const content = fs.readFileSync(settingsPath, 'utf8');
-      const parsed = JSON.parse(content) as ICommonSettings;
-      expect(parsed.schemaVersion).toBe(commonSettings.schemaVersion);
-    });
-
-    test('file contains properly formatted JSON with indentation', () => {
-      expect(writeCommonSettings(tempDir, commonSettings)).toSucceed();
-
-      const settingsPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsCommon);
-      const content = fs.readFileSync(settingsPath, 'utf8');
-
-      // Should be formatted with 2-space indentation (from JSON.stringify with spaces: 2)
-      expect(content).toContain('\n  ');
-    });
-
-    test('overwrites existing settings file', () => {
-      // Write initial settings
-      expect(writeCommonSettings(tempDir, commonSettings)).toSucceed();
-
-      // Create modified settings
-      const modifiedSettings: ICommonSettings = {
-        ...commonSettings,
-        tools: {
-          scaling: {
-            batchMultiplier: 2.0
-          }
-        }
-      };
-
-      // Overwrite
-      expect(writeCommonSettings(tempDir, modifiedSettings)).toSucceed();
-
-      // Verify new content
-      const settingsPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsCommon);
-      const content = fs.readFileSync(settingsPath, 'utf8');
-      const parsed = JSON.parse(content) as ICommonSettings;
-      expect(parsed.tools?.scaling?.batchMultiplier).toBe(2.0);
-    });
-
-    test('fails when settings directory does not exist', () => {
-      // Use a temp dir without creating directories
-      const newTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'no-dirs-test-'));
-      try {
-        expect(writeCommonSettings(newTempDir, commonSettings)).toFailWith(
-          /failed to write common settings/i
-        );
-      } finally {
-        fs.rmSync(newTempDir, { recursive: true, force: true });
-      }
     });
   });
 
@@ -285,86 +207,6 @@ describe('workspaceInit', () => {
   });
 
   // ============================================================================
-  // writeDeviceSettings
-  // ============================================================================
-
-  describe('writeDeviceSettings', () => {
-    let deviceSettings: IDeviceSettings;
-    const deviceId = 'test-device' as unknown as DeviceId;
-
-    beforeEach(() => {
-      // Create workspace directories first
-      createWorkspaceDirectories(tempDir).orThrow();
-      deviceSettings = createDefaultDeviceSettings(deviceId, 'Test Device');
-    });
-
-    test('writes valid device settings JSON with correct filename pattern', () => {
-      expect(writeDeviceSettings(tempDir, deviceId, deviceSettings)).toSucceed();
-
-      const expectedFileName = `${LibraryPaths.settingsDevicePrefix}${deviceId}.json`;
-      const settingsPath = path.join(tempDir, LibraryPaths.settings, expectedFileName);
-
-      expect(fs.existsSync(settingsPath)).toBe(true);
-
-      // Verify file is readable and valid JSON
-      const content = fs.readFileSync(settingsPath, 'utf8');
-      const parsed = JSON.parse(content) as IDeviceSettings;
-      expect(parsed.schemaVersion).toBe(deviceSettings.schemaVersion);
-      expect(parsed.deviceId).toBe(deviceId);
-    });
-
-    test('filename includes device ID', () => {
-      const uniqueDeviceId = 'unique-device-123' as unknown as DeviceId;
-      const settings = createDefaultDeviceSettings(uniqueDeviceId);
-
-      expect(writeDeviceSettings(tempDir, uniqueDeviceId, settings)).toSucceed();
-
-      const expectedFileName = `device-${uniqueDeviceId}.json`;
-      const settingsPath = path.join(tempDir, LibraryPaths.settings, expectedFileName);
-      expect(fs.existsSync(settingsPath)).toBe(true);
-    });
-
-    test('writes multiple device settings files', () => {
-      const device1 = 'device-1' as unknown as DeviceId;
-      const device2 = 'device-2' as unknown as DeviceId;
-
-      expect(writeDeviceSettings(tempDir, device1, createDefaultDeviceSettings(device1))).toSucceed();
-      expect(writeDeviceSettings(tempDir, device2, createDefaultDeviceSettings(device2))).toSucceed();
-
-      // Both files should exist
-      expect(fs.existsSync(path.join(tempDir, LibraryPaths.settings, `device-${device1}.json`))).toBe(true);
-      expect(fs.existsSync(path.join(tempDir, LibraryPaths.settings, `device-${device2}.json`))).toBe(true);
-    });
-
-    test('file contains properly formatted JSON', () => {
-      expect(writeDeviceSettings(tempDir, deviceId, deviceSettings)).toSucceed();
-
-      const settingsPath = path.join(
-        tempDir,
-        LibraryPaths.settings,
-        `${LibraryPaths.settingsDevicePrefix}${deviceId}.json`
-      );
-      const content = fs.readFileSync(settingsPath, 'utf8');
-
-      // Should be formatted with 2-space indentation
-      expect(content).toContain('\n  ');
-      expect(content).toContain('"deviceId"');
-    });
-
-    test('fails when settings directory does not exist', () => {
-      // Use a temp dir without creating directories
-      const newTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'no-dirs-test-'));
-      try {
-        expect(writeDeviceSettings(newTempDir, deviceId, deviceSettings)).toFailWith(
-          /failed to write device settings/i
-        );
-      } finally {
-        fs.rmSync(newTempDir, { recursive: true, force: true });
-      }
-    });
-  });
-
-  // ============================================================================
   // initializeWorkspace
   // ============================================================================
 
@@ -384,32 +226,20 @@ describe('workspaceInit', () => {
         expect(result.workspacePath).toBe(tempDir);
         expect(result.bootstrapSettings).toBeDefined();
         expect(result.preferencesSettings).toBeDefined();
-        expect(result.commonSettings).toBeDefined();
-        expect(result.deviceSettings).toBeDefined();
         expect(result.bootstrapSettings.schemaVersion).toBe(1);
         expect(result.preferencesSettings.schemaVersion).toBe(1);
-        expect(result.commonSettings.schemaVersion).toBe(1);
-        expect(result.deviceSettings.schemaVersion).toBe(1);
-        expect(result.deviceSettings.deviceId).toBe(deviceId);
+        expect(result.bootstrapSettings.deviceName).toBe(deviceName);
 
         // Verify directories exist
         expect(fs.existsSync(path.join(tempDir, LibraryPaths.settings))).toBe(true);
         expect(fs.existsSync(path.join(tempDir, LibraryPaths.ingredients))).toBe(true);
         expect(fs.existsSync(path.join(tempDir, LibraryPaths.confections))).toBe(true);
 
-        // Verify all settings files exist
+        // Verify settings files exist
         const bootstrapPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsBootstrap);
         const preferencesPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsPreferences);
-        const commonPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsCommon);
-        const devicePath = path.join(
-          tempDir,
-          LibraryPaths.settings,
-          `${LibraryPaths.settingsDevicePrefix}${deviceId}.json`
-        );
         expect(fs.existsSync(bootstrapPath)).toBe(true);
         expect(fs.existsSync(preferencesPath)).toBe(true);
-        expect(fs.existsSync(commonPath)).toBe(true);
-        expect(fs.existsSync(devicePath)).toBe(true);
       });
     });
 
@@ -424,17 +254,10 @@ describe('workspaceInit', () => {
         // Verify bootstrap settings
         expect(result.bootstrapSettings.schemaVersion).toBe(1);
         expect(result.bootstrapSettings.includeBuiltIn).toBe(true);
+        expect(result.bootstrapSettings.deviceName).toBe(deviceName);
 
         // Verify preferences settings
         expect(result.preferencesSettings.schemaVersion).toBe(1);
-
-        // Verify common settings (legacy)
-        expect(result.commonSettings.schemaVersion).toBe(1);
-
-        // Verify device settings (legacy)
-        expect(result.deviceSettings.deviceId).toBe(deviceId);
-        expect(result.deviceSettings.deviceName).toBe(deviceName);
-        expect(result.deviceSettings.schemaVersion).toBe(1);
       });
     });
 
@@ -458,23 +281,6 @@ describe('workspaceInit', () => {
       const preferencesContent = fs.readFileSync(preferencesPath, 'utf8');
       const preferencesParsed = JSON.parse(preferencesContent) as IPreferencesSettings;
       expect(preferencesParsed.schemaVersion).toBe(1);
-
-      // Read and parse common settings (legacy)
-      const commonPath = path.join(tempDir, LibraryPaths.settings, LibraryPaths.settingsCommon);
-      const commonContent = fs.readFileSync(commonPath, 'utf8');
-      const commonParsed = JSON.parse(commonContent) as ICommonSettings;
-      expect(commonParsed.schemaVersion).toBe(1);
-
-      // Read and parse device settings (legacy)
-      const devicePath = path.join(
-        tempDir,
-        LibraryPaths.settings,
-        `${LibraryPaths.settingsDevicePrefix}${deviceId}.json`
-      );
-      const deviceContent = fs.readFileSync(devicePath, 'utf8');
-      const deviceParsed = JSON.parse(deviceContent) as IDeviceSettings;
-      expect(deviceParsed.deviceId).toBe(deviceId);
-      expect(deviceParsed.schemaVersion).toBe(1);
     });
 
     test('works with minimal params (no device name)', () => {
@@ -484,8 +290,7 @@ describe('workspaceInit', () => {
       };
 
       expect(initializeWorkspace(params)).toSucceedAndSatisfy((result) => {
-        expect(result.deviceSettings.deviceId).toBe(deviceId);
-        expect(result.deviceSettings.deviceName).toBeUndefined();
+        expect(result.bootstrapSettings.deviceName).toBeUndefined();
       });
     });
 
@@ -529,29 +334,6 @@ describe('workspaceInit', () => {
       try {
         // Bootstrap is the first settings file written, so it fails first
         expect(initializeWorkspace(params)).toFailWith(/failed to write bootstrap settings/i);
-      } finally {
-        fs.chmodSync(settingsDir, 0o755);
-      }
-    });
-
-    test('fails gracefully if device settings write fails', () => {
-      // Create directories and write all preceding settings files
-      createWorkspaceDirectories(tempDir).orThrow();
-      writeBootstrapSettings(tempDir, createDefaultBootstrapSettings()).orThrow();
-      writePreferencesSettings(tempDir, createDefaultPreferencesSettings()).orThrow();
-      writeCommonSettings(tempDir, createDefaultCommonSettings()).orThrow();
-
-      // Now make settings directory read-only to block device settings write
-      const settingsDir = path.join(tempDir, LibraryPaths.settings);
-      fs.chmodSync(settingsDir, 0o555); // Read and execute only, no write
-
-      const params: IWorkspaceInitParams = {
-        workspacePath: tempDir,
-        deviceId
-      };
-
-      try {
-        expect(initializeWorkspace(params)).toFailWith(/failed to write device settings/i);
       } finally {
         fs.chmodSync(settingsDir, 0o755);
       }

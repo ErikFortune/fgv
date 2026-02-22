@@ -60,23 +60,6 @@ The device identifier for this instance.
 </td></tr>
 <tr><td>
 
-[deviceName](./IPlatformInitOptions.deviceName.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-string
-
-</td><td>
-
-Human-readable name for this device.
-
-</td></tr>
-<tr><td>
-
 [keyStorePath](./IPlatformInitOptions.keyStorePath.md)
 
 </td><td>

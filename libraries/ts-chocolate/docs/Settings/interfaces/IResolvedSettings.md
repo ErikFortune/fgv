@@ -2,7 +2,7 @@
 
 # Interface: IResolvedSettings
 
-Fully resolved settings after merging common and device-specific settings.
+Fully resolved settings after merging preferences.
 This is what the workspace actually uses at runtime.
 
 ## Properties
@@ -56,7 +56,7 @@ The current device ID
 
 </td><td>
 
-Merged default targets (device overrides common)
+Merged default targets
 
 </td></tr>
 <tr><td>
@@ -73,24 +73,7 @@ Merged default targets (device overrides common)
 
 </td><td>
 
-Merged tool settings (device overrides common)
-
-</td></tr>
-<tr><td>
-
-[lastActiveSessionId](./IResolvedSettings.lastActiveSessionId.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-string
-
-</td><td>
-
-Last active session ID
+Merged tool settings
 
 </td></tr>
 <tr><td>
@@ -107,7 +90,7 @@ Last active session ID
 
 </td><td>
 
-Default storage root targets for new collections (from common settings)
+Default storage root targets for new collections
 
 </td></tr>
 </tbody></table>

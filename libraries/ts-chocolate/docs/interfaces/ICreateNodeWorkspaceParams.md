@@ -94,23 +94,6 @@ Device identifier for this instance.
 </td></tr>
 <tr><td>
 
-[deviceName](./ICreateNodeWorkspaceParams.deviceName.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-string
-
-</td><td>
-
-Human-readable device name.
-
-</td></tr>
-<tr><td>
-
 [builtin](./ICreateNodeWorkspaceParams.builtin.md)
 
 </td><td>

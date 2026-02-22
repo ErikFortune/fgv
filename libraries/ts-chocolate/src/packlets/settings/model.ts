@@ -22,8 +22,8 @@
  * Workspace settings model types.
  *
  * Settings are stored in a directory structure:
- * - `data/settings/common.json` - Shared across all devices
- * - `data/settings/device-{deviceId}.json` - Device-specific overrides
+ * - `data/settings/bootstrap.json` - Preload configuration (what data sources to set up)
+ * - `data/settings/preferences.json` - Runtime preferences (defaults, tools, etc.)
  *
  * @packageDocumentation
  */
@@ -330,6 +330,9 @@ export interface IBootstrapSettings {
 
   /** Logging verbosity settings. */
   readonly logging?: ILogSettings;
+
+  /** Human-readable name for this device/platform instance. */
+  readonly deviceName?: string;
 }
 
 // ============================================================================
@@ -353,32 +356,7 @@ export interface IPreferencesSettings {
 }
 
 // ============================================================================
-// Common Settings (Shared Across Devices)
-// ============================================================================
-
-/**
- * Settings that are shared across all devices.
- * Stored in: data/settings/common.json
- *
- * @deprecated Use {@link IBootstrapSettings} and {@link IPreferencesSettings} instead.
- * Retained temporarily for migration from common.json.
- * @public
- */
-export interface ICommonSettings {
-  /** Schema version for migration support */
-  readonly schemaVersion: SettingsSchemaVersion;
-  /** Default target collections for each sublibrary */
-  readonly defaultTargets?: IDefaultCollectionTargets;
-  /** Tool configuration (scaling, workflow, etc.) */
-  readonly tools?: IToolSettings;
-  /** External library references (paths resolved by platform) */
-  readonly externalLibraries?: ReadonlyArray<IExternalLibraryRefConfig>;
-  /** Default storage locations for new collections (global + per-sublibrary) */
-  readonly defaultStorageTargets?: IDefaultStorageTargets;
-}
-
-// ============================================================================
-// Device-Specific Settings
+// Device-Specific File Tree Overrides
 // ============================================================================
 
 /**
@@ -393,53 +371,23 @@ export interface IDeviceFileTreeOverrides {
   readonly keyStorePath?: string;
 }
 
-/**
- * Settings specific to a device/platform instance.
- * Stored in: `data/settings/device-[deviceId].json`
- *
- * @deprecated Device settings are vestigial — no UI reads these fields.
- * Directory handles are persisted in IndexedDB, device ID in localStorage.
- * Retained temporarily for migration.
- * @public
- */
-export interface IDeviceSettings {
-  /** Schema version for migration support */
-  readonly schemaVersion: SettingsSchemaVersion;
-  /** Unique device identifier */
-  readonly deviceId: DeviceId;
-  /** Human-readable device name */
-  readonly deviceName?: string;
-  /** Last active session ID for this device */
-  readonly lastActiveSessionId?: string;
-  /** Override default collection targets for this device */
-  readonly defaultTargetsOverride?: Partial<IDefaultCollectionTargets>;
-  /** Override tool settings for this device */
-  readonly toolsOverride?: Partial<IToolSettings>;
-  /** Platform-specific file tree path overrides */
-  readonly fileTreeOverrides?: IDeviceFileTreeOverrides;
-  /** Local directories added by the user via File System Access API */
-  readonly localDirectories?: ReadonlyArray<ILocalDirectoryRef>;
-}
-
 // ============================================================================
-// Resolved Settings (After Merging Common + Device)
+// Resolved Settings (After Merging Preferences)
 // ============================================================================
 
 /**
- * Fully resolved settings after merging common and device-specific settings.
+ * Fully resolved settings after merging preferences.
  * This is what the workspace actually uses at runtime.
  * @public
  */
 export interface IResolvedSettings {
   /** The current device ID */
   readonly deviceId: DeviceId;
-  /** Merged default targets (device overrides common) */
+  /** Merged default targets */
   readonly defaultTargets: IDefaultCollectionTargets;
-  /** Merged tool settings (device overrides common) */
+  /** Merged tool settings */
   readonly tools: IToolSettings;
-  /** Last active session ID */
-  readonly lastActiveSessionId?: string;
-  /** Default storage root targets for new collections (from common settings) */
+  /** Default storage root targets for new collections */
   readonly defaultStorageTargets?: IDefaultStorageTargets;
 }
 
@@ -512,47 +460,6 @@ export function resolvePreferencesSettings(
 }
 
 /**
- * Resolves settings by merging common and device-specific settings.
- * Device settings override common settings.
- *
- * @deprecated Use {@link resolvePreferencesSettings} instead.
- * @param common - Common settings shared across devices
- * @param device - Device-specific settings
- * @returns Fully resolved settings
- * @public
- */
-export function resolveSettings(common: ICommonSettings, device: IDeviceSettings): IResolvedSettings {
-  return {
-    deviceId: device.deviceId,
-
-    // Merge default targets (device overrides common)
-    defaultTargets: {
-      ...common.defaultTargets,
-      ...device.defaultTargetsOverride
-    },
-
-    // Deep merge tool settings
-    tools: {
-      scaling: {
-        ...DEFAULT_SCALING,
-        ...common.tools?.scaling,
-        ...device.toolsOverride?.scaling
-      },
-      workflow: {
-        ...DEFAULT_WORKFLOW,
-        ...common.tools?.workflow,
-        ...device.toolsOverride?.workflow
-      }
-    },
-
-    lastActiveSessionId: device.lastActiveSessionId,
-
-    // Default storage targets come from common settings (shared across devices)
-    defaultStorageTargets: common.defaultStorageTargets
-  };
-}
-
-/**
  * Creates default bootstrap settings for first run.
  * @returns Default bootstrap settings
  * @public
@@ -576,65 +483,5 @@ export function createDefaultPreferencesSettings(): IPreferencesSettings {
     schemaVersion: SETTINGS_SCHEMA_VERSION,
     defaultTargets: {},
     tools: DEFAULT_TOOL_SETTINGS
-  };
-}
-
-/**
- * Splits a legacy {@link ICommonSettings} into bootstrap + preferences.
- * Used for one-time migration from common.json.
- * @param common - The legacy common settings
- * @returns Bootstrap and preferences settings
- * @public
- */
-export function splitCommonSettings(common: ICommonSettings): {
-  bootstrap: IBootstrapSettings;
-  preferences: IPreferencesSettings;
-} {
-  return {
-    bootstrap: {
-      schemaVersion: SETTINGS_SCHEMA_VERSION,
-      includeBuiltIn: true,
-      localStorage: { library: true, userData: true },
-      externalLibraries: common.externalLibraries
-    },
-    preferences: {
-      schemaVersion: SETTINGS_SCHEMA_VERSION,
-      defaultTargets: common.defaultTargets,
-      defaultStorageTargets: common.defaultStorageTargets,
-      tools: common.tools
-    }
-  };
-}
-
-/**
- * Creates default common settings for first run.
- *
- * @deprecated Use {@link createDefaultBootstrapSettings} and {@link createDefaultPreferencesSettings} instead.
- * @returns Default common settings
- * @public
- */
-export function createDefaultCommonSettings(): ICommonSettings {
-  return {
-    schemaVersion: SETTINGS_SCHEMA_VERSION,
-    defaultTargets: {},
-    tools: DEFAULT_TOOL_SETTINGS,
-    externalLibraries: []
-  };
-}
-
-/**
- * Creates default device settings for first run.
- *
- * @deprecated Device settings are vestigial.
- * @param deviceId - The device identifier
- * @param deviceName - Optional human-readable name
- * @returns Default device settings
- * @public
- */
-export function createDefaultDeviceSettings(deviceId: DeviceId, deviceName?: string): IDeviceSettings {
-  return {
-    schemaVersion: SETTINGS_SCHEMA_VERSION,
-    deviceId,
-    deviceName
   };
 }

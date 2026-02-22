@@ -3,6 +3,6 @@ export { SettingsCascadeView, type ISettingsCascadeViewProps } from './SettingsC
 export {
   useSettingsDraft,
   type ISettingsDraft,
-  type ICommonSettingsDraft,
-  type IDeviceSettingsDraft
+  type IBootstrapSettingsDraft,
+  type IPreferencesDraft
 } from './useSettingsDraft';

@@ -48,11 +48,6 @@ export interface ILoadWorkspaceOptions {
    * @defaultValue 'fail-on-error'
    */
   readonly startupMode?: StartupMode;
-
-  /**
-   * Device name for this instance.
-   */
-  readonly deviceName?: string;
 }
 
 /**
@@ -91,8 +86,7 @@ export async function loadWorkspace(options: ILoadWorkspaceOptions): Promise<Res
     },
     builtin: options.builtin ?? true,
     preWarm: options.preWarm ?? false,
-    startupMode: options.startupMode ?? 'fail-on-error',
-    deviceName: options.deviceName
+    startupMode: options.startupMode ?? 'fail-on-error'
   });
 }
 

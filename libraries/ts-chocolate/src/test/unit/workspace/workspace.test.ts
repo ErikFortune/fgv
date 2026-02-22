@@ -56,8 +56,8 @@ import {
   SettingsManager,
   DeviceId,
   SETTINGS_SCHEMA_VERSION,
-  ICommonSettings,
-  IDeviceSettings
+  IBootstrapSettings,
+  IPreferencesSettings
 } from '../../../packlets/settings';
 
 describe('Workspace', () => {
@@ -362,18 +362,19 @@ describe('Workspace', () => {
 
   describe('createWithSettings', () => {
     function createSettingsFileTree(): FileTree.IFileTreeDirectoryItem {
-      const testDeviceId = 'test-device' as unknown as DeviceId;
-      const commonSettings: ICommonSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION
-      };
-      const deviceSettings: IDeviceSettings = {
+      const bootstrapSettings: IBootstrapSettings = {
         schemaVersion: SETTINGS_SCHEMA_VERSION,
-        deviceId: testDeviceId
+        includeBuiltIn: true,
+        localStorage: { library: true, userData: true },
+        externalLibraries: []
+      };
+      const preferencesSettings: IPreferencesSettings = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION
       };
 
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/library/data/settings/common.json', contents: commonSettings },
-        { path: '/library/data/settings/device-test-device.json', contents: deviceSettings }
+        { path: '/library/data/settings/bootstrap.json', contents: bootstrapSettings },
+        { path: '/library/data/settings/preferences.json', contents: preferencesSettings }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       return tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -382,7 +383,7 @@ describe('Workspace', () => {
     test('creates workspace with settings manager', () => {
       const fileTree = createSettingsFileTree();
       const testDeviceId = 'test-device' as unknown as DeviceId;
-      const settings = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
+      const settings = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
 
       expect(
         Workspace.createWithSettings({
@@ -395,7 +396,7 @@ describe('Workspace', () => {
     test('settings accessor returns the provided settings manager', () => {
       const fileTree = createSettingsFileTree();
       const testDeviceId = 'test-device' as unknown as DeviceId;
-      const settings = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
+      const settings = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
 
       expect(
         Workspace.createWithSettings({
@@ -410,7 +411,7 @@ describe('Workspace', () => {
     test('workspace with settings still has no-keystore state', () => {
       const fileTree = createSettingsFileTree();
       const testDeviceId = 'test-device' as unknown as DeviceId;
-      const settings = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
+      const settings = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
 
       expect(
         Workspace.createWithSettings({
@@ -426,7 +427,7 @@ describe('Workspace', () => {
     test('workspace with settings and libraries', () => {
       const fileTree = createSettingsFileTree();
       const testDeviceId = 'test-device' as unknown as DeviceId;
-      const settings = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
+      const settings = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
 
       expect(
         Workspace.createWithSettings({
@@ -444,7 +445,7 @@ describe('Workspace', () => {
       const cryptoProvider = CryptoUtils.nodeCryptoProvider;
       const fileTree = createSettingsFileTree();
       const testDeviceId = 'test-device' as unknown as DeviceId;
-      const settings = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
+      const settings = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
 
       expect(
         Workspace.createWithSettings({
@@ -462,7 +463,7 @@ describe('Workspace', () => {
     test('createWithSettings creates default logger when not provided', () => {
       const fileTree = createSettingsFileTree();
       const testDeviceId = 'test-device' as unknown as DeviceId;
-      const settings = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
+      const settings = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
 
       expect(
         Workspace.createWithSettings({
@@ -668,18 +669,19 @@ describe('Workspace', () => {
 
   describe('createWithSettings with keyStore', () => {
     function createSettingsFileTree(): FileTree.IFileTreeDirectoryItem {
-      const testDeviceId = 'test-device' as unknown as DeviceId;
-      const commonSettings: ICommonSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION
-      };
-      const deviceSettings: IDeviceSettings = {
+      const bootstrapSettings: IBootstrapSettings = {
         schemaVersion: SETTINGS_SCHEMA_VERSION,
-        deviceId: testDeviceId
+        includeBuiltIn: true,
+        localStorage: { library: true, userData: true },
+        externalLibraries: []
+      };
+      const preferencesSettings: IPreferencesSettings = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION
       };
 
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/library/data/settings/common.json', contents: commonSettings },
-        { path: '/library/data/settings/device-test-device.json', contents: deviceSettings }
+        { path: '/library/data/settings/bootstrap.json', contents: bootstrapSettings },
+        { path: '/library/data/settings/preferences.json', contents: preferencesSettings }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       return tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -689,7 +691,7 @@ describe('Workspace', () => {
       const cryptoProvider = CryptoUtils.nodeCryptoProvider;
       const fileTree = createSettingsFileTree();
       const testDeviceId = 'test-device' as unknown as DeviceId;
-      const settings = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
+      const settings = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
 
       // Create and save a keyStore
       const keyStore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider }).orThrow();
@@ -713,7 +715,7 @@ describe('Workspace', () => {
       const cryptoProvider = CryptoUtils.nodeCryptoProvider;
       const fileTree = createSettingsFileTree();
       const testDeviceId = 'test-device' as unknown as DeviceId;
-      const settings = SettingsManager.create({ fileTree, deviceId: testDeviceId }).orThrow();
+      const settings = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
       const invalidFile = { format: 'invalid' };
 
       expect(

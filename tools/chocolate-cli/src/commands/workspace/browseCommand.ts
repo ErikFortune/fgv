@@ -40,7 +40,6 @@ import {
  */
 interface IBrowseCommandOptions {
   readonly workspace: string;
-  readonly deviceName?: string;
 }
 
 /**
@@ -249,8 +248,7 @@ export function createBrowseCommand(): Command {
     .option('-d, --device-name <name>', 'Device name for this instance')
     .action(async (options: IBrowseCommandOptions) => {
       const workspaceResult = await loadWorkspace({
-        workspacePath: options.workspace,
-        deviceName: options.deviceName
+        workspacePath: options.workspace
       });
 
       if (workspaceResult.isFailure()) {

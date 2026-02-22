@@ -117,15 +117,6 @@ Converter for IDefaultStorageTargets.
 </td></tr>
 <tr><td>
 
-[commonSettings](./variables/commonSettings.md)
-
-</td><td>
-
-Converter for ICommonSettings.
-
-</td></tr>
-<tr><td>
-
 [deviceFileTreeOverrides](./variables/deviceFileTreeOverrides.md)
 
 </td><td>
@@ -140,15 +131,6 @@ Converter for IDeviceFileTreeOverrides.
 </td><td>
 
 Converter for partial tool settings (for device overrides).
-
-</td></tr>
-<tr><td>
-
-[deviceSettings](./variables/deviceSettings.md)
-
-</td><td>
-
-Converter for IDeviceSettings.
 
 </td></tr>
 <tr><td>

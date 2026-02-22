@@ -2,7 +2,7 @@
 
 ## IResolvedSettings.defaultTargets property
 
-Merged default targets (device overrides common)
+Merged default targets
 
 **Signature:**
 

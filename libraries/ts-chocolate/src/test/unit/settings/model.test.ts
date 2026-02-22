@@ -19,15 +19,9 @@
 // SOFTWARE.
 
 import {
-  resolveSettings,
   resolvePreferencesSettings,
-  createDefaultCommonSettings,
-  createDefaultDeviceSettings,
   createDefaultBootstrapSettings,
   createDefaultPreferencesSettings,
-  splitCommonSettings,
-  ICommonSettings,
-  IDeviceSettings,
   IPreferencesSettings,
   DeviceId,
   DEFAULT_SCALING,
@@ -72,57 +66,6 @@ describe('settings model', () => {
         scaling: DEFAULT_SCALING,
         workflow: DEFAULT_WORKFLOW
       });
-    });
-  });
-
-  // ============================================================================
-  // createDefaultCommonSettings
-  // ============================================================================
-
-  describe('createDefaultCommonSettings', () => {
-    test('returns common settings with correct schema version', () => {
-      const settings = createDefaultCommonSettings();
-      expect(settings.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
-    });
-
-    test('returns empty default targets', () => {
-      const settings = createDefaultCommonSettings();
-      expect(settings.defaultTargets).toEqual({});
-    });
-
-    test('returns DEFAULT_TOOL_SETTINGS as tools', () => {
-      const settings = createDefaultCommonSettings();
-      expect(settings.tools).toEqual(DEFAULT_TOOL_SETTINGS);
-    });
-
-    test('returns empty external libraries array', () => {
-      const settings = createDefaultCommonSettings();
-      expect(settings.externalLibraries).toEqual([]);
-    });
-  });
-
-  // ============================================================================
-  // createDefaultDeviceSettings
-  // ============================================================================
-
-  describe('createDefaultDeviceSettings', () => {
-    test('returns device settings with correct schema version and device ID', () => {
-      const deviceId = 'test-device' as unknown as DeviceId;
-      const settings = createDefaultDeviceSettings(deviceId);
-      expect(settings.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
-      expect(settings.deviceId).toBe(deviceId);
-    });
-
-    test('includes device name when provided', () => {
-      const deviceId = 'test-device' as unknown as DeviceId;
-      const settings = createDefaultDeviceSettings(deviceId, 'My Test Device');
-      expect(settings.deviceName).toBe('My Test Device');
-    });
-
-    test('device name is undefined when omitted', () => {
-      const deviceId = 'test-device' as unknown as DeviceId;
-      const settings = createDefaultDeviceSettings(deviceId);
-      expect(settings.deviceName).toBeUndefined();
     });
   });
 
@@ -182,71 +125,6 @@ describe('settings model', () => {
     test('omits defaultStorageTargets', () => {
       const settings = createDefaultPreferencesSettings();
       expect(settings.defaultStorageTargets).toBeUndefined();
-    });
-  });
-
-  // ============================================================================
-  // splitCommonSettings
-  // ============================================================================
-
-  describe('splitCommonSettings', () => {
-    test('splits externalLibraries into bootstrap', () => {
-      const common: ICommonSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        externalLibraries: [{ name: 'Lib', ref: '/path' as never }]
-      };
-      const { bootstrap } = splitCommonSettings(common);
-      expect(bootstrap.externalLibraries).toHaveLength(1);
-      expect(bootstrap.externalLibraries![0].name).toBe('Lib');
-    });
-
-    test('splits defaultTargets into preferences', () => {
-      const common: ICommonSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        defaultTargets: { fillings: 'user' as CollectionId }
-      };
-      const { preferences } = splitCommonSettings(common);
-      expect(preferences.defaultTargets?.fillings).toBe('user');
-    });
-
-    test('splits defaultStorageTargets into preferences', () => {
-      const common: ICommonSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        defaultStorageTargets: { libraryDefault: 'main' as StorageRootId }
-      };
-      const { preferences } = splitCommonSettings(common);
-      expect(preferences.defaultStorageTargets?.libraryDefault).toBe('main');
-    });
-
-    test('splits tools into preferences', () => {
-      const common: ICommonSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        tools: { scaling: { weightUnit: 'oz' } }
-      };
-      const { preferences } = splitCommonSettings(common);
-      expect(preferences.tools?.scaling?.weightUnit).toBe('oz');
-    });
-
-    test('bootstrap gets default includeBuiltIn and localStorage', () => {
-      const common: ICommonSettings = { schemaVersion: SETTINGS_SCHEMA_VERSION };
-      const { bootstrap } = splitCommonSettings(common);
-      expect(bootstrap.includeBuiltIn).toBe(true);
-      expect(bootstrap.localStorage).toEqual({ library: true, userData: true });
-    });
-
-    test('both outputs have correct schemaVersion', () => {
-      const common: ICommonSettings = { schemaVersion: SETTINGS_SCHEMA_VERSION };
-      const { bootstrap, preferences } = splitCommonSettings(common);
-      expect(bootstrap.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
-      expect(preferences.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
-    });
-
-    test('minimal common produces valid split', () => {
-      const common: ICommonSettings = { schemaVersion: SETTINGS_SCHEMA_VERSION };
-      const { bootstrap, preferences } = splitCommonSettings(common);
-      expect(bootstrap.externalLibraries).toBeUndefined();
-      expect(preferences.defaultTargets).toBeUndefined();
-      expect(preferences.tools).toBeUndefined();
     });
   });
 
@@ -318,139 +196,6 @@ describe('settings model', () => {
       };
       const resolved = resolvePreferencesSettings(prefs, testDeviceId);
       expect(resolved.defaultStorageTargets?.libraryDefault).toBe('main');
-    });
-
-    test('does not include lastActiveSessionId', () => {
-      const prefs: IPreferencesSettings = { schemaVersion: SETTINGS_SCHEMA_VERSION };
-      const resolved = resolvePreferencesSettings(prefs, testDeviceId);
-      expect(resolved.lastActiveSessionId).toBeUndefined();
-    });
-  });
-
-  // ============================================================================
-  // resolveSettings (legacy)
-  // ============================================================================
-
-  describe('resolveSettings', () => {
-    const baseCommon: ICommonSettings = {
-      schemaVersion: SETTINGS_SCHEMA_VERSION,
-      defaultTargets: {
-        fillings: 'user' as CollectionId,
-        ingredients: 'user' as CollectionId
-      },
-      tools: {
-        scaling: {
-          weightUnit: 'oz',
-          batchMultiplier: 2.0
-        },
-        workflow: {
-          autoSaveIntervalSeconds: 120,
-          confirmAbandon: false
-        }
-      }
-    };
-
-    const baseDevice: IDeviceSettings = {
-      schemaVersion: SETTINGS_SCHEMA_VERSION,
-      deviceId: 'my-device' as unknown as DeviceId
-    };
-
-    test('uses device ID from device settings', () => {
-      const resolved = resolveSettings(baseCommon, baseDevice);
-      expect(resolved.deviceId).toBe(baseDevice.deviceId);
-    });
-
-    test('merges common default targets when device has no overrides', () => {
-      const resolved = resolveSettings(baseCommon, baseDevice);
-      expect(resolved.defaultTargets.fillings).toBe('user');
-      expect(resolved.defaultTargets.ingredients).toBe('user');
-    });
-
-    test('device defaultTargetsOverride takes precedence over common', () => {
-      const device: IDeviceSettings = {
-        ...baseDevice,
-        defaultTargetsOverride: {
-          fillings: 'device-local' as CollectionId
-        }
-      };
-      const resolved = resolveSettings(baseCommon, device);
-      expect(resolved.defaultTargets.fillings).toBe('device-local');
-      // Common-only targets still present
-      expect(resolved.defaultTargets.ingredients).toBe('user');
-    });
-
-    test('applies DEFAULT_SCALING as base layer for tools.scaling', () => {
-      const minimalCommon: ICommonSettings = { schemaVersion: SETTINGS_SCHEMA_VERSION };
-      const resolved = resolveSettings(minimalCommon, baseDevice);
-      expect(resolved.tools.scaling).toEqual(DEFAULT_SCALING);
-    });
-
-    test('applies DEFAULT_WORKFLOW as base layer for tools.workflow', () => {
-      const minimalCommon: ICommonSettings = { schemaVersion: SETTINGS_SCHEMA_VERSION };
-      const resolved = resolveSettings(minimalCommon, baseDevice);
-      expect(resolved.tools.workflow).toEqual(DEFAULT_WORKFLOW);
-    });
-
-    test('common tools.scaling overrides DEFAULT_SCALING', () => {
-      const resolved = resolveSettings(baseCommon, baseDevice);
-      expect(resolved.tools.scaling?.weightUnit).toBe('oz');
-      expect(resolved.tools.scaling?.batchMultiplier).toBe(2.0);
-      // Defaults still present for fields not overridden
-      expect(resolved.tools.scaling?.bufferPercentage).toBe(DEFAULT_SCALING.bufferPercentage);
-    });
-
-    test('device toolsOverride.scaling overrides common tools.scaling', () => {
-      const device: IDeviceSettings = {
-        ...baseDevice,
-        toolsOverride: {
-          scaling: { weightUnit: 'kg' }
-        }
-      };
-      const resolved = resolveSettings(baseCommon, device);
-      expect(resolved.tools.scaling?.weightUnit).toBe('kg');
-      // Common override still present for fields not overridden by device
-      expect(resolved.tools.scaling?.batchMultiplier).toBe(2.0);
-    });
-
-    test('device toolsOverride.workflow overrides common tools.workflow', () => {
-      const device: IDeviceSettings = {
-        ...baseDevice,
-        toolsOverride: {
-          workflow: { confirmAbandon: true }
-        }
-      };
-      const resolved = resolveSettings(baseCommon, device);
-      expect(resolved.tools.workflow?.confirmAbandon).toBe(true);
-      // Common override still present
-      expect(resolved.tools.workflow?.autoSaveIntervalSeconds).toBe(120);
-    });
-
-    test('lastActiveSessionId passes through from device', () => {
-      const device: IDeviceSettings = {
-        ...baseDevice,
-        lastActiveSessionId: 'session-abc'
-      };
-      const resolved = resolveSettings(baseCommon, device);
-      expect(resolved.lastActiveSessionId).toBe('session-abc');
-    });
-
-    test('lastActiveSessionId is undefined when not set', () => {
-      const resolved = resolveSettings(baseCommon, baseDevice);
-      expect(resolved.lastActiveSessionId).toBeUndefined();
-    });
-
-    test('minimal settings resolve with all defaults', () => {
-      const minimalCommon: ICommonSettings = { schemaVersion: SETTINGS_SCHEMA_VERSION };
-      const minimalDevice: IDeviceSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        deviceId: 'dev' as unknown as DeviceId
-      };
-      const resolved = resolveSettings(minimalCommon, minimalDevice);
-      expect(resolved.deviceId).toBe('dev');
-      expect(resolved.defaultTargets).toEqual({});
-      expect(resolved.tools.scaling).toEqual(DEFAULT_SCALING);
-      expect(resolved.tools.workflow).toEqual(DEFAULT_WORKFLOW);
-      expect(resolved.lastActiveSessionId).toBeUndefined();
     });
   });
 });

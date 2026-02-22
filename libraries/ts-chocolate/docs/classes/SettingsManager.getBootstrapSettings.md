@@ -7,11 +7,11 @@ Gets the bootstrap settings (preload configuration).
 **Signature:**
 
 ```typescript
-getBootstrapSettings(): IBootstrapSettings | undefined;
+getBootstrapSettings(): IBootstrapSettings;
 ```
 
 **Returns:**
 
-[IBootstrapSettings](../interfaces/IBootstrapSettings.md) | undefined
+[IBootstrapSettings](../interfaces/IBootstrapSettings.md)
 
-The bootstrap settings, or undefined if using legacy mode
+The bootstrap settings

@@ -342,109 +342,6 @@ describe('settings converters', () => {
   });
 
   // ============================================================================
-  // commonSettings converter
-  // ============================================================================
-
-  describe('commonSettings', () => {
-    test('converts full settings object', () => {
-      const input = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        defaultTargets: { fillings: 'user' },
-        tools: {
-          scaling: { weightUnit: 'g' },
-          workflow: { confirmAbandon: true }
-        },
-        externalLibraries: [{ name: 'Lib', ref: '/path' }]
-      };
-      expect(Converters.commonSettings.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
-        expect(result.defaultTargets?.fillings).toBe('user');
-        expect(result.tools?.scaling?.weightUnit).toBe('g');
-        expect(result.externalLibraries).toHaveLength(1);
-      });
-    });
-
-    test('converts minimal settings (only schemaVersion)', () => {
-      const input = { schemaVersion: SETTINGS_SCHEMA_VERSION };
-      expect(Converters.commonSettings.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
-        expect(result.defaultTargets).toBeUndefined();
-        expect(result.tools).toBeUndefined();
-        expect(result.externalLibraries).toBeUndefined();
-      });
-    });
-
-    test('fails for wrong schemaVersion', () => {
-      expect(Converters.commonSettings.convert({ schemaVersion: 999 })).toFail();
-    });
-
-    test('fails when schemaVersion is missing', () => {
-      expect(Converters.commonSettings.convert({})).toFail();
-    });
-  });
-
-  // ============================================================================
-  // deviceSettings converter
-  // ============================================================================
-
-  describe('deviceSettings', () => {
-    test('converts full device settings', () => {
-      const input = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        deviceId: 'my-device',
-        deviceName: 'My Device',
-        lastActiveSessionId: 'session-123',
-        defaultTargetsOverride: { fillings: 'device-local' },
-        toolsOverride: {
-          scaling: { weightUnit: 'oz' }
-        },
-        fileTreeOverrides: {
-          userLibraryPath: '/custom/path',
-          keyStorePath: '/custom/keys'
-        }
-      };
-      expect(Converters.deviceSettings.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
-        expect(result.deviceId).toBe('my-device');
-        expect(result.deviceName).toBe('My Device');
-        expect(result.lastActiveSessionId).toBe('session-123');
-        expect(result.defaultTargetsOverride?.fillings).toBe('device-local');
-        expect(result.toolsOverride?.scaling?.weightUnit).toBe('oz');
-        expect(result.fileTreeOverrides?.userLibraryPath).toBe('/custom/path');
-      });
-    });
-
-    test('converts minimal device settings (schemaVersion + deviceId)', () => {
-      const input = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        deviceId: 'dev-01'
-      };
-      expect(Converters.deviceSettings.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
-        expect(result.deviceId).toBe('dev-01');
-        expect(result.deviceName).toBeUndefined();
-      });
-    });
-
-    test('fails when deviceId is missing', () => {
-      expect(Converters.deviceSettings.convert({ schemaVersion: SETTINGS_SCHEMA_VERSION })).toFail();
-    });
-
-    test('fails for invalid deviceId', () => {
-      expect(
-        Converters.deviceSettings.convert({
-          schemaVersion: SETTINGS_SCHEMA_VERSION,
-          deviceId: 'has.dots'
-        })
-      ).toFail();
-    });
-
-    test('fails for wrong schemaVersion', () => {
-      expect(Converters.deviceSettings.convert({ schemaVersion: 99, deviceId: 'dev' })).toFail();
-    });
-  });
-
-  // ============================================================================
   // deviceFileTreeOverrides converter
   // ============================================================================
 
@@ -571,7 +468,8 @@ describe('settings converters', () => {
         externalLibraries: [{ name: 'Lib', ref: '/path' }],
         preferencesLocation: { type: 'local' },
         keystoreLocation: { type: 'external', rootName: 'drive' },
-        fileTreeOverrides: { userLibraryPath: '/custom' }
+        fileTreeOverrides: { userLibraryPath: '/custom' },
+        deviceName: 'My Device'
       };
       expect(Converters.bootstrapSettings.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
@@ -580,6 +478,7 @@ describe('settings converters', () => {
         expect(result.externalLibraries).toHaveLength(1);
         expect(result.preferencesLocation?.type).toBe('local');
         expect(result.fileTreeOverrides?.userLibraryPath).toBe('/custom');
+        expect(result.deviceName).toBe('My Device');
       });
     });
 

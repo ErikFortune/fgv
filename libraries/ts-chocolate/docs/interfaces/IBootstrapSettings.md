@@ -163,4 +163,21 @@ Platform-specific file tree overrides (moved from device settings).
 Logging verbosity settings.
 
 </td></tr>
+<tr><td>
+
+[deviceName](./IBootstrapSettings.deviceName.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Human-readable name for this device/platform instance.
+
+</td></tr>
 </tbody></table>

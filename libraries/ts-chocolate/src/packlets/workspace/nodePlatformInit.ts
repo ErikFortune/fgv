@@ -35,15 +35,12 @@ import { CryptoUtils } from '@fgv/ts-extras';
 import { LibraryPaths } from '../library-data';
 import {
   Converters as SettingsConverters,
-  createDefaultCommonSettings,
-  createDefaultDeviceSettings,
   DeviceId,
   ExternalLibraryRef,
   IBootstrapSettings,
-  ICommonSettings,
-  IDeviceSettings,
   IExternalLibraryRefConfig,
-  resolveSettings
+  resolvePreferencesSettings,
+  SettingsManager
 } from '../settings';
 import {
   IPlatformInitializer,
@@ -97,16 +94,16 @@ export class NodePlatformInitializer implements IPlatformInitializer {
     }
     const userLibraryTree = userLibraryTreeResult.value;
 
-    // 3. Load bootstrap settings (try bootstrap.json, fall back to common.json)
+    // 3. Load bootstrap settings (if present)
     const settingsDir = this._navigateToDirectory(userLibraryTree, LibraryPaths.settings);
-    const bootstrapResult = this._loadBootstrapOrFallback(settingsDir, deviceId, options.deviceName);
+    const bootstrapResult = this._loadBootstrapSettings(settingsDir);
     if (bootstrapResult.isFailure()) {
-      return fail(`Failed to load settings: ${bootstrapResult.message}`);
+      return fail(`Failed to load bootstrap settings: ${bootstrapResult.message}`);
     }
-    const { bootstrap, common, device } = bootstrapResult.value;
+    const bootstrap = bootstrapResult.value;
 
-    // 4. Resolve external libraries from bootstrap (or common fallback)
-    const externalLibConfigs = bootstrap?.externalLibraries ?? common.externalLibraries ?? [];
+    // 4. Resolve external libraries from bootstrap
+    const externalLibConfigs = bootstrap?.externalLibraries ?? [];
     const externalLibrariesResult = this._resolveExternalLibraries(externalLibConfigs);
     if (externalLibrariesResult.isFailure()) {
       return fail(`Failed to resolve external libraries: ${externalLibrariesResult.message}`);
@@ -116,8 +113,15 @@ export class NodePlatformInitializer implements IPlatformInitializer {
     const keyStorePath = options.keyStorePath ?? path.join(options.userLibraryPath, LibraryPaths.keyStore);
     const keyStoreFileResult = this._loadKeyStoreFile(keyStorePath);
 
-    // 6. Create resolved settings
-    const resolvedSettings = resolveSettings(common, device);
+    // 6. Create a temporary settings manager to get resolved settings
+    const settingsResult = SettingsManager.createFromBootstrapWithMigration({
+      fileTree: userLibraryTree,
+      deviceId
+    });
+    const resolvedSettings = settingsResult.isSuccess()
+      ? settingsResult.value.getResolvedSettings()
+      : /* c8 ignore next 1 - defensive: migration fallback when settings load fails */
+        resolvePreferencesSettings({ schemaVersion: 1 }, deviceId);
 
     return succeed({
       cryptoProvider: CryptoUtils.nodeCryptoProvider,
@@ -125,8 +129,6 @@ export class NodePlatformInitializer implements IPlatformInitializer {
       externalLibraries: externalLibrariesResult.value,
       keyStoreFile: keyStoreFileResult.isSuccess() ? keyStoreFileResult.value : undefined,
       bootstrapSettings: bootstrap,
-      commonSettings: common,
-      deviceSettings: device,
       resolvedSettings,
       deviceId
     });
@@ -207,32 +209,6 @@ export class NodePlatformInitializer implements IPlatformInitializer {
   }
 
   /**
-   * Loads bootstrap settings, with fallback to common settings for external library resolution.
-   * Also loads legacy common + device settings for backward compatibility.
-   * @internal
-   */
-  private _loadBootstrapOrFallback(
-    settingsDir: Result<FileTree.IFileTreeDirectoryItem>,
-    deviceId: DeviceId,
-    deviceName?: string
-  ): Result<{ bootstrap: IBootstrapSettings | undefined; common: ICommonSettings; device: IDeviceSettings }> {
-    // Try to load bootstrap.json
-    const bootstrap = this._loadBootstrapSettings(settingsDir);
-    if (bootstrap.isFailure()) {
-      return fail(`Failed to load bootstrap settings: ${bootstrap.message}`);
-    }
-
-    // Load common and device settings (legacy, for backward compat + resolvedSettings)
-    return this._loadCommonSettings(settingsDir)
-      .withErrorFormat((msg) => `Failed to load common settings: ${msg}`)
-      .onSuccess((common) =>
-        this._loadDeviceSettings(settingsDir, deviceId, deviceName)
-          .withErrorFormat((msg) => `Failed to load device settings: ${msg}`)
-          .onSuccess((device) => succeed({ bootstrap: bootstrap.value, common, device }))
-      );
-  }
-
-  /**
    * Loads bootstrap settings from the settings directory.
    * Returns undefined (not failure) if the file doesn't exist.
    * @internal
@@ -259,72 +235,6 @@ export class NodePlatformInitializer implements IPlatformInitializer {
         .onSuccess((json) =>
           SettingsConverters.bootstrapSettings.convert(json).withErrorFormat((e) => `bootstrap.json: ${e}`)
         );
-    });
-  }
-
-  /**
-   * Loads common settings from the settings directory.
-   * @internal
-   */
-  private _loadCommonSettings(settingsDir: Result<FileTree.IFileTreeDirectoryItem>): Result<ICommonSettings> {
-    if (settingsDir.isFailure()) {
-      // Settings directory doesn't exist - use defaults
-      return succeed(createDefaultCommonSettings());
-    }
-
-    return settingsDir.value.getChildren().onSuccess((children) => {
-      const commonFile = children.find((c) => c.name === LibraryPaths.settingsCommon && c.type === 'file') as
-        | FileTree.IFileTreeFileItem
-        | undefined;
-
-      if (!commonFile) {
-        // Common settings file doesn't exist - create it with defaults
-        const defaults = createDefaultCommonSettings();
-        return this._writeSettingsFile(settingsDir.value, LibraryPaths.settingsCommon, defaults)
-          .withErrorFormat((msg) => `Failed to create default common settings: ${msg}`)
-          .onSuccess(() => succeed(defaults));
-      }
-
-      return commonFile.getContents().onSuccess((json) => {
-        return SettingsConverters.commonSettings.convert(json).withErrorFormat((e) => `common.json: ${e}`);
-      });
-    });
-  }
-
-  /**
-   * Loads device settings from the settings directory.
-   * @internal
-   */
-  private _loadDeviceSettings(
-    settingsDir: Result<FileTree.IFileTreeDirectoryItem>,
-    deviceId: DeviceId,
-    deviceName?: string
-  ): Result<IDeviceSettings> {
-    if (settingsDir.isFailure()) {
-      // Settings directory doesn't exist - use defaults
-      return succeed(createDefaultDeviceSettings(deviceId, deviceName));
-    }
-
-    const deviceFileName = `${LibraryPaths.settingsDevicePrefix}${deviceId}.json`;
-
-    return settingsDir.value.getChildren().onSuccess((children) => {
-      const deviceFile = children.find((c) => c.name === deviceFileName && c.type === 'file') as
-        | FileTree.IFileTreeFileItem
-        | undefined;
-
-      if (!deviceFile) {
-        // Device settings file doesn't exist - create it with defaults
-        const defaults = createDefaultDeviceSettings(deviceId, deviceName);
-        return this._writeSettingsFile(settingsDir.value, deviceFileName, defaults)
-          .withErrorFormat((msg) => `Failed to create default device settings: ${msg}`)
-          .onSuccess(() => succeed(defaults));
-      }
-
-      return deviceFile.getContents().onSuccess((json) => {
-        return SettingsConverters.deviceSettings
-          .convert(json)
-          .withErrorFormat((e) => `${deviceFileName}: ${e}`);
-      });
     });
   }
 
@@ -372,25 +282,6 @@ export class NodePlatformInitializer implements IPlatformInitializer {
         .convert(json)
         .withErrorFormat((e: string) => `${keyStorePath}: ${e}`);
     });
-  }
-
-  /**
-   * Writes a settings file to disk.
-   * @internal
-   */
-  private _writeSettingsFile(
-    settingsDir: FileTree.IFileTreeDirectoryItem,
-    fileName: string,
-    settings: ICommonSettings | IDeviceSettings
-  ): Result<void> {
-    // Get the absolute path to the settings directory
-    const settingsDirPath = settingsDir.absolutePath;
-
-    const filePath = path.join(settingsDirPath, fileName);
-
-    return captureResult(() => {
-      fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), 'utf8');
-    }).onFailure((msg) => fail(`Failed to write ${fileName}: ${msg}`));
   }
 
   /**

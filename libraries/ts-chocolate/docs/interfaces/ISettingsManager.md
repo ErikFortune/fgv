@@ -143,58 +143,6 @@ Updates preferences settings with partial values.
 </td></tr>
 <tr><td>
 
-[getCommonSettings()](./ISettingsManager.getCommonSettings.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Gets the common settings shared across all devices.
-
-</td></tr>
-<tr><td>
-
-[getDeviceSettings()](./ISettingsManager.getDeviceSettings.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Gets the device-specific settings.
-
-</td></tr>
-<tr><td>
-
-[updateCommonSettings(updates)](./ISettingsManager.updateCommonSettings.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Updates common settings with partial values.
-
-</td></tr>
-<tr><td>
-
-[updateDeviceSettings(updates)](./ISettingsManager.updateDeviceSettings.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Updates device-specific settings with partial values.
-
-</td></tr>
-<tr><td>
-
 [updateDefaultTargets(targets)](./ISettingsManager.updateDefaultTargets.md)
 
 </td><td>
@@ -217,19 +165,6 @@ Updates the default collection targets (convenience method).
 </td><td>
 
 Updates the default storage targets (convenience method).
-
-</td></tr>
-<tr><td>
-
-[updateLastActiveSessionId(sessionId)](./ISettingsManager.updateLastActiveSessionId.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Updates the last active session ID for this device (convenience method).
 
 </td></tr>
 <tr><td>

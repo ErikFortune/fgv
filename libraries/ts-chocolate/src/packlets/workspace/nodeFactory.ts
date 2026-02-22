@@ -151,11 +151,6 @@ export interface ICreateNodeWorkspaceParams {
   readonly deviceId?: DeviceId;
 
   /**
-   * Human-readable device name.
-   */
-  readonly deviceName?: string;
-
-  /**
    * Whether to load built-in data.
    * @defaultValue true
    */
@@ -209,8 +204,7 @@ export async function createNodeWorkspace(params: ICreateNodeWorkspaceParams): P
   // Stage 1: Platform initialization
   const platformResult = await initializeNodePlatform({
     userLibraryPath,
-    deviceId: params.deviceId,
-    deviceName: params.deviceName
+    deviceId: params.deviceId
   });
 
   if (platformResult.isFailure()) {

@@ -2,7 +2,7 @@
 
 ## IResolvedSettings.tools property
 
-Merged tool settings (device overrides common)
+Merged tool settings
 
 **Signature:**
 

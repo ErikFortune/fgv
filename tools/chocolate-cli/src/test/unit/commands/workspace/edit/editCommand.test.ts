@@ -127,8 +127,7 @@ describe('editCommand', () => {
       await cmd.parseAsync(['-w', '/test/workspace', '-t', 'ingredient'], { from: 'user' });
 
       expect(mockLoadWorkspace).toHaveBeenCalledWith({
-        workspacePath: '/test/workspace',
-        deviceName: undefined
+        workspacePath: '/test/workspace'
       });
       expect(mockExecuteAdd).toHaveBeenCalledWith(workspace, 'ingredient', undefined, undefined);
       expect(mockShowSuccess).toHaveBeenCalledWith('Entity added');
@@ -197,8 +196,7 @@ describe('editCommand', () => {
       });
 
       expect(mockLoadWorkspace).toHaveBeenCalledWith({
-        workspacePath: '/test/workspace',
-        deviceName: undefined
+        workspacePath: '/test/workspace'
       });
       expect(mockExecuteUpdate).toHaveBeenCalledWith(
         workspace,

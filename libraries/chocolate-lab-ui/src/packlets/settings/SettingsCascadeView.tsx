@@ -117,8 +117,7 @@ function SectionContent({
 }): React.ReactElement {
   const workspace = useWorkspace();
   const deviceId = workspace.settings?.deviceId;
-  const { bootstrap, common, device, hasBootstrapChanges, updateBootstrap, updateCommon, updateDevice } =
-    draft;
+  const { bootstrap, preferences, hasBootstrapChanges, updateBootstrap, updatePreferences } = draft;
 
   function handleSquashColumns(subCols: ReadonlyArray<ICascadeColumn>): void {
     const sectionCol: ICascadeColumn = {
@@ -148,20 +147,20 @@ function SectionContent({
       );
     case 'workspace':
       return deviceId !== undefined ? (
-        <WorkspaceSection deviceId={deviceId} device={device} onDeviceChange={updateDevice} />
+        <WorkspaceSection deviceId={deviceId} bootstrap={bootstrap} onBootstrapChange={updateBootstrap} />
       ) : (
         <div className="p-6 text-sm text-gray-400">No workspace device settings available.</div>
       );
     case 'scaling':
-      return <ScalingSection scaling={common.scaling} onChange={updateCommon} />;
+      return <ScalingSection scaling={preferences.scaling} onChange={updatePreferences} />;
     case 'workflow':
-      return <WorkflowSection workflow={common.workflow} onChange={updateCommon} />;
+      return <WorkflowSection workflow={preferences.workflow} onChange={updatePreferences} />;
     case 'storage':
       return (
         <StorageSection
           onSquashColumns={handleSquashColumns}
-          onUpdateCommon={updateCommon}
-          currentStorageTargets={common.defaultStorageTargets}
+          onUpdateCommon={updatePreferences}
+          currentStorageTargets={preferences.defaultStorageTargets}
         />
       );
     case 'libraries':

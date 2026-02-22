@@ -44,8 +44,6 @@ import {
   DeviceId,
   ExternalLibraryRef,
   IBootstrapSettings,
-  ICommonSettings,
-  IDeviceSettings,
   IExternalLibraryRefConfig,
   IResolvedSettings,
   SettingsManager
@@ -121,21 +119,8 @@ export interface IPlatformInitResult {
 
   /**
    * The bootstrap settings loaded during platform init.
-   * Present when the platform loads bootstrap.json (or migrates from common.json).
    */
   readonly bootstrapSettings?: IBootstrapSettings;
-
-  /**
-   * The common settings (loaded from file or defaults).
-   * @deprecated Use bootstrapSettings for preload config, preferences via SettingsManager.
-   */
-  readonly commonSettings: ICommonSettings;
-
-  /**
-   * The device settings (loaded from file or defaults).
-   * @deprecated Device settings are vestigial. Use deviceId directly.
-   */
-  readonly deviceSettings: IDeviceSettings;
 
   /**
    * The merged resolved settings.
@@ -169,12 +154,6 @@ export interface IPlatformInitOptions {
    * If not provided, the platform should generate one.
    */
   readonly deviceId?: DeviceId;
-
-  /**
-   * Human-readable name for this device.
-   * Used for new device settings if device settings file doesn't exist.
-   */
-  readonly deviceName?: string;
 
   /**
    * Path to the key store file (platform-specific format).

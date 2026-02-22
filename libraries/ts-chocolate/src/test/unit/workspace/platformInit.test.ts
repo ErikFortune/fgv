@@ -35,10 +35,10 @@ import {
 import {
   DeviceId,
   ExternalLibraryRef,
-  ICommonSettings,
-  IDeviceSettings,
+  IBootstrapSettings,
+  IPreferencesSettings,
   SETTINGS_SCHEMA_VERSION,
-  resolveSettings
+  resolvePreferencesSettings
 } from '../../../packlets/settings';
 
 describe('workspace platformInit helpers', () => {
@@ -202,19 +202,21 @@ describe('workspace platformInit helpers', () => {
     const testDeviceId = 'test-device' as unknown as DeviceId;
 
     function createPlatformInitResult(overrides?: Partial<IPlatformInitResult>): IPlatformInitResult {
-      const commonSettings: ICommonSettings = {
+      const bootstrapSettings: IBootstrapSettings = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION,
+        includeBuiltIn: true,
+        localStorage: { library: true, userData: true },
+        externalLibraries: []
+      };
+      const preferencesSettings: IPreferencesSettings = {
         schemaVersion: SETTINGS_SCHEMA_VERSION
       };
-      const deviceSettings: IDeviceSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        deviceId: testDeviceId
-      };
-      const resolved = resolveSettings(commonSettings, deviceSettings);
+      const resolved = resolvePreferencesSettings(preferencesSettings, testDeviceId);
 
-      // The user library tree needs settings files for SettingsManager.create
+      // The user library tree needs settings files for SettingsManager.createFromBootstrapWithMigration
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/library/data/settings/common.json', contents: commonSettings },
-        { path: '/library/data/settings/device-test-device.json', contents: deviceSettings }
+        { path: '/library/data/settings/bootstrap.json', contents: bootstrapSettings },
+        { path: '/library/data/settings/preferences.json', contents: preferencesSettings }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const userLibraryTree = tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -223,8 +225,7 @@ describe('workspace platformInit helpers', () => {
         cryptoProvider: CryptoUtils.nodeCryptoProvider,
         userLibraryTree,
         externalLibraries: [],
-        commonSettings,
-        deviceSettings,
+        bootstrapSettings,
         resolvedSettings: resolved,
         deviceId: testDeviceId,
         ...overrides
@@ -372,19 +373,21 @@ describe('workspace platformInit helpers', () => {
     const testDeviceId = 'test-device' as unknown as DeviceId;
 
     function createPlatformInitResult(overrides?: Partial<IPlatformInitResult>): IPlatformInitResult {
-      const commonSettings: ICommonSettings = {
+      const bootstrapSettings: IBootstrapSettings = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION,
+        includeBuiltIn: true,
+        localStorage: { library: true, userData: true },
+        externalLibraries: []
+      };
+      const preferencesSettings: IPreferencesSettings = {
         schemaVersion: SETTINGS_SCHEMA_VERSION
       };
-      const deviceSettings: IDeviceSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        deviceId: testDeviceId
-      };
-      const resolved = resolveSettings(commonSettings, deviceSettings);
+      const resolved = resolvePreferencesSettings(preferencesSettings, testDeviceId);
 
-      // The user library tree needs settings files for SettingsManager.create
+      // The user library tree needs settings files for SettingsManager.createFromBootstrapWithMigration
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/library/data/settings/common.json', contents: commonSettings },
-        { path: '/library/data/settings/device-test-device.json', contents: deviceSettings }
+        { path: '/library/data/settings/bootstrap.json', contents: bootstrapSettings },
+        { path: '/library/data/settings/preferences.json', contents: preferencesSettings }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const userLibraryTree = tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -393,8 +396,7 @@ describe('workspace platformInit helpers', () => {
         cryptoProvider: CryptoUtils.nodeCryptoProvider,
         userLibraryTree,
         externalLibraries: [],
-        commonSettings,
-        deviceSettings,
+        bootstrapSettings,
         resolvedSettings: resolved,
         deviceId: testDeviceId,
         ...overrides

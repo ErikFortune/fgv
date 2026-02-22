@@ -19,14 +19,15 @@ export interface IBootstrapSettingsDraft {
   readonly storeLevel: Settings.ILogSettings['storeLevel'];
   readonly displayLevel: Settings.ILogSettings['displayLevel'];
   readonly toastLevel: Settings.ILogSettings['toastLevel'];
+  readonly deviceName: string;
 }
 
 /**
- * Mutable draft of common settings fields exposed in the UI.
+ * Mutable draft of preferences settings fields exposed in the UI.
  * @public
  */
-export interface ICommonSettingsDraft {
-  readonly defaultTargets: Settings.ICommonSettings['defaultTargets'];
+export interface IPreferencesDraft {
+  readonly defaultTargets: Settings.IDefaultCollectionTargets | undefined;
   readonly externalLibraries: ReadonlyArray<Settings.IExternalLibraryRefConfig>;
   readonly defaultStorageTargets: Settings.IDefaultStorageTargets | undefined;
   readonly scaling: {
@@ -45,29 +46,18 @@ export interface ICommonSettingsDraft {
 }
 
 /**
- * Mutable draft of device settings fields exposed in the UI.
- * @public
- */
-export interface IDeviceSettingsDraft {
-  readonly deviceName: string;
-  readonly localDirectories: ReadonlyArray<Settings.ILocalDirectoryRef>;
-}
-
-/**
  * Return value of useSettingsDraft.
  * @public
  */
 export interface ISettingsDraft {
   readonly bootstrap: IBootstrapSettingsDraft;
-  readonly common: ICommonSettingsDraft;
-  readonly device: IDeviceSettingsDraft;
+  readonly preferences: IPreferencesDraft;
   readonly isDirty: boolean;
   readonly hasBootstrapChanges: boolean;
   readonly isSaving: boolean;
   readonly saveError: string | undefined;
   readonly updateBootstrap: (updates: Partial<IBootstrapSettingsDraft>) => void;
-  readonly updateCommon: (updates: Partial<ICommonSettingsDraft>) => void;
-  readonly updateDevice: (updates: Partial<IDeviceSettingsDraft>) => void;
+  readonly updatePreferences: (updates: Partial<IPreferencesDraft>) => void;
   readonly save: () => Promise<void>;
   readonly revert: () => void;
 }
@@ -83,7 +73,8 @@ function buildBootstrapDraft(settings: Settings.IBootstrapSettings | undefined):
     localStorageUserData: settings?.localStorage?.userData ?? true,
     storeLevel: settings?.logging?.storeLevel,
     displayLevel: settings?.logging?.displayLevel,
-    toastLevel: settings?.logging?.toastLevel
+    toastLevel: settings?.logging?.toastLevel,
+    deviceName: settings?.deviceName ?? ''
   };
 }
 
@@ -94,46 +85,37 @@ function bootstrapDraftsEqual(a: IBootstrapSettingsDraft, b: IBootstrapSettingsD
     a.localStorageUserData === b.localStorageUserData &&
     a.storeLevel === b.storeLevel &&
     a.displayLevel === b.displayLevel &&
-    a.toastLevel === b.toastLevel
+    a.toastLevel === b.toastLevel &&
+    a.deviceName === b.deviceName
   );
 }
 
-function buildCommonDraft(settings: Settings.ICommonSettings): ICommonSettingsDraft {
+function buildPreferencesDraft(
+  prefs: Settings.IPreferencesSettings,
+  bootstrap: Settings.IBootstrapSettings | undefined
+): IPreferencesDraft {
   return {
-    defaultTargets: settings.defaultTargets,
-    externalLibraries: settings.externalLibraries ?? [],
-    defaultStorageTargets: settings.defaultStorageTargets,
+    defaultTargets: prefs.defaultTargets,
+    externalLibraries: bootstrap?.externalLibraries ?? [],
+    defaultStorageTargets: prefs.defaultStorageTargets,
     scaling: {
-      weightUnit: settings.tools?.scaling?.weightUnit ?? 'g',
-      measurementUnit: settings.tools?.scaling?.measurementUnit ?? 'g',
-      batchMultiplier: settings.tools?.scaling?.batchMultiplier ?? 1.0,
-      bufferPercentage: settings.tools?.scaling?.bufferPercentage ?? 0.1
+      weightUnit: prefs.tools?.scaling?.weightUnit ?? 'g',
+      measurementUnit: prefs.tools?.scaling?.measurementUnit ?? 'g',
+      batchMultiplier: prefs.tools?.scaling?.batchMultiplier ?? 1.0,
+      bufferPercentage: prefs.tools?.scaling?.bufferPercentage ?? 0.1
     },
     workflow: {
-      autoSaveIntervalSeconds: settings.tools?.workflow?.autoSaveIntervalSeconds ?? 60,
-      confirmAbandon: settings.tools?.workflow?.confirmAbandon ?? true,
-      showPercentages: settings.tools?.workflow?.showPercentages ?? true,
-      autoExpandIngredients: settings.tools?.workflow?.autoExpandIngredients ?? false,
-      adaptedRecipeNameSuffix: settings.tools?.workflow?.adaptedRecipeNameSuffix ?? ' (adapted)'
+      autoSaveIntervalSeconds: prefs.tools?.workflow?.autoSaveIntervalSeconds ?? 60,
+      confirmAbandon: prefs.tools?.workflow?.confirmAbandon ?? true,
+      showPercentages: prefs.tools?.workflow?.showPercentages ?? true,
+      autoExpandIngredients: prefs.tools?.workflow?.autoExpandIngredients ?? false,
+      adaptedRecipeNameSuffix: prefs.tools?.workflow?.adaptedRecipeNameSuffix ?? ' (adapted)'
     }
   };
 }
 
-function buildDeviceDraft(settings: Settings.IDeviceSettings): IDeviceSettingsDraft {
-  return {
-    deviceName: settings.deviceName ?? '',
-    localDirectories: settings.localDirectories ?? []
-  };
-}
-
-function draftsEqual(a: ICommonSettingsDraft, b: ICommonSettingsDraft): boolean {
+function preferencesDraftsEqual(a: IPreferencesDraft, b: IPreferencesDraft): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
-}
-
-function deviceDraftsEqual(a: IDeviceSettingsDraft, b: IDeviceSettingsDraft): boolean {
-  return (
-    a.deviceName === b.deviceName && JSON.stringify(a.localDirectories) === JSON.stringify(b.localDirectories)
-  );
 }
 
 // ============================================================================
@@ -150,75 +132,54 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
   const settingsManager = workspace.settings;
 
   const [bootstrapDraft, setBootstrapDraft] = useState<IBootstrapSettingsDraft | undefined>(undefined);
-  const [commonDraft, setCommonDraft] = useState<ICommonSettingsDraft | undefined>(undefined);
-  const [deviceDraft, setDeviceDraft] = useState<IDeviceSettingsDraft | undefined>(undefined);
+  const [preferencesDraft, setPreferencesDraft] = useState<IPreferencesDraft | undefined>(undefined);
   const [savedBootstrap, setSavedBootstrap] = useState<IBootstrapSettingsDraft | undefined>(undefined);
-  const [savedCommon, setSavedCommon] = useState<ICommonSettingsDraft | undefined>(undefined);
-  const [savedDevice, setSavedDevice] = useState<IDeviceSettingsDraft | undefined>(undefined);
+  const [savedPreferences, setSavedPreferences] = useState<IPreferencesDraft | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!settingsManager) return;
-    const bootstrap = buildBootstrapDraft(settingsManager.getBootstrapSettings());
-
-    // In bootstrap mode, getCommonSettings() returns a stub. Merge real values
-    // from preferences/bootstrap so the draft reflects persisted state.
-    const commonSettings = settingsManager.getCommonSettings();
     const prefs = settingsManager.getPreferencesSettings();
     const bootstrapSettings = settingsManager.getBootstrapSettings();
-    const commonSource = prefs
-      ? {
-          ...commonSettings,
-          defaultStorageTargets: prefs.defaultStorageTargets,
-          defaultTargets: prefs.defaultTargets,
-          tools: prefs.tools,
-          externalLibraries: bootstrapSettings?.externalLibraries
-        }
-      : commonSettings;
-    const common = buildCommonDraft(commonSource);
-
-    const device = buildDeviceDraft(settingsManager.getDeviceSettings());
+    const bootstrap = buildBootstrapDraft(bootstrapSettings);
+    const preferences = buildPreferencesDraft(prefs, bootstrapSettings);
     setBootstrapDraft(bootstrap);
-    setCommonDraft(common);
-    setDeviceDraft(device);
+    setPreferencesDraft(preferences);
     setSavedBootstrap(bootstrap);
-    setSavedCommon(common);
-    setSavedDevice(device);
+    setSavedPreferences(preferences);
   }, [settingsManager]);
 
   const updateBootstrap = useCallback((updates: Partial<IBootstrapSettingsDraft>): void => {
     setBootstrapDraft((prev) => (prev ? { ...prev, ...updates } : prev));
   }, []);
 
-  const updateCommon = useCallback((updates: Partial<ICommonSettingsDraft>): void => {
-    setCommonDraft((prev) => (prev ? { ...prev, ...updates } : prev));
-  }, []);
-
-  const updateDevice = useCallback((updates: Partial<IDeviceSettingsDraft>): void => {
-    setDeviceDraft((prev) => (prev ? { ...prev, ...updates } : prev));
+  const updatePreferences = useCallback((updates: Partial<IPreferencesDraft>): void => {
+    setPreferencesDraft((prev) => (prev ? { ...prev, ...updates } : prev));
   }, []);
 
   const reactiveWorkspace = useReactiveWorkspace();
 
   const save = useCallback(async (): Promise<void> => {
-    if (!settingsManager || !bootstrapDraft || !commonDraft || !deviceDraft) return;
+    if (!settingsManager || !bootstrapDraft || !preferencesDraft) return;
     setIsSaving(true);
     setSaveError(undefined);
 
     const scalingUpdate: Settings.IScalingDefaults = {
-      weightUnit: commonDraft.scaling.weightUnit as Settings.IScalingDefaults['weightUnit'],
-      measurementUnit: commonDraft.scaling.measurementUnit as Settings.IScalingDefaults['measurementUnit'],
-      batchMultiplier: commonDraft.scaling.batchMultiplier,
-      bufferPercentage: commonDraft.scaling.bufferPercentage
+      weightUnit: preferencesDraft.scaling.weightUnit as Settings.IScalingDefaults['weightUnit'],
+      measurementUnit: preferencesDraft.scaling
+        .measurementUnit as Settings.IScalingDefaults['measurementUnit'],
+      batchMultiplier: preferencesDraft.scaling.batchMultiplier,
+      bufferPercentage: preferencesDraft.scaling.bufferPercentage
     };
     const workflowUpdate: Settings.IWorkflowPreferences = {
-      autoSaveIntervalSeconds: commonDraft.workflow.autoSaveIntervalSeconds,
-      confirmAbandon: commonDraft.workflow.confirmAbandon,
-      showPercentages: commonDraft.workflow.showPercentages,
-      autoExpandIngredients: commonDraft.workflow.autoExpandIngredients,
-      adaptedRecipeNameSuffix: commonDraft.workflow.adaptedRecipeNameSuffix
+      autoSaveIntervalSeconds: preferencesDraft.workflow.autoSaveIntervalSeconds,
+      confirmAbandon: preferencesDraft.workflow.confirmAbandon,
+      showPercentages: preferencesDraft.workflow.showPercentages,
+      autoExpandIngredients: preferencesDraft.workflow.autoExpandIngredients,
+      adaptedRecipeNameSuffix: preferencesDraft.workflow.adaptedRecipeNameSuffix
     };
+
     // Save bootstrap settings if changed
     if (savedBootstrap && !bootstrapDraftsEqual(bootstrapDraft, savedBootstrap)) {
       const hasLogging =
@@ -237,7 +198,8 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
               displayLevel: bootstrapDraft.displayLevel,
               toastLevel: bootstrapDraft.toastLevel
             }
-          : undefined
+          : undefined,
+        deviceName: bootstrapDraft.deviceName || undefined
       });
       if (bootstrapResult.isFailure()) {
         setSaveError(`Failed to update bootstrap settings: ${bootstrapResult.message}`);
@@ -246,49 +208,24 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
       }
     }
 
-    // Route fields to the correct settings file based on mode
-    if (settingsManager.getPreferencesSettings() !== undefined) {
-      // Bootstrap mode: preferences gets tools + storageTargets, bootstrap gets externalLibraries
-      const prefsResult = settingsManager.updatePreferencesSettings({
-        defaultStorageTargets: commonDraft.defaultStorageTargets,
-        tools: { scaling: scalingUpdate, workflow: workflowUpdate }
-      });
-      if (prefsResult.isFailure()) {
-        setSaveError(`Failed to update preferences settings: ${prefsResult.message}`);
-        setIsSaving(false);
-        return;
-      }
-      const extLibResult = settingsManager.updateBootstrapSettings({
-        externalLibraries:
-          commonDraft.externalLibraries.length > 0 ? commonDraft.externalLibraries : undefined
-      });
-      if (extLibResult.isFailure()) {
-        setSaveError(`Failed to update bootstrap settings: ${extLibResult.message}`);
-        setIsSaving(false);
-        return;
-      }
-    } else {
-      // Legacy mode: all goes to common
-      const commonResult = settingsManager.updateCommonSettings({
-        externalLibraries:
-          commonDraft.externalLibraries.length > 0 ? commonDraft.externalLibraries : undefined,
-        defaultStorageTargets: commonDraft.defaultStorageTargets,
-        tools: { scaling: scalingUpdate, workflow: workflowUpdate }
-      });
-      if (commonResult.isFailure()) {
-        setSaveError(`Failed to update common settings: ${commonResult.message}`);
-        setIsSaving(false);
-        return;
-      }
+    // Update preferences settings
+    const prefsResult = settingsManager.updatePreferencesSettings({
+      defaultStorageTargets: preferencesDraft.defaultStorageTargets,
+      tools: { scaling: scalingUpdate, workflow: workflowUpdate }
+    });
+    if (prefsResult.isFailure()) {
+      setSaveError(`Failed to update preferences settings: ${prefsResult.message}`);
+      setIsSaving(false);
+      return;
     }
 
-    const deviceResult = settingsManager.updateDeviceSettings({
-      deviceName: deviceDraft.deviceName || undefined,
-      localDirectories: deviceDraft.localDirectories.length > 0 ? deviceDraft.localDirectories : undefined
+    // Update external libraries in bootstrap settings
+    const extLibResult = settingsManager.updateBootstrapSettings({
+      externalLibraries:
+        preferencesDraft.externalLibraries.length > 0 ? preferencesDraft.externalLibraries : undefined
     });
-
-    if (deviceResult.isFailure()) {
-      setSaveError(`Failed to update device settings: ${deviceResult.message}`);
+    if (extLibResult.isFailure()) {
+      setSaveError(`Failed to update bootstrap settings: ${extLibResult.message}`);
       setIsSaving(false);
       return;
     }
@@ -298,63 +235,40 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
       setSaveError(`Failed to save settings: ${saveResult.message}`);
     } else {
       setSavedBootstrap(bootstrapDraft);
-      setSavedCommon(commonDraft);
-      setSavedDevice(deviceDraft);
+      setSavedPreferences(preferencesDraft);
 
       applyStorageTargetsFromWorkspace({
         localStorageRootDir: reactiveWorkspace.localStorageRootDir,
         persistentTrees: reactiveWorkspace.persistentTrees,
-        targets: commonDraft.defaultStorageTargets,
+        targets: preferencesDraft.defaultStorageTargets,
         entities: workspace.data.entities
       });
     }
     setIsSaving(false);
-  }, [
-    settingsManager,
-    bootstrapDraft,
-    savedBootstrap,
-    commonDraft,
-    deviceDraft,
-    reactiveWorkspace,
-    workspace
-  ]);
+  }, [settingsManager, bootstrapDraft, savedBootstrap, preferencesDraft, reactiveWorkspace, workspace]);
 
   const revert = useCallback((): void => {
     setBootstrapDraft(savedBootstrap);
-    setCommonDraft(savedCommon);
-    setDeviceDraft(savedDevice);
+    setPreferencesDraft(savedPreferences);
     setSaveError(undefined);
-  }, [savedBootstrap, savedCommon, savedDevice]);
+  }, [savedBootstrap, savedPreferences]);
 
-  if (
-    !settingsManager ||
-    !bootstrapDraft ||
-    !commonDraft ||
-    !deviceDraft ||
-    !savedBootstrap ||
-    !savedCommon ||
-    !savedDevice
-  ) {
+  if (!settingsManager || !bootstrapDraft || !preferencesDraft || !savedBootstrap || !savedPreferences) {
     return undefined;
   }
 
   const hasBootstrapChanges = !bootstrapDraftsEqual(bootstrapDraft, savedBootstrap);
-  const isDirty =
-    hasBootstrapChanges ||
-    !draftsEqual(commonDraft, savedCommon) ||
-    !deviceDraftsEqual(deviceDraft, savedDevice);
+  const isDirty = hasBootstrapChanges || !preferencesDraftsEqual(preferencesDraft, savedPreferences);
 
   return {
     bootstrap: bootstrapDraft,
-    common: commonDraft,
-    device: deviceDraft,
+    preferences: preferencesDraft,
     isDirty,
     hasBootstrapChanges,
     isSaving,
     saveError,
     updateBootstrap,
-    updateCommon,
-    updateDevice,
+    updatePreferences,
     save,
     revert
   };

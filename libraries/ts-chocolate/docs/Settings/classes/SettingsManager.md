@@ -107,19 +107,6 @@ auto-migrating from common.json if bootstrap.json doesn't exist yet.
 </td></tr>
 <tr><td>
 
-[create(params)](./SettingsManager.create.md)
-
-</td><td>
-
-`static`
-
-</td><td>
-
-Creates a new SettingsManager, loading settings from the file tree.
-
-</td></tr>
-<tr><td>
-
 [getResolvedSettings()](./SettingsManager.getResolvedSettings.md)
 
 </td><td>
@@ -185,58 +172,6 @@ Updates preferences settings with partial values.
 </td></tr>
 <tr><td>
 
-[getCommonSettings()](./SettingsManager.getCommonSettings.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Gets the common settings shared across all devices.
-
-</td></tr>
-<tr><td>
-
-[getDeviceSettings()](./SettingsManager.getDeviceSettings.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Gets the device-specific settings.
-
-</td></tr>
-<tr><td>
-
-[updateCommonSettings(updates)](./SettingsManager.updateCommonSettings.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Updates common settings with partial values.
-
-</td></tr>
-<tr><td>
-
-[updateDeviceSettings(updates)](./SettingsManager.updateDeviceSettings.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Updates device-specific settings with partial values.
-
-</td></tr>
-<tr><td>
-
 [updateDefaultTargets(targets)](./SettingsManager.updateDefaultTargets.md)
 
 </td><td>
@@ -263,19 +198,6 @@ Updates the default storage targets (convenience method).
 </td></tr>
 <tr><td>
 
-[updateLastActiveSessionId(sessionId)](./SettingsManager.updateLastActiveSessionId.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Updates the last active session ID for this device (convenience method).
-
-</td></tr>
-<tr><td>
-
 [save()](./SettingsManager.save.md)
 
 </td><td>
@@ -298,19 +220,6 @@ Saves all pending changes to the file tree.
 </td><td>
 
 Updates tool settings.
-
-</td></tr>
-<tr><td>
-
-[updateDeviceToolsOverride(tools)](./SettingsManager.updateDeviceToolsOverride.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Updates device tool settings overrides.
 
 </td></tr>
 </tbody></table>

@@ -160,9 +160,9 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
                   return fail(`workspace directories: ${dirsResult.message}`);
                 }
 
-                return this._loadSettingsWithBootstrap(tree, deviceId, browserOptions.deviceName)
+                return this._loadSettings(tree, deviceId)
                   .withErrorFormat((msg) => `settings: ${msg}`)
-                  .onSuccess(({ bootstrap, common, device }) => {
+                  .onSuccess(({ bootstrap, resolvedSettings }) => {
                     const keyStoreFile = this._loadKeyStoreFromStorage(
                       browserOptions.storage ??
                         (typeof window !== 'undefined' ? window.localStorage : undefined),
@@ -175,9 +175,7 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
                       externalLibraries: [] as IResolvedExternalLibrary[],
                       keyStoreFile: keyStoreFile.isSuccess() ? keyStoreFile.value : undefined,
                       bootstrapSettings: bootstrap,
-                      commonSettings: common,
-                      deviceSettings: device,
-                      resolvedSettings: Settings.resolveSettings(common, device),
+                      resolvedSettings,
                       deviceId
                     });
                   });
@@ -231,28 +229,38 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
   }
 
   /**
-   * Loads settings from the FileTree, including bootstrap settings.
+   * Loads settings from the FileTree.
+   * Loads bootstrap and preferences settings, then resolves final settings.
    * @param tree - The FileTree instance (for path-based file lookup)
-   * @param deviceId - Device ID for device settings
-   * @param deviceName - Optional device name for new device settings
+   * @param deviceId - Device ID for resolved settings
    * @internal
    */
-  private _loadSettingsWithBootstrap(
+  private _loadSettings(
     tree: FileTree.FileTree,
-    deviceId: Settings.DeviceId,
-    deviceName?: string
+    deviceId: Settings.DeviceId
   ): Result<{
     bootstrap: Settings.IBootstrapSettings | undefined;
-    common: Settings.ICommonSettings;
-    device: Settings.IDeviceSettings;
+    resolvedSettings: Settings.IResolvedSettings;
   }> {
-    return this._loadBootstrapSettings(tree).onSuccess((bootstrap) =>
-      this._loadCommonSettings(tree).onSuccess((common) =>
-        this._loadDeviceSettings(tree, deviceId, deviceName).onSuccess((device) =>
-          succeed({ bootstrap, common, device })
-        )
-      )
-    );
+    // Load bootstrap settings (optional)
+    const bootstrap = this._loadBootstrapSettings(tree);
+    if (bootstrap.isFailure()) {
+      return fail(bootstrap.message);
+    }
+
+    // Load preferences settings (optional)
+    const preferences = this._loadPreferencesSettings(tree);
+    if (preferences.isFailure()) {
+      return fail(preferences.message);
+    }
+
+    const prefs = preferences.value ?? { schemaVersion: 1 as Settings.SettingsSchemaVersion };
+    const resolvedSettings = Settings.resolvePreferencesSettings(prefs, deviceId);
+
+    return succeed({
+      bootstrap: bootstrap.value,
+      resolvedSettings
+    });
   }
 
   /**
@@ -276,47 +284,24 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
   }
 
   /**
-   * Loads common settings from the FileTree.
-   * Falls back to defaults if the settings file doesn't exist.
+   * Loads preferences settings from the FileTree.
+   * Returns undefined (not failure) if the file doesn't exist.
    * @internal
    */
-  private _loadCommonSettings(tree: FileTree.FileTree): Result<Settings.ICommonSettings> {
-    const settingsPath = `/${LibraryData.LibraryPaths.settings}/${LibraryData.LibraryPaths.settingsCommon}`;
+  private _loadPreferencesSettings(
+    tree: FileTree.FileTree
+  ): Result<Settings.IPreferencesSettings | undefined> {
+    const settingsPath = `/${LibraryData.LibraryPaths.settings}/${LibraryData.LibraryPaths.settingsPreferences}`;
 
     const fileResult = tree.getFile(settingsPath);
     if (fileResult.isFailure()) {
-      return succeed(Settings.createDefaultCommonSettings());
+      return succeed(undefined);
     }
 
     return fileResult.value
       .getContents()
       .onSuccess((json) =>
-        Settings.Converters.commonSettings.convert(json).withErrorFormat((e) => `common.json: ${e}`)
-      );
-  }
-
-  /**
-   * Loads device settings from the FileTree.
-   * Falls back to defaults if the device settings file doesn't exist.
-   * @internal
-   */
-  private _loadDeviceSettings(
-    tree: FileTree.FileTree,
-    deviceId: Settings.DeviceId,
-    deviceName?: string
-  ): Result<Settings.IDeviceSettings> {
-    const deviceFileName = `${LibraryData.LibraryPaths.settingsDevicePrefix}${deviceId}.json`;
-    const settingsPath = `/${LibraryData.LibraryPaths.settings}/${deviceFileName}`;
-
-    const fileResult = tree.getFile(settingsPath);
-    if (fileResult.isFailure()) {
-      return succeed(Settings.createDefaultDeviceSettings(deviceId, deviceName));
-    }
-
-    return fileResult.value
-      .getContents()
-      .onSuccess((json) =>
-        Settings.Converters.deviceSettings.convert(json).withErrorFormat((e) => `${deviceFileName}: ${e}`)
+        Settings.Converters.preferencesSettings.convert(json).withErrorFormat((e) => `preferences.json: ${e}`)
       );
   }
 

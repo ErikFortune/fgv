@@ -2,7 +2,7 @@
 
 # Interface: ISettingsManagerBootstrapParams
 
-Parameters for creating a SettingsManager with bootstrap/preferences.
+Parameters for creating a SettingsManager.
 
 ## Properties
 

@@ -26,10 +26,6 @@
  * - `bootstrap.json` - Preload configuration (what data sources to set up)
  * - `preferences.json` - Runtime preferences (defaults, tools, etc.)
  *
- * Legacy files (deprecated, migration only):
- * - `common.json` - Previously shared across all devices
- * - `device-{deviceId}.json` - Previously device-specific overrides
- *
  * @packageDocumentation
  */
 
@@ -53,7 +49,7 @@ export {
   type StorageRootId,
   type ILocalDirectoryRef,
   type IDefaultStorageTargets,
-  // Bootstrap and preferences (new two-phase model)
+  // Bootstrap and preferences
   type ISettingsFileLocation,
   type ILocalStorageConfig,
   type ILogSettings,
@@ -62,20 +58,13 @@ export {
   createDefaultBootstrapSettings,
   createDefaultPreferencesSettings,
   resolvePreferencesSettings,
-  splitCommonSettings,
-  // Legacy settings types (deprecated)
-  type ICommonSettings,
-  type IDeviceSettings,
+  // Device file tree overrides (used by bootstrap)
   type IDeviceFileTreeOverrides,
   type IResolvedSettings,
   // Default values
   DEFAULT_SCALING,
   DEFAULT_WORKFLOW,
-  DEFAULT_TOOL_SETTINGS,
-  // Legacy functions (deprecated)
-  resolveSettings,
-  createDefaultCommonSettings,
-  createDefaultDeviceSettings
+  DEFAULT_TOOL_SETTINGS
 } from './model';
 
 // Converters (as namespace)
@@ -99,13 +88,8 @@ export {
 export {
   type ISettingsManager,
   type ISettingsManagerBootstrapParams,
-  type ISettingsManagerParams,
   SettingsManager,
   SETTINGS_DIR_PATH,
   BOOTSTRAP_SETTINGS_FILENAME,
-  PREFERENCES_SETTINGS_FILENAME,
-  COMMON_SETTINGS_FILENAME,
-  DEVICE_SETTINGS_PREFIX,
-  DEVICE_SETTINGS_SUFFIX,
-  getDeviceSettingsFilename
+  PREFERENCES_SETTINGS_FILENAME
 } from './settingsManager';

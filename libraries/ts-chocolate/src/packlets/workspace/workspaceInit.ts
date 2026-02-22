@@ -31,13 +31,9 @@ import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 import { createDefaultLibraryDirectories, LibraryPaths } from '../library-data';
 import {
   createDefaultBootstrapSettings,
-  createDefaultCommonSettings,
-  createDefaultDeviceSettings,
   createDefaultPreferencesSettings,
   DeviceId,
   IBootstrapSettings,
-  ICommonSettings,
-  IDeviceSettings,
   IPreferencesSettings
 } from '../settings';
 import { createDefaultUserEntityDirectories } from '../user-entities';
@@ -82,16 +78,6 @@ export interface IWorkspaceInitResult {
    * Created preferences settings.
    */
   readonly preferencesSettings: IPreferencesSettings;
-
-  /**
-   * Created common settings (legacy, for backward compatibility).
-   */
-  readonly commonSettings: ICommonSettings;
-
-  /**
-   * Created device settings (legacy, for backward compatibility).
-   */
-  readonly deviceSettings: IDeviceSettings;
 }
 
 /**
@@ -162,76 +148,33 @@ export function writePreferencesSettings(
 }
 
 /**
- * Writes common settings to disk.
- *
- * @param workspacePath - Absolute path to workspace root
- * @param settings - Common settings to write
- * @returns Success or failure
- * @public
- */
-export function writeCommonSettings(workspacePath: string, settings: ICommonSettings): Result<void> {
-  const settingsPath = path.join(workspacePath, LibraryPaths.settings, LibraryPaths.settingsCommon);
-
-  return captureResult(() => {
-    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
-  }).onFailure((msg) => fail(`Failed to write common settings: ${msg}`));
-}
-
-/**
- * Writes device settings to disk.
- *
- * @param workspacePath - Absolute path to workspace root
- * @param deviceId - Device identifier
- * @param settings - Device settings to write
- * @returns Success or failure
- * @public
- */
-export function writeDeviceSettings(
-  workspacePath: string,
-  deviceId: DeviceId,
-  settings: IDeviceSettings
-): Result<void> {
-  const deviceFileName = `${LibraryPaths.settingsDevicePrefix}${deviceId}.json`;
-  const settingsPath = path.join(workspacePath, LibraryPaths.settings, deviceFileName);
-
-  return captureResult(() => {
-    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
-  }).onFailure((msg) => fail(`Failed to write device settings: ${msg}`));
-}
-
-/**
  * Initializes a new workspace with default settings and directory structure.
  *
  * This is the primary initialization function that tools should call.
  * It creates:
  * - Standard directory structure
- * - Default bootstrap settings (two-phase init)
- * - Default preferences settings (two-phase init)
- * - Default common settings (legacy, for backward compatibility)
- * - Default device settings (legacy, for backward compatibility)
+ * - Default bootstrap settings
+ * - Default preferences settings
  *
  * @param params - Workspace initialization parameters
  * @returns Success with initialization result, or Failure
  * @public
  */
 export function initializeWorkspace(params: IWorkspaceInitParams): Result<IWorkspaceInitResult> {
-  const bootstrapSettings = createDefaultBootstrapSettings();
+  const bootstrapSettings: IBootstrapSettings = {
+    ...createDefaultBootstrapSettings(),
+    deviceName: params.deviceName
+  };
   const preferencesSettings = createDefaultPreferencesSettings();
-  const commonSettings = createDefaultCommonSettings();
-  const deviceSettings = createDefaultDeviceSettings(params.deviceId, params.deviceName);
 
   return createWorkspaceDirectories(params.workspacePath)
     .onSuccess(() => writeBootstrapSettings(params.workspacePath, bootstrapSettings))
     .onSuccess(() => writePreferencesSettings(params.workspacePath, preferencesSettings))
-    .onSuccess(() => writeCommonSettings(params.workspacePath, commonSettings))
-    .onSuccess(() => writeDeviceSettings(params.workspacePath, params.deviceId, deviceSettings))
     .onSuccess(() =>
       succeed({
         workspacePath: params.workspacePath,
         bootstrapSettings,
-        preferencesSettings,
-        commonSettings,
-        deviceSettings
+        preferencesSettings
       })
     );
 }

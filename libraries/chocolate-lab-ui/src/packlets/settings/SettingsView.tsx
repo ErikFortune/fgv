@@ -57,15 +57,13 @@ export function SettingsView(props: ISettingsViewProps): React.ReactElement {
 
   const {
     bootstrap,
-    common,
-    device,
+    preferences,
     isDirty,
     hasBootstrapChanges,
     isSaving,
     saveError,
     updateBootstrap,
-    updateCommon,
-    updateDevice,
+    updatePreferences,
     save,
     revert
   } = draft;
@@ -108,12 +106,19 @@ export function SettingsView(props: ISettingsViewProps): React.ReactElement {
           />
         )}
         {activeTab === 'workspace' && deviceId !== undefined && (
-          <WorkspaceSection deviceId={deviceId} device={device} onDeviceChange={updateDevice} />
+          <WorkspaceSection deviceId={deviceId} bootstrap={bootstrap} onBootstrapChange={updateBootstrap} />
         )}
-        {activeTab === 'scaling' && <ScalingSection scaling={common.scaling} onChange={updateCommon} />}
-        {activeTab === 'workflow' && <WorkflowSection workflow={common.workflow} onChange={updateCommon} />}
+        {activeTab === 'scaling' && (
+          <ScalingSection scaling={preferences.scaling} onChange={updatePreferences} />
+        )}
+        {activeTab === 'workflow' && (
+          <WorkflowSection workflow={preferences.workflow} onChange={updatePreferences} />
+        )}
         {activeTab === 'libraries' && (
-          <ExternalLibrariesSection externalLibraries={common.externalLibraries} onChange={updateCommon} />
+          <ExternalLibrariesSection
+            externalLibraries={preferences.externalLibraries}
+            onChange={updatePreferences}
+          />
         )}
         {activeTab === 'security' && <SecuritySection />}
       </div>

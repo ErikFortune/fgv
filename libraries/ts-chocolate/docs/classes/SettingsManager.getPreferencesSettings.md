@@ -7,11 +7,11 @@ Gets the preferences settings (runtime configuration).
 **Signature:**
 
 ```typescript
-getPreferencesSettings(): IPreferencesSettings | undefined;
+getPreferencesSettings(): IPreferencesSettings;
 ```
 
 **Returns:**
 
-[IPreferencesSettings](../interfaces/IPreferencesSettings.md) | undefined
+[IPreferencesSettings](../interfaces/IPreferencesSettings.md)
 
-The preferences settings, or undefined if using legacy mode
+The preferences settings

@@ -75,38 +75,4 @@ Created bootstrap settings.
 Created preferences settings.
 
 </td></tr>
-<tr><td>
-
-[commonSettings](./IWorkspaceInitResult.commonSettings.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[ICommonSettings](ICommonSettings.md)
-
-</td><td>
-
-Created common settings (legacy, for backward compatibility).
-
-</td></tr>
-<tr><td>
-
-[deviceSettings](./IWorkspaceInitResult.deviceSettings.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IDeviceSettings](IDeviceSettings.md)
-
-</td><td>
-
-Created device settings (legacy, for backward compatibility).
-
-</td></tr>
 </tbody></table>

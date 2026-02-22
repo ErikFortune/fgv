@@ -64,8 +64,8 @@ import {
 import { IWorkspace, Workspace } from '../../packlets/workspace';
 import {
   DeviceId,
-  ICommonSettings,
-  IDeviceSettings,
+  IBootstrapSettings,
+  IPreferencesSettings,
   ISettingsManager,
   SETTINGS_SCHEMA_VERSION,
   SettingsManager
@@ -314,20 +314,22 @@ function createFixtureLibraries(): {
  * @internal
  */
 function createSettingsFileTree(
-  deviceId: DeviceId,
+  _deviceId: DeviceId,
   additionalFiles?: FileTree.IInMemoryFile[]
 ): FileTree.IFileTreeDirectoryItem {
-  const commonSettings: ICommonSettings = {
-    schemaVersion: SETTINGS_SCHEMA_VERSION
-  };
-  const deviceSettings: IDeviceSettings = {
+  const bootstrapSettings: IBootstrapSettings = {
     schemaVersion: SETTINGS_SCHEMA_VERSION,
-    deviceId
+    includeBuiltIn: true,
+    localStorage: { library: true, userData: true },
+    externalLibraries: []
+  };
+  const preferencesSettings: IPreferencesSettings = {
+    schemaVersion: SETTINGS_SCHEMA_VERSION
   };
 
   const files: FileTree.IInMemoryFile[] = [
-    { path: '/library/data/settings/common.json', contents: commonSettings },
-    { path: `/library/data/settings/device-${deviceId}.json`, contents: deviceSettings },
+    { path: '/library/data/settings/bootstrap.json', contents: bootstrapSettings },
+    { path: '/library/data/settings/preferences.json', contents: preferencesSettings },
     ...(additionalFiles ?? [])
   ];
 
@@ -383,7 +385,7 @@ export function createTestWorkspace(options?: ITestWorkspaceOptions): Result<ITe
     // Use createWithSettings path
     const fileTree = createSettingsFileTree(deviceId, opts.additionalFiles);
 
-    return SettingsManager.create({ fileTree, deviceId }).onSuccess((settings) => {
+    return SettingsManager.createFromBootstrap({ fileTree, deviceId }).onSuccess((settings) => {
       return Workspace.createWithSettings({
         builtin,
         libraries: fixtureLibs,
@@ -443,6 +445,6 @@ export function createTestSettings(deviceId?: DeviceId): {
 } {
   const id = deviceId ?? TEST_DEVICE_ID;
   const fileTree = createSettingsFileTree(id);
-  const settings = SettingsManager.create({ fileTree, deviceId: id }).orThrow();
+  const settings = SettingsManager.createFromBootstrap({ fileTree, deviceId: id }).orThrow();
   return { fileTree, settings };
 }
