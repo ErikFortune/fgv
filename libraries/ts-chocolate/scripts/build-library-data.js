@@ -189,6 +189,9 @@ fs.writeFileSync(OUTPUT_FILE, output);
 
 // Run Prettier on the generated file to match checked-in formatting
 try {
+  // Stage the generated file so Prettier will detect it as changed
+  execSync(`git add ${path.relative(process.cwd(), OUTPUT_FILE)}`, { stdio: 'inherit' });
+
   const rushPrettierCommand = path.relative(
     process.cwd(),
     path.join(__dirname, '../../../common/scripts/install-run-rush.js')
