@@ -20,14 +20,15 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('yaml');
+const { execSync } = require('child_process');
 
-const INGREDIENTS_DIR = path.join(__dirname, '../data/published/ingredients');
-const FILLINGS_DIR = path.join(__dirname, '../data/published/fillings');
-const MOLDS_DIR = path.join(__dirname, '../data/published/molds');
-const PROCEDURES_DIR = path.join(__dirname, '../data/published/procedures');
-const TASKS_DIR = path.join(__dirname, '../data/published/tasks');
-const CONFECTIONS_DIR = path.join(__dirname, '../data/published/confections');
-const DECORATIONS_DIR = path.join(__dirname, '../data/published/decorations');
+const INGREDIENTS_DIR = path.join(__dirname, '../data/published/data/ingredients');
+const FILLINGS_DIR = path.join(__dirname, '../data/published/data/fillings');
+const MOLDS_DIR = path.join(__dirname, '../data/published/data/molds');
+const PROCEDURES_DIR = path.join(__dirname, '../data/published/data/procedures');
+const TASKS_DIR = path.join(__dirname, '../data/published/data/tasks');
+const CONFECTIONS_DIR = path.join(__dirname, '../data/published/data/confections');
+const DECORATIONS_DIR = path.join(__dirname, '../data/published/data/decorations');
 const OUTPUT_FILE = path.join(__dirname, '../src/packlets/built-in/builtInData.generated.ts');
 
 /**
@@ -185,6 +186,18 @@ export const decorationCollections: Record<string, JsonObject> = ${JSON.stringif
 `;
 
 fs.writeFileSync(OUTPUT_FILE, output);
+
+// Run Prettier on the generated file to match checked-in formatting
+try {
+  const rushPrettierCommand = path.relative(
+    process.cwd(),
+    path.join(__dirname, '../../../common/scripts/install-run-rush.js')
+  );
+  execSync(`node ${rushPrettierCommand} prettier`, { stdio: 'inherit' });
+  console.log('Applied Prettier formatting to generated file');
+} catch (error) {
+  console.warn('Warning: Failed to run Prettier on generated file:', error.message);
+}
 
 // Count file types for reporting
 const allFiles = [
