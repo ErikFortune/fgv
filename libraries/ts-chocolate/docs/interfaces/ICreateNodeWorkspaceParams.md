@@ -126,4 +126,21 @@ boolean
 Whether to pre-warm caches on load.
 
 </td></tr>
+<tr><td>
+
+[configName](./ICreateNodeWorkspaceParams.configName.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional configuration name for this workspace instance (e.g.
+
+</td></tr>
 </tbody></table>

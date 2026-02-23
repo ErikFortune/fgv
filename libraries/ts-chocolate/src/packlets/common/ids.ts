@@ -441,7 +441,9 @@ export type Certification =
   | 'organic'
   | 'peanut-free'
   | 'real-vanilla'
+  | 'soy-free'
   | 'traceable-beans'
+  | 'tree-nut-free'
   | 'vegan'
   | 'vegetarian'
   | 'without-lecithin';

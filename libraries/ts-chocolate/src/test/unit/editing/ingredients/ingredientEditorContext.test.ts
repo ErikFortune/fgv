@@ -92,7 +92,7 @@ describe('IngredientEditorContext', () => {
     ganacheCharacteristics: createGanache(40, 20, 0, 0, 40, 0),
     temperatureCurve: {
       melt: temp(50),
-      cool: temp(32),
+      cool: temp(30),
       working: temp(31)
     }
   });
@@ -173,7 +173,7 @@ describe('IngredientEditorContext', () => {
         ganacheCharacteristics: createGanache(40, 20, 0, 0, 40, 0),
         temperatureCurve: {
           melt: temp(50),
-          cool: temp(27), // Invalid: cool < working
+          cool: temp(33), // Invalid: cool > working
           working: temp(31)
         }
       };
@@ -181,7 +181,7 @@ describe('IngredientEditorContext', () => {
       expect(context.validate(ingredient)).toSucceedAndSatisfy((report) => {
         expect(report.isValid).toBe(false);
         expect(report.generalErrors.length).toBeGreaterThan(0);
-        expect(report.generalErrors[0]).toMatch(/cool.*must be greater than working/i);
+        expect(report.generalErrors[0]).toMatch(/cool.*must be less than working/i);
       });
     });
 

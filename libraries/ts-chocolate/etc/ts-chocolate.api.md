@@ -602,7 +602,7 @@ export type Celsius = Brand<number, 'Celsius'>;
 const celsius: Converter<Celsius>;
 
 // @public
-export type Certification = 'all-natural' | 'cocoa-horizons' | 'fair-trade' | 'gluten-free' | 'halal' | 'kosher' | 'kosher-dairy' | 'non-gmo' | 'organic' | 'peanut-free' | 'real-vanilla' | 'traceable-beans' | 'vegan' | 'vegetarian' | 'without-lecithin';
+export type Certification = 'all-natural' | 'cocoa-horizons' | 'fair-trade' | 'gluten-free' | 'halal' | 'kosher' | 'kosher-dairy' | 'non-gmo' | 'organic' | 'peanut-free' | 'real-vanilla' | 'soy-free' | 'traceable-beans' | 'tree-nut-free' | 'vegan' | 'vegetarian' | 'without-lecithin';
 
 // @public
 const certification: Converter<Certification>;

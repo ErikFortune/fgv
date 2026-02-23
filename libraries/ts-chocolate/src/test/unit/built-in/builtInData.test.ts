@@ -335,8 +335,8 @@ describe('BuiltInData', () => {
   describe('source data validation', () => {
     // The test runs from lib/test/unit/built-in/, so we need to go up to the library root
     const libraryRoot = path.resolve(__dirname, '..', '..', '..', '..');
-    const ingredientsSourceDir = path.join(libraryRoot, 'data', 'published', 'ingredients');
-    const recipesSourceDir = path.join(libraryRoot, 'data', 'published', 'fillings');
+    const ingredientsSourceDir = path.join(libraryRoot, 'data', 'published', 'data', 'ingredients');
+    const recipesSourceDir = path.join(libraryRoot, 'data', 'published', 'data', 'fillings');
 
     test('generated ingredient data matches source YAML files', () => {
       // Read source YAML files directly

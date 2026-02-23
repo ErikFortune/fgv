@@ -83,9 +83,9 @@ export function validateTemperatureCurve(entity: IngredientEntity): Result<true>
     );
   }
 
-  if (curve.cool <= curve.working) {
+  if (curve.cool >= curve.working) {
     return Failure.with(
-      `temperatureCurve: cool temperature (${curve.cool}°C) must be greater than working temperature (${curve.working}°C)`
+      `temperatureCurve: cool temperature (${curve.cool}°C) must be less than working temperature (${curve.working}°C)`
     );
   }
 

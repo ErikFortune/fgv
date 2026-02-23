@@ -151,7 +151,7 @@ describe('validateTemperatureCurve', () => {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(50),
-        cool: temp(32),
+        cool: temp(30),
         working: temp(31)
       }
     };
@@ -170,16 +170,16 @@ describe('validateTemperatureCurve', () => {
     expect(validateTemperatureCurve(ingredient)).toFailWith(/melt.*must be greater than cool/i);
   });
 
-  test('should fail if cool <= working', () => {
+  test('should fail if cool >= working', () => {
     const ingredient: IChocolateIngredientEntity = {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(50),
-        cool: temp(30),
+        cool: temp(33),
         working: temp(32)
       }
     };
-    expect(validateTemperatureCurve(ingredient)).toFailWith(/cool.*must be greater than working/i);
+    expect(validateTemperatureCurve(ingredient)).toFailWith(/cool.*must be less than working/i);
   });
 
   test('should fail if melt temperature is too low', () => {
@@ -187,8 +187,8 @@ describe('validateTemperatureCurve', () => {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(30),
-        cool: temp(27),
-        working: temp(25)
+        cool: temp(25),
+        working: temp(27)
       }
     };
     expect(validateTemperatureCurve(ingredient)).toFailWith(/melt temperature.*outside reasonable range/i);
@@ -199,8 +199,8 @@ describe('validateTemperatureCurve', () => {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(70),
-        cool: temp(32),
-        working: temp(31)
+        cool: temp(30),
+        working: temp(32)
       }
     };
     expect(validateTemperatureCurve(ingredient)).toFailWith(/melt temperature.*outside reasonable range/i);
@@ -211,7 +211,7 @@ describe('validateTemperatureCurve', () => {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(50),
-        cool: temp(27),
+        cool: temp(18),
         working: temp(20)
       }
     };
@@ -223,7 +223,7 @@ describe('validateTemperatureCurve', () => {
       ...createChocolateIngredient(),
       temperatureCurve: {
         melt: temp(50),
-        cool: temp(40),
+        cool: temp(36),
         working: temp(38)
       }
     };
@@ -509,7 +509,7 @@ describe('validateIngredientEntity', () => {
       cacaoPercentage: pct(70),
       temperatureCurve: {
         melt: temp(50),
-        cool: temp(32),
+        cool: temp(30),
         working: temp(31)
       }
     };
