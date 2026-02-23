@@ -3090,6 +3090,7 @@ interface ICollectionSourceFile<T = JsonObject> {
 export interface ICommonWorkspaceInitParams {
     readonly additionalFileSources?: ReadonlyArray<ILibraryFileTreeSource>;
     readonly builtin?: FullLibraryLoadSpec;
+    readonly configName?: string;
     readonly logger?: Logging.LogReporter<unknown>;
     readonly platformInit: IPlatformInitResult;
     readonly preWarm?: boolean;
@@ -3336,6 +3337,7 @@ interface ICreateFillingSessionOptions {
 // @public
 export interface ICreateNodeWorkspaceParams {
     readonly builtin?: boolean;
+    readonly configName?: string;
     readonly deviceId?: DeviceId;
     readonly layout: DirectoryLayoutParams;
     readonly missingFileBehavior?: MissingFileBehavior;
@@ -6105,6 +6107,7 @@ interface IWorkflowPreferences {
 
 // @public
 export interface IWorkspace {
+    readonly configName: string | undefined;
     readonly data: ChocolateLibrary;
     readonly isReady: boolean;
     readonly keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
@@ -6119,6 +6122,7 @@ export interface IWorkspace {
 export interface IWorkspaceCreateParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly builtin?: FullLibraryLoadSpec;
+    readonly configName?: string;
     readonly encryption?: Partial<Omit<IEncryptionConfig, 'secretProvider'>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
@@ -8544,6 +8548,7 @@ const workflowPreferences: Converter<IWorkflowPreferences>;
 
 // @public
 export class Workspace implements IWorkspace {
+    get configName(): string | undefined;
     static create(params?: IWorkspaceCreateParams): Result<Workspace>;
     static createWithSettings(params: IWorkspaceCreateWithSettingsParams): Result<Workspace>;
     get data(): ChocolateLibrary;

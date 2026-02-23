@@ -100,6 +100,23 @@ The settings manager for workspace configuration.
 </td></tr>
 <tr><td>
 
+[configName](./IWorkspace.configName.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string | undefined
+
+</td><td>
+
+Optional configuration name for this workspace instance (e.g.
+
+</td></tr>
+<tr><td>
+
 [state](./IWorkspace.state.md)
 
 </td><td>

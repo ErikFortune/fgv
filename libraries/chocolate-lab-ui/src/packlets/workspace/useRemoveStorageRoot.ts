@@ -28,8 +28,8 @@
 import { useCallback } from 'react';
 
 import { type Settings } from '@fgv/ts-chocolate';
-import { DirectoryHandleStore } from '@fgv/ts-web-extras';
 
+import { createDirectoryStore } from './directoryStoreFactory';
 import { useReactiveWorkspace, useWorkspace } from './useWorkspace';
 
 // ============================================================================
@@ -78,7 +78,7 @@ export function useRemoveStorageRoot(): IRemoveStorageRootActions {
 
       reactiveWorkspace.unregisterPersistentTree(id);
 
-      const store = new DirectoryHandleStore();
+      const store = createDirectoryStore(workspace.configName);
       const removeResult = await store.remove(id);
       if (removeResult.isFailure()) {
         workspace.data.logger.warn(`Failed to remove persisted handle for "${id}": ${removeResult.message}`);

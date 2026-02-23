@@ -237,6 +237,12 @@ export interface ICommonWorkspaceInitParams {
   readonly userLibrarySourceName?: string;
 
   /**
+   * Optional configuration name (e.g. 'debug').
+   * Stored on the workspace for platform layers to use for storage isolation.
+   */
+  readonly configName?: string;
+
+  /**
    * Optional logger for workspace operations.
    * If not provided, a default NoOp logger is used.
    */
@@ -421,13 +427,7 @@ export function ensureWorkspaceDirectoriesInTree(root: FileTree.IFileTreeDirecto
  * @public
  */
 export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams): Result<IWorkspace> {
-  const {
-    platformInit,
-    builtin,
-    additionalFileSources,
-    preWarm,
-    userLibrarySourceName = 'localStorage'
-  } = params;
+  const { platformInit, builtin, additionalFileSources, preWarm, userLibrarySourceName, configName } = params;
 
   // Create settings manager using bootstrap-with-migration factory.
   // This handles bootstrap.json + preferences.json, with automatic migration
@@ -444,23 +444,26 @@ export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams):
         // Convert external libraries to file tree sources
         const externalSources = toLibraryFileSources(platformInit.externalLibraries);
 
-        // Convert user library to file tree source (journals/sessions only)
-        const userSource = toUserLibrarySource(platformInit.userLibraryTree, userLibrarySourceName);
+        // Build file sources for the entity library
+        const allFileSources: ILibraryFileTreeSource[] = [...externalSources];
 
-        // The entity library also needs to load from the user tree so that
-        // user-created entity collections (ingredients, fillings, etc.) are
-        // found on restart.  Built-in data comes from builtInData.generated.ts,
-        // not from this tree, so there is no risk of duplicate loading.
-        const userEntitySource: ILibraryFileTreeSource = {
-          sourceName: userLibrarySourceName,
-          directory: platformInit.userLibraryTree,
-          load: true,
-          mutable: true,
-          skipMissingDirectories: true
-        };
+        // Only load from user library tree if a source name was provided
+        // (i.e., local storage loading is enabled by bootstrap settings)
+        let userFileSources: ILibraryFileTreeSource | undefined;
+        if (userLibrarySourceName) {
+          // User data (journals/sessions) source
+          userFileSources = toUserLibrarySource(platformInit.userLibraryTree, userLibrarySourceName);
 
-        // Combine all file sources for the entity library
-        const allFileSources: ILibraryFileTreeSource[] = [...externalSources, userEntitySource];
+          // Entity library also needs to load from user tree so that
+          // user-created entity collections are found on restart.
+          allFileSources.push({
+            sourceName: userLibrarySourceName,
+            directory: platformInit.userLibraryTree,
+            load: true,
+            mutable: true,
+            skipMissingDirectories: true
+          });
+        }
 
         /* c8 ignore next 3 - not currently exercised: additionalFileSources is not passed by any caller */
         if (additionalFileSources) {
@@ -480,9 +483,10 @@ export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams):
 
         // Create the workspace using the internal factory
         return Workspace.createWithSettings({
+          configName,
           builtin,
           fileSources: allFileSources,
-          userFileSources: userSource,
+          userFileSources,
           keyStore: keyStoreConfig,
           preWarm,
           settings,

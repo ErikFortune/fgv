@@ -252,6 +252,22 @@ describe('workspace platformInit helpers', () => {
       });
     });
 
+    test('workspace stores configName when provided', () => {
+      const platformInit = createPlatformInitResult();
+      expect(
+        createWorkspaceFromPlatform({ platformInit, builtin: false, configName: 'debug' })
+      ).toSucceedAndSatisfy((ws) => {
+        expect(ws.configName).toBe('debug');
+      });
+    });
+
+    test('workspace configName is undefined when not provided', () => {
+      const platformInit = createPlatformInitResult();
+      expect(createWorkspaceFromPlatform({ platformInit, builtin: false })).toSucceedAndSatisfy((ws) => {
+        expect(ws.configName).toBeUndefined();
+      });
+    });
+
     test('workspace state is no-keystore without key store file', () => {
       const platformInit = createPlatformInitResult();
       expect(createWorkspaceFromPlatform({ platformInit, builtin: false })).toSucceedAndSatisfy((ws) => {

@@ -59,6 +59,7 @@ export class Workspace implements IWorkspace {
   private readonly _keyStore: CryptoUtils.KeyStore.KeyStore | undefined;
   private readonly _cryptoProvider: CryptoUtils.ICryptoProvider | undefined;
   private readonly _settings: ISettingsManager | undefined;
+  private readonly _configName: string | undefined;
   private readonly _logger: Logging.LogReporter<unknown>;
   private _userData: UserLibrary | undefined;
 
@@ -71,6 +72,7 @@ export class Workspace implements IWorkspace {
     keyStore: CryptoUtils.KeyStore.KeyStore | undefined,
     cryptoProvider: CryptoUtils.ICryptoProvider | undefined,
     settings: ISettingsManager | undefined,
+    configName: string | undefined,
     logger: Logging.LogReporter<unknown>
   ) {
     this._library = library;
@@ -78,6 +80,7 @@ export class Workspace implements IWorkspace {
     this._keyStore = keyStore;
     this._cryptoProvider = cryptoProvider;
     this._settings = settings;
+    this._configName = configName;
     this._logger = logger;
   }
 
@@ -146,6 +149,8 @@ export class Workspace implements IWorkspace {
               keyStore,
               cryptoProvider,
               undefined, // Settings manager - not available via basic create
+              /* c8 ignore next 1 - TS optional chaining compiles to unreachable null check */
+              params?.configName,
               logger
             );
             logger.info(
@@ -218,6 +223,7 @@ export class Workspace implements IWorkspace {
               keyStore,
               cryptoProvider,
               params.settings,
+              params.configName,
               logger
             );
             logger.info(
@@ -264,6 +270,11 @@ export class Workspace implements IWorkspace {
    */
   public get settings(): ISettingsManager | undefined {
     return this._settings;
+  }
+
+  /** {@inheritDoc IWorkspace.configName} */
+  public get configName(): string | undefined {
+    return this._configName;
   }
 
   // ============================================================================

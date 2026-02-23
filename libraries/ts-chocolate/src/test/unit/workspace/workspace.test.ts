@@ -239,6 +239,18 @@ describe('Workspace', () => {
         expect(ws).toBeDefined();
       });
     });
+
+    test('configName is undefined when not provided', () => {
+      expect(Workspace.create()).toSucceedAndSatisfy((ws) => {
+        expect(ws.configName).toBeUndefined();
+      });
+    });
+
+    test('stores configName when provided', () => {
+      expect(Workspace.create({ builtin: false, configName: 'debug' })).toSucceedAndSatisfy((ws) => {
+        expect(ws.configName).toBe('debug');
+      });
+    });
   });
 
   // ============================================================================

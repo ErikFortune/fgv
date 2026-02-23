@@ -27,7 +27,9 @@
 
 import { type FileTree } from '@fgv/ts-json-base';
 import { LibraryData, type LibraryRuntime } from '@fgv/ts-chocolate';
-import { DirectoryHandleStore, FileApiTreeAccessors, supportsFileSystemAccess } from '@fgv/ts-web-extras';
+import { FileApiTreeAccessors, supportsFileSystemAccess } from '@fgv/ts-web-extras';
+
+import { createDirectoryStore } from './directoryStoreFactory';
 
 import { type ReactiveWorkspace } from './reactiveWorkspace';
 
@@ -96,6 +98,8 @@ export interface IRestoreSavedDirectoriesParams {
   readonly reactiveWorkspace: ReactiveWorkspace;
   /** The entity library to load collections into */
   readonly entities: LibraryRuntime.ChocolateEntityLibrary;
+  /** Optional config name for per-config IndexedDB isolation */
+  readonly configName?: string;
   /** Optional logger for diagnostics */
   readonly logger?: { detail(msg: string): void; warn(msg: string): void; info(msg: string): void };
 }
@@ -119,7 +123,7 @@ export async function restoreSavedDirectories(params: IRestoreSavedDirectoriesPa
     return 0;
   }
 
-  const store = new DirectoryHandleStore();
+  const store = createDirectoryStore(params.configName);
   const allResult = await store.getAll();
   if (allResult.isFailure()) {
     logger?.warn(`restoreSavedDirectories: failed to load handles: ${allResult.message}`);

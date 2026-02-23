@@ -169,33 +169,51 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     userLibraryPath: 'localStorage',
     storageKeyPrefix
   });
+
+  // Read bootstrap flags to control what data sources are loaded
+  const bootstrap = platformInit.value?.bootstrapSettings;
+  const includeBuiltIn = bootstrap?.includeBuiltIn ?? true;
+  const loadLocalLibrary = bootstrap?.localStorage?.library ?? true;
+  const loadLocalUserData = bootstrap?.localStorage?.userData ?? true;
+  const useLocalStorage = loadLocalLibrary || loadLocalUserData;
+
+  _bootReporter?.detail(
+    `_buildReactiveWorkspace: includeBuiltIn=${includeBuiltIn}, loadLocalLibrary=${loadLocalLibrary}, loadLocalUserData=${loadLocalUserData}, useLocalStorage=${useLocalStorage}`
+  );
+
   const workspace = platformInit
     .onSuccess((init) =>
       createWorkspaceFromPlatform({
         platformInit: init,
-        builtin: true,
-        preWarm: true,
-        userLibrarySourceName: 'localStorage',
+        builtin: includeBuiltIn,
+        preWarm: includeBuiltIn,
+        userLibrarySourceName: useLocalStorage ? 'localStorage' : undefined,
+        configName: _configNamespace,
         logger: _bootReporter
       })
     )
     .orThrow();
   const reactiveWorkspace = new ReactiveWorkspace(workspace, true);
-  const localStorageRootDir = platformInit.value?.userLibraryTree;
-  reactiveWorkspace.registerLocalStorageRoot('Browser Storage', localStorageRootDir);
-  await restoreSavedDirectories({
-    reactiveWorkspace,
-    entities: workspace.data.entities,
-    logger: _bootReporter
-  });
 
-  applyStorageTargetsFromWorkspace({
-    localStorageRootDir,
-    persistentTrees: reactiveWorkspace.persistentTrees,
-    targets: workspace.settings?.getResolvedSettings().defaultStorageTargets,
-    entities: workspace.data.entities,
-    logger: _bootReporter
-  });
+  if (useLocalStorage) {
+    const localStorageRootDir = platformInit.value?.userLibraryTree;
+    reactiveWorkspace.registerLocalStorageRoot('Browser Storage', localStorageRootDir);
+
+    await restoreSavedDirectories({
+      reactiveWorkspace,
+      entities: workspace.data.entities,
+      configName: _configNamespace,
+      logger: _bootReporter
+    });
+
+    applyStorageTargetsFromWorkspace({
+      localStorageRootDir,
+      persistentTrees: reactiveWorkspace.persistentTrees,
+      targets: workspace.settings?.getResolvedSettings().defaultStorageTargets,
+      entities: workspace.data.entities,
+      logger: _bootReporter
+    });
+  }
 
   // Log storage summary
   const storage = reactiveWorkspace.storageSummary;
@@ -203,7 +221,7 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   if (storage.hasBuiltIn) {
     storageParts.push('built-in library');
   }
-  if (localStorageRootDir) {
+  if (useLocalStorage) {
     storageParts.push('local storage');
   }
   if (storage.localDirectoryCount > 0) {

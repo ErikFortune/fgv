@@ -147,6 +147,23 @@ Additional encryption configuration options.
 </td></tr>
 <tr><td>
 
+[configName](./IWorkspaceCreateParams.configName.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional configuration name (e.g.
+
+</td></tr>
+<tr><td>
+
 [logger](./IWorkspaceCreateParams.logger.md)
 
 </td><td>

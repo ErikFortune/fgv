@@ -54,6 +54,7 @@ function createMockWorkspace(state: WorkspaceState): IWorkspace {
   return {
     state,
     isReady: state !== 'locked',
+    configName: undefined,
     data: {} as IWorkspace['data'],
     userData: {} as IWorkspace['userData'],
     keyStore: undefined,

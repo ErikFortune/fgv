@@ -30,14 +30,10 @@ import { useCallback } from 'react';
 
 import { type FileTree } from '@fgv/ts-json-base';
 import { LibraryData } from '@fgv/ts-chocolate';
-import {
-  DirectoryHandleStore,
-  FileApiTreeAccessors,
-  safeShowDirectoryPicker,
-  supportsFileSystemAccess
-} from '@fgv/ts-web-extras';
+import { FileApiTreeAccessors, safeShowDirectoryPicker, supportsFileSystemAccess } from '@fgv/ts-web-extras';
 
 import { applyStorageTargetsFromWorkspace } from './applyStorageTargets';
+import { createDirectoryStore } from './directoryStoreFactory';
 import { useReactiveWorkspace, useWorkspace } from './useWorkspace';
 
 // ============================================================================
@@ -137,7 +133,7 @@ export function useAddStorageRoot(): IAddStorageRootActions {
       });
     }
 
-    const store = new DirectoryHandleStore();
+    const store = createDirectoryStore(workspace.configName);
     const saveResult = await store.save(sourceName, dirHandle);
     if (saveResult.isFailure()) {
       workspace.data.logger.warn(`Failed to persist directory handle: ${saveResult.message}`);

@@ -40,6 +40,7 @@ import {
  */
 interface IBrowseCommandOptions {
   readonly workspace: string;
+  readonly config?: string;
 }
 
 /**
@@ -246,9 +247,11 @@ export function createBrowseCommand(): Command {
     .description('Browse workspace contents interactively')
     .requiredOption('-w, --workspace <path>', 'Path to workspace directory')
     .option('-d, --device-name <name>', 'Device name for this instance')
+    .option('--config <name>', 'Configuration name (e.g. debug)')
     .action(async (options: IBrowseCommandOptions) => {
       const workspaceResult = await loadWorkspace({
-        workspacePath: options.workspace
+        workspacePath: options.workspace,
+        configName: options.config
       });
 
       if (workspaceResult.isFailure()) {

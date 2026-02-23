@@ -64,6 +64,7 @@ export const interactiveEntityTypes: ReadonlyArray<EntityTypeName> = [
  */
 export interface IEditCommandOptions {
   readonly workspace: string;
+  readonly config?: string;
 }
 
 /**

@@ -161,6 +161,11 @@ export interface ICreateNodeWorkspaceParams {
    * @defaultValue false
    */
   readonly preWarm?: boolean;
+
+  /**
+   * Optional configuration name for this workspace instance (e.g. 'debug').
+   */
+  readonly configName?: string;
 }
 
 /**
@@ -265,6 +270,8 @@ export async function createNodeWorkspace(params: ICreateNodeWorkspaceParams): P
     platformInit: platformResult.value,
     builtin,
     preWarm,
+    userLibrarySourceName: 'localStorage',
+    configName: params.configName,
     /* c8 ignore next 1 - branch: additionalFileSources always populated after successful platform init */
     additionalFileSources: additionalFileSources.length > 0 ? additionalFileSources : undefined
   });

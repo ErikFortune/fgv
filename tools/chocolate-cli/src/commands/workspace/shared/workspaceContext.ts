@@ -48,6 +48,11 @@ export interface ILoadWorkspaceOptions {
    * @defaultValue 'fail-on-error'
    */
   readonly startupMode?: StartupMode;
+
+  /**
+   * Optional configuration name for this workspace instance (e.g. 'debug').
+   */
+  readonly configName?: string;
 }
 
 /**
@@ -86,7 +91,8 @@ export async function loadWorkspace(options: ILoadWorkspaceOptions): Promise<Res
     },
     builtin: options.builtin ?? true,
     preWarm: options.preWarm ?? false,
-    startupMode: options.startupMode ?? 'fail-on-error'
+    startupMode: options.startupMode ?? 'fail-on-error',
+    configName: options.configName
   });
 }
 

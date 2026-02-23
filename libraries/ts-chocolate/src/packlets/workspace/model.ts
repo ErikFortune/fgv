@@ -94,6 +94,12 @@ export interface IWorkspace {
    */
   readonly settings: ISettingsManager | undefined;
 
+  /**
+   * Optional configuration name for this workspace instance (e.g. 'debug').
+   * Used by platform layers to isolate per-config storage (e.g. IndexedDB databases).
+   */
+  readonly configName: string | undefined;
+
   // ---- Workspace State ----
 
   /**
@@ -205,6 +211,14 @@ export interface IWorkspaceCreateParams {
    * The workspace automatically wires up the key store's secret provider.
    */
   readonly encryption?: Partial<Omit<IEncryptionConfig, 'secretProvider'>>;
+
+  // ---- Configuration ----
+
+  /**
+   * Optional configuration name (e.g. 'debug').
+   * Stored on the workspace for platform layers to use for storage isolation.
+   */
+  readonly configName?: string;
 
   // ---- Logging ----
 

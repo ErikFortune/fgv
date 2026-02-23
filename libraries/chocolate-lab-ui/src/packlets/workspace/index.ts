@@ -27,6 +27,7 @@ export {
   type StorageCategory
 } from './reactiveWorkspace';
 
+export { createDirectoryStore } from './directoryStoreFactory';
 export { restoreSavedDirectories, type IRestoreSavedDirectoriesParams } from './restoreSavedDirectories';
 export {
   applyStorageTargets,

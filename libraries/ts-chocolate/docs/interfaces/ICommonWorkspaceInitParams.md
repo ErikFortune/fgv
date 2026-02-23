@@ -112,6 +112,23 @@ The source name to stamp on collections loaded from the user library tree.
 </td></tr>
 <tr><td>
 
+[configName](./ICommonWorkspaceInitParams.configName.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional configuration name (e.g.
+
+</td></tr>
+<tr><td>
+
 [logger](./ICommonWorkspaceInitParams.logger.md)
 
 </td><td>

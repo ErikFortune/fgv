@@ -61,7 +61,8 @@ async function unlockWorkspaceIfNeeded(workspace: IWorkspace): Promise<Result<vo
  */
 async function loadEditWorkspace(options: IEditCommandOptions): Promise<IWorkspace | undefined> {
   const workspaceResult = await loadWorkspace({
-    workspacePath: options.workspace
+    workspacePath: options.workspace,
+    configName: options.config
   });
 
   if (workspaceResult.isFailure()) {
@@ -96,6 +97,7 @@ function createAddSubcommand(): Command {
     .option('-f, --from-file <path>', 'Import entity from a JSON or YAML file')
     .option('-c, --collection <id>', 'Target collection ID')
     .option('-d, --device-name <name>', 'Device name for this instance')
+    .option('--config <name>', 'Configuration name (e.g. debug)')
     .action(async (options: IAddCommandOptions) => {
       const workspace = await loadEditWorkspace(options);
       if (!workspace) {
@@ -132,6 +134,7 @@ function createUpdateSubcommand(): Command {
     .option('-f, --from-file <path>', 'Import updated entity from a JSON or YAML file')
     .option('-c, --collection <id>', 'Collection ID override')
     .option('-d, --device-name <name>', 'Device name for this instance')
+    .option('--config <name>', 'Configuration name (e.g. debug)')
     .action(async (entityId: string, options: IUpdateCommandOptions) => {
       const workspace = await loadEditWorkspace(options);
       if (!workspace) {
@@ -181,6 +184,7 @@ export function createEditCommand(): Command {
     .requiredOption('-w, --workspace <path>', 'Path to workspace directory')
     .option('-c, --collection <id>', 'Target collection ID')
     .option('-d, --device-name <name>', 'Device name for this instance')
+    .option('--config <name>', 'Configuration name (e.g. debug)')
     .action(async (options: IEditCommandOptions & { collection?: string }) => {
       const workspace = await loadEditWorkspace(options);
       if (!workspace) {
