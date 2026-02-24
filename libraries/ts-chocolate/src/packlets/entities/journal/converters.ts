@@ -81,7 +81,7 @@ export const resolvedSlotType: Converter<ResolvedSlotType> = Converters.enumerat
  * @public
  */
 export const resolvedFillingSlotEntity: Converter<IResolvedFillingSlotEntity> =
-  Converters.object<IResolvedFillingSlotEntity>({
+  Converters.strictObject<IResolvedFillingSlotEntity>({
     slotType: Converters.literal('recipe'),
     slotId: CommonConverters.slotId,
     fillingId: CommonConverters.fillingId
@@ -92,7 +92,7 @@ export const resolvedFillingSlotEntity: Converter<IResolvedFillingSlotEntity> =
  * @public
  */
 export const resolvedIngredientSlotEntity: Converter<IResolvedIngredientSlotEntity> =
-  Converters.object<IResolvedIngredientSlotEntity>({
+  Converters.strictObject<IResolvedIngredientSlotEntity>({
     slotType: Converters.literal('ingredient'),
     slotId: CommonConverters.slotId,
     ingredientId: CommonConverters.ingredientId
@@ -168,7 +168,7 @@ export const anyJournalConfectionVariation: Converter<AnyJournalConfectionVariat
  * @public
  */
 export const producedFillingIngredientEntity: Converter<IProducedFillingIngredientEntity> =
-  Converters.object<IProducedFillingIngredientEntity>({
+  Converters.strictObject<IProducedFillingIngredientEntity>({
     ingredientId: CommonConverters.ingredientId,
     amount: CommonConverters.measurement,
     unit: CommonConverters.measurementUnit.optional(),
@@ -181,7 +181,7 @@ export const producedFillingIngredientEntity: Converter<IProducedFillingIngredie
  * @public
  */
 export const producedFillingEntity: Converter<IProducedFillingEntity> =
-  Converters.object<IProducedFillingEntity>({
+  Converters.strictObject<IProducedFillingEntity>({
     variationId: CommonConverters.fillingRecipeVariationId,
     scaleFactor: Converters.number,
     targetWeight: CommonConverters.measurement,
@@ -199,7 +199,7 @@ export const producedFillingEntity: Converter<IProducedFillingEntity> =
  * @public
  */
 export const producedMoldedBonBonEntity: Converter<IProducedMoldedBonBonEntity> =
-  Converters.object<IProducedMoldedBonBonEntity>({
+  Converters.strictObject<IProducedMoldedBonBonEntity>({
     confectionType: Converters.literal('molded-bonbon'),
     variationId: CommonConverters.confectionRecipeVariationId,
     yield: confectionYieldConverter,
@@ -217,7 +217,7 @@ export const producedMoldedBonBonEntity: Converter<IProducedMoldedBonBonEntity> 
  * @public
  */
 export const producedBarTruffleEntity: Converter<IProducedBarTruffleEntity> =
-  Converters.object<IProducedBarTruffleEntity>({
+  Converters.strictObject<IProducedBarTruffleEntity>({
     confectionType: Converters.literal('bar-truffle'),
     variationId: CommonConverters.confectionRecipeVariationId,
     yield: confectionYieldConverter,
@@ -232,7 +232,7 @@ export const producedBarTruffleEntity: Converter<IProducedBarTruffleEntity> =
  * @public
  */
 export const producedRolledTruffleEntity: Converter<IProducedRolledTruffleEntity> =
-  Converters.object<IProducedRolledTruffleEntity>({
+  Converters.strictObject<IProducedRolledTruffleEntity>({
     confectionType: Converters.literal('rolled-truffle'),
     variationId: CommonConverters.confectionRecipeVariationId,
     yield: confectionYieldConverter,
@@ -267,7 +267,7 @@ export const anyProducedConfectionEntity: Converter<AnyProducedConfectionEntity>
  * @public
  */
 export const fillingEditJournalEntryEntity: Converter<IFillingEditJournalEntryEntity> =
-  Converters.object<IFillingEditJournalEntryEntity>({
+  Converters.strictObject<IFillingEditJournalEntryEntity>({
     type: Converters.literal('filling-edit'),
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
@@ -283,7 +283,7 @@ export const fillingEditJournalEntryEntity: Converter<IFillingEditJournalEntryEn
  * @public
  */
 export const confectionEditJournalEntryEntity: Converter<IConfectionEditJournalEntryEntity> =
-  Converters.object<IConfectionEditJournalEntryEntity>({
+  Converters.strictObject<IConfectionEditJournalEntryEntity>({
     type: Converters.literal('confection-edit'),
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
@@ -299,7 +299,7 @@ export const confectionEditJournalEntryEntity: Converter<IConfectionEditJournalE
  * @public
  */
 export const fillingProductionJournalEntryEntity: Converter<IFillingProductionJournalEntryEntity> =
-  Converters.object<IFillingProductionJournalEntryEntity>({
+  Converters.strictObject<IFillingProductionJournalEntryEntity>({
     type: Converters.literal('filling-production'),
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
@@ -317,7 +317,7 @@ export const fillingProductionJournalEntryEntity: Converter<IFillingProductionJo
  * @public
  */
 export const confectionProductionJournalEntryEntity: Converter<IConfectionProductionJournalEntryEntity> =
-  Converters.object<IConfectionProductionJournalEntryEntity>({
+  Converters.strictObject<IConfectionProductionJournalEntryEntity>({
     type: Converters.literal('confection-production'),
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
@@ -335,7 +335,7 @@ export const confectionProductionJournalEntryEntity: Converter<IConfectionProduc
  * @public
  */
 export const groupNotesJournalEntryEntity: Converter<IGroupNotesJournalEntryEntity> =
-  Converters.object<IGroupNotesJournalEntryEntity>({
+  Converters.strictObject<IGroupNotesJournalEntryEntity>({
     type: Converters.literal('group-notes'),
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,

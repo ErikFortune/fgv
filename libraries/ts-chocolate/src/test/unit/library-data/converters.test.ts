@@ -205,21 +205,15 @@ describe('LibraryData.Converters', () => {
       expect(collectionConverter.convert(123)).toFail();
     });
 
-    test('ignores extra fields not in schema', () => {
-      // The collection converter uses Converters.object (not strictObject)
-      // because it has optional fields like metadata. Extra properties are ignored.
+    test('rejects extra fields not in schema', () => {
       const input = {
         id: 'test-collection',
         isMutable: true,
         items: {},
-        extraField: 'should be ignored'
+        extraField: 'should be rejected'
       };
 
-      expect(collectionConverter.convert(input)).toSucceedAndSatisfy((collection) => {
-        expect(collection.id).toBe('test-collection');
-        // extraField is not included in the result
-        expect(Object.keys(collection)).not.toContain('extraField');
-      });
+      expect(collectionConverter.convert(input)).toFailWith(/unexpected property/);
     });
   });
 });

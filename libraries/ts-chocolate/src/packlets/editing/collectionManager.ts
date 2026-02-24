@@ -83,7 +83,7 @@ function maxLengthString(maxLength: number, fieldName: string): Converter<string
  * - tags: optional array of strings
  */
 const validatedMetadataConverter: Converter<ICollectionFileMetadata> =
-  Converters.object<ICollectionFileMetadata>({
+  Converters.strictObject<ICollectionFileMetadata>({
     name: trimmedNonEmptyString(200, 'Collection name').optional(),
     description: maxLengthString(2000, 'Collection description').optional(),
     secretName: trimmedNonEmptyString(100, 'Secret name').optional(),

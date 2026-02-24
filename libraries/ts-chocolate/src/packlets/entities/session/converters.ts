@@ -71,7 +71,7 @@ export const persistedSessionStatus: Converter<PersistedSessionStatus> =
  * @public
  */
 export const persistedSessionDestinationEntity: Converter<ISessionDestinationEntity> =
-  Converters.object<ISessionDestinationEntity>({
+  Converters.strictObject<ISessionDestinationEntity>({
     defaultCollectionId: CommonConverters.collectionId.optional(),
     overrideCollectionId: CommonConverters.collectionId.optional()
   });
@@ -86,7 +86,7 @@ export const persistedSessionDestinationEntity: Converter<ISessionDestinationEnt
  */
 export const serializedFillingHistoryEntity: Converter<
   ISerializedEditingHistoryEntity<IProducedFillingEntity>
-> = Converters.object<ISerializedEditingHistoryEntity<IProducedFillingEntity>>({
+> = Converters.strictObject<ISerializedEditingHistoryEntity<IProducedFillingEntity>>({
   current: producedFillingConverter,
   original: producedFillingConverter,
   undoStack: Converters.arrayOf(producedFillingConverter),
@@ -99,7 +99,7 @@ export const serializedFillingHistoryEntity: Converter<
  */
 export const serializedConfectionHistoryEntity: Converter<
   ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>
-> = Converters.object<ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>>({
+> = Converters.strictObject<ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>>({
   current: anyProducedConfectionConverter,
   original: anyProducedConfectionConverter,
   undoStack: Converters.arrayOf(anyProducedConfectionConverter),
@@ -124,7 +124,7 @@ export const childSessionIds: Converter<Readonly<Record<SlotId, SessionId>>> = C
  * @public
  */
 export const fillingSessionEntity: Converter<IFillingSessionEntity> =
-  Converters.object<IFillingSessionEntity>({
+  Converters.strictObject<IFillingSessionEntity>({
     baseId: CommonConverters.baseSessionId,
     sessionType: Converters.literal('filling'),
     status: persistedSessionStatus,
@@ -143,7 +143,7 @@ export const fillingSessionEntity: Converter<IFillingSessionEntity> =
  * @public
  */
 export const confectionSessionEntity: Converter<IConfectionSessionEntity> =
-  Converters.object<IConfectionSessionEntity>({
+  Converters.strictObject<IConfectionSessionEntity>({
     baseId: CommonConverters.baseSessionId,
     sessionType: Converters.literal('confection'),
     status: persistedSessionStatus,

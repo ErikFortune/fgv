@@ -69,7 +69,7 @@ export const removeJsonExtension: Converter<string> = removeExtension(['.json'])
  * @public
  */
 export const collectionFileMetadata: Converter<ICollectionFileMetadata> =
-  Converters.object<ICollectionFileMetadata>({
+  Converters.strictObject<ICollectionFileMetadata>({
     secretName: Converters.string.optional(),
     name: Converters.string.optional(),
     description: Converters.string.optional(),
@@ -83,7 +83,7 @@ export const collectionFileMetadata: Converter<ICollectionFileMetadata> =
  * @public
  */
 export const collectionRuntimeMetadata: Converter<ICollectionRuntimeMetadata> =
-  Converters.object<ICollectionRuntimeMetadata>({
+  Converters.strictObject<ICollectionRuntimeMetadata>({
     sourceName: Converters.string,
     secretName: Converters.string.optional(),
     name: Converters.string.optional(),
@@ -101,7 +101,7 @@ export const collectionRuntimeMetadata: Converter<ICollectionRuntimeMetadata> =
 export function collectionSourceFile<T>(
   itemConverter: Converter<T> | Validator<T>
 ): Converter<ICollectionSourceFile<T>> {
-  return Converters.object<ICollectionSourceFile<T>>({
+  return Converters.strictObject<ICollectionSourceFile<T>>({
     metadata: collectionFileMetadata.optional(),
     items: Converters.recordOf(itemConverter)
   });
@@ -127,7 +127,7 @@ export interface ICollectionConverterParams<TCOLLECTIONID extends string, TITEMI
 export function collection<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(
   params: ICollectionConverterParams<TCOLLECTIONID, TITEMID, TITEM>
 ): Converter<ICollection<TITEM, TCOLLECTIONID, TITEMID>> {
-  return Converters.object<ICollection<TITEM, TCOLLECTIONID, TITEMID>>({
+  return Converters.strictObject<ICollection<TITEM, TCOLLECTIONID, TITEMID>>({
     id: params.collectionIdConverter,
     isMutable: Converters.boolean,
     items: Converters.recordOf(params.itemConverter, { keyConverter: params.itemIdConverter }),
@@ -144,7 +144,7 @@ export function collection<TCOLLECTIONID extends string, TITEMID extends string,
  * @public
  */
 export const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata> =
-  Converters.object<IEncryptedCollectionMetadata>({
+  Converters.strictObject<IEncryptedCollectionMetadata>({
     collectionId: Converters.string.optional(),
     description: Converters.string.optional(),
     itemCount: Converters.number.optional()

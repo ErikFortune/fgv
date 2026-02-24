@@ -92,7 +92,7 @@ export const externalLibraryRef: Converter<ExternalLibraryRef> = Converters.stri
  * Converter for {@link IScalingDefaults}.
  * @public
  */
-export const scalingDefaults: Converter<IScalingDefaults> = Converters.object<IScalingDefaults>({
+export const scalingDefaults: Converter<IScalingDefaults> = Converters.strictObject<IScalingDefaults>({
   weightUnit: CommonConverters.weightUnit.optional(),
   measurementUnit: CommonConverters.measurementUnit.optional(),
   batchMultiplier: Converters.number.optional(),
@@ -103,19 +103,20 @@ export const scalingDefaults: Converter<IScalingDefaults> = Converters.object<IS
  * Converter for {@link IWorkflowPreferences}.
  * @public
  */
-export const workflowPreferences: Converter<IWorkflowPreferences> = Converters.object<IWorkflowPreferences>({
-  autoSaveIntervalSeconds: Converters.number.optional(),
-  confirmAbandon: Converters.boolean.optional(),
-  showPercentages: Converters.boolean.optional(),
-  autoExpandIngredients: Converters.boolean.optional(),
-  adaptedRecipeNameSuffix: Converters.string.optional()
-});
+export const workflowPreferences: Converter<IWorkflowPreferences> =
+  Converters.strictObject<IWorkflowPreferences>({
+    autoSaveIntervalSeconds: Converters.number.optional(),
+    confirmAbandon: Converters.boolean.optional(),
+    showPercentages: Converters.boolean.optional(),
+    autoExpandIngredients: Converters.boolean.optional(),
+    adaptedRecipeNameSuffix: Converters.string.optional()
+  });
 
 /**
  * Converter for {@link IToolSettings}.
  * @public
  */
-export const toolSettings: Converter<IToolSettings> = Converters.object<IToolSettings>({
+export const toolSettings: Converter<IToolSettings> = Converters.strictObject<IToolSettings>({
   scaling: scalingDefaults.optional(),
   workflow: workflowPreferences.optional()
 });
@@ -129,7 +130,7 @@ export const toolSettings: Converter<IToolSettings> = Converters.object<IToolSet
  * @public
  */
 export const defaultCollectionTargets: Converter<IDefaultCollectionTargets> =
-  Converters.object<IDefaultCollectionTargets>({
+  Converters.strictObject<IDefaultCollectionTargets>({
     journals: CommonConverters.collectionId.optional(),
     sessions: CommonConverters.collectionId.optional(),
     fillings: CommonConverters.collectionId.optional(),
@@ -184,7 +185,7 @@ const subLibraryLoadSpec: Converter<boolean | Partial<Record<SubLibraryId | 'def
  * @public
  */
 export const externalLibraryRefConfig: Converter<IExternalLibraryRefConfig> =
-  Converters.object<IExternalLibraryRefConfig>({
+  Converters.strictObject<IExternalLibraryRefConfig>({
     name: Converters.string,
     ref: externalLibraryRef,
     load: subLibraryLoadSpec.optional(),
@@ -218,7 +219,7 @@ export const storageRootId: Converter<StorageRootId> = Converters.string.map((s)
  * Converter for {@link ILocalDirectoryRef}.
  * @public
  */
-export const localDirectoryRef: Converter<ILocalDirectoryRef> = Converters.object<ILocalDirectoryRef>({
+export const localDirectoryRef: Converter<ILocalDirectoryRef> = Converters.strictObject<ILocalDirectoryRef>({
   label: Converters.string,
   mutable: Converters.boolean,
   load: subLibraryLoadSpec.optional()
@@ -260,7 +261,7 @@ interface IDefaultStorageTargetsRaw {
 }
 
 const defaultStorageTargetsRaw: Converter<IDefaultStorageTargetsRaw> =
-  Converters.object<IDefaultStorageTargetsRaw>({
+  Converters.strictObject<IDefaultStorageTargetsRaw>({
     globalDefault: storageRootId.optional(),
     libraryDefault: storageRootId.optional(),
     userDataDefault: storageRootId.optional(),
@@ -292,7 +293,7 @@ export const defaultStorageTargets: Converter<IDefaultStorageTargets> =
  * @public
  */
 export const deviceFileTreeOverrides: Converter<IDeviceFileTreeOverrides> =
-  Converters.object<IDeviceFileTreeOverrides>({
+  Converters.strictObject<IDeviceFileTreeOverrides>({
     userLibraryPath: Converters.string.optional(),
     keyStorePath: Converters.string.optional()
   });
@@ -301,7 +302,7 @@ export const deviceFileTreeOverrides: Converter<IDeviceFileTreeOverrides> =
  * Converter for partial tool settings (for device overrides).
  * @public
  */
-export const partialToolSettings: Converter<Partial<IToolSettings>> = Converters.object<
+export const partialToolSettings: Converter<Partial<IToolSettings>> = Converters.strictObject<
   Partial<IToolSettings>
 >({
   scaling: scalingDefaults.optional(),
@@ -342,10 +343,11 @@ export const settingsFileLocation: Converter<ISettingsFileLocation> =
  * Converter for {@link ILocalStorageConfig}.
  * @public
  */
-export const localStorageConfig: Converter<ILocalStorageConfig> = Converters.object<ILocalStorageConfig>({
-  library: Converters.boolean.optional(),
-  userData: Converters.boolean.optional()
-});
+export const localStorageConfig: Converter<ILocalStorageConfig> =
+  Converters.strictObject<ILocalStorageConfig>({
+    library: Converters.boolean.optional(),
+    userData: Converters.boolean.optional()
+  });
 
 // ============================================================================
 // Logging Settings Converter
@@ -369,7 +371,7 @@ export const reporterLogLevel: Converter<Logging.ReporterLogLevel> =
  * Converter for {@link ILogSettings}.
  * @public
  */
-export const logSettings: Converter<ILogSettings> = Converters.object<ILogSettings>({
+export const logSettings: Converter<ILogSettings> = Converters.strictObject<ILogSettings>({
   storeLevel: reporterLogLevel.optional(),
   displayLevel: reporterLogLevel.optional(),
   toastLevel: reporterLogLevel.optional()
@@ -383,7 +385,7 @@ export const logSettings: Converter<ILogSettings> = Converters.object<ILogSettin
  * Converter for {@link IBootstrapSettings}.
  * @public
  */
-export const bootstrapSettings: Converter<IBootstrapSettings> = Converters.object<IBootstrapSettings>({
+export const bootstrapSettings: Converter<IBootstrapSettings> = Converters.strictObject<IBootstrapSettings>({
   schemaVersion: schemaVersion,
   includeBuiltIn: Converters.boolean.optional(),
   localStorage: localStorageConfig.optional(),
@@ -403,9 +405,10 @@ export const bootstrapSettings: Converter<IBootstrapSettings> = Converters.objec
  * Converter for {@link IPreferencesSettings}.
  * @public
  */
-export const preferencesSettings: Converter<IPreferencesSettings> = Converters.object<IPreferencesSettings>({
-  schemaVersion: schemaVersion,
-  defaultTargets: defaultCollectionTargets.optional(),
-  defaultStorageTargets: defaultStorageTargets.optional(),
-  tools: toolSettings.optional()
-});
+export const preferencesSettings: Converter<IPreferencesSettings> =
+  Converters.strictObject<IPreferencesSettings>({
+    schemaVersion: schemaVersion,
+    defaultTargets: defaultCollectionTargets.optional(),
+    defaultStorageTargets: defaultStorageTargets.optional(),
+    tools: toolSettings.optional()
+  });

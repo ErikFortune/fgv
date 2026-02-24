@@ -732,7 +732,7 @@ export const ingredientPhase: Converter<IngredientPhase> = Converters.enumerated
  * @public
  */
 export const measurementUnitOption: Converter<IMeasurementUnitOption> =
-  Converters.object<IMeasurementUnitOption>({
+  Converters.strictObject<IMeasurementUnitOption>({
     id: measurementUnit
   });
 
@@ -759,7 +759,7 @@ export function optionsWithPreferred<TOption extends IHasId<TId>, TId extends st
 ): Converter<IOptionsWithPreferred<TOption, TId>> {
   return Converters.generic<IOptionsWithPreferred<TOption, TId>>(
     (from: unknown): Result<IOptionsWithPreferred<TOption, TId>> => {
-      const baseConverter = Converters.object<IOptionsWithPreferred<TOption, TId>>({
+      const baseConverter = Converters.strictObject<IOptionsWithPreferred<TOption, TId>>({
         options: Converters.arrayOf(optionConverter),
         preferredId: idConverter.optional()
       });
@@ -786,7 +786,7 @@ export function idsWithPreferred<TId extends string>(
   context?: string
 ): Converter<IIdsWithPreferred<TId>> {
   return Converters.generic<IIdsWithPreferred<TId>>((from: unknown): Result<IIdsWithPreferred<TId>> => {
-    const baseConverter = Converters.object<IIdsWithPreferred<TId>>({
+    const baseConverter = Converters.strictObject<IIdsWithPreferred<TId>>({
       slotId: slotId.optional(),
       ids: Converters.arrayOf(idConverter),
       preferredId: idConverter.optional()
@@ -812,7 +812,7 @@ export const noteCategory: Converter<NoteCategory> = Converters.generic(toNoteCa
  * Converter for {@link Model.ICategorizedNote | ICategorizedNote}.
  * @public
  */
-export const categorizedNote: Converter<ICategorizedNote> = Converters.object<ICategorizedNote>({
+export const categorizedNote: Converter<ICategorizedNote> = Converters.strictObject<ICategorizedNote>({
   category: noteCategory,
   note: Converters.string
 });
@@ -833,7 +833,7 @@ export const groupName: Converter<GroupName> = Converters.generic(toGroupName);
  * @public
  */
 export function refWithNotes<TId extends string>(idConverter: Converter<TId>): Converter<IRefWithNotes<TId>> {
-  return Converters.object<IRefWithNotes<TId>>({
+  return Converters.strictObject<IRefWithNotes<TId>>({
     id: idConverter,
     notes: Converters.arrayOf(categorizedNote).optional()
   });
@@ -853,7 +853,7 @@ export const urlCategory: Converter<UrlCategory> = Converters.generic(toUrlCateg
  * Converter for {@link Model.ICategorizedUrl | ICategorizedUrl}.
  * @public
  */
-export const categorizedUrl: Converter<ICategorizedUrl> = Converters.object<ICategorizedUrl>({
+export const categorizedUrl: Converter<ICategorizedUrl> = Converters.strictObject<ICategorizedUrl>({
   category: urlCategory,
   url: Converters.string
 });

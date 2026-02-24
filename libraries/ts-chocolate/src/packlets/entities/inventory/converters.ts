@@ -191,7 +191,7 @@ export const inventoryType: Converter<InventoryType> = Converters.enumeratedValu
  * @public
  */
 export const moldInventoryEntryEntity: Converter<IMoldInventoryEntryEntity> =
-  Converters.object<IMoldInventoryEntryEntity>({
+  Converters.strictObject<IMoldInventoryEntryEntity>({
     inventoryType: Converters.literal('mold'),
     moldId: CommonConverters.moldId,
     count: Converters.number,
@@ -208,7 +208,7 @@ export const moldInventoryEntryEntity: Converter<IMoldInventoryEntryEntity> =
  * @public
  */
 export const ingredientInventoryEntryEntity: Converter<IIngredientInventoryEntryEntity> =
-  Converters.object<IIngredientInventoryEntryEntity>({
+  Converters.strictObject<IIngredientInventoryEntryEntity>({
     inventoryType: Converters.literal('ingredient'),
     ingredientId: CommonConverters.ingredientId,
     quantity: CommonConverters.measurement,
