@@ -31,9 +31,9 @@ items:
     applications: [confectionary, ganache, mousse, enrobing, molding, baking, sauces, drinks]
     certifications: [halal, kosher-dairy, vegetarian, vegan, cocoa-horizons]
     traceAllergens: [milk, soy]
-    temperingCurve:
-      meltingPoint: 45
-      workingTemperature: 31
+    temperatureCurve:
+      melt: 45
+      working: 31
     vegan: true
 
   823-milk-33:
@@ -61,9 +61,9 @@ items:
     applications: [molding, enrobing, ganache, mousse, confectionary]
     certifications: [halal, kosher-dairy, vegetarian, cocoa-horizons]
     allergens: [milk, soy]
-    temperingCurve:
-      meltingPoint: 45
-      workingTemperature: 30
+    temperatureCurve:
+      melt: 45
+      working: 30
     vegan: false
 
   w2-white-28:
@@ -90,9 +90,9 @@ items:
     applications: [ganache, mousse, confectionary, enrobing, glazes, ice-cream]
     certifications: [halal, kosher-dairy, vegetarian, gluten-free, cocoa-horizons]
     allergens: [milk, soy]
-    temperingCurve:
-      meltingPoint: 40
-      workingTemperature: 28
+    temperatureCurve:
+      melt: 40
+      working: 28
     vegan: false
 
   70-30-38-dark-70:
@@ -120,9 +120,9 @@ items:
     applications: [cremeux, sauces, baking, ganache, mousse, cookies]
     certifications: [halal, kosher-dairy, vegetarian, vegan, cocoa-horizons]
     traceAllergens: [soy]
-    temperingCurve:
-      meltingPoint: 45
-      workingTemperature: 32
+    temperatureCurve:
+      melt: 45
+      working: 32
     vegan: true
 
   gold-caramel-30:
@@ -148,9 +148,9 @@ items:
     applications: [confectionary, frozen-desserts, baking, ice-cream, ganache, mousse]
     certifications: [halal, kosher-dairy, vegetarian, gluten-free, non-gmo, cocoa-horizons]
     allergens: [milk, soy]
-    temperingCurve:
-      meltingPoint: 40
-      workingTemperature: 28
+    temperatureCurve:
+      melt: 40
+      working: 28
     vegan: false
 
   ruby-rb1-33:
@@ -177,9 +177,9 @@ items:
     applications: [pralines, frozen-desserts, mousse, glazes, confectionary]
     certifications: [halal, kosher-dairy, vegetarian, cocoa-horizons]
     allergens: [milk, soy]
-    temperingCurve:
-      meltingPoint: 40
-      workingTemperature: 28
+    temperatureCurve:
+      melt: 40
+      working: 28
     vegan: false
 
   845-milk-32:
@@ -207,7 +207,7 @@ items:
     applications: [molding, enrobing, ganache, confectionary, mousse]
     certifications: [halal, kosher-dairy, vegetarian, cocoa-horizons]
     allergens: [milk, soy]
-    temperingCurve:
-      meltingPoint: 45
-      workingTemperature: 30
+    temperatureCurve:
+      melt: 45
+      working: 30
     vegan: false

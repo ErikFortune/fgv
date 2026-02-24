@@ -76,9 +76,9 @@ export interface ITemperatureCurve {
   /** Temperature to fully melt chocolate */
   readonly melt: Celsius;
   /** Temperature to cool chocolate to (crystallization) */
-  readonly cool: Celsius;
+  readonly cool?: Celsius;
   /** Final working temperature */
-  readonly working: Celsius;
+  readonly working?: Celsius;
 }
 
 // ============================================================================

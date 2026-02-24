@@ -181,9 +181,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
         ],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'vegan', 'cocoa-horizons'],
         traceAllergens: ['milk', 'soy'],
-        temperingCurve: {
-          meltingPoint: 45,
-          workingTemperature: 31
+        temperatureCurve: {
+          melt: 45,
+          working: 31
         },
         vegan: true
       },
@@ -211,9 +211,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
         applications: ['molding', 'enrobing', 'ganache', 'mousse', 'confectionary'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'cocoa-horizons'],
         allergens: ['milk', 'soy'],
-        temperingCurve: {
-          meltingPoint: 45,
-          workingTemperature: 30
+        temperatureCurve: {
+          melt: 45,
+          working: 30
         },
         vegan: false
       },
@@ -240,9 +240,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
         applications: ['ganache', 'mousse', 'confectionary', 'enrobing', 'glazes', 'ice-cream'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'gluten-free', 'cocoa-horizons'],
         allergens: ['milk', 'soy'],
-        temperingCurve: {
-          meltingPoint: 40,
-          workingTemperature: 28
+        temperatureCurve: {
+          melt: 40,
+          working: 28
         },
         vegan: false
       },
@@ -270,9 +270,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
         applications: ['cremeux', 'sauces', 'baking', 'ganache', 'mousse', 'cookies'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'vegan', 'cocoa-horizons'],
         traceAllergens: ['soy'],
-        temperingCurve: {
-          meltingPoint: 45,
-          workingTemperature: 32
+        temperatureCurve: {
+          melt: 45,
+          working: 32
         },
         vegan: true
       },
@@ -298,9 +298,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
         applications: ['confectionary', 'frozen-desserts', 'baking', 'ice-cream', 'ganache', 'mousse'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'gluten-free', 'non-gmo', 'cocoa-horizons'],
         allergens: ['milk', 'soy'],
-        temperingCurve: {
-          meltingPoint: 40,
-          workingTemperature: 28
+        temperatureCurve: {
+          melt: 40,
+          working: 28
         },
         vegan: false
       },
@@ -327,9 +327,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
         applications: ['pralines', 'frozen-desserts', 'mousse', 'glazes', 'confectionary'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'cocoa-horizons'],
         allergens: ['milk', 'soy'],
-        temperingCurve: {
-          meltingPoint: 40,
-          workingTemperature: 28
+        temperatureCurve: {
+          melt: 40,
+          working: 28
         },
         vegan: false
       },
@@ -357,9 +357,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
         applications: ['molding', 'enrobing', 'ganache', 'confectionary', 'mousse'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'cocoa-horizons'],
         allergens: ['milk', 'soy'],
-        temperingCurve: {
-          meltingPoint: 45,
-          workingTemperature: 30
+        temperatureCurve: {
+          melt: 45,
+          working: 30
         },
         vegan: false
       }
@@ -1096,7 +1096,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
           otherFats: 2
         },
         fluidityStars: 4,
-        viscosityMcm: 65,
+        viscosityMcM: 65,
         description:
           'Dark and rich chocolate with a smooth, creamy mouthfeel. Full-bodied throughout with a clean, fresh finish',
         manufacturer: 'Guittard',
@@ -1113,9 +1113,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
           'gluten-free'
         ],
         traceAllergens: ['milk'],
-        temperingCurve: {
-          meltingPoint: 45,
-          workingTemperature: 31
+        temperatureCurve: {
+          melt: 45,
+          working: 31
         },
         vegan: true
       },
@@ -1155,9 +1155,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
           'gluten-free'
         ],
         traceAllergens: ['milk'],
-        temperingCurve: {
-          meltingPoint: 45,
-          workingTemperature: 31
+        temperatureCurve: {
+          melt: 45,
+          working: 31
         },
         vegan: true
       },
@@ -1191,8 +1191,8 @@ export const ingredientCollections: Record<string, JsonObject> = {
           'gluten-free'
         ],
         allergens: ['milk'],
-        temperingCurve: {
-          meltingPoint: 45
+        temperatureCurve: {
+          melt: 45
         },
         vegan: false
       },
@@ -1226,9 +1226,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
           'gluten-free'
         ],
         traceAllergens: ['milk'],
-        temperingCurve: {
-          meltingPoint: 45,
-          workingTemperature: 31
+        temperatureCurve: {
+          melt: 45,
+          working: 31
         },
         vegan: true
       },
@@ -1262,9 +1262,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
           'gluten-free'
         ],
         traceAllergens: ['milk'],
-        temperingCurve: {
-          meltingPoint: 45,
-          workingTemperature: 31
+        temperatureCurve: {
+          melt: 45,
+          working: 31
         },
         vegan: true
       },
@@ -1297,9 +1297,9 @@ export const ingredientCollections: Record<string, JsonObject> = {
           'gluten-free'
         ],
         allergens: ['milk'],
-        temperingCurve: {
-          meltingPoint: 45,
-          workingTemperature: 30
+        temperatureCurve: {
+          melt: 45,
+          working: 30
         },
         vegan: false
       }

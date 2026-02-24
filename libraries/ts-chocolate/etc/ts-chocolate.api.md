@@ -5995,9 +5995,9 @@ type ITasksLibraryParams = ISubLibraryParams<TasksLibrary, TaskCollectionEntryIn
 
 // @public
 interface ITemperatureCurve {
-    readonly cool: Celsius;
+    readonly cool?: Celsius;
     readonly melt: Celsius;
-    readonly working: Celsius;
+    readonly working?: Celsius;
 }
 
 // @public

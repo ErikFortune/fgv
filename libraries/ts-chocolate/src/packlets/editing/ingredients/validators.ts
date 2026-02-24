@@ -76,17 +76,19 @@ export function validateTemperatureCurve(entity: IngredientEntity): Result<true>
     return Success.with(true); // Optional field
   }
 
-  // Validate temperature sequence: melt > cool > working
-  if (curve.melt <= curve.cool) {
-    return Failure.with(
-      `temperatureCurve: melt temperature (${curve.melt}°C) must be greater than cool temperature (${curve.cool}°C)`
-    );
-  }
+  // Validate temperature sequence: melt > cool > working (cool is optional)
+  if (curve.cool !== undefined) {
+    if (curve.melt <= curve.cool) {
+      return Failure.with(
+        `temperatureCurve: melt temperature (${curve.melt}°C) must be greater than cool temperature (${curve.cool}°C)`
+      );
+    }
 
-  if (curve.cool >= curve.working) {
-    return Failure.with(
-      `temperatureCurve: cool temperature (${curve.cool}°C) must be less than working temperature (${curve.working}°C)`
-    );
+    if (curve.working !== undefined && curve.cool >= curve.working) {
+      return Failure.with(
+        `temperatureCurve: cool temperature (${curve.cool}°C) must be less than working temperature (${curve.working}°C)`
+      );
+    }
   }
 
   // Reasonable temperature ranges for chocolate
@@ -96,7 +98,7 @@ export function validateTemperatureCurve(entity: IngredientEntity): Result<true>
     );
   }
 
-  if (curve.working < 25 || curve.working > 35) {
+  if (curve.working !== undefined && (curve.working < 25 || curve.working > 35)) {
     return Failure.with(
       `temperatureCurve: working temperature ${curve.working}°C is outside reasonable range (25-35°C)`
     );

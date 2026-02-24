@@ -19,7 +19,7 @@ items:
       solids: 30
       otherFats: 2
     fluidityStars: 4
-    viscosityMcm: 65
+    viscosityMcM: 65
     description: >-
       Dark and rich chocolate with a smooth, creamy mouthfeel.
       Full-bodied throughout with a clean, fresh finish
@@ -30,9 +30,9 @@ items:
     applications: [enrobing, molding, confectionary, ganache, mousse]
     certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
     traceAllergens: [milk]
-    temperingCurve:
-      meltingPoint: 45
-      workingTemperature: 31
+    temperatureCurve:
+      melt: 45
+      working: 31
     vegan: true
 
   lever-du-soleil-61:
@@ -60,9 +60,9 @@ items:
     applications: [enrobing, molding, confectionary, ganache, mousse]
     certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
     traceAllergens: [milk]
-    temperingCurve:
-      meltingPoint: 45
-      workingTemperature: 31
+    temperatureCurve:
+      melt: 45
+      working: 31
     vegan: true
 
   creme-francaise-31:
@@ -89,8 +89,8 @@ items:
     applications: [ganache, mousse, baking, ice-cream, sorbet, confectionary, drinks]
     certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
     allergens: [milk]
-    temperingCurve:
-      meltingPoint: 45
+    temperatureCurve:
+      melt: 45
     vegan: false
 
   letoile-du-nord-64:
@@ -116,9 +116,9 @@ items:
     applications: [cremeux, ganache, mousse, baking, ice-cream, sorbet]
     certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
     traceAllergens: [milk]
-    temperingCurve:
-      meltingPoint: 45
-      workingTemperature: 31
+    temperatureCurve:
+      melt: 45
+      working: 31
     vegan: true
 
   la-nuit-noire-55:
@@ -144,9 +144,9 @@ items:
     applications: [cremeux, ganache, mousse]
     certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
     traceAllergens: [milk]
-    temperingCurve:
-      meltingPoint: 45
-      workingTemperature: 31
+    temperatureCurve:
+      melt: 45
+      working: 31
     vegan: true
 
   soleil-dor-38:
@@ -171,7 +171,7 @@ items:
     applications: [cremeux, ganache, mousse, baking, ice-cream, sorbet]
     certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
     allergens: [milk]
-    temperingCurve:
-      meltingPoint: 45
-      workingTemperature: 30
+    temperatureCurve:
+      melt: 45
+      working: 30
     vegan: false

@@ -83,7 +83,7 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - "cacaoPercentage" (REQUIRED): number 0-100
 - "fluidityStars": one of [${Model.Enums.allFluidityStars.join(', ')}]
 - "viscosityMcM": number — viscosity in degrees MacMichael
-- "temperatureCurve": object with "melt", "cool", "working" (all numbers in Celsius)
+- "temperatureCurve": object with required "melt" and optional "cool", "working" (all numbers in Celsius)
 - "beanVarieties": array of [${Model.Enums.allCacaoVarieties.map((v) => `"${v}"`).join(', ')}]
 - "applications": array of [${Model.Enums.allChocolateApplications.map((a) => `"${a}"`).join(', ')}]
 - "origins": array of strings
