@@ -329,6 +329,12 @@ export type AnyConfectionRecipeVariationEntity =
   | IBarTruffleRecipeVariationEntity
   | IRolledTruffleRecipeVariationEntity;
 
+/**
+ * Discriminator type for confection variation snapshots (e.g. in journal entries).
+ * @public
+ */
+export type ConfectionVariationType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
+
 // ============================================================================
 // Derivation Tracking
 // ============================================================================

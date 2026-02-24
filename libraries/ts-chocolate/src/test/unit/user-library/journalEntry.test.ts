@@ -193,6 +193,7 @@ describe('Journal Entry Classes', () => {
     timestamp: '2026-01-15T15:00:00Z',
     variationId: 'test.test-molded-bonbon@2026-01-01-01' as ConfectionRecipeVariationId,
     recipe: {
+      variationType: 'molded-bonbon' as const,
       variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
       createdDate: '2026-01-01',
       yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
@@ -246,6 +247,7 @@ describe('Journal Entry Classes', () => {
     timestamp: '2026-01-16T14:00:00Z',
     variationId: 'test.test-molded-bonbon@2026-01-01-01' as ConfectionRecipeVariationId,
     recipe: {
+      variationType: 'molded-bonbon' as const,
       variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
       createdDate: '2026-01-01',
       yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },

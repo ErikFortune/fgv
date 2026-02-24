@@ -109,7 +109,8 @@ describe('Journal Model', () => {
       produced: producedFilling
     };
 
-    const confectionRecipe: Confections.IMoldedBonBonRecipeVariationEntity = {
+    const confectionRecipe: Journal.IMoldedBonBonJournalVariation = {
+      variationType: 'molded-bonbon',
       variationSpec: 'v1' as Confections.IMoldedBonBonRecipeVariationEntity['variationSpec'],
       createdDate: '2026-01-15',
       yield: { count: 24 },

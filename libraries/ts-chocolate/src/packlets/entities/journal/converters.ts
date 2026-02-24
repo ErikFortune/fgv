@@ -27,8 +27,11 @@ import { Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../../common';
 import {
-  anyConfectionRecipeVariationEntity as anyConfectionVersionConverter,
-  confectionYield as confectionYieldConverter
+  barTruffleVariationFields,
+  confectionYield as confectionYieldConverter,
+  commonVariationFields,
+  moldedBonBonVariationFields,
+  rolledTruffleVariationFields
 } from '../confections/converters';
 import {
   AnyProducedConfectionEntity,
@@ -48,12 +51,16 @@ import {
 import { IProducedFillingEntity, IProducedFillingIngredientEntity } from '../fillings';
 import {
   allJournalEntryTypes,
+  AnyJournalConfectionVariation,
   AnyJournalEntryEntity,
+  IBarTruffleJournalVariation,
   IConfectionEditJournalEntryEntity,
   IConfectionProductionJournalEntryEntity,
   IFillingEditJournalEntryEntity,
   IFillingProductionJournalEntryEntity,
   IGroupNotesJournalEntryEntity,
+  IMoldedBonBonJournalVariation,
+  IRolledTruffleJournalVariation,
   JournalEntryType
 } from './model';
 
@@ -100,6 +107,56 @@ export const anyResolvedFillingSlotEntity: Converter<AnyResolvedFillingSlotEntit
   Converters.discriminatedObject<AnyResolvedFillingSlotEntity>('slotType', {
     recipe: resolvedFillingSlotEntity,
     ingredient: resolvedIngredientSlotEntity
+  });
+
+// ============================================================================
+// Journal Confection Variation Converters
+// ============================================================================
+
+/**
+ * Converter for {@link IMoldedBonBonJournalVariation} — molded bonbon variation snapshot.
+ * @public
+ */
+export const moldedBonBonJournalVariation: Converter<IMoldedBonBonJournalVariation> =
+  Converters.strictObject<IMoldedBonBonJournalVariation>({
+    ...commonVariationFields,
+    ...moldedBonBonVariationFields,
+    variationType: Converters.literal('molded-bonbon')
+  });
+
+/**
+ * Converter for {@link IBarTruffleJournalVariation} — bar truffle variation snapshot.
+ * @public
+ */
+export const barTruffleJournalVariation: Converter<IBarTruffleJournalVariation> =
+  Converters.strictObject<IBarTruffleJournalVariation>({
+    ...commonVariationFields,
+    ...barTruffleVariationFields,
+    variationType: Converters.literal('bar-truffle')
+  });
+
+/**
+ * Converter for {@link IRolledTruffleJournalVariation} — rolled truffle variation snapshot.
+ * @public
+ */
+export const rolledTruffleJournalVariation: Converter<IRolledTruffleJournalVariation> =
+  Converters.strictObject<IRolledTruffleJournalVariation>({
+    ...commonVariationFields,
+    ...rolledTruffleVariationFields,
+    variationType: Converters.literal('rolled-truffle')
+  });
+
+/**
+ * Converter for {@link AnyJournalConfectionVariation} — discriminated on `variationType`.
+ * @public
+ */
+export const anyJournalConfectionVariation: Converter<AnyJournalConfectionVariation> =
+  Converters.discriminatedObject<AnyJournalConfectionVariation>('variationType', {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    'molded-bonbon': moldedBonBonJournalVariation,
+    'bar-truffle': barTruffleJournalVariation,
+    'rolled-truffle': rolledTruffleJournalVariation
+    /* eslint-enable @typescript-eslint/naming-convention */
   });
 
 // ============================================================================
@@ -231,8 +288,8 @@ export const confectionEditJournalEntryEntity: Converter<IConfectionEditJournalE
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
     variationId: CommonConverters.confectionRecipeVariationId,
-    recipe: anyConfectionVersionConverter,
-    updated: anyConfectionVersionConverter.optional(),
+    recipe: anyJournalConfectionVariation,
+    updated: anyJournalConfectionVariation.optional(),
     updatedId: CommonConverters.confectionRecipeVariationId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
@@ -265,8 +322,8 @@ export const confectionProductionJournalEntryEntity: Converter<IConfectionProduc
     baseId: CommonConverters.baseJournalId,
     timestamp: Converters.string,
     variationId: CommonConverters.confectionRecipeVariationId,
-    recipe: anyConfectionVersionConverter,
-    updated: anyConfectionVersionConverter.optional(),
+    recipe: anyJournalConfectionVariation,
+    updated: anyJournalConfectionVariation.optional(),
     updatedId: CommonConverters.confectionRecipeVariationId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     yield: confectionYieldConverter,

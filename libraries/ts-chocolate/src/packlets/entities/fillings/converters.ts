@@ -46,16 +46,17 @@ import {
  * Converter for {@link Entities.Fillings.IIngredientModifiers | IIngredientModifiers}.
  * @public
  */
-export const ingredientModifiers: Converter<IIngredientModifiers> = Converters.object<IIngredientModifiers>({
-  spoonLevel: CommonConverters.spoonLevel.optional(),
-  toTaste: Converters.boolean.optional(),
-  yieldFactor: Converters.number
-    .withConstraint((n) => n >= 0.0 && n <= 5.0, { description: 'must be between 0.0 and 5.0' })
-    .optional(),
-  processNote: Converters.string
-    .withConstraint((s) => s.length <= 200, { description: 'must be at most 200 characters' })
-    .optional()
-});
+export const ingredientModifiers: Converter<IIngredientModifiers> =
+  Converters.strictObject<IIngredientModifiers>({
+    spoonLevel: CommonConverters.spoonLevel.optional(),
+    toTaste: Converters.boolean.optional(),
+    yieldFactor: Converters.number
+      .withConstraint((n) => n >= 0.0 && n <= 5.0, { description: 'must be between 0.0 and 5.0' })
+      .optional(),
+    processNote: Converters.string
+      .withConstraint((s) => s.length <= 200, { description: 'must be at most 200 characters' })
+      .optional()
+  });
 
 /**
  * Converter for {@link Entities.Fillings.IFillingIngredientEntity | IFillingIngredientEntity}.
@@ -63,7 +64,7 @@ export const ingredientModifiers: Converter<IIngredientModifiers> = Converters.o
  * @public
  */
 export const fillingIngredientEntity: Converter<IFillingIngredientEntity> =
-  Converters.object<IFillingIngredientEntity>({
+  Converters.strictObject<IFillingIngredientEntity>({
     ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'fillingIngredient'),
     amount: CommonConverters.measurement,
     unit: CommonConverters.measurementUnit.optional(),
@@ -87,7 +88,7 @@ export const fillingCategory: Converter<FillingCategory> = Converters.enumerated
  * Converter for {@link Entities.Fillings.IFillingRating | IFillingRating}
  * @public
  */
-export const fillingRating: Converter<IFillingRating> = Converters.object<IFillingRating>({
+export const fillingRating: Converter<IFillingRating> = Converters.strictObject<IFillingRating>({
   category: ratingCategory,
   score: CommonConverters.ratingScore,
   notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
@@ -98,7 +99,7 @@ export const fillingRating: Converter<IFillingRating> = Converters.object<IFilli
  * @public
  */
 export const fillingDerivationEntity: Converter<IFillingDerivationEntity> =
-  Converters.object<IFillingDerivationEntity>({
+  Converters.strictObject<IFillingDerivationEntity>({
     sourceVariationId: CommonConverters.fillingRecipeVariationId,
     derivedDate: Converters.string, // ISO 8601 date string
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
@@ -125,7 +126,7 @@ export const procedureEntities: Converter<Model.IOptionsWithPreferred<IProcedure
  * @public
  */
 export const fillingRecipeVariationEntity: Converter<IFillingRecipeVariationEntity> =
-  Converters.object<IFillingRecipeVariationEntity>({
+  Converters.strictObject<IFillingRecipeVariationEntity>({
     variationSpec: CommonConverters.fillingRecipeVariationSpec,
     name: Converters.string.optional(),
     createdDate: Converters.string, // ISO 8601 date string
@@ -142,7 +143,7 @@ export const fillingRecipeVariationEntity: Converter<IFillingRecipeVariationEnti
  * @public
  */
 export const fillingRecipeRawEntity: Converter<IFillingRecipeEntity> =
-  Converters.object<IFillingRecipeEntity>({
+  Converters.strictObject<IFillingRecipeEntity>({
     baseId: CommonConverters.baseFillingId,
     name: CommonConverters.fillingName,
     category: fillingCategory,
@@ -183,7 +184,7 @@ export const fillingRecipeEntity: Converter<IFillingRecipeEntity> = Converters.g
  * Converter for {@link Entities.Fillings.IScalingRefEntity | IScalingRefEntity} (lightweight reference-based format)
  * @public
  */
-export const scalingRefEntity: Converter<IScalingRefEntity> = Converters.object<IScalingRefEntity>({
+export const scalingRefEntity: Converter<IScalingRefEntity> = Converters.strictObject<IScalingRefEntity>({
   sourceVariationId: CommonConverters.fillingRecipeVariationId,
   scaleFactor: Converters.number,
   targetWeight: CommonConverters.measurement,
@@ -195,7 +196,7 @@ export const scalingRefEntity: Converter<IScalingRefEntity> = Converters.object<
  * @public
  */
 export const ingredientSnapshotEntity: Converter<IIngredientSnapshotEntity> =
-  Converters.object<IIngredientSnapshotEntity>({
+  Converters.strictObject<IIngredientSnapshotEntity>({
     ingredientId: CommonConverters.ingredientId,
     originalAmount: CommonConverters.measurement,
     scaledAmount: CommonConverters.measurement,

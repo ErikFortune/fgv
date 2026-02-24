@@ -32,11 +32,65 @@ import {
   Model as CommonModel
 } from '../../common';
 import {
-  AnyConfectionRecipeVariationEntity,
   AnyProducedConfectionEntity,
-  IConfectionYield
+  ConfectionVariationType,
+  IBarTruffleRecipeVariationEntity,
+  IConfectionYield,
+  IMoldedBonBonRecipeVariationEntity,
+  IRolledTruffleRecipeVariationEntity
 } from '../confections';
 import { IFillingRecipeVariationEntity, IProducedFillingEntity } from '../fillings';
+
+// ============================================================================
+// Journal Confection Variation Types (with variationType discriminator)
+// ============================================================================
+
+/**
+ * Molded bonbon variation snapshot for journal entries.
+ * Extends the entity interface with a `variationType` discriminator.
+ * @public
+ */
+export interface IMoldedBonBonJournalVariation extends IMoldedBonBonRecipeVariationEntity {
+  readonly variationType: 'molded-bonbon';
+}
+
+/**
+ * Bar truffle variation snapshot for journal entries.
+ * Extends the entity interface with a `variationType` discriminator.
+ * @public
+ */
+export interface IBarTruffleJournalVariation extends IBarTruffleRecipeVariationEntity {
+  readonly variationType: 'bar-truffle';
+}
+
+/**
+ * Rolled truffle variation snapshot for journal entries.
+ * Extends the entity interface with a `variationType` discriminator.
+ * @public
+ */
+export interface IRolledTruffleJournalVariation extends IRolledTruffleRecipeVariationEntity {
+  readonly variationType: 'rolled-truffle';
+}
+
+/**
+ * Union of all journal confection variation snapshots.
+ * All members carry a `variationType` discriminator for safe parsing.
+ * @public
+ */
+export type AnyJournalConfectionVariation =
+  | IMoldedBonBonJournalVariation
+  | IBarTruffleJournalVariation
+  | IRolledTruffleJournalVariation;
+
+/**
+ * All possible {@link ConfectionVariationType} values.
+ * @public
+ */
+export const allConfectionVariationTypes: ConfectionVariationType[] = [
+  'molded-bonbon',
+  'bar-truffle',
+  'rolled-truffle'
+];
 
 /**
  * Types of journal entries.
@@ -98,7 +152,7 @@ export interface IFillingEditJournalEntryEntity
  * @public
  */
 export interface IConfectionEditJournalEntryEntity
-  extends IJournalEntryEntityBase<AnyConfectionRecipeVariationEntity, ConfectionRecipeVariationId> {
+  extends IJournalEntryEntityBase<AnyJournalConfectionVariation, ConfectionRecipeVariationId> {
   readonly type: 'confection-edit';
 }
 
@@ -120,7 +174,7 @@ export interface IFillingProductionJournalEntryEntity
  * @public
  */
 export interface IConfectionProductionJournalEntryEntity
-  extends IJournalEntryEntityBase<AnyConfectionRecipeVariationEntity, ConfectionRecipeVariationId> {
+  extends IJournalEntryEntityBase<AnyJournalConfectionVariation, ConfectionRecipeVariationId> {
   readonly type: 'confection-production';
   /** Yield specification for this production run */
   readonly yield: IConfectionYield;

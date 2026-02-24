@@ -4,7 +4,7 @@
 
 Journal entry for confection edits.
 
-**Extends:** [`IJournalEntryEntityBase<AnyConfectionRecipeVariationEntity, ConfectionRecipeVariationId>`](IJournalEntryEntityBase.md)
+**Extends:** [`IJournalEntryEntityBase<AnyJournalConfectionVariation, ConfectionRecipeVariationId>`](IJournalEntryEntityBase.md)
 
 ## Properties
 
@@ -104,7 +104,7 @@ Source variation ID for indexing and lookup
 
 </td><td>
 
-[AnyConfectionRecipeVariationEntity](../type-aliases/AnyConfectionRecipeVariationEntity.md)
+[AnyJournalConfectionVariation](../type-aliases/AnyJournalConfectionVariation.md)
 
 </td><td>
 
@@ -121,7 +121,7 @@ Full source recipe/confection at the time of the entry
 
 </td><td>
 
-[AnyConfectionRecipeVariationEntity](../type-aliases/AnyConfectionRecipeVariationEntity.md)
+[AnyJournalConfectionVariation](../type-aliases/AnyJournalConfectionVariation.md)
 
 </td><td>
 

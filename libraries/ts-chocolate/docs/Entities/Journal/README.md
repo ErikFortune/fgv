@@ -16,6 +16,33 @@ Description
 <tbody>
 <tr><td>
 
+[IMoldedBonBonJournalVariation](./interfaces/IMoldedBonBonJournalVariation.md)
+
+</td><td>
+
+Molded bonbon variation snapshot for journal entries.
+
+</td></tr>
+<tr><td>
+
+[IBarTruffleJournalVariation](./interfaces/IBarTruffleJournalVariation.md)
+
+</td><td>
+
+Bar truffle variation snapshot for journal entries.
+
+</td></tr>
+<tr><td>
+
+[IRolledTruffleJournalVariation](./interfaces/IRolledTruffleJournalVariation.md)
+
+</td><td>
+
+Rolled truffle variation snapshot for journal entries.
+
+</td></tr>
+<tr><td>
+
 [IJournalEntryEntityBase](./interfaces/IJournalEntryEntityBase.md)
 
 </td><td>
@@ -37,6 +64,15 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[AnyJournalConfectionVariation](./type-aliases/AnyJournalConfectionVariation.md)
+
+</td><td>
+
+Union of all journal confection variation snapshots.
+
+</td></tr>
 <tr><td>
 
 [IJournalFileTreeSource](./type-aliases/IJournalFileTreeSource.md)
@@ -200,6 +236,15 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[allConfectionVariationTypes](./variables/allConfectionVariationTypes.md)
+
+</td><td>
+
+All possible ConfectionVariationType values.
+
+</td></tr>
 <tr><td>
 
 [allJournalEntryTypes](./variables/allJournalEntryTypes.md)

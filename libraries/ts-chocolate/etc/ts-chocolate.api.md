@@ -6,6 +6,7 @@
 
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
+import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { Converters as Converters_9 } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
@@ -91,6 +92,11 @@ const allChocolateTypes: ChocolateType[];
 
 // @public
 const allConfectionTypes: ConfectionType[];
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ConfectionVariationType"
+//
+// @public
+const allConfectionVariationTypes: ConfectionVariationType[];
 
 // @public
 const allDecorationRatingCategories: RatingCategory[];
@@ -229,6 +235,14 @@ type AnyInventoryEntryEntity = IMoldInventoryEntryEntity | IIngredientInventoryE
 const anyInventoryEntryEntity: Converter<AnyInventoryEntryEntity>;
 
 // @public
+type AnyJournalConfectionVariation = IMoldedBonBonJournalVariation | IBarTruffleJournalVariation | IRolledTruffleJournalVariation;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "AnyJournalConfectionVariation"
+//
+// @public
+const anyJournalConfectionVariation: Converter<AnyJournalConfectionVariation>;
+
+// @public
 type AnyJournalEntry = IFillingEditJournalEntry | IConfectionEditJournalEntry | IFillingProductionJournalEntry | IConfectionProductionJournalEntry;
 
 // @public
@@ -294,6 +308,11 @@ class BarTruffleEditingSession<TRecipe extends IBarTruffleRecipe = IBarTruffleRe
 // @public
 const barTruffleEntity: Converter<BarTruffleRecipeEntity>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IBarTruffleJournalVariation"
+//
+// @public
+const barTruffleJournalVariation: Converter<IBarTruffleJournalVariation>;
+
 // @public
 class BarTruffleRecipe extends ConfectionBase<IBarTruffleRecipeVariation, Confections.BarTruffleRecipeEntity> implements IBarTruffleRecipe {
     // @internal
@@ -339,6 +358,9 @@ class BarTruffleRecipeVariation extends ConfectionRecipeVariationBase<IBarTruffl
 //
 // @public
 const barTruffleRecipeVariationEntity: Converter<IBarTruffleRecipeVariationEntity>;
+
+// @internal
+const barTruffleVariationFields: Conversion.FieldConverters<Omit<IBarTruffleRecipeVariationEntity, keyof IConfectionRecipeVariationEntityBase>>;
 
 // @public
 const BASE_ID_PATTERN: RegExp;
@@ -825,6 +847,9 @@ function collectionSourceFile<T>(itemConverter: Converter<T> | Validator<T>): Co
 // @public
 function collectionYamlConverter<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
 
+// @internal
+const commonVariationFields: Conversion.FieldConverters<IConfectionRecipeVariationEntityBase>;
+
 // @public
 type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
 
@@ -1102,6 +1127,7 @@ declare namespace Confections {
         IBarTruffleRecipeVariationEntity,
         IRolledTruffleRecipeVariationEntity,
         AnyConfectionRecipeVariationEntity,
+        ConfectionVariationType,
         IConfectionDerivationEntity,
         IConfectionRecipeEntityBase,
         MoldedBonBonRecipeEntity,
@@ -1152,6 +1178,9 @@ export type ConfectionType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
 
 // @public
 const confectionType: Converter<ConfectionType>;
+
+// @public
+type ConfectionVariationType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1382,8 +1411,12 @@ declare namespace Converters_6 {
         frameDimensions,
         bonBonDimensions,
         coatingsEntity,
+        commonVariationFields,
+        moldedBonBonVariationFields,
         moldedBonBonRecipeVariationEntity,
+        barTruffleVariationFields,
         barTruffleRecipeVariationEntity,
+        rolledTruffleVariationFields,
         rolledTruffleRecipeVariationEntity,
         anyConfectionRecipeVariationEntity,
         confectionDerivationEntity,
@@ -2827,6 +2860,12 @@ interface IAlcoholIngredientEntity extends IIngredientEntity {
 }
 
 // @public
+interface IBarTruffleJournalVariation extends IBarTruffleRecipeVariationEntity {
+    // (undocumented)
+    readonly variationType: 'bar-truffle';
+}
+
+// @public
 interface IBarTruffleRecipe extends IConfectionBase<IBarTruffleRecipeVariation, Confections.BarTruffleRecipeEntity> {
     readonly confectionType: 'bar-truffle';
     readonly enrobingChocolate?: IResolvedChocolateSpec;
@@ -3174,7 +3213,7 @@ interface IConfectionEditJournalEntry extends IJournalEntryBase<IConfectionBase,
 }
 
 // @public
-interface IConfectionEditJournalEntryEntity extends IJournalEntryEntityBase<AnyConfectionRecipeVariationEntity, ConfectionRecipeVariationId> {
+interface IConfectionEditJournalEntryEntity extends IJournalEntryEntityBase<AnyJournalConfectionVariation, ConfectionRecipeVariationId> {
     // (undocumented)
     readonly type: 'confection-edit';
 }
@@ -3190,7 +3229,7 @@ interface IConfectionProductionJournalEntry extends IJournalEntryBase<IConfectio
 }
 
 // @public
-interface IConfectionProductionJournalEntryEntity extends IJournalEntryEntityBase<AnyConfectionRecipeVariationEntity, ConfectionRecipeVariationId> {
+interface IConfectionProductionJournalEntryEntity extends IJournalEntryEntityBase<AnyJournalConfectionVariation, ConfectionRecipeVariationId> {
     readonly produced: AnyProducedConfectionEntity;
     // (undocumented)
     readonly type: 'confection-production';
@@ -4349,6 +4388,12 @@ interface IMoldContext {
 }
 
 // @public
+interface IMoldedBonBonJournalVariation extends IMoldedBonBonRecipeVariationEntity {
+    // (undocumented)
+    readonly variationType: 'molded-bonbon';
+}
+
+// @public
 interface IMoldedBonBonRecipe extends IConfectionBase<IMoldedBonBonRecipeVariation, Confections.MoldedBonBonRecipeEntity> {
     readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
     readonly confectionType: 'molded-bonbon';
@@ -5360,6 +5405,12 @@ interface IResolveImportRootOptions {
 }
 
 // @public
+interface IRolledTruffleJournalVariation extends IRolledTruffleRecipeVariationEntity {
+    // (undocumented)
+    readonly variationType: 'rolled-truffle';
+}
+
+// @public
 interface IRolledTruffleRecipe extends IConfectionBase<IRolledTruffleRecipeVariation, Confections.RolledTruffleRecipeEntity> {
     readonly coatings?: IResolvedCoatings;
     readonly confectionType: 'rolled-truffle';
@@ -6168,6 +6219,10 @@ declare namespace Journal {
         resolvedFillingSlotEntity,
         resolvedIngredientSlotEntity,
         anyResolvedFillingSlotEntity,
+        moldedBonBonJournalVariation,
+        barTruffleJournalVariation,
+        rolledTruffleJournalVariation,
+        anyJournalConfectionVariation,
         producedFillingIngredientEntity,
         producedFillingEntity,
         producedMoldedBonBonEntity,
@@ -6191,6 +6246,11 @@ declare namespace Journal_2 {
         isFillingProductionJournalEntryEntity,
         isConfectionProductionJournalEntryEntity,
         isGroupNotesJournalEntryEntity,
+        IMoldedBonBonJournalVariation,
+        IBarTruffleJournalVariation,
+        IRolledTruffleJournalVariation,
+        AnyJournalConfectionVariation,
+        allConfectionVariationTypes,
         JournalEntryType,
         allJournalEntryTypes,
         IJournalEntryEntityBase,
@@ -6698,6 +6758,11 @@ class MoldedBonBonEditingSession<TRecipe extends IMoldedBonBonRecipe = IMoldedBo
 // @public
 const moldedBonBonEntity: Converter<MoldedBonBonRecipeEntity>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IMoldedBonBonJournalVariation"
+//
+// @public
+const moldedBonBonJournalVariation: Converter<IMoldedBonBonJournalVariation>;
+
 // @public
 class MoldedBonBonRecipe extends ConfectionBase<IMoldedBonBonRecipeVariation, Confections.MoldedBonBonRecipeEntity> implements IMoldedBonBonRecipe {
     // @internal
@@ -6741,6 +6806,9 @@ class MoldedBonBonRecipeVariation extends ConfectionRecipeVariationBase<IMoldedB
 //
 // @public
 const moldedBonBonRecipeVariationEntity: Converter<IMoldedBonBonRecipeVariationEntity>;
+
+// @internal
+const moldedBonBonVariationFields: Conversion.FieldConverters<Omit<IMoldedBonBonRecipeVariationEntity, keyof IConfectionRecipeVariationEntityBase>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -7429,6 +7497,11 @@ class RolledTruffleEditingSession<TRecipe extends IRolledTruffleRecipe = IRolled
 // @public
 const rolledTruffleEntity: Converter<RolledTruffleRecipeEntity>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IRolledTruffleJournalVariation"
+//
+// @public
+const rolledTruffleJournalVariation: Converter<IRolledTruffleJournalVariation>;
+
 // @public
 class RolledTruffleRecipe extends ConfectionBase<IRolledTruffleRecipeVariation, Confections.RolledTruffleRecipeEntity> implements IRolledTruffleRecipe {
     // @internal
@@ -7473,6 +7546,9 @@ class RolledTruffleRecipeVariation extends ConfectionRecipeVariationBase<IRolled
 //
 // @public
 const rolledTruffleRecipeVariationEntity: Converter<IRolledTruffleRecipeVariationEntity>;
+
+// @internal
+const rolledTruffleVariationFields: Conversion.FieldConverters<Omit<IRolledTruffleRecipeVariationEntity, keyof IConfectionRecipeVariationEntityBase>>;
 
 // @internal
 class RuntimeReverseIndex {

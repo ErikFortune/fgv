@@ -86,6 +86,7 @@ describe('JournalLibrary (Collection-Based)', () => {
     timestamp,
     variationId: CommonConverters.confectionRecipeVariationId.convert(variationId).orThrow(),
     recipe: {
+      variationType: 'molded-bonbon' as const,
       variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
       createdDate: '2026-01-01',
       yield: {
@@ -95,7 +96,7 @@ describe('JournalLibrary (Collection-Based)', () => {
       molds: {
         options: []
       },
-      shellChocolate: undefined
+      shellChocolate: { ids: ['test.dark-chocolate' as IngredientId] }
     },
     yield: {
       count: 24

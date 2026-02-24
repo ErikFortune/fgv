@@ -47,7 +47,7 @@ import {
  * @public
  */
 export const ganacheCharacteristics: Converter<IGanacheCharacteristics> =
-  Converters.object<IGanacheCharacteristics>({
+  Converters.strictObject<IGanacheCharacteristics>({
     cacaoFat: IngredientConverters.percentage,
     sugar: IngredientConverters.percentage,
     milkFat: IngredientConverters.percentage,
@@ -64,7 +64,7 @@ export const ganacheCharacteristics: Converter<IGanacheCharacteristics> =
  * Converter for ITemperatureCurve
  * @public
  */
-export const temperatureCurve: Converter<ITemperatureCurve> = Converters.object<ITemperatureCurve>({
+export const temperatureCurve: Converter<ITemperatureCurve> = Converters.strictObject<ITemperatureCurve>({
   melt: IngredientConverters.celsius,
   cool: IngredientConverters.celsius.optional(),
   working: IngredientConverters.celsius.optional()

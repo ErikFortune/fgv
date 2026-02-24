@@ -65,7 +65,7 @@ import { Converters as RecipeConverters } from '../fillings';
  * `Converter` for {@link Entities.Confections.IConfectionYield | IConfectionYield}.
  * @public
  */
-export const confectionYield: Converter<IConfectionYield> = Converters.object<IConfectionYield>({
+export const confectionYield: Converter<IConfectionYield> = Converters.strictObject<IConfectionYield>({
   count: Converters.number,
   unit: Converters.string.optional(),
   weightPerPiece: CommonConverters.measurement.optional()
@@ -75,7 +75,7 @@ export const confectionYield: Converter<IConfectionYield> = Converters.object<IC
  * `Converter` for {@link Entities.Confections.IMoldedBonBonYield | IMoldedBonBonYield}.
  * @public
  */
-export const moldedBonBonYield: Converter<IMoldedBonBonYield> = Converters.object<IMoldedBonBonYield>({
+export const moldedBonBonYield: Converter<IMoldedBonBonYield> = Converters.strictObject<IMoldedBonBonYield>({
   yieldType: Converters.literal('frames'),
   frames: Converters.number,
   bufferPercentage: Converters.number,
@@ -99,7 +99,7 @@ export const anyConfectionYield: Converter<AnyConfectionYield> = Converters.oneO
  * @public
  */
 export const confectionDecoration: Converter<IConfectionDecoration> =
-  Converters.object<IConfectionDecoration>({
+  Converters.strictObject<IConfectionDecoration>({
     description: Converters.string,
     preferred: Converters.boolean.optional()
   });
@@ -124,7 +124,7 @@ const fillingOptionId: Converter<FillingOptionId> = Converters.oneOf<FillingOpti
  * @public
  */
 export const recipeFillingOptionEntity: Converter<IRecipeFillingOptionEntity> =
-  Converters.object<IRecipeFillingOptionEntity>({
+  Converters.strictObject<IRecipeFillingOptionEntity>({
     type: Converters.literal('recipe'),
     id: CommonConverters.fillingId,
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
@@ -135,7 +135,7 @@ export const recipeFillingOptionEntity: Converter<IRecipeFillingOptionEntity> =
  * @public
  */
 export const ingredientFillingOptionEntity: Converter<IIngredientFillingOptionEntity> =
-  Converters.object<IIngredientFillingOptionEntity>({
+  Converters.strictObject<IIngredientFillingOptionEntity>({
     type: Converters.literal('ingredient'),
     id: CommonConverters.ingredientId,
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
@@ -161,7 +161,7 @@ export const fillingOptionEntities: Converter<
  * `Converter` for {@link Entities.Confections.IFillingSlotEntity | IFillingSlotEntity}.
  * @public
  */
-export const fillingSlotEntity: Converter<IFillingSlotEntity> = Converters.object<IFillingSlotEntity>({
+export const fillingSlotEntity: Converter<IFillingSlotEntity> = Converters.strictObject<IFillingSlotEntity>({
   slotId: CommonConverters.slotId,
   name: Converters.string.optional(),
   filling: fillingOptionEntities
@@ -186,7 +186,7 @@ export const chocolateSpec: Converter<IChocolateSpec> = CommonConverters.idsWith
  * @public
  */
 export const additionalChocolateEntity: Converter<IAdditionalChocolateEntity> =
-  Converters.object<IAdditionalChocolateEntity>({
+  Converters.strictObject<IAdditionalChocolateEntity>({
     chocolate: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'additionalChocolate'),
     purpose: CommonConverters.additionalChocolatePurpose
   });
@@ -219,7 +219,7 @@ export const confectionMolds: Converter<Model.IOptionsWithPreferred<IConfectionM
  * Converter for {@link Entities.Confections.IFrameDimensions | IFrameDimensions}.
  * @public
  */
-export const frameDimensions: Converter<IFrameDimensions> = Converters.object<IFrameDimensions>({
+export const frameDimensions: Converter<IFrameDimensions> = Converters.strictObject<IFrameDimensions>({
   width: CommonConverters.millimeters,
   height: CommonConverters.millimeters,
   depth: CommonConverters.millimeters
@@ -229,7 +229,7 @@ export const frameDimensions: Converter<IFrameDimensions> = Converters.object<IF
  * Converter for {@link Entities.Confections.IBonBonDimensions | IBonBonDimensions}.
  * @public
  */
-export const bonBonDimensions: Converter<IBonBonDimensions> = Converters.object<IBonBonDimensions>({
+export const bonBonDimensions: Converter<IBonBonDimensions> = Converters.strictObject<IBonBonDimensions>({
   width: CommonConverters.millimeters,
   height: CommonConverters.millimeters
 });
@@ -256,7 +256,7 @@ export const coatingsEntity: Converter<ICoatingsEntity> = CommonConverters.idsWi
  * Common fields shared by all variation types
  * @internal
  */
-const commonVariationFields: Conversion.FieldConverters<IConfectionRecipeVariationEntityBase> = {
+export const commonVariationFields: Conversion.FieldConverters<IConfectionRecipeVariationEntityBase> = {
   variationSpec: CommonConverters.confectionRecipeVariationSpec,
   name: Converters.string.optional(),
   createdDate: Converters.string, // ISO 8601 date string
@@ -274,38 +274,68 @@ const commonVariationFields: Conversion.FieldConverters<IConfectionRecipeVariati
 };
 
 /**
+ * Fields specific to molded bonbon variations (beyond commonVariationFields).
+ * @internal
+ */
+export const moldedBonBonVariationFields: Conversion.FieldConverters<
+  Omit<IMoldedBonBonRecipeVariationEntity, keyof IConfectionRecipeVariationEntityBase>
+> = {
+  molds: confectionMolds,
+  shellChocolate: chocolateSpec,
+  additionalChocolates: Converters.arrayOf(additionalChocolateEntity).optional()
+};
+
+/**
  * Converter for {@link Entities.Confections.IMoldedBonBonVariationEntity | IMoldedBonBonRecipeVariationEntity}.
  * @public
  */
 export const moldedBonBonRecipeVariationEntity: Converter<IMoldedBonBonRecipeVariationEntity> =
-  Converters.object<IMoldedBonBonRecipeVariationEntity>({
+  Converters.strictObject<IMoldedBonBonRecipeVariationEntity>({
     ...commonVariationFields,
-    molds: confectionMolds,
-    shellChocolate: chocolateSpec,
-    additionalChocolates: Converters.arrayOf(additionalChocolateEntity).optional()
+    ...moldedBonBonVariationFields
   });
+
+/**
+ * Fields specific to bar truffle variations (beyond commonVariationFields).
+ * @internal
+ */
+export const barTruffleVariationFields: Conversion.FieldConverters<
+  Omit<IBarTruffleRecipeVariationEntity, keyof IConfectionRecipeVariationEntityBase>
+> = {
+  frameDimensions,
+  singleBonBonDimensions: bonBonDimensions,
+  enrobingChocolate: chocolateSpec.optional()
+};
 
 /**
  * Converter for {@link Entities.Confections.IBarTruffleRecipeVariationEntity | IBarTruffleRecipeVariationEntity}.
  * @public
  */
 export const barTruffleRecipeVariationEntity: Converter<IBarTruffleRecipeVariationEntity> =
-  Converters.object<IBarTruffleRecipeVariationEntity>({
+  Converters.strictObject<IBarTruffleRecipeVariationEntity>({
     ...commonVariationFields,
-    frameDimensions,
-    singleBonBonDimensions: bonBonDimensions,
-    enrobingChocolate: chocolateSpec.optional()
+    ...barTruffleVariationFields
   });
+
+/**
+ * Fields specific to rolled truffle variations (beyond commonVariationFields).
+ * @internal
+ */
+export const rolledTruffleVariationFields: Conversion.FieldConverters<
+  Omit<IRolledTruffleRecipeVariationEntity, keyof IConfectionRecipeVariationEntityBase>
+> = {
+  enrobingChocolate: chocolateSpec.optional(),
+  coatings: coatingsEntity.optional()
+};
 
 /**
  * Converter for {@link Entities.Confections.IRolledTruffleRecipeVariationEntity | IRolledTruffleRecipeVariationEntity}.
  * @public
  */
 export const rolledTruffleRecipeVariationEntity: Converter<IRolledTruffleRecipeVariationEntity> =
-  Converters.object<IRolledTruffleRecipeVariationEntity>({
+  Converters.strictObject<IRolledTruffleRecipeVariationEntity>({
     ...commonVariationFields,
-    enrobingChocolate: chocolateSpec.optional(),
-    coatings: coatingsEntity.optional()
+    ...rolledTruffleVariationFields
   });
 
 /**
@@ -328,7 +358,7 @@ export const anyConfectionRecipeVariationEntity: Converter<AnyConfectionRecipeVa
  * @public
  */
 export const confectionDerivationEntity: Converter<IConfectionDerivationEntity> =
-  Converters.object<IConfectionDerivationEntity>({
+  Converters.strictObject<IConfectionDerivationEntity>({
     sourceVariationId: CommonConverters.confectionRecipeVariationId,
     derivedDate: Converters.string, // ISO 8601 date string
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
@@ -355,7 +385,7 @@ const commonConfectionFields: Conversion.FieldConverters<
  * @public
  */
 export const baseConfectionEntity: Converter<IConfectionRecipeEntityBase> =
-  Converters.object<IConfectionRecipeEntityBase>({
+  Converters.strictObject<IConfectionRecipeEntityBase>({
     ...commonConfectionFields,
     confectionType: CommonConverters.confectionType,
     variations: Converters.arrayOf(anyConfectionRecipeVariationEntity)
@@ -370,7 +400,7 @@ export const baseConfectionEntity: Converter<IConfectionRecipeEntityBase> =
  * @public
  */
 export const moldedBonBonEntity: Converter<MoldedBonBonRecipeEntity> =
-  Converters.object<MoldedBonBonRecipeEntity>({
+  Converters.strictObject<MoldedBonBonRecipeEntity>({
     ...commonConfectionFields,
     confectionType: Converters.literal('molded-bonbon'),
     variations: Converters.arrayOf(moldedBonBonRecipeVariationEntity)
@@ -380,18 +410,19 @@ export const moldedBonBonEntity: Converter<MoldedBonBonRecipeEntity> =
  * Converter for {@link Entities.Confections.IBarTruffleEntity | IBarTruffleEntity}
  * @public
  */
-export const barTruffleEntity: Converter<BarTruffleRecipeEntity> = Converters.object<BarTruffleRecipeEntity>({
-  ...commonConfectionFields,
-  confectionType: Converters.literal('bar-truffle'),
-  variations: Converters.arrayOf(barTruffleRecipeVariationEntity)
-});
+export const barTruffleEntity: Converter<BarTruffleRecipeEntity> =
+  Converters.strictObject<BarTruffleRecipeEntity>({
+    ...commonConfectionFields,
+    confectionType: Converters.literal('bar-truffle'),
+    variations: Converters.arrayOf(barTruffleRecipeVariationEntity)
+  });
 
 /**
  * Converter for {@link Entities.Confections.IRolledTruffleEntity | IRolledTruffleEntity}
  * @public
  */
 export const rolledTruffleEntity: Converter<RolledTruffleRecipeEntity> =
-  Converters.object<RolledTruffleRecipeEntity>({
+  Converters.strictObject<RolledTruffleRecipeEntity>({
     ...commonConfectionFields,
     confectionType: Converters.literal('rolled-truffle'),
     variations: Converters.arrayOf(rolledTruffleRecipeVariationEntity)

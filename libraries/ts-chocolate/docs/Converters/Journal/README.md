@@ -63,6 +63,42 @@ Converter for Entities.Confections.AnyResolvedFillingSlotEntity | AnyResolvedFil
 </td></tr>
 <tr><td>
 
+[moldedBonBonJournalVariation](./variables/moldedBonBonJournalVariation.md)
+
+</td><td>
+
+Converter for IMoldedBonBonJournalVariation — molded bonbon variation snapshot.
+
+</td></tr>
+<tr><td>
+
+[barTruffleJournalVariation](./variables/barTruffleJournalVariation.md)
+
+</td><td>
+
+Converter for IBarTruffleJournalVariation — bar truffle variation snapshot.
+
+</td></tr>
+<tr><td>
+
+[rolledTruffleJournalVariation](./variables/rolledTruffleJournalVariation.md)
+
+</td><td>
+
+Converter for IRolledTruffleJournalVariation — rolled truffle variation snapshot.
+
+</td></tr>
+<tr><td>
+
+[anyJournalConfectionVariation](./variables/anyJournalConfectionVariation.md)
+
+</td><td>
+
+Converter for AnyJournalConfectionVariation — discriminated on `variationType`.
+
+</td></tr>
+<tr><td>
+
 [producedFillingIngredientEntity](./variables/producedFillingIngredientEntity.md)
 
 </td><td>

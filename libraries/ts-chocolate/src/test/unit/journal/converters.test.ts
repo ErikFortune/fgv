@@ -75,11 +75,12 @@ describe('Journal Converters', () => {
         timestamp: '2024-01-01T00:00:00Z',
         variationId: 'source.confection@2024-01-01-01',
         recipe: {
+          variationType: 'molded-bonbon',
           variationSpec: '2024-01-01-01',
           createdDate: '2024-01-01',
           yield: { count: 10 },
-          molds: { preferredId: 'mold-1', options: [] },
-          shellChocolate: { ids: ['choc-1'] }
+          molds: { preferredId: 'test.mold-1', options: [{ notes: [], id: 'test.mold-1' }] },
+          shellChocolate: { ids: ['test.choc-1'] }
         }
       };
 

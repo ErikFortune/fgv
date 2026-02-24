@@ -210,6 +210,15 @@ Coating specification for rolled truffles.
 </td></tr>
 <tr><td>
 
+[ConfectionVariationType](./type-aliases/ConfectionVariationType.md)
+
+</td><td>
+
+Discriminator type for confection variation snapshots (e.g.
+
+</td></tr>
+<tr><td>
+
 [ResolvedSlotType](./type-aliases/ResolvedSlotType.md)
 
 </td><td>
