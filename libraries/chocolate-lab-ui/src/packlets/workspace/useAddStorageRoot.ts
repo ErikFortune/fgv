@@ -31,6 +31,7 @@ import { useCallback } from 'react';
 import { type FileTree } from '@fgv/ts-json-base';
 import { LibraryData } from '@fgv/ts-chocolate';
 import { FileApiTreeAccessors, safeShowDirectoryPicker, supportsFileSystemAccess } from '@fgv/ts-web-extras';
+import { useMessages } from '@fgv/ts-app-shell';
 
 import { applyStorageTargetsFromWorkspace } from './applyStorageTargets';
 import { createDirectoryStore } from './directoryStoreFactory';
@@ -62,6 +63,7 @@ export interface IAddStorageRootActions {
 export function useAddStorageRoot(): IAddStorageRootActions {
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
+  const { addMessage } = useMessages();
 
   const canAddStorageRoot = typeof window !== 'undefined' && supportsFileSystemAccess(window);
 
@@ -137,6 +139,8 @@ export function useAddStorageRoot(): IAddStorageRootActions {
     const saveResult = await store.save(sourceName, dirHandle);
     if (saveResult.isFailure()) {
       workspace.data.logger.warn(`Failed to persist directory handle: ${saveResult.message}`);
+    } else {
+      addMessage('success', `"${sourceName}" added and saved — it will be available on next launch.`);
     }
 
     applyStorageTargetsFromWorkspace({
@@ -148,7 +152,7 @@ export function useAddStorageRoot(): IAddStorageRootActions {
 
     workspace.data.clearCache();
     reactiveWorkspace.notifyChange();
-  }, [canAddStorageRoot, workspace, reactiveWorkspace]);
+  }, [canAddStorageRoot, workspace, reactiveWorkspace, addMessage]);
 
   return { canAddStorageRoot, addStorageRoot };
 }

@@ -1,16 +1,10 @@
-# Guittard chocolate couvertures
-
 metadata:
   name: Guittard Chocolates
   description: American chocolate couvertures from Guittard Chocolate Company
-
 items:
   coucher-du-soleil-72:
     baseId: coucher-du-soleil-72
     name: Coucher du Soleil 72%
-    category: chocolate
-    chocolateType: dark
-    cacaoPercentage: 72
     ganacheCharacteristics:
       cacaoFat: 42
       sugar: 27
@@ -18,32 +12,48 @@ items:
       water: 1
       solids: 30
       otherFats: 2
+    description: Dark and rich chocolate with a smooth, creamy mouthfeel. Full-bodied throughout with a clean, fresh finish
+    manufacturer: Guittard
+    traceAllergens:
+      - milk
+    certifications:
+      - fair-trade
+      - all-natural
+      - real-vanilla
+      - non-gmo
+      - peanut-free
+      - gluten-free
+    vegan: true
+    tags:
+      - dark
+      - bittersweet
+      - couverture
+      - smooth
+      - full-bodied
+    category: chocolate
+    chocolateType: dark
+    cacaoPercentage: 72
     fluidityStars: 4
     viscosityMcM: 65
-    description: >-
-      Dark and rich chocolate with a smooth, creamy mouthfeel.
-      Full-bodied throughout with a clean, fresh finish
-    manufacturer: Guittard
-    tags: [dark, bittersweet, couverture, smooth, full-bodied]
-    origins: [South Pacific, West Africa, South America blend]
-    beanVarieties: [Forastero, Trinitario]
-    applications: [enrobing, molding, confectionary, ganache, mousse]
-    certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
-    traceAllergens: [milk]
     temperatureCurve:
       melt: 45
       working: 31
-    vegan: true
-
+    origins:
+      - South Pacific
+      - West Africa
+      - South America blend
+    beanVarieties:
+      - Forastero
+      - Trinitario
+    applications:
+      - enrobing
+      - molding
+      - confectionary
+      - ganache
+      - mousse
   lever-du-soleil-61:
     baseId: lever-du-soleil-61
     name: Lever du Soleil 61%
-    category: chocolate
-    chocolateType: dark
-    cacaoPercentage: 61
-    urls:
-      - category: product-page
-        url: https://www.guittard.com/our-chocolate/detail/pro_lever-du-soleil
     ganacheCharacteristics:
       cacaoFat: 38
       sugar: 37
@@ -51,26 +61,49 @@ items:
       water: 1
       solids: 24
       otherFats: 2
-    fluidityStars: 4
     description: Dark chocolate couverture with balanced sweetness and smooth texture
     manufacturer: Guittard
-    tags: [dark, bittersweet, couverture, balanced]
-    origins: [South Pacific, West Africa, South America blend]
-    beanVarieties: [Forastero, Trinitario]
-    applications: [enrobing, molding, confectionary, ganache, mousse]
-    certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
-    traceAllergens: [milk]
+    traceAllergens:
+      - milk
+    certifications:
+      - fair-trade
+      - all-natural
+      - real-vanilla
+      - non-gmo
+      - peanut-free
+      - gluten-free
+    vegan: true
+    tags:
+      - dark
+      - bittersweet
+      - couverture
+      - balanced
+    urls:
+      - category: product-page
+        url: https://www.guittard.com/our-chocolate/detail/pro_lever-du-soleil
+    category: chocolate
+    chocolateType: dark
+    cacaoPercentage: 61
+    fluidityStars: 4
     temperatureCurve:
       melt: 45
       working: 31
-    vegan: true
-
+    origins:
+      - South Pacific
+      - West Africa
+      - South America blend
+    beanVarieties:
+      - Forastero
+      - Trinitario
+    applications:
+      - enrobing
+      - molding
+      - confectionary
+      - ganache
+      - mousse
   creme-francaise-31:
     baseId: creme-francaise-31
     name: Crème Française 31%
-    category: chocolate
-    chocolateType: white
-    cacaoPercentage: 31
     ganacheCharacteristics:
       cacaoFat: 20
       sugar: 47
@@ -78,27 +111,44 @@ items:
       water: 1
       solids: 24
       otherFats: 0
-    fluidityStars: 4
-    viscosityMcM: 75
     description: >-
-      French-style white chocolate with sweet fresh cream flavor,
-      nutty undertones and lingering hint of citrus.
+      French-style white chocolate with sweet fresh cream flavor, nutty undertones and lingering hint of citrus.
       Balanced, sweet dairy and rich cocoa butter taste
     manufacturer: Guittard
-    tags: [white, french-style, creamy, citrus, nutty]
-    applications: [ganache, mousse, baking, ice-cream, sorbet, confectionary, drinks]
-    certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
-    allergens: [milk]
+    allergens:
+      - milk
+    certifications:
+      - fair-trade
+      - all-natural
+      - real-vanilla
+      - non-gmo
+      - peanut-free
+      - gluten-free
+    vegan: false
+    tags:
+      - white
+      - french-style
+      - creamy
+      - citrus
+      - nutty
+    category: chocolate
+    chocolateType: white
+    cacaoPercentage: 31
+    fluidityStars: 4
+    viscosityMcM: 75
     temperatureCurve:
       melt: 45
-    vegan: false
-
+    applications:
+      - ganache
+      - mousse
+      - baking
+      - ice-cream
+      - sorbet
+      - confectionary
+      - drinks
   letoile-du-nord-64:
     baseId: letoile-du-nord-64
     name: L'Étoile du Nord 64%
-    category: chocolate
-    chocolateType: dark
-    cacaoPercentage: 64
     ganacheCharacteristics:
       cacaoFat: 37
       sugar: 34
@@ -106,27 +156,44 @@ items:
       water: 1
       solids: 28
       otherFats: 2
+    description: >-
+      High impact, lingering bittersweet chocolate balanced with minimal sweetness, dark color with warm chocolate and
+      spice notes
+    manufacturer: Guittard
+    traceAllergens:
+      - milk
+    certifications:
+      - fair-trade
+      - all-natural
+      - real-vanilla
+      - non-gmo
+      - peanut-free
+      - gluten-free
+    vegan: true
+    tags:
+      - dark
+      - bittersweet
+      - high-impact
+      - spice
+      - minimal-sweetness
+    category: chocolate
+    chocolateType: dark
+    cacaoPercentage: 64
     fluidityStars: 4
     viscosityMcM: 85
-    description: >-
-      High impact, lingering bittersweet chocolate balanced with minimal sweetness,
-      dark color with warm chocolate and spice notes
-    manufacturer: Guittard
-    tags: [dark, bittersweet, high-impact, spice, minimal-sweetness]
-    applications: [cremeux, ganache, mousse, baking, ice-cream, sorbet]
-    certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
-    traceAllergens: [milk]
     temperatureCurve:
       melt: 45
       working: 31
-    vegan: true
-
+    applications:
+      - cremeux
+      - ganache
+      - mousse
+      - baking
+      - ice-cream
+      - sorbet
   la-nuit-noire-55:
     baseId: la-nuit-noire-55
     name: La Nuit Noire 55%
-    category: chocolate
-    chocolateType: dark
-    cacaoPercentage: 55
     ganacheCharacteristics:
       cacaoFat: 33
       sugar: 43
@@ -134,27 +201,42 @@ items:
       water: 1
       solids: 23
       otherFats: 2
+    description: >-
+      Classic deep chocolate flavor with pronounced fudge and multi-dimensional, balanced flavor profile. Nutty with
+      lingering chocolate and vanilla finish
+    manufacturer: Guittard
+    traceAllergens:
+      - milk
+    certifications:
+      - fair-trade
+      - all-natural
+      - real-vanilla
+      - non-gmo
+      - peanut-free
+      - gluten-free
+    vegan: true
+    tags:
+      - dark
+      - classic
+      - fudge
+      - nutty
+      - vanilla
+      - balanced
+    category: chocolate
+    chocolateType: dark
+    cacaoPercentage: 55
     fluidityStars: 3
     viscosityMcM: 115
-    description: >-
-      Classic deep chocolate flavor with pronounced fudge and multi-dimensional,
-      balanced flavor profile. Nutty with lingering chocolate and vanilla finish
-    manufacturer: Guittard
-    tags: [dark, classic, fudge, nutty, vanilla, balanced]
-    applications: [cremeux, ganache, mousse]
-    certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
-    traceAllergens: [milk]
     temperatureCurve:
       melt: 45
       working: 31
-    vegan: true
-
+    applications:
+      - cremeux
+      - ganache
+      - mousse
   soleil-dor-38:
     baseId: soleil-dor-38
     name: Soleil d'Or 38%
-    category: chocolate
-    chocolateType: milk
-    cacaoPercentage: 38
     ganacheCharacteristics:
       cacaoFat: 20
       sugar: 40
@@ -162,16 +244,96 @@ items:
       water: 1
       solids: 31
       otherFats: 0
-    fluidityStars: 4
     description: >-
-      Bold, rich upfront chocolate flavor accented with subtle caramel notes
-      and lingering hint of cinnamon, fresh dairy flavor and spicy finish
+      Bold, rich upfront chocolate flavor accented with subtle caramel notes and lingering hint of cinnamon, fresh dairy
+      flavor and spicy finish
     manufacturer: Guittard
-    tags: [milk, bold, caramel, cinnamon, dairy, spicy]
-    applications: [cremeux, ganache, mousse, baking, ice-cream, sorbet]
-    certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
-    allergens: [milk]
+    allergens:
+      - milk
+    certifications:
+      - fair-trade
+      - all-natural
+      - real-vanilla
+      - non-gmo
+      - peanut-free
+      - gluten-free
+    vegan: false
+    tags:
+      - milk
+      - bold
+      - caramel
+      - cinnamon
+      - dairy
+      - spicy
+    category: chocolate
+    chocolateType: milk
+    cacaoPercentage: 38
+    fluidityStars: 4
     temperatureCurve:
       melt: 45
       working: 30
+    applications:
+      - cremeux
+      - ganache
+      - mousse
+      - baking
+      - ice-cream
+      - sorbet
+  guittard-onyx-72:
+    baseId: guittard-onyx-72
+    name: Onyx 72
+    ganacheCharacteristics:
+      cacaoFat: 40
+      sugar: 28
+      milkFat: 0
+      water: 1
+      solids: 31
+      otherFats: 0
+    description: >-
+      Guittard Onyx 72% is a deep, rich, bittersweet dark chocolate with an unsurpassed intense chocolate flavor, ideal
+      for general-purpose use in ganache, molding, enrobing, and baking.
+    manufacturer: Guittard
+    allergens:
+      - soy
+    traceAllergens:
+      - milk
+    certifications:
+      - gluten-free
+      - kosher
+      - non-gmo
     vegan: false
+    tags:
+      - bittersweet
+      - dark
+      - wafers
+      - couverture
+    density: 1.3
+    phase: solid
+    notes:
+      - category: ai
+        note: >-
+          cacaoFat set to 40% based on product listing as 40% fat (primarily cocoa butter in high-cacao dark chocolate).
+          sugar estimated as ~28% (100-72=28, typical for minimal non-cocoa ingredients). solids roughly estimated as
+          non-fat cocoa solids ~31%. milkFat and otherFats at 0 as it's dark chocolate with no milk or added fats. water
+          low at ~1% typical for couverture. Viscosity 130 McM from one retailer source. Fluidity estimated as medium (3
+          stars) given general-purpose use and not listed as high-fluidity. Trace milk allergen due to shared equipment.
+          Not vegan due to possible dairy trace and vanilla (often non-vegan).
+    category: chocolate
+    chocolateType: dark
+    cacaoPercentage: 72
+    fluidityStars: 3
+    viscosityMcM: 130
+    temperatureCurve:
+      melt: 45
+    origins:
+      - Côte d'Ivoire
+      - Ghana
+    beanVarieties:
+      - Blend
+    applications:
+      - baking
+      - confectionary
+      - ganache
+      - molding
+      - enrobing
+      - pralines

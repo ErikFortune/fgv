@@ -195,25 +195,26 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     .orThrow();
   const reactiveWorkspace = new ReactiveWorkspace(workspace, true);
 
+  const localStorageRootDir = useLocalStorage ? platformInit.value?.userLibraryTree : undefined;
+
   if (useLocalStorage) {
-    const localStorageRootDir = platformInit.value?.userLibraryTree;
     reactiveWorkspace.registerLocalStorageRoot('Browser Storage', localStorageRootDir);
-
-    await restoreSavedDirectories({
-      reactiveWorkspace,
-      entities: workspace.data.entities,
-      configName: _configNamespace,
-      logger: _bootReporter
-    });
-
-    applyStorageTargetsFromWorkspace({
-      localStorageRootDir,
-      persistentTrees: reactiveWorkspace.persistentTrees,
-      targets: workspace.settings?.getResolvedSettings().defaultStorageTargets,
-      entities: workspace.data.entities,
-      logger: _bootReporter
-    });
   }
+
+  await restoreSavedDirectories({
+    reactiveWorkspace,
+    entities: workspace.data.entities,
+    configName: _configNamespace,
+    logger: _bootReporter
+  });
+
+  applyStorageTargetsFromWorkspace({
+    localStorageRootDir,
+    persistentTrees: reactiveWorkspace.persistentTrees,
+    targets: workspace.settings?.getResolvedSettings().defaultStorageTargets,
+    entities: workspace.data.entities,
+    logger: _bootReporter
+  });
 
   // Log storage summary
   const storage = reactiveWorkspace.storageSummary;
