@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters as BaseConverters, fail, Result, succeed } from '@fgv/ts-utils';
+import { fail, Result, succeed } from '@fgv/ts-utils';
 import { FileTree, JsonValue } from '@fgv/ts-json-base';
 
 import * as Converters from './converters';
@@ -62,40 +62,6 @@ export const BOOTSTRAP_SETTINGS_FILENAME: string = 'bootstrap.json';
  * @public
  */
 export const PREFERENCES_SETTINGS_FILENAME: string = 'preferences.json';
-
-/**
- * Filename for legacy common settings (used only for migration detection).
- * @internal
- */
-const COMMON_SETTINGS_FILENAME: string = 'common.json';
-
-// ============================================================================
-// Migration-only converter for legacy common.json
-// ============================================================================
-
-/**
- * Minimal shape of legacy common.json needed for migration.
- * @internal
- */
-interface ILegacyCommonSettings {
-  readonly schemaVersion: number;
-  readonly defaultTargets?: IDefaultCollectionTargets;
-  readonly tools?: IToolSettings;
-  readonly externalLibraries?: ReadonlyArray<unknown>;
-  readonly defaultStorageTargets?: IDefaultStorageTargets;
-}
-
-/**
- * Converter for legacy common.json, used only for migration.
- * @internal
- */
-const legacyCommonSettings: Converter<ILegacyCommonSettings> = BaseConverters.object<ILegacyCommonSettings>({
-  schemaVersion: BaseConverters.number,
-  defaultTargets: Converters.defaultCollectionTargets.optional(),
-  tools: Converters.toolSettings.optional(),
-  externalLibraries: BaseConverters.arrayOf(Converters.externalLibraryRefConfig).optional(),
-  defaultStorageTargets: Converters.defaultStorageTargets.optional()
-});
 
 // ============================================================================
 // Settings Manager Interface
@@ -265,76 +231,6 @@ export class SettingsManager implements ISettingsManager {
     manager._preferencesDirty = preferencesIsNew;
 
     return succeed(manager);
-  }
-
-  /**
-   * Creates a new SettingsManager from bootstrap + preferences files,
-   * auto-migrating from common.json if bootstrap.json doesn't exist yet.
-   *
-   * Migration logic:
-   * - If bootstrap.json exists: load bootstrap + preferences normally
-   * - If bootstrap.json doesn't exist but common.json does: split common.json
-   *   into bootstrap + preferences, write both, and proceed
-   * - If neither exists: create defaults
-   *
-   * @param params - Creation parameters
-   * @returns Success with SettingsManager, or Failure
-   * @public
-   */
-  public static createFromBootstrapWithMigration(
-    params: ISettingsManagerBootstrapParams
-  ): Result<SettingsManager> {
-    const { fileTree, deviceId } = params;
-    const bootstrapPath = `${SETTINGS_DIR_PATH}/${BOOTSTRAP_SETTINGS_FILENAME}`;
-    const commonPath = `${SETTINGS_DIR_PATH}/${COMMON_SETTINGS_FILENAME}`;
-
-    // Check if bootstrap.json already exists
-    const existingBootstrap = SettingsManager._loadSettingsFile(
-      fileTree,
-      bootstrapPath,
-      Converters.bootstrapSettings
-    );
-    if (existingBootstrap.isFailure()) {
-      return fail(existingBootstrap.message);
-    }
-
-    if (existingBootstrap.value !== undefined) {
-      // bootstrap.json exists — use normal bootstrap factory
-      return SettingsManager.createFromBootstrap(params);
-    }
-
-    // bootstrap.json doesn't exist — check for common.json to migrate
-    const existingCommon = SettingsManager._loadSettingsFile(fileTree, commonPath, legacyCommonSettings);
-    if (existingCommon.isFailure()) {
-      return fail(existingCommon.message);
-    }
-
-    if (existingCommon.value !== undefined) {
-      // common.json exists — split into bootstrap + preferences
-      const common = existingCommon.value;
-      const bootstrap: IBootstrapSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        includeBuiltIn: true,
-        localStorage: { library: true, userData: true },
-        externalLibraries: common.externalLibraries as IBootstrapSettings['externalLibraries'] | undefined
-      };
-      const preferences: IPreferencesSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        defaultTargets: common.defaultTargets,
-        defaultStorageTargets: common.defaultStorageTargets,
-        tools: common.tools
-      };
-
-      const manager = new SettingsManager(fileTree, deviceId, bootstrap, preferences);
-      // Mark both as dirty so they get persisted on next save
-      manager._bootstrapDirty = true;
-      manager._preferencesDirty = true;
-
-      return succeed(manager);
-    }
-
-    // Neither exists — create defaults via normal bootstrap factory
-    return SettingsManager.createFromBootstrap(params);
   }
 
   /**

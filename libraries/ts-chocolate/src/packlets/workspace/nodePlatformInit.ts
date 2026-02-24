@@ -114,7 +114,7 @@ export class NodePlatformInitializer implements IPlatformInitializer {
     const keyStoreFileResult = this._loadKeyStoreFile(keyStorePath);
 
     // 6. Create a temporary settings manager to get resolved settings
-    const settingsResult = SettingsManager.createFromBootstrapWithMigration({
+    const settingsResult = SettingsManager.createFromBootstrap({
       fileTree: userLibraryTree,
       deviceId
     });

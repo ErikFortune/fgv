@@ -7782,7 +7782,6 @@ const settingsFileLocation: Converter<ISettingsFileLocation>;
 // @public
 class SettingsManager implements ISettingsManager {
     static createFromBootstrap(params: ISettingsManagerBootstrapParams): Result<SettingsManager>;
-    static createFromBootstrapWithMigration(params: ISettingsManagerBootstrapParams): Result<SettingsManager>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISettingsManager"
     //
     // (undocumented)

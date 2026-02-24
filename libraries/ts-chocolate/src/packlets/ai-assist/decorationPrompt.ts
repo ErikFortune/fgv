@@ -24,6 +24,7 @@
  */
 
 import { Helpers } from '../common';
+import { allDecorationRatingCategories } from '../entities';
 
 /**
  * Builds a detailed AI prompt for generating a decoration entity JSON object.
@@ -65,7 +66,7 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - "notes": array of objects with "category" and "note"
 
 ### Rating object:
-- "category": one of ["difficulty", "durability", "appearance", "workability"]
+- "category": one of [${allDecorationRatingCategories.map((c) => `"${c}"`).join(', ')}]
 - "score": number from 1 to 5
 - "notes": array of objects with "category" and "note" (optional)
 

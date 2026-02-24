@@ -73,7 +73,7 @@ describe('buildProcedureAiPrompt', () => {
       expect(prompt).toContain('"ganache"');
       expect(prompt).toContain('"caramel"');
       expect(prompt).toContain('"gianduja"');
-      expect(prompt).toContain('"molded-bon-bon"');
+      expect(prompt).toContain('"molded-bonbon"');
       expect(prompt).toContain('"rolled-truffle"');
       expect(prompt).toContain('"bar-truffle"');
       expect(prompt).toContain('"decoration"');
@@ -90,14 +90,14 @@ describe('buildProcedureAiPrompt', () => {
     });
 
     test('includes inline task schema', () => {
-      expect(prompt).toContain('"kind": "inline"');
-      expect(prompt).toContain('"name"');
-      expect(prompt).toContain('"description"');
+      expect(prompt).toContain('"task"');
+      expect(prompt).toContain('"baseId"');
+      expect(prompt).toContain('"template"');
+      expect(prompt).toContain('"params"');
     });
 
     test('includes library task reference schema', () => {
-      expect(prompt).toContain('"kind": "library"');
-      expect(prompt).toContain('"id"');
+      expect(prompt).toContain('"taskId"');
       expect(prompt).toContain('"params"');
     });
 

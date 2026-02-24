@@ -93,20 +93,6 @@ Creates a new SettingsManager from bootstrap + preferences files.
 </td></tr>
 <tr><td>
 
-[createFromBootstrapWithMigration(params)](./SettingsManager.createFromBootstrapWithMigration.md)
-
-</td><td>
-
-`static`
-
-</td><td>
-
-Creates a new SettingsManager from bootstrap + preferences files,
-auto-migrating from common.json if bootstrap.json doesn't exist yet.
-
-</td></tr>
-<tr><td>
-
 [getResolvedSettings()](./SettingsManager.getResolvedSettings.md)
 
 </td><td>

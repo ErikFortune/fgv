@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Helpers } from '../common';
+import { Helpers, Model } from '../common';
 
 /**
  * Builds a detailed AI prompt for generating a procedure entity JSON object.
@@ -51,7 +51,9 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 
 ### Optional fields:
 - "description": string — overview of what the procedure accomplishes
-- "category": one of ["ganache", "caramel", "gianduja", "molded-bon-bon", "rolled-truffle", "bar-truffle", "decoration", "other"] — the type of confection or filling this procedure applies to; omit if general/reusable
+- "category": one of [${Model.Enums.allProcedureTypes
+    .map((t) => `"${t}"`)
+    .join(', ')}] — the type of confection or filling this procedure applies to; omit if general/reusable
 - "tags": array of strings — for searching/filtering (e.g., ["tempering", "ganache", "enrobing"])
 - "notes": array of objects with "category" (string, e.g. "ai") and "note" (string)
 
@@ -69,21 +71,24 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 ### Inline task (use when the step is specific to this procedure):
 \`\`\`json
 {
-  "kind": "inline",
-  "name": "string — short action name",
-  "description": "string — detailed instructions for this step",
-  "activeTime": number (minutes, optional),
-  "waitTime": number (minutes, optional),
-  "temperature": number (Celsius, optional)
+  "task": {
+    "baseId": "string — lowercase-kebab-case identifier (e.g. \"melt-chocolate\")",
+    "name": "string — short action name",
+    "template": "string — Mustache template describing the step (e.g. \"Melt {{chocolate}} to {{temp}}°C\")",
+    "defaultActiveTime": number (minutes, optional),
+    "defaultWaitTime": number (minutes, optional),
+    "defaultHoldTime": number (minutes, optional),
+    "defaultTemperature": number (Celsius, optional)
+  },
+  "params": { "key": "value" }
 }
 \`\`\`
 
 ### Library task reference (use when the step is a standard reusable task):
 \`\`\`json
 {
-  "kind": "library",
-  "id": "string — task baseId in lowercase-kebab-case",
-  "params": {}
+  "taskId": "string — full task ID in format \"collection.baseId\" (e.g. \"common.temper-chocolate\")",
+  "params": { "key": "value" }
 }
 \`\`\`
 

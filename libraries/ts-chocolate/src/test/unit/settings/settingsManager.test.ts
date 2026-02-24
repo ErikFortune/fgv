@@ -81,7 +81,6 @@ describe('SettingsManager', () => {
   function createBootstrapFileTree(
     bootstrap?: IBootstrapSettings,
     preferences?: IPreferencesSettings,
-    common?: Record<string, unknown>,
     options?: { mutable?: boolean }
   ): FileTree.IFileTreeDirectoryItem {
     const files: FileTree.IInMemoryFile[] = [];
@@ -95,12 +94,6 @@ describe('SettingsManager', () => {
       files.push({
         path: `/library/${SETTINGS_DIR_PATH}/${PREFERENCES_SETTINGS_FILENAME}`,
         contents: preferences
-      });
-    }
-    if (common !== undefined) {
-      files.push({
-        path: `/library/${SETTINGS_DIR_PATH}/common.json`,
-        contents: common
       });
     }
     if (files.length === 0) {
@@ -176,125 +169,6 @@ describe('SettingsManager', () => {
       const tree = FileTree.inMemory(files).orThrow();
       const fileTree = tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
       expect(SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId })).toFail();
-    });
-  });
-
-  // ============================================================================
-  // createFromBootstrapWithMigration
-  // ============================================================================
-
-  describe('createFromBootstrapWithMigration', () => {
-    test('uses bootstrap path when bootstrap.json exists', () => {
-      const fileTree = createBootstrapFileTree(validBootstrapSettings, validPreferencesSettings);
-      expect(
-        SettingsManager.createFromBootstrapWithMigration({ fileTree, deviceId: testDeviceId })
-      ).toSucceedAndSatisfy((manager) => {
-        const bootstrap = manager.getBootstrapSettings();
-        expect(bootstrap.includeBuiltIn).toBe(true);
-        expect(manager.isDirty).toBe(false);
-      });
-    });
-
-    test('migrates from common.json when bootstrap.json does not exist', () => {
-      const legacyCommonSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        defaultTargets: {
-          fillings: 'user' as CollectionId,
-          ingredients: 'user' as CollectionId
-        },
-        tools: {
-          scaling: { weightUnit: 'g', batchMultiplier: 1.5 },
-          workflow: { confirmAbandon: true }
-        },
-        externalLibraries: []
-      };
-      const fileTree = createBootstrapFileTree(undefined, undefined, legacyCommonSettings);
-      expect(
-        SettingsManager.createFromBootstrapWithMigration({ fileTree, deviceId: testDeviceId })
-      ).toSucceedAndSatisfy((manager) => {
-        // Should have split common into bootstrap + preferences
-        const bootstrap = manager.getBootstrapSettings();
-        const preferences = manager.getPreferencesSettings();
-
-        // externalLibraries should be in bootstrap
-        expect(bootstrap.externalLibraries).toEqual(legacyCommonSettings.externalLibraries);
-
-        // defaultTargets and tools should be in preferences
-        expect(preferences.defaultTargets?.fillings).toBe('user');
-        expect(preferences.tools?.scaling?.weightUnit).toBe('g');
-
-        // Should be dirty since new files need to be written
-        expect(manager.isDirty).toBe(true);
-      });
-    });
-
-    test('creates defaults when neither bootstrap.json nor common.json exists', () => {
-      const fileTree = createBootstrapFileTree();
-      expect(
-        SettingsManager.createFromBootstrapWithMigration({ fileTree, deviceId: testDeviceId })
-      ).toSucceedAndSatisfy((manager) => {
-        const bootstrap = manager.getBootstrapSettings();
-        const preferences = manager.getPreferencesSettings();
-        expect(bootstrap.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
-        expect(preferences.schemaVersion).toBe(SETTINGS_SCHEMA_VERSION);
-        expect(manager.isDirty).toBe(true);
-      });
-    });
-
-    test('migrated settings can be saved', async () => {
-      const legacyCommonSettings = {
-        schemaVersion: SETTINGS_SCHEMA_VERSION,
-        defaultTargets: {
-          fillings: 'user' as CollectionId,
-          ingredients: 'user' as CollectionId
-        },
-        tools: {
-          scaling: { weightUnit: 'g', batchMultiplier: 1.5 },
-          workflow: { confirmAbandon: true }
-        },
-        externalLibraries: []
-      };
-      const fileTree = createBootstrapFileTree(undefined, undefined, legacyCommonSettings, {
-        mutable: true
-      });
-      const manager = SettingsManager.createFromBootstrapWithMigration({
-        fileTree,
-        deviceId: testDeviceId
-      }).orThrow();
-
-      expect(manager.isDirty).toBe(true);
-      const result = await manager.save();
-      expect(result).toSucceedWith(true);
-      expect(manager.isDirty).toBe(false);
-
-      // Verify the new files can be loaded by createFromBootstrap
-      const manager2 = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
-      expect(manager2.getBootstrapSettings().includeBuiltIn).toBe(true);
-      expect(manager2.getPreferencesSettings().defaultTargets?.fillings).toBe('user');
-    });
-
-    test('fails for malformed bootstrap.json during migration check', () => {
-      const files: FileTree.IInMemoryFile[] = [
-        {
-          path: `/library/${SETTINGS_DIR_PATH}/${BOOTSTRAP_SETTINGS_FILENAME}`,
-          contents: { schemaVersion: 999 } // exists but invalid
-        }
-      ];
-      const tree = FileTree.inMemory(files).orThrow();
-      const fileTree = tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
-      expect(SettingsManager.createFromBootstrapWithMigration({ fileTree, deviceId: testDeviceId })).toFail();
-    });
-
-    test('fails for malformed common.json during migration', () => {
-      const files: FileTree.IInMemoryFile[] = [
-        {
-          path: `/library/${SETTINGS_DIR_PATH}/common.json`,
-          contents: { schemaVersion: 'not-a-number' }
-        }
-      ];
-      const tree = FileTree.inMemory(files).orThrow();
-      const fileTree = tree.getItem('/library').orThrow() as FileTree.IFileTreeDirectoryItem;
-      expect(SettingsManager.createFromBootstrapWithMigration({ fileTree, deviceId: testDeviceId })).toFail();
     });
   });
 
@@ -428,7 +302,7 @@ describe('SettingsManager', () => {
 
   describe('save (bootstrap/preferences)', () => {
     test('saves bootstrap and preferences to file tree', async () => {
-      const fileTree = createBootstrapFileTree(validBootstrapSettings, validPreferencesSettings, undefined, {
+      const fileTree = createBootstrapFileTree(validBootstrapSettings, validPreferencesSettings, {
         mutable: true
       });
       const manager = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
@@ -467,7 +341,7 @@ describe('SettingsManager', () => {
     });
 
     test('returns false when not dirty', async () => {
-      const fileTree = createBootstrapFileTree(validBootstrapSettings, validPreferencesSettings, undefined, {
+      const fileTree = createBootstrapFileTree(validBootstrapSettings, validPreferencesSettings, {
         mutable: true
       });
       const manager = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();

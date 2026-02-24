@@ -429,11 +429,9 @@ export function ensureWorkspaceDirectoriesInTree(root: FileTree.IFileTreeDirecto
 export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams): Result<IWorkspace> {
   const { platformInit, builtin, additionalFileSources, preWarm, userLibrarySourceName, configName } = params;
 
-  // Create settings manager using bootstrap-with-migration factory.
-  // This handles bootstrap.json + preferences.json, with automatic migration
-  // from legacy common.json if needed.
+  // Create settings manager from bootstrap + preferences files.
   return (
-    SettingsManager.createFromBootstrapWithMigration({
+    SettingsManager.createFromBootstrap({
       fileTree: platformInit.userLibraryTree,
       deviceId: platformInit.deviceId
     })
