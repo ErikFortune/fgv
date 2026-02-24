@@ -45,7 +45,7 @@ items:
       sour wood notes, and hint of liquorice
     tags: [dark, single-origin, madagascar, organic, citrus]
     origins: [Madagascar]
-    beanVarieties: Trinitario
+    beanVarieties: [Trinitario]
     certifications: [organic, halal, vegetarian, kosher-dairy, traceable-beans]
 
   guayaquil-64:

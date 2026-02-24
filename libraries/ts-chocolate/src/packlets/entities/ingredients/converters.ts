@@ -184,14 +184,21 @@ export const alcoholIngredientEntity: Converter<IAlcoholIngredientEntity> =
 
 /**
  * Converter for {@link Entities.Ingredients.IngredientEntity | IngredientEntity} (discriminated union).
- * Tries specialized converters based on category, falls back to base.
+ * Dispatches to the appropriate specialized converter based on the `category` field.
+ * Unknown categories fall back to {@link baseIngredientEntity}.
  * @public
  */
-export const ingredientEntity: Converter<IngredientEntity> = Converters.oneOf<IngredientEntity>([
-  chocolateIngredientEntity,
-  sugarIngredientEntity,
-  dairyIngredientEntity,
-  fatIngredientEntity,
-  alcoholIngredientEntity,
-  baseIngredientEntity
-]);
+export const ingredientEntity: Converter<IngredientEntity> = Converters.discriminatedObject<IngredientEntity>(
+  'category',
+  {
+    chocolate: chocolateIngredientEntity,
+    sugar: sugarIngredientEntity,
+    dairy: dairyIngredientEntity,
+    fat: fatIngredientEntity,
+    alcohol: alcoholIngredientEntity,
+    liquid: baseIngredientEntity,
+    flavor: baseIngredientEntity,
+    decoration: baseIngredientEntity,
+    other: baseIngredientEntity
+  }
+);

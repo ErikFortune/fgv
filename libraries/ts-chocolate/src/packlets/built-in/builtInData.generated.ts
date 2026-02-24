@@ -70,7 +70,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
           'Madagascar single-origin dark chocolate with citrus bitterness, sour wood notes, and hint of liquorice',
         tags: ['dark', 'single-origin', 'madagascar', 'organic', 'citrus'],
         origins: ['Madagascar'],
-        beanVarieties: 'Trinitario',
+        beanVarieties: ['Trinitario'],
         certifications: ['organic', 'halal', 'vegetarian', 'kosher-dairy', 'traceable-beans']
       },
       'guayaquil-64': {
@@ -170,7 +170,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
         origins: ['Ivory Coast', 'Ghana', 'Ecuador'],
         beanVarieties: ['Forastero', 'Trinitario'],
         applications: [
-          'confectionery',
+          'confectionary',
           'ganache',
           'mousse',
           'enrobing',
@@ -208,7 +208,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
         tags: ['milk', 'caramel', 'smooth', 'versatile', 'classic', 'full-bodied'],
         origins: ['Ivory Coast', 'Ghana', 'Ecuador'],
         beanVarieties: ['Forastero'],
-        applications: ['molding', 'enrobing', 'ganache', 'mousse', 'confectionery'],
+        applications: ['molding', 'enrobing', 'ganache', 'mousse', 'confectionary'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'cocoa-horizons'],
         allergens: ['milk', 'soy'],
         temperingCurve: {
@@ -237,7 +237,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
         manufacturer: 'Callebaut',
         tags: ['white', 'creamy', 'vanilla', 'balanced', 'versatile', 'milky'],
         origins: ['Belgium', 'West Africa'],
-        applications: ['ganache', 'mousse', 'confectionery', 'enrobing', 'glazes', 'ice-cream'],
+        applications: ['ganache', 'mousse', 'confectionary', 'enrobing', 'glazes', 'ice-cream'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'gluten-free', 'cocoa-horizons'],
         allergens: ['milk', 'soy'],
         temperingCurve: {
@@ -295,7 +295,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
           'Unique caramelized white chocolate with pale amber color and golden hue. Rich notes of toffee, butter, cream and an exciting dash of salt. Expertly crafted with caramelized sugar and caramelized milk',
         manufacturer: 'Callebaut',
         tags: ['caramelized', 'white', 'toffee', 'buttery', 'salted', 'golden', 'unique'],
-        applications: ['confectionery', 'desserts', 'baking', 'ice-cream', 'ganache', 'mousse'],
+        applications: ['confectionary', 'frozen-desserts', 'baking', 'ice-cream', 'ganache', 'mousse'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'gluten-free', 'non-gmo', 'cocoa-horizons'],
         allergens: ['milk', 'soy'],
         temperingCurve: {
@@ -324,7 +324,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
         manufacturer: 'Callebaut',
         tags: ['ruby', 'fruity', 'sour', 'pink', 'natural', 'innovative', 'unique'],
         origins: ['Ivory Coast', 'Ghana', 'Ecuador'],
-        applications: ['pralines', 'frozen-desserts', 'mousse', 'glazes', 'confectionery'],
+        applications: ['pralines', 'frozen-desserts', 'mousse', 'glazes', 'confectionary'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'cocoa-horizons'],
         allergens: ['milk', 'soy'],
         temperingCurve: {
@@ -354,7 +354,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
         tags: ['milk', 'caramel', 'intense', 'creamy', 'rich', 'all-round'],
         origins: ['Ivory Coast', 'Ghana', 'Ecuador'],
         beanVarieties: ['Forastero'],
-        applications: ['molding', 'enrobing', 'ganache', 'confectionery', 'mousse'],
+        applications: ['molding', 'enrobing', 'ganache', 'confectionary', 'mousse'],
         certifications: ['halal', 'kosher-dairy', 'vegetarian', 'cocoa-horizons'],
         allergens: ['milk', 'soy'],
         temperingCurve: {
@@ -1103,7 +1103,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
         tags: ['dark', 'bittersweet', 'couverture', 'smooth', 'full-bodied'],
         origins: ['South Pacific', 'West Africa', 'South America blend'],
         beanVarieties: ['Forastero', 'Trinitario'],
-        applications: ['enrobing', 'molding', 'confectionery', 'ganache', 'mousse'],
+        applications: ['enrobing', 'molding', 'confectionary', 'ganache', 'mousse'],
         certifications: [
           'fair-trade',
           'all-natural',
@@ -1145,7 +1145,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
         tags: ['dark', 'bittersweet', 'couverture', 'balanced'],
         origins: ['South Pacific', 'West Africa', 'South America blend'],
         beanVarieties: ['Forastero', 'Trinitario'],
-        applications: ['enrobing', 'molding', 'confectionery', 'ganache', 'mousse'],
+        applications: ['enrobing', 'molding', 'confectionary', 'ganache', 'mousse'],
         certifications: [
           'fair-trade',
           'all-natural',
@@ -1181,7 +1181,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
           'French-style white chocolate with sweet fresh cream flavor, nutty undertones and lingering hint of citrus. Balanced, sweet dairy and rich cocoa butter taste',
         manufacturer: 'Guittard',
         tags: ['white', 'french-style', 'creamy', 'citrus', 'nutty'],
-        applications: ['ganache', 'mousse', 'baking', 'ice-cream', 'sorbet', 'confectionery', 'drinks'],
+        applications: ['ganache', 'mousse', 'baking', 'ice-cream', 'sorbet', 'confectionary', 'drinks'],
         certifications: [
           'fair-trade',
           'all-natural',

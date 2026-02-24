@@ -28,7 +28,7 @@ items:
     tags: [dark, semisweet, versatile, fruity, roasted-cocoa, iconic]
     origins: [Ivory Coast, Ghana, Ecuador]
     beanVarieties: [Forastero, Trinitario]
-    applications: [confectionery, ganache, mousse, enrobing, molding, baking, sauces, drinks]
+    applications: [confectionary, ganache, mousse, enrobing, molding, baking, sauces, drinks]
     certifications: [halal, kosher-dairy, vegetarian, vegan, cocoa-horizons]
     traceAllergens: [milk, soy]
     temperingCurve:
@@ -58,7 +58,7 @@ items:
     tags: [milk, caramel, smooth, versatile, classic, full-bodied]
     origins: [Ivory Coast, Ghana, Ecuador]
     beanVarieties: [Forastero]
-    applications: [molding, enrobing, ganache, mousse, confectionery]
+    applications: [molding, enrobing, ganache, mousse, confectionary]
     certifications: [halal, kosher-dairy, vegetarian, cocoa-horizons]
     allergens: [milk, soy]
     temperingCurve:
@@ -87,7 +87,7 @@ items:
     manufacturer: Callebaut
     tags: [white, creamy, vanilla, balanced, versatile, milky]
     origins: [Belgium, West Africa]
-    applications: [ganache, mousse, confectionery, enrobing, glazes, ice-cream]
+    applications: [ganache, mousse, confectionary, enrobing, glazes, ice-cream]
     certifications: [halal, kosher-dairy, vegetarian, gluten-free, cocoa-horizons]
     allergens: [milk, soy]
     temperingCurve:
@@ -145,7 +145,7 @@ items:
       Expertly crafted with caramelized sugar and caramelized milk
     manufacturer: Callebaut
     tags: [caramelized, white, toffee, buttery, salted, golden, unique]
-    applications: [confectionery, desserts, baking, ice-cream, ganache, mousse]
+    applications: [confectionary, frozen-desserts, baking, ice-cream, ganache, mousse]
     certifications: [halal, kosher-dairy, vegetarian, gluten-free, non-gmo, cocoa-horizons]
     allergens: [milk, soy]
     temperingCurve:
@@ -174,7 +174,7 @@ items:
     manufacturer: Callebaut
     tags: [ruby, fruity, sour, pink, natural, innovative, unique]
     origins: [Ivory Coast, Ghana, Ecuador]
-    applications: [pralines, frozen-desserts, mousse, glazes, confectionery]
+    applications: [pralines, frozen-desserts, mousse, glazes, confectionary]
     certifications: [halal, kosher-dairy, vegetarian, cocoa-horizons]
     allergens: [milk, soy]
     temperingCurve:
@@ -204,7 +204,7 @@ items:
     tags: [milk, caramel, intense, creamy, rich, all-round]
     origins: [Ivory Coast, Ghana, Ecuador]
     beanVarieties: [Forastero]
-    applications: [molding, enrobing, ganache, confectionery, mousse]
+    applications: [molding, enrobing, ganache, confectionary, mousse]
     certifications: [halal, kosher-dairy, vegetarian, cocoa-horizons]
     allergens: [milk, soy]
     temperingCurve:

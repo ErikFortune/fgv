@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
+import { FileTree } from '@fgv/ts-json-base';
 import { IngredientsLibrary } from '../../../packlets/entities';
 import { CollectionId } from '../../../packlets/common';
 import { ICollectionRuntimeMetadata } from '../../../packlets/library-data';
@@ -436,6 +437,192 @@ describe('SubLibraryBase Collection Management', () => {
         expect(entry.metadata?.name).toBe('Added Name');
         expect(entry.metadata?.sourceName).toBe('unknown');
       });
+    });
+  });
+
+  // ============================================================================
+  // setActiveMutableSource()
+  // ============================================================================
+
+  describe('setActiveMutableSource', () => {
+    test('sets mutable source name and data directory', () => {
+      const tree = FileTree.inMemory([{ path: '/data/ingredients/placeholder.txt', contents: '' }]).orThrow();
+      const dir = tree.getItem('/data/ingredients').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      library.setActiveMutableSource('my-source', dir);
+
+      expect(library.mutableSourceName).toBe('my-source');
+    });
+
+    test('sets mutable source name with undefined data directory', () => {
+      library.setActiveMutableSource('no-dir-source', undefined);
+
+      expect(library.mutableSourceName).toBe('no-dir-source');
+    });
+
+    test('sets mutable source name with optional sourceRoot', () => {
+      const tree = FileTree.inMemory([{ path: '/data/ingredients/placeholder.txt', contents: '' }]).orThrow();
+      const dir = tree.getItem('/data/ingredients').orThrow() as FileTree.IFileTreeDirectoryItem;
+      const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      library.setActiveMutableSource('rooted-source', dir, root);
+
+      expect(library.mutableSourceName).toBe('rooted-source');
+    });
+
+    test('overwrites previously set mutable source', () => {
+      const tree = FileTree.inMemory([{ path: '/data/ingredients/placeholder.txt', contents: '' }]).orThrow();
+      const dir = tree.getItem('/data/ingredients').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      library.setActiveMutableSource('first-source', dir);
+      library.setActiveMutableSource('second-source', undefined);
+
+      expect(library.mutableSourceName).toBe('second-source');
+    });
+  });
+
+  // ============================================================================
+  // removeSource()
+  // ============================================================================
+
+  describe('removeSource', () => {
+    test('removes mutable collections matching the source name', () => {
+      library.addCollectionEntry({
+        id: 'src-a-col1' as CollectionId,
+        isMutable: true,
+        items: {},
+        metadata: { sourceName: 'source-a' }
+      });
+      library.addCollectionEntry({
+        id: 'src-a-col2' as CollectionId,
+        isMutable: true,
+        items: {},
+        metadata: { sourceName: 'source-a' }
+      });
+
+      const removed = library.removeSource('source-a');
+
+      expect(removed).toBe(2);
+      expect(library.collections.has('src-a-col1' as CollectionId)).toBe(false);
+      expect(library.collections.has('src-a-col2' as CollectionId)).toBe(false);
+    });
+
+    test('returns 0 when no collections match the source name', () => {
+      library.addCollectionEntry({
+        id: 'other-col' as CollectionId,
+        isMutable: true,
+        items: {},
+        metadata: { sourceName: 'other-source' }
+      });
+
+      const removed = library.removeSource('nonexistent-source');
+
+      expect(removed).toBe(0);
+      expect(library.collections.has('other-col' as CollectionId)).toBe(true);
+    });
+
+    test('does not remove immutable collections even if source name matches', () => {
+      library.addCollectionEntry({
+        id: 'immutable-col' as CollectionId,
+        isMutable: false,
+        items: {},
+        metadata: { sourceName: 'source-b' }
+      });
+
+      const removed = library.removeSource('source-b');
+
+      expect(removed).toBe(0);
+      expect(library.collections.has('immutable-col' as CollectionId)).toBe(true);
+    });
+
+    test('only removes collections from the specified source, leaving others intact', () => {
+      library.addCollectionEntry({
+        id: 'target-col' as CollectionId,
+        isMutable: true,
+        items: {},
+        metadata: { sourceName: 'target-source' }
+      });
+      library.addCollectionEntry({
+        id: 'keep-col' as CollectionId,
+        isMutable: true,
+        items: {},
+        metadata: { sourceName: 'other-source' }
+      });
+
+      const removed = library.removeSource('target-source');
+
+      expect(removed).toBe(1);
+      expect(library.collections.has('target-col' as CollectionId)).toBe(false);
+      expect(library.collections.has('keep-col' as CollectionId)).toBe(true);
+    });
+
+    test('returns 0 on empty library', () => {
+      expect(library.removeSource('any-source')).toBe(0);
+    });
+
+    test('skips immutable collection whose sourceName matches', () => {
+      library.addCollectionEntry({
+        id: 'immutable-match' as CollectionId,
+        isMutable: false,
+        items: {},
+        metadata: { sourceName: 'target-source' }
+      });
+      library.addCollectionEntry({
+        id: 'mutable-match' as CollectionId,
+        isMutable: true,
+        items: {},
+        metadata: { sourceName: 'target-source' }
+      });
+
+      const removed = library.removeSource('target-source');
+
+      expect(removed).toBe(1);
+      expect(library.collections.has('immutable-match' as CollectionId)).toBe(true);
+      expect(library.collections.has('mutable-match' as CollectionId)).toBe(false);
+    });
+  });
+
+  // ============================================================================
+  // Lazy mutable source root (init path: lines 569-574)
+  // ============================================================================
+
+  describe('lazy mutable source root initialization', () => {
+    test('stores mutableSourceRoot when data directory does not exist but createChildDirectory is available', () => {
+      // A mutable in-memory tree supports createChildDirectory but has no data/ingredients dir yet.
+      // skipMissingDirectories allows loading to succeed; the constructor loop then hits the
+      // createChildDirectory branch (lines 571-573) to store the root for lazy directory creation.
+      const tree = FileTree.inMemory([{ path: '/placeholder.txt', contents: '' }], {
+        mutable: true
+      }).orThrow();
+      const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      const lib = IngredientsLibrary.create({
+        builtin: false,
+        fileSources: {
+          directory: root,
+          mutable: true,
+          sourceName: 'lazy-source',
+          skipMissingDirectories: true
+        }
+      }).orThrow();
+
+      // mutableSourceName is set even though the data directory doesn't exist yet
+      expect(lib.mutableSourceName).toBe('lazy-source');
+    });
+
+    test('mutableSourceName is undefined when no mutable sources are present', () => {
+      // A library with only immutable sources should have no mutableSourceName.
+      const tree = FileTree.inMemory([
+        { path: '/data/ingredients/col.json', contents: { items: {} } }
+      ]).orThrow();
+      const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      const lib = IngredientsLibrary.create({
+        builtin: false,
+        fileSources: { directory: root, mutable: false, sourceName: 'immutable-source' }
+      }).orThrow();
+
+      expect(lib.mutableSourceName).toBeUndefined();
     });
   });
 });

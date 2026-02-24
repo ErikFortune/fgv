@@ -3,7 +3,8 @@
 # Variable: ingredientEntity
 
 Converter for Entities.Ingredients.IngredientEntity | IngredientEntity (discriminated union).
-Tries specialized converters based on category, falls back to base.
+Dispatches to the appropriate specialized converter based on the `category` field.
+Unknown categories fall back to baseIngredientEntity.
 
 ## Type
 

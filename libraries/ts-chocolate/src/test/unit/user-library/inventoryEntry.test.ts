@@ -64,7 +64,7 @@ describe('InventoryEntry', () => {
   const testIngredient: IIngredientEntity = {
     baseId: 'dark-chocolate' as BaseIngredientId,
     name: 'Dark Chocolate 70%',
-    category: 'chocolate',
+    category: 'other',
     ganacheCharacteristics: testGanacheChars
   };
 

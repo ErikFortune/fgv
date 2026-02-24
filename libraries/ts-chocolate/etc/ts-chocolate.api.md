@@ -4565,6 +4565,7 @@ class IngredientEditorContext extends ValidatingEditorContext<IngredientEntity, 
 type IngredientEntity = IChocolateIngredientEntity | ISugarIngredientEntity | IDairyIngredientEntity | IFatIngredientEntity | IAlcoholIngredientEntity | IIngredientEntity;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "baseIngredientEntity"
 //
 // @public
 const ingredientEntity: Converter<IngredientEntity>;

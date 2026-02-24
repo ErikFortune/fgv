@@ -27,7 +27,7 @@ items:
     tags: [dark, bittersweet, couverture, smooth, full-bodied]
     origins: [South Pacific, West Africa, South America blend]
     beanVarieties: [Forastero, Trinitario]
-    applications: [enrobing, molding, confectionery, ganache, mousse]
+    applications: [enrobing, molding, confectionary, ganache, mousse]
     certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
     traceAllergens: [milk]
     temperingCurve:
@@ -57,7 +57,7 @@ items:
     tags: [dark, bittersweet, couverture, balanced]
     origins: [South Pacific, West Africa, South America blend]
     beanVarieties: [Forastero, Trinitario]
-    applications: [enrobing, molding, confectionery, ganache, mousse]
+    applications: [enrobing, molding, confectionary, ganache, mousse]
     certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
     traceAllergens: [milk]
     temperingCurve:
@@ -86,7 +86,7 @@ items:
       Balanced, sweet dairy and rich cocoa butter taste
     manufacturer: Guittard
     tags: [white, french-style, creamy, citrus, nutty]
-    applications: [ganache, mousse, baking, ice-cream, sorbet, confectionery, drinks]
+    applications: [ganache, mousse, baking, ice-cream, sorbet, confectionary, drinks]
     certifications: [fair-trade, all-natural, real-vanilla, non-gmo, peanut-free, gluten-free]
     allergens: [milk]
     temperingCurve:

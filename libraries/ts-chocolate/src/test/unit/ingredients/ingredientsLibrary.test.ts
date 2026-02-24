@@ -50,7 +50,7 @@ describe('IngredientsLibrary', () => {
   const testIngredient: Ingredients.IIngredientEntity = {
     baseId: 'test-choco' as BaseIngredientId,
     name: 'Test Chocolate',
-    category: 'chocolate',
+    category: 'other',
     ganacheCharacteristics: testCharacteristics
   };
 
