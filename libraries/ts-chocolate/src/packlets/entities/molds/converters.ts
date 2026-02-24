@@ -32,7 +32,7 @@ import { ICavities, ICavityDimensions, ICavityInfo, IMoldEntity } from './model'
  * Converter for {@link Entities.Molds.ICavityDimensions | ICavityDimensions}.
  * @public
  */
-export const cavityDimensions: Converter<ICavityDimensions> = Converters.object<ICavityDimensions>({
+export const cavityDimensions: Converter<ICavityDimensions> = Converters.strictObject<ICavityDimensions>({
   width: CommonConverters.millimeters,
   length: CommonConverters.millimeters,
   depth: CommonConverters.millimeters
@@ -42,7 +42,7 @@ export const cavityDimensions: Converter<ICavityDimensions> = Converters.object<
  * Converter for {@link Entities.Molds.ICavityInfo | ICavityInfo}.
  * @public
  */
-export const cavityInfo: Converter<ICavityInfo> = Converters.object<ICavityInfo>({
+export const cavityInfo: Converter<ICavityInfo> = Converters.strictObject<ICavityInfo>({
   weight: CommonConverters.measurement.optional(),
   dimensions: cavityDimensions.optional()
 });
@@ -51,7 +51,7 @@ export const cavityInfo: Converter<ICavityInfo> = Converters.object<ICavityInfo>
  * Converter for {@link Entities.Molds.ICavities | ICavities} data structure.
  * @public
  */
-const cavitiesGrid: Converter<Extract<ICavities, { kind: 'grid' }>> = Converters.object<
+const cavitiesGrid: Converter<Extract<ICavities, { kind: 'grid' }>> = Converters.strictObject<
   Extract<ICavities, { kind: 'grid' }>
 >({
   kind: Converters.literal('grid'),
@@ -64,7 +64,7 @@ const cavitiesGrid: Converter<Extract<ICavities, { kind: 'grid' }>> = Converters
  * Converter for {@link Entities.Molds.ICavities | ICavities} data structure.
  * @public
  */
-const cavitiesCount: Converter<Extract<ICavities, { kind: 'count' }>> = Converters.object<
+const cavitiesCount: Converter<Extract<ICavities, { kind: 'count' }>> = Converters.strictObject<
   Extract<ICavities, { kind: 'count' }>
 >({
   kind: Converters.literal('count'),
@@ -76,13 +76,16 @@ const cavitiesCount: Converter<Extract<ICavities, { kind: 'count' }>> = Converte
  * Converter for {@link Entities.Molds.ICavities | ICavities} data structure.
  * @public
  */
-export const cavities: Converter<ICavities> = Converters.oneOf<ICavities>([cavitiesGrid, cavitiesCount]);
+export const cavities: Converter<ICavities> = Converters.discriminatedObject<ICavities>('kind', {
+  grid: cavitiesGrid,
+  count: cavitiesCount
+});
 
 /**
  * Converter for {@link Entities.Molds.IMoldEntity | IMoldEntity} data structure.
  * @public
  */
-export const moldEntity: Converter<IMoldEntity> = Converters.object<IMoldEntity>({
+export const moldEntity: Converter<IMoldEntity> = Converters.strictObject<IMoldEntity>({
   baseId: CommonConverters.baseMoldId,
   manufacturer: Converters.string,
   productNumber: Converters.string,

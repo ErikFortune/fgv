@@ -42,7 +42,7 @@ import {
  * @public
  */
 export const decorationIngredientEntity: Converter<IDecorationIngredientEntity> =
-  Converters.object<IDecorationIngredientEntity>({
+  Converters.strictObject<IDecorationIngredientEntity>({
     ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'decorationIngredient'),
     amount: CommonConverters.measurement,
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
@@ -56,7 +56,7 @@ export const decorationIngredientEntity: Converter<IDecorationIngredientEntity> 
  * Converter for {@link Entities.Decorations.IDecorationRating | IDecorationRating}.
  * @public
  */
-export const decorationRating: Converter<IDecorationRating> = Converters.object<IDecorationRating>({
+export const decorationRating: Converter<IDecorationRating> = Converters.strictObject<IDecorationRating>({
   category: FillingConverters.ratingCategory,
   score: CommonConverters.ratingScore,
   notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
@@ -82,7 +82,7 @@ export const decorationRefEntity: Converter<IDecorationRefEntity> = CommonConver
  * Converter for {@link Entities.Decorations.IDecorationEntity | IDecorationEntity}.
  * @public
  */
-export const decorationEntity: Converter<IDecorationEntity> = Converters.object<IDecorationEntity>({
+export const decorationEntity: Converter<IDecorationEntity> = Converters.strictObject<IDecorationEntity>({
   baseId: CommonConverters.baseDecorationId,
   name: Converters.string,
   description: Converters.string.optional(),

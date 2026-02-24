@@ -33,21 +33,22 @@ import { IProcedureEntity, IProcedureStepEntity } from './model';
  * Converter for {@link Entities.Procedures.IProcedureStepEntity | IProcedureStepEntity}.
  * @public
  */
-export const procedureStepEntity: Converter<IProcedureStepEntity> = Converters.object<IProcedureStepEntity>({
-  order: Converters.number,
-  task: TaskConverters.taskEntityInvocation,
-  activeTime: CommonConverters.minutes.optional(),
-  waitTime: CommonConverters.minutes.optional(),
-  holdTime: CommonConverters.minutes.optional(),
-  temperature: CommonConverters.celsius.optional(),
-  notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
-});
+export const procedureStepEntity: Converter<IProcedureStepEntity> =
+  Converters.strictObject<IProcedureStepEntity>({
+    order: Converters.number,
+    task: TaskConverters.taskEntityInvocation,
+    activeTime: CommonConverters.minutes.optional(),
+    waitTime: CommonConverters.minutes.optional(),
+    holdTime: CommonConverters.minutes.optional(),
+    temperature: CommonConverters.celsius.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
 
 /**
  * Converter for {@link Entities.Procedures.IProcedureEntity | IProcedureEntity} data structure.
  * @public
  */
-export const procedureEntity: Converter<IProcedureEntity> = Converters.object<IProcedureEntity>({
+export const procedureEntity: Converter<IProcedureEntity> = Converters.strictObject<IProcedureEntity>({
   baseId: CommonConverters.baseProcedureId,
   name: Converters.string,
   description: Converters.string.optional(),

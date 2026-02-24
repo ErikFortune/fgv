@@ -61,7 +61,7 @@ const params: Converter<Record<string, unknown>> = Converters.recordOf<unknown>(
  * Does not include requiredVariables as those are extracted from the template at runtime.
  * @public
  */
-export const rawTaskEntity: Converter<IRawTaskEntity> = Converters.object<IRawTaskEntity>({
+export const rawTaskEntity: Converter<IRawTaskEntity> = Converters.strictObject<IRawTaskEntity>({
   baseId: CommonConverters.baseTaskId,
   name: Converters.string,
   template: Converters.string,
@@ -82,7 +82,7 @@ export const rawTaskEntity: Converter<IRawTaskEntity> = Converters.object<IRawTa
  * Converter for {@link Entities.Tasks.ITaskRefEntity | ITaskRefEntity} (reference to a public task)
  * @public
  */
-export const taskRefEntity: Converter<ITaskRefEntity> = Converters.object<ITaskRefEntity>({
+export const taskRefEntity: Converter<ITaskRefEntity> = Converters.strictObject<ITaskRefEntity>({
   taskId: CommonConverters.taskId,
   params: params
 });
@@ -106,7 +106,7 @@ export const taskRefStatus: Converter<TaskRefStatus> = Converters.enumeratedValu
  * Converter for {@link Entities.Tasks.IInlineTaskEntity | IInlineTaskEntity} (embedded task with full ITaskData definition).
  * @public
  */
-export const inlineTaskEntity: Converter<IInlineTaskEntity> = Converters.object<IInlineTaskEntity>({
+export const inlineTaskEntity: Converter<IInlineTaskEntity> = Converters.strictObject<IInlineTaskEntity>({
   task: rawTaskEntity,
   params: params
 });
@@ -141,7 +141,7 @@ export const validationBehavior: Converter<ValidationBehavior> =
  * Converter for IRenderOptions
  * @public
  */
-export const renderOptions: Converter<IRenderOptions> = Converters.object<IRenderOptions>({
+export const renderOptions: Converter<IRenderOptions> = Converters.strictObject<IRenderOptions>({
   onInvalidTaskRef: validationBehavior.optional(),
   onMissingVariables: validationBehavior.optional(),
   additionalContext: params.optional()

@@ -300,8 +300,7 @@ describe('TasksLibrary.createAsync', () => {
             'external-task': {
               baseId: 'external-task',
               name: 'External Task',
-              template: 'Do external {{action}}',
-              requiredVariables: ['action']
+              template: 'Do external {{action}}'
             }
           }
         }
@@ -333,8 +332,7 @@ describe('TasksLibrary.createAsync', () => {
       'secret-task': {
         baseId: 'secret-task',
         name: 'Secret Task',
-        template: 'Secret {{action}}',
-        requiredVariables: ['action']
+        template: 'Secret {{action}}'
       }
     };
 
@@ -385,8 +383,7 @@ describe('TasksLibrary.createAsync', () => {
       'secret-task': {
         baseId: 'secret-task',
         name: 'Secret Task',
-        template: 'Secret action',
-        requiredVariables: []
+        template: 'Secret action'
       }
     };
 
