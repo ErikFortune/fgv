@@ -30,6 +30,7 @@ import {
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useCanDeleteFromCollections,
   useEntityActions,
   IngredientDetail,
   IngredientEditView,
@@ -90,6 +91,11 @@ export function ConfectionsTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.confections
   );
+
+  const canDeleteConfection = useCanDeleteFromCollections(workspace.data.entities.confections.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
   const editingRef = useRef<IConfectionEditingState | undefined>(undefined);
   const editVariationSpecRef = useRef<ConfectionRecipeVariationSpec | undefined>(undefined);
@@ -1310,9 +1316,7 @@ export function ConfectionsTabContent(): React.ReactElement {
                 compareCount={compareIds.size}
                 onStartComparison={startComparison}
                 onDelete={handleRequestDelete}
-                canDelete={(id): boolean =>
-                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
-                }
+                canDelete={canDeleteConfection}
                 emptyState={{
                   title: 'No Confections',
                   description: 'No confections found in the library.'

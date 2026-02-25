@@ -71,6 +71,8 @@ export interface ICollectionSectionProps {
   readonly collections: ReadonlyArray<ICollectionRowItem>;
   /** Callback when visibility is toggled for a collection */
   readonly onToggleVisibility: (collectionId: string) => void;
+  /** Callback when all-visible toggle is clicked; receives true to show all, false to hide all */
+  readonly onToggleAllVisibility?: (showAll: boolean) => void;
   /** Callback when "Add Directory" is clicked */
   readonly onAddDirectory?: () => void;
   /** Callback when "New Collection" is clicked */
@@ -210,6 +212,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
   const {
     collections,
     onToggleVisibility,
+    onToggleAllVisibility,
     onAddDirectory,
     onCreateCollection,
     onDeleteCollection,
@@ -222,6 +225,19 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
   } = props;
 
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+
+  const allVisible = collections.length > 0 && collections.every((c) => c.isVisible);
+
+  const handleToggleAllVisibility = useCallback((): void => {
+    if (onToggleAllVisibility) {
+      onToggleAllVisibility(!allVisible);
+    } else {
+      const ids = allVisible
+        ? collections.map((c) => c.id)
+        : collections.filter((c) => !c.isVisible).map((c) => c.id);
+      ids.forEach((id) => onToggleVisibility(id));
+    }
+  }, [onToggleAllVisibility, onToggleVisibility, allVisible, collections]);
 
   const handleToggleCollapse = useCallback((): void => {
     setCollapsed((prev) => !prev);
@@ -241,6 +257,16 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
           Collections
           <span className="text-gray-400 normal-case font-normal">({collections.length})</span>
         </button>
+        {collections.length > 1 && (
+          <button
+            onClick={handleToggleAllVisibility}
+            className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
+            title={allVisible ? 'Hide all collections' : 'Show all collections'}
+            aria-label={allVisible ? 'Hide all collections' : 'Show all collections'}
+          >
+            {allVisible ? '\u{1F441}\u{FE0F}\u{200D}\u{1F5E8}\u{FE0F}' : '\u{1F441}'}
+          </button>
+        )}
 
         {/* Action buttons */}
         <div className="flex items-center gap-1">

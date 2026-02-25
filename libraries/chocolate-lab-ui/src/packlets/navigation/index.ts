@@ -41,4 +41,8 @@ export { type ITabNavigation, useTabNavigation } from './useTabNavigation';
 
 export { type IEntityListOptions, type IEntityListResult, useEntityList } from './useEntityList';
 
-export { type ICollectionMap as IMutableCollectionMap, useMutableCollection } from './useMutableCollection';
+export {
+  type ICollectionMap as IMutableCollectionMap,
+  useMutableCollection,
+  useCanDeleteFromCollections
+} from './useMutableCollection';

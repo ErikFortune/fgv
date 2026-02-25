@@ -15,6 +15,7 @@ import {
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useCanDeleteFromCollections,
   useEntityActions,
   MoldDetail,
   MoldEditView,
@@ -55,6 +56,11 @@ export function MoldsTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.molds
   );
+
+  const canDeleteMold = useCanDeleteFromCollections(workspace.data.entities.molds.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
   const handleCreateMold = useCallback(
     (entity: Entities.Molds.IMoldEntity, source: 'manual' | 'ai'): void => {
@@ -487,9 +493,7 @@ export function MoldsTabContent(): React.ReactElement {
                 compareCount={compareIds.size}
                 onStartComparison={startComparison}
                 onDelete={handleRequestDelete}
-                canDelete={(id): boolean =>
-                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
-                }
+                canDelete={canDeleteMold}
                 emptyState={{
                   title: 'No Molds',
                   description: 'No molds found in the library.'

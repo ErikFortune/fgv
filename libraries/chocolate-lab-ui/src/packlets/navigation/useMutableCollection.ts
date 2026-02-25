@@ -80,3 +80,29 @@ export function useMutableCollection(
     [...deps, preferredId]
   );
 }
+
+/**
+ * Returns a predicate that returns true if a composite entity ID (collectionId.baseId)
+ * belongs to a mutable collection. Use this for `canDelete` in EntityList.
+ *
+ * @param collections - The entity collection map to check against.
+ * @param deps - Memo dependencies (typically `[workspace, reactiveWorkspace.version]`).
+ * @public
+ */
+export function useCanDeleteFromCollections(
+  collections: ICollectionMap,
+  deps: ReadonlyArray<unknown>
+): (compositeId: string) => boolean {
+  return useMemo<(compositeId: string) => boolean>(
+    () =>
+      (compositeId: string): boolean => {
+        const collectionId = compositeId.split('.')[0];
+        if (collectionId === undefined) return false;
+        for (const [id, col] of collections.entries()) {
+          if (id === collectionId) return col.isMutable;
+        }
+        return false;
+      },
+    deps
+  );
+}

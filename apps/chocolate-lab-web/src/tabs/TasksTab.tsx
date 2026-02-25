@@ -15,6 +15,7 @@ import {
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useCanDeleteFromCollections,
   useEntityActions,
   TaskDetail,
   TaskEditView,
@@ -58,6 +59,11 @@ export function TasksTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.tasks
   );
+
+  const canDeleteTask = useCanDeleteFromCollections(workspace.data.entities.tasks.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
   const handleCreateTask = useCallback(
     (entity: Entities.Tasks.IRawTaskEntity, source: 'manual'): void => {
@@ -555,9 +561,7 @@ export function TasksTabContent(): React.ReactElement {
                 compareCount={compareIds.size}
                 onStartComparison={startComparison}
                 onDelete={handleRequestDelete}
-                canDelete={(id): boolean =>
-                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
-                }
+                canDelete={canDeleteTask}
                 emptyState={{
                   title: 'No Tasks',
                   description: 'No tasks found in the library.'

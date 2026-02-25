@@ -27,6 +27,7 @@ import {
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useCanDeleteFromCollections,
   useEntityActions,
   IngredientDetail,
   IngredientEditView,
@@ -113,6 +114,11 @@ export function FillingsTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.fillings
   );
+
+  const canDeleteFilling = useCanDeleteFromCollections(workspace.data.entities.fillings.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
   const { entities: fillings, selectedId } = useEntityList<LibraryRuntime.FillingRecipe, FillingId>({
     getAll: () => workspace.data.fillings.values(),
@@ -1428,9 +1434,7 @@ export function FillingsTabContent(): React.ReactElement {
                 compareCount={compareIds.size}
                 onStartComparison={startComparison}
                 onDelete={handleRequestDelete}
-                canDelete={(id): boolean =>
-                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
-                }
+                canDelete={canDeleteFilling}
                 emptyState={{
                   title: 'No Fillings',
                   description: 'No filling recipes found in the library.'

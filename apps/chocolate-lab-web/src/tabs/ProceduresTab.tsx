@@ -15,6 +15,7 @@ import {
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useCanDeleteFromCollections,
   useEntityActions,
   ProcedureDetail,
   ProcedureEditView,
@@ -64,6 +65,11 @@ export function ProceduresTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.procedures
   );
+
+  const canDeleteProcedure = useCanDeleteFromCollections(workspace.data.entities.procedures.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
   const { entities: procedures, selectedId } = useEntityList<LibraryRuntime.IProcedure, ProcedureId>({
     getAll: () => workspace.data.procedures.values(),
@@ -613,10 +619,7 @@ export function ProceduresTabContent(): React.ReactElement {
                 compareCount={compareIds.size}
                 onStartComparison={startComparison}
                 onDelete={handleRequestDelete}
-                canDelete={(id): boolean =>
-                  mutableProcedureCollectionId !== undefined &&
-                  id.startsWith(`${mutableProcedureCollectionId}.`)
-                }
+                canDelete={canDeleteProcedure}
                 emptyState={{
                   title: 'No Procedures',
                   description: 'No procedures found in the library.'

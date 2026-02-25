@@ -25,6 +25,7 @@ import {
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useCanDeleteFromCollections,
   useEntityActions,
   IngredientDetail,
   IngredientEditView,
@@ -85,6 +86,11 @@ export function DecorationsTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.decorations
   );
+
+  const canDeleteDecoration = useCanDeleteFromCollections(workspace.data.entities.decorations.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
   const { entities: decorations, selectedId } = useEntityList<LibraryRuntime.IDecoration, DecorationId>({
     getAll: () => workspace.data.decorations.values(),
@@ -1165,9 +1171,7 @@ export function DecorationsTabContent(): React.ReactElement {
                 compareCount={compareIds.size}
                 onStartComparison={startComparison}
                 onDelete={handleRequestDelete}
-                canDelete={(id): boolean =>
-                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
-                }
+                canDelete={canDeleteDecoration}
                 emptyState={{
                   title: 'No Decorations',
                   description: 'No decorations found in the library.'

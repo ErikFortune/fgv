@@ -15,6 +15,7 @@ import {
   useTabNavigation,
   useEntityList,
   useMutableCollection,
+  useCanDeleteFromCollections,
   useEntityActions,
   IngredientDetail,
   IngredientEditView,
@@ -60,6 +61,11 @@ export function IngredientsTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.ingredients
   );
+
+  const canDeleteIngredient = useCanDeleteFromCollections(workspace.data.entities.ingredients.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
 
   const { entities: ingredients, selectedId } = useEntityList<LibraryRuntime.AnyIngredient, IngredientId>({
     getAll: () => workspace.data.ingredients.values(),
@@ -489,9 +495,7 @@ export function IngredientsTabContent(): React.ReactElement {
                 compareCount={compareIds.size}
                 onStartComparison={startComparison}
                 onDelete={handleRequestDelete}
-                canDelete={(id): boolean =>
-                  mutableCollectionId !== undefined && id.startsWith(`${mutableCollectionId}.`)
-                }
+                canDelete={canDeleteIngredient}
                 emptyState={{
                   title: 'No Ingredients',
                   description: 'No ingredients found in the library.'
