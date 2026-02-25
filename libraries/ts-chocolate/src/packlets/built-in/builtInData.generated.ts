@@ -1083,14 +1083,14 @@ export const ingredientCollections: Record<string, JsonObject> = {
     items: {
       'coucher-du-soleil-72': {
         baseId: 'coucher-du-soleil-72',
-        name: 'Coucher du Soleil 72%',
+        name: 'Guittard Coucher du Soleil 72% Dark',
         ganacheCharacteristics: {
           cacaoFat: 42,
           sugar: 27,
           milkFat: 0,
-          water: 1,
+          water: 0,
           solids: 30,
-          otherFats: 2
+          otherFats: 1
         },
         description:
           'Dark and rich chocolate with a smooth, creamy mouthfeel. Full-bodied throughout with a clean, fresh finish',
@@ -1121,14 +1121,14 @@ export const ingredientCollections: Record<string, JsonObject> = {
       },
       'lever-du-soleil-61': {
         baseId: 'lever-du-soleil-61',
-        name: 'Lever du Soleil 61%',
+        name: 'Guittard Lever du Soleil 61% Dark',
         ganacheCharacteristics: {
           cacaoFat: 38,
           sugar: 37,
           milkFat: 0,
-          water: 1,
+          water: 0,
           solids: 24,
-          otherFats: 2
+          otherFats: 1
         },
         description: 'Dark chocolate couverture with balanced sweetness and smooth texture',
         manufacturer: 'Guittard',
@@ -1163,7 +1163,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
       },
       'creme-francaise-31': {
         baseId: 'creme-francaise-31',
-        name: 'Crème Française 31%',
+        name: 'Guittard Crème Française 31% White',
         ganacheCharacteristics: {
           cacaoFat: 20,
           sugar: 47,
@@ -1198,14 +1198,14 @@ export const ingredientCollections: Record<string, JsonObject> = {
       },
       'letoile-du-nord-64': {
         baseId: 'letoile-du-nord-64',
-        name: "L'Étoile du Nord 64%",
+        name: "Guittard L'Étoile du Nord 64% Dark",
         ganacheCharacteristics: {
           cacaoFat: 37,
           sugar: 34,
           milkFat: 0,
-          water: 1,
+          water: 0,
           solids: 28,
-          otherFats: 2
+          otherFats: 1
         },
         description:
           'High impact, lingering bittersweet chocolate balanced with minimal sweetness, dark color with warm chocolate and spice notes',
@@ -1234,14 +1234,14 @@ export const ingredientCollections: Record<string, JsonObject> = {
       },
       'la-nuit-noire-55': {
         baseId: 'la-nuit-noire-55',
-        name: 'La Nuit Noire 55%',
+        name: 'Guittard La Nuit Noire 55% Dark',
         ganacheCharacteristics: {
           cacaoFat: 33,
           sugar: 43,
           milkFat: 0,
-          water: 1,
+          water: 0,
           solids: 23,
-          otherFats: 2
+          otherFats: 1
         },
         description:
           'Classic deep chocolate flavor with pronounced fudge and multi-dimensional, balanced flavor profile. Nutty with lingering chocolate and vanilla finish',
@@ -1270,7 +1270,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
       },
       'soleil-dor-38': {
         baseId: 'soleil-dor-38',
-        name: "Soleil d'Or 38%",
+        name: "Guittard Soleil d'Or 38% Milk",
         ganacheCharacteristics: {
           cacaoFat: 20,
           sugar: 40,
@@ -1305,7 +1305,7 @@ export const ingredientCollections: Record<string, JsonObject> = {
       },
       'guittard-onyx-72': {
         baseId: 'guittard-onyx-72',
-        name: 'Onyx 72',
+        name: 'Guittard Onyx 72% Dark',
         ganacheCharacteristics: {
           cacaoFat: 40,
           sugar: 28,
