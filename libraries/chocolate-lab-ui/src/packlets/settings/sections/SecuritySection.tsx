@@ -110,6 +110,14 @@ export function SecuritySection(): React.ReactElement {
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<'idle' | 'set-password' | 'unlock' | 'change-password'>('idle');
+  const [apiKeyName, setApiKeyName] = useState('');
+  const [apiKeyValue, setApiKeyValue] = useState('');
+  const [apiKeyError, setApiKeyError] = useState<string | undefined>();
+  const [apiKeySuccess, setApiKeySuccess] = useState(false);
+
+  // Retained master password for save operations after unlock.
+  // The form password gets cleared, but we need the password to persist the vault.
+  const [masterPassword, setMasterPassword] = useState<string | undefined>();
 
   const clearForm = useCallback((): void => {
     setPassword('');
@@ -161,6 +169,7 @@ export function SecuritySection(): React.ReactElement {
       }
       await persistKeyStore(keyStore, password);
       reactiveWorkspace.notifyChange();
+      setMasterPassword(password);
       clearForm();
     } finally {
       setBusy(false);
@@ -182,6 +191,7 @@ export function SecuritySection(): React.ReactElement {
         setError('Incorrect password');
         return;
       }
+      setMasterPassword(password);
       clearForm();
     } finally {
       setBusy(false);
@@ -191,6 +201,7 @@ export function SecuritySection(): React.ReactElement {
   // ---- Lock ----
   const handleLock = useCallback((): void => {
     workspaceLock();
+    setMasterPassword(undefined);
   }, [workspaceLock]);
 
   // ---- Change Password ----
@@ -210,11 +221,48 @@ export function SecuritySection(): React.ReactElement {
     try {
       await persistKeyStore(keyStore, password);
       reactiveWorkspace.notifyChange();
+      setMasterPassword(password);
       clearForm();
     } finally {
       setBusy(false);
     }
   }, [keyStore, password, confirmPassword, persistKeyStore, reactiveWorkspace, clearForm]);
+
+  // ---- Import API Key ----
+  const handleImportApiKey = useCallback(async (): Promise<void> => {
+    if (!keyStore) {
+      setApiKeyError('No keystore available');
+      return;
+    }
+    const trimmedName = apiKeyName.trim();
+    const trimmedValue = apiKeyValue.trim();
+    if (!trimmedName) {
+      setApiKeyError('Secret name is required');
+      return;
+    }
+    if (!trimmedValue) {
+      setApiKeyError('API key is required');
+      return;
+    }
+
+    setApiKeyError(undefined);
+    const result = keyStore.importApiKey(trimmedName, trimmedValue);
+    if (result.isFailure()) {
+      setApiKeyError(result.message);
+      return;
+    }
+
+    // Persist keystore after adding secret
+    if (masterPassword) {
+      await persistKeyStore(keyStore, masterPassword);
+    }
+    reactiveWorkspace.notifyChange();
+
+    setApiKeyName('');
+    setApiKeyValue('');
+    setApiKeySuccess(true);
+    setTimeout(() => setApiKeySuccess(false), 2000);
+  }, [keyStore, apiKeyName, apiKeyValue, masterPassword, persistKeyStore, reactiveWorkspace]);
 
   // ---- Secret List ----
   const secretNames: ReadonlyArray<string> = (() => {
@@ -415,6 +463,44 @@ export function SecuritySection(): React.ReactElement {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {/* Import API Key (only when unlocked) */}
+          {workspaceState === 'unlocked' && (
+            <div className="rounded-lg border border-gray-200 p-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Import API Key</p>
+              <p className="text-xs text-gray-500 mb-3">
+                Store an API key as a keystore secret for use with AI assist providers.
+              </p>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={apiKeyName}
+                  onChange={(e): void => setApiKeyName(e.target.value)}
+                  placeholder="Secret name (e.g. xai-api-key)"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                />
+                <input
+                  type="password"
+                  value={apiKeyValue}
+                  onChange={(e): void => setApiKeyValue(e.target.value)}
+                  placeholder="API key"
+                  className="w-full px-3 py-1.5 text-sm font-mono border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                />
+                {apiKeyError && <p className="text-xs text-red-600">{apiKeyError}</p>}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleImportApiKey}
+                    disabled={!apiKeyName.trim() || !apiKeyValue.trim()}
+                    className="px-3 py-1.5 text-sm bg-amber-500 rounded-md text-white hover:bg-amber-600 disabled:opacity-50"
+                  >
+                    Import
+                  </button>
+                  {apiKeySuccess && <span className="text-xs text-green-600">Saved!</span>}
+                </div>
+              </div>
             </div>
           )}
         </div>

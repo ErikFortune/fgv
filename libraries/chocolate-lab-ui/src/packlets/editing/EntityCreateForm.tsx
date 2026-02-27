@@ -23,18 +23,25 @@
 /**
  * Generic entity create form for the cascade 'create' mode.
  *
- * Renders name/ID fields, an AI drop zone, a Copy AI Prompt button,
- * and Create/Cancel actions. Parameterized so it can be reused across
- * entity types (ingredients, fillings, molds, etc.).
+ * Renders name/ID fields, an AI drop zone, AI action buttons (copy prompt
+ * and/or direct generation), and Create/Cancel actions. Parameterized so
+ * it can be reused across entity types (ingredients, fillings, molds, etc.).
+ *
+ * When multiple AI providers are enabled in settings, the AI button becomes
+ * a dropdown with all available actions.
  *
  * @packageDocumentation
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ClipboardDocumentIcon, SparklesIcon, XMarkIcon } from '@heroicons/react/20/solid';
+import { ChevronDownIcon, ClipboardDocumentIcon, SparklesIcon, XMarkIcon } from '@heroicons/react/20/solid';
 
 import type { Result } from '@fgv/ts-utils';
+
+import { type AiAssist, type Settings } from '@fgv/ts-chocolate';
+
+import { useAiAssist, type IAiAssistAction } from './useAiAssist';
 
 // ============================================================================
 // Props
@@ -47,8 +54,8 @@ import type { Result } from '@fgv/ts-utils';
 export interface IEntityCreateFormProps<TEntity> {
   /** Convert a display name to a slug ID */
   readonly slugify: (name: string) => string;
-  /** Build an AI prompt string from the ingredient name */
-  readonly buildPrompt: (name: string) => string;
+  /** Build a structured AI prompt from the entity name */
+  readonly buildPrompt: (name: string) => AiAssist.IAiPrompt;
   /** Convert unknown JSON into a validated entity */
   readonly convert: (from: unknown) => Result<TEntity>;
   /** Build a blank entity from name and ID (for manual creation) */
@@ -73,8 +80,11 @@ export interface IEntityCreateFormProps<TEntity> {
  * Generic create form for the cascade 'create' mode.
  *
  * Displays name, auto-derived ID, a paste/drop zone for AI-generated JSON,
- * a Copy AI Prompt button, and Create/Cancel actions. All fields are always
+ * AI action button(s), and Create/Cancel actions. All fields are always
  * visible — no progressive disclosure.
+ *
+ * When multiple AI providers are enabled, the copy prompt button becomes
+ * a dropdown showing all available actions (copy prompt, generate with Grok, etc.).
  *
  * @public
  */
@@ -95,11 +105,31 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
   const [idOverride, setIdOverride] = useState('');
   const [pasteError, setPasteError] = useState<string | undefined>(undefined);
   const [promptCopied, setPromptCopied] = useState(false);
+  const [aiDropdownOpen, setAiDropdownOpen] = useState(false);
+
+  const aiAssist = useAiAssist();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const trimmedName = name.trim();
   const derivedId = trimmedName ? slugify(trimmedName) : '';
   const effectiveId = idOverride.trim() || derivedId;
   const hasValidId = effectiveId.length > 0;
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!aiDropdownOpen) return;
+    const handleClick = (e: MouseEvent): void => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setAiDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return (): void => document.removeEventListener('mousedown', handleClick);
+  }, [aiDropdownOpen]);
+
+  // Determine if we have multiple actions (i.e. more than just copy-paste)
+  const hasMultipleActions = aiAssist.actions.length > 1;
+  const directActions = aiAssist.actions.filter((a) => a.provider !== 'copy-paste');
 
   // ---- Handlers ----
 
@@ -112,7 +142,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
   const handleCopyPrompt = useCallback((): void => {
     if (!trimmedName) return;
     const prompt = buildPrompt(trimmedName);
-    navigator.clipboard.writeText(prompt).then(
+    aiAssist.copyPrompt(prompt).then(
       () => {
         setPromptCopied(true);
         setTimeout(() => setPromptCopied(false), 2000);
@@ -121,7 +151,32 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
         setPasteError('Failed to copy prompt to clipboard');
       }
     );
-  }, [trimmedName, buildPrompt]);
+    setAiDropdownOpen(false);
+  }, [trimmedName, buildPrompt, aiAssist]);
+
+  const handleDirectGenerate = useCallback(
+    (action: IAiAssistAction): void => {
+      if (!trimmedName) return;
+      setPasteError(undefined);
+      setAiDropdownOpen(false);
+
+      const prompt = buildPrompt(trimmedName);
+      aiAssist.generateDirect<TEntity>(action.provider as Settings.AiAssistProvider, prompt, convert).then(
+        (result) => {
+          if (result.isFailure()) {
+            setPasteError(result.message);
+            return;
+          }
+          onCreate(result.value.entity, 'ai');
+        },
+        (err: unknown) => {
+          const detail = err instanceof Error ? err.message : String(err);
+          setPasteError(`AI generation failed: ${detail}`);
+        }
+      );
+    },
+    [trimmedName, buildPrompt, convert, onCreate, aiAssist]
+  );
 
   const handleJsonInput = useCallback(
     (text: string): void => {
@@ -182,6 +237,107 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
     e.dataTransfer.dropEffect = 'copy';
   }, []);
 
+  // ---- Render helpers ----
+
+  const renderAiButton = (): React.ReactElement => {
+    // Single action (copy-paste only) — simple button
+    if (!hasMultipleActions) {
+      return (
+        <button
+          onClick={handleCopyPrompt}
+          disabled={!hasValidId}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 hover:text-purple-900 hover:bg-purple-50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          title={hasValidId ? 'Copy AI prompt to clipboard' : 'Enter a name to generate an AI prompt'}
+        >
+          {promptCopied ? (
+            <>
+              <ClipboardDocumentIcon className="w-4 h-4" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <SparklesIcon className="w-4 h-4" />
+              Copy AI Prompt
+            </>
+          )}
+        </button>
+      );
+    }
+
+    // Multiple actions — split button with dropdown
+    return (
+      <div ref={dropdownRef} className="relative">
+        <div className="flex items-center">
+          {/* Main button — copy prompt (always the default action) */}
+          <button
+            onClick={handleCopyPrompt}
+            disabled={!hasValidId || aiAssist.isWorking}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 hover:text-purple-900 hover:bg-purple-50 rounded-l transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title={hasValidId ? 'Copy AI prompt to clipboard' : 'Enter a name to generate an AI prompt'}
+          >
+            {aiAssist.isWorking ? (
+              <>
+                <SparklesIcon className="w-4 h-4 animate-pulse" />
+                Generating...
+              </>
+            ) : promptCopied ? (
+              <>
+                <ClipboardDocumentIcon className="w-4 h-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <SparklesIcon className="w-4 h-4" />
+                AI Assist
+              </>
+            )}
+          </button>
+          {/* Dropdown toggle */}
+          <button
+            onClick={(): void => setAiDropdownOpen(!aiDropdownOpen)}
+            disabled={!hasValidId || aiAssist.isWorking}
+            className="flex items-center px-1.5 py-1.5 text-xs font-medium text-purple-700 hover:text-purple-900 hover:bg-purple-50 rounded-r border-l border-purple-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="More AI options"
+          >
+            <ChevronDownIcon className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Dropdown menu */}
+        {aiDropdownOpen && (
+          <div className="absolute left-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1">
+            {/* Copy prompt — always first */}
+            <button
+              onClick={handleCopyPrompt}
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-gray-700 hover:bg-purple-50 hover:text-purple-900"
+            >
+              <ClipboardDocumentIcon className="w-4 h-4 text-purple-500" />
+              <span>Copy AI Prompt</span>
+            </button>
+            {/* Direct providers */}
+            {directActions.map((action) => (
+              <button
+                key={action.provider}
+                onClick={(): void => handleDirectGenerate(action)}
+                disabled={!action.isAvailable}
+                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-gray-700 hover:bg-purple-50 hover:text-purple-900 disabled:opacity-40 disabled:cursor-not-allowed"
+                title={action.unavailableReason}
+              >
+                <SparklesIcon className="w-4 h-4 text-purple-500" />
+                <div className="flex flex-col">
+                  <span>{action.label}</span>
+                  {action.unavailableReason && (
+                    <span className="text-[10px] text-gray-400">{action.unavailableReason}</span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ---- Render ----
 
   return (
@@ -236,24 +392,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
 
       {/* Action buttons */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={handleCopyPrompt}
-          disabled={!hasValidId}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 hover:text-purple-900 hover:bg-purple-50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          title={hasValidId ? 'Copy AI prompt to clipboard' : `Enter a name to generate an AI prompt`}
-        >
-          {promptCopied ? (
-            <>
-              <ClipboardDocumentIcon className="w-4 h-4" />
-              Copied!
-            </>
-          ) : (
-            <>
-              <SparklesIcon className="w-4 h-4" />
-              Copy AI Prompt
-            </>
-          )}
-        </button>
+        {renderAiButton()}
 
         <div className="flex items-center gap-2">
           <button

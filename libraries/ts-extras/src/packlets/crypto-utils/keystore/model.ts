@@ -54,6 +54,20 @@ export const MIN_SALT_LENGTH: number = 16;
 // ============================================================================
 
 /**
+ * Discriminator for secret types stored in the vault.
+ * - `'encryption-key'`: A 32-byte AES-256 encryption key.
+ * - `'api-key'`: An arbitrary-length API key string (UTF-8 encoded).
+ * @public
+ */
+export type KeyStoreSecretType = 'encryption-key' | 'api-key';
+
+/**
+ * All valid key store secret types.
+ * @public
+ */
+export const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType> = ['encryption-key', 'api-key'];
+
+/**
  * A secret entry stored in the vault (in-memory representation).
  * @public
  */
@@ -64,7 +78,15 @@ export interface IKeyStoreSecretEntry {
   readonly name: string;
 
   /**
-   * The 32-byte AES-256 key.
+   * Secret type discriminator.
+   * Defaults to `'encryption-key'` for backwards compatibility.
+   */
+  readonly type: KeyStoreSecretType;
+
+  /**
+   * The secret data.
+   * - For `'encryption-key'`: 32-byte AES-256 key.
+   * - For `'api-key'`: UTF-8 encoded API key string (arbitrary length).
    */
   readonly key: Uint8Array;
 
@@ -90,7 +112,13 @@ export interface IKeyStoreSecretEntryJson {
   readonly name: string;
 
   /**
-   * Base64-encoded 32-byte key.
+   * Secret type discriminator.
+   * Optional for backwards compatibility — missing means `'encryption-key'`.
+   */
+  readonly type?: KeyStoreSecretType;
+
+  /**
+   * Base64-encoded secret data.
    */
   readonly key: string;
 

@@ -31,3 +31,12 @@ export {
   type IEntityReferenceHit,
   type IReferenceScanResult
 } from './referenceScanner';
+
+export {
+  useAiAssist,
+  type IAiAssistAction,
+  type IAiAssistResult,
+  type IUseAiAssistResult
+} from './useAiAssist';
+
+export { AiAssistNameDialog, type IAiAssistNameDialogProps } from './AiAssistNameDialog';

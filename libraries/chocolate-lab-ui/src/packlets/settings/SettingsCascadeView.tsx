@@ -1,10 +1,10 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
 
 import { CascadeContainer, type ICascadeColumn } from '@fgv/ts-app-shell';
 
 import { useWorkspace } from '../workspace';
 
-import { useSettingsDraft } from './useSettingsDraft';
+import { type ISettingsDraft, useSettingsDraft } from './useSettingsDraft';
 import { BootstrapSection } from './sections/BootstrapSection';
 import { WorkspaceSection } from './sections/WorkspaceSection';
 import { ScalingSection } from './sections/ScalingSection';
@@ -12,6 +12,25 @@ import { WorkflowSection } from './sections/WorkflowSection';
 import { StorageSection } from './sections/StorageSection';
 import { LibrarySection } from './sections/LibrarySection';
 import { SecuritySection } from './sections/SecuritySection';
+import { AiAssistSection } from './sections/AiAssistSection';
+
+// ============================================================================
+// Shared draft context
+// ============================================================================
+
+// Context so section components rendered inside stored cascade JSX always
+// read the latest draft from the parent, avoiding stale-prop issues.
+const SettingsDraftContext: React.Context<ISettingsDraft | undefined> = createContext<
+  ISettingsDraft | undefined
+>(undefined);
+
+function useSharedDraft(): ISettingsDraft {
+  const ctx = useContext(SettingsDraftContext);
+  if (!ctx) {
+    throw new Error('useSharedDraft must be used inside SettingsDraftContext.Provider');
+  }
+  return ctx;
+}
 
 // ============================================================================
 // Section definitions
@@ -24,6 +43,7 @@ type SettingsSection =
   | 'workflow'
   | 'storage'
   | 'libraries'
+  | 'ai-assist'
   | 'security';
 
 interface ISectionDef {
@@ -38,6 +58,7 @@ const SECTIONS: ReadonlyArray<ISectionDef> = [
   { id: 'workflow', label: 'Workflow' },
   { id: 'storage', label: 'Storage' },
   { id: 'libraries', label: 'Libraries' },
+  { id: 'ai-assist', label: 'AI Assist' },
   { id: 'security', label: 'Security' }
 ];
 
@@ -104,17 +125,18 @@ function SectionListColumn({
 
 function SectionContent({
   section,
-  draft,
   sectionKey,
   sectionLabel,
   onSetColumns
 }: {
   readonly section: SettingsSection;
-  readonly draft: NonNullable<ReturnType<typeof useSettingsDraft>>;
   readonly sectionKey: string;
   readonly sectionLabel: string;
   readonly onSetColumns: (cols: ReadonlyArray<ICascadeColumn>) => void;
 }): React.ReactElement {
+  // Read draft from context so we always get the parent's current state,
+  // even though this component is stored as JSX in the cascade column state.
+  const draft = useSharedDraft();
   const workspace = useWorkspace();
   const deviceId = workspace.settings?.deviceId;
   const { bootstrap, preferences, hasBootstrapChanges, updateBootstrap, updatePreferences } = draft;
@@ -126,7 +148,6 @@ function SectionContent({
       content: (
         <SectionContent
           section={section}
-          draft={draft}
           sectionKey={sectionKey}
           sectionLabel={sectionLabel}
           onSetColumns={onSetColumns}
@@ -165,6 +186,8 @@ function SectionContent({
       );
     case 'libraries':
       return <LibrarySection />;
+    case 'ai-assist':
+      return <AiAssistSection aiAssist={preferences.aiAssist} onChange={updatePreferences} />;
     case 'security':
       return <SecuritySection />;
     default:
@@ -227,7 +250,6 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
         content: (
           <SectionContent
             section={section.id}
-            draft={resolvedDraft}
             sectionKey={section.id}
             sectionLabel={section.label}
             onSetColumns={setDetailColumns}
@@ -241,56 +263,58 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
   handleSelectSectionRef.current = handleSelectSection;
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Toolbar: full-width, above sidebar+cascade */}
-      <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 border-b border-gray-200 bg-gray-50 shrink-0">
-        <div className="flex-1" />
-        {saveError && <span className="text-xs text-red-600">{saveError}</span>}
-        {isDirty && (
+    <SettingsDraftContext.Provider value={resolvedDraft}>
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Toolbar: full-width, above sidebar+cascade */}
+        <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 border-b border-gray-200 bg-gray-50 shrink-0">
+          <div className="flex-1" />
+          {saveError && <span className="text-xs text-red-600">{saveError}</span>}
+          {isDirty && (
+            <button
+              type="button"
+              onClick={revert}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Revert
+            </button>
+          )}
           <button
             type="button"
-            onClick={revert}
+            onClick={handleClose}
             disabled={isSaving}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Revert
+            Cancel
           </button>
-        )}
-        <button
-          type="button"
-          onClick={handleClose}
-          disabled={isSaving}
-          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={isSaving || !isDirty}
-          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-white bg-choco-primary hover:bg-choco-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {isSaving ? 'Saving…' : 'Save'}
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || !isDirty}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-white bg-choco-primary hover:bg-choco-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isSaving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
 
-      <CascadeContainer
-        columns={[
-          {
-            key: '__sections__',
-            label: 'Settings',
-            content: (
-              <SectionListColumn
-                activeSection={activeSection}
-                onSelectSection={(s): void => handleSelectSectionRef.current(s)}
-              />
-            )
-          },
-          ...detailColumns
-        ]}
-        onPopTo={handlePopTo}
-        rootLabel="Settings"
-      />
-    </div>
+        <CascadeContainer
+          columns={[
+            {
+              key: '__sections__',
+              label: 'Settings',
+              content: (
+                <SectionListColumn
+                  activeSection={activeSection}
+                  onSelectSection={(s): void => handleSelectSectionRef.current(s)}
+                />
+              )
+            },
+            ...detailColumns
+          ]}
+          onPopTo={handlePopTo}
+          rootLabel="Settings"
+        />
+      </div>
+    </SettingsDraftContext.Provider>
   );
 }

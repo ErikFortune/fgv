@@ -24,6 +24,7 @@
  */
 
 import { Helpers, Model } from '../common';
+import { createAiPrompt, IAiPrompt } from './model';
 
 /**
  * Builds a detailed AI prompt for generating an ingredient entity JSON object.
@@ -31,15 +32,15 @@ import { Helpers, Model } from '../common';
  * and instructions for the AI to include notes describing assumptions.
  *
  * @param ingredientName - The display name of the ingredient to generate data for
- * @returns A complete prompt string suitable for copying to clipboard or sending to an AI agent
+ * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildIngredientAiPrompt(ingredientName: string): string {
+export function buildIngredientAiPrompt(ingredientName: string): IAiPrompt {
   const baseId = Helpers.toKebabCase(ingredientName);
 
-  return `Generate a JSON object representing the ingredient "${ingredientName}" for a chocolate-making application.
+  const user = `Generate a JSON object representing the ingredient "${ingredientName}" for a chocolate-making application.`;
 
-Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
+  const system = `Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
 
 ## baseId
 Generate from the name as lowercase-kebab-case: "${baseId}"
@@ -105,8 +106,10 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 
 ## Instructions
 - Use your knowledge to fill in accurate values. Research the specific product if a manufacturer is identifiable.
-- For ganacheCharacteristics, provide your best estimates. The six percentages need not sum to 100 (they represent different compositional axes).
+- For ganacheCharacteristics, provide your best estimates of each component as a percentage of total weight. The six values (cacaoFat, sugar, milkFat, water, solids, otherFats) represent the ingredient's composition and MUST sum to exactly 100. For example, Valrhona Guanaja 70% dark chocolate might be: cacaoFat 38, sugar 29, milkFat 0, water 1, solids 31, otherFats 1.
 - Include a "notes" array with at least one entry using category "ai" describing any assumptions you made, especially unconfirmed estimates. These notes are preserved on the entity and shown to the user.
 - Populate as many optional fields as you can reasonably determine.
 - Return ONLY the JSON object, nothing else.`;
+
+  return createAiPrompt(user, system);
 }

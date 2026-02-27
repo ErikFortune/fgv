@@ -25,20 +25,21 @@
 
 import { Helpers } from '../common';
 import { allDecorationRatingCategories } from '../entities';
+import { createAiPrompt, IAiPrompt } from './model';
 
 /**
  * Builds a detailed AI prompt for generating a decoration entity JSON object.
  *
  * @param decorationName - The display name of the decoration to generate data for
- * @returns A complete prompt string suitable for copying to clipboard or sending to an AI agent
+ * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildDecorationAiPrompt(decorationName: string): string {
+export function buildDecorationAiPrompt(decorationName: string): IAiPrompt {
   const baseId = Helpers.toKebabCase(decorationName);
 
-  return `Generate a JSON object representing the chocolate confection decoration "${decorationName}" for a chocolate-making application.
+  const user = `Generate a JSON object representing the chocolate confection decoration "${decorationName}" for a chocolate-making application.`;
 
-Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
+  const system = `Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
 
 ## baseId
 Generate from the name as lowercase-kebab-case: "${baseId}"
@@ -77,4 +78,6 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - If you can estimate difficulty or appearance ratings, include them.
 - Populate as many optional fields as you can reasonably determine.
 - Return ONLY the JSON object, nothing else.`;
+
+  return createAiPrompt(user, system);
 }

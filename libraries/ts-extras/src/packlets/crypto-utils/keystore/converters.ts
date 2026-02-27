@@ -21,11 +21,13 @@
 import { Converter, Converters } from '@fgv/ts-utils';
 import { base64String, encryptionAlgorithm, keyDerivationParams } from '../converters';
 import {
+  allKeyStoreSecretTypes,
   IKeyStoreFile,
   IKeyStoreSecretEntryJson,
   IKeyStoreVaultContents,
   KEYSTORE_FORMAT,
-  KeyStoreFormat
+  KeyStoreFormat,
+  KeyStoreSecretType
 } from './model';
 
 // ============================================================================
@@ -41,23 +43,36 @@ export const keystoreFormat: Converter<KeyStoreFormat> = Converters.enumeratedVa
 ]);
 
 // ============================================================================
+// Secret Type Converter
+// ============================================================================
+
+/**
+ * Converter for {@link CryptoUtils.KeyStore.KeyStoreSecretType | key store secret type} discriminator.
+ * @public
+ */
+export const keystoreSecretType: Converter<KeyStoreSecretType> =
+  Converters.enumeratedValue<KeyStoreSecretType>(allKeyStoreSecretTypes);
+
+// ============================================================================
 // Secret Entry Converters
 // ============================================================================
 
 /**
  * Converter for {@link CryptoUtils.KeyStore.IKeyStoreSecretEntryJson | key store secret entry} in JSON format.
+ * The `type` field is optional for backwards compatibility — missing means `'encryption-key'`.
  * @public
  */
 export const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson> =
   Converters.object<IKeyStoreSecretEntryJson>(
     {
       name: Converters.string,
+      type: keystoreSecretType,
       key: base64String,
       description: Converters.string,
       createdAt: Converters.string
     },
     {
-      optionalFields: ['description']
+      optionalFields: ['type', 'description']
     }
   );
 

@@ -24,22 +24,23 @@
  */
 
 import { Helpers } from '../common';
+import { createAiPrompt, IAiPrompt } from './model';
 
 /**
  * Builds a detailed AI prompt for generating a filling recipe entity JSON object.
  *
  * @param fillingName - The display name of the filling recipe to generate data for
- * @returns A complete prompt string suitable for copying to clipboard or sending to an AI agent
+ * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildFillingAiPrompt(fillingName: string): string {
+export function buildFillingAiPrompt(fillingName: string): IAiPrompt {
   const baseId = Helpers.toKebabCase(fillingName);
 
   const today = new Date().toISOString().split('T')[0]!;
 
-  return `Generate a JSON object representing the filling recipe "${fillingName}" for a chocolate-making application.
+  const user = `Generate a JSON object representing the filling recipe "${fillingName}" for a chocolate-making application.`;
 
-Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
+  const system = `Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
 
 ## baseId
 Generate from the name as lowercase-kebab-case: "${baseId}"
@@ -90,4 +91,6 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - Include a "notes" array on the variation with at least one entry using category "ai" describing any assumptions, especially estimated amounts or substitutions.
 - Populate as many optional fields as you can reasonably determine.
 - Return ONLY the JSON object, nothing else.`;
+
+  return createAiPrompt(user, system);
 }

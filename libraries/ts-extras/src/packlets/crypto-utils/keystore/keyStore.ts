@@ -45,6 +45,7 @@ import {
   IKeyStoreVaultContents,
   KEYSTORE_FORMAT,
   KeyStoreLockState,
+  KeyStoreSecretType,
   MIN_SALT_LENGTH
 } from './model';
 import { keystoreFile, keystoreVaultContents } from './converters';
@@ -274,6 +275,7 @@ export class KeyStore implements IEncryptionProvider {
       }
       const entry: IKeyStoreSecretEntry = {
         name,
+        type: jsonEntry.type ?? 'encryption-key',
         key: keyBytesResult.value,
         description: jsonEntry.description,
         createdAt: jsonEntry.createdAt
@@ -432,6 +434,7 @@ export class KeyStore implements IEncryptionProvider {
 
     const entry: IKeyStoreSecretEntry = {
       name,
+      type: 'encryption-key',
       key: keyResult.value,
       description: options?.description,
       createdAt: getCurrentTimestamp()
@@ -473,6 +476,7 @@ export class KeyStore implements IEncryptionProvider {
 
     const entry: IKeyStoreSecretEntry = {
       name,
+      type: 'encryption-key',
       key: new Uint8Array(key), // Copy to prevent external modification
       description: options?.description,
       createdAt: getCurrentTimestamp()
@@ -536,6 +540,7 @@ export class KeyStore implements IEncryptionProvider {
 
     const entry: IKeyStoreSecretEntry = {
       name,
+      type: 'encryption-key',
       key: keyResult.value,
       description: options?.description,
       createdAt: getCurrentTimestamp()
@@ -580,6 +585,91 @@ export class KeyStore implements IEncryptionProvider {
   }
 
   /**
+   * Imports an API key string into the vault.
+   * The string is UTF-8 encoded and stored with type `'api-key'`.
+   * @param name - Unique name for the secret
+   * @param apiKey - The API key string
+   * @param options - Optional description, whether to replace existing
+   * @returns Success with entry, Failure if locked, empty, or exists and !replace
+   * @public
+   */
+  public importApiKey(
+    name: string,
+    apiKey: string,
+    options?: IImportSecretOptions
+  ): Result<IAddSecretResult> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    if (!name || name.length === 0) {
+      return fail('Secret name cannot be empty');
+    }
+    if (!apiKey || apiKey.length === 0) {
+      return fail('API key cannot be empty');
+    }
+
+    const exists = this._secrets.has(name);
+    if (exists && !options?.replace) {
+      return fail(`Secret '${name}' already exists - use replace=true to overwrite`);
+    }
+
+    const encoder = new TextEncoder();
+    const entry: IKeyStoreSecretEntry = {
+      name,
+      type: 'api-key',
+      key: encoder.encode(apiKey),
+      description: options?.description,
+      createdAt: getCurrentTimestamp()
+    };
+
+    this._secrets.set(name, entry);
+    this._dirty = true;
+
+    return succeed({ entry, replaced: exists });
+  }
+
+  /**
+   * Retrieves an API key string by name.
+   * Only works for secrets with type `'api-key'`.
+   * @param name - Name of the secret
+   * @returns Success with the API key string, Failure if not found, locked, or wrong type
+   * @public
+   */
+  public getApiKey(name: string): Result<string> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    const entry = this._secrets.get(name);
+    if (!entry) {
+      return fail(`Secret '${name}' not found`);
+    }
+    if (entry.type !== 'api-key') {
+      return fail(`Secret '${name}' is not an API key (type: ${entry.type})`);
+    }
+    const decoder = new TextDecoder();
+    return succeed(decoder.decode(entry.key));
+  }
+
+  /**
+   * Lists secret names filtered by type.
+   * @param type - The secret type to filter by
+   * @returns Success with array of matching secret names, Failure if locked
+   * @public
+   */
+  public listSecretsByType(type: KeyStoreSecretType): Result<readonly string[]> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    const names: string[] = [];
+    for (const [name, entry] of this._secrets) {
+      if (entry.type === type) {
+        names.push(name);
+      }
+    }
+    return succeed(names);
+  }
+
+  /**
    * Renames a secret.
    * @param oldName - Current name
    * @param newName - New name
@@ -603,7 +693,7 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Secret '${newName}' already exists`);
     }
 
-    // Create new entry with new name
+    // Create new entry with new name (preserve type)
     const newEntry: IKeyStoreSecretEntry = {
       ...entry,
       name: newName
@@ -647,6 +737,7 @@ export class KeyStore implements IEncryptionProvider {
     for (const [name, entry] of this._secrets) {
       secrets[name] = {
         name: entry.name,
+        type: entry.type,
         key: this._cryptoProvider.toBase64(entry.key),
         description: entry.description,
         createdAt: entry.createdAt

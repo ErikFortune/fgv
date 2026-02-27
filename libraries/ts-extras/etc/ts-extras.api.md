@@ -17,6 +17,9 @@ import { Validator } from '@fgv/ts-utils';
 const AES_256_KEY_SIZE: number;
 
 // @public
+const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
+
+// @public
 const base64String: Converter<string>;
 
 declare namespace Constants {
@@ -43,6 +46,7 @@ export { Converters }
 declare namespace Converters_2 {
     export {
         keystoreFormat,
+        keystoreSecretType,
         keystoreSecretEntryJson,
         keystoreVaultContents,
         keystoreFile
@@ -430,6 +434,7 @@ interface IKeyStoreSecretEntry {
     readonly description?: string;
     readonly key: Uint8Array;
     readonly name: string;
+    readonly type: KeyStoreSecretType;
 }
 
 // @public
@@ -438,6 +443,7 @@ interface IKeyStoreSecretEntryJson {
     readonly description?: string;
     readonly key: string;
     readonly name: string;
+    readonly type?: KeyStoreSecretType;
 }
 
 // @public
@@ -527,6 +533,8 @@ declare namespace KeyStore {
         KEYSTORE_FORMAT,
         DEFAULT_KEYSTORE_ITERATIONS,
         MIN_SALT_LENGTH,
+        KeyStoreSecretType,
+        allKeyStoreSecretTypes,
         IKeyStoreSecretEntry,
         IKeyStoreSecretEntryJson,
         IKeyStoreVaultContents,
@@ -554,16 +562,19 @@ class KeyStore_2 implements IEncryptionProvider {
     //
     // (undocumented)
     encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
+    getApiKey(name: string): Result<string>;
     getEncryptionConfig(): Result<Pick<IEncryptionConfig, 'secretProvider' | 'cryptoProvider'>>;
     getSecret(name: string): Result<IKeyStoreSecretEntry>;
     getSecretProvider(): Result<SecretProvider>;
     hasSecret(name: string): Result<boolean>;
+    importApiKey(name: string, apiKey: string, options?: IImportSecretOptions): Result<IAddSecretResult>;
     importSecret(name: string, key: Uint8Array, options?: IImportSecretOptions): Result<IAddSecretResult>;
     initialize(password: string): Promise<Result<KeyStore_2>>;
     get isDirty(): boolean;
     get isNew(): boolean;
     get isUnlocked(): boolean;
     listSecrets(): Result<readonly string[]>;
+    listSecretsByType(type: KeyStoreSecretType): Result<readonly string[]>;
     lock(force?: boolean): Result<KeyStore_2>;
     static open(params: IKeyStoreOpenParams): Result<KeyStore_2>;
     removeSecret(name: string): Result<IKeyStoreSecretEntry>;
@@ -596,6 +607,14 @@ type KeyStoreLockState = 'locked' | 'unlocked';
 //
 // @public
 const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson>;
+
+// @public
+type KeyStoreSecretType = 'encryption-key' | 'api-key';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreSecretType: Converter<KeyStoreSecretType>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

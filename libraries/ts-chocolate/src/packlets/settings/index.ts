@@ -41,6 +41,12 @@ export {
   type IScalingDefaults,
   type IWorkflowPreferences,
   type IToolSettings,
+  // AI Assist
+  type AiAssistProvider,
+  allAiAssistProviders,
+  type IAiAssistProviderConfig,
+  type IAiAssistSettings,
+  DEFAULT_AI_ASSIST,
   // Collection targets
   type IDefaultCollectionTargets,
   // External libraries

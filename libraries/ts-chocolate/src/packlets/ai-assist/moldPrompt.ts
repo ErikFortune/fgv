@@ -24,6 +24,7 @@
  */
 
 import { Helpers, Model } from '../common';
+import { createAiPrompt, IAiPrompt } from './model';
 
 /**
  * Builds a detailed AI prompt for generating a mold entity JSON object.
@@ -31,15 +32,15 @@ import { Helpers, Model } from '../common';
  * and instructions for the AI to include notes describing assumptions.
  *
  * @param moldDescription - A description of the mold, typically manufacturer and model number
- * @returns A complete prompt string suitable for copying to clipboard or sending to an AI agent
+ * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildMoldAiPrompt(moldDescription: string): string {
+export function buildMoldAiPrompt(moldDescription: string): IAiPrompt {
   const baseId = Helpers.toKebabCase(moldDescription);
 
-  return `Generate a JSON object representing the chocolate mold "${moldDescription}" for a chocolate-making application.
+  const user = `Generate a JSON object representing the chocolate mold "${moldDescription}" for a chocolate-making application.`;
 
-Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
+  const system = `Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
 
 ## baseId
 Generate from the description as lowercase-kebab-case: "${baseId}"
@@ -107,4 +108,6 @@ Generate from the description as lowercase-kebab-case: "${baseId}"
 - Include "urls" if you can identify the manufacturer's product page or a purchase link.
 - Populate as many optional fields as you can reasonably determine.
 - Return ONLY the JSON object, nothing else.`;
+
+  return createAiPrompt(user, system);
 }
