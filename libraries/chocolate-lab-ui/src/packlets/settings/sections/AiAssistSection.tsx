@@ -104,7 +104,7 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
           </thead>
           <tbody>
             {AiAssist.getProviderDescriptors().map((descriptor) => {
-              const config = enabledMap.get(descriptor.id as Settings.AiAssistProvider);
+              const config = enabledMap.get(descriptor.id);
               const isEnabled = config !== undefined;
               const isCopyPaste = descriptor.id === 'copy-paste';
               const isDefault = effectiveDefault === descriptor.id;

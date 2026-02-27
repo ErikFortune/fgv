@@ -22,10 +22,11 @@ type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
 declare namespace AiAssist {
     export {
         AiPrompt,
+        AiProviderId,
+        IAiCompletionResponse,
         IChatMessage,
         AiApiFormat,
         IAiProviderDescriptor,
-        AiProviderId,
         allProviderIds,
         getProviderDescriptors,
         getProviderDescriptor,
@@ -56,7 +57,7 @@ const allProviderIds: ReadonlyArray<AiProviderId>;
 const base64String: Converter<string>;
 
 // @public
-function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<string>>;
+function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
 
 declare namespace Constants {
     export {
@@ -318,7 +319,7 @@ const GCM_AUTH_TAG_SIZE: number;
 const GCM_IV_SIZE: number;
 
 // @public
-function getProviderDescriptor(id: string): IAiProviderDescriptor | undefined;
+function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>;
 
 // @public
 function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor>;
@@ -355,12 +356,18 @@ interface IAddSecretResult {
 }
 
 // @public
+interface IAiCompletionResponse {
+    readonly content: string;
+    readonly truncated: boolean;
+}
+
+// @public
 interface IAiProviderDescriptor {
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;
     readonly defaultModel: string;
-    readonly id: string;
+    readonly id: AiProviderId;
     readonly label: string;
     readonly needsSecret: boolean;
 }

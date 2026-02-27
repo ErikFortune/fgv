@@ -27,9 +27,10 @@
  * @packageDocumentation
  */
 
-import { fail, Result, succeed } from '@fgv/ts-utils';
+import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
+import { fail, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
-import { AiPrompt, type IAiProviderDescriptor, type IChatMessage } from './model';
+import { AiPrompt, type IAiCompletionResponse, type IAiProviderDescriptor, type IChatMessage } from './model';
 
 // ============================================================================
 // Types
@@ -99,7 +100,7 @@ async function fetchJson(
   url: string,
   headers: Record<string, string>,
   body: unknown
-): Promise<Result<Record<string, unknown>>> {
+): Promise<Result<JsonObject>> {
   let response: Response;
   try {
     response = await fetch(url, {
@@ -127,8 +128,90 @@ async function fetchJson(
     return fail('AI API returned invalid JSON response');
   }
 
-  return succeed(json as Record<string, unknown>);
+  if (!isJsonObject(json)) {
+    return fail('AI API returned non-object JSON response');
+  }
+  return succeed(json);
 }
+
+// ============================================================================
+// Response validators (non-strict — extra API fields preserved for debugging)
+// ============================================================================
+
+/** @internal */
+interface IOpenAiMessage {
+  content: string;
+}
+/** @internal */
+interface IOpenAiChoice {
+  message: IOpenAiMessage;
+  finish_reason: string;
+}
+/** @internal */
+interface IOpenAiResponse {
+  choices: IOpenAiChoice[];
+}
+
+const openAiMessage: Validator<IOpenAiMessage> = Validators.object<IOpenAiMessage>({
+  content: Validators.string
+});
+const openAiChoice: Validator<IOpenAiChoice> = Validators.object<IOpenAiChoice>({
+  message: openAiMessage,
+  finish_reason: Validators.string
+});
+const openAiResponse: Validator<IOpenAiResponse> = Validators.object<IOpenAiResponse>({
+  choices: Validators.arrayOf(openAiChoice).withConstraint((arr) => arr.length > 0)
+});
+
+/** @internal */
+interface IAnthropicContentBlock {
+  text: string;
+}
+/** @internal */
+interface IAnthropicResponse {
+  content: IAnthropicContentBlock[];
+  stop_reason: string;
+}
+
+const anthropicContentBlock: Validator<IAnthropicContentBlock> = Validators.object<IAnthropicContentBlock>({
+  text: Validators.string
+});
+const anthropicResponse: Validator<IAnthropicResponse> = Validators.object<IAnthropicResponse>({
+  content: Validators.arrayOf(anthropicContentBlock).withConstraint((arr) => arr.length > 0),
+  stop_reason: Validators.string
+});
+
+/** @internal */
+interface IGeminiPart {
+  text: string;
+}
+/** @internal */
+interface IGeminiContent {
+  parts: IGeminiPart[];
+}
+/** @internal */
+interface IGeminiCandidate {
+  content: IGeminiContent;
+  finishReason: string;
+}
+/** @internal */
+interface IGeminiResponse {
+  candidates: IGeminiCandidate[];
+}
+
+const geminiPart: Validator<IGeminiPart> = Validators.object<IGeminiPart>({
+  text: Validators.string
+});
+const geminiContent: Validator<IGeminiContent> = Validators.object<IGeminiContent>({
+  parts: Validators.arrayOf(geminiPart).withConstraint((arr) => arr.length > 0)
+});
+const geminiCandidate: Validator<IGeminiCandidate> = Validators.object<IGeminiCandidate>({
+  content: geminiContent,
+  finishReason: Validators.string
+});
+const geminiResponse: Validator<IGeminiResponse> = Validators.object<IGeminiResponse>({
+  candidates: Validators.arrayOf(geminiCandidate).withConstraint((arr) => arr.length > 0)
+});
 
 // ============================================================================
 // OpenAI-compatible client
@@ -139,33 +222,30 @@ async function fetchJson(
  * Works for xAI Grok, OpenAI, Groq, and Mistral.
  * @internal
  */
-function callOpenAiCompletion(
+async function callOpenAiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7
-): Promise<Result<string>> {
+): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt, additionalMessages);
   const body = { model: config.model, messages, temperature };
 
-  return fetchJson(url, { Authorization: `Bearer ${config.apiKey}` }, body).then((jsonResult) => {
-    if (jsonResult.isFailure()) {
-      return fail(jsonResult.message);
-    }
-    const obj = jsonResult.value;
-    const choices = obj.choices;
-    if (!Array.isArray(choices) || choices.length === 0) {
-      return fail('AI API returned no choices');
-    }
-    const firstChoice = choices[0] as Record<string, unknown>;
-    const message = firstChoice.message as Record<string, unknown> | undefined;
-    const content = message?.content;
-    if (typeof content !== 'string') {
-      return fail('AI API response missing message content');
-    }
-    return succeed(content);
-  });
+  const jsonResult = await fetchJson(url, { Authorization: `Bearer ${config.apiKey}` }, body);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return openAiResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `OpenAI API response: ${msg}`)
+    .onSuccess((response) => {
+      const choice = response.choices[0];
+      return succeed({
+        content: choice.message.content,
+        truncated: choice.finish_reason === 'length'
+      });
+    });
 }
 
 // ============================================================================
@@ -176,12 +256,12 @@ function callOpenAiCompletion(
  * Calls the Anthropic Messages API.
  * @internal
  */
-function callAnthropicCompletion(
+async function callAnthropicCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7
-): Promise<Result<string>> {
+): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
 
   // Anthropic uses system as a top-level field, not in messages
@@ -208,22 +288,19 @@ function callAnthropicCompletion(
     'anthropic-version': '2023-06-01'
   };
 
-  return fetchJson(url, headers, body).then((jsonResult) => {
-    if (jsonResult.isFailure()) {
-      return fail(jsonResult.message);
-    }
-    const obj = jsonResult.value;
-    const contentArray = obj.content;
-    if (!Array.isArray(contentArray) || contentArray.length === 0) {
-      return fail('Anthropic API returned no content');
-    }
-    const first = contentArray[0] as Record<string, unknown>;
-    const text = first.text;
-    if (typeof text !== 'string') {
-      return fail('Anthropic API response missing text content');
-    }
-    return succeed(text);
-  });
+  const jsonResult = await fetchJson(url, headers, body);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return anthropicResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `Anthropic API response: ${msg}`)
+    .onSuccess((response) => {
+      return succeed({
+        content: response.content[0].text,
+        truncated: response.stop_reason === 'max_tokens'
+      });
+    });
 }
 
 // ============================================================================
@@ -234,12 +311,12 @@ function callAnthropicCompletion(
  * Calls the Google Gemini generateContent API.
  * @internal
  */
-function callGeminiCompletion(
+async function callGeminiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7
-): Promise<Result<string>> {
+): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
   // Gemini uses 'contents' with 'parts', and 'model' role instead of 'assistant'
@@ -267,27 +344,20 @@ function callGeminiCompletion(
     'x-goog-api-key': config.apiKey
   };
 
-  return fetchJson(url, headers, body).then((jsonResult) => {
-    if (jsonResult.isFailure()) {
-      return fail(jsonResult.message);
-    }
-    const obj = jsonResult.value;
-    const candidates = obj.candidates;
-    if (!Array.isArray(candidates) || candidates.length === 0) {
-      return fail('Gemini API returned no candidates');
-    }
-    const first = candidates[0] as Record<string, unknown>;
-    const contentObj = first.content as Record<string, unknown> | undefined;
-    const parts = contentObj?.parts;
-    if (!Array.isArray(parts) || parts.length === 0) {
-      return fail('Gemini API response missing content parts');
-    }
-    const text = (parts[0] as Record<string, unknown>).text;
-    if (typeof text !== 'string') {
-      return fail('Gemini API response missing text in parts');
-    }
-    return succeed(text);
-  });
+  const jsonResult = await fetchJson(url, headers, body);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return geminiResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `Gemini API response: ${msg}`)
+    .onSuccess((response) => {
+      const candidate = response.candidates[0];
+      return succeed({
+        content: candidate.content.parts[0].text,
+        truncated: candidate.finishReason === 'MAX_TOKENS'
+      });
+    });
 }
 
 // ============================================================================
@@ -303,11 +373,17 @@ function callGeminiCompletion(
  * - `'gemini'` for Google Gemini
  *
  * @param params - Request parameters including descriptor, API key, and prompt
- * @returns The assistant's response content string, or a failure
+ * @returns The completion response with content and truncation status, or a failure
  * @public
  */
-export async function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<string>> {
+export async function callProviderCompletion(
+  params: IProviderCompletionParams
+): Promise<Result<IAiCompletionResponse>> {
   const { descriptor, apiKey, prompt, additionalMessages, temperature = 0.7, modelOverride } = params;
+
+  if (!descriptor.baseUrl) {
+    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  }
 
   const config: IAiApiConfig = {
     baseUrl: descriptor.baseUrl,
@@ -322,5 +398,9 @@ export async function callProviderCompletion(params: IProviderCompletionParams):
       return callAnthropicCompletion(config, prompt, additionalMessages, temperature);
     case 'gemini':
       return callGeminiCompletion(config, prompt, additionalMessages, temperature);
+    default: {
+      const _exhaustive: never = descriptor.apiFormat;
+      return fail(`unsupported API format: ${String(_exhaustive)}`);
+    }
   }
 }

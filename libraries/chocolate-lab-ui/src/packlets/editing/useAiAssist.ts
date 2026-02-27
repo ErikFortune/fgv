@@ -142,10 +142,11 @@ export function useAiAssist(): IUseAiAssistResult {
         }
       }
 
-      const descriptor = AiAssist.getProviderDescriptor(config.provider);
+      const label =
+        AiAssist.getProviderDescriptor(config.provider).orDefault()?.buttonLabel ?? config.provider;
       return {
         provider: config.provider,
-        label: descriptor?.buttonLabel ?? config.provider,
+        label,
         isDefault: config.provider === defaultProvider,
         isAvailable,
         unavailableReason
@@ -177,10 +178,11 @@ export function useAiAssist(): IUseAiAssistResult {
         return fail(`Provider "${provider}" not configured`);
       }
 
-      const descriptor = AiAssist.getProviderDescriptor(provider);
-      if (!descriptor) {
-        return fail(`Unknown provider: ${provider}`);
+      const descriptorResult = AiAssist.getProviderDescriptor(provider);
+      if (descriptorResult.isFailure()) {
+        return fail(descriptorResult.message);
       }
+      const descriptor = descriptorResult.value;
 
       if (!providerConfig.secretName) {
         return fail(`Provider "${provider}" has no secret name configured`);
@@ -213,7 +215,12 @@ export function useAiAssist(): IUseAiAssistResult {
             return fail(responseResult.message);
           }
 
-          const rawResponse = responseResult.value;
+          const { content: rawResponse, truncated } = responseResult.value;
+
+          // Truncated responses are almost certainly malformed JSON — fail early
+          if (truncated) {
+            return fail('AI response was truncated due to token limits — try a shorter prompt');
+          }
 
           // Strip markdown code fences and parse JSON
           const stripped = rawResponse

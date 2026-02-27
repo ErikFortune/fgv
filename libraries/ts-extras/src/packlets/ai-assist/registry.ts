@@ -23,7 +23,9 @@
  * @packageDocumentation
  */
 
-import { type IAiProviderDescriptor } from './model';
+import { fail, Result, succeed } from '@fgv/ts-utils';
+
+import { type AiProviderId, type IAiProviderDescriptor } from './model';
 
 // ============================================================================
 // Built-in providers
@@ -112,23 +114,10 @@ const PROVIDER_BY_ID: ReadonlyMap<string, IAiProviderDescriptor> = new Map(
 // ============================================================================
 
 /**
- * All known provider IDs, derived from the registry.
- * @public
- */
-export type AiProviderId =
-  | 'copy-paste'
-  | 'xai-grok'
-  | 'openai'
-  | 'anthropic'
-  | 'google-gemini'
-  | 'groq'
-  | 'mistral';
-
-/**
  * All valid provider ID values, in the same order as the registry.
  * @public
  */
-export const allProviderIds: ReadonlyArray<AiProviderId> = BUILTIN_PROVIDERS.map((d) => d.id as AiProviderId);
+export const allProviderIds: ReadonlyArray<AiProviderId> = BUILTIN_PROVIDERS.map((d) => d.id);
 
 /**
  * Get all known provider descriptors. Copy-paste first, then alphabetical.
@@ -142,9 +131,13 @@ export function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor> {
 /**
  * Get a provider descriptor by id.
  * @param id - The provider identifier
- * @returns The descriptor, or undefined if not found
+ * @returns The descriptor, or a failure if the provider is unknown
  * @public
  */
-export function getProviderDescriptor(id: string): IAiProviderDescriptor | undefined {
-  return PROVIDER_BY_ID.get(id);
+export function getProviderDescriptor(id: string): Result<IAiProviderDescriptor> {
+  const descriptor = PROVIDER_BY_ID.get(id);
+  if (!descriptor) {
+    return fail(`unknown AI provider: ${id}`);
+  }
+  return succeed(descriptor);
 }

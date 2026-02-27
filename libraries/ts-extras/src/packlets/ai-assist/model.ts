@@ -69,6 +69,19 @@ export interface IChatMessage {
 // ============================================================================
 
 /**
+ * All known AI provider identifiers.
+ * @public
+ */
+export type AiProviderId =
+  | 'copy-paste'
+  | 'xai-grok'
+  | 'openai'
+  | 'anthropic'
+  | 'google-gemini'
+  | 'groq'
+  | 'mistral';
+
+/**
  * API format categories for provider routing.
  * @public
  */
@@ -78,9 +91,28 @@ export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
  * Describes a single AI provider — single source of truth for all metadata.
  * @public
  */
+// ============================================================================
+// Completion Response
+// ============================================================================
+
+/**
+ * Result of an AI provider completion call.
+ * @public
+ */
+export interface IAiCompletionResponse {
+  /** The generated text content */
+  readonly content: string;
+  /** Whether the response was truncated due to token limits */
+  readonly truncated: boolean;
+}
+
+/**
+ * Describes a single AI provider — single source of truth for all metadata.
+ * @public
+ */
 export interface IAiProviderDescriptor {
   /** Provider identifier (e.g. 'xai-grok', 'anthropic') */
-  readonly id: string;
+  readonly id: AiProviderId;
   /** Human-readable label (e.g. "xAI Grok") */
   readonly label: string;
   /** Button label for action buttons (e.g. "AI Assist | Grok") */
