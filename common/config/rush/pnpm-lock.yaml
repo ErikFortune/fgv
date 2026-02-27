@@ -377,6 +377,9 @@ importers:
 
   ../../libraries/ts-app-shell:
     dependencies:
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../ts-extras
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils

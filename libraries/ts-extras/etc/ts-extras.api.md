@@ -27,14 +27,31 @@ declare namespace AiAssist {
         IChatMessage,
         AiApiFormat,
         IAiProviderDescriptor,
+        IAiAssistProviderConfig,
+        IAiAssistSettings,
+        DEFAULT_AI_ASSIST,
+        IAiAssistKeyStore,
         allProviderIds,
         getProviderDescriptors,
         getProviderDescriptor,
         callProviderCompletion,
-        IProviderCompletionParams
+        IProviderCompletionParams,
+        aiProviderId,
+        aiAssistProviderConfig,
+        aiAssistSettings
     }
 }
 export { AiAssist }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiAssistProviderConfig"
+//
+// @public
+const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiAssistSettings"
+//
+// @public
+const aiAssistSettings: Converter<IAiAssistSettings>;
 
 // @public
 class AiPrompt {
@@ -46,6 +63,11 @@ class AiPrompt {
 
 // @public
 type AiProviderId = 'copy-paste' | 'xai-grok' | 'openai' | 'anthropic' | 'google-gemini' | 'groq' | 'mistral';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiProviderId"
+//
+// @public
+const aiProviderId: Converter<AiProviderId>;
 
 // @public
 const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
@@ -173,6 +195,9 @@ interface CsvOptions {
 //
 // @public
 function decryptFile<TPayload extends JsonValue = JsonValue>(file: IEncryptedFile<unknown>, key: Uint8Array, cryptoProvider: ICryptoProvider, payloadConverter?: Converter<TPayload>): Promise<Result<TPayload>>;
+
+// @public
+const DEFAULT_AI_ASSIST: IAiAssistSettings;
 
 // @public
 const DEFAULT_ALGORITHM: "AES-256-GCM";
@@ -353,6 +378,26 @@ interface IAddSecretOptions {
 interface IAddSecretResult {
     readonly entry: IKeyStoreSecretEntry;
     readonly replaced: boolean;
+}
+
+// @public
+interface IAiAssistKeyStore {
+    getApiKey(name: string): Result<string>;
+    hasSecret(name: string): Result<boolean>;
+    readonly isUnlocked: boolean;
+}
+
+// @public
+interface IAiAssistProviderConfig {
+    readonly model?: string;
+    readonly provider: AiProviderId;
+    readonly secretName?: string;
+}
+
+// @public
+interface IAiAssistSettings {
+    readonly defaultProvider?: AiProviderId;
+    readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
 }
 
 // @public

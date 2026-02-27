@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 
 import { AiAssist } from '@fgv/ts-extras';
-import { Settings } from '@fgv/ts-chocolate';
 
 import type { IPreferencesDraft } from '../useSettingsDraft';
 
@@ -24,20 +23,20 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
   const enabledMap = new Map(aiAssist.providers.map((p) => [p.provider, p]));
 
   // Resolve which provider is the current default
-  const effectiveDefault: Settings.AiAssistProvider =
+  const effectiveDefault: AiAssist.AiProviderId =
     aiAssist.defaultProvider && enabledMap.has(aiAssist.defaultProvider)
       ? aiAssist.defaultProvider
       : aiAssist.providers[0]?.provider ?? 'copy-paste';
 
   const updateSettings = useCallback(
-    (updates: Partial<Settings.IAiAssistSettings>): void => {
+    (updates: Partial<AiAssist.IAiAssistSettings>): void => {
       onChange({ aiAssist: { ...aiAssist, ...updates } });
     },
     [aiAssist, onChange]
   );
 
   const updateProviders = useCallback(
-    (newProviders: ReadonlyArray<Settings.IAiAssistProviderConfig>): void => {
+    (newProviders: ReadonlyArray<AiAssist.IAiAssistProviderConfig>): void => {
       updateSettings({ providers: newProviders });
     },
     [updateSettings]
@@ -46,7 +45,7 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
   const handleToggle = useCallback(
     (descriptor: AiAssist.IAiProviderDescriptor, enabled: boolean): void => {
       if (enabled) {
-        updateProviders([...aiAssist.providers, { provider: descriptor.id as Settings.AiAssistProvider }]);
+        updateProviders([...aiAssist.providers, { provider: descriptor.id }]);
       } else {
         const newProviders = aiAssist.providers.filter((p) => p.provider !== descriptor.id);
         // If removing the default provider, clear the explicit default
@@ -58,14 +57,14 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
   );
 
   const handleDefaultChange = useCallback(
-    (provider: Settings.AiAssistProvider): void => {
+    (provider: AiAssist.AiProviderId): void => {
       updateSettings({ defaultProvider: provider });
     },
     [updateSettings]
   );
 
   const handleSecretNameChange = useCallback(
-    (provider: Settings.AiAssistProvider, secretName: string): void => {
+    (provider: AiAssist.AiProviderId, secretName: string): void => {
       updateProviders(
         aiAssist.providers.map((p) =>
           p.provider === provider ? { ...p, secretName: secretName || undefined } : p
@@ -76,7 +75,7 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
   );
 
   const handleModelChange = useCallback(
-    (provider: Settings.AiAssistProvider, model: string): void => {
+    (provider: AiAssist.AiProviderId, model: string): void => {
       updateProviders(
         aiAssist.providers.map((p) => (p.provider === provider ? { ...p, model: model || undefined } : p))
       );
@@ -126,7 +125,7 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                       name="ai-assist-default"
                       checked={isDefault}
                       disabled={!isEnabled}
-                      onChange={(): void => handleDefaultChange(descriptor.id as Settings.AiAssistProvider)}
+                      onChange={(): void => handleDefaultChange(descriptor.id)}
                       className="w-4 h-4 border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-30"
                     />
                   </td>
@@ -141,9 +140,7 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                         className="w-full max-w-[200px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent disabled:opacity-40 disabled:bg-gray-50"
                         placeholder="secret name"
                         defaultValue={config?.secretName ?? ''}
-                        onBlur={(e): void =>
-                          handleSecretNameChange(descriptor.id as Settings.AiAssistProvider, e.target.value)
-                        }
+                        onBlur={(e): void => handleSecretNameChange(descriptor.id, e.target.value)}
                       />
                     ) : (
                       <span className="text-xs text-gray-400">&mdash;</span>
@@ -157,9 +154,7 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                         className="w-full max-w-[180px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent disabled:opacity-40 disabled:bg-gray-50"
                         placeholder={descriptor.defaultModel || 'model'}
                         defaultValue={config?.model ?? ''}
-                        onBlur={(e): void =>
-                          handleModelChange(descriptor.id as Settings.AiAssistProvider, e.target.value)
-                        }
+                        onBlur={(e): void => handleModelChange(descriptor.id, e.target.value)}
                       />
                     ) : (
                       <span className="text-xs text-gray-400">&mdash;</span>

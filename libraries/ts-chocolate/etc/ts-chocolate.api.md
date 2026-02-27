@@ -50,24 +50,6 @@ declare namespace AiAssist {
 export { AiAssist }
 
 // @public
-type AiAssistProvider = AiAssist_2.AiProviderId;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "AiAssistProvider"
-//
-// @public
-const aiAssistProvider: Converter<AiAssistProvider>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IAiAssistProviderConfig"
-//
-// @public
-const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IAiAssistSettings"
-//
-// @public
-const aiAssistSettings: Converter<IAiAssistSettings>;
-
-// @public
 class AlcoholIngredient extends IngredientBase implements IAlcoholIngredient {
     // @internal
     protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredientEntity);
@@ -87,9 +69,6 @@ const alcoholIngredientEntity: Converter<IAlcoholIngredientEntity>;
 
 // @public
 const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[];
-
-// @public
-const allAiAssistProviders: ReadonlyArray<AiAssistProvider>;
 
 // @public
 const allAllergens: Allergen[];
@@ -1345,9 +1324,6 @@ declare namespace Converters_12 {
         externalLibraryRef,
         scalingDefaults,
         workflowPreferences,
-        aiAssistProvider,
-        aiAssistProviderConfig,
-        aiAssistSettings,
         toolSettings,
         defaultCollectionTargets,
         externalLibraryRefConfig,
@@ -1666,9 +1642,6 @@ class DecorationsLibrary extends SubLibraryBase<DecorationId, BaseDecorationId, 
 
 // @public
 type DecorationsMergeSource = SubLibraryMergeSource<DecorationsLibrary>;
-
-// @public
-const DEFAULT_AI_ASSIST: IAiAssistSettings;
 
 // @public
 const DEFAULT_SCALING: IScalingDefaults;
@@ -2870,19 +2843,6 @@ export const HundredPercent: Percentage;
 interface IAdditionalChocolateEntity {
     readonly chocolate: Model.IIdsWithPreferred<IngredientId>;
     readonly purpose: AdditionalChocolatePurpose;
-}
-
-// @public
-interface IAiAssistProviderConfig {
-    readonly model?: string;
-    readonly provider: AiAssistProvider;
-    readonly secretName?: string;
-}
-
-// @public
-interface IAiAssistSettings {
-    readonly defaultProvider?: AiAssistProvider;
-    readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
 }
 
 // @public
@@ -6107,7 +6067,7 @@ interface ITemperatureCurve {
 
 // @public
 interface IToolSettings {
-    readonly aiAssist?: IAiAssistSettings;
+    readonly aiAssist?: AiAssist_2.IAiAssistSettings;
     readonly scaling?: IScalingDefaults;
     readonly workflow?: IWorkflowPreferences;
 }
@@ -7787,11 +7747,6 @@ declare namespace Settings {
         IScalingDefaults,
         IWorkflowPreferences,
         IToolSettings,
-        AiAssistProvider,
-        allAiAssistProviders,
-        IAiAssistProviderConfig,
-        IAiAssistSettings,
-        DEFAULT_AI_ASSIST,
         IDefaultCollectionTargets,
         IExternalLibraryRefConfig,
         StorageRootId,

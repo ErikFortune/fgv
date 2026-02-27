@@ -19,9 +19,11 @@
 // SOFTWARE.
 
 /**
- * Core types for AI assist: prompt class, provider descriptors, and chat messages.
+ * Core types for AI assist: prompt class, provider descriptors, settings, and chat messages.
  * @packageDocumentation
  */
+
+import { type Result } from '@fgv/ts-utils';
 
 // ============================================================================
 // AiPrompt
@@ -87,10 +89,6 @@ export type AiProviderId =
  */
 export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
 
-/**
- * Describes a single AI provider — single source of truth for all metadata.
- * @public
- */
 // ============================================================================
 // Completion Response
 // ============================================================================
@@ -125,4 +123,58 @@ export interface IAiProviderDescriptor {
   readonly baseUrl: string;
   /** Default model identifier (e.g. 'grok-4-1-fast') */
   readonly defaultModel: string;
+}
+
+// ============================================================================
+// Settings
+// ============================================================================
+
+/**
+ * Configuration for a single AI assist provider.
+ * @public
+ */
+export interface IAiAssistProviderConfig {
+  /** Which provider this configures */
+  readonly provider: AiProviderId;
+  /** For API-based providers: the keystore secret name holding the API key */
+  readonly secretName?: string;
+  /** Optional model override (provider has a default) */
+  readonly model?: string;
+}
+
+/**
+ * AI assist settings — which providers are enabled and their configuration.
+ * @public
+ */
+export interface IAiAssistSettings {
+  /** Enabled providers and their configuration. */
+  readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
+  /** Which enabled provider is the default for the main button. Falls back to first in list. */
+  readonly defaultProvider?: AiProviderId;
+}
+
+/**
+ * Default AI assist settings (copy-paste only).
+ * @public
+ */
+export const DEFAULT_AI_ASSIST: IAiAssistSettings = {
+  providers: [{ provider: 'copy-paste' }]
+};
+
+// ============================================================================
+// Keystore Interface
+// ============================================================================
+
+/**
+ * Minimal keystore interface for AI assist API key resolution.
+ * Satisfied structurally by the concrete `KeyStore` class from `@fgv/ts-extras`.
+ * @public
+ */
+export interface IAiAssistKeyStore {
+  /** Whether the keystore is currently unlocked */
+  readonly isUnlocked: boolean;
+  /** Check if a named secret exists */
+  hasSecret(name: string): Result<boolean>;
+  /** Get an API key by secret name */
+  getApiKey(name: string): Result<string>;
 }

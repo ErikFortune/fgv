@@ -109,56 +109,6 @@ export interface IWorkflowPreferences {
 }
 
 // ============================================================================
-// Tool Configuration - AI Assist
-// ============================================================================
-
-/**
- * Identifier for an AI assist provider.
- * Derived from the provider registry in `@fgv/ts-extras`.
- * @public
- */
-export type AiAssistProvider = AiAssist.AiProviderId;
-
-/**
- * All valid AI assist provider values.
- * Derived from the provider registry in `@fgv/ts-extras`.
- * @public
- */
-export const allAiAssistProviders: ReadonlyArray<AiAssistProvider> = AiAssist.allProviderIds;
-
-/**
- * Configuration for a single AI assist provider.
- * @public
- */
-export interface IAiAssistProviderConfig {
-  /** Which provider this configures */
-  readonly provider: AiAssistProvider;
-  /** For API-based providers: the keystore secret name holding the API key */
-  readonly secretName?: string;
-  /** Optional model override (provider has a default) */
-  readonly model?: string;
-}
-
-/**
- * AI assist settings — which providers are enabled and their configuration.
- * @public
- */
-export interface IAiAssistSettings {
-  /** Enabled providers and their configuration. */
-  readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
-  /** Which enabled provider is the default for the main button. Falls back to first in list. */
-  readonly defaultProvider?: AiAssistProvider;
-}
-
-/**
- * Default AI assist settings (copy-paste only).
- * @public
- */
-export const DEFAULT_AI_ASSIST: IAiAssistSettings = {
-  providers: [{ provider: 'copy-paste' }]
-};
-
-// ============================================================================
 // Tool Configuration - Combined
 // ============================================================================
 
@@ -172,7 +122,7 @@ export interface IToolSettings {
   /** Workflow preferences */
   readonly workflow?: IWorkflowPreferences;
   /** AI assist preferences */
-  readonly aiAssist?: IAiAssistSettings;
+  readonly aiAssist?: AiAssist.IAiAssistSettings;
 }
 
 // ============================================================================
@@ -507,7 +457,7 @@ export function resolvePreferencesSettings(
         ...DEFAULT_WORKFLOW,
         ...preferences.tools?.workflow
       },
-      aiAssist: preferences.tools?.aiAssist ?? DEFAULT_AI_ASSIST
+      aiAssist: preferences.tools?.aiAssist ?? AiAssist.DEFAULT_AI_ASSIST
     },
     defaultStorageTargets: preferences.defaultStorageTargets
   };

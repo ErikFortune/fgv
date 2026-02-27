@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { AiAssist } from '@fgv/ts-extras';
 import { Settings } from '@fgv/ts-chocolate';
 
 import { applyStorageTargetsFromWorkspace, useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -43,7 +44,7 @@ export interface IPreferencesDraft {
     readonly autoExpandIngredients: boolean;
     readonly adaptedRecipeNameSuffix: string;
   };
-  readonly aiAssist: Settings.IAiAssistSettings;
+  readonly aiAssist: AiAssist.IAiAssistSettings;
 }
 
 /**
@@ -112,7 +113,7 @@ function buildPreferencesDraft(
       autoExpandIngredients: prefs.tools?.workflow?.autoExpandIngredients ?? false,
       adaptedRecipeNameSuffix: prefs.tools?.workflow?.adaptedRecipeNameSuffix ?? ' (adapted)'
     },
-    aiAssist: prefs.tools?.aiAssist ?? Settings.DEFAULT_AI_ASSIST
+    aiAssist: prefs.tools?.aiAssist ?? AiAssist.DEFAULT_AI_ASSIST
   };
 }
 

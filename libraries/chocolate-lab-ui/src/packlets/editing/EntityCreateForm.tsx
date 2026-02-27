@@ -40,7 +40,6 @@ import { ChevronDownIcon, ClipboardDocumentIcon, SparklesIcon, XMarkIcon } from 
 import type { Result } from '@fgv/ts-utils';
 
 import { AiAssist } from '@fgv/ts-extras';
-import { type Settings } from '@fgv/ts-chocolate';
 
 import { useAiAssist, type IAiAssistAction } from './useAiAssist';
 
@@ -162,7 +161,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
       setAiDropdownOpen(false);
 
       const prompt = buildPrompt(trimmedName);
-      aiAssist.generateDirect<TEntity>(action.provider as Settings.AiAssistProvider, prompt, convert).then(
+      aiAssist.generateDirect<TEntity>(action.provider, prompt, convert).then(
         (result) => {
           if (result.isFailure()) {
             setPasteError(result.message);

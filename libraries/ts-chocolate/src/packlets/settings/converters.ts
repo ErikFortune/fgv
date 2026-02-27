@@ -25,15 +25,13 @@
 
 import { Converter, Converters, Logging, fail, succeed } from '@fgv/ts-utils';
 
+import { AiAssist } from '@fgv/ts-extras';
+
 import { Converters as CommonConverters } from '../common';
 import { SubLibraryId, allSubLibraryIds } from '../library-data';
 import {
-  type AiAssistProvider,
-  allAiAssistProviders,
   DeviceId,
   ExternalLibraryRef,
-  type IAiAssistProviderConfig,
-  type IAiAssistSettings,
   IBootstrapSettings,
   IDefaultCollectionTargets,
   IDefaultStorageTargets,
@@ -117,40 +115,13 @@ export const workflowPreferences: Converter<IWorkflowPreferences> =
   });
 
 /**
- * Converter for {@link AiAssistProvider}.
- * @public
- */
-export const aiAssistProvider: Converter<AiAssistProvider> =
-  Converters.enumeratedValue<AiAssistProvider>(allAiAssistProviders);
-
-/**
- * Converter for {@link IAiAssistProviderConfig}.
- * @public
- */
-export const aiAssistProviderConfig: Converter<IAiAssistProviderConfig> =
-  Converters.strictObject<IAiAssistProviderConfig>({
-    provider: aiAssistProvider,
-    secretName: Converters.string.optional(),
-    model: Converters.string.optional()
-  });
-
-/**
- * Converter for {@link IAiAssistSettings}.
- * @public
- */
-export const aiAssistSettings: Converter<IAiAssistSettings> = Converters.strictObject<IAiAssistSettings>({
-  providers: Converters.arrayOf(aiAssistProviderConfig),
-  defaultProvider: aiAssistProvider.optional()
-});
-
-/**
  * Converter for {@link IToolSettings}.
  * @public
  */
 export const toolSettings: Converter<IToolSettings> = Converters.strictObject<IToolSettings>({
   scaling: scalingDefaults.optional(),
   workflow: workflowPreferences.optional(),
-  aiAssist: aiAssistSettings.optional()
+  aiAssist: AiAssist.aiAssistSettings.optional()
 });
 
 // ============================================================================
@@ -339,7 +310,7 @@ export const partialToolSettings: Converter<Partial<IToolSettings>> = Converters
 >({
   scaling: scalingDefaults.optional(),
   workflow: workflowPreferences.optional(),
-  aiAssist: aiAssistSettings.optional()
+  aiAssist: AiAssist.aiAssistSettings.optional()
 });
 
 // ============================================================================

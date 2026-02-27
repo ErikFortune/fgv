@@ -68,7 +68,7 @@ Workflow preferences
 
 </td><td>
 
-[IAiAssistSettings](../../interfaces/IAiAssistSettings.md)
+IAiAssistSettings
 
 </td><td>
 

@@ -43,3 +43,6 @@ export * from './packlets/editing';
 
 // Generic detail-view primitive components
 export * from './packlets/detail';
+
+// AI assist hook (generic, context-free)
+export * from './packlets/ai-assist';
