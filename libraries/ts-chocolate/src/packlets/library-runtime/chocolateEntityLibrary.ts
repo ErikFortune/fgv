@@ -45,6 +45,7 @@ import { IMoldEntity, MoldsLibrary } from '../entities';
 import { IProcedureEntity, ProceduresLibrary } from '../entities';
 import { IRawTaskEntity, TasksLibrary } from '../entities';
 import { IDecorationEntity, DecorationsLibrary } from '../entities';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { EditableCollection } from '../editing';
 import {
   FullLibraryLoadSpec,
@@ -351,119 +352,140 @@ export class ChocolateEntityLibrary {
   /**
    * Get an editable ingredients collection with persistence enabled.
    * @param collectionId - ID of the collection to make editable
+   * @param encryptionProvider - Optional encryption provider for encrypted save support
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
   public getEditableIngredientsEntityCollection(
-    collectionId: CollectionId
+    collectionId: CollectionId,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider
   ): Result<EditableCollection<IngredientEntity, BaseIngredientId>> {
     return EditableCollection.fromLibrary(
       this.ingredients,
       collectionId,
       CommonConverters.baseIngredientId,
-      EntityConverters.Ingredients.ingredientEntity
+      EntityConverters.Ingredients.ingredientEntity,
+      encryptionProvider
     );
   }
 
   /**
    * Get an editable fillings collection with persistence enabled.
    * @param collectionId - ID of the collection to make editable
+   * @param encryptionProvider - Optional encryption provider for encrypted save support
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
   public getEditableFillingsRecipeEntityCollection(
-    collectionId: CollectionId
+    collectionId: CollectionId,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider
   ): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>> {
     return EditableCollection.fromLibrary(
       this.fillings,
       collectionId,
       CommonConverters.baseFillingId,
-      EntityConverters.Fillings.fillingRecipeEntity
+      EntityConverters.Fillings.fillingRecipeEntity,
+      encryptionProvider
     );
   }
 
   /**
    * Get an editable molds collection with persistence enabled.
    * @param collectionId - ID of the collection to make editable
+   * @param encryptionProvider - Optional encryption provider for encrypted save support
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
   public getEditableMoldsEntityCollection(
-    collectionId: CollectionId
+    collectionId: CollectionId,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider
   ): Result<EditableCollection<IMoldEntity, BaseMoldId>> {
     return EditableCollection.fromLibrary(
       this.molds,
       collectionId,
       CommonConverters.baseMoldId,
-      EntityConverters.Molds.moldEntity
+      EntityConverters.Molds.moldEntity,
+      encryptionProvider
     );
   }
 
   /**
    * Get an editable procedures collection with persistence enabled.
    * @param collectionId - ID of the collection to make editable
+   * @param encryptionProvider - Optional encryption provider for encrypted save support
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
   public getEditableProceduresEntityCollection(
-    collectionId: CollectionId
+    collectionId: CollectionId,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider
   ): Result<EditableCollection<IProcedureEntity, BaseProcedureId>> {
     return EditableCollection.fromLibrary(
       this.procedures,
       collectionId,
       CommonConverters.baseProcedureId,
-      EntityConverters.Procedures.procedureEntity
+      EntityConverters.Procedures.procedureEntity,
+      encryptionProvider
     );
   }
 
   /**
    * Get an editable tasks collection with persistence enabled.
    * @param collectionId - ID of the collection to make editable
+   * @param encryptionProvider - Optional encryption provider for encrypted save support
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
   public getEditableTasksEntityCollection(
-    collectionId: CollectionId
+    collectionId: CollectionId,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider
   ): Result<EditableCollection<IRawTaskEntity, BaseTaskId>> {
     return EditableCollection.fromLibrary(
       this.tasks,
       collectionId,
       CommonConverters.baseTaskId,
-      EntityConverters.Tasks.rawTaskEntity
+      EntityConverters.Tasks.rawTaskEntity,
+      encryptionProvider
     );
   }
 
   /**
    * Get an editable confections collection with persistence enabled.
    * @param collectionId - ID of the collection to make editable
+   * @param encryptionProvider - Optional encryption provider for encrypted save support
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
   public getEditableConfectionsEntityCollection(
-    collectionId: CollectionId
+    collectionId: CollectionId,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider
   ): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>> {
     return EditableCollection.fromLibrary(
       this.confections,
       collectionId,
       CommonConverters.baseConfectionId,
-      EntityConverters.Confections.anyConfectionRawEntity
+      EntityConverters.Confections.anyConfectionRawEntity,
+      encryptionProvider
     );
   }
 
   /**
    * Get an editable decorations collection with persistence enabled.
    * @param collectionId - ID of the collection to make editable
+   * @param encryptionProvider - Optional encryption provider for encrypted save support
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
   public getEditableDecorationsEntityCollection(
-    collectionId: CollectionId
+    collectionId: CollectionId,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider
   ): Result<EditableCollection<IDecorationEntity, BaseDecorationId>> {
     return EditableCollection.fromLibrary(
       this.decorations,
       collectionId,
       CommonConverters.baseDecorationId,
-      EntityConverters.Decorations.decorationEntity
+      EntityConverters.Decorations.decorationEntity,
+      encryptionProvider
     );
   }
 }

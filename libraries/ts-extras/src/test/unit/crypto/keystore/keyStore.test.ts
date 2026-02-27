@@ -34,6 +34,8 @@ describe('KeyStore', () => {
         expect(keystore.isUnlocked).toBe(false);
         expect(keystore.state).toBe('locked');
         expect(keystore.isDirty).toBe(false);
+        expect(keystore.isNew).toBe(true);
+        expect(keystore.cryptoProvider).toBe(provider);
       });
     });
 
@@ -201,6 +203,97 @@ describe('KeyStore', () => {
 
         const result = keystore.importSecret('my-secret', key);
         expect(result).toFailWith(/locked/i);
+      });
+    });
+
+    describe('addSecretFromPassword', () => {
+      test('derives a key from password and adds it', async () => {
+        const result = await keystore.addSecretFromPassword('pw-secret', 'my-password');
+
+        expect(result).toSucceedAndSatisfy((addResult) => {
+          expect(addResult.entry.name).toBe('pw-secret');
+          expect(addResult.entry.key).toBeInstanceOf(Uint8Array);
+          expect(addResult.entry.key.length).toBe(CryptoUtils.Constants.AES_256_KEY_SIZE);
+          expect(addResult.entry.createdAt).toBeDefined();
+          expect(addResult.replaced).toBe(false);
+          expect(addResult.keyDerivation).toBeDefined();
+          expect(addResult.keyDerivation.kdf).toBe('pbkdf2');
+          expect(addResult.keyDerivation.salt).toBeDefined();
+          expect(addResult.keyDerivation.iterations).toBe(CryptoUtils.KeyStore.DEFAULT_SECRET_ITERATIONS);
+        });
+      });
+
+      test('adds secret with custom iterations', async () => {
+        const result = await keystore.addSecretFromPassword('pw-secret', 'my-password', {
+          iterations: 100000
+        });
+
+        expect(result).toSucceedAndSatisfy((addResult) => {
+          expect(addResult.keyDerivation.iterations).toBe(100000);
+        });
+      });
+
+      test('adds secret with description', async () => {
+        const result = await keystore.addSecretFromPassword('pw-secret', 'my-password', {
+          description: 'Password-derived key'
+        });
+
+        expect(result).toSucceedAndSatisfy((addResult) => {
+          expect(addResult.entry.description).toBe('Password-derived key');
+        });
+      });
+
+      test('fails when secret exists and replace not set', async () => {
+        await keystore.addSecretFromPassword('pw-secret', 'password-1');
+        const result = await keystore.addSecretFromPassword('pw-secret', 'password-2');
+
+        expect(result).toFailWith(/already exists/i);
+      });
+
+      test('replaces when replace=true', async () => {
+        await keystore.addSecretFromPassword('pw-secret', 'password-1');
+        const result = await keystore.addSecretFromPassword('pw-secret', 'password-2', { replace: true });
+
+        expect(result).toSucceedAndSatisfy((addResult) => {
+          expect(addResult.replaced).toBe(true);
+        });
+      });
+
+      test('fails with empty name', async () => {
+        const result = await keystore.addSecretFromPassword('', 'my-password');
+        expect(result).toFailWith(/name cannot be empty/i);
+      });
+
+      test('fails with empty password', async () => {
+        const result = await keystore.addSecretFromPassword('pw-secret', '');
+        expect(result).toFailWith(/password cannot be empty/i);
+      });
+
+      test('fails when locked', async () => {
+        keystore.lock(true);
+        const result = await keystore.addSecretFromPassword('pw-secret', 'my-password');
+        expect(result).toFailWith(/locked/i);
+      });
+
+      test('derived key is deterministic with same salt and iterations', async () => {
+        // Derive a key and then verify we can re-derive the same key
+        const addResult = (await keystore.addSecretFromPassword('pw-secret', 'my-password')).orThrow();
+        const originalKey = addResult.entry.key;
+        const { salt, iterations } = addResult.keyDerivation;
+
+        // Re-derive with the same params
+        const saltBytes = CryptoUtils.fromBase64(salt);
+        const reDerived = (await provider.deriveKey('my-password', saltBytes, iterations)).orThrow();
+
+        expect(reDerived).toEqual(originalKey);
+      });
+
+      test('marks keystore as dirty', async () => {
+        // Save to clear dirty flag from initialization
+        await keystore.save(testPassword);
+        expect(keystore.isDirty).toBe(false);
+        await keystore.addSecretFromPassword('pw-secret', 'my-password');
+        expect(keystore.isDirty).toBe(true);
       });
     });
 
@@ -466,6 +559,7 @@ describe('KeyStore', () => {
         cryptoProvider: provider,
         keystoreFile: savedFile
       }).orThrow();
+      expect(keystore2.isNew).toBe(false);
       const result = await keystore2.unlock('wrong-password');
       expect(result).toFailWith(/incorrect password/i);
     });
@@ -659,6 +753,72 @@ describe('KeyStore', () => {
 
       const result = await keystore2.initialize('some-password');
       expect(result).toFailWith(/use unlock/i);
+    });
+  });
+
+  // ==========================================================================
+  // encryptByName (IEncryptionProvider)
+  // ==========================================================================
+
+  describe('encryptByName', () => {
+    test('encrypts content using a named secret', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
+      await keystore.initialize(testPassword);
+      await keystore.addSecret('my-secret');
+
+      const content = { hello: 'world' };
+      const result = await keystore.encryptByName('my-secret', content);
+      expect(result).toSucceedAndSatisfy((encrypted) => {
+        expect(encrypted.format).toBe(CryptoUtils.Constants.ENCRYPTED_FILE_FORMAT);
+        expect(encrypted.secretName).toBe('my-secret');
+        expect(typeof encrypted.encryptedData).toBe('string');
+      });
+    });
+
+    test('includes metadata in encrypted file', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
+      await keystore.initialize(testPassword);
+      await keystore.addSecret('my-secret');
+
+      const metadata = { collectionId: 'test-collection', itemCount: 5 };
+      const result = await keystore.encryptByName('my-secret', { data: 1 }, metadata);
+      expect(result).toSucceedAndSatisfy((encrypted) => {
+        expect(encrypted.metadata).toEqual(metadata);
+      });
+    });
+
+    test('fails when secret not found', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
+      await keystore.initialize(testPassword);
+
+      const result = await keystore.encryptByName('missing', { data: 1 });
+      expect(result).toFailWith(/not found/i);
+    });
+
+    test('fails when locked', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
+      await keystore.initialize(testPassword);
+      await keystore.addSecret('my-secret');
+      keystore.lock(true);
+
+      const result = await keystore.encryptByName('my-secret', { data: 1 });
+      expect(result).toFailWith(/locked/i);
+    });
+
+    test('encrypted content can be decrypted', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
+      await keystore.initialize(testPassword);
+      await keystore.addSecret('my-secret');
+
+      const originalContent = { items: [1, 2, 3], name: 'test' };
+      const encryptResult = await keystore.encryptByName('my-secret', originalContent);
+      expect(encryptResult).toSucceed();
+
+      const secret = keystore.getSecret('my-secret').orThrow();
+      const decryptResult = await CryptoUtils.decryptFile(encryptResult.orThrow(), secret.key, provider);
+      expect(decryptResult).toSucceedAndSatisfy((decrypted) => {
+        expect(decrypted).toEqual(originalContent);
+      });
     });
   });
 });

@@ -38,6 +38,9 @@ import {
   type IFilterOption
 } from '@fgv/ts-app-shell';
 
+import type { LibraryData, LibraryRuntime } from '@fgv/ts-chocolate';
+import { CryptoUtils } from '@fgv/ts-extras';
+
 import {
   type AppTab,
   type IFilterState,
@@ -47,10 +50,13 @@ import {
   selectCurrentFilter
 } from '../navigation';
 
+import { useReactiveWorkspace, useWorkspace, useWorkspaceState } from '../workspace';
+
 import { useCollectionInfo } from './collectionInfo';
 import { CreateCollectionDialog, type ICreateCollectionData } from './CreateCollectionDialog';
 import { ImportCollisionDialog, type ImportCollisionResolution } from './ImportCollisionDialog';
 import { SetSecretPasswordDialog } from './SetSecretPasswordDialog';
+import { UnlockCollectionDialog, type UnlockCollectionMode } from './UnlockCollectionDialog';
 import { type IPendingSecretSetup } from './useCollectionActions';
 
 import { TAB_FILTER_DEFINITIONS, type IFilterDefinition } from './filterConfigs';
@@ -81,6 +87,39 @@ const PLACEHOLDER_PROVIDER: IFilterOptionProvider = {
     return [];
   }
 };
+
+// ============================================================================
+// Sub-Library Accessor
+// ============================================================================
+
+/**
+ * Returns the entity-layer sub-library for a given tab, or undefined for
+ * tabs that don't have sub-libraries (e.g., production tabs).
+ * @internal
+ */
+function getSubLibraryForTab(
+  entities: LibraryRuntime.ChocolateEntityLibrary,
+  tab: AppTab
+): LibraryData.SubLibraryBase<string, string, unknown> | undefined {
+  switch (tab) {
+    case 'ingredients':
+      return entities.ingredients;
+    case 'fillings':
+      return entities.fillings;
+    case 'confections':
+      return entities.confections;
+    case 'decorations':
+      return entities.decorations;
+    case 'molds':
+      return entities.molds;
+    case 'procedures':
+      return entities.procedures;
+    case 'tasks':
+      return entities.tasks;
+    default:
+      return undefined;
+  }
+}
 
 // ============================================================================
 // TabSidebar Props
@@ -158,6 +197,11 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [collectionToDelete, setCollectionToDelete] = useState<string | null>(null);
+  const [unlockCollectionId, setUnlockCollectionId] = useState<string | null>(null);
+
+  const workspace = useWorkspace();
+  const reactiveWorkspace = useReactiveWorkspace();
+  const { unlock: workspaceUnlock } = useWorkspaceState();
 
   const activeTab = useNavigationStore(selectActiveTab);
   const filterState = useNavigationStore(selectCurrentFilter);
@@ -226,6 +270,150 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
     [onCreateCollection]
   );
 
+  // --------------------------------------------------------------------------
+  // Unlock Collection
+  // --------------------------------------------------------------------------
+
+  const handleRequestUnlockCollection = useCallback(
+    (collectionId: string): void => {
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      if (!subLibrary) return;
+
+      const protectedInfo = subLibrary.protectedCollections.find((pc) => pc.collectionId === collectionId);
+      if (!protectedInfo) return;
+
+      // If keystore is unlocked and has the secret, try loading directly
+      if (workspace.state === 'unlocked' && workspace.keyStore) {
+        const secretResult = workspace.keyStore.getSecret(protectedInfo.secretName);
+        if (secretResult.isSuccess()) {
+          const encConfig = workspace.keyStore.getEncryptionConfig();
+          if (encConfig.isSuccess()) {
+            const encryption: LibraryData.IEncryptionConfig = {
+              ...encConfig.value,
+              onMissingKey: 'warn'
+            };
+            const lib = subLibrary;
+            async function loadDirect(): Promise<void> {
+              await lib.loadProtectedCollectionAsync(encryption, [collectionId]);
+              workspace.data.clearCache();
+              reactiveWorkspace.notifyChange();
+            }
+            loadDirect().catch(() => undefined);
+            return;
+          }
+        }
+      }
+
+      // Otherwise show dialog
+      setUnlockCollectionId(collectionId);
+    },
+    [workspace, activeTab, reactiveWorkspace]
+  );
+
+  // Compute dialog props from the unlock state
+  const unlockDialogInfo = useMemo(() => {
+    if (!unlockCollectionId) return undefined;
+
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+    if (!subLibrary) return undefined;
+
+    const protectedInfo = subLibrary.protectedCollections.find(
+      (pc) => pc.collectionId === unlockCollectionId
+    );
+    if (!protectedInfo) return undefined;
+
+    const modes: UnlockCollectionMode[] = [];
+    if (workspace.state === 'locked') {
+      modes.push('keystore');
+    }
+    if (protectedInfo.keyDerivation) {
+      modes.push('collection');
+    }
+    // If keystore is unlocked but secret is missing — only collection mode
+    if (workspace.state === 'unlocked' && modes.length === 0 && protectedInfo.keyDerivation) {
+      modes.push('collection');
+    }
+
+    if (modes.length === 0) return undefined;
+
+    return {
+      collectionName: protectedInfo.description ?? protectedInfo.collectionId,
+      secretName: protectedInfo.secretName,
+      availableModes: modes as ReadonlyArray<UnlockCollectionMode>,
+      protectedInfo
+    };
+  }, [unlockCollectionId, workspace, activeTab]);
+
+  const handleUnlockCollectionSubmit = useCallback(
+    async (
+      password: string,
+      mode: UnlockCollectionMode,
+      saveToKeystore: boolean
+    ): Promise<string | undefined> => {
+      if (!unlockCollectionId || !unlockDialogInfo) return 'No collection selected';
+
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      if (!subLibrary) return 'No sub-library for tab';
+
+      const { protectedInfo } = unlockDialogInfo;
+
+      if (mode === 'keystore') {
+        // Unlock workspace (keystore + load all protected collections)
+        const errorMsg = await workspaceUnlock(password);
+        if (errorMsg) return errorMsg;
+
+        // Check if the collection was loaded by workspace.unlock()
+        const stillProtected = subLibrary.protectedCollections.find(
+          (pc) => pc.collectionId === unlockCollectionId
+        );
+        if (stillProtected) {
+          return `Secret '${protectedInfo.secretName}' not found in keystore. Try using a collection password.`;
+        }
+
+        setUnlockCollectionId(null);
+        return undefined;
+      }
+
+      // Collection password mode — derive key from password using stored keyDerivation params
+      const keyDerivation = protectedInfo.keyDerivation;
+      if (!keyDerivation) return 'Collection does not support password-based decryption';
+
+      const keyStore = workspace.keyStore;
+      if (!keyStore) return 'No keystore available';
+
+      const cryptoProvider = keyStore.cryptoProvider;
+      const saltBytes = CryptoUtils.fromBase64(keyDerivation.salt);
+      const keyResult = await cryptoProvider.deriveKey(password, saltBytes, keyDerivation.iterations);
+      if (keyResult.isFailure()) return `Key derivation failed: ${keyResult.message}`;
+
+      // Build encryption config with the derived key
+      const encryption: LibraryData.IEncryptionConfig = {
+        secrets: [{ name: protectedInfo.secretName, key: keyResult.value }],
+        cryptoProvider
+      };
+
+      const loadResult = await subLibrary.loadProtectedCollectionAsync(encryption, [unlockCollectionId]);
+      if (loadResult.isFailure()) return `Failed to load collection: ${loadResult.message}`;
+
+      // Optionally save the derived secret to the keystore
+      if (saveToKeystore && keyStore.isUnlocked) {
+        keyStore.importSecret(protectedInfo.secretName, keyResult.value);
+      }
+
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+      setUnlockCollectionId(null);
+      return undefined;
+    },
+    [unlockCollectionId, unlockDialogInfo, workspace, activeTab, workspaceUnlock, reactiveWorkspace]
+  );
+
+  const handleCancelUnlockCollection = useCallback((): void => {
+    setUnlockCollectionId(null);
+  }, []);
+
+  // --------------------------------------------------------------------------
+
   const existingCollectionIds = useMemo(() => new Set(collectionInfos.map((c) => c.id)), [collectionInfos]);
 
   const activeFilterCount = useMemo(() => countActiveSelections(filterState), [filterState]);
@@ -264,6 +452,7 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
         onExportAllAsZip={onExportAllAsZip}
         onImportCollection={onImportCollection}
         onOpenCollectionFromFile={onOpenCollectionFromFile}
+        onUnlockCollection={handleRequestUnlockCollection}
       />
 
       {onCreateCollection && (
@@ -305,6 +494,17 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
           secretName={pendingSecretSetup?.secretName ?? ''}
           onSetPassword={onResolveSecretSetup}
           onSkip={onSkipSecretSetup}
+        />
+      )}
+
+      {unlockDialogInfo && (
+        <UnlockCollectionDialog
+          isOpen={unlockCollectionId !== null}
+          collectionName={unlockDialogInfo.collectionName}
+          secretName={unlockDialogInfo.secretName}
+          availableModes={unlockDialogInfo.availableModes}
+          onUnlock={handleUnlockCollectionSubmit}
+          onCancel={handleCancelUnlockCollection}
         />
       )}
     </div>

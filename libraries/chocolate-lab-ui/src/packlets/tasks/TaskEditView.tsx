@@ -43,6 +43,7 @@ import { LibraryRuntime, Model as CommonModel, type Celsius, type Minutes } from
 type EditedTask = LibraryRuntime.EditedTask;
 
 import { EditingToolbar, useEditingContext, NotesEditor } from '../editing';
+import { useWorkspace } from '../workspace';
 
 // ============================================================================
 // Props
@@ -107,7 +108,10 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
     onConvertMode
   } = props;
 
-  const ctx = useEditingContext<EditedTask>({ wrapper, onSave, onSaveAs, onCancel, readOnly });
+  const {
+    data: { logger }
+  } = useWorkspace();
+  const ctx = useEditingContext<EditedTask>({ wrapper, onSave, onSaveAs, onCancel, readOnly, logger });
   const entity = wrapper.current;
 
   // ---- Base ID editing state ----

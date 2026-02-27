@@ -41,6 +41,7 @@ import type {
 } from '@fgv/ts-chocolate';
 
 import { EditingToolbar, NotesEditor, useEditingContext, useDatalistMatch } from '../editing';
+import { useWorkspace } from '../workspace';
 
 type EditedDecoration = LibraryRuntime.EditedDecoration;
 
@@ -131,7 +132,10 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
     onPasteIngredient
   } = props;
 
-  const ctx = useEditingContext<EditedDecoration>({ wrapper, onSave, onSaveAs, onCancel, readOnly });
+  const {
+    data: { logger }
+  } = useWorkspace();
+  const ctx = useEditingContext<EditedDecoration>({ wrapper, onSave, onSaveAs, onCancel, readOnly, logger });
   const entity = wrapper.current;
 
   // Parent-level draft state for datalist inputs (follows ProcedureEditView pattern)

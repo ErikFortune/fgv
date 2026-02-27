@@ -10,7 +10,7 @@ to enable direct save() functionality.
 **Signature:**
 
 ```typescript
-static fromLibrary(library: SubLibraryBase<string, TBaseId, TItem>, collectionId: CollectionId, keyConverter: Converter<TBaseId, unknown>, valueConverter: Converter<T, unknown>): Result<EditableCollection<T, TBaseId>>;
+static fromLibrary(library: SubLibraryBase<string, TBaseId, TItem>, collectionId: CollectionId, keyConverter: Converter<TBaseId, unknown>, valueConverter: Converter<T, unknown>, encryptionProvider?: IEncryptionProvider): Result<EditableCollection<T, TBaseId>>;
 ```
 
 **Parameters:**
@@ -21,6 +21,7 @@ static fromLibrary(library: SubLibraryBase<string, TBaseId, TItem>, collectionId
 <tr><td>collectionId</td><td>CollectionId</td><td>ID of the collection to make editable</td></tr>
 <tr><td>keyConverter</td><td>Converter&lt;TBaseId, unknown&gt;</td><td>Converter for validating item keys</td></tr>
 <tr><td>valueConverter</td><td>Converter&lt;T, unknown&gt;</td><td>Converter for validating item values</td></tr>
+<tr><td>encryptionProvider</td><td>IEncryptionProvider</td><td>Optional encryption provider for encrypted save support</td></tr>
 </tbody></table>
 
 **Returns:**

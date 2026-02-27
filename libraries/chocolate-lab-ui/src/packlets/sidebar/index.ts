@@ -36,3 +36,9 @@ export {
 export { UnlockDialog, type IUnlockDialogProps } from './UnlockDialog';
 
 export { SetSecretPasswordDialog, type ISetSecretPasswordDialogProps } from './SetSecretPasswordDialog';
+
+export {
+  UnlockCollectionDialog,
+  type IUnlockCollectionDialogProps,
+  type UnlockCollectionMode
+} from './UnlockCollectionDialog';

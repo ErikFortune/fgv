@@ -18,11 +18,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import { JsonValue } from '@fgv/ts-json-base';
 import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 import * as Constants from '../constants';
-import { ICryptoProvider, IEncryptionConfig, SecretProvider } from '../model';
+import { createEncryptedFile } from '../encryptedFile';
+import {
+  ICryptoProvider,
+  IEncryptedFile,
+  IEncryptionConfig,
+  IEncryptionProvider,
+  SecretProvider
+} from '../model';
 import {
   DEFAULT_KEYSTORE_ITERATIONS,
+  DEFAULT_SECRET_ITERATIONS,
+  IAddSecretFromPasswordOptions,
+  IAddSecretFromPasswordResult,
   IAddSecretOptions,
   IAddSecretResult,
   IImportSecretOptions,
@@ -80,7 +91,7 @@ function getCurrentTimestamp(): string {
  *
  * @public
  */
-export class KeyStore {
+export class KeyStore implements IEncryptionProvider {
   private readonly _cryptoProvider: ICryptoProvider;
   private readonly _iterations: number;
   private _keystoreFile: IKeyStoreFile | undefined;
@@ -323,11 +334,30 @@ export class KeyStore {
   }
 
   /**
+   * Whether this is a newly created key store (not opened from a file).
+   * A new key store must be initialized with a password before use.
+   * An opened key store must be unlocked with the existing password.
+   * @public
+   */
+  public get isNew(): boolean {
+    return this._isNew;
+  }
+
+  /**
    * Gets the current lock state.
    * @public
    */
   public get state(): KeyStoreLockState {
     return this._state;
+  }
+
+  /**
+   * Gets the crypto provider used by this key store.
+   * Available regardless of lock state.
+   * @public
+   */
+  public get cryptoProvider(): ICryptoProvider {
+    return this._cryptoProvider;
   }
 
   // ============================================================================
@@ -452,6 +482,77 @@ export class KeyStore {
     this._dirty = true;
 
     return succeed({ entry, replaced: exists });
+  }
+
+  /**
+   * Adds a secret derived from a password using PBKDF2.
+   *
+   * Generates a random salt, derives a 32-byte AES-256 key from the password,
+   * and stores it in the vault. Returns the key derivation parameters so they
+   * can be stored alongside encrypted files, enabling decryption with just the
+   * password (without unlocking the keystore).
+   *
+   * @param name - Unique name for the secret
+   * @param password - Password to derive the key from
+   * @param options - Optional description, iterations, replace flag
+   * @returns Success with entry and keyDerivation params, Failure if locked or invalid
+   * @public
+   */
+  public async addSecretFromPassword(
+    name: string,
+    password: string,
+    options?: IAddSecretFromPasswordOptions
+  ): Promise<Result<IAddSecretFromPasswordResult>> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    if (!name || name.length === 0) {
+      return fail('Secret name cannot be empty');
+    }
+    if (!password || password.length === 0) {
+      return fail('Password cannot be empty');
+    }
+
+    const exists = this._secrets.has(name);
+    if (exists && !options?.replace) {
+      return fail(`Secret '${name}' already exists - use replace=true to overwrite`);
+    }
+
+    const iterations = options?.iterations ?? DEFAULT_SECRET_ITERATIONS;
+
+    // Generate a random salt for this secret's key derivation
+    const saltResult = this._cryptoProvider.generateRandomBytes(MIN_SALT_LENGTH);
+    /* c8 ignore next 3 - crypto provider errors tested but coverage intermittently missed */
+    if (saltResult.isFailure()) {
+      return fail(`Failed to generate salt: ${saltResult.message}`);
+    }
+
+    // Derive the key from password
+    const keyResult = await this._cryptoProvider.deriveKey(password, saltResult.value, iterations);
+    /* c8 ignore next 3 - crypto provider errors tested but coverage intermittently missed */
+    if (keyResult.isFailure()) {
+      return fail(`Key derivation failed: ${keyResult.message}`);
+    }
+
+    const entry: IKeyStoreSecretEntry = {
+      name,
+      key: keyResult.value,
+      description: options?.description,
+      createdAt: getCurrentTimestamp()
+    };
+
+    this._secrets.set(name, entry);
+    this._dirty = true;
+
+    return succeed({
+      entry,
+      replaced: exists,
+      keyDerivation: {
+        kdf: 'pbkdf2',
+        salt: this._cryptoProvider.toBase64(saltResult.value),
+        iterations
+      }
+    });
   }
 
   /**
@@ -665,6 +766,30 @@ export class KeyStore {
       return fail(saveResult.message);
     }
     return succeed(this);
+  }
+
+  // ============================================================================
+  // IEncryptionProvider
+  // ============================================================================
+
+  /** {@inheritDoc IEncryptionProvider.encryptByName} */
+  public async encryptByName<TMetadata = JsonValue>(
+    secretName: string,
+    content: JsonValue,
+    metadata?: TMetadata
+  ): Promise<Result<IEncryptedFile<TMetadata>>> {
+    const secretResult = this.getSecret(secretName);
+    if (secretResult.isFailure()) {
+      return fail(`encryptByName: ${secretResult.message}`);
+    }
+
+    return createEncryptedFile({
+      content,
+      secretName,
+      key: secretResult.value.key,
+      cryptoProvider: this._cryptoProvider,
+      metadata
+    });
   }
 
   // ============================================================================

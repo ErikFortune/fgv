@@ -190,7 +190,7 @@ export function TasksTabContent(): React.ReactElement {
   );
 
   const handleSave = useCallback(
-    (wrapper: LibraryRuntime.EditedTask): void => {
+    async (wrapper: LibraryRuntime.EditedTask): Promise<void> => {
       const entity = wrapper.current;
       const compositeId = editingRef.current?.id;
       if (!compositeId) {
@@ -222,12 +222,15 @@ export function TasksTabContent(): React.ReactElement {
         return;
       }
 
-      const editableResult = workspace.data.entities.getEditableTasksEntityCollection(collectionId);
+      const editableResult = workspace.data.entities.getEditableTasksEntityCollection(
+        collectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
         if (editable.canSave()) {
-          const saveResult = editable.save();
+          const saveResult = await editable.save();
           if (saveResult.isFailure()) {
             workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
           } else {

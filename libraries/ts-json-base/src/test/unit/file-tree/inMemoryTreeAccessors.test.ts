@@ -273,6 +273,12 @@ describe('InMemoryTreeAccessors', () => {
     test('joinPaths joins paths', () => {
       expect(accessors.joinPaths('path', 'to', 'file')).toBe('path/to/file');
       expect(accessors.joinPaths('/root', 'sub')).toBe('/root/sub');
+      expect(accessors.joinPaths('/', 'keystore.json')).toBe('/keystore.json');
+      expect(accessors.joinPaths('/data/ingredients', 'collection.yaml')).toBe(
+        '/data/ingredients/collection.yaml'
+      );
+      // empty call returns empty string
+      expect(accessors.joinPaths()).toBe('');
     });
   });
 

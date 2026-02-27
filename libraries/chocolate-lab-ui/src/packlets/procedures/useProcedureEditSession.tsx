@@ -217,7 +217,7 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
   }, [procedureRef, squashCascade]);
 
   const handleNestedTaskSave = useCallback(
-    (wrapper: LibraryRuntime.EditedTask): void => {
+    async (wrapper: LibraryRuntime.EditedTask): Promise<void> => {
       const session = nestedTaskSession;
       const procWrapper = procedureRef.current?.wrapper;
       const procId = procedureRef.current?.id;
@@ -258,12 +258,17 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
 
         colResult.value.items.set(baseId, wrapper.current);
 
-        const editableResult =
-          workspace.data.entities.getEditableTasksEntityCollection(mutableTaskCollectionId);
+        const editableResult = workspace.data.entities.getEditableTasksEntityCollection(
+          mutableTaskCollectionId,
+          workspace.keyStore
+        );
         if (editableResult.isSuccess()) {
           editableResult.value.set(baseId, wrapper.current);
           if (editableResult.value.canSave()) {
-            editableResult.value.save();
+            const saveResult = await editableResult.value.save();
+            if (saveResult.isFailure()) {
+              workspace.data.logger.error(`Failed to save task collection: ${saveResult.message}`);
+            }
           }
         }
 
@@ -317,7 +322,7 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
   );
 
   const handleNestedTaskConvertMode = useCallback(
-    (targetMode: 'inline' | 'library'): void => {
+    async (targetMode: 'inline' | 'library'): Promise<void> => {
       const session = nestedTaskSession;
       const procWrapper = procedureRef.current?.wrapper;
       const procId = procedureRef.current?.id;
@@ -348,12 +353,17 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
 
         colResult.value.items.set(baseId, session.wrapper.current);
 
-        const editableResult =
-          workspace.data.entities.getEditableTasksEntityCollection(mutableTaskCollectionId);
+        const editableResult = workspace.data.entities.getEditableTasksEntityCollection(
+          mutableTaskCollectionId,
+          workspace.keyStore
+        );
         if (editableResult.isSuccess()) {
           editableResult.value.set(baseId, session.wrapper.current);
           if (editableResult.value.canSave()) {
-            editableResult.value.save();
+            const saveResult = await editableResult.value.save();
+            if (saveResult.isFailure()) {
+              workspace.data.logger.error(`Failed to save task collection: ${saveResult.message}`);
+            }
           }
         }
 

@@ -112,7 +112,10 @@ export function useRemoveStorageRoot(): IRemoveStorageRootActions {
               userDataDefault: newUserDataDefault,
               sublibraryOverrides: Object.keys(newOverrides).length > 0 ? newOverrides : undefined
             });
-            settingsManager.save().catch(() => undefined);
+            const saveResult = await settingsManager.save();
+            if (saveResult.isFailure()) {
+              workspace.data.logger.warn(`Failed to save settings: ${saveResult.message}`);
+            }
           }
         }
       }

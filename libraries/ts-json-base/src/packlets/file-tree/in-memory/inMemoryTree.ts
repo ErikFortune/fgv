@@ -260,7 +260,8 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
    * {@inheritDoc FileTree.IFileTreeAccessors.joinPaths}
    */
   public joinPaths(...paths: string[]): string {
-    return paths.join('/');
+    const joined = paths.flatMap((p) => p.split('/').filter((s) => s.length > 0)).join('/');
+    return paths[0]?.startsWith('/') ? `/${joined}` : joined;
   }
 
   /**

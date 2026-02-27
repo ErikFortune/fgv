@@ -436,7 +436,7 @@ export function ConfectionsTabContent(): React.ReactElement {
   }, [cascadeStack, squashCascade]);
 
   const handleSubIngredientCreate = useCallback(
-    (entity: Entities.Ingredients.IngredientEntity, __source: 'manual' | 'ai'): void => {
+    async (entity: Entities.Ingredients.IngredientEntity, __source: 'manual' | 'ai'): Promise<void> => {
       let ingredientCollectionId: CollectionId | undefined;
       for (const [id, col] of workspace.data.entities.ingredients.collections.entries()) {
         if (col.isMutable) {
@@ -453,12 +453,14 @@ export function ConfectionsTabContent(): React.ReactElement {
       const colResult = workspace.data.entities.ingredients.collections.get(ingredientCollectionId);
       if (colResult.isFailure() || !colResult.value.isMutable) return;
       colResult.value.items.set(baseId, entity);
-      const editableResult =
-        workspace.data.entities.getEditableIngredientsEntityCollection(ingredientCollectionId);
+      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(
+        ingredientCollectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
-        if (editable.canSave()) editable.save();
+        if (editable.canSave()) await editable.save();
       }
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
@@ -479,7 +481,7 @@ export function ConfectionsTabContent(): React.ReactElement {
   );
 
   const handleSubIngredientSave = useCallback(
-    (wrapper: LibraryRuntime.EditedIngredient): void => {
+    async (wrapper: LibraryRuntime.EditedIngredient): Promise<void> => {
       const entity = wrapper.current;
       const compositeId = subIngredientRef.current?.id;
       if (!compositeId) return;
@@ -488,11 +490,14 @@ export function ConfectionsTabContent(): React.ReactElement {
       const colResult = workspace.data.entities.ingredients.collections.get(collectionId);
       if (colResult.isFailure() || !colResult.value.isMutable) return;
       colResult.value.items.set(baseId, entity);
-      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(collectionId);
+      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(
+        collectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
-        if (editable.canSave()) editable.save();
+        if (editable.canSave()) await editable.save();
       }
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
@@ -510,7 +515,7 @@ export function ConfectionsTabContent(): React.ReactElement {
   }, [cascadeStack, squashCascade]);
 
   const handleSubFillingCreate = useCallback(
-    (entity: Entities.Fillings.IFillingRecipeEntity, __source: 'manual' | 'ai'): void => {
+    async (entity: Entities.Fillings.IFillingRecipeEntity, __source: 'manual' | 'ai'): Promise<void> => {
       let fillingCollectionId: CollectionId | undefined;
       for (const [id, col] of workspace.data.entities.fillings.collections.entries()) {
         if (col.isMutable) {
@@ -527,12 +532,14 @@ export function ConfectionsTabContent(): React.ReactElement {
       const colResult = workspace.data.entities.fillings.collections.get(fillingCollectionId);
       if (colResult.isFailure() || !colResult.value.isMutable) return;
       colResult.value.items.set(baseId, entity);
-      const editableResult =
-        workspace.data.entities.getEditableFillingsRecipeEntityCollection(fillingCollectionId);
+      const editableResult = workspace.data.entities.getEditableFillingsRecipeEntityCollection(
+        fillingCollectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
-        if (editable.canSave()) editable.save();
+        if (editable.canSave()) await editable.save();
       }
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
@@ -553,7 +560,7 @@ export function ConfectionsTabContent(): React.ReactElement {
   );
 
   const handleSubFillingSave = useCallback(
-    (__mode: FillingSaveMode): void => {
+    async (__mode: FillingSaveMode): Promise<void> => {
       const subState = subFillingRef.current;
       if (!subState) return;
       const entity = subState.wrapper.current;
@@ -563,11 +570,14 @@ export function ConfectionsTabContent(): React.ReactElement {
       const colResult = workspace.data.entities.fillings.collections.get(collectionId);
       if (colResult.isFailure() || !colResult.value.isMutable) return;
       colResult.value.items.set(baseId, entity);
-      const editableResult = workspace.data.entities.getEditableFillingsRecipeEntityCollection(collectionId);
+      const editableResult = workspace.data.entities.getEditableFillingsRecipeEntityCollection(
+        collectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
-        if (editable.canSave()) editable.save();
+        if (editable.canSave()) await editable.save();
       }
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
@@ -585,7 +595,7 @@ export function ConfectionsTabContent(): React.ReactElement {
   }, [cascadeStack, squashCascade]);
 
   const handleSubProcedureCreate = useCallback(
-    (entity: Entities.Procedures.IProcedureEntity, __source: 'manual' | 'ai'): void => {
+    async (entity: Entities.Procedures.IProcedureEntity, __source: 'manual' | 'ai'): Promise<void> => {
       let procedureCollectionId: CollectionId | undefined;
       for (const [id, col] of workspace.data.entities.procedures.collections.entries()) {
         if (col.isMutable) {
@@ -602,12 +612,14 @@ export function ConfectionsTabContent(): React.ReactElement {
       const colResult = workspace.data.entities.procedures.collections.get(procedureCollectionId);
       if (colResult.isFailure() || !colResult.value.isMutable) return;
       colResult.value.items.set(baseId, entity);
-      const editableResult =
-        workspace.data.entities.getEditableProceduresEntityCollection(procedureCollectionId);
+      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(
+        procedureCollectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
-        if (editable.canSave()) editable.save();
+        if (editable.canSave()) await editable.save();
       }
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
@@ -628,7 +640,7 @@ export function ConfectionsTabContent(): React.ReactElement {
   );
 
   const handleSubProcedureSave = useCallback(
-    (wrapper: LibraryRuntime.EditedProcedure): void => {
+    async (wrapper: LibraryRuntime.EditedProcedure): Promise<void> => {
       const entity = wrapper.current;
       const compositeId = subProcedureRef.current?.id;
       if (!compositeId) return;
@@ -637,11 +649,14 @@ export function ConfectionsTabContent(): React.ReactElement {
       const colResult = workspace.data.entities.procedures.collections.get(collectionId);
       if (colResult.isFailure() || !colResult.value.isMutable) return;
       colResult.value.items.set(baseId, entity);
-      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(collectionId);
+      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(
+        collectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
-        if (editable.canSave()) editable.save();
+        if (editable.canSave()) await editable.save();
       }
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
@@ -659,7 +674,7 @@ export function ConfectionsTabContent(): React.ReactElement {
   }, [cascadeStack, squashCascade]);
 
   const handleSaveAsConfection = useCallback(
-    (entityId: string, newName: string): void => {
+    async (entityId: string, newName: string): Promise<void> => {
       const state = editingRef.current;
       if (!state) return;
       if (!mutableCollectionId) {
@@ -690,13 +705,15 @@ export function ConfectionsTabContent(): React.ReactElement {
         return;
       }
 
-      const editableResult =
-        workspace.data.entities.getEditableConfectionsEntityCollection(mutableCollectionId);
+      const editableResult = workspace.data.entities.getEditableConfectionsEntityCollection(
+        mutableCollectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(newBaseId, newEntity);
         if (editable.canSave()) {
-          const diskResult = editable.save();
+          const diskResult = await editable.save();
           if (diskResult.isFailure()) {
             workspace.data.logger.error(`Disk save failed: ${diskResult.message}`);
           } else {
@@ -716,7 +733,7 @@ export function ConfectionsTabContent(): React.ReactElement {
   );
 
   const handleSaveConfection = useCallback(
-    (entityId: string): void => {
+    async (entityId: string): Promise<void> => {
       const state = editingRef.current;
       if (!state) {
         workspace.data.logger.error('Save failed: no editing state');
@@ -744,12 +761,15 @@ export function ConfectionsTabContent(): React.ReactElement {
         return;
       }
 
-      const editableResult = workspace.data.entities.getEditableConfectionsEntityCollection(collectionId);
+      const editableResult = workspace.data.entities.getEditableConfectionsEntityCollection(
+        collectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
         if (editable.canSave()) {
-          const saveResult = editable.save();
+          const saveResult = await editable.save();
           if (saveResult.isFailure()) {
             workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
           } else {
@@ -846,7 +866,7 @@ export function ConfectionsTabContent(): React.ReactElement {
                       value={saveAsName}
                       onChange={(e): void => setSaveAsName(e.target.value)}
                       onKeyDown={(e): void => {
-                        if (e.key === 'Enter') handleSaveAsConfection(entry.entityId, saveAsName);
+                        if (e.key === 'Enter') void handleSaveAsConfection(entry.entityId, saveAsName);
                         if (e.key === 'Escape') {
                           setShowSaveAsForm(false);
                           setSaveAsName('');
@@ -858,7 +878,7 @@ export function ConfectionsTabContent(): React.ReactElement {
                     />
                     <button
                       type="button"
-                      onClick={(): void => handleSaveAsConfection(entry.entityId, saveAsName)}
+                      onClick={(): void => void handleSaveAsConfection(entry.entityId, saveAsName)}
                       className="px-2.5 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
                     >
                       Save
@@ -889,7 +909,7 @@ export function ConfectionsTabContent(): React.ReactElement {
                   availableMolds={availableMolds}
                   availableDecorations={availableDecorations}
                   readOnly={isSourceReadOnly}
-                  onSave={(): void => handleSaveConfection(entry.entityId)}
+                  onSave={(): void => void handleSaveConfection(entry.entityId)}
                   onSaveAs={
                     mutableCollectionId
                       ? (): void => {

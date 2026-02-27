@@ -230,6 +230,39 @@ export interface ICryptoProvider {
 }
 
 // ============================================================================
+// Encryption Provider Interface
+// ============================================================================
+
+/**
+ * High-level interface for encrypting JSON content by secret name.
+ *
+ * This abstraction unifies two common encryption workflows:
+ * - **KeyStore**: looks up the named secret and crypto provider from the vault
+ * - **DirectEncryptionProvider**: uses a pre-supplied key and crypto provider,
+ *   optionally bound to a specific secret name for safety
+ *
+ * Callers that need to encrypt (e.g. `EditableCollection.save()`) depend on
+ * this interface rather than on `KeyStore` directly, allowing mix-and-match.
+ *
+ * @public
+ */
+export interface IEncryptionProvider {
+  /**
+   * Encrypts JSON content under a named secret.
+   *
+   * @param secretName - Name of the secret to encrypt with
+   * @param content - JSON-safe content to encrypt
+   * @param metadata - Optional unencrypted metadata to include in the encrypted file
+   * @returns Success with encrypted file structure, or Failure with error context
+   */
+  encryptByName<TMetadata = JsonValue>(
+    secretName: string,
+    content: JsonValue,
+    metadata?: TMetadata
+  ): Promise<Result<IEncryptedFile<TMetadata>>>;
+}
+
+// ============================================================================
 // Encryption Configuration
 // ============================================================================
 

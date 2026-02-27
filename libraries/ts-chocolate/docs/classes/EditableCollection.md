@@ -234,7 +234,7 @@ Parse content (auto-detecting format) and create an editable collection.
 </td></tr>
 <tr><td>
 
-[fromLibrary(library, collectionId, keyConverter, valueConverter)](./EditableCollection.fromLibrary.md)
+[fromLibrary(library, collectionId, keyConverter, valueConverter, encryptionProvider)](./EditableCollection.fromLibrary.md)
 
 </td><td>
 
@@ -364,7 +364,7 @@ Check if the source file has unsaved changes.
 </td></tr>
 <tr><td>
 
-[save()](./EditableCollection.save.md)
+[save(options)](./EditableCollection.save.md)
 
 </td><td>
 

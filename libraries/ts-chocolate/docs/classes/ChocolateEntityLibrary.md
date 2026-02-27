@@ -198,7 +198,7 @@ Creates a new LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary ins
 </td></tr>
 <tr><td>
 
-[getEditableIngredientsEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableIngredientsEntityCollection.md)
+[getEditableIngredientsEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableIngredientsEntityCollection.md)
 
 </td><td>
 
@@ -211,7 +211,7 @@ Get an editable ingredients collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableFillingsRecipeEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableFillingsRecipeEntityCollection.md)
+[getEditableFillingsRecipeEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableFillingsRecipeEntityCollection.md)
 
 </td><td>
 
@@ -224,7 +224,7 @@ Get an editable fillings collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableMoldsEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableMoldsEntityCollection.md)
+[getEditableMoldsEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableMoldsEntityCollection.md)
 
 </td><td>
 
@@ -237,7 +237,7 @@ Get an editable molds collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableProceduresEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableProceduresEntityCollection.md)
+[getEditableProceduresEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableProceduresEntityCollection.md)
 
 </td><td>
 
@@ -250,7 +250,7 @@ Get an editable procedures collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableTasksEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableTasksEntityCollection.md)
+[getEditableTasksEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableTasksEntityCollection.md)
 
 </td><td>
 
@@ -263,7 +263,7 @@ Get an editable tasks collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableConfectionsEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableConfectionsEntityCollection.md)
+[getEditableConfectionsEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableConfectionsEntityCollection.md)
 
 </td><td>
 
@@ -276,7 +276,7 @@ Get an editable confections collection with persistence enabled.
 </td></tr>
 <tr><td>
 
-[getEditableDecorationsEntityCollection(collectionId)](./ChocolateEntityLibrary.getEditableDecorationsEntityCollection.md)
+[getEditableDecorationsEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableDecorationsEntityCollection.md)
 
 </td><td>
 

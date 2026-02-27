@@ -174,7 +174,7 @@ export function ProceduresTabContent(): React.ReactElement {
   );
 
   const handleSaveProcedure = useCallback(
-    (wrapper: LibraryRuntime.EditedProcedure): void => {
+    async (wrapper: LibraryRuntime.EditedProcedure): Promise<void> => {
       const entity = wrapper.current;
       const compositeId = editingRef.current?.id;
       if (!compositeId) {
@@ -207,12 +207,15 @@ export function ProceduresTabContent(): React.ReactElement {
         return;
       }
 
-      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(collectionId);
+      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(
+        collectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
         if (editable.canSave()) {
-          const saveResult = editable.save();
+          const saveResult = await editable.save();
           if (saveResult.isFailure()) {
             workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
           }

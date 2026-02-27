@@ -7,7 +7,7 @@ Get an editable fillings collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableFillingsRecipeEntityCollection(collectionId: CollectionId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
+getEditableFillingsRecipeEntityCollection(collectionId: CollectionId, encryptionProvider?: IEncryptionProvider): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
 ```
 
 **Parameters:**
@@ -15,6 +15,7 @@ getEditableFillingsRecipeEntityCollection(collectionId: CollectionId): Result<Ed
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td>collectionId</td><td>CollectionId</td><td>ID of the collection to make editable</td></tr>
+<tr><td>encryptionProvider</td><td>IEncryptionProvider</td><td>Optional encryption provider for encrypted save support</td></tr>
 </tbody></table>
 
 **Returns:**

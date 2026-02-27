@@ -26,16 +26,16 @@
  * @packageDocumentation
  */
 
-import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
+import { fail, Result, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
-import { CryptoUtils } from '@fgv/ts-extras';
 import {
   CryptoUtils as BrowserCrypto,
   FileApiTreeAccessors,
   ILocalStorageTreeParams
 } from '@fgv/ts-web-extras';
 import { ensureWorkspaceDirectoriesInTree, LibraryData, Settings } from '@fgv/ts-chocolate';
+import { loadKeystoreFromTree } from './keystoreStorage';
 
 import type {
   IPlatformInitializer,
@@ -98,7 +98,8 @@ function createDefaultPathToKeyMap(prefix: string): Record<string, string> {
     [`/${LibraryData.LibraryPaths.sessions}`]: `${prefix}:sessions:v1`,
     [`/${LibraryData.LibraryPaths.moldInventory}`]: `${prefix}:mold-inventory:v1`,
     [`/${LibraryData.LibraryPaths.ingredientInventory}`]: `${prefix}:ingredient-inventory:v1`,
-    [`/${LibraryData.LibraryPaths.settings}`]: `${prefix}:settings:v1`
+    [`/${LibraryData.LibraryPaths.settings}`]: `${prefix}:settings:v1`,
+    ['/keystore']: `${prefix}:keystore:v1`
   };
 }
 
@@ -163,17 +164,16 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
                 return this._loadSettings(tree, deviceId)
                   .withErrorFormat((msg) => `settings: ${msg}`)
                   .onSuccess(({ bootstrap, resolvedSettings }) => {
-                    const keyStoreFile = this._loadKeyStoreFromStorage(
-                      browserOptions.storage ??
-                        (typeof window !== 'undefined' ? window.localStorage : undefined),
-                      `${prefix}:keystore:v1`
-                    );
+                    const keystoreResult = loadKeystoreFromTree(userLibraryTree);
+                    if (keystoreResult.isFailure()) {
+                      return fail(`keystore: ${keystoreResult.message}`);
+                    }
 
                     return succeed({
                       cryptoProvider,
                       userLibraryTree,
                       externalLibraries: [] as IResolvedExternalLibrary[],
-                      keyStoreFile: keyStoreFile.isSuccess() ? keyStoreFile.value : undefined,
+                      keyStoreFile: keystoreResult.value,
                       bootstrapSettings: bootstrap,
                       resolvedSettings,
                       deviceId
@@ -302,32 +302,6 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
       .getContents()
       .onSuccess((json) =>
         Settings.Converters.preferencesSettings.convert(json).withErrorFormat((e) => `preferences.json: ${e}`)
-      );
-  }
-
-  /**
-   * Loads key store file from localStorage.
-   * @internal
-   */
-  private _loadKeyStoreFromStorage(
-    storage: Storage | undefined,
-    key: string
-  ): Result<CryptoUtils.KeyStore.IKeyStoreFile> {
-    if (!storage) {
-      return fail('localStorage not available');
-    }
-
-    const raw = storage.getItem(key);
-    if (!raw) {
-      return fail('Key store not found in localStorage');
-    }
-
-    return captureResult(() => JSON.parse(raw) as unknown)
-      .withErrorFormat((msg) => `keystore parse: ${msg}`)
-      .onSuccess((json) =>
-        CryptoUtils.KeyStore.Converters.keystoreFile
-          .convert(json)
-          .withErrorFormat((msg) => `keystore: ${msg}`)
       );
   }
 }

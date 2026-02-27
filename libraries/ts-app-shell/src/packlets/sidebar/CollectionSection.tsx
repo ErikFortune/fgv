@@ -89,6 +89,8 @@ export interface ICollectionSectionProps {
   readonly onImportCollection?: () => void;
   /** Callback when "Open from File" is clicked (header-level, File System Access API) */
   readonly onOpenCollectionFromFile?: () => void;
+  /** Callback when the unlock button is clicked for a locked protected collection */
+  readonly onUnlockCollection?: (collectionId: string) => void;
   /** Whether the section starts collapsed */
   readonly defaultCollapsed?: boolean;
 }
@@ -103,8 +105,9 @@ function CollectionRow(props: {
   readonly onSetDefault?: (id: string) => void;
   readonly onDelete?: (id: string) => void;
   readonly onExport?: (id: string) => void;
+  readonly onUnlock?: (id: string) => void;
 }): React.ReactElement {
-  const { collection, onToggleVisibility, onSetDefault, onDelete, onExport } = props;
+  const { collection, onToggleVisibility, onSetDefault, onDelete, onExport, onUnlock } = props;
   const displayName = collection.name ?? collection.id;
 
   return (
@@ -154,14 +157,24 @@ function CollectionRow(props: {
           {'\uD83D\uDD12'}
         </span>
       )}
-      {collection.isProtected && (
-        <span
-          className={`shrink-0 text-xs ${collection.isUnlocked ? 'text-green-500' : 'text-gray-400'}`}
-          title={collection.isUnlocked ? 'Protected (unlocked)' : 'Protected (locked)'}
-        >
-          {'\uD83D\uDEE1'}
-        </span>
-      )}
+      {collection.isProtected &&
+        (collection.isUnlocked || !onUnlock ? (
+          <span
+            className={`shrink-0 text-xs ${collection.isUnlocked ? 'text-green-500' : 'text-gray-400'}`}
+            title={collection.isUnlocked ? 'Protected (unlocked)' : 'Protected (locked)'}
+          >
+            {'\uD83D\uDEE1'}
+          </span>
+        ) : (
+          <button
+            onClick={(): void => onUnlock(collection.id)}
+            className="shrink-0 text-xs text-gray-400 hover:text-amber-500 transition-colors"
+            title="Click to unlock"
+            aria-label={`Unlock ${collection.name ?? collection.id}`}
+          >
+            {'\uD83D\uDEE1'}
+          </button>
+        ))}
 
       {/* Name + count */}
       <span className="flex-1 truncate" title={displayName}>
@@ -221,6 +234,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
     onExportAllAsZip,
     onImportCollection,
     onOpenCollectionFromFile,
+    onUnlockCollection,
     defaultCollapsed = false
   } = props;
 
@@ -337,6 +351,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
                 onSetDefault={onSetDefaultCollection}
                 onDelete={onDeleteCollection}
                 onExport={onExportCollection}
+                onUnlock={onUnlockCollection}
               />
             ))
           )}

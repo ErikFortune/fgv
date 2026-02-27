@@ -186,7 +186,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
       onCreate(data);
       onClose();
     },
-    [canSubmit, name, effectiveId, description, tagsInput, onCreate, onClose]
+    [canSubmit, name, effectiveId, description, tagsInput, secretInput, secretMatcher, onCreate, onClose]
   );
 
   return (

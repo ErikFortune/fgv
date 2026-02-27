@@ -32,6 +32,7 @@ import { EditField, EditSection, TextInput, TagsInput } from '@fgv/ts-app-shell'
 import type { Entities, LibraryRuntime, Model, TaskId } from '@fgv/ts-chocolate';
 
 import { EditingToolbar, NotesEditor, useEditingContext, useDatalistMatch } from '../editing';
+import { useWorkspace } from '../workspace';
 
 type EditedProcedure = LibraryRuntime.EditedProcedure;
 
@@ -83,7 +84,10 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
     onEditStepParams
   } = props;
 
-  const ctx = useEditingContext<EditedProcedure>({ wrapper, onSave, onSaveAs, onCancel, readOnly });
+  const {
+    data: { logger }
+  } = useWorkspace();
+  const ctx = useEditingContext<EditedProcedure>({ wrapper, onSave, onSaveAs, onCancel, readOnly, logger });
   const entity = wrapper.current;
 
   const [newStepText, setNewStepText] = useState('');

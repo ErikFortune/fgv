@@ -42,7 +42,7 @@ import {
   supportsFileSystemAccess
 } from '@fgv/ts-web-extras';
 
-import { createDirectoryStore } from '../workspace';
+import { createDirectoryStore, getOrCreateKeystoreFileItem, saveKeystoreToFile } from '../workspace';
 
 import { type AppTab, selectActiveTab, useNavigationStore } from '../navigation';
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -204,6 +204,23 @@ export function useCollectionActions(): ICollectionActions {
   const secretSetupResolverRef = useRef<((password: string) => Promise<string | undefined>) | null>(null);
   const secretSetupSkipRef = useRef<(() => void) | null>(null);
 
+  const persistKeyStore = useCallback(
+    async (ks: CryptoUtils.KeyStore.KeyStore, pw: string): Promise<void> => {
+      const rootDir = reactiveWorkspace.localStorageRootDir;
+      if (!rootDir) return;
+      const fileItemResult = getOrCreateKeystoreFileItem(rootDir);
+      if (fileItemResult.isFailure()) {
+        workspace.data.logger.warn(`Keystore persist: ${fileItemResult.message}`);
+        return;
+      }
+      const saveResult = await saveKeystoreToFile(ks, pw, fileItemResult.value);
+      if (saveResult.isFailure()) {
+        workspace.data.logger.warn(`Keystore persist: ${saveResult.message}`);
+      }
+    },
+    [reactiveWorkspace, workspace]
+  );
+
   const resolveImportCollision = useCallback((resolution: ImportCollisionResolution): void => {
     collisionResolverRef.current?.(resolution);
     collisionResolverRef.current = null;
@@ -329,13 +346,18 @@ export function useCollectionActions(): ICollectionActions {
 
       // Try to encrypt the file if a secretName is provided
       const keyStore = workspace.keyStore;
+      let keyDerivation: CryptoUtils.IKeyDerivationParams | undefined;
+
       if (data.secretName && keyStore) {
         const hasSecretResult = keyStore.hasSecret(data.secretName);
         const hasSecret = hasSecretResult.isSuccess() && hasSecretResult.value;
 
         // If the secret doesn't exist yet, prompt for a password
         if (!hasSecret) {
-          const errorMsg = await new Promise<string | undefined>((resolve) => {
+          const setupResult = await new Promise<{
+            error?: string;
+            keyDerivation?: CryptoUtils.IKeyDerivationParams;
+          }>((resolve) => {
             secretSetupResolverRef.current = async (password: string): Promise<string | undefined> => {
               secretSetupResolverRef.current = null;
               secretSetupSkipRef.current = null;
@@ -347,32 +369,37 @@ export function useCollectionActions(): ICollectionActions {
                   if (initResult.isFailure()) {
                     const unlockResult = await keyStore.unlock(password);
                     if (unlockResult.isFailure()) {
-                      resolve(unlockResult.message);
+                      resolve({ error: unlockResult.message });
                       return unlockResult.message;
                     }
                   }
                 }
-                const addResult = await keyStore.addSecret(data.secretName!);
+                // Derive secret key from the password (not random)
+                const addResult = await keyStore.addSecretFromPassword(data.secretName!, password);
                 if (addResult.isFailure()) {
-                  resolve(addResult.message);
+                  resolve({ error: addResult.message });
                   return addResult.message;
                 }
-                resolve(undefined);
+                // Persist keystore so the new secret survives page reload
+                await persistKeyStore(keyStore, password);
+                resolve({ keyDerivation: addResult.value.keyDerivation });
                 return undefined;
               } catch (e) {
                 const msg = e instanceof Error ? e.message : String(e);
-                resolve(msg);
+                resolve({ error: msg });
                 return msg;
               }
             };
-            secretSetupSkipRef.current = (): void => resolve(undefined);
+            secretSetupSkipRef.current = (): void => resolve({});
             setPendingSecretSetup({ secretName: data.secretName! });
           });
 
-          if (errorMsg) {
+          if (setupResult.error) {
             workspace.data.logger.warn(
-              `Failed to set up secret '${data.secretName}': ${errorMsg}. Collection created without encryption.`
+              `Failed to set up secret '${data.secretName}': ${setupResult.error}. Collection created without encryption.`
             );
+          } else {
+            keyDerivation = setupResult.keyDerivation;
           }
         }
 
@@ -387,6 +414,7 @@ export function useCollectionActions(): ICollectionActions {
               secretName: data.secretName,
               key: secretResult.value.key,
               metadata: { collectionId, itemCount: 0 },
+              keyDerivation,
               cryptoProvider: encConfigResult.value.cryptoProvider
             });
             if (encryptedResult.isSuccess()) {
@@ -421,7 +449,7 @@ export function useCollectionActions(): ICollectionActions {
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
     },
-    [workspace, reactiveWorkspace, activeTab]
+    [workspace, reactiveWorkspace, activeTab, persistKeyStore]
   );
 
   const setDefaultCollection = useCallback(

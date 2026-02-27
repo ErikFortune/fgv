@@ -47,6 +47,7 @@ import type {
 import { Entities as EntitiesNS } from '@fgv/ts-chocolate';
 
 import { EditingToolbar, NotesEditor, useEditingContext, useDatalistMatch } from '../editing';
+import { useWorkspace } from '../workspace';
 
 type EditedConfectionRecipe = LibraryRuntime.EditedConfectionRecipe;
 
@@ -156,12 +157,16 @@ export function ConfectionEditView({
   onProcedureClick,
   onDecorationClick
 }: IConfectionEditViewProps): React.ReactElement {
+  const {
+    data: { logger }
+  } = useWorkspace();
   const ctx = useEditingContext({
     onSave: (): void => onSave(),
     onSaveAs: onSaveAs ? (): void => onSaveAs() : undefined,
     onCancel,
     wrapper,
-    readOnly
+    readOnly,
+    logger
   });
   const inputsDisabled = readOnly && !onSaveAs;
 

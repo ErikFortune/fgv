@@ -468,16 +468,12 @@ export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams):
           allFileSources.push(...additionalFileSources);
         }
 
-        // Create key store configuration if we have a key store file
-        let keyStoreConfig:
-          | { file?: CryptoUtils.KeyStore.IKeyStoreFile; cryptoProvider: CryptoUtils.ICryptoProvider }
-          | undefined;
-        if (platformInit.keyStoreFile) {
-          keyStoreConfig = {
-            file: platformInit.keyStoreFile,
-            cryptoProvider: platformInit.cryptoProvider
-          };
-        }
+        // Always create key store config so the workspace has a KeyStore instance.
+        // If no file exists, a fresh (uninitialized) keystore is created.
+        const keyStoreConfig = {
+          file: platformInit.keyStoreFile,
+          cryptoProvider: platformInit.cryptoProvider
+        };
 
         // Create the workspace using the internal factory
         return Workspace.createWithSettings({

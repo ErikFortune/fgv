@@ -34,7 +34,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 
-import type { Result } from '@fgv/ts-utils';
+import type { Logging, Result } from '@fgv/ts-utils';
 
 // ============================================================================
 // IEditable Interface
@@ -67,16 +67,18 @@ export interface IEditable {
 export interface IEditingContextOptions<TWrapper extends IEditable> {
   /** The mutable wrapper instance to manage. */
   readonly wrapper: TWrapper;
-  /** Callback invoked when the user requests save. Receives the wrapper for snapshot extraction. */
-  readonly onSave: (wrapper: TWrapper) => void;
-  /** Callback invoked when the user requests "save to" another collection. */
-  readonly onSaveAs?: (wrapper: TWrapper) => void;
+  /** Callback invoked when the user requests save. Receives the wrapper for snapshot extraction. May be async. */
+  readonly onSave: (wrapper: TWrapper) => void | Promise<void>;
+  /** Callback invoked when the user requests "save to" another collection. May be async. */
+  readonly onSaveAs?: (wrapper: TWrapper) => void | Promise<void>;
   /** Callback invoked when the user cancels editing. */
   readonly onCancel: () => void;
   /** Optional callback invoked after every mutation (undo, redo, or field edit). */
   readonly onMutation?: () => void;
   /** If true, the source entity is read-only (e.g. built-in collection). Save is replaced by Save to. */
   readonly readOnly?: boolean;
+  /** Optional logger for error reporting. Falls back to console if not provided. */
+  readonly logger?: Logging.ILogger;
 }
 
 /**
@@ -129,7 +131,7 @@ export interface IEditingContext<TWrapper extends IEditable> {
 export function useEditingContext<TWrapper extends IEditable>(
   options: IEditingContextOptions<TWrapper>
 ): IEditingContext<TWrapper> {
-  const { wrapper, onSave, onSaveAs, onCancel, onMutation, readOnly: isReadOnly } = options;
+  const { wrapper, onSave, onSaveAs, onCancel, onMutation, readOnly: isReadOnly, logger } = options;
 
   // Stable ref for the wrapper — it never changes identity during a session.
   const wrapperRef = useRef(wrapper);
@@ -154,12 +156,26 @@ export function useEditingContext<TWrapper extends IEditable>(
   }, [notifyMutation]);
 
   const save = useCallback((): void => {
-    onSave(wrapperRef.current);
-  }, [onSave]);
+    async function doSave(): Promise<void> {
+      try {
+        await onSave(wrapperRef.current);
+      } catch (err: unknown) {
+        logger?.error('Save error:', err);
+      }
+    }
+    doSave().catch(() => undefined);
+  }, [onSave, logger]);
 
   const saveAsCallback = useCallback((): void => {
-    onSaveAs?.(wrapperRef.current);
-  }, [onSaveAs]);
+    async function doSaveAs(): Promise<void> {
+      try {
+        await onSaveAs?.(wrapperRef.current);
+      } catch (err: unknown) {
+        logger?.error('Save-to error:', err);
+      }
+    }
+    doSaveAs().catch(() => undefined);
+  }, [onSaveAs, logger]);
 
   const cancel = useCallback((): void => {
     onCancel();

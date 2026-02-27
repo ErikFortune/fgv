@@ -143,4 +143,21 @@ FileTreeItem
 Optional reference to the source FileTree item for persistence.
 
 </td></tr>
+<tr><td>
+
+[encryptionProvider](./IEditableCollectionParams.encryptionProvider.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+IEncryptionProvider
+
+</td><td>
+
+Optional encryption provider for encrypted save support.
+
+</td></tr>
 </tbody></table>

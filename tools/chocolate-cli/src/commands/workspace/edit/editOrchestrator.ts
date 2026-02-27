@@ -21,6 +21,7 @@
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import {
   CollectionId,
+  Editing,
   Entities,
   IWorkspace,
   BaseTaskId,
@@ -94,7 +95,7 @@ export async function executeAdd(
   }
 
   // 3. Add to collection
-  return addToCollection(workspace, entityType, collectionId, baseId, entityData);
+  return await addToCollection(workspace, entityType, collectionId, baseId, entityData);
 }
 
 // ============================================================================
@@ -150,7 +151,7 @@ export async function executeUpdate(
   }
 
   // Update in collection
-  return updateInCollection(workspace, entityType, collectionId, baseId, updatedData);
+  return await updateInCollection(workspace, entityType, collectionId, baseId, updatedData);
 }
 
 // ============================================================================
@@ -489,189 +490,181 @@ function getExistingEntity(
 }
 
 /**
+ * Gets an editable collection, adds/sets an entity, awaits save, and returns a message.
+ * @internal
+ */
+async function mutateAndSave(
+  collectionResult: Result<Editing.EditableCollection<unknown, string>>,
+  mutate: (collection: Editing.EditableCollection<unknown, string>) => Result<unknown>,
+  entityType: EntityTypeName,
+  collectionId: CollectionId,
+  baseId: string,
+  verb: 'added' | 'updated'
+): Promise<Result<string>> {
+  if (collectionResult.isFailure()) {
+    return fail(collectionResult.message);
+  }
+
+  const collection = collectionResult.value;
+  const mutateResult = mutate(collection);
+  if (mutateResult.isFailure()) {
+    return fail(`Failed to ${verb === 'added' ? 'add' : 'update'} ${entityType}: ${mutateResult.message}`);
+  }
+
+  const saveResult = await collection.save();
+  return saveResult
+    .onSuccess(() =>
+      succeed(
+        `${entityType[0].toUpperCase()}${entityType.slice(
+          1
+        )} "${collectionId}.${baseId}" ${verb} successfully`
+      )
+    )
+    .onFailure((msg) =>
+      fail(`${entityType[0].toUpperCase()}${entityType.slice(1)} ${verb} but save failed: ${msg}`)
+    );
+}
+
+/**
  * Adds an entity to a collection and saves.
  */
-function addToCollection(
+async function addToCollection(
   workspace: IWorkspace,
   entityType: EntityTypeName,
   collectionId: CollectionId,
   baseId: string,
   entity: unknown
-): Result<string> {
+): Promise<Result<string>> {
   const entityLib = workspace.data.entities;
 
   switch (entityType) {
-    case 'task': {
-      return entityLib.getEditableTasksEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .add(baseId as BaseTaskId, entity as Entities.Tasks.IRawTaskEntity)
-          .asResult.withErrorFormat((msg) => `Failed to add task: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Task "${collectionId}.${baseId}" added successfully`))
-              .onFailure((msg) => fail(`Task added but save failed: ${msg}`));
-          });
-      });
-    }
-    case 'ingredient': {
-      return entityLib.getEditableIngredientsEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .add(baseId as BaseIngredientId, entity as Entities.IngredientEntity)
-          .asResult.withErrorFormat((msg) => `Failed to add ingredient: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Ingredient "${collectionId}.${baseId}" added successfully`))
-              .onFailure((msg) => fail(`Ingredient added but save failed: ${msg}`));
-          });
-      });
-    }
-    case 'mold': {
-      return entityLib.getEditableMoldsEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .add(baseId as BaseMoldId, entity as Entities.IMoldEntity)
-          .asResult.withErrorFormat((msg) => `Failed to add mold: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Mold "${collectionId}.${baseId}" added successfully`))
-              .onFailure((msg) => fail(`Mold added but save failed: ${msg}`));
-          });
-      });
-    }
-    case 'procedure': {
-      return entityLib.getEditableProceduresEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .add(baseId as BaseProcedureId, entity as Entities.IProcedureEntity)
-          .asResult.withErrorFormat((msg) => `Failed to add procedure: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Procedure "${collectionId}.${baseId}" added successfully`))
-              .onFailure((msg) => fail(`Procedure added but save failed: ${msg}`));
-          });
-      });
-    }
-    case 'filling': {
-      return entityLib.getEditableFillingsRecipeEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .add(baseId as BaseFillingId, entity as Entities.IFillingRecipeEntity)
-          .asResult.withErrorFormat((msg) => `Failed to add filling: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Filling "${collectionId}.${baseId}" added successfully`))
-              .onFailure((msg) => fail(`Filling added but save failed: ${msg}`));
-          });
-      });
-    }
-    case 'confection': {
-      return entityLib.getEditableConfectionsEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .add(baseId as BaseConfectionId, entity as Entities.Confections.AnyConfectionRecipeEntity)
-          .asResult.withErrorFormat((msg) => `Failed to add confection: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Confection "${collectionId}.${baseId}" added successfully`))
-              .onFailure((msg) => fail(`Confection added but save failed: ${msg}`));
-          });
-      });
-    }
+    case 'task':
+      return mutateAndSave(
+        entityLib.getEditableTasksEntityCollection(collectionId),
+        (c) => c.add(baseId as BaseTaskId, entity as Entities.Tasks.IRawTaskEntity).asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'added'
+      );
+    case 'ingredient':
+      return mutateAndSave(
+        entityLib.getEditableIngredientsEntityCollection(collectionId),
+        (c) => c.add(baseId as BaseIngredientId, entity as Entities.IngredientEntity).asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'added'
+      );
+    case 'mold':
+      return mutateAndSave(
+        entityLib.getEditableMoldsEntityCollection(collectionId),
+        (c) => c.add(baseId as BaseMoldId, entity as Entities.IMoldEntity).asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'added'
+      );
+    case 'procedure':
+      return mutateAndSave(
+        entityLib.getEditableProceduresEntityCollection(collectionId),
+        (c) => c.add(baseId as BaseProcedureId, entity as Entities.IProcedureEntity).asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'added'
+      );
+    case 'filling':
+      return mutateAndSave(
+        entityLib.getEditableFillingsRecipeEntityCollection(collectionId),
+        (c) => c.add(baseId as BaseFillingId, entity as Entities.IFillingRecipeEntity).asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'added'
+      );
+    case 'confection':
+      return mutateAndSave(
+        entityLib.getEditableConfectionsEntityCollection(collectionId),
+        (c) =>
+          c.add(baseId as BaseConfectionId, entity as Entities.Confections.AnyConfectionRecipeEntity)
+            .asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'added'
+      );
   }
 }
 
 /**
  * Updates an entity in a collection and saves.
  */
-function updateInCollection(
+async function updateInCollection(
   workspace: IWorkspace,
   entityType: EntityTypeName,
   collectionId: CollectionId,
   baseId: string,
   entity: unknown
-): Result<string> {
+): Promise<Result<string>> {
   const entityLib = workspace.data.entities;
 
   switch (entityType) {
-    case 'task': {
-      return entityLib.getEditableTasksEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .set(baseId as BaseTaskId, entity as Entities.Tasks.IRawTaskEntity)
-          .asResult.withErrorFormat((msg) => `Failed to update task: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Task "${collectionId}.${baseId}" updated successfully`))
-              .onFailure((msg) => fail(`Task updated but save failed: ${msg}`));
-          });
-      });
-    }
-    case 'ingredient': {
-      return entityLib.getEditableIngredientsEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .set(baseId as BaseIngredientId, entity as Entities.IngredientEntity)
-          .asResult.withErrorFormat((msg) => `Failed to update ingredient: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Ingredient "${collectionId}.${baseId}" updated successfully`))
-              .onFailure((msg) => fail(`Ingredient updated but save failed: ${msg}`));
-          });
-      });
-    }
-    case 'mold': {
-      return entityLib.getEditableMoldsEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .set(baseId as BaseMoldId, entity as Entities.IMoldEntity)
-          .asResult.withErrorFormat((msg) => `Failed to update mold: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Mold "${collectionId}.${baseId}" updated successfully`))
-              .onFailure((msg) => fail(`Mold updated but save failed: ${msg}`));
-          });
-      });
-    }
-    case 'procedure': {
-      return entityLib.getEditableProceduresEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .set(baseId as BaseProcedureId, entity as Entities.IProcedureEntity)
-          .asResult.withErrorFormat((msg) => `Failed to update procedure: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Procedure "${collectionId}.${baseId}" updated successfully`))
-              .onFailure((msg) => fail(`Procedure updated but save failed: ${msg}`));
-          });
-      });
-    }
-    case 'filling': {
-      return entityLib.getEditableFillingsRecipeEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .set(baseId as BaseFillingId, entity as Entities.IFillingRecipeEntity)
-          .asResult.withErrorFormat((msg) => `Failed to update filling: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Filling "${collectionId}.${baseId}" updated successfully`))
-              .onFailure((msg) => fail(`Filling updated but save failed: ${msg}`));
-          });
-      });
-    }
-    case 'confection': {
-      return entityLib.getEditableConfectionsEntityCollection(collectionId).onSuccess((collection) => {
-        return collection
-          .set(baseId as BaseConfectionId, entity as Entities.Confections.AnyConfectionRecipeEntity)
-          .asResult.withErrorFormat((msg) => `Failed to update confection: ${msg}`)
-          .onSuccess(() => {
-            return collection
-              .save()
-              .onSuccess(() => succeed(`Confection "${collectionId}.${baseId}" updated successfully`))
-              .onFailure((msg) => fail(`Confection updated but save failed: ${msg}`));
-          });
-      });
-    }
+    case 'task':
+      return mutateAndSave(
+        entityLib.getEditableTasksEntityCollection(collectionId),
+        (c) => c.set(baseId as BaseTaskId, entity as Entities.Tasks.IRawTaskEntity).asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'updated'
+      );
+    case 'ingredient':
+      return mutateAndSave(
+        entityLib.getEditableIngredientsEntityCollection(collectionId),
+        (c) => c.set(baseId as BaseIngredientId, entity as Entities.IngredientEntity).asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'updated'
+      );
+    case 'mold':
+      return mutateAndSave(
+        entityLib.getEditableMoldsEntityCollection(collectionId),
+        (c) => c.set(baseId as BaseMoldId, entity as Entities.IMoldEntity).asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'updated'
+      );
+    case 'procedure':
+      return mutateAndSave(
+        entityLib.getEditableProceduresEntityCollection(collectionId),
+        (c) => c.set(baseId as BaseProcedureId, entity as Entities.IProcedureEntity).asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'updated'
+      );
+    case 'filling':
+      return mutateAndSave(
+        entityLib.getEditableFillingsRecipeEntityCollection(collectionId),
+        (c) => c.set(baseId as BaseFillingId, entity as Entities.IFillingRecipeEntity).asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'updated'
+      );
+    case 'confection':
+      return mutateAndSave(
+        entityLib.getEditableConfectionsEntityCollection(collectionId),
+        (c) =>
+          c.set(baseId as BaseConfectionId, entity as Entities.Confections.AnyConfectionRecipeEntity)
+            .asResult,
+        entityType,
+        collectionId,
+        baseId,
+        'updated'
+      );
   }
 }

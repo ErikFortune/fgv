@@ -20,6 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 import { Converters, succeed } from '@fgv/ts-utils';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { CollectionId } from '../../../index';
 import { EditableCollection } from '../../../packlets/editing';
 
@@ -835,7 +836,7 @@ items:
   });
 
   describe('save', () => {
-    test('should fail when collection is immutable', () => {
+    test('should fail when collection is immutable', async () => {
       const collection = EditableCollection.createEditable<TestItem>({
         collectionId: TEST_SOURCE_ID,
         metadata: testMetadata,
@@ -845,10 +846,10 @@ items:
         valueConverter: testValueConverter
       }).orThrow();
 
-      expect(collection.save()).toFailWith(/immutable.*cannot be saved/i);
+      expect(await collection.save()).toFailWith(/immutable.*cannot be saved/i);
     });
 
-    test('should fail when no sourceItem', () => {
+    test('should fail when no sourceItem', async () => {
       const collection = EditableCollection.createEditable<TestItem>({
         collectionId: TEST_SOURCE_ID,
         metadata: testMetadata,
@@ -858,10 +859,10 @@ items:
         valueConverter: testValueConverter
       }).orThrow();
 
-      expect(collection.save()).toFailWith(/no source file/i);
+      expect(await collection.save()).toFailWith(/no source file/i);
     });
 
-    test('should fail when sourceItem is not a file', () => {
+    test('should fail when sourceItem is not a file', async () => {
       const mockSourceItem = {
         name: 'test'
       };
@@ -876,10 +877,10 @@ items:
         sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
       }).orThrow();
 
-      expect(collection.save()).toFailWith(/not a file/i);
+      expect(await collection.save()).toFailWith(/not a file/i);
     });
 
-    test('should fail when sourceItem file is immutable', () => {
+    test('should fail when sourceItem file is immutable', async () => {
       const mockSourceItem = {
         name: 'test',
         getIsMutable: () => succeed(false)
@@ -895,10 +896,10 @@ items:
         sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
       }).orThrow();
 
-      expect(collection.save()).toFailWith(/not mutable/i);
+      expect(await collection.save()).toFailWith(/not mutable/i);
     });
 
-    test('should fail when getIsMutable returns failure', () => {
+    test('should fail when getIsMutable returns failure', async () => {
       const mockSourceItem = {
         name: 'test',
         getIsMutable: () => {
@@ -920,10 +921,10 @@ items:
         sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
       }).orThrow();
 
-      expect(collection.save()).toFailWith(/not mutable.*Failed to check mutability/i);
+      expect(await collection.save()).toFailWith(/not mutable.*Failed to check mutability/i);
     });
 
-    test('should save successfully when sourceItem is mutable file', () => {
+    test('should save as plain YAML when no secretName', async () => {
       const mockSourceItem = {
         name: 'test',
         getIsMutable: () => succeed(true),
@@ -942,7 +943,183 @@ items:
         sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
       }).orThrow();
 
-      expect(collection.save()).toSucceed();
+      expect(await collection.save()).toSucceedWith(true);
+    });
+
+    test('should save as plain YAML when secretName present but no keyStore', async () => {
+      const mockSourceItem = {
+        name: 'test',
+        getIsMutable: () => succeed(true),
+        setRawContents: (_content: string) => {
+          return succeed(undefined);
+        }
+      };
+
+      const collection = EditableCollection.createEditable<TestItem>({
+        collectionId: TEST_SOURCE_ID,
+        metadata: { ...testMetadata, secretName: 'my-secret' },
+        isMutable: true,
+        initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
+        keyConverter: testKeyConverter,
+        valueConverter: testValueConverter,
+        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+      }).orThrow();
+
+      expect(await collection.save()).toSucceedWith(true);
+    });
+
+    describe('encrypted save', () => {
+      const cryptoProvider = CryptoUtils.nodeCryptoProvider;
+      const testPassword = 'test-password';
+
+      let keyStore: CryptoUtils.KeyStore.KeyStore;
+
+      beforeEach(async () => {
+        keyStore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider }).orThrow();
+        await keyStore.initialize(testPassword);
+        await keyStore.addSecret('my-secret');
+      });
+
+      test('should encrypt when secretName and keyStore are provided via constructor', async () => {
+        let savedContent = '';
+        const mockSourceItem = {
+          name: 'test',
+          getIsMutable: () => succeed(true),
+          setRawContents: (content: string) => {
+            savedContent = content;
+            return succeed(undefined);
+          }
+        };
+
+        const collection = EditableCollection.createEditable<TestItem>({
+          collectionId: TEST_SOURCE_ID,
+          metadata: { ...testMetadata, secretName: 'my-secret' },
+          isMutable: true,
+          initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter,
+          sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem,
+          encryptionProvider: keyStore
+        }).orThrow();
+
+        expect(await collection.save()).toSucceedWith(true);
+
+        // Verify it wrote encrypted JSON, not plain YAML
+        const parsed = JSON.parse(savedContent);
+        expect(parsed.format).toBe(CryptoUtils.Constants.ENCRYPTED_FILE_FORMAT);
+        expect(parsed.secretName).toBe('my-secret');
+        expect(typeof parsed.encryptedData).toBe('string');
+      });
+
+      test('should encrypt when encryptionProvider is provided via save options', async () => {
+        let savedContent = '';
+        const mockSourceItem = {
+          name: 'test',
+          getIsMutable: () => succeed(true),
+          setRawContents: (content: string) => {
+            savedContent = content;
+            return succeed(undefined);
+          }
+        };
+
+        const collection = EditableCollection.createEditable<TestItem>({
+          collectionId: TEST_SOURCE_ID,
+          metadata: { ...testMetadata, secretName: 'my-secret' },
+          isMutable: true,
+          initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter,
+          sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+        }).orThrow();
+
+        expect(await collection.save({ encryptionProvider: keyStore })).toSucceedWith(true);
+
+        const parsed = JSON.parse(savedContent);
+        expect(parsed.format).toBe(CryptoUtils.Constants.ENCRYPTED_FILE_FORMAT);
+        expect(parsed.secretName).toBe('my-secret');
+      });
+
+      test('should fail when secret is not found in encryptionProvider', async () => {
+        const mockSourceItem = {
+          name: 'test',
+          getIsMutable: () => succeed(true),
+          setRawContents: (_content: string) => succeed(undefined)
+        };
+
+        const collection = EditableCollection.createEditable<TestItem>({
+          collectionId: TEST_SOURCE_ID,
+          metadata: { ...testMetadata, secretName: 'nonexistent-secret' },
+          isMutable: true,
+          initialItems: new Map(),
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter,
+          sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem,
+          encryptionProvider: keyStore
+        }).orThrow();
+
+        expect(await collection.save()).toFailWith(/not found/i);
+      });
+
+      test('should fail when keyStore is locked', async () => {
+        keyStore.lock(true);
+
+        const mockSourceItem = {
+          name: 'test',
+          getIsMutable: () => succeed(true),
+          setRawContents: (_content: string) => succeed(undefined)
+        };
+
+        const collection = EditableCollection.createEditable<TestItem>({
+          collectionId: TEST_SOURCE_ID,
+          metadata: { ...testMetadata, secretName: 'my-secret' },
+          isMutable: true,
+          initialItems: new Map(),
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter,
+          sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem,
+          encryptionProvider: keyStore
+        }).orThrow();
+
+        expect(await collection.save()).toFailWith(/locked/i);
+      });
+
+      test('options encryptionProvider overrides constructor encryptionProvider', async () => {
+        const otherKeyStore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider }).orThrow();
+        await otherKeyStore.initialize('other-password');
+        await otherKeyStore.addSecret('other-secret');
+
+        let savedContent = '';
+        const mockSourceItem = {
+          name: 'test',
+          getIsMutable: () => succeed(true),
+          setRawContents: (content: string) => {
+            savedContent = content;
+            return succeed(undefined);
+          }
+        };
+
+        // Constructor encryptionProvider doesn't have 'other-secret', but options one does
+        const collection = EditableCollection.createEditable<TestItem>({
+          collectionId: TEST_SOURCE_ID,
+          metadata: { ...testMetadata, secretName: 'other-secret' },
+          isMutable: true,
+          initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
+          keyConverter: testKeyConverter,
+          valueConverter: testValueConverter,
+          sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem,
+          encryptionProvider: keyStore
+        }).orThrow();
+
+        // Should fail with constructor encryptionProvider (doesn't have 'other-secret')
+        expect(await collection.save()).toFailWith(/not found/i);
+
+        // Should succeed with options encryptionProvider override
+        expect(await collection.save({ encryptionProvider: otherKeyStore })).toSucceedWith(true);
+
+        const parsed = JSON.parse(savedContent);
+        expect(parsed.format).toBe(CryptoUtils.Constants.ENCRYPTED_FILE_FORMAT);
+        expect(parsed.secretName).toBe('other-secret');
+      });
     });
   });
 

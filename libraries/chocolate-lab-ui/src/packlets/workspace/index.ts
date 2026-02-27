@@ -28,6 +28,15 @@ export {
 } from './reactiveWorkspace';
 
 export { createDirectoryStore } from './directoryStoreFactory';
+
+export { saveKeystoreToFile, loadKeystoreFromTree, getOrCreateKeystoreFileItem } from './keystoreStorage';
+
+export {
+  saveEditableCollection,
+  type ISaveCollectionParams,
+  type ISaveCollectionResult,
+  type SaveOutcome
+} from './saveEditableCollection';
 export { restoreSavedDirectories, type IRestoreSavedDirectoriesParams } from './restoreSavedDirectories';
 export {
   applyStorageTargets,

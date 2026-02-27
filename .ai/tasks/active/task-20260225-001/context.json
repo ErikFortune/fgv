@@ -1,0 +1,15 @@
+{
+  "task": {
+    "id": "task-20260225-001",
+    "description": "Complete end-to-end encrypted collection support in chocolate-lab-web and related libraries",
+    "type": "feature",
+    "priority": "high",
+    "complexity": "complex"
+  },
+  "workflow": "standard-feature",
+  "state": {
+    "currentPhase": "requirements_confirmation",
+    "completedPhases": [],
+    "iterations": 0
+  }
+}

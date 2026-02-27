@@ -139,10 +139,12 @@ function buildCollectionInfos(
   defaultCollectionId: string | undefined
 ): ReadonlyArray<ICollectionInfo> {
   const protectedIds = new Set(subLibrary.protectedCollections.map((pc) => pc.collectionId));
+  const loadedCollectionIds = new Set<string>();
 
   const infos: ICollectionInfo[] = [];
 
   for (const entry of subLibrary.collections.values()) {
+    loadedCollectionIds.add(entry.id);
     const metadata = entry.metadata as LibraryData.ICollectionRuntimeMetadata | undefined;
     const isProtected = protectedIds.has(entry.id) || metadata?.secretName !== undefined;
 
@@ -156,6 +158,22 @@ function buildCollectionInfos(
       isVisible: isCollectionVisible(visibility, entry.id),
       isDefault: entry.id === defaultCollectionId
     });
+  }
+
+  // Add entries for protected collections that haven't been decrypted yet
+  for (const pc of subLibrary.protectedCollections) {
+    if (!loadedCollectionIds.has(pc.collectionId)) {
+      infos.push({
+        id: pc.collectionId,
+        name: pc.description ?? pc.collectionId,
+        itemCount: pc.itemCount ?? 0,
+        isMutable: pc.isMutable,
+        isProtected: true,
+        isUnlocked: false,
+        isVisible: isCollectionVisible(visibility, pc.collectionId),
+        isDefault: pc.collectionId === defaultCollectionId
+      });
+    }
   }
 
   // Sort: mutable first, then alphabetical by id

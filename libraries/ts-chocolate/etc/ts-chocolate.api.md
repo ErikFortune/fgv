@@ -652,13 +652,13 @@ class ChocolateEntityLibrary {
     get decorations(): DecorationsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get fillings(): FillingsLibrary;
-    getEditableConfectionsEntityCollection(collectionId: CollectionId): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>>;
-    getEditableDecorationsEntityCollection(collectionId: CollectionId): Result<EditableCollection<IDecorationEntity, BaseDecorationId>>;
-    getEditableFillingsRecipeEntityCollection(collectionId: CollectionId): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
-    getEditableIngredientsEntityCollection(collectionId: CollectionId): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
-    getEditableMoldsEntityCollection(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
-    getEditableProceduresEntityCollection(collectionId: CollectionId): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
-    getEditableTasksEntityCollection(collectionId: CollectionId): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
+    getEditableConfectionsEntityCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>>;
+    getEditableDecorationsEntityCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<IDecorationEntity, BaseDecorationId>>;
+    getEditableFillingsRecipeEntityCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
+    getEditableIngredientsEntityCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<IngredientEntity, BaseIngredientId>>;
+    getEditableMoldsEntityCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
+    getEditableProceduresEntityCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<IProcedureEntity, BaseProcedureId>>;
+    getEditableTasksEntityCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<IRawTaskEntity, BaseTaskId>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get ingredients(): IngredientsLibrary;
     readonly logger: Logging.LogReporter<unknown>;
@@ -1712,15 +1712,17 @@ class EditableCollection<T, TBaseId extends string = string> extends ValidatingR
     readonly collectionId: CollectionId;
     static createEditable<T, TBaseId extends string = string>(params: IEditableCollectionParams<T, TBaseId>): Result<EditableCollection<T, TBaseId>>;
     delete(key: TBaseId): DetailedResult<T, Collections.ResultMapResultDetail>;
+    // @internal
+    protected _encryptionProvider?: CryptoUtils.IEncryptionProvider;
     export(): Result<ICollectionSourceFile<T>>;
     static fromJson<T, TBaseId extends string = string>(content: string, params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>): Result<EditableCollection<T, TBaseId>>;
-    static fromLibrary<T, TBaseId extends string, TItem>(library: SubLibraryBase<string, TBaseId, TItem>, collectionId: CollectionId, keyConverter: Converter<TBaseId, unknown>, valueConverter: Converter<T, unknown>): Result<EditableCollection<T, TBaseId>>;
+    static fromLibrary<T, TBaseId extends string, TItem>(library: SubLibraryBase<string, TBaseId, TItem>, collectionId: CollectionId, keyConverter: Converter<TBaseId, unknown>, valueConverter: Converter<T, unknown>, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<T, TBaseId>>;
     static fromYaml<T, TBaseId extends string = string>(content: string, params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>): Result<EditableCollection<T, TBaseId>>;
     isDirty(): boolean;
     readonly isMutable: boolean;
     get metadata(): ICollectionFileMetadata;
     static parse<T, TBaseId extends string = string>(content: string, params: Omit<IEditableCollectionParams<T, TBaseId>, 'initialItems'>): Result<EditableCollection<T, TBaseId>>;
-    save(): Result<void>;
+    save(options?: ICollectionSaveOptions): Promise<Result<true>>;
     serialize(format: 'yaml' | 'json', options?: IExportOptions): Result<string>;
     serializeToJson(options?: IExportOptions): Result<string>;
     serializeToYaml(options?: IExportOptions): Result<string>;
@@ -1983,6 +1985,7 @@ declare namespace Editing {
         ValidationReport,
         ValidationReportBuilder,
         IEditableCollectionParams,
+        ICollectionSaveOptions,
         EditableCollection,
         CollectionManager,
         IEditorContextParams,
@@ -3111,6 +3114,13 @@ interface ICollectionRuntimeMetadata extends ICollectionFileMetadata {
     readonly sourceName: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EditableCollection"
+//
+// @public
+interface ICollectionSaveOptions {
+    readonly encryptionProvider?: CryptoUtils.IEncryptionProvider;
+}
+
 // @public
 interface ICollectionSet<TCollectionId extends string = string> {
     readonly collections: ReadonlyArray<{
@@ -3540,6 +3550,9 @@ interface IEditableCollection<T, TBaseId extends string = string, TId extends st
 // @public
 interface IEditableCollectionParams<T, TBaseId extends string = string> {
     readonly collectionId: CollectionId;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EditableCollection"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "CryptoUtils"
+    readonly encryptionProvider?: CryptoUtils.IEncryptionProvider;
     readonly initialItems: ReadonlyMap<TBaseId, T>;
     readonly isMutable: boolean;
     readonly keyConverter: Converter<TBaseId, unknown>;

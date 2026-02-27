@@ -31,12 +31,14 @@ import {
   omit,
   succeed
 } from '@fgv/ts-utils';
-import { FileTree } from '@fgv/ts-json-base';
+import { FileTree, JsonValue, sanitizeJsonObject } from '@fgv/ts-json-base';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { CollectionId, Helpers as CommonHelpers } from '../common';
 import {
   ICollectionSourceFile,
   ICollectionFileMetadata,
   ICollectionRuntimeMetadata,
+  IEncryptedCollectionMetadata,
   SubLibraryBase,
   Converters as LibraryDataConverters
 } from '../library-data';
@@ -92,6 +94,32 @@ export interface IEditableCollectionParams<T, TBaseId extends string = string> {
    * Collections loaded from FileTree will have this populated.
    */
   readonly sourceItem?: FileTree.FileTreeItem;
+
+  /**
+   * Optional encryption provider for encrypted save support.
+   * When present and the collection's metadata includes a `secretName`,
+   * {@link EditableCollection.save} will encrypt the collection before writing.
+   *
+   * Accepts any {@link CryptoUtils.IEncryptionProvider}: a `KeyStore`,
+   * a `DirectEncryptionProvider`, or a custom implementation.
+   */
+  readonly encryptionProvider?: CryptoUtils.IEncryptionProvider;
+}
+
+// ============================================================================
+// Save Options
+// ============================================================================
+
+/**
+ * Options for {@link EditableCollection.save}.
+ * @public
+ */
+export interface ICollectionSaveOptions {
+  /**
+   * Optional encryption provider override for this save operation.
+   * If provided, takes precedence over the constructor-supplied provider.
+   */
+  readonly encryptionProvider?: CryptoUtils.IEncryptionProvider;
 }
 
 // ============================================================================
@@ -129,6 +157,12 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
   private _metadata: ICollectionFileMetadata;
 
   /**
+   * Optional encryption provider for encrypted save.
+   * @internal
+   */
+  protected _encryptionProvider?: CryptoUtils.IEncryptionProvider;
+
+  /**
    * Create an editable collection.
    * Use the static `createEditable` method for proper initialization.
    */
@@ -137,13 +171,15 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     isMutable: boolean,
     metadata: ICollectionFileMetadata,
     params: Collections.IValidatingResultMapConstructorParams<TBaseId, T>,
-    sourceItem?: FileTree.FileTreeItem
+    sourceItem?: FileTree.FileTreeItem,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider
   ) {
     super(params);
     this.collectionId = collectionId;
     this.isMutable = isMutable;
     this._metadata = { ...metadata };
     this.sourceItem = sourceItem;
+    this._encryptionProvider = encryptionProvider;
   }
 
   /**
@@ -176,7 +212,8 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
           entries,
           converters
         },
-        params.sourceItem
+        params.sourceItem,
+        params.encryptionProvider
       )
     );
   }
@@ -331,6 +368,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
    * @param collectionId - ID of the collection to make editable
    * @param keyConverter - Converter for validating item keys
    * @param valueConverter - Converter for validating item values
+   * @param encryptionProvider - Optional encryption provider for encrypted save support
    * @returns Result containing EditableCollection with persistence, or Failure
    * @public
    */
@@ -338,7 +376,8 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     library: SubLibraryBase<string, TBaseId, TItem>,
     collectionId: CollectionId,
     keyConverter: Converter<TBaseId, unknown>,
-    valueConverter: Converter<T, unknown>
+    valueConverter: Converter<T, unknown>,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider
   ): Result<EditableCollection<T, TBaseId>> {
     // Get the collection from the library
     const collectionResult = library.collections.get(collectionId).asResult;
@@ -367,7 +406,8 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
       initialItems: itemsMap,
       keyConverter,
       valueConverter,
-      sourceItem
+      sourceItem,
+      encryptionProvider
     });
   }
 
@@ -482,9 +522,15 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
   /**
    * Save the collection to its source file using FileTree persistence.
    * Requires a sourceItem with a mutable FileTree.
-   * @returns Result indicating success or failure
+   *
+   * When the collection's metadata includes a `secretName` and a KeyStore
+   * is available (via constructor or options), the collection is encrypted
+   * before writing. Otherwise it is saved as plain YAML.
+   *
+   * @param options - Optional save options (e.g. KeyStore override)
+   * @returns Result with `true` on success, or Failure with error context
    */
-  public save(): Result<void> {
+  public async save(options?: ICollectionSaveOptions): Promise<Result<true>> {
     // Check if collection is mutable
     if (!this.isMutable) {
       return Failure.with(`Collection "${this.collectionId}" is immutable and cannot be saved`);
@@ -512,13 +558,64 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
       );
     }
 
-    // Serialize to YAML
+    const fileItem = this.sourceItem as FileTree.IFileTreeFileItem;
+    const provider = options?.encryptionProvider ?? this._encryptionProvider;
+    const secretName = this._metadata.secretName;
+
+    // Encrypted save path
+    if (secretName && provider) {
+      return this._saveEncrypted(fileItem, provider, secretName);
+    }
+
+    // Plain YAML save
     return this.serializeToYaml().onSuccess((yaml) => {
-      // Use the file item's setRawContents method to save
-      return (this.sourceItem as FileTree.IFileTreeFileItem)
-        .setRawContents(yaml)
-        .onSuccess(() => Success.with(undefined));
+      return fileItem.setRawContents(yaml).onSuccess(() => succeed(true as const));
     });
+  }
+
+  // ==========================================================================
+  // Private: Encrypted Save
+  // ==========================================================================
+
+  /**
+   * Encrypts the collection and writes it to the file item.
+   * @internal
+   */
+  private async _saveEncrypted(
+    fileItem: FileTree.IFileTreeFileItem,
+    provider: CryptoUtils.IEncryptionProvider,
+    secretName: string
+  ): Promise<Result<true>> {
+    // Build items as JSON-safe value
+    const exportResult = this.export();
+    if (exportResult.isFailure()) {
+      return fail(`${this.collectionId}: export: ${exportResult.message}`);
+    }
+
+    const contentResult = sanitizeJsonObject(exportResult.value.items);
+    if (contentResult.isFailure()) {
+      return fail(`${this.collectionId}: serialize items: ${contentResult.message}`);
+    }
+
+    const metadata: IEncryptedCollectionMetadata = {
+      collectionId: this.collectionId,
+      itemCount: this.size
+    };
+
+    const encryptedResult = await provider.encryptByName(
+      secretName,
+      contentResult.value as unknown as JsonValue,
+      metadata
+    );
+    if (encryptedResult.isFailure()) {
+      return fail(`${this.collectionId}: encrypt: ${encryptedResult.message}`);
+    }
+
+    const jsonContent = JSON.stringify(encryptedResult.value, null, 2);
+    return fileItem
+      .setRawContents(jsonContent)
+      .withErrorFormat((msg) => `${this.collectionId}: write encrypted: ${msg}`)
+      .onSuccess(() => succeed(true as const));
   }
 
   // ==========================================================================

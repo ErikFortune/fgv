@@ -61,6 +61,7 @@ type IGanacheCharacteristics = Entities.Ingredients.IGanacheCharacteristics;
 type IngredientEntity = Entities.Ingredients.IngredientEntity;
 
 import { EditingToolbar, useEditingContext } from '../editing';
+import { useWorkspace } from '../workspace';
 
 // ============================================================================
 // Props
@@ -538,13 +539,17 @@ function CategorySpecificFields({
  */
 export function IngredientEditView(props: IIngredientEditViewProps): React.ReactElement {
   const { wrapper, onSave, onSaveAs, onCancel, readOnly } = props;
+  const {
+    data: { logger }
+  } = useWorkspace();
 
   const ctx = useEditingContext({
     wrapper,
     onSave,
     onSaveAs,
     onCancel,
-    readOnly
+    readOnly,
+    logger
   });
 
   const w = ctx.wrapper;

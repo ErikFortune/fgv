@@ -7,7 +7,7 @@ Get an editable molds collection with persistence enabled.
 **Signature:**
 
 ```typescript
-getEditableMoldsEntityCollection(collectionId: CollectionId): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
+getEditableMoldsEntityCollection(collectionId: CollectionId, encryptionProvider?: IEncryptionProvider): Result<EditableCollection<IMoldEntity, BaseMoldId>>;
 ```
 
 **Parameters:**
@@ -15,6 +15,7 @@ getEditableMoldsEntityCollection(collectionId: CollectionId): Result<EditableCol
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td>collectionId</td><td>CollectionId</td><td>ID of the collection to make editable</td></tr>
+<tr><td>encryptionProvider</td><td>IEncryptionProvider</td><td>Optional encryption provider for encrypted save support</td></tr>
 </tbody></table>
 
 **Returns:**

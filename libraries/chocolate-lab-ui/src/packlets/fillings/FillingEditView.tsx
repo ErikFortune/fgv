@@ -48,6 +48,7 @@ import type {
 } from '@fgv/ts-chocolate';
 
 import { EditingToolbar, NotesEditor, useEditingContext, useDatalistMatch } from '../editing';
+import { useWorkspace } from '../workspace';
 
 const ALL_MEASUREMENT_UNITS: ReadonlyArray<MeasurementUnit> = [
   'g',
@@ -274,11 +275,15 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
   const isProductionMode = editMode === 'production';
 
   // Recipe-level editing context (undo/redo for wrapper)
+  const {
+    data: { logger }
+  } = useWorkspace();
   const ctx = useEditingContext<EditedFillingRecipe>({
     wrapper,
     onSave: (): void => onSave('update'),
     onCancel,
-    readOnly
+    readOnly,
+    logger
   });
 
   // Separate version counter for session mutations (triggers re-render)

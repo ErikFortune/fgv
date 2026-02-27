@@ -327,7 +327,7 @@ export function FillingsTabContent(): React.ReactElement {
   );
 
   const handleSaveFilling = useCallback(
-    (mode: FillingSaveMode): void => {
+    async (mode: FillingSaveMode): Promise<void> => {
       const state = editingRef.current;
       if (!state) {
         workspace.data.logger.error('Save failed: no editing state');
@@ -436,13 +436,15 @@ export function FillingsTabContent(): React.ReactElement {
         }
 
         // Persist to disk
-        const editableResult =
-          workspace.data.entities.getEditableFillingsRecipeEntityCollection(mutableCollectionId);
+        const editableResult = workspace.data.entities.getEditableFillingsRecipeEntityCollection(
+          mutableCollectionId,
+          workspace.keyStore
+        );
         if (editableResult.isSuccess()) {
           const editable = editableResult.value;
           editable.set(newBaseId, newEntity);
           if (editable.canSave()) {
-            const diskResult = editable.save();
+            const diskResult = await editable.save();
             if (diskResult.isFailure()) {
               workspace.data.logger.error(`Disk save failed: ${diskResult.message}`);
             } else {
@@ -497,12 +499,15 @@ export function FillingsTabContent(): React.ReactElement {
       }
 
       // Persist to disk
-      const editableResult = workspace.data.entities.getEditableFillingsRecipeEntityCollection(collectionId);
+      const editableResult = workspace.data.entities.getEditableFillingsRecipeEntityCollection(
+        collectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
         if (editable.canSave()) {
-          const saveResult = editable.save();
+          const saveResult = await editable.save();
           if (saveResult.isFailure()) {
             workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
           } else {
@@ -702,7 +707,7 @@ export function FillingsTabContent(): React.ReactElement {
   );
 
   const handleSubEntityIngredientCreate = useCallback(
-    (entity: Entities.Ingredients.IngredientEntity, _source: 'manual' | 'ai'): void => {
+    async (entity: Entities.Ingredients.IngredientEntity, _source: 'manual' | 'ai'): Promise<void> => {
       let ingredientCollectionId: CollectionId | undefined;
       for (const [id, col] of workspace.data.entities.ingredients.collections.entries()) {
         if (col.isMutable) {
@@ -736,13 +741,15 @@ export function FillingsTabContent(): React.ReactElement {
       }
 
       // Persist to disk
-      const editableResult =
-        workspace.data.entities.getEditableIngredientsEntityCollection(ingredientCollectionId);
+      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(
+        ingredientCollectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
         if (editable.canSave()) {
-          const diskResult = editable.save();
+          const diskResult = await editable.save();
           if (diskResult.isFailure()) {
             workspace.data.logger.error(`Disk save failed for ingredient: ${diskResult.message}`);
           }
@@ -773,7 +780,7 @@ export function FillingsTabContent(): React.ReactElement {
   );
 
   const handleSubEntityProcedureCreate = useCallback(
-    (entity: Entities.Procedures.IProcedureEntity, _source: 'manual' | 'ai'): void => {
+    async (entity: Entities.Procedures.IProcedureEntity, _source: 'manual' | 'ai'): Promise<void> => {
       let procedureCollectionId: CollectionId | undefined;
       for (const [id, col] of workspace.data.entities.procedures.collections.entries()) {
         if (col.isMutable) {
@@ -807,13 +814,15 @@ export function FillingsTabContent(): React.ReactElement {
       }
 
       // Persist to disk
-      const editableResult =
-        workspace.data.entities.getEditableProceduresEntityCollection(procedureCollectionId);
+      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(
+        procedureCollectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
         if (editable.canSave()) {
-          const diskResult = editable.save();
+          const diskResult = await editable.save();
           if (diskResult.isFailure()) {
             workspace.data.logger.error(`Disk save failed for procedure: ${diskResult.message}`);
           }
@@ -890,7 +899,7 @@ export function FillingsTabContent(): React.ReactElement {
   );
 
   const handleSubIngredientSave = useCallback(
-    (wrapper: LibraryRuntime.EditedIngredient): void => {
+    async (wrapper: LibraryRuntime.EditedIngredient): Promise<void> => {
       const entity = wrapper.current;
       const compositeId = subIngredientRef.current?.id;
       if (!compositeId) return;
@@ -905,12 +914,15 @@ export function FillingsTabContent(): React.ReactElement {
       }
       colResult.value.items.set(baseId, entity);
 
-      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(collectionId);
+      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(
+        collectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
         if (editable.canSave()) {
-          const diskResult = editable.save();
+          const diskResult = await editable.save();
           if (diskResult.isFailure()) {
             workspace.data.logger.error(`Disk save failed for ingredient: ${diskResult.message}`);
           }
@@ -938,7 +950,7 @@ export function FillingsTabContent(): React.ReactElement {
   }, [cascadeStack, squashCascade]);
 
   const handleSubProcedureSave = useCallback(
-    (wrapper: LibraryRuntime.EditedProcedure): void => {
+    async (wrapper: LibraryRuntime.EditedProcedure): Promise<void> => {
       const entity = wrapper.current;
       const compositeId = subProcedureRef.current?.id;
       if (!compositeId) return;
@@ -953,12 +965,15 @@ export function FillingsTabContent(): React.ReactElement {
       }
       colResult.value.items.set(baseId, entity);
 
-      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(collectionId);
+      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(
+        collectionId,
+        workspace.keyStore
+      );
       if (editableResult.isSuccess()) {
         const editable = editableResult.value;
         editable.set(baseId, entity);
         if (editable.canSave()) {
-          const diskResult = editable.save();
+          const diskResult = await editable.save();
           if (diskResult.isFailure()) {
             workspace.data.logger.error(`Disk save failed for procedure: ${diskResult.message}`);
           }

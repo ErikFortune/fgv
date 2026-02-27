@@ -44,6 +44,9 @@ export { KeyStore };
 import * as Converters from './converters';
 export { Converters };
 
+// Direct encryption provider
+export { DirectEncryptionProvider, IDirectEncryptionProviderParams } from './directEncryptionProvider';
+
 // Note: NodeCryptoProvider is NOT exported in browser version
 // Use BrowserCryptoProvider from @fgv/ts-web-extras instead
 

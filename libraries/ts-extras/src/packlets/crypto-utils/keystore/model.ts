@@ -241,6 +241,45 @@ export interface IImportSecretOptions extends IAddSecretOptions {
   readonly replace?: boolean;
 }
 
+/**
+ * Options for adding a secret derived from a password.
+ * @public
+ */
+export interface IAddSecretFromPasswordOptions extends IAddSecretOptions {
+  /**
+   * Whether to replace an existing secret with the same name.
+   */
+  readonly replace?: boolean;
+
+  /**
+   * PBKDF2 iterations for key derivation.
+   * @defaultValue DEFAULT_SECRET_ITERATIONS (350000)
+   */
+  readonly iterations?: number;
+}
+
+/**
+ * Default PBKDF2 iterations for secret-level key derivation.
+ * Lower than keystore encryption since these are used more frequently.
+ * @public
+ */
+export const DEFAULT_SECRET_ITERATIONS: number = 350000;
+
+/**
+ * Result of adding a password-derived secret.
+ * Extends {@link IAddSecretResult} with key derivation parameters
+ * needed to store alongside encrypted files.
+ * @public
+ */
+export interface IAddSecretFromPasswordResult extends IAddSecretResult {
+  /**
+   * Key derivation parameters used to derive the secret key.
+   * Store these in encrypted file metadata so the password alone
+   * can re-derive the same key for decryption.
+   */
+  readonly keyDerivation: IKeyDerivationParams;
+}
+
 // ============================================================================
 // Detection Helper
 // ============================================================================

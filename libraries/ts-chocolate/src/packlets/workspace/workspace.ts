@@ -285,7 +285,7 @@ export class Workspace implements IWorkspace {
    * {@inheritDoc IWorkspace.state}
    */
   public get state(): WorkspaceState {
-    if (!this._keyStore) {
+    if (!this._keyStore || this._keyStore.isNew) {
       return 'no-keystore';
     }
     return this._keyStore.isUnlocked ? 'unlocked' : 'locked';

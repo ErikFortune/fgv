@@ -38,6 +38,9 @@ export { KeyStore };
 import * as Converters from './converters';
 export { Converters };
 
+// Direct encryption provider
+export { DirectEncryptionProvider, IDirectEncryptionProviderParams } from './directEncryptionProvider';
+
 // Node.js crypto provider (Node.js environment only)
 export { NodeCryptoProvider, nodeCryptoProvider } from './nodeCryptoProvider';
 

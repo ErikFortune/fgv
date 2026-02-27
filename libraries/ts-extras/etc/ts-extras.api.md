@@ -82,6 +82,8 @@ declare namespace CryptoUtils {
         Constants,
         KeyStore,
         Converters_3 as Converters,
+        DirectEncryptionProvider,
+        IDirectEncryptionProviderParams,
         NodeCryptoProvider,
         nodeCryptoProvider,
         createEncryptedFile,
@@ -99,6 +101,7 @@ declare namespace CryptoUtils {
         IKeyDerivationParams,
         IEncryptedFile,
         ICryptoProvider,
+        IEncryptionProvider,
         EncryptedFileErrorMode,
         SecretProvider,
         IEncryptionConfig
@@ -141,6 +144,21 @@ const DEFAULT_KEYSTORE_ITERATIONS: number;
 //
 // @public
 const DEFAULT_RANGEOF_FORMATS: RangeOfFormats;
+
+// @public
+const DEFAULT_SECRET_ITERATIONS: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptionProvider"
+//
+// @public
+class DirectEncryptionProvider implements IEncryptionProvider {
+    get boundSecretName(): string | undefined;
+    static create(params: IDirectEncryptionProviderParams): Result<DirectEncryptionProvider>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptionProvider"
+    //
+    // (undocumented)
+    encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
+}
 
 // @public
 const ENCRYPTED_FILE_FORMAT: "encrypted-collection-v1";
@@ -267,6 +285,19 @@ declare namespace Hash {
 export { Hash }
 
 // @public
+interface IAddSecretFromPasswordOptions extends IAddSecretOptions {
+    readonly iterations?: number;
+    readonly replace?: boolean;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAddSecretResult"
+//
+// @public
+interface IAddSecretFromPasswordResult extends IAddSecretResult {
+    readonly keyDerivation: IKeyDerivationParams;
+}
+
+// @public
 interface IAddSecretOptions {
     readonly description?: string;
 }
@@ -317,6 +348,15 @@ interface ICryptoProvider {
     toBase64(data: Uint8Array): string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "DirectEncryptionProvider"
+//
+// @public
+interface IDirectEncryptionProviderParams {
+    readonly boundSecretName?: string;
+    readonly cryptoProvider: ICryptoProvider;
+    readonly key: Uint8Array;
+}
+
 // @public
 interface IEncryptedFile<TMetadata = JsonValue> {
     readonly algorithm: EncryptionAlgorithm;
@@ -336,6 +376,11 @@ interface IEncryptionConfig {
     readonly onMissingKey?: EncryptedFileErrorMode;
     readonly secretProvider?: SecretProvider;
     readonly secrets?: ReadonlyArray<INamedSecret>;
+}
+
+// @public
+interface IEncryptionProvider {
+    encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
 }
 
 // @public
@@ -491,15 +536,24 @@ declare namespace KeyStore {
         IKeyStoreOpenParams,
         IAddSecretResult,
         IAddSecretOptions,
-        IImportSecretOptions
+        IImportSecretOptions,
+        IAddSecretFromPasswordOptions,
+        DEFAULT_SECRET_ITERATIONS,
+        IAddSecretFromPasswordResult
     }
 }
 
 // @public
-class KeyStore_2 {
+class KeyStore_2 implements IEncryptionProvider {
     addSecret(name: string, options?: IAddSecretOptions): Promise<Result<IAddSecretResult>>;
+    addSecretFromPassword(name: string, password: string, options?: IAddSecretFromPasswordOptions): Promise<Result<IAddSecretFromPasswordResult>>;
     changePassword(currentPassword: string, newPassword: string): Promise<Result<KeyStore_2>>;
     static create(params: IKeyStoreCreateParams): Result<KeyStore_2>;
+    get cryptoProvider(): ICryptoProvider;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptionProvider"
+    //
+    // (undocumented)
+    encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
     getEncryptionConfig(): Result<Pick<IEncryptionConfig, 'secretProvider' | 'cryptoProvider'>>;
     getSecret(name: string): Result<IKeyStoreSecretEntry>;
     getSecretProvider(): Result<SecretProvider>;
@@ -507,6 +561,7 @@ class KeyStore_2 {
     importSecret(name: string, key: Uint8Array, options?: IImportSecretOptions): Result<IAddSecretResult>;
     initialize(password: string): Promise<Result<KeyStore_2>>;
     get isDirty(): boolean;
+    get isNew(): boolean;
     get isUnlocked(): boolean;
     listSecrets(): Result<readonly string[]>;
     lock(force?: boolean): Result<KeyStore_2>;

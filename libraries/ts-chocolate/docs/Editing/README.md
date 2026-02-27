@@ -255,6 +255,15 @@ Parameters for creating an editable collection.
 </td></tr>
 <tr><td>
 
+[ICollectionSaveOptions](./interfaces/ICollectionSaveOptions.md)
+
+</td><td>
+
+Options for EditableCollection.save.
+
+</td></tr>
+<tr><td>
+
 [IEditorContextParams](./interfaces/IEditorContextParams.md)
 
 </td><td>

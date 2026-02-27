@@ -52,6 +52,7 @@ type ICavities = Entities.Molds.ICavities;
 type ICavityDimensions = Entities.Molds.ICavityDimensions;
 
 import { EditingToolbar, useEditingContext, NotesEditor, UrlsEditor } from '../editing';
+import { useWorkspace } from '../workspace';
 
 // ============================================================================
 // Props
@@ -268,7 +269,10 @@ function CavityEditor({
  */
 export function MoldEditView(props: IMoldEditViewProps): React.ReactElement {
   const { wrapper, onSave, onSaveAs, onCancel, readOnly } = props;
-  const ctx = useEditingContext({ wrapper, onSave, onSaveAs, onCancel, readOnly });
+  const {
+    data: { logger }
+  } = useWorkspace();
+  const ctx = useEditingContext({ wrapper, onSave, onSaveAs, onCancel, readOnly, logger });
 
   const entity = wrapper.current;
 
