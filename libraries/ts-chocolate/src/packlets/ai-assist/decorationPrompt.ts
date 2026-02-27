@@ -23,9 +23,10 @@
  * @packageDocumentation
  */
 
+import { AiAssist } from '@fgv/ts-extras';
+
 import { Helpers } from '../common';
 import { allDecorationRatingCategories } from '../entities';
-import { createAiPrompt, IAiPrompt } from './model';
 
 /**
  * Builds a detailed AI prompt for generating a decoration entity JSON object.
@@ -34,7 +35,7 @@ import { createAiPrompt, IAiPrompt } from './model';
  * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildDecorationAiPrompt(decorationName: string): IAiPrompt {
+export function buildDecorationAiPrompt(decorationName: string): AiAssist.AiPrompt {
   const baseId = Helpers.toKebabCase(decorationName);
 
   const user = `Generate a JSON object representing the chocolate confection decoration "${decorationName}" for a chocolate-making application.`;
@@ -79,5 +80,5 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - Populate as many optional fields as you can reasonably determine.
 - Return ONLY the JSON object, nothing else.`;
 
-  return createAiPrompt(user, system);
+  return new AiAssist.AiPrompt(user, system);
 }

@@ -7,5 +7,5 @@ Builds a detailed AI prompt for generating a filling recipe entity JSON object.
 ## Signature
 
 ```typescript
-function buildFillingAiPrompt(fillingName: string): string
+function buildFillingAiPrompt(fillingName: string): AiPrompt
 ```

@@ -23,8 +23,9 @@
  * @packageDocumentation
  */
 
+import { AiAssist } from '@fgv/ts-extras';
+
 import { Helpers, Model } from '../common';
-import { createAiPrompt, IAiPrompt } from './model';
 
 /**
  * Builds a detailed AI prompt for generating a mold entity JSON object.
@@ -35,7 +36,7 @@ import { createAiPrompt, IAiPrompt } from './model';
  * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildMoldAiPrompt(moldDescription: string): IAiPrompt {
+export function buildMoldAiPrompt(moldDescription: string): AiAssist.AiPrompt {
   const baseId = Helpers.toKebabCase(moldDescription);
 
   const user = `Generate a JSON object representing the chocolate mold "${moldDescription}" for a chocolate-making application.`;
@@ -109,5 +110,5 @@ Generate from the description as lowercase-kebab-case: "${baseId}"
 - Populate as many optional fields as you can reasonably determine.
 - Return ONLY the JSON object, nothing else.`;
 
-  return createAiPrompt(user, system);
+  return new AiAssist.AiPrompt(user, system);
 }

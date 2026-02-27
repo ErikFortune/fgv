@@ -24,22 +24,22 @@ describe('buildProcedureAiPrompt', () => {
   describe('baseId generation', () => {
     test('converts simple name to kebab-case', () => {
       const prompt = buildProcedureAiPrompt('Temper Dark Chocolate');
-      expect(prompt).toContain('"temper-dark-chocolate"');
+      expect(prompt.combined).toContain('"temper-dark-chocolate"');
     });
 
     test('strips leading and trailing hyphens', () => {
       const prompt = buildProcedureAiPrompt('--Ganache Method--');
-      expect(prompt).toContain('"ganache-method"');
+      expect(prompt.combined).toContain('"ganache-method"');
     });
 
     test('collapses non-alphanumeric characters into single hyphens', () => {
       const prompt = buildProcedureAiPrompt('Enrobe & Decorate (Shell)');
-      expect(prompt).toContain('"enrobe-decorate-shell"');
+      expect(prompt.combined).toContain('"enrobe-decorate-shell"');
     });
 
     test('handles single-word name', () => {
       const prompt = buildProcedureAiPrompt('Tempering');
-      expect(prompt).toContain('"tempering"');
+      expect(prompt.combined).toContain('"tempering"');
     });
   });
 
@@ -47,69 +47,69 @@ describe('buildProcedureAiPrompt', () => {
     const prompt = buildProcedureAiPrompt('Test Procedure');
 
     test('includes the procedure name in the prompt', () => {
-      expect(prompt).toContain('Test Procedure');
+      expect(prompt.combined).toContain('Test Procedure');
     });
 
     test('includes schema sections', () => {
-      expect(prompt).toContain('## Schema');
-      expect(prompt).toContain('### Required fields:');
-      expect(prompt).toContain('### Optional fields:');
+      expect(prompt.combined).toContain('## Schema');
+      expect(prompt.combined).toContain('### Required fields:');
+      expect(prompt.combined).toContain('### Optional fields:');
     });
 
     test('includes required field descriptions', () => {
-      expect(prompt).toContain('"baseId"');
-      expect(prompt).toContain('"name"');
-      expect(prompt).toContain('"steps"');
+      expect(prompt.combined).toContain('"baseId"');
+      expect(prompt.combined).toContain('"name"');
+      expect(prompt.combined).toContain('"steps"');
     });
 
     test('includes optional field descriptions', () => {
-      expect(prompt).toContain('"description"');
-      expect(prompt).toContain('"category"');
-      expect(prompt).toContain('"tags"');
-      expect(prompt).toContain('"notes"');
+      expect(prompt.combined).toContain('"description"');
+      expect(prompt.combined).toContain('"category"');
+      expect(prompt.combined).toContain('"tags"');
+      expect(prompt.combined).toContain('"notes"');
     });
 
     test('includes procedure categories', () => {
-      expect(prompt).toContain('"ganache"');
-      expect(prompt).toContain('"caramel"');
-      expect(prompt).toContain('"gianduja"');
-      expect(prompt).toContain('"molded-bonbon"');
-      expect(prompt).toContain('"rolled-truffle"');
-      expect(prompt).toContain('"bar-truffle"');
-      expect(prompt).toContain('"decoration"');
-      expect(prompt).toContain('"other"');
+      expect(prompt.combined).toContain('"ganache"');
+      expect(prompt.combined).toContain('"caramel"');
+      expect(prompt.combined).toContain('"gianduja"');
+      expect(prompt.combined).toContain('"molded-bonbon"');
+      expect(prompt.combined).toContain('"rolled-truffle"');
+      expect(prompt.combined).toContain('"bar-truffle"');
+      expect(prompt.combined).toContain('"decoration"');
+      expect(prompt.combined).toContain('"other"');
     });
 
     test('includes step object fields', () => {
-      expect(prompt).toContain('"order"');
-      expect(prompt).toContain('"task"');
-      expect(prompt).toContain('"activeTime"');
-      expect(prompt).toContain('"waitTime"');
-      expect(prompt).toContain('"holdTime"');
-      expect(prompt).toContain('"temperature"');
+      expect(prompt.combined).toContain('"order"');
+      expect(prompt.combined).toContain('"task"');
+      expect(prompt.combined).toContain('"activeTime"');
+      expect(prompt.combined).toContain('"waitTime"');
+      expect(prompt.combined).toContain('"holdTime"');
+      expect(prompt.combined).toContain('"temperature"');
     });
 
     test('includes inline task schema', () => {
-      expect(prompt).toContain('"task"');
-      expect(prompt).toContain('"baseId"');
-      expect(prompt).toContain('"template"');
-      expect(prompt).toContain('"params"');
+      expect(prompt.combined).toContain('"task"');
+      expect(prompt.combined).toContain('"baseId"');
+      expect(prompt.combined).toContain('"template"');
+      expect(prompt.combined).toContain('"params"');
     });
 
     test('includes library task reference schema', () => {
-      expect(prompt).toContain('"taskId"');
-      expect(prompt).toContain('"params"');
+      expect(prompt.combined).toContain('"taskId"');
+      expect(prompt.combined).toContain('"params"');
     });
 
     test('includes notes instruction', () => {
-      expect(prompt).toContain('category "ai"');
-      expect(prompt).toContain('assumptions');
+      expect(prompt.combined).toContain('category "ai"');
+      expect(prompt.combined).toContain('assumptions');
     });
 
     test('instructs to return only JSON', () => {
-      expect(prompt).toContain('Return ONLY valid JSON');
-      expect(prompt).toContain('no markdown');
-      expect(prompt).toContain('no code fences');
+      expect(prompt.combined).toContain('Return ONLY valid JSON');
+      expect(prompt.combined).toContain('no markdown');
+      expect(prompt.combined).toContain('no code fences');
     });
   });
 });

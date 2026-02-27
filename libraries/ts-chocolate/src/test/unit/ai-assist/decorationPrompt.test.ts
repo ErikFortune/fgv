@@ -24,22 +24,22 @@ describe('buildDecorationAiPrompt', () => {
   describe('baseId generation', () => {
     test('converts simple name to kebab-case', () => {
       const prompt = buildDecorationAiPrompt('Gold Leaf');
-      expect(prompt).toContain('"gold-leaf"');
+      expect(prompt.combined).toContain('"gold-leaf"');
     });
 
     test('strips leading and trailing hyphens', () => {
       const prompt = buildDecorationAiPrompt('--Transfer Sheet--');
-      expect(prompt).toContain('"transfer-sheet"');
+      expect(prompt.combined).toContain('"transfer-sheet"');
     });
 
     test('collapses non-alphanumeric characters into single hyphens', () => {
       const prompt = buildDecorationAiPrompt('Cocoa Butter (Colored) 50%');
-      expect(prompt).toContain('"cocoa-butter-colored-50"');
+      expect(prompt.combined).toContain('"cocoa-butter-colored-50"');
     });
 
     test('handles single-word name', () => {
       const prompt = buildDecorationAiPrompt('Glitter');
-      expect(prompt).toContain('"glitter"');
+      expect(prompt.combined).toContain('"glitter"');
     });
   });
 
@@ -47,53 +47,53 @@ describe('buildDecorationAiPrompt', () => {
     const prompt = buildDecorationAiPrompt('Test Decoration');
 
     test('includes the decoration name in the prompt', () => {
-      expect(prompt).toContain('Test Decoration');
+      expect(prompt.combined).toContain('Test Decoration');
     });
 
     test('includes schema sections', () => {
-      expect(prompt).toContain('## Schema');
-      expect(prompt).toContain('### Required fields:');
-      expect(prompt).toContain('### Optional fields:');
+      expect(prompt.combined).toContain('## Schema');
+      expect(prompt.combined).toContain('### Required fields:');
+      expect(prompt.combined).toContain('### Optional fields:');
     });
 
     test('includes required field descriptions', () => {
-      expect(prompt).toContain('"baseId"');
-      expect(prompt).toContain('"name"');
-      expect(prompt).toContain('"ingredients"');
+      expect(prompt.combined).toContain('"baseId"');
+      expect(prompt.combined).toContain('"name"');
+      expect(prompt.combined).toContain('"ingredients"');
     });
 
     test('includes optional field descriptions', () => {
-      expect(prompt).toContain('"description"');
-      expect(prompt).toContain('"tags"');
-      expect(prompt).toContain('"notes"');
-      expect(prompt).toContain('"ratings"');
+      expect(prompt.combined).toContain('"description"');
+      expect(prompt.combined).toContain('"tags"');
+      expect(prompt.combined).toContain('"notes"');
+      expect(prompt.combined).toContain('"ratings"');
     });
 
     test('includes ingredient object schema', () => {
-      expect(prompt).toContain('"ingredient"');
-      expect(prompt).toContain('"ids"');
-      expect(prompt).toContain('"preferredId"');
-      expect(prompt).toContain('"amount"');
+      expect(prompt.combined).toContain('"ingredient"');
+      expect(prompt.combined).toContain('"ids"');
+      expect(prompt.combined).toContain('"preferredId"');
+      expect(prompt.combined).toContain('"amount"');
     });
 
     test('includes rating object schema', () => {
-      expect(prompt).toContain('"category"');
-      expect(prompt).toContain('"score"');
-      expect(prompt).toContain('difficulty');
-      expect(prompt).toContain('durability');
-      expect(prompt).toContain('appearance');
-      expect(prompt).toContain('workability');
+      expect(prompt.combined).toContain('"category"');
+      expect(prompt.combined).toContain('"score"');
+      expect(prompt.combined).toContain('difficulty');
+      expect(prompt.combined).toContain('durability');
+      expect(prompt.combined).toContain('appearance');
+      expect(prompt.combined).toContain('workability');
     });
 
     test('includes notes instruction', () => {
-      expect(prompt).toContain('category "ai"');
-      expect(prompt).toContain('assumptions');
+      expect(prompt.combined).toContain('category "ai"');
+      expect(prompt.combined).toContain('assumptions');
     });
 
     test('instructs to return only JSON', () => {
-      expect(prompt).toContain('Return ONLY valid JSON');
-      expect(prompt).toContain('no markdown');
-      expect(prompt).toContain('no code fences');
+      expect(prompt.combined).toContain('Return ONLY valid JSON');
+      expect(prompt.combined).toContain('no markdown');
+      expect(prompt.combined).toContain('no code fences');
     });
   });
 });

@@ -31,9 +31,10 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
+import { AiAssist } from '@fgv/ts-extras';
 import { fail, Result, succeed } from '@fgv/ts-utils';
 
-import { AiAssist, type Settings } from '@fgv/ts-chocolate';
+import { type Settings } from '@fgv/ts-chocolate';
 
 import { useWorkspace } from '../workspace';
 
@@ -48,7 +49,7 @@ import { useWorkspace } from '../workspace';
 export interface IAiAssistAction {
   /** The provider identifier */
   readonly provider: Settings.AiAssistProvider;
-  /** Display label (e.g. "Copy AI Prompt", "Generate with Grok") */
+  /** Display label (e.g. "AI Assist | Copy", "AI Assist | Grok") */
   readonly label: string;
   /** Whether this is the default (first) action */
   readonly isDefault: boolean;
@@ -82,31 +83,17 @@ export interface IUseAiAssistResult {
    * Execute a copy-paste action: copies the combined prompt to clipboard.
    * @returns Success with `'copied'`, or failure.
    */
-  readonly copyPrompt: (prompt: AiAssist.IAiPrompt) => Promise<Result<'copied'>>;
+  readonly copyPrompt: (prompt: AiAssist.AiPrompt) => Promise<Result<'copied'>>;
   /**
    * Execute a direct API action: calls the provider, validates the response, returns the entity.
    * @returns Success with the validated entity, or failure.
    */
   readonly generateDirect: <TEntity>(
     provider: Settings.AiAssistProvider,
-    prompt: AiAssist.IAiPrompt,
+    prompt: AiAssist.AiPrompt,
     convert: (from: unknown) => Result<TEntity>
   ) => Promise<Result<IAiAssistResult<TEntity>>>;
 }
-
-// ============================================================================
-// Provider Labels
-// ============================================================================
-
-const PROVIDER_LABELS: Readonly<Record<string, string>> = {
-  'copy-paste': 'AI Assist | Copy',
-  'xai-grok': 'AI Assist | Grok',
-  openai: 'AI Assist | OpenAI',
-  anthropic: 'AI Assist | Claude',
-  'google-gemini': 'AI Assist | Gemini',
-  groq: 'AI Assist | Groq',
-  mistral: 'AI Assist | Mistral'
-};
 
 // ============================================================================
 // Hook
@@ -155,9 +142,10 @@ export function useAiAssist(): IUseAiAssistResult {
         }
       }
 
+      const descriptor = AiAssist.getProviderDescriptor(config.provider);
       return {
         provider: config.provider,
-        label: PROVIDER_LABELS[config.provider] ?? config.provider,
+        label: descriptor?.buttonLabel ?? config.provider,
         isDefault: config.provider === defaultProvider,
         isAvailable,
         unavailableReason
@@ -165,7 +153,7 @@ export function useAiAssist(): IUseAiAssistResult {
     });
   }, [workspace]);
 
-  const copyPrompt = useCallback(async (prompt: AiAssist.IAiPrompt): Promise<Result<'copied'>> => {
+  const copyPrompt = useCallback(async (prompt: AiAssist.AiPrompt): Promise<Result<'copied'>> => {
     try {
       await navigator.clipboard.writeText(prompt.combined);
       return succeed('copied' as const);
@@ -177,10 +165,10 @@ export function useAiAssist(): IUseAiAssistResult {
   const generateDirect = useCallback(
     async <TEntity>(
       provider: Settings.AiAssistProvider,
-      prompt: AiAssist.IAiPrompt,
+      prompt: AiAssist.AiPrompt,
       convert: (from: unknown) => Result<TEntity>
     ): Promise<Result<IAiAssistResult<TEntity>>> => {
-      // Find the provider config
+      // Find the provider config and descriptor
       const resolved = workspace.settings?.getResolvedSettings();
       const aiAssist = resolved?.tools?.aiAssist;
       const providerConfig = aiAssist?.providers.find((p) => p.provider === provider);
@@ -188,6 +176,12 @@ export function useAiAssist(): IUseAiAssistResult {
       if (!providerConfig) {
         return fail(`Provider "${provider}" not configured`);
       }
+
+      const descriptor = AiAssist.getProviderDescriptor(provider);
+      if (!descriptor) {
+        return fail(`Unknown provider: ${provider}`);
+      }
+
       if (!providerConfig.secretName) {
         return fail(`Provider "${provider}" has no secret name configured`);
       }
@@ -201,12 +195,6 @@ export function useAiAssist(): IUseAiAssistResult {
         return fail(`Failed to get API key: ${apiKeyResult.message}`);
       }
 
-      // Build API config
-      const configResult = AiAssist.getApiConfig(provider, apiKeyResult.value, providerConfig.model);
-      if (configResult.isFailure()) {
-        return fail(configResult.message);
-      }
-
       setIsWorking(true);
       try {
         const maxAttempts = 3;
@@ -214,10 +202,12 @@ export function useAiAssist(): IUseAiAssistResult {
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
           // Call the API (with any correction messages from previous attempts)
-          const responseResult = await AiAssist.callProviderCompletion(provider, {
-            config: configResult.value,
+          const responseResult = await AiAssist.callProviderCompletion({
+            descriptor,
+            apiKey: apiKeyResult.value,
             prompt,
-            additionalMessages: correctionMessages.length > 0 ? correctionMessages : undefined
+            additionalMessages: correctionMessages.length > 0 ? correctionMessages : undefined,
+            modelOverride: providerConfig.model
           });
           if (responseResult.isFailure()) {
             return fail(responseResult.message);

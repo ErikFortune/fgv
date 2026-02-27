@@ -63,6 +63,33 @@ Converter for IWorkflowPreferences.
 </td></tr>
 <tr><td>
 
+[aiAssistProvider](./variables/aiAssistProvider.md)
+
+</td><td>
+
+Converter for AiAssistProvider.
+
+</td></tr>
+<tr><td>
+
+[aiAssistProviderConfig](./variables/aiAssistProviderConfig.md)
+
+</td><td>
+
+Converter for IAiAssistProviderConfig.
+
+</td></tr>
+<tr><td>
+
+[aiAssistSettings](./variables/aiAssistSettings.md)
+
+</td><td>
+
+Converter for IAiAssistSettings.
+
+</td></tr>
+<tr><td>
+
 [toolSettings](./variables/toolSettings.md)
 
 </td><td>

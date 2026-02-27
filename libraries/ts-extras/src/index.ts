@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import * as AiAssist from './packlets/ai-assist';
 import * as CryptoUtils from './packlets/crypto-utils';
 import * as Csv from './packlets/csv';
 import * as Experimental from './packlets/experimental';
@@ -31,4 +32,4 @@ import * as ZipFileTree from './packlets/zip-file-tree';
 
 import { Converters } from './packlets/conversion';
 
-export { Converters, CryptoUtils, Csv, Experimental, Hash, Mustache, RecordJar, Yaml, ZipFileTree };
+export { AiAssist, Converters, CryptoUtils, Csv, Experimental, Hash, Mustache, RecordJar, Yaml, ZipFileTree };

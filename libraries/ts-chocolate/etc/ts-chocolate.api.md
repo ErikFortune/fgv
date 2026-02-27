@@ -4,6 +4,7 @@
 
 ```ts
 
+import { AiAssist as AiAssist_2 } from '@fgv/ts-extras';
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
@@ -39,28 +40,17 @@ declare namespace AiAssist {
     export {
         AI_NOTE_CATEGORY,
         extractAiNote,
-        IAiPrompt,
-        createAiPrompt,
         buildIngredientAiPrompt,
         buildMoldAiPrompt,
         buildFillingAiPrompt,
         buildProcedureAiPrompt,
-        buildDecorationAiPrompt,
-        callChatCompletion,
-        callAnthropicCompletion,
-        callGeminiCompletion,
-        callProviderCompletion,
-        getApiConfig,
-        PROVIDER_DEFAULTS,
-        IChatMessage,
-        IAiApiConfig,
-        IAiApiRequestParams
+        buildDecorationAiPrompt
     }
 }
 export { AiAssist }
 
 // @public
-type AiAssistProvider = 'copy-paste' | 'xai-grok' | 'openai' | 'anthropic' | 'google-gemini' | 'groq' | 'mistral';
+type AiAssistProvider = AiAssist_2.AiProviderId;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "AiAssistProvider"
 //
@@ -548,19 +538,19 @@ const BOOTSTRAP_SETTINGS_FILENAME: string;
 const bootstrapSettings: Converter<IBootstrapSettings>;
 
 // @public
-function buildDecorationAiPrompt(decorationName: string): IAiPrompt;
+function buildDecorationAiPrompt(decorationName: string): AiAssist_2.AiPrompt;
 
 // @public
-function buildFillingAiPrompt(fillingName: string): IAiPrompt;
+function buildFillingAiPrompt(fillingName: string): AiAssist_2.AiPrompt;
 
 // @public
-function buildIngredientAiPrompt(ingredientName: string): IAiPrompt;
+function buildIngredientAiPrompt(ingredientName: string): AiAssist_2.AiPrompt;
 
 // @public
-function buildMoldAiPrompt(moldDescription: string): IAiPrompt;
+function buildMoldAiPrompt(moldDescription: string): AiAssist_2.AiPrompt;
 
 // @public
-function buildProcedureAiPrompt(procedureName: string): IAiPrompt;
+function buildProcedureAiPrompt(procedureName: string): AiAssist_2.AiPrompt;
 
 declare namespace BuiltIn {
     export {
@@ -620,22 +610,6 @@ function calculateTotalWeight(ingredients: ReadonlyArray<Fillings.IFillingIngred
 
 // @public
 function calculateWeightContributions(ingredients: ReadonlyArray<Fillings.IFillingIngredientEntity>, context?: IWeightCalculationContext): IWeightContribution[];
-
-// @public
-function callAnthropicCompletion(params: IAiApiRequestParams): Promise<Result<string>>;
-
-// @public
-function callChatCompletion(params: IAiApiRequestParams): Promise<Result<string>>;
-
-// @public
-function callGeminiCompletion(params: IAiApiRequestParams): Promise<Result<string>>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "callChatCompletion"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "callAnthropicCompletion"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "callGeminiCompletion"
-//
-// @public
-function callProviderCompletion(provider: AiAssistProvider, params: IAiApiRequestParams): Promise<Result<string>>;
 
 // @public
 function canScale(variation: AnyConfectionRecipeVariation, target: IConfectionScalingTarget): boolean;
@@ -1509,9 +1483,6 @@ declare namespace Converters_8 {
         anyInventoryEntryEntity
     }
 }
-
-// @public
-function createAiPrompt(user: string, system: string): IAiPrompt;
 
 // @public
 function createBlankDecorationEntity(baseId: BaseDecorationId, name: string): IDecorationEntity;
@@ -2731,9 +2702,6 @@ function generateUniqueBaseIdFromName(name: string, existingIds: ReadonlySet<str
 function generateVariationSpec<TSpec extends string>(existingSpecs: ReadonlyArray<TSpec>, converter: Converter<TSpec>, options?: IGenerateVariationSpecOptions): Result<TSpec>;
 
 // @public
-function getApiConfig(provider: AiAssistProvider, apiKey: string, modelOverride?: string): Result<IAiApiConfig>;
-
-// @public
 function getConfectionsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
@@ -2905,21 +2873,6 @@ interface IAdditionalChocolateEntity {
 }
 
 // @public
-interface IAiApiConfig {
-    readonly apiKey: string;
-    readonly baseUrl: string;
-    readonly model: string;
-}
-
-// @public
-interface IAiApiRequestParams {
-    readonly additionalMessages?: ReadonlyArray<IChatMessage>;
-    readonly config: IAiApiConfig;
-    readonly prompt: IAiPrompt;
-    readonly temperature?: number;
-}
-
-// @public
 interface IAiAssistProviderConfig {
     readonly model?: string;
     readonly provider: AiAssistProvider;
@@ -2930,13 +2883,6 @@ interface IAiAssistProviderConfig {
 interface IAiAssistSettings {
     readonly defaultProvider?: AiAssistProvider;
     readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
-}
-
-// @public
-interface IAiPrompt {
-    readonly combined: string;
-    readonly system: string;
-    readonly user: string;
 }
 
 // @public
@@ -3047,12 +2993,6 @@ interface ICavityInfo {
     readonly dimensions?: ICavityDimensions;
     // (undocumented)
     readonly weight?: Measurement;
-}
-
-// @public
-interface IChatMessage {
-    readonly content: string;
-    readonly role: 'system' | 'user' | 'assistant';
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -7511,11 +7451,6 @@ class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolledTruffl
 //
 // @public
 const producedRolledTruffleEntity: Converter<IProducedRolledTruffleEntity>;
-
-// Warning: (ae-forgotten-export) The symbol "IProviderDefaults" needs to be exported by the entry point index.d.ts
-//
-// @public
-const PROVIDER_DEFAULTS: Readonly<Record<string, IProviderDefaults>>;
 
 // @public
 type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability' | 'difficulty' | 'durability';

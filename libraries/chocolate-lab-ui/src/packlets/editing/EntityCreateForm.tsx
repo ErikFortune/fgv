@@ -39,7 +39,8 @@ import { ChevronDownIcon, ClipboardDocumentIcon, SparklesIcon, XMarkIcon } from 
 
 import type { Result } from '@fgv/ts-utils';
 
-import { type AiAssist, type Settings } from '@fgv/ts-chocolate';
+import { AiAssist } from '@fgv/ts-extras';
+import { type Settings } from '@fgv/ts-chocolate';
 
 import { useAiAssist, type IAiAssistAction } from './useAiAssist';
 
@@ -55,7 +56,7 @@ export interface IEntityCreateFormProps<TEntity> {
   /** Convert a display name to a slug ID */
   readonly slugify: (name: string) => string;
   /** Build a structured AI prompt from the entity name */
-  readonly buildPrompt: (name: string) => AiAssist.IAiPrompt;
+  readonly buildPrompt: (name: string) => AiAssist.AiPrompt;
   /** Convert unknown JSON into a validated entity */
   readonly convert: (from: unknown) => Result<TEntity>;
   /** Build a blank entity from name and ID (for manual creation) */

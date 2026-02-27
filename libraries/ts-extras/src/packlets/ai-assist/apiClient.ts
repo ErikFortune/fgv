@@ -29,46 +29,33 @@
 
 import { fail, Result, succeed } from '@fgv/ts-utils';
 
-import { AiAssistProvider } from '../settings';
-import { IAiPrompt } from './model';
+import { AiPrompt, type IAiProviderDescriptor, type IChatMessage } from './model';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 /**
- * Configuration for an API-based AI provider.
- * @public
+ * Internal API configuration built from a provider descriptor.
+ * @internal
  */
-export interface IAiApiConfig {
-  /** Base URL for the API (e.g. `https://api.x.ai/v1`) */
+interface IAiApiConfig {
   readonly baseUrl: string;
-  /** API key for Bearer auth */
   readonly apiKey: string;
-  /** Model identifier (e.g. `grok-4-1-fast`) */
   readonly model: string;
 }
 
 /**
- * A single chat message in OpenAI format.
+ * Parameters for a provider completion request.
  * @public
  */
-export interface IChatMessage {
-  /** Message role */
-  readonly role: 'system' | 'user' | 'assistant';
-  /** Message content */
-  readonly content: string;
-}
-
-/**
- * Parameters for a chat completion request.
- * @public
- */
-export interface IAiApiRequestParams {
-  /** Provider configuration */
-  readonly config: IAiApiConfig;
+export interface IProviderCompletionParams {
+  /** The provider descriptor */
+  readonly descriptor: IAiProviderDescriptor;
+  /** API key for authentication */
+  readonly apiKey: string;
   /** The structured prompt to send */
-  readonly prompt: IAiPrompt;
+  readonly prompt: AiPrompt;
   /**
    * Additional messages to append after system+user (e.g. for correction retries).
    * These are appended in order after the initial system and user messages.
@@ -76,42 +63,9 @@ export interface IAiApiRequestParams {
   readonly additionalMessages?: ReadonlyArray<IChatMessage>;
   /** Sampling temperature (default: 0.7) */
   readonly temperature?: number;
+  /** Optional model override (uses descriptor.defaultModel otherwise) */
+  readonly modelOverride?: string;
 }
-
-/**
- * Default provider configuration (base URL and default model).
- * @internal
- */
-interface IProviderDefaults {
-  readonly baseUrl: string;
-  readonly defaultModel: string;
-}
-
-/* eslint-disable @typescript-eslint/naming-convention */
-
-/**
- * Default configurations for known API providers.
- * @public
- */
-export const PROVIDER_DEFAULTS: Readonly<Record<string, IProviderDefaults>> = {
-  'xai-grok': { baseUrl: 'https://api.x.ai/v1', defaultModel: 'grok-4-1-fast' },
-  openai: { baseUrl: 'https://api.openai.com/v1', defaultModel: 'gpt-4o' },
-  groq: { baseUrl: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile' },
-  mistral: { baseUrl: 'https://api.mistral.ai/v1', defaultModel: 'mistral-large-latest' },
-  anthropic: { baseUrl: 'https://api.anthropic.com/v1', defaultModel: 'claude-sonnet-4-5-20250929' },
-  'google-gemini': {
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: 'gemini-2.5-flash'
-  }
-};
-
-/* eslint-enable @typescript-eslint/naming-convention */
-
-/**
- * Providers that use the OpenAI-compatible `/chat/completions` format.
- * @internal
- */
-const OPENAI_COMPATIBLE_PROVIDERS: ReadonlySet<string> = new Set(['xai-grok', 'openai', 'groq', 'mistral']);
 
 // ============================================================================
 // Shared helpers
@@ -122,7 +76,7 @@ const OPENAI_COMPATIBLE_PROVIDERS: ReadonlySet<string> = new Set(['xai-grok', 'o
  * @internal
  */
 function buildMessages(
-  prompt: IAiPrompt,
+  prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>
 ): Array<{ role: string; content: string }> {
   const messages: Array<{ role: string; content: string }> = [
@@ -151,7 +105,7 @@ async function fetchJson(
     response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json', // eslint-disable-line @typescript-eslint/naming-convention
+        'Content-Type': 'application/json',
         ...headers
       },
       body: JSON.stringify(body)
@@ -182,38 +136,36 @@ async function fetchJson(
 
 /**
  * Calls an OpenAI-compatible chat completion endpoint.
- *
  * Works for xAI Grok, OpenAI, Groq, and Mistral.
- *
- * @param params - Request parameters including config and prompt
- * @returns The assistant's response content string, or a failure
- * @public
+ * @internal
  */
-export async function callChatCompletion(params: IAiApiRequestParams): Promise<Result<string>> {
-  const { config, prompt, additionalMessages, temperature = 0.7 } = params;
-
+function callOpenAiCompletion(
+  config: IAiApiConfig,
+  prompt: AiPrompt,
+  additionalMessages?: ReadonlyArray<IChatMessage>,
+  temperature: number = 0.7
+): Promise<Result<string>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt, additionalMessages);
   const body = { model: config.model, messages, temperature };
 
-  return fetchJson(url, { Authorization: `Bearer ${config.apiKey}` }, body) // eslint-disable-line @typescript-eslint/naming-convention
-    .then((jsonResult) => {
-      if (jsonResult.isFailure()) {
-        return fail(jsonResult.message);
-      }
-      const obj = jsonResult.value;
-      const choices = obj.choices;
-      if (!Array.isArray(choices) || choices.length === 0) {
-        return fail('AI API returned no choices');
-      }
-      const firstChoice = choices[0] as Record<string, unknown>;
-      const message = firstChoice.message as Record<string, unknown> | undefined;
-      const content = message?.content;
-      if (typeof content !== 'string') {
-        return fail('AI API response missing message content');
-      }
-      return succeed(content);
-    });
+  return fetchJson(url, { Authorization: `Bearer ${config.apiKey}` }, body).then((jsonResult) => {
+    if (jsonResult.isFailure()) {
+      return fail(jsonResult.message);
+    }
+    const obj = jsonResult.value;
+    const choices = obj.choices;
+    if (!Array.isArray(choices) || choices.length === 0) {
+      return fail('AI API returned no choices');
+    }
+    const firstChoice = choices[0] as Record<string, unknown>;
+    const message = firstChoice.message as Record<string, unknown> | undefined;
+    const content = message?.content;
+    if (typeof content !== 'string') {
+      return fail('AI API response missing message content');
+    }
+    return succeed(content);
+  });
 }
 
 // ============================================================================
@@ -222,21 +174,14 @@ export async function callChatCompletion(params: IAiApiRequestParams): Promise<R
 
 /**
  * Calls the Anthropic Messages API.
- *
- * Adapts from the common IAiApiRequestParams format to Anthropic's:
- * - `system` as top-level field (not in messages array)
- * - `x-api-key` header instead of Bearer auth
- * - `anthropic-version` header required
- * - `max_tokens` required
- * - Response text in `content[0].text`
- *
- * @param params - Request parameters
- * @returns The assistant's response content string, or a failure
- * @public
+ * @internal
  */
-export async function callAnthropicCompletion(params: IAiApiRequestParams): Promise<Result<string>> {
-  const { config, prompt, additionalMessages, temperature = 0.7 } = params;
-
+function callAnthropicCompletion(
+  config: IAiApiConfig,
+  prompt: AiPrompt,
+  additionalMessages?: ReadonlyArray<IChatMessage>,
+  temperature: number = 0.7
+): Promise<Result<string>> {
   const url = `${config.baseUrl}/messages`;
 
   // Anthropic uses system as a top-level field, not in messages
@@ -254,16 +199,14 @@ export async function callAnthropicCompletion(params: IAiApiRequestParams): Prom
     model: config.model,
     system: prompt.system,
     messages,
-    max_tokens: 4096, // eslint-disable-line @typescript-eslint/naming-convention
+    max_tokens: 4096,
     temperature
   };
 
-  /* eslint-disable @typescript-eslint/naming-convention */
   const headers: Record<string, string> = {
     'x-api-key': config.apiKey,
     'anthropic-version': '2023-06-01'
   };
-  /* eslint-enable @typescript-eslint/naming-convention */
 
   return fetchJson(url, headers, body).then((jsonResult) => {
     if (jsonResult.isFailure()) {
@@ -289,21 +232,14 @@ export async function callAnthropicCompletion(params: IAiApiRequestParams): Prom
 
 /**
  * Calls the Google Gemini generateContent API.
- *
- * Adapts from the common IAiApiRequestParams format to Gemini's:
- * - Endpoint: `${baseUrl}/models/${model}:generateContent`
- * - Auth via `x-goog-api-key` header
- * - `systemInstruction` as top-level field with `parts` array
- * - `contents` array with `parts` instead of `messages` with `content`
- * - Response text in `candidates[0].content.parts[0].text`
- *
- * @param params - Request parameters
- * @returns The assistant's response content string, or a failure
- * @public
+ * @internal
  */
-export async function callGeminiCompletion(params: IAiApiRequestParams): Promise<Result<string>> {
-  const { config, prompt, additionalMessages, temperature = 0.7 } = params;
-
+function callGeminiCompletion(
+  config: IAiApiConfig,
+  prompt: AiPrompt,
+  additionalMessages?: ReadonlyArray<IChatMessage>,
+  temperature: number = 0.7
+): Promise<Result<string>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
   // Gemini uses 'contents' with 'parts', and 'model' role instead of 'assistant'
@@ -328,7 +264,7 @@ export async function callGeminiCompletion(params: IAiApiRequestParams): Promise
   };
 
   const headers: Record<string, string> = {
-    'x-goog-api-key': config.apiKey // eslint-disable-line @typescript-eslint/naming-convention
+    'x-goog-api-key': config.apiKey
   };
 
   return fetchJson(url, headers, body).then((jsonResult) => {
@@ -361,56 +297,30 @@ export async function callGeminiCompletion(params: IAiApiRequestParams): Promise
 /**
  * Calls the appropriate chat completion API for a given provider.
  *
- * Routes OpenAI-compatible providers (xAI, OpenAI, Groq, Mistral) to
- * {@link callChatCompletion}, Anthropic to {@link callAnthropicCompletion},
- * and Google Gemini to {@link callGeminiCompletion}.
+ * Routes based on the provider descriptor's `apiFormat` field:
+ * - `'openai'` for xAI, OpenAI, Groq, Mistral
+ * - `'anthropic'` for Anthropic Claude
+ * - `'gemini'` for Google Gemini
  *
- * @param provider - The AI assist provider identifier
- * @param params - Request parameters
+ * @param params - Request parameters including descriptor, API key, and prompt
  * @returns The assistant's response content string, or a failure
  * @public
  */
-export async function callProviderCompletion(
-  provider: AiAssistProvider,
-  params: IAiApiRequestParams
-): Promise<Result<string>> {
-  if (OPENAI_COMPATIBLE_PROVIDERS.has(provider)) {
-    return callChatCompletion(params);
-  }
-  switch (provider) {
-    case 'anthropic':
-      return callAnthropicCompletion(params);
-    case 'google-gemini':
-      return callGeminiCompletion(params);
-    default:
-      return fail(`Unsupported provider for direct API: ${provider}`);
-  }
-}
+export async function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<string>> {
+  const { descriptor, apiKey, prompt, additionalMessages, temperature = 0.7, modelOverride } = params;
 
-// ============================================================================
-// Config helper
-// ============================================================================
-
-/**
- * Gets the default API configuration for a provider.
- * @param provider - The AI assist provider
- * @param apiKey - The API key
- * @param modelOverride - Optional model override
- * @returns The API config, or failure if provider has no defaults
- * @public
- */
-export function getApiConfig(
-  provider: AiAssistProvider,
-  apiKey: string,
-  modelOverride?: string
-): Result<IAiApiConfig> {
-  const defaults = PROVIDER_DEFAULTS[provider];
-  if (!defaults) {
-    return fail(`No API defaults for provider: ${provider}`);
-  }
-  return succeed({
-    baseUrl: defaults.baseUrl,
+  const config: IAiApiConfig = {
+    baseUrl: descriptor.baseUrl,
     apiKey,
-    model: modelOverride ?? defaults.defaultModel
-  });
+    model: modelOverride ?? descriptor.defaultModel
+  };
+
+  switch (descriptor.apiFormat) {
+    case 'openai':
+      return callOpenAiCompletion(config, prompt, additionalMessages, temperature);
+    case 'anthropic':
+      return callAnthropicCompletion(config, prompt, additionalMessages, temperature);
+    case 'gemini':
+      return callGeminiCompletion(config, prompt, additionalMessages, temperature);
+  }
 }

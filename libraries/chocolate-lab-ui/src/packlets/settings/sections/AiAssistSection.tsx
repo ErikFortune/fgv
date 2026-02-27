@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 
-import { AiAssist, Settings } from '@fgv/ts-chocolate';
+import { AiAssist } from '@fgv/ts-extras';
+import { Settings } from '@fgv/ts-chocolate';
 
 import type { IPreferencesDraft } from '../useSettingsDraft';
 
@@ -12,27 +13,6 @@ export interface IAiAssistSectionProps {
   readonly aiAssist: IPreferencesDraft['aiAssist'];
   readonly onChange: (updates: Partial<IPreferencesDraft>) => void;
 }
-
-// ============================================================================
-// Provider metadata
-// ============================================================================
-
-interface IProviderRow {
-  readonly provider: Settings.AiAssistProvider;
-  readonly label: string;
-  readonly needsSecret: boolean;
-}
-
-// TODO: feels like the list of providers should come from the AiAssist packlet in ts-chocolate
-const ALL_PROVIDERS: ReadonlyArray<IProviderRow> = [
-  { provider: 'copy-paste', label: 'Copy / Paste', needsSecret: false },
-  { provider: 'anthropic', label: 'Anthropic Claude', needsSecret: true },
-  { provider: 'google-gemini', label: 'Google Gemini', needsSecret: true },
-  { provider: 'groq', label: 'Groq', needsSecret: true },
-  { provider: 'mistral', label: 'Mistral', needsSecret: true },
-  { provider: 'openai', label: 'OpenAI', needsSecret: true },
-  { provider: 'xai-grok', label: 'xAI Grok', needsSecret: true }
-];
 
 // ============================================================================
 // Component
@@ -64,13 +44,13 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
   );
 
   const handleToggle = useCallback(
-    (row: IProviderRow, enabled: boolean): void => {
+    (descriptor: AiAssist.IAiProviderDescriptor, enabled: boolean): void => {
       if (enabled) {
-        updateProviders([...aiAssist.providers, { provider: row.provider }]);
+        updateProviders([...aiAssist.providers, { provider: descriptor.id as Settings.AiAssistProvider }]);
       } else {
-        const newProviders = aiAssist.providers.filter((p) => p.provider !== row.provider);
+        const newProviders = aiAssist.providers.filter((p) => p.provider !== descriptor.id);
         // If removing the default provider, clear the explicit default
-        const newDefault = aiAssist.defaultProvider === row.provider ? undefined : aiAssist.defaultProvider;
+        const newDefault = aiAssist.defaultProvider === descriptor.id ? undefined : aiAssist.defaultProvider;
         updateSettings({ providers: newProviders, defaultProvider: newDefault });
       }
     },
@@ -123,21 +103,20 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
             </tr>
           </thead>
           <tbody>
-            {ALL_PROVIDERS.map((row) => {
-              const config = enabledMap.get(row.provider);
+            {AiAssist.getProviderDescriptors().map((descriptor) => {
+              const config = enabledMap.get(descriptor.id as Settings.AiAssistProvider);
               const isEnabled = config !== undefined;
-              const isCopyPaste = row.provider === 'copy-paste';
-              const isDefault = effectiveDefault === row.provider;
-              const defaultModel = AiAssist.PROVIDER_DEFAULTS[row.provider]?.defaultModel;
+              const isCopyPaste = descriptor.id === 'copy-paste';
+              const isDefault = effectiveDefault === descriptor.id;
 
               return (
-                <tr key={row.provider} className="border-b border-gray-100">
+                <tr key={descriptor.id} className="border-b border-gray-100">
                   <td className="py-2.5 pr-3">
                     <input
                       type="checkbox"
                       checked={isEnabled}
                       disabled={isCopyPaste}
-                      onChange={(e): void => handleToggle(row, e.target.checked)}
+                      onChange={(e): void => handleToggle(descriptor, e.target.checked)}
                       className="w-4 h-4 rounded border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-50"
                     />
                   </td>
@@ -147,39 +126,43 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                       name="ai-assist-default"
                       checked={isDefault}
                       disabled={!isEnabled}
-                      onChange={(): void => handleDefaultChange(row.provider)}
+                      onChange={(): void => handleDefaultChange(descriptor.id as Settings.AiAssistProvider)}
                       className="w-4 h-4 border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-30"
                     />
                   </td>
                   <td className="py-2.5 pr-3">
-                    <span className={isEnabled ? 'text-gray-900' : 'text-gray-400'}>{row.label}</span>
+                    <span className={isEnabled ? 'text-gray-900' : 'text-gray-400'}>{descriptor.label}</span>
                   </td>
                   <td className="py-2.5 pr-3">
-                    {row.needsSecret ? (
+                    {descriptor.needsSecret ? (
                       <input
                         type="text"
                         disabled={!isEnabled}
                         className="w-full max-w-[200px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent disabled:opacity-40 disabled:bg-gray-50"
                         placeholder="secret name"
                         defaultValue={config?.secretName ?? ''}
-                        onBlur={(e): void => handleSecretNameChange(row.provider, e.target.value)}
+                        onBlur={(e): void =>
+                          handleSecretNameChange(descriptor.id as Settings.AiAssistProvider, e.target.value)
+                        }
                       />
                     ) : (
-                      <span className="text-xs text-gray-400">—</span>
+                      <span className="text-xs text-gray-400">&mdash;</span>
                     )}
                   </td>
                   <td className="py-2.5">
-                    {row.needsSecret ? (
+                    {descriptor.needsSecret ? (
                       <input
                         type="text"
                         disabled={!isEnabled}
                         className="w-full max-w-[180px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent disabled:opacity-40 disabled:bg-gray-50"
-                        placeholder={defaultModel ?? 'model'}
+                        placeholder={descriptor.defaultModel || 'model'}
                         defaultValue={config?.model ?? ''}
-                        onBlur={(e): void => handleModelChange(row.provider, e.target.value)}
+                        onBlur={(e): void =>
+                          handleModelChange(descriptor.id as Settings.AiAssistProvider, e.target.value)
+                        }
                       />
                     ) : (
-                      <span className="text-xs text-gray-400">—</span>
+                      <span className="text-xs text-gray-400">&mdash;</span>
                     )}
                   </td>
                 </tr>

@@ -96,6 +96,24 @@ Tool configuration section of settings.
 </td></tr>
 <tr><td>
 
+[IAiAssistProviderConfig](./interfaces/IAiAssistProviderConfig.md)
+
+</td><td>
+
+Configuration for a single AI assist provider.
+
+</td></tr>
+<tr><td>
+
+[IAiAssistSettings](./interfaces/IAiAssistSettings.md)
+
+</td><td>
+
+AI assist settings — which providers are enabled and their configuration.
+
+</td></tr>
+<tr><td>
+
 [IDefaultCollectionTargets](./interfaces/IDefaultCollectionTargets.md)
 
 </td><td>
@@ -245,6 +263,15 @@ Reference to an external library (path or URI).
 </td></tr>
 <tr><td>
 
+[AiAssistProvider](./type-aliases/AiAssistProvider.md)
+
+</td><td>
+
+Identifier for an AI assist provider.
+
+</td></tr>
+<tr><td>
+
 [StorageRootId](./type-aliases/StorageRootId.md)
 
 </td><td>
@@ -323,6 +350,24 @@ Description
 </td><td>
 
 Current schema version for settings files.
+
+</td></tr>
+<tr><td>
+
+[allAiAssistProviders](./variables/allAiAssistProviders.md)
+
+</td><td>
+
+All valid AI assist provider values.
+
+</td></tr>
+<tr><td>
+
+[DEFAULT_AI_ASSIST](./variables/DEFAULT_AI_ASSIST.md)
+
+</td><td>
+
+Default AI assist settings (copy-paste only).
 
 </td></tr>
 <tr><td>

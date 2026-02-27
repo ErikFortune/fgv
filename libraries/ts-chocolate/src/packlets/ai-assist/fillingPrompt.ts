@@ -23,8 +23,9 @@
  * @packageDocumentation
  */
 
+import { AiAssist } from '@fgv/ts-extras';
+
 import { Helpers } from '../common';
-import { createAiPrompt, IAiPrompt } from './model';
 
 /**
  * Builds a detailed AI prompt for generating a filling recipe entity JSON object.
@@ -33,7 +34,7 @@ import { createAiPrompt, IAiPrompt } from './model';
  * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildFillingAiPrompt(fillingName: string): IAiPrompt {
+export function buildFillingAiPrompt(fillingName: string): AiAssist.AiPrompt {
   const baseId = Helpers.toKebabCase(fillingName);
 
   const today = new Date().toISOString().split('T')[0]!;
@@ -92,5 +93,5 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - Populate as many optional fields as you can reasonably determine.
 - Return ONLY the JSON object, nothing else.`;
 
-  return createAiPrompt(user, system);
+  return new AiAssist.AiPrompt(user, system);
 }

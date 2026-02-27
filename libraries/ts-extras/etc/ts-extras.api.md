@@ -17,10 +17,46 @@ import { Validator } from '@fgv/ts-utils';
 const AES_256_KEY_SIZE: number;
 
 // @public
+type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
+
+declare namespace AiAssist {
+    export {
+        AiPrompt,
+        IChatMessage,
+        AiApiFormat,
+        IAiProviderDescriptor,
+        AiProviderId,
+        allProviderIds,
+        getProviderDescriptors,
+        getProviderDescriptor,
+        callProviderCompletion,
+        IProviderCompletionParams
+    }
+}
+export { AiAssist }
+
+// @public
+class AiPrompt {
+    constructor(user: string, system: string);
+    get combined(): string;
+    readonly system: string;
+    readonly user: string;
+}
+
+// @public
+type AiProviderId = 'copy-paste' | 'xai-grok' | 'openai' | 'anthropic' | 'google-gemini' | 'groq' | 'mistral';
+
+// @public
 const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
 
 // @public
+const allProviderIds: ReadonlyArray<AiProviderId>;
+
+// @public
 const base64String: Converter<string>;
+
+// @public
+function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<string>>;
 
 declare namespace Constants {
     export {
@@ -281,6 +317,12 @@ const GCM_AUTH_TAG_SIZE: number;
 // @public
 const GCM_IV_SIZE: number;
 
+// @public
+function getProviderDescriptor(id: string): IAiProviderDescriptor | undefined;
+
+// @public
+function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor>;
+
 declare namespace Hash {
     export {
         Md5Normalizer
@@ -310,6 +352,23 @@ interface IAddSecretOptions {
 interface IAddSecretResult {
     readonly entry: IKeyStoreSecretEntry;
     readonly replaced: boolean;
+}
+
+// @public
+interface IAiProviderDescriptor {
+    readonly apiFormat: AiApiFormat;
+    readonly baseUrl: string;
+    readonly buttonLabel: string;
+    readonly defaultModel: string;
+    readonly id: string;
+    readonly label: string;
+    readonly needsSecret: boolean;
+}
+
+// @public
+interface IChatMessage {
+    readonly content: string;
+    readonly role: 'system' | 'user' | 'assistant';
 }
 
 // @public
@@ -470,6 +529,16 @@ interface IMustacheTemplateOptions {
 interface INamedSecret {
     readonly key: Uint8Array;
     readonly name: string;
+}
+
+// @public
+interface IProviderCompletionParams {
+    readonly additionalMessages?: ReadonlyArray<IChatMessage>;
+    readonly apiKey: string;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly modelOverride?: string;
+    readonly prompt: AiPrompt;
+    readonly temperature?: number;
 }
 
 // @public

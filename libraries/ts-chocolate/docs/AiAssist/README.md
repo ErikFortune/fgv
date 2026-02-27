@@ -4,6 +4,9 @@
 
 AI assist packlet - prompt generation and note helpers for entity creation.
 
+Generic AI infrastructure (provider registry, prompt class, API client)
+is in `@fgv/ts-extras` AiAssist namespace.
+
 ## Functions
 
 <table><thead><tr><th>

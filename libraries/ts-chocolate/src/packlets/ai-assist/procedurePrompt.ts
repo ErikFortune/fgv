@@ -23,8 +23,9 @@
  * @packageDocumentation
  */
 
+import { AiAssist } from '@fgv/ts-extras';
+
 import { Helpers, Model } from '../common';
-import { createAiPrompt, IAiPrompt } from './model';
 
 /**
  * Builds a detailed AI prompt for generating a procedure entity JSON object.
@@ -33,7 +34,7 @@ import { createAiPrompt, IAiPrompt } from './model';
  * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildProcedureAiPrompt(procedureName: string): IAiPrompt {
+export function buildProcedureAiPrompt(procedureName: string): AiAssist.AiPrompt {
   const baseId = Helpers.toKebabCase(procedureName);
 
   const user = `Generate a JSON object representing the chocolate-making procedure "${procedureName}" for a chocolate-making application.`;
@@ -101,5 +102,5 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - Populate as many optional fields as you can reasonably determine.
 - Return ONLY the JSON object, nothing else.`;
 
-  return createAiPrompt(user, system);
+  return new AiAssist.AiPrompt(user, system);
 }

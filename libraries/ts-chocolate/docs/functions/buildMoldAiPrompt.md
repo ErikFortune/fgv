@@ -9,5 +9,5 @@ and instructions for the AI to include notes describing assumptions.
 ## Signature
 
 ```typescript
-function buildMoldAiPrompt(moldDescription: string): string
+function buildMoldAiPrompt(moldDescription: string): AiPrompt
 ```

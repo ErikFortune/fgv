@@ -9,5 +9,5 @@ and instructions for the AI to include notes describing assumptions.
 ## Signature
 
 ```typescript
-function buildIngredientAiPrompt(ingredientName: string): string
+function buildIngredientAiPrompt(ingredientName: string): AiPrompt
 ```

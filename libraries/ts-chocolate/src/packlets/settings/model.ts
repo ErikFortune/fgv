@@ -28,6 +28,7 @@
  * @packageDocumentation
  */
 
+import { AiAssist } from '@fgv/ts-extras';
 import { Brand, Logging } from '@fgv/ts-utils';
 
 import { MeasurementUnit, CollectionId, WeightUnit } from '../common';
@@ -113,30 +114,17 @@ export interface IWorkflowPreferences {
 
 /**
  * Identifier for an AI assist provider.
+ * Derived from the provider registry in `@fgv/ts-extras`.
  * @public
  */
-export type AiAssistProvider =
-  | 'copy-paste'
-  | 'xai-grok'
-  | 'openai'
-  | 'anthropic'
-  | 'google-gemini'
-  | 'groq'
-  | 'mistral';
+export type AiAssistProvider = AiAssist.AiProviderId;
 
 /**
  * All valid AI assist provider values.
+ * Derived from the provider registry in `@fgv/ts-extras`.
  * @public
  */
-export const allAiAssistProviders: ReadonlyArray<AiAssistProvider> = [
-  'copy-paste',
-  'xai-grok',
-  'openai',
-  'anthropic',
-  'google-gemini',
-  'groq',
-  'mistral'
-];
+export const allAiAssistProviders: ReadonlyArray<AiAssistProvider> = AiAssist.allProviderIds;
 
 /**
  * Configuration for a single AI assist provider.

@@ -58,4 +58,21 @@ Scaling defaults for production
 Workflow preferences
 
 </td></tr>
+<tr><td>
+
+[aiAssist](./IToolSettings.aiAssist.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAiAssistSettings](../../interfaces/IAiAssistSettings.md)
+
+</td><td>
+
+AI assist preferences
+
+</td></tr>
 </tbody></table>
