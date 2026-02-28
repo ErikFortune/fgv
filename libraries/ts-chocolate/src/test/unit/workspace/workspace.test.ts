@@ -466,7 +466,8 @@ describe('Workspace', () => {
           keyStore: { cryptoProvider }
         })
       ).toSucceedAndSatisfy((ws) => {
-        expect(ws.state).toBe('locked');
+        // New (uninitialized) keystore reports 'no-keystore' state
+        expect(ws.state).toBe('no-keystore');
         expect(ws.settings).toBe(settings);
         expect(ws.keyStore).toBeDefined();
       });
@@ -501,22 +502,23 @@ describe('Workspace', () => {
           keyStore: { cryptoProvider }
         })
       ).toSucceedAndSatisfy((ws) => {
-        expect(ws.state).toBe('locked');
+        // New (uninitialized) keystore reports 'no-keystore' state
+        expect(ws.state).toBe('no-keystore');
         expect(ws.keyStore).toBeDefined();
-        expect(ws.isReady).toBe(false);
+        expect(ws.isReady).toBe(true);
       });
     });
 
-    test('lock when already locked returns success', () => {
+    test('lock when new keystore returns success', () => {
       const cryptoProvider = CryptoUtils.nodeCryptoProvider;
       const ws = Workspace.create({
         builtin: false,
         keyStore: { cryptoProvider }
       }).orThrow();
 
-      // Already locked, lock should return success
+      // New keystore is not unlocked, so lock is a no-op success
       expect(ws.lock()).toSucceedAndSatisfy((locked) => {
-        expect(locked.state).toBe('locked');
+        expect(locked.state).toBe('no-keystore');
       });
     });
 

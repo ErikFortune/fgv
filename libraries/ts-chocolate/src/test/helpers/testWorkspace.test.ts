@@ -131,9 +131,10 @@ describe('TestWorkspace helpers', () => {
     test('creates workspace with key store', () => {
       expect(createTestWorkspace({ withKeyStore: true })).toSucceedAndSatisfy((result) => {
         expect(result.workspace).toBeDefined();
-        expect(result.workspace.state).toBe('locked');
+        // New (uninitialized) keystore reports 'no-keystore' state
+        expect(result.workspace.state).toBe('no-keystore');
         expect(result.workspace.keyStore).toBeDefined();
-        expect(result.workspace.isReady).toBe(false);
+        expect(result.workspace.isReady).toBe(true);
       });
     });
 
@@ -159,7 +160,8 @@ describe('TestWorkspace helpers', () => {
         expect(result.fillings).toBeDefined();
         expect(result.confections).toBeDefined();
         expect(result.journals).toBeDefined();
-        expect(result.workspace.state).toBe('locked');
+        // New (uninitialized) keystore reports 'no-keystore' state
+        expect(result.workspace.state).toBe('no-keystore');
         expect(result.workspace.settings).toBe(result.settings);
       });
     });

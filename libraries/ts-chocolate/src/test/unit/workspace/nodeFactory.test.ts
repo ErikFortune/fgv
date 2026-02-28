@@ -87,7 +87,9 @@ describe('createNodeWorkspace', () => {
 
     const result = await createNodeWorkspace({ layout: { mode: 'single-root', rootPath: tempDir } });
     expect(result).toSucceedAndSatisfy((workspace) => {
-      expect(workspace.keyStore).toBeUndefined();
+      // Fresh workspace gets a new (uninitialized) keystore
+      expect(workspace.keyStore).toBeDefined();
+      expect(workspace.state).toBe('no-keystore');
     });
   });
 

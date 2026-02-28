@@ -563,6 +563,19 @@ export interface IProtectedCollectionInternal<TCollectionId extends string = str
    * The complete encrypted collection file data for later decryption.
    */
   readonly encryptedFile: EncryptedCollectionFile;
+
+  /**
+   * The FileTree source item for this collection's backing file, if available.
+   * Used to register persistence after decryption so saves write back to storage.
+   */
+  readonly sourceItem?: FileTree.FileTreeItem;
+
+  /**
+   * The source name (e.g. 'localStorage') for this collection.
+   * Used to populate metadata.sourceName after decryption so the collection
+   * appears in storage settings or popups.
+   */
+  readonly sourceName?: string;
 }
 
 /**

@@ -244,11 +244,12 @@ describe('workspace platformInit helpers', () => {
       });
     });
 
-    test('workspace has no key store without key store file', () => {
+    test('workspace has new keystore without key store file', () => {
       const platformInit = createPlatformInitResult();
       expect(createWorkspaceFromPlatform({ platformInit, builtin: false })).toSucceedAndSatisfy((ws) => {
-        // No keyStoreFile in platformInit means no key store on workspace
-        expect(ws.keyStore).toBeUndefined();
+        // No keyStoreFile creates a fresh (uninitialized) keystore
+        expect(ws.keyStore).toBeDefined();
+        expect(ws.state).toBe('no-keystore');
       });
     });
 

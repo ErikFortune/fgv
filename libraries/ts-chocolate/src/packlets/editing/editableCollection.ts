@@ -586,21 +586,22 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
     provider: CryptoUtils.IEncryptionProvider,
     secretName: string
   ): Promise<Result<true>> {
-    // Build items as JSON-safe value
-    const exportResult = this.export();
-    if (exportResult.isFailure()) {
-      return fail(`${this.collectionId}: export: ${exportResult.message}`);
-    }
-
-    const contentResult = sanitizeJsonObject(exportResult.value.items);
-    if (contentResult.isFailure()) {
-      return fail(`${this.collectionId}: serialize items: ${contentResult.message}`);
-    }
-
     const metadata: IEncryptedCollectionMetadata = {
       collectionId: this.collectionId,
       itemCount: this.size
     };
+
+    const contentResult = this.export()
+      .withErrorFormat((msg) => `${this.collectionId}: export: ${msg}`)
+      .onSuccess((exported) =>
+        sanitizeJsonObject(exported.items).withErrorFormat(
+          (msg) => `${this.collectionId}: serialize items: ${msg}`
+        )
+      );
+    /* c8 ignore next 3 - defensive: export and sanitize of valid collection should not fail */
+    if (contentResult.isFailure()) {
+      return fail(contentResult.message);
+    }
 
     const encryptedResult = await provider.encryptByName(
       secretName,

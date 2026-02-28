@@ -236,7 +236,9 @@ export class CollectionLoader<
                   json as JsonObject,
                   item.name,
                   mutabilitySpec,
-                  isBuiltIn
+                  isBuiltIn,
+                  item.item,
+                  params.sourceName
                 );
                 if (captureResult.isSuccess()) {
                   protectedCollections.push(captureResult.value);
@@ -440,7 +442,9 @@ export class CollectionLoader<
         onEncryptedFile,
         protectedCollections,
         `Encrypted collection "${collectionName}" found but no encryption config provided`,
-        isBuiltIn
+        isBuiltIn,
+        sourceItem,
+        sourceName
       );
     }
 
@@ -454,7 +458,9 @@ export class CollectionLoader<
         onEncryptedFile,
         protectedCollections,
         `Missing key for secret "${encryptedFile.secretName}" in collection "${collectionName}"`,
-        isBuiltIn
+        isBuiltIn,
+        sourceItem,
+        sourceName
       );
     }
 
@@ -503,7 +509,9 @@ export class CollectionLoader<
     onEncryptedFile: EncryptedFileHandling,
     protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[],
     message: string,
-    isBuiltIn: boolean
+    isBuiltIn: boolean,
+    sourceItem?: FileTree.FileTreeItem,
+    sourceName?: string
   ): Result<IRuntimeCollection<T, TCOLLECTIONID, TITEMID>> | undefined {
     if (onEncryptedFile === 'capture') {
       // Capture for later decryption
@@ -517,7 +525,9 @@ export class CollectionLoader<
           isMutable: CollectionLoader._calculateMutability(collectionName, mutabilitySpec),
           isBuiltIn
         },
-        encryptedFile
+        encryptedFile,
+        sourceItem,
+        sourceName
       });
       return undefined;
     }
@@ -588,7 +598,9 @@ export class CollectionLoader<
     json: JsonObject,
     collectionName: TCOLLECTIONID,
     mutabilitySpec: MutabilitySpec,
-    isBuiltIn: boolean
+    isBuiltIn: boolean,
+    sourceItem?: FileTree.FileTreeItem,
+    sourceName?: string
   ): Result<IProtectedCollectionInternal<TCOLLECTIONID>> {
     // Validate the encrypted file structure
     return LibraryConverters.encryptedCollectionFile.convert(json).onSuccess((encryptedFile) => {
@@ -602,7 +614,9 @@ export class CollectionLoader<
           isMutable: CollectionLoader._calculateMutability(collectionName, mutabilitySpec),
           isBuiltIn
         },
-        encryptedFile
+        encryptedFile,
+        sourceItem,
+        sourceName
       });
     });
   }

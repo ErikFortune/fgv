@@ -61,6 +61,6 @@ export function createZipFromTextFiles(
       out[normalizedPath] = strToU8(f.contents);
     }
     return zipSync(out, { level: options?.level ?? 6 });
-    /* c8 ignore next 1 - defensive: zipSync only throws on internal library errors */
+    /* c8 ignore next - defensive: zipSync only throws on internal library errors */
   }).withErrorFormat((e) => `Failed to create zip: ${e}`);
 }

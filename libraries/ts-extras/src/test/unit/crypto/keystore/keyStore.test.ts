@@ -441,6 +441,121 @@ describe('KeyStore', () => {
         expect(result).toFailWith(/locked/i);
       });
     });
+
+    describe('importApiKey', () => {
+      test('imports an API key string', () => {
+        const result = keystore.importApiKey('my-api-key', 'sk-abc123');
+
+        expect(result).toSucceedAndSatisfy((addResult) => {
+          expect(addResult.entry.name).toBe('my-api-key');
+          expect(addResult.entry.type).toBe('api-key');
+          expect(addResult.entry.key).toBeInstanceOf(Uint8Array);
+          expect(addResult.entry.createdAt).toBeDefined();
+          expect(addResult.replaced).toBe(false);
+        });
+      });
+
+      test('imports with description', () => {
+        const result = keystore.importApiKey('my-api-key', 'sk-abc123', {
+          description: 'OpenAI key'
+        });
+
+        expect(result).toSucceedAndSatisfy((addResult) => {
+          expect(addResult.entry.description).toBe('OpenAI key');
+        });
+      });
+
+      test('fails when secret exists and replace not set', () => {
+        keystore.importApiKey('my-api-key', 'sk-abc123');
+        const result = keystore.importApiKey('my-api-key', 'sk-def456');
+
+        expect(result).toFailWith(/already exists/i);
+      });
+
+      test('replaces when replace=true', () => {
+        keystore.importApiKey('my-api-key', 'sk-abc123');
+        const result = keystore.importApiKey('my-api-key', 'sk-def456', { replace: true });
+
+        expect(result).toSucceedAndSatisfy((addResult) => {
+          expect(addResult.replaced).toBe(true);
+        });
+      });
+
+      test('fails with empty name', () => {
+        const result = keystore.importApiKey('', 'sk-abc123');
+        expect(result).toFailWith(/name cannot be empty/i);
+      });
+
+      test('fails with empty API key', () => {
+        const result = keystore.importApiKey('my-api-key', '');
+        expect(result).toFailWith(/api key cannot be empty/i);
+      });
+
+      test('fails when locked', () => {
+        keystore.lock(true);
+        const result = keystore.importApiKey('my-api-key', 'sk-abc123');
+        expect(result).toFailWith(/locked/i);
+      });
+    });
+
+    describe('getApiKey', () => {
+      test('retrieves an imported API key', () => {
+        keystore.importApiKey('my-api-key', 'sk-abc123');
+
+        const result = keystore.getApiKey('my-api-key');
+        expect(result).toSucceedWith('sk-abc123');
+      });
+
+      test('fails for non-existent secret', () => {
+        const result = keystore.getApiKey('non-existent');
+        expect(result).toFailWith(/not found/i);
+      });
+
+      test('fails for non-api-key type secret', async () => {
+        await keystore.addSecret('encryption-secret');
+
+        const result = keystore.getApiKey('encryption-secret');
+        expect(result).toFailWith(/not an API key/i);
+      });
+
+      test('fails when locked', () => {
+        keystore.lock(true);
+        const result = keystore.getApiKey('my-api-key');
+        expect(result).toFailWith(/locked/i);
+      });
+    });
+
+    describe('listSecretsByType', () => {
+      test('returns only secrets of the specified type', async () => {
+        await keystore.addSecret('enc-key-1');
+        await keystore.addSecret('enc-key-2');
+        keystore.importApiKey('api-key-1', 'sk-abc');
+        keystore.importApiKey('api-key-2', 'sk-def');
+
+        expect(keystore.listSecretsByType('api-key')).toSucceedAndSatisfy((names) => {
+          expect(names).toHaveLength(2);
+          expect(names).toContain('api-key-1');
+          expect(names).toContain('api-key-2');
+        });
+
+        expect(keystore.listSecretsByType('encryption-key')).toSucceedAndSatisfy((names) => {
+          expect(names).toHaveLength(2);
+          expect(names).toContain('enc-key-1');
+          expect(names).toContain('enc-key-2');
+        });
+      });
+
+      test('returns empty array when no secrets match', () => {
+        const result = keystore.listSecretsByType('api-key');
+        expect(result).toSucceedWith([]);
+      });
+
+      test('fails when locked', () => {
+        keystore.lock(true);
+        const result = keystore.listSecretsByType('api-key');
+        expect(result).toFailWith(/locked/i);
+      });
+    });
   });
 
   describe('lock/unlock', () => {

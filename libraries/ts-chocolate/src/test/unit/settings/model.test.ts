@@ -197,5 +197,21 @@ describe('settings model', () => {
       const resolved = resolvePreferencesSettings(prefs, testDeviceId);
       expect(resolved.defaultStorageTargets?.libraryDefault).toBe('main');
     });
+
+    test('falls back to DEFAULT_AI_ASSIST when aiAssist not set', () => {
+      const prefs: IPreferencesSettings = { schemaVersion: SETTINGS_SCHEMA_VERSION };
+      const resolved = resolvePreferencesSettings(prefs, testDeviceId);
+      expect(resolved.tools.aiAssist).toEqual({ providers: [{ provider: 'copy-paste' }] });
+    });
+
+    test('uses provided aiAssist settings', () => {
+      const customAiAssist = { providers: [{ provider: 'xai-grok' as const, secretName: 'grok-key' }] };
+      const prefs: IPreferencesSettings = {
+        schemaVersion: SETTINGS_SCHEMA_VERSION,
+        tools: { aiAssist: customAiAssist }
+      };
+      const resolved = resolvePreferencesSettings(prefs, testDeviceId);
+      expect(resolved.tools.aiAssist).toEqual(customAiAssist);
+    });
   });
 });

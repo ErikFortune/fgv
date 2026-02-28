@@ -5162,6 +5162,8 @@ interface IProtectedCollectionInfo<TCollectionId extends string = string> {
 interface IProtectedCollectionInternal<TCollectionId extends string = string> {
     readonly encryptedFile: EncryptedCollectionFile;
     readonly ref: IProtectedCollectionInfo<TCollectionId>;
+    readonly sourceItem?: FileTree.FileTreeItem;
+    readonly sourceName?: string;
 }
 
 // @public

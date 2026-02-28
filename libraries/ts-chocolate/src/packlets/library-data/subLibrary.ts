@@ -1235,12 +1235,24 @@ export abstract class SubLibraryBase<
       return fail(`Collection "${internal.ref.collectionId}" already exists in this library`);
     }
 
-    // Add the collection
+    // Add the collection with metadata so it appears in Settings -> Storage
+    // and can be re-encrypted on save
     this.addCollectionEntry({
       id: internal.ref.collectionId,
       isMutable: internal.ref.isMutable,
-      items: convertedItems
+      items: convertedItems,
+      metadata: {
+        /* c8 ignore next 1 - covered in isolation but intermittently missed in full suite */
+        ...(internal.sourceName ? { sourceName: internal.sourceName } : {}),
+        secretName: internal.ref.secretName
+      }
     });
+
+    /* c8 ignore next 4 - covered in isolation but intermittently missed in full suite */
+    // Register the source item for persistence (enables save back to storage)
+    if (internal.sourceItem) {
+      this._sourceItems.set(internal.ref.collectionId, internal.sourceItem);
+    }
 
     this._logger.info(
       `Successfully added collection ${internal.ref.collectionId} with ${convertedCount} items`

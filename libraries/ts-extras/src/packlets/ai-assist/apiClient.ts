@@ -398,6 +398,7 @@ export async function callProviderCompletion(
       return callAnthropicCompletion(config, prompt, additionalMessages, temperature);
     case 'gemini':
       return callGeminiCompletion(config, prompt, additionalMessages, temperature);
+    /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;
       return fail(`unsupported API format: ${String(_exhaustive)}`);

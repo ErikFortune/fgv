@@ -275,6 +275,7 @@ export class KeyStore implements IEncryptionProvider {
       }
       const entry: IKeyStoreSecretEntry = {
         name,
+        /* c8 ignore next 1 - backwards compatibility: old vaults may lack type field */
         type: jsonEntry.type ?? 'encryption-key',
         key: keyBytesResult.value,
         description: jsonEntry.description,

@@ -135,7 +135,7 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IFileT
    */
   public setRawContents(contents: string): Result<string> {
     return this.getIsMutable().asResult.onSuccess(() =>
-      /* c8 ignore next 1 - unreachable: ZIP files are always read-only */
+      /* c8 ignore next - unreachable: ZIP files are always read-only */
       this._accessors.saveFileContents(this.absolutePath, contents)
     );
   }
@@ -356,7 +356,7 @@ export class ZipFileTreeAccessors<TCT extends string = string>
             resolve(succeed(new ZipFileTreeAccessors<TCT>(files, normalizedParams)));
           }
         });
-        /* c8 ignore next 6 - defensive coding: fflate reports errors via callback, not exceptions */
+        /* c8 ignore next 5 - defensive coding: fflate reports errors via callback, not exceptions */
       } catch (error) {
         resolve(
           fail(`Failed to load ZIP archive: ${error instanceof Error ? error.message : String(error)}`)
