@@ -391,7 +391,7 @@ export function MoldsTabContent(): React.ReactElement {
               <MoldEditView
                 wrapper={wrapper}
                 onSave={handleSave}
-                onSaveAs={isReadOnly ? handleSaveAs : undefined}
+                onSaveAs={isReadOnly && mutableCollectionId ? handleSaveAs : undefined}
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
                 onMutation={(): void => {
                   updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));

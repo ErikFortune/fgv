@@ -114,10 +114,17 @@ export function SecuritySection(): React.ReactElement {
   const [apiKeyValue, setApiKeyValue] = useState('');
   const [apiKeyError, setApiKeyError] = useState<string | undefined>();
   const [apiKeySuccess, setApiKeySuccess] = useState(false);
+  const [apiKeySuccessMessage, setApiKeySuccessMessage] = useState('Saved!');
 
-  // Retained master password for save operations after unlock.
-  // The form password gets cleared, but we need the password to persist the vault.
-  const [masterPassword, setMasterPassword] = useState<string | undefined>();
+  // Master password is stored on the reactive workspace so it survives
+  // component unmount/remount cycles (e.g. navigating away from settings).
+  const masterPassword = reactiveWorkspace.masterPassword;
+  const setMasterPassword = useCallback(
+    (pw: string | undefined): void => {
+      reactiveWorkspace.masterPassword = pw;
+    },
+    [reactiveWorkspace]
+  );
 
   const clearForm = useCallback((): void => {
     setPassword('');
@@ -246,7 +253,7 @@ export function SecuritySection(): React.ReactElement {
     }
 
     setApiKeyError(undefined);
-    const result = keyStore.importApiKey(trimmedName, trimmedValue);
+    const result = keyStore.importApiKey(trimmedName, trimmedValue, { replace: true });
     if (result.isFailure()) {
       setApiKeyError(result.message);
       return;
@@ -255,12 +262,16 @@ export function SecuritySection(): React.ReactElement {
     // Persist keystore after adding secret
     if (masterPassword) {
       await persistKeyStore(keyStore, masterPassword);
+    } else {
+      workspace.data.logger.warn('Keystore: master password not available, key added to memory only');
+      setApiKeyError('Key added but could not persist — please lock and unlock to re-enter password');
     }
     reactiveWorkspace.notifyChange();
 
     setApiKeyName('');
     setApiKeyValue('');
     setApiKeySuccess(true);
+    setApiKeySuccessMessage(result.value.replaced ? 'Replaced!' : 'Saved!');
     setTimeout(() => setApiKeySuccess(false), 2000);
   }, [keyStore, apiKeyName, apiKeyValue, masterPassword, persistKeyStore, reactiveWorkspace]);
 
@@ -459,7 +470,18 @@ export function SecuritySection(): React.ReactElement {
                 {secretNames.map((name) => (
                   <li key={name} className="text-sm text-gray-600 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    {name}
+                    <span className="flex-1">{name}</span>
+                    <button
+                      type="button"
+                      onClick={(): void => {
+                        setApiKeyName(name);
+                        setApiKeyValue('');
+                        setApiKeyError(undefined);
+                      }}
+                      className="text-xs text-amber-600 hover:text-amber-800"
+                    >
+                      Replace
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -471,7 +493,7 @@ export function SecuritySection(): React.ReactElement {
             <div className="rounded-lg border border-gray-200 p-4">
               <p className="text-sm font-medium text-gray-700 mb-2">Import API Key</p>
               <p className="text-xs text-gray-500 mb-3">
-                Store an API key as a keystore secret for use with AI assist providers.
+                Store or replace an API key secret for use with AI assist providers.
               </p>
               <div className="space-y-2">
                 <input
@@ -498,7 +520,7 @@ export function SecuritySection(): React.ReactElement {
                   >
                     Import
                   </button>
-                  {apiKeySuccess && <span className="text-xs text-green-600">Saved!</span>}
+                  {apiKeySuccess && <span className="text-xs text-green-600">{apiKeySuccessMessage}</span>}
                 </div>
               </div>
             </div>

@@ -481,7 +481,7 @@ export function ProceduresTabContent(): React.ReactElement {
                 wrapper={wrapper}
                 availableTasks={availableTasks}
                 onSave={handleSaveProcedure}
-                onSaveAs={isReadOnly ? handleSaveProcedureAs : undefined}
+                onSaveAs={handleSaveProcedureAs}
                 onCancel={(): void => handleCancelProcedureEdit(entry.entityId)}
                 readOnly={isReadOnly}
                 onPreview={(): void => handlePreviewProcedure(entry.entityId)}

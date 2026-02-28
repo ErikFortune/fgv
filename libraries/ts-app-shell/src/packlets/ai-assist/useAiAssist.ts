@@ -32,7 +32,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { AiAssist } from '@fgv/ts-extras';
-import { fail, Result, succeed } from '@fgv/ts-utils';
+import { fail, type Logging, Result, succeed } from '@fgv/ts-utils';
 
 // ============================================================================
 // Types
@@ -47,6 +47,8 @@ export interface IUseAiAssistParams {
   readonly settings: AiAssist.IAiAssistSettings | undefined;
   /** Keystore for API key resolution (or undefined if no keystore). */
   readonly keyStore: AiAssist.IAiAssistKeyStore | undefined;
+  /** Optional logger for request/response observability. */
+  readonly logger?: Logging.ILogger;
 }
 
 /**
@@ -113,7 +115,7 @@ export interface IUseAiAssistResult {
  * @public
  */
 export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
-  const { settings, keyStore } = params;
+  const { settings, keyStore, logger } = params;
   const [isWorking, setIsWorking] = useState(false);
 
   const actions = useMemo((): ReadonlyArray<IAiAssistAction> => {
@@ -213,16 +215,20 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
             apiKey: apiKeyResult.value,
             prompt,
             additionalMessages: correctionMessages.length > 0 ? correctionMessages : undefined,
-            modelOverride: providerConfig.model
+            modelOverride: providerConfig.model,
+            logger
           });
           if (responseResult.isFailure()) {
+            logger?.error(`AI completion failed: ${responseResult.message}`);
             return fail(responseResult.message);
           }
 
           const { content: rawResponse, truncated } = responseResult.value;
+          logger?.detail(`AI response received (${rawResponse.length} chars, truncated=${truncated})`);
 
           // Truncated responses are almost certainly malformed JSON — fail early
           if (truncated) {
+            logger?.warn('AI response truncated due to token limits');
             return fail('AI response was truncated due to token limits — try a shorter prompt');
           }
 
@@ -248,6 +254,9 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
           }
 
           // Validation failed — if we have retries left, send a correction
+          logger?.warn(
+            `AI response validation failed (attempt ${attempt + 1}/${maxAttempts}): ${entityResult.message}`
+          );
           if (attempt < maxAttempts - 1) {
             correctionMessages.push(
               { role: 'assistant', content: rawResponse },
@@ -270,7 +279,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
         setIsWorking(false);
       }
     },
-    [settings, keyStore]
+    [settings, keyStore, logger]
   );
 
   return { actions, isWorking, copyPrompt, generateDirect };

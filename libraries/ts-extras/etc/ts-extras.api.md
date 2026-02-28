@@ -10,6 +10,7 @@ import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
@@ -588,6 +589,7 @@ interface IProviderCompletionParams {
     readonly additionalMessages?: ReadonlyArray<IChatMessage>;
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;
+    readonly logger?: Logging.ILogger;
     readonly modelOverride?: string;
     readonly prompt: AiPrompt;
     readonly temperature?: number;

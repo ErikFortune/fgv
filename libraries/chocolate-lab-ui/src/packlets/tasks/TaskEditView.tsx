@@ -25,7 +25,7 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { EyeIcon, PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { TagIcon, DocumentTextIcon, HashtagIcon, ListBulletIcon } from '@heroicons/react/20/solid';
 
@@ -115,12 +115,17 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
   const {
     data: { logger }
   } = useWorkspace();
+  const combinedOnMutation = useCallback((): void => {
+    onMutation?.();
+    onMutate?.();
+  }, [onMutation, onMutate]);
+
   const ctx = useEditingContext<EditedTask>({
     wrapper,
     onSave,
     onSaveAs,
     onCancel,
-    onMutation,
+    onMutation: combinedOnMutation,
     readOnly,
     logger,
     checkHasChanges: (w) => w.hasChanges(w.initial)
@@ -253,12 +258,6 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
     },
     [wrapper, ctx]
   );
-
-  // Notify parent of mutations so live preview can update.
-  // `entity` is a new object reference after each mutation, so this fires on every edit.
-  useEffect(() => {
-    onMutate?.();
-  }, [entity, onMutate]);
 
   // Build custom save button for step context with mode selection
   const customSaveButton =

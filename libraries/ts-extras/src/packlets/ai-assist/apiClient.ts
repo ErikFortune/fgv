@@ -28,7 +28,7 @@
  */
 
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
-import { fail, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
 import { AiPrompt, type IAiCompletionResponse, type IAiProviderDescriptor, type IChatMessage } from './model';
 
@@ -66,6 +66,8 @@ export interface IProviderCompletionParams {
   readonly temperature?: number;
   /** Optional model override (uses descriptor.defaultModel otherwise) */
   readonly modelOverride?: string;
+  /** Optional logger for request/response observability. */
+  readonly logger?: Logging.ILogger;
 }
 
 // ============================================================================
@@ -99,8 +101,11 @@ function buildMessages(
 async function fetchJson(
   url: string,
   headers: Record<string, string>,
-  body: unknown
+  body: unknown,
+  logger?: Logging.ILogger
 ): Promise<Result<JsonObject>> {
+  logger?.detail(`AI API request: POST ${url}`);
+
   let response: Response;
   try {
     response = await fetch(url, {
@@ -113,22 +118,28 @@ async function fetchJson(
     });
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : String(err);
+    logger?.error(`AI API request failed: ${detail}`);
     return fail(`AI API request failed: ${detail}`);
   }
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'unknown error');
+    logger?.error(`AI API returned ${response.status}: ${errorText}`);
     return fail(`AI API returned ${response.status}: ${errorText}`);
   }
+
+  logger?.detail(`AI API response: ${response.status}`);
 
   let json: unknown;
   try {
     json = await response.json();
   } catch {
+    logger?.error('AI API returned invalid JSON response');
     return fail('AI API returned invalid JSON response');
   }
 
   if (!isJsonObject(json)) {
+    logger?.error('AI API returned non-object JSON response');
     return fail('AI API returned non-object JSON response');
   }
   return succeed(json);
@@ -226,13 +237,15 @@ async function callOpenAiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7
+  temperature: number = 0.7,
+  logger?: Logging.ILogger
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt, additionalMessages);
   const body = { model: config.model, messages, temperature };
 
-  const jsonResult = await fetchJson(url, { Authorization: `Bearer ${config.apiKey}` }, body);
+  logger?.info(`OpenAI completion: model=${config.model}`);
+  const jsonResult = await fetchJson(url, { Authorization: `Bearer ${config.apiKey}` }, body, logger);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -260,7 +273,8 @@ async function callAnthropicCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7
+  temperature: number = 0.7,
+  logger?: Logging.ILogger
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
 
@@ -285,10 +299,12 @@ async function callAnthropicCompletion(
 
   const headers: Record<string, string> = {
     'x-api-key': config.apiKey,
-    'anthropic-version': '2023-06-01'
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true'
   };
 
-  const jsonResult = await fetchJson(url, headers, body);
+  logger?.info(`Anthropic completion: model=${config.model}`);
+  const jsonResult = await fetchJson(url, headers, body, logger);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -315,7 +331,8 @@ async function callGeminiCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>,
-  temperature: number = 0.7
+  temperature: number = 0.7,
+  logger?: Logging.ILogger
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
@@ -344,7 +361,8 @@ async function callGeminiCompletion(
     'x-goog-api-key': config.apiKey
   };
 
-  const jsonResult = await fetchJson(url, headers, body);
+  logger?.info(`Gemini completion: model=${config.model}`);
+  const jsonResult = await fetchJson(url, headers, body, logger);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -379,7 +397,7 @@ async function callGeminiCompletion(
 export async function callProviderCompletion(
   params: IProviderCompletionParams
 ): Promise<Result<IAiCompletionResponse>> {
-  const { descriptor, apiKey, prompt, additionalMessages, temperature = 0.7, modelOverride } = params;
+  const { descriptor, apiKey, prompt, additionalMessages, temperature = 0.7, modelOverride, logger } = params;
 
   if (!descriptor.baseUrl) {
     return fail(`provider "${descriptor.id}" has no API endpoint configured`);
@@ -391,13 +409,15 @@ export async function callProviderCompletion(
     model: modelOverride ?? descriptor.defaultModel
   };
 
+  logger?.info(`AI completion: provider=${descriptor.id}, format=${descriptor.apiFormat}`);
+
   switch (descriptor.apiFormat) {
     case 'openai':
-      return callOpenAiCompletion(config, prompt, additionalMessages, temperature);
+      return callOpenAiCompletion(config, prompt, additionalMessages, temperature, logger);
     case 'anthropic':
-      return callAnthropicCompletion(config, prompt, additionalMessages, temperature);
+      return callAnthropicCompletion(config, prompt, additionalMessages, temperature, logger);
     case 'gemini':
-      return callGeminiCompletion(config, prompt, additionalMessages, temperature);
+      return callGeminiCompletion(config, prompt, additionalMessages, temperature, logger);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;

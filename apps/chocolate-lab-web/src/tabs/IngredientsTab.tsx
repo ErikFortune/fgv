@@ -398,7 +398,7 @@ export function IngredientsTabContent(): React.ReactElement {
               <IngredientEditView
                 wrapper={wrapper}
                 onSave={handleSave}
-                onSaveAs={isReadOnly ? handleSaveAs : undefined}
+                onSaveAs={handleSaveAs}
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
                 onMutation={(): void => {
                   updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));

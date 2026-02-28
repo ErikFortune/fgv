@@ -886,6 +886,9 @@ export function DecorationsTabContent(): React.ReactElement {
               content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
             };
           }
+          const sourceCollectionId = (entry.entityId as string).split('.')[0] as CollectionId;
+          const sourceColResult = workspace.data.entities.decorations.collections.get(sourceCollectionId);
+          const isSourceReadOnly = sourceColResult.isSuccess() && !sourceColResult.value.isMutable;
           return {
             key: `${entry.entityId}:edit`,
             label: `Editing: ${result.value.name}`,
@@ -894,8 +897,9 @@ export function DecorationsTabContent(): React.ReactElement {
                 wrapper={wrapper}
                 availableIngredients={availableIngredients}
                 availableProcedures={availableProcedures}
+                readOnly={isSourceReadOnly}
                 onSave={handleSaveDecoration}
-                onSaveAs={handleSaveDecorationAs}
+                onSaveAs={isSourceReadOnly && mutableCollectionId ? handleSaveDecorationAs : undefined}
                 onCancel={(): void => handleCancelDecorationEdit(entry.entityId)}
                 onMutate={(): void => {
                   updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));

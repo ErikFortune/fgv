@@ -43,5 +43,9 @@ export type { IAiAssistAction, IAiAssistResult, IUseAiAssistResult } from '@fgv/
 export function useAiAssist(): IUseAiAssistResult {
   const workspace = useWorkspace();
   const settings = workspace.settings?.getResolvedSettings()?.tools?.aiAssist;
-  return useGenericAiAssist({ settings, keyStore: workspace.keyStore ?? undefined });
+  return useGenericAiAssist({
+    settings,
+    keyStore: workspace.keyStore ?? undefined,
+    logger: workspace.data.logger
+  });
 }

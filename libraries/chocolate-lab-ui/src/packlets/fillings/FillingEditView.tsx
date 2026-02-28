@@ -840,7 +840,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       onSelect: () => void;
     }> = [];
 
-    if (saveAnalysis.canCreateVariation && !saveAnalysis.mustCreateNew) {
+    // When source is read-only, skip actions that write to the same collection
+    if (!readOnly && saveAnalysis.canCreateVariation && !saveAnalysis.mustCreateNew) {
       actions.push({
         id: 'update',
         label: 'Save',
@@ -849,7 +850,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       });
     }
 
-    if (saveAnalysis.canCreateVariation) {
+    if (!readOnly && saveAnalysis.canCreateVariation) {
       actions.push({
         id: 'new-variation',
         label: 'Save as New Variation',
@@ -858,7 +859,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       });
     }
 
-    if (isProductionMode && saveAnalysis.canAddAlternatives) {
+    if (!readOnly && isProductionMode && saveAnalysis.canAddAlternatives) {
       actions.push({
         id: 'alternatives',
         label: 'Save as Alternatives',
@@ -876,10 +877,10 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     });
 
     return actions;
-  }, [saveAnalysis, onSave]);
+  }, [saveAnalysis, onSave, readOnly]);
 
   const customSaveButton =
-    saveActions.length > 1 ? (
+    saveActions.length > 0 ? (
       <MultiActionButton
         primaryAction={saveActions[0]}
         alternativeActions={saveActions.slice(1)}

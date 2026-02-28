@@ -453,7 +453,7 @@ export function TasksTabContent(): React.ReactElement {
               <TaskEditView
                 wrapper={wrapper}
                 onSave={handleSave}
-                onSaveAs={isReadOnly ? handleSaveAs : undefined}
+                onSaveAs={handleSaveAs}
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
                 readOnly={isReadOnly}
                 onPreview={(): void => handlePreview(entry.entityId)}

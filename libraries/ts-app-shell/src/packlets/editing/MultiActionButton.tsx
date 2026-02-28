@@ -109,24 +109,28 @@ export function MultiActionButton(props: IMultiActionButtonProps): React.ReactEl
         type="button"
         onClick={primaryAction.onSelect}
         disabled={disabled}
-        className={`${baseClasses} ${variantClasses[variant]} px-2.5 py-1 rounded-r-none`}
+        className={`${baseClasses} ${variantClasses[variant]} px-2.5 py-1 ${
+          alternativeActions.length > 0 ? 'rounded-r-none' : 'rounded'
+        }`}
       >
         {primaryAction.icon}
         <span>{primaryAction.label}</span>
       </button>
 
-      {/* Dropdown toggle button */}
-      <button
-        type="button"
-        onClick={(): void => setIsOpen(!isOpen)}
-        disabled={disabled}
-        className={`${baseClasses} ${variantClasses[variant]} px-1 py-1 rounded-l-none border-l border-white/20`}
-      >
-        <ChevronDownIcon className="h-3.5 w-3.5" />
-      </button>
+      {/* Dropdown toggle button — only shown when there are alternative actions */}
+      {alternativeActions.length > 0 && (
+        <button
+          type="button"
+          onClick={(): void => setIsOpen(!isOpen)}
+          disabled={disabled}
+          className={`${baseClasses} ${variantClasses[variant]} px-1 py-1 rounded-l-none border-l border-white/20`}
+        >
+          <ChevronDownIcon className="h-3.5 w-3.5" />
+        </button>
+      )}
 
       {/* Dropdown menu */}
-      {isOpen && (
+      {isOpen && alternativeActions.length > 0 && (
         <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
           {alternativeActions.map((action) => (
             <button

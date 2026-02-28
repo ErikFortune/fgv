@@ -129,9 +129,15 @@ export function EditingToolbar<TWrapper extends IEditable>(
   return (
     <div className={`flex flex-col border-b border-gray-200 bg-gray-50 ${className ?? ''}`}>
       {/* Read-only info banner */}
-      {context.readOnly && (
+      {context.readOnly && !customSaveButton && (
         <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 border-b border-amber-200 text-amber-700 text-xs">
-          <span>Read-only source — use &ldquo;Save to&hellip;&rdquo; to save to a writable collection.</span>
+          <span>
+            {context.saveAs ? (
+              <>Read-only source — use &ldquo;Save to&hellip;&rdquo; to save to a writable collection.</>
+            ) : (
+              <>Read-only source — no writable collection available.</>
+            )}
+          </span>
         </div>
       )}
 

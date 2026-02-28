@@ -120,6 +120,93 @@ function ChocolateSection({
 }
 
 // ============================================================================
+// Dairy-Specific Section
+// ============================================================================
+
+function DairySection({
+  ingredient
+}: {
+  readonly ingredient: LibraryRuntime.DairyIngredient;
+}): React.ReactElement {
+  return (
+    <DetailSection title="Dairy Properties">
+      <DetailRow
+        label="Fat Content"
+        value={ingredient.fatContent !== undefined ? `${ingredient.fatContent}%` : undefined}
+      />
+      <DetailRow
+        label="Water Content"
+        value={ingredient.waterContent !== undefined ? `${ingredient.waterContent}%` : undefined}
+      />
+    </DetailSection>
+  );
+}
+
+// ============================================================================
+// Alcohol-Specific Section
+// ============================================================================
+
+function AlcoholSection({
+  ingredient
+}: {
+  readonly ingredient: LibraryRuntime.AlcoholIngredient;
+}): React.ReactElement {
+  return (
+    <DetailSection title="Alcohol Properties">
+      <DetailRow
+        label="ABV"
+        value={ingredient.alcoholByVolume !== undefined ? `${ingredient.alcoholByVolume}%` : undefined}
+      />
+      <DetailRow label="Flavor Profile" value={ingredient.flavorProfile} />
+    </DetailSection>
+  );
+}
+
+// ============================================================================
+// Sugar-Specific Section
+// ============================================================================
+
+function SugarSection({
+  ingredient
+}: {
+  readonly ingredient: LibraryRuntime.SugarIngredient;
+}): React.ReactElement {
+  return (
+    <DetailSection title="Sugar Properties">
+      <DetailRow
+        label="Hydration Number"
+        value={ingredient.hydrationNumber !== undefined ? String(ingredient.hydrationNumber) : undefined}
+      />
+      <DetailRow
+        label="Sweetness Potency"
+        value={
+          ingredient.sweetnessPotency !== undefined ? `${ingredient.sweetnessPotency}x sucrose` : undefined
+        }
+      />
+    </DetailSection>
+  );
+}
+
+// ============================================================================
+// Fat-Specific Section
+// ============================================================================
+
+function FatSection({
+  ingredient
+}: {
+  readonly ingredient: LibraryRuntime.FatIngredient;
+}): React.ReactElement {
+  return (
+    <DetailSection title="Fat Properties">
+      <DetailRow
+        label="Melting Point"
+        value={ingredient.meltingPoint !== undefined ? `${ingredient.meltingPoint} °C` : undefined}
+      />
+    </DetailSection>
+  );
+}
+
+// ============================================================================
 // IngredientDetail Component
 // ============================================================================
 
@@ -166,8 +253,12 @@ export function IngredientDetail(props: IIngredientDetailProps): React.ReactElem
       {/* Ganache Characteristics */}
       <GanacheSection ingredient={ingredient} />
 
-      {/* Chocolate-specific properties */}
+      {/* Category-specific properties */}
       {ingredient.isChocolate() && <ChocolateSection ingredient={ingredient} />}
+      {ingredient.isDairy() && <DairySection ingredient={ingredient} />}
+      {ingredient.isAlcohol() && <AlcoholSection ingredient={ingredient} />}
+      {ingredient.isSugar() && <SugarSection ingredient={ingredient} />}
+      {ingredient.isFat() && <FatSection ingredient={ingredient} />}
 
       {/* Tags */}
       {ingredient.tags.length > 0 && (

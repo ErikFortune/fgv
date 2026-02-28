@@ -118,6 +118,7 @@ export class ReactiveWorkspace {
   private _localStorageRootDir: FileTree.IFileTreeDirectoryItem | undefined = undefined;
   private _mitigatedRoots: ReadonlySet<string> = new Set();
   private _validationWarnings: ReadonlyArray<ISettingsValidationWarning> = [];
+  private _masterPassword: string | undefined = undefined;
 
   public constructor(workspace: IWorkspace, builtInLoaded: boolean = false) {
     this._workspace = workspace;
@@ -234,6 +235,18 @@ export class ReactiveWorkspace {
    */
   public get localStorageRootDir(): FileTree.IFileTreeDirectoryItem | undefined {
     return this._localStorageRootDir;
+  }
+
+  /**
+   * The retained master password for keystore operations.
+   * Set during unlock/initialize, cleared on lock.
+   */
+  public get masterPassword(): string | undefined {
+    return this._masterPassword;
+  }
+
+  public set masterPassword(value: string | undefined) {
+    this._masterPassword = value;
   }
 
   /**

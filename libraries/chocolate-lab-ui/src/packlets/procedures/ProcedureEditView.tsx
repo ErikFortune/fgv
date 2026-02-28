@@ -263,10 +263,6 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
   );
 
   useEffect(() => {
-    onMutate?.();
-  }, [entity, onMutate]);
-
-  useEffect(() => {
     // Clear unresolved state for steps that now have valid tasks
     setUnresolvedByStep((prev) => {
       const next = { ...prev };

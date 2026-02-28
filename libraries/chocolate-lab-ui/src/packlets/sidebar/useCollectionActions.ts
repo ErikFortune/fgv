@@ -466,7 +466,8 @@ export function useCollectionActions(): ICollectionActions {
         confections: 'confections',
         molds: 'molds',
         procedures: 'procedures',
-        tasks: 'tasks'
+        tasks: 'tasks',
+        decorations: 'decorations'
       };
       const key = tabToKey[activeTab as AppTab];
       if (!key) {
