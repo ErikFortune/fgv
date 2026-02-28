@@ -269,17 +269,142 @@ All changes are breaking (acceptable — ts-chocolate is new with no external de
 - AI interactor: ingredient copy/paste implementation
 
 ### Phase 5: Production Mode
-**Scope:** The Production side of the application.
+**Scope:** The Production side of the application. Broken into sub-phases — see [Production UX Master Plan](./production-ux-master-plan.md) for details.
+
+#### Critical Architecture Rule: Materialized Objects Only
+
+**The UI layer must NEVER work with raw entity interfaces (`IFillingSessionEntity`, `IConfectionSessionEntity`, `AnySessionEntity`, etc.).** All UI components consume materialized runtime objects — the same pattern used throughout Library mode.
+
+This rule exists because:
+- Materialized objects wrap entities and expose properties through accessors (e.g., `FillingRecipe` wraps `IFillingRecipeEntity` and exposes `.name`, `.id`, `.entity`, `.goldenVariation`, etc.)
+- Materialized objects carry resolved references (the filling, its ingredients, procedures) — the UI should never manually parse IDs to re-resolve things the runtime already resolved
+- Entity interfaces are internal data-layer concerns; the runtime layer exists precisely to shield consumers from them
+
+**Concrete example — how Library tabs work (the pattern to follow):**
+```typescript
+// FillingsTab iterates materialized FillingRecipe objects, NOT IFillingRecipeEntity
+const { entities: fillings } = useEntityList<LibraryRuntime.FillingRecipe, FillingId>({
+  getAll: () => workspace.data.fillings.values(), // yields materialized objects
+  compare: (a, b) => a.name.localeCompare(b.name), // uses runtime accessors
+  ...
+});
+
+// FillingDetail receives a FillingRecipe and accesses .name, .variations, etc.
+<FillingDetail filling={filling} ... />
+```
+
+**How sessions must work (same pattern):**
+```typescript
+// SessionsTab must iterate materialized sessions, NOT raw entities
+const sessions = useMemo(() => {
+  return Array.from(workspace.userData.sessions.values()); // yields AnyMaterializedSession
+}, [workspace, reactiveWorkspace.version]);
+
+// SessionDetailView receives a materialized EditingSession and accesses
+// .baseRecipe, .produced.snapshot.ingredients, .status, .label, etc.
+<SessionDetailView session={materializedSession} ... />
+```
+
+#### Cross-Entity Identity Contract: Composite IDs for App State
+
+This applies to **all Production entities** (sessions, journals, ingredient inventory, mold inventory, and future additions):
+
+- Use **composite IDs** (`collectionId.baseId`-style identifiers) for all UI app-state identity:
+  - cascade `entityId`
+  - list row keys
+  - selected/checked IDs
+  - navigation/deep-link IDs
+- Use **base IDs** for display and grouping only.
+- Never resolve records by base ID alone when reading/updating app state.
+- Never use suffix matching (`endsWith(baseId)`) for selection.
+
+If a UI component needs both forms, pass both explicitly and keep the contract clear:
+- `id` = composite ID (identity)
+- `baseId` = human-readable short ID (display)
+
+#### UI–Runtime Boundary: No Entity Leakage
+
+Hooks and action callbacks in the UI layer should return **composite IDs** or **materialized objects** — never raw entity interfaces. Entity interfaces are data-layer internals; exposing them to React components breaks the materialized-object contract and invites the anti-patterns listed below.
+
+- **Action hooks** (e.g., `useSessionActions`, `useEntityActions`) that create or mutate entities should return the resulting composite ID (`SessionId`, `FillingId`, etc.) or `Result<compositeId>`. The caller can then look up the materialized object via `workspace.userData.sessions.get(id)` if needed.
+- **Query hooks** that return lists or single items should return materialized objects, not entities.
+- If a hook currently returns an entity type (e.g., `Result<IFillingSessionEntity>`), refactor it to return the composite ID instead. This keeps the entity confined to the runtime layer where it belongs.
+
+#### Phase 5 Pre-Requisite: Extend Materialized Session Classes
+
+Before building any UI, the materialized session classes (`EditingSession`, `ConfectionEditingSessionBase`) must expose session metadata through accessors — following the same pattern as `FillingRecipe`, `IngredientBase`, etc.
+
+**Current gap:** `EditingSession.fromPersistedState()` receives the full `IFillingSessionEntity` but only uses it to restore editing history. It discards the metadata fields (`status`, `label`, `baseId`, `createdAt`, `updatedAt`, `group`, `notes`, `procedureProgress`). Same for `ConfectionEditingSessionBase`.
+
+**Required changes in ts-chocolate (before UI work begins):**
+
+1. **`EditingSession`** — store the source `IFillingSessionEntity` during `fromPersistedState()` and expose:
+   - `.baseId: BaseSessionId`
+   - `.sessionType: PersistedSessionType` (always `'filling'`)
+   - `.status: PersistedSessionStatus`
+   - `.label: string | undefined`
+   - `.group: GroupName | undefined`
+   - `.createdAt: string`
+   - `.updatedAt: string`
+   - `.notes: ReadonlyArray<ICategorizedNote> | undefined`
+   - `.procedureProgress: ProcedureProgressMap | undefined`
+   - `.sourceVariationId: FillingRecipeVariationId`
+   - `.entity: IFillingSessionEntity` (the underlying entity, same pattern as `FillingRecipe.entity`)
+
+2. **`ConfectionEditingSessionBase`** — same pattern for `IConfectionSessionEntity` fields, plus:
+   - `.confectionType: ConfectionType`
+   - `.childSessionIds: Record<SlotId, SessionId>`
+
+3. **`AnyMaterializedSession`** — consider a common interface (`IMaterializedSessionBase`?) so UI components can access shared metadata (status, label, baseId, timestamps, etc.) without type-narrowing.
+
+4. **Freshly created sessions** (via `EditingSession.create()`, not restored from persisted state) won't have metadata yet. These sessions need sensible defaults or the creation flow needs to persist first, then materialize. The `createFillingSession` action in `useSessionActions` already persists then adds — so the materialized library will restore from the persisted entity, which has all fields.
+
+**Anti-patterns to avoid (things the first attempt got wrong):**
+
+| Anti-Pattern | Correct Pattern |
+|---|---|
+| `for (const [id, entity] of workspace.userData.sessions.entries())` with `entity: AnySessionEntity` | `entries()` on a `MaterializedLibrary` yields materialized objects (`AnyMaterializedSession`), not entities |
+| Manually parsing `sourceVariationId` to find a filling (`vid.indexOf('::')`, `workspace.data.fillings.get(fillingId as never)`) | Use `session.baseRecipe` — the materialized session already holds the resolved `IFillingRecipeVariation` |
+| Reading `session.history.current.ingredients` to display ingredient lists | Use `session.produced.snapshot.ingredients` or `session.produced.ingredients` — the `ProducedFilling` has the current state |
+| UI components typed to accept `Entities.Session.AnySessionEntity` | UI components accept `AnyMaterializedSession` or specific materialized types |
+| Using `baseId` as list key or cascade identity (`entityId`) | Use composite ID for identity; use `baseId` for label/display only |
+
+#### Phase 5a: Sessions
 
 - Session list with grouped view (`session.group ?? session.status`)
 - Session creation (from Library "Start Session" action + toast with link)
 - Session detail view (recipe + procedure checklist split)
 - Session lifecycle transitions (planning → active → committed → abandoned)
-- Batch operations (group select + batch status change)
-- Session groups (group field, group-notes journal entries, group header with metadata)
-- Related Activity panel (Library → Production cross-reference, collapsible slide-in)
-- Inventory update popover (location, notes, quantity)
-- Journal view (read-only list + detail)
+
+**Implementation sequence:**
+1. Extend `EditingSession` and `ConfectionEditingSessionBase` with metadata accessors (ts-chocolate)
+2. Build `SessionListView` consuming `AnyMaterializedSession` — use `.status`, `.label`, `.baseId`, `.group` accessors
+3. Build `SessionDetailView` consuming materialized sessions — use `.baseRecipe` for recipe info, `.produced` for current editing state, `.status`/`.label`/etc. for metadata
+4. Wire `SessionsTab` using `workspace.userData.sessions.values()` (materialized iterator)
+5. Wire "Start Session" action and mode navigation
+
+#### Phase 5b: Journal & Inventory
+Journal list/detail, inventory CRUD, commit flow. Same materialized-only rule applies — use `workspace.userData.journals.values()` and inventory equivalents.
+
+#### Phase 5c: Cross-References & Integration
+Related Activity panel, inventory popovers on Library views.
+
+#### Testing Guidance: Active Development vs Stabilization
+
+During active feature development, optimize for **functional confidence** over line-by-line coverage chasing:
+
+- Prioritize broad functional tests that cover:
+  - happy-path workflows
+  - failure handling
+  - important edge cases and regressions
+- Keep tests resilient to expected refactors while architecture and UX are still moving.
+- Do not block iteration on temporary measured-coverage dips during active churn.
+
+Before declaring a phase stable (or promoting from provisional to complete), run a hardening pass:
+
+- tighten/refactor tests for final APIs and UX
+- close temporary coverage gaps
+- restore full repository coverage expectations for stabilized code
 
 ### Phase 6: Polish & Cross-Cutting
 **Scope:** Refinement and nice-to-haves.
@@ -292,6 +417,7 @@ All changes are breaking (acceptable — ts-chocolate is new with no external de
 - Sidebar collapse to icons
 - Performance profiling + event granularity refinement
 - Manual session ordering within groups
+- Batch operations for grouped production entities (select-all, multi-transition, and bulk action UX)
 
 ---
 
