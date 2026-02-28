@@ -30,8 +30,10 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { TagIcon, DocumentTextIcon, HashtagIcon, LinkIcon } from '@heroicons/react/20/solid';
+import { CheckIcon } from '@heroicons/react/24/solid';
+import { DocumentDuplicateIcon, PlusIcon } from '@heroicons/react/24/outline';
 
-import { EditField, EditSection, TextInput, TagsInput } from '@fgv/ts-app-shell';
+import { EditField, EditSection, TextInput, TagsInput, MultiActionButton } from '@fgv/ts-app-shell';
 import type {
   ConfectionName,
   ConfectionRecipeVariationSpec,
@@ -80,6 +82,15 @@ type IFillingOptionSuggestion = IRecipeFillingOptionSuggestion | IIngredientFill
 // ============================================================================
 
 /**
+ * Save mode for confection recipe editing.
+ * - `update`: overwrite the current variation in place
+ * - `new-variation`: save edits as a new variation on the same recipe
+ * - `new-recipe`: create an entirely new recipe derived from this one
+ * @public
+ */
+export type ConfectionSaveMode = 'update' | 'new-variation' | 'new-recipe';
+
+/**
  * Props for the ConfectionEditView component.
  * @public
  */
@@ -92,10 +103,8 @@ export interface IConfectionEditViewProps {
   readonly selectedVariationSpec: ConfectionRecipeVariationSpec;
   /** Callback when user selects a different variation */
   readonly onVariationChange: (spec: ConfectionRecipeVariationSpec) => void;
-  /** Callback when save is requested */
-  readonly onSave: () => void;
-  /** Callback when "Save to…" is requested (source is immutable) */
-  readonly onSaveAs?: () => void;
+  /** Callback when save is requested with a specific mode */
+  readonly onSave: (mode: ConfectionSaveMode) => void;
   /** Callback when cancel is requested */
   readonly onCancel: () => void;
   /** Optional callback invoked after every mutation (undo, redo, or field edit). */
@@ -149,7 +158,6 @@ export function ConfectionEditView({
   selectedVariationSpec,
   onVariationChange,
   onSave,
-  onSaveAs,
   onCancel,
   onMutation,
   readOnly = false,
@@ -172,8 +180,7 @@ export function ConfectionEditView({
     data: { logger }
   } = useWorkspace();
   const ctx = useEditingContext({
-    onSave: (): void => onSave(),
-    onSaveAs: onSaveAs ? (): void => onSaveAs() : undefined,
+    onSave: (): void => onSave('update'),
     onCancel,
     onMutation,
     wrapper,
@@ -181,7 +188,7 @@ export function ConfectionEditView({
     logger,
     checkHasChanges: (w) => w.hasChanges(w.initial)
   });
-  const inputsDisabled = readOnly && !onSaveAs;
+  const inputsDisabled = readOnly;
 
   // ---- Change indicators ----
 
@@ -838,12 +845,59 @@ export function ConfectionEditView({
   );
 
   // ============================================================================
+  // Save button
+  // ============================================================================
+
+  const saveActions = useMemo(() => {
+    const actions: Array<{
+      id: string;
+      label: string;
+      icon: React.ReactElement;
+      onSelect: () => void;
+    }> = [];
+
+    if (!readOnly) {
+      actions.push({
+        id: 'update',
+        label: 'Save',
+        icon: <CheckIcon className="h-3.5 w-3.5" />,
+        onSelect: (): void => onSave('update')
+      });
+
+      actions.push({
+        id: 'new-variation',
+        label: 'Save as New Variation',
+        icon: <PlusIcon className="h-3.5 w-3.5" />,
+        onSelect: (): void => onSave('new-variation')
+      });
+    }
+
+    actions.push({
+      id: 'new-recipe',
+      label: 'Save as New Recipe',
+      icon: <DocumentDuplicateIcon className="h-3.5 w-3.5" />,
+      onSelect: (): void => onSave('new-recipe')
+    });
+
+    return actions;
+  }, [onSave, readOnly]);
+
+  const customSaveButton =
+    saveActions.length > 0 ? (
+      <MultiActionButton
+        primaryAction={saveActions[0]}
+        alternativeActions={saveActions.slice(1)}
+        variant="primary"
+      />
+    ) : undefined;
+
+  // ============================================================================
   // Render
   // ============================================================================
 
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
-      <EditingToolbar context={ctx} changeIndicators={changeIndicators} />
+      <EditingToolbar context={ctx} changeIndicators={changeIndicators} customSaveButton={customSaveButton} />
 
       {/* Derived-from indicator */}
       {wrapper.current.derivedFrom && (
