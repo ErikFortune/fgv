@@ -25,7 +25,15 @@
  * @packageDocumentation
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
+import {
+  DocumentTextIcon,
+  HashtagIcon,
+  BuildingOfficeIcon,
+  CubeIcon,
+  ScaleIcon,
+  LinkIcon
+} from '@heroicons/react/20/solid';
 
 import {
   EditField,
@@ -51,7 +59,13 @@ type EditedMold = LibraryRuntime.EditedMold;
 type ICavities = Entities.Molds.ICavities;
 type ICavityDimensions = Entities.Molds.ICavityDimensions;
 
-import { EditingToolbar, useEditingContext, NotesEditor, UrlsEditor } from '../editing';
+import {
+  EditingToolbar,
+  useEditingContext,
+  NotesEditor,
+  UrlsEditor,
+  type IChangeIndicator
+} from '../editing';
 import { useWorkspace } from '../workspace';
 
 // ============================================================================
@@ -71,6 +85,8 @@ export interface IMoldEditViewProps {
   readonly onSaveAs?: (wrapper: EditedMold) => void;
   /** Called when the user cancels editing. */
   readonly onCancel: () => void;
+  /** Optional callback invoked after every mutation (undo, redo, or field edit). */
+  readonly onMutation?: () => void;
   /** If true, the source entity is read-only (e.g. built-in collection). */
   readonly readOnly?: boolean;
 }
@@ -268,13 +284,49 @@ function CavityEditor({
  * @public
  */
 export function MoldEditView(props: IMoldEditViewProps): React.ReactElement {
-  const { wrapper, onSave, onSaveAs, onCancel, readOnly } = props;
+  const { wrapper, onSave, onSaveAs, onCancel, onMutation, readOnly } = props;
   const {
     data: { logger }
   } = useWorkspace();
-  const ctx = useEditingContext({ wrapper, onSave, onSaveAs, onCancel, readOnly, logger });
+  const ctx = useEditingContext({
+    wrapper,
+    onSave,
+    onSaveAs,
+    onCancel,
+    onMutation,
+    readOnly,
+    logger,
+    checkHasChanges: (w) => w.hasChanges(w.initial)
+  });
 
   const entity = wrapper.current;
+
+  // ---- Change indicators ----
+
+  const changes = useMemo(() => wrapper.getChanges(wrapper.initial), [wrapper, ctx.version]);
+
+  const changeIndicators: ReadonlyArray<IChangeIndicator> = useMemo(
+    () => [
+      {
+        key: 'manufacturer',
+        label: 'Manufacturer',
+        icon: <BuildingOfficeIcon />,
+        changed: changes.manufacturerChanged
+      },
+      { key: 'format', label: 'Format', icon: <CubeIcon />, changed: changes.formatChanged },
+      { key: 'cavities', label: 'Cavities', icon: <ScaleIcon />, changed: changes.cavitiesChanged },
+      {
+        key: 'description',
+        label: 'Description',
+        icon: <DocumentTextIcon />,
+        changed: changes.descriptionChanged
+      },
+      { key: 'notes', label: 'Notes', icon: <DocumentTextIcon />, changed: changes.notesChanged },
+      { key: 'tags', label: 'Tags', icon: <HashtagIcon />, changed: changes.tagsChanged },
+      { key: 'urls', label: 'URLs', icon: <LinkIcon />, changed: changes.urlsChanged }
+    ],
+    [changes]
+  );
 
   // ---- Field change handlers ----
 
@@ -353,7 +405,7 @@ export function MoldEditView(props: IMoldEditViewProps): React.ReactElement {
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
       {/* Toolbar */}
-      <EditingToolbar context={ctx} />
+      <EditingToolbar context={ctx} changeIndicators={changeIndicators} />
 
       {/* Identity Section */}
       <EditSection title="Identity">

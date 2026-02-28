@@ -7,7 +7,7 @@ import {
   EntityTabLayout,
   type IComparisonColumn
 } from '@fgv/ts-app-shell';
-import { AiAssist, Entities, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
+import { AiAssist, Entities, Helpers, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
 import type {
   BaseConfectionId,
   BaseFillingId,
@@ -47,7 +47,8 @@ import {
   DecorationDetail,
   useFilteredEntities,
   EntityCreateForm,
-  type IConfectionViewSettings
+  type IConfectionViewSettings,
+  useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -133,6 +134,7 @@ export function ConfectionsTabContent(): React.ReactElement {
     references: IReferenceScanResult;
   } | null>(null);
   const entityActions = useEntityActions();
+  const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
   const availableIngredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
     return Array.from(workspace.data.ingredients.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -688,10 +690,20 @@ export function ConfectionsTabContent(): React.ReactElement {
       const newBaseId = `${slugify(safeName)}-${today}` as BaseConfectionId;
       const newCompositeId = `${mutableCollectionId}.${newBaseId}` as ConfectionId;
 
+      // Build derivedFrom reference to the source confection recipe variation
+      const sourceConfectionId = state.id as ConfectionId;
+      const sourceVariationIdResult = Helpers.createConfectionRecipeVariationId({
+        collectionId: sourceConfectionId,
+        itemId: state.selectedVariationSpec
+      });
+
       const newEntity: Entities.Confections.AnyConfectionRecipeEntity = {
         ...originalEntity,
         baseId: newBaseId,
-        name: safeName as typeof originalEntity.name
+        name: safeName as typeof originalEntity.name,
+        derivedFrom: sourceVariationIdResult.isSuccess()
+          ? { sourceVariationId: sourceVariationIdResult.value, derivedDate: today }
+          : undefined
       };
 
       const colResult = workspace.data.entities.confections.collections.get(mutableCollectionId);
@@ -924,6 +936,12 @@ export function ConfectionsTabContent(): React.ReactElement {
                   onMoldClick={onMoldClick}
                   onProcedureClick={onProcedureClick}
                   onDecorationClick={onDecorationClick}
+                  onMutation={(): void => {
+                    updateCascadeEntryChanges(
+                      entry.entityId,
+                      state.wrapper.hasChanges(state.wrapper.initial)
+                    );
+                  }}
                 />
               </div>
             )

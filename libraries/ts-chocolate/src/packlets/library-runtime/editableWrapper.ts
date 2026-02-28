@@ -45,30 +45,37 @@ const MAX_HISTORY_SIZE: number = 50;
  */
 export abstract class EditableWrapper<T> implements ISnapshotProvider<T> {
   protected _current: T;
+  private _initial: T;
   private _undoStack: T[];
   private _redoStack: T[];
 
   /**
    * Creates an EditableWrapper.
    * Use static factory methods in subclasses instead of calling this directly.
+   * Subclass factories must call `_setInitialSnapshot()` after construction.
    * @param initial - The initial entity state (should already be deep-copied by caller)
    * @internal
    */
   protected constructor(initial: T) {
     this._current = initial;
+    // _initial is set by _setInitialSnapshot(), called by subclass factories after construction.
+    // TypeScript's definite assignment is satisfied by the factory pattern.
+    this._initial = undefined!;
     this._undoStack = [];
     this._redoStack = [];
   }
 
   /**
    * Restores undo/redo stacks from serialized history.
-   * Call from subclass `restoreFromHistory` static factory after constructing the instance.
+   * Returns `Result<this>` to support fluent chaining in subclass factories.
    * @param history - Serialized editing history
+   * @returns Success with this instance for chaining
    * @internal
    */
-  protected _restoreHistory(history: Session.ISerializedEditingHistoryEntity<T>): void {
+  protected _restoreHistory(history: Session.ISerializedEditingHistoryEntity<T>): Result<this> {
     this._undoStack = [...history.undoStack];
     this._redoStack = [...history.redoStack];
+    return succeed(this);
   }
 
   // ============================================================================
@@ -188,6 +195,15 @@ export abstract class EditableWrapper<T> implements ISnapshotProvider<T> {
   // ============================================================================
 
   /**
+   * Gets the initial entity state at creation time (direct reference — callers should not mutate).
+   * Useful for change detection via `hasChanges(wrapper.initial)`.
+   * @public
+   */
+  public get initial(): T {
+    return this._initial;
+  }
+
+  /**
    * Gets the current state as an immutable snapshot.
    * @public
    */
@@ -206,6 +222,18 @@ export abstract class EditableWrapper<T> implements ISnapshotProvider<T> {
   // ============================================================================
   // Protected Helpers
   // ============================================================================
+
+  /**
+   * Stores a deep copy of the current state as the initial snapshot for change detection.
+   * Returns `Result<this>` to support fluent chaining in subclass factories.
+   * @param snapshot - The initial entity state to store. If not provided, deep-copies current.
+   * @returns Success with this instance for chaining
+   * @internal
+   */
+  protected _setInitialSnapshot(snapshot?: T): Result<this> {
+    this._initial = snapshot ? this._deepCopy(snapshot) : this._deepCopy(this._current);
+    return succeed(this);
+  }
 
   /**
    * Pushes current state to undo stack and clears the redo stack.

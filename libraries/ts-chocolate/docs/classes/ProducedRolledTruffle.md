@@ -165,6 +165,23 @@ Gets the procedure ID.
 </td></tr>
 <tr><td>
 
+[initial](./ProducedConfectionBase.initial.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+T
+
+</td><td>
+
+Gets the initial entity state at creation time (direct reference — callers should not mutate).
+
+</td></tr>
+<tr><td>
+
 [snapshot](./ProducedConfectionBase.snapshot.md)
 
 </td><td>

@@ -159,6 +159,8 @@ export interface ICascadeEntry {
   readonly sourceConfectionId?: string;
   /** Source slot ID within the confection (for live weight recomputation) */
   readonly sourceSlotId?: string;
+  /** Whether this cascade entry has unsaved changes (set by the owning tab component). */
+  readonly hasChanges?: boolean;
 }
 
 // ============================================================================

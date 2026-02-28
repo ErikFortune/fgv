@@ -33,7 +33,12 @@ import { EntityRow, DetailSection, DetailRow, TagList, StatusBadge, DetailHeader
 import type { LibraryRuntime, Entities } from '@fgv/ts-chocolate';
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 import type { IngredientId, FillingRecipeVariationSpec, ProcedureId } from '@fgv/ts-chocolate';
-import { formatIngredientAmount, formatScaledIngredientAmount, copyJsonToClipboard } from '../common';
+import {
+  formatIngredientAmount,
+  formatScaledIngredientAmount,
+  copyJsonToClipboard,
+  DerivedFromIndicator
+} from '../common';
 
 // ============================================================================
 // Props
@@ -305,10 +310,18 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
         subtitle={filling.id}
         description={filling.description}
         indicators={
-          <StatusBadge
-            label={filling.entity.category}
-            colorClass={CATEGORY_COLORS[filling.entity.category] ?? 'bg-gray-100 text-gray-800'}
-          />
+          <>
+            <StatusBadge
+              label={filling.entity.category}
+              colorClass={CATEGORY_COLORS[filling.entity.category] ?? 'bg-gray-100 text-gray-800'}
+            />
+            {filling.entity.derivedFrom && (
+              <DerivedFromIndicator
+                sourceVariationId={filling.entity.derivedFrom.sourceVariationId}
+                derivedDate={filling.entity.derivedFrom.derivedDate}
+              />
+            )}
+          </>
         }
         actions={
           <>

@@ -24,7 +24,7 @@
  * @packageDocumentation
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
 import { Helpers, Model as CommonModel } from '../../common';
 import { Fillings, Session } from '../../entities';
@@ -88,7 +88,9 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
    * @public
    */
   public static create(initial: Fillings.IFillingRecipeEntity): Result<EditedFillingRecipe> {
-    return succeed(new EditedFillingRecipe(EditedFillingRecipe._copyEntity(initial)));
+    return captureResult(() => new EditedFillingRecipe(EditedFillingRecipe._copyEntity(initial))).onSuccess(
+      (e) => e._setInitialSnapshot()
+    );
   }
 
   /**
@@ -101,9 +103,9 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<Fillings.IFillingRecipeEntity>
   ): Result<EditedFillingRecipe> {
-    const instance = new EditedFillingRecipe(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return captureResult(() => new EditedFillingRecipe(history.current))
+      .onSuccess((e) => e._restoreHistory(history))
+      .onSuccess((i) => i._setInitialSnapshot(history.original));
   }
 
   // ============================================================================

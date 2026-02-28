@@ -39,7 +39,8 @@ import {
   TaskDetail,
   EntityCreateForm,
   useFilteredEntities,
-  useProcedureEditSession
+  useProcedureEditSession,
+  useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -108,6 +109,7 @@ export function FillingsTabContent(): React.ReactElement {
     references: IReferenceScanResult;
   } | null>(null);
   const entityActions = useEntityActions();
+  const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
   const mutableCollectionId = useMutableCollection(
     workspace.data.entities.fillings.collections,
@@ -410,7 +412,9 @@ export function FillingsTabContent(): React.ReactElement {
 
         const newEntity: Entities.Fillings.IFillingRecipeEntity = {
           baseId: newBaseId,
-          name: `${originalEntity.name} (derived)` as typeof originalEntity.name,
+          name: `${originalEntity.name}${
+            workspace.settings?.getResolvedSettings()?.workflow?.adaptedRecipeNameSuffix ?? ' (adapted)'
+          }` as typeof originalEntity.name,
           category: originalEntity.category,
           description: originalEntity.description,
           tags: originalEntity.tags,
@@ -1079,6 +1083,9 @@ export function FillingsTabContent(): React.ReactElement {
                 onPreview={(): void => handlePreviewFilling(entry.entityId)}
                 onCreateIngredient={handleCreateIngredientFromFilling}
                 onCreateProcedure={handleCreateProcedureFromFilling}
+                onMutation={(): void => {
+                  updateCascadeEntryChanges(entry.entityId, state.wrapper.hasChanges(state.wrapper.initial));
+                }}
               />
             )
           };

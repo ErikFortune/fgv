@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, MoldFormat, MoldId, Model as CommonModel } from '../../common';
 import { Molds, Session } from '../../entities';
@@ -78,7 +78,9 @@ export class EditedMold extends EditableWrapper<Molds.IMoldEntity> {
    * @public
    */
   public static create(initial: Molds.IMoldEntity): Result<EditedMold> {
-    return succeed(new EditedMold(EditedMold._copyEntity(initial)));
+    return captureResult(() => new EditedMold(EditedMold._copyEntity(initial))).onSuccess((e) =>
+      e._setInitialSnapshot()
+    );
   }
 
   /**
@@ -91,9 +93,9 @@ export class EditedMold extends EditableWrapper<Molds.IMoldEntity> {
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<Molds.IMoldEntity>
   ): Result<EditedMold> {
-    const instance = new EditedMold(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return captureResult(() => new EditedMold(history.current))
+      .onSuccess((e) => e._restoreHistory(history))
+      .onSuccess((i) => i._setInitialSnapshot(history.original));
   }
 
   // ============================================================================

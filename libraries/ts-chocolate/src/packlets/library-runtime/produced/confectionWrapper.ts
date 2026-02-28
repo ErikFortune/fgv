@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, succeed, fail, mapResults } from '@fgv/ts-utils';
+import { Result, succeed, fail, mapResults, captureResult } from '@fgv/ts-utils';
 
 import {
   ConfectionRecipeVariationId,
@@ -448,7 +448,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
    * @public
    */
   public static create(initial: IProducedMoldedBonBonEntity): Result<ProducedMoldedBonBon> {
-    return succeed(new ProducedMoldedBonBon(initial));
+    return captureResult(() => new ProducedMoldedBonBon(initial)).onSuccess((e) => e._setInitialSnapshot());
   }
 
   /**
@@ -459,7 +459,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
    */
   public static fromSource(source: IMoldedBonBonRecipeVariation): Result<ProducedMoldedBonBon> {
     return ProducedMoldedBonBon._convertFromSource(source).onSuccess((produced) =>
-      ProducedMoldedBonBon.create(produced)
+      ProducedMoldedBonBon.create(produced).onSuccess((p) => p._setInitialSnapshot())
     );
   }
 
@@ -472,9 +472,9 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>
   ): Result<ProducedMoldedBonBon> {
-    const instance = new ProducedMoldedBonBon(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return ProducedMoldedBonBon.create(history.current)
+      .onSuccess((b) => b._restoreHistory(history))
+      .onSuccess((i) => i._setInitialSnapshot(history.original));
   }
 
   /**
@@ -737,7 +737,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
    * @public
    */
   public static create(initial: IProducedBarTruffleEntity): Result<ProducedBarTruffle> {
-    return succeed(new ProducedBarTruffle(initial));
+    return captureResult(() => new ProducedBarTruffle(initial)).onSuccess((p) => p._setInitialSnapshot());
   }
 
   /**
@@ -747,9 +747,9 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
    * @public
    */
   public static fromSource(source: IBarTruffleRecipeVariation): Result<ProducedBarTruffle> {
-    return ProducedBarTruffle._convertFromSource(source).onSuccess((produced) =>
-      ProducedBarTruffle.create(produced)
-    );
+    return ProducedBarTruffle._convertFromSource(source).onSuccess((produced) => {
+      return ProducedBarTruffle.create(produced).onSuccess((t) => t._setInitialSnapshot());
+    });
   }
 
   /**
@@ -761,9 +761,9 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>
   ): Result<ProducedBarTruffle> {
-    const instance = new ProducedBarTruffle(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return ProducedBarTruffle.create(history.current)
+      .onSuccess((p) => p._restoreHistory(history))
+      .onSuccess((p) => p._setInitialSnapshot(history.original));
   }
 
   /**
@@ -932,7 +932,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
    * @public
    */
   public static create(initial: IProducedRolledTruffleEntity): Result<ProducedRolledTruffle> {
-    return succeed(new ProducedRolledTruffle(initial));
+    return captureResult(() => new ProducedRolledTruffle(initial)).onSuccess((p) => p._setInitialSnapshot());
   }
 
   /**
@@ -942,9 +942,9 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
    * @public
    */
   public static fromSource(source: IRolledTruffleRecipeVariation): Result<ProducedRolledTruffle> {
-    return ProducedRolledTruffle._convertFromSource(source).onSuccess((produced) =>
-      ProducedRolledTruffle.create(produced)
-    );
+    return ProducedRolledTruffle._convertFromSource(source).onSuccess((produced) => {
+      return ProducedRolledTruffle.create(produced).onSuccess((p) => p._setInitialSnapshot());
+    });
   }
 
   /**
@@ -956,9 +956,9 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>
   ): Result<ProducedRolledTruffle> {
-    const instance = new ProducedRolledTruffle(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return ProducedRolledTruffle.create(history.current)
+      .onSuccess((p) => p._restoreHistory(history))
+      .onSuccess((p) => p._setInitialSnapshot(history.original));
   }
 
   /**

@@ -36,7 +36,8 @@ import {
   DecorationPreviewPanel,
   EntityCreateForm,
   useFilteredEntities,
-  useProcedureEditSession
+  useProcedureEditSession,
+  useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -80,6 +81,7 @@ export function DecorationsTabContent(): React.ReactElement {
     references: IReferenceScanResult;
   } | null>(null);
   const entityActions = useEntityActions();
+  const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
   const mutableCollectionId = useMutableCollection(
     workspace.data.entities.decorations.collections,
@@ -895,7 +897,9 @@ export function DecorationsTabContent(): React.ReactElement {
                 onSave={handleSaveDecoration}
                 onSaveAs={handleSaveDecorationAs}
                 onCancel={(): void => handleCancelDecorationEdit(entry.entityId)}
-                onMutate={undefined}
+                onMutate={(): void => {
+                  updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
+                }}
                 onPreview={(): void => handlePreviewDecoration(entry.entityId)}
                 onCreateIngredient={handleCreateIngredientFromDecoration}
                 onCreateProcedure={handleCreateProcedureFromDecoration}

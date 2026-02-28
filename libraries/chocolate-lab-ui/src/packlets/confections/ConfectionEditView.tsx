@@ -29,6 +29,7 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
+import { TagIcon, DocumentTextIcon, HashtagIcon, LinkIcon } from '@heroicons/react/20/solid';
 
 import { EditField, EditSection, TextInput, TagsInput } from '@fgv/ts-app-shell';
 import type {
@@ -46,7 +47,14 @@ import type {
 } from '@fgv/ts-chocolate';
 import { Entities as EntitiesNS } from '@fgv/ts-chocolate';
 
-import { EditingToolbar, NotesEditor, useEditingContext, useDatalistMatch } from '../editing';
+import {
+  EditingToolbar,
+  NotesEditor,
+  useEditingContext,
+  useDatalistMatch,
+  type IChangeIndicator
+} from '../editing';
+import { DerivedFromIndicator } from '../common';
 import { useWorkspace } from '../workspace';
 
 type EditedConfectionRecipe = LibraryRuntime.EditedConfectionRecipe;
@@ -90,6 +98,8 @@ export interface IConfectionEditViewProps {
   readonly onSaveAs?: () => void;
   /** Callback when cancel is requested */
   readonly onCancel: () => void;
+  /** Optional callback invoked after every mutation (undo, redo, or field edit). */
+  readonly onMutation?: () => void;
   /** If true, the source entity is read-only */
   readonly readOnly?: boolean;
   /** Callback after any mutation for parent state tracking */
@@ -141,6 +151,7 @@ export function ConfectionEditView({
   onSave,
   onSaveAs,
   onCancel,
+  onMutation,
   readOnly = false,
   onMutate,
   availableIngredients = [],
@@ -164,11 +175,39 @@ export function ConfectionEditView({
     onSave: (): void => onSave(),
     onSaveAs: onSaveAs ? (): void => onSaveAs() : undefined,
     onCancel,
+    onMutation,
     wrapper,
     readOnly,
-    logger
+    logger,
+    checkHasChanges: (w) => w.hasChanges(w.initial)
   });
   const inputsDisabled = readOnly && !onSaveAs;
+
+  // ---- Change indicators ----
+
+  const changes = useMemo(() => wrapper.getChanges(wrapper.initial), [wrapper, ctx.version]);
+
+  const changeIndicators: ReadonlyArray<IChangeIndicator> = useMemo(
+    () => [
+      { key: 'name', label: 'Name', icon: <TagIcon />, changed: changes.nameChanged },
+      {
+        key: 'description',
+        label: 'Description',
+        icon: <DocumentTextIcon />,
+        changed: changes.descriptionChanged
+      },
+      { key: 'tags', label: 'Tags', icon: <HashtagIcon />, changed: changes.tagsChanged },
+      { key: 'urls', label: 'URLs', icon: <LinkIcon />, changed: changes.urlsChanged },
+      {
+        key: 'goldenVariation',
+        label: 'Golden Variation',
+        icon: <TagIcon />,
+        changed: changes.goldenVariationSpecChanged
+      },
+      { key: 'variations', label: 'Variations', icon: <TagIcon />, changed: changes.variationsChanged }
+    ],
+    [changes]
+  );
 
   const notifyWrapper = useCallback((): void => {
     ctx.notifyMutation();
@@ -804,7 +843,17 @@ export function ConfectionEditView({
 
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
-      <EditingToolbar context={ctx} />
+      <EditingToolbar context={ctx} changeIndicators={changeIndicators} />
+
+      {/* Derived-from indicator */}
+      {wrapper.current.derivedFrom && (
+        <div className="px-1 py-1">
+          <DerivedFromIndicator
+            sourceVariationId={wrapper.current.derivedFrom.sourceVariationId}
+            derivedDate={wrapper.current.derivedFrom.derivedDate}
+          />
+        </div>
+      )}
 
       {/* Identity Section */}
       <EditSection title="Identity">

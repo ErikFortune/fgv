@@ -20,7 +20,8 @@ import {
   MoldDetail,
   MoldEditView,
   EntityCreateForm,
-  useFilteredEntities
+  useFilteredEntities,
+  useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
 import { MOLD_DESCRIPTOR, MOLD_FILTER_SPEC, slugify, createBlankMoldEntity } from '../shared';
@@ -50,6 +51,7 @@ export function MoldsTabContent(): React.ReactElement {
     references: IReferenceScanResult;
   } | null>(null);
   const entityActions = useEntityActions();
+  const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
   const mutableCollectionId = useMutableCollection(
     workspace.data.entities.molds.collections,
@@ -391,6 +393,9 @@ export function MoldsTabContent(): React.ReactElement {
                 onSave={handleSave}
                 onSaveAs={isReadOnly ? handleSaveAs : undefined}
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
+                onMutation={(): void => {
+                  updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
+                }}
                 readOnly={isReadOnly}
               />
             )

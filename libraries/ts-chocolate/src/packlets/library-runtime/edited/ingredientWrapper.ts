@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import {
   Allergen,
@@ -98,7 +98,9 @@ export class EditedIngredient extends EditableWrapper<Ingredients.IngredientEnti
    * @public
    */
   public static create(initial: Ingredients.IngredientEntity): Result<EditedIngredient> {
-    return succeed(new EditedIngredient(EditedIngredient._copyEntity(initial)));
+    return captureResult(() => new EditedIngredient(EditedIngredient._copyEntity(initial))).onSuccess((e) =>
+      e._setInitialSnapshot()
+    );
   }
 
   /**
@@ -111,9 +113,9 @@ export class EditedIngredient extends EditableWrapper<Ingredients.IngredientEnti
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<Ingredients.IngredientEntity>
   ): Result<EditedIngredient> {
-    const instance = new EditedIngredient(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return captureResult(() => new EditedIngredient(history.current))
+      .onSuccess((e) => e._restoreHistory(history))
+      .onSuccess((i) => i._setInitialSnapshot(history.original));
   }
 
   // ============================================================================

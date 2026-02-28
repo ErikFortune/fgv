@@ -25,8 +25,9 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { EyeIcon, PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { TagIcon, DocumentTextIcon, HashtagIcon, ListBulletIcon } from '@heroicons/react/20/solid';
 
 import {
   EditField,
@@ -42,7 +43,7 @@ import { LibraryRuntime, Model as CommonModel, type Celsius, type Minutes } from
 
 type EditedTask = LibraryRuntime.EditedTask;
 
-import { EditingToolbar, useEditingContext, NotesEditor } from '../editing';
+import { EditingToolbar, useEditingContext, NotesEditor, type IChangeIndicator } from '../editing';
 import { useWorkspace } from '../workspace';
 
 // ============================================================================
@@ -62,6 +63,8 @@ export interface ITaskEditViewProps {
   readonly onSaveAs?: (wrapper: EditedTask) => void;
   /** Called when the user cancels editing. */
   readonly onCancel: () => void;
+  /** Optional callback invoked after every mutation (undo, redo, or field edit). */
+  readonly onMutation?: () => void;
   /** If true, the source entity is read-only (e.g. built-in collection). */
   readonly readOnly?: boolean;
   /** Called when the user clicks the Preview button to open a preview pane. */
@@ -100,6 +103,7 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
     onSave,
     onSaveAs,
     onCancel,
+    onMutation,
     readOnly,
     onPreview,
     onMutate,
@@ -111,8 +115,55 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
   const {
     data: { logger }
   } = useWorkspace();
-  const ctx = useEditingContext<EditedTask>({ wrapper, onSave, onSaveAs, onCancel, readOnly, logger });
+  const ctx = useEditingContext<EditedTask>({
+    wrapper,
+    onSave,
+    onSaveAs,
+    onCancel,
+    onMutation,
+    readOnly,
+    logger,
+    checkHasChanges: (w) => w.hasChanges(w.initial)
+  });
   const entity = wrapper.current;
+
+  // ---- Change indicators ----
+
+  const changes = useMemo(() => wrapper.getChanges(wrapper.initial), [wrapper, ctx.version]);
+
+  const changeIndicators: ReadonlyArray<IChangeIndicator> = useMemo(
+    () => [
+      { key: 'name', label: 'Name', icon: <TagIcon />, changed: changes.nameChanged },
+      { key: 'template', label: 'Template', icon: <DocumentTextIcon />, changed: changes.templateChanged },
+      {
+        key: 'defaultActiveTime',
+        label: 'Active Time',
+        icon: <ListBulletIcon />,
+        changed: changes.defaultActiveTimeChanged
+      },
+      {
+        key: 'defaultWaitTime',
+        label: 'Wait Time',
+        icon: <ListBulletIcon />,
+        changed: changes.defaultWaitTimeChanged
+      },
+      {
+        key: 'defaultHoldTime',
+        label: 'Hold Time',
+        icon: <ListBulletIcon />,
+        changed: changes.defaultHoldTimeChanged
+      },
+      {
+        key: 'defaultTemperature',
+        label: 'Temperature',
+        icon: <ListBulletIcon />,
+        changed: changes.defaultTemperatureChanged
+      },
+      { key: 'notes', label: 'Notes', icon: <DocumentTextIcon />, changed: changes.notesChanged },
+      { key: 'tags', label: 'Tags', icon: <HashtagIcon />, changed: changes.tagsChanged }
+    ],
+    [changes]
+  );
 
   // ---- Base ID editing state ----
   const [isEditingBaseId, setIsEditingBaseId] = useState(false);
@@ -250,6 +301,7 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
       {/* Toolbar */}
       <EditingToolbar
         context={ctx}
+        changeIndicators={changeIndicators}
         customSaveButton={customSaveButton}
         extraButtons={
           <>

@@ -75,6 +75,8 @@ export interface IEditingContextOptions<TWrapper extends IEditable> {
   readonly onCancel: () => void;
   /** Optional callback invoked after every mutation (undo, redo, or field edit). */
   readonly onMutation?: () => void;
+  /** Optional function to check if the wrapper has changes from its initial state. */
+  readonly checkHasChanges?: (wrapper: TWrapper) => boolean;
   /** If true, the source entity is read-only (e.g. built-in collection). Save is replaced by Save to. */
   readonly readOnly?: boolean;
   /** Optional logger for error reporting. Falls back to console if not provided. */
@@ -109,6 +111,8 @@ export interface IEditingContext<TWrapper extends IEditable> {
   readonly saveAs?: () => void;
   /** Request cancel (delegates to the onCancel callback). */
   readonly cancel: () => void;
+  /** Whether the wrapper has changes from its initial state. Only available if checkHasChanges was provided. */
+  readonly hasChanges: boolean;
 }
 
 // ============================================================================
@@ -131,7 +135,16 @@ export interface IEditingContext<TWrapper extends IEditable> {
 export function useEditingContext<TWrapper extends IEditable>(
   options: IEditingContextOptions<TWrapper>
 ): IEditingContext<TWrapper> {
-  const { wrapper, onSave, onSaveAs, onCancel, onMutation, readOnly: isReadOnly, logger } = options;
+  const {
+    wrapper,
+    onSave,
+    onSaveAs,
+    onCancel,
+    onMutation,
+    checkHasChanges,
+    readOnly: isReadOnly,
+    logger
+  } = options;
 
   // Stable ref for the wrapper — it never changes identity during a session.
   const wrapperRef = useRef(wrapper);
@@ -187,6 +200,7 @@ export function useEditingContext<TWrapper extends IEditable>(
     canRedo: wrapper.canRedo(),
     version,
     readOnly: isReadOnly ?? false,
+    hasChanges: checkHasChanges ? checkHasChanges(wrapper) : false,
     notifyMutation,
     undo,
     redo,

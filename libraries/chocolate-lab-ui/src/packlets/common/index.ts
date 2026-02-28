@@ -12,7 +12,9 @@ export {
   type IEntityDetailHeaderProps,
   type IEntityDetailHeaderBadge,
   type ICopyJsonOptions,
-  copyJsonToClipboard
+  copyJsonToClipboard,
+  DerivedFromIndicator,
+  type IDerivedFromIndicatorProps
 } from './DetailCommon';
 
 export { formatIngredientAmount, formatScaledIngredientAmount } from './formatHelpers';

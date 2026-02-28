@@ -122,6 +122,8 @@ export interface INavigationActions {
   startComparison: () => void;
   /** Exit the comparison view back to the selection list. */
   exitComparison: () => void;
+  /** Update the hasChanges flag on a cascade entry by entity ID. */
+  updateCascadeEntryChanges: (entityId: string, hasChanges: boolean) => void;
 }
 
 // ============================================================================
@@ -315,6 +317,14 @@ export const useNavigationStore: UseBoundStore<StoreApi<NavigationStore>> = crea
 
     exitComparison: (): void => {
       set({ showingComparison: false });
+    },
+
+    updateCascadeEntryChanges: (entityId: string, hasChanges: boolean): void => {
+      set((state) => ({
+        cascadeStack: state.cascadeStack.map((entry) =>
+          entry.entityId === entityId ? { ...entry, hasChanges } : entry
+        )
+      }));
     }
   })
 );

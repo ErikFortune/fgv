@@ -81,6 +81,23 @@ Gets the ganache characteristics.
 </td></tr>
 <tr><td>
 
+[initial](./EditableWrapper.initial.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+T
+
+</td><td>
+
+Gets the initial entity state at creation time (direct reference — callers should not mutate).
+
+</td></tr>
+<tr><td>
+
 [snapshot](./EditableWrapper.snapshot.md)
 
 </td><td>

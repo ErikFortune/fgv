@@ -20,7 +20,8 @@ import {
   TaskDetail,
   TaskEditView,
   TaskPreviewPanel,
-  useFilteredEntities
+  useFilteredEntities,
+  useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
 import { TASK_DESCRIPTOR, TASK_FILTER_SPEC, slugify, createBlankRawTaskEntity } from '../shared';
@@ -50,6 +51,7 @@ export function TasksTabContent(): React.ReactElement {
     references: IReferenceScanResult;
   } | null>(null);
   const entityActions = useEntityActions();
+  const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
   // Counter that increments on each edit mutation — forces the preview column to re-render with live data.
   const [previewVersion, setPreviewVersion] = useState(0);
@@ -455,7 +457,10 @@ export function TasksTabContent(): React.ReactElement {
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
                 readOnly={isReadOnly}
                 onPreview={(): void => handlePreview(entry.entityId)}
-                onMutate={(): void => setPreviewVersion((v) => v + 1)}
+                onMutate={(): void => {
+                  setPreviewVersion((v) => v + 1);
+                  updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
+                }}
               />
             )
           };

@@ -30,6 +30,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { EyeIcon, StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid, CheckIcon } from '@heroicons/react/24/solid';
 import { DocumentDuplicateIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { TagIcon, DocumentTextIcon, HashtagIcon } from '@heroicons/react/20/solid';
 
 import { EditField, EditSection, TextInput, TagsInput, MultiActionButton } from '@fgv/ts-app-shell';
 import type {
@@ -47,7 +48,14 @@ import type {
   UserLibrary
 } from '@fgv/ts-chocolate';
 
-import { EditingToolbar, NotesEditor, useEditingContext, useDatalistMatch } from '../editing';
+import {
+  EditingToolbar,
+  NotesEditor,
+  useEditingContext,
+  useDatalistMatch,
+  type IChangeIndicator
+} from '../editing';
+import { DerivedFromIndicator } from '../common';
 import { useWorkspace } from '../workspace';
 
 const ALL_MEASUREMENT_UNITS: ReadonlyArray<MeasurementUnit> = [
@@ -95,6 +103,8 @@ export interface IFillingEditViewProps {
   readonly onSave: (mode: FillingSaveMode) => void;
   /** Callback when cancel is requested */
   readonly onCancel: () => void;
+  /** Optional callback invoked after every mutation (undo, redo, or field edit). */
+  readonly onMutation?: () => void;
   /** If true, the source entity is read-only */
   readonly readOnly?: boolean;
   /** Callback after any mutation for parent state tracking */
@@ -263,6 +273,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     availableProcedures,
     onSave,
     onCancel,
+    onMutation,
     readOnly,
     onMutate,
     onPreview,
@@ -282,12 +293,39 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     wrapper,
     onSave: (): void => onSave('update'),
     onCancel,
+    onMutation,
     readOnly,
-    logger
+    logger,
+    checkHasChanges: (w) => w.hasChanges(w.initial)
   });
 
   // Separate version counter for session mutations (triggers re-render)
   const [sessionVersion, setSessionVersion] = useState(0);
+
+  // ---- Change indicators ----
+
+  const changes = useMemo(() => wrapper.getChanges(wrapper.initial), [wrapper, ctx.version]);
+
+  const changeIndicators: ReadonlyArray<IChangeIndicator> = useMemo(
+    () => [
+      { key: 'name', label: 'Name', icon: <TagIcon />, changed: changes.nameChanged },
+      {
+        key: 'description',
+        label: 'Description',
+        icon: <DocumentTextIcon />,
+        changed: changes.descriptionChanged
+      },
+      { key: 'tags', label: 'Tags', icon: <HashtagIcon />, changed: changes.tagsChanged },
+      {
+        key: 'goldenVariation',
+        label: 'Golden Variation',
+        icon: <TagIcon />,
+        changed: changes.goldenVariationSpecChanged
+      },
+      { key: 'variations', label: 'Variations', icon: <TagIcon />, changed: changes.variationsChanged }
+    ],
+    [changes]
+  );
 
   // Draft state for datalist inputs
   const [ingredientInputDraft, setIngredientInputDraft] = useState<Record<number, string>>({});
@@ -853,6 +891,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     <div className="flex flex-col p-4 overflow-y-auto h-full">
       <EditingToolbar
         context={ctx}
+        changeIndicators={changeIndicators}
         customSaveButton={customSaveButton}
         extraButtons={
           onPreview ? (
@@ -868,6 +907,16 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
           ) : undefined
         }
       />
+
+      {/* Derived-from indicator */}
+      {wrapper.current.derivedFrom && (
+        <div className="px-1 py-1">
+          <DerivedFromIndicator
+            sourceVariationId={wrapper.current.derivedFrom.sourceVariationId}
+            derivedDate={wrapper.current.derivedFrom.derivedDate}
+          />
+        </div>
+      )}
 
       {/* Identity Section */}
       <EditSection title="Identity">

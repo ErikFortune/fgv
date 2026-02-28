@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Model as CommonModel, ProcedureType } from '../../common';
 import { Procedures, Session, Tasks } from '../../entities';
@@ -57,15 +57,17 @@ export class EditedProcedure extends EditableWrapper<IProcedureEntity> {
   }
 
   public static create(initial: IProcedureEntity): Result<EditedProcedure> {
-    return succeed(new EditedProcedure(EditedProcedure._copyEntity(initial)));
+    return captureResult(() => new EditedProcedure(EditedProcedure._copyEntity(initial))).onSuccess((e) =>
+      e._setInitialSnapshot()
+    );
   }
 
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IProcedureEntity>
   ): Result<EditedProcedure> {
-    const instance = new EditedProcedure(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return captureResult(() => new EditedProcedure(history.current))
+      .onSuccess((e) => e._restoreHistory(history))
+      .onSuccess((i) => i._setInitialSnapshot(history.original));
   }
 
   public setName(name: string): Result<void> {

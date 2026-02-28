@@ -404,12 +404,9 @@ function AppShell(props: IAppShellProps): React.ReactElement {
     [activeToasts, toastLevel]
   );
 
-  // NOTE: Guard fires whenever an edit/create pane is open, regardless of whether the user
-  // has actually made changes. A finer-grained check (wrapper.hasChanges()) would require
-  // threading editingRef up from each tab — a future refinement if the false-positive rate
-  // becomes annoying.
-  const hasActiveEdit = cascadeStack.some((e) => e.mode === 'edit' || e.mode === 'create');
-  const hasUnsavedChanges = hasActiveEdit || collectionActions.hasDirtyTrees;
+  const hasUnsavedChanges =
+    cascadeStack.some((e) => (e.mode === 'edit' || e.mode === 'create') && e.hasChanges === true) ||
+    collectionActions.hasDirtyTrees;
 
   // Warn on browser close/refresh when there are unsaved changes
   useEffect(() => {

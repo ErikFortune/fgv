@@ -18,6 +18,12 @@ export {
 
 export { EditingToolbar, type IEditingToolbarProps } from './EditingToolbar';
 
+export {
+  ChangeSummaryIcons,
+  type IChangeIndicator,
+  type IChangeSummaryIconsProps
+} from './ChangeSummaryIcons';
+
 export { EntityCreateForm, type IEntityCreateFormProps } from './EntityCreateForm';
 
 export { NotesEditor, type INotesEditorProps } from './NotesEditor';

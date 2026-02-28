@@ -25,7 +25,15 @@
  * @packageDocumentation
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
+import {
+  TagIcon,
+  DocumentTextIcon,
+  HashtagIcon,
+  FolderIcon,
+  BeakerIcon,
+  BuildingOfficeIcon
+} from '@heroicons/react/20/solid';
 
 import {
   EditField,
@@ -60,7 +68,7 @@ type EditedIngredient = LibraryRuntime.EditedIngredient;
 type IGanacheCharacteristics = Entities.Ingredients.IGanacheCharacteristics;
 type IngredientEntity = Entities.Ingredients.IngredientEntity;
 
-import { EditingToolbar, useEditingContext } from '../editing';
+import { EditingToolbar, useEditingContext, type IChangeIndicator } from '../editing';
 import { useWorkspace } from '../workspace';
 
 // ============================================================================
@@ -80,6 +88,8 @@ export interface IIngredientEditViewProps {
   readonly onSaveAs?: (wrapper: EditedIngredient) => void;
   /** Called when the user cancels editing. */
   readonly onCancel: () => void;
+  /** Optional callback invoked after every mutation (undo, redo, or field edit). */
+  readonly onMutation?: () => void;
   /** If true, the source entity is read-only (e.g. built-in collection). */
   readonly readOnly?: boolean;
 }
@@ -538,7 +548,7 @@ function CategorySpecificFields({
  * @public
  */
 export function IngredientEditView(props: IIngredientEditViewProps): React.ReactElement {
-  const { wrapper, onSave, onSaveAs, onCancel, readOnly } = props;
+  const { wrapper, onSave, onSaveAs, onCancel, onMutation, readOnly } = props;
   const {
     data: { logger }
   } = useWorkspace();
@@ -548,12 +558,46 @@ export function IngredientEditView(props: IIngredientEditViewProps): React.React
     onSave,
     onSaveAs,
     onCancel,
+    onMutation,
     readOnly,
-    logger
+    logger,
+    checkHasChanges: (w) => w.hasChanges(w.initial)
   });
 
   const w = ctx.wrapper;
   const current = w.current;
+
+  // ---- Change indicators ----
+
+  const changes = useMemo(() => w.getChanges(w.initial), [w, ctx.version]);
+
+  const changeIndicators: ReadonlyArray<IChangeIndicator> = useMemo(
+    () => [
+      { key: 'name', label: 'Name', icon: <TagIcon />, changed: changes.nameChanged },
+      { key: 'category', label: 'Category', icon: <FolderIcon />, changed: changes.categoryChanged },
+      {
+        key: 'ganache',
+        label: 'Ganache',
+        icon: <BeakerIcon />,
+        changed: changes.ganacheCharacteristicsChanged
+      },
+      {
+        key: 'description',
+        label: 'Description',
+        icon: <DocumentTextIcon />,
+        changed: changes.descriptionChanged
+      },
+      {
+        key: 'manufacturer',
+        label: 'Manufacturer',
+        icon: <BuildingOfficeIcon />,
+        changed: changes.manufacturerChanged
+      },
+      { key: 'notes', label: 'Notes', icon: <DocumentTextIcon />, changed: changes.notesChanged },
+      { key: 'tags', label: 'Tags', icon: <HashtagIcon />, changed: changes.tagsChanged }
+    ],
+    [changes]
+  );
 
   // ---- Field change handlers ----
 
@@ -657,7 +701,7 @@ export function IngredientEditView(props: IIngredientEditViewProps): React.React
 
   return (
     <div className="flex flex-col h-full">
-      <EditingToolbar context={ctx} />
+      <EditingToolbar context={ctx} changeIndicators={changeIndicators} />
 
       <div className="flex flex-col p-4 overflow-y-auto flex-1">
         {/* Header / Identity */}

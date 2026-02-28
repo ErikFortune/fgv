@@ -44,6 +44,7 @@ import { MultiActionButton } from '@fgv/ts-app-shell';
 import type { IMultiActionButtonAction } from '@fgv/ts-app-shell';
 
 import type { IEditable, IEditingContext } from './useEditingContext';
+import { ChangeSummaryIcons, type IChangeIndicator } from './ChangeSummaryIcons';
 
 // ============================================================================
 // Props
@@ -62,6 +63,8 @@ export interface IEditingToolbarProps<TWrapper extends IEditable> {
   readonly extraButtons?: React.ReactNode;
   /** Optional custom save button to replace the default save/saveAs buttons. */
   readonly customSaveButton?: React.ReactNode;
+  /** Optional change indicators to display in the toolbar. */
+  readonly changeIndicators?: ReadonlyArray<IChangeIndicator>;
 }
 
 // ============================================================================
@@ -121,7 +124,7 @@ function ToolbarButton({
 export function EditingToolbar<TWrapper extends IEditable>(
   props: IEditingToolbarProps<TWrapper>
 ): React.ReactElement {
-  const { context, className, extraButtons, customSaveButton } = props;
+  const { context, className, extraButtons, customSaveButton, changeIndicators } = props;
 
   return (
     <div className={`flex flex-col border-b border-gray-200 bg-gray-50 ${className ?? ''}`}>
@@ -152,6 +155,9 @@ export function EditingToolbar<TWrapper extends IEditable>(
             <ArrowUturnRightIcon className="h-3.5 w-3.5" />
           </ToolbarButton>
         </div>
+
+        {/* Change summary indicators */}
+        {changeIndicators && <ChangeSummaryIcons indicators={changeIndicators} />}
 
         {/* Spacer */}
         <div className="flex-1" />

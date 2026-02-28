@@ -32,7 +32,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { EyeIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowUturnLeftIcon, EyeIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ClipboardDocumentIcon } from '@heroicons/react/20/solid';
 import { DetailHeader, DetailSection, StatusBadge } from '@fgv/ts-app-shell';
 import type { Model } from '@fgv/ts-chocolate';
@@ -246,5 +246,41 @@ export function EntityDetailHeader({
       indicators={indicators}
       actions={actions}
     />
+  );
+}
+
+// ============================================================================
+// DerivedFromIndicator
+// ============================================================================
+
+/**
+ * Props for the DerivedFromIndicator component.
+ * @public
+ */
+export interface IDerivedFromIndicatorProps {
+  /** The source variation ID (e.g. "collection.recipe-id\@2024-01-15") */
+  readonly sourceVariationId: string;
+  /** ISO 8601 date of derivation */
+  readonly derivedDate: string;
+}
+
+/**
+ * Renders a compact "Adapted from [source]" indicator.
+ * Used in detail and edit view headers for recipes that were derived from another.
+ * @public
+ */
+export function DerivedFromIndicator({
+  sourceVariationId,
+  derivedDate
+}: IDerivedFromIndicatorProps): React.ReactElement {
+  const formattedDate = derivedDate.slice(0, 10);
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-xs text-gray-500 italic"
+      title={`Derived on ${formattedDate}`}
+    >
+      <ArrowUturnLeftIcon className="h-3 w-3 text-gray-400" />
+      Adapted from {sourceVariationId}
+    </span>
   );
 }

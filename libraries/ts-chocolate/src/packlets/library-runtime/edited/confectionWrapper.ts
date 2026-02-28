@@ -24,7 +24,7 @@
  * @packageDocumentation
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
 import { Helpers, Model as CommonModel } from '../../common';
 import { Confections, Decorations, Fillings, Session } from '../../entities';
@@ -93,7 +93,9 @@ export class EditedConfectionRecipe extends EditableWrapper<Confections.AnyConfe
    * @public
    */
   public static create(initial: Confections.AnyConfectionRecipeEntity): Result<EditedConfectionRecipe> {
-    return succeed(new EditedConfectionRecipe(EditedConfectionRecipe._copyEntity(initial)));
+    return captureResult(
+      () => new EditedConfectionRecipe(EditedConfectionRecipe._copyEntity(initial))
+    ).onSuccess((e) => e._setInitialSnapshot());
   }
 
   /**
@@ -106,9 +108,9 @@ export class EditedConfectionRecipe extends EditableWrapper<Confections.AnyConfe
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<Confections.AnyConfectionRecipeEntity>
   ): Result<EditedConfectionRecipe> {
-    const instance = new EditedConfectionRecipe(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return captureResult(() => new EditedConfectionRecipe(history.current))
+      .onSuccess((e) => e._restoreHistory(history))
+      .onSuccess((i) => i._setInitialSnapshot(history.original));
   }
 
   // ============================================================================

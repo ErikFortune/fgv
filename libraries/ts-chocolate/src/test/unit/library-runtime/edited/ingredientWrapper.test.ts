@@ -182,6 +182,17 @@ describe('EditedIngredient', () => {
       expect(snap).not.toBe(wrapper.current);
     });
 
+    test('initial getter returns initial snapshot', () => {
+      const wrapper = EditedIngredient.create(baseIngredient).orThrow();
+      const initial = wrapper.initial;
+
+      expect(initial).toEqual(baseIngredient);
+
+      wrapper.setName('Modified Name').orThrow();
+      expect(initial.name).toBe('Dark Chocolate 70%');
+      expect(wrapper.name).toBe('Modified Name');
+    });
+
     test('restoreSnapshot() restores state, pushes undo, clears redo', () => {
       const wrapper = EditedIngredient.create(baseIngredient).orThrow();
 

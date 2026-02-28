@@ -28,6 +28,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ClipboardDocumentIcon, EyeIcon, StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
+import {
+  TagIcon,
+  DocumentTextIcon,
+  HashtagIcon,
+  BeakerIcon,
+  ListBulletIcon
+} from '@heroicons/react/20/solid';
 
 import { EditField, EditSection, TextInput, TagsInput } from '@fgv/ts-app-shell';
 import type {
@@ -40,7 +47,13 @@ import type {
   RatingScore
 } from '@fgv/ts-chocolate';
 
-import { EditingToolbar, NotesEditor, useEditingContext, useDatalistMatch } from '../editing';
+import {
+  EditingToolbar,
+  NotesEditor,
+  useEditingContext,
+  useDatalistMatch,
+  type IChangeIndicator
+} from '../editing';
 import { useWorkspace } from '../workspace';
 
 type EditedDecoration = LibraryRuntime.EditedDecoration;
@@ -52,6 +65,8 @@ export interface IDecorationEditViewProps {
   readonly onSave: (wrapper: EditedDecoration) => void;
   readonly onSaveAs?: (wrapper: EditedDecoration) => void;
   readonly onCancel: () => void;
+  /** Optional callback invoked after every mutation (undo, redo, or field edit). */
+  readonly onMutation?: () => void;
   readonly readOnly?: boolean;
   readonly onPreview?: () => void;
   readonly onMutate?: () => void;
@@ -124,6 +139,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
     onSave,
     onSaveAs,
     onCancel,
+    onMutation,
     readOnly,
     onPreview,
     onMutate,
@@ -135,8 +151,43 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
   const {
     data: { logger }
   } = useWorkspace();
-  const ctx = useEditingContext<EditedDecoration>({ wrapper, onSave, onSaveAs, onCancel, readOnly, logger });
+  const ctx = useEditingContext<EditedDecoration>({
+    wrapper,
+    onSave,
+    onSaveAs,
+    onCancel,
+    onMutation,
+    readOnly,
+    logger,
+    checkHasChanges: (w) => w.hasChanges(w.initial)
+  });
   const entity = wrapper.current;
+
+  // ---- Change indicators ----
+
+  const changes = useMemo(() => wrapper.getChanges(wrapper.initial), [wrapper, ctx.version]);
+
+  const changeIndicators: ReadonlyArray<IChangeIndicator> = useMemo(
+    () => [
+      { key: 'name', label: 'Name', icon: <TagIcon />, changed: changes.nameChanged },
+      {
+        key: 'description',
+        label: 'Description',
+        icon: <DocumentTextIcon />,
+        changed: changes.descriptionChanged
+      },
+      { key: 'ingredients', label: 'Ingredients', icon: <BeakerIcon />, changed: changes.ingredientsChanged },
+      {
+        key: 'procedures',
+        label: 'Procedures',
+        icon: <ListBulletIcon />,
+        changed: changes.proceduresChanged
+      },
+      { key: 'notes', label: 'Notes', icon: <DocumentTextIcon />, changed: changes.notesChanged },
+      { key: 'tags', label: 'Tags', icon: <HashtagIcon />, changed: changes.tagsChanged }
+    ],
+    [changes]
+  );
 
   // Parent-level draft state for datalist inputs (follows ProcedureEditView pattern)
   const [ingredientInputDraft, setIngredientInputDraft] = useState<Record<number, string>>({});
@@ -390,6 +441,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
     <div className="flex flex-col p-4 overflow-y-auto h-full">
       <EditingToolbar
         context={ctx}
+        changeIndicators={changeIndicators}
         extraButtons={
           onPreview ? (
             <button

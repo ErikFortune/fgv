@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Celsius, Minutes, Model as CommonModel } from '../../common';
 import { Tasks, Session } from '../../entities';
@@ -80,7 +80,9 @@ export class EditedTask extends EditableWrapper<IRawTaskEntity> {
    * @public
    */
   public static create(initial: IRawTaskEntity): Result<EditedTask> {
-    return succeed(new EditedTask(EditedTask._copyEntity(initial)));
+    return captureResult(() => new EditedTask(EditedTask._copyEntity(initial))).onSuccess((e) =>
+      e._setInitialSnapshot()
+    );
   }
 
   /**
@@ -93,9 +95,9 @@ export class EditedTask extends EditableWrapper<IRawTaskEntity> {
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IRawTaskEntity>
   ): Result<EditedTask> {
-    const instance = new EditedTask(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return captureResult(() => new EditedTask(history.current))
+      .onSuccess((e) => e._restoreHistory(history))
+      .onSuccess((i) => i._setInitialSnapshot(history.original));
   }
 
   // ============================================================================

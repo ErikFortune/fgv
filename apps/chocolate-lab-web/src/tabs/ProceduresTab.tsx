@@ -21,7 +21,8 @@ import {
   ProcedureEditView,
   ProcedurePreviewPanel,
   useFilteredEntities,
-  useProcedureEditSession
+  useProcedureEditSession,
+  useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -57,6 +58,7 @@ export function ProceduresTabContent(): React.ReactElement {
     references: IReferenceScanResult;
   } | null>(null);
   const entityActions = useEntityActions();
+  const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
   const [newProcedureName, setNewProcedureName] = useState('');
 
@@ -483,7 +485,10 @@ export function ProceduresTabContent(): React.ReactElement {
                 onCancel={(): void => handleCancelProcedureEdit(entry.entityId)}
                 readOnly={isReadOnly}
                 onPreview={(): void => handlePreviewProcedure(entry.entityId)}
-                onMutate={(): void => setPreviewVersion((v) => v + 1)}
+                onMutate={(): void => {
+                  setPreviewVersion((v) => v + 1);
+                  updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
+                }}
                 onEditStepTask={procedureSession.onEditStepTask}
                 onEditStepParams={procedureSession.onEditStepParams}
               />

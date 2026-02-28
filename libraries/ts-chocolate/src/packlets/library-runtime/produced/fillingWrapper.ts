@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, succeed, fail, mapResults } from '@fgv/ts-utils';
+import { Result, succeed, fail, mapResults, captureResult } from '@fgv/ts-utils';
 
 import {
   FillingRecipeVariationId,
@@ -78,7 +78,7 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
    * @public
    */
   public static create(initial: IProducedFillingEntity): Result<ProducedFilling> {
-    return succeed(new ProducedFilling(initial));
+    return captureResult(() => new ProducedFilling(initial)).onSuccess((p) => p._setInitialSnapshot());
   }
 
   /**
@@ -92,9 +92,9 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
     source: IFillingRecipeVariation,
     scaleFactor: number = 1.0
   ): Result<ProducedFilling> {
-    return ProducedFilling._convertFromSource(source, scaleFactor).onSuccess((produced) =>
-      ProducedFilling.create(produced)
-    );
+    return ProducedFilling._convertFromSource(source, scaleFactor).onSuccess((produced) => {
+      return ProducedFilling.create(produced).onSuccess((f) => f._setInitialSnapshot());
+    });
   }
 
   /**
@@ -107,9 +107,9 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>
   ): Result<ProducedFilling> {
-    const instance = new ProducedFilling(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return ProducedFilling.create(history.current)
+      .onSuccess((p) => p._restoreHistory(history))
+      .onSuccess((p) => p._setInitialSnapshot(history.original));
   }
 
   /**

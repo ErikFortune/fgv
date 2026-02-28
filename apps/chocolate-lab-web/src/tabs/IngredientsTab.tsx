@@ -20,7 +20,8 @@ import {
   IngredientDetail,
   IngredientEditView,
   EntityCreateForm,
-  useFilteredEntities
+  useFilteredEntities,
+  useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -47,6 +48,7 @@ export function IngredientsTabContent(): React.ReactElement {
     startComparison,
     exitComparison
   } = useTabNavigation();
+  const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
   const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(undefined);
   const [ingredientToDelete, setIngredientToDelete] = useState<{
@@ -124,7 +126,12 @@ export function IngredientsTabContent(): React.ReactElement {
         workspace.data.logger.info(`Created ingredient '${entity.name}' from AI-generated data`);
       }
 
-      const entry: ICascadeEntry = { entityType: 'ingredient', entityId: compositeId, mode: 'edit' };
+      const entry: ICascadeEntry = {
+        entityType: 'ingredient',
+        entityId: compositeId,
+        mode: 'edit',
+        hasChanges: true
+      };
       squashCascade([entry]);
     },
     [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
@@ -393,6 +400,9 @@ export function IngredientsTabContent(): React.ReactElement {
                 onSave={handleSave}
                 onSaveAs={isReadOnly ? handleSaveAs : undefined}
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
+                onMutation={(): void => {
+                  updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
+                }}
                 readOnly={isReadOnly}
               />
             )

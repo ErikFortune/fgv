@@ -1747,12 +1747,15 @@ abstract class EditableWrapper<T> implements ISnapshotProvider<T> {
     // @internal
     protected abstract _deepCopy(entity: T): T;
     getSerializedHistory(original: T): Session.ISerializedEditingHistoryEntity<T>;
+    get initial(): T;
     // @internal
     protected _pushUndo(): void;
     redo(): Result<boolean>;
     // @internal
-    protected _restoreHistory(history: Session.ISerializedEditingHistoryEntity<T>): void;
+    protected _restoreHistory(history: Session.ISerializedEditingHistoryEntity<T>): Result<this>;
     restoreSnapshot(snapshot: T): Result<void>;
+    // @internal
+    protected _setInitialSnapshot(snapshot?: T): Result<this>;
     get snapshot(): T;
     undo(): Result<boolean>;
 }

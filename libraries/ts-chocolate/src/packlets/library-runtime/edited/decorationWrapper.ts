@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
 import { Helpers, Model as CommonModel, ProcedureId, RatingScore } from '../../common';
 import { Decorations, Fillings, Session } from '../../entities';
@@ -77,7 +77,9 @@ export class EditedDecoration extends EditableWrapper<Decorations.IDecorationEnt
    * @public
    */
   public static create(initial: Decorations.IDecorationEntity): Result<EditedDecoration> {
-    return succeed(new EditedDecoration(EditedDecoration._copyEntity(initial)));
+    return captureResult(() => new EditedDecoration(EditedDecoration._copyEntity(initial))).onSuccess((e) =>
+      e._setInitialSnapshot()
+    );
   }
 
   /**
@@ -90,9 +92,9 @@ export class EditedDecoration extends EditableWrapper<Decorations.IDecorationEnt
   public static restoreFromHistory(
     history: Session.ISerializedEditingHistoryEntity<Decorations.IDecorationEntity>
   ): Result<EditedDecoration> {
-    const instance = new EditedDecoration(history.current);
-    instance._restoreHistory(history);
-    return succeed(instance);
+    return captureResult(() => new EditedDecoration(history.current))
+      .onSuccess((e) => e._restoreHistory(history))
+      .onSuccess((i) => i._setInitialSnapshot(history.original));
   }
 
   // ============================================================================
