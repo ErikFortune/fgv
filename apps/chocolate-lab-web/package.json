@@ -8,7 +8,11 @@
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
     "clean": "rimraf lib dist",
-    "test": "echo 'No tests configured for chocolate-lab-web - this is a frontend app' && exit 0"
+    "test": "echo 'Use rushx test:e2e for end-to-end tests' && exit 0",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "playwright:install": "playwright install chromium"
   },
   "keywords": [
     "chocolate",
@@ -64,7 +68,14 @@
     "html-webpack-plugin": "~5.6.5",
     "jest": "^29.7.0",
     "rimraf": "^6.1.2",
-    "@types/js-yaml": "~4.0.9"
+    "@types/js-yaml": "~4.0.9",
+    "@testing-library/react": "^16",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.4.2",
+    "ts-jest": "^29.4.6",
+    "@types/jest": "^29.5.14",
+    "identity-obj-proxy": "3",
+    "@playwright/test": "~1.58.2"
   },
   "repository": {
     "type": "git",

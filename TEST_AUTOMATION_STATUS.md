@@ -63,52 +63,100 @@ Configured ts-app-shell to use `@fgv/heft-dual-rig` (matching ts-utils, ts-choco
 
 **Result**: All tests passing ✅
 
+## Test Strategy
+
+### Two-Tier Approach
+
+**1. Component Tests (Jest + React Testing Library)**
+- **Where**: `libraries/chocolate-lab-ui`
+- **What**: Individual UI components in isolation
+- **When**: Run on every change, fast feedback
+- **Coverage**: Aim for 100% at final check-in
+
+**2. Integration Tests (Playwright)**
+- **Where**: `apps/chocolate-lab-web`
+- **What**: Real browser, full user journeys
+- **When**: Run manually before commits (not in CI yet)
+- **Coverage**: Add opportunistically when fixing bugs
+
+### Why Not Jest for the App?
+
+Jest with jsdom requires heavy mocking (crypto APIs, file system, browser APIs) and tests mocks rather than real behavior. Playwright tests actual user experience in real browsers with no mocking needed.
+
 ## Next Steps
 
 ### Immediate: Expand Test Coverage
 
-1. **Add more UI component tests**:
+1. **chocolate-lab-ui component tests**:
    - Settings components (SettingsCascadeView, sections)
    - Additional mold tests (MoldEditView)
    - Data library workflow tests (ingredients, fillings, decorations)
    - Sidebar and navigation tests
 
-2. **Set up chocolate-lab-web integration tests**:
-   - Create `apps/chocolate-lab-web/src/test/` directory
-   - Add smoke test for App component
-   - Add integration tests for settings modal, routing, basic workflows
+2. **chocolate-lab-web integration tests** (add opportunistically):
+   - Settings modal flow
+   - Mold creation/editing journey
+   - Data library navigation
+   - File import/export workflows
 
-3. **Improve test coverage**:
-   - Current: 0% (only test helpers and one component tested)
-   - Target: Focus on functional breadth during active development
-   - Final: Restore 100% coverage at check-in
-
-4. **CI Integration**:
-   - Configure CI to run tests on pull requests
-   - Block merges to release branch on test failures
-   - Add coverage reporting to CI pipeline
+3. **CI Integration** (future):
+   - Add Playwright to CI once test suite is stable
+   - Configure to run on pull requests
+   - Block merges to release branch on failures
 
 ## Files Created/Modified
 
-### Created
+### chocolate-lab-ui (Component Tests)
+**Created:**
 - `libraries/chocolate-lab-ui/src/test/helpers/testRender.tsx` - Test render utility with workspace providers
 - `libraries/chocolate-lab-ui/src/test/helpers/index.ts` - Test helper exports
 - `libraries/chocolate-lab-ui/src/test/unit/molds/MoldDetail.test.tsx` - First UI component tests (3 tests)
-- `TEST_AUTOMATION_STATUS.md` - This documentation
 
-### Modified
+### chocolate-lab-web (Integration Tests)
+**Created:**
+- `apps/chocolate-lab-web/playwright.config.ts` - Playwright configuration
+- `apps/chocolate-lab-web/e2e/app.spec.ts` - Basic smoke tests (2 tests)
+- `apps/chocolate-lab-web/.gitignore` - Added Playwright artifacts
+
+**Modified:**
+- `apps/chocolate-lab-web/package.json` - Added Playwright, updated test scripts
+
+### ts-app-shell (Build Fix)
+**Modified:**
 - `libraries/ts-app-shell/config/rig.json` - Changed to use `@fgv/heft-dual-rig`
 - `libraries/ts-app-shell/tsconfig.json` - Updated to extend heft-node-rig base config
 - `libraries/ts-app-shell/package.json` - Removed heft-web-rig, added heft-node-rig@2.11.12
 
+### Documentation
+**Created:**
+- `TEST_AUTOMATION_STATUS.md` - This documentation
+
 ## How to Run Tests
 
-### chocolate-lab-ui
+### chocolate-lab-ui (Component Tests - Jest)
 ```bash
 cd libraries/chocolate-lab-ui
 rushx test              # Run all tests
 rushx coverage          # Run with coverage report
 ```
+
+### chocolate-lab-web (Integration Tests - Playwright)
+
+**First time setup:**
+```bash
+cd apps/chocolate-lab-web
+rushx playwright:install
+```
+
+**Run tests:**
+```bash
+cd apps/chocolate-lab-web
+rushx test:e2e          # Headless mode
+rushx test:e2e:ui       # Interactive UI mode (recommended for development)
+rushx test:e2e:headed   # See the browser
+```
+
+**Note:** Playwright tests are NOT in CI yet - run manually before commits.
 
 ### Verify ts-app-shell CommonJS Build
 ```bash
