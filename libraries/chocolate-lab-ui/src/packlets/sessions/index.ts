@@ -27,4 +27,9 @@
 
 export { useSessionActions, type ISessionActions } from './useSessionActions';
 export { SessionDetailView, type ISessionDetailViewProps } from './SessionDetailView';
-export { StartSessionDialog, type IStartSessionDialogProps } from './StartSessionDialog';
+export {
+  CreateSessionPanel,
+  type ICreateSessionPanelProps,
+  type ISessionRecipeSelection,
+  type SessionRecipeTypeFilter
+} from './CreateSessionPanel';

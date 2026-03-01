@@ -40,9 +40,7 @@ import {
   EntityCreateForm,
   useFilteredEntities,
   useProcedureEditSession,
-  useNavigationStore,
-  useSessionActions,
-  StartSessionDialog
+  useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -125,49 +123,27 @@ export function FillingsTabContent(): React.ReactElement {
   ]);
 
   // --------------------------------------------------------------------------
-  // Start Session Dialog
+  // Start Session — navigate to sessions tab with pre-filled cascade
   // --------------------------------------------------------------------------
-
-  const sessionActions = useSessionActions();
-
-  const [sessionDialogTarget, setSessionDialogTarget] = useState<{
-    fillingId: FillingId;
-    variationSpec: FillingRecipeVariationSpec;
-    name: string;
-  } | null>(null);
 
   const handleRequestStartSession = useCallback(
     (fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): void => {
       const result = workspace.data.fillings.get(fillingId);
-      const name = result.isSuccess() ? result.value.name : fillingId;
-      setSessionDialogTarget({ fillingId, variationSpec, name });
+      const entityName = result.isSuccess() ? result.value.name : fillingId;
+      const store = useNavigationStore.getState();
+      store.setMode('production');
+      store.setTab('sessions');
+      store.squashCascade([
+        {
+          entityType: 'session',
+          entityId: '__new__',
+          mode: 'create',
+          createSessionInfo: { fillingId, variationSpec, entityName }
+        }
+      ]);
     },
     [workspace]
   );
-
-  const handleConfirmStartSession = useCallback(
-    (label: string, slug: string): void => {
-      if (!sessionDialogTarget || !sessionActions.defaultCollectionId) return;
-      const variationId = Helpers.createFillingRecipeVariationId(
-        sessionDialogTarget.fillingId,
-        sessionDialogTarget.variationSpec
-      );
-      const result = sessionActions.createFillingSession(variationId, {
-        collectionId: sessionActions.defaultCollectionId,
-        label,
-        slug
-      });
-      if (result.isFailure()) {
-        workspace.data.logger.error(`Failed to start session: ${result.message}`);
-      }
-      setSessionDialogTarget(null);
-    },
-    [sessionDialogTarget, sessionActions, workspace]
-  );
-
-  const handleCancelStartSession = useCallback((): void => {
-    setSessionDialogTarget(null);
-  }, []);
 
   const { entities: fillings, selectedId } = useEntityList<LibraryRuntime.FillingRecipe, FillingId>({
     getAll: () => workspace.data.fillings.values(),
@@ -1446,12 +1422,6 @@ export function FillingsTabContent(): React.ReactElement {
 
   return (
     <>
-      <StartSessionDialog
-        isOpen={sessionDialogTarget !== null}
-        entityName={sessionDialogTarget?.name ?? ''}
-        onConfirm={handleConfirmStartSession}
-        onCancel={handleCancelStartSession}
-      />
       <ConfirmDialog
         isOpen={fillingToDelete !== null}
         title="Delete Filling"

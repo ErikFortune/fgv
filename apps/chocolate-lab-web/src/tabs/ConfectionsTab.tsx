@@ -49,9 +49,7 @@ import {
   useFilteredEntities,
   EntityCreateForm,
   type IConfectionViewSettings,
-  useNavigationStore,
-  useSessionActions,
-  StartSessionDialog
+  useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -137,7 +135,6 @@ export function ConfectionsTabContent(): React.ReactElement {
     references: IReferenceScanResult;
   } | null>(null);
   const entityActions = useEntityActions();
-  const sessionActions = useSessionActions();
   const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
   const availableIngredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
@@ -210,39 +207,25 @@ export function ConfectionsTabContent(): React.ReactElement {
   // Start Session Dialog
   // --------------------------------------------------------------------------
 
-  const [sessionDialogTarget, setSessionDialogTarget] = useState<{
-    id: ConfectionId;
-    name: string;
-  } | null>(null);
-
   const handleRequestStartSession = useCallback(
     (confectionId: ConfectionId): void => {
       const result = workspace.data.confections.get(confectionId);
-      const name = result.isSuccess() ? result.value.name : confectionId;
-      setSessionDialogTarget({ id: confectionId, name });
+      const entityName = result.isSuccess() ? result.value.name : confectionId;
+      // Navigate to sessions tab and open create panel pre-filled with this confection
+      const store = useNavigationStore.getState();
+      store.setMode('production');
+      store.setTab('sessions');
+      store.squashCascade([
+        {
+          entityType: 'session',
+          entityId: '__new__',
+          mode: 'create',
+          createSessionInfo: { confectionId, entityName }
+        }
+      ]);
     },
     [workspace]
   );
-
-  const handleConfirmStartSession = useCallback(
-    (label: string, slug: string): void => {
-      if (!sessionDialogTarget || !sessionActions.defaultCollectionId) return;
-      const result = sessionActions.createConfectionSession(sessionDialogTarget.id, {
-        collectionId: sessionActions.defaultCollectionId,
-        label,
-        slug
-      });
-      if (result.isFailure()) {
-        workspace.data.logger.error(`Failed to start session: ${result.message}`);
-      }
-      setSessionDialogTarget(null);
-    },
-    [sessionDialogTarget, sessionActions, workspace]
-  );
-
-  const handleCancelStartSession = useCallback((): void => {
-    setSessionDialogTarget(null);
-  }, []);
 
   // Handle creating a confection from a pasted entity (add to mutable collection, open in edit mode)
   const handleCreateConfection = useCallback(
@@ -1368,12 +1351,6 @@ export function ConfectionsTabContent(): React.ReactElement {
 
   return (
     <>
-      <StartSessionDialog
-        isOpen={sessionDialogTarget !== null}
-        entityName={sessionDialogTarget?.name ?? ''}
-        onConfirm={handleConfirmStartSession}
-        onCancel={handleCancelStartSession}
-      />
       <ConfirmDialog
         isOpen={confectionToDelete !== null}
         title="Delete Confection"

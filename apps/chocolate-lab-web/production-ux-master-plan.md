@@ -34,12 +34,20 @@ No production UI components exist yet — all four production tabs are placehold
 ### Scope
 
 #### Session Creation
-- "Start Session" action available on confection and filling recipe views in Library mode
-- Fire-and-forget: creates session in background, stays in Library mode
-- Toast notification with "Go to Session" link (navigates to Production → Sessions, opens session in cascade)
+- Sessions are created via a **cascade panel** (consistent with all other entity creation flows), not a modal
+- **Entry points:**
+  - "+ New Session" button atop the session list (standalone creation with recipe typeahead)
+  - "Start Session" action on confection/filling detail views (navigates to Sessions tab, opens cascade pre-filled)
+- **Recipe typeahead** in the create panel:
+  - Type filter: Any / Confection / Filling (pre-set when launched from a specific recipe)
+  - Combined datalist of all confections + fillings (uses `useDatalistMatch`)
+  - Blur behavior: single match auto-selects; zero/multiple matches with specific type pushes entity create form; with type "Any" shows inline "Create as: Confection / Filling" disambiguation
+  - Filling recipes show a variation selector (defaults to golden variation)
+- Session fields: label (display name), slug (kebab-case ID suffix, auto-derived from label)
 - Session created in `planning` status with editing history initialized from source variation
 
 #### Session List
+- "+ New Session" button above the list (disabled when no mutable collection exists)
 - Grouped view: `session.group ?? session.status`
 - Group headers with group name and metadata (from `group-notes` journal entries)
 - Status filter in sidebar
