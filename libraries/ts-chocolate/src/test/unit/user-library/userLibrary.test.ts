@@ -434,17 +434,6 @@ describe('UserLibrary', () => {
 
     ctx = ChocolateLibrary.fromChocolateEntityLibrary(entityLib).orThrow();
 
-    // Create a test session for materialization testing
-    const variationId = 'test.test-ganache@2026-01-01-01' as FillingRecipeVariationId;
-    const tempUserLib = UserLibrary.create(UserEntityLibrary.create().orThrow(), ctx).orThrow();
-    const testSession = tempUserLib
-      .createPersistedFillingSession(variationId, {
-        collectionId: 'user' as CollectionId,
-        status: 'active',
-        label: 'Test Session for Materialization'
-      })
-      .orThrow();
-
     // Build user entity library with sessions, journals, inventories
     sessionLib = SessionLibrary.create({
       builtin: false,
@@ -453,7 +442,6 @@ describe('UserLibrary', () => {
           id: 'user' as CollectionId,
           isMutable: true,
           items: {
-            [testSession.baseId]: testSession,
             [moldedBonBonSessionEntity.baseId]: moldedBonBonSessionEntity,
             [rolledTruffleSessionEntity.baseId]: rolledTruffleSessionEntity,
             [barTruffleSessionEntity.baseId]: barTruffleSessionEntity
@@ -461,8 +449,6 @@ describe('UserLibrary', () => {
         }
       ]
     }).orThrow();
-
-    testSessionId = `user.${testSession.baseId}` as SessionId;
 
     const userEntities = UserEntityLibrary.create({
       libraries: {
@@ -508,6 +494,16 @@ describe('UserLibrary', () => {
     }).orThrow();
 
     userLib = UserLibrary.create(userEntities, ctx).orThrow();
+
+    // Create a test filling session via the UserLibrary (tests createPersistedFillingSession + persists to entity lib)
+    const variationId = 'test.test-ganache@2026-01-01-01' as FillingRecipeVariationId;
+    testSessionId = userLib
+      .createPersistedFillingSession(variationId, {
+        collectionId: 'user' as CollectionId,
+        status: 'active',
+        label: 'Test Session for Materialization'
+      })
+      .orThrow();
   });
 
   // ============================================================================
@@ -524,6 +520,13 @@ describe('UserLibrary', () => {
       const userEntities = UserEntityLibrary.create().orThrow();
       expect(UserLibrary.create(userEntities, ctx)).toSucceedAndSatisfy((lib) => {
         expect(lib).toBeInstanceOf(UserLibrary);
+      });
+    });
+
+    test('entities exposes underlying user entity library', () => {
+      const userEntities = UserEntityLibrary.create().orThrow();
+      expect(UserLibrary.create(userEntities, ctx)).toSucceedAndSatisfy((lib) => {
+        expect(lib.entities).toBe(userEntities);
       });
     });
   });
@@ -678,24 +681,32 @@ describe('UserLibrary', () => {
   // ============================================================================
 
   describe('createPersistedFillingSession', () => {
-    test('creates persisted session from valid variation ID', () => {
+    test('creates persisted session and returns composite SessionId', () => {
       const variationId = 'test.test-ganache@2026-01-01-01' as FillingRecipeVariationId;
       expect(
         userLib.createPersistedFillingSession(variationId, {
           collectionId: 'user' as CollectionId
         })
-      ).toSucceed();
+      ).toSucceedAndSatisfy((sessionId) => {
+        expect(sessionId).toMatch(/^user\./);
+      });
     });
 
-    test('returns IFillingSessionEntity with correct sessionType', () => {
+    test('persisted session is materializable via sessions library', () => {
       const variationId = 'test.test-ganache@2026-01-01-01' as FillingRecipeVariationId;
-      expect(
-        userLib.createPersistedFillingSession(variationId, {
-          collectionId: 'user' as CollectionId
+      const sessionId = userLib
+        .createPersistedFillingSession(variationId, {
+          collectionId: 'user' as CollectionId,
+          status: 'active',
+          label: 'Materializable Session'
         })
-      ).toSucceedAndSatisfy((persisted) => {
-        expect(persisted.sessionType).toBe('filling');
-        expect(persisted.sourceVariationId).toBe(variationId);
+        .orThrow();
+
+      expect(userLib.sessions.get(sessionId)).toSucceedAndSatisfy((session) => {
+        expect(session.sessionType).toBe('filling');
+        expect(session.status).toBe('active');
+        expect(session.label).toBe('Materializable Session');
+        expect(session.sourceVariationId).toBe(variationId);
       });
     });
 
@@ -703,6 +714,62 @@ describe('UserLibrary', () => {
       const variationId = 'test.unknown-filling@2026-01-01-01' as FillingRecipeVariationId;
       expect(
         userLib.createPersistedFillingSession(variationId, {
+          collectionId: 'user' as CollectionId
+        })
+      ).toFail();
+    });
+  });
+
+  // ============================================================================
+  // createPersistedConfectionSession Tests
+  // ============================================================================
+
+  describe('createPersistedConfectionSession', () => {
+    test('creates persisted molded bonbon session and returns composite SessionId', () => {
+      expect(
+        userLib.createPersistedConfectionSession('test.test-bonbon' as ConfectionId, {
+          collectionId: 'user' as CollectionId
+        })
+      ).toSucceedAndSatisfy((sessionId) => {
+        expect(sessionId).toMatch(/^user\./);
+      });
+    });
+
+    test('persisted confection session is materializable via sessions library', () => {
+      const sessionId = userLib
+        .createPersistedConfectionSession('test.test-bonbon' as ConfectionId, {
+          collectionId: 'user' as CollectionId,
+          status: 'planning',
+          label: 'Test Bonbon Session'
+        })
+        .orThrow();
+
+      expect(userLib.sessions.get(sessionId)).toSucceedAndSatisfy((session) => {
+        expect(session.sessionType).toBe('confection');
+        expect(session.status).toBe('planning');
+        expect(session.label).toBe('Test Bonbon Session');
+      });
+    });
+
+    test('creates bar truffle session', () => {
+      expect(
+        userLib.createPersistedConfectionSession('test.test-bar-truffle' as ConfectionId, {
+          collectionId: 'user' as CollectionId
+        })
+      ).toSucceed();
+    });
+
+    test('creates rolled truffle session', () => {
+      expect(
+        userLib.createPersistedConfectionSession('test.test-rolled-truffle' as ConfectionId, {
+          collectionId: 'user' as CollectionId
+        })
+      ).toSucceed();
+    });
+
+    test('fails for unknown confection ID', () => {
+      expect(
+        userLib.createPersistedConfectionSession('test.unknown-confection' as ConfectionId, {
           collectionId: 'user' as CollectionId
         })
       ).toFail();
@@ -719,42 +786,20 @@ describe('UserLibrary', () => {
       expect(userLib.saveSession(sessionId)).toFail();
     });
 
-    test('creates and materializes persisted session', () => {
-      const variationId = 'test.test-ganache@2026-01-01-01' as FillingRecipeVariationId;
+    test('materializes and saves filling session', () => {
+      expect(testSessionId).toBeDefined();
 
-      // Create a persisted session
-      expect(
-        userLib.createPersistedFillingSession(variationId, {
-          collectionId: 'user' as CollectionId,
-          status: 'active',
-          label: 'Test Session'
-        })
-      ).toSucceedAndSatisfy((persisted) => {
-        expect(persisted.sessionType).toBe('filling');
-        expect(persisted.status).toBe('active');
-        expect(persisted.label).toBe('Test Session');
-        expect(persisted.sourceVariationId).toBe(variationId);
-      });
-    });
-
-    test('materializes and saves session added in beforeEach', () => {
-      if (!testSessionId) {
-        // Skip if session wasn't added (shouldn't happen in normal test run)
-        return;
-      }
-
-      // First verify materialization works - tests _materializeSession and _materializeFillingSession
-      expect(userLib.sessions.get(testSessionId)).toSucceedAndSatisfy((session) => {
-        // Filling sessions are EditingSession type
+      // First verify materialization works
+      expect(userLib.sessions.get(testSessionId!)).toSucceedAndSatisfy((session) => {
         if ('targetWeight' in session && 'baseRecipe' in session) {
           expect(session.targetWeight).toBeDefined();
           expect(session.baseRecipe.fillingRecipe.baseId).toBe('test-ganache');
         }
       });
 
-      // Then verify saveSession works - tests saveSession success path (lines 296-329)
-      expect(userLib.saveSession(testSessionId)).toSucceedAndSatisfy((saved) => {
-        expect(saved.sessionType).toBe('filling');
+      // saveSession returns the composite SessionId
+      expect(userLib.saveSession(testSessionId!)).toSucceedAndSatisfy((savedId) => {
+        expect(savedId).toBe(testSessionId);
       });
     });
 
@@ -764,21 +809,12 @@ describe('UserLibrary', () => {
       // First materialize the confection session
       expect(userLib.sessions.get(sessionId)).toSucceed();
 
-      // Then verify saveSession works for confection sessions
-      expect(userLib.saveSession(sessionId)).toSucceedAndSatisfy((saved) => {
-        expect(saved.sessionType).toBe('confection');
-        if (saved.sessionType === 'confection') {
-          expect(saved.confectionType).toBe('molded-bonbon');
-          expect(saved.sourceVariationId).toBe(moldedBonBonSessionEntity.sourceVariationId);
-          expect(saved.childSessionIds).toEqual({});
-        }
-      });
+      // saveSession returns the composite SessionId
+      expect(userLib.saveSession(sessionId)).toSucceedWith(sessionId);
     });
 
-    // Note: Lines 309-310 (session not found in entities during save) represent defensive
-    // coding for race conditions. If a session materializes successfully via get(), it must
-    // exist in the entity library. This path would only be hit if the session was deleted
-    // between get() and saveSession(), which cannot be tested without modifying the library.
+    // Note: The defensive "session not found in entities" path would only be hit if a session
+    // was deleted between get() and saveSession(), which cannot be tested without modifying the library.
   });
 
   // ============================================================================

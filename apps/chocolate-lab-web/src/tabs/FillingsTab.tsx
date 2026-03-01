@@ -40,7 +40,9 @@ import {
   EntityCreateForm,
   useFilteredEntities,
   useProcedureEditSession,
-  useNavigationStore
+  useNavigationStore,
+  useSessionActions,
+  StartSessionDialog
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -121,6 +123,51 @@ export function FillingsTabContent(): React.ReactElement {
     workspace,
     reactiveWorkspace.version
   ]);
+
+  // --------------------------------------------------------------------------
+  // Start Session Dialog
+  // --------------------------------------------------------------------------
+
+  const sessionActions = useSessionActions();
+
+  const [sessionDialogTarget, setSessionDialogTarget] = useState<{
+    fillingId: FillingId;
+    variationSpec: FillingRecipeVariationSpec;
+    name: string;
+  } | null>(null);
+
+  const handleRequestStartSession = useCallback(
+    (fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): void => {
+      const result = workspace.data.fillings.get(fillingId);
+      const name = result.isSuccess() ? result.value.name : fillingId;
+      setSessionDialogTarget({ fillingId, variationSpec, name });
+    },
+    [workspace]
+  );
+
+  const handleConfirmStartSession = useCallback(
+    (label: string, slug: string): void => {
+      if (!sessionDialogTarget || !sessionActions.defaultCollectionId) return;
+      const variationId = Helpers.createFillingRecipeVariationId(
+        sessionDialogTarget.fillingId,
+        sessionDialogTarget.variationSpec
+      );
+      const result = sessionActions.createFillingSession(variationId, {
+        collectionId: sessionActions.defaultCollectionId,
+        label,
+        slug
+      });
+      if (result.isFailure()) {
+        workspace.data.logger.error(`Failed to start session: ${result.message}`);
+      }
+      setSessionDialogTarget(null);
+    },
+    [sessionDialogTarget, sessionActions, workspace]
+  );
+
+  const handleCancelStartSession = useCallback((): void => {
+    setSessionDialogTarget(null);
+  }, []);
 
   const { entities: fillings, selectedId } = useEntityList<LibraryRuntime.FillingRecipe, FillingId>({
     getAll: () => workspace.data.fillings.values(),
@@ -1129,6 +1176,7 @@ export function FillingsTabContent(): React.ReactElement {
               onCompareVariations={(specs): void => setVariationCompare({ id: fillingId, specs })}
               onEdit={(spec): void => handleEditFilling(entry.entityId, spec)}
               onPreview={(): void => handlePreviewFilling(entry.entityId)}
+              onStartSession={(spec): void => handleRequestStartSession(fillingId, spec)}
               targetYield={targetYieldMap.get(entry.entityId)}
               onTargetYieldChange={(g): void => handleTargetYieldChange(entry.entityId, g)}
             />
@@ -1361,7 +1409,8 @@ export function FillingsTabContent(): React.ReactElement {
     handleSubProcedureSave,
     handleSubProcedureCancel,
     procedureSession,
-    subEntitySeed
+    subEntitySeed,
+    handleRequestStartSession
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
@@ -1397,6 +1446,12 @@ export function FillingsTabContent(): React.ReactElement {
 
   return (
     <>
+      <StartSessionDialog
+        isOpen={sessionDialogTarget !== null}
+        entityName={sessionDialogTarget?.name ?? ''}
+        onConfirm={handleConfirmStartSession}
+        onCancel={handleCancelStartSession}
+      />
       <ConfirmDialog
         isOpen={fillingToDelete !== null}
         title="Delete Filling"

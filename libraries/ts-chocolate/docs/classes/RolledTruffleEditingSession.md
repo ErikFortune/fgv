@@ -112,6 +112,193 @@ TRuntime
 Gets the base confection.
 
 </td></tr>
+<tr><td>
+
+[baseId](./ConfectionEditingSessionBase.baseId.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[BaseSessionId](../type-aliases/BaseSessionId.md)
+
+</td><td>
+
+Base identifier within the collection (no collection prefix).
+
+</td></tr>
+<tr><td>
+
+[sessionType](./ConfectionEditingSessionBase.sessionType.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+"confection"
+
+</td><td>
+
+Session type discriminator - always 'confection' for confection sessions.
+
+</td></tr>
+<tr><td>
+
+[status](./ConfectionEditingSessionBase.status.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[PersistedSessionStatus](../type-aliases/PersistedSessionStatus.md)
+
+</td><td>
+
+Current lifecycle status.
+
+</td></tr>
+<tr><td>
+
+[label](./ConfectionEditingSessionBase.label.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string | undefined
+
+</td><td>
+
+User-provided label for the session.
+
+</td></tr>
+<tr><td>
+
+[group](./ConfectionEditingSessionBase.group.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[GroupName](../type-aliases/GroupName.md) | undefined
+
+</td><td>
+
+Optional group identifier for organizing related sessions.
+
+</td></tr>
+<tr><td>
+
+[createdAt](./ConfectionEditingSessionBase.createdAt.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+ISO 8601 timestamp when session was created.
+
+</td></tr>
+<tr><td>
+
+[updatedAt](./ConfectionEditingSessionBase.updatedAt.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+ISO 8601 timestamp when session was last updated.
+
+</td></tr>
+<tr><td>
+
+[notes](./ConfectionEditingSessionBase.notes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [ICategorizedNote](../interfaces/ICategorizedNote.md)[] | undefined
+
+</td><td>
+
+Optional categorized notes.
+
+</td></tr>
+<tr><td>
+
+[sourceVariationId](./ConfectionEditingSessionBase.sourceVariationId.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ConfectionRecipeVariationId](../type-aliases/ConfectionRecipeVariationId.md)
+
+</td><td>
+
+Source confection variation ID for this session.
+
+</td></tr>
+<tr><td>
+
+[confectionType](./ConfectionEditingSessionBase.confectionType.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ConfectionType](../type-aliases/ConfectionType.md)
+
+</td><td>
+
+Confection type discriminator.
+
+</td></tr>
+<tr><td>
+
+[entity](./ConfectionEditingSessionBase.entity.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IConfectionSessionEntity](../interfaces/IConfectionSessionEntity.md)
+
+</td><td>
+
+The underlying persisted entity.
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -145,7 +332,7 @@ Factory method for creating a RolledTruffleEditingSession.
 </td></tr>
 <tr><td>
 
-[fromPersistedState(baseConfection, history, context, params)](./RolledTruffleEditingSession.fromPersistedState.md)
+[fromPersistedState(baseConfection, persistedEntity, context, params)](./RolledTruffleEditingSession.fromPersistedState.md)
 
 </td><td>
 

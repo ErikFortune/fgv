@@ -29,6 +29,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import { EntityRow, DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
 import type { ISelectableItem } from '@fgv/ts-app-shell';
+import { PlayIcon } from '@heroicons/react/24/outline';
 import {
   EntityDetailHeader,
   NotesSection,
@@ -86,6 +87,8 @@ export interface IConfectionDetailProps {
   readonly onEdit?: (spec: ConfectionRecipeVariationSpec) => void;
   /** Optional callback to open the preview pane */
   readonly onPreview?: () => void;
+  /** Optional callback to start a production session for this confection */
+  readonly onStartSession?: () => void;
   /** Current view settings (alternate selections, scaling) */
   readonly viewSettings?: IConfectionViewSettings;
   /** Callback when any view setting changes */
@@ -660,6 +663,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     onCompareVariations,
     onEdit,
     onPreview,
+    onStartSession,
     viewSettings,
     onViewSettingsChange
   } = props;
@@ -754,6 +758,19 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
         onCopyJson={handleCopyJson}
         onPreview={onPreview}
         onEdit={onEdit ? (): void => onEdit(selectedSpec) : undefined}
+        extraActions={
+          onStartSession && (
+            <button
+              type="button"
+              onClick={onStartSession}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+              title="Start Session"
+            >
+              <PlayIcon className="w-4 h-4" />
+              Session
+            </button>
+          )
+        }
       />
 
       {/* Variation selector */}

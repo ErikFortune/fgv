@@ -26,7 +26,7 @@
  */
 
 import { type FileTree } from '@fgv/ts-json-base';
-import { LibraryData, type LibraryRuntime } from '@fgv/ts-chocolate';
+import { LibraryData, type LibraryRuntime, type UserEntities } from '@fgv/ts-chocolate';
 import { FileApiTreeAccessors, supportsFileSystemAccess } from '@fgv/ts-web-extras';
 
 import { createDirectoryStore } from './directoryStoreFactory';
@@ -46,6 +46,7 @@ import { type ReactiveWorkspace } from './reactiveWorkspace';
 function loadAllSubLibrariesFromTree(
   tree: FileTree.FileTree,
   entities: LibraryRuntime.ChocolateEntityLibrary,
+  userEntities: UserEntities.IUserEntityLibrary | undefined,
   sourceName: string,
   logger?: { detail(msg: string): void; warn(msg: string): void; info(msg: string): void }
 ): number {
@@ -58,13 +59,23 @@ function loadAllSubLibrariesFromTree(
   }
 
   const subLibraries: ReadonlyArray<{ lib: LibraryData.SubLibraryBase<string, string, unknown> }> = [
+    // Shared library sub-libraries
     { lib: entities.ingredients },
     { lib: entities.fillings },
     { lib: entities.confections },
     { lib: entities.decorations },
     { lib: entities.molds },
     { lib: entities.procedures },
-    { lib: entities.tasks }
+    { lib: entities.tasks },
+    // User entity sub-libraries
+    ...(userEntities
+      ? [
+          { lib: userEntities.sessions },
+          { lib: userEntities.journals },
+          { lib: userEntities.moldInventory },
+          { lib: userEntities.ingredientInventory }
+        ]
+      : [])
   ];
 
   let totalLoaded = 0;
@@ -98,6 +109,8 @@ export interface IRestoreSavedDirectoriesParams {
   readonly reactiveWorkspace: ReactiveWorkspace;
   /** The entity library to load collections into */
   readonly entities: LibraryRuntime.ChocolateEntityLibrary;
+  /** The user entity library to load user collections into (sessions, journals, inventory) */
+  readonly userEntities?: UserEntities.IUserEntityLibrary;
   /** Optional config name for per-config IndexedDB isolation */
   readonly configName?: string;
   /** Optional logger for diagnostics */
@@ -117,7 +130,7 @@ export interface IRestoreSavedDirectoriesParams {
  * @public
  */
 export async function restoreSavedDirectories(params: IRestoreSavedDirectoriesParams): Promise<number> {
-  const { reactiveWorkspace, entities, logger } = params;
+  const { reactiveWorkspace, entities, userEntities, logger } = params;
 
   if (typeof window === 'undefined' || !supportsFileSystemAccess(window)) {
     return 0;
@@ -145,7 +158,7 @@ export async function restoreSavedDirectories(params: IRestoreSavedDirectoriesPa
     }
 
     const tree = treeResult.value;
-    const loaded = loadAllSubLibrariesFromTree(tree, entities, label, logger);
+    const loaded = loadAllSubLibrariesFromTree(tree, entities, userEntities, label, logger);
 
     const accessors = tree.hal;
     if ('syncToDisk' in accessors && 'isDirty' in accessors) {

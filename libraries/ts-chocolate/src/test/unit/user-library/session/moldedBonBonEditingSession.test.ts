@@ -50,8 +50,7 @@ import {
   IMoldEntity,
   MoldsLibrary,
   ConfectionsLibrary,
-  Confections,
-  Session as SessionEntities
+  Confections
 } from '../../../../packlets/entities';
 import {
   ChocolateEntityLibrary,
@@ -721,11 +720,9 @@ describe('MoldedBonBonEditingSession', () => {
       // Persist
       const persisted = session.toPersistedState({ collectionId: 'test' as CollectionId }).orThrow();
 
-      // Restore - history must be cast to specific confection type
-      const history =
-        persisted.history as SessionEntities.ISerializedEditingHistoryEntity<Confections.IProducedMoldedBonBonEntity>;
+      // Restore from full persisted entity
       expect(
-        Session.MoldedBonBonEditingSession.fromPersistedState(confection, history, sessionContext)
+        Session.MoldedBonBonEditingSession.fromPersistedState(confection, persisted, sessionContext)
       ).toSucceedAndSatisfy((restored) => {
         expect(restored.baseConfection).toBe(confection);
         expect(restored.produced.yield.count).toBe(48);

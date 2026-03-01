@@ -347,6 +347,24 @@ Generates a SessionId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
 </td></tr>
 <tr><td>
 
+[generateSessionBaseId](./functions/generateSessionBaseId.md)
+
+</td><td>
+
+Generates a SessionBaseId in the format YYYY-MM-DD-HHMMSS-slug.
+
+</td></tr>
+<tr><td>
+
+[toSessionSlug](./functions/toSessionSlug.md)
+
+</td><td>
+
+Normalizes a string to a kebab-case slug suitable for use in a session ID.
+
+</td></tr>
+<tr><td>
+
 [getCurrentDateString](./functions/getCurrentDateString.md)
 
 </td><td>

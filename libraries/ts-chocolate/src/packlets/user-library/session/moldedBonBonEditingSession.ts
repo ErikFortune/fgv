@@ -26,7 +26,7 @@
 import { captureResult, fail, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, MoldId, SlotId, ZeroMeasurement } from '../../common';
-import { Confections, IProducedMoldedBonBonEntity, Session } from '../../entities';
+import { Confections, IConfectionSessionEntity, IProducedMoldedBonBonEntity, Session } from '../../entities';
 import { IMoldedBonBonRecipe, IMold, ProducedMoldedBonBon } from '../../library-runtime';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -58,9 +58,10 @@ export class MoldedBonBonEditingSession<
     baseConfection: TRecipe,
     produced: ProducedMoldedBonBon,
     context: ISessionContext,
-    params?: IConfectionEditingSessionParams
+    params?: IConfectionEditingSessionParams,
+    persistedEntity?: IConfectionSessionEntity
   ) {
-    super(baseConfection, produced, context, params);
+    super(baseConfection, produced, context, params, persistedEntity);
 
     // Load current mold
     this._currentMold = this._loadCurrentMold().orThrow();
@@ -105,12 +106,16 @@ export class MoldedBonBonEditingSession<
    */
   public static fromPersistedState<T extends IMoldedBonBonRecipe = IMoldedBonBonRecipe>(
     baseConfection: T,
-    history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
+    persistedEntity: IConfectionSessionEntity,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<MoldedBonBonEditingSession<T>> {
+    const history =
+      persistedEntity.history as Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>;
     return ProducedMoldedBonBon.restoreFromHistory(history).onSuccess((produced) =>
-      captureResult(() => new MoldedBonBonEditingSession(baseConfection, produced, context, params))
+      captureResult(
+        () => new MoldedBonBonEditingSession(baseConfection, produced, context, params, persistedEntity)
+      )
     );
   }
 

@@ -79,7 +79,7 @@ export interface IWorkspace {
 
   /**
    * User library runtime for materialized user data.
-   * Access via `userRuntime.sessions`, `userRuntime.journals`, `userRuntime.moldInventory`, etc.
+   * Access via `userData.sessions`, `userData.journals`, `userData.moldInventory`, etc.
    */
   readonly userData: IUserLibrary;
 

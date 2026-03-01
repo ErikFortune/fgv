@@ -26,7 +26,7 @@
 import { captureResult, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
-import { Confections, IProducedRolledTruffleEntity, Session } from '../../entities';
+import { Confections, IConfectionSessionEntity, IProducedRolledTruffleEntity, Session } from '../../entities';
 import { IRolledTruffleRecipe, ProducedRolledTruffle } from '../../library-runtime';
 
 import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
@@ -55,9 +55,10 @@ export class RolledTruffleEditingSession<
     baseConfection: TRecipe,
     produced: ProducedRolledTruffle,
     context: ISessionContext,
-    params?: IConfectionEditingSessionParams
+    params?: IConfectionEditingSessionParams,
+    persistedEntity?: IConfectionSessionEntity
   ) {
-    super(baseConfection, produced, context, params);
+    super(baseConfection, produced, context, params, persistedEntity);
 
     // Apply initial yield if provided
     if (params?.initialYield) {
@@ -99,12 +100,16 @@ export class RolledTruffleEditingSession<
    */
   public static fromPersistedState<T extends IRolledTruffleRecipe = IRolledTruffleRecipe>(
     baseConfection: T,
-    history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
+    persistedEntity: IConfectionSessionEntity,
     context: ISessionContext,
     params?: IConfectionEditingSessionParams
   ): Result<RolledTruffleEditingSession<T>> {
+    const history =
+      persistedEntity.history as Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>;
     return ProducedRolledTruffle.restoreFromHistory(history).onSuccess((produced) =>
-      captureResult(() => new RolledTruffleEditingSession(baseConfection, produced, context, params))
+      captureResult(
+        () => new RolledTruffleEditingSession(baseConfection, produced, context, params, persistedEntity)
+      )
     );
   }
 

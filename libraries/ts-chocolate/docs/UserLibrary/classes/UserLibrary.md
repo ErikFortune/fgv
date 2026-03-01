@@ -34,6 +34,23 @@ Description
 <tbody>
 <tr><td>
 
+[entities](./UserLibrary.entities.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IUserEntityLibrary](../../interfaces/IUserEntityLibrary.md)
+
+</td><td>
+
+The underlying user entity library for collection management operations.
+
+</td></tr>
+<tr><td>
+
 [sessions](./UserLibrary.sessions.md)
 
 </td><td>
@@ -270,6 +287,19 @@ Checks if a collection is mutable.
 </td><td>
 
 Creates a new persisted filling session from a filling variation.
+
+</td></tr>
+<tr><td>
+
+[createPersistedConfectionSession(confectionId, options)](./UserLibrary.createPersistedConfectionSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates a new persisted confection session from a confection recipe.
 
 </td></tr>
 <tr><td>

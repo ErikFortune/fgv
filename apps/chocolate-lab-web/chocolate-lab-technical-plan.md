@@ -381,8 +381,7 @@ Before building any UI, the materialized session classes (`EditingSession`, `Con
 2. Build `SessionListView` consuming `AnyMaterializedSession` — use `.status`, `.label`, `.baseId`, `.group` accessors
 3. Build `SessionDetailView` consuming materialized sessions — use `.baseRecipe` for recipe info, `.produced` for current editing state, `.status`/`.label`/etc. for metadata
 4. Wire `SessionsTab` using `workspace.userData.sessions.values()` (materialized iterator)
-5. Wire "Start Session" action and mode navigation
-
+5. Wire "Start Session" action and mode navigation.  Start session can provide default values for the session (date/time and random slug) but must allow the user to override them - either via an editor form in the sessions collection itself or on a modal pre-creation.
 #### Phase 5b: Journal & Inventory
 Journal list/detail, inventory CRUD, commit flow. Same materialized-only rule applies — use `workspace.userData.journals.values()` and inventory equivalents.
 

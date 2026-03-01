@@ -46,8 +46,7 @@ import {
   IFillingRecipeEntity,
   FillingsLibrary,
   ConfectionsLibrary,
-  Confections,
-  Session as SessionEntities
+  Confections
 } from '../../../../packlets/entities';
 import {
   ChocolateEntityLibrary,
@@ -489,11 +488,9 @@ describe('BarTruffleEditingSession', () => {
       // Persist
       const persisted = session.toPersistedState({ collectionId: 'test' as CollectionId }).orThrow();
 
-      // Restore - history must be cast to specific confection type
-      const history =
-        persisted.history as SessionEntities.ISerializedEditingHistoryEntity<Confections.IProducedBarTruffleEntity>;
+      // Restore from full persisted entity
       expect(
-        Session.BarTruffleEditingSession.fromPersistedState(confection, history, sessionContext)
+        Session.BarTruffleEditingSession.fromPersistedState(confection, persisted, sessionContext)
       ).toSucceedAndSatisfy((restored) => {
         expect(restored.baseConfection).toBe(confection);
         expect(restored.produced.yield.count).toBe(96);

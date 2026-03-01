@@ -50,9 +50,6 @@ import {
   IFillingSessionEntity,
   IMoldEntity,
   IProcedureEntity,
-  IProducedBarTruffleEntity,
-  IProducedMoldedBonBonEntity,
-  IProducedRolledTruffleEntity,
   IngredientEntity,
   Inventory,
   Session as SessionEntities
@@ -75,6 +72,7 @@ import { IngredientInventoryEntry, MoldInventoryEntry } from './inventoryEntry';
 import {
   AnyJournalEntry,
   AnyMaterializedSession,
+  ICreateConfectionSessionOptions,
   ICreateFillingSessionOptions,
   IIngredientInventoryEntry,
   IMoldInventoryEntry,
@@ -138,6 +136,13 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     confectionContext: IConfectionContext
   ): Result<UserLibrary> {
     return succeed(new UserLibrary(userEntityLibrary, confectionContext));
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.entities}
+   */
+  public get entities(): IUserEntityLibrary {
+    return this._entities;
   }
 
   /**
@@ -284,16 +289,23 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
   public createPersistedFillingSession(
     variationId: FillingRecipeVariationId,
     options: ICreateFillingSessionOptions
-  ): Result<IFillingSessionEntity> {
+  ): Result<SessionId> {
     const fillingId = Helpers.getFillingRecipeVariationFillingId(variationId);
-    return this._confectionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
-      const variationSpec = Helpers.getFillingRecipeVariationSpec(variationId);
-      return filling.getVariation(variationSpec).onSuccess((variation) => {
-        return Session.EditingSession.create(variation).onSuccess((session) => {
-          return session.toPersistedState({
-            collectionId: options.collectionId,
-            status: options.status,
-            label: options.label
+    return Session.generateSessionBaseId(undefined, options.slug).onSuccess((baseId) => {
+      return this._confectionContext.fillings.get(fillingId).asResult.onSuccess((filling) => {
+        const variationSpec = Helpers.getFillingRecipeVariationSpec(variationId);
+        return filling.getVariation(variationSpec).onSuccess((variation) => {
+          return Session.EditingSession.create(variation).onSuccess((session) => {
+            return session
+              .toPersistedState({
+                collectionId: options.collectionId,
+                baseId,
+                status: options.status,
+                label: options.label
+              })
+              .onSuccess((persisted) => {
+                return this._entities.sessions.addSession(options.collectionId, persisted);
+              });
           });
         });
       });
@@ -301,9 +313,36 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
   }
 
   /**
+   * {@inheritDoc IUserLibrary.createPersistedConfectionSession}
+   */
+  public createPersistedConfectionSession(
+    confectionId: ConfectionId,
+    options: ICreateConfectionSessionOptions
+  ): Result<SessionId> {
+    return Session.generateSessionBaseId(undefined, options.slug).onSuccess((baseId) => {
+      return this._confectionContext.confections.get(confectionId).asResult.onSuccess((confection) => {
+        return Session.ConfectionEditingSession.create(confection, this, options.params).onSuccess(
+          (session) => {
+            return session
+              .toPersistedState({
+                collectionId: options.collectionId,
+                baseId,
+                status: options.status,
+                label: options.label
+              })
+              .onSuccess((persisted) => {
+                return this._entities.sessions.addSession(options.collectionId, persisted);
+              });
+          }
+        );
+      });
+    });
+  }
+
+  /**
    * {@inheritDoc IUserLibrary.saveSession}
    */
-  public saveSession(sessionId: SessionId): Result<AnySessionEntity> {
+  public saveSession(sessionId: SessionId): Result<SessionId> {
     // Get the materialized session from the cache
     const sessionResult = this._getSessions().get(sessionId);
     if (sessionResult.isFailure()) {
@@ -336,9 +375,7 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     const persistedResult = session.toPersistedState(persistOptions);
 
     return persistedResult.onSuccess((persisted) => {
-      return this._entities.sessions.upsertSession(collectionId, persisted).onSuccess(() => {
-        return succeed(persisted as AnySessionEntity);
-      });
+      return this._entities.sessions.upsertSession(collectionId, persisted);
     });
   }
 
@@ -474,27 +511,15 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     confection: IConfectionBase
   ): Result<Session.AnyConfectionEditingSession> {
     if (confection.isMoldedBonBon() && persisted.confectionType === ('molded-bonbon' as ConfectionType)) {
-      return Session.MoldedBonBonEditingSession.fromPersistedState(
-        confection,
-        persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>,
-        this
-      );
+      return Session.MoldedBonBonEditingSession.fromPersistedState(confection, persisted, this);
     }
 
     if (confection.isBarTruffle() && persisted.confectionType === ('bar-truffle' as ConfectionType)) {
-      return Session.BarTruffleEditingSession.fromPersistedState(
-        confection,
-        persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>,
-        this
-      );
+      return Session.BarTruffleEditingSession.fromPersistedState(confection, persisted, this);
     }
 
     if (confection.isRolledTruffle() && persisted.confectionType === ('rolled-truffle' as ConfectionType)) {
-      return Session.RolledTruffleEditingSession.fromPersistedState(
-        confection,
-        persisted.history as SessionEntities.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>,
-        this
-      );
+      return Session.RolledTruffleEditingSession.fromPersistedState(confection, persisted, this);
     }
     /* c8 ignore next 2 - defensive: exhaustive confection type check */
     return fail(`Confection type mismatch: expected ${persisted.confectionType}`);

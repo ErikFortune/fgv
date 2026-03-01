@@ -38,7 +38,7 @@ import {
   type IFilterOption
 } from '@fgv/ts-app-shell';
 
-import type { LibraryData, LibraryRuntime } from '@fgv/ts-chocolate';
+import type { LibraryData } from '@fgv/ts-chocolate';
 import { CryptoUtils } from '@fgv/ts-extras';
 
 import {
@@ -58,6 +58,7 @@ import { ImportCollisionDialog, type ImportCollisionResolution } from './ImportC
 import { SetSecretPasswordDialog } from './SetSecretPasswordDialog';
 import { UnlockCollectionDialog, type UnlockCollectionMode } from './UnlockCollectionDialog';
 import { type IPendingSecretSetup } from './useCollectionActions';
+import { getSubLibraryForTab } from './subLibraryLookup';
 
 import { TAB_FILTER_DEFINITIONS, type IFilterDefinition } from './filterConfigs';
 
@@ -87,39 +88,6 @@ const PLACEHOLDER_PROVIDER: IFilterOptionProvider = {
     return [];
   }
 };
-
-// ============================================================================
-// Sub-Library Accessor
-// ============================================================================
-
-/**
- * Returns the entity-layer sub-library for a given tab, or undefined for
- * tabs that don't have sub-libraries (e.g., production tabs).
- * @internal
- */
-function getSubLibraryForTab(
-  entities: LibraryRuntime.ChocolateEntityLibrary,
-  tab: AppTab
-): LibraryData.SubLibraryBase<string, string, unknown> | undefined {
-  switch (tab) {
-    case 'ingredients':
-      return entities.ingredients;
-    case 'fillings':
-      return entities.fillings;
-    case 'confections':
-      return entities.confections;
-    case 'decorations':
-      return entities.decorations;
-    case 'molds':
-      return entities.molds;
-    case 'procedures':
-      return entities.procedures;
-    case 'tasks':
-      return entities.tasks;
-    default:
-      return undefined;
-  }
-}
 
 // ============================================================================
 // TabSidebar Props
@@ -276,7 +244,7 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
 
   const handleRequestUnlockCollection = useCallback(
     (collectionId: string): void => {
-      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) return;
 
       const protectedInfo = subLibrary.protectedCollections.find((pc) => pc.collectionId === collectionId);
@@ -314,7 +282,7 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
   const unlockDialogInfo = useMemo(() => {
     if (!unlockCollectionId) return undefined;
 
-    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
     if (!subLibrary) return undefined;
 
     const protectedInfo = subLibrary.protectedCollections.find(
@@ -352,7 +320,7 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
     ): Promise<string | undefined> => {
       if (!unlockCollectionId || !unlockDialogInfo) return 'No collection selected';
 
-      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) return 'No sub-library for tab';
 
       const { protectedInfo } = unlockDialogInfo;

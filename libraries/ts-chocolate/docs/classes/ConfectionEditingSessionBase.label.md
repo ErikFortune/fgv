@@ -1,0 +1,11 @@
+[Home](../README.md) > [ConfectionEditingSessionBase](./ConfectionEditingSessionBase.md) > label
+
+## ConfectionEditingSessionBase.label property
+
+User-provided label for the session.
+
+**Signature:**
+
+```typescript
+readonly label: string | undefined;
+```

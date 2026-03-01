@@ -66,6 +66,15 @@ Description
 <tbody>
 <tr><td>
 
+[IMaterializedSessionBase](./interfaces/IMaterializedSessionBase.md)
+
+</td><td>
+
+Common metadata interface for all materialized editing sessions.
+
+</td></tr>
+<tr><td>
+
 [ISessionContext](./interfaces/ISessionContext.md)
 
 </td><td>
@@ -80,6 +89,15 @@ Context interface for session creation and management.
 </td><td>
 
 Options for creating a new persisted filling session.
+
+</td></tr>
+<tr><td>
+
+[ICreateConfectionSessionOptions](./interfaces/ICreateConfectionSessionOptions.md)
+
+</td><td>
+
+Options for creating a new persisted confection session.
 
 </td></tr>
 <tr><td>
