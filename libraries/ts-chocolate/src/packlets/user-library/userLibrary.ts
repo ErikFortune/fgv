@@ -52,6 +52,7 @@ import {
   IProcedureEntity,
   IngredientEntity,
   Inventory,
+  PersistedSessionStatus,
   Session as SessionEntities
 } from '../entities';
 import {
@@ -376,6 +377,25 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
 
     return persistedResult.onSuccess((persisted) => {
       return this._entities.sessions.upsertSession(collectionId, persisted);
+    });
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.updateSessionStatus}
+   */
+  public updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId> {
+    const existingResult = this._entities.sessions.get(sessionId);
+    if (existingResult.isFailure()) {
+      return fail(`Session ${sessionId} not found: ${existingResult.message}`);
+    }
+
+    const existing = existingResult.value;
+    const collectionId = Helpers.getSessionCollectionId(sessionId);
+    const updated = { ...existing, status, updatedAt: new Date().toISOString() };
+
+    return this._entities.sessions.upsertSession(collectionId, updated).onSuccess((id) => {
+      this._sessions = undefined;
+      return succeed(id);
     });
   }
 

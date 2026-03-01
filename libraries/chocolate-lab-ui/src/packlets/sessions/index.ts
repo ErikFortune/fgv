@@ -27,6 +27,8 @@
 
 export { useSessionActions, type ISessionActions } from './useSessionActions';
 export { SessionDetailView, type ISessionDetailViewProps } from './SessionDetailView';
+export { FillingSessionPanel, type IFillingSessionPanelProps } from './FillingSessionPanel';
+export { SessionStatusBar, type ISessionStatusBarProps } from './SessionStatusBar';
 export {
   CreateSessionPanel,
   type ICreateSessionPanelProps,

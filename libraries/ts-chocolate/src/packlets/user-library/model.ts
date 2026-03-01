@@ -400,4 +400,12 @@ export interface IUserLibrary {
    * @returns Result with the composite SessionId
    */
   saveSession(sessionId: SessionId): Result<SessionId>;
+
+  /**
+   * Updates the status of an existing persisted session.
+   * @param sessionId - Session to update
+   * @param status - New session status
+   * @returns Result with the composite SessionId
+   */
+  updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId>;
 }

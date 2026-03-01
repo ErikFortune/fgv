@@ -858,6 +858,65 @@ describe('UserLibrary', () => {
   });
 
   // ============================================================================
+  // updateSessionStatus Tests
+  // ============================================================================
+
+  describe('updateSessionStatus', () => {
+    test('fails for non-existent sessionId', () => {
+      const sessionId = 'user.non-existent' as SessionId;
+      expect(userLib.updateSessionStatus(sessionId, 'committed')).toFail();
+    });
+
+    test('updates filling session status', () => {
+      expect(testSessionId).toBeDefined();
+
+      // Verify initial status is 'active'
+      expect(userLib.sessions.get(testSessionId!)).toSucceedAndSatisfy((session) => {
+        expect(session.status).toBe('active');
+      });
+
+      // Update to 'committed'
+      expect(userLib.updateSessionStatus(testSessionId!, 'committed')).toSucceedWith(testSessionId!);
+
+      // Verify status changed (cache was cleared, so re-materializes)
+      expect(userLib.sessions.get(testSessionId!)).toSucceedAndSatisfy((session) => {
+        expect(session.status).toBe('committed');
+      });
+
+      // Restore to 'active' for other tests
+      expect(userLib.updateSessionStatus(testSessionId!, 'active')).toSucceed();
+    });
+
+    test('updates confection session status', () => {
+      const sessionId = `user.${moldedBonBonSessionEntity.baseId}` as SessionId;
+
+      expect(userLib.updateSessionStatus(sessionId, 'planning')).toSucceedWith(sessionId);
+
+      expect(userLib.sessions.get(sessionId)).toSucceedAndSatisfy((session) => {
+        expect(session.status).toBe('planning');
+      });
+
+      // Restore
+      expect(userLib.updateSessionStatus(sessionId, 'active')).toSucceed();
+    });
+
+    test('updates updatedAt timestamp', () => {
+      expect(testSessionId).toBeDefined();
+
+      const beforeUpdate = new Date().toISOString();
+
+      expect(userLib.updateSessionStatus(testSessionId!, 'committing')).toSucceed();
+
+      expect(userLib.sessions.get(testSessionId!)).toSucceedAndSatisfy((session) => {
+        expect(session.updatedAt >= beforeUpdate).toBe(true);
+      });
+
+      // Restore
+      expect(userLib.updateSessionStatus(testSessionId!, 'active')).toSucceed();
+    });
+  });
+
+  // ============================================================================
   // Error Path Tests
   // ============================================================================
 
