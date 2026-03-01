@@ -26,6 +26,8 @@
 import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 
 import {
+  FillingRecipeVariationId,
+  GroupName,
   IngredientId,
   Measurement,
   MeasurementUnit,
@@ -45,6 +47,7 @@ import {
   IProducedFillingEntity,
   PersistedSessionStatus
 } from '../../entities';
+import { IMaterializedSessionBase } from '../model';
 import { IFillingRecipeVariation, ProducedFilling } from '../../library-runtime';
 import {
   ISaveAnalysis,
@@ -71,11 +74,12 @@ import {
  *
  * @public
  */
-export class EditingSession {
+export class EditingSession implements IMaterializedSessionBase {
   private readonly _baseRecipe: IFillingRecipeVariation;
   private readonly _produced: ProducedFilling;
   private readonly _originalSnapshot: IProducedFillingEntity;
   private readonly _sessionId: SessionSpec;
+  private readonly _persistedEntity: IFillingSessionEntity | undefined;
 
   /**
    * Creates an EditingSession.
@@ -84,13 +88,15 @@ export class EditingSession {
    * @param produced - The RuntimeProducedFilling wrapper
    * @param sessionId - Optional session ID (generates new if not provided)
    * @param originalSnapshot - Optional original snapshot for restoration (uses current if not provided)
+   * @param persistedEntity - Optional persisted entity (set when restoring from persisted state)
    * @internal
    */
   private constructor(
     baseRecipe: IFillingRecipeVariation,
     produced: ProducedFilling,
     sessionId?: SessionSpec,
-    originalSnapshot?: IProducedFillingEntity
+    originalSnapshot?: IProducedFillingEntity,
+    persistedEntity?: IFillingSessionEntity
   ) {
     this._baseRecipe = baseRecipe;
     this._produced = produced;
@@ -98,6 +104,7 @@ export class EditingSession {
     // TODO: this is an observable external contract (id generated if not supplied) that should be tested.
     /* c8 ignore next 1 - branch: sessionId param exists for future restore-with-id but is not yet wired */
     this._sessionId = sessionId ?? generateSessionId().orThrow();
+    this._persistedEntity = persistedEntity;
   }
 
   /**
@@ -441,8 +448,8 @@ export class EditingSession {
 
     // Restore the RuntimeProducedFilling from history
     return ProducedFilling.restoreFromHistory(data.history).onSuccess((produced) => {
-      // Create the session with restored state, passing the original snapshot
-      const session = new EditingSession(baseRecipe, produced, undefined, data.history.original);
+      // Create the session with restored state, passing the original snapshot and persisted entity
+      const session = new EditingSession(baseRecipe, produced, undefined, data.history.original, data);
       return succeed(session);
     });
   }
@@ -489,6 +496,93 @@ export class EditingSession {
    */
   public get hasChanges(): boolean {
     return this._produced.hasChanges(this._originalSnapshot);
+  }
+
+  // ============================================================================
+  // IMaterializedSessionBase Accessors
+  // ============================================================================
+
+  /**
+   * Base identifier within the collection (no collection prefix).
+   * @public
+   */
+  public get baseId(): BaseSessionId {
+    return this._persistedEntity?.baseId ?? ('' as BaseSessionId);
+  }
+
+  /**
+   * Session type discriminator - always 'filling' for EditingSession.
+   * @public
+   */
+  public get sessionType(): 'filling' {
+    return 'filling';
+  }
+
+  /**
+   * Current lifecycle status.
+   * @public
+   */
+  public get status(): PersistedSessionStatus {
+    return this._persistedEntity?.status ?? 'active';
+  }
+
+  /**
+   * User-provided label for the session.
+   * @public
+   */
+  public get label(): string | undefined {
+    return this._persistedEntity?.label;
+  }
+
+  /**
+   * Optional group identifier for organizing related sessions.
+   * @public
+   */
+  public get group(): GroupName | undefined {
+    return this._persistedEntity?.group;
+  }
+
+  /**
+   * ISO 8601 timestamp when session was created.
+   * @public
+   */
+  public get createdAt(): string {
+    return this._persistedEntity?.createdAt ?? '';
+  }
+
+  /**
+   * ISO 8601 timestamp when session was last updated.
+   * @public
+   */
+  public get updatedAt(): string {
+    return this._persistedEntity?.updatedAt ?? '';
+  }
+
+  /**
+   * Optional categorized notes.
+   * @public
+   */
+  public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
+    return this._persistedEntity?.notes;
+  }
+
+  /**
+   * Source filling variation ID for this session.
+   * @public
+   */
+  public get sourceVariationId(): FillingRecipeVariationId {
+    return this._baseRecipe.variationId;
+  }
+
+  /**
+   * The underlying persisted entity.
+   * @public
+   */
+  public get entity(): IFillingSessionEntity {
+    if (!this._persistedEntity) {
+      throw new Error('EditingSession has no persisted entity (session was created, not restored)');
+    }
+    return this._persistedEntity;
   }
 
   // ============================================================================

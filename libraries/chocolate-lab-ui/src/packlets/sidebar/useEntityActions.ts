@@ -31,49 +31,12 @@
 
 import { useCallback } from 'react';
 
-import {
-  type CollectionId,
-  Helpers,
-  type LibraryData,
-  type LibraryRuntime,
-  Editing
-} from '@fgv/ts-chocolate';
+import { type CollectionId, Helpers, Editing } from '@fgv/ts-chocolate';
 
 import { selectActiveTab, useNavigationStore } from '../navigation';
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
 import { type IReferenceScanResult, EntityReferenceScanner } from '../editing';
-
-// ============================================================================
-// Sub-Library Accessor (maps tab → entity sub-library)
-// ============================================================================
-
-/**
- * Returns the entity-layer sub-library for a given tab.
- * @internal
- */
-function getSubLibraryForTab(
-  entities: LibraryRuntime.ChocolateEntityLibrary,
-  tab: string
-): LibraryData.SubLibraryBase<string, string, unknown> | undefined {
-  switch (tab) {
-    case 'ingredients':
-      return entities.ingredients;
-    case 'fillings':
-      return entities.fillings;
-    case 'confections':
-      return entities.confections;
-    case 'decorations':
-      return entities.decorations;
-    case 'molds':
-      return entities.molds;
-    case 'procedures':
-      return entities.procedures;
-    case 'tasks':
-      return entities.tasks;
-    default:
-      return undefined;
-  }
-}
+import { getSubLibraryForTab } from './subLibraryLookup';
 
 // ============================================================================
 // Entity Actions Result
@@ -152,7 +115,7 @@ export function useEntityActions(): IEntityActions {
 
   const deleteEntity = useCallback(
     (compositeId: string): boolean => {
-      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
         return false;
@@ -175,7 +138,7 @@ export function useEntityActions(): IEntityActions {
 
   const copyEntity = useCallback(
     (compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): string | undefined => {
-      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
         return undefined;
@@ -198,7 +161,7 @@ export function useEntityActions(): IEntityActions {
 
   const moveEntity = useCallback(
     (compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): string | undefined => {
-      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
         return undefined;
@@ -229,7 +192,7 @@ export function useEntityActions(): IEntityActions {
 
   const exportEntity = useCallback(
     (compositeId: string): void => {
-      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
         return;

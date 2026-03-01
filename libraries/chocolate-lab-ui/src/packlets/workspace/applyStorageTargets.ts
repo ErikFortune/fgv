@@ -27,7 +27,7 @@
  */
 
 import { type FileTree } from '@fgv/ts-json-base';
-import { LibraryData, type LibraryRuntime, type Settings } from '@fgv/ts-chocolate';
+import { LibraryData, type LibraryRuntime, type Settings, type UserEntities } from '@fgv/ts-chocolate';
 
 import type { IPersistentTreeEntry } from './reactiveWorkspace';
 
@@ -52,6 +52,7 @@ export type StorageRootTreeMap = ReadonlyMap<string, FileTree.IFileTreeDirectory
  */
 function getSubLibrary(
   entities: LibraryRuntime.ChocolateEntityLibrary,
+  userEntities: UserEntities.IUserEntityLibrary | undefined,
   subLibId: LibraryData.SubLibraryId
 ): LibraryData.SubLibraryBase<string, string, unknown> | undefined {
   switch (subLibId) {
@@ -69,6 +70,14 @@ function getSubLibrary(
       return entities.procedures;
     case 'tasks':
       return entities.tasks;
+    case 'sessions':
+      return userEntities?.sessions;
+    case 'journals':
+      return userEntities?.journals;
+    case 'moldInventory':
+      return userEntities?.moldInventory;
+    case 'ingredientInventory':
+      return userEntities?.ingredientInventory;
     default:
       return undefined;
   }
@@ -110,7 +119,8 @@ export function applyStorageTargets(
   entities: LibraryRuntime.ChocolateEntityLibrary,
   localStorageRootDir: FileTree.IFileTreeDirectoryItem,
   persistentTrees: StorageRootTreeMap,
-  logger?: { detail(msg: string): void; info(msg: string): void; warn(msg: string): void }
+  logger?: { detail(msg: string): void; info(msg: string): void; warn(msg: string): void },
+  userEntities?: UserEntities.IUserEntityLibrary
 ): void {
   const subLibIds: ReadonlyArray<LibraryData.SubLibraryId> = [
     'ingredients',
@@ -119,11 +129,15 @@ export function applyStorageTargets(
     'decorations',
     'molds',
     'procedures',
-    'tasks'
+    'tasks',
+    'sessions',
+    'journals',
+    'moldInventory',
+    'ingredientInventory'
   ];
 
   for (const subLibId of subLibIds) {
-    const subLib = getSubLibrary(entities, subLibId);
+    const subLib = getSubLibrary(entities, userEntities, subLibId);
     if (!subLib) {
       continue;
     }
@@ -173,9 +187,10 @@ export function applyStorageTargetsFromWorkspace(params: {
   readonly persistentTrees: ReadonlyMap<string, IPersistentTreeEntry>;
   readonly targets: Settings.IDefaultStorageTargets | undefined;
   readonly entities: LibraryRuntime.ChocolateEntityLibrary;
+  readonly userEntities?: UserEntities.IUserEntityLibrary;
   readonly logger?: { detail(msg: string): void; info(msg: string): void; warn(msg: string): void };
 }): void {
-  const { localStorageRootDir, persistentTrees, targets, entities, logger } = params;
+  const { localStorageRootDir, persistentTrees, targets, entities, userEntities, logger } = params;
   if (!localStorageRootDir) {
     return;
   }
@@ -186,5 +201,5 @@ export function applyStorageTargetsFromWorkspace(params: {
       return rootResult.isSuccess() ? [[id, rootResult.value] as const] : [];
     })
   );
-  applyStorageTargets(targets, entities, localStorageRootDir, persistentTreeMap, logger);
+  applyStorageTargets(targets, entities, localStorageRootDir, persistentTreeMap, logger, userEntities);
 }

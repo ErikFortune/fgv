@@ -31,7 +31,7 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 
-import type { LibraryData, LibraryRuntime, Settings } from '@fgv/ts-chocolate';
+import type { LibraryData, Settings } from '@fgv/ts-chocolate';
 
 import {
   type AppTab,
@@ -43,6 +43,7 @@ import {
 } from '../navigation';
 
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
+import { getSubLibraryForTab } from './subLibraryLookup';
 
 // ============================================================================
 // Collection Info Model
@@ -72,7 +73,7 @@ export interface ICollectionInfo {
 }
 
 // ============================================================================
-// Sub-Library Accessor
+// Default Target Key Accessor
 // ============================================================================
 
 /**
@@ -88,42 +89,17 @@ function getDefaultTargetKeyForTab(tab: AppTab): keyof Settings.IDefaultCollecti
     case 'confections':
       return 'confections';
     case 'decorations':
-      return undefined;
+      return 'decorations';
     case 'molds':
       return 'molds';
     case 'procedures':
       return 'procedures';
     case 'tasks':
       return 'tasks';
-    default:
-      return undefined;
-  }
-}
-
-/**
- * Returns the entity-layer sub-library for a given tab, or undefined for
- * tabs that don't have sub-libraries (e.g., production tabs).
- * @internal
- */
-function getSubLibraryForTab(
-  entities: LibraryRuntime.ChocolateEntityLibrary,
-  tab: AppTab
-): LibraryData.SubLibraryBase<string, string, unknown> | undefined {
-  switch (tab) {
-    case 'ingredients':
-      return entities.ingredients;
-    case 'fillings':
-      return entities.fillings;
-    case 'confections':
-      return entities.confections;
-    case 'decorations':
-      return entities.decorations;
-    case 'molds':
-      return entities.molds;
-    case 'procedures':
-      return entities.procedures;
-    case 'tasks':
-      return entities.tasks;
+    case 'sessions':
+      return 'sessions';
+    case 'journal':
+      return 'journals';
     default:
       return undefined;
   }
@@ -209,7 +185,7 @@ export function useCollectionInfo(): ReadonlyArray<ICollectionInfo> {
   const version = useSyncExternalStore(reactiveWorkspace.subscribe, reactiveWorkspace.getSnapshot);
 
   return useMemo(() => {
-    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
     if (!subLibrary) {
       return [];
     }

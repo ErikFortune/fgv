@@ -28,7 +28,10 @@ import { MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 import {
   BaseSessionId,
   CollectionId,
+  ConfectionRecipeVariationId,
+  ConfectionType,
   FillingId,
+  GroupName,
   Helpers,
   IngredientId,
   Measurement,
@@ -47,7 +50,7 @@ import { IConfectionBase, ProducedConfectionBase } from '../../library-runtime';
 
 import { EditingSession } from './editingSession';
 import { IConfectionEditingSessionParams, IFillingSessionMap } from './model';
-import { ISessionContext } from '../model';
+import { IMaterializedSessionBase, ISessionContext } from '../model';
 import { generateSessionId, generateSessionBaseId, getCurrentTimestamp } from './sessionUtils';
 
 // ============================================================================
@@ -68,13 +71,15 @@ import { generateSessionId, generateSessionBaseId, getCurrentTimestamp } from '.
 export abstract class ConfectionEditingSessionBase<
   T extends AnyProducedConfectionEntity,
   TRuntime extends IConfectionBase
-> {
+> implements IMaterializedSessionBase
+{
   protected readonly _baseConfection: TRuntime;
   protected readonly _context: ISessionContext;
   protected readonly _produced: ProducedConfectionBase<T>;
   protected readonly _originalSnapshot: T;
   protected readonly _sessionId: SessionSpec;
   protected readonly _fillingSessions: Map<SlotId, EditingSession>;
+  protected readonly _persistedEntity: IConfectionSessionEntity | undefined;
 
   /**
    * Creates a ConfectionEditingSessionBase.
@@ -82,13 +87,15 @@ export abstract class ConfectionEditingSessionBase<
    * @param produced - The produced confection wrapper
    * @param context - The runtime context
    * @param params - Optional session parameters
+   * @param persistedEntity - Optional persisted entity (set when restoring from persisted state)
    * @internal
    */
   protected constructor(
     baseConfection: TRuntime,
     produced: ProducedConfectionBase<T>,
     context: ISessionContext,
-    params?: IConfectionEditingSessionParams
+    params?: IConfectionEditingSessionParams,
+    persistedEntity?: IConfectionSessionEntity
   ) {
     this._baseConfection = baseConfection;
     this._context = context;
@@ -96,6 +103,7 @@ export abstract class ConfectionEditingSessionBase<
     this._originalSnapshot = produced.createSnapshot();
     this._sessionId = params?.sessionId ?? generateSessionId().orThrow();
     this._fillingSessions = new Map();
+    this._persistedEntity = persistedEntity;
 
     // Note: Filling sessions are loaded by subclass after type-specific initialization
     // (e.g., MoldedBonBonEditingSession needs to load the mold first)
@@ -381,5 +389,108 @@ export abstract class ConfectionEditingSessionBase<
    */
   public get baseConfection(): TRuntime {
     return this._baseConfection;
+  }
+
+  // ============================================================================
+  // IMaterializedSessionBase Accessors
+  // ============================================================================
+
+  /**
+   * Base identifier within the collection (no collection prefix).
+   * @public
+   */
+  public get baseId(): BaseSessionId {
+    return this._persistedEntity?.baseId ?? ('' as BaseSessionId);
+  }
+
+  /**
+   * Session type discriminator - always 'confection' for confection sessions.
+   * @public
+   */
+  public get sessionType(): 'confection' {
+    return 'confection';
+  }
+
+  /**
+   * Current lifecycle status.
+   * @public
+   */
+  public get status(): PersistedSessionStatus {
+    return this._persistedEntity?.status ?? 'active';
+  }
+
+  /**
+   * User-provided label for the session.
+   * @public
+   */
+  public get label(): string | undefined {
+    return this._persistedEntity?.label;
+  }
+
+  /**
+   * Optional group identifier for organizing related sessions.
+   * @public
+   */
+  public get group(): GroupName | undefined {
+    return this._persistedEntity?.group;
+  }
+
+  /**
+   * ISO 8601 timestamp when session was created.
+   * @public
+   */
+  public get createdAt(): string {
+    return this._persistedEntity?.createdAt ?? '';
+  }
+
+  /**
+   * ISO 8601 timestamp when session was last updated.
+   * @public
+   */
+  public get updatedAt(): string {
+    return this._persistedEntity?.updatedAt ?? '';
+  }
+
+  /**
+   * Optional categorized notes.
+   * @public
+   */
+  public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
+    return this._persistedEntity?.notes;
+  }
+
+  /**
+   * Source confection variation ID for this session.
+   * @public
+   */
+  public get sourceVariationId(): ConfectionRecipeVariationId {
+    if (this._persistedEntity) {
+      return this._persistedEntity.sourceVariationId;
+    }
+    // Derive from base confection when not restored from persisted state
+    const golden = this._baseConfection.goldenVariation;
+    return Helpers.createConfectionRecipeVariationId({
+      collectionId: golden.confectionId,
+      itemId: golden.variationSpec
+    }).orThrow();
+  }
+
+  /**
+   * Confection type discriminator.
+   * @public
+   */
+  public get confectionType(): ConfectionType {
+    return this._baseConfection.confectionType;
+  }
+
+  /**
+   * The underlying persisted entity.
+   * @public
+   */
+  public get entity(): IConfectionSessionEntity {
+    if (!this._persistedEntity) {
+      throw new Error('ConfectionEditingSession has no persisted entity (session was created, not restored)');
+    }
+    return this._persistedEntity;
   }
 }

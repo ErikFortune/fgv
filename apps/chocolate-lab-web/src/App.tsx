@@ -59,6 +59,7 @@ import { TasksTabContent } from './tabs/TasksTab';
 import { ProceduresTabContent } from './tabs/ProceduresTab';
 import { ConfectionsTabContent } from './tabs/ConfectionsTab';
 import { DecorationsTabContent } from './tabs/DecorationsTab';
+import { SessionsTabContent } from './tabs/SessionsTab';
 
 // ============================================================================
 // Mode / Tab Configuration
@@ -204,6 +205,7 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   await restoreSavedDirectories({
     reactiveWorkspace,
     entities: workspace.data.entities,
+    userEntities: workspace.userData.entities,
     configName: _configNamespace,
     logger: _bootReporter
   });
@@ -213,6 +215,7 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     persistentTrees: reactiveWorkspace.persistentTrees,
     targets: workspace.settings?.getResolvedSettings().defaultStorageTargets,
     entities: workspace.data.entities,
+    userEntities: workspace.userData.entities,
     logger: _bootReporter
   });
 
@@ -307,6 +310,8 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
       return <ConfectionsTabContent />;
     case 'decorations':
       return <DecorationsTabContent />;
+    case 'sessions':
+      return <SessionsTabContent />;
     default:
       return <TabPlaceholder tab={tab} />;
   }

@@ -3,12 +3,12 @@
 ## UserLibrary.createPersistedFillingSession() method
 
 Creates a new persisted filling session from a filling variation.
-The session is created and persisted immediately.
+The session is created, persisted to the entity library, and the composite SessionId is returned.
 
 **Signature:**
 
 ```typescript
-createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<SessionId>;
 ```
 
 **Parameters:**
@@ -21,6 +21,6 @@ createPersistedFillingSession(variationId: FillingRecipeVariationId, options: IC
 
 **Returns:**
 
-Result&lt;[IFillingSessionEntity](../interfaces/IFillingSessionEntity.md)&gt;
+Result&lt;[SessionId](../type-aliases/SessionId.md)&gt;
 
-Result with the created persisted session
+Result with the composite SessionId

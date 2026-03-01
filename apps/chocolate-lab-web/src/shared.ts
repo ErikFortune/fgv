@@ -3,8 +3,8 @@
  * @packageDocumentation
  */
 
-import type { IEntityDescriptor } from '@fgv/ts-app-shell';
-import { Entities, LibraryRuntime } from '@fgv/ts-chocolate';
+import type { IEntityDescriptor, IEntityStatus } from '@fgv/ts-app-shell';
+import { Entities, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
 import type {
   IngredientId,
   FillingId,
@@ -12,7 +12,8 @@ import type {
   TaskId,
   ProcedureId,
   ConfectionId,
-  DecorationId
+  DecorationId,
+  SessionId
 } from '@fgv/ts-chocolate';
 import type { IEntityFilterSpec } from '@fgv/chocolate-lab-ui';
 
@@ -71,6 +72,42 @@ export const MOLD_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.IMold, MoldId> = 
   getSublabel: (m: LibraryRuntime.IMold): string | undefined =>
     [m.format, m.description].filter(Boolean).join(' · ') || undefined,
   getStatus: undefined
+};
+
+/**
+ * Wrapper for session list entries, pairing the composite ID with the materialized session.
+ * Needed because AnyMaterializedSession does not expose a composite `id` property.
+ */
+export interface ISessionListEntry {
+  readonly id: SessionId;
+  readonly session: UserLibrary.AnyMaterializedSession;
+}
+
+const SESSION_STATUS_COLORS: Record<string, string> = {
+  planning: 'bg-blue-400',
+  active: 'bg-green-400',
+  committing: 'bg-yellow-400',
+  committed: 'bg-gray-400',
+  abandoned: 'bg-red-400'
+};
+
+const SESSION_STATUS_LABELS: Record<string, string> = {
+  planning: 'Planning',
+  active: 'Active',
+  committing: 'Committing',
+  committed: 'Committed',
+  abandoned: 'Abandoned'
+};
+
+export const SESSION_DESCRIPTOR: IEntityDescriptor<ISessionListEntry, SessionId> = {
+  getId: (e: ISessionListEntry): SessionId => e.id,
+  getLabel: (e: ISessionListEntry): string => e.session.label ?? e.session.baseId,
+  getSublabel: (e: ISessionListEntry): string | undefined =>
+    [e.session.sessionType, e.session.group].filter(Boolean).join(' · ') || undefined,
+  getStatus: (e: ISessionListEntry): IEntityStatus => ({
+    label: SESSION_STATUS_LABELS[e.session.status] ?? e.session.status,
+    colorClass: SESSION_STATUS_COLORS[e.session.status] ?? 'bg-gray-400'
+  })
 };
 
 export const DECORATION_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.IDecoration, DecorationId> = {
@@ -161,6 +198,17 @@ export const DECORATION_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IDecoratio
   selectionExtractors: {
     collection: (d) => collectionFromId(d.id),
     tags: (d) => d.tags ?? []
+  }
+};
+
+export const SESSION_FILTER_SPEC: IEntityFilterSpec<ISessionListEntry> = {
+  getSearchText: (e) =>
+    [e.session.label, e.session.baseId, e.session.sessionType, e.session.group].filter(Boolean).join(' '),
+  getCollectionId: (e) => collectionFromId(e.id),
+  selectionExtractors: {
+    collection: (e) => collectionFromId(e.id),
+    status: (e) => e.session.status,
+    type: (e) => e.session.sessionType
   }
 };
 

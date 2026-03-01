@@ -11,6 +11,7 @@ export {
   type CascadeEntityType,
   type CascadeColumnMode,
   type ICascadeEntry,
+  type ICreateSessionInfo,
   type ICollectionVisibility,
   type IFilterState,
   DEFAULT_COLLECTION_VISIBILITY,

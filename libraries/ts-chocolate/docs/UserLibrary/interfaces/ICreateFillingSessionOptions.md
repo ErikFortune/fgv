@@ -75,4 +75,21 @@ string
 Optional user-provided label
 
 </td></tr>
+<tr><td>
+
+[slug](./ICreateFillingSessionOptions.slug.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional slug appended to the generated session ID as kebab-case
+
+</td></tr>
 </tbody></table>

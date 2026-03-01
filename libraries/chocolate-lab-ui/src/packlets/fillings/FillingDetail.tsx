@@ -26,7 +26,7 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { EyeIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PencilSquareIcon, PlayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ClipboardDocumentIcon } from '@heroicons/react/20/solid';
 
 import { EntityRow, DetailSection, DetailRow, TagList, StatusBadge, DetailHeader } from '@fgv/ts-app-shell';
@@ -63,6 +63,8 @@ export interface IFillingDetailProps {
   readonly onEdit?: (variationSpec: FillingRecipeVariationSpec) => void;
   /** Optional callback to open the preview pane */
   readonly onPreview?: () => void;
+  /** Optional callback to start a production session for the current variation */
+  readonly onStartSession?: (variationSpec: FillingRecipeVariationSpec) => void;
   /** Optional callback to close this panel */
   readonly onClose?: () => void;
   /** Target yield in grams for scaling ingredient quantities */
@@ -221,6 +223,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
     defaultVariationSpec,
     onEdit,
     onPreview,
+    onStartSession,
     onClose,
     targetYield,
     onTargetYieldChange
@@ -353,6 +356,17 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
               >
                 <PencilSquareIcon className="w-4 h-4" />
                 Edit
+              </button>
+            )}
+            {onStartSession && (
+              <button
+                type="button"
+                onClick={(): void => onStartSession(selectedSpec)}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                title="Start production session"
+              >
+                <PlayIcon className="w-4 h-4" />
+                Session
               </button>
             )}
             {onClose && (

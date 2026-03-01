@@ -82,7 +82,8 @@ export {
   AnySessionEntity,
   IConfectionSessionEntity,
   IFillingSessionEntity,
-  PersistedSessionStatus
+  PersistedSessionStatus,
+  PersistedSessionType
 } from './session';
 
 export {

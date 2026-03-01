@@ -34,7 +34,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Converters as JsonConverters, type FileTree } from '@fgv/ts-json-base';
 
 import { CryptoUtils, ZipFileTree } from '@fgv/ts-extras';
-import { type CollectionId, Helpers, LibraryData, type LibraryRuntime, Settings } from '@fgv/ts-chocolate';
+import { type CollectionId, Helpers, LibraryData, Settings } from '@fgv/ts-chocolate';
 import {
   FileApiTreeAccessors,
   safeShowDirectoryPicker,
@@ -48,63 +48,7 @@ import { type AppTab, selectActiveTab, useNavigationStore } from '../navigation'
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
 import { type ICreateCollectionData } from './CreateCollectionDialog';
 import { type ImportCollisionResolution } from './ImportCollisionDialog';
-
-// ============================================================================
-// Sub-Library Accessor (maps tab → entity sub-library)
-// ============================================================================
-
-/**
- * Returns the entity-layer sub-library for a given tab.
- * @internal
- */
-function getSubLibraryForTab(
-  entities: LibraryRuntime.ChocolateEntityLibrary,
-  tab: string
-): LibraryData.SubLibraryBase<string, string, unknown> | undefined {
-  switch (tab) {
-    case 'ingredients':
-      return entities.ingredients;
-    case 'fillings':
-      return entities.fillings;
-    case 'confections':
-      return entities.confections;
-    case 'decorations':
-      return entities.decorations;
-    case 'molds':
-      return entities.molds;
-    case 'procedures':
-      return entities.procedures;
-    case 'tasks':
-      return entities.tasks;
-    default:
-      return undefined;
-  }
-}
-
-/**
- * Maps a tab name to the sub-library path within a library tree.
- * @internal
- */
-function getSubLibraryPathForTab(tab: string): string | undefined {
-  switch (tab) {
-    case 'ingredients':
-      return LibraryData.LibraryPaths.ingredients;
-    case 'fillings':
-      return LibraryData.LibraryPaths.fillings;
-    case 'confections':
-      return LibraryData.LibraryPaths.confections;
-    case 'decorations':
-      return LibraryData.LibraryPaths.decorations;
-    case 'molds':
-      return LibraryData.LibraryPaths.molds;
-    case 'procedures':
-      return LibraryData.LibraryPaths.procedures;
-    case 'tasks':
-      return LibraryData.LibraryPaths.tasks;
-    default:
-      return undefined;
-  }
-}
+import { getSubLibraryForTab, getSubLibraryPathForTab } from './subLibraryLookup';
 
 // ============================================================================
 // Collection Actions Result
@@ -253,7 +197,7 @@ export function useCollectionActions(): ICollectionActions {
 
     // Try to navigate to the sub-library directory for the active tab
     const subLibraryPath = getSubLibraryPathForTab(activeTab);
-    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
 
     if (!subLibraryPath || !subLibrary) {
       workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
@@ -322,7 +266,7 @@ export function useCollectionActions(): ICollectionActions {
 
   const createCollection = useCallback(
     async (data: ICreateCollectionData): Promise<void> => {
-      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
         return;
@@ -467,7 +411,9 @@ export function useCollectionActions(): ICollectionActions {
         molds: 'molds',
         procedures: 'procedures',
         tasks: 'tasks',
-        decorations: 'decorations'
+        decorations: 'decorations',
+        sessions: 'sessions',
+        journal: 'journals'
       };
       const key = tabToKey[activeTab as AppTab];
       if (!key) {
@@ -499,7 +445,7 @@ export function useCollectionActions(): ICollectionActions {
 
   const deleteCollection = useCallback(
     (collectionId: string): void => {
-      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         return;
       }
@@ -532,7 +478,7 @@ export function useCollectionActions(): ICollectionActions {
 
   const exportCollection = useCallback(
     async (collectionId: string): Promise<void> => {
-      const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
         return;
@@ -611,7 +557,7 @@ export function useCollectionActions(): ICollectionActions {
   );
 
   const exportAllAsZip = useCallback(async (): Promise<void> => {
-    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
     if (!subLibrary) {
       workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
       return;
@@ -690,7 +636,7 @@ export function useCollectionActions(): ICollectionActions {
   }, [workspace, activeTab]);
 
   const importCollection = useCallback(async (): Promise<void> => {
-    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
     if (!subLibrary) {
       workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
       return;
@@ -773,7 +719,7 @@ export function useCollectionActions(): ICollectionActions {
       return;
     }
 
-    const subLibrary = getSubLibraryForTab(workspace.data.entities, activeTab);
+    const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
     if (!subLibrary) {
       workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
       return;

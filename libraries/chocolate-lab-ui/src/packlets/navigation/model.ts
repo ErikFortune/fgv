@@ -143,6 +143,22 @@ export type CascadeEntityType =
 export type CascadeColumnMode = 'view' | 'edit' | 'create' | 'preview';
 
 /**
+ * Pre-fill data for session creation in the cascade.
+ * Used when "Start Session" is invoked from a confection or filling detail view.
+ * @public
+ */
+export interface ICreateSessionInfo {
+  /** Pre-selected confection ID (composite, from confection detail "Start Session") */
+  readonly confectionId?: string;
+  /** Pre-selected filling ID (composite, from filling detail "Start Session") */
+  readonly fillingId?: string;
+  /** Pre-selected filling variation spec (e.g. '2026-01-15') */
+  readonly variationSpec?: string;
+  /** Pre-filled entity display name for the label field */
+  readonly entityName?: string;
+}
+
+/**
  * A single entry in the column cascade stack.
  * @public
  */
@@ -161,6 +177,8 @@ export interface ICascadeEntry {
   readonly sourceSlotId?: string;
   /** Whether this cascade entry has unsaved changes (set by the owning tab component). */
   readonly hasChanges?: boolean;
+  /** Pre-fill data for session creation (set when opening create-session from a recipe) */
+  readonly createSessionInfo?: ICreateSessionInfo;
 }
 
 // ============================================================================

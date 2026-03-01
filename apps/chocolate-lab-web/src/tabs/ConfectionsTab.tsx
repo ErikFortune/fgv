@@ -203,6 +203,30 @@ export function ConfectionsTabContent(): React.ReactElement {
     setConfectionToDelete(null);
   }, []);
 
+  // --------------------------------------------------------------------------
+  // Start Session Dialog
+  // --------------------------------------------------------------------------
+
+  const handleRequestStartSession = useCallback(
+    (confectionId: ConfectionId): void => {
+      const result = workspace.data.confections.get(confectionId);
+      const entityName = result.isSuccess() ? result.value.name : confectionId;
+      // Navigate to sessions tab and open create panel pre-filled with this confection
+      const store = useNavigationStore.getState();
+      store.setMode('production');
+      store.setTab('sessions');
+      store.squashCascade([
+        {
+          entityType: 'session',
+          entityId: '__new__',
+          mode: 'create',
+          createSessionInfo: { confectionId, entityName }
+        }
+      ]);
+    },
+    [workspace]
+  );
+
   // Handle creating a confection from a pasted entity (add to mutable collection, open in edit mode)
   const handleCreateConfection = useCallback(
     (entity: Entities.Confections.AnyConfectionRecipeEntity): void => {
@@ -1019,6 +1043,7 @@ export function ConfectionsTabContent(): React.ReactElement {
               }
               onEdit={(spec): void => handleEditConfection(entityId, spec)}
               onPreview={(): void => handlePreviewConfection(entityId)}
+              onStartSession={(): void => handleRequestStartSession(entityId as ConfectionId)}
               viewSettings={viewSettingsMap.get(entityId)}
               onViewSettingsChange={(s): void => handleViewSettingsChange(entityId, s)}
             />

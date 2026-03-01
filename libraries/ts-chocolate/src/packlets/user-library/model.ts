@@ -27,9 +27,12 @@ import { Result } from '@fgv/ts-utils';
 
 import {
   BaseJournalId,
+  BaseSessionId,
   CollectionId,
+  ConfectionId,
   ConfectionRecipeVariationId,
   FillingRecipeVariationId,
+  GroupName,
   JournalId,
   Measurement,
   SessionId,
@@ -43,11 +46,11 @@ import {
   IConfectionProductionJournalEntryEntity,
   IFillingEditJournalEntryEntity,
   IFillingProductionJournalEntryEntity,
-  IFillingSessionEntity,
   IIngredientInventoryEntryEntity,
   IMoldInventoryEntryEntity,
   Inventory,
-  PersistedSessionStatus
+  PersistedSessionStatus,
+  PersistedSessionType
 } from '../entities';
 import {
   IConfectionBase,
@@ -59,7 +62,45 @@ import {
   IMold,
   MaterializedLibrary
 } from '../library-runtime';
+import { IUserEntityLibrary } from '../user-entities';
 import * as Session from './session';
+
+// ============================================================================
+// Materialized Session Base Interface
+// ============================================================================
+
+/**
+ * Common metadata interface for all materialized editing sessions.
+ *
+ * Follows the library-runtime pattern where materialized classes store a data
+ * entity and expose its properties via typed accessors. The UI layer consumes
+ * this interface (never raw entity interfaces).
+ *
+ * @public
+ */
+// TODO: conssider templating with session type & entity type for better typing
+export interface IMaterializedSessionBase {
+  /** Base identifier within the collection (no collection prefix) */
+  readonly baseId: BaseSessionId;
+  /** Session type discriminator */
+  readonly sessionType: PersistedSessionType;
+  /** Current lifecycle status */
+  readonly status: PersistedSessionStatus;
+  /** User-provided label for the session */
+  readonly label: string | undefined;
+  /** Optional group identifier for organizing related sessions */
+  readonly group: GroupName | undefined;
+  /** ISO 8601 timestamp when session was created */
+  readonly createdAt: string;
+  /** ISO 8601 timestamp when session was last updated */
+  readonly updatedAt: string;
+  /** Optional categorized notes */
+  readonly notes: ReadonlyArray<CommonModel.ICategorizedNote> | undefined;
+  /** Source variation ID for this session */
+  readonly sourceVariationId: FillingRecipeVariationId | ConfectionRecipeVariationId;
+  /** The underlying persisted entity */
+  readonly entity: AnySessionEntity;
+}
 
 // ============================================================================
 // Session Context Interface
@@ -105,6 +146,25 @@ export interface ICreateFillingSessionOptions {
   readonly status?: PersistedSessionStatus;
   /** Optional user-provided label */
   readonly label?: string;
+  /** Optional slug appended to the generated session ID as kebab-case */
+  readonly slug?: string;
+}
+
+/**
+ * Options for creating a new persisted confection session.
+ * @public
+ */
+export interface ICreateConfectionSessionOptions {
+  /** Target collection for the persisted session */
+  readonly collectionId: CollectionId;
+  /** Initial session status (default: 'active') */
+  readonly status?: PersistedSessionStatus;
+  /** Optional user-provided label */
+  readonly label?: string;
+  /** Optional slug appended to the generated session ID as kebab-case */
+  readonly slug?: string;
+  /** Optional confection editing session parameters (yield, sessionId) */
+  readonly params?: Session.IConfectionEditingSessionParams;
 }
 
 // ============================================================================
@@ -271,6 +331,12 @@ export type AnyInventoryEntry = IMoldInventoryEntry | IIngredientInventoryEntry;
  */
 export interface IUserLibrary {
   /**
+   * The underlying user entity library for collection management operations.
+   * Parallels `workspace.data.entities` for shared library data.
+   */
+  readonly entities: IUserEntityLibrary;
+
+  /**
    * A materialized library of all sessions, keyed by composite ID.
    * Sessions are materialized lazily on access and cached.
    */
@@ -306,20 +372,32 @@ export interface IUserLibrary {
 
   /**
    * Creates a new persisted filling session from a filling variation.
-   * The session is created and persisted immediately.
+   * The session is created, persisted to the entity library, and the composite SessionId is returned.
    * @param variationId - Source filling variation to create session for
    * @param options - Creation options including target collection
-   * @returns Result with the created persisted session
+   * @returns Result with the composite SessionId
    */
   createPersistedFillingSession(
     variationId: FillingRecipeVariationId,
     options: ICreateFillingSessionOptions
-  ): Result<IFillingSessionEntity>;
+  ): Result<SessionId>;
+
+  /**
+   * Creates a new persisted confection session from a confection recipe.
+   * The session is created, persisted to the entity library, and the composite SessionId is returned.
+   * @param confectionId - Source confection to create session for
+   * @param options - Creation options including target collection and optional session params
+   * @returns Result with the composite SessionId
+   */
+  createPersistedConfectionSession(
+    confectionId: ConfectionId,
+    options: ICreateConfectionSessionOptions
+  ): Result<SessionId>;
 
   /**
    * Saves an active session back to the library.
    * @param sessionId - Session to save
-   * @returns Result with the updated persisted session
+   * @returns Result with the composite SessionId
    */
-  saveSession(sessionId: SessionId): Result<AnySessionEntity>;
+  saveSession(sessionId: SessionId): Result<SessionId>;
 }

@@ -7,7 +7,7 @@ Saves an active session back to the library.
 **Signature:**
 
 ```typescript
-saveSession(sessionId: SessionId): Result<AnySessionEntity>;
+saveSession(sessionId: SessionId): Result<SessionId>;
 ```
 
 **Parameters:**
@@ -19,6 +19,6 @@ saveSession(sessionId: SessionId): Result<AnySessionEntity>;
 
 **Returns:**
 
-Result&lt;[AnySessionEntity](../type-aliases/AnySessionEntity.md)&gt;
+Result&lt;[SessionId](../type-aliases/SessionId.md)&gt;
 
-Result with the updated persisted session
+Result with the composite SessionId

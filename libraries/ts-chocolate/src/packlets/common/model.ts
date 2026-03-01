@@ -122,19 +122,20 @@ export const SESSION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8
 
 /**
  * Pattern for valid base session IDs (within a collection)
- * Format: YYYY-MM-DD-HHMMSS-[0-9a-f]\{8\}
- * Example: "2026-01-15-143025-a1b2c3d4"
+ * Format: YYYY-MM-DD-HHMMSS-slug where slug is a kebab-case identifier
+ * (defaults to an 8-char hex hash when auto-generated).
+ * Example: "2026-01-15-143025-a1b2c3d4" or "2026-01-15-143025-my-batch"
  * @public
  */
-export const BASE_SESSION_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
+export const BASE_SESSION_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[a-z0-9]+(-[a-z0-9]+)*$/;
 
 /**
  * Pattern for valid composite session IDs
  * Format: collectionId.baseSessionId
- * Example: "user-sessions.2026-01-15-143025-a1b2c3d4"
+ * Example: "user-sessions.2026-01-15-143025-a1b2c3d4" or "user.2026-01-15-143025-my-batch"
  * @public
  */
-export const SESSION_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+\.\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
+export const SESSION_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+\.\d{4}-\d{2}-\d{2}-\d{6}-[a-z0-9]+(-[a-z0-9]+)*$/;
 
 /**
  * Pattern for valid journal base IDs (within a collection)

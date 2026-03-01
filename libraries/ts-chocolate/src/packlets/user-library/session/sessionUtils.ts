@@ -70,12 +70,53 @@ export function generateJournalId(): Result<BaseJournalId> {
 }
 
 /**
- * Generates a SessionBaseId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
+ * Character replacements applied before general slug normalization.
+ * Handles German umlauts/sharp-s and strips apostrophes and similar punctuation.
+ * @internal
+ */
+const SLUG_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
+  // German umlauts → base vowel + e
+  [/ä/g, 'ae'],
+  [/ö/g, 'oe'],
+  [/ü/g, 'ue'],
+  [/ÿ/g, 'ij'],
+  // Sharp-s
+  [/ß/g, 'ss'],
+  // Apostrophes and similar (strip without inserting a hyphen)
+  [/[\u0027\u2019\u2018\u0060\u00B4]/g, '']
+];
+
+/**
+ * Normalizes a string to a kebab-case slug suitable for use in a session ID.
+ *
+ * - German umlauts are expanded (ä→ae, ö→oe, ü→ue) and ß becomes ss.
+ * - Apostrophes and similar punctuation are stripped (so "Bailey's" → "baileys").
+ * - Remaining non-alphanumeric runs become hyphens.
+ * - Leading/trailing hyphens are trimmed.
+ *
+ * @param input - The string to normalize
+ * @returns A kebab-case slug, or undefined if the result is empty
+ * @public
+ */
+export function toSessionSlug(input: string): string | undefined {
+  let s = input.toLowerCase();
+  for (const [pattern, replacement] of SLUG_REPLACEMENTS) {
+    s = s.replace(pattern, replacement);
+  }
+  const slug = s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return slug.length > 0 ? slug : undefined;
+}
+
+/**
+ * Generates a SessionBaseId in the format YYYY-MM-DD-HHMMSS-slug.
+ * If a slug is provided it is normalized to kebab-case; otherwise a random
+ * 8-character hex string is used.
  * @param now - Optional date to base the ID on (defaults to current date/time)
+ * @param slug - Optional slug to use instead of the default random hex (will be normalized)
  * @returns Result with a valid SessionBaseId
  * @public
  */
-export function generateSessionBaseId(now?: Date): Result<BaseSessionId> {
+export function generateSessionBaseId(now?: Date, slug?: string): Result<BaseSessionId> {
   now = now ?? new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -83,9 +124,10 @@ export function generateSessionBaseId(now?: Date): Result<BaseSessionId> {
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
-  const random = Math.random().toString(16).substring(2, 10).padStart(8, '0');
+  const resolvedSlug =
+    (slug ? toSessionSlug(slug) : undefined) ?? Math.random().toString(16).substring(2, 10).padStart(8, '0');
   return CommonConverters.baseSessionId.convert(
-    `${year}-${month}-${day}-${hours}${minutes}${seconds}-${random}`
+    `${year}-${month}-${day}-${hours}${minutes}${seconds}-${resolvedSlug}`
   );
 }
 

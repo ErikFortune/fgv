@@ -89,15 +89,6 @@ Schema version discriminator type.
 </td></tr>
 <tr><td>
 
-[PersistedSessionType](./type-aliases/PersistedSessionType.md)
-
-</td><td>
-
-Persisted session type discriminator.
-
-</td></tr>
-<tr><td>
-
 [ISessionFileTreeSource](./type-aliases/ISessionFileTreeSource.md)
 
 </td><td>

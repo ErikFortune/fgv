@@ -3,7 +3,7 @@
 ## Workspace.userData property
 
 User library runtime for materialized user data.
-Access via `userRuntime.sessions`, `userRuntime.journals`, `userRuntime.moldInventory`, etc.
+Access via `userData.sessions`, `userData.journals`, `userData.moldInventory`, etc.
 
 **Signature:**
 

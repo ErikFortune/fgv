@@ -186,6 +186,8 @@ Pattern for valid session specs
 </td><td>
 
 Pattern for valid base session IDs (within a collection)
+Format: YYYY-MM-DD-HHMMSS-slug where slug is a kebab-case identifier
+(defaults to an 8-char hex hash when auto-generated).
 
 </td></tr>
 <tr><td>

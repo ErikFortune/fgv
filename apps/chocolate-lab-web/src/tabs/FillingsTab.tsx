@@ -122,6 +122,29 @@ export function FillingsTabContent(): React.ReactElement {
     reactiveWorkspace.version
   ]);
 
+  // --------------------------------------------------------------------------
+  // Start Session — navigate to sessions tab with pre-filled cascade
+  // --------------------------------------------------------------------------
+
+  const handleRequestStartSession = useCallback(
+    (fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): void => {
+      const result = workspace.data.fillings.get(fillingId);
+      const entityName = result.isSuccess() ? result.value.name : fillingId;
+      const store = useNavigationStore.getState();
+      store.setMode('production');
+      store.setTab('sessions');
+      store.squashCascade([
+        {
+          entityType: 'session',
+          entityId: '__new__',
+          mode: 'create',
+          createSessionInfo: { fillingId, variationSpec, entityName }
+        }
+      ]);
+    },
+    [workspace]
+  );
+
   const { entities: fillings, selectedId } = useEntityList<LibraryRuntime.FillingRecipe, FillingId>({
     getAll: () => workspace.data.fillings.values(),
     compare: (a, b) => a.name.localeCompare(b.name),
@@ -1129,6 +1152,7 @@ export function FillingsTabContent(): React.ReactElement {
               onCompareVariations={(specs): void => setVariationCompare({ id: fillingId, specs })}
               onEdit={(spec): void => handleEditFilling(entry.entityId, spec)}
               onPreview={(): void => handlePreviewFilling(entry.entityId)}
+              onStartSession={(spec): void => handleRequestStartSession(fillingId, spec)}
               targetYield={targetYieldMap.get(entry.entityId)}
               onTargetYieldChange={(g): void => handleTargetYieldChange(entry.entityId, g)}
             />
@@ -1361,7 +1385,8 @@ export function FillingsTabContent(): React.ReactElement {
     handleSubProcedureSave,
     handleSubProcedureCancel,
     procedureSession,
-    subEntitySeed
+    subEntitySeed,
+    handleRequestStartSession
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {

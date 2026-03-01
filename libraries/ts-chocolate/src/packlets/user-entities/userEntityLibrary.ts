@@ -38,8 +38,10 @@ import {
 import {
   IFileTreeSource,
   ILibraryFileTreeSource,
+  type LibraryLoadSpec,
   LibraryPaths,
   normalizeFileSources,
+  resolveSubLibraryLoadSpec,
   SubLibraryId
 } from '../library-data';
 import { IUserEntityLibrary, IUserEntityLibraryCreateParams } from './model';
@@ -142,9 +144,9 @@ export class UserEntityLibrary implements IUserEntityLibrary {
 
   /**
    * Converts generic file sources to sub-library specific sources.
-   * User libraries have no built-in data, so we just map the directory and mutable flag.
+   * Resolves the per-sub-library load spec from the source's FullLibraryLoadSpec.
    * @param sources - Generic file tree sources
-   * @param subLibraryId - The sub-library to extract sources for (unused for user libraries)
+   * @param subLibraryId - The sub-library to extract load spec for
    * @returns Array of sub-library specific sources
    * @internal
    */
@@ -152,11 +154,12 @@ export class UserEntityLibrary implements IUserEntityLibrary {
     sources: ReadonlyArray<ILibraryFileTreeSource>,
     subLibraryId: SubLibraryId
   ): ReadonlyArray<IFileTreeSource<CollectionId>> {
-    // User libraries have no built-in data, so we ignore the subLibraryId
-    // and just map directory/mutable from the source
     return sources.map((source) => ({
       directory: source.directory,
-      load: false, // No built-in data for user libraries
+      load:
+        source.load !== undefined
+          ? (resolveSubLibraryLoadSpec(source.load, subLibraryId) as LibraryLoadSpec<CollectionId>)
+          : false,
       mutable: source.mutable,
       skipMissingDirectories: source.skipMissingDirectories
     }));

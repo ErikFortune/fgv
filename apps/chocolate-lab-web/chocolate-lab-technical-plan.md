@@ -372,17 +372,31 @@ Before building any UI, the materialized session classes (`EditingSession`, `Con
 #### Phase 5a: Sessions
 
 - Session list with grouped view (`session.group ?? session.status`)
-- Session creation (from Library "Start Session" action + toast with link)
+- Session creation via cascade panel with recipe typeahead (see below)
 - Session detail view (recipe + procedure checklist split)
 - Session lifecycle transitions (planning → active → committed → abandoned)
+
+**Session creation — cascade panel with recipe typeahead:**
+
+Session creation uses a `CreateSessionPanel` component rendered in the cascade (consistent with all other entity creation). No modal.
+
+- **`ICascadeEntry` extension:** Optional `createSessionInfo?: ICreateSessionInfo` field carries pre-fill data (confectionId, fillingId, variationSpec, entityName) for cross-tab navigation from Library.
+- **Recipe typeahead:** Combined confection+filling datalist using `useDatalistMatch` (same union-type discriminator pattern as ConfectionEditView's filling+ingredient datalist). Type filter (Any/Confection/Filling) narrows suggestions.
+- **Blur/resolution behavior:**
+  1. Single match: auto-select recipe, set type
+  2. Zero/multiple matches + specific type: push entity create form onto cascade (via `onAddConfection(seed)` / `onAddFilling(seed)`)
+  3. Zero/multiple matches + type="Any": inline disambiguation "Create as: [Confection] [Filling]" (same pattern as ConfectionEditView `pendingNewFilling`)
+- **Filling variation selector:** Shown when filling recipe selected; defaults to golden variation.
+- **Entry points:** "+ New Session" button atop session list (standalone, empty); "Start Session" on confection/filling detail views (navigates to sessions tab, pushes pre-filled cascade entry).
+- **After creation:** Session ID returned by `useSessionActions`, cascade squashes to view mode for the new session.
 
 **Implementation sequence:**
 1. Extend `EditingSession` and `ConfectionEditingSessionBase` with metadata accessors (ts-chocolate)
 2. Build `SessionListView` consuming `AnyMaterializedSession` — use `.status`, `.label`, `.baseId`, `.group` accessors
 3. Build `SessionDetailView` consuming materialized sessions — use `.baseRecipe` for recipe info, `.produced` for current editing state, `.status`/`.label`/etc. for metadata
 4. Wire `SessionsTab` using `workspace.userData.sessions.values()` (materialized iterator)
-5. Wire "Start Session" action and mode navigation
-
+5. Build `CreateSessionPanel` with recipe typeahead, wire into SessionsTab cascade create mode
+6. Wire "Start Session" from ConfectionsTab/FillingsTab: navigate to sessions tab + push pre-filled cascade entry
 #### Phase 5b: Journal & Inventory
 Journal list/detail, inventory CRUD, commit flow. Same materialized-only rule applies — use `workspace.userData.journals.values()` and inventory equivalents.
 

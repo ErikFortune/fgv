@@ -33,6 +33,8 @@ export {
 export {
   generateJournalId,
   generateSessionId,
+  generateSessionBaseId,
+  toSessionSlug,
   getCurrentDateString,
   getCurrentTimestamp
 } from './sessionUtils';

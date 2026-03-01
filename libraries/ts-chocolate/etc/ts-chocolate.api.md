@@ -300,7 +300,7 @@ class BarTruffleEditingSession<TRecipe extends IBarTruffleRecipe = IBarTruffleRe
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     static create<T extends IBarTruffleRecipe = IBarTruffleRecipe>(baseConfection: T, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession<T>>;
-    static fromPersistedState<T extends IBarTruffleRecipe = IBarTruffleRecipe>(baseConfection: T, history: Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession<T>>;
+    static fromPersistedState<T extends IBarTruffleRecipe = IBarTruffleRecipe>(baseConfection: T, persistedEntity: IConfectionSessionEntity, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<BarTruffleEditingSession<T>>;
     scaleToYield(yieldSpec: Confections.AnyConfectionYield): Result<Confections.IConfectionYield>;
 }
 
@@ -954,26 +954,35 @@ class ConfectionEditingSession {
 }
 
 // @public
-abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntity, TRuntime extends IConfectionBase> {
+abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntity, TRuntime extends IConfectionBase> implements IMaterializedSessionBase {
     // @internal
-    protected constructor(baseConfection: TRuntime, produced: ProducedConfectionBase<T>, context: ISessionContext, params?: IConfectionEditingSessionParams);
+    protected constructor(baseConfection: TRuntime, produced: ProducedConfectionBase<T>, context: ISessionContext, params?: IConfectionEditingSessionParams, persistedEntity?: IConfectionSessionEntity);
     get baseConfection(): TRuntime;
     // (undocumented)
     protected readonly _baseConfection: TRuntime;
+    get baseId(): BaseSessionId;
     protected abstract _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
+    get confectionType(): ConfectionType;
     get context(): ISessionContext;
     // (undocumented)
     protected readonly _context: ISessionContext;
+    get createdAt(): string;
     // @internal
     protected _createFillingSessionForSlot(slotId: SlotId, fillingId: FillingId): Result<EditingSession>;
+    get entity(): IConfectionSessionEntity;
     get fillingSessions(): IFillingSessionMap;
     // (undocumented)
     protected readonly _fillingSessions: Map<SlotId, EditingSession>;
     getFillingSession(slotId: SlotId): EditingSession | undefined;
+    get group(): GroupName | undefined;
+    get label(): string | undefined;
     // @internal
     protected _loadFillingSessions(): Result<Map<SlotId, EditingSession> | undefined>;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     // (undocumented)
     protected readonly _originalSnapshot: T;
+    // (undocumented)
+    protected readonly _persistedEntity: IConfectionSessionEntity | undefined;
     get produced(): ProducedConfectionBase<T>;
     // (undocumented)
     protected readonly _produced: ProducedConfectionBase<T>;
@@ -988,6 +997,7 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
     get sessionId(): SessionSpec;
     // (undocumented)
     protected readonly _sessionId: SessionSpec;
+    get sessionType(): 'confection';
     setFillingSlot(slotId: SlotId, choice: {
         type: 'recipe';
         fillingId: FillingId;
@@ -995,6 +1005,8 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
         type: 'ingredient';
         ingredientId: IngredientId;
     }): Result<EditingSession | undefined>;
+    get sourceVariationId(): ConfectionRecipeVariationId;
+    get status(): PersistedSessionStatus;
     toPersistedState(options: {
         readonly collectionId: CollectionId;
         readonly baseId?: BaseSessionId;
@@ -1002,6 +1014,7 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
         readonly label?: string;
         readonly notes?: Model.ICategorizedNote[];
     }): Result<IConfectionSessionEntity>;
+    get updatedAt(): string;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2003,14 +2016,20 @@ declare namespace Editing {
 export { Editing }
 
 // @public
-class EditingSession {
+class EditingSession implements IMaterializedSessionBase {
     analyzeSaveOptions(): ISaveAnalysis;
+    get baseId(): BaseSessionId;
     get baseRecipe(): IFillingRecipeVariation;
     canRedo(): boolean;
     canUndo(): boolean;
     static create(baseRecipe: IFillingRecipeVariation, initialScale?: number): Result<EditingSession>;
+    get createdAt(): string;
+    get entity(): IFillingSessionEntity;
     static fromPersistedState(data: IFillingSessionEntity, baseRecipe: IFillingRecipeVariation): Result<EditingSession>;
+    get group(): GroupName | undefined;
     get hasChanges(): boolean;
+    get label(): string | undefined;
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get produced(): ProducedFilling;
     redo(): Result<boolean>;
     removeIngredient(id: IngredientId): Result<void>;
@@ -2019,9 +2038,12 @@ class EditingSession {
     saveAsNewVariation(options: ISaveVariationOptions): Result<ISaveResult>;
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
     get sessionId(): SessionSpec;
+    get sessionType(): 'filling';
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<void>;
     setNotes(notes: Model.ICategorizedNote[]): Result<void>;
     setProcedure(id: ProcedureId | undefined): Result<void>;
+    get sourceVariationId(): FillingRecipeVariationId;
+    get status(): PersistedSessionStatus;
     get targetWeight(): Measurement;
     toEditJournalEntry(notes?: Model.ICategorizedNote[]): Result<IFillingEditJournalEntryEntity>;
     toPersistedState(options: {
@@ -2033,6 +2055,7 @@ class EditingSession {
     }): Result<IFillingSessionEntity>;
     toProductionJournalEntry(notes?: Model.ICategorizedNote[]): Result<IFillingProductionJournalEntryEntity>;
     undo(): Result<boolean>;
+    get updatedAt(): string;
 }
 
 // @public
@@ -2144,6 +2167,7 @@ declare namespace Entities {
         IConfectionSessionEntity,
         IFillingSessionEntity,
         PersistedSessionStatus,
+        PersistedSessionType,
         IngredientInventoryLibrary,
         MoldInventoryLibrary,
         IIngredientInventoryEntryEntity,
@@ -2664,6 +2688,9 @@ function generateFillingVariationSpec(existingSpecs: ReadonlyArray<FillingRecipe
 
 // @public
 function generateJournalId(): Result<BaseJournalId>;
+
+// @public
+function generateSessionBaseId(now?: Date, slug?: string): Result<BaseSessionId>;
 
 // @public
 function generateSessionId(): Result<SessionSpec>;
@@ -3381,9 +3408,19 @@ interface IConfectionYield {
 }
 
 // @public
+interface ICreateConfectionSessionOptions {
+    readonly collectionId: CollectionId;
+    readonly label?: string;
+    readonly params?: Session_2.IConfectionEditingSessionParams;
+    readonly slug?: string;
+    readonly status?: PersistedSessionStatus;
+}
+
+// @public
 interface ICreateFillingSessionOptions {
     readonly collectionId: CollectionId;
     readonly label?: string;
+    readonly slug?: string;
     readonly status?: PersistedSessionStatus;
 }
 
@@ -4315,6 +4352,20 @@ interface IMaterializedLibraryParams<TId extends string, TEntity, TMaterialized,
     logger?: Logging.ILogger;
     onConversionError?: Collections.ConversionErrorHandling;
     orchestrator?: IFindOrchestrator<TMaterialized, TQuerySpec>;
+}
+
+// @public
+interface IMaterializedSessionBase {
+    readonly baseId: BaseSessionId;
+    readonly createdAt: string;
+    readonly entity: AnySessionEntity;
+    readonly group: GroupName | undefined;
+    readonly label: string | undefined;
+    readonly notes: ReadonlyArray<Model.ICategorizedNote> | undefined;
+    readonly sessionType: PersistedSessionType;
+    readonly sourceVariationId: FillingRecipeVariationId | ConfectionRecipeVariationId;
+    readonly status: PersistedSessionStatus;
+    readonly updatedAt: string;
 }
 
 // @public
@@ -6102,11 +6153,13 @@ interface IUserEntityLibraryCreateParams {
 
 // @public
 interface IUserLibrary {
-    createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+    createPersistedConfectionSession(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Result<SessionId>;
+    createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<SessionId>;
+    readonly entities: IUserEntityLibrary;
     readonly ingredientInventory: MaterializedLibrary<Inventory.IngredientInventoryEntryId, IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
     readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
     readonly moldInventory: MaterializedLibrary<Inventory.MoldInventoryEntryId, IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
-    saveSession(sessionId: SessionId): Result<AnySessionEntity>;
+    saveSession(sessionId: SessionId): Result<SessionId>;
     readonly sessions: MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>;
 }
 
@@ -6767,7 +6820,7 @@ class MoldedBonBonEditingSession<TRecipe extends IMoldedBonBonRecipe = IMoldedBo
     confirmMoldChange(): Result<undefined>;
     static create<T extends IMoldedBonBonRecipe = IMoldedBonBonRecipe>(baseConfection: T, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession<T>>;
     get currentMold(): IMold;
-    static fromPersistedState<T extends IMoldedBonBonRecipe = IMoldedBonBonRecipe>(baseConfection: T, history: Session.ISerializedEditingHistoryEntity<IProducedMoldedBonBonEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession<T>>;
+    static fromPersistedState<T extends IMoldedBonBonRecipe = IMoldedBonBonRecipe>(baseConfection: T, persistedEntity: IConfectionSessionEntity, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<MoldedBonBonEditingSession<T>>;
     get pendingMoldChange(): IMoldChangeAnalysis | undefined;
     scaleToYield(yieldSpec: Confections.AnyConfectionYield): Result<Confections.IConfectionYield>;
     setFrames(frames: number, bufferPercentage?: number): Result<Confections.IMoldedBonBonYield>;
@@ -7508,7 +7561,7 @@ class RolledTruffleEditingSession<TRecipe extends IRolledTruffleRecipe = IRolled
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     static create<T extends IRolledTruffleRecipe = IRolledTruffleRecipe>(baseConfection: T, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession<T>>;
-    static fromPersistedState<T extends IRolledTruffleRecipe = IRolledTruffleRecipe>(baseConfection: T, history: Session.ISerializedEditingHistoryEntity<IProducedRolledTruffleEntity>, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession<T>>;
+    static fromPersistedState<T extends IRolledTruffleRecipe = IRolledTruffleRecipe>(baseConfection: T, persistedEntity: IConfectionSessionEntity, context: ISessionContext, params?: IConfectionEditingSessionParams): Result<RolledTruffleEditingSession<T>>;
     scaleToYield(yieldSpec: Confections.AnyConfectionYield): Result<Confections.IConfectionYield>;
 }
 
@@ -7657,6 +7710,8 @@ declare namespace Session_2 {
         IReadOnlyEditingSessionValidator,
         generateJournalId,
         generateSessionId,
+        generateSessionBaseId,
+        toSessionSlug,
         getCurrentDateString,
         getCurrentTimestamp,
         ISaveAnalysis,
@@ -8176,6 +8231,9 @@ function toRatingScore(from: unknown): Result<RatingScore>;
 function toSessionId(from: unknown): Result<SessionId>;
 
 // @public
+function toSessionSlug(input: string): string | undefined;
+
+// @public
 function toSessionSpec(from: unknown): Result<SessionSpec>;
 
 // @public
@@ -8239,9 +8297,11 @@ class UserEntityLibrary implements IUserEntityLibrary {
 declare namespace UserLibrary {
     export {
         Session_2 as Session,
+        IMaterializedSessionBase,
         ISessionContext,
         AnyMaterializedSession,
         ICreateFillingSessionOptions,
+        ICreateConfectionSessionOptions,
         IJournalEntryBase,
         IFillingEditJournalEntry,
         IConfectionEditJournalEntry,
@@ -8271,8 +8331,16 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
-    createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<IFillingSessionEntity>;
+    createPersistedConfectionSession(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Result<SessionId>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<SessionId>;
     get decorations(): MaterializedLibrary<DecorationId, IDecorationEntity, IDecoration, never>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    get entities(): IUserEntityLibrary;
     get fillings(): MaterializedLibrary<FillingId, IFillingRecipeEntity, IFillingRecipe, Indexers.IFillingRecipeQuerySpec>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
@@ -8293,7 +8361,7 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
-    saveSession(sessionId: SessionId): Result<AnySessionEntity>;
+    saveSession(sessionId: SessionId): Result<SessionId>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
