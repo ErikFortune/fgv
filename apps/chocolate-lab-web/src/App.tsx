@@ -141,21 +141,84 @@ function LockButton({
 const _bootLogger = new Logging.BootLogger();
 const _bootReporter = new Logging.LogReporter<unknown>({ logger: _bootLogger });
 
+const _defaultConfigNamespaceStorageKey = 'chocolate-lab:default-config-namespace';
+const _configNamespaceRegex = /^[a-zA-Z0-9-]+$/;
+
+type ConfigNamespaceSource = 'url' | 'default' | 'none';
+
+interface IResolvedConfigNamespace {
+  readonly effectiveConfigNamespace: string | undefined;
+  readonly defaultConfigNamespace: string | undefined;
+  readonly source: ConfigNamespaceSource;
+}
+
 /**
  * Read the `?config=xxx` URL parameter once at module load.
  * Only alphanumeric characters and hyphens are allowed.
  */
-function _readConfigNamespace(): string | undefined {
+function _isValidConfigNamespace(raw: string): boolean {
+  return _configNamespaceRegex.test(raw);
+}
+
+function _readUrlConfigNamespace(): string | undefined {
   const raw = new URLSearchParams(window.location.search).get('config');
   if (!raw) return undefined;
-  if (!/^[a-zA-Z0-9-]+$/.test(raw)) {
+  if (!_isValidConfigNamespace(raw)) {
     _bootLogger.warn(`Ignoring invalid config namespace '${raw}' — only [a-zA-Z0-9-] allowed`);
     return undefined;
   }
   return raw;
 }
 
-const _configNamespace = _readConfigNamespace();
+function _readStoredDefaultConfigNamespace(): string | undefined {
+  try {
+    const raw = window.localStorage.getItem(_defaultConfigNamespaceStorageKey);
+    if (!raw) return undefined;
+    if (!_isValidConfigNamespace(raw)) {
+      _bootLogger.warn(`Ignoring invalid stored default config namespace '${raw}' — clearing stored value`);
+      window.localStorage.removeItem(_defaultConfigNamespaceStorageKey);
+      return undefined;
+    }
+    return raw;
+  } catch (err: unknown) {
+    _bootLogger.warn(
+      `Unable to read default config namespace from localStorage: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    );
+    return undefined;
+  }
+}
+
+function _resolveConfigNamespace(): IResolvedConfigNamespace {
+  const fromUrl = _readUrlConfigNamespace();
+  const fromDefault = _readStoredDefaultConfigNamespace();
+
+  if (fromUrl) {
+    return {
+      effectiveConfigNamespace: fromUrl,
+      defaultConfigNamespace: fromDefault,
+      source: 'url'
+    };
+  }
+
+  if (fromDefault) {
+    return {
+      effectiveConfigNamespace: fromDefault,
+      defaultConfigNamespace: fromDefault,
+      source: 'default'
+    };
+  }
+
+  return {
+    effectiveConfigNamespace: undefined,
+    defaultConfigNamespace: undefined,
+    source: 'none'
+  };
+}
+
+const _resolvedConfigNamespace = _resolveConfigNamespace();
+const _configNamespace = _resolvedConfigNamespace.effectiveConfigNamespace;
 
 interface IBuildResult {
   reactiveWorkspace: ReactiveWorkspace;
@@ -371,10 +434,13 @@ interface IAppShellProps {
   readonly displayLevel?: Logging.ReporterLogLevel;
   readonly toastLevel?: Logging.ReporterLogLevel;
   readonly configNamespace?: string;
+  readonly configNamespaceSource: ConfigNamespaceSource;
+  readonly initialDefaultConfigNamespace?: string;
 }
 
 function AppShell(props: IAppShellProps): React.ReactElement {
-  const { displayLevel, toastLevel, configNamespace } = props;
+  const { displayLevel, toastLevel, configNamespace, configNamespaceSource, initialDefaultConfigNamespace } =
+    props;
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
   const { state: workspaceState, unlock, lock } = useWorkspaceState();
@@ -387,6 +453,9 @@ function AppShell(props: IAppShellProps): React.ReactElement {
   const cascadeStack = useNavigationStore((s) => s.cascadeStack);
 
   const settingsOpen = (activeTab as string) === 'settings';
+  const [defaultConfigNamespace, setDefaultConfigNamespace] = useState<string | undefined>(
+    initialDefaultConfigNamespace
+  );
   const [pendingSettingsClose, setPendingSettingsClose] = useState(false);
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
@@ -468,6 +537,26 @@ function AppShell(props: IAppShellProps): React.ReactElement {
 
   // Sync navigation state ↔ URL hash
   useUrlSync(URL_SYNC_CONFIG, { mode, activeTab }, { setMode: guardedSetMode, setTab: guardedSetTab });
+
+  const handleSetDefaultConfigNamespace = useCallback(
+    (namespace: string | undefined): void => {
+      try {
+        if (namespace === undefined) {
+          window.localStorage.removeItem(_defaultConfigNamespaceStorageKey);
+        } else {
+          window.localStorage.setItem(_defaultConfigNamespaceStorageKey, namespace);
+        }
+        setDefaultConfigNamespace(namespace);
+      } catch (err: unknown) {
+        workspace.data.logger.warn(
+          `Unable to update default config namespace in localStorage: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
+      }
+    },
+    [workspace]
+  );
 
   // Global keyboard shortcuts
   const shortcuts = useMemo<ReadonlyArray<IShortcut>>(
@@ -578,6 +667,10 @@ function AppShell(props: IAppShellProps): React.ReactElement {
       {/* Main content area: sidebar + tab content, or settings cascade */}
       {settingsOpen ? (
         <SettingsCascadeView
+          currentConfigNamespace={configNamespace}
+          currentConfigNamespaceSource={configNamespaceSource}
+          defaultConfigNamespace={defaultConfigNamespace}
+          onSetDefaultConfigNamespace={handleSetDefaultConfigNamespace}
           onClose={(): void => guardedSetTab(modeTabs[0] as AppTab)}
           onDirtyClose={(): void => setPendingSettingsClose(true)}
         />
@@ -702,6 +795,8 @@ function WorkspaceBootstrap(): React.ReactElement {
           displayLevel={logSettings?.displayLevel}
           toastLevel={logSettings?.toastLevel ?? 'warning'}
           configNamespace={_configNamespace}
+          configNamespaceSource={_resolvedConfigNamespace.source}
+          initialDefaultConfigNamespace={_resolvedConfigNamespace.defaultConfigNamespace}
         />
       </KeyboardShortcutProvider>
     </WorkspaceProvider>

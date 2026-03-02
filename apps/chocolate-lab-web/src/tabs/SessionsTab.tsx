@@ -6,6 +6,7 @@ import {
   Helpers,
   type BaseIngredientId,
   type BaseProcedureId,
+  type FillingId,
   type SessionId,
   type ConfectionId,
   type FillingRecipeVariationSpec,
@@ -18,6 +19,7 @@ import {
   useEntityList,
   useFilteredEntities,
   useMutableCollection,
+  FillingDetail,
   SessionDetailView,
   useSessionActions,
   CreateSessionPanel,
@@ -132,7 +134,7 @@ export function SessionsTabContent(): React.ReactElement {
         }
       } else {
         const variationId = Helpers.createFillingRecipeVariationId(
-          selection.fillingId,
+          selection.fillingId as FillingId,
           selection.variationSpec as FillingRecipeVariationSpec
         );
         const result = sessionActions.createFillingSession(variationId, {
@@ -146,6 +148,21 @@ export function SessionsTabContent(): React.ReactElement {
       }
     },
     [sessionActions, workspace, squashCascade]
+  );
+
+  const handleOpenFillingRecipeFromSession = useCallback(
+    (sessionEntry: ICascadeEntry, fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): void => {
+      squashCascade([
+        sessionEntry,
+        {
+          entityType: 'filling',
+          entityId: fillingId,
+          mode: 'view',
+          prefillName: variationSpec
+        }
+      ]);
+    },
+    [squashCascade]
   );
 
   const handleCancelCreate = useCallback((): void => {
@@ -379,6 +396,32 @@ export function SessionsTabContent(): React.ReactElement {
                 handleRequestCreateEntity(entry, entityType, prefillName)
               }
               onRecipeSwap={handleRecipeSwap}
+              onOpenFillingRecipe={(fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): void =>
+                handleOpenFillingRecipeFromSession(entry, fillingId, variationSpec)
+              }
+            />
+          )
+        };
+      }
+
+      if (entry.entityType === 'filling') {
+        const result = workspace.data.fillings.get(entry.entityId as FillingId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load filling: {entry.entityId}</div>
+          };
+        }
+
+        return {
+          key: `${entry.entityId}:${entry.prefillName ?? ''}`,
+          label: result.value.name,
+          content: (
+            <FillingDetail
+              filling={result.value}
+              defaultVariationSpec={entry.prefillName as FillingRecipeVariationSpec | undefined}
+              onClose={(): void => popCascadeTo(_index)}
             />
           )
         };
@@ -403,6 +446,7 @@ export function SessionsTabContent(): React.ReactElement {
     handleProcedureCreated,
     handleCancelCreateEntity,
     handleRecipeSwap,
+    handleOpenFillingRecipeFromSession,
     newProcedureName
   ]);
 

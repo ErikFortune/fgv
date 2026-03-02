@@ -117,6 +117,8 @@ export interface IFillingSessionPanelProps {
   readonly onRequestCreateEntity?: (entityType: CascadeEntityType, prefillName: string) => void;
   /** Optional callback when user requests a recipe or variation swap */
   readonly onRecipeSwap?: RecipeSwapHandler;
+  /** Optional callback to open current recipe in a filling browser panel */
+  readonly onOpenFillingRecipe?: (fillingId: FillingId, variationSpec: FillingRecipeVariationSpec) => void;
 }
 
 // ============================================================================
@@ -165,7 +167,8 @@ export function FillingSessionPanel({
   session,
   onClose,
   onRequestCreateEntity,
-  onRecipeSwap
+  onRecipeSwap,
+  onOpenFillingRecipe
 }: IFillingSessionPanelProps): React.ReactElement {
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
@@ -296,6 +299,10 @@ export function FillingSessionPanel({
     });
     setRecipeEditMode(false);
   }, [onRecipeSwap, isRecipeSwapChanged, selectedRecipeId, selectedVariationSpec, isRecipeChanged, session]);
+
+  const handleOpenFillingRecipe = useCallback((): void => {
+    onOpenFillingRecipe?.(session.baseRecipe.fillingRecipe.id, session.baseRecipe.variationSpec);
+  }, [onOpenFillingRecipe, session]);
 
   // ---- Draft state ----
 
@@ -561,12 +568,24 @@ export function FillingSessionPanel({
           {/* Collapsed view */}
           {!recipeEditMode && (
             <div className="space-y-0.5 px-2">
-              <div className="text-sm text-gray-800" title={String(session.baseRecipe.fillingRecipe.id)}>
-                {session.baseRecipe.fillingRecipe.name}
-              </div>
-              <div className="text-xs text-gray-500" title={String(session.baseRecipe.variationSpec)}>
-                {session.baseRecipe.name ?? String(session.baseRecipe.variationSpec)}
-              </div>
+              {onOpenFillingRecipe ? (
+                <button
+                  type="button"
+                  onClick={handleOpenFillingRecipe}
+                  className="text-sm text-left text-choco-primary hover:text-choco-primary/80 hover:underline"
+                  title={`Open recipe ${String(session.baseRecipe.fillingRecipe.id)}`}
+                >
+                  {`${session.baseRecipe.fillingRecipe.name} | ${
+                    session.baseRecipe.name ?? String(session.baseRecipe.variationSpec)
+                  }`}
+                </button>
+              ) : (
+                <div className="text-sm text-gray-800" title={String(session.baseRecipe.fillingRecipe.id)}>
+                  {`${session.baseRecipe.fillingRecipe.name} | ${
+                    session.baseRecipe.name ?? String(session.baseRecipe.variationSpec)
+                  }`}
+                </div>
+              )}
               <ChangeSummaryIcons indicators={changeIndicators} />
             </div>
           )}

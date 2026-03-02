@@ -69,6 +69,10 @@ const SECTIONS: ReadonlyArray<ISectionDef> = [
 export interface ISettingsCascadeViewProps {
   readonly onClose: () => void;
   readonly onDirtyClose?: () => void;
+  readonly currentConfigNamespace?: string;
+  readonly currentConfigNamespaceSource?: 'url' | 'default' | 'none';
+  readonly defaultConfigNamespace?: string;
+  readonly onSetDefaultConfigNamespace?: (namespace: string | undefined) => void;
 }
 
 // ============================================================================
@@ -127,12 +131,20 @@ function SectionContent({
   section,
   sectionKey,
   sectionLabel,
-  onSetColumns
+  onSetColumns,
+  currentConfigNamespace,
+  currentConfigNamespaceSource,
+  defaultConfigNamespace,
+  onSetDefaultConfigNamespace
 }: {
   readonly section: SettingsSection;
   readonly sectionKey: string;
   readonly sectionLabel: string;
   readonly onSetColumns: (cols: ReadonlyArray<ICascadeColumn>) => void;
+  readonly currentConfigNamespace?: string;
+  readonly currentConfigNamespaceSource?: 'url' | 'default' | 'none';
+  readonly defaultConfigNamespace?: string;
+  readonly onSetDefaultConfigNamespace?: (namespace: string | undefined) => void;
 }): React.ReactElement {
   // Read draft from context so we always get the parent's current state,
   // even though this component is stored as JSX in the cascade column state.
@@ -151,6 +163,10 @@ function SectionContent({
           sectionKey={sectionKey}
           sectionLabel={sectionLabel}
           onSetColumns={onSetColumns}
+          currentConfigNamespace={currentConfigNamespace}
+          currentConfigNamespaceSource={currentConfigNamespaceSource}
+          defaultConfigNamespace={defaultConfigNamespace}
+          onSetDefaultConfigNamespace={onSetDefaultConfigNamespace}
         />
       )
     };
@@ -168,7 +184,15 @@ function SectionContent({
       );
     case 'workspace':
       return deviceId !== undefined ? (
-        <WorkspaceSection deviceId={deviceId} bootstrap={bootstrap} onBootstrapChange={updateBootstrap} />
+        <WorkspaceSection
+          deviceId={deviceId}
+          bootstrap={bootstrap}
+          onBootstrapChange={updateBootstrap}
+          currentConfigNamespace={currentConfigNamespace}
+          currentConfigNamespaceSource={currentConfigNamespaceSource}
+          defaultConfigNamespace={defaultConfigNamespace}
+          onSetDefaultConfigNamespace={onSetDefaultConfigNamespace}
+        />
       ) : (
         <div className="p-6 text-sm text-gray-400">No workspace device settings available.</div>
       );
@@ -200,7 +224,14 @@ function SectionContent({
 // ============================================================================
 
 export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.ReactElement {
-  const { onClose, onDirtyClose } = props;
+  const {
+    onClose,
+    onDirtyClose,
+    currentConfigNamespace,
+    currentConfigNamespaceSource,
+    defaultConfigNamespace,
+    onSetDefaultConfigNamespace
+  } = props;
   const draft = useSettingsDraft();
   const [activeSection, setActiveSection] = useState<SettingsSection | undefined>(undefined);
 
@@ -253,6 +284,10 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
             sectionKey={section.id}
             sectionLabel={section.label}
             onSetColumns={setDetailColumns}
+            currentConfigNamespace={currentConfigNamespace}
+            currentConfigNamespaceSource={currentConfigNamespaceSource}
+            defaultConfigNamespace={defaultConfigNamespace}
+            onSetDefaultConfigNamespace={onSetDefaultConfigNamespace}
           />
         )
       }
