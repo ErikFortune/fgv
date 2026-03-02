@@ -327,6 +327,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
           {onCreateCollection && (
             <button
               onClick={onCreateCollection}
+              data-testid="sidebar-new-collection-button"
               className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
               title="New collection"
               aria-label="New collection"

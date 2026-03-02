@@ -32,7 +32,14 @@ import { StarIcon as StarIconSolid, CheckIcon } from '@heroicons/react/24/solid'
 import { DocumentDuplicateIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { TagIcon, DocumentTextIcon, HashtagIcon } from '@heroicons/react/20/solid';
 
-import { EditField, EditSection, TextInput, TagsInput, MultiActionButton } from '@fgv/ts-app-shell';
+import {
+  EditField,
+  EditSection,
+  TextInput,
+  TagsInput,
+  MultiActionButton,
+  useTypeaheadMatch
+} from '@fgv/ts-app-shell';
 import type {
   Entities,
   FillingName,
@@ -48,13 +55,7 @@ import type {
   UserLibrary
 } from '@fgv/ts-chocolate';
 
-import {
-  EditingToolbar,
-  NotesEditor,
-  useEditingContext,
-  useDatalistMatch,
-  type IChangeIndicator
-} from '../editing';
+import { EditingToolbar, NotesEditor, useEditingContext, type IChangeIndicator } from '../editing';
 import { DerivedFromIndicator } from '../common';
 import { useWorkspace } from '../workspace';
 
@@ -367,8 +368,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     return availableProcedures.map((proc) => ({ id: proc.id, name: proc.name }));
   }, [availableProcedures]);
 
-  const ingredientMatcher = useDatalistMatch(ingredientSuggestions);
-  const procedureMatcher = useDatalistMatch(procedureSuggestions);
+  const ingredientMatcher = useTypeaheadMatch(ingredientSuggestions);
+  const procedureMatcher = useTypeaheadMatch(procedureSuggestions);
 
   // Current session state
   const producedIngredients = session.produced.ingredients;

@@ -35,16 +35,10 @@ import {
   ListBulletIcon
 } from '@heroicons/react/20/solid';
 
-import { EditField, EditSection, TextInput, TagsInput } from '@fgv/ts-app-shell';
+import { EditField, EditSection, TextInput, TagsInput, useTypeaheadMatch } from '@fgv/ts-app-shell';
 import type { Entities, LibraryRuntime, Model, TaskId } from '@fgv/ts-chocolate';
 
-import {
-  EditingToolbar,
-  NotesEditor,
-  useEditingContext,
-  useDatalistMatch,
-  type IChangeIndicator
-} from '../editing';
+import { EditingToolbar, NotesEditor, useEditingContext, type IChangeIndicator } from '../editing';
 import { useWorkspace } from '../workspace';
 
 type EditedProcedure = LibraryRuntime.EditedProcedure;
@@ -145,7 +139,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
   }, [availableTasks]);
 
   const { findExactMatch: findTaskExactMatch, resolveOnBlur: resolveTaskOnBlur } =
-    useDatalistMatch(taskSuggestions);
+    useTypeaheadMatch(taskSuggestions);
 
   const notify = useCallback((): void => {
     ctx.notifyMutation();

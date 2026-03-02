@@ -32,9 +32,9 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useTypeaheadMatch } from '@fgv/ts-app-shell';
 import type { LibraryRuntime } from '@fgv/ts-chocolate';
 
-import { useDatalistMatch } from '../editing';
 import type { ICreateSessionInfo } from '../navigation';
 
 // ============================================================================
@@ -194,7 +194,7 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
     [allSuggestions]
   );
 
-  const matcher = useDatalistMatch(filteredSuggestions as ReadonlyArray<{ id: string; name: string }>);
+  const matcher = useTypeaheadMatch(filteredSuggestions as ReadonlyArray<{ id: string; name: string }>);
 
   // --------------------------------------------------------------------------
   // Auto-resolve pre-filled recipe on mount
@@ -420,6 +420,7 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
         </label>
         <input
           id="session-recipe"
+          data-testid="sessions-create-recipe-input"
           type="text"
           list="session-recipe-suggestions"
           value={recipeInput}
@@ -446,7 +447,10 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
 
       {/* Unresolved disambiguation (type="any") */}
       {pendingUnresolved && (
-        <div className="rounded border border-amber-200 bg-amber-50 p-2 space-y-1.5">
+        <div
+          data-testid="sessions-create-unresolved-panel"
+          className="rounded border border-amber-200 bg-amber-50 p-2 space-y-1.5"
+        >
           <div className="text-xs text-amber-800">
             <span className="font-medium">&quot;{pendingUnresolved}&quot;</span> not found. Create as:
           </div>
@@ -454,6 +458,7 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
             {onAddConfection && (
               <button
                 type="button"
+                data-testid="sessions-create-unresolved-confection"
                 onClick={(): void => {
                   onAddConfection(pendingUnresolved);
                   setPendingUnresolved(undefined);
@@ -466,6 +471,7 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
             {onAddFilling && (
               <button
                 type="button"
+                data-testid="sessions-create-unresolved-filling"
                 onClick={(): void => {
                   onAddFilling(pendingUnresolved);
                   setPendingUnresolved(undefined);
@@ -477,6 +483,7 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
             )}
             <button
               type="button"
+              data-testid="sessions-create-unresolved-cancel"
               onClick={(): void => setPendingUnresolved(undefined)}
               className="px-2 py-0.5 text-xs rounded text-gray-500 hover:text-gray-700"
             >

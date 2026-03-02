@@ -461,6 +461,7 @@ export function SessionsTabContent(): React.ReactElement {
           <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
             <button
               onClick={handleNewSession}
+              data-testid="sessions-new-session-button"
               disabled={mutableCollectionId === undefined}
               title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
               className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

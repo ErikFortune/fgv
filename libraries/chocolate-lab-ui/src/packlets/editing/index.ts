@@ -31,13 +31,6 @@ export { NotesEditor, type INotesEditorProps } from './NotesEditor';
 export { UrlsEditor, type IUrlsEditorProps } from './UrlsEditor';
 
 export {
-  useDatalistMatch,
-  buildTieredSuggestions,
-  type IDatalistSuggestion,
-  type IDatalistMatchResult
-} from './useDatalistMatch';
-
-export {
   EntityReferenceScanner,
   type IEntityReferenceHit,
   type IReferenceScanResult

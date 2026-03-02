@@ -31,9 +31,8 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { Modal, useTypeaheadMatch } from '@fgv/ts-app-shell';
 import { Helpers } from '@fgv/ts-chocolate';
-import { Modal } from '@fgv/ts-app-shell';
-import { useDatalistMatch } from '../editing';
 
 // ============================================================================
 // Types
@@ -113,7 +112,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
     () => (existingSecretNames ?? []).map((n) => ({ id: n, name: n })),
     [existingSecretNames]
   );
-  const secretMatcher = useDatalistMatch(secretSuggestions);
+  const secretMatcher = useTypeaheadMatch(secretSuggestions);
 
   // Auto-generate ID from name (unless manually edited)
   const generatedId = useMemo(() => {
@@ -199,6 +198,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
           </label>
           <input
             id="cc-name"
+            data-testid="collections-create-name-input"
             type="text"
             value={name}
             onChange={handleNameChange}
@@ -218,6 +218,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
           </label>
           <input
             id="cc-id"
+            data-testid="collections-create-id-input"
             type="text"
             value={effectiveId}
             onChange={handleIdChange}
@@ -268,6 +269,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
           <input
             ref={secretInputRef}
             id="cc-secret"
+            data-testid="collections-create-secret-input"
             type="text"
             value={secretInput}
             onChange={(e): void => setSecretInput(e.target.value)}
@@ -299,6 +301,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
           </button>
           <button
             type="submit"
+            data-testid="collections-create-submit-button"
             disabled={!canSubmit}
             className="px-4 py-2 text-sm font-medium text-white bg-choco-accent rounded-md hover:bg-choco-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >

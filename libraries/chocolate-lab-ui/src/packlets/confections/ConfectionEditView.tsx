@@ -33,7 +33,14 @@ import { TagIcon, DocumentTextIcon, HashtagIcon, LinkIcon } from '@heroicons/rea
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { DocumentDuplicateIcon, PlusIcon } from '@heroicons/react/24/outline';
 
-import { EditField, EditSection, TextInput, TagsInput, MultiActionButton } from '@fgv/ts-app-shell';
+import {
+  EditField,
+  EditSection,
+  TextInput,
+  TagsInput,
+  MultiActionButton,
+  useTypeaheadMatch
+} from '@fgv/ts-app-shell';
 import type {
   ConfectionName,
   ConfectionRecipeVariationSpec,
@@ -49,13 +56,7 @@ import type {
 } from '@fgv/ts-chocolate';
 import { Entities as EntitiesNS } from '@fgv/ts-chocolate';
 
-import {
-  EditingToolbar,
-  NotesEditor,
-  useEditingContext,
-  useDatalistMatch,
-  type IChangeIndicator
-} from '../editing';
+import { EditingToolbar, NotesEditor, useEditingContext, type IChangeIndicator } from '../editing';
 import { DerivedFromIndicator } from '../common';
 import { useWorkspace } from '../workspace';
 
@@ -384,13 +385,13 @@ export function ConfectionEditView({
     [availableDecorations]
   );
 
-  const ingredientMatcher = useDatalistMatch(ingredientSuggestions);
-  const fillingOptionMatcher = useDatalistMatch(
+  const ingredientMatcher = useTypeaheadMatch(ingredientSuggestions);
+  const fillingOptionMatcher = useTypeaheadMatch(
     fillingOptionSuggestions as ReadonlyArray<{ id: string; name: string }>
   );
-  const procedureMatcher = useDatalistMatch(procedureSuggestions);
-  const moldMatcher = useDatalistMatch(moldSuggestions);
-  const decorationMatcher = useDatalistMatch(decorationSuggestions);
+  const procedureMatcher = useTypeaheadMatch(procedureSuggestions);
+  const moldMatcher = useTypeaheadMatch(moldSuggestions);
+  const decorationMatcher = useTypeaheadMatch(decorationSuggestions);
 
   const handleYieldCountChange = useCallback(
     (value: string): void => {

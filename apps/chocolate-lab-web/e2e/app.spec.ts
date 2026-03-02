@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
  * Basic smoke tests for Chocolate Lab Web application.
@@ -6,6 +6,19 @@ import { test, expect } from '@playwright/test';
  * These tests verify the app loads and basic functionality works.
  * Add more tests here as you encounter bugs that should have regression protection.
  */
+
+async function openSessionsTab(page: Page): Promise<void> {
+  await page.goto('/#/production/sessions', { waitUntil: 'networkidle' });
+  await expect(page.getByTestId('sessions-new-session-button')).toBeVisible();
+}
+
+async function createCollectionForActiveTab(page: Page, name: string): Promise<void> {
+  await page.getByTestId('sidebar-new-collection-button').click();
+  await expect(page.getByRole('heading', { name: 'New Collection' })).toBeVisible();
+  await page.getByTestId('collections-create-name-input').fill(name);
+  await page.getByTestId('collections-create-submit-button').click();
+  await expect(page.getByRole('heading', { name: 'New Collection' })).toHaveCount(0);
+}
 
 test.describe('Chocolate Lab App', () => {
   test('loads and displays the application', async ({ page }) => {
@@ -60,5 +73,52 @@ test.describe('Chocolate Lab App', () => {
       activeTabText?.toLowerCase(),
       `Expected active tab to be "Confections", but found "${activeTabText}"`
     ).toContain('confections');
+  });
+
+  test('supports unresolved recipe flow in New Session panel', async ({ page }) => {
+    await openSessionsTab(page);
+    await createCollectionForActiveTab(page, `playwright-sessions-${Date.now()}`);
+
+    const newSessionButton = page.getByTestId('sessions-new-session-button');
+    await expect(newSessionButton).toBeEnabled();
+    await newSessionButton.click();
+
+    await expect(page.getByRole('heading', { name: 'New Session' })).toBeVisible();
+
+    const recipeInput = page.getByTestId('sessions-create-recipe-input');
+    await recipeInput.fill('playwright-unresolved-recipe');
+    await recipeInput.blur();
+
+    const unresolvedPanel = page.getByTestId('sessions-create-unresolved-panel');
+    await expect(unresolvedPanel).toBeVisible();
+    await unresolvedPanel.getByRole('button', { name: 'Cancel' }).click();
+    await expect(unresolvedPanel).toHaveCount(0);
+  });
+
+  test('opens New Collection dialog and resolves secret input on blur when suggestions exist', async ({
+    page
+  }) => {
+    await page.goto('/#/production/sessions', { waitUntil: 'networkidle' });
+    await page.getByTestId('sidebar-new-collection-button').click();
+    await expect(page.getByRole('heading', { name: 'New Collection' })).toBeVisible();
+
+    await page.getByTestId('collections-create-name-input').fill('Playwright Collection');
+    await expect(page.getByTestId('collections-create-id-input')).toHaveValue('playwright-collection');
+
+    const options = page.locator('#cc-secret-suggestions option');
+    const optionCount = await options.count();
+    if (optionCount > 0) {
+      const suggestedSecret = await options.first().getAttribute('value');
+      expect(suggestedSecret).toBeTruthy();
+
+      if (suggestedSecret) {
+        const secretInput = page.getByTestId('collections-create-secret-input');
+        await secretInput.fill(suggestedSecret.toUpperCase());
+        await secretInput.blur();
+        await expect(secretInput).toHaveValue(suggestedSecret);
+      }
+    }
+
+    await expect(page.getByTestId('collections-create-submit-button')).toBeEnabled();
   });
 });

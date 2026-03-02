@@ -36,7 +36,7 @@ import {
   ListBulletIcon
 } from '@heroicons/react/20/solid';
 
-import { EditField, EditSection, TextInput, TagsInput } from '@fgv/ts-app-shell';
+import { EditField, EditSection, TextInput, TagsInput, useTypeaheadMatch } from '@fgv/ts-app-shell';
 import type {
   Entities,
   IngredientId,
@@ -47,13 +47,7 @@ import type {
   RatingScore
 } from '@fgv/ts-chocolate';
 
-import {
-  EditingToolbar,
-  NotesEditor,
-  useEditingContext,
-  useDatalistMatch,
-  type IChangeIndicator
-} from '../editing';
+import { EditingToolbar, NotesEditor, useEditingContext, type IChangeIndicator } from '../editing';
 import { useWorkspace } from '../workspace';
 
 type EditedDecoration = LibraryRuntime.EditedDecoration;
@@ -209,8 +203,8 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
     return availableProcedures.map((proc) => ({ id: proc.id, name: proc.name }));
   }, [availableProcedures]);
 
-  const ingredientMatcher = useDatalistMatch(ingredientSuggestions);
-  const procedureMatcher = useDatalistMatch(procedureSuggestions);
+  const ingredientMatcher = useTypeaheadMatch(ingredientSuggestions);
+  const procedureMatcher = useTypeaheadMatch(procedureSuggestions);
 
   const notify = useCallback((): void => {
     ctx.notifyMutation();
