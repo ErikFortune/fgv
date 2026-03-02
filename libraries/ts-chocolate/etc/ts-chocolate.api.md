@@ -6161,6 +6161,7 @@ interface IUserLibrary {
     readonly moldInventory: MaterializedLibrary<Inventory.MoldInventoryEntryId, IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
     saveSession(sessionId: SessionId): Result<SessionId>;
     readonly sessions: MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>;
+    updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId>;
 }
 
 // @public
@@ -8366,6 +8367,10 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     //
     // (undocumented)
     get sessions(): MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId>;
 }
 
 // @public

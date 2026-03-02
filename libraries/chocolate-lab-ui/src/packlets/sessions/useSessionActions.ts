@@ -134,6 +134,17 @@ export interface ISessionActions {
   readonly saveSession: (sessionId: SessionId) => Result<SessionId>;
 
   /**
+   * Update the status of an existing persisted session.
+   * @param sessionId - The composite SessionId to update
+   * @param status - New session status
+   * @returns Result with the composite SessionId
+   */
+  readonly updateSessionStatus: (
+    sessionId: SessionId,
+    status: Entities.PersistedSessionStatus
+  ) => Result<SessionId>;
+
+  /**
    * The default mutable collection ID for new sessions.
    * Resolved from the sessions sub-library; undefined if no mutable collection exists.
    */
@@ -222,10 +233,28 @@ export function useSessionActions(): ISessionActions {
     [workspace, reactiveWorkspace]
   );
 
+  const updateSessionStatus = useCallback(
+    (sessionId: SessionId, status: Entities.PersistedSessionStatus): Result<SessionId> => {
+      const result = workspace.userData.updateSessionStatus(sessionId, status);
+      if (result.isSuccess()) {
+        const collectionId = Helpers.getSessionCollectionId(sessionId);
+        persistSessionCollection(workspace.userData.entities.sessions, collectionId, workspace.data.logger);
+        workspace.data.clearCache();
+        reactiveWorkspace.notifyChange();
+        workspace.data.logger.info(`Updated session '${sessionId}' status to '${status}'`);
+      } else {
+        workspace.data.logger.error(`Failed to update session status: ${result.message}`);
+      }
+      return result;
+    },
+    [workspace, reactiveWorkspace]
+  );
+
   return {
     createFillingSession,
     createConfectionSession,
     saveSession,
+    updateSessionStatus,
     defaultCollectionId
   };
 }

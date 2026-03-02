@@ -315,4 +315,17 @@ Creates a new persisted confection session from a confection recipe.
 Saves an active session back to the library.
 
 </td></tr>
+<tr><td>
+
+[updateSessionStatus(sessionId, status)](./UserLibrary.updateSessionStatus.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates the status of an existing persisted session.
+
+</td></tr>
 </tbody></table>
