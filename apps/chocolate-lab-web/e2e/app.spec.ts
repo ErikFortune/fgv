@@ -43,23 +43,22 @@ test.describe('Chocolate Lab App', () => {
     expect(errors, `Found ${errors.length} console errors: ${errors.join(', ')}`).toHaveLength(0);
   });
 
-  test.skip('shows Confections tab by default', async ({ page }) => {
-    // TODO: Re-enable once we understand the UI structure
-    // This test is skipped to debug what elements actually exist
+  test('shows Confections tab as active by default', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
 
-    // Debug: print all elements with role="tab"
-    const tabs = await page.locator('[role="tab"]').all();
-    console.log(`Found ${tabs.length} tabs`);
-    for (const tab of tabs) {
-      const text = await tab.textContent();
-      console.log(`Tab text: "${text}"`);
-    }
+    // Find all tabs with aria-current="page" (active tabs)
+    const activeTabs = await page.locator('[aria-current="page"]').all();
 
-    const confectionsTab = page
-      .locator('[role="tab"]')
-      .filter({ hasText: /confections/i })
-      .first();
-    await expect(confectionsTab).toBeVisible({ timeout: 10000 });
+    // Should have exactly one active tab
+    expect(activeTabs.length, `Expected exactly 1 active tab, found ${activeTabs.length}`).toBe(1);
+
+    // Get the text of the active tab
+    const activeTabText = await activeTabs[0].textContent();
+
+    // Verify it's the Confections tab
+    expect(
+      activeTabText?.toLowerCase(),
+      `Expected active tab to be "Confections", but found "${activeTabText}"`
+    ).toContain('confections');
   });
 });
