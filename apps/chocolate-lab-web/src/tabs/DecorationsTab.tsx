@@ -18,15 +18,18 @@ import type {
   ProcedureId,
   DecorationId
 } from '@fgv/ts-chocolate';
+import { fail } from '@fgv/ts-utils';
+import type { Result } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
-  type CascadeEntityType,
   type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
+  createSetInMutableCollection,
+  useEntityMutation,
   IngredientDetail,
   IngredientEditView,
   ProcedureDetail,
@@ -37,6 +40,8 @@ import {
   EntityCreateForm,
   useFilteredEntities,
   useClipboardJsonImport,
+  useCascadeDrillDown,
+  useSquashAt,
   useProcedureEditSession,
   useNavigationStore
 } from '@fgv/chocolate-lab-ui';
@@ -68,7 +73,9 @@ export function DecorationsTabContent(): React.ReactElement {
     exitComparison
   } = useTabNavigation();
 
-  const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedDecoration } | undefined>(undefined);
+  const editingRef = useRef<{ id: DecorationId; wrapper: LibraryRuntime.EditedDecoration } | undefined>(
+    undefined
+  );
   const subIngredientRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
     undefined
   );
@@ -94,6 +101,30 @@ export function DecorationsTabContent(): React.ReactElement {
     workspace,
     reactiveWorkspace.version
   ]);
+
+  type DecorationCollectionResult = ReturnType<typeof workspace.data.entities.decorations.collections.get>;
+  type DecorationCollectionEntry = Exclude<DecorationCollectionResult['value'], undefined>;
+
+  const decorationMutation = useEntityMutation<
+    Entities.Decorations.IDecorationEntity,
+    BaseDecorationId,
+    DecorationId
+  >({
+    setInMutableCollection: createSetInMutableCollection({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.decorations.collections.get(collectionId),
+      isMutable: (entry: DecorationCollectionEntry): entry is DecorationCollectionEntry => entry.isMutable,
+      setEntity: (
+        entry: DecorationCollectionEntry,
+        baseId: BaseDecorationId,
+        entity: Entities.Decorations.IDecorationEntity
+      ) => ('set' in entry.items ? entry.items.set(baseId, entity) : fail('Collection items are read-only')),
+      entityLabel: 'decoration'
+    }),
+    entityLabel: 'decoration',
+    getEditableCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getEditableDecorationsEntityCollection(collectionId, workspace.keyStore)
+  });
 
   const { entities: decorations, selectedId } = useEntityList<LibraryRuntime.IDecoration, DecorationId>({
     getAll: () => workspace.data.decorations.values(),
@@ -156,13 +187,7 @@ export function DecorationsTabContent(): React.ReactElement {
     setDecorationToDelete(null);
   }, []);
 
-  // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
-  const squashAt = useCallback(
-    (depth: number, entry: ICascadeEntry): void => {
-      squashCascade([...cascadeStack.slice(0, depth + 1), entry]);
-    },
-    [squashCascade, cascadeStack]
-  );
+  const squashAt = useSquashAt(cascadeStack, squashCascade);
 
   const getOrCreateWrapper = useCallback(
     (decoration: LibraryRuntime.IDecoration): LibraryRuntime.EditedDecoration | undefined => {
@@ -229,52 +254,17 @@ export function DecorationsTabContent(): React.ReactElement {
         return;
       }
 
-      const collectionId = compositeId.split('.')[0] as CollectionId;
       const baseId = entity.baseId as BaseDecorationId;
 
-      const collectionEntry = workspace.data.entities.decorations.collections.get(collectionId);
-      if (collectionEntry.isFailure()) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' not found`);
+      const saveResult = await decorationMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
         return;
       }
-      if (!collectionEntry.value.isMutable) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' is immutable`);
-        return;
-      }
-
-      const inMemoryResult = collectionEntry.value.items.set(baseId, entity);
-      if (inMemoryResult.isFailure()) {
-        workspace.data.logger.error(`Save failed (in-memory): ${inMemoryResult.message}`);
-        return;
-      }
-
-      const editableResult = workspace.data.entities.getEditableDecorationsEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const saveResult = await editable.save();
-          if (saveResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
-          } else {
-            workspace.data.logger.info(`Saved decoration '${entity.name}' to collection '${collectionId}'`);
-          }
-        } else {
-          workspace.data.logger.info(
-            `Updated decoration '${entity.name}' in-memory (collection '${collectionId}' has no backing file)`
-          );
-        }
-      } else {
-        workspace.data.logger.info(
-          `Updated decoration '${entity.name}' in-memory only: ${editableResult.message}`
-        );
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       if (editingRef.current?.id === compositeId) {
         editingRef.current = undefined;
@@ -287,43 +277,26 @@ export function DecorationsTabContent(): React.ReactElement {
       );
       squashCascade(updated);
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade, procedureSession]
+    [workspace, decorationMutation, cascadeStack, squashCascade, procedureSession]
   );
 
   // Create a new decoration from an entity, add to mutable collection, and open in edit mode
   const handleCreateDecoration = useCallback(
-    (entity: Entities.Decorations.IDecorationEntity, source: 'manual' | 'ai'): void => {
-      if (!mutableCollectionId) {
-        workspace.data.logger.error('Cannot add decoration: no mutable collection available');
-        return;
-      }
-
+    async (entity: Entities.Decorations.IDecorationEntity, source: 'manual' | 'ai'): Promise<void> => {
       const baseId = entity.baseId as BaseDecorationId;
       const compositeId = `${mutableCollectionId}.${baseId}` as DecorationId;
 
-      const existing = workspace.data.decorations.get(compositeId);
-      if (existing.isSuccess()) {
-        workspace.data.logger.error(`Decoration '${compositeId}' already exists`);
+      const createResult = await decorationMutation.createEntity({
+        mutableCollectionId,
+        baseId,
+        entity,
+        compositeId,
+        exists: (id: DecorationId) => workspace.data.decorations.get(id).isSuccess(),
+        persistToDisk: false
+      });
+      if (createResult.isFailure()) {
         return;
       }
-
-      const colResult = workspace.data.entities.decorations.collections.get(mutableCollectionId);
-      if (colResult.isFailure()) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' not found: ${colResult.message}`);
-        return;
-      }
-      if (!colResult.value.isMutable) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' is not mutable`);
-        return;
-      }
-      const setResult = colResult.value.items.set(baseId, entity);
-      if (setResult.isFailure()) {
-        workspace.data.logger.error(`Failed to add decoration: ${setResult.message}`);
-        return;
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       const wrapperResult = LibraryRuntime.EditedDecoration.create(entity);
       if (wrapperResult.isFailure()) {
@@ -339,7 +312,7 @@ export function DecorationsTabContent(): React.ReactElement {
       const entry: ICascadeEntry = { entityType: 'decoration', entityId: compositeId, mode: 'edit' };
       squashCascade([entry]);
     },
-    [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
+    [workspace, mutableCollectionId, decorationMutation, squashCascade]
   );
 
   const handleListHeaderPaste = useClipboardJsonImport<Entities.Decorations.IDecorationEntity>({
@@ -782,19 +755,13 @@ export function DecorationsTabContent(): React.ReactElement {
     }
   }, [cascadeStack, squashCascade, procedureSession]);
 
+  const drillDown = useCascadeDrillDown(cascadeStack, squashCascade, squashAt);
+
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, index) => {
-      const toggleDrillDown = (entityType: CascadeEntityType, entityId: string): void => {
-        const nextEntry = cascadeStack[index + 1];
-        if (nextEntry?.entityType === entityType && nextEntry.entityId === entityId) {
-          squashCascade(cascadeStack.slice(0, index + 1));
-        } else {
-          squashAt(index, { entityType, entityId, mode: 'view' });
-        }
-      };
-      const onIngredientClick = (id: IngredientId): void => toggleDrillDown('ingredient', id);
-      const onProcedureClick = (id: ProcedureId): void => toggleDrillDown('procedure', id);
-      const onTaskClick = (id: TaskId): void => toggleDrillDown('task', id);
+      const onIngredientClick = (id: IngredientId): void => drillDown(index, 'ingredient', id);
+      const onProcedureClick = (id: ProcedureId): void => drillDown(index, 'procedure', id);
+      const onTaskClick = (id: TaskId): void => drillDown(index, 'task', id);
 
       if (entry.entityType === 'decoration') {
         // Create mode: render EntityCreateForm

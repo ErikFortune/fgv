@@ -9,6 +9,7 @@ import {
 } from '@fgv/ts-app-shell';
 import { Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseProcedureId, CollectionId, TaskId, ProcedureId } from '@fgv/ts-chocolate';
+import type { Result } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type IReferenceScanResult,
@@ -17,11 +18,14 @@ import {
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
+  createSetInMutableCollection,
+  useEntityMutation,
   ProcedureDetail,
   ProcedureEditView,
   ProcedurePreviewPanel,
   useFilteredEntities,
   useClipboardJsonImport,
+  useSquashAt,
   useProcedureEditSession,
   useNavigationStore
 } from '@fgv/chocolate-lab-ui';
@@ -51,7 +55,9 @@ export function ProceduresTabContent(): React.ReactElement {
     exitComparison
   } = useTabNavigation();
 
-  const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedProcedure } | undefined>(undefined);
+  const editingRef = useRef<{ id: ProcedureId; wrapper: LibraryRuntime.EditedProcedure } | undefined>(
+    undefined
+  );
   const [previewVersion, setPreviewVersion] = useState(0);
   const [procedureToDelete, setProcedureToDelete] = useState<{
     id: ProcedureId;
@@ -73,6 +79,41 @@ export function ProceduresTabContent(): React.ReactElement {
     workspace,
     reactiveWorkspace.version
   ]);
+
+  type ProcedureCollectionResult = ReturnType<typeof workspace.data.entities.procedures.collections.get>;
+  type ProcedureCollectionEntry = Exclude<ProcedureCollectionResult['value'], undefined>;
+  type ProcedureMutableCollectionEntry = ProcedureCollectionEntry & {
+    readonly items: {
+      set: (id: BaseProcedureId, entity: Entities.Procedures.IProcedureEntity) => Result<unknown>;
+    };
+  };
+
+  const procedureMutation = useEntityMutation<
+    Entities.Procedures.IProcedureEntity,
+    BaseProcedureId,
+    ProcedureId
+  >({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Procedures.IProcedureEntity,
+      BaseProcedureId,
+      ProcedureCollectionEntry,
+      ProcedureMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.procedures.collections.get(collectionId),
+      isMutable: (entry: ProcedureCollectionEntry): entry is ProcedureMutableCollectionEntry =>
+        entry.isMutable && 'set' in entry.items,
+      setEntity: (
+        entry: ProcedureMutableCollectionEntry,
+        baseId: BaseProcedureId,
+        entity: Entities.Procedures.IProcedureEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'procedure'
+    }),
+    entityLabel: 'procedure',
+    getEditableCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getEditableProceduresEntityCollection(collectionId, workspace.keyStore)
+  });
 
   const { entities: procedures, selectedId } = useEntityList<LibraryRuntime.IProcedure, ProcedureId>({
     getAll: () => workspace.data.procedures.values(),
@@ -191,42 +232,17 @@ export function ProceduresTabContent(): React.ReactElement {
         return;
       }
 
-      const collectionId = compositeId.split('.')[0] as CollectionId;
       const baseId = entity.baseId as BaseProcedureId;
 
-      const collectionEntry = workspace.data.entities.procedures.collections.get(collectionId);
-      if (collectionEntry.isFailure()) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' not found`);
+      const saveResult = await procedureMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
         return;
       }
-      if (!collectionEntry.value.isMutable) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' is immutable`);
-        return;
-      }
-
-      const inMemoryResult = collectionEntry.value.items.set(baseId, entity);
-      if (inMemoryResult.isFailure()) {
-        workspace.data.logger.error(`Save failed (in-memory): ${inMemoryResult.message}`);
-        return;
-      }
-
-      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const saveResult = await editable.save();
-          if (saveResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
-          }
-        }
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       if (editingRef.current?.id === compositeId) {
         editingRef.current = undefined;
@@ -237,7 +253,7 @@ export function ProceduresTabContent(): React.ReactElement {
       );
       squashCascade(updated.filter((e) => e.entityType !== 'task' || e.mode === 'view'));
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade, procedureSession]
+    [workspace, procedureMutation, cascadeStack, squashCascade, procedureSession]
   );
 
   const handlePreviewProcedure = useCallback(
@@ -252,74 +268,28 @@ export function ProceduresTabContent(): React.ReactElement {
 
   const handleCloseProcedurePreview = useCallback(
     (entityId: string): void => {
-      squashCascade(
-        cascadeStack.filter(
-          (e) => !(e.entityType === 'procedure' && e.entityId === entityId && e.mode === 'preview')
-        )
+      const updated = cascadeStack.map((e) =>
+        e.entityId === entityId && e.entityType === 'procedure' ? { ...e, mode: 'view' as const } : e
       );
+      squashCascade(updated.filter((e) => e.entityType !== 'task' || e.mode === 'view'));
     },
     [cascadeStack, squashCascade]
   );
 
-  const handleCreateProcedure = useCallback((): void => {
-    const trimmed = newProcedureName.trim();
-    if (!trimmed || !mutableProcedureCollectionId) {
-      return;
-    }
-    const baseId = slugify(trimmed) as BaseProcedureId;
-    const entity = createBlankRawProcedureEntity(baseId, trimmed);
-    const compositeId = `${mutableProcedureCollectionId}.${baseId}` as ProcedureId;
-
-    const colResult = workspace.data.entities.procedures.collections.get(mutableProcedureCollectionId);
-    if (colResult.isFailure() || !colResult.value.isMutable) {
-      workspace.data.logger.error('Cannot create procedure: mutable collection not available');
-      return;
-    }
-    colResult.value.items.set(baseId, entity);
-
-    const wrapperResult = LibraryRuntime.EditedProcedure.create(entity);
-    if (wrapperResult.isFailure()) {
-      workspace.data.logger.error(`Failed to create procedure wrapper: ${wrapperResult.message}`);
-      return;
-    }
-    editingRef.current = { id: compositeId, wrapper: wrapperResult.value };
-    workspace.data.clearCache();
-    reactiveWorkspace.notifyChange();
-    setNewProcedureName('');
-    squashCascade([{ entityType: 'procedure', entityId: compositeId, mode: 'edit' }]);
-  }, [newProcedureName, mutableProcedureCollectionId, workspace, reactiveWorkspace, squashCascade]);
-
-  const handleCreateProcedureCancel = useCallback((): void => {
-    setNewProcedureName('');
-    squashCascade([]);
-  }, [squashCascade]);
-
-  const handleListHeaderPaste = useClipboardJsonImport<Entities.Procedures.IProcedureEntity>({
-    entityLabel: 'procedure',
-    convert: (from: unknown) => Entities.Procedures.Converters.procedureEntity.convert(from),
-    onValid: (entity: Entities.Procedures.IProcedureEntity) => {
-      if (!mutableProcedureCollectionId) {
-        workspace.data.logger.error('Cannot add procedure: no mutable collection available');
-        return;
-      }
-
+  const openProcedureForEdit = useCallback(
+    async (entity: Entities.Procedures.IProcedureEntity): Promise<void> => {
       const baseId = entity.baseId as BaseProcedureId;
       const compositeId = `${mutableProcedureCollectionId}.${baseId}` as ProcedureId;
 
-      const existing = workspace.data.procedures.get(compositeId);
-      if (existing.isSuccess()) {
-        workspace.data.logger.error(`Procedure '${compositeId}' already exists`);
-        return;
-      }
-
-      const colResult = workspace.data.entities.procedures.collections.get(mutableProcedureCollectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) {
-        workspace.data.logger.error('Cannot create procedure: mutable collection not available');
-        return;
-      }
-      const setResult = colResult.value.items.set(baseId, entity);
-      if (setResult.isFailure()) {
-        workspace.data.logger.error(`Failed to add procedure: ${setResult.message}`);
+      const createResult = await procedureMutation.createEntity({
+        mutableCollectionId: mutableProcedureCollectionId,
+        baseId,
+        entity,
+        compositeId,
+        exists: (id: ProcedureId) => workspace.data.procedures.get(id).isSuccess(),
+        persistToDisk: false
+      });
+      if (createResult.isFailure()) {
         return;
       }
 
@@ -329,22 +299,37 @@ export function ProceduresTabContent(): React.ReactElement {
         return;
       }
       editingRef.current = { id: compositeId, wrapper: wrapperResult.value };
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
       squashCascade([{ entityType: 'procedure', entityId: compositeId, mode: 'edit' }]);
     },
+    [workspace, mutableProcedureCollectionId, procedureMutation, squashCascade]
+  );
+
+  const handleCreateProcedure = useCallback((): void => {
+    const trimmed = newProcedureName.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    const baseId = slugify(trimmed) as BaseProcedureId;
+    const entity = createBlankRawProcedureEntity(baseId, trimmed);
+    setNewProcedureName('');
+    void openProcedureForEdit(entity);
+  }, [newProcedureName, openProcedureForEdit]);
+
+  const handleCreateProcedureCancel = useCallback((): void => {
+    setNewProcedureName('');
+    squashCascade([]);
+  }, [squashCascade]);
+
+  const handleListHeaderPaste = useClipboardJsonImport<Entities.Procedures.IProcedureEntity>({
+    entityLabel: 'procedure',
+    convert: (from: unknown) => Entities.Procedures.Converters.procedureEntity.convert(from),
+    onValid: (entity: Entities.Procedures.IProcedureEntity) => openProcedureForEdit(entity),
     onValidSuccessMessage: (entity: Entities.Procedures.IProcedureEntity) =>
       `Opened '${entity.name}' for review — save when ready`
   });
 
-  // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
-  const squashAt = useCallback(
-    (depth: number, entry: ICascadeEntry): void => {
-      squashCascade([...cascadeStack.slice(0, depth + 1), entry]);
-    },
-    [squashCascade, cascadeStack]
-  );
+  const squashAt = useSquashAt(cascadeStack, squashCascade);
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, index) => {

@@ -25,7 +25,6 @@ import type {
 } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
-  type CascadeEntityType,
   type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
@@ -50,6 +49,8 @@ import {
   EntityCreateForm,
   type IConfectionViewSettings,
   useClipboardJsonImport,
+  useCascadeDrillDown,
+  useSquashAt,
   useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
@@ -280,13 +281,7 @@ export function ConfectionsTabContent(): React.ReactElement {
       `Opened '${entity.name}' for review — save when ready`
   });
 
-  // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
-  const squashAt = useCallback(
-    (depth: number, entry: ICascadeEntry): void => {
-      squashCascade([...cascadeStack.slice(0, depth + 1), entry]);
-    },
-    [squashCascade, cascadeStack]
-  );
+  const squashAt = useSquashAt(cascadeStack, squashCascade);
 
   // ============================================================================
   // Editing State Management
@@ -837,32 +832,21 @@ export function ConfectionsTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace, cascadeStack, squashCascade, mutableCollectionId, saveAsName]
   );
 
+  const drillDown = useCascadeDrillDown(cascadeStack, squashCascade, squashAt);
+
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, index) => {
-      // Per-pane drill-down callbacks that squash to the right of this pane
-      const toggleDrillDown = (
-        entityType: CascadeEntityType,
-        entityId: string,
-        extra?: Partial<ICascadeEntry>
-      ): void => {
-        const nextEntry = cascadeStack[index + 1];
-        if (nextEntry?.entityType === entityType && nextEntry.entityId === entityId) {
-          squashCascade(cascadeStack.slice(0, index + 1));
-        } else {
-          squashAt(index, { entityType, entityId, mode: 'view', ...extra });
-        }
-      };
-      const onIngredientClick = (id: IngredientId): void => toggleDrillDown('ingredient', id);
+      const onIngredientClick = (id: IngredientId): void => drillDown(index, 'ingredient', id);
       const onFillingClick = (
         id: FillingId,
         targetWeight?: number,
         sourceConfectionId?: string,
         sourceSlotId?: string
-      ): void => toggleDrillDown('filling', id, { targetWeight, sourceConfectionId, sourceSlotId });
-      const onMoldClick = (id: MoldId): void => toggleDrillDown('mold', id);
-      const onProcedureClick = (id: ProcedureId): void => toggleDrillDown('procedure', id);
-      const onDecorationClick = (id: DecorationId): void => toggleDrillDown('decoration', id);
-      const onTaskClick = (id: TaskId): void => toggleDrillDown('task', id);
+      ): void => drillDown(index, 'filling', id, { targetWeight, sourceConfectionId, sourceSlotId });
+      const onMoldClick = (id: MoldId): void => drillDown(index, 'mold', id);
+      const onProcedureClick = (id: ProcedureId): void => drillDown(index, 'procedure', id);
+      const onDecorationClick = (id: DecorationId): void => drillDown(index, 'decoration', id);
+      const onTaskClick = (id: TaskId): void => drillDown(index, 'task', id);
 
       if (entry.entityType === 'confection') {
         const result = workspace.data.confections.get(entry.entityId as ConfectionId);

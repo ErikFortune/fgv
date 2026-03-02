@@ -21,7 +21,6 @@ import type {
 } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
-  type CascadeEntityType,
   type FillingSaveMode,
   type IReferenceScanResult,
   useTabNavigation,
@@ -40,6 +39,8 @@ import {
   EntityCreateForm,
   useFilteredEntities,
   useClipboardJsonImport,
+  useCascadeDrillDown,
+  useSquashAt,
   useProcedureEditSession,
   useNavigationStore
 } from '@fgv/chocolate-lab-ui';
@@ -207,12 +208,7 @@ export function FillingsTabContent(): React.ReactElement {
     setFillingToDelete(null);
   }, []);
 
-  const squashAt = useCallback(
-    (depth: number, entry: ICascadeEntry): void => {
-      squashCascade([...cascadeStack.slice(0, depth + 1), entry]);
-    },
-    [squashCascade, cascadeStack]
-  );
+  const squashAt = useSquashAt(cascadeStack, squashCascade);
 
   // ============================================================================
   // Editing State Management
@@ -999,23 +995,17 @@ export function FillingsTabContent(): React.ReactElement {
     }
   }, [cascadeStack, squashCascade, procedureSession]);
 
+  const drillDown = useCascadeDrillDown(cascadeStack, squashCascade, squashAt);
+
   // ============================================================================
   // Cascade Columns
   // ============================================================================
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, index) => {
-      const toggleDrillDown = (entityType: CascadeEntityType, entityId: string): void => {
-        const nextEntry = cascadeStack[index + 1];
-        if (nextEntry?.entityType === entityType && nextEntry.entityId === entityId) {
-          squashCascade(cascadeStack.slice(0, index + 1));
-        } else {
-          squashAt(index, { entityType, entityId, mode: 'view' });
-        }
-      };
-      const onIngredientClick = (id: IngredientId): void => toggleDrillDown('ingredient', id);
-      const onProcedureClick = (id: ProcedureId): void => toggleDrillDown('procedure', id);
-      const onTaskClick = (id: TaskId): void => toggleDrillDown('task', id);
+      const onIngredientClick = (id: IngredientId): void => drillDown(index, 'ingredient', id);
+      const onProcedureClick = (id: ProcedureId): void => drillDown(index, 'procedure', id);
+      const onTaskClick = (id: TaskId): void => drillDown(index, 'task', id);
 
       if (entry.entityType === 'filling') {
         // Create mode

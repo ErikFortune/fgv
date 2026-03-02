@@ -35,7 +35,7 @@
 
 import { useCallback } from 'react';
 
-import { fail, succeed, type Result } from '@fgv/ts-utils';
+import { fail, succeed, type IResult, type Result } from '@fgv/ts-utils';
 
 import type { CollectionId } from '@fgv/ts-chocolate';
 
@@ -59,13 +59,18 @@ export interface IEditableEntityCollection<TEntity, TBaseId extends string> {
  * Options for {@link createSetInMutableCollection}.
  * @public
  */
-export interface ISetInMutableCollectionFactoryOptions<TEntity, TBaseId extends string, TCollectionEntry> {
+export interface ISetInMutableCollectionFactoryOptions<
+  TEntity,
+  TBaseId extends string,
+  TCollectionEntry,
+  TMutableCollectionEntry extends TCollectionEntry = TCollectionEntry
+> {
   /** Retrieves a collection entry by ID. */
-  readonly getCollection: (collectionId: CollectionId) => Result<TCollectionEntry>;
-  /** Determines whether a collection entry is mutable. */
-  readonly isMutable: (entry: TCollectionEntry) => boolean;
+  readonly getCollection: (collectionId: CollectionId) => IResult<TCollectionEntry>;
+  /** Determines whether a collection entry is mutable and narrows writable shape. */
+  readonly isMutable: (entry: TCollectionEntry) => entry is TMutableCollectionEntry;
   /** Sets an entity in the collection entry. */
-  readonly setEntity: (entry: TCollectionEntry, baseId: TBaseId, entity: TEntity) => Result<unknown>;
+  readonly setEntity: (entry: TMutableCollectionEntry, baseId: TBaseId, entity: TEntity) => IResult<unknown>;
   /** Human-friendly entity label for error context. */
   readonly entityLabel: string;
 }
@@ -142,8 +147,13 @@ export interface IEntityMutationActions<TEntity, TBaseId extends string, TCompos
  *
  * @public
  */
-export function createSetInMutableCollection<TEntity, TBaseId extends string, TCollectionEntry>(
-  options: ISetInMutableCollectionFactoryOptions<TEntity, TBaseId, TCollectionEntry>
+export function createSetInMutableCollection<
+  TEntity,
+  TBaseId extends string,
+  TCollectionEntry,
+  TMutableCollectionEntry extends TCollectionEntry = TCollectionEntry
+>(
+  options: ISetInMutableCollectionFactoryOptions<TEntity, TBaseId, TCollectionEntry, TMutableCollectionEntry>
 ): (collectionId: CollectionId, baseId: TBaseId, entity: TEntity) => Result<unknown> {
   const { getCollection, isMutable, setEntity, entityLabel } = options;
 

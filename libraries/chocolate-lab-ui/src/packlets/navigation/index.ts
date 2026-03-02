@@ -40,6 +40,8 @@ export {
 
 export { type ITabNavigation, useTabNavigation } from './useTabNavigation';
 
+export { useSquashAt, useCascadeDrillDown } from './useCascadeTransitions';
+
 export { type IEntityListOptions, type IEntityListResult, useEntityList } from './useEntityList';
 
 export {
