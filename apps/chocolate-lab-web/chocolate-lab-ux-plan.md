@@ -265,3 +265,33 @@ Plan in the component model for:
 - Already built into the `Produced*` wrappers (50-deep undo/redo stacks).
 - UI surfaces via keyboard shortcuts and toolbar buttons.
 - `canUndo()` / `canRedo()` drive button enabled/disabled state.
+
+---
+
+## 10. Typeahead On-Blur Pattern
+
+A consistent app-wide affordance for all typeahead/datalist inputs.
+
+### Behavior
+
+On blur (or Enter/Tab) from a typeahead field:
+1. **1 match** — Auto-select it. The field commits the matched entity.
+2. **0 or >1 matches** — Open a create/resolve cascade in the next panel. The typed text is passed as a prefill name to the create form.
+
+### Tiered Suggestions
+
+Typeahead fields support **priority suggestions** that appear first in the datalist, separated from the full list by a visual divider:
+- **Ingredient fields in sessions:** Variation alternates appear first, then all ingredients.
+- **Procedure fields in sessions:** Variation procedures appear first, then all procedures.
+
+Priority suggestions are checked first during blur resolution, so alternates are preferred over the global list when names overlap.
+
+### Implementation
+
+- `useDatalistMatch(suggestions, prioritySuggestions?)` — Hook that provides `findExactMatch` and `resolveOnBlur` with tiered matching.
+- `buildTieredSuggestions(all, priority)` — Combines priority + remaining items with a separator for `<datalist>` rendering.
+- `onRequestCreateEntity(entityType, prefillName)` — Callback from the editing panel to the parent tab, which opens a create form via `squashCascade`.
+
+### Rationale
+
+This pattern eliminates "unresolved" error states from typeahead fields. Instead of showing an inline error when the user types something that doesn't match, the app proactively helps them create the missing entity. The cascade column pattern makes this feel natural — the create form appears in the next panel, and on save, the user returns to the original editing context.

@@ -356,9 +356,10 @@ describe('EditingSession', () => {
       const analysis = session.analyzeSaveOptions();
 
       expect(analysis.canCreateVariation).toBe(true);
-      // Scaling changes ingredients proportionally, so it's an "alternatives" scenario
-      expect(analysis.recommendedOption).toBe('alternatives');
+      // Uniform scaling is a weight change, not an ingredient change
+      expect(analysis.recommendedOption).toBe('variation');
       expect(analysis.changes.weightChanged).toBe(true);
+      expect(analysis.changes.ingredientsChanged).toBe(false);
     });
 
     test('recommends variation for notes-only changes', () => {

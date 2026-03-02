@@ -29,3 +29,12 @@ export {
   type IMultiActionButtonProps,
   type IMultiActionButtonAction
 } from './MultiActionButton';
+
+export { TypeaheadInput, type ITypeaheadInputProps } from './TypeaheadInput';
+
+export {
+  useTypeaheadMatch,
+  type ITypeaheadSuggestion,
+  type ITypeaheadMatchResult,
+  type IFilteredSuggestions
+} from './useTypeaheadMatch';

@@ -27,24 +27,50 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { DetailSection, DetailRow, EditSection } from '@fgv/ts-app-shell';
+import { ArrowPathIcon, BeakerIcon, DocumentTextIcon, ListBulletIcon } from '@heroicons/react/20/solid';
+import { DetailSection, EditSection, TypeaheadInput } from '@fgv/ts-app-shell';
 import {
   Entities,
+  Helpers,
+  type FillingId,
+  type FillingRecipeVariationId,
+  type FillingRecipeVariationSpec,
   type IngredientId,
   type LibraryRuntime,
   type Measurement,
   type MeasurementUnit,
   type Model,
+  type ProcedureId,
   type SessionId,
   type SpoonLevel,
   type UserLibrary
 } from '@fgv/ts-chocolate';
+import type { CascadeEntityType } from '../navigation';
 
-import { NotesEditor, useDatalistMatch } from '../editing';
+import { NotesEditor, ChangeSummaryIcons, type IChangeIndicator } from '../editing';
 import { EntityDetailHeader } from '../common';
 import { useWorkspace, useReactiveWorkspace } from '../workspace';
 import { SessionStatusBar } from './SessionStatusBar';
 import { useSessionActions } from './useSessionActions';
+
+/**
+ * Recipe swap request from the panel.
+ * @public
+ */
+export interface IRecipeSwapRequest {
+  /** The new variation ID to swap to */
+  readonly variationId: FillingRecipeVariationId;
+  /** Whether this is a same-recipe variation swap (in-place) or a different recipe (new session) */
+  readonly mode: 'variation' | 'recipe';
+  /** The current target weight to preserve */
+  readonly targetWeight: Measurement;
+}
+
+/**
+ * Callback type for recipe swap requests.
+ * @public
+ */
+export type RecipeSwapHandler = (request: IRecipeSwapRequest) => void;
 
 // ============================================================================
 // Constants
@@ -87,6 +113,10 @@ export interface IFillingSessionPanelProps {
   readonly session: UserLibrary.Session.EditingSession;
   /** Optional callback to close this panel */
   readonly onClose?: () => void;
+  /** Optional callback to request creating a new entity (ingredient, procedure) via cascade */
+  readonly onRequestCreateEntity?: (entityType: CascadeEntityType, prefillName: string) => void;
+  /** Optional callback when user requests a recipe or variation swap */
+  readonly onRecipeSwap?: RecipeSwapHandler;
 }
 
 // ============================================================================
@@ -98,6 +128,13 @@ function getIngredientDisplayName(
   suggestions: ReadonlyArray<{ id: IngredientId; name: string }>
 ): string {
   return suggestions.find((s) => s.id === ingredientId)?.name ?? String(ingredientId);
+}
+
+function getProcedureDisplayName(
+  procedureId: ProcedureId,
+  suggestions: ReadonlyArray<{ id: ProcedureId; name: string }>
+): string {
+  return suggestions.find((s) => s.id === procedureId)?.name ?? String(procedureId);
 }
 
 function RatingStars({ score }: { readonly score: number | undefined }): React.ReactElement {
@@ -126,7 +163,9 @@ function RatingStars({ score }: { readonly score: number | undefined }): React.R
 export function FillingSessionPanel({
   sessionId,
   session,
-  onClose
+  onClose,
+  onRequestCreateEntity,
+  onRecipeSwap
 }: IFillingSessionPanelProps): React.ReactElement {
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
@@ -148,19 +187,28 @@ export function FillingSessionPanel({
     }));
   }, [workspace, reactiveWorkspace.version]);
 
-  const ingredientMatcher = useDatalistMatch(ingredientSuggestions);
+  // Build priority suggestions from variation alternates
+  const ingredientAlternates = useMemo(() => {
+    const result = session.baseRecipe.getIngredients();
+    if (result.isFailure()) return [];
+    const alts: Array<{ id: IngredientId; name: string }> = [];
+    const seen = new Set<IngredientId>();
+    for (const ri of result.value) {
+      for (const alt of ri.alternates) {
+        if (!seen.has(alt.id)) {
+          seen.add(alt.id);
+          alts.push({ id: alt.id, name: alt.name });
+        }
+      }
+    }
+    return alts;
+  }, [session]);
 
   // ---- Current session state (re-read on sessionVersion change) ----
 
   const producedIngredients = useMemo(() => session.produced.ingredients, [session, sessionVersion]);
 
   const currentProcedureId = useMemo(() => session.produced.snapshot.procedureId, [session, sessionVersion]);
-
-  const procedureName = useMemo(() => {
-    if (!currentProcedureId) return undefined;
-    const proc = workspace.data.procedures.get(currentProcedureId);
-    return proc.isSuccess() ? proc.value.name : String(currentProcedureId);
-  }, [workspace, currentProcedureId]);
 
   const baseRecipeRatings = useMemo(() => {
     const ratings = session.baseRecipe.entity.ratings;
@@ -174,12 +222,85 @@ export function FillingSessionPanel({
 
   const hasChanges = useMemo(() => session.hasChanges, [session, sessionVersion]);
 
+  const sessionChanges = useMemo(() => {
+    return session.analyzeSaveOptions().changes;
+  }, [session, sessionVersion]);
+
+  const hasNonScaleChanges =
+    sessionChanges.ingredientsChanged || sessionChanges.procedureChanged || sessionChanges.notesChanged;
+
+  const changeIndicators: ReadonlyArray<IChangeIndicator> = useMemo(
+    () => [
+      {
+        key: 'ingredients',
+        label: 'Ingredients',
+        icon: <BeakerIcon />,
+        changed: sessionChanges.ingredientsChanged
+      },
+      {
+        key: 'procedure',
+        label: 'Procedure',
+        icon: <ListBulletIcon />,
+        changed: sessionChanges.procedureChanged
+      },
+      { key: 'notes', label: 'Notes', icon: <DocumentTextIcon />, changed: sessionChanges.notesChanged }
+    ],
+    [sessionChanges]
+  );
+
+  // ---- Recipe section state ----
+
+  const [recipeEditMode, setRecipeEditMode] = useState(false);
+  const currentFillingId = session.baseRecipe.fillingRecipe.id;
+  const currentVariationSpec = session.baseRecipe.variationSpec;
+
+  const [selectedRecipeId, setSelectedRecipeId] = useState<FillingId>(currentFillingId);
+  const [selectedVariationSpec, setSelectedVariationSpec] =
+    useState<FillingRecipeVariationSpec>(currentVariationSpec);
+
+  // All filling recipes for the recipe dropdown
+  const allFillingRecipes = useMemo(
+    () => Array.from(workspace.data.fillings.values()).sort((a, b) => a.name.localeCompare(b.name)),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  // Variations of the currently selected recipe
+  const selectedRecipeVariations = useMemo(() => {
+    const recipeResult = workspace.data.fillings.get(selectedRecipeId);
+    if (recipeResult.isFailure()) return [];
+    return recipeResult.value.variations;
+  }, [workspace, selectedRecipeId, reactiveWorkspace.version]);
+
+  // Whether the selection differs from the current session
+  const isRecipeSwapChanged =
+    selectedRecipeId !== currentFillingId || selectedVariationSpec !== currentVariationSpec;
+  const isRecipeChanged = selectedRecipeId !== currentFillingId;
+
+  // Reset selection state when entering/exiting edit mode
+  const handleToggleRecipeEdit = useCallback((): void => {
+    if (recipeEditMode) {
+      // Exiting — reset selection to current
+      setSelectedRecipeId(currentFillingId);
+      setSelectedVariationSpec(currentVariationSpec);
+    }
+    setRecipeEditMode((prev) => !prev);
+  }, [recipeEditMode, currentFillingId, currentVariationSpec]);
+
+  const handleApplyRecipeSwap = useCallback((): void => {
+    if (!onRecipeSwap || !isRecipeSwapChanged) return;
+    const variationId = Helpers.createFillingRecipeVariationId(selectedRecipeId, selectedVariationSpec);
+    onRecipeSwap({
+      variationId,
+      mode: isRecipeChanged ? 'recipe' : 'variation',
+      targetWeight: session.produced.targetWeight
+    });
+    setRecipeEditMode(false);
+  }, [onRecipeSwap, isRecipeSwapChanged, selectedRecipeId, selectedVariationSpec, isRecipeChanged, session]);
+
   // ---- Draft state ----
 
   const [ingredientInputDraft, setIngredientInputDraft] = useState<Record<number, string>>({});
   const [newIngredientText, setNewIngredientText] = useState('');
-  const [unresolvedIngredients, setUnresolvedIngredients] = useState<Record<number, string>>({});
-  const [unresolvedNewIngredient, setUnresolvedNewIngredient] = useState<string | undefined>(undefined);
   const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set());
   const [targetWeightInput, setTargetWeightInput] = useState<string>(String(session.produced.targetWeight));
 
@@ -224,41 +345,48 @@ export function FillingSessionPanel({
 
   // ---- Target weight ----
 
-  const handleScaleToWeight = useCallback((): void => {
+  const scaleFactor = useMemo<number | undefined>(() => {
+    const baseWeight = session.baseRecipe.baseWeight;
+    if (baseWeight <= 0) return undefined;
+    const factor = session.produced.targetWeight / baseWeight;
+    return Math.abs(factor - 1.0) < 0.001 ? undefined : factor;
+  }, [session, sessionVersion]);
+
+  const handleScaleOnBlur = useCallback((): void => {
     const weight = parseFloat(targetWeightInput);
     if (!isNaN(weight) && weight > 0) {
       session.scaleToTargetWeight(weight as Measurement);
       notifySession();
+    } else {
+      // Reset to current target weight if invalid
+      setTargetWeightInput(String(session.produced.targetWeight));
     }
   }, [session, targetWeightInput, notifySession]);
 
   // ---- Ingredient handlers ----
 
-  const commitIngredientInput = useCallback(
-    (index: number, input: string): void => {
-      const match = ingredientMatcher.resolveOnBlur(input);
-      if (match) {
-        const existing = producedIngredients[index];
-        if (match.id !== existing.ingredientId) {
-          session.removeIngredient(existing.ingredientId);
-          session.setIngredient(match.id, existing.amount, existing.unit, existing.modifiers);
-        }
-        setIngredientInputDraft((prev) => {
-          const next = { ...prev };
-          delete next[index];
-          return next;
-        });
-        setUnresolvedIngredients((prev) => {
-          const next = { ...prev };
-          delete next[index];
-          return next;
-        });
-        notifySession();
-      } else if (input.trim()) {
-        setUnresolvedIngredients((prev) => ({ ...prev, [index]: input.trim() }));
+  const handleIngredientSelect = useCallback(
+    (index: number, match: { id: IngredientId; name: string }): void => {
+      const existing = producedIngredients[index];
+      if (match.id !== existing.ingredientId) {
+        session.removeIngredient(existing.ingredientId);
+        session.setIngredient(match.id as IngredientId, existing.amount, existing.unit, existing.modifiers);
       }
+      setIngredientInputDraft((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+      notifySession();
     },
-    [ingredientMatcher, notifySession, session, producedIngredients]
+    [notifySession, session, producedIngredients]
+  );
+
+  const handleIngredientUnresolved = useCallback(
+    (text: string): void => {
+      onRequestCreateEntity?.('ingredient', text);
+    },
+    [onRequestCreateEntity]
   );
 
   const handleIngredientAmountChange = useCallback(
@@ -312,30 +440,74 @@ export function FillingSessionPanel({
         delete next[index];
         return next;
       });
-      setUnresolvedIngredients((prev) => {
-        const next = { ...prev };
-        delete next[index];
-        return next;
-      });
       notifySession();
     },
     [notifySession, session, producedIngredients]
   );
 
-  const commitNewIngredient = useCallback(
-    (input: string): void => {
-      const match = ingredientMatcher.resolveOnBlur(input);
-      if (match) {
-        session.setIngredient(match.id, 0 as Measurement);
+  const handleNewIngredientSelect = useCallback(
+    (match: { id: IngredientId; name: string }): void => {
+      session.setIngredient(match.id as IngredientId, 0 as Measurement);
+      setNewIngredientText('');
+      notifySession();
+    },
+    [notifySession, session]
+  );
+
+  const handleNewIngredientUnresolved = useCallback(
+    (text: string): void => {
+      if (onRequestCreateEntity) {
+        onRequestCreateEntity('ingredient', text);
         setNewIngredientText('');
-        setUnresolvedNewIngredient(undefined);
-        notifySession();
-      } else if (input.trim()) {
-        setUnresolvedNewIngredient(input.trim());
       }
     },
-    [ingredientMatcher, notifySession, session]
+    [onRequestCreateEntity]
   );
+
+  // ---- Procedure ----
+
+  const procedureSuggestions = useMemo(() => {
+    return Array.from(workspace.data.procedures.values()).map((proc: LibraryRuntime.IProcedure) => ({
+      id: proc.id,
+      name: proc.name
+    }));
+  }, [workspace, reactiveWorkspace.version]);
+
+  // Build priority suggestions from variation procedures
+  const procedureAlternates = useMemo(() => {
+    const resolved = session.baseRecipe.procedures;
+    if (!resolved) return [];
+    return resolved.procedures.map((rp) => ({
+      id: rp.id,
+      name: rp.procedure.name
+    }));
+  }, [session]);
+
+  const [newProcedureText, setNewProcedureText] = useState('');
+
+  const handleProcedureSelect = useCallback(
+    (match: { id: ProcedureId; name: string }): void => {
+      session.setProcedure(match.id as ProcedureId);
+      setNewProcedureText('');
+      notifySession();
+    },
+    [notifySession, session]
+  );
+
+  const handleProcedureUnresolved = useCallback(
+    (text: string): void => {
+      if (onRequestCreateEntity) {
+        onRequestCreateEntity('procedure', text);
+        setNewProcedureText('');
+      }
+    },
+    [onRequestCreateEntity]
+  );
+
+  const handleClearProcedure = useCallback((): void => {
+    session.setProcedure(undefined);
+    notifySession();
+  }, [session, notifySession]);
 
   // ---- Notes ----
 
@@ -353,9 +525,11 @@ export function FillingSessionPanel({
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      {/* Status bar */}
+      {/* Header */}
+      <EntityDetailHeader title={session.label ?? session.baseId} subtitle={sessionId} />
+
+      {/* Status bar with close button */}
       <SessionStatusBar
-        sessionId={sessionId}
         session={session}
         onStatusChange={handleStatusChange}
         canUndo={session.canUndo()}
@@ -364,45 +538,150 @@ export function FillingSessionPanel({
         onRedo={handleRedo}
         onSave={handleSave}
         hasChanges={hasChanges}
+        onClose={onClose}
       />
 
       <div className="flex flex-col p-4 gap-4">
-        {/* Header */}
-        <EntityDetailHeader
-          title={session.label ?? session.baseId}
-          subtitle={`Filling Session · ${session.sourceVariationId}`}
-          onClose={onClose}
-        />
+        {/* Recipe info */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recipe</h3>
+            {onRecipeSwap && (
+              <button
+                type="button"
+                onClick={handleToggleRecipeEdit}
+                title={recipeEditMode ? 'Cancel recipe change' : 'Change recipe or variation'}
+                className="inline-flex items-center p-0.5 text-gray-400 hover:text-choco-primary rounded transition-colors"
+              >
+                <ArrowPathIcon className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
 
-        {/* Source Recipe Info */}
-        <DetailSection title="Source Recipe">
-          <DetailRow label="Variation" value={session.sourceVariationId} />
-          <DetailRow label="Base Weight" value={`${session.baseRecipe.entity.baseWeight} g`} />
-        </DetailSection>
+          {/* Collapsed view */}
+          {!recipeEditMode && (
+            <div className="space-y-0.5 px-2">
+              <div className="text-sm text-gray-800" title={String(session.baseRecipe.fillingRecipe.id)}>
+                {session.baseRecipe.fillingRecipe.name}
+              </div>
+              <div className="text-xs text-gray-500" title={String(session.baseRecipe.variationSpec)}>
+                {session.baseRecipe.name ?? String(session.baseRecipe.variationSpec)}
+              </div>
+              <ChangeSummaryIcons indicators={changeIndicators} />
+            </div>
+          )}
+
+          {/* Expanded editing mode */}
+          {recipeEditMode && (
+            <div className="space-y-2 px-2">
+              {/* Recipe selector */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-500 w-16 shrink-0">Recipe</label>
+                <select
+                  className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                  value={String(selectedRecipeId)}
+                  onChange={(e): void => {
+                    const newId = e.target.value as FillingId;
+                    setSelectedRecipeId(newId);
+                    // Reset variation to golden of new recipe
+                    const recipeResult = workspace.data.fillings.get(newId);
+                    if (recipeResult.isSuccess()) {
+                      setSelectedVariationSpec(recipeResult.value.goldenVariationSpec);
+                    }
+                  }}
+                >
+                  {allFillingRecipes.map((r) => (
+                    <option key={String(r.id)} value={String(r.id)}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Variation selector */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-500 w-16 shrink-0">Variation</label>
+                <select
+                  className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                  value={String(selectedVariationSpec)}
+                  onChange={(e): void =>
+                    setSelectedVariationSpec(e.target.value as FillingRecipeVariationSpec)
+                  }
+                >
+                  {selectedRecipeVariations.map((v) => (
+                    <option key={String(v.variationSpec)} value={String(v.variationSpec)}>
+                      {v.name ?? String(v.variationSpec)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Warning for non-scale changes */}
+              {hasNonScaleChanges && isRecipeSwapChanged && (
+                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">
+                  You have unsaved changes that will be lost.
+                </div>
+              )}
+
+              {/* Info about what will happen */}
+              {isRecipeSwapChanged && (
+                <div className="text-xs text-gray-500">
+                  {isRecipeChanged
+                    ? 'A new session will be created for the selected recipe.'
+                    : 'Session will be updated in place with the selected variation.'}
+                </div>
+              )}
+
+              {/* Apply / Cancel */}
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleApplyRecipeSwap}
+                  disabled={!isRecipeSwapChanged}
+                  className="px-2.5 py-1 text-xs font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggleRecipeEdit}
+                  className="px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Target Weight */}
         <EditSection title="Target Weight">
           <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 shrink-0">Scale to</span>
             <input
               type="number"
-              className="w-28 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              className="w-24 text-sm border border-gray-300 rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
               value={targetWeightInput}
-              min={0}
-              step={1}
+              placeholder={String(Math.round(session.baseRecipe.baseWeight))}
+              min={1}
+              step={10}
               onChange={(e): void => setTargetWeightInput(e.target.value)}
+              onBlur={handleScaleOnBlur}
               onKeyDown={(e): void => {
-                if (e.key === 'Enter') handleScaleToWeight();
+                if (e.key === 'Enter') {
+                  (e.target as HTMLInputElement).blur();
+                } else if (e.key === 'Escape') {
+                  setTargetWeightInput(String(session.produced.targetWeight));
+                }
               }}
             />
-            <span className="text-sm text-gray-500">g</span>
-            <button
-              type="button"
-              onClick={handleScaleToWeight}
-              className="px-2.5 py-1 text-xs font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded transition-colors"
-            >
-              Scale
-            </button>
-            <span className="text-xs text-gray-400">Current: {session.produced.targetWeight} g</span>
+            <span className="text-xs text-gray-500">g</span>
+            {scaleFactor !== undefined && (
+              <span className="text-xs text-amber-600 font-medium">
+                {'\u00d7'}
+                {scaleFactor.toFixed(2)}
+              </span>
+            )}
           </div>
         </EditSection>
 
@@ -426,20 +705,14 @@ export function FillingSessionPanel({
                 <div key={ing.ingredientId} className="rounded border border-gray-200 p-2">
                   {/* Main row: name, amount, unit toggle, remove */}
                   <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    <TypeaheadInput<IngredientId>
                       value={ingValue}
-                      list="session-ingredient-suggestions"
-                      onChange={(e): void => {
-                        setIngredientInputDraft((prev) => ({ ...prev, [index]: e.target.value }));
-                      }}
-                      onBlur={(): void => commitIngredientInput(index, ingValue)}
-                      onKeyDown={(e): void => {
-                        if (e.key === 'Enter' || e.key === 'Tab') {
-                          commitIngredientInput(index, ingValue);
-                        }
-                      }}
+                      onChange={(v): void => setIngredientInputDraft((prev) => ({ ...prev, [index]: v }))}
+                      suggestions={ingredientSuggestions}
+                      prioritySuggestions={ingredientAlternates}
+                      onSelect={(match): void => handleIngredientSelect(index, match)}
+                      onUnresolved={onRequestCreateEntity ? handleIngredientUnresolved : undefined}
+                      className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
                     />
                     <input
                       type="number"
@@ -474,13 +747,6 @@ export function FillingSessionPanel({
                       ✕
                     </button>
                   </div>
-
-                  {/* Unresolved warning */}
-                  {unresolvedIngredients[index] && (
-                    <div className="text-xs text-red-500 mt-1">
-                      Unresolved: &ldquo;{unresolvedIngredients[index]}&rdquo;
-                    </div>
-                  )}
 
                   {/* Expanded details */}
                   {isExpanded && (
@@ -585,47 +851,51 @@ export function FillingSessionPanel({
             })}
 
             {/* Add ingredient row */}
-            <div className="flex items-center gap-1.5">
-              <input
-                type="text"
-                className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                placeholder="+ add ingredient"
-                value={newIngredientText}
-                list="session-ingredient-suggestions"
-                onChange={(e): void => setNewIngredientText(e.target.value)}
-                onBlur={(): void => {
-                  if (newIngredientText.trim()) commitNewIngredient(newIngredientText);
-                }}
-                onKeyDown={(e): void => {
-                  if (e.key === 'Enter' || e.key === 'Tab') {
-                    if (newIngredientText.trim()) commitNewIngredient(newIngredientText);
-                  }
-                }}
-              />
-            </div>
-            {unresolvedNewIngredient && (
-              <div className="text-xs text-red-500">
-                Unresolved ingredient: &ldquo;{unresolvedNewIngredient}&rdquo;
-              </div>
-            )}
+            <TypeaheadInput<IngredientId>
+              value={newIngredientText}
+              onChange={setNewIngredientText}
+              suggestions={ingredientSuggestions}
+              prioritySuggestions={ingredientAlternates}
+              onSelect={handleNewIngredientSelect}
+              onUnresolved={onRequestCreateEntity ? handleNewIngredientUnresolved : undefined}
+              placeholder="+ add ingredient"
+              className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+            />
           </div>
-
-          {/* Datalist */}
-          <datalist id="session-ingredient-suggestions">
-            {ingredientSuggestions.map((s) => (
-              <option key={s.id} value={s.name} />
-            ))}
-          </datalist>
         </EditSection>
 
-        {/* Procedure (read-only for Phase 1) */}
-        <DetailSection title="Procedure">
-          {procedureName ? (
-            <DetailRow label="Current" value={procedureName} />
-          ) : (
-            <div className="text-sm text-gray-400 italic px-2 py-1">No procedure set</div>
-          )}
-        </DetailSection>
+        {/* Procedure (editable) */}
+        <EditSection title="Procedure">
+          <div className="space-y-2">
+            {currentProcedureId && (
+              <div className="rounded border border-gray-200 p-2 flex items-center gap-2">
+                <span className="flex-1 text-sm text-gray-800">
+                  {getProcedureDisplayName(currentProcedureId, procedureSuggestions)}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleClearProcedure}
+                  className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+
+            {!currentProcedureId && (
+              <TypeaheadInput<ProcedureId>
+                value={newProcedureText}
+                onChange={setNewProcedureText}
+                suggestions={procedureSuggestions}
+                prioritySuggestions={procedureAlternates}
+                onSelect={handleProcedureSelect}
+                onUnresolved={onRequestCreateEntity ? handleProcedureUnresolved : undefined}
+                placeholder="Type procedure name to set"
+                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              />
+            )}
+          </div>
+        </EditSection>
 
         {/* Ratings (read-only from base recipe) */}
         {baseRecipeRatings && (

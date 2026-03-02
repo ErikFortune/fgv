@@ -520,7 +520,8 @@ describe('ProducedFilling', () => {
       changes = wrapper.getChanges(baseProducedFilling);
       expect(changes.hasChanges).toBe(true);
       expect(changes.targetWeightChanged).toBe(true);
-      expect(changes.ingredientsChanged).toBe(true);
+      // Uniform scaling is a weight change, not an ingredient change
+      expect(changes.ingredientsChanged).toBe(false);
     });
 
     test('getChanges() returns detailed changes for ingredients', () => {

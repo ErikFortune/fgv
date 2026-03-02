@@ -30,7 +30,12 @@ export { NotesEditor, type INotesEditorProps } from './NotesEditor';
 
 export { UrlsEditor, type IUrlsEditorProps } from './UrlsEditor';
 
-export { useDatalistMatch, type IDatalistSuggestion, type IDatalistMatchResult } from './useDatalistMatch';
+export {
+  useDatalistMatch,
+  buildTieredSuggestions,
+  type IDatalistSuggestion,
+  type IDatalistMatchResult
+} from './useDatalistMatch';
 
 export {
   EntityReferenceScanner,
