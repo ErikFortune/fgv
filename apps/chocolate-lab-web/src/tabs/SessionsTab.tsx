@@ -1,13 +1,19 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { EntityList, type ICascadeColumn, EntityTabLayout } from '@fgv/ts-app-shell';
 import {
+  AiAssist,
+  Entities,
   Helpers,
+  type BaseIngredientId,
+  type BaseProcedureId,
   type SessionId,
   type ConfectionId,
-  type FillingRecipeVariationSpec
+  type FillingRecipeVariationSpec,
+  LibraryRuntime
 } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
+  type CascadeEntityType,
   useTabNavigation,
   useEntityList,
   useFilteredEntities,
@@ -15,10 +21,19 @@ import {
   SessionDetailView,
   useSessionActions,
   CreateSessionPanel,
-  type ISessionRecipeSelection
+  EntityCreateForm,
+  type ISessionRecipeSelection,
+  type IRecipeSwapRequest
 } from '@fgv/chocolate-lab-ui';
 
-import { SESSION_DESCRIPTOR, SESSION_FILTER_SPEC, type ISessionListEntry } from '../shared';
+import {
+  SESSION_DESCRIPTOR,
+  SESSION_FILTER_SPEC,
+  type ISessionListEntry,
+  slugify,
+  createBlankIngredientEntity,
+  createBlankRawProcedureEntity
+} from '../shared';
 
 // ============================================================================
 // Tab Content
@@ -138,11 +153,191 @@ export function SessionsTabContent(): React.ReactElement {
   }, [squashCascade]);
 
   // ============================================================================
+  // Create Entity from Session (on-blur cascade)
+  // ============================================================================
+
+  const handleRequestCreateEntity = useCallback(
+    (sessionEntry: ICascadeEntry, entityType: CascadeEntityType, prefillName: string): void => {
+      squashCascade([sessionEntry, { entityType, entityId: '__new__', mode: 'create', prefillName }]);
+    },
+    [squashCascade]
+  );
+
+  // ============================================================================
+  // Create Entity Handlers (from on-blur cascade)
+  // ============================================================================
+
+  const [newProcedureName, setNewProcedureName] = useState('');
+
+  const mutableIngredientCollectionId = useMutableCollection(
+    workspace.data.entities.ingredients.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.ingredients
+  );
+
+  const mutableProcedureCollectionId = useMutableCollection(
+    workspace.data.entities.procedures.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.procedures
+  );
+
+  const handleIngredientCreated = useCallback(
+    (entity: Entities.Ingredients.IngredientEntity, _source: 'manual' | 'ai'): void => {
+      if (!mutableIngredientCollectionId) return;
+      const baseId = entity.baseId as BaseIngredientId;
+      const colResult = workspace.data.entities.ingredients.collections.get(mutableIngredientCollectionId);
+      if (colResult.isFailure() || !colResult.value.isMutable) return;
+      const setResult = colResult.value.items.set(baseId, entity);
+      if (setResult.isFailure()) return;
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+      // Pop the create column, leaving the session column
+      const sessionEntry = cascadeStack.find((e) => e.entityType === 'session' && e.mode === 'view');
+      if (sessionEntry) {
+        squashCascade([sessionEntry]);
+      }
+    },
+    [mutableIngredientCollectionId, workspace, reactiveWorkspace, cascadeStack, squashCascade]
+  );
+
+  const handleProcedureCreated = useCallback((): void => {
+    const trimmed = newProcedureName.trim();
+    if (!trimmed || !mutableProcedureCollectionId) return;
+    const baseId = slugify(trimmed) as BaseProcedureId;
+    const entity = createBlankRawProcedureEntity(baseId, trimmed);
+    const colResult = workspace.data.entities.procedures.collections.get(mutableProcedureCollectionId);
+    if (colResult.isFailure() || !colResult.value.isMutable) return;
+    const setResult = colResult.value.items.set(baseId, entity);
+    if (setResult.isFailure()) return;
+    workspace.data.clearCache();
+    reactiveWorkspace.notifyChange();
+    setNewProcedureName('');
+    // Pop the create column, leaving the session column
+    const sessionEntry = cascadeStack.find((e) => e.entityType === 'session' && e.mode === 'view');
+    if (sessionEntry) {
+      squashCascade([sessionEntry]);
+    }
+  }, [
+    newProcedureName,
+    mutableProcedureCollectionId,
+    workspace,
+    reactiveWorkspace,
+    cascadeStack,
+    squashCascade
+  ]);
+
+  const handleCancelCreateEntity = useCallback((): void => {
+    setNewProcedureName('');
+    const sessionEntry = cascadeStack.find((e) => e.entityType === 'session' && e.mode === 'view');
+    if (sessionEntry) {
+      squashCascade([sessionEntry]);
+    }
+  }, [cascadeStack, squashCascade]);
+
+  // ============================================================================
+  // Recipe Swap Handler
+  // ============================================================================
+
+  const handleRecipeSwap = useCallback(
+    (request: IRecipeSwapRequest): void => {
+      if (!sessionActions.defaultCollectionId) {
+        workspace.data.logger.error('Cannot swap recipe: no mutable collection available');
+        return;
+      }
+
+      // Both variation swap and recipe change create a new session for MVP.
+      // Future: variation swap could replace in-place.
+      const result = sessionActions.createFillingSession(request.variationId, {
+        collectionId: sessionActions.defaultCollectionId
+      });
+      if (result.isSuccess()) {
+        squashCascade([{ entityType: 'session', entityId: result.value, mode: 'view' }]);
+      }
+    },
+    [sessionActions, workspace, squashCascade]
+  );
+
+  // ============================================================================
   // Cascade Columns
   // ============================================================================
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, _index) => {
+      // Ingredient create (from on-blur cascade)
+      if (entry.entityType === 'ingredient' && entry.mode === 'create') {
+        return {
+          key: '__new__ingredient',
+          label: 'New Ingredient',
+          content: (
+            <EntityCreateForm<Entities.Ingredients.IngredientEntity>
+              slugify={slugify}
+              buildPrompt={AiAssist.buildIngredientAiPrompt}
+              convert={(
+                from: unknown
+              ): ReturnType<typeof Entities.Ingredients.Converters.ingredientEntity.convert> =>
+                Entities.Ingredients.Converters.ingredientEntity.convert(from)
+              }
+              makeBlank={(name: string, id: string): Entities.Ingredients.IngredientEntity =>
+                createBlankIngredientEntity(id as BaseIngredientId, name)
+              }
+              onCreate={handleIngredientCreated}
+              onCancel={handleCancelCreateEntity}
+              namePlaceholder="e.g. Callebaut 811 Dark"
+              entityLabel="Ingredient"
+              initialName={entry.prefillName}
+            />
+          )
+        };
+      }
+
+      // Procedure create (from on-blur cascade)
+      if (entry.entityType === 'procedure' && entry.mode === 'create') {
+        return {
+          key: '__new__procedure',
+          label: 'New Procedure',
+          content: (
+            <div className="p-4 space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900">New Procedure</h2>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Procedure Name</label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Tempering"
+                  value={newProcedureName || entry.prefillName || ''}
+                  onChange={(e): void => setNewProcedureName(e.target.value)}
+                  onKeyDown={(e): void => {
+                    if (e.key === 'Enter') handleProcedureCreated();
+                    if (e.key === 'Escape') handleCancelCreateEntity();
+                  }}
+                  autoFocus
+                />
+                {(newProcedureName.trim() || entry.prefillName) && (
+                  <p className="text-xs text-gray-400 mt-1 font-mono">
+                    ID: {slugify((newProcedureName || entry.prefillName || '').trim())}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleProcedureCreated}
+                  disabled={!(newProcedureName.trim() || entry.prefillName)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Create
+                </button>
+                <button
+                  onClick={handleCancelCreateEntity}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )
+        };
+      }
+
       if (entry.entityType === 'session') {
         // Create mode
         if (entry.mode === 'create') {
@@ -180,6 +375,10 @@ export function SessionsTabContent(): React.ReactElement {
               sessionId={entry.entityId as SessionId}
               session={session}
               onClose={(): void => popCascadeTo(_index)}
+              onRequestCreateEntity={(entityType, prefillName): void =>
+                handleRequestCreateEntity(entry, entityType, prefillName)
+              }
+              onRecipeSwap={handleRecipeSwap}
             />
           )
         };
@@ -198,7 +397,13 @@ export function SessionsTabContent(): React.ReactElement {
     availableConfections,
     availableFillings,
     handleCreateSession,
-    handleCancelCreate
+    handleCancelCreate,
+    handleRequestCreateEntity,
+    handleIngredientCreated,
+    handleProcedureCreated,
+    handleCancelCreateEntity,
+    handleRecipeSwap,
+    newProcedureName
   ]);
 
   // ============================================================================

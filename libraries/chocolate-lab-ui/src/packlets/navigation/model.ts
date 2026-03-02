@@ -179,6 +179,8 @@ export interface ICascadeEntry {
   readonly hasChanges?: boolean;
   /** Pre-fill data for session creation (set when opening create-session from a recipe) */
   readonly createSessionInfo?: ICreateSessionInfo;
+  /** Pre-fill name for entity creation (set when on-blur typeahead doesn't match) */
+  readonly prefillName?: string;
 }
 
 // ============================================================================

@@ -37,6 +37,7 @@ import {
 } from '../../common';
 import { Fillings, IProducedFillingEntity, Session } from '../../entities';
 import type { IFillingRecipeVariation } from '../model';
+import { scaleAmount } from '../internal';
 import { EditableWrapper } from '../editableWrapper';
 
 /**
@@ -490,13 +491,16 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
 
     this._pushUndo();
 
-    // Scale each ingredient
+    // Scale each ingredient using scaleAmount for display-friendly rounding
     const scaledIngredients = this._current.ingredients.map((ing) => {
       const unit = ing.unit ?? 'g';
 
       // Only scale weight-contributing units (g, mL)
       if (unit === 'g' || unit === 'mL') {
-        const scaledAmount = (ing.amount * scaleFactor) as Measurement;
+        const scaled = scaleAmount(ing.amount, unit, scaleFactor);
+        const scaledAmount = scaled.isSuccess()
+          ? scaled.value.value
+          : ((ing.amount * scaleFactor) as Measurement);
         return { ...ing, amount: scaledAmount };
       }
 
@@ -665,7 +669,10 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
   }
 
   /**
-   * Compares two ingredient arrays for equality.
+   * Compares two ingredient arrays for equality, accounting for uniform scaling.
+   * Scales `b`'s amounts to `a`'s total weight using `scaleAmount` (which rounds),
+   * then compares the rounded result to `a`'s amounts. This way a pure scale
+   * operation does not register as an ingredient change.
    */
   private _ingredientsEqual(
     a: ReadonlyArray<Fillings.IProducedFillingIngredientEntity>,
@@ -679,8 +686,13 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
     const sortedA = [...a].sort((x, y) => x.ingredientId.localeCompare(y.ingredientId));
     const sortedB = [...b].sort((x, y) => x.ingredientId.localeCompare(y.ingredientId));
 
+    // Compute scale factor to bring b to a's weight
+    const totalA = ProducedFilling._calculateWeightFromIngredients(a);
+    const totalB = ProducedFilling._calculateWeightFromIngredients(b);
+    const factor = totalB > 0 && totalA > 0 ? totalA / totalB : 1.0;
+
     for (let i = 0; i < sortedA.length; i++) {
-      if (!this._ingredientEqual(sortedA[i], sortedB[i])) {
+      if (!this._ingredientEqual(sortedA[i], sortedB[i], factor)) {
         return false;
       }
     }
@@ -689,19 +701,33 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
   }
 
   /**
-   * Compares two ingredients for equality.
+   * Compares two ingredients for equality. For weight-contributing units (g, mL),
+   * scales `b`'s amount by `factor` using `scaleAmount` (applying the same rounding
+   * as scaleToTargetWeight), then compares to `a`'s amount.
    */
   private _ingredientEqual(
     a: Fillings.IProducedFillingIngredientEntity,
-    b: Fillings.IProducedFillingIngredientEntity
+    b: Fillings.IProducedFillingIngredientEntity,
+    factor: number
   ): boolean {
-    return (
-      a.ingredientId === b.ingredientId &&
-      a.amount === b.amount &&
-      a.unit === b.unit &&
-      this._modifiersEqual(a.modifiers, b.modifiers) &&
-      a.notes === b.notes
-    );
+    if (a.ingredientId !== b.ingredientId || a.unit !== b.unit) {
+      return false;
+    }
+
+    const unit = a.unit ?? 'g';
+    const isWeightUnit = unit === 'g' || unit === 'mL';
+    if (isWeightUnit && factor !== 1.0) {
+      // Scale b's amount to a's weight using the same rounding as scaleToTargetWeight
+      const scaled = scaleAmount(b.amount, unit, factor);
+      const scaledAmount = scaled.isSuccess() ? scaled.value.value : b.amount * factor;
+      if (a.amount !== scaledAmount) {
+        return false;
+      }
+    } else if (a.amount !== b.amount) {
+      return false;
+    }
+
+    return this._modifiersEqual(a.modifiers, b.modifiers) && this._notesEqual(a.notes, b.notes);
   }
 
   /**
@@ -717,8 +743,12 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
     if (a === undefined || b === undefined) {
       return false;
     }
-    /* c8 ignore next - branch: both modifiers defined but differing values */
-    return a.spoonLevel === b.spoonLevel && a.toTaste === b.toTaste;
+    return (
+      a.spoonLevel === b.spoonLevel &&
+      a.toTaste === b.toTaste &&
+      a.yieldFactor === b.yieldFactor &&
+      a.processNote === b.processNote
+    );
   }
 
   /**

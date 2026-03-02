@@ -26,8 +26,8 @@
  */
 
 import React from 'react';
-import { ArrowUturnLeftIcon, ArrowUturnRightIcon, CheckIcon } from '@heroicons/react/20/solid';
-import { Entities, type SessionId, type UserLibrary } from '@fgv/ts-chocolate';
+import { ArrowUturnLeftIcon, ArrowUturnRightIcon, CheckIcon, XMarkIcon } from '@heroicons/react/20/solid';
+import { Entities, type UserLibrary } from '@fgv/ts-chocolate';
 
 // ============================================================================
 // Status Colors
@@ -50,8 +50,6 @@ const STATUS_COLORS: Record<string, string> = {
  * @public
  */
 export interface ISessionStatusBarProps {
-  /** The composite session ID */
-  readonly sessionId: SessionId;
   /** The materialized session for metadata display */
   readonly session: UserLibrary.IMaterializedSessionBase;
   /** Called when the user changes the session status */
@@ -68,6 +66,8 @@ export interface ISessionStatusBarProps {
   readonly onSave: () => void;
   /** Whether the session has unsaved changes */
   readonly hasChanges: boolean;
+  /** Optional callback to close this panel */
+  readonly onClose?: () => void;
 }
 
 // ============================================================================
@@ -83,7 +83,6 @@ export interface ISessionStatusBarProps {
  * @public
  */
 export function SessionStatusBar({
-  sessionId,
   session,
   onStatusChange,
   canUndo,
@@ -91,14 +90,16 @@ export function SessionStatusBar({
   onUndo,
   onRedo,
   onSave,
-  hasChanges
+  hasChanges,
+  onClose
 }: ISessionStatusBarProps): React.ReactElement {
   const statusColor = STATUS_COLORS[session.status] ?? 'bg-gray-100 text-gray-800';
+  const hasMetadata = !!(session.group || session.updatedAt);
 
   return (
     <div className="flex flex-col border-b border-gray-200 bg-gray-50">
-      {/* Main toolbar row */}
-      <div className="flex flex-wrap items-center gap-1 px-3 py-1.5">
+      {/* Button row — never wraps */}
+      <div className="flex flex-nowrap items-center gap-1 px-3 py-1.5">
         {/* Undo / Redo group */}
         <div className="flex items-center gap-0.5">
           <button
@@ -124,28 +125,36 @@ export function SessionStatusBar({
         {/* Divider */}
         <div className="w-px h-4 bg-gray-300 mx-1" />
 
-        {/* Status dropdown */}
-        <div className="flex items-center gap-1.5">
-          <span
-            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${statusColor}`}
-          >
-            {session.status}
-          </span>
-          <select
-            value={session.status}
-            onChange={(e): void => onStatusChange(e.target.value as Entities.PersistedSessionStatus)}
-            className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-          >
-            {Entities.Session.allPersistedSessionStatuses.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Status dropdown (styled with color) */}
+        <select
+          value={session.status}
+          onChange={(e): void => onStatusChange(e.target.value as Entities.PersistedSessionStatus)}
+          className={`text-xs font-medium border-none rounded px-1.5 py-0.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-choco-primary ${statusColor}`}
+        >
+          {Entities.Session.allPersistedSessionStatuses.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Close button */}
+        {onClose && (
+          <>
+            <button
+              type="button"
+              onClick={onClose}
+              title="Close"
+              className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+            >
+              <XMarkIcon className="h-3.5 w-3.5" />
+            </button>
+            <div className="w-px h-4 bg-gray-300 mx-1" />
+          </>
+        )}
 
         {/* Save button */}
         <button
@@ -160,17 +169,17 @@ export function SessionStatusBar({
         </button>
       </div>
 
-      {/* Metadata row */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 px-3 py-1 text-[11px] text-gray-500 border-t border-gray-100">
-        <span className="font-mono">{sessionId}</span>
-        {session.group && (
-          <span>
-            Group: <span className="text-gray-700">{session.group}</span>
-          </span>
-        )}
-        <span>Created: {formatTimestamp(session.createdAt)}</span>
-        <span>Updated: {formatTimestamp(session.updatedAt)}</span>
-      </div>
+      {/* Metadata row — wraps naturally, only shown when there's metadata */}
+      {hasMetadata && (
+        <div className="flex flex-wrap items-center gap-x-3 px-3 pb-1.5 text-[11px] text-gray-400">
+          {session.group && (
+            <span>
+              Group: <span className="text-gray-600">{session.group}</span>
+            </span>
+          )}
+          {session.updatedAt && <span>Updated: {formatTimestamp(session.updatedAt)}</span>}
+        </div>
+      )}
     </div>
   );
 }

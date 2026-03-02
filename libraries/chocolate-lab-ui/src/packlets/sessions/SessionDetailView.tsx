@@ -29,7 +29,8 @@
 import React from 'react';
 import { type SessionId, UserLibrary } from '@fgv/ts-chocolate';
 
-import { FillingSessionPanel } from './FillingSessionPanel';
+import type { CascadeEntityType } from '../navigation';
+import { FillingSessionPanel, type RecipeSwapHandler } from './FillingSessionPanel';
 import { GenericSessionDetailView } from './GenericSessionDetailView';
 
 // ============================================================================
@@ -47,6 +48,10 @@ export interface ISessionDetailViewProps {
   readonly session: UserLibrary.AnyMaterializedSession;
   /** Optional callback to close this panel */
   readonly onClose?: () => void;
+  /** Optional callback to request creating a new entity via cascade */
+  readonly onRequestCreateEntity?: (entityType: CascadeEntityType, prefillName: string) => void;
+  /** Optional callback when user requests a recipe or variation swap */
+  readonly onRecipeSwap?: RecipeSwapHandler;
 }
 
 // ============================================================================
@@ -65,7 +70,9 @@ export interface ISessionDetailViewProps {
 export function SessionDetailView({
   sessionId,
   session,
-  onClose
+  onClose,
+  onRequestCreateEntity,
+  onRecipeSwap
 }: ISessionDetailViewProps): React.ReactElement {
   if (session.sessionType === 'filling') {
     return (
@@ -73,6 +80,8 @@ export function SessionDetailView({
         sessionId={sessionId}
         session={session as UserLibrary.Session.EditingSession}
         onClose={onClose}
+        onRequestCreateEntity={onRequestCreateEntity}
+        onRecipeSwap={onRecipeSwap}
       />
     );
   }
