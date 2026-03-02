@@ -23,6 +23,7 @@ import type {
   ConfectionId,
   DecorationId
 } from '@fgv/ts-chocolate';
+import type { Result } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type IReferenceScanResult,
@@ -31,6 +32,8 @@ import {
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
+  createSetInMutableCollection,
+  useEntityMutation,
   IngredientDetail,
   IngredientEditView,
   FillingDetail,
@@ -64,7 +67,7 @@ import {
 } from '../shared';
 
 interface IConfectionEditingState {
-  readonly id: string;
+  readonly id: ConfectionId;
   readonly wrapper: LibraryRuntime.EditedConfectionRecipe;
   selectedVariationSpec: ConfectionRecipeVariationSpec;
 }
@@ -100,6 +103,41 @@ export function ConfectionsTabContent(): React.ReactElement {
     workspace,
     reactiveWorkspace.version
   ]);
+
+  type ConfectionCollectionResult = ReturnType<typeof workspace.data.entities.confections.collections.get>;
+  type ConfectionCollectionEntry = Exclude<ConfectionCollectionResult['value'], undefined>;
+  type ConfectionMutableCollectionEntry = ConfectionCollectionEntry & {
+    readonly items: {
+      set: (id: BaseConfectionId, entity: Entities.Confections.AnyConfectionRecipeEntity) => Result<unknown>;
+    };
+  };
+
+  const confectionMutation = useEntityMutation<
+    Entities.Confections.AnyConfectionRecipeEntity,
+    BaseConfectionId,
+    ConfectionId
+  >({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Confections.AnyConfectionRecipeEntity,
+      BaseConfectionId,
+      ConfectionCollectionEntry,
+      ConfectionMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.confections.collections.get(collectionId),
+      isMutable: (entry: ConfectionCollectionEntry): entry is ConfectionMutableCollectionEntry =>
+        entry.isMutable && 'set' in entry.items,
+      setEntity: (
+        entry: ConfectionMutableCollectionEntry,
+        baseId: BaseConfectionId,
+        entity: Entities.Confections.AnyConfectionRecipeEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'confection'
+    }),
+    entityLabel: 'confection',
+    getEditableCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getEditableConfectionsEntityCollection(collectionId, workspace.keyStore)
+  });
 
   const editingRef = useRef<IConfectionEditingState | undefined>(undefined);
   const editVariationSpecRef = useRef<ConfectionRecipeVariationSpec | undefined>(undefined);
@@ -231,46 +269,27 @@ export function ConfectionsTabContent(): React.ReactElement {
 
   // Handle creating a confection from a pasted entity (add to mutable collection, open in edit mode)
   const handleCreateConfection = useCallback(
-    (entity: Entities.Confections.AnyConfectionRecipeEntity): void => {
-      if (!mutableCollectionId) {
-        workspace.data.logger.error('Cannot add confection: no mutable collection available');
-        return;
-      }
-
+    async (entity: Entities.Confections.AnyConfectionRecipeEntity): Promise<void> => {
       const baseId = entity.baseId as BaseConfectionId;
       const compositeId = `${mutableCollectionId}.${baseId}` as ConfectionId;
 
-      // Check for duplicate
-      const existing = workspace.data.confections.get(compositeId);
-      if (existing.isSuccess()) {
-        workspace.data.logger.error(`Confection '${compositeId}' already exists`);
+      const createResult = await confectionMutation.createEntity({
+        mutableCollectionId,
+        baseId,
+        entity,
+        compositeId,
+        exists: (id: ConfectionId) => workspace.data.confections.get(id).isSuccess(),
+        persistToDisk: false
+      });
+      if (createResult.isFailure()) {
         return;
       }
-
-      // Add to in-memory collection
-      const colResult = workspace.data.entities.confections.collections.get(mutableCollectionId);
-      if (colResult.isFailure()) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' not found: ${colResult.message}`);
-        return;
-      }
-      if (!colResult.value.isMutable) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' is not mutable`);
-        return;
-      }
-      const setResult = colResult.value.items.set(baseId, entity);
-      if (setResult.isFailure()) {
-        workspace.data.logger.error(`Failed to add confection: ${setResult.message}`);
-        return;
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       // Open in edit mode
       editVariationSpecRef.current = entity.goldenVariationSpec as ConfectionRecipeVariationSpec;
       squashCascade([{ entityType: 'confection', entityId: compositeId, mode: 'edit' as const }]);
     },
-    [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
+    [workspace, mutableCollectionId, confectionMutation, squashCascade]
   );
 
   const handleListHeaderPaste = useClipboardJsonImport<Entities.Confections.AnyConfectionRecipeEntity>({
@@ -701,36 +720,18 @@ export function ConfectionsTabContent(): React.ReactElement {
             : undefined
         };
 
-        const colResult = workspace.data.entities.confections.collections.get(mutableCollectionId);
-        if (colResult.isFailure() || !colResult.value.isMutable) {
-          workspace.data.logger.error('Save failed: mutable collection unavailable');
-          return;
-        }
-        const setResult = colResult.value.items.set(newBaseId, newEntity);
-        if (setResult.isFailure()) {
-          workspace.data.logger.error(`Save failed (in-memory): ${setResult.message}`);
-          return;
-        }
-
-        const editableResult = workspace.data.entities.getEditableConfectionsEntityCollection(
+        const createResult = await confectionMutation.createEntity({
           mutableCollectionId,
-          workspace.keyStore
-        );
-        if (editableResult.isSuccess()) {
-          const editable = editableResult.value;
-          editable.set(newBaseId, newEntity);
-          if (editable.canSave()) {
-            const diskResult = await editable.save();
-            if (diskResult.isFailure()) {
-              workspace.data.logger.error(`Disk save failed: ${diskResult.message}`);
-            } else {
-              workspace.data.logger.info(`Saved copy '${safeName}' to collection '${mutableCollectionId}'`);
-            }
-          }
+          baseId: newBaseId,
+          entity: newEntity,
+          compositeId: newCompositeId,
+          exists: (id: ConfectionId) => workspace.data.confections.get(id).isSuccess(),
+          persistToDisk: true
+        });
+        if (createResult.isFailure()) {
+          return;
         }
-
-        workspace.data.clearCache();
-        reactiveWorkspace.notifyChange();
+        workspace.data.logger.info(`Saved copy '${safeName}' to collection '${mutableCollectionId}'`);
         editingRef.current = undefined;
         setShowSaveAsForm(false);
         setSaveAsName('');
@@ -771,53 +772,18 @@ export function ConfectionsTabContent(): React.ReactElement {
 
       // ---- update (default) and new-variation: persist wrapper.current ----
       const entity = state.wrapper.current;
-      const compositeId = state.id as ConfectionId;
-      const collectionId = compositeId.split('.')[0] as CollectionId;
+      const compositeId = state.id;
       const baseId = entity.baseId as BaseConfectionId;
 
-      const collectionEntry = workspace.data.entities.confections.collections.get(collectionId);
-      if (collectionEntry.isFailure()) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' not found`);
+      const saveResult = await confectionMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
         return;
       }
-      if (!collectionEntry.value.isMutable) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' is immutable`);
-        return;
-      }
-
-      const inMemoryResult = collectionEntry.value.items.set(baseId, entity);
-      if (inMemoryResult.isFailure()) {
-        workspace.data.logger.error(`Save failed (in-memory): ${inMemoryResult.message}`);
-        return;
-      }
-
-      const editableResult = workspace.data.entities.getEditableConfectionsEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const saveResult = await editable.save();
-          if (saveResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
-          } else {
-            workspace.data.logger.info(`Saved confection '${entity.name}' to collection '${collectionId}'`);
-          }
-        } else {
-          workspace.data.logger.info(
-            `Updated confection '${entity.name}' in-memory (collection '${collectionId}' has no backing file)`
-          );
-        }
-      } else {
-        workspace.data.logger.info(
-          `Updated confection '${entity.name}' in-memory only: ${editableResult.message}`
-        );
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       viewVariationSpecRef.current = editingRef.current?.selectedVariationSpec;
 
@@ -829,7 +795,7 @@ export function ConfectionsTabContent(): React.ReactElement {
       );
       squashCascade(updated);
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade, mutableCollectionId, saveAsName]
+    [workspace, cascadeStack, squashCascade, mutableCollectionId, saveAsName, confectionMutation]
   );
 
   const drillDown = useCascadeDrillDown(cascadeStack, squashCascade, squashAt);

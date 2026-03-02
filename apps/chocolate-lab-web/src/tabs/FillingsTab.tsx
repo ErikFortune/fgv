@@ -19,6 +19,7 @@ import type {
   TaskId,
   ProcedureId
 } from '@fgv/ts-chocolate';
+import type { Result } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type FillingSaveMode,
@@ -28,6 +29,8 @@ import {
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
+  createSetInMutableCollection,
+  useEntityMutation,
   IngredientDetail,
   IngredientEditView,
   FillingDetail,
@@ -55,7 +58,7 @@ import {
 } from '../shared';
 
 interface IFillingEditingState {
-  readonly id: string;
+  readonly id: FillingId;
   readonly wrapper: LibraryRuntime.EditedFillingRecipe;
   session: UserLibrary.Session.EditingSession;
   selectedVariationSpec: FillingRecipeVariationSpec;
@@ -123,6 +126,39 @@ export function FillingsTabContent(): React.ReactElement {
     workspace,
     reactiveWorkspace.version
   ]);
+
+  type FillingCollectionResult = ReturnType<typeof workspace.data.entities.fillings.collections.get>;
+  type FillingCollectionEntry = Exclude<FillingCollectionResult['value'], undefined>;
+  type FillingMutableCollectionEntry = FillingCollectionEntry & {
+    readonly items: {
+      set: (id: BaseFillingId, entity: Entities.Fillings.IFillingRecipeEntity) => Result<unknown>;
+    };
+  };
+
+  const fillingMutation = useEntityMutation<Entities.Fillings.IFillingRecipeEntity, BaseFillingId, FillingId>(
+    {
+      setInMutableCollection: createSetInMutableCollection<
+        Entities.Fillings.IFillingRecipeEntity,
+        BaseFillingId,
+        FillingCollectionEntry,
+        FillingMutableCollectionEntry
+      >({
+        getCollection: (collectionId: CollectionId) =>
+          workspace.data.entities.fillings.collections.get(collectionId),
+        isMutable: (entry: FillingCollectionEntry): entry is FillingMutableCollectionEntry =>
+          entry.isMutable && 'set' in entry.items,
+        setEntity: (
+          entry: FillingMutableCollectionEntry,
+          baseId: BaseFillingId,
+          entity: Entities.Fillings.IFillingRecipeEntity
+        ) => entry.items.set(baseId, entity),
+        entityLabel: 'filling'
+      }),
+      entityLabel: 'filling',
+      getEditableCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.getEditableFillingsRecipeEntityCollection(collectionId, workspace.keyStore)
+    }
+  );
 
   // --------------------------------------------------------------------------
   // Start Session — navigate to sessions tab with pre-filled cascade
@@ -447,40 +483,18 @@ export function FillingsTabContent(): React.ReactElement {
           }
         };
 
-        // Add to mutable collection
-        const colResult = workspace.data.entities.fillings.collections.get(mutableCollectionId);
-        if (colResult.isFailure() || !colResult.value.isMutable) {
-          workspace.data.logger.error('Save failed: mutable collection unavailable');
-          return;
-        }
-        const setResult = colResult.value.items.set(newBaseId, newEntity);
-        if (setResult.isFailure()) {
-          workspace.data.logger.error(`Save failed (in-memory): ${setResult.message}`);
-          return;
-        }
-
-        // Persist to disk
-        const editableResult = workspace.data.entities.getEditableFillingsRecipeEntityCollection(
+        const createResult = await fillingMutation.createEntity({
           mutableCollectionId,
-          workspace.keyStore
-        );
-        if (editableResult.isSuccess()) {
-          const editable = editableResult.value;
-          editable.set(newBaseId, newEntity);
-          if (editable.canSave()) {
-            const diskResult = await editable.save();
-            if (diskResult.isFailure()) {
-              workspace.data.logger.error(`Disk save failed: ${diskResult.message}`);
-            } else {
-              workspace.data.logger.info(
-                `Created new recipe '${newEntity.name}' from '${originalEntity.name}'`
-              );
-            }
-          }
+          baseId: newBaseId,
+          entity: newEntity,
+          compositeId: newCompositeId,
+          exists: (id: FillingId) => workspace.data.fillings.get(id).isSuccess(),
+          persistToDisk: true
+        });
+        if (createResult.isFailure()) {
+          return;
         }
-
-        workspace.data.clearCache();
-        reactiveWorkspace.notifyChange();
+        workspace.data.logger.info(`Created new recipe '${newEntity.name}' from '${originalEntity.name}'`);
 
         // Clean up editing state and navigate to the new recipe
         editingRef.current = undefined;
@@ -502,56 +516,17 @@ export function FillingsTabContent(): React.ReactElement {
       }
 
       const compositeId = state.id;
-      const collectionId = compositeId.split('.')[0] as CollectionId;
       const baseId = entity.baseId as BaseFillingId;
 
-      // Persist to in-memory collection
-      const collectionEntry = workspace.data.entities.fillings.collections.get(collectionId);
-      if (collectionEntry.isFailure()) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' not found`);
+      const saveResult = await fillingMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
         return;
       }
-      if (!collectionEntry.value.isMutable) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' is immutable`);
-        return;
-      }
-
-      const inMemoryResult = collectionEntry.value.items.set(baseId, entity);
-      if (inMemoryResult.isFailure()) {
-        workspace.data.logger.error(`Save failed (in-memory): ${inMemoryResult.message}`);
-        return;
-      }
-
-      // Persist to disk
-      const editableResult = workspace.data.entities.getEditableFillingsRecipeEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const saveResult = await editable.save();
-          if (saveResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
-          } else {
-            workspace.data.logger.info(
-              `Saved filling '${entity.name}' (${mode}) to collection '${collectionId}'`
-            );
-          }
-        } else {
-          workspace.data.logger.info(
-            `Updated filling '${entity.name}' in-memory (collection '${collectionId}' has no backing file)`
-          );
-        }
-      } else {
-        workspace.data.logger.info(
-          `Updated filling '${entity.name}' in-memory only: ${editableResult.message}`
-        );
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       // Preserve edited variation spec for detail view
       viewVariationSpecRef.current = editingRef.current?.selectedVariationSpec;
@@ -567,7 +542,7 @@ export function FillingsTabContent(): React.ReactElement {
       );
       squashCascade(updated);
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade, procedureSession, mutableCollectionId]
+    [workspace, cascadeStack, squashCascade, procedureSession, mutableCollectionId, fillingMutation]
   );
 
   // ============================================================================
@@ -580,38 +555,21 @@ export function FillingsTabContent(): React.ReactElement {
   }, [squashCascade]);
 
   const handleCreateFilling = useCallback(
-    (entity: Entities.Fillings.IFillingRecipeEntity, source: 'manual' | 'ai'): void => {
-      if (!mutableCollectionId) {
-        workspace.data.logger.error('Cannot add filling: no mutable collection available');
-        return;
-      }
-
+    async (entity: Entities.Fillings.IFillingRecipeEntity, source: 'manual' | 'ai'): Promise<void> => {
       const baseId = entity.baseId as BaseFillingId;
       const compositeId = `${mutableCollectionId}.${baseId}` as FillingId;
 
-      const existing = workspace.data.fillings.get(compositeId);
-      if (existing.isSuccess()) {
-        workspace.data.logger.error(`Filling '${compositeId}' already exists`);
+      const createResult = await fillingMutation.createEntity({
+        mutableCollectionId,
+        baseId,
+        entity,
+        compositeId,
+        exists: (id: FillingId) => workspace.data.fillings.get(id).isSuccess(),
+        persistToDisk: false
+      });
+      if (createResult.isFailure()) {
         return;
       }
-
-      const colResult = workspace.data.entities.fillings.collections.get(mutableCollectionId);
-      if (colResult.isFailure()) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' not found: ${colResult.message}`);
-        return;
-      }
-      if (!colResult.value.isMutable) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' is not mutable`);
-        return;
-      }
-      const setResult = colResult.value.items.set(baseId, entity);
-      if (setResult.isFailure()) {
-        workspace.data.logger.error(`Failed to add filling: ${setResult.message}`);
-        return;
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       // Create editing state for the new filling
       const wrapperResult = LibraryRuntime.EditedFillingRecipe.create(entity);
@@ -654,7 +612,7 @@ export function FillingsTabContent(): React.ReactElement {
       const entry: ICascadeEntry = { entityType: 'filling', entityId: compositeId, mode: 'edit' };
       squashCascade([entry]);
     },
-    [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
+    [workspace, mutableCollectionId, fillingMutation, squashCascade]
   );
 
   const handleCreateFormCancel = useCallback((): void => {
