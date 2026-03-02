@@ -9,6 +9,7 @@ import {
 } from '@fgv/ts-app-shell';
 import { Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseTaskId, CollectionId, TaskId } from '@fgv/ts-chocolate';
+import type { Result } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type IReferenceScanResult,
@@ -17,6 +18,9 @@ import {
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
+  createSetInMutableCollection,
+  useEntityMutation,
+  useClipboardJsonImport,
   TaskDetail,
   TaskEditView,
   TaskPreviewPanel,
@@ -25,6 +29,13 @@ import {
 } from '@fgv/chocolate-lab-ui';
 
 import { TASK_DESCRIPTOR, TASK_FILTER_SPEC, slugify, createBlankRawTaskEntity } from '../shared';
+
+type TaskMutableCollectionEntry = {
+  readonly isMutable: boolean;
+  readonly items: {
+    set: (id: BaseTaskId, entity: Entities.Tasks.IRawTaskEntity) => Result<unknown>;
+  };
+};
 
 export function TasksTabContent(): React.ReactElement {
   const {
@@ -44,7 +55,7 @@ export function TasksTabContent(): React.ReactElement {
     exitComparison
   } = useTabNavigation();
 
-  const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedTask } | undefined>(undefined);
+  const editingRef = useRef<{ id: TaskId; wrapper: LibraryRuntime.EditedTask } | undefined>(undefined);
   const [taskToDelete, setTaskToDelete] = useState<{
     id: TaskId;
     name: string;
@@ -67,39 +78,43 @@ export function TasksTabContent(): React.ReactElement {
     reactiveWorkspace.version
   ]);
 
-  const handleCreateTask = useCallback(
-    (entity: Entities.Tasks.IRawTaskEntity, source: 'manual'): void => {
-      if (!mutableCollectionId) {
-        workspace.data.logger.error('Cannot add task: no mutable collection available');
-        return;
-      }
+  const taskMutation = useEntityMutation<Entities.Tasks.IRawTaskEntity, BaseTaskId, TaskId>({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Tasks.IRawTaskEntity,
+      BaseTaskId,
+      TaskMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.tasks.collections.get(collectionId),
+      isMutable: (entry: TaskMutableCollectionEntry) => entry.isMutable,
+      setEntity: (
+        entry: TaskMutableCollectionEntry,
+        baseId: BaseTaskId,
+        entity: Entities.Tasks.IRawTaskEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'task'
+    }),
+    entityLabel: 'task',
+    getEditableCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getEditableTasksEntityCollection(collectionId, workspace.keyStore)
+  });
 
+  const handleCreateTask = useCallback(
+    async (entity: Entities.Tasks.IRawTaskEntity, source: 'manual'): Promise<void> => {
       const baseId = entity.baseId as BaseTaskId;
       const compositeId = `${mutableCollectionId}.${baseId}` as TaskId;
 
-      const existing = workspace.data.tasks.get(compositeId);
-      if (existing.isSuccess()) {
-        workspace.data.logger.error(`Task '${compositeId}' already exists`);
+      const createResult = await taskMutation.createEntity({
+        mutableCollectionId,
+        baseId,
+        entity,
+        compositeId,
+        exists: (id: TaskId) => workspace.data.tasks.get(id).isSuccess(),
+        persistToDisk: false
+      });
+      if (createResult.isFailure()) {
         return;
       }
-
-      const colResult = workspace.data.entities.tasks.collections.get(mutableCollectionId);
-      if (colResult.isFailure()) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' not found: ${colResult.message}`);
-        return;
-      }
-      if (!colResult.value.isMutable) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' is not mutable`);
-        return;
-      }
-      const setResult = colResult.value.items.set(baseId, entity);
-      if (setResult.isFailure()) {
-        workspace.data.logger.error(`Failed to add task: ${setResult.message}`);
-        return;
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       const wrapperResult = LibraryRuntime.EditedTask.create(entity);
       if (wrapperResult.isFailure()) {
@@ -115,7 +130,7 @@ export function TasksTabContent(): React.ReactElement {
       const entry: ICascadeEntry = { entityType: 'task', entityId: compositeId, mode: 'edit' };
       squashCascade([entry]);
     },
-    [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
+    [workspace, mutableCollectionId, taskMutation, squashCascade]
   );
 
   const { entities: tasks, selectedId } = useEntityList<LibraryRuntime.ITask, TaskId>({
@@ -206,49 +221,17 @@ export function TasksTabContent(): React.ReactElement {
         return;
       }
 
-      const collectionId = compositeId.split('.')[0] as CollectionId;
       const baseId = entity.baseId as BaseTaskId;
 
-      const collectionEntry = workspace.data.entities.tasks.collections.get(collectionId);
-      if (collectionEntry.isFailure()) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' not found`);
+      const saveResult = await taskMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
         return;
       }
-      if (!collectionEntry.value.isMutable) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' is immutable`);
-        return;
-      }
-      const inMemoryResult = collectionEntry.value.items.set(baseId, entity);
-      if (inMemoryResult.isFailure()) {
-        workspace.data.logger.error(`Save failed (in-memory): ${inMemoryResult.message}`);
-        return;
-      }
-
-      const editableResult = workspace.data.entities.getEditableTasksEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const saveResult = await editable.save();
-          if (saveResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
-          } else {
-            workspace.data.logger.info(`Saved task '${entity.name}' to collection '${collectionId}'`);
-          }
-        } else {
-          workspace.data.logger.info(
-            `Updated task '${entity.name}' in-memory (collection '${collectionId}' has no backing file)`
-          );
-        }
-      } else {
-        workspace.data.logger.info(`Updated task '${entity.name}' in-memory only: ${editableResult.message}`);
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       const entityId = compositeId;
       if (editingRef.current?.id === entityId) {
@@ -259,7 +242,7 @@ export function TasksTabContent(): React.ReactElement {
       );
       squashCascade(updated);
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [workspace, taskMutation, cascadeStack, squashCascade]
   );
 
   const getOrCreateWrapper = useCallback(
@@ -295,44 +278,13 @@ export function TasksTabContent(): React.ReactElement {
     [cascadeStack, squashCascade]
   );
 
-  // Handle paste from the list header drop target button
-  const handleListHeaderPaste = useCallback((): void => {
-    navigator.clipboard.readText().then(
-      (text) => {
-        if (!text.trim()) {
-          workspace.data.logger.info('Clipboard is empty');
-          return;
-        }
-
-        const stripped = text
-          .trim()
-          .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
-          .trim();
-
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(stripped);
-        } catch (err: unknown) {
-          const detail = err instanceof Error ? err.message : String(err);
-          workspace.data.logger.error(`Clipboard does not contain valid JSON: ${detail}`);
-          return;
-        }
-
-        const result = Entities.Tasks.Converters.rawTaskEntity.convert(parsed);
-        if (result.isFailure()) {
-          workspace.data.logger.error(`Task validation failed: ${result.message}`);
-          return;
-        }
-
-        handleCreateTask(result.value, 'manual');
-        workspace.data.logger.info(`Opened '${result.value.name}' for review — save when ready`);
-      },
-      (err: unknown) => {
-        const detail = err instanceof Error ? err.message : String(err);
-        workspace.data.logger.error(`Failed to read clipboard: ${detail}`);
-      }
-    );
-  }, [workspace, handleCreateTask]);
+  const handleListHeaderPaste = useClipboardJsonImport<Entities.Tasks.IRawTaskEntity>({
+    entityLabel: 'task',
+    convert: (from: unknown) => Entities.Tasks.Converters.rawTaskEntity.convert(from),
+    onValid: (entity: Entities.Tasks.IRawTaskEntity) => handleCreateTask(entity, 'manual'),
+    onValidSuccessMessage: (entity: Entities.Tasks.IRawTaskEntity) =>
+      `Opened '${entity.name}' for review — save when ready`
+  });
 
   const handleNewTask = useCallback((): void => {
     const entry: ICascadeEntry = { entityType: 'task', entityId: '__new__', mode: 'create' };

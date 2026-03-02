@@ -44,3 +44,16 @@ export {
 } from './useAiAssist';
 
 export { AiAssistNameDialog, type IAiAssistNameDialogProps } from './AiAssistNameDialog';
+
+export {
+  useEntityMutation,
+  createSetInMutableCollection,
+  type IEditableEntityCollection,
+  type ISetInMutableCollectionFactoryOptions,
+  type IEntityMutationOptions,
+  type ICreateEntityMutationParams,
+  type ISaveEntityMutationParams,
+  type IEntityMutationActions
+} from './useEntityMutation';
+
+export { useClipboardJsonImport, type IClipboardJsonImportOptions } from './useClipboardJsonImport';

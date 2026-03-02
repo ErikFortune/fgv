@@ -9,6 +9,7 @@ import {
 } from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseMoldId, CollectionId, MoldId } from '@fgv/ts-chocolate';
+import type { Result } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type IReferenceScanResult,
@@ -17,6 +18,9 @@ import {
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
+  createSetInMutableCollection,
+  useEntityMutation,
+  useClipboardJsonImport,
   MoldDetail,
   MoldEditView,
   EntityCreateForm,
@@ -25,6 +29,13 @@ import {
 } from '@fgv/chocolate-lab-ui';
 
 import { MOLD_DESCRIPTOR, MOLD_FILTER_SPEC, slugify, createBlankMoldEntity } from '../shared';
+
+type MoldMutableCollectionEntry = {
+  readonly isMutable: boolean;
+  readonly items: {
+    set: (id: BaseMoldId, entity: Entities.Molds.IMoldEntity) => Result<unknown>;
+  };
+};
 
 export function MoldsTabContent(): React.ReactElement {
   const {
@@ -44,7 +55,7 @@ export function MoldsTabContent(): React.ReactElement {
     exitComparison
   } = useTabNavigation();
 
-  const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedMold } | undefined>(undefined);
+  const editingRef = useRef<{ id: MoldId; wrapper: LibraryRuntime.EditedMold } | undefined>(undefined);
   const [moldToDelete, setMoldToDelete] = useState<{
     id: MoldId;
     name: string;
@@ -64,39 +75,43 @@ export function MoldsTabContent(): React.ReactElement {
     reactiveWorkspace.version
   ]);
 
-  const handleCreateMold = useCallback(
-    (entity: Entities.Molds.IMoldEntity, source: 'manual' | 'ai'): void => {
-      if (!mutableCollectionId) {
-        workspace.data.logger.error('Cannot add mold: no mutable collection available');
-        return;
-      }
+  const moldMutation = useEntityMutation<Entities.Molds.IMoldEntity, BaseMoldId, MoldId>({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Molds.IMoldEntity,
+      BaseMoldId,
+      MoldMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.molds.collections.get(collectionId),
+      isMutable: (entry: MoldMutableCollectionEntry) => entry.isMutable,
+      setEntity: (
+        entry: MoldMutableCollectionEntry,
+        baseId: BaseMoldId,
+        entity: Entities.Molds.IMoldEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'mold'
+    }),
+    entityLabel: 'mold',
+    getEditableCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getEditableMoldsEntityCollection(collectionId, workspace.keyStore)
+  });
 
+  const handleCreateMold = useCallback(
+    async (entity: Entities.Molds.IMoldEntity, source: 'manual' | 'ai'): Promise<void> => {
       const baseId = entity.baseId as BaseMoldId;
       const compositeId = `${mutableCollectionId}.${baseId}` as MoldId;
 
-      const existing = workspace.data.molds.get(compositeId);
-      if (existing.isSuccess()) {
-        workspace.data.logger.error(`Mold '${compositeId}' already exists`);
+      const createResult = await moldMutation.createEntity({
+        mutableCollectionId,
+        baseId,
+        entity,
+        compositeId,
+        exists: (id: MoldId) => workspace.data.molds.get(id).isSuccess(),
+        persistToDisk: false
+      });
+      if (createResult.isFailure()) {
         return;
       }
-
-      const colResult = workspace.data.entities.molds.collections.get(mutableCollectionId);
-      if (colResult.isFailure()) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' not found: ${colResult.message}`);
-        return;
-      }
-      if (!colResult.value.isMutable) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' is not mutable`);
-        return;
-      }
-      const setResult = colResult.value.items.set(baseId, entity);
-      if (setResult.isFailure()) {
-        workspace.data.logger.error(`Failed to add mold: ${setResult.message}`);
-        return;
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       const wrapperResult = LibraryRuntime.EditedMold.create(entity);
       if (wrapperResult.isFailure()) {
@@ -114,47 +129,16 @@ export function MoldsTabContent(): React.ReactElement {
       const entry: ICascadeEntry = { entityType: 'mold', entityId: compositeId, mode: 'edit' };
       squashCascade([entry]);
     },
-    [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
+    [workspace, mutableCollectionId, moldMutation, squashCascade]
   );
 
-  const handleListHeaderPaste = useCallback((): void => {
-    navigator.clipboard.readText().then(
-      (text) => {
-        if (!text.trim()) {
-          workspace.data.logger.info('Clipboard is empty');
-          return;
-        }
-
-        const stripped = text
-          .trim()
-          .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
-          .trim();
-
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(stripped);
-        } catch (err: unknown) {
-          const detail = err instanceof Error ? err.message : String(err);
-          workspace.data.logger.error(`Clipboard does not contain valid JSON: ${detail}`);
-          return;
-        }
-
-        const result = Entities.Molds.Converters.moldEntity.convert(parsed);
-        if (result.isFailure()) {
-          workspace.data.logger.error(`AI mold validation failed: ${result.message}`);
-          return;
-        }
-
-        handleCreateMold(result.value, 'ai');
-        workspace.data.logger.info(
-          `Opened '${result.value.manufacturer} ${result.value.productNumber}' for review — save when ready`
-        );
-      },
-      () => {
-        workspace.data.logger.error('Could not read clipboard — permission may be required');
-      }
-    );
-  }, [workspace, handleCreateMold]);
+  const handleListHeaderPaste = useClipboardJsonImport<Entities.Molds.IMoldEntity>({
+    entityLabel: 'mold',
+    convert: (from: unknown) => Entities.Molds.Converters.moldEntity.convert(from),
+    onValid: (entity: Entities.Molds.IMoldEntity) => handleCreateMold(entity, 'ai'),
+    onValidSuccessMessage: (entity: Entities.Molds.IMoldEntity) =>
+      `Opened '${entity.manufacturer} ${entity.productNumber}' for review — save when ready`
+  });
 
   const { entities: molds, selectedId } = useEntityList<LibraryRuntime.IMold, MoldId>({
     getAll: () => workspace.data.molds.values(),
@@ -244,53 +228,17 @@ export function MoldsTabContent(): React.ReactElement {
         return;
       }
 
-      const collectionId = compositeId.split('.')[0] as CollectionId;
       const baseId = entity.baseId as BaseMoldId;
 
-      const collectionEntry = workspace.data.entities.molds.collections.get(collectionId);
-      if (collectionEntry.isFailure()) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' not found`);
+      const saveResult = await moldMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
         return;
       }
-      if (!collectionEntry.value.isMutable) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' is immutable`);
-        return;
-      }
-      const inMemoryResult = collectionEntry.value.items.set(baseId, entity);
-      if (inMemoryResult.isFailure()) {
-        workspace.data.logger.error(`Save failed (in-memory): ${inMemoryResult.message}`);
-        return;
-      }
-
-      const editableResult = workspace.data.entities.getEditableMoldsEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const saveResult = await editable.save();
-          if (saveResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
-          } else {
-            workspace.data.logger.info(
-              `Saved mold '${entity.manufacturer} ${entity.productNumber}' to collection '${collectionId}'`
-            );
-          }
-        } else {
-          workspace.data.logger.info(
-            `Updated mold '${entity.manufacturer} ${entity.productNumber}' in-memory (collection '${collectionId}' has no backing file)`
-          );
-        }
-      } else {
-        workspace.data.logger.info(
-          `Updated mold '${entity.manufacturer} ${entity.productNumber}' in-memory only: ${editableResult.message}`
-        );
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       const entityId = compositeId;
       if (editingRef.current?.id === entityId) {
@@ -301,7 +249,7 @@ export function MoldsTabContent(): React.ReactElement {
       );
       squashCascade(updated);
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [workspace, moldMutation, cascadeStack, squashCascade]
   );
 
   const getOrCreateWrapper = useCallback(

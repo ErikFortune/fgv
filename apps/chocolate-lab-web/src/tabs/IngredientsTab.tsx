@@ -9,6 +9,7 @@ import {
 } from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseIngredientId, CollectionId, IngredientId } from '@fgv/ts-chocolate';
+import type { Result } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type IReferenceScanResult,
@@ -17,6 +18,9 @@ import {
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
+  createSetInMutableCollection,
+  useEntityMutation,
+  useClipboardJsonImport,
   IngredientDetail,
   IngredientEditView,
   EntityCreateForm,
@@ -30,6 +34,13 @@ import {
   slugify,
   createBlankIngredientEntity
 } from '../shared';
+
+type IngredientMutableCollectionEntry = {
+  readonly isMutable: boolean;
+  readonly items: {
+    set: (id: BaseIngredientId, entity: Entities.Ingredients.IngredientEntity) => Result<unknown>;
+  };
+};
 
 export function IngredientsTabContent(): React.ReactElement {
   const {
@@ -50,7 +61,9 @@ export function IngredientsTabContent(): React.ReactElement {
   } = useTabNavigation();
   const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
-  const editingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(undefined);
+  const editingRef = useRef<{ id: IngredientId; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
+    undefined
+  );
   const [ingredientToDelete, setIngredientToDelete] = useState<{
     id: IngredientId;
     name: string;
@@ -69,6 +82,31 @@ export function IngredientsTabContent(): React.ReactElement {
     reactiveWorkspace.version
   ]);
 
+  const ingredientMutation = useEntityMutation<
+    Entities.Ingredients.IngredientEntity,
+    BaseIngredientId,
+    IngredientId
+  >({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Ingredients.IngredientEntity,
+      BaseIngredientId,
+      IngredientMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.ingredients.collections.get(collectionId),
+      isMutable: (entry: IngredientMutableCollectionEntry) => entry.isMutable,
+      setEntity: (
+        entry: IngredientMutableCollectionEntry,
+        baseId: BaseIngredientId,
+        entity: Entities.Ingredients.IngredientEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'ingredient'
+    }),
+    entityLabel: 'ingredient',
+    getEditableCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getEditableIngredientsEntityCollection(collectionId, workspace.keyStore)
+  });
+
   const { entities: ingredients, selectedId } = useEntityList<LibraryRuntime.AnyIngredient, IngredientId>({
     getAll: () => workspace.data.ingredients.values(),
     compare: (a, b) => a.name.localeCompare(b.name),
@@ -79,40 +117,21 @@ export function IngredientsTabContent(): React.ReactElement {
 
   // Create a new ingredient from an entity, add to mutable collection, and open in edit mode
   const handleCreateIngredient = useCallback(
-    (entity: Entities.Ingredients.IngredientEntity, source: 'manual' | 'ai'): void => {
-      if (!mutableCollectionId) {
-        workspace.data.logger.error('Cannot add ingredient: no mutable collection available');
-        return;
-      }
-
+    async (entity: Entities.Ingredients.IngredientEntity, source: 'manual' | 'ai'): Promise<void> => {
       const baseId = entity.baseId as BaseIngredientId;
       const compositeId = `${mutableCollectionId}.${baseId}` as IngredientId;
 
-      // Check for duplicate
-      const existing = workspace.data.ingredients.get(compositeId);
-      if (existing.isSuccess()) {
-        workspace.data.logger.error(`Ingredient '${compositeId}' already exists`);
+      const createResult = await ingredientMutation.createEntity({
+        mutableCollectionId,
+        baseId,
+        entity,
+        compositeId,
+        exists: (id: IngredientId) => workspace.data.ingredients.get(id).isSuccess(),
+        persistToDisk: false
+      });
+      if (createResult.isFailure()) {
         return;
       }
-
-      // Add to in-memory collection
-      const colResult = workspace.data.entities.ingredients.collections.get(mutableCollectionId);
-      if (colResult.isFailure()) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' not found: ${colResult.message}`);
-        return;
-      }
-      if (!colResult.value.isMutable) {
-        workspace.data.logger.error(`Collection '${mutableCollectionId}' is not mutable`);
-        return;
-      }
-      const setResult = colResult.value.items.set(baseId, entity);
-      if (setResult.isFailure()) {
-        workspace.data.logger.error(`Failed to add ingredient: ${setResult.message}`);
-        return;
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       // Create editing wrapper and open in edit mode
       const wrapperResult = LibraryRuntime.EditedIngredient.create(entity);
@@ -134,46 +153,16 @@ export function IngredientsTabContent(): React.ReactElement {
       };
       squashCascade([entry]);
     },
-    [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
+    [workspace, mutableCollectionId, ingredientMutation, squashCascade]
   );
 
-  // Handle paste from the list header drop target button
-  const handleListHeaderPaste = useCallback((): void => {
-    navigator.clipboard.readText().then(
-      (text) => {
-        if (!text.trim()) {
-          workspace.data.logger.info('Clipboard is empty');
-          return;
-        }
-
-        const stripped = text
-          .trim()
-          .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
-          .trim();
-
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(stripped);
-        } catch (err: unknown) {
-          const detail = err instanceof Error ? err.message : String(err);
-          workspace.data.logger.error(`Clipboard does not contain valid JSON: ${detail}`);
-          return;
-        }
-
-        const result = Entities.Ingredients.Converters.ingredientEntity.convert(parsed);
-        if (result.isFailure()) {
-          workspace.data.logger.error(`AI ingredient validation failed: ${result.message}`);
-          return;
-        }
-
-        handleCreateIngredient(result.value, 'ai');
-        workspace.data.logger.info(`Opened '${result.value.name}' for review — save when ready`);
-      },
-      () => {
-        workspace.data.logger.error('Could not read clipboard — permission may be required');
-      }
-    );
-  }, [workspace, handleCreateIngredient]);
+  const handleListHeaderPaste = useClipboardJsonImport<Entities.Ingredients.IngredientEntity>({
+    entityLabel: 'ingredient',
+    convert: (from: unknown) => Entities.Ingredients.Converters.ingredientEntity.convert(from),
+    onValid: (entity: Entities.Ingredients.IngredientEntity) => handleCreateIngredient(entity, 'ai'),
+    onValidSuccessMessage: (entity: Entities.Ingredients.IngredientEntity) =>
+      `Opened '${entity.name}' for review — save when ready`
+  });
 
   const handleSelect = useCallback(
     (id: IngredientId): void => {
@@ -255,51 +244,17 @@ export function IngredientsTabContent(): React.ReactElement {
         return;
       }
 
-      const collectionId = compositeId.split('.')[0] as CollectionId;
       const baseId = entity.baseId as BaseIngredientId;
 
-      const collectionEntry = workspace.data.entities.ingredients.collections.get(collectionId);
-      if (collectionEntry.isFailure()) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' not found`);
+      const saveResult = await ingredientMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
         return;
       }
-      if (!collectionEntry.value.isMutable) {
-        workspace.data.logger.error(`Save failed: collection '${collectionId}' is immutable`);
-        return;
-      }
-      const inMemoryResult = collectionEntry.value.items.set(baseId, entity);
-      if (inMemoryResult.isFailure()) {
-        workspace.data.logger.error(`Save failed (in-memory): ${inMemoryResult.message}`);
-        return;
-      }
-
-      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const saveResult = await editable.save();
-          if (saveResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed: ${saveResult.message}`);
-          } else {
-            workspace.data.logger.info(`Saved ingredient '${entity.name}' to collection '${collectionId}'`);
-          }
-        } else {
-          workspace.data.logger.info(
-            `Updated ingredient '${entity.name}' in-memory (collection '${collectionId}' has no backing file)`
-          );
-        }
-      } else {
-        workspace.data.logger.info(
-          `Updated ingredient '${entity.name}' in-memory only: ${editableResult.message}`
-        );
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
 
       if (editingRef.current?.id === compositeId) {
         editingRef.current = undefined;
@@ -309,7 +264,7 @@ export function IngredientsTabContent(): React.ReactElement {
       );
       squashCascade(updated);
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [workspace, ingredientMutation, cascadeStack, squashCascade]
   );
 
   const getOrCreateWrapper = useCallback(

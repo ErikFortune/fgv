@@ -49,6 +49,7 @@ import {
   useFilteredEntities,
   EntityCreateForm,
   type IConfectionViewSettings,
+  useClipboardJsonImport,
   useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
@@ -271,44 +272,13 @@ export function ConfectionsTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
   );
 
-  // Handle paste from the list header drop target button
-  const handleListHeaderPaste = useCallback((): void => {
-    navigator.clipboard.readText().then(
-      (text) => {
-        if (!text.trim()) {
-          workspace.data.logger.info('Clipboard is empty');
-          return;
-        }
-
-        const stripped = text
-          .trim()
-          .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
-          .trim();
-
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(stripped);
-        } catch (err: unknown) {
-          const detail = err instanceof Error ? err.message : String(err);
-          workspace.data.logger.error(`Clipboard does not contain valid JSON: ${detail}`);
-          return;
-        }
-
-        const result = Entities.Confections.Converters.anyConfectionEntity.convert(parsed);
-        if (result.isFailure()) {
-          workspace.data.logger.error(`Confection validation failed: ${result.message}`);
-          return;
-        }
-
-        handleCreateConfection(result.value);
-        workspace.data.logger.info(`Opened '${result.value.name}' for review — save when ready`);
-      },
-      (err: unknown) => {
-        const detail = err instanceof Error ? err.message : String(err);
-        workspace.data.logger.error(`Failed to read clipboard: ${detail}`);
-      }
-    );
-  }, [workspace, handleCreateConfection]);
+  const handleListHeaderPaste = useClipboardJsonImport<Entities.Confections.AnyConfectionRecipeEntity>({
+    entityLabel: 'confection',
+    convert: (from: unknown) => Entities.Confections.Converters.anyConfectionEntity.convert(from),
+    onValid: (entity: Entities.Confections.AnyConfectionRecipeEntity) => handleCreateConfection(entity),
+    onValidSuccessMessage: (entity: Entities.Confections.AnyConfectionRecipeEntity) =>
+      `Opened '${entity.name}' for review — save when ready`
+  });
 
   // Depth-aware squash: keep stack up to and including the pane at `depth`, then append the new entry.
   const squashAt = useCallback(

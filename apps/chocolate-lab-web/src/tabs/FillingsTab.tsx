@@ -39,6 +39,7 @@ import {
   TaskDetail,
   EntityCreateForm,
   useFilteredEntities,
+  useClipboardJsonImport,
   useProcedureEditSession,
   useNavigationStore
 } from '@fgv/chocolate-lab-ui';
@@ -664,44 +665,13 @@ export function FillingsTabContent(): React.ReactElement {
     squashCascade([]);
   }, [squashCascade]);
 
-  // Handle paste from the list header drop target button
-  const handleListHeaderPaste = useCallback((): void => {
-    navigator.clipboard.readText().then(
-      (text) => {
-        if (!text.trim()) {
-          workspace.data.logger.info('Clipboard is empty');
-          return;
-        }
-
-        const stripped = text
-          .trim()
-          .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
-          .trim();
-
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(stripped);
-        } catch (err: unknown) {
-          const detail = err instanceof Error ? err.message : String(err);
-          workspace.data.logger.error(`Clipboard does not contain valid JSON: ${detail}`);
-          return;
-        }
-
-        const result = Entities.Fillings.Converters.fillingRecipeEntity.convert(parsed);
-        if (result.isFailure()) {
-          workspace.data.logger.error(`Filling validation failed: ${result.message}`);
-          return;
-        }
-
-        handleCreateFilling(result.value, 'ai');
-        workspace.data.logger.info(`Opened '${result.value.name}' for review — save when ready`);
-      },
-      (err: unknown) => {
-        const detail = err instanceof Error ? err.message : String(err);
-        workspace.data.logger.error(`Failed to read clipboard: ${detail}`);
-      }
-    );
-  }, [workspace, handleCreateFilling]);
+  const handleListHeaderPaste = useClipboardJsonImport<Entities.Fillings.IFillingRecipeEntity>({
+    entityLabel: 'filling',
+    convert: (from: unknown) => Entities.Fillings.Converters.fillingRecipeEntity.convert(from),
+    onValid: (entity: Entities.Fillings.IFillingRecipeEntity) => handleCreateFilling(entity, 'ai'),
+    onValidSuccessMessage: (entity: Entities.Fillings.IFillingRecipeEntity) =>
+      `Opened '${entity.name}' for review — save when ready`
+  });
 
   // ============================================================================
   // Sub-Entity Creation (Ingredients / Procedures from Filling Editor)

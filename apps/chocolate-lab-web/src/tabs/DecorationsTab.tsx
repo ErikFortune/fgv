@@ -36,6 +36,7 @@ import {
   DecorationPreviewPanel,
   EntityCreateForm,
   useFilteredEntities,
+  useClipboardJsonImport,
   useProcedureEditSession,
   useNavigationStore
 } from '@fgv/chocolate-lab-ui';
@@ -341,44 +342,13 @@ export function DecorationsTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace, mutableCollectionId, squashCascade]
   );
 
-  // Handle paste from the list header drop target button
-  const handleListHeaderPaste = useCallback((): void => {
-    navigator.clipboard.readText().then(
-      (text) => {
-        if (!text.trim()) {
-          workspace.data.logger.info('Clipboard is empty');
-          return;
-        }
-
-        const stripped = text
-          .trim()
-          .replace(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?\s*```$/, '$1')
-          .trim();
-
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(stripped);
-        } catch (err: unknown) {
-          const detail = err instanceof Error ? err.message : String(err);
-          workspace.data.logger.error(`Clipboard does not contain valid JSON: ${detail}`);
-          return;
-        }
-
-        const result = Entities.Decorations.Converters.decorationEntity.convert(parsed);
-        if (result.isFailure()) {
-          workspace.data.logger.error(`Decoration validation failed: ${result.message}`);
-          return;
-        }
-
-        handleCreateDecoration(result.value, 'ai');
-        workspace.data.logger.info(`Opened '${result.value.name}' for review — save when ready`);
-      },
-      (err: unknown) => {
-        const detail = err instanceof Error ? err.message : String(err);
-        workspace.data.logger.error(`Failed to read clipboard: ${detail}`);
-      }
-    );
-  }, [workspace, handleCreateDecoration]);
+  const handleListHeaderPaste = useClipboardJsonImport<Entities.Decorations.IDecorationEntity>({
+    entityLabel: 'decoration',
+    convert: (from: unknown) => Entities.Decorations.Converters.decorationEntity.convert(from),
+    onValid: (entity: Entities.Decorations.IDecorationEntity) => handleCreateDecoration(entity, 'ai'),
+    onValidSuccessMessage: (entity: Entities.Decorations.IDecorationEntity) =>
+      `Opened '${entity.name}' for review — save when ready`
+  });
 
   const handleNewDecoration = useCallback((): void => {
     const entry: ICascadeEntry = { entityType: 'decoration', entityId: '__new__', mode: 'create' };
