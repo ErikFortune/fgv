@@ -22,6 +22,7 @@ All coding standards, testing guidelines, and review checklists are defined in t
 @.ai/instructions/TESTING_GUIDELINES.md
 @.ai/instructions/CODE_REVIEW_CHECKLIST.md
 @.ai/instructions/MONOREPO_GUIDE.md
+@.ai/instructions/ACTIVE_DEVELOPMENT.md
 
 ## Critical Rules Summary
 
@@ -111,12 +112,14 @@ Always use `rush add -p package-name` or `rush remove -p package-name`. Never us
 │   ├── CODING_STANDARDS.md
 │   ├── TESTING_GUIDELINES.md
 │   ├── CODE_REVIEW_CHECKLIST.md
-│   └── MONOREPO_GUIDE.md
+│   ├── MONOREPO_GUIDE.md
+│   └── ACTIVE_DEVELOPMENT.md
 ├── workflows/                # Task orchestration workflows
 └── tasks/                    # Runtime task artifacts
 
 .claude/                      # Claude-specific configuration
 ├── agents/                   # Orchestration agents (task-master, etc.)
+├── skills/                   # On-demand skills (e.g. /resolve-regression)
 ├── settings.local.json       # Permissions
 └── project/                  # Project-specific design docs
 
@@ -124,6 +127,12 @@ CLAUDE.md                     # This file (Claude entry point)
 .windsurfrules                # Windsurf adapter → .ai/
 .cursorrules                  # Cursor adapter → .ai/
 ```
+
+## Skills
+
+On-demand skills in `.claude/skills/` for common workflows:
+
+- `/resolve-regression` - Structured workflow for fixing regressions in chocolate-lab-web using lite TDD with Playwright
 
 ## Additional Resources
 
