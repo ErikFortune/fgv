@@ -26,7 +26,8 @@ import {
   TaskPreviewPanel,
   getWritableCollectionOptions,
   useFilteredEntities,
-  useNavigationStore
+  useNavigationStore,
+  ReadOnlyEditGate
 } from '@fgv/chocolate-lab-ui';
 
 import { TASK_DESCRIPTOR, TASK_FILTER_SPEC, slugify, createBlankRawTaskEntity } from '../shared';
@@ -448,6 +449,33 @@ export function TasksTabContent(): React.ReactElement {
           const collectionEntry = workspace.data.entities.tasks.collections.get(collectionId);
           const isReadOnly = collectionEntry.isSuccess() && !collectionEntry.value.isMutable;
 
+          // Read-only source: show gate instead of full editor
+          if (isReadOnly) {
+            return {
+              key: `${entry.entityId}:edit`,
+              label: result.value.name,
+              content: (
+                <ReadOnlyEditGate
+                  entityName={result.value.name}
+                  onSaveCopy={
+                    mutableCollectionId
+                      ? (): void => {
+                          const today = new Date().toISOString().split('T')[0]!;
+                          handleCreateTaskFromSource({
+                            mode: 'copy',
+                            sourceId: entry.entityId,
+                            name: result.value.name,
+                            id: `${result.value.entity.baseId}-copy-${today}`
+                          });
+                        }
+                      : undefined
+                  }
+                  onCancel={(): void => handleCancelEdit(entry.entityId)}
+                />
+              )
+            };
+          }
+
           return {
             key: `${entry.entityId}:edit`,
             label: `${result.value.name} (editing)`,
@@ -455,9 +483,7 @@ export function TasksTabContent(): React.ReactElement {
               <TaskEditView
                 wrapper={wrapper}
                 onSave={handleSave}
-                onSaveAs={handleSaveAs}
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
-                readOnly={isReadOnly}
                 onPreview={(): void => handlePreview(entry.entityId)}
                 onMutate={(): void => {
                   setPreviewVersion((v) => v + 1);

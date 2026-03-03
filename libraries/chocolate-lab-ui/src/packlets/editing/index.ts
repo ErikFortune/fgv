@@ -60,3 +60,5 @@ export {
 } from './useEntityMutation';
 
 export { useClipboardJsonImport, type IClipboardJsonImportOptions } from './useClipboardJsonImport';
+
+export { ReadOnlyEditGate, type IReadOnlyEditGateProps } from './ReadOnlyEditGate';

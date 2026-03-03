@@ -27,7 +27,8 @@ import {
   EntityCreateForm,
   getWritableCollectionOptions,
   useFilteredEntities,
-  useNavigationStore
+  useNavigationStore,
+  ReadOnlyEditGate
 } from '@fgv/chocolate-lab-ui';
 
 import { MOLD_DESCRIPTOR, MOLD_FILTER_SPEC, slugify, createBlankMoldEntity } from '../shared';
@@ -384,6 +385,33 @@ export function MoldsTabContent(): React.ReactElement {
           const collectionEntry = workspace.data.entities.molds.collections.get(collectionId);
           const isReadOnly = collectionEntry.isSuccess() && !collectionEntry.value.isMutable;
 
+          // Read-only source: show gate instead of full editor
+          if (isReadOnly) {
+            return {
+              key: `${entry.entityId}:edit`,
+              label: result.value.displayName,
+              content: (
+                <ReadOnlyEditGate
+                  entityName={result.value.displayName}
+                  onSaveCopy={
+                    mutableCollectionId
+                      ? (): void => {
+                          const today = new Date().toISOString().split('T')[0]!;
+                          handleCreateMoldFromSource({
+                            mode: 'copy',
+                            sourceId: entry.entityId,
+                            name: result.value.displayName,
+                            id: `${result.value.entity.baseId}-copy-${today}`
+                          });
+                        }
+                      : undefined
+                  }
+                  onCancel={(): void => handleCancelEdit(entry.entityId)}
+                />
+              )
+            };
+          }
+
           return {
             key: `${entry.entityId}:edit`,
             label: `${result.value.displayName} (editing)`,
@@ -391,12 +419,10 @@ export function MoldsTabContent(): React.ReactElement {
               <MoldEditView
                 wrapper={wrapper}
                 onSave={handleSave}
-                onSaveAs={isReadOnly && mutableCollectionId ? handleSaveAs : undefined}
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
                 onMutation={(): void => {
                   updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
                 }}
-                readOnly={isReadOnly}
               />
             )
           };

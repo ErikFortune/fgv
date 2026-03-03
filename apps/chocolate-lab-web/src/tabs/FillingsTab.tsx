@@ -47,7 +47,8 @@ import {
   useCascadeDrillDown,
   useSquashAt,
   useProcedureEditSession,
-  useNavigationStore
+  useNavigationStore,
+  ReadOnlyEditGate
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -1072,6 +1073,24 @@ export function FillingsTabContent(): React.ReactElement {
           const sourceCollectionId = (state.id as string).split('.')[0] as CollectionId;
           const sourceColResult = workspace.data.entities.fillings.collections.get(sourceCollectionId);
           const isSourceReadOnly = sourceColResult.isSuccess() && !sourceColResult.value.isMutable;
+
+          // Read-only source: show gate instead of full editor
+          if (isSourceReadOnly) {
+            return {
+              key: `${entry.entityId}:edit`,
+              label: result.value.name,
+              content: (
+                <ReadOnlyEditGate
+                  entityName={result.value.name}
+                  onSaveCopy={
+                    mutableCollectionId ? (): void => void handleSaveFilling('new-recipe') : undefined
+                  }
+                  onCancel={(): void => handleCancelFillingEdit(entry.entityId)}
+                />
+              )
+            };
+          }
+
           return {
             key: `${entry.entityId}:edit`,
             label: `Editing: ${result.value.name}`,
@@ -1083,7 +1102,6 @@ export function FillingsTabContent(): React.ReactElement {
                 onVariationChange={handleVariationChange}
                 availableIngredients={availableIngredients}
                 availableProcedures={availableProcedures}
-                readOnly={isSourceReadOnly}
                 onSave={handleSaveFilling}
                 onCancel={(): void => handleCancelFillingEdit(entry.entityId)}
                 onPreview={(): void => handlePreviewFilling(entry.entityId)}

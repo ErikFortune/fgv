@@ -27,7 +27,8 @@ import {
   EntityCreateForm,
   getWritableCollectionOptions,
   useFilteredEntities,
-  useNavigationStore
+  useNavigationStore,
+  ReadOnlyEditGate
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -397,6 +398,33 @@ export function IngredientsTabContent(): React.ReactElement {
           const collectionEntry = workspace.data.entities.ingredients.collections.get(collectionId);
           const isReadOnly = collectionEntry.isSuccess() && !collectionEntry.value.isMutable;
 
+          // Read-only source: show gate instead of full editor
+          if (isReadOnly) {
+            return {
+              key: `${entry.entityId}:edit`,
+              label: result.value.name,
+              content: (
+                <ReadOnlyEditGate
+                  entityName={result.value.name}
+                  onSaveCopy={
+                    mutableCollectionId
+                      ? (): void => {
+                          const today = new Date().toISOString().split('T')[0]!;
+                          handleCreateIngredientFromSource({
+                            mode: 'copy',
+                            sourceId: entry.entityId,
+                            name: result.value.name,
+                            id: `${result.value.entity.baseId}-copy-${today}`
+                          });
+                        }
+                      : undefined
+                  }
+                  onCancel={(): void => handleCancelEdit(entry.entityId)}
+                />
+              )
+            };
+          }
+
           return {
             key: `${entry.entityId}:edit`,
             label: `${result.value.name} (editing)`,
@@ -409,7 +437,6 @@ export function IngredientsTabContent(): React.ReactElement {
                 onMutation={(): void => {
                   updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
                 }}
-                readOnly={isReadOnly}
               />
             )
           };

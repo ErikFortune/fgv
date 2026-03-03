@@ -44,7 +44,8 @@ import {
   useCascadeDrillDown,
   useSquashAt,
   useProcedureEditSession,
-  useNavigationStore
+  useNavigationStore,
+  ReadOnlyEditGate
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -874,6 +875,34 @@ export function DecorationsTabContent(): React.ReactElement {
           const sourceCollectionId = (entry.entityId as string).split('.')[0] as CollectionId;
           const sourceColResult = workspace.data.entities.decorations.collections.get(sourceCollectionId);
           const isSourceReadOnly = sourceColResult.isSuccess() && !sourceColResult.value.isMutable;
+
+          // Read-only source: show gate instead of full editor
+          if (isSourceReadOnly) {
+            return {
+              key: `${entry.entityId}:edit`,
+              label: result.value.name,
+              content: (
+                <ReadOnlyEditGate
+                  entityName={result.value.name}
+                  onSaveCopy={
+                    mutableCollectionId
+                      ? (): void => {
+                          const today = new Date().toISOString().split('T')[0]!;
+                          handleCreateDecorationFromSource({
+                            mode: 'copy',
+                            sourceId: entry.entityId,
+                            name: result.value.name,
+                            id: `${result.value.entity.baseId}-copy-${today}`
+                          });
+                        }
+                      : undefined
+                  }
+                  onCancel={(): void => handleCancelDecorationEdit(entry.entityId)}
+                />
+              )
+            };
+          }
+
           return {
             key: `${entry.entityId}:edit`,
             label: `Editing: ${result.value.name}`,
@@ -882,9 +911,7 @@ export function DecorationsTabContent(): React.ReactElement {
                 wrapper={wrapper}
                 availableIngredients={availableIngredients}
                 availableProcedures={availableProcedures}
-                readOnly={isSourceReadOnly}
                 onSave={handleSaveDecoration}
-                onSaveAs={isSourceReadOnly && mutableCollectionId ? handleSaveDecorationAs : undefined}
                 onCancel={(): void => handleCancelDecorationEdit(entry.entityId)}
                 onMutate={(): void => {
                   updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));

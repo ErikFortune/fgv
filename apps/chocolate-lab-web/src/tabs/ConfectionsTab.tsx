@@ -57,7 +57,8 @@ import {
   useClipboardJsonImport,
   useCascadeDrillDown,
   useSquashAt,
-  useNavigationStore
+  useNavigationStore,
+  ReadOnlyEditGate
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -1054,6 +1055,26 @@ export function ConfectionsTabContent(): React.ReactElement {
           const sourceCollectionId = (state.id as string).split('.')[0] as CollectionId;
           const sourceColResult = workspace.data.entities.confections.collections.get(sourceCollectionId);
           const isSourceReadOnly = sourceColResult.isSuccess() && !sourceColResult.value.isMutable;
+
+          // Read-only source: show gate instead of full editor
+          if (isSourceReadOnly) {
+            return {
+              key: `${entry.entityId}:edit`,
+              label: result.value.name,
+              content: (
+                <ReadOnlyEditGate
+                  entityName={result.value.name}
+                  onSaveCopy={
+                    mutableCollectionId
+                      ? (): void => void handleSaveConfection(entry.entityId, 'new-recipe')
+                      : undefined
+                  }
+                  onCancel={(): void => handleCancelConfectionEdit(entry.entityId)}
+                />
+              )
+            };
+          }
+
           return {
             key: `${entry.entityId}:edit`,
             label: `Editing: ${result.value.name}`,
@@ -1109,7 +1130,6 @@ export function ConfectionsTabContent(): React.ReactElement {
                   onAddProcedure={handleCreateProcedureFromConfection}
                   availableMolds={availableMolds}
                   availableDecorations={availableDecorations}
-                  readOnly={isSourceReadOnly}
                   onSave={(mode: ConfectionSaveMode): void => {
                     if (mode === 'new-recipe') {
                       setSaveAsName(result.value.name);

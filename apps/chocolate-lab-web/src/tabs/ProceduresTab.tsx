@@ -28,7 +28,8 @@ import {
   useClipboardJsonImport,
   useSquashAt,
   useProcedureEditSession,
-  useNavigationStore
+  useNavigationStore,
+  ReadOnlyEditGate
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -440,6 +441,25 @@ export function ProceduresTabContent(): React.ReactElement {
           const collectionEntry = workspace.data.entities.procedures.collections.get(collectionId);
           const isReadOnly = collectionEntry.isSuccess() && !collectionEntry.value.isMutable;
 
+          // Read-only source: show gate instead of full editor
+          if (isReadOnly) {
+            return {
+              key: `${entry.entityId}:edit`,
+              label: result.value.name,
+              content: (
+                <ReadOnlyEditGate
+                  entityName={result.value.name}
+                  onSaveCopy={
+                    mutableCollectionId
+                      ? (): void => void openProcedureForEdit(result.value.entity)
+                      : undefined
+                  }
+                  onCancel={(): void => handleCancelProcedureEdit(entry.entityId)}
+                />
+              )
+            };
+          }
+
           return {
             key: `${entry.entityId}:edit`,
             label: `${result.value.name} (editing)`,
@@ -448,9 +468,7 @@ export function ProceduresTabContent(): React.ReactElement {
                 wrapper={wrapper}
                 availableTasks={availableTasks}
                 onSave={handleSaveProcedure}
-                onSaveAs={handleSaveProcedureAs}
                 onCancel={(): void => handleCancelProcedureEdit(entry.entityId)}
-                readOnly={isReadOnly}
                 onPreview={(): void => handlePreviewProcedure(entry.entityId)}
                 onMutate={(): void => {
                   setPreviewVersion((v) => v + 1);
