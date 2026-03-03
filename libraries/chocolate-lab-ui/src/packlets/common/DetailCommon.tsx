@@ -139,6 +139,8 @@ export interface IEntityDetailHeaderProps {
   readonly badge?: IEntityDetailHeaderBadge;
   /** Additional indicator content rendered after badge and subtitle */
   readonly extraIndicators?: React.ReactNode;
+  /** If provided, renders derivation info as a second status line below the header controls */
+  readonly derivedFrom?: IDerivedFromIndicatorProps;
   /** If provided, renders a clipboard icon button that calls this handler */
   readonly onCopyJson?: (options?: ICopyJsonOptions) => void;
   /** If provided, renders a Preview button in the actions slot */
@@ -168,6 +170,7 @@ export function EntityDetailHeader({
   subtitle,
   badge,
   extraIndicators,
+  derivedFrom,
   onCopyJson,
   onPreview,
   onEdit,
@@ -239,13 +242,24 @@ export function EntityDetailHeader({
   );
 
   return (
-    <DetailHeader
-      title={title}
-      subtitle={subtitle}
-      description={description}
-      indicators={indicators}
-      actions={actions}
-    />
+    <>
+      <DetailHeader
+        title={title}
+        subtitle={subtitle}
+        description={derivedFrom ? undefined : description}
+        indicators={indicators}
+        actions={actions}
+      />
+      {derivedFrom && (
+        <div className="px-4 py-2 border-b border-gray-200 space-y-1">
+          <DerivedFromIndicator
+            sourceVariationId={derivedFrom.sourceVariationId}
+            derivedDate={derivedFrom.derivedDate}
+          />
+          {description && <p className="text-sm text-gray-600">{description}</p>}
+        </div>
+      )}
+    </>
   );
 }
 

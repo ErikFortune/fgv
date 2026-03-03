@@ -61,7 +61,7 @@ export interface IEntityCreateFormProps<TEntity> {
   /** Build a blank entity from name and ID (for manual creation) */
   readonly makeBlank: (name: string, id: string) => TEntity;
   /** Called when the user creates an entity (manual or AI) */
-  readonly onCreate: (entity: TEntity, source: 'manual' | 'ai') => void;
+  readonly onCreate: (entity: TEntity, source: 'manual' | 'ai', targetCollectionId?: string) => void;
   /** Called when the user cancels */
   readonly onCancel: () => void;
   /** Placeholder text for the name field */
@@ -70,6 +70,51 @@ export interface IEntityCreateFormProps<TEntity> {
   readonly entityLabel?: string;
   /** Initial value for the name field (e.g. from typeahead seed) */
   readonly initialName?: string;
+
+  /** Existing entities available for copy/derive flows */
+  readonly sourceOptions?: ReadonlyArray<IEntityCreateSourceOption>;
+
+  /** Mode used when creating from an existing source option (default: 'derive') */
+  readonly sourceCreateMode?: IEntityCreateFromSourceParams['mode'];
+
+  /** Invoked when creating from an existing source */
+  readonly onCreateFromSource?: (params: IEntityCreateFromSourceParams) => void;
+
+  /** Writable target collections (if provided, shown in the form) */
+  readonly writableCollections?: ReadonlyArray<IEntityCreateCollectionOption>;
+
+  /** Optional preferred target collection */
+  readonly defaultTargetCollectionId?: string;
+}
+
+/**
+ * Source entity option for copy/derive flows.
+ * @public
+ */
+export interface IEntityCreateSourceOption {
+  readonly id: string;
+  readonly name: string;
+}
+
+/**
+ * Target collection option for create flows.
+ * @public
+ */
+export interface IEntityCreateCollectionOption {
+  readonly id: string;
+  readonly label?: string;
+}
+
+/**
+ * Parameters for create-from-source callbacks.
+ * @public
+ */
+export interface IEntityCreateFromSourceParams {
+  readonly mode: 'copy' | 'derive';
+  readonly sourceId: string;
+  readonly name: string;
+  readonly id: string;
+  readonly targetCollectionId?: string;
 }
 
 // ============================================================================
@@ -98,7 +143,12 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
     onCancel,
     namePlaceholder = 'e.g. Callebaut 811 Dark',
     entityLabel = 'Entity',
-    initialName
+    initialName,
+    sourceOptions,
+    sourceCreateMode = 'derive',
+    onCreateFromSource,
+    writableCollections,
+    defaultTargetCollectionId
   } = props;
 
   const [name, setName] = useState(initialName ?? '');
@@ -107,6 +157,11 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
   const [promptCopied, setPromptCopied] = useState(false);
   const [aiDropdownOpen, setAiDropdownOpen] = useState(false);
 
+  const [selectedSourceId, setSelectedSourceId] = useState('');
+  const [targetCollectionId, setTargetCollectionId] = useState<string>(
+    defaultTargetCollectionId ?? writableCollections?.[0]?.id ?? ''
+  );
+
   const aiAssist = useAiAssist();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -114,6 +169,35 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
   const derivedId = trimmedName ? slugify(trimmedName) : '';
   const effectiveId = idOverride.trim() || derivedId;
   const hasValidId = effectiveId.length > 0;
+
+  const hasSourceSelection = sourceOptions !== undefined && onCreateFromSource !== undefined;
+  const canCreateFromSource = selectedSourceId.trim().length > 0 && onCreateFromSource !== undefined;
+
+  useEffect(() => {
+    if (defaultTargetCollectionId !== undefined) {
+      setTargetCollectionId(defaultTargetCollectionId);
+      return;
+    }
+
+    if (writableCollections === undefined || writableCollections.length === 0) {
+      return;
+    }
+
+    const found = writableCollections.some((option) => option.id === targetCollectionId);
+    if (!found) {
+      setTargetCollectionId(writableCollections[0].id);
+    }
+  }, [defaultTargetCollectionId, writableCollections, targetCollectionId]);
+
+  useEffect(() => {
+    if (!selectedSourceId) {
+      return;
+    }
+    const sourceExists = (sourceOptions ?? []).some((source) => source.id === selectedSourceId);
+    if (!sourceExists) {
+      setSelectedSourceId('');
+    }
+  }, [sourceOptions, selectedSourceId]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -135,9 +219,34 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
 
   const handleCreate = useCallback((): void => {
     if (!trimmedName) return;
+    if (selectedSourceId.trim().length > 0) {
+      if (!canCreateFromSource) {
+        return;
+      }
+
+      onCreateFromSource({
+        mode: sourceCreateMode,
+        sourceId: selectedSourceId,
+        name: trimmedName,
+        id: effectiveId,
+        targetCollectionId: targetCollectionId || undefined
+      });
+      return;
+    }
+
     const entity = makeBlank(trimmedName, effectiveId);
-    onCreate(entity, 'manual');
-  }, [trimmedName, effectiveId, makeBlank, onCreate]);
+    onCreate(entity, 'manual', targetCollectionId || undefined);
+  }, [
+    trimmedName,
+    selectedSourceId,
+    canCreateFromSource,
+    onCreateFromSource,
+    sourceCreateMode,
+    effectiveId,
+    targetCollectionId,
+    makeBlank,
+    onCreate
+  ]);
 
   const handleCopyPrompt = useCallback((): void => {
     if (!trimmedName) return;
@@ -167,7 +276,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
             setPasteError(result.message);
             return;
           }
-          onCreate(result.value.entity, 'ai');
+          onCreate(result.value.entity, 'ai', targetCollectionId || undefined);
         },
         (err: unknown) => {
           const detail = err instanceof Error ? err.message : String(err);
@@ -175,7 +284,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
         }
       );
     },
-    [trimmedName, buildPrompt, convert, onCreate, aiAssist]
+    [trimmedName, buildPrompt, convert, onCreate, targetCollectionId, aiAssist]
   );
 
   const handleJsonInput = useCallback(
@@ -203,9 +312,9 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
         return;
       }
 
-      onCreate(result.value, 'ai');
+      onCreate(result.value, 'ai', targetCollectionId || undefined);
     },
-    [convert, onCreate]
+    [convert, onCreate, targetCollectionId]
   );
 
   const handlePaste = useCallback(
@@ -342,6 +451,27 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
 
   return (
     <div className="flex flex-col p-4 gap-4">
+      {/* Source picker */}
+      {hasSourceSelection && (
+        <div>
+          <label className="text-sm font-medium text-gray-700">
+            {sourceCreateMode === 'copy' ? 'Copy from' : 'Derive from'}
+          </label>
+          <select
+            value={selectedSourceId}
+            onChange={(e): void => setSelectedSourceId(e.target.value)}
+            className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+          >
+            <option value="">(none)</option>
+            {(sourceOptions ?? []).map((source) => (
+              <option key={source.id} value={source.id}>
+                {source.name} ({source.id})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Name field */}
       <div>
         <label className="text-sm font-medium text-gray-700">{entityLabel} Name</label>
@@ -373,26 +503,46 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
         />
       </div>
 
+      {/* Target collection */}
+      {(writableCollections?.length ?? 0) > 0 && (
+        <div>
+          <label className="text-sm font-medium text-gray-700">Target Collection</label>
+          <select
+            value={targetCollectionId}
+            onChange={(e): void => setTargetCollectionId(e.target.value)}
+            className="mt-1 w-full px-3 py-2 text-sm font-mono border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+          >
+            {writableCollections?.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label ?? option.id}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* AI Drop Zone */}
-      <div
-        onPaste={handlePaste}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        tabIndex={0}
-        className={`flex flex-col items-center justify-center gap-2 px-4 py-6 border-2 border-dashed rounded-lg cursor-default transition-colors focus-within:border-choco-primary focus-within:bg-choco-primary/5 ${
-          pasteError ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-        }`}
-      >
-        <span className="text-sm text-gray-500">Paste or drop AI-generated JSON here</span>
-        <span className="text-xs text-gray-400">Ctrl+V to paste, or drag a text file</span>
-      </div>
+      {selectedSourceId.trim().length === 0 && (
+        <div
+          onPaste={handlePaste}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          tabIndex={0}
+          className={`flex flex-col items-center justify-center gap-2 px-4 py-6 border-2 border-dashed rounded-lg cursor-default transition-colors focus-within:border-choco-primary focus-within:bg-choco-primary/5 ${
+            pasteError ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+          }`}
+        >
+          <span className="text-sm text-gray-500">Paste or drop AI-generated JSON here</span>
+          <span className="text-xs text-gray-400">Ctrl+V to paste, or drag a text file</span>
+        </div>
+      )}
 
       {/* Paste error */}
       {pasteError && <p className="text-xs text-red-600">{pasteError}</p>}
 
       {/* Action buttons */}
       <div className="flex items-center justify-between">
-        {renderAiButton()}
+        {selectedSourceId.trim().length === 0 ? renderAiButton() : <div />}
 
         <div className="flex items-center gap-2">
           <button

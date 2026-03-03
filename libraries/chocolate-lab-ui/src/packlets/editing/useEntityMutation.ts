@@ -121,10 +121,11 @@ export interface IEntityMutationOptions<TEntity, TBaseId extends string> {
  * @public
  */
 export interface ICreateEntityMutationParams<TEntity, TBaseId extends string, TCompositeId extends string> {
-  readonly mutableCollectionId: CollectionId | undefined;
+  readonly targetCollectionId?: CollectionId;
+  readonly defaultCollectionId?: CollectionId;
+  readonly getCompositeId: (collectionId: CollectionId, baseId: TBaseId) => TCompositeId;
   readonly baseId: TBaseId;
   readonly entity: TEntity;
-  readonly compositeId: TCompositeId;
   readonly exists: (compositeId: TCompositeId) => boolean;
   readonly persistToDisk?: boolean;
 }
@@ -245,13 +246,25 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
     async (
       params: ICreateEntityMutationParams<TEntity, TBaseId, TCompositeId>
     ): Promise<Result<TCompositeId>> => {
-      const { mutableCollectionId, baseId, entity, compositeId, exists, persistToDisk = false } = params;
+      const {
+        targetCollectionId,
+        defaultCollectionId,
+        getCompositeId,
+        baseId,
+        entity,
+        exists,
+        persistToDisk = false
+      } = params;
+
+      const mutableCollectionId = targetCollectionId ?? defaultCollectionId;
 
       if (!mutableCollectionId) {
         const message = `Cannot add ${entityLabel}: no mutable collection available`;
         workspace.data.logger.error(message);
         return fail(message);
       }
+
+      const compositeId = getCompositeId(mutableCollectionId, baseId);
 
       if (exists(compositeId)) {
         const message = `${entityLabel} '${compositeId}' already exists`;

@@ -9,7 +9,7 @@ import {
 } from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseMoldId, CollectionId, MoldId } from '@fgv/ts-chocolate';
-import type { Result } from '@fgv/ts-utils';
+import type { Result, ResultMapValueType } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type IReferenceScanResult,
@@ -19,23 +19,18 @@ import {
   useCanDeleteFromCollections,
   useEntityActions,
   createSetInMutableCollection,
+  type MutableCollectionEntryWithSet,
   useEntityMutation,
   useClipboardJsonImport,
   MoldDetail,
   MoldEditView,
   EntityCreateForm,
+  getWritableCollectionOptions,
   useFilteredEntities,
   useNavigationStore
 } from '@fgv/chocolate-lab-ui';
 
 import { MOLD_DESCRIPTOR, MOLD_FILTER_SPEC, slugify, createBlankMoldEntity } from '../shared';
-
-type MoldMutableCollectionEntry = {
-  readonly isMutable: boolean;
-  readonly items: {
-    set: (id: BaseMoldId, entity: Entities.Molds.IMoldEntity) => Result<unknown>;
-  };
-};
 
 export function MoldsTabContent(): React.ReactElement {
   const {
@@ -55,6 +50,13 @@ export function MoldsTabContent(): React.ReactElement {
     exitComparison
   } = useTabNavigation();
 
+  type MoldCollectionEntry = ResultMapValueType<typeof workspace.data.entities.molds.collections>;
+  type MoldMutableCollectionEntry = MutableCollectionEntryWithSet<
+    MoldCollectionEntry,
+    BaseMoldId,
+    Entities.Molds.IMoldEntity
+  >;
+
   const editingRef = useRef<{ id: MoldId; wrapper: LibraryRuntime.EditedMold } | undefined>(undefined);
   const [moldToDelete, setMoldToDelete] = useState<{
     id: MoldId;
@@ -70,6 +72,15 @@ export function MoldsTabContent(): React.ReactElement {
     workspace.settings?.getResolvedSettings().defaultTargets.molds
   );
 
+  const writableMoldCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.molds.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.molds
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
   const canDeleteMold = useCanDeleteFromCollections(workspace.data.entities.molds.collections, [
     workspace,
     reactiveWorkspace.version
@@ -79,11 +90,13 @@ export function MoldsTabContent(): React.ReactElement {
     setInMutableCollection: createSetInMutableCollection<
       Entities.Molds.IMoldEntity,
       BaseMoldId,
+      MoldCollectionEntry,
       MoldMutableCollectionEntry
     >({
       getCollection: (collectionId: CollectionId) =>
         workspace.data.entities.molds.collections.get(collectionId),
-      isMutable: (entry: MoldMutableCollectionEntry) => entry.isMutable,
+      isMutable: (entry: MoldCollectionEntry): entry is MoldMutableCollectionEntry =>
+        entry.isMutable && 'set' in entry.items,
       setEntity: (
         entry: MoldMutableCollectionEntry,
         baseId: BaseMoldId,
@@ -97,21 +110,27 @@ export function MoldsTabContent(): React.ReactElement {
   });
 
   const handleCreateMold = useCallback(
-    async (entity: Entities.Molds.IMoldEntity, source: 'manual' | 'ai'): Promise<void> => {
+    async (
+      entity: Entities.Molds.IMoldEntity,
+      source: 'manual' | 'ai',
+      targetCollectionId?: string
+    ): Promise<void> => {
       const baseId = entity.baseId as BaseMoldId;
-      const compositeId = `${mutableCollectionId}.${baseId}` as MoldId;
-
       const createResult = await moldMutation.createEntity({
-        mutableCollectionId,
+        targetCollectionId: targetCollectionId as CollectionId | undefined,
+        defaultCollectionId: mutableCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseMoldId) =>
+          `${collectionId}.${nextBaseId}` as MoldId,
         baseId,
         entity,
-        compositeId,
         exists: (id: MoldId) => workspace.data.molds.get(id).isSuccess(),
         persistToDisk: false
       });
       if (createResult.isFailure()) {
         return;
       }
+
+      const compositeId = createResult.value;
 
       const wrapperResult = LibraryRuntime.EditedMold.create(entity);
       if (wrapperResult.isFailure()) {
@@ -147,6 +166,41 @@ export function MoldsTabContent(): React.ReactElement {
     cascadeStack,
     deps: [workspace, reactiveWorkspace.version]
   });
+
+  const moldCreateSourceOptions = useMemo(
+    (): ReadonlyArray<{ id: string; name: string }> =>
+      molds.map((mold) => ({
+        id: mold.id,
+        name: mold.displayName
+      })),
+    [molds]
+  );
+
+  const handleCreateMoldFromSource = useCallback(
+    (params: {
+      mode: 'copy' | 'derive';
+      sourceId: string;
+      name: string;
+      id: string;
+      targetCollectionId?: string;
+    }): void => {
+      const sourceResult = workspace.data.molds.get(params.sourceId as MoldId);
+      if (sourceResult.isFailure()) {
+        workspace.data.logger.error(`Cannot copy mold '${params.sourceId}': not found`);
+        return;
+      }
+
+      const source = sourceResult.value.entity;
+      const nextEntity: Entities.Molds.IMoldEntity = {
+        ...source,
+        baseId: params.id as BaseMoldId,
+        manufacturer: params.name as typeof source.manufacturer
+      };
+
+      void handleCreateMold(nextEntity, 'manual', params.targetCollectionId);
+    },
+    [workspace, handleCreateMold]
+  );
 
   const handleSelect = useCallback(
     (id: MoldId): void => {
@@ -273,13 +327,6 @@ export function MoldsTabContent(): React.ReactElement {
     squashCascade([entry]);
   }, [squashCascade]);
 
-  const handleCreateFormSubmit = useCallback(
-    (entity: Entities.Molds.IMoldEntity, source: 'manual' | 'ai'): void => {
-      handleCreateMold(entity, source);
-    },
-    [handleCreateMold]
-  );
-
   const handleCreateFormCancel = useCallback((): void => {
     squashCascade([]);
   }, [squashCascade]);
@@ -300,7 +347,12 @@ export function MoldsTabContent(): React.ReactElement {
                 makeBlank={(name: string, id: string): Entities.Molds.IMoldEntity =>
                   createBlankMoldEntity(id as BaseMoldId, name)
                 }
-                onCreate={handleCreateFormSubmit}
+                onCreate={handleCreateMold}
+                sourceCreateMode="copy"
+                sourceOptions={moldCreateSourceOptions}
+                onCreateFromSource={handleCreateMoldFromSource}
+                writableCollections={writableMoldCollections}
+                defaultTargetCollectionId={mutableCollectionId}
                 onCancel={handleCreateFormCancel}
                 namePlaceholder="e.g. Chocolate World CW1000"
                 entityLabel="Mold"
@@ -370,7 +422,10 @@ export function MoldsTabContent(): React.ReactElement {
     handleSaveAs,
     handleCancelEdit,
     handleEdit,
-    handleCreateFormSubmit,
+    handleCreateMold,
+    handleCreateMoldFromSource,
+    moldCreateSourceOptions,
+    writableMoldCollections,
     handleCreateFormCancel
   ]);
 

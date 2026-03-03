@@ -9,7 +9,7 @@ import {
 } from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseIngredientId, CollectionId, IngredientId } from '@fgv/ts-chocolate';
-import type { Result } from '@fgv/ts-utils';
+import type { Result, ResultMapValueType } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type IReferenceScanResult,
@@ -19,11 +19,13 @@ import {
   useCanDeleteFromCollections,
   useEntityActions,
   createSetInMutableCollection,
+  type MutableCollectionEntryWithSet,
   useEntityMutation,
   useClipboardJsonImport,
   IngredientDetail,
   IngredientEditView,
   EntityCreateForm,
+  getWritableCollectionOptions,
   useFilteredEntities,
   useNavigationStore
 } from '@fgv/chocolate-lab-ui';
@@ -34,13 +36,6 @@ import {
   slugify,
   createBlankIngredientEntity
 } from '../shared';
-
-type IngredientMutableCollectionEntry = {
-  readonly isMutable: boolean;
-  readonly items: {
-    set: (id: BaseIngredientId, entity: Entities.Ingredients.IngredientEntity) => Result<unknown>;
-  };
-};
 
 export function IngredientsTabContent(): React.ReactElement {
   const {
@@ -61,6 +56,13 @@ export function IngredientsTabContent(): React.ReactElement {
   } = useTabNavigation();
   const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
+  type IngredientCollectionEntry = ResultMapValueType<typeof workspace.data.entities.ingredients.collections>;
+  type IngredientMutableCollectionEntry = MutableCollectionEntryWithSet<
+    IngredientCollectionEntry,
+    BaseIngredientId,
+    Entities.Ingredients.IngredientEntity
+  >;
+
   const editingRef = useRef<{ id: IngredientId; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
     undefined
   );
@@ -77,6 +79,15 @@ export function IngredientsTabContent(): React.ReactElement {
     workspace.settings?.getResolvedSettings().defaultTargets.ingredients
   );
 
+  const writableIngredientCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.ingredients.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.ingredients
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
   const canDeleteIngredient = useCanDeleteFromCollections(workspace.data.entities.ingredients.collections, [
     workspace,
     reactiveWorkspace.version
@@ -90,11 +101,13 @@ export function IngredientsTabContent(): React.ReactElement {
     setInMutableCollection: createSetInMutableCollection<
       Entities.Ingredients.IngredientEntity,
       BaseIngredientId,
+      IngredientCollectionEntry,
       IngredientMutableCollectionEntry
     >({
       getCollection: (collectionId: CollectionId) =>
         workspace.data.entities.ingredients.collections.get(collectionId),
-      isMutable: (entry: IngredientMutableCollectionEntry) => entry.isMutable,
+      isMutable: (entry: IngredientCollectionEntry): entry is IngredientMutableCollectionEntry =>
+        entry.isMutable && 'set' in entry.items,
       setEntity: (
         entry: IngredientMutableCollectionEntry,
         baseId: BaseIngredientId,
@@ -115,23 +128,38 @@ export function IngredientsTabContent(): React.ReactElement {
     deps: [workspace, reactiveWorkspace.version]
   });
 
+  const ingredientCreateSourceOptions = useMemo(
+    (): ReadonlyArray<{ id: string; name: string }> =>
+      ingredients.map((ingredient) => ({
+        id: ingredient.id,
+        name: ingredient.name
+      })),
+    [ingredients]
+  );
+
   // Create a new ingredient from an entity, add to mutable collection, and open in edit mode
   const handleCreateIngredient = useCallback(
-    async (entity: Entities.Ingredients.IngredientEntity, source: 'manual' | 'ai'): Promise<void> => {
+    async (
+      entity: Entities.Ingredients.IngredientEntity,
+      source: 'manual' | 'ai',
+      targetCollectionId?: string
+    ): Promise<void> => {
       const baseId = entity.baseId as BaseIngredientId;
-      const compositeId = `${mutableCollectionId}.${baseId}` as IngredientId;
-
       const createResult = await ingredientMutation.createEntity({
-        mutableCollectionId,
+        targetCollectionId: targetCollectionId as CollectionId | undefined,
+        defaultCollectionId: mutableCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseIngredientId) =>
+          `${collectionId}.${nextBaseId}` as IngredientId,
         baseId,
         entity,
-        compositeId,
         exists: (id: IngredientId) => workspace.data.ingredients.get(id).isSuccess(),
         persistToDisk: false
       });
       if (createResult.isFailure()) {
         return;
       }
+
+      const compositeId = createResult.value;
 
       // Create editing wrapper and open in edit mode
       const wrapperResult = LibraryRuntime.EditedIngredient.create(entity);
@@ -154,6 +182,31 @@ export function IngredientsTabContent(): React.ReactElement {
       squashCascade([entry]);
     },
     [workspace, mutableCollectionId, ingredientMutation, squashCascade]
+  );
+
+  const handleCreateIngredientFromSource = useCallback(
+    (params: {
+      mode: 'copy' | 'derive';
+      sourceId: string;
+      name: string;
+      id: string;
+      targetCollectionId?: string;
+    }): void => {
+      const sourceResult = workspace.data.ingredients.get(params.sourceId as IngredientId);
+      if (sourceResult.isFailure()) {
+        workspace.data.logger.error(`Cannot copy ingredient '${params.sourceId}': not found`);
+        return;
+      }
+
+      const nextEntity: Entities.Ingredients.IngredientEntity = {
+        ...sourceResult.value.entity,
+        baseId: params.id as BaseIngredientId,
+        name: params.name as typeof sourceResult.value.entity.name
+      };
+
+      void handleCreateIngredient(nextEntity, 'manual', params.targetCollectionId);
+    },
+    [workspace, handleCreateIngredient]
   );
 
   const handleListHeaderPaste = useClipboardJsonImport<Entities.Ingredients.IngredientEntity>({
@@ -287,13 +340,6 @@ export function IngredientsTabContent(): React.ReactElement {
     squashCascade([{ entityType: 'ingredient', entityId: '__new__', mode: 'create' }]);
   }, [squashCascade]);
 
-  const handleCreateFormSubmit = useCallback(
-    (entity: Entities.Ingredients.IngredientEntity, source: 'manual' | 'ai'): void => {
-      handleCreateIngredient(entity, source);
-    },
-    [handleCreateIngredient]
-  );
-
   const handleCreateFormCancel = useCallback((): void => {
     squashCascade([]);
   }, [squashCascade]);
@@ -314,7 +360,12 @@ export function IngredientsTabContent(): React.ReactElement {
                 makeBlank={(name: string, id: string): Entities.Ingredients.IngredientEntity =>
                   createBlankIngredientEntity(id as BaseIngredientId, name)
                 }
-                onCreate={handleCreateFormSubmit}
+                onCreate={handleCreateIngredient}
+                sourceCreateMode="copy"
+                sourceOptions={ingredientCreateSourceOptions}
+                onCreateFromSource={handleCreateIngredientFromSource}
+                writableCollections={writableIngredientCollections}
+                defaultTargetCollectionId={mutableCollectionId}
                 onCancel={handleCreateFormCancel}
                 namePlaceholder="e.g. Callebaut 811 Dark"
                 entityLabel="Ingredient"
@@ -384,7 +435,10 @@ export function IngredientsTabContent(): React.ReactElement {
     handleSaveAs,
     handleCancelEdit,
     handleEdit,
-    handleCreateFormSubmit,
+    handleCreateIngredient,
+    handleCreateIngredientFromSource,
+    ingredientCreateSourceOptions,
+    writableIngredientCollections,
     handleCreateFormCancel
   ]);
 

@@ -42,6 +42,14 @@ export interface ICollectionMap {
   entries(): IterableIterator<[string, { readonly isMutable: boolean }]>;
 }
 
+/**
+ * Writable collection option.
+ * @public
+ */
+export interface IWritableCollectionOption {
+  readonly id: CollectionId;
+}
+
 // ============================================================================
 // Hook
 // ============================================================================
@@ -79,6 +87,42 @@ export function useMutableCollection(
     // Deps are caller-provided to match the memoization pattern used throughout the tab components.
     [...deps, preferredId]
   );
+}
+
+/**
+ * Returns all writable collections for the provided map.
+ *
+ * If `preferredId` is writable, it is placed first in the returned list.
+ *
+ * @param collections - The entity collection map to search.
+ * @param deps - Memo dependencies (typically `[workspace, reactiveWorkspace.version]`).
+ * @param preferredId - Optional preferred writable collection ID.
+ * @public
+ */
+export function useWritableCollections(
+  collections: ICollectionMap,
+  deps: ReadonlyArray<unknown>,
+  preferredId?: string
+): ReadonlyArray<IWritableCollectionOption> {
+  return useMemo<ReadonlyArray<IWritableCollectionOption>>(() => {
+    const writable: IWritableCollectionOption[] = [];
+    let preferred: IWritableCollectionOption | undefined;
+
+    for (const [id, col] of collections.entries()) {
+      if (!col.isMutable) {
+        continue;
+      }
+
+      const option: IWritableCollectionOption = { id: id as CollectionId };
+      if (preferredId !== undefined && id === preferredId) {
+        preferred = option;
+      } else {
+        writable.push(option);
+      }
+    }
+
+    return preferred ? [preferred, ...writable] : writable;
+  }, [...deps, preferredId]);
 }
 
 /**

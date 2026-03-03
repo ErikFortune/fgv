@@ -23,6 +23,7 @@ import {
   ProcedureDetail,
   ProcedureEditView,
   ProcedurePreviewPanel,
+  getWritableCollectionOptions,
   useFilteredEntities,
   useClipboardJsonImport,
   useSquashAt,
@@ -69,10 +70,19 @@ export function ProceduresTabContent(): React.ReactElement {
 
   const [newProcedureName, setNewProcedureName] = useState('');
 
-  const mutableProcedureCollectionId = useMutableCollection(
+  const mutableCollectionId = useMutableCollection(
     workspace.data.entities.procedures.collections,
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.procedures
+  );
+
+  const writableProcedureCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.procedures.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.procedures
+      ),
+    [workspace, reactiveWorkspace.version]
   );
 
   const canDeleteProcedure = useCanDeleteFromCollections(workspace.data.entities.procedures.collections, [
@@ -279,19 +289,20 @@ export function ProceduresTabContent(): React.ReactElement {
   const openProcedureForEdit = useCallback(
     async (entity: Entities.Procedures.IProcedureEntity): Promise<void> => {
       const baseId = entity.baseId as BaseProcedureId;
-      const compositeId = `${mutableProcedureCollectionId}.${baseId}` as ProcedureId;
-
       const createResult = await procedureMutation.createEntity({
-        mutableCollectionId: mutableProcedureCollectionId,
+        targetCollectionId: mutableCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseProcedureId) =>
+          `${collectionId}.${nextBaseId}` as ProcedureId,
         baseId,
         entity,
-        compositeId,
         exists: (id: ProcedureId) => workspace.data.procedures.get(id).isSuccess(),
         persistToDisk: false
       });
       if (createResult.isFailure()) {
         return;
       }
+
+      const compositeId = createResult.value;
 
       const wrapperResult = LibraryRuntime.EditedProcedure.create(entity);
       if (wrapperResult.isFailure()) {
@@ -301,7 +312,7 @@ export function ProceduresTabContent(): React.ReactElement {
       editingRef.current = { id: compositeId, wrapper: wrapperResult.value };
       squashCascade([{ entityType: 'procedure', entityId: compositeId, mode: 'edit' }]);
     },
-    [workspace, mutableProcedureCollectionId, procedureMutation, squashCascade]
+    [workspace, mutableCollectionId, procedureMutation, squashCascade]
   );
 
   const handleCreateProcedure = useCallback((): void => {
@@ -550,11 +561,9 @@ export function ProceduresTabContent(): React.ReactElement {
                 onClick={(): void =>
                   squashCascade([{ entityType: 'procedure', entityId: '__new__', mode: 'create' }])
                 }
-                disabled={mutableProcedureCollectionId === undefined}
+                disabled={mutableCollectionId === undefined}
                 title={
-                  mutableProcedureCollectionId === undefined
-                    ? 'No mutable procedure collection available'
-                    : undefined
+                  mutableCollectionId === undefined ? 'No mutable procedure collection available' : undefined
                 }
                 className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
@@ -562,7 +571,7 @@ export function ProceduresTabContent(): React.ReactElement {
               </button>
               <button
                 onClick={handleListHeaderPaste}
-                disabled={mutableProcedureCollectionId === undefined}
+                disabled={mutableCollectionId === undefined}
                 title="Paste procedure from clipboard (JSON)"
                 className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >

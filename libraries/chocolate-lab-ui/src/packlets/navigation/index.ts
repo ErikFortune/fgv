@@ -46,6 +46,8 @@ export { type IEntityListOptions, type IEntityListResult, useEntityList } from '
 
 export {
   type ICollectionMap as IMutableCollectionMap,
+  type IWritableCollectionOption,
   useMutableCollection,
+  useWritableCollections,
   useCanDeleteFromCollections
 } from './useMutableCollection';

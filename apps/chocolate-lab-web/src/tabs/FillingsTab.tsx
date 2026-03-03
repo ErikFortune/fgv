@@ -41,6 +41,7 @@ import {
   ProcedureEditView,
   TaskDetail,
   EntityCreateForm,
+  getWritableCollectionOptions,
   useFilteredEntities,
   useClipboardJsonImport,
   useCascadeDrillDown,
@@ -121,6 +122,15 @@ export function FillingsTabContent(): React.ReactElement {
     workspace.data.entities.fillings.collections,
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.fillings
+  );
+
+  const writableFillingCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.fillings.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.fillings
+      ),
+    [workspace, reactiveWorkspace.version]
   );
 
   const canDeleteFilling = useCanDeleteFromCollections(workspace.data.entities.fillings.collections, [
@@ -258,6 +268,15 @@ export function FillingsTabContent(): React.ReactElement {
     cascadeStack,
     deps: [workspace, reactiveWorkspace.version]
   });
+
+  const fillingCreateSourceOptions = useMemo(
+    (): ReadonlyArray<{ id: string; name: string }> =>
+      fillings.map((filling) => ({
+        id: filling.id,
+        name: filling.name
+      })),
+    [fillings]
+  );
 
   const availableIngredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
     return Array.from(workspace.data.ingredients.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -552,10 +571,11 @@ export function FillingsTabContent(): React.ReactElement {
         };
 
         const createResult = await fillingMutation.createEntity({
-          mutableCollectionId,
+          targetCollectionId: mutableCollectionId,
+          getCompositeId: (collectionId: CollectionId, nextBaseId: BaseFillingId) =>
+            `${collectionId}.${nextBaseId}` as FillingId,
           baseId: newBaseId,
           entity: newEntity,
-          compositeId: newCompositeId,
           exists: (id: FillingId) => workspace.data.fillings.get(id).isSuccess(),
           persistToDisk: true
         });
@@ -623,21 +643,27 @@ export function FillingsTabContent(): React.ReactElement {
   }, [squashCascade]);
 
   const handleCreateFilling = useCallback(
-    async (entity: Entities.Fillings.IFillingRecipeEntity, source: 'manual' | 'ai'): Promise<void> => {
+    async (
+      entity: Entities.Fillings.IFillingRecipeEntity,
+      source: 'manual' | 'ai',
+      targetCollectionId?: string
+    ): Promise<void> => {
       const baseId = entity.baseId as BaseFillingId;
-      const compositeId = `${mutableCollectionId}.${baseId}` as FillingId;
-
       const createResult = await fillingMutation.createEntity({
-        mutableCollectionId,
+        targetCollectionId: targetCollectionId as CollectionId | undefined,
+        defaultCollectionId: mutableCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseFillingId) =>
+          `${collectionId}.${nextBaseId}` as FillingId,
         baseId,
         entity,
-        compositeId,
         exists: (id: FillingId) => workspace.data.fillings.get(id).isSuccess(),
         persistToDisk: false
       });
       if (createResult.isFailure()) {
         return;
       }
+
+      const compositeId = createResult.value;
 
       // Create editing state for the new filling
       const wrapperResult = LibraryRuntime.EditedFillingRecipe.create(entity);
@@ -681,6 +707,42 @@ export function FillingsTabContent(): React.ReactElement {
       squashCascade([entry]);
     },
     [workspace, mutableCollectionId, fillingMutation, squashCascade]
+  );
+
+  const handleCreateFillingFromSource = useCallback(
+    (params: {
+      mode: 'copy' | 'derive';
+      sourceId: string;
+      name: string;
+      id: string;
+      targetCollectionId?: string;
+    }): void => {
+      const sourceResult = workspace.data.fillings.get(params.sourceId as FillingId);
+      if (sourceResult.isFailure()) {
+        workspace.data.logger.error(`Cannot ${params.mode} filling '${params.sourceId}': not found`);
+        return;
+      }
+
+      const source = sourceResult.value;
+      const today = new Date().toISOString().split('T')[0] ?? '';
+      const sourceVariationId = Helpers.createFillingRecipeVariationId(source.id, source.goldenVariationSpec);
+
+      const nextEntity: Entities.Fillings.IFillingRecipeEntity = {
+        ...source.entity,
+        baseId: params.id as BaseFillingId,
+        name: params.name as typeof source.entity.name,
+        derivedFrom:
+          params.mode === 'derive'
+            ? {
+                sourceVariationId,
+                derivedDate: today
+              }
+            : source.entity.derivedFrom
+      };
+
+      void handleCreateFilling(nextEntity, 'manual', params.targetCollectionId);
+    },
+    [workspace, handleCreateFilling]
   );
 
   const handleCreateFormCancel = useCallback((): void => {
@@ -743,10 +805,11 @@ export function FillingsTabContent(): React.ReactElement {
       const compositeId = `${ingredientCollectionId}.${baseId}` as IngredientId;
 
       const createResult = await ingredientMutation.createEntity({
-        mutableCollectionId: ingredientCollectionId,
+        targetCollectionId: ingredientCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseIngredientId) =>
+          `${collectionId}.${nextBaseId}` as IngredientId,
         baseId,
         entity,
-        compositeId,
         exists: (id: IngredientId) => workspace.data.ingredients.get(id).isSuccess(),
         persistToDisk: true
       });
@@ -793,10 +856,11 @@ export function FillingsTabContent(): React.ReactElement {
       const compositeId = `${procedureCollectionId}.${baseId}` as ProcedureId;
 
       const createResult = await procedureMutation.createEntity({
-        mutableCollectionId: procedureCollectionId,
+        targetCollectionId: procedureCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseProcedureId) =>
+          `${collectionId}.${nextBaseId}` as ProcedureId,
         baseId,
         entity,
-        compositeId,
         exists: (id: ProcedureId) => workspace.data.procedures.get(id).isSuccess(),
         persistToDisk: true
       });
@@ -972,6 +1036,11 @@ export function FillingsTabContent(): React.ReactElement {
                   createBlankFillingRecipeEntity(id as BaseFillingId, name)
                 }
                 onCreate={handleCreateFilling}
+                sourceCreateMode="derive"
+                sourceOptions={fillingCreateSourceOptions}
+                onCreateFromSource={handleCreateFillingFromSource}
+                writableCollections={writableFillingCollections}
+                defaultTargetCollectionId={mutableCollectionId}
                 onCancel={handleCreateFormCancel}
                 namePlaceholder="e.g. Dark Chocolate Ganache"
                 entityLabel="Filling"
@@ -1284,7 +1353,10 @@ export function FillingsTabContent(): React.ReactElement {
     handleSaveFilling,
     handleVariationChange,
     handleCreateFilling,
+    handleCreateFillingFromSource,
     handleCreateFormCancel,
+    fillingCreateSourceOptions,
+    writableFillingCollections,
     handleCreateIngredientFromFilling,
     handleCreateProcedureFromFilling,
     handleSubEntityIngredientCreate,

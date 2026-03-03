@@ -24,6 +24,7 @@ import {
   TaskDetail,
   TaskEditView,
   TaskPreviewPanel,
+  getWritableCollectionOptions,
   useFilteredEntities,
   useNavigationStore
 } from '@fgv/chocolate-lab-ui';
@@ -73,6 +74,15 @@ export function TasksTabContent(): React.ReactElement {
     workspace.settings?.getResolvedSettings().defaultTargets.tasks
   );
 
+  const writableTaskCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.tasks.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.tasks
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
   const canDeleteTask = useCanDeleteFromCollections(workspace.data.entities.tasks.collections, [
     workspace,
     reactiveWorkspace.version
@@ -100,21 +110,27 @@ export function TasksTabContent(): React.ReactElement {
   });
 
   const handleCreateTask = useCallback(
-    async (entity: Entities.Tasks.IRawTaskEntity, source: 'manual'): Promise<void> => {
+    async (
+      entity: Entities.Tasks.IRawTaskEntity,
+      source: 'manual',
+      targetCollectionId?: string
+    ): Promise<void> => {
       const baseId = entity.baseId as BaseTaskId;
-      const compositeId = `${mutableCollectionId}.${baseId}` as TaskId;
-
       const createResult = await taskMutation.createEntity({
-        mutableCollectionId,
+        targetCollectionId: targetCollectionId as CollectionId | undefined,
+        defaultCollectionId: mutableCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseTaskId) =>
+          `${collectionId}.${nextBaseId}` as TaskId,
         baseId,
         entity,
-        compositeId,
         exists: (id: TaskId) => workspace.data.tasks.get(id).isSuccess(),
         persistToDisk: false
       });
       if (createResult.isFailure()) {
         return;
       }
+
+      const compositeId = createResult.value;
 
       const wrapperResult = LibraryRuntime.EditedTask.create(entity);
       if (wrapperResult.isFailure()) {
@@ -140,6 +156,40 @@ export function TasksTabContent(): React.ReactElement {
     cascadeStack,
     deps: [workspace, reactiveWorkspace.version]
   });
+
+  const taskCreateSourceOptions = useMemo(
+    (): ReadonlyArray<{ id: string; name: string }> =>
+      tasks.map((task) => ({
+        id: task.id,
+        name: task.name
+      })),
+    [tasks]
+  );
+
+  const handleCreateTaskFromSource = useCallback(
+    (params: {
+      mode: 'copy' | 'derive';
+      sourceId: string;
+      name: string;
+      id: string;
+      targetCollectionId?: string;
+    }): void => {
+      const sourceResult = workspace.data.tasks.get(params.sourceId as TaskId);
+      if (sourceResult.isFailure()) {
+        workspace.data.logger.error(`Cannot copy task '${params.sourceId}': not found`);
+        return;
+      }
+
+      const nextEntity: Entities.Tasks.IRawTaskEntity = {
+        ...sourceResult.value.entity,
+        baseId: params.id as BaseTaskId,
+        name: params.name as typeof sourceResult.value.entity.name
+      };
+
+      void handleCreateTask(nextEntity, 'manual', params.targetCollectionId);
+    },
+    [workspace, handleCreateTask]
+  );
 
   const handleSelect = useCallback(
     (id: TaskId): void => {
@@ -443,6 +493,9 @@ export function TasksTabContent(): React.ReactElement {
     handleClosePreview,
     handleCreateFormSubmit,
     handleCreateFormCancel,
+    handleCreateTaskFromSource,
+    taskCreateSourceOptions,
+    writableTaskCollections,
     previewVersion
   ]);
 

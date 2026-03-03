@@ -43,6 +43,8 @@ export {
   type IUseAiAssistResult
 } from './useAiAssist';
 
+export { getWritableCollectionOptions } from './writableCollections';
+
 export { AiAssistNameDialog, type IAiAssistNameDialogProps } from './AiAssistNameDialog';
 
 export {

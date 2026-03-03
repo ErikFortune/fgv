@@ -8,6 +8,7 @@ import {
   type IComparisonColumn
 } from '@fgv/ts-app-shell';
 import { AiAssist, Entities, Helpers, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
+import { AiAssist as ExtrasAiAssist } from '@fgv/ts-extras';
 import type {
   BaseConfectionId,
   BaseFillingId,
@@ -51,6 +52,7 @@ import {
   DecorationDetail,
   useFilteredEntities,
   EntityCreateForm,
+  getWritableCollectionOptions,
   type IConfectionViewSettings,
   useClipboardJsonImport,
   useCascadeDrillDown,
@@ -98,6 +100,15 @@ export function ConfectionsTabContent(): React.ReactElement {
     workspace.data.entities.confections.collections,
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.confections
+  );
+
+  const writableConfectionCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.confections.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.confections
+      ),
+    [workspace, reactiveWorkspace.version]
   );
 
   const canDeleteConfection = useCanDeleteFromCollections(workspace.data.entities.confections.collections, [
@@ -311,6 +322,15 @@ export function ConfectionsTabContent(): React.ReactElement {
     deps: [workspace, reactiveWorkspace.version]
   });
 
+  const confectionCreateSourceOptions = useMemo(
+    (): ReadonlyArray<{ id: string; name: string }> =>
+      confections.map((confection) => ({
+        id: confection.id,
+        name: confection.name
+      })),
+    [confections]
+  );
+
   const handleSelect = useCallback(
     (id: ConfectionId): void => {
       const entry: ICascadeEntry = { entityType: 'confection', entityId: id, mode: 'view' };
@@ -367,23 +387,37 @@ export function ConfectionsTabContent(): React.ReactElement {
     [workspace]
   );
 
+  const handleShowCreateConfection = useCallback((): void => {
+    squashCascade([{ entityType: 'confection', entityId: '__new__', mode: 'create' }]);
+  }, [squashCascade]);
+
+  const handleCreateConfectionCancel = useCallback((): void => {
+    squashCascade([]);
+  }, [squashCascade]);
+
   // Handle creating a confection from a pasted entity (add to mutable collection, open in edit mode)
   const handleCreateConfection = useCallback(
-    async (entity: Entities.Confections.AnyConfectionRecipeEntity): Promise<void> => {
+    async (
+      entity: Entities.Confections.AnyConfectionRecipeEntity,
+      __source: 'manual' | 'ai',
+      targetCollectionId?: string
+    ): Promise<void> => {
       const baseId = entity.baseId as BaseConfectionId;
-      const compositeId = `${mutableCollectionId}.${baseId}` as ConfectionId;
-
       const createResult = await confectionMutation.createEntity({
-        mutableCollectionId,
+        targetCollectionId: targetCollectionId as CollectionId | undefined,
+        defaultCollectionId: mutableCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseConfectionId) =>
+          `${collectionId}.${nextBaseId}` as ConfectionId,
         baseId,
         entity,
-        compositeId,
         exists: (id: ConfectionId) => workspace.data.confections.get(id).isSuccess(),
         persistToDisk: false
       });
       if (createResult.isFailure()) {
         return;
       }
+
+      const compositeId = createResult.value;
 
       // Open in edit mode
       editVariationSpecRef.current = entity.goldenVariationSpec as ConfectionRecipeVariationSpec;
@@ -392,10 +426,49 @@ export function ConfectionsTabContent(): React.ReactElement {
     [workspace, mutableCollectionId, confectionMutation, squashCascade]
   );
 
+  const handleCreateConfectionFromSource = useCallback(
+    (params: {
+      mode: 'copy' | 'derive';
+      sourceId: string;
+      name: string;
+      id: string;
+      targetCollectionId?: string;
+    }): void => {
+      const sourceResult = workspace.data.confections.get(params.sourceId as ConfectionId);
+      if (sourceResult.isFailure()) {
+        workspace.data.logger.error(`Cannot ${params.mode} confection '${params.sourceId}': not found`);
+        return;
+      }
+
+      const source = sourceResult.value;
+      const today = new Date().toISOString().split('T')[0] ?? '';
+      const sourceVariationIdResult = Helpers.createConfectionRecipeVariationId({
+        collectionId: source.id,
+        itemId: source.goldenVariationSpec
+      });
+
+      const nextEntity: Entities.Confections.AnyConfectionRecipeEntity = {
+        ...source.entity,
+        baseId: params.id as BaseConfectionId,
+        name: params.name as typeof source.entity.name,
+        derivedFrom:
+          params.mode === 'derive' && sourceVariationIdResult.isSuccess()
+            ? {
+                sourceVariationId: sourceVariationIdResult.value,
+                derivedDate: today
+              }
+            : source.entity.derivedFrom
+      };
+
+      void handleCreateConfection(nextEntity, 'manual', params.targetCollectionId);
+    },
+    [workspace, handleCreateConfection]
+  );
+
   const handleListHeaderPaste = useClipboardJsonImport<Entities.Confections.AnyConfectionRecipeEntity>({
     entityLabel: 'confection',
     convert: (from: unknown) => Entities.Confections.Converters.anyConfectionEntity.convert(from),
-    onValid: (entity: Entities.Confections.AnyConfectionRecipeEntity) => handleCreateConfection(entity),
+    onValid: (entity: Entities.Confections.AnyConfectionRecipeEntity) => handleCreateConfection(entity, 'ai'),
     onValidSuccessMessage: (entity: Entities.Confections.AnyConfectionRecipeEntity) =>
       `Opened '${entity.name}' for review — save when ready`
   });
@@ -560,19 +633,21 @@ export function ConfectionsTabContent(): React.ReactElement {
         return;
       }
       const baseId = entity.baseId as BaseIngredientId;
-      const compositeId = `${ingredientCollectionId}.${baseId}` as IngredientId;
 
       const createResult = await ingredientMutation.createEntity({
-        mutableCollectionId: ingredientCollectionId,
+        targetCollectionId: ingredientCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseIngredientId) =>
+          `${collectionId}.${nextBaseId}` as IngredientId,
         baseId,
         entity,
-        compositeId,
         exists: (id: IngredientId) => workspace.data.ingredients.get(id).isSuccess(),
         persistToDisk: true
       });
       if (createResult.isFailure()) {
         return;
       }
+
+      const compositeId = createResult.value;
 
       setSubEntitySeed('');
       const wrapperResult = LibraryRuntime.EditedIngredient.create(entity);
@@ -634,19 +709,21 @@ export function ConfectionsTabContent(): React.ReactElement {
         return;
       }
       const baseId = entity.baseId as BaseFillingId;
-      const compositeId = `${fillingCollectionId}.${baseId}` as FillingId;
 
       const createResult = await fillingMutation.createEntity({
-        mutableCollectionId: fillingCollectionId,
+        targetCollectionId: fillingCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseFillingId) =>
+          `${collectionId}.${nextBaseId}` as FillingId,
         baseId,
         entity,
-        compositeId,
         exists: (id: FillingId) => workspace.data.fillings.get(id).isSuccess(),
         persistToDisk: true
       });
       if (createResult.isFailure()) {
         return;
       }
+
+      const compositeId = createResult.value;
 
       setSubEntitySeed('');
       const wrapperResult = LibraryRuntime.EditedFillingRecipe.create(entity);
@@ -709,19 +786,21 @@ export function ConfectionsTabContent(): React.ReactElement {
         return;
       }
       const baseId = entity.baseId as BaseProcedureId;
-      const compositeId = `${procedureCollectionId}.${baseId}` as ProcedureId;
 
       const createResult = await procedureMutation.createEntity({
-        mutableCollectionId: procedureCollectionId,
+        targetCollectionId: procedureCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseProcedureId) =>
+          `${collectionId}.${nextBaseId}` as ProcedureId,
         baseId,
         entity,
-        compositeId,
         exists: (id: ProcedureId) => workspace.data.procedures.get(id).isSuccess(),
         persistToDisk: true
       });
       if (createResult.isFailure()) {
         return;
       }
+
+      const compositeId = createResult.value;
 
       setSubEntitySeed('');
       const wrapperResult = LibraryRuntime.EditedProcedure.create(entity);
@@ -788,7 +867,6 @@ export function ConfectionsTabContent(): React.ReactElement {
         const today = new Date().toISOString().split('T')[0]!;
         const safeName = saveAsName.trim() || originalEntity.name;
         const newBaseId = `${slugify(safeName)}-${today}` as BaseConfectionId;
-        const newCompositeId = `${mutableCollectionId}.${newBaseId}` as ConfectionId;
 
         const sourceConfectionId = state.id as ConfectionId;
         const sourceVariationIdResult = Helpers.createConfectionRecipeVariationId({
@@ -806,16 +884,18 @@ export function ConfectionsTabContent(): React.ReactElement {
         };
 
         const createResult = await confectionMutation.createEntity({
-          mutableCollectionId,
+          targetCollectionId: mutableCollectionId,
+          getCompositeId: (collectionId: CollectionId, nextBaseId: BaseConfectionId) =>
+            `${collectionId}.${nextBaseId}` as ConfectionId,
           baseId: newBaseId,
           entity: newEntity,
-          compositeId: newCompositeId,
           exists: (id: ConfectionId) => workspace.data.confections.get(id).isSuccess(),
           persistToDisk: true
         });
         if (createResult.isFailure()) {
           return;
         }
+        const newCompositeId = createResult.value;
         workspace.data.logger.info(`Saved copy '${safeName}' to collection '${mutableCollectionId}'`);
         editingRef.current = undefined;
         setShowSaveAsForm(false);
@@ -900,6 +980,57 @@ export function ConfectionsTabContent(): React.ReactElement {
       const onTaskClick = (id: TaskId): void => drillDown(index, 'task', id);
 
       if (entry.entityType === 'confection') {
+        if (entry.mode === 'create') {
+          return {
+            key: '__new__',
+            label: 'New Confection',
+            content: (
+              <EntityCreateForm<Entities.Confections.AnyConfectionRecipeEntity>
+                slugify={slugify}
+                buildPrompt={(name: string): ExtrasAiAssist.AiPrompt => {
+                  const user = `Generate a JSON object representing the chocolate confection recipe \"${name}\".`;
+                  const system =
+                    'Return ONLY valid JSON (no markdown). Use confectionType "rolled-truffle" with at least one variation and set goldenVariationSpec to that variationSpec.';
+                  return new ExtrasAiAssist.AiPrompt(user, system);
+                }}
+                convert={(from: unknown) => Entities.Confections.Converters.anyConfectionEntity.convert(from)}
+                makeBlank={(name: string, id: string): Entities.Confections.AnyConfectionRecipeEntity => {
+                  const today = new Date().toISOString().split('T')[0] ?? '';
+                  const variationSpec = Helpers.generateConfectionVariationSpec([], {
+                    date: today
+                  }).orThrow();
+
+                  return {
+                    baseId: id as BaseConfectionId,
+                    confectionType: 'rolled-truffle',
+                    name: name as Entities.Confections.RolledTruffleRecipeEntity['name'],
+                    goldenVariationSpec: variationSpec,
+                    variations: [
+                      {
+                        variationSpec,
+                        createdDate: today,
+                        yield: {
+                          count: 1,
+                          unit: 'pieces'
+                        }
+                      }
+                    ]
+                  };
+                }}
+                onCreate={handleCreateConfection}
+                sourceCreateMode="derive"
+                sourceOptions={confectionCreateSourceOptions}
+                onCreateFromSource={handleCreateConfectionFromSource}
+                writableCollections={writableConfectionCollections}
+                defaultTargetCollectionId={mutableCollectionId}
+                onCancel={handleCreateConfectionCancel}
+                namePlaceholder="e.g. Classic Dark Dome"
+                entityLabel="Confection"
+              />
+            )
+          };
+        }
+
         const result = workspace.data.confections.get(entry.entityId as ConfectionId);
         if (result.isFailure()) {
           return {
@@ -1313,14 +1444,20 @@ export function ConfectionsTabContent(): React.ReactElement {
       };
     });
   }, [
-    cascadeStack,
-    workspace,
-    squashAt,
-    showSaveAsForm,
-    saveAsName,
-    handleSaveConfection,
+    handleSelect,
+    handleRequestDelete,
+    handleShowCreateConfection,
+    handleCreateConfectionFromSource,
+    handleListHeaderPaste,
+    variationCompare,
+    getOrCreateEditingState,
+    handleViewSettingsChange,
+    handleRequestStartSession,
+    confectionCreateSourceOptions,
+    writableConfectionCollections,
     mutableCollectionId,
-    viewSettingsMap
+    handleCreateConfection,
+    squashCascade
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
@@ -1389,6 +1526,14 @@ export function ConfectionsTabContent(): React.ReactElement {
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
               <div className="flex-1" />
+              <button
+                onClick={handleShowCreateConfection}
+                disabled={mutableCollectionId === undefined}
+                title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
+                className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                + New Confection
+              </button>
               <button
                 onClick={handleListHeaderPaste}
                 disabled={mutableCollectionId === undefined}

@@ -38,6 +38,7 @@ import {
   DecorationEditView,
   DecorationPreviewPanel,
   EntityCreateForm,
+  getWritableCollectionOptions,
   useFilteredEntities,
   useClipboardJsonImport,
   useCascadeDrillDown,
@@ -97,6 +98,15 @@ export function DecorationsTabContent(): React.ReactElement {
     workspace.settings?.getResolvedSettings().defaultTargets.decorations
   );
 
+  const writableDecorationCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.decorations.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.decorations
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
   const canDeleteDecoration = useCanDeleteFromCollections(workspace.data.entities.decorations.collections, [
     workspace,
     reactiveWorkspace.version
@@ -133,6 +143,15 @@ export function DecorationsTabContent(): React.ReactElement {
     cascadeStack,
     deps: [workspace, reactiveWorkspace.version]
   });
+
+  const decorationCreateSourceOptions = useMemo(
+    (): ReadonlyArray<{ id: string; name: string }> =>
+      decorations.map((decoration) => ({
+        id: decoration.id,
+        name: decoration.name
+      })),
+    [decorations]
+  );
 
   const availableIngredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
     return Array.from(workspace.data.ingredients.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -282,21 +301,27 @@ export function DecorationsTabContent(): React.ReactElement {
 
   // Create a new decoration from an entity, add to mutable collection, and open in edit mode
   const handleCreateDecoration = useCallback(
-    async (entity: Entities.Decorations.IDecorationEntity, source: 'manual' | 'ai'): Promise<void> => {
+    async (
+      entity: Entities.Decorations.IDecorationEntity,
+      source: 'manual' | 'ai',
+      targetCollectionId?: string
+    ): Promise<void> => {
       const baseId = entity.baseId as BaseDecorationId;
-      const compositeId = `${mutableCollectionId}.${baseId}` as DecorationId;
-
       const createResult = await decorationMutation.createEntity({
-        mutableCollectionId,
+        targetCollectionId: targetCollectionId as CollectionId | undefined,
+        defaultCollectionId: mutableCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseDecorationId) =>
+          `${collectionId}.${nextBaseId}` as DecorationId,
         baseId,
         entity,
-        compositeId,
         exists: (id: DecorationId) => workspace.data.decorations.get(id).isSuccess(),
         persistToDisk: false
       });
       if (createResult.isFailure()) {
         return;
       }
+
+      const compositeId = createResult.value;
 
       const wrapperResult = LibraryRuntime.EditedDecoration.create(entity);
       if (wrapperResult.isFailure()) {
@@ -315,6 +340,31 @@ export function DecorationsTabContent(): React.ReactElement {
     [workspace, mutableCollectionId, decorationMutation, squashCascade]
   );
 
+  const handleCreateDecorationFromSource = useCallback(
+    (params: {
+      mode: 'copy' | 'derive';
+      sourceId: string;
+      name: string;
+      id: string;
+      targetCollectionId?: string;
+    }): void => {
+      const sourceResult = workspace.data.decorations.get(params.sourceId as DecorationId);
+      if (sourceResult.isFailure()) {
+        workspace.data.logger.error(`Cannot copy decoration '${params.sourceId}': not found`);
+        return;
+      }
+
+      const nextEntity: Entities.Decorations.IDecorationEntity = {
+        ...sourceResult.value.entity,
+        baseId: params.id as BaseDecorationId,
+        name: params.name as typeof sourceResult.value.entity.name
+      };
+
+      void handleCreateDecoration(nextEntity, 'manual', params.targetCollectionId);
+    },
+    [workspace, handleCreateDecoration]
+  );
+
   const handleListHeaderPaste = useClipboardJsonImport<Entities.Decorations.IDecorationEntity>({
     entityLabel: 'decoration',
     convert: (from: unknown) => Entities.Decorations.Converters.decorationEntity.convert(from),
@@ -327,13 +377,6 @@ export function DecorationsTabContent(): React.ReactElement {
     const entry: ICascadeEntry = { entityType: 'decoration', entityId: '__new__', mode: 'create' };
     squashCascade([entry]);
   }, [squashCascade]);
-
-  const handleCreateFormSubmit = useCallback(
-    (entity: Entities.Decorations.IDecorationEntity, source: 'manual' | 'ai'): void => {
-      handleCreateDecoration(entity, source);
-    },
-    [handleCreateDecoration]
-  );
 
   const handleCreateFormCancel = useCallback((): void => {
     squashCascade([]);
@@ -777,7 +820,12 @@ export function DecorationsTabContent(): React.ReactElement {
                 makeBlank={(name: string, id: string): Entities.Decorations.IDecorationEntity =>
                   createBlankDecorationEntity(id as BaseDecorationId, name)
                 }
-                onCreate={handleCreateFormSubmit}
+                onCreate={handleCreateDecoration}
+                sourceCreateMode="copy"
+                sourceOptions={decorationCreateSourceOptions}
+                onCreateFromSource={handleCreateDecorationFromSource}
+                writableCollections={writableDecorationCollections}
+                defaultTargetCollectionId={mutableCollectionId}
                 onCancel={handleCreateFormCancel}
                 namePlaceholder="e.g. Gold Leaf Accent"
                 entityLabel="Decoration"
@@ -1037,7 +1085,10 @@ export function DecorationsTabContent(): React.ReactElement {
     handleCancelDecorationEdit,
     handleSaveDecoration,
     handleSaveDecorationAs,
-    handleCreateFormSubmit,
+    handleCreateDecoration,
+    handleCreateDecorationFromSource,
+    decorationCreateSourceOptions,
+    writableDecorationCollections,
     handleCreateFormCancel,
     handlePreviewDecoration,
     handleCreateIngredientFromDecoration,

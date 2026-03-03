@@ -30,13 +30,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { EntityRow, DetailSection, DetailRow, TagList } from '@fgv/ts-app-shell';
 import type { ISelectableItem } from '@fgv/ts-app-shell';
 import { PlayIcon } from '@heroicons/react/24/outline';
-import {
-  EntityDetailHeader,
-  NotesSection,
-  UrlsSection,
-  DerivedFromIndicator,
-  copyJsonToClipboard
-} from '../common';
+import { EntityDetailHeader, NotesSection, UrlsSection, copyJsonToClipboard } from '../common';
 import type {
   LibraryRuntime,
   Model,
@@ -747,14 +741,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
         description={confection.description}
         badge={{ label: confection.confectionType, colorClass: 'bg-choco-primary/10 text-choco-primary' }}
         subtitle={confection.id}
-        extraIndicators={
-          confection.entity.derivedFrom && (
-            <DerivedFromIndicator
-              sourceVariationId={confection.entity.derivedFrom.sourceVariationId}
-              derivedDate={confection.entity.derivedFrom.derivedDate}
-            />
-          )
-        }
+        derivedFrom={confection.entity.derivedFrom}
         onCopyJson={handleCopyJson}
         onPreview={onPreview}
         onEdit={onEdit ? (): void => onEdit(selectedSpec) : undefined}
