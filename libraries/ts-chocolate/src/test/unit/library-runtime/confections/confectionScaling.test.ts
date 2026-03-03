@@ -150,6 +150,7 @@ describe('confectionScaling', () => {
     baseId: 'mold-a' as BaseMoldId,
     manufacturer: 'Test',
     productNumber: 'T-001',
+    name: 'Mold A',
     cavities: { kind: 'count', count: 24, info: { weight: 10 as Measurement } },
     format: 'other' as MoldFormat
   };
@@ -159,6 +160,7 @@ describe('confectionScaling', () => {
     baseId: 'mold-b' as BaseMoldId,
     manufacturer: 'Test',
     productNumber: 'T-002',
+    name: 'Mold B',
     cavities: { kind: 'count', count: 30, info: { weight: 8 as Measurement } },
     format: 'other' as MoldFormat
   };
@@ -168,6 +170,7 @@ describe('confectionScaling', () => {
     baseId: 'mold-no-weight' as BaseMoldId,
     manufacturer: 'Test',
     productNumber: 'T-003',
+    name: 'No Weight Mold',
     cavities: { kind: 'count', count: 20 },
     format: 'other' as MoldFormat
   };

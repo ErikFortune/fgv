@@ -99,10 +99,13 @@ describe('BuiltInData', () => {
         expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
           const names = children.map((c) => c.name).sort();
           expect(names).toEqual([
+            'alcohol.json',
             'cacao-barry.json',
             'callebaut.json',
             'common.json',
+            'decorations.json',
             'felchlin.json',
+            'flavors.json',
             'guittard.json'
           ]);
         });

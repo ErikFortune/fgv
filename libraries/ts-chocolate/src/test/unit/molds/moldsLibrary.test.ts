@@ -43,7 +43,7 @@ describe('MoldsLibrary', () => {
     baseId: 'test-mold' as BaseMoldId,
     manufacturer: 'Test Manufacturer',
     productNumber: 'TM-001',
-    description: 'Test Mold',
+    name: 'Test Mold',
     cavities: {
       kind: 'count',
       count: 24,
@@ -79,7 +79,7 @@ describe('MoldsLibrary', () => {
     test('creates library with built-ins by default', () => {
       expect(MoldsLibrary.create()).toSucceedAndSatisfy((lib) => {
         expect(lib.size).toBeGreaterThan(0);
-        expect(lib.collectionCount).toBe(2); // common.yaml + cw.yaml
+        expect(lib.collectionCount).toBe(4); // common.yaml + cw.yaml + greyas + implast
       });
     });
 
@@ -117,7 +117,7 @@ describe('MoldsLibrary', () => {
       });
 
       expect(result).toSucceedAndSatisfy((lib) => {
-        expect(lib.collectionCount).toBe(3); // 2 built-in + 1 custom
+        expect(lib.collectionCount).toBe(5); // 4 built-in + 1 custom
         expect(lib.validating.has('test.testMold')).toBe(true);
         expect(lib.validating.has('cw.chocolate-world-cw-2227')).toBe(true);
       });
@@ -224,10 +224,10 @@ describe('MoldsLibrary', () => {
       expect(library.set(id, createTestMold())).toSucceed();
       expect(library.has(id)).toBe(true);
 
-      const updatedMold: IMoldEntity = { ...testMoldData, description: 'Updated Description' };
+      const updatedMold: IMoldEntity = { ...testMoldData, name: 'Updated Name' };
       expect(library.set(id, updatedMold)).toSucceed();
       expect(library.get(id)).toSucceedAndSatisfy((mold) => {
-        expect(mold.description).toBe('Updated Description');
+        expect(mold.name).toBe('Updated Name');
       });
     });
 
@@ -277,6 +277,7 @@ describe('MoldsLibrary.createAsync', () => {
               baseId: 'external-mold',
               manufacturer: 'External Manufacturer',
               productNumber: 'EXT-001',
+              name: 'External Mold',
               cavities: { kind: 'count', count: 20 },
               format: 'series-1000'
             }
@@ -310,6 +311,7 @@ describe('MoldsLibrary.createAsync', () => {
         baseId: 'secret-mold',
         manufacturer: 'Secret Manufacturer',
         productNumber: 'SEC-001',
+        name: 'Secret Mold',
         cavities: { kind: 'count', count: 16 },
         format: 'series-2000'
       }
@@ -362,6 +364,7 @@ describe('MoldsLibrary.createAsync', () => {
         baseId: 'secret-mold',
         manufacturer: 'Secret Manufacturer',
         productNumber: 'SEC-001',
+        name: 'Secret Mold',
         cavities: { kind: 'count', count: 16 },
         format: 'series-2000'
       }

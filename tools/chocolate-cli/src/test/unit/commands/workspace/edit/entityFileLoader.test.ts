@@ -62,6 +62,7 @@ const VALID_INGREDIENT_JSON = JSON.stringify({
 
 const VALID_MOLD_JSON = JSON.stringify({
   baseId: 'test-mold',
+  name: 'Test Mold',
   manufacturer: 'Test',
   productNumber: 'T-001',
   format: 'other',

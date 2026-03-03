@@ -6,7 +6,7 @@ items:
     baseId: chocolate-world-cw-2227
     manufacturer: Chocolate World
     productNumber: CW 2227
-    description: Hex Swirl
+    name: Hex Swirl
     cavities:
       kind: count
       count: 32
@@ -27,7 +27,7 @@ items:
     baseId: chocolate-world-cw1988
     manufacturer: Chocolate World
     productNumber: CW1988
-    description: Pleated Leaf
+    name: Pleated Leaf
     cavities:
       kind: grid
       columns: 7
@@ -61,7 +61,8 @@ items:
     baseId: chocolate-world-cw12060
     manufacturer: Chocolate World
     productNumber: CW12060
-    description: The Duel (signature modern square praline with tapered design by Paul Wagemaker)
+    name: The Duel
+    description: Signature modern square praline with tapered design by Paul Wagemaker
     cavities:
       kind: grid
       columns: 7

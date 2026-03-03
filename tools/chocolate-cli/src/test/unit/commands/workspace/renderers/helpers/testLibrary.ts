@@ -225,7 +225,7 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
     baseId: 'cw-2227' as BaseMoldId,
     manufacturer: 'Chocolate World',
     productNumber: 'CW2227',
-    description: 'Classic praline mold',
+    name: 'Classic praline mold',
     format: 'series-1000' as MoldFormat,
     cavities: {
       kind: 'grid',
@@ -260,6 +260,7 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
     baseId: 'cw-1000' as BaseMoldId,
     manufacturer: 'Chocolate World',
     productNumber: 'CW1000',
+    name: 'Count mold',
     format: 'series-2000' as MoldFormat,
     cavities: {
       kind: 'count',

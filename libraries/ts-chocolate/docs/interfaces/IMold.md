@@ -116,6 +116,23 @@ Product number from the manufacturer
 </td></tr>
 <tr><td>
 
+[name](./IMold.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Human-readable name
+
+</td></tr>
+<tr><td>
+
 [description](./IMold.description.md)
 
 </td><td>
@@ -128,7 +145,7 @@ string
 
 </td><td>
 
-Human-readable description
+Optional longer description
 
 </td></tr>
 <tr><td>

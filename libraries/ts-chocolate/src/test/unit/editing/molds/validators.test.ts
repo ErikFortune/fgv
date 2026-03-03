@@ -38,6 +38,7 @@ const createBaseMold = (): IMoldEntity => ({
   baseId: 'test-mold' as BaseMoldId,
   manufacturer: 'Test Manufacturer',
   productNumber: 'TM-100',
+  name: 'Test Mold',
   cavities: { kind: 'grid', columns: 3, rows: 8 },
   format: 'other'
 });
@@ -245,7 +246,7 @@ describe('validateMoldEntity', () => {
   test('should succeed for a mold with all optional fields', () => {
     const mold: IMoldEntity = {
       ...createBaseMold(),
-      description: 'Test sphere mold',
+      name: 'Test sphere mold',
       tags: ['sphere', 'bonbon'],
       notes: [{ category: 'user' as never, note: 'Great mold' }],
       urls: [{ category: 'manufacturer' as never, url: 'https://example.com' }],
@@ -309,16 +310,17 @@ describe('validateMoldEntity', () => {
 
 describe('createBlankMoldEntity', () => {
   test('should create a valid mold entity with defaults', () => {
-    const mold = createBlankMoldEntity('test-mold' as BaseMoldId, 'Test Manufacturer');
+    const mold = createBlankMoldEntity('test-mold' as BaseMoldId, 'Test Manufacturer', 'Test Mold');
     expect(mold.baseId).toBe('test-mold');
     expect(mold.manufacturer).toBe('Test Manufacturer');
     expect(mold.productNumber).toBe('');
+    expect(mold.name).toBe('Test Mold');
     expect(mold.cavities.kind).toBe('grid');
     expect(mold.format).toBe('other');
   });
 
   test('should produce a mold that passes validation', () => {
-    const mold = createBlankMoldEntity('valid-mold' as BaseMoldId, 'Chocolate World');
+    const mold = createBlankMoldEntity('valid-mold' as BaseMoldId, 'Chocolate World', 'Sphere');
     expect(validateMoldEntity(mold)).toSucceed();
   });
 });

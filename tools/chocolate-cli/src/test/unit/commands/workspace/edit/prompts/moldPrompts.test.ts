@@ -61,6 +61,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Acme Molds')
           .onInput(/^Product number/i, 'TRF-1000')
           .onInput(/^Base ID/i, 'acme-trf1000')
+          .onInput(/^Name/i, 'Premium Truffle')
           .onInput(/^Description/i, 'Premium truffle mold')
           .onInput(/^Number of columns/i, '6')
           .onInput(/^Number of rows/i, '4')
@@ -74,7 +75,7 @@ describe('moldPrompts', () => {
           expect(entity.baseId).toBe('acme-trf1000');
           expect(entity.manufacturer).toBe('Acme Molds');
           expect(entity.productNumber).toBe('TRF-1000');
-          expect(entity.description).toBe('Premium truffle mold');
+          expect(entity.name).toBe('Premium Truffle');
           expect(entity.format).toBe('series-1000');
           expect(entity.cavities.kind).toBe('grid');
           if (entity.cavities.kind === 'grid') {
@@ -90,6 +91,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Best Molds')
           .onInput(/^Product number/i, 'BM-500')
           .onInput(/^Base ID/i, '')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, '')
           .onInput(/^Number of cavities/i, '24')
           .onMenu(/^Select mold format/i, 'series-2000')
@@ -115,6 +117,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Chef Supply')
           .onInput(/^Product number/i, 'PRO 2000')
           .onInput(/^Base ID/i, '')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, 'Professional grade')
           .onInput(/^Number of cavities/i, '12')
           .onMenu(/^Select mold format/i, 'other')
@@ -132,6 +135,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Maker')
           .onInput(/^Product number/i, 'M-100')
           .onInput(/^Base ID/i, 'custom-id-123')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, '')
           .onInput(/^Number of cavities/i, '8')
           .onMenu(/^Select mold format/i, 'other')
@@ -149,6 +153,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Maker')
           .onInput(/^Product number/i, 'M-300')
           .onInput(/^Base ID/i, '')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, '')
           .onInput(/^Number of cavities/i, '10')
           .onMenu(/^Select mold format/i, 'other')
@@ -195,6 +200,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'A-100')
           .onInput(/^Base ID/i, '')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, '')
           .onMenuBack(/^Select mold format/i)
           .install(mocks);
@@ -207,6 +213,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'A-100')
           .onInput(/^Base ID/i, '')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, '')
           .onMenu(/^Select mold format/i, 'series-1000')
           .onMenuBack(/^Select cavity configuration/i)
@@ -220,6 +227,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'A-100')
           .onInput(/^Base ID/i, '')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, '0')
           .onMenu(/^Select mold format/i, 'series-1000')
@@ -234,6 +242,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'A-100')
           .onInput(/^Base ID/i, '')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, 'not-a-number')
           .onMenu(/^Select mold format/i, 'series-1000')
@@ -248,6 +257,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'A-100')
           .onInput(/^Base ID/i, '')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, '4')
           .onInput(/^Number of rows/i, '-2')
@@ -263,6 +273,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'A-100')
           .onInput(/^Base ID/i, '')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, '')
           .onInput(/^Number of cavities/i, '0')
           .onMenu(/^Select mold format/i, 'series-2000')
@@ -277,6 +288,7 @@ describe('moldPrompts', () => {
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'A-100')
           .onInput(/^Base ID/i, '')
+          .onInput(/^Name/i, 'Test Mold')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, '5')
           .onInput(/^Number of rows/i, '5')
@@ -296,7 +308,7 @@ describe('moldPrompts', () => {
       baseId: 'acme-trf-original' as unknown as BaseMoldId,
       manufacturer: 'Acme Original',
       productNumber: 'TRF-ORIG',
-      description: 'Original description',
+      name: 'Original name',
       format: 'series-1000',
       cavities: {
         kind: 'grid',
@@ -317,6 +329,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme Updated')
           .onInput(/^Product number/i, 'TRF-UPD')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, 'Updated description')
           .onInput(/^Number of columns/i, '6')
           .onInput(/^Number of rows/i, '5')
@@ -330,6 +343,7 @@ describe('moldPrompts', () => {
           expect(entity.baseId).toBe('acme-trf-original');
           expect(entity.manufacturer).toBe('Acme Updated');
           expect(entity.productNumber).toBe('TRF-UPD');
+          expect(entity.name).toBe('Updated Name');
           expect(entity.description).toBe('Updated description');
           expect(entity.format).toBe('series-2000');
           if (entity.cavities.kind === 'grid') {
@@ -348,6 +362,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, '4')
           .onInput(/^Number of rows/i, '3')
@@ -365,6 +380,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onInput(/^Number of cavities/i, '20')
           .onMenu(/mold format/i, 'series-2000')
@@ -389,6 +405,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, '6')
           .onInput(/^Number of rows/i, '4')
@@ -415,6 +432,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, '4')
           .onInput(/^Number of rows/i, '3')
@@ -433,6 +451,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, '4')
           .onInput(/^Number of rows/i, '3')
@@ -472,6 +491,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onMenuBack(/mold format/i)
           .install(mocks);
@@ -483,6 +503,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onMenu(/mold format/i, 'series-1000')
           .onMenuBack(/cavity configuration/i)
@@ -495,6 +516,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, '-1')
           .onMenu(/mold format/i, 'series-1000')
@@ -508,6 +530,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, '5')
           .onInput(/^Number of rows/i, '0')
@@ -522,6 +545,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onInput(/^Number of cavities/i, '-5')
           .onMenu(/mold format/i, 'series-2000')
@@ -535,6 +559,7 @@ describe('moldPrompts', () => {
         createResponder()
           .onInput(/^Manufacturer/i, 'Acme')
           .onInput(/^Product number/i, 'TRF')
+          .onInput(/^Name/i, 'Updated Name')
           .onInput(/^Description/i, '')
           .onInput(/^Number of columns/i, '4')
           .onInput(/^Number of rows/i, '3')

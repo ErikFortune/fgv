@@ -120,7 +120,14 @@ export class Mold implements IMold {
   }
 
   /**
-   * Human-readable description
+   * Human-readable name
+   */
+  public get name(): string {
+    return this._mold.name;
+  }
+
+  /**
+   * Optional longer description
    */
   public get description(): string | undefined {
     return this._mold.description;
@@ -209,14 +216,9 @@ export class Mold implements IMold {
   /**
    * Gets a display string for this mold.
    * Example: "Hex Swirl (Chocolate World CW-2227)"
-   * Falls back to manufacturer + product number if no description.
    */
   public get displayName(): string {
-    const manufacturerModel = `${this._mold.manufacturer} ${this._mold.productNumber}`;
-    if (this._mold.description) {
-      return `${this._mold.description} (${manufacturerModel})`;
-    }
-    return manufacturerModel;
+    return `${this._mold.name} (${this._mold.manufacturer} ${this._mold.productNumber})`;
   }
 
   /**

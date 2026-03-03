@@ -8,7 +8,7 @@ items:
     baseId: chef-jungstedt-sm-1
     manufacturer: Implast
     productNumber: '753'
-    description: Chef Jungstedt SM-1 Dome
+    name: Chef Jungstedt SM-1 Dome
     cavities:
       kind: grid
       columns: 7

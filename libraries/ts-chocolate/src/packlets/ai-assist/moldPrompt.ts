@@ -52,13 +52,14 @@ Generate from the description as lowercase-kebab-case: "${baseId}"
 - "baseId": string — lowercase alphanumeric with hyphens, no dots. Pattern: /^[a-zA-Z0-9_-]+$/
 - "manufacturer": string — manufacturer name (e.g., "Chocolate World", "Martellato", "Pavoni")
 - "productNumber": string — manufacturer's product/model number
+- "name": string — human-readable name for the mold shape (e.g., "sphere", "heart", "bar")
 - "cavities": object — one of two formats (see below)
 - "format": one of [${Model.Enums.allMoldFormats
     .map((f) => `"${f}"`)
-    .join(', ')}], where "series-1000" are 135x275mm and "series-2000" are 175x257mm.
+    .join(', ')}], where "series-1000" are 135x275mm and "series-2000" are 175x275mm.
 
 ### Optional fields:
-- "description": string — human-readable description of the mold shape (e.g., "sphere", "heart", "bar")
+- "description": string — optional longer description of the mold shape or design
 - "tags": array of strings — for searching/filtering (e.g., ["sphere", "bonbon", "polycarbonate"])
 - "related": array of strings — IDs of related molds (e.g., different sizes of the same shape)
 - "urls": array of objects with "category" (string, e.g., "manufacturer", "purchase") and "url" (string)

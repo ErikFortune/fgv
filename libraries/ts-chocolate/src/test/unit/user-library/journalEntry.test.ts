@@ -134,6 +134,7 @@ describe('Journal Entry Classes', () => {
     baseId: 'mold-a' as BaseMoldId,
     manufacturer: 'Test Molds',
     productNumber: 'TM-001',
+    name: 'Test Mold A',
     cavities: { kind: 'count', count: 24, info: { weight: 10 as Measurement } },
     format: 'other' as MoldFormat
   };

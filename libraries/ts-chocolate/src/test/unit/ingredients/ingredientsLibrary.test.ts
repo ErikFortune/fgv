@@ -69,7 +69,7 @@ describe('IngredientsLibrary', () => {
     test('creates library with built-ins by default', () => {
       expect(IngredientsLibrary.create()).toSucceedAndSatisfy((lib) => {
         expect(lib.size).toBeGreaterThan(0);
-        expect(lib.collectionCount).toBe(5);
+        expect(lib.collectionCount).toBe(8);
       });
     });
 
@@ -107,7 +107,7 @@ describe('IngredientsLibrary', () => {
       });
 
       expect(result).toSucceedAndSatisfy((lib) => {
-        expect(lib.collectionCount).toBe(6); // 5 built-in + 1 custom
+        expect(lib.collectionCount).toBe(9); // 8 built-in + 1 custom
         expect(lib.validating.has('test.testChoco')).toBe(true);
         expect(lib.validating.has('common.heavy-cream-36')).toBe(true);
       });
@@ -147,7 +147,7 @@ describe('IngredientsLibrary', () => {
           }
         })
       ).toSucceedAndSatisfy((lib) => {
-        expect(lib.collectionCount).toBe(3);
+        expect(lib.collectionCount).toBe(6);
         expect(lib.validating.has('common.heavy-cream-36')).toBe(true);
         expect(lib.validating.has('felchlin.maracaibo-65')).toBe(true);
       });
@@ -496,8 +496,8 @@ describe('IngredientsLibrary', () => {
           fileSources: { directory: root }
         })
       ).toSucceedAndSatisfy((lib) => {
-        // 5 builtins + 1 custom
-        expect(lib.collectionCount).toBe(6);
+        // 8 builtins + 1 custom
+        expect(lib.collectionCount).toBe(9);
         expect(lib.validating.has('custom-source.test-chocolate')).toBe(true);
         expect(lib.validating.has('felchlin.maracaibo-65')).toBe(true);
       });
@@ -772,8 +772,8 @@ describe('IngredientsLibrary', () => {
           mergeLibraries: existingLibrary
         })
       ).toSucceedAndSatisfy((lib) => {
-        // 5 builtins + 1 custom
-        expect(lib.collectionCount).toBe(6);
+        // 8 builtins + 1 custom
+        expect(lib.collectionCount).toBe(9);
         expect(lib.validating.has('custom.testChoco')).toBe(true);
         expect(lib.validating.has('felchlin.maracaibo-65')).toBe(true);
       });

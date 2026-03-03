@@ -2,7 +2,7 @@
 
 ## IMold.description property
 
-Human-readable description
+Optional longer description
 
 **Signature:**
 

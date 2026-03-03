@@ -40,7 +40,7 @@ describe('RuntimeMold', () => {
     baseId: 'cw-2227' as BaseMoldId,
     manufacturer: 'Chocolate World',
     productNumber: 'CW 2227',
-    description: 'Rectangle bar mold',
+    name: 'Rectangle bar mold',
     cavities: {
       kind: 'count',
       count: 8,
@@ -62,6 +62,7 @@ describe('RuntimeMold', () => {
     baseId: 'custom-mold' as BaseMoldId,
     manufacturer: 'Custom',
     productNumber: 'CUSTOM-001',
+    name: 'Custom Mold',
     cavities: { kind: 'count', count: 12 },
     format: 'custom' as MoldFormat
   };
@@ -70,7 +71,7 @@ describe('RuntimeMold', () => {
     baseId: 'grid-mold' as BaseMoldId,
     manufacturer: 'Polycarbonate',
     productNumber: 'PC-GRID-001',
-    description: 'Grid layout mold',
+    name: 'Grid layout mold',
     cavities: {
       kind: 'grid',
       columns: 4,
@@ -100,7 +101,7 @@ describe('RuntimeMold', () => {
       const moldId = 'cw.cw-2227' as MoldId;
 
       expect(Mold.create(mockContext, moldId, simpleMold)).toSucceedAndSatisfy((runtimeMold) => {
-        expect(runtimeMold.description).toBe('Rectangle bar mold');
+        expect(runtimeMold.name).toBe('Rectangle bar mold');
         expect(runtimeMold.cavityCount).toBe(8);
         expect(runtimeMold.cavityWeight).toBe(10);
         expect(runtimeMold.cavityDimensions).toEqual({
@@ -117,19 +118,18 @@ describe('RuntimeMold', () => {
 
   describe('computed properties', () => {
     describe('displayName', () => {
-      test('should return description with manufacturer + product number', () => {
+      test('should return name with manufacturer + product number', () => {
         const moldId = 'cw.cw-2227' as MoldId;
         const runtimeMold = Mold.create(mockContext, moldId, simpleMold).orThrow();
 
         expect(runtimeMold.displayName).toBe('Rectangle bar mold (Chocolate World CW 2227)');
       });
 
-      test('should fall back to manufacturer + product number when no description', () => {
+      test('should always include name in display', () => {
         const moldId = 'cw.cw-2227' as MoldId;
-        const moldWithoutDescription = { ...simpleMold, description: undefined };
-        const runtimeMold = Mold.create(mockContext, moldId, moldWithoutDescription).orThrow();
+        const runtimeMold = Mold.create(mockContext, moldId, simpleMold).orThrow();
 
-        expect(runtimeMold.displayName).toBe('Chocolate World CW 2227');
+        expect(runtimeMold.displayName).toBe('Rectangle bar mold (Chocolate World CW 2227)');
       });
     });
 
@@ -165,7 +165,7 @@ describe('RuntimeMold', () => {
       const moldId = 'custom.custom-mold' as MoldId;
 
       expect(Mold.create(mockContext, moldId, moldWithoutWeight)).toSucceedAndSatisfy((runtimeMold) => {
-        expect(runtimeMold.description).toBeUndefined();
+        expect(runtimeMold.name).toBe('Custom Mold');
         expect(runtimeMold.cavityWeight).toBeUndefined();
         expect(runtimeMold.cavityDimensions).toBeUndefined();
         expect(runtimeMold.tags).toBeUndefined();

@@ -76,11 +76,12 @@ function matchesFilters(
     return false;
   }
 
-  // Filter by name (case-insensitive substring on description)
+  // Filter by name (case-insensitive substring on name and description)
   if (options.name) {
-    const descLower = (mold.description ?? '').toLowerCase();
     const patternLower = options.name.toLowerCase();
-    if (!descLower.includes(patternLower)) {
+    const nameLower = mold.name.toLowerCase();
+    const descriptionLower = mold.description?.toLowerCase() ?? '';
+    if (!nameLower.includes(patternLower) && !descriptionLower.includes(patternLower)) {
       return false;
     }
   }
@@ -198,9 +199,9 @@ export function createListSubcommand(): Command {
         // Build list item
         matchingMolds.push({
           id: moldId,
-          name: mold.description ?? mold.productNumber,
+          name: mold.name,
           collectionId: collectionId,
-          description: mold.description,
+          description: mold.name,
           tags: mold.tags,
           manufacturer: mold.manufacturer,
           productNumber: mold.productNumber,

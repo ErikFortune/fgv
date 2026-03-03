@@ -316,6 +316,12 @@ export function MoldEditView(props: IMoldEditViewProps): React.ReactElement {
       { key: 'format', label: 'Format', icon: <CubeIcon />, changed: changes.formatChanged },
       { key: 'cavities', label: 'Cavities', icon: <ScaleIcon />, changed: changes.cavitiesChanged },
       {
+        key: 'name',
+        label: 'Name',
+        icon: <DocumentTextIcon />,
+        changed: changes.nameChanged
+      },
+      {
         key: 'description',
         label: 'Description',
         icon: <DocumentTextIcon />,
@@ -346,9 +352,17 @@ export function MoldEditView(props: IMoldEditViewProps): React.ReactElement {
     [wrapper, ctx]
   );
 
+  const handleNameChange = useCallback(
+    (value: string) => {
+      wrapper.setName(value);
+      ctx.notifyMutation();
+    },
+    [wrapper, ctx]
+  );
+
   const handleDescriptionChange = useCallback(
     (value: string | undefined) => {
-      wrapper.setDescription(value);
+      wrapper.setDescription(value || undefined);
       ctx.notifyMutation();
     },
     [wrapper, ctx]
@@ -426,11 +440,14 @@ export function MoldEditView(props: IMoldEditViewProps): React.ReactElement {
             placeholder="e.g. CW1000"
           />
         </EditField>
+        <EditField label="Name">
+          <TextInput value={entity.name} onChange={handleNameChange} placeholder="Shape name" />
+        </EditField>
         <EditField label="Description">
           <TextAreaInput
-            value={entity.description}
+            value={entity.description ?? ''}
             onChange={handleDescriptionChange}
-            placeholder="Shape description"
+            placeholder="Optional longer description"
           />
         </EditField>
         <EditField label="Format">

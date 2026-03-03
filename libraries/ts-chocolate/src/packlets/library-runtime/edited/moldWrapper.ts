@@ -38,6 +38,8 @@ export interface IMoldChanges {
   readonly manufacturerChanged: boolean;
   /** True if product number changed */
   readonly productNumberChanged: boolean;
+  /** True if name changed */
+  readonly nameChanged: boolean;
   /** True if description changed */
   readonly descriptionChanged: boolean;
   /** True if cavities changed */
@@ -127,7 +129,19 @@ export class EditedMold extends EditableWrapper<Molds.IMoldEntity> {
   }
 
   /**
-   * Sets the mold description.
+   * Sets the mold name.
+   * @param name - New name
+   * @returns Success
+   * @public
+   */
+  public setName(name: string): Result<void> {
+    this._pushUndo();
+    this._current = { ...this._current, name };
+    return succeed(undefined);
+  }
+
+  /**
+   * Sets the description.
    * @param description - New description, or undefined to clear
    * @returns Success
    * @public
@@ -287,6 +301,7 @@ export class EditedMold extends EditableWrapper<Molds.IMoldEntity> {
   public getChanges(original: Molds.IMoldEntity): IMoldChanges {
     const manufacturerChanged = this._current.manufacturer !== original.manufacturer;
     const productNumberChanged = this._current.productNumber !== original.productNumber;
+    const nameChanged = this._current.name !== original.name;
     const descriptionChanged = this._current.description !== original.description;
     const cavitiesChanged = !EditedMold._cavitiesEqual(this._current.cavities, original.cavities);
     const formatChanged = this._current.format !== original.format;
@@ -298,6 +313,7 @@ export class EditedMold extends EditableWrapper<Molds.IMoldEntity> {
     return {
       manufacturerChanged,
       productNumberChanged,
+      nameChanged,
       descriptionChanged,
       cavitiesChanged,
       formatChanged,
@@ -308,6 +324,7 @@ export class EditedMold extends EditableWrapper<Molds.IMoldEntity> {
       hasChanges:
         manufacturerChanged ||
         productNumberChanged ||
+        nameChanged ||
         descriptionChanged ||
         cavitiesChanged ||
         formatChanged ||

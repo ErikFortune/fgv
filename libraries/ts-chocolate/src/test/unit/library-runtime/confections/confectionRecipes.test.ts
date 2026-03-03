@@ -153,6 +153,7 @@ describe('Confection Recipes', () => {
     baseId: 'mold-a' as BaseMoldId,
     manufacturer: 'Test',
     productNumber: 'T-001',
+    name: 'Mold A',
     cavities: { kind: 'count', count: 24, info: { weight: 10 as Measurement } },
     format: 'other' as MoldFormat
   };
@@ -161,6 +162,7 @@ describe('Confection Recipes', () => {
     baseId: 'mold-b' as BaseMoldId,
     manufacturer: 'Test',
     productNumber: 'T-002',
+    name: 'Mold B',
     cavities: { kind: 'count', count: 28, info: { weight: 12 as Measurement } },
     format: 'other' as MoldFormat
   };

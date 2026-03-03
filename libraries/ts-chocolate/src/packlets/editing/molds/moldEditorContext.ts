@@ -58,7 +58,7 @@ export class MoldEditorContext extends ValidatingEditorContext<IMoldEntity, Base
       keyConverter: CommonConverters.baseMoldId,
       semanticValidator: validateMoldEntity,
       createId: CommonConverters.moldId,
-      getName: (mold: IMoldEntity) => `${mold.manufacturer} ${mold.productNumber}`
+      getName: (mold: IMoldEntity) => mold.name
     }).onSuccess((baseContext) => {
       // Wrap in mold-specific context
       return Success.with(

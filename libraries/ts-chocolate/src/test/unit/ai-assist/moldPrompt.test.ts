@@ -114,8 +114,9 @@ describe('buildMoldAiPrompt', () => {
   test('includes optional fields guidance', () => {
     const prompt = buildMoldAiPrompt('Test Mold');
 
+    // Should mention required name field
+    expect(prompt.combined).toContain('"name"');
     // Should mention optional fields
-    expect(prompt.combined).toContain('"description"');
     expect(prompt.combined).toContain('"tags"');
     expect(prompt.combined).toContain('"related"');
     expect(prompt.combined).toContain('"urls"');

@@ -77,7 +77,7 @@ describe('moldRenderer', () => {
       expect(result.text).toContain('Format: series-1000');
 
       // Optional fields
-      expect(result.text).toContain('Description: Classic praline mold');
+      expect(result.text).toContain('Name: Classic praline mold');
       expect(result.text).toContain('Tags: praline');
 
       // Cavity information (grid layout)

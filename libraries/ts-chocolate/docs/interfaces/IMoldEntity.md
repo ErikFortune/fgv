@@ -77,6 +77,23 @@ Product number from the manufacturer
 </td></tr>
 <tr><td>
 
+[name](./IMoldEntity.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Human-readable name for the mold shape
+
+</td></tr>
+<tr><td>
+
 [description](./IMoldEntity.description.md)
 
 </td><td>
@@ -89,7 +106,7 @@ string
 
 </td><td>
 
-Human-readable description of the mold shape
+Optional longer description of the mold
 
 </td></tr>
 <tr><td>

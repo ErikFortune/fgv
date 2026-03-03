@@ -69,8 +69,7 @@ export const TASK_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.ITask, TaskId> = 
 export const MOLD_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.IMold, MoldId> = {
   getId: (m: LibraryRuntime.IMold): MoldId => m.id,
   getLabel: (m: LibraryRuntime.IMold): string => m.displayName,
-  getSublabel: (m: LibraryRuntime.IMold): string | undefined =>
-    [m.format, m.description].filter(Boolean).join(' · ') || undefined,
+  getSublabel: (m: LibraryRuntime.IMold): string | undefined => m.format,
   getStatus: undefined
 };
 
@@ -164,7 +163,8 @@ export const CONFECTION_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IConfectio
 };
 
 export const MOLD_FILTER_SPEC: IEntityFilterSpec<LibraryRuntime.IMold> = {
-  getSearchText: (m) => [m.displayName, m.manufacturer, m.format, m.description].filter(Boolean).join(' '),
+  getSearchText: (m) =>
+    [m.displayName, m.manufacturer, m.format, m.name, m.description].filter(Boolean).join(' '),
   getCollectionId: (m) => m.collectionId,
   selectionExtractors: {
     collection: (m) => m.collectionId,

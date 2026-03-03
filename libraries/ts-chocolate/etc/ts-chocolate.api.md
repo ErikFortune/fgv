@@ -1483,7 +1483,7 @@ function createBlankFillingRecipeEntity(baseId: BaseFillingId, name: string, var
 function createBlankIngredientEntity(baseId: BaseIngredientId, name: string): IIngredientEntity;
 
 // @public
-function createBlankMoldEntity(baseId: BaseMoldId, manufacturer: string): IMoldEntity;
+function createBlankMoldEntity(baseId: BaseMoldId, manufacturer: string, name: string): IMoldEntity;
 
 // @public
 function createBlankRawProcedureEntity(baseId: BaseProcedureId, name: string): IProcedureEntity;
@@ -1908,6 +1908,7 @@ class EditedMold extends EditableWrapper<Molds_2.IMoldEntity> {
     setDescription(description: string | undefined): Result<void>;
     setFormat(format: MoldFormat): Result<void>;
     setManufacturer(manufacturer: string): Result<void>;
+    setName(name: string): Result<void>;
     setNotes(notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<void>;
     setProductNumber(productNumber: string): Result<void>;
     setRelated(related: ReadonlyArray<MoldId> | undefined): Result<void>;
@@ -4418,6 +4419,7 @@ interface IMold {
     readonly format: MoldFormat;
     readonly id: MoldId;
     readonly manufacturer: string;
+    readonly name: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly productNumber: string;
     readonly related?: ReadonlyArray<MoldId>;
@@ -4444,6 +4446,7 @@ interface IMoldChanges {
     readonly formatChanged: boolean;
     readonly hasChanges: boolean;
     readonly manufacturerChanged: boolean;
+    readonly nameChanged: boolean;
     readonly notesChanged: boolean;
     readonly productNumberChanged: boolean;
     readonly relatedChanged: boolean;
@@ -4502,6 +4505,7 @@ interface IMoldEntity {
     readonly description?: string;
     readonly format: MoldFormat;
     readonly manufacturer: string;
+    readonly name: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly productNumber: string;
     readonly related?: ReadonlyArray<MoldId>;
@@ -6791,6 +6795,7 @@ class Mold implements IMold {
     get format(): MoldFormat;
     get id(): MoldId;
     get manufacturer(): string;
+    get name(): string;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get productNumber(): string;
     // (undocumented)

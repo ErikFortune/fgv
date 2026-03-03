@@ -35,6 +35,7 @@ import { formatMoldHuman } from '../../../../commands/mold/showCommand';
 function createGridMold(overrides?: Record<string, unknown>): Entities.Molds.IMoldEntity {
   return {
     baseId: 'cw1000',
+    name: 'Grid Mold',
     manufacturer: 'Chocolate World',
     productNumber: 'CW1000',
     format: 'series-1000',
@@ -50,6 +51,7 @@ function createGridMold(overrides?: Record<string, unknown>): Entities.Molds.IMo
 function createCountMold(overrides?: Record<string, unknown>): Entities.Molds.IMoldEntity {
   return {
     baseId: 'custom-12',
+    name: 'Count Mold',
     manufacturer: 'Custom Molds',
     productNumber: 'CM-12',
     format: 'other',
@@ -69,11 +71,12 @@ describe('formatMoldHuman', () => {
   test('formats grid mold', () => {
     const mold = createGridMold();
     const output = formatMoldHuman(mold, 'coll.cw1000' as MoldId);
-    expect(output).toContain('Mold: CW1000');
+    expect(output).toContain('Mold: Grid Mold');
     expect(output).toContain('ID: coll.cw1000');
     expect(output).toContain('Manufacturer: Chocolate World');
     expect(output).toContain('Product Number: CW1000');
     expect(output).toContain('Format: series-1000');
+    expect(output).toContain('Name: Grid Mold');
     expect(output).toContain('Layout: 4 x 6 grid');
     expect(output).toContain('Total Count: 24');
   });
@@ -85,17 +88,17 @@ describe('formatMoldHuman', () => {
     expect(output).not.toContain('Layout:');
   });
 
-  test('formats mold with description', () => {
-    const mold = createGridMold({ description: 'Semi-sphere 25mm' });
+  test('formats mold with name', () => {
+    const mold = createGridMold({ name: 'Semi-sphere 25mm' });
     const output = formatMoldHuman(mold, 'coll.cw1000' as MoldId);
     expect(output).toContain('Mold: Semi-sphere 25mm');
-    expect(output).toContain('Description: Semi-sphere 25mm');
+    expect(output).toContain('Name: Semi-sphere 25mm');
   });
 
-  test('uses product number when no description', () => {
+  test('uses product number when no name override', () => {
     const mold = createGridMold();
     const output = formatMoldHuman(mold, 'coll.cw1000' as MoldId);
-    expect(output).toContain('Mold: CW1000');
+    expect(output).toContain('Mold: Grid Mold');
   });
 
   test('formats mold with tags', () => {

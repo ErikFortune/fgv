@@ -68,7 +68,7 @@ describe('MoldDetail', () => {
       );
 
       expect(screen.getByText(moldWithGrid.displayName)).toBeInTheDocument();
-      expect(screen.getByText(/grid/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/grid/i).length).toBeGreaterThan(0);
     }
   });
 

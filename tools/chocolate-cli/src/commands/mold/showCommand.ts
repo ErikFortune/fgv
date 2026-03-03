@@ -62,11 +62,15 @@ function getCavityCount(mold: Entities.Molds.IMoldEntity): number {
 export function formatMoldHuman(mold: Entities.Molds.IMoldEntity, moldId: MoldId): string {
   const lines: string[] = [];
 
-  lines.push(`Mold: ${mold.description ?? mold.productNumber}`);
+  lines.push(`Mold: ${mold.name}`);
   lines.push(`ID: ${moldId}`);
   lines.push(`Manufacturer: ${mold.manufacturer}`);
   lines.push(`Product Number: ${mold.productNumber}`);
   lines.push(`Format: ${mold.format}`);
+
+  if (mold.name) {
+    lines.push(`Name: ${mold.name}`);
+  }
 
   if (mold.description) {
     lines.push(`Description: ${mold.description}`);
@@ -163,7 +167,7 @@ export function createShowSubcommand(): Command {
           const cavities = getCavityCount(m);
           selectableItems.push({
             id,
-            name: m.description ?? m.productNumber,
+            name: m.name,
             description: `[${m.manufacturer}] ${cavities} cavities`,
             mold: m
           });
@@ -175,8 +179,7 @@ export function createShowSubcommand(): Command {
           items: selectableItems,
           prompt: 'Select a mold:',
           formatName: (item) => {
-            const desc = item.mold.description ? ` - ${item.mold.description}` : '';
-            return `${item.id}${desc}`;
+            return `${item.id} - ${item.mold.name}`;
           }
         });
 

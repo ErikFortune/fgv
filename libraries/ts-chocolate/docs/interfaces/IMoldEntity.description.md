@@ -2,7 +2,7 @@
 
 ## IMoldEntity.description property
 
-Human-readable description of the mold shape
+Optional longer description of the mold
 
 **Signature:**
 

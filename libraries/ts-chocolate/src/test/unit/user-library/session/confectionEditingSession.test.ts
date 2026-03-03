@@ -123,7 +123,7 @@ describe('ConfectionEditingSession', () => {
     baseId: 'mold-a' as BaseMoldId,
     manufacturer: 'Test Molds',
     productNumber: 'TM-001',
-    description: 'Test mold A',
+    name: 'Test mold A',
     cavities: { kind: 'count', count: 24, info: { weight: 10 as Measurement } },
     format: 'other' as MoldFormat
   };
@@ -132,7 +132,7 @@ describe('ConfectionEditingSession', () => {
     baseId: 'mold-b' as BaseMoldId,
     manufacturer: 'Test Molds',
     productNumber: 'TM-002',
-    description: 'Test mold B',
+    name: 'Test mold B',
     cavities: { kind: 'count', count: 28, info: { weight: 12 as Measurement } },
     format: 'other' as MoldFormat
   };

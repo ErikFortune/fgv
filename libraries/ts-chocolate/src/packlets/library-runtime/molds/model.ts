@@ -89,7 +89,10 @@ export interface IMold {
   /** Product number from the manufacturer */
   readonly productNumber: string;
 
-  /** Human-readable description */
+  /** Human-readable name */
+  readonly name: string;
+
+  /** Optional longer description */
   readonly description?: string;
 
   /** Cavities definition (grid or count) */

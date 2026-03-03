@@ -10,7 +10,7 @@ items:
     baseId: dome-25mm
     manufacturer: Generic
     productNumber: DOME-25
-    description: 25mm hemisphere dome
+    name: 25mm hemisphere dome
     cavities:
       kind: count
       count: 24
@@ -30,7 +30,7 @@ items:
     baseId: dome-30mm
     manufacturer: Generic
     productNumber: DOME-30
-    description: 30mm hemisphere dome
+    name: 30mm hemisphere dome
     cavities:
       kind: count
       count: 15
@@ -50,7 +50,7 @@ items:
     baseId: bullet-28mm
     manufacturer: Generic
     productNumber: BULLET-28
-    description: 28mm bullet/ogive shape
+    name: 28mm bullet/ogive shape
     cavities:
       kind: count
       count: 21
@@ -70,7 +70,7 @@ items:
     baseId: square-25mm
     manufacturer: Generic
     productNumber: SQ-25
-    description: 25mm square
+    name: 25mm square
     cavities:
       kind: count
       count: 24

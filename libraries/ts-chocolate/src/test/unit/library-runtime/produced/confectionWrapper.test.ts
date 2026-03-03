@@ -1019,7 +1019,7 @@ describe('Ingredient-type filling slot conversion', () => {
       baseId: 'mold-a' as BaseMoldId,
       manufacturer: 'Test Molds',
       productNumber: 'TM-001',
-      description: 'Test mold A',
+      name: 'Test mold A',
       cavities: { kind: 'count', count: 24, info: { weight: 10 as Measurement } },
       format: 'other' as MoldFormat
     };

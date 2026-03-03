@@ -60,6 +60,11 @@ export async function promptNewMold(): Promise<Result<Entities.IMoldEntity>> {
     }
   }
 
+  const name = await promptInput('Name (shape name):');
+  if (!name.trim()) {
+    return fail('Name is required');
+  }
+
   const description = await promptInput('Description (optional):');
 
   // Select format
@@ -140,6 +145,7 @@ export async function promptNewMold(): Promise<Result<Entities.IMoldEntity>> {
     baseId,
     manufacturer: manufacturer.trim(),
     productNumber: productNumber.trim(),
+    name: name.trim(),
     ...(description.trim() && { description: description.trim() }),
     cavities,
     format
@@ -163,6 +169,11 @@ export async function promptEditMold(existing: Entities.IMoldEntity): Promise<Re
   const productNumber = await promptInput('Product number:', existing.productNumber);
   if (!productNumber.trim()) {
     return fail('Product number is required');
+  }
+
+  const name = await promptInput('Name (shape name):', existing.name);
+  if (!name.trim()) {
+    return fail('Name is required');
   }
 
   const description = await promptInput('Description (optional):', existing.description);
@@ -268,6 +279,7 @@ export async function promptEditMold(existing: Entities.IMoldEntity): Promise<Re
     baseId: existing.baseId,
     manufacturer: manufacturer.trim(),
     productNumber: productNumber.trim(),
+    name: name.trim(),
     ...(description.trim() && { description: description.trim() }),
     cavities,
     format

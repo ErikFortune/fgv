@@ -129,6 +129,7 @@ describe('UserLibrary', () => {
     baseId: 'mold-a' as BaseMoldId,
     manufacturer: 'Test',
     productNumber: 'T-001',
+    name: 'Test Mold A',
     cavities: { kind: 'count', count: 24, info: { weight: 10 as Measurement } },
     format: 'other' as MoldFormat
   };

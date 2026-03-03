@@ -89,6 +89,7 @@ export const moldEntity: Converter<IMoldEntity> = Converters.strictObject<IMoldE
   baseId: CommonConverters.baseMoldId,
   manufacturer: Converters.string,
   productNumber: Converters.string,
+  name: Converters.string,
   description: Converters.string.optional(),
   cavities,
   format: CommonConverters.moldFormat,

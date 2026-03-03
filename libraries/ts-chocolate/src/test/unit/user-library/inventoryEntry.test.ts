@@ -72,6 +72,7 @@ describe('InventoryEntry', () => {
     baseId: 'hemisphere-25' as BaseMoldId,
     manufacturer: 'Test Mfg',
     productNumber: 'TM-1000',
+    name: 'Hemisphere Mold',
     cavities: {
       kind: 'count',
       count: 15,

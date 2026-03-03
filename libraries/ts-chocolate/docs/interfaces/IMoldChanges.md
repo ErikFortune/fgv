@@ -60,6 +60,23 @@ True if product number changed
 </td></tr>
 <tr><td>
 
+[nameChanged](./IMoldChanges.nameChanged.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+True if name changed
+
+</td></tr>
+<tr><td>
+
 [descriptionChanged](./IMoldChanges.descriptionChanged.md)
 
 </td><td>

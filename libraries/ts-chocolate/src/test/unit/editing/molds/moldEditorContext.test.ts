@@ -50,6 +50,7 @@ describe('MoldEditorContext', () => {
     baseId: (baseId ?? 'test-mold') as BaseMoldId,
     manufacturer: manufacturer ?? 'Test Manufacturer',
     productNumber: productNumber ?? 'TM-123',
+    name: 'Test Mold',
     cavities: { kind: 'count', count: 24 },
     format: 'series-1000'
   });

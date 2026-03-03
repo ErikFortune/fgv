@@ -6,7 +6,7 @@ items:
     baseId: greyas-cm-3843
     manufacturer: Greyas
     productNumber: CM-3843
-    description: Heart‑cylinder (Luis Amado Signature)
+    name: Heart‑cylinder (Luis Amado Signature)
     cavities:
       kind: grid
       columns: 6

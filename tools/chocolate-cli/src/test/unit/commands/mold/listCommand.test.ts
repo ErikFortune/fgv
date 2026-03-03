@@ -43,7 +43,7 @@ import { createListSubcommand } from '../../../../commands/mold/listCommand';
 
 function createMold(overrides?: Record<string, unknown>): Record<string, unknown> {
   return {
-    description: 'Square Bon Bon Mold',
+    name: 'Square Bon Bon Mold',
     manufacturer: 'Chocolat World',
     productNumber: 'CW-2000',
     format: 'series-2000',
@@ -92,7 +92,7 @@ describe('mold listCommand', () => {
           ['coll.square-bonbon', createMold()],
           [
             'coll.round-truffle',
-            createMold({ description: 'Round Truffle Mold', productNumber: 'CW-1500', format: 'series-1000' })
+            createMold({ name: 'Round Truffle Mold', productNumber: 'CW-1500', format: 'series-1000' })
           ]
         ])
       )
@@ -112,7 +112,7 @@ describe('mold listCommand', () => {
       succeed(
         createMockLibrary([
           ['alpha.square-bonbon', createMold()],
-          ['beta.round-truffle', createMold({ description: 'Round Truffle Mold' })]
+          ['beta.round-truffle', createMold({ name: 'Round Truffle Mold' })]
         ])
       )
     );
@@ -125,12 +125,12 @@ describe('mold listCommand', () => {
     expect(output).not.toContain('Round Truffle Mold');
   });
 
-  test('filters by name (searches description field, case-insensitive)', async () => {
+  test('filters by name (searches name field, case-insensitive)', async () => {
     mockLoadMoldsLibrary.mockResolvedValue(
       succeed(
         createMockLibrary([
           ['coll.square-bonbon', createMold()],
-          ['coll.round-truffle', createMold({ description: 'Round Truffle Mold' })]
+          ['coll.round-truffle', createMold({ name: 'Round Truffle Mold' })]
         ])
       )
     );
@@ -148,10 +148,7 @@ describe('mold listCommand', () => {
       succeed(
         createMockLibrary([
           ['coll.square-bonbon', createMold()],
-          [
-            'coll.round-truffle',
-            createMold({ description: 'Round Truffle Mold', manufacturer: 'Martellato' })
-          ]
+          ['coll.round-truffle', createMold({ name: 'Round Truffle Mold', manufacturer: 'Martellato' })]
         ])
       )
     );
@@ -169,8 +166,8 @@ describe('mold listCommand', () => {
       succeed(
         createMockLibrary([
           ['coll.square-bonbon', createMold()],
-          ['coll.round-truffle', createMold({ description: 'Round Truffle Mold', format: 'series-1000' })],
-          ['coll.custom', createMold({ description: 'Custom Mold', format: 'other' })]
+          ['coll.round-truffle', createMold({ name: 'Round Truffle Mold', format: 'series-1000' })],
+          ['coll.custom', createMold({ name: 'Custom Mold', format: 'other' })]
         ])
       )
     );
@@ -191,12 +188,9 @@ describe('mold listCommand', () => {
           ['coll.square-bonbon', createMold()],
           [
             'coll.large-grid',
-            createMold({ description: 'Large Grid Mold', cavities: { kind: 'grid', rows: 5, columns: 6 } })
+            createMold({ name: 'Large Grid Mold', cavities: { kind: 'grid', rows: 5, columns: 6 } })
           ],
-          [
-            'coll.small',
-            createMold({ description: 'Small Mold', cavities: { kind: 'grid', rows: 2, columns: 3 } })
-          ]
+          ['coll.small', createMold({ name: 'Small Mold', cavities: { kind: 'grid', rows: 2, columns: 3 } })]
         ])
       )
     );
@@ -215,11 +209,8 @@ describe('mold listCommand', () => {
       succeed(
         createMockLibrary([
           ['coll.square-bonbon', createMold()],
-          [
-            'coll.count-mold',
-            createMold({ description: 'Count Mold', cavities: { kind: 'count', count: 24 } })
-          ],
-          ['coll.small', createMold({ description: 'Small Mold', cavities: { kind: 'count', count: 6 } })]
+          ['coll.count-mold', createMold({ name: 'Count Mold', cavities: { kind: 'count', count: 24 } })],
+          ['coll.small', createMold({ name: 'Small Mold', cavities: { kind: 'count', count: 6 } })]
         ])
       )
     );
@@ -238,7 +229,7 @@ describe('mold listCommand', () => {
       succeed(
         createMockLibrary([
           ['coll.square-bonbon', createMold({ tags: ['polycarbonate', 'professional'] })],
-          ['coll.round-truffle', createMold({ description: 'Round Truffle Mold', tags: ['polycarbonate'] })]
+          ['coll.round-truffle', createMold({ name: 'Round Truffle Mold', tags: ['polycarbonate'] })]
         ])
       )
     );
@@ -281,8 +272,8 @@ describe('mold listCommand', () => {
     mockLoadMoldsLibrary.mockResolvedValue(
       succeed(
         createMockLibrary([
-          ['coll.zzz-last', createMold({ description: 'Zzz Last' })],
-          ['coll.aaa-first', createMold({ description: 'Aaa First' })]
+          ['coll.zzz-last', createMold({ name: 'Zzz Last' })],
+          ['coll.aaa-first', createMold({ name: 'Aaa First' })]
         ])
       )
     );

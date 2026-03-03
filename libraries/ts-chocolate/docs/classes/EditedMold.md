@@ -201,6 +201,19 @@ Sets the product number.
 </td></tr>
 <tr><td>
 
+[setName(name)](./EditedMold.setName.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets the mold name.
+
+</td></tr>
+<tr><td>
+
 [setDescription(description)](./EditedMold.setDescription.md)
 
 </td><td>
@@ -209,7 +222,7 @@ Sets the product number.
 
 </td><td>
 
-Sets the mold description.
+Sets the description.
 
 </td></tr>
 <tr><td>

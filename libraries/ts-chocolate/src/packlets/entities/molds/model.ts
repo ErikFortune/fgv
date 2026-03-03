@@ -93,7 +93,12 @@ export interface IMoldEntity {
   readonly productNumber: string;
 
   /**
-   * Human-readable description of the mold shape
+   * Human-readable name for the mold shape
+   */
+  readonly name: string;
+
+  /**
+   * Optional longer description of the mold
    */
   readonly description?: string;
 
@@ -136,14 +141,16 @@ export interface IMoldEntity {
  * Create a blank mold entity with sensible defaults.
  * @param baseId - Base identifier for the mold
  * @param manufacturer - Manufacturer name (used as initial display name)
+ * @param name - Human-readable name for the mold shape
  * @returns A minimal valid mold entity
  * @public
  */
-export function createBlankMoldEntity(baseId: BaseMoldId, manufacturer: string): IMoldEntity {
+export function createBlankMoldEntity(baseId: BaseMoldId, manufacturer: string, name: string): IMoldEntity {
   return {
     baseId,
     manufacturer,
     productNumber: '',
+    name,
     cavities: { kind: 'grid', columns: 3, rows: 8 },
     format: 'other'
   };

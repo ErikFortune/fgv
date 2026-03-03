@@ -2,7 +2,7 @@
 
 ## EditedMold.setDescription() method
 
-Sets the mold description.
+Sets the description.
 
 **Signature:**
 

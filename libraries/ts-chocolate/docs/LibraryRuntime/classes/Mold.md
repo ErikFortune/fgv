@@ -118,6 +118,23 @@ Product number from the manufacturer
 </td></tr>
 <tr><td>
 
+[name](./Mold.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Human-readable name
+
+</td></tr>
+<tr><td>
+
 [description](./Mold.description.md)
 
 </td><td>
@@ -130,7 +147,7 @@ string | undefined
 
 </td><td>
 
-Human-readable description
+Optional longer description
 
 </td></tr>
 <tr><td>

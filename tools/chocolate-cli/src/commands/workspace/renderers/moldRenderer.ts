@@ -43,6 +43,10 @@ export function renderMoldDetail(mold: LibraryRuntime.IMold, context: IRenderCon
   lines.push(`Product Number: ${mold.productNumber}`);
   lines.push(`Format: ${mold.format}`);
 
+  if (mold.name) {
+    lines.push(`Name: ${mold.name}`);
+  }
+
   if (mold.description) {
     lines.push(`Description: ${mold.description}`);
   }

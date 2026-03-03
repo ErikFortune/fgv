@@ -38,7 +38,7 @@ describe('Mold Converters', () => {
     baseId: 'chocolate-world-cw-2227',
     manufacturer: 'Chocolate World',
     productNumber: 'CW 2227',
-    description: 'Hex Swirl',
+    name: 'Hex Swirl',
     cavities: {
       kind: 'count',
       count: 32,
@@ -124,7 +124,7 @@ describe('Mold Converters', () => {
         expect(result.baseId).toBe('chocolate-world-cw-2227');
         expect(result.manufacturer).toBe('Chocolate World');
         expect(result.productNumber).toBe('CW 2227');
-        expect(result.description).toBe('Hex Swirl');
+        expect(result.name).toBe('Hex Swirl');
         expect(result.cavities.kind).toBe('count');
         if (result.cavities.kind === 'count') {
           expect(result.cavities.count).toBe(32);
@@ -141,6 +141,7 @@ describe('Mold Converters', () => {
         baseId: 'test-mold',
         manufacturer: 'Test Maker',
         productNumber: 'TM-001',
+        name: 'Test Mold',
         cavities: { kind: 'count', count: 24 },
         format: 'series-1000'
       };
@@ -148,12 +149,12 @@ describe('Mold Converters', () => {
         expect(result.baseId).toBe('test-mold');
         expect(result.manufacturer).toBe('Test Maker');
         expect(result.productNumber).toBe('TM-001');
+        expect(result.name).toBe('Test Mold');
         expect(result.cavities.kind).toBe('count');
         if (result.cavities.kind === 'count') {
           expect(result.cavities.count).toBe(24);
         }
         expect(result.format).toBe('series-1000');
-        expect(result.description).toBeUndefined();
         expect(result.cavities.info?.weight).toBeUndefined();
         expect(result.cavities.info?.dimensions).toBeUndefined();
         expect(result.tags).toBeUndefined();

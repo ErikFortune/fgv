@@ -3818,7 +3818,7 @@ export const moldCollections: Record<string, JsonObject> = {
         baseId: 'dome-25mm',
         manufacturer: 'Generic',
         productNumber: 'DOME-25',
-        description: '25mm hemisphere dome',
+        name: '25mm hemisphere dome',
         cavities: {
           kind: 'count',
           count: 24,
@@ -3844,7 +3844,7 @@ export const moldCollections: Record<string, JsonObject> = {
         baseId: 'dome-30mm',
         manufacturer: 'Generic',
         productNumber: 'DOME-30',
-        description: '30mm hemisphere dome',
+        name: '30mm hemisphere dome',
         cavities: {
           kind: 'count',
           count: 15,
@@ -3870,7 +3870,7 @@ export const moldCollections: Record<string, JsonObject> = {
         baseId: 'bullet-28mm',
         manufacturer: 'Generic',
         productNumber: 'BULLET-28',
-        description: '28mm bullet/ogive shape',
+        name: '28mm bullet/ogive shape',
         cavities: {
           kind: 'count',
           count: 21,
@@ -3896,7 +3896,7 @@ export const moldCollections: Record<string, JsonObject> = {
         baseId: 'square-25mm',
         manufacturer: 'Generic',
         productNumber: 'SQ-25',
-        description: '25mm square',
+        name: '25mm square',
         cavities: {
           kind: 'count',
           count: 24,
@@ -3930,7 +3930,7 @@ export const moldCollections: Record<string, JsonObject> = {
         baseId: 'chocolate-world-cw-2227',
         manufacturer: 'Chocolate World',
         productNumber: 'CW 2227',
-        description: 'Hex Swirl',
+        name: 'Hex Swirl',
         cavities: {
           kind: 'count',
           count: 32,
@@ -3956,7 +3956,7 @@ export const moldCollections: Record<string, JsonObject> = {
         baseId: 'chocolate-world-cw1988',
         manufacturer: 'Chocolate World',
         productNumber: 'CW1988',
-        description: 'Pleated Leaf',
+        name: 'Pleated Leaf',
         cavities: {
           kind: 'grid',
           columns: 7,
@@ -3994,7 +3994,8 @@ export const moldCollections: Record<string, JsonObject> = {
         baseId: 'chocolate-world-cw12060',
         manufacturer: 'Chocolate World',
         productNumber: 'CW12060',
-        description: 'The Duel (signature modern square praline with tapered design by Paul Wagemaker)',
+        name: 'The Duel',
+        description: 'Signature modern square praline with tapered design by Paul Wagemaker',
         cavities: {
           kind: 'grid',
           columns: 7,
@@ -4056,7 +4057,7 @@ export const moldCollections: Record<string, JsonObject> = {
         baseId: 'greyas-cm-3843',
         manufacturer: 'Greyas',
         productNumber: 'CM-3843',
-        description: 'Heart‑cylinder (Luis Amado Signature)',
+        name: 'Heart‑cylinder (Luis Amado Signature)',
         cavities: {
           kind: 'grid',
           columns: 6,
@@ -4107,7 +4108,7 @@ export const moldCollections: Record<string, JsonObject> = {
         baseId: 'chef-jungstedt-sm-1',
         manufacturer: 'Implast',
         productNumber: '753',
-        description: 'Chef Jungstedt SM-1 Dome',
+        name: 'Chef Jungstedt SM-1 Dome',
         cavities: {
           kind: 'grid',
           columns: 7,

@@ -69,13 +69,14 @@ const baseMold: Molds.IMoldEntity = {
   baseId: 'cw1000' as BaseMoldId,
   manufacturer: 'Chocolate World',
   productNumber: 'CW1000',
+  name: 'Praline Mold',
   cavities: gridCavities,
   format: 'series-1000' as MoldFormat
 };
 
 const fullMold: Molds.IMoldEntity = {
   ...baseMold,
-  description: 'Standard praline mold',
+  name: 'Standard praline mold',
   tags: ['praline', 'standard'],
   related: ['cw1001' as MoldId, 'cw1002' as MoldId],
   notes: [{ note: 'Popular mold', category: 'general' as NoteCategory }],
@@ -99,7 +100,7 @@ describe('EditedMold', () => {
     test('create() succeeds with full mold', () => {
       expect(EditedMold.create(fullMold)).toSucceedAndSatisfy((wrapper) => {
         expect(wrapper.manufacturer).toBe('Chocolate World');
-        expect(wrapper.current.description).toBe('Standard praline mold');
+        expect(wrapper.current.name).toBe('Standard praline mold');
         expect(wrapper.current.tags).toEqual(['praline', 'standard']);
       });
     });
@@ -302,14 +303,14 @@ describe('EditedMold', () => {
       expect(wrapper.canUndo()).toBe(true);
     });
 
-    test('setDescription() sets and clears description', () => {
+    test('setName() updates the mold name', () => {
       const wrapper = EditedMold.create(baseMold).orThrow();
 
-      expect(wrapper.setDescription('A description')).toSucceed();
-      expect(wrapper.current.description).toBe('A description');
+      expect(wrapper.setName('A new name')).toSucceed();
+      expect(wrapper.current.name).toBe('A new name');
 
-      expect(wrapper.setDescription(undefined)).toSucceed();
-      expect(wrapper.current.description).toBeUndefined();
+      expect(wrapper.setName('Another name')).toSucceed();
+      expect(wrapper.current.name).toBe('Another name');
     });
 
     test('setCavities() updates cavities with grid', () => {
@@ -458,9 +459,9 @@ describe('EditedMold', () => {
     test('applyUpdate() applies partial update', () => {
       const wrapper = EditedMold.create(baseMold).orThrow();
 
-      expect(wrapper.applyUpdate({ manufacturer: 'Updated', description: 'New desc' })).toSucceed();
+      expect(wrapper.applyUpdate({ manufacturer: 'Updated', name: 'New name' })).toSucceed();
       expect(wrapper.manufacturer).toBe('Updated');
-      expect(wrapper.current.description).toBe('New desc');
+      expect(wrapper.current.name).toBe('New name');
       expect(wrapper.canUndo()).toBe(true);
     });
   });
@@ -507,7 +508,7 @@ describe('EditedMold', () => {
       expect(changes.hasChanges).toBe(false);
       expect(changes.manufacturerChanged).toBe(false);
       expect(changes.productNumberChanged).toBe(false);
-      expect(changes.descriptionChanged).toBe(false);
+      expect(changes.nameChanged).toBe(false);
       expect(changes.cavitiesChanged).toBe(false);
       expect(changes.formatChanged).toBe(false);
       expect(changes.tagsChanged).toBe(false);
@@ -535,12 +536,12 @@ describe('EditedMold', () => {
       expect(changes.hasChanges).toBe(true);
     });
 
-    test('getChanges() detects description change', () => {
+    test('getChanges() detects name change', () => {
       const wrapper = EditedMold.create(baseMold).orThrow();
-      wrapper.setDescription('New description').orThrow();
+      wrapper.setName('New name').orThrow();
       const changes = wrapper.getChanges(baseMold);
 
-      expect(changes.descriptionChanged).toBe(true);
+      expect(changes.nameChanged).toBe(true);
       expect(changes.hasChanges).toBe(true);
     });
 
