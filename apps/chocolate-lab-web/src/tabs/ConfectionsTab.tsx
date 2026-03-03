@@ -23,7 +23,7 @@ import type {
   ConfectionId,
   DecorationId
 } from '@fgv/ts-chocolate';
-import type { Result } from '@fgv/ts-utils';
+import type { Result, ResultMapValueType } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type IReferenceScanResult,
@@ -33,6 +33,7 @@ import {
   useCanDeleteFromCollections,
   useEntityActions,
   createSetInMutableCollection,
+  type MutableCollectionEntryWithSet,
   useEntityMutation,
   IngredientDetail,
   IngredientEditView,
@@ -104,13 +105,33 @@ export function ConfectionsTabContent(): React.ReactElement {
     reactiveWorkspace.version
   ]);
 
-  type ConfectionCollectionResult = ReturnType<typeof workspace.data.entities.confections.collections.get>;
-  type ConfectionCollectionEntry = Exclude<ConfectionCollectionResult['value'], undefined>;
-  type ConfectionMutableCollectionEntry = ConfectionCollectionEntry & {
-    readonly items: {
-      set: (id: BaseConfectionId, entity: Entities.Confections.AnyConfectionRecipeEntity) => Result<unknown>;
-    };
-  };
+  type ConfectionCollectionEntry = ResultMapValueType<typeof workspace.data.entities.confections.collections>;
+  type ConfectionMutableCollectionEntry = MutableCollectionEntryWithSet<
+    ConfectionCollectionEntry,
+    BaseConfectionId,
+    Entities.Confections.AnyConfectionRecipeEntity
+  >;
+
+  type IngredientCollectionEntry = ResultMapValueType<typeof workspace.data.entities.ingredients.collections>;
+  type IngredientMutableCollectionEntry = MutableCollectionEntryWithSet<
+    IngredientCollectionEntry,
+    BaseIngredientId,
+    Entities.Ingredients.IngredientEntity
+  >;
+
+  type FillingCollectionEntry = ResultMapValueType<typeof workspace.data.entities.fillings.collections>;
+  type FillingMutableCollectionEntry = MutableCollectionEntryWithSet<
+    FillingCollectionEntry,
+    BaseFillingId,
+    Entities.Fillings.IFillingRecipeEntity
+  >;
+
+  type ProcedureCollectionEntry = ResultMapValueType<typeof workspace.data.entities.procedures.collections>;
+  type ProcedureMutableCollectionEntry = MutableCollectionEntryWithSet<
+    ProcedureCollectionEntry,
+    BaseProcedureId,
+    Entities.Procedures.IProcedureEntity
+  >;
 
   const confectionMutation = useEntityMutation<
     Entities.Confections.AnyConfectionRecipeEntity,
@@ -139,6 +160,85 @@ export function ConfectionsTabContent(): React.ReactElement {
       workspace.data.entities.getEditableConfectionsEntityCollection(collectionId, workspace.keyStore)
   });
 
+  const ingredientMutation = useEntityMutation<
+    Entities.Ingredients.IngredientEntity,
+    BaseIngredientId,
+    IngredientId
+  >({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Ingredients.IngredientEntity,
+      BaseIngredientId,
+      IngredientCollectionEntry,
+      IngredientMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.ingredients.collections.get(collectionId),
+      isMutable: (entry: IngredientCollectionEntry): entry is IngredientMutableCollectionEntry =>
+        entry.isMutable && 'set' in entry.items,
+      setEntity: (
+        entry: IngredientMutableCollectionEntry,
+        baseId: BaseIngredientId,
+        entity: Entities.Ingredients.IngredientEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'ingredient'
+    }),
+    entityLabel: 'ingredient',
+    getEditableCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getEditableIngredientsEntityCollection(collectionId, workspace.keyStore)
+  });
+
+  const fillingMutation = useEntityMutation<Entities.Fillings.IFillingRecipeEntity, BaseFillingId, FillingId>(
+    {
+      setInMutableCollection: createSetInMutableCollection<
+        Entities.Fillings.IFillingRecipeEntity,
+        BaseFillingId,
+        FillingCollectionEntry,
+        FillingMutableCollectionEntry
+      >({
+        getCollection: (collectionId: CollectionId) =>
+          workspace.data.entities.fillings.collections.get(collectionId),
+        isMutable: (entry: FillingCollectionEntry): entry is FillingMutableCollectionEntry =>
+          entry.isMutable && 'set' in entry.items,
+        setEntity: (
+          entry: FillingMutableCollectionEntry,
+          baseId: BaseFillingId,
+          entity: Entities.Fillings.IFillingRecipeEntity
+        ) => entry.items.set(baseId, entity),
+        entityLabel: 'filling'
+      }),
+      entityLabel: 'filling',
+      getEditableCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.getEditableFillingsRecipeEntityCollection(collectionId, workspace.keyStore)
+    }
+  );
+
+  const procedureMutation = useEntityMutation<
+    Entities.Procedures.IProcedureEntity,
+    BaseProcedureId,
+    ProcedureId
+  >({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Procedures.IProcedureEntity,
+      BaseProcedureId,
+      ProcedureCollectionEntry,
+      ProcedureMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.procedures.collections.get(collectionId),
+      isMutable: (entry: ProcedureCollectionEntry): entry is ProcedureMutableCollectionEntry =>
+        entry.isMutable && 'set' in entry.items,
+      setEntity: (
+        entry: ProcedureMutableCollectionEntry,
+        baseId: BaseProcedureId,
+        entity: Entities.Procedures.IProcedureEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'procedure'
+    }),
+    entityLabel: 'procedure',
+    getEditableCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getEditableProceduresEntityCollection(collectionId, workspace.keyStore)
+  });
+
   const editingRef = useRef<IConfectionEditingState | undefined>(undefined);
   const editVariationSpecRef = useRef<ConfectionRecipeVariationSpec | undefined>(undefined);
   const viewVariationSpecRef = useRef<ConfectionRecipeVariationSpec | undefined>(undefined);
@@ -159,13 +259,13 @@ export function ConfectionsTabContent(): React.ReactElement {
 
   const [saveAsName, setSaveAsName] = useState('');
   const [showSaveAsForm, setShowSaveAsForm] = useState(false);
-  const subIngredientRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
+  const subIngredientRef = useRef<{ id: IngredientId; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
     undefined
   );
-  const subFillingRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedFillingRecipe } | undefined>(
+  const subFillingRef = useRef<{ id: FillingId; wrapper: LibraryRuntime.EditedFillingRecipe } | undefined>(
     undefined
   );
-  const subProcedureRef = useRef<{ id: string; wrapper: LibraryRuntime.EditedProcedure } | undefined>(
+  const subProcedureRef = useRef<{ id: ProcedureId; wrapper: LibraryRuntime.EditedProcedure } | undefined>(
     undefined
   );
   const [subEntitySeed, setSubEntitySeed] = useState('');
@@ -461,20 +561,19 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
       const baseId = entity.baseId as BaseIngredientId;
       const compositeId = `${ingredientCollectionId}.${baseId}` as IngredientId;
-      const colResult = workspace.data.entities.ingredients.collections.get(ingredientCollectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) return;
-      colResult.value.items.set(baseId, entity);
-      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(
-        ingredientCollectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) await editable.save();
+
+      const createResult = await ingredientMutation.createEntity({
+        mutableCollectionId: ingredientCollectionId,
+        baseId,
+        entity,
+        compositeId,
+        exists: (id: IngredientId) => workspace.data.ingredients.get(id).isSuccess(),
+        persistToDisk: true
+      });
+      if (createResult.isFailure()) {
+        return;
       }
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
+
       setSubEntitySeed('');
       const wrapperResult = LibraryRuntime.EditedIngredient.create(entity);
       if (wrapperResult.isSuccess()) {
@@ -488,7 +587,7 @@ export function ConfectionsTabContent(): React.ReactElement {
         ]);
       }
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [workspace, cascadeStack, squashCascade, ingredientMutation]
   );
 
   const handleSubIngredientSave = useCallback(
@@ -496,27 +595,23 @@ export function ConfectionsTabContent(): React.ReactElement {
       const entity = wrapper.current;
       const compositeId = subIngredientRef.current?.id;
       if (!compositeId) return;
-      const collectionId = compositeId.split('.')[0] as CollectionId;
       const baseId = entity.baseId as BaseIngredientId;
-      const colResult = workspace.data.entities.ingredients.collections.get(collectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) return;
-      colResult.value.items.set(baseId, entity);
-      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) await editable.save();
+
+      const saveResult = await ingredientMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
+        return;
       }
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
+
       subIngredientRef.current = undefined;
       const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
       if (editIdx >= 0) squashCascade(cascadeStack.slice(0, editIdx + 1));
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [cascadeStack, squashCascade, ingredientMutation]
   );
 
   const handleSubIngredientCancel = useCallback((): void => {
@@ -540,20 +635,19 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
       const baseId = entity.baseId as BaseFillingId;
       const compositeId = `${fillingCollectionId}.${baseId}` as FillingId;
-      const colResult = workspace.data.entities.fillings.collections.get(fillingCollectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) return;
-      colResult.value.items.set(baseId, entity);
-      const editableResult = workspace.data.entities.getEditableFillingsRecipeEntityCollection(
-        fillingCollectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) await editable.save();
+
+      const createResult = await fillingMutation.createEntity({
+        mutableCollectionId: fillingCollectionId,
+        baseId,
+        entity,
+        compositeId,
+        exists: (id: FillingId) => workspace.data.fillings.get(id).isSuccess(),
+        persistToDisk: true
+      });
+      if (createResult.isFailure()) {
+        return;
       }
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
+
       setSubEntitySeed('');
       const wrapperResult = LibraryRuntime.EditedFillingRecipe.create(entity);
       if (wrapperResult.isSuccess()) {
@@ -567,7 +661,7 @@ export function ConfectionsTabContent(): React.ReactElement {
         ]);
       }
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [workspace, cascadeStack, squashCascade, fillingMutation]
   );
 
   const handleSubFillingSave = useCallback(
@@ -576,27 +670,23 @@ export function ConfectionsTabContent(): React.ReactElement {
       if (!subState) return;
       const entity = subState.wrapper.current;
       const compositeId = subState.id;
-      const collectionId = compositeId.split('.')[0] as CollectionId;
       const baseId = entity.baseId as BaseFillingId;
-      const colResult = workspace.data.entities.fillings.collections.get(collectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) return;
-      colResult.value.items.set(baseId, entity);
-      const editableResult = workspace.data.entities.getEditableFillingsRecipeEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) await editable.save();
+
+      const saveResult = await fillingMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
+        return;
       }
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
+
       subFillingRef.current = undefined;
       const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
       if (editIdx >= 0) squashCascade(cascadeStack.slice(0, editIdx + 1));
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [cascadeStack, squashCascade, fillingMutation]
   );
 
   const handleSubFillingCancel = useCallback((): void => {
@@ -620,20 +710,19 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
       const baseId = entity.baseId as BaseProcedureId;
       const compositeId = `${procedureCollectionId}.${baseId}` as ProcedureId;
-      const colResult = workspace.data.entities.procedures.collections.get(procedureCollectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) return;
-      colResult.value.items.set(baseId, entity);
-      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(
-        procedureCollectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) await editable.save();
+
+      const createResult = await procedureMutation.createEntity({
+        mutableCollectionId: procedureCollectionId,
+        baseId,
+        entity,
+        compositeId,
+        exists: (id: ProcedureId) => workspace.data.procedures.get(id).isSuccess(),
+        persistToDisk: true
+      });
+      if (createResult.isFailure()) {
+        return;
       }
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
+
       setSubEntitySeed('');
       const wrapperResult = LibraryRuntime.EditedProcedure.create(entity);
       if (wrapperResult.isSuccess()) {
@@ -647,7 +736,7 @@ export function ConfectionsTabContent(): React.ReactElement {
         ]);
       }
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [workspace, cascadeStack, squashCascade, procedureMutation]
   );
 
   const handleSubProcedureSave = useCallback(
@@ -655,27 +744,23 @@ export function ConfectionsTabContent(): React.ReactElement {
       const entity = wrapper.current;
       const compositeId = subProcedureRef.current?.id;
       if (!compositeId) return;
-      const collectionId = compositeId.split('.')[0] as CollectionId;
       const baseId = entity.baseId as BaseProcedureId;
-      const colResult = workspace.data.entities.procedures.collections.get(collectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) return;
-      colResult.value.items.set(baseId, entity);
-      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) await editable.save();
+
+      const saveResult = await procedureMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
+        return;
       }
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
+
       subProcedureRef.current = undefined;
       const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
       if (editIdx >= 0) squashCascade(cascadeStack.slice(0, editIdx + 1));
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [cascadeStack, squashCascade, procedureMutation]
   );
 
   const handleSubProcedureCancel = useCallback((): void => {

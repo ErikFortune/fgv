@@ -984,6 +984,9 @@ export type DetailedFailureContinuation<T, TD> = (message: string, detail?: TD) 
 // @beta
 export type DetailedResult<T, TD> = DetailedSuccess<T, TD> | DetailedFailure<T, TD>;
 
+// @beta
+export type DetailedResultValueType<T> = T extends DetailedResult<infer TV, unknown> ? TV : never;
+
 // @public
 export class DetailedSuccess<out T, out TD> extends Success<T> {
     constructor(value: T, detail?: TD);
@@ -1780,6 +1783,9 @@ export interface IResultReportOptions<TD = unknown> {
     failure?: MessageLogLevel | IMessageReportDetail<TD>;
     success?: MessageLogLevel | IMessageReportDetail<TD>;
 }
+
+// @beta
+export type IResultValueType<T> = T extends IResult<infer TV> ? TV : never;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2579,6 +2585,11 @@ class ResultMapValidator<TK extends string = string, TV = unknown> implements IR
 //
 // @public
 type ResultMapValueFactory<TK extends string = string, TV = unknown> = (key: TK) => Result<TV>;
+
+// @beta
+export type ResultMapValueType<TCollection extends {
+    get: (...args: readonly unknown[]) => unknown;
+}> = Exclude<IResultValueType<ReturnType<TCollection['get']>>, undefined>;
 
 // @beta
 export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;

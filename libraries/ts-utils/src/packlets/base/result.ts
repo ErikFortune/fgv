@@ -66,6 +66,23 @@ export type FailureContinuation<T> = (message: string) => Result<T>;
 export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
 
 /**
+ * Type inference to determine the result type of an {@link IResult}.
+ * @beta
+ */
+export type IResultValueType<T> = T extends IResult<infer TV> ? TV : never;
+
+/**
+ * Type inference to determine the value type returned from a result-map style
+ * `get` method.
+ * @remarks
+ * Useful for extracting collection entry types from maps whose `get` method
+ * returns an {@link IResult}.
+ * @beta
+ */
+export type ResultMapValueType<TCollection extends { get: (...args: readonly unknown[]) => unknown }> =
+  Exclude<IResultValueType<ReturnType<TCollection['get']>>, undefined>;
+
+/**
  * Formats an error message.
  * @param message - The error message to be formatted.
  * @param detail - An optional detail to be included in the formatted message.
@@ -998,10 +1015,16 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
 }
 
 /**
- * Type inference to determine the result type `T` of a {@link DetailedResult | DetailedResult<T, TD>}.
+ * Represents a result with additional detail.
  * @beta
  */
 export type DetailedResult<T, TD> = DetailedSuccess<T, TD> | DetailedFailure<T, TD>;
+
+/**
+ * Type inference to determine the result type `T` of a {@link DetailedResult | DetailedResult<T, TD>}.
+ * @beta
+ */
+export type DetailedResultValueType<T> = T extends DetailedResult<infer TV, unknown> ? TV : never;
 
 /**
  * Type inference to determine the detail type `TD` of a {@link DetailedResult | DetailedResult<T, TD>}.

@@ -10,7 +10,7 @@
 
 **`Beta`**
 
-Type inference to determine the result type `T` of a DetailedResult\<T, TD\>.
+Represents a result with additional detail.
 
 ## Type Parameters
 

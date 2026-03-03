@@ -56,6 +56,23 @@ export interface IEditableEntityCollection<TEntity, TBaseId extends string> {
 }
 
 /**
+ * Infers the mutable branch of a collection entry union by requiring `items.set`.
+ *
+ * Useful when collection APIs return `readonly | mutable` entry unions and callers
+ * need a stable writable subtype for type guards.
+ *
+ * @public
+ */
+export type MutableCollectionEntryWithSet<TEntry, TBaseId extends string, TEntity> = Extract<
+  TEntry,
+  {
+    readonly items: {
+      readonly set: (id: TBaseId, entity: TEntity) => IResult<unknown>;
+    };
+  }
+>;
+
+/**
  * Options for {@link createSetInMutableCollection}.
  * @public
  */
