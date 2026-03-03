@@ -1,18 +1,12 @@
-# Chocolate World molds collection
-
 metadata:
   name: Chocolate World Molds
   description: Chocolate World polycarbonate molds
-
 items:
   chocolate-world-cw-2227:
     baseId: chocolate-world-cw-2227
     manufacturer: Chocolate World
     productNumber: CW 2227
     description: Hex Swirl
-    urls:
-      - category: product-page
-        url: https://www.chocolateworld.be/winkel/moulds/frame-moulds/CW2227
     cavities:
       kind: count
       count: 32
@@ -23,4 +17,90 @@ items:
           length: 30
           depth: 16
     format: series-2000
-    tags: [hex-swirl, praline]
+    tags:
+      - hex-swirl
+      - praline
+    urls:
+      - category: product-page
+        url: https://www.chocolateworld.be/winkel/moulds/frame-moulds/CW2227
+  chocolate-world-cw1988:
+    baseId: chocolate-world-cw1988
+    manufacturer: Chocolate World
+    productNumber: CW1988
+    description: Pleated Leaf
+    cavities:
+      kind: grid
+      columns: 7
+      rows: 3
+      info:
+        weight: 12
+        dimensions:
+          width: 30.5
+          length: 33.5
+          depth: 19
+    format: series-1000
+    tags:
+      - leaf
+      - pleated
+      - botanical
+      - polycarbonate
+      - bonbon
+    related: []
+    notes:
+      - category: ai
+        note: >-
+          Dimensions and weight per cavity sourced from multiple retailer listings (Amazon, Vantage House, Pastry Chefs
+          Boutique); consistent across sources as 33.5 x 30.5 x 19 mm and 12g. Mold size confirms series-1000
+          (135x275mm). Layout is grid 3 rows x 7 columns totaling 21 cavities.
+    urls:
+      - category: manufacturer
+        url: https://www.chocolateworld.be/
+      - category: purchase
+        url: https://www.amazon.com/Chocolate-World-CW1988-Pleated-Leaf-Polycarbonate/dp/B08NTNX7F3
+  chocolate-world-cw12060:
+    baseId: chocolate-world-cw12060
+    manufacturer: Chocolate World
+    productNumber: CW12060
+    description: The Duel (signature modern square praline with tapered design by Paul Wagemaker)
+    cavities:
+      kind: grid
+      columns: 7
+      rows: 3
+      info:
+        weight: 14
+        dimensions:
+          width: 30
+          length: 30
+          depth: 20.5
+    format: series-1000
+    tags:
+      - square
+      - modern
+      - praline
+      - bonbon
+      - polycarbonate
+      - signature
+      - paul-wagemaker
+    related: []
+    notes:
+      - category: ai
+        note: >-
+          CW12060 is a signature mold 'The Duel' designed in collaboration with Paul Wagemaker. Features 21 cavities in
+          3x7 grid layout. Cavity dimensions consistently listed as 30x30x20.5 mm with 14g chocolate capacity across
+          sources (Vantage House, Pastry Chefs Boutique, Chocolate World catalog excerpts, Sweetlink). Mold frame:
+          275x135x26 mm, confirming series-1000 format. Described as a modern square/tapered praline shape suitable for
+          bonbons. Video demo available on Chocolate World's YouTube.
+    urls:
+      - category: manufacturer
+        url: https://www.chocolateworld.be/winkel/moulds/frame-moulds/CW12060
+      - category: manufacturer
+        url: https://www.chocolateworld.be/pdf/Signature_moulds.pdf
+      - category: purchase
+        url: https://www.vantagehouse.com/product/moulds/chocolate-world-moulds/CW12060
+      - category: purchase
+        url: https://www.chocolat-chocolat.com/product/chocolate-mold-the-duel-by-paul-wagemaker
+      - category: purchase
+        url: >-
+          https://www.pastrychefsboutique.com/CHOCOLATE/Chocolate-Molds/polycarbonate-chocolate-molds/Modern-Shaped-Molds/chocolate-world-cw12060-polycarbonate-chocolate-mold-the-duel-by-paul-wagemaker-30mm-x-30mm-x-205mm-14gr-21-cavity-modern-shaped
+      - category: video
+        url: https://www.youtube.com/watch?v=FY8DJTc3eRs

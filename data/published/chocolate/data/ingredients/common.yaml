@@ -257,31 +257,6 @@ items:
       - seedless
     density: 1.05
     category: liquid
-  corn-syrup:
-    baseId: corn-syrup
-    name: Corn Syrup
-    ganacheCharacteristics:
-      cacaoFat: 0
-      sugar: 78
-      milkFat: 0
-      water: 22
-      solids: 0
-      otherFats: 0
-    description: >-
-      Light corn syrup (also known as glucose syrup from corn starch hydrolysis) — a viscous, clear sweetener primarily
-      composed of glucose, maltose, and higher oligosaccharides. Used in ganache and confections to inhibit sugar
-      crystallization, improve smoothness, add body, and extend shelf life. Typically unsweetened beyond its own sugars,
-      with no added flavors.
-    certifications:
-      - vegan
-    vegan: true
-    tags:
-      - sweetener
-      - glucose-syrup
-      - anti-crystallization
-      - confectionery
-    density: 1.38
-    category: liquid
   cocoa-butter:
     baseId: cocoa-butter
     name: Cocoa Butter
@@ -575,3 +550,239 @@ items:
       - color
       - transfer
     category: decoration
+  corn-syrup:
+    baseId: corn-syrup
+    name: Corn Syrup
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 76
+      milkFat: 0
+      water: 24
+      solids: 0
+      otherFats: 0
+    description: >-
+      A thick, sweet syrup made from corn starch that has been processed to convert some of its glucose into fructose.
+      Corn syrup is commonly used in confectionery to prevent crystallization, add sweetness, and improve texture. It
+      helps retain moisture and extends shelf life in chocolate ganaches and other confections.
+    allergens: []
+    traceAllergens: []
+    certifications: []
+    vegan: true
+    tags:
+      - sweetener
+      - liquid-sugar
+      - anti-crystallization
+      - humectant
+      - confectionery
+      - glucose-syrup
+    density: 1.4
+    phase: liquid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+        - id: tsp
+        - id: Tbsp
+      preferredId: g
+    urls: []
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics estimated based on typical light corn syrup composition: approximately 76% sugars
+          (primarily glucose with some maltose and higher oligosaccharides) and 24% water. Standard corn syrup contains
+          minimal to no fats or milk solids. Sweetness potency estimated at 0.75 relative to sucrose, as corn syrup is
+          less sweet than table sugar. Density estimated at 1.4 g/mL for standard light corn syrup. These values may
+          vary slightly by manufacturer and whether it's light or dark corn syrup.
+    category: sugar
+    hydrationNumber: 0
+    sweetnessPotency: 0.75
+  goat-cheese-costco:
+    baseId: goat-cheese-costco
+    name: Goat Cheese (Costco)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 1
+      milkFat: 21
+      water: 60
+      solids: 17
+      otherFats: 1
+    description: >-
+      Fresh goat cheese (chèvre) from Costco, typically soft and creamy with a tangy, mild flavor. Commonly used in
+      ganaches for its unique flavor profile and smooth texture when melted.
+    manufacturer: Kirkland (Various Suppliers)
+    allergens:
+      - milk
+    traceAllergens: []
+    certifications: []
+    vegan: false
+    tags:
+      - cheese
+      - goat
+      - chèvre
+      - fresh cheese
+      - tangy
+      - creamy
+      - costco
+    density: 1.03
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+        - id: tsp
+        - id: Tbsp
+      preferredId: g
+    urls: []
+    notes:
+      - category: ai
+        note: >-
+          Nutritional composition estimated based on typical fresh goat cheese (chèvre) values: approximately 22% fat,
+          60% water, 17% protein and other solids, 1% lactose/sugar. Costco sources from multiple suppliers, so exact
+          composition may vary by region and brand. The ganacheCharacteristics represent a typical soft goat cheese
+          composition suitable for ganache applications.
+      - category: ai
+        note: >-
+          Density estimated at 1.03 g/mL based on typical fresh soft cheese density. When using in ganache, the high
+          water content (60%) should be accounted for in shelf life calculations.
+    category: dairy
+    fatContent: 22
+    waterContent: 60
+  mascarpone:
+    baseId: mascarpone
+    name: Mascarpone
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 3
+      milkFat: 44
+      water: 49
+      solids: 4
+      otherFats: 0
+    description: >-
+      Italian cream cheese made from whole cream, coagulated by the addition of citric acid or acetic acid. Known for
+      its rich, creamy texture and slightly sweet flavor. Commonly used in ganaches and desserts like tiramisu.
+    allergens:
+      - milk
+    certifications:
+      - vegetarian
+    vegan: false
+    tags:
+      - italian
+      - cream-cheese
+      - soft-cheese
+      - dessert
+      - ganache
+      - filling
+    density: 1.03
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+        - id: Tbsp
+        - id: tsp
+      preferredId: g
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics estimated based on typical mascarpone composition: approximately 44% milk fat, 49%
+          water, 3% natural milk sugars (lactose), and 4% milk solids (proteins and minerals). Values may vary slightly
+          by manufacturer and production method. Fat content and water content are typical ranges for commercial
+          mascarpone. Density estimated at 1.03 g/mL based on high fat content.
+    category: dairy
+    fatContent: 44
+    waterContent: 49
+  coffee-beans:
+    baseId: coffee-beans
+    name: Coffee Beans
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 3
+      solids: 96
+      otherFats: 1
+    description: >-
+      Whole roasted coffee beans used to infuse flavor into creams, ganaches, and other chocolate preparations. Can be
+      used whole for steeping or ground for direct incorporation. Provides rich coffee flavor and aroma to chocolate
+      confections.
+    allergens: []
+    traceAllergens: []
+    certifications: []
+    vegan: true
+    tags:
+      - coffee
+      - beans
+      - infusion
+      - flavor
+      - aromatic
+      - roasted
+    density: 0.65
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: tsp
+        - id: Tbsp
+      preferredId: g
+    urls: []
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics estimated for typical roasted coffee beans: approximately 96% solids (including
+          cellulose, proteins, minerals, and coffee oils), 3% residual water, and 1% coffee oils (counted as otherFats).
+          These beans are typically used for infusion rather than direct incorporation into ganache, so their
+          composition affects flavor extraction rather than ganache texture. Density estimated at 0.65 g/mL for whole
+          roasted beans. For use in ganache, beans are typically steeped in cream or other liquids to extract flavor
+          compounds, then strained out.
+    category: flavor
+  maple-syrup:
+    baseId: maple-syrup
+    name: Maple Syrup
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 66
+      milkFat: 0
+      water: 33
+      solids: 1
+      otherFats: 0
+    description: >-
+      Pure maple syrup produced by concentrating the sap of sugar maple trees through evaporation. It delivers a
+      distinctive complex sweetness with caramel, woody, and vanilla-like notes, making it ideal for enhancing chocolate
+      ganaches, pralines, and flavored fillings while contributing natural moisture and subtle acidity.
+    allergens: []
+    traceAllergens: []
+    certifications:
+      - all-natural
+      - vegan
+      - vegetarian
+      - non-gmo
+      - kosher
+    vegan: true
+    tags:
+      - sweetener
+      - maple-flavor
+      - natural-syrup
+      - liquid-sweetener
+    density: 1.33
+    phase: liquid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+        - id: tsp
+        - id: Tbsp
+      preferredId: mL
+    urls:
+      - category: wikipedia
+        url: https://en.wikipedia.org/wiki/Maple_syrup
+    notes:
+      - category: ai
+        note: >-
+          GanacheCharacteristics based on standard pure maple syrup composition (minimum 66° Brix): ~66% sugars
+          (primarily sucrose with trace glucose/fructose), ~33% water, ~1% other solids (minerals/organic
+          acids/phenolics). Density averaged from industry sources (1.32–1.37 g/mL). Sweetness potency 0.6 relative to
+          sucrose per Quebec maple industry technical data for the syrup as used. Hydration number 0 (anhydrous sucrose
+          dominant). Generic values for unspecified pure maple syrup; minor batch variations possible by grade/producer.
+    category: sugar
+    hydrationNumber: 0
+    sweetnessPotency: 0.6

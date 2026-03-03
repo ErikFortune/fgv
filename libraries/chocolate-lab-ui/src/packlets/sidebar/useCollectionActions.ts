@@ -195,28 +195,25 @@ export function useCollectionActions(): ICollectionActions {
 
     const tree = treeResult.value;
 
-    // Try to navigate to the sub-library directory for the active tab
-    const subLibraryPath = getSubLibraryPathForTab(activeTab);
+    // Pass the tree root to loadFromFileTreeSource — the sub-library's
+    // directoryNavigator handles navigating to the correct sub-path (e.g., data/ingredients).
+    // This matches restoreSavedDirectories which also passes the root.
     const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
 
-    if (!subLibraryPath || !subLibrary) {
+    if (!subLibrary) {
       workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
       return;
     }
 
-    // Try the sub-library path first (e.g., data/ingredients)
-    // If that fails, try the root (user may have pointed at the sub-library dir directly)
-    const dirResult = tree.getDirectory(`/${subLibraryPath}`);
-    const sourceDirResult = dirResult.isSuccess() ? dirResult : tree.getDirectory('/');
-
-    if (sourceDirResult.isFailure()) {
-      workspace.data.logger.error(`Failed to find data directory: ${sourceDirResult.message}`);
+    const rootResult = tree.getDirectory('/');
+    if (rootResult.isFailure()) {
+      workspace.data.logger.error(`Failed to access directory root: ${rootResult.message}`);
       return;
     }
 
     const loadResult = subLibrary.loadFromFileTreeSource({
       sourceName: dirHandle.name,
-      directory: sourceDirResult.value,
+      directory: rootResult.value,
       load: true,
       mutable: true
     });

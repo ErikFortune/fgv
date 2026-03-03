@@ -1,0 +1,39 @@
+metadata:
+  name: Greyas
+  description: Polycarbonate Chocolate Molds by Greyas plastics
+items:
+  greyas-cm-3843:
+    baseId: greyas-cm-3843
+    manufacturer: Greyas
+    productNumber: CM-3843
+    description: Heart‑cylinder (Luis Amado Signature)
+    cavities:
+      kind: grid
+      columns: 6
+      rows: 4
+      info:
+        weight: 12.5
+        dimensions:
+          width: 30
+          length: 30
+          depth: 16
+    format: series-2000
+    tags:
+      - polycarbonate
+      - bonbon
+      - heart
+      - cylinder
+      - luis-amado
+    related: []
+    notes:
+      - category: ai
+        note: >-
+          Dimensions, weight, cavity count, and frame size are taken from product listings (24 cavities, 30×16 mm, 12.5
+          g, 275×175 mm). Grid layout inferred from 24‑piece arrangement.
+    urls:
+      - category: purchase
+        url: https://greyas.com/products/cm-3843-luis-amado-signature-herz-pralinen-schokoladenform
+      - category: purchase
+        url: https://homenkitchenshop.com/products/greyas-cm-3843-louis-amado-clear-polycarbonate-chocolate-mold
+      - category: purchase
+        url: https://amazon.com/dp/B09QD36Q4J

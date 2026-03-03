@@ -2,14 +2,19 @@
 // Run 'rushx build:data' to regenerate from source YAML files
 //
 // Source files:
+//   - data/published/ingredients/alcohol.yaml
 //   - data/published/ingredients/cacao-barry.yaml
 //   - data/published/ingredients/callebaut.yaml
 //   - data/published/ingredients/common.yaml
+//   - data/published/ingredients/decorations.yaml
 //   - data/published/ingredients/felchlin.yaml
+//   - data/published/ingredients/flavors.yaml
 //   - data/published/ingredients/guittard.yaml
 //   - data/published/fillings/common.yaml
 //   - data/published/molds/common.yaml
 //   - data/published/molds/cw.yaml
+//   - data/published/molds/greyas.yaml
+//   - data/published/molds/implast.yaml
 //   - data/published/procedures/common.yaml
 //   - data/published/tasks/common.yaml
 //   - data/published/confections/common.yaml
@@ -24,6 +29,771 @@ import { JsonObject } from '@fgv/ts-json-base';
  * @public
  */
 export const ingredientCollections: Record<string, JsonObject> = {
+  alcohol: {
+    metadata: {
+      name: 'Alcohol'
+    },
+    items: {
+      'amarula-cream-liqueur': {
+        baseId: 'amarula-cream-liqueur',
+        name: 'Amarula Cream Liqueur',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 14,
+          milkFat: 8,
+          water: 60,
+          solids: 3,
+          otherFats: 15
+        },
+        description:
+          'A cream liqueur from South Africa made from the fruit of the marula tree (Sclerocarya birrea). The liqueur has a smooth, creamy texture with flavors of caramel, vanilla, and exotic fruit. The marula fruit is fermented and distilled, then blended with cream and aged in oak barrels for two years.',
+        manufacturer: 'Distell Group Limited',
+        allergens: ['milk'],
+        traceAllergens: [],
+        certifications: [],
+        vegan: false,
+        tags: [
+          'cream liqueur',
+          'south african',
+          'marula',
+          'liqueur',
+          'alcohol',
+          'dairy liqueur',
+          'exotic fruit'
+        ],
+        density: 1.05,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'tsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [
+          {
+            category: 'manufacturer',
+            url: 'https://www.amarula.com'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated based on typical cream liqueur composition: approximately 17% ABV (alcohol/water mix ~60% water), cream content contributing ~8% milk fat and ~15% other fats, sugar content ~14%, and remaining solids ~3%. These percentages are estimates based on standard cream liqueur formulations and may vary slightly from the actual product composition.'
+          },
+          {
+            category: 'ai',
+            note: 'Density estimated at 1.05 g/mL based on typical cream liqueur density, which is slightly higher than water due to sugar and cream content but lower than pure cream due to alcohol content.'
+          },
+          {
+            category: 'usage',
+            note: 'When using in ganache, the alcohol and high water content must be carefully balanced. The cream component adds richness but also increases perishability. Consider reducing other liquid ingredients proportionally.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 17,
+        flavorProfile:
+          'Rich and creamy with notes of caramel, vanilla, and exotic marula fruit. Smooth texture with a sweet finish and subtle hints of toasted oak from barrel aging.'
+      },
+      'baileys-irish-cream': {
+        baseId: 'baileys-irish-cream',
+        name: "Bailey's Irish Cream",
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 20,
+          milkFat: 13,
+          water: 50,
+          solids: 12,
+          otherFats: 5
+        },
+        description:
+          "A premium Irish cream liqueur made with Irish whiskey, cream, and cocoa. Bailey's is a sweet, creamy liqueur with notes of vanilla, chocolate, and caramel. It's commonly used in ganaches, truffles, and dessert applications to add both alcohol flavor and dairy richness.",
+        manufacturer: 'Diageo',
+        allergens: ['milk'],
+        traceAllergens: [],
+        certifications: [],
+        vegan: false,
+        tags: ['irish-cream', 'liqueur', 'whiskey', 'cream-based', 'dessert-alcohol'],
+        density: 1.05,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [
+          {
+            category: 'manufacturer',
+            url: 'https://www.baileys.com'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: "Ganache characteristics estimated based on Bailey's composition: approximately 13% cream fat, 17% alcohol (as water equivalent for ganache purposes), 20% sugar, with remaining being milk solids, whiskey solids, and flavoring compounds. The alcoholByVolume is the actual ABV of the product (17%). Water content in ganacheCharacteristics includes the water component of the alcohol for ganache ratio calculations."
+          },
+          {
+            category: 'ai',
+            note: 'Density estimated at 1.05 g/mL based on typical cream liqueur specifications.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 17,
+        flavorProfile:
+          'Sweet and creamy with notes of Irish whiskey, vanilla, chocolate, and caramel. Smooth, velvety texture with a warming alcohol finish.'
+      },
+      chambord: {
+        baseId: 'chambord',
+        name: 'Chambord',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 18,
+          milkFat: 0,
+          water: 65,
+          solids: 2,
+          otherFats: 15
+        },
+        description:
+          'Chambord is a premium black raspberry liqueur from the Loire Valley, France, made with black raspberries, blackberries, Madagascar vanilla, cognacs, honey, and secret macerates. It offers a rich, fruity profile ideal for infusing ganaches, mousses, and cocktails.',
+        manufacturer: 'Brown-Forman',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: false,
+        tags: ['liqueur', 'raspberry', 'fruity', 'vanilla', 'cognac', 'blackberry'],
+        density: 1.05,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [
+          {
+            category: 'official',
+            url: 'https://www.chambordusa.com/'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics are estimates for use in chocolate ganache recipes: water as base solvent, sugar from sweeteners (incl. honey), minimal solids from fruit extracts and vanilla, otherFats approximating ethanol and minor oils (alcohol not a fat but grouped here for schema). Percentages sum to 100. Vegan=false due to honey. Density estimated from similar sugared liqueurs. No major allergens from provided enum.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 16.5,
+        flavorProfile:
+          'Intense black raspberry and blackberry with smooth cognac, Madagascar vanilla, subtle honey, and hints of currant and violet.'
+      },
+      'grand-marnier': {
+        baseId: 'grand-marnier',
+        name: 'Grand Marnier',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 25,
+          milkFat: 0,
+          water: 70,
+          solids: 5,
+          otherFats: 0
+        },
+        description:
+          'Grand Marnier is a premium French orange liqueur created in 1880. It blends fine Cognac brandy with the distilled essence of bitter oranges and a touch of sugar, offering a rich, complex flavor profile ideal for flavoring ganaches, truffles, creams, and other chocolate confections.',
+        manufacturer: 'Société des Produits Marnier-Lapostolle',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['orange', 'liqueur', 'brandy', 'cognac', 'french', 'citrus', 'premium'],
+        density: 1.07,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [
+          {
+            category: 'official',
+            url: 'https://www.grandmarnier.com/'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: "Ganache characteristics estimated: 'water' (70%) includes water + ethanol (~32% wt from 40% ABV, density-adjusted); sugar (25%) based on typical liqueur Brix/sweetness for Grand Marnier (~200-250g/L); solids (5%) for orange essences, trace flavors, and impurities. No fats present. Density estimated from ABV and sugar content. Confirmed gluten-free as distilled spirit; no other allergens detected."
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 40,
+        flavorProfile: 'Intense bitter orange with Cognac brandy undertones, vanilla, and subtle spice notes.'
+      },
+      cointreau: {
+        baseId: 'cointreau',
+        name: 'Cointreau',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 10,
+          milkFat: 0,
+          water: 30,
+          solids: 0,
+          otherFats: 0
+        },
+        description:
+          "Cointreau is a brand of triple sec, an orange-flavored liqueur produced in Saint-Barthélemy-d'Anjou, France. It is used in a wide variety of cocktails and culinary applications.",
+        manufacturer: 'Rémy Cointreau',
+        vegan: true,
+        tags: ['liqueur', 'orange', 'triple sec', 'French'],
+        density: 1.1,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'tsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [
+          {
+            category: 'official',
+            url: 'https://www.cointreau.com'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: 'The ganacheCharacteristics percentages are estimated based on typical liqueur compositions. Exact values may vary.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 40,
+        flavorProfile: 'Sweet and zesty orange with a hint of bitterness'
+      },
+      rum: {
+        baseId: 'rum',
+        name: 'Rum',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 60,
+          solids: 0,
+          otherFats: 0
+        },
+        description:
+          'Rum is a distilled alcoholic beverage made from sugarcane byproducts, such as molasses, or directly from sugarcane juice, through a process of fermentation and distillation.',
+        manufacturer: 'Various',
+        traceAllergens: [],
+        certifications: ['gluten-free', 'vegan'],
+        vegan: true,
+        tags: ['caribbean', 'distilled', 'aged'],
+        density: 0.95,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'The ganache characteristics are estimated based on typical rum composition, assuming 40% ABV and 60% water content. The flavor profile is generalized and may vary between different brands and types of rum.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 40,
+        flavorProfile: 'Aged, sweet, and spicy with notes of vanilla, caramel, and oak'
+      },
+      bourbon: {
+        baseId: 'bourbon',
+        name: 'Bourbon',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 60,
+          solids: 0,
+          otherFats: 0
+        },
+        manufacturer: 'Various distilleries',
+        certifications: ['non-gmo'],
+        tags: ['whiskey', 'spirit', 'oak-aged'],
+        density: 0.95,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [
+          {
+            category: 'information',
+            url: 'https://en.wikipedia.org/wiki/Bourbon_whiskey'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Assumed typical ABV of bourbon as 40% and estimated water content. Flavor profile generalized based on typical bourbon characteristics.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 40,
+        flavorProfile: 'Rich and oaky with notes of vanilla and caramel'
+      },
+      whiskey: {
+        baseId: 'whiskey',
+        name: 'Whiskey',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 40,
+          solids: 0,
+          otherFats: 0
+        },
+        description:
+          'Whiskey is a distilled alcoholic beverage made from fermented grain mash, often aged in wooden casks.',
+        manufacturer: 'Various',
+        tags: ['spirits', 'flavor', 'distilled'],
+        density: 0.95,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'tsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Alcohol by volume and water content are estimated based on typical whiskey composition. Flavor profile is generalized and may vary depending on specific whiskey brand.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 40,
+        flavorProfile: 'Rich, smoky, and oaky with hints of caramel and vanilla.'
+      },
+      'almond-liqueur': {
+        baseId: 'almond-liqueur',
+        name: 'Almond Liqueur',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 20,
+          milkFat: 0,
+          water: 30,
+          solids: 0,
+          otherFats: 50
+        },
+        description:
+          'A sweet, nutty liqueur made from almonds, often used in baking and confectionery for its distinct flavor.',
+        tags: ['nutty', 'sweet', 'liqueur', 'almond'],
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Assumed typical composition for an almond liqueur. Exact sugar and fat content may vary by brand.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 25,
+        flavorProfile: 'Sweet, nutty almond flavor with a hint of vanilla.'
+      },
+      amaretto: {
+        baseId: 'amaretto',
+        name: 'Amaretto',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 20,
+          milkFat: 0,
+          water: 10,
+          solids: 10,
+          otherFats: 0
+        },
+        description:
+          'Amaretto is a sweet, almond-flavored liqueur originating from Italy. It is commonly used in desserts, cocktails, and baking for its distinctive flavor.',
+        manufacturer: 'Various',
+        traceAllergens: ['nuts'],
+        certifications: ['vegetarian'],
+        vegan: false,
+        tags: ['liqueur', 'almond', 'sweet'],
+        density: 1.1,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'tsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'The composition percentages are estimated based on typical Amaretto formulations. Actual values may vary by brand. Assumed water and sugar content based on typical liqueur properties.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 28,
+        flavorProfile: 'Sweet, with a distinct almond flavor, often with hints of vanilla and cherry.'
+      },
+      frangelico: {
+        baseId: 'frangelico',
+        name: 'Frangelico',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 10,
+          milkFat: 0,
+          water: 30,
+          solids: 5,
+          otherFats: 55
+        },
+        description:
+          'Frangelico is a brand of noisette and herb-flavored liqueur which is produced in Canale, Italy. It has a rich hazelnut flavor with hints of vanilla and cocoa.',
+        manufacturer: 'Frangelico',
+        allergens: ['nuts'],
+        certifications: ['vegetarian'],
+        vegan: false,
+        tags: ['liqueur', 'hazelnut', 'Italian'],
+        density: 1.1,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'The ganacheCharacteristics percentages are estimated based on typical liqueur compositions. The water content is assumed to be relatively high, and otherFats represent the alcohol and flavor oils.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 24,
+        flavorProfile: 'Rich hazelnut flavor with notes of vanilla and cocoa'
+      },
+      'eierlik-r': {
+        baseId: 'eierlik-r',
+        name: 'Eierlikör',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 20,
+          milkFat: 10,
+          water: 30,
+          solids: 5,
+          otherFats: 35
+        },
+        description:
+          'Eierlikör is a creamy, egg-based liqueur originating from Germany, often used in desserts and chocolates.',
+        allergens: ['eggs', 'milk'],
+        certifications: ['gluten-free'],
+        tags: ['liqueur', 'creamy', 'dessert'],
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Assumed typical percentages for Eierlikör based on general knowledge of its composition. Specific brand formulations may vary.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 20,
+        flavorProfile: 'Rich, creamy, and sweet with notes of vanilla and a hint of rum or brandy.'
+      },
+      kahlua: {
+        baseId: 'kahlua',
+        name: 'Kahlua',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 45,
+          milkFat: 0,
+          water: 30,
+          solids: 5,
+          otherFats: 20
+        },
+        description:
+          'Kahlua is a coffee-flavored liqueur from Mexico. It contains rum, sugar, vanilla bean, and arabica coffee.',
+        tags: ['coffee', 'liqueur', 'mexican'],
+        density: 1.1,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'tsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [
+          {
+            category: 'official',
+            url: 'https://www.kahlua.com'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: "Estimated the percentages for ganache characteristics based on typical liqueur compositions and Kahlua's known ingredients. Exact values may vary."
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 20,
+        flavorProfile: 'Rich coffee with notes of vanilla and caramel'
+      },
+      'tia-maria': {
+        baseId: 'tia-maria',
+        name: 'Tia Maria',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 20,
+          milkFat: 0,
+          water: 60,
+          solids: 0,
+          otherFats: 20
+        },
+        description:
+          'Tia Maria is a coffee liqueur made using Jamaican coffee beans, vanilla, and sugar blended with Jamaican rum.',
+        manufacturer: 'Illva Saronno',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: false,
+        tags: ['coffee liqueur', 'Jamaican rum', 'vanilla', 'sugar'],
+        density: 1.1,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [
+          {
+            category: 'product',
+            url: 'https://www.tiamaria.com'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: 'The ganache characteristics are estimated based on typical liqueur composition as specific product formulation details are not publicly available.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 20,
+        flavorProfile: 'Rich coffee flavor with hints of vanilla and chocolate.'
+      },
+      gin: {
+        baseId: 'gin',
+        name: 'Gin',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 60,
+          solids: 0,
+          otherFats: 40
+        },
+        description:
+          'A distilled alcoholic spirit flavored primarily with juniper berries and various botanicals. Gin adds aromatic complexity and helps preserve ganaches while lowering water activity. The botanical notes can complement chocolate, particularly dark chocolate with citrus or floral profiles.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['spirit', 'botanical', 'juniper', 'alcohol', 'liquor', 'ganache-ingredient', 'preservation'],
+        density: 0.95,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'tsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: "Assumed standard gin at 40% ABV (80 proof), which is the most common strength. Premium gins may range from 37.5% to 47% ABV. For ganache characteristics: 60% water, 40% classified as 'otherFats' (representing the alcohol/ethanol component since there is no dedicated alcohol field in the schema). Actual botanical extract content is minimal (<1%). Density estimated at 0.95 g/mL for 40% ABV ethanol-water mixture."
+          },
+          {
+            category: 'usage',
+            note: 'When using gin in ganache, alcohol content affects shelf stability and texture. Typically used at 5-10% of total ganache weight. Alcohol inhibits crystallization and reduces water activity, extending shelf life. Consider that alcohol will not fully evaporate in ganache applications.'
+          }
+        ],
+        category: 'alcohol',
+        alcoholByVolume: 40,
+        flavorProfile:
+          'Juniper-forward with botanical notes including coriander, citrus peel, angelica root, and various herbs and spices. Flavor varies significantly by brand and style (London Dry, Plymouth, Old Tom, etc.).'
+      }
+    }
+  },
   'cacao-barry': {
     metadata: {
       name: 'Cacao Barry Chocolates',
@@ -621,25 +1391,6 @@ export const ingredientCollections: Record<string, JsonObject> = {
         density: 1.05,
         category: 'liquid'
       },
-      'corn-syrup': {
-        baseId: 'corn-syrup',
-        name: 'Corn Syrup',
-        ganacheCharacteristics: {
-          cacaoFat: 0,
-          sugar: 78,
-          milkFat: 0,
-          water: 22,
-          solids: 0,
-          otherFats: 0
-        },
-        description:
-          'Light corn syrup (also known as glucose syrup from corn starch hydrolysis) — a viscous, clear sweetener primarily composed of glucose, maltose, and higher oligosaccharides. Used in ganache and confections to inhibit sugar crystallization, improve smoothness, add body, and extend shelf life. Typically unsweetened beyond its own sugars, with no added flavors.',
-        certifications: ['vegan'],
-        vegan: true,
-        tags: ['sweetener', 'glucose-syrup', 'anti-crystallization', 'confectionery'],
-        density: 1.38,
-        category: 'liquid'
-      },
       'cocoa-butter': {
         baseId: 'cocoa-butter',
         name: 'Cocoa Butter',
@@ -885,6 +1636,414 @@ export const ingredientCollections: Record<string, JsonObject> = {
         vegan: true,
         tags: ['decoration', 'cocoa-butter', 'color', 'transfer'],
         category: 'decoration'
+      },
+      'corn-syrup': {
+        baseId: 'corn-syrup',
+        name: 'Corn Syrup',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 76,
+          milkFat: 0,
+          water: 24,
+          solids: 0,
+          otherFats: 0
+        },
+        description:
+          'A thick, sweet syrup made from corn starch that has been processed to convert some of its glucose into fructose. Corn syrup is commonly used in confectionery to prevent crystallization, add sweetness, and improve texture. It helps retain moisture and extends shelf life in chocolate ganaches and other confections.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: [
+          'sweetener',
+          'liquid-sugar',
+          'anti-crystallization',
+          'humectant',
+          'confectionery',
+          'glucose-syrup'
+        ],
+        density: 1.4,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: "Ganache characteristics estimated based on typical light corn syrup composition: approximately 76% sugars (primarily glucose with some maltose and higher oligosaccharides) and 24% water. Standard corn syrup contains minimal to no fats or milk solids. Sweetness potency estimated at 0.75 relative to sucrose, as corn syrup is less sweet than table sugar. Density estimated at 1.4 g/mL for standard light corn syrup. These values may vary slightly by manufacturer and whether it's light or dark corn syrup."
+          }
+        ],
+        category: 'sugar',
+        hydrationNumber: 0,
+        sweetnessPotency: 0.75
+      },
+      'goat-cheese-costco': {
+        baseId: 'goat-cheese-costco',
+        name: 'Goat Cheese (Costco)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 1,
+          milkFat: 21,
+          water: 60,
+          solids: 17,
+          otherFats: 1
+        },
+        description:
+          'Fresh goat cheese (chèvre) from Costco, typically soft and creamy with a tangy, mild flavor. Commonly used in ganaches for its unique flavor profile and smooth texture when melted.',
+        manufacturer: 'Kirkland (Various Suppliers)',
+        allergens: ['milk'],
+        traceAllergens: [],
+        certifications: [],
+        vegan: false,
+        tags: ['cheese', 'goat', 'chèvre', 'fresh cheese', 'tangy', 'creamy', 'costco'],
+        density: 1.03,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Nutritional composition estimated based on typical fresh goat cheese (chèvre) values: approximately 22% fat, 60% water, 17% protein and other solids, 1% lactose/sugar. Costco sources from multiple suppliers, so exact composition may vary by region and brand. The ganacheCharacteristics represent a typical soft goat cheese composition suitable for ganache applications.'
+          },
+          {
+            category: 'ai',
+            note: 'Density estimated at 1.03 g/mL based on typical fresh soft cheese density. When using in ganache, the high water content (60%) should be accounted for in shelf life calculations.'
+          }
+        ],
+        category: 'dairy',
+        fatContent: 22,
+        waterContent: 60
+      },
+      mascarpone: {
+        baseId: 'mascarpone',
+        name: 'Mascarpone',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 3,
+          milkFat: 44,
+          water: 49,
+          solids: 4,
+          otherFats: 0
+        },
+        description:
+          'Italian cream cheese made from whole cream, coagulated by the addition of citric acid or acetic acid. Known for its rich, creamy texture and slightly sweet flavor. Commonly used in ganaches and desserts like tiramisu.',
+        allergens: ['milk'],
+        certifications: ['vegetarian'],
+        vegan: false,
+        tags: ['italian', 'cream-cheese', 'soft-cheese', 'dessert', 'ganache', 'filling'],
+        density: 1.03,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'tsp'
+            }
+          ],
+          preferredId: 'g'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated based on typical mascarpone composition: approximately 44% milk fat, 49% water, 3% natural milk sugars (lactose), and 4% milk solids (proteins and minerals). Values may vary slightly by manufacturer and production method. Fat content and water content are typical ranges for commercial mascarpone. Density estimated at 1.03 g/mL based on high fat content.'
+          }
+        ],
+        category: 'dairy',
+        fatContent: 44,
+        waterContent: 49
+      },
+      'coffee-beans': {
+        baseId: 'coffee-beans',
+        name: 'Coffee Beans',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 3,
+          solids: 96,
+          otherFats: 1
+        },
+        description:
+          'Whole roasted coffee beans used to infuse flavor into creams, ganaches, and other chocolate preparations. Can be used whole for steeping or ground for direct incorporation. Provides rich coffee flavor and aroma to chocolate confections.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['coffee', 'beans', 'infusion', 'flavor', 'aromatic', 'roasted'],
+        density: 0.65,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated for typical roasted coffee beans: approximately 96% solids (including cellulose, proteins, minerals, and coffee oils), 3% residual water, and 1% coffee oils (counted as otherFats). These beans are typically used for infusion rather than direct incorporation into ganache, so their composition affects flavor extraction rather than ganache texture. Density estimated at 0.65 g/mL for whole roasted beans. For use in ganache, beans are typically steeped in cream or other liquids to extract flavor compounds, then strained out.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'maple-syrup': {
+        baseId: 'maple-syrup',
+        name: 'Maple Syrup',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 66,
+          milkFat: 0,
+          water: 33,
+          solids: 1,
+          otherFats: 0
+        },
+        description:
+          'Pure maple syrup produced by concentrating the sap of sugar maple trees through evaporation. It delivers a distinctive complex sweetness with caramel, woody, and vanilla-like notes, making it ideal for enhancing chocolate ganaches, pralines, and flavored fillings while contributing natural moisture and subtle acidity.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: ['all-natural', 'vegan', 'vegetarian', 'non-gmo', 'kosher'],
+        vegan: true,
+        tags: ['sweetener', 'maple-flavor', 'natural-syrup', 'liquid-sweetener'],
+        density: 1.33,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [
+          {
+            category: 'wikipedia',
+            url: 'https://en.wikipedia.org/wiki/Maple_syrup'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: 'GanacheCharacteristics based on standard pure maple syrup composition (minimum 66° Brix): ~66% sugars (primarily sucrose with trace glucose/fructose), ~33% water, ~1% other solids (minerals/organic acids/phenolics). Density averaged from industry sources (1.32–1.37 g/mL). Sweetness potency 0.6 relative to sucrose per Quebec maple industry technical data for the syrup as used. Hydration number 0 (anhydrous sucrose dominant). Generic values for unspecified pure maple syrup; minor batch variations possible by grade/producer.'
+          }
+        ],
+        category: 'sugar',
+        hydrationNumber: 0,
+        sweetnessPotency: 0.6
+      }
+    }
+  },
+  decorations: {
+    metadata: {
+      name: 'Decorations'
+    },
+    items: {
+      'lustre-dust': {
+        baseId: 'lustre-dust',
+        name: 'Lustre Dust',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 0,
+          solids: 100,
+          otherFats: 0
+        },
+        description:
+          'Edible decorative powder with a shimmering, metallic finish used to add visual appeal to chocolates and confections. Available in various colors including gold, silver, bronze, and pearl. Creates a lustrous sheen when applied to chocolate surfaces.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: [
+          'decoration',
+          'edible-shimmer',
+          'metallic-finish',
+          'surface-decoration',
+          'powder',
+          'food-coloring'
+        ],
+        density: 0.4,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'pinch'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: "Lustre dust is typically composed of mica-based pearlescent pigments, titanium dioxide, and approved food colorants. The ganacheCharacteristics reflect it as 100% solids since it's a dry powder with negligible moisture. Density estimated at 0.4 g/mL as a loose powder. This is a surface decoration only and not incorporated into ganache formulations. Vegan status assumed true for most commercial lustre dusts, but specific products may vary - users should verify with manufacturer if using animal-derived pearl pigments."
+          },
+          {
+            category: 'ai',
+            note: 'Allergen information is product-specific. While pure lustre dust typically contains no common allergens, cross-contamination may occur during manufacturing. Users should verify with specific product manufacturers.'
+          }
+        ],
+        category: 'decoration'
+      },
+      'cocoa-butter-decorative': {
+        baseId: 'cocoa-butter-decorative',
+        name: 'Cocoa Butter (Decorative)',
+        ganacheCharacteristics: {
+          cacaoFat: 100,
+          sugar: 0,
+          milkFat: 0,
+          water: 0,
+          solids: 0,
+          otherFats: 0
+        },
+        description:
+          'Pure cocoa butter specifically intended for decorative applications in chocolate work, including colored cocoa butter for spray work, transfer sheets, and artistic chocolate designs. Provides a stable, crystalline fat structure that adheres well to chocolate surfaces.',
+        allergens: [],
+        traceAllergens: ['milk', 'soy', 'nuts'],
+        certifications: ['vegan', 'gluten-free', 'kosher'],
+        vegan: true,
+        tags: [
+          'cocoa-butter',
+          'decorative',
+          'spray',
+          'coloring',
+          'artistic',
+          'transfer-sheets',
+          'pure-fat',
+          'tempering'
+        ],
+        density: 0.91,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics represent pure cocoa butter at 100% cacao fat. Density of 0.91 g/mL is standard for cocoa butter at room temperature. Melting point of 34°C (93°F) represents the typical melting point for stable Form V crystals in tempered cocoa butter. Trace allergens listed reflect common manufacturing environments where cocoa butter is processed alongside chocolate products. This ingredient is assumed to be pure, deodorized cocoa butter suitable for decorative work, though specific manufacturers may add colorants or have different processing standards.'
+          },
+          {
+            category: 'usage',
+            note: 'When used for decorative purposes, cocoa butter should be tempered (typically heated to 45-50°C, cooled to 26-27°C, then reheated to 31-32°C) to ensure proper crystallization and shine. Colored cocoa butter is often mixed with fat-soluble powder colors at ratios of approximately 10% color to 90% cocoa butter.'
+          }
+        ],
+        category: 'fat',
+        meltingPoint: 34
+      },
+      'gold-leaf': {
+        baseId: 'gold-leaf',
+        name: 'Gold Leaf',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 0,
+          solids: 100,
+          otherFats: 0
+        },
+        description:
+          'Edible gold leaf used for decorating chocolates and confections. Typically 23-24 karat gold that has been hammered or rolled into extremely thin sheets. Adds luxury visual appeal and metallic shimmer to finished chocolate pieces.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: ['gluten-free', 'vegan', 'vegetarian', 'kosher', 'halal', 'all-natural'],
+        vegan: true,
+        tags: ['edible-gold', 'decoration', 'luxury', 'metallic', 'finishing', 'garnish', '24k', '23k'],
+        density: 5,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Gold leaf is pure elemental gold and contains no organic compounds, fats, sugars, or water. Actual gold density is 19.3 g/mL but set to maximum allowed value of 5.0 g/mL due to schema constraints. Solids percentage is 100% as it is a pure metal in solid form. Gold is biologically inert and passes through the digestive system unchanged, making it safe for consumption and suitable for all dietary restrictions. Typically sold in books of very thin sheets measured by weight in grams or by sheet count.'
+          }
+        ],
+        category: 'decoration'
       }
     }
   },
@@ -1072,6 +2231,798 @@ export const ingredientCollections: Record<string, JsonObject> = {
         tags: ['caramelized', 'blond', 'dulce'],
         allergens: ['milk'],
         vegan: false
+      }
+    }
+  },
+  flavors: {
+    metadata: {
+      name: 'Flavors'
+    },
+    items: {
+      'cinnamon-ground': {
+        baseId: 'cinnamon-ground',
+        name: 'Cinnamon (Ground)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 2,
+          milkFat: 0,
+          water: 10,
+          solids: 88,
+          otherFats: 0
+        },
+        description:
+          'Ground cinnamon is a warm, sweet spice derived from the inner bark of Cinnamomum trees. Commonly used in chocolate confections to add depth and aromatic warmth. Available in two main varieties: Ceylon (true cinnamon, sweeter and more delicate) and Cassia (more common, stronger flavor). Ground cinnamon adds complexity to ganaches, pralines, and flavored chocolates.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['spice', 'warming', 'aromatic', 'sweet', 'bark', 'ground', 'cassia', 'ceylon'],
+        density: 0.56,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'tsp'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated for typical ground cinnamon: approximately 88% solids (fiber, carbohydrates, minerals), 10% residual moisture, 2% natural sugars. The composition can vary slightly between Ceylon and Cassia varieties. Density of 0.56 g/mL is an average for ground cinnamon powder. Most cinnamon used in chocolate work is Cassia variety unless specifically labeled as Ceylon. When using in ganache, typical dosage is 0.5-2% of total weight to avoid overpowering the chocolate.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'cinnamon-whole': {
+        baseId: 'cinnamon-whole',
+        name: 'Cinnamon (Whole)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 2,
+          milkFat: 0,
+          water: 10,
+          solids: 88,
+          otherFats: 0
+        },
+        description:
+          'Whole cinnamon sticks (quills) from dried bark of Cinnamomum trees. Used for infusing creams, ganaches, and chocolate preparations. Provides warm, sweet, and slightly spicy aromatic notes. Typically steeped in hot liquid and removed before final preparation.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['spice', 'aromatic', 'infusion', 'warm-spice', 'cinnamon', 'bark', 'whole-spice', 'flavoring'],
+        density: 0.4,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated for dried whole cinnamon sticks: approximately 88% solids (cellulose, lignin, and aromatic compounds), 10% residual water, 2% natural sugars. These values represent the physical composition of the spice itself. In practice, whole cinnamon is typically infused into liquids (cream, milk) and then removed, so it contributes primarily aromatic compounds rather than mass to the final ganache. The density of 0.4 g/mL reflects the low density of dried bark pieces.'
+          },
+          {
+            category: 'ai',
+            note: "Two main types exist: Ceylon cinnamon (Cinnamomum verum, 'true cinnamon') with delicate, sweet flavor, and Cassia cinnamon (Cinnamomum cassia) with stronger, more pungent flavor. This entry represents whole sticks generically. For infusions, typical usage is 1-2 sticks per 250-500mL liquid, steeped for 10-30 minutes depending on desired intensity."
+          }
+        ],
+        category: 'flavor'
+      },
+      'cardamom-whole': {
+        baseId: 'cardamom-whole',
+        name: 'Cardamom (Whole)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 8,
+          solids: 90,
+          otherFats: 2
+        },
+        description:
+          'Whole green cardamom pods containing aromatic black seeds. A highly fragrant spice with sweet, floral, and slightly eucalyptus-like notes. Native to India and commonly used in both sweet and savory applications. The pods can be infused whole into liquids or the seeds can be ground for more intense flavor.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: [
+          'spice',
+          'aromatic',
+          'cardamom',
+          'green-cardamom',
+          'infusion',
+          'indian-spice',
+          'whole-spice',
+          'pods'
+        ],
+        density: 0.55,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'pods'
+            }
+          ],
+          preferredId: 'pods'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated for whole cardamom pods: approximately 90% solids (fiber, carbohydrates, protein), 8% water content, 2% volatile oils/fats. These pods are typically used for infusion rather than direct incorporation into ganache. The essential oils contain terpenes and other aromatic compounds. Water content is based on typical dried spice moisture levels. For ganache applications, pods are usually steeped in cream or other liquids and then removed, so the actual contribution to final ganache composition would be minimal - primarily flavor compounds rather than mass.'
+          },
+          {
+            category: 'ai',
+            note: 'Density estimated at 0.55 g/mL for whole pods, which are lightweight and contain hollow chambers. Individual pods typically weigh 0.3-0.5g each. For recipe purposes, measuring by pod count is more practical than weight.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'cardamom-ground': {
+        baseId: 'cardamom-ground',
+        name: 'Cardamom (Ground)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 8,
+          solids: 90,
+          otherFats: 2
+        },
+        description:
+          "Ground cardamom is a warm, aromatic spice with sweet, floral, and slightly citrusy notes. It's derived from the seeds of cardamom pods and is commonly used in both sweet and savory applications. In chocolate making, it adds complexity and exotic flavor, pairing particularly well with dark chocolate, white chocolate, and ganaches.",
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['spice', 'aromatic', 'warming', 'floral', 'citrus', 'middle-eastern', 'indian', 'exotic'],
+        density: 0.55,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'tsp'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated based on typical composition of ground cardamom: approximately 8% moisture content, 2% volatile oils (counted as otherFats), and 90% solids (including fiber, carbohydrates, and minerals). These values are estimates for dried, ground cardamom spice. Density of 0.55 g/mL is typical for ground spices. Use sparingly in chocolate applications as cardamom has a strong, distinctive flavor - typically 0.5-2% by weight of the chocolate mass.'
+          },
+          {
+            category: 'usage',
+            note: 'When incorporating into ganache or chocolate, bloom the cardamom in warm cream or fat first to extract maximum flavor. Start with small amounts (0.5-1% of total weight) and adjust to taste, as cardamom can quickly overpower other flavors. Pairs exceptionally well with orange, coffee, and rose flavors.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'cloves-whole': {
+        baseId: 'cloves-whole',
+        name: 'Cloves (whole)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 2,
+          milkFat: 0,
+          water: 9,
+          solids: 87,
+          otherFats: 2
+        },
+        description:
+          'Whole dried flower buds of Syzygium aromaticum, offering an intense, warm, sweet, and slightly bitter flavor with aromatic notes. Used sparingly in chocolate confections for spiced ganaches, infusions, and specialty pralines. Should be infused in cream or other liquids and strained before use.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: [
+          'spice',
+          'aromatic',
+          'warm spice',
+          'infusion',
+          'whole spice',
+          'eugenol',
+          'holiday spice',
+          'clove'
+        ],
+        density: 0.55,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'GanacheCharacteristics estimated based on typical composition of whole dried cloves: approximately 87% total solids (including fiber, volatile oils, and other dry matter), 9% moisture, 2% essential oils (counted as otherFats), and 2% natural sugars. Cloves contain 15-20% essential oils by weight, but for ganache calculations the volatile oil component is estimated conservatively at 2%. Density estimated at 0.55 g/mL for whole cloves in loose form. This ingredient should be used for infusion purposes only and strained out before incorporating into ganache.'
+          },
+          {
+            category: 'ai',
+            note: 'Usage recommendation: Typically infused at 1-3 whole cloves per 100g of cream or liquid, then strained. Direct incorporation into ganache is not recommended due to the hard, woody texture of whole cloves.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'cloves-ground': {
+        baseId: 'cloves-ground',
+        name: 'Cloves (Ground)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 2,
+          milkFat: 0,
+          water: 9,
+          solids: 87,
+          otherFats: 2
+        },
+        description:
+          'Ground cloves are a warm, aromatic spice derived from the dried flower buds of the clove tree (Syzygium aromaticum). They have an intensely pungent, sweet-spicy flavor with notes of pepper and a slightly bitter undertone. Used sparingly in chocolate applications to add warmth and complexity, particularly in spiced ganaches, truffles, and holiday confections. Pairs well with cinnamon, nutmeg, and orange.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: [
+          'spice',
+          'aromatic',
+          'warming',
+          'holiday',
+          'traditional',
+          'pungent',
+          'eugenol',
+          'asian-spice',
+          'indonesian',
+          'madagascar'
+        ],
+        density: 0.55,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'tsp'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated based on typical composition of ground cloves: primarily fiber and carbohydrates (solids ~87%), residual moisture (~9%), small amounts of natural sugars (~2%), and essential oils containing eugenol (~2% as otherFats). Density of 0.55 g/mL is typical for ground spices. Use very sparingly in chocolate applications (typically 0.1-0.3% of total recipe weight) as the flavor is extremely potent and can easily overpower chocolate. Cloves contain 15-20% essential oils by weight, with eugenol being the primary aromatic compound.'
+          },
+          {
+            category: 'ai',
+            note: 'Usage recommendation: In ganaches, start with 0.1-0.2g per 100g of chocolate. Cloves work particularly well with dark chocolate (65-75% cacao), orange, cinnamon, cardamom, and ginger. Allow flavors to infuse in warm cream for 10-15 minutes before straining for best results, or add directly to ganache in very small quantities for a more pronounced spice presence.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'nutmeg-whole': {
+        baseId: 'nutmeg-whole',
+        name: 'Nutmeg (Whole)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 8,
+          solids: 85,
+          otherFats: 7
+        },
+        description:
+          'Whole nutmeg seeds from the Myristica fragrans tree, prized for their warm, sweet, and slightly spicy aromatic profile. Used in chocolate making by grating fresh or grinding to release volatile oils that complement chocolate, caramel, and cream-based preparations. Whole nutmeg retains potency far longer than pre-ground.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['spice', 'aromatic', 'warm spice', 'baking spice', 'whole spice', 'grating spice'],
+        density: 0.55,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'seeds'
+            }
+          ],
+          preferredId: 'seeds'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated for whole nutmeg seed: approximately 85% solids (cellulose, proteins, carbohydrates), 7% other fats (volatile oils including myristicin), and 8% residual water. These values represent the dried whole seed composition. Density estimated at 0.55 g/mL for whole nutmeg seeds. When used in chocolate applications, nutmeg is typically grated fresh in very small quantities for flavoring rather than incorporated as a bulk ingredient.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'nutmeg-ground': {
+        baseId: 'nutmeg-ground',
+        name: 'Nutmeg (Ground)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 5,
+          milkFat: 0,
+          water: 8,
+          solids: 85,
+          otherFats: 2
+        },
+        description:
+          'Ground nutmeg is a warm, aromatic spice derived from the seed of the Myristica fragrans tree. It has a sweet, nutty flavor with hints of clove and is commonly used in baking and confectionery. In chocolate applications, it adds depth and complexity, particularly in ganaches, truffles, and spiced chocolate creations.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['spice', 'warm', 'aromatic', 'baking', 'flavoring', 'traditional'],
+        density: 0.45,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'tsp'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated based on typical ground nutmeg composition: primarily carbohydrates and fiber (solids ~85%), small amounts of natural sugars (~5%), moisture content (~8%), and essential oils/fats (~2%). Nutmeg contains approximately 25-40% fixed oils in whole form, but ground nutmeg has lower fat content due to processing and oxidation. Density estimated at 0.45 g/mL for ground spice. Use sparingly in chocolate applications as nutmeg has a potent flavor that can easily overpower other ingredients.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'lebkuchen-spice': {
+        baseId: 'lebkuchen-spice',
+        name: 'Lebkuchen Spice',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 8,
+          solids: 92,
+          otherFats: 0
+        },
+        description:
+          'Traditional German gingerbread spice blend typically containing cinnamon, cloves, allspice, coriander, cardamom, ginger, nutmeg, and mace. Used in holiday baking and confections, particularly lebkuchen (German gingerbread). Adds warm, aromatic, and slightly sweet spice notes to chocolates, ganaches, and baked goods.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: [
+          'spice',
+          'spice-blend',
+          'german',
+          'christmas',
+          'holiday',
+          'gingerbread',
+          'lebkuchen',
+          'warming-spices',
+          'aromatic',
+          'baking-spice'
+        ],
+        density: 0.55,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'tsp'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated based on typical ground spice blend composition: predominantly dry solids (92%) with minimal residual moisture (8%). Density of 0.55 g/mL is typical for ground spice blends. Exact composition may vary by manufacturer and blend recipe. Traditional lebkuchen spice typically includes cinnamon, cloves, allspice, coriander, cardamom, ginger, nutmeg, and mace, though proportions and exact ingredients vary by recipe and regional tradition.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'aztec-spice': {
+        baseId: 'aztec-spice',
+        name: 'Aztec Spice',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 8,
+          solids: 92,
+          otherFats: 0
+        },
+        description:
+          'A warming spice blend inspired by traditional Aztec chocolate beverages, typically combining cinnamon, chili pepper, and sometimes vanilla, nutmeg, or allspice. Used to add complex heat and aromatic depth to chocolate confections, ganaches, and drinking chocolate.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: [
+          'spice',
+          'aztec',
+          'mexican',
+          'cinnamon',
+          'chili',
+          'warming',
+          'traditional',
+          'heat',
+          'aromatic'
+        ],
+        density: 0.55,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'tsp'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated for a typical dried spice blend: primarily solids (ground spices) with minimal residual water content. Actual composition may vary based on specific blend ingredients and freshness. The 92% solids represents the dried spice matter, while 8% water accounts for typical moisture content in dried spices.'
+          },
+          {
+            category: 'ai',
+            note: 'Density estimated at 0.55 g/mL, which is typical for ground spice blends. Actual density may vary depending on grind size and specific spice composition.'
+          },
+          {
+            category: 'ai',
+            note: 'Allergen information assumes a pure spice blend without cross-contamination. Users should verify with manufacturer if using a commercial blend, as processing facilities may introduce trace allergens.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'chai-spice': {
+        baseId: 'chai-spice',
+        name: 'Chai Spice',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 8,
+          solids: 90,
+          otherFats: 2
+        },
+        description:
+          'A warming blend of aromatic spices traditionally used in chai tea, typically including cinnamon, cardamom, ginger, cloves, and black pepper. Perfect for infusing into ganaches, creams, and chocolate fillings to create exotic, spiced flavor profiles.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: [
+          'spice',
+          'chai',
+          'warming',
+          'aromatic',
+          'cinnamon',
+          'cardamom',
+          'ginger',
+          'cloves',
+          'infusion',
+          'blend'
+        ],
+        density: 0.55,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'tsp'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated for a typical chai spice blend composition: approximately 90% solids (ground spices), 8% residual water content, and 2% volatile oils. Density estimated at 0.55 g/mL for ground spice blend. Actual composition may vary significantly based on specific blend ratios and grinding fineness. For chocolate applications, this spice blend is typically infused into cream or other liquids rather than added directly to chocolate.'
+          },
+          {
+            category: 'usage',
+            note: 'Best used by infusing into warm cream or milk for 10-15 minutes, then straining before incorporating into ganache. Can also be ground finely and added directly in small quantities (0.5-2% of total recipe weight) for more pronounced flavor.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'coffee-beans': {
+        baseId: 'coffee-beans',
+        name: 'Coffee Beans',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 2,
+          solids: 98,
+          otherFats: 0
+        },
+        description:
+          'Whole roasted coffee beans used to infuse flavor into ganaches, creams, and chocolate preparations. Can be steeped in dairy or cream to extract coffee flavor and aroma. Common varieties include Arabica and Robusta beans from various origins.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['coffee', 'infusion', 'aromatic', 'beans', 'whole', 'roasted', 'flavor-infusion'],
+        density: 0.65,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: "Ganache characteristics represent roasted whole coffee beans. The composition is approximately 98% dry solids (including oils, proteins, carbohydrates, fiber, and caffeine) and 2% residual moisture. Coffee beans contain natural oils (10-15% of weight) which are included in the solids percentage rather than separated out as 'otherFats' since they remain bound within the bean structure when used whole for infusion. When using coffee beans in ganache, they are typically steeped in cream/dairy and then strained out, so the actual contribution to the final ganache depends on extraction efficiency and infusion time."
+          },
+          {
+            category: 'ai',
+            note: 'Density estimated at 0.65 g/mL for whole roasted coffee beans (bulk density). Individual bean density may vary based on roast level and origin.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'thai-tea': {
+        baseId: 'thai-tea',
+        name: 'Thai Tea',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 5,
+          solids: 94,
+          otherFats: 1
+        },
+        description:
+          'Thai tea is a strongly brewed black tea blend, typically featuring Ceylon or Assam tea mixed with spices like star anise, cardamom, and sometimes vanilla or tamarind. Known for its distinctive orange color (often from food coloring in commercial versions) and sweet, creamy, spiced flavor profile. When used in chocolate applications, it provides aromatic, floral, and slightly spiced notes.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['tea', 'thai', 'spiced', 'aromatic', 'infusion', 'asian', 'floral', 'black-tea'],
+        density: 0.35,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated for dried Thai tea leaves/powder: assumed minimal moisture (5% water), predominantly tea solids (94%), trace natural oils (1%). The composition can vary based on whether this is pure tea leaves, a pre-mixed blend with spices, or includes added sugar/creamer (this assumes pure tea). For infusion use in ganache, the tea would typically be steeped in cream or liquid, extracting flavor compounds while the solids are strained out.'
+          },
+          {
+            category: 'ai',
+            note: 'Density estimated at 0.35 g/mL for loose dried tea leaves. Thai tea blends vary widely - some are pure tea, others include sugar, food coloring, and spices pre-mixed. This entry assumes a basic dried tea blend without added sugar or dairy, suitable for infusing into chocolate ganache or cream.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'yuzu-extract': {
+        baseId: 'yuzu-extract',
+        name: 'Yuzu Extract',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 5,
+          milkFat: 0,
+          water: 75,
+          solids: 15,
+          otherFats: 5
+        },
+        description:
+          "A concentrated extract made from yuzu, a Japanese citrus fruit with a distinctive tart, floral, and aromatic flavor profile. Yuzu extract captures the essence of the fruit's zest and juice, providing intense citrus notes with hints of grapefruit, mandarin, and bergamot. Commonly used in ganaches, creams, and fillings to add bright, complex citrus flavor to chocolate confections.",
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['citrus', 'japanese', 'asian', 'extract', 'flavoring', 'yuzu', 'aromatic', 'tart', 'floral'],
+        density: 1.05,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics are estimates based on typical extract compositions. Yuzu extract is primarily water-based with some dissolved solids (citrus oils, aromatics, flavor compounds), minimal natural sugars from the fruit, and trace amounts of natural citrus oils. The exact composition varies significantly by manufacturer and extraction method (alcohol-based vs. water-based vs. oil-based). This assumes a water-based extract with some alcohol or oil carrier. Commercial extracts may contain additional ingredients like alcohol (as preservative/carrier), natural flavors, or citric acid. Density estimate is slightly higher than water due to dissolved solids and oils. Use sparingly as the flavor is highly concentrated.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'vietnamese-coffee-concentrate': {
+        baseId: 'vietnamese-coffee-concentrate',
+        name: 'Vietnamese Coffee Concentrate',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 85,
+          solids: 15,
+          otherFats: 0
+        },
+        description:
+          'A strong, concentrated coffee extract made from Vietnamese robusta coffee beans, typically prepared using the traditional phin filter method. This concentrate delivers intense coffee flavor with characteristic bold, earthy notes and slight bitterness. Often used in ganaches, truffles, and coffee-flavored confections.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: [
+          'coffee',
+          'vietnamese',
+          'concentrate',
+          'extract',
+          'robusta',
+          'beverage',
+          'flavoring',
+          'liquid-flavoring'
+        ],
+        density: 1.02,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated based on typical coffee concentrate composition: approximately 85% water and 15% coffee solids (including caffeine, chlorogenic acids, and other extracted compounds). Actual composition may vary based on brewing method, concentration ratio, and bean variety. Density estimated at 1.02 g/mL for concentrated coffee extract. Vietnamese coffee concentrate is traditionally made strong, so this assumes a 3:1 to 4:1 concentration ratio compared to regular brewed coffee.'
+          },
+          {
+            category: 'ai',
+            note: "This ingredient is categorized as 'flavor' rather than 'liquid' because its primary function in chocolate-making is flavoring rather than hydration, though it does contribute water content to ganache formulations. When calculating water activity and shelf life, the water content (85%) should be factored into ganache recipes."
+          }
+        ],
+        category: 'flavor'
       }
     }
   },
@@ -1980,12 +3931,6 @@ export const moldCollections: Record<string, JsonObject> = {
         manufacturer: 'Chocolate World',
         productNumber: 'CW 2227',
         description: 'Hex Swirl',
-        urls: [
-          {
-            category: 'product-page',
-            url: 'https://www.chocolateworld.be/winkel/moulds/frame-moulds/CW2227'
-          }
-        ],
         cavities: {
           kind: 'count',
           count: 32,
@@ -1999,7 +3944,202 @@ export const moldCollections: Record<string, JsonObject> = {
           }
         },
         format: 'series-2000',
-        tags: ['hex-swirl', 'praline']
+        tags: ['hex-swirl', 'praline'],
+        urls: [
+          {
+            category: 'product-page',
+            url: 'https://www.chocolateworld.be/winkel/moulds/frame-moulds/CW2227'
+          }
+        ]
+      },
+      'chocolate-world-cw1988': {
+        baseId: 'chocolate-world-cw1988',
+        manufacturer: 'Chocolate World',
+        productNumber: 'CW1988',
+        description: 'Pleated Leaf',
+        cavities: {
+          kind: 'grid',
+          columns: 7,
+          rows: 3,
+          info: {
+            weight: 12,
+            dimensions: {
+              width: 30.5,
+              length: 33.5,
+              depth: 19
+            }
+          }
+        },
+        format: 'series-1000',
+        tags: ['leaf', 'pleated', 'botanical', 'polycarbonate', 'bonbon'],
+        related: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Dimensions and weight per cavity sourced from multiple retailer listings (Amazon, Vantage House, Pastry Chefs Boutique); consistent across sources as 33.5 x 30.5 x 19 mm and 12g. Mold size confirms series-1000 (135x275mm). Layout is grid 3 rows x 7 columns totaling 21 cavities.'
+          }
+        ],
+        urls: [
+          {
+            category: 'manufacturer',
+            url: 'https://www.chocolateworld.be/'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.amazon.com/Chocolate-World-CW1988-Pleated-Leaf-Polycarbonate/dp/B08NTNX7F3'
+          }
+        ]
+      },
+      'chocolate-world-cw12060': {
+        baseId: 'chocolate-world-cw12060',
+        manufacturer: 'Chocolate World',
+        productNumber: 'CW12060',
+        description: 'The Duel (signature modern square praline with tapered design by Paul Wagemaker)',
+        cavities: {
+          kind: 'grid',
+          columns: 7,
+          rows: 3,
+          info: {
+            weight: 14,
+            dimensions: {
+              width: 30,
+              length: 30,
+              depth: 20.5
+            }
+          }
+        },
+        format: 'series-1000',
+        tags: ['square', 'modern', 'praline', 'bonbon', 'polycarbonate', 'signature', 'paul-wagemaker'],
+        related: [],
+        notes: [
+          {
+            category: 'ai',
+            note: "CW12060 is a signature mold 'The Duel' designed in collaboration with Paul Wagemaker. Features 21 cavities in 3x7 grid layout. Cavity dimensions consistently listed as 30x30x20.5 mm with 14g chocolate capacity across sources (Vantage House, Pastry Chefs Boutique, Chocolate World catalog excerpts, Sweetlink). Mold frame: 275x135x26 mm, confirming series-1000 format. Described as a modern square/tapered praline shape suitable for bonbons. Video demo available on Chocolate World's YouTube."
+          }
+        ],
+        urls: [
+          {
+            category: 'manufacturer',
+            url: 'https://www.chocolateworld.be/winkel/moulds/frame-moulds/CW12060'
+          },
+          {
+            category: 'manufacturer',
+            url: 'https://www.chocolateworld.be/pdf/Signature_moulds.pdf'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.vantagehouse.com/product/moulds/chocolate-world-moulds/CW12060'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.chocolat-chocolat.com/product/chocolate-mold-the-duel-by-paul-wagemaker'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.pastrychefsboutique.com/CHOCOLATE/Chocolate-Molds/polycarbonate-chocolate-molds/Modern-Shaped-Molds/chocolate-world-cw12060-polycarbonate-chocolate-mold-the-duel-by-paul-wagemaker-30mm-x-30mm-x-205mm-14gr-21-cavity-modern-shaped'
+          },
+          {
+            category: 'video',
+            url: 'https://www.youtube.com/watch?v=FY8DJTc3eRs'
+          }
+        ]
+      }
+    }
+  },
+  greyas: {
+    metadata: {
+      name: 'Greyas',
+      description: 'Polycarbonate Chocolate Molds by Greyas plastics'
+    },
+    items: {
+      'greyas-cm-3843': {
+        baseId: 'greyas-cm-3843',
+        manufacturer: 'Greyas',
+        productNumber: 'CM-3843',
+        description: 'Heart‑cylinder (Luis Amado Signature)',
+        cavities: {
+          kind: 'grid',
+          columns: 6,
+          rows: 4,
+          info: {
+            weight: 12.5,
+            dimensions: {
+              width: 30,
+              length: 30,
+              depth: 16
+            }
+          }
+        },
+        format: 'series-2000',
+        tags: ['polycarbonate', 'bonbon', 'heart', 'cylinder', 'luis-amado'],
+        related: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Dimensions, weight, cavity count, and frame size are taken from product listings (24 cavities, 30×16 mm, 12.5 g, 275×175 mm). Grid layout inferred from 24‑piece arrangement.'
+          }
+        ],
+        urls: [
+          {
+            category: 'purchase',
+            url: 'https://greyas.com/products/cm-3843-luis-amado-signature-herz-pralinen-schokoladenform'
+          },
+          {
+            category: 'purchase',
+            url: 'https://homenkitchenshop.com/products/greyas-cm-3843-louis-amado-clear-polycarbonate-chocolate-mold'
+          },
+          {
+            category: 'purchase',
+            url: 'https://amazon.com/dp/B09QD36Q4J'
+          }
+        ]
+      }
+    }
+  },
+  implast: {
+    metadata: {
+      name: 'Implast',
+      description: 'Polycarbonate Chocolate Molds by Implast Plastics',
+      tags: ['implast']
+    },
+    items: {
+      'chef-jungstedt-sm-1': {
+        baseId: 'chef-jungstedt-sm-1',
+        manufacturer: 'Implast',
+        productNumber: '753',
+        description: 'Chef Jungstedt SM-1 Dome',
+        cavities: {
+          kind: 'grid',
+          columns: 7,
+          rows: 4,
+          info: {
+            weight: 11,
+            dimensions: {
+              width: 31,
+              length: 31,
+              depth: 18
+            }
+          }
+        },
+        format: 'other',
+        tags: ['polycarbonate', 'bonbon', 'dome', 'chef-jungstedt', 'implast'],
+        related: [],
+        notes: [
+          {
+            category: 'ai',
+            note: "Dimensions, weight, and layout are taken directly from product listings; manufacturer series format is not specified, so 'other' is used."
+          }
+        ],
+        urls: [
+          {
+            category: 'purchase',
+            url: 'https://chocolat-chocolat.com/products/chocolate-and-praline-mold-smooth-dome'
+          },
+          {
+            category: 'purchase',
+            url: 'https://tantfondant.se/products/implast-pralinform-nr-753-chef-jungstedt'
+          }
+        ]
       }
     }
   }
