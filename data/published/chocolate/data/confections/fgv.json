@@ -2,11 +2,11 @@
   "format": "encrypted-collection-v1",
   "secretName": "fgv",
   "algorithm": "AES-256-GCM",
-  "iv": "EvQmM8R7iRQOcTIr",
-  "authTag": "mqwnVT6/viy6mrDzWMgm+Q==",
-  "encryptedData": "7eKilceT+8L316N+1LFQXbskIcOJZwXpqIaevx26pR8ImYkTH2dtD0LhEBkhwAL2eXntSB9+FQpHH16YKwDZ+6adkj5cHKUkh/zkvqVIzt4+IIgCk38rksqoFa7zAup30BRzPuAtYhwzJOat+Y3Y/34z2Mrn+StJB8F1iN9Z/Yq+ajQZMUqFIDBk/SApkU7jeyBkx153nCozEHtNaj1IPtQC3RFqBXL6t8mJU/210rD5LzrSPynBK2q/s92qdWjgtfeLm2WPlipniOzqlKm4DqBJjk0lT6WuAjMkhNV3qHPm9N3mvF8RnFODQ/FAhtszIz4up17DVBH7ISNep5eroewAHGsdtHlODwndprf0XZdzS11ux5l6OcecFHOGgb0NyYuE4PPm4pfZGkcoNzAb1+jpFztC19wp85YWvcKOcDl/AVRjmhTXalXWgWzs9UxodEzO2wdw3xYBtatjYWEALj9N1MJqOLPiunoWtTRlKjtSNHO/10vkzp8Se/4krJWZwC6vlf3j99VrTIRvBMiedXUijhVuuUteGfymZWh3NbijW/3xEMFYOv01gROp4BW1MQOinkbiBw/ic8lGGOcIAjjpbtGDwqjbajUgV5LeHUK8u9w8+wQZMJ0L1RHkvCpYlIGneBulzAXrCDPZlpwE08IRkE0G+M3BDmIQf+Te7QR/bgntKpZxQ2TsDA4W6kyI3MKuvx8JE9WPBAI31o3FoMoWK0LrpkT894ikiX0h9A0g6genjk4cHSyFXPDNAHMXRNrA",
+  "iv": "s6FrDNCtOVB31N3j",
+  "authTag": "VM1KD8NnIdUDPuTfSRQ00g==",
+  "encryptedData": "VY8=",
   "metadata": {
     "collectionId": "fgv",
-    "itemCount": 1
+    "itemCount": 0
   }
 }

@@ -505,40 +505,55 @@ export class ChocolateEntityLibrary {
    * `reactiveWorkspace.syncAllToDisk()` to flush the file tree to the
    * filesystem.
    *
+   * @remarks
+   * When a collection ID exists in multiple sub-libraries (e.g. `"common"`),
+   * pass `subLibrary` to disambiguate. Without it the method picks the first
+   * match in iteration order, which may not be the sub-library that was
+   * actually mutated.
+   *
    * @param collectionId - Collection to persist
    * @param encryptionProvider - Optional encryption provider for encrypted collections
+   * @param subLibrary - Optional sub-library hint to disambiguate shared collection IDs
    * @returns Result with `true` on success, or Failure with context
    * @public
    */
   public async saveCollection(
     collectionId: CollectionId,
-    encryptionProvider?: CryptoUtils.IEncryptionProvider
+    encryptionProvider?: CryptoUtils.IEncryptionProvider,
+    subLibrary?: { collections: { has(id: CollectionId): boolean } }
   ): Promise<Result<true>> {
-    if (this.ingredients.collections.has(collectionId)) {
+    // When subLibrary is provided, use identity to find the correct match
+    const match = subLibrary
+      ? (lib: { collections: { has(id: CollectionId): boolean } }): boolean =>
+          lib === subLibrary && lib.collections.has(collectionId)
+      : (lib: { collections: { has(id: CollectionId): boolean } }): boolean =>
+          lib.collections.has(collectionId);
+
+    if (match(this.ingredients)) {
       return this._saveEditable(
         this.getEditableIngredientsEntityCollection(collectionId, encryptionProvider)
       );
     }
-    if (this.fillings.collections.has(collectionId)) {
+    if (match(this.fillings)) {
       return this._saveEditable(
         this.getEditableFillingsRecipeEntityCollection(collectionId, encryptionProvider)
       );
     }
-    if (this.molds.collections.has(collectionId)) {
+    if (match(this.molds)) {
       return this._saveEditable(this.getEditableMoldsEntityCollection(collectionId, encryptionProvider));
     }
-    if (this.procedures.collections.has(collectionId)) {
+    if (match(this.procedures)) {
       return this._saveEditable(this.getEditableProceduresEntityCollection(collectionId, encryptionProvider));
     }
-    if (this.tasks.collections.has(collectionId)) {
+    if (match(this.tasks)) {
       return this._saveEditable(this.getEditableTasksEntityCollection(collectionId, encryptionProvider));
     }
-    if (this.confections.collections.has(collectionId)) {
+    if (match(this.confections)) {
       return this._saveEditable(
         this.getEditableConfectionsEntityCollection(collectionId, encryptionProvider)
       );
     }
-    if (this.decorations.collections.has(collectionId)) {
+    if (match(this.decorations)) {
       return this._saveEditable(
         this.getEditableDecorationsEntityCollection(collectionId, encryptionProvider)
       );

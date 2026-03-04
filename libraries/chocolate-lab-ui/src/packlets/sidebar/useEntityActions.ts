@@ -136,13 +136,25 @@ export function useEntityActions(): IEntityActions {
    * Creates an ephemeral EditableCollection that snapshots the current
    * (post-mutation) state, saves it to the file tree, then syncs dirty
    * trees to the filesystem.
+   *
+   * @param subLibrary - The sub-library that was mutated. Required to
+   *   disambiguate collection IDs that exist across multiple sub-libraries
+   *   (e.g. "common" appears in ingredients, fillings, confections, etc.).
+   * @param collectionIds - One or more collection IDs to persist.
    */
   const persistCollections = useCallback(
-    async (...collectionIds: CollectionId[]): Promise<void> => {
+    async (
+      subLibrary: { collections: { has(id: CollectionId): boolean } },
+      ...collectionIds: CollectionId[]
+    ): Promise<void> => {
       for (const collectionId of collectionIds) {
-        const saveResult = await workspace.data.entities.saveCollection(collectionId, workspace.keyStore);
+        const saveResult = await workspace.data.entities.saveCollection(
+          collectionId,
+          workspace.keyStore,
+          subLibrary
+        );
         if (saveResult.isFailure()) {
-          workspace.data.logger.info(
+          workspace.data.logger.warn(
             `Collection '${collectionId}' not persisted (in-memory only): ${saveResult.message}`
           );
         }
@@ -183,7 +195,7 @@ export function useEntityActions(): IEntityActions {
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
 
-      await persistCollections(collectionId);
+      await persistCollections(subLibrary, collectionId);
       return true;
     },
     [workspace, reactiveWorkspace, activeTab, persistCollections]
@@ -213,7 +225,7 @@ export function useEntityActions(): IEntityActions {
       reactiveWorkspace.notifyChange();
 
       // Only the target collection was modified (item added)
-      await persistCollections(targetCollectionId);
+      await persistCollections(subLibrary, targetCollectionId);
       return result.value;
     },
     [workspace, reactiveWorkspace, activeTab, persistCollections]
@@ -249,11 +261,11 @@ export function useEntityActions(): IEntityActions {
       reactiveWorkspace.notifyChange();
 
       // Both source (item removed) and target (item added) were modified
-      const collectionsToSave =
-        sourceCollectionId === targetCollectionId
-          ? [sourceCollectionId]
-          : [sourceCollectionId, targetCollectionId];
-      await persistCollections(...collectionsToSave);
+      if (sourceCollectionId === targetCollectionId) {
+        await persistCollections(subLibrary, sourceCollectionId);
+      } else {
+        await persistCollections(subLibrary, sourceCollectionId, targetCollectionId);
+      }
       return result.value;
     },
     [workspace, reactiveWorkspace, activeTab, persistCollections]

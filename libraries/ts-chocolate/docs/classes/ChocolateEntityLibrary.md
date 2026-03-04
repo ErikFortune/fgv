@@ -287,4 +287,17 @@ Get an editable confections collection with persistence enabled.
 Get an editable decorations collection with persistence enabled.
 
 </td></tr>
+<tr><td>
+
+[saveCollection(collectionId, encryptionProvider, subLibrary)](./ChocolateEntityLibrary.saveCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a collection's current in-memory state to its backing file tree.
+
+</td></tr>
 </tbody></table>
