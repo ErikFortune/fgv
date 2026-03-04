@@ -25,14 +25,15 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   TagIcon,
   DocumentTextIcon,
   HashtagIcon,
   FolderIcon,
   BeakerIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  SparklesIcon
 } from '@heroicons/react/20/solid';
 
 import {
@@ -68,7 +69,11 @@ type EditedIngredient = LibraryRuntime.EditedIngredient;
 type IGanacheCharacteristics = Entities.Ingredients.IGanacheCharacteristics;
 type IngredientEntity = Entities.Ingredients.IngredientEntity;
 
-import { EditingToolbar, useEditingContext, type IChangeIndicator } from '../editing';
+import type { Result } from '@fgv/ts-utils';
+
+import { AiAssist } from '@fgv/ts-extras';
+
+import { EditingToolbar, useEditingContext, AiRerollDialog, type IChangeIndicator } from '../editing';
 import { useWorkspace } from '../workspace';
 
 // ============================================================================
@@ -92,6 +97,10 @@ export interface IIngredientEditViewProps {
   readonly onMutation?: () => void;
   /** If true, the source entity is read-only (e.g. built-in collection). */
   readonly readOnly?: boolean;
+  /** Optional AI prompt builder for re-roll. */
+  readonly buildPrompt?: (name: string, additionalInstructions?: string) => AiAssist.AiPrompt;
+  /** Optional converter for AI re-roll results. */
+  readonly convert?: (from: unknown) => Result<IngredientEntity>;
 }
 
 // ============================================================================
@@ -548,7 +557,8 @@ function CategorySpecificFields({
  * @public
  */
 export function IngredientEditView(props: IIngredientEditViewProps): React.ReactElement {
-  const { wrapper, onSave, onSaveAs, onCancel, onMutation, readOnly } = props;
+  const { wrapper, onSave, onSaveAs, onCancel, onMutation, readOnly, buildPrompt, convert } = props;
+  const [showReroll, setShowReroll] = useState(false);
   const {
     data: { logger }
   } = useWorkspace();
@@ -701,7 +711,41 @@ export function IngredientEditView(props: IIngredientEditViewProps): React.React
 
   return (
     <div className="flex flex-col h-full">
-      <EditingToolbar context={ctx} changeIndicators={changeIndicators} />
+      <EditingToolbar
+        context={ctx}
+        changeIndicators={changeIndicators}
+        extraButtons={
+          buildPrompt && convert ? (
+            <button
+              type="button"
+              onClick={(): void => setShowReroll(!showReroll)}
+              title="Re-generate with AI"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded transition-colors"
+            >
+              <SparklesIcon className="h-3.5 w-3.5" />
+              <span>AI</span>
+            </button>
+          ) : undefined
+        }
+      />
+
+      {/* AI Re-roll dialog */}
+      {showReroll && buildPrompt && convert && (
+        <div className="px-4 pt-3">
+          <AiRerollDialog
+            entityName={current.name}
+            entityLabel="Ingredient"
+            buildPrompt={buildPrompt}
+            convert={convert}
+            onResult={(generated): void => {
+              w.applyUpdate(generated);
+              ctx.notifyMutation();
+              setShowReroll(false);
+            }}
+            onCancel={(): void => setShowReroll(false)}
+          />
+        </div>
+      )}
 
       <div className="flex flex-col p-4 overflow-y-auto flex-1">
         {/* Header / Identity */}

@@ -423,6 +423,8 @@ export function MoldsTabContent(): React.ReactElement {
                 onMutation={(): void => {
                   updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
                 }}
+                buildPrompt={AiAssist.buildMoldAiPrompt}
+                convert={(from: unknown) => Entities.Molds.Converters.moldEntity.convert(from)}
               />
             )
           };

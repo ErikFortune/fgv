@@ -7,5 +7,5 @@ Builds a detailed AI prompt for generating a procedure entity JSON object.
 ## Signature
 
 ```typescript
-function buildProcedureAiPrompt(procedureName: string): AiPrompt
+function buildProcedureAiPrompt(procedureName: string, additionalInstructions: string): AiPrompt
 ```

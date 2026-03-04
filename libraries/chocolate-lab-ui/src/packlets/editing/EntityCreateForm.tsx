@@ -54,8 +54,8 @@ import { useAiAssist, type IAiAssistAction } from './useAiAssist';
 export interface IEntityCreateFormProps<TEntity> {
   /** Convert a display name to a slug ID */
   readonly slugify: (name: string) => string;
-  /** Build a structured AI prompt from the entity name */
-  readonly buildPrompt: (name: string) => AiAssist.AiPrompt;
+  /** Build a structured AI prompt from the entity name and optional additional instructions */
+  readonly buildPrompt: (name: string, additionalInstructions?: string) => AiAssist.AiPrompt;
   /** Convert unknown JSON into a validated entity */
   readonly convert: (from: unknown) => Result<TEntity>;
   /** Build a blank entity from name and ID (for manual creation) */
@@ -157,6 +157,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
   const [promptCopied, setPromptCopied] = useState(false);
   const [aiDropdownOpen, setAiDropdownOpen] = useState(false);
 
+  const [additionalInstructions, setAdditionalInstructions] = useState('');
   const [selectedSourceId, setSelectedSourceId] = useState('');
   const [targetCollectionId, setTargetCollectionId] = useState<string>(
     defaultTargetCollectionId ?? writableCollections?.[0]?.id ?? ''
@@ -214,6 +215,8 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
   // Determine if we have multiple actions (i.e. more than just copy-paste)
   const hasMultipleActions = aiAssist.actions.length > 1;
   const directActions = aiAssist.actions.filter((a) => a.provider !== 'copy-paste');
+  const defaultAction = aiAssist.actions.find((a) => a.isDefault);
+  const defaultIsDirect = defaultAction !== undefined && defaultAction.provider !== 'copy-paste';
 
   // ---- Handlers ----
 
@@ -250,7 +253,8 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
 
   const handleCopyPrompt = useCallback((): void => {
     if (!trimmedName) return;
-    const prompt = buildPrompt(trimmedName);
+    const instructions = additionalInstructions.trim() || undefined;
+    const prompt = buildPrompt(trimmedName, instructions);
     aiAssist.copyPrompt(prompt).then(
       () => {
         setPromptCopied(true);
@@ -261,7 +265,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
       }
     );
     setAiDropdownOpen(false);
-  }, [trimmedName, buildPrompt, aiAssist]);
+  }, [trimmedName, additionalInstructions, buildPrompt, aiAssist]);
 
   const handleDirectGenerate = useCallback(
     (action: IAiAssistAction): void => {
@@ -269,7 +273,8 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
       setPasteError(undefined);
       setAiDropdownOpen(false);
 
-      const prompt = buildPrompt(trimmedName);
+      const instructions = additionalInstructions.trim() || undefined;
+      const prompt = buildPrompt(trimmedName, instructions);
       aiAssist.generateDirect<TEntity>(action.provider, prompt, convert).then(
         (result) => {
           if (result.isFailure()) {
@@ -284,7 +289,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
         }
       );
     },
-    [trimmedName, buildPrompt, convert, onCreate, targetCollectionId, aiAssist]
+    [trimmedName, additionalInstructions, buildPrompt, convert, onCreate, targetCollectionId, aiAssist]
   );
 
   const handleJsonInput = useCallback(
@@ -374,15 +379,29 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
     }
 
     // Multiple actions — split button with dropdown
+    const handleMainButtonClick =
+      defaultIsDirect && defaultAction ? (): void => handleDirectGenerate(defaultAction) : handleCopyPrompt;
+    const mainButtonLabel = defaultIsDirect && defaultAction ? defaultAction.label : 'AI Assist';
+
     return (
       <div ref={dropdownRef} className="relative">
         <div className="flex items-center">
-          {/* Main button — copy prompt (always the default action) */}
+          {/* Main button — uses the configured default action */}
           <button
-            onClick={handleCopyPrompt}
-            disabled={!hasValidId || aiAssist.isWorking}
+            onClick={handleMainButtonClick}
+            disabled={
+              !hasValidId ||
+              aiAssist.isWorking ||
+              (defaultIsDirect && defaultAction !== undefined && !defaultAction.isAvailable)
+            }
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 hover:text-purple-900 hover:bg-purple-50 rounded-l transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title={hasValidId ? 'Copy AI prompt to clipboard' : 'Enter a name to generate an AI prompt'}
+            title={
+              hasValidId
+                ? defaultIsDirect
+                  ? `Generate with ${mainButtonLabel}`
+                  : 'Copy AI prompt to clipboard'
+                : 'Enter a name to generate an AI prompt'
+            }
           >
             {aiAssist.isWorking ? (
               <>
@@ -397,7 +416,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
             ) : (
               <>
                 <SparklesIcon className="w-4 h-4" />
-                AI Assist
+                {mainButtonLabel}
               </>
             )}
           </button>
@@ -480,7 +499,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
           value={name}
           onChange={(e): void => setName(e.target.value)}
           onKeyDown={(e): void => {
-            if (e.key === 'Enter' && trimmedName) handleCreate();
+            if (e.key === 'Enter' && trimmedName && !aiAssist.isWorking) handleCreate();
           }}
           placeholder={namePlaceholder}
           className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
@@ -496,7 +515,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
           value={idOverride}
           onChange={(e): void => setIdOverride(e.target.value)}
           onKeyDown={(e): void => {
-            if (e.key === 'Enter' && trimmedName) handleCreate();
+            if (e.key === 'Enter' && trimmedName && !aiAssist.isWorking) handleCreate();
           }}
           placeholder={derivedId || 'auto-derived from name'}
           className="mt-1 w-full px-3 py-2 text-sm font-mono border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
@@ -537,6 +556,20 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
         </div>
       )}
 
+      {/* Additional Instructions */}
+      {selectedSourceId.trim().length === 0 && (
+        <div>
+          <label className="text-xs font-medium text-gray-500">Additional Instructions (optional)</label>
+          <textarea
+            value={additionalInstructions}
+            onChange={(e): void => setAdditionalInstructions(e.target.value)}
+            placeholder="e.g. This is a 275×135mm frame mold, use metric units..."
+            rows={2}
+            className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 resize-none"
+          />
+        </div>
+      )}
+
       {/* Paste error */}
       {pasteError && <p className="text-xs text-red-600">{pasteError}</p>}
 
@@ -554,7 +587,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
           </button>
           <button
             onClick={handleCreate}
-            disabled={!trimmedName}
+            disabled={!trimmedName || aiAssist.isWorking}
             className="px-3 py-1.5 text-xs font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Create

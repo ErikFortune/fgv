@@ -31,15 +31,22 @@ import { Helpers } from '../common';
  * Builds a detailed AI prompt for generating a filling recipe entity JSON object.
  *
  * @param fillingName - The display name of the filling recipe to generate data for
+ * @param additionalInstructions - Optional additional instructions to append to the user message
  * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildFillingAiPrompt(fillingName: string): AiAssist.AiPrompt {
+export function buildFillingAiPrompt(
+  fillingName: string,
+  additionalInstructions?: string
+): AiAssist.AiPrompt {
   const baseId = Helpers.toKebabCase(fillingName);
 
   const today = new Date().toISOString().split('T')[0]!;
 
-  const user = `Generate a JSON object representing the filling recipe "${fillingName}" for a chocolate-making application.`;
+  const userBase = `Generate a JSON object representing the filling recipe "${fillingName}" for a chocolate-making application.`;
+  const user = additionalInstructions
+    ? `${userBase}\n\nAdditional instructions from the user:\n${additionalInstructions}`
+    : userBase;
 
   const system = `Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
 

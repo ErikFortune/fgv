@@ -32,13 +32,20 @@ import { allDecorationRatingCategories } from '../entities';
  * Builds a detailed AI prompt for generating a decoration entity JSON object.
  *
  * @param decorationName - The display name of the decoration to generate data for
+ * @param additionalInstructions - Optional additional instructions to append to the user message
  * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildDecorationAiPrompt(decorationName: string): AiAssist.AiPrompt {
+export function buildDecorationAiPrompt(
+  decorationName: string,
+  additionalInstructions?: string
+): AiAssist.AiPrompt {
   const baseId = Helpers.toKebabCase(decorationName);
 
-  const user = `Generate a JSON object representing the chocolate confection decoration "${decorationName}" for a chocolate-making application.`;
+  const userBase = `Generate a JSON object representing the chocolate confection decoration "${decorationName}" for a chocolate-making application.`;
+  const user = additionalInstructions
+    ? `${userBase}\n\nAdditional instructions from the user:\n${additionalInstructions}`
+    : userBase;
 
   const system = `Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
 

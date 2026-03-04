@@ -47,6 +47,8 @@ export { getWritableCollectionOptions } from './writableCollections';
 
 export { AiAssistNameDialog, type IAiAssistNameDialogProps } from './AiAssistNameDialog';
 
+export { AiRerollDialog, type IAiRerollDialogProps } from './AiRerollDialog';
+
 export {
   useEntityMutation,
   createSetInMutableCollection,

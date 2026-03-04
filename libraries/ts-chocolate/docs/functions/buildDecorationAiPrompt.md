@@ -7,5 +7,5 @@ Builds a detailed AI prompt for generating a decoration entity JSON object.
 ## Signature
 
 ```typescript
-function buildDecorationAiPrompt(decorationName: string): AiPrompt
+function buildDecorationAiPrompt(decorationName: string, additionalInstructions: string): AiPrompt
 ```

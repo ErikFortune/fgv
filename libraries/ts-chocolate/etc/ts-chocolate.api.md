@@ -517,19 +517,19 @@ const BOOTSTRAP_SETTINGS_FILENAME: string;
 const bootstrapSettings: Converter<IBootstrapSettings>;
 
 // @public
-function buildDecorationAiPrompt(decorationName: string): AiAssist_2.AiPrompt;
+function buildDecorationAiPrompt(decorationName: string, additionalInstructions?: string): AiAssist_2.AiPrompt;
 
 // @public
-function buildFillingAiPrompt(fillingName: string): AiAssist_2.AiPrompt;
+function buildFillingAiPrompt(fillingName: string, additionalInstructions?: string): AiAssist_2.AiPrompt;
 
 // @public
-function buildIngredientAiPrompt(ingredientName: string): AiAssist_2.AiPrompt;
+function buildIngredientAiPrompt(ingredientName: string, additionalInstructions?: string): AiAssist_2.AiPrompt;
 
 // @public
-function buildMoldAiPrompt(moldDescription: string): AiAssist_2.AiPrompt;
+function buildMoldAiPrompt(moldDescription: string, additionalInstructions?: string): AiAssist_2.AiPrompt;
 
 // @public
-function buildProcedureAiPrompt(procedureName: string): AiAssist_2.AiPrompt;
+function buildProcedureAiPrompt(procedureName: string, additionalInstructions?: string): AiAssist_2.AiPrompt;
 
 declare namespace BuiltIn {
     export {

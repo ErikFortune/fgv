@@ -437,6 +437,8 @@ export function IngredientsTabContent(): React.ReactElement {
                 onMutation={(): void => {
                   updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
                 }}
+                buildPrompt={AiAssist.buildIngredientAiPrompt}
+                convert={(from: unknown) => Entities.Ingredients.Converters.ingredientEntity.convert(from)}
               />
             )
           };

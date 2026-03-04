@@ -33,13 +33,20 @@ import { Helpers, Model } from '../common';
  * and instructions for the AI to include notes describing assumptions.
  *
  * @param ingredientName - The display name of the ingredient to generate data for
+ * @param additionalInstructions - Optional additional instructions to append to the user message
  * @returns A structured prompt with system/user split and combined version
  * @public
  */
-export function buildIngredientAiPrompt(ingredientName: string): AiAssist.AiPrompt {
+export function buildIngredientAiPrompt(
+  ingredientName: string,
+  additionalInstructions?: string
+): AiAssist.AiPrompt {
   const baseId = Helpers.toKebabCase(ingredientName);
 
-  const user = `Generate a JSON object representing the ingredient "${ingredientName}" for a chocolate-making application.`;
+  const userBase = `Generate a JSON object representing the ingredient "${ingredientName}" for a chocolate-making application.`;
+  const user = additionalInstructions
+    ? `${userBase}\n\nAdditional instructions from the user:\n${additionalInstructions}`
+    : userBase;
 
   const system = `Return ONLY valid JSON (no markdown, no explanation, no code fences). The JSON must conform exactly to the schema below.
 

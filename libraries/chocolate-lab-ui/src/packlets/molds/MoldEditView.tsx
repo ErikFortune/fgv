@@ -25,14 +25,15 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   DocumentTextIcon,
   HashtagIcon,
   BuildingOfficeIcon,
   CubeIcon,
   ScaleIcon,
-  LinkIcon
+  LinkIcon,
+  SparklesIcon
 } from '@heroicons/react/20/solid';
 
 import {
@@ -59,11 +60,16 @@ type EditedMold = LibraryRuntime.EditedMold;
 type ICavities = Entities.Molds.ICavities;
 type ICavityDimensions = Entities.Molds.ICavityDimensions;
 
+import type { Result } from '@fgv/ts-utils';
+
+import { AiAssist } from '@fgv/ts-extras';
+
 import {
   EditingToolbar,
   useEditingContext,
   NotesEditor,
   UrlsEditor,
+  AiRerollDialog,
   type IChangeIndicator
 } from '../editing';
 import { useWorkspace } from '../workspace';
@@ -89,6 +95,10 @@ export interface IMoldEditViewProps {
   readonly onMutation?: () => void;
   /** If true, the source entity is read-only (e.g. built-in collection). */
   readonly readOnly?: boolean;
+  /** Optional AI prompt builder for re-roll. */
+  readonly buildPrompt?: (name: string, additionalInstructions?: string) => AiAssist.AiPrompt;
+  /** Optional converter for AI re-roll results. */
+  readonly convert?: (from: unknown) => Result<Entities.Molds.IMoldEntity>;
 }
 
 // ============================================================================
@@ -284,7 +294,8 @@ function CavityEditor({
  * @public
  */
 export function MoldEditView(props: IMoldEditViewProps): React.ReactElement {
-  const { wrapper, onSave, onSaveAs, onCancel, onMutation, readOnly } = props;
+  const { wrapper, onSave, onSaveAs, onCancel, onMutation, readOnly, buildPrompt, convert } = props;
+  const [showReroll, setShowReroll] = useState(false);
   const {
     data: { logger }
   } = useWorkspace();
@@ -419,7 +430,41 @@ export function MoldEditView(props: IMoldEditViewProps): React.ReactElement {
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">
       {/* Toolbar */}
-      <EditingToolbar context={ctx} changeIndicators={changeIndicators} />
+      <EditingToolbar
+        context={ctx}
+        changeIndicators={changeIndicators}
+        extraButtons={
+          buildPrompt && convert ? (
+            <button
+              type="button"
+              onClick={(): void => setShowReroll(!showReroll)}
+              title="Re-generate with AI"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded transition-colors"
+            >
+              <SparklesIcon className="h-3.5 w-3.5" />
+              <span>AI</span>
+            </button>
+          ) : undefined
+        }
+      />
+
+      {/* AI Re-roll dialog */}
+      {showReroll && buildPrompt && convert && (
+        <div className="px-4 pt-3">
+          <AiRerollDialog
+            entityName={entity.name}
+            entityLabel="Mold"
+            buildPrompt={buildPrompt}
+            convert={convert}
+            onResult={(generated): void => {
+              wrapper.applyUpdate(generated);
+              ctx.notifyMutation();
+              setShowReroll(false);
+            }}
+            onCancel={(): void => setShowReroll(false)}
+          />
+        </div>
+      )}
 
       {/* Identity Section */}
       <EditSection title="Identity">

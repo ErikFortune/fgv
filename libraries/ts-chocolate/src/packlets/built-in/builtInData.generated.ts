@@ -15,9 +15,12 @@
 //   - data/published/molds/cw.yaml
 //   - data/published/molds/greyas.yaml
 //   - data/published/molds/implast.yaml
+//   - data/published/molds/martellato.yaml
+//   - data/published/molds/other.yaml
 //   - data/published/procedures/common.yaml
 //   - data/published/tasks/common.yaml
 //   - data/published/confections/common.yaml
+//   - data/published/confections/fgv.json
 //   - data/published/decorations/common.yaml
 
 /* eslint-disable max-lines */
@@ -4044,6 +4047,151 @@ export const moldCollections: Record<string, JsonObject> = {
             url: 'https://www.youtube.com/watch?v=FY8DJTc3eRs'
           }
         ]
+      },
+      'chocolate-world-cw12027': {
+        baseId: 'chocolate-world-cw12027',
+        manufacturer: 'Chocolate World',
+        productNumber: 'CW12027',
+        name: 'The Taster',
+        description:
+          "Signature mold 'The Taster' designed by Lana Orlova Bauer, featuring 21 squeezed-in-the-middle half-sphere cavities, ideal for filled pralines or bonbons with glossy finish",
+        cavities: {
+          kind: 'grid',
+          columns: 7,
+          rows: 3,
+          info: {
+            weight: 13.5,
+            dimensions: {
+              width: 29.5,
+              length: 34.5,
+              depth: 17
+            }
+          }
+        },
+        format: 'series-1000',
+        tags: ['bonbon', 'praline', 'polycarbonate', 'signature', 'modern', 'filled'],
+        notes: [
+          {
+            category: 'ai',
+            note: "Dimensions consistently listed as 34.5 x 29.5 x 17 mm across sources (length x width x height/depth); weight per cavity 13.5g from official catalog and retailer specs. Format 'series-1000' confirmed via multiple sources as 275x135mm frame. Cavity shape described as 'squeezed-in-the-middle half-sphere' or similar modern abstract form. Grid is 3 rows x 7 columns totaling 21 cavities. Same model referenced as CW2468 in some contexts."
+          }
+        ],
+        urls: [
+          {
+            category: 'manufacturer-catalog-reference',
+            url: 'https://www.chocolateworld.be/pdf/CW_Moulds2026.pdf'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.amazon.com/Chocolate-World-CW12027-Polycarbonate-Lana-Orlova-Bauer/dp/B09L1LSG8Y'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.vantagehouse.com/product/moulds/chocolate-world-moulds/CW12027'
+          },
+          {
+            category: 'purchase',
+            url: 'https://zuccherocanada.us/products/the-taster-lana-orlova-bauer-chocolate-mold-cw12027'
+          }
+        ]
+      },
+      'chocolate-world-cw1840': {
+        baseId: 'chocolate-world-cw1840',
+        manufacturer: 'Chocolate World',
+        productNumber: 'CW1840',
+        name: 'Cube with edge',
+        description:
+          'Dan Forgey signature polycarbonate mold featuring 24 modern cube-shaped cavities with a slanted or flattened edge/corner, ideal for glossy pralines or bonbons',
+        cavities: {
+          kind: 'grid',
+          columns: 8,
+          rows: 3,
+          info: {
+            weight: 12,
+            dimensions: {
+              width: 23,
+              length: 23,
+              depth: 20
+            }
+          }
+        },
+        format: 'series-1000',
+        tags: ['cube', 'modern', 'bonbon', 'praline', 'polycarbonate', 'signature', 'dan forgey'],
+        notes: [
+          {
+            category: 'ai',
+            note: "Cavity dimensions consistently reported as 23 x 23 x 20 mm (width x length x depth/height) across multiple retailers and manufacturer specs. Weight per cavity 12g confirmed in official and sales listings. Layout 3 rows x 8 columns for 24 cavities. Format 'series-1000' (275x135mm) verified in product details. Shape described as 'cube with edge', 'cube with slanted edge', or 'square flattened at one corner'. Mold overall height ~30mm."
+          }
+        ],
+        urls: [
+          {
+            category: 'manufacturer',
+            url: 'https://www.chocolateworld.be/winkel/vormen/kadervormen/CW1840'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.amazon.com/Chocolate-World-CW1840-Polycarbonate-Dan-Forgey-Square/dp/B09L1KP2ND'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.vantagehouse.com/product/moulds/chocolate-world-moulds/CW1840'
+          },
+          {
+            category: 'purchase',
+            url: 'https://zuccherocanada.us/products/dan-forgey-chocolate-mold-cw1840'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.pastrychefsboutique.com/CHOCOLATE/Chocolate-Molds/polycarbonate-chocolate-molds/Modern-Shaped-Molds/chocolate-world-cw1840-polycarbonate-cube-with-edge-by-dan-forgey-chocolate-mold-23-x-23-x-20-mm-12gr-3x8-cavity-275x135x24mm-mo'
+          }
+        ]
+      },
+      'chocolate-world-cw1301': {
+        baseId: 'chocolate-world-cw1301',
+        manufacturer: 'Chocolate World',
+        productNumber: 'CW1301',
+        name: 'Wiro',
+        description:
+          "Polycarbonate chocolate mold featuring hexagonal or square cavities with a spiral 'wiro' swirl design on the bottom, creating elegant pralines or bonbons with decorative texture",
+        cavities: {
+          kind: 'grid',
+          columns: 8,
+          rows: 3,
+          info: {
+            weight: 10,
+            dimensions: {
+              width: 30,
+              length: 30,
+              depth: 16
+            }
+          }
+        },
+        format: 'series-1000',
+        tags: ['bonbon', 'praline', 'swirl', 'hexagonal', 'wiro', 'polycarbonate', 'fantasy'],
+        notes: [
+          {
+            category: 'ai',
+            note: "Cavity dimensions Ø30x16 mm (circular/round base with swirl, listed as 30x30x16 mm in rectangular approximation) from multiple retailer specs and catalog. Weight per cavity 10g consistent across sources. Layout 3 rows x 8 columns for 24 cavities in series-1000 (275x135 mm) frame, mold height 24 mm. Shape named 'Wiro' referring to spiral/swirl design, often categorized under fantasy or modern pralines; same model as CW2227 in series-2000. Dimensions are internal cavity specs; weight based on solid milk chocolate molding."
+          }
+        ],
+        urls: [
+          {
+            category: 'manufacturer',
+            url: 'https://www.chocolateworld.be/winkel/vormen/kadervormen/CW1301'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.vantagehouse.com/product/moulds/chocolate-world-moulds/CW1301'
+          },
+          {
+            category: 'purchase',
+            url: 'https://secure.auifinefoods.com/polycarbonate-mold-wiro-27-5x13-5x2-4cm-8613011301'
+          },
+          {
+            category: 'catalog-reference',
+            url: 'https://cocoaoutlet.com/media/pdf/CWmoulds13.pdf'
+          }
+        ]
       }
     }
   },
@@ -4139,6 +4287,62 @@ export const moldCollections: Record<string, JsonObject> = {
           {
             category: 'purchase',
             url: 'https://tantfondant.se/products/implast-pralinform-nr-753-chef-jungstedt'
+          }
+        ]
+      }
+    }
+  },
+  martellato: {
+    metadata: {
+      name: 'Martellato'
+    },
+    items: {}
+  },
+  other: {
+    metadata: {
+      name: 'Other'
+    },
+    items: {
+      'cabrellon-10176-coffee-cup': {
+        baseId: 'cabrellon-10176-coffee-cup',
+        manufacturer: 'Cabrellon',
+        productNumber: '10176',
+        name: 'Coffee cup',
+        description:
+          'Small coffee cup / tea cup shaped cavities in a classic mini format, suitable for bonbons or hollow shells',
+        cavities: {
+          kind: 'grid',
+          columns: 8,
+          rows: 4,
+          info: {
+            weight: 9.4,
+            dimensions: {
+              width: 26,
+              length: 26,
+              depth: 15.6
+            }
+          }
+        },
+        format: 'series-2000',
+        tags: ['cup', 'coffee cup', 'tea cup', 'mini', 'polycarbonate', 'bonbon'],
+        notes: [
+          {
+            category: 'ai',
+            note: "Weight per cavity approximated as ~9.4g based on 1/3oz (≈9.45g) from one retailer listing; exact manufacturer weight may vary slightly as approximations are common. Dimensions Ø 26mm (taken as width/length) and height 15.6mm from catalog excerpt. Format 'series-2000' assigned due to 275x175mm size matching the larger series. Listed as 'coffee cup' per user query but often described as 'small tea cup' or 'tiny cup' in sources."
+          }
+        ],
+        urls: [
+          {
+            category: 'manufacturer-catalog-reference',
+            url: 'https://www.cabrellon.it/wp-content/uploads/2023/05/CATALOGO-23-1.pdf'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.homechocolatefactory.com/PROD/PMC10176.html'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.chocolat-chocolat.com/product/art10176-chocolate-mold-tiny-cup'
           }
         ]
       }
@@ -5144,6 +5348,18 @@ export const confectionCollections: Record<string, JsonObject> = {
           }
         ]
       }
+    }
+  },
+  fgv: {
+    format: 'encrypted-collection-v1',
+    secretName: 'fgv',
+    algorithm: 'AES-256-GCM',
+    iv: 'BNvukisCBmoRemOF',
+    authTag: 'NOC7leJ4RE1fwwYnkbvj3A==',
+    encryptedData: '6FI=',
+    metadata: {
+      collectionId: 'fgv',
+      itemCount: 0
     }
   }
 };
