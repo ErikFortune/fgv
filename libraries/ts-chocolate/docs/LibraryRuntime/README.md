@@ -440,6 +440,15 @@ Description
 <tbody>
 <tr><td>
 
+[IPersistenceConfig](./interfaces/IPersistenceConfig.md)
+
+</td><td>
+
+Configuration for the persistence pipeline, supplied after library creation
+
+</td></tr>
+<tr><td>
+
 [IInstantiatedEntityLibrarySources](./interfaces/IInstantiatedEntityLibrarySources.md)
 
 </td><td>

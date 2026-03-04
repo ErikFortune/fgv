@@ -117,8 +117,8 @@ export function IngredientsTabContent(): React.ReactElement {
       entityLabel: 'ingredient'
     }),
     entityLabel: 'ingredient',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableIngredientsEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedIngredientsCollection(collectionId)
   });
 
   const { entities: ingredients, selectedId } = useEntityList<LibraryRuntime.AnyIngredient, IngredientId>({

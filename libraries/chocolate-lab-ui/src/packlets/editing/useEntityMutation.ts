@@ -37,23 +37,13 @@ import { useCallback } from 'react';
 
 import { fail, succeed, type IResult, type Result } from '@fgv/ts-utils';
 
-import type { CollectionId } from '@fgv/ts-chocolate';
+import type { CollectionId, Editing } from '@fgv/ts-chocolate';
+type PersistedEditableCollection<TEntity, TBaseId extends string> = Editing.PersistedEditableCollection<
+  TEntity,
+  TBaseId
+>;
 
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-/**
- * Minimal editable collection shape used by the mutation helper.
- * @public
- */
-export interface IEditableEntityCollection<TEntity, TBaseId extends string> {
-  readonly set: (id: TBaseId, entity: TEntity) => void;
-  readonly canSave: () => boolean;
-  readonly save: () => Promise<Result<unknown>>;
-}
 
 /**
  * Infers the mutable branch of a collection entry union by requiring `items.set`.
@@ -108,12 +98,12 @@ export interface IEntityMutationOptions<TEntity, TBaseId extends string> {
   readonly entityLabel: string;
 
   /**
-   * Optional accessor for editable collections.
+   * Optional accessor for persisted collection singletons.
    * If absent, persistence is skipped and mutation remains in-memory.
    */
-  readonly getEditableCollection?: (
+  readonly getPersistedCollection?: (
     collectionId: CollectionId
-  ) => Result<IEditableEntityCollection<TEntity, TBaseId>>;
+  ) => Result<PersistedEditableCollection<TEntity, TBaseId>>;
 }
 
 /**
@@ -201,7 +191,7 @@ export function createSetInMutableCollection<
 export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId extends string>(
   options: IEntityMutationOptions<TEntity, TBaseId>
 ): IEntityMutationActions<TEntity, TBaseId, TCompositeId> {
-  const { setInMutableCollection, entityLabel, getEditableCollection } = options;
+  const { setInMutableCollection, entityLabel, getPersistedCollection } = options;
 
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
@@ -212,39 +202,26 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
   }, [workspace, reactiveWorkspace]);
 
   const persistIfRequested = useCallback(
-    async (
-      collectionId: CollectionId,
-      baseId: TBaseId,
-      entity: TEntity,
-      persistToDisk: boolean
-    ): Promise<void> => {
-      if (!persistToDisk || !getEditableCollection) {
+    async (collectionId: CollectionId, persistToDisk: boolean): Promise<void> => {
+      if (!persistToDisk || !getPersistedCollection) {
         return;
       }
 
-      const editableResult = getEditableCollection(collectionId);
-      if (editableResult.isFailure()) {
+      const persistedResult = getPersistedCollection(collectionId);
+      if (persistedResult.isFailure()) {
         workspace.data.logger.info(
-          `Updated ${entityLabel} in-memory only (collection '${collectionId}'): ${editableResult.message}`
+          `Updated ${entityLabel} in-memory only (collection '${collectionId}'): ${persistedResult.message}`
         );
         return;
       }
 
-      const editable = editableResult.value;
-      editable.set(baseId, entity);
-      if (editable.canSave()) {
-        const saveResult = await editable.save();
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Disk save failed for ${entityLabel}: ${saveResult.message}`);
-        } else if (reactiveWorkspace.hasDirtyTrees) {
-          const syncResult = await reactiveWorkspace.syncAllToDisk();
-          if (syncResult.isFailure()) {
-            workspace.data.logger.error(`Disk sync failed: ${syncResult.message}`);
-          }
-        }
+      // save() handles: re-snapshot from SubLibrary → FileTree write → disk sync
+      const saveResult = await persistedResult.value.save();
+      if (saveResult.isFailure()) {
+        workspace.data.logger.error(`Disk save failed for ${entityLabel}: ${saveResult.message}`);
       }
     },
-    [entityLabel, getEditableCollection, workspace, reactiveWorkspace]
+    [entityLabel, getPersistedCollection, workspace]
   );
 
   const createEntity = useCallback(
@@ -284,7 +261,7 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
         return fail(message);
       }
 
-      await persistIfRequested(mutableCollectionId, baseId, entity, persistToDisk);
+      await persistIfRequested(mutableCollectionId, persistToDisk);
       refreshWorkspace();
       return succeed(compositeId);
     },
@@ -312,7 +289,7 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
         return fail(message);
       }
 
-      await persistIfRequested(collectionId, baseId, entity, persistToDisk);
+      await persistIfRequested(collectionId, persistToDisk);
       refreshWorkspace();
       return succeed(compositeId);
     },

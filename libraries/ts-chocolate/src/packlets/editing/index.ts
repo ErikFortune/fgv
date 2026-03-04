@@ -33,6 +33,9 @@ export * from './validation';
 // Editable collection wrapper (thin wrapper around ValidatingResultMap)
 export * from './editableCollection';
 
+// Persisted editable collection (singleton wrapper with save pipeline)
+export * from './persistedEditableCollection';
+
 // Collection manager (collection-level CRUD operations)
 export * from './collectionManager';
 

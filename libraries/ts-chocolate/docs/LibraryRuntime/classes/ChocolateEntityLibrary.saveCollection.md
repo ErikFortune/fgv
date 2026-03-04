@@ -4,14 +4,9 @@
 
 Save a collection's current in-memory state to its backing file tree.
 
-Finds the sub-library that owns the given collection, creates an
-ephemeral EditableCollection that snapshots the current state,
-and calls EditableCollection.save | save() to write serialized
-content to the file tree item.
-
-After a successful save the caller should call
-`reactiveWorkspace.syncAllToDisk()` to flush the file tree to the
-filesystem.
+Uses the persisted collection singleton if available, otherwise falls
+back to the ephemeral snapshot pattern. When using persisted singletons,
+the full save pipeline (FileTree write + disk sync) is handled automatically.
 
 **Signature:**
 

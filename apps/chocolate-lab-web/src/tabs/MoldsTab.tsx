@@ -106,8 +106,8 @@ export function MoldsTabContent(): React.ReactElement {
       entityLabel: 'mold'
     }),
     entityLabel: 'mold',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableMoldsEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedMoldsCollection(collectionId)
   });
 
   const handleCreateMold = useCallback(

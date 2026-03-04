@@ -19,7 +19,6 @@ import type {
   DecorationId
 } from '@fgv/ts-chocolate';
 import { fail } from '@fgv/ts-utils';
-import type { Result } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type IReferenceScanResult,
@@ -29,6 +28,7 @@ import {
   useCanDeleteFromCollections,
   useEntityActions,
   createSetInMutableCollection,
+  type MutableCollectionEntryWithSet,
   useEntityMutation,
   IngredientDetail,
   IngredientEditView,
@@ -99,6 +99,18 @@ export function DecorationsTabContent(): React.ReactElement {
     workspace.settings?.getResolvedSettings().defaultTargets.decorations
   );
 
+  const ingredientMutableCollectionId = useMutableCollection(
+    workspace.data.entities.ingredients.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.ingredients
+  );
+
+  const procedureMutableCollectionId = useMutableCollection(
+    workspace.data.entities.procedures.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.procedures
+  );
+
   const writableDecorationCollections = useMemo(
     (): ReadonlyArray<{ id: string; label?: string }> =>
       getWritableCollectionOptions(
@@ -115,6 +127,22 @@ export function DecorationsTabContent(): React.ReactElement {
 
   type DecorationCollectionResult = ReturnType<typeof workspace.data.entities.decorations.collections.get>;
   type DecorationCollectionEntry = Exclude<DecorationCollectionResult['value'], undefined>;
+
+  type IngredientCollectionResult = ReturnType<typeof workspace.data.entities.ingredients.collections.get>;
+  type IngredientCollectionEntry = Exclude<IngredientCollectionResult['value'], undefined>;
+  type IngredientMutableCollectionEntry = MutableCollectionEntryWithSet<
+    IngredientCollectionEntry,
+    BaseIngredientId,
+    Entities.Ingredients.IngredientEntity
+  >;
+
+  type ProcedureCollectionResult = ReturnType<typeof workspace.data.entities.procedures.collections.get>;
+  type ProcedureCollectionEntry = Exclude<ProcedureCollectionResult['value'], undefined>;
+  type ProcedureMutableCollectionEntry = MutableCollectionEntryWithSet<
+    ProcedureCollectionEntry,
+    BaseProcedureId,
+    Entities.Procedures.IProcedureEntity
+  >;
 
   const decorationMutation = useEntityMutation<
     Entities.Decorations.IDecorationEntity,
@@ -133,8 +161,62 @@ export function DecorationsTabContent(): React.ReactElement {
       entityLabel: 'decoration'
     }),
     entityLabel: 'decoration',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableDecorationsEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedDecorationsCollection(collectionId)
+  });
+
+  const ingredientMutation = useEntityMutation<
+    Entities.Ingredients.IngredientEntity,
+    BaseIngredientId,
+    IngredientId
+  >({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Ingredients.IngredientEntity,
+      BaseIngredientId,
+      IngredientCollectionEntry,
+      IngredientMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.ingredients.collections.get(collectionId),
+      isMutable: (entry: IngredientCollectionEntry): entry is IngredientMutableCollectionEntry =>
+        entry.isMutable && 'set' in entry.items,
+      setEntity: (
+        entry: IngredientMutableCollectionEntry,
+        baseId: BaseIngredientId,
+        entity: Entities.Ingredients.IngredientEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'ingredient'
+    }),
+    entityLabel: 'ingredient',
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedIngredientsCollection(collectionId)
+  });
+
+  const procedureMutation = useEntityMutation<
+    Entities.Procedures.IProcedureEntity,
+    BaseProcedureId,
+    ProcedureId
+  >({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Procedures.IProcedureEntity,
+      BaseProcedureId,
+      ProcedureCollectionEntry,
+      ProcedureMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.procedures.collections.get(collectionId),
+      isMutable: (entry: ProcedureCollectionEntry): entry is ProcedureMutableCollectionEntry =>
+        entry.isMutable && 'set' in entry.items,
+      setEntity: (
+        entry: ProcedureMutableCollectionEntry,
+        baseId: BaseProcedureId,
+        entity: Entities.Procedures.IProcedureEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'procedure'
+    }),
+    entityLabel: 'procedure',
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedProceduresCollection(collectionId)
   });
 
   const { entities: decorations, selectedId } = useEntityList<LibraryRuntime.IDecoration, DecorationId>({
@@ -426,7 +508,7 @@ export function DecorationsTabContent(): React.ReactElement {
   // Paste ingredient from clipboard (AI-generated JSON)
   const handlePasteIngredientFromDecoration = useCallback((): void => {
     navigator.clipboard.readText().then(
-      (text) => {
+      async (text) => {
         if (!text.trim()) {
           workspace.data.logger.info('Clipboard is empty');
           return;
@@ -452,114 +534,67 @@ export function DecorationsTabContent(): React.ReactElement {
           return;
         }
 
-        // Find a mutable ingredient collection
-        let ingredientCollectionId: CollectionId | undefined;
-        for (const [id, col] of workspace.data.entities.ingredients.collections.entries()) {
-          if (col.isMutable) {
-            ingredientCollectionId = id as CollectionId;
-            break;
-          }
-        }
-        if (!ingredientCollectionId) {
+        if (!ingredientMutableCollectionId) {
           workspace.data.logger.error('Cannot add ingredient: no mutable ingredient collection available');
           return;
         }
 
         const entity = result.value;
         const baseId = entity.baseId as BaseIngredientId;
-        const compositeId = `${ingredientCollectionId}.${baseId}` as IngredientId;
 
-        const existing = workspace.data.ingredients.get(compositeId);
-        if (existing.isSuccess()) {
-          workspace.data.logger.info(`Ingredient '${entity.name}' already exists — available for selection`);
-          return;
+        const createResult = await ingredientMutation.createEntity({
+          targetCollectionId: ingredientMutableCollectionId,
+          getCompositeId: (collectionId: CollectionId, nextBaseId: BaseIngredientId) =>
+            `${collectionId}.${nextBaseId}` as IngredientId,
+          baseId,
+          entity,
+          exists: (id: IngredientId) => workspace.data.ingredients.get(id).isSuccess(),
+          persistToDisk: true
+        });
+        if (createResult.isSuccess()) {
+          workspace.data.logger.info(
+            `Added ingredient '${entity.name}' from clipboard — now available for selection`
+          );
         }
-
-        const colResult = workspace.data.entities.ingredients.collections.get(ingredientCollectionId);
-        if (colResult.isFailure() || !colResult.value.isMutable) {
-          workspace.data.logger.error('Failed to access mutable ingredient collection');
-          return;
-        }
-        const setResult = colResult.value.items.set(baseId, entity);
-        if (setResult.isFailure()) {
-          workspace.data.logger.error(`Failed to add ingredient: ${setResult.message}`);
-          return;
-        }
-
-        workspace.data.clearCache();
-        reactiveWorkspace.notifyChange();
-        workspace.data.logger.info(
-          `Added ingredient '${entity.name}' from clipboard — now available for selection`
-        );
       },
       () => {
         workspace.data.logger.error('Could not read clipboard — permission may be required');
       }
     );
-  }, [workspace, reactiveWorkspace]);
+  }, [workspace, ingredientMutation, ingredientMutableCollectionId]);
 
   // Handle ingredient creation from sub-entity create form
   const handleSubEntityIngredientCreate = useCallback(
-    async (entity: Entities.Ingredients.IngredientEntity, __source: 'manual' | 'ai'): Promise<void> => {
-      let ingredientCollectionId: CollectionId | undefined;
-      for (const [id, col] of workspace.data.entities.ingredients.collections.entries()) {
-        if (col.isMutable) {
-          ingredientCollectionId = id as CollectionId;
-          break;
-        }
-      }
-      if (!ingredientCollectionId) {
+    async (entity: Entities.Ingredients.IngredientEntity, _source: 'manual' | 'ai'): Promise<void> => {
+      if (!ingredientMutableCollectionId) {
         workspace.data.logger.error('Cannot add ingredient: no mutable ingredient collection available');
         return;
       }
 
       const baseId = entity.baseId as BaseIngredientId;
-      const compositeId = `${ingredientCollectionId}.${baseId}` as IngredientId;
 
-      const existing = workspace.data.ingredients.get(compositeId);
-      if (existing.isSuccess()) {
-        workspace.data.logger.error(`Ingredient '${compositeId}' already exists`);
+      const createResult = await ingredientMutation.createEntity({
+        targetCollectionId: ingredientMutableCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseIngredientId) =>
+          `${collectionId}.${nextBaseId}` as IngredientId,
+        baseId,
+        entity,
+        exists: (id: IngredientId) => workspace.data.ingredients.get(id).isSuccess(),
+        persistToDisk: true
+      });
+      if (createResult.isFailure()) {
         return;
       }
 
-      const colResult = workspace.data.entities.ingredients.collections.get(ingredientCollectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) {
-        workspace.data.logger.error('Failed to access mutable ingredient collection');
-        return;
-      }
-      const setResult = colResult.value.items.set(baseId, entity);
-      if (setResult.isFailure()) {
-        workspace.data.logger.error(`Failed to add ingredient: ${setResult.message}`);
-        return;
-      }
+      const compositeId = createResult.value;
 
-      // Persist to disk
-      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(
-        ingredientCollectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const diskResult = await editable.save();
-          if (diskResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed for ingredient: ${diskResult.message}`);
-          }
-        }
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
       setSubEntitySeed('');
 
       // Open the new ingredient in edit mode (squashed after decoration editor)
       const wrapperResult = LibraryRuntime.EditedIngredient.create(entity);
-      if (wrapperResult.isFailure()) {
-        workspace.data.logger.error(`Failed to create ingredient editing wrapper: ${wrapperResult.message}`);
-        return;
+      if (wrapperResult.isSuccess()) {
+        subIngredientRef.current = { id: compositeId, wrapper: wrapperResult.value };
       }
-      subIngredientRef.current = { id: compositeId, wrapper: wrapperResult.value };
 
       const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
       if (editIdx >= 0) {
@@ -569,71 +604,41 @@ export function DecorationsTabContent(): React.ReactElement {
         ]);
       }
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [workspace, cascadeStack, squashCascade, ingredientMutation, ingredientMutableCollectionId]
   );
 
   // Handle procedure creation from sub-entity create form
   const handleSubEntityProcedureCreate = useCallback(
     async (entity: Entities.Procedures.IProcedureEntity, _source: 'manual' | 'ai'): Promise<void> => {
-      let procedureCollectionId: CollectionId | undefined;
-      for (const [id, col] of workspace.data.entities.procedures.collections.entries()) {
-        if (col.isMutable) {
-          procedureCollectionId = id as CollectionId;
-          break;
-        }
-      }
-      if (!procedureCollectionId) {
+      if (!procedureMutableCollectionId) {
         workspace.data.logger.error('Cannot add procedure: no mutable procedure collection available');
         return;
       }
 
       const baseId = entity.baseId as BaseProcedureId;
-      const compositeId = `${procedureCollectionId}.${baseId}` as ProcedureId;
 
-      const existing = workspace.data.procedures.get(compositeId);
-      if (existing.isSuccess()) {
-        workspace.data.logger.error(`Procedure '${compositeId}' already exists`);
+      const createResult = await procedureMutation.createEntity({
+        targetCollectionId: procedureMutableCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseProcedureId) =>
+          `${collectionId}.${nextBaseId}` as ProcedureId,
+        baseId,
+        entity,
+        exists: (id: ProcedureId) => workspace.data.procedures.get(id).isSuccess(),
+        persistToDisk: true
+      });
+      if (createResult.isFailure()) {
         return;
       }
 
-      const colResult = workspace.data.entities.procedures.collections.get(procedureCollectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) {
-        workspace.data.logger.error('Failed to access mutable procedure collection');
-        return;
-      }
-      const setResult = colResult.value.items.set(baseId, entity);
-      if (setResult.isFailure()) {
-        workspace.data.logger.error(`Failed to add procedure: ${setResult.message}`);
-        return;
-      }
+      const compositeId = createResult.value;
 
-      // Persist to disk
-      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(
-        procedureCollectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const diskResult = await editable.save();
-          if (diskResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed for procedure: ${diskResult.message}`);
-          }
-        }
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
       setSubEntitySeed('');
 
       // Open the new procedure in edit mode (squashed after decoration editor)
       const wrapperResult = LibraryRuntime.EditedProcedure.create(entity);
-      if (wrapperResult.isFailure()) {
-        workspace.data.logger.error(`Failed to create procedure editing wrapper: ${wrapperResult.message}`);
-        return;
+      if (wrapperResult.isSuccess()) {
+        subProcedureRef.current = { id: compositeId, wrapper: wrapperResult.value };
       }
-      subProcedureRef.current = { id: compositeId, wrapper: wrapperResult.value };
 
       const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
       if (editIdx >= 0) {
@@ -643,7 +648,7 @@ export function DecorationsTabContent(): React.ReactElement {
         ]);
       }
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [workspace, cascadeStack, squashCascade, procedureMutation, procedureMutableCollectionId]
   );
 
   // Cancel sub-entity creation — pop back to decoration editor
@@ -695,36 +700,22 @@ export function DecorationsTabContent(): React.ReactElement {
   const handleSubIngredientSave = useCallback(
     async (wrapper: LibraryRuntime.EditedIngredient): Promise<void> => {
       const entity = wrapper.current;
-      const compositeId = subIngredientRef.current?.id;
-      if (!compositeId) return;
+      const refId = subIngredientRef.current?.id;
+      if (!refId) return;
 
-      const collectionId = compositeId.split('.')[0] as CollectionId;
+      const compositeId = refId as IngredientId;
       const baseId = entity.baseId as BaseIngredientId;
 
-      const colResult = workspace.data.entities.ingredients.collections.get(collectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) {
-        workspace.data.logger.error(`Save failed: ingredient collection '${collectionId}' not available`);
+      const saveResult = await ingredientMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
         return;
       }
-      colResult.value.items.set(baseId, entity);
 
-      const editableResult = workspace.data.entities.getEditableIngredientsEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const diskResult = await editable.save();
-          if (diskResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed for ingredient: ${diskResult.message}`);
-          }
-        }
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
       subIngredientRef.current = undefined;
 
       const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
@@ -732,7 +723,7 @@ export function DecorationsTabContent(): React.ReactElement {
         squashCascade(cascadeStack.slice(0, editIdx + 1));
       }
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [cascadeStack, squashCascade, ingredientMutation]
   );
 
   // Cancel sub-entity ingredient editing — pop back to decoration editor
@@ -748,36 +739,22 @@ export function DecorationsTabContent(): React.ReactElement {
   const handleSubProcedureSave = useCallback(
     async (wrapper: LibraryRuntime.EditedProcedure): Promise<void> => {
       const entity = wrapper.current;
-      const compositeId = subProcedureRef.current?.id;
-      if (!compositeId) return;
+      const refId = subProcedureRef.current?.id;
+      if (!refId) return;
 
-      const collectionId = compositeId.split('.')[0] as CollectionId;
+      const compositeId = refId as ProcedureId;
       const baseId = entity.baseId as BaseProcedureId;
 
-      const colResult = workspace.data.entities.procedures.collections.get(collectionId);
-      if (colResult.isFailure() || !colResult.value.isMutable) {
-        workspace.data.logger.error(`Save failed: procedure collection '${collectionId}' not available`);
+      const saveResult = await procedureMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
         return;
       }
-      colResult.value.items.set(baseId, entity);
 
-      const editableResult = workspace.data.entities.getEditableProceduresEntityCollection(
-        collectionId,
-        workspace.keyStore
-      );
-      if (editableResult.isSuccess()) {
-        const editable = editableResult.value;
-        editable.set(baseId, entity);
-        if (editable.canSave()) {
-          const diskResult = await editable.save();
-          if (diskResult.isFailure()) {
-            workspace.data.logger.error(`Disk save failed for procedure: ${diskResult.message}`);
-          }
-        }
-      }
-
-      workspace.data.clearCache();
-      reactiveWorkspace.notifyChange();
       subProcedureRef.current = undefined;
       procedureSession.cleanup();
 
@@ -786,7 +763,7 @@ export function DecorationsTabContent(): React.ReactElement {
         squashCascade(cascadeStack.slice(0, editIdx + 1));
       }
     },
-    [workspace, reactiveWorkspace, cascadeStack, squashCascade, procedureSession]
+    [cascadeStack, squashCascade, procedureMutation, procedureSession]
   );
 
   // Cancel sub-entity procedure editing — pop back to decoration editor

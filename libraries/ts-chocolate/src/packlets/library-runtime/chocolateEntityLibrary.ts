@@ -24,7 +24,7 @@
  * @packageDocumentation
  */
 
-import { Logging, Result, Success, fail } from '@fgv/ts-utils';
+import { Converter, Logging, Result, Success, fail, succeed } from '@fgv/ts-utils';
 
 import {
   Converters as CommonConverters,
@@ -46,15 +46,43 @@ import { IProcedureEntity, ProceduresLibrary } from '../entities';
 import { IRawTaskEntity, TasksLibrary } from '../entities';
 import { IDecorationEntity, DecorationsLibrary } from '../entities';
 import { CryptoUtils } from '@fgv/ts-extras';
-import { EditableCollection } from '../editing';
+import { EditableCollection, ISyncProvider, PersistedEditableCollection } from '../editing';
 import {
   FullLibraryLoadSpec,
   IFileTreeSource,
   ILibraryFileTreeSource,
+  SubLibraryBase,
   normalizeFileSources,
   resolveBuiltInSpec,
   SubLibraryId
 } from '../library-data';
+
+// ============================================================================
+// Persistence Configuration
+// ============================================================================
+
+/**
+ * Configuration for the persistence pipeline, supplied after library creation
+ * via {@link ChocolateEntityLibrary.configurePersistence | configurePersistence()}.
+ *
+ * @public
+ */
+export interface IPersistenceConfig {
+  /**
+   * Provider for flushing FileTree changes to the filesystem.
+   * In the web app, wraps `reactiveWorkspace.syncAllToDisk()`.
+   */
+  readonly syncProvider?: ISyncProvider;
+
+  /**
+   * Encryption provider (or lazy getter) for encrypted collections.
+   * Use a getter function when the provider is not yet available at
+   * configuration time (e.g. a KeyStore that is unlocked after startup).
+   */
+  readonly encryptionProvider?:
+    | CryptoUtils.IEncryptionProvider
+    | (() => CryptoUtils.IEncryptionProvider | undefined);
+}
 
 // ============================================================================
 // Parameters Interface
@@ -163,6 +191,41 @@ export class ChocolateEntityLibrary {
   private readonly _tasks: TasksLibrary;
   private readonly _confections: Entities.Confections.ConfectionsLibrary;
   private readonly _decorations: DecorationsLibrary;
+
+  // Persistence configuration (set via configurePersistence)
+  private _syncProvider: ISyncProvider | undefined;
+  private _encryptionProvider:
+    | CryptoUtils.IEncryptionProvider
+    | (() => CryptoUtils.IEncryptionProvider | undefined)
+    | undefined;
+
+  // Singleton caches for persisted collections (one map per sub-library)
+  private readonly _persistedIngredients: Map<
+    CollectionId,
+    PersistedEditableCollection<IngredientEntity, BaseIngredientId>
+  > = new Map();
+  private readonly _persistedFillings: Map<
+    CollectionId,
+    PersistedEditableCollection<IFillingRecipeEntity, BaseFillingId>
+  > = new Map();
+  private readonly _persistedMolds: Map<CollectionId, PersistedEditableCollection<IMoldEntity, BaseMoldId>> =
+    new Map();
+  private readonly _persistedProcedures: Map<
+    CollectionId,
+    PersistedEditableCollection<IProcedureEntity, BaseProcedureId>
+  > = new Map();
+  private readonly _persistedTasks: Map<
+    CollectionId,
+    PersistedEditableCollection<IRawTaskEntity, BaseTaskId>
+  > = new Map();
+  private readonly _persistedConfections: Map<
+    CollectionId,
+    PersistedEditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>
+  > = new Map();
+  private readonly _persistedDecorations: Map<
+    CollectionId,
+    PersistedEditableCollection<IDecorationEntity, BaseDecorationId>
+  > = new Map();
 
   /**
    * Logger used by this library and its sub-libraries.
@@ -349,6 +412,159 @@ export class ChocolateEntityLibrary {
     return this._decorations;
   }
 
+  // ==========================================================================
+  // Persistence Configuration
+  // ==========================================================================
+
+  /**
+   * Configure the persistence pipeline for this library.
+   *
+   * Call this once during app initialization after the workspace and KeyStore
+   * are available. Persisted collection wrappers created after this call will
+   * use the provided sync and encryption providers.
+   *
+   * @param config - Persistence configuration
+   * @public
+   */
+  public configurePersistence(config: IPersistenceConfig): void {
+    this._syncProvider = config.syncProvider;
+    this._encryptionProvider = config.encryptionProvider;
+  }
+
+  // ==========================================================================
+  // Persisted Collection Singletons
+  // ==========================================================================
+
+  /**
+   * Get or create a singleton persisted ingredients collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   * @public
+   */
+  public getPersistedIngredientsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<IngredientEntity, BaseIngredientId>> {
+    return this._getOrCreatePersisted(
+      this._persistedIngredients,
+      this.ingredients,
+      collectionId,
+      CommonConverters.baseIngredientId,
+      EntityConverters.Ingredients.ingredientEntity
+    );
+  }
+
+  /**
+   * Get or create a singleton persisted fillings collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   * @public
+   */
+  public getPersistedFillingsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<IFillingRecipeEntity, BaseFillingId>> {
+    return this._getOrCreatePersisted(
+      this._persistedFillings,
+      this.fillings,
+      collectionId,
+      CommonConverters.baseFillingId,
+      EntityConverters.Fillings.fillingRecipeEntity
+    );
+  }
+
+  /**
+   * Get or create a singleton persisted molds collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   * @public
+   */
+  public getPersistedMoldsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<IMoldEntity, BaseMoldId>> {
+    return this._getOrCreatePersisted(
+      this._persistedMolds,
+      this.molds,
+      collectionId,
+      CommonConverters.baseMoldId,
+      EntityConverters.Molds.moldEntity
+    );
+  }
+
+  /**
+   * Get or create a singleton persisted procedures collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   * @public
+   */
+  public getPersistedProceduresCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<IProcedureEntity, BaseProcedureId>> {
+    return this._getOrCreatePersisted(
+      this._persistedProcedures,
+      this.procedures,
+      collectionId,
+      CommonConverters.baseProcedureId,
+      EntityConverters.Procedures.procedureEntity
+    );
+  }
+
+  /**
+   * Get or create a singleton persisted tasks collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   * @public
+   */
+  public getPersistedTasksCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<IRawTaskEntity, BaseTaskId>> {
+    return this._getOrCreatePersisted(
+      this._persistedTasks,
+      this.tasks,
+      collectionId,
+      CommonConverters.baseTaskId,
+      EntityConverters.Tasks.rawTaskEntity
+    );
+  }
+
+  /**
+   * Get or create a singleton persisted confections collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   * @public
+   */
+  public getPersistedConfectionsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>> {
+    return this._getOrCreatePersisted(
+      this._persistedConfections,
+      this.confections,
+      collectionId,
+      CommonConverters.baseConfectionId,
+      EntityConverters.Confections.anyConfectionRawEntity
+    );
+  }
+
+  /**
+   * Get or create a singleton persisted decorations collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   * @public
+   */
+  public getPersistedDecorationsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<IDecorationEntity, BaseDecorationId>> {
+    return this._getOrCreatePersisted(
+      this._persistedDecorations,
+      this.decorations,
+      collectionId,
+      CommonConverters.baseDecorationId,
+      EntityConverters.Decorations.decorationEntity
+    );
+  }
+
+  // ==========================================================================
+  // Ephemeral Editable Collections (legacy — use getPersisted* for new code)
+  // ==========================================================================
+
   /**
    * Get an editable ingredients collection with persistence enabled.
    * @param collectionId - ID of the collection to make editable
@@ -496,14 +712,9 @@ export class ChocolateEntityLibrary {
   /**
    * Save a collection's current in-memory state to its backing file tree.
    *
-   * Finds the sub-library that owns the given collection, creates an
-   * ephemeral {@link EditableCollection} that snapshots the current state,
-   * and calls {@link EditableCollection.save | save()} to write serialized
-   * content to the file tree item.
-   *
-   * After a successful save the caller should call
-   * `reactiveWorkspace.syncAllToDisk()` to flush the file tree to the
-   * filesystem.
+   * Uses the persisted collection singleton if available, otherwise falls
+   * back to the ephemeral snapshot pattern. When using persisted singletons,
+   * the full save pipeline (FileTree write + disk sync) is handled automatically.
    *
    * @remarks
    * When a collection ID exists in multiple sub-libraries (e.g. `"common"`),
@@ -530,51 +741,74 @@ export class ChocolateEntityLibrary {
           lib.collections.has(collectionId);
 
     if (match(this.ingredients)) {
-      return this._saveEditable(
-        this.getEditableIngredientsEntityCollection(collectionId, encryptionProvider)
-      );
+      return this._savePersisted(this.getPersistedIngredientsCollection(collectionId));
     }
     if (match(this.fillings)) {
-      return this._saveEditable(
-        this.getEditableFillingsRecipeEntityCollection(collectionId, encryptionProvider)
-      );
+      return this._savePersisted(this.getPersistedFillingsCollection(collectionId));
     }
     if (match(this.molds)) {
-      return this._saveEditable(this.getEditableMoldsEntityCollection(collectionId, encryptionProvider));
+      return this._savePersisted(this.getPersistedMoldsCollection(collectionId));
     }
     if (match(this.procedures)) {
-      return this._saveEditable(this.getEditableProceduresEntityCollection(collectionId, encryptionProvider));
+      return this._savePersisted(this.getPersistedProceduresCollection(collectionId));
     }
     if (match(this.tasks)) {
-      return this._saveEditable(this.getEditableTasksEntityCollection(collectionId, encryptionProvider));
+      return this._savePersisted(this.getPersistedTasksCollection(collectionId));
     }
     if (match(this.confections)) {
-      return this._saveEditable(
-        this.getEditableConfectionsEntityCollection(collectionId, encryptionProvider)
-      );
+      return this._savePersisted(this.getPersistedConfectionsCollection(collectionId));
     }
     if (match(this.decorations)) {
-      return this._saveEditable(
-        this.getEditableDecorationsEntityCollection(collectionId, encryptionProvider)
-      );
+      return this._savePersisted(this.getPersistedDecorationsCollection(collectionId));
     }
     return fail(`Collection '${collectionId}' not found in any sub-library`);
   }
 
+  // ==========================================================================
+  // Private Helpers
+  // ==========================================================================
+
   /**
-   * Save an editable collection if it supports persistence.
+   * Get or create a singleton persisted collection wrapper.
    * @internal
    */
-  private async _saveEditable<T, TBaseId extends string>(
-    editableResult: Result<EditableCollection<T, TBaseId>>
+  private _getOrCreatePersisted<T, TBaseId extends string>(
+    cache: Map<CollectionId, PersistedEditableCollection<T, TBaseId>>,
+    subLibrary: SubLibraryBase<string, TBaseId, T>,
+    collectionId: CollectionId,
+    keyConverter: Converter<TBaseId, unknown>,
+    valueConverter: Converter<T, unknown>
+  ): Result<PersistedEditableCollection<T, TBaseId>> {
+    // Verify the collection exists before creating a wrapper
+    if (!subLibrary.collections.has(collectionId)) {
+      return fail(`Collection "${collectionId}" not found`);
+    }
+
+    let cached = cache.get(collectionId);
+    if (!cached) {
+      cached = new PersistedEditableCollection({
+        subLibrary,
+        collectionId,
+        keyConverter,
+        valueConverter,
+        syncProvider: this._syncProvider,
+        encryptionProvider: this._encryptionProvider
+      });
+      cache.set(collectionId, cached);
+    }
+    return succeed(cached);
+  }
+
+  /**
+   * Save a persisted collection wrapper, handling the Result unwrap.
+   * @internal
+   */
+  private async _savePersisted<T, TBaseId extends string>(
+    persistedResult: Result<PersistedEditableCollection<T, TBaseId>>
   ): Promise<Result<true>> {
-    if (editableResult.isFailure()) {
-      return fail(editableResult.message);
+    if (persistedResult.isFailure()) {
+      return fail(persistedResult.message);
     }
-    const editable = editableResult.value;
-    if (!editable.canSave()) {
-      return fail(`Collection '${editable.collectionId}' does not support persistence`);
-    }
-    return editable.save();
+    return persistedResult.value.save();
   }
 }

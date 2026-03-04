@@ -52,7 +52,6 @@ export { AiRerollDialog, type IAiRerollDialogProps } from './AiRerollDialog';
 export {
   useEntityMutation,
   createSetInMutableCollection,
-  type IEditableEntityCollection,
   type MutableCollectionEntryWithSet,
   type ISetInMutableCollectionFactoryOptions,
   type IEntityMutationOptions,

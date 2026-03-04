@@ -180,8 +180,8 @@ export function FillingsTabContent(): React.ReactElement {
         entityLabel: 'filling'
       }),
       entityLabel: 'filling',
-      getEditableCollection: (collectionId: CollectionId) =>
-        workspace.data.entities.getEditableFillingsRecipeEntityCollection(collectionId, workspace.keyStore)
+      getPersistedCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.getPersistedFillingsCollection(collectionId)
     }
   );
 
@@ -208,8 +208,8 @@ export function FillingsTabContent(): React.ReactElement {
       entityLabel: 'ingredient'
     }),
     entityLabel: 'ingredient',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableIngredientsEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedIngredientsCollection(collectionId)
   });
 
   const procedureMutation = useEntityMutation<
@@ -235,8 +235,8 @@ export function FillingsTabContent(): React.ReactElement {
       entityLabel: 'procedure'
     }),
     entityLabel: 'procedure',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableProceduresEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedProceduresCollection(collectionId)
   });
 
   // --------------------------------------------------------------------------

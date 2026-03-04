@@ -198,6 +198,110 @@ Creates a new LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary ins
 </td></tr>
 <tr><td>
 
+[configurePersistence(config)](./ChocolateEntityLibrary.configurePersistence.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Configure the persistence pipeline for this library.
+
+</td></tr>
+<tr><td>
+
+[getPersistedIngredientsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedIngredientsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted ingredients collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedFillingsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedFillingsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted fillings collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedMoldsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedMoldsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted molds collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedProceduresCollection(collectionId)](./ChocolateEntityLibrary.getPersistedProceduresCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted procedures collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedTasksCollection(collectionId)](./ChocolateEntityLibrary.getPersistedTasksCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted tasks collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedConfectionsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedConfectionsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted confections collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedDecorationsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedDecorationsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted decorations collection.
+
+</td></tr>
+<tr><td>
+
 [getEditableIngredientsEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableIngredientsEntityCollection.md)
 
 </td><td>

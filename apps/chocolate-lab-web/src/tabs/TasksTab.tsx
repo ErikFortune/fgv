@@ -106,8 +106,8 @@ export function TasksTabContent(): React.ReactElement {
       entityLabel: 'task'
     }),
     entityLabel: 'task',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableTasksEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedTasksCollection(collectionId)
   });
 
   const handleCreateTask = useCallback(

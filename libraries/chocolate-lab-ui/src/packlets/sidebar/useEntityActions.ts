@@ -133,9 +133,9 @@ export function useEntityActions(): IEntityActions {
   /**
    * Persist one or more collections to disk after an in-memory mutation.
    *
-   * Creates an ephemeral EditableCollection that snapshots the current
-   * (post-mutation) state, saves it to the file tree, then syncs dirty
-   * trees to the filesystem.
+   * Uses persisted collection singletons from the entity library, which
+   * handle the full pipeline: re-snapshot from SubLibrary → FileTree write
+   * → disk sync.
    *
    * @param subLibrary - The sub-library that was mutated. Required to
    *   disambiguate collection IDs that exist across multiple sub-libraries
@@ -159,15 +159,8 @@ export function useEntityActions(): IEntityActions {
           );
         }
       }
-
-      if (reactiveWorkspace.hasDirtyTrees) {
-        const syncResult = await reactiveWorkspace.syncAllToDisk();
-        if (syncResult.isFailure()) {
-          workspace.data.logger.error(`Disk sync failed: ${syncResult.message}`);
-        }
-      }
     },
-    [workspace, reactiveWorkspace]
+    [workspace]
   );
 
   const deleteEntity = useCallback(

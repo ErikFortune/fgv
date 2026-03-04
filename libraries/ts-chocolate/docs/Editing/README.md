@@ -115,6 +115,16 @@ mutability control, and export functionality for entity editing workflows.
 </td></tr>
 <tr><td>
 
+[PersistedEditableCollection](./classes/PersistedEditableCollection.md)
+
+</td><td>
+
+Persistent wrapper around EditableCollection that owns the full
+save pipeline.
+
+</td></tr>
+<tr><td>
+
 [CollectionManager](./classes/CollectionManager.md)
 
 </td><td>
@@ -260,6 +270,24 @@ Parameters for creating an editable collection.
 </td><td>
 
 Options for EditableCollection.save.
+
+</td></tr>
+<tr><td>
+
+[ISyncProvider](./interfaces/ISyncProvider.md)
+
+</td><td>
+
+Provider for flushing in-memory FileTree changes to the filesystem.
+
+</td></tr>
+<tr><td>
+
+[IPersistedEditableCollectionParams](./interfaces/IPersistedEditableCollectionParams.md)
+
+</td><td>
+
+Parameters for creating a PersistedEditableCollection.
 
 </td></tr>
 <tr><td>

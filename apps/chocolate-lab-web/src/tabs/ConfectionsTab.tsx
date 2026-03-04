@@ -328,8 +328,8 @@ export function ConfectionsTabContent(): React.ReactElement {
       entityLabel: 'confection'
     }),
     entityLabel: 'confection',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableConfectionsEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedConfectionsCollection(collectionId)
   });
 
   const ingredientMutation = useEntityMutation<
@@ -355,8 +355,8 @@ export function ConfectionsTabContent(): React.ReactElement {
       entityLabel: 'ingredient'
     }),
     entityLabel: 'ingredient',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableIngredientsEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedIngredientsCollection(collectionId)
   });
 
   const fillingMutation = useEntityMutation<Entities.Fillings.IFillingRecipeEntity, BaseFillingId, FillingId>(
@@ -379,8 +379,8 @@ export function ConfectionsTabContent(): React.ReactElement {
         entityLabel: 'filling'
       }),
       entityLabel: 'filling',
-      getEditableCollection: (collectionId: CollectionId) =>
-        workspace.data.entities.getEditableFillingsRecipeEntityCollection(collectionId, workspace.keyStore)
+      getPersistedCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.getPersistedFillingsCollection(collectionId)
     }
   );
 
@@ -407,8 +407,8 @@ export function ConfectionsTabContent(): React.ReactElement {
       entityLabel: 'procedure'
     }),
     entityLabel: 'procedure',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableProceduresEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedProceduresCollection(collectionId)
   });
 
   const moldMutation = useEntityMutation<Entities.Molds.IMoldEntity, BaseMoldId, MoldId>({
@@ -421,8 +421,8 @@ export function ConfectionsTabContent(): React.ReactElement {
       entityLabel: 'mold'
     }),
     entityLabel: 'mold',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableMoldsEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedMoldsCollection(collectionId)
   });
 
   const decorationMutation = useEntityMutation<
@@ -442,8 +442,8 @@ export function ConfectionsTabContent(): React.ReactElement {
       entityLabel: 'decoration'
     }),
     entityLabel: 'decoration',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableDecorationsEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedDecorationsCollection(collectionId)
   });
 
   const editingRef = useRef<IConfectionEditingState | undefined>(undefined);

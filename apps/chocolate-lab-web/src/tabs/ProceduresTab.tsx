@@ -122,8 +122,8 @@ export function ProceduresTabContent(): React.ReactElement {
       entityLabel: 'procedure'
     }),
     entityLabel: 'procedure',
-    getEditableCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getEditableProceduresEntityCollection(collectionId, workspace.keyStore)
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedProceduresCollection(collectionId)
   });
 
   const { entities: procedures, selectedId } = useEntityList<LibraryRuntime.IProcedure, ProcedureId>({

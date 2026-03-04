@@ -18,7 +18,7 @@ import {
   type IShortcut,
   SidebarLayout
 } from '@fgv/ts-app-shell';
-import { Logging, type MessageLogLevel } from '@fgv/ts-utils';
+import { Logging, type MessageLogLevel, succeed, fail } from '@fgv/ts-utils';
 import {
   createWorkspaceFromPlatform,
   validateResolvedSettings,
@@ -258,6 +258,18 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     )
     .orThrow();
   const reactiveWorkspace = new ReactiveWorkspace(workspace, true);
+
+  // Wire up persistence so PersistedEditableCollection wrappers can sync to disk
+  // and can encrypt collections when the KeyStore is unlocked.
+  workspace.data.entities.configurePersistence({
+    syncProvider: {
+      syncToDisk: async () => {
+        const result = await reactiveWorkspace.syncAllToDisk();
+        return result.isSuccess() ? succeed(true as const) : fail(result.message);
+      }
+    },
+    encryptionProvider: () => workspace.keyStore
+  });
 
   const localStorageRootDir = useLocalStorage ? platformInit.value?.userLibraryTree : undefined;
 
