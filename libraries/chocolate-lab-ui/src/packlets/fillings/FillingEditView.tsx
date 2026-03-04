@@ -26,7 +26,7 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EyeIcon, StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid, CheckIcon } from '@heroicons/react/24/solid';
 import { DocumentDuplicateIcon, PlusIcon } from '@heroicons/react/24/outline';
@@ -332,6 +332,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
   const [ingredientInputDraft, setIngredientInputDraft] = useState<Record<number, string>>({});
   const [newIngredientText, setNewIngredientText] = useState('');
   const [newProcedureText, setNewProcedureText] = useState('');
+  const focusIngredientRef = useRef<string | undefined>(undefined);
 
   // Unresolved state
   const [unresolvedIngredients, setUnresolvedIngredients] = useState<Record<number, string>>({});
@@ -342,6 +343,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     undefined
   );
   const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set());
+  const [ratingsCollapsed, setRatingsCollapsed] = useState(true);
   const [showAddVariationForm, setShowAddVariationForm] = useState(false);
   const [newVariationDate, setNewVariationDate] = useState('');
   const [newVariationName, setNewVariationName] = useState('');
@@ -543,6 +545,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       const match = ingredientMatcher.resolveOnBlur(input);
       if (match) {
         session.setIngredient(match.id, 0 as Measurement);
+        focusIngredientRef.current = match.id;
         setNewIngredientText('');
         setUnresolvedNewIngredient(undefined);
         notifySession();
@@ -1166,6 +1169,12 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     }}
                   />
                   <input
+                    ref={(el): void => {
+                      if (el && focusIngredientRef.current === ing.ingredientId) {
+                        focusIngredientRef.current = undefined;
+                        requestAnimationFrame(() => el.focus());
+                      }
+                    }}
                     type="number"
                     className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary disabled:bg-gray-50 disabled:text-gray-400"
                     value={ing.amount}
@@ -1596,22 +1605,32 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       </EditSection>
 
       {/* Ratings Section (on variation entity, via wrapper) */}
-      <EditSection title="Ratings">
-        <div className="space-y-1.5">
-          {RATING_CATEGORIES.map((category) => {
-            const existing = currentVariation?.ratings?.find((r) => r.category === category);
-            return (
-              <div key={category} className="flex items-center justify-between py-0.5">
-                <span className="text-sm text-gray-600 capitalize">{category}</span>
-                <RatingStars
-                  score={existing?.score}
-                  onChange={(score): void => handleRatingChange(category, score)}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </EditSection>
+      <div className="mb-4">
+        <button
+          type="button"
+          onClick={(): void => setRatingsCollapsed((prev) => !prev)}
+          className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-700 mb-2"
+        >
+          <span className={`transition-transform ${ratingsCollapsed ? '' : 'rotate-90'}`}>{'\u203A'}</span>
+          Ratings
+        </button>
+        {!ratingsCollapsed && (
+          <div className="space-y-1.5">
+            {RATING_CATEGORIES.map((category) => {
+              const existing = currentVariation?.ratings?.find((r) => r.category === category);
+              return (
+                <div key={category} className="flex items-center justify-between py-0.5">
+                  <span className="text-sm text-gray-600 capitalize">{category}</span>
+                  <RatingStars
+                    score={existing?.score}
+                    onChange={(score): void => handleRatingChange(category, score)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Tags Section */}
       <EditSection title="Tags">

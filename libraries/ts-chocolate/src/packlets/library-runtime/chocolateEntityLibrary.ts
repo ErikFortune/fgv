@@ -24,7 +24,7 @@
  * @packageDocumentation
  */
 
-import { Logging, Result, Success } from '@fgv/ts-utils';
+import { Logging, Result, Success, fail } from '@fgv/ts-utils';
 
 import {
   Converters as CommonConverters,
@@ -487,5 +487,79 @@ export class ChocolateEntityLibrary {
       EntityConverters.Decorations.decorationEntity,
       encryptionProvider
     );
+  }
+
+  // ==========================================================================
+  // Generic Collection Persistence
+  // ==========================================================================
+
+  /**
+   * Save a collection's current in-memory state to its backing file tree.
+   *
+   * Finds the sub-library that owns the given collection, creates an
+   * ephemeral {@link EditableCollection} that snapshots the current state,
+   * and calls {@link EditableCollection.save | save()} to write serialized
+   * content to the file tree item.
+   *
+   * After a successful save the caller should call
+   * `reactiveWorkspace.syncAllToDisk()` to flush the file tree to the
+   * filesystem.
+   *
+   * @param collectionId - Collection to persist
+   * @param encryptionProvider - Optional encryption provider for encrypted collections
+   * @returns Result with `true` on success, or Failure with context
+   * @public
+   */
+  public async saveCollection(
+    collectionId: CollectionId,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider
+  ): Promise<Result<true>> {
+    if (this.ingredients.collections.has(collectionId)) {
+      return this._saveEditable(
+        this.getEditableIngredientsEntityCollection(collectionId, encryptionProvider)
+      );
+    }
+    if (this.fillings.collections.has(collectionId)) {
+      return this._saveEditable(
+        this.getEditableFillingsRecipeEntityCollection(collectionId, encryptionProvider)
+      );
+    }
+    if (this.molds.collections.has(collectionId)) {
+      return this._saveEditable(this.getEditableMoldsEntityCollection(collectionId, encryptionProvider));
+    }
+    if (this.procedures.collections.has(collectionId)) {
+      return this._saveEditable(this.getEditableProceduresEntityCollection(collectionId, encryptionProvider));
+    }
+    if (this.tasks.collections.has(collectionId)) {
+      return this._saveEditable(this.getEditableTasksEntityCollection(collectionId, encryptionProvider));
+    }
+    if (this.confections.collections.has(collectionId)) {
+      return this._saveEditable(
+        this.getEditableConfectionsEntityCollection(collectionId, encryptionProvider)
+      );
+    }
+    if (this.decorations.collections.has(collectionId)) {
+      return this._saveEditable(
+        this.getEditableDecorationsEntityCollection(collectionId, encryptionProvider)
+      );
+    }
+    return fail(`Collection '${collectionId}' not found in any sub-library`);
+  }
+
+  /**
+   * Save an editable collection if it supports persistence.
+   * @internal
+   */
+  private async _saveEditable<T, TBaseId extends string>(
+    editableResult: Result<EditableCollection<T, TBaseId>>
+  ): Promise<Result<true>> {
+    if (editableResult.isFailure()) {
+      return fail(editableResult.message);
+    }
+    const editable = editableResult.value;
+    if (!editable.canSave()) {
+      return fail(`Collection '${editable.collectionId}' does not support persistence`);
+    }
+    return editable.save();
   }
 }

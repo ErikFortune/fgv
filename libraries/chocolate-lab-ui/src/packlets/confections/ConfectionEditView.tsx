@@ -130,6 +130,10 @@ export interface IConfectionEditViewProps {
   readonly onAddIngredient?: (seed: string) => void;
   /** Called when typed procedure name doesn't match — open create form with seed text */
   readonly onAddProcedure?: (seed: string) => void;
+  /** Called when typed mold name doesn't match — open create form with seed text */
+  readonly onAddMold?: (seed: string) => void;
+  /** Called when typed decoration name doesn't match — open create form with seed text */
+  readonly onAddDecoration?: (seed: string) => void;
   /** Callback when a filling recipe is clicked for drill-down */
   readonly onFillingClick?: (id: FillingId) => void;
   /** Callback when an ingredient is clicked for drill-down */
@@ -171,6 +175,8 @@ export function ConfectionEditView({
   onAddFilling,
   onAddIngredient,
   onAddProcedure,
+  onAddMold,
+  onAddDecoration,
   onFillingClick,
   onIngredientClick,
   onMoldClick,
@@ -761,7 +767,10 @@ export function ConfectionEditView({
   const handleAddDecoration = useCallback(
     (input: string): void => {
       const match = decorationMatcher.resolveOnBlur(input);
-      if (!match) return;
+      if (!match) {
+        if (input.trim()) onAddDecoration?.(input.trim());
+        return;
+      }
       const current = currentVariation?.decorations;
       const currentOptions = current?.options ?? [];
       if (currentOptions.some((o) => o.id === match.id)) return;
@@ -770,7 +779,7 @@ export function ConfectionEditView({
       wrapper.setVariationDecorations(selectedVariationSpec, { options: newOptions, preferredId });
       notifyWrapper();
     },
-    [wrapper, selectedVariationSpec, currentVariation, decorationMatcher, notifyWrapper]
+    [wrapper, selectedVariationSpec, currentVariation, decorationMatcher, notifyWrapper, onAddDecoration]
   );
 
   const handleRemoveDecoration = useCallback(
@@ -806,7 +815,10 @@ export function ConfectionEditView({
       const current = currentVariation;
       if (!current || !EntitiesNS.Confections.isMoldedBonBonRecipeVariationEntity(current)) return;
       const existing = current.molds;
-      wrapper.setVariationMolds(selectedVariationSpec, { ...existing, preferredId: moldId });
+      const options = existing.options.some((o) => o.id === moldId)
+        ? existing.options
+        : [...existing.options, { id: moldId }];
+      wrapper.setVariationMolds(selectedVariationSpec, { options, preferredId: moldId });
       notifyWrapper();
     },
     [wrapper, selectedVariationSpec, currentVariation, notifyWrapper]
@@ -815,7 +827,10 @@ export function ConfectionEditView({
   const handleAddMold = useCallback(
     (input: string): void => {
       const match = moldMatcher.resolveOnBlur(input);
-      if (!match) return;
+      if (!match) {
+        if (input.trim()) onAddMold?.(input.trim());
+        return;
+      }
       const current = currentVariation;
       if (!current || !EntitiesNS.Confections.isMoldedBonBonRecipeVariationEntity(current)) return;
       const existing = current.molds;
@@ -827,7 +842,7 @@ export function ConfectionEditView({
       });
       notifyWrapper();
     },
-    [wrapper, selectedVariationSpec, currentVariation, moldMatcher, notifyWrapper]
+    [wrapper, selectedVariationSpec, currentVariation, moldMatcher, notifyWrapper, onAddMold]
   );
 
   const handleRemoveMold = useCallback(
@@ -1148,14 +1163,24 @@ export function ConfectionEditView({
                         className="text-xs border border-dashed border-gray-300 rounded px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
                         list="mold-suggestions"
                         onBlur={(e): void => {
-                          const m = moldMatcher.resolveOnBlur(e.target.value);
-                          if (m) handleSetPreferredMold(m.id as MoldId);
+                          const val = e.target.value;
+                          const m = moldMatcher.resolveOnBlur(val);
+                          if (m) {
+                            handleSetPreferredMold(m.id as MoldId);
+                          } else if (val.trim()) {
+                            onAddMold?.(val.trim());
+                          }
                           e.target.value = '';
                         }}
                         onKeyDown={(e): void => {
                           if (e.key === 'Enter') {
-                            const m = moldMatcher.resolveOnBlur((e.target as HTMLInputElement).value);
-                            if (m) handleSetPreferredMold(m.id as MoldId);
+                            const val = (e.target as HTMLInputElement).value;
+                            const m = moldMatcher.resolveOnBlur(val);
+                            if (m) {
+                              handleSetPreferredMold(m.id as MoldId);
+                            } else if (val.trim()) {
+                              onAddMold?.(val.trim());
+                            }
                             (e.target as HTMLInputElement).value = '';
                           }
                         }}

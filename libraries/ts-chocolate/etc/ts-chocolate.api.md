@@ -667,6 +667,9 @@ class ChocolateEntityLibrary {
     get molds(): MoldsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get procedures(): ProceduresLibrary;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EditableCollection"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EditableCollection"
+    saveCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Promise<Result<true>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get tasks(): TasksLibrary;
 }

@@ -48,14 +48,14 @@ import { getSubLibraryForTab } from './subLibraryLookup';
  */
 export interface IEntityActions {
   /**
-   * Delete an entity from its collection.
+   * Delete an entity from its collection and sync to disk.
    * @param compositeId - Composite entity ID (collectionId.baseId)
    * @returns true on success, false on failure
    */
-  readonly deleteEntity: (compositeId: string) => boolean;
+  readonly deleteEntity: (compositeId: string) => Promise<boolean>;
 
   /**
-   * Copy an entity to another collection.
+   * Copy an entity to another collection and sync to disk.
    * @param compositeId - Source composite entity ID
    * @param targetCollectionId - Target collection ID
    * @param newBaseId - Optional new base ID; defaults to source base ID
@@ -65,10 +65,10 @@ export interface IEntityActions {
     compositeId: string,
     targetCollectionId: CollectionId,
     newBaseId?: string
-  ) => string | undefined;
+  ) => Promise<string | undefined>;
 
   /**
-   * Move an entity to another collection.
+   * Move an entity to another collection and sync to disk.
    * Does NOT update cross-entity references — callers must handle that separately.
    * @param compositeId - Source composite entity ID
    * @param targetCollectionId - Target collection ID
@@ -79,7 +79,7 @@ export interface IEntityActions {
     compositeId: string,
     targetCollectionId: CollectionId,
     newBaseId?: string
-  ) => string | undefined;
+  ) => Promise<string | undefined>;
 
   /**
    * Scan for all entities that reference the given composite ID.
@@ -94,6 +94,23 @@ export interface IEntityActions {
    * @param compositeId - Composite entity ID (collectionId.baseId)
    */
   readonly exportEntity: (compositeId: string) => void;
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Extract the collection ID prefix from a composite entity ID.
+ * @param compositeId - e.g. "my-collection.my-entity"
+ * @returns The collection ID portion, or undefined if the format is invalid
+ */
+function extractCollectionId(compositeId: string): CollectionId | undefined {
+  const dotIndex = compositeId.indexOf('.');
+  if (dotIndex < 1) {
+    return undefined;
+  }
+  return compositeId.slice(0, dotIndex) as CollectionId;
 }
 
 // ============================================================================
@@ -113,11 +130,45 @@ export function useEntityActions(): IEntityActions {
   const reactiveWorkspace = useReactiveWorkspace();
   const activeTab = useNavigationStore(selectActiveTab);
 
+  /**
+   * Persist one or more collections to disk after an in-memory mutation.
+   *
+   * Creates an ephemeral EditableCollection that snapshots the current
+   * (post-mutation) state, saves it to the file tree, then syncs dirty
+   * trees to the filesystem.
+   */
+  const persistCollections = useCallback(
+    async (...collectionIds: CollectionId[]): Promise<void> => {
+      for (const collectionId of collectionIds) {
+        const saveResult = await workspace.data.entities.saveCollection(collectionId, workspace.keyStore);
+        if (saveResult.isFailure()) {
+          workspace.data.logger.info(
+            `Collection '${collectionId}' not persisted (in-memory only): ${saveResult.message}`
+          );
+        }
+      }
+
+      if (reactiveWorkspace.hasDirtyTrees) {
+        const syncResult = await reactiveWorkspace.syncAllToDisk();
+        if (syncResult.isFailure()) {
+          workspace.data.logger.error(`Disk sync failed: ${syncResult.message}`);
+        }
+      }
+    },
+    [workspace, reactiveWorkspace]
+  );
+
   const deleteEntity = useCallback(
-    (compositeId: string): boolean => {
+    async (compositeId: string): Promise<boolean> => {
       const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
+        return false;
+      }
+
+      const collectionId = extractCollectionId(compositeId);
+      if (!collectionId) {
+        workspace.data.logger.error(`Invalid composite ID '${compositeId}'`);
         return false;
       }
 
@@ -131,13 +182,19 @@ export function useEntityActions(): IEntityActions {
       workspace.data.logger.info(`Deleted entity '${compositeId}'`);
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
+
+      await persistCollections(collectionId);
       return true;
     },
-    [workspace, reactiveWorkspace, activeTab]
+    [workspace, reactiveWorkspace, activeTab, persistCollections]
   );
 
   const copyEntity = useCallback(
-    (compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): string | undefined => {
+    async (
+      compositeId: string,
+      targetCollectionId: CollectionId,
+      newBaseId?: string
+    ): Promise<string | undefined> => {
       const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
@@ -154,16 +211,29 @@ export function useEntityActions(): IEntityActions {
       workspace.data.logger.info(`Copied '${compositeId}' → '${result.value}'`);
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
+
+      // Only the target collection was modified (item added)
+      await persistCollections(targetCollectionId);
       return result.value;
     },
-    [workspace, reactiveWorkspace, activeTab]
+    [workspace, reactiveWorkspace, activeTab, persistCollections]
   );
 
   const moveEntity = useCallback(
-    (compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): string | undefined => {
+    async (
+      compositeId: string,
+      targetCollectionId: CollectionId,
+      newBaseId?: string
+    ): Promise<string | undefined> => {
       const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         workspace.data.logger.warn(`No sub-library for tab '${activeTab}'`);
+        return undefined;
+      }
+
+      const sourceCollectionId = extractCollectionId(compositeId);
+      if (!sourceCollectionId) {
+        workspace.data.logger.error(`Invalid composite ID '${compositeId}'`);
         return undefined;
       }
 
@@ -177,9 +247,16 @@ export function useEntityActions(): IEntityActions {
       workspace.data.logger.info(`Moved '${compositeId}' → '${result.value}'`);
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
+
+      // Both source (item removed) and target (item added) were modified
+      const collectionsToSave =
+        sourceCollectionId === targetCollectionId
+          ? [sourceCollectionId]
+          : [sourceCollectionId, targetCollectionId];
+      await persistCollections(...collectionsToSave);
       return result.value;
     },
-    [workspace, reactiveWorkspace, activeTab]
+    [workspace, reactiveWorkspace, activeTab, persistCollections]
   );
 
   const scanReferences = useCallback(

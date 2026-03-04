@@ -236,10 +236,15 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
         const saveResult = await editable.save();
         if (saveResult.isFailure()) {
           workspace.data.logger.error(`Disk save failed for ${entityLabel}: ${saveResult.message}`);
+        } else if (reactiveWorkspace.hasDirtyTrees) {
+          const syncResult = await reactiveWorkspace.syncAllToDisk();
+          if (syncResult.isFailure()) {
+            workspace.data.logger.error(`Disk sync failed: ${syncResult.message}`);
+          }
         }
       }
     },
-    [entityLabel, getEditableCollection, workspace]
+    [entityLabel, getEditableCollection, workspace, reactiveWorkspace]
   );
 
   const createEntity = useCallback(

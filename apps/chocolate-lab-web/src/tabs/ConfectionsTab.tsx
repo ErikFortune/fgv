@@ -11,8 +11,10 @@ import { AiAssist, Entities, Helpers, LibraryRuntime, UserLibrary } from '@fgv/t
 import { AiAssist as ExtrasAiAssist } from '@fgv/ts-extras';
 import type {
   BaseConfectionId,
+  BaseDecorationId,
   BaseFillingId,
   BaseIngredientId,
+  BaseMoldId,
   BaseProcedureId,
   CollectionId,
   ConfectionRecipeVariationSpec,
@@ -27,9 +29,11 @@ import type {
   ConfectionId,
   DecorationId
 } from '@fgv/ts-chocolate';
+import { fail } from '@fgv/ts-utils';
 import type { Result, ResultMapValueType } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
+  type CascadeEntityType,
   type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
@@ -45,6 +49,7 @@ import {
   FillingEditView,
   FillingSaveMode,
   MoldDetail,
+  MoldEditView,
   ProcedureDetail,
   ProcedureEditView,
   TaskDetail,
@@ -53,6 +58,7 @@ import {
   type ConfectionSaveMode,
   ConfectionPreviewPanel,
   DecorationDetail,
+  DecorationEditView,
   useFilteredEntities,
   EntityCreateForm,
   getWritableCollectionOptions,
@@ -70,7 +76,9 @@ import {
   slugify,
   createBlankIngredientEntity,
   createBlankRawProcedureEntity,
-  createBlankFillingRecipeEntity
+  createBlankFillingRecipeEntity,
+  createBlankMoldEntity,
+  createBlankDecorationEntity
 } from '../shared';
 
 // ============================================================================
@@ -291,6 +299,12 @@ export function ConfectionsTabContent(): React.ReactElement {
     Entities.Procedures.IProcedureEntity
   >;
 
+  type MoldCollectionResult = ReturnType<typeof workspace.data.entities.molds.collections.get>;
+  type MoldCollectionEntry = Exclude<MoldCollectionResult['value'], undefined>;
+
+  type DecorationCollectionResult = ReturnType<typeof workspace.data.entities.decorations.collections.get>;
+  type DecorationCollectionEntry = Exclude<DecorationCollectionResult['value'], undefined>;
+
   const confectionMutation = useEntityMutation<
     Entities.Confections.AnyConfectionRecipeEntity,
     BaseConfectionId,
@@ -397,6 +411,41 @@ export function ConfectionsTabContent(): React.ReactElement {
       workspace.data.entities.getEditableProceduresEntityCollection(collectionId, workspace.keyStore)
   });
 
+  const moldMutation = useEntityMutation<Entities.Molds.IMoldEntity, BaseMoldId, MoldId>({
+    setInMutableCollection: createSetInMutableCollection({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.molds.collections.get(collectionId),
+      isMutable: (entry: MoldCollectionEntry): entry is MoldCollectionEntry => entry.isMutable,
+      setEntity: (entry: MoldCollectionEntry, baseId: BaseMoldId, entity: Entities.Molds.IMoldEntity) =>
+        'set' in entry.items ? entry.items.set(baseId, entity) : fail('Collection items are read-only'),
+      entityLabel: 'mold'
+    }),
+    entityLabel: 'mold',
+    getEditableCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getEditableMoldsEntityCollection(collectionId, workspace.keyStore)
+  });
+
+  const decorationMutation = useEntityMutation<
+    Entities.Decorations.IDecorationEntity,
+    BaseDecorationId,
+    DecorationId
+  >({
+    setInMutableCollection: createSetInMutableCollection({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.decorations.collections.get(collectionId),
+      isMutable: (entry: DecorationCollectionEntry): entry is DecorationCollectionEntry => entry.isMutable,
+      setEntity: (
+        entry: DecorationCollectionEntry,
+        baseId: BaseDecorationId,
+        entity: Entities.Decorations.IDecorationEntity
+      ) => ('set' in entry.items ? entry.items.set(baseId, entity) : fail('Collection items are read-only')),
+      entityLabel: 'decoration'
+    }),
+    entityLabel: 'decoration',
+    getEditableCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getEditableDecorationsEntityCollection(collectionId, workspace.keyStore)
+  });
+
   const editingRef = useRef<IConfectionEditingState | undefined>(undefined);
   const editVariationSpecRef = useRef<ConfectionRecipeVariationSpec | undefined>(undefined);
   const viewVariationSpecRef = useRef<ConfectionRecipeVariationSpec | undefined>(undefined);
@@ -424,6 +473,10 @@ export function ConfectionsTabContent(): React.ReactElement {
     undefined
   );
   const subProcedureRef = useRef<{ id: ProcedureId; wrapper: LibraryRuntime.EditedProcedure } | undefined>(
+    undefined
+  );
+  const subMoldRef = useRef<{ id: MoldId; wrapper: LibraryRuntime.EditedMold } | undefined>(undefined);
+  const subDecorationRef = useRef<{ id: DecorationId; wrapper: LibraryRuntime.EditedDecoration } | undefined>(
     undefined
   );
   const [subEntitySeed, setSubEntitySeed] = useState('');
@@ -460,6 +513,81 @@ export function ConfectionsTabContent(): React.ReactElement {
   const availableDecorations = useMemo<ReadonlyArray<LibraryRuntime.IDecoration>>(() => {
     return Array.from(workspace.data.decorations.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [workspace, reactiveWorkspace.version]);
+
+  const ingredientMutableCollectionId = useMutableCollection(
+    workspace.data.entities.ingredients.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.ingredients
+  );
+
+  const writableIngredientCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.ingredients.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.ingredients
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  const fillingMutableCollectionId = useMutableCollection(
+    workspace.data.entities.fillings.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.fillings
+  );
+
+  const writableFillingCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.fillings.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.fillings
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  const procedureMutableCollectionId = useMutableCollection(
+    workspace.data.entities.procedures.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.procedures
+  );
+
+  const writableProcedureCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.procedures.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.procedures
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  const moldMutableCollectionId = useMutableCollection(
+    workspace.data.entities.molds.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.molds
+  );
+
+  const writableMoldCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.molds.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.molds
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  const decorationMutableCollectionId = useMutableCollection(
+    workspace.data.entities.decorations.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.decorations
+  );
+
+  const writableDecorationCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.decorations.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.decorations
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
 
   const { entities: confections, selectedId } = useEntityList<LibraryRuntime.AnyConfection, ConfectionId>({
     getAll: () => workspace.data.confections.values(),
@@ -705,8 +833,12 @@ export function ConfectionsTabContent(): React.ReactElement {
       subIngredientRef.current = undefined;
       subFillingRef.current = undefined;
       subProcedureRef.current = undefined;
+      subMoldRef.current = undefined;
+      subDecorationRef.current = undefined;
       const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'confection' ? { ...e, mode: 'view' as const } : e
+        e.entityId === entityId && e.entityType === 'confection'
+          ? { ...e, mode: 'view' as const, hasChanges: false }
+          : e
       );
       squashCascade(updated);
     },
@@ -717,64 +849,53 @@ export function ConfectionsTabContent(): React.ReactElement {
   // Sub-Entity Creation (Ingredients / Fillings / Procedures from Confection Editor)
   // ============================================================================
 
-  const handleCreateIngredientFromConfection = useCallback(
-    (seed: string): void => {
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-      if (editIdx < 0) return;
-      setSubEntitySeed(seed);
-      squashCascade([
-        ...cascadeStack.slice(0, editIdx + 1),
-        { entityType: 'ingredient', entityId: '__new__', mode: 'create' }
-      ]);
-    },
+  const makeSubEntityCascadeHandler = useCallback(
+    (entityType: CascadeEntityType) =>
+      (seed: string): void => {
+        const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
+        if (editIdx < 0) return;
+        setSubEntitySeed(seed);
+        const last = cascadeStack[cascadeStack.length - 1];
+        const base = last && last.mode !== 'edit' ? cascadeStack.slice(0, -1) : cascadeStack;
+        squashCascade([...base, { entityType, entityId: '__new__', mode: 'create' }]);
+      },
     [cascadeStack, squashCascade]
   );
 
-  const handleCreateFillingFromConfection = useCallback(
-    (seed: string): void => {
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-      if (editIdx < 0) return;
-      setSubEntitySeed(seed);
-      squashCascade([
-        ...cascadeStack.slice(0, editIdx + 1),
-        { entityType: 'filling', entityId: '__new__', mode: 'create' }
-      ]);
-    },
-    [cascadeStack, squashCascade]
+  const handleCreateIngredientFromConfection = useMemo(
+    () => makeSubEntityCascadeHandler('ingredient'),
+    [makeSubEntityCascadeHandler]
   );
-
-  const handleCreateProcedureFromConfection = useCallback(
-    (seed: string): void => {
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-      if (editIdx < 0) return;
-      setSubEntitySeed(seed);
-      squashCascade([
-        ...cascadeStack.slice(0, editIdx + 1),
-        { entityType: 'procedure', entityId: '__new__', mode: 'create' }
-      ]);
-    },
-    [cascadeStack, squashCascade]
+  const handleCreateFillingFromConfection = useMemo(
+    () => makeSubEntityCascadeHandler('filling'),
+    [makeSubEntityCascadeHandler]
+  );
+  const handleCreateProcedureFromConfection = useMemo(
+    () => makeSubEntityCascadeHandler('procedure'),
+    [makeSubEntityCascadeHandler]
+  );
+  const handleCreateMoldFromConfection = useMemo(
+    () => makeSubEntityCascadeHandler('mold'),
+    [makeSubEntityCascadeHandler]
+  );
+  const handleCreateDecorationFromConfection = useMemo(
+    () => makeSubEntityCascadeHandler('decoration'),
+    [makeSubEntityCascadeHandler]
   );
 
   const handleSubEntityCancel = useCallback((): void => {
     setSubEntitySeed('');
-    const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-    if (editIdx >= 0) {
-      squashCascade(cascadeStack.slice(0, editIdx + 1));
-    } else {
-      squashCascade([]);
-    }
+    squashCascade(cascadeStack.slice(0, -1));
   }, [cascadeStack, squashCascade]);
 
   const handleSubIngredientCreate = useCallback(
-    async (entity: Entities.Ingredients.IngredientEntity, __source: 'manual' | 'ai'): Promise<void> => {
-      let ingredientCollectionId: CollectionId | undefined;
-      for (const [id, col] of workspace.data.entities.ingredients.collections.entries()) {
-        if (col.isMutable) {
-          ingredientCollectionId = id as CollectionId;
-          break;
-        }
-      }
+    async (
+      entity: Entities.Ingredients.IngredientEntity,
+      _source: 'manual' | 'ai',
+      selectedCollectionId?: string
+    ): Promise<void> => {
+      const ingredientCollectionId =
+        (selectedCollectionId as CollectionId | undefined) ?? ingredientMutableCollectionId;
       if (!ingredientCollectionId) {
         workspace.data.logger.error('Cannot add ingredient: no mutable ingredient collection available');
         return;
@@ -801,15 +922,12 @@ export function ConfectionsTabContent(): React.ReactElement {
       if (wrapperResult.isSuccess()) {
         subIngredientRef.current = { id: compositeId, wrapper: wrapperResult.value };
       }
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-      if (editIdx >= 0) {
-        squashCascade([
-          ...cascadeStack.slice(0, editIdx + 1),
-          { entityType: 'ingredient', entityId: compositeId, mode: 'edit' }
-        ]);
-      }
+      squashCascade([
+        ...cascadeStack.slice(0, -1),
+        { entityType: 'ingredient', entityId: compositeId, mode: 'edit' }
+      ]);
     },
-    [workspace, cascadeStack, squashCascade, ingredientMutation]
+    [workspace, cascadeStack, squashCascade, ingredientMutation, ingredientMutableCollectionId]
   );
 
   const handleSubIngredientSave = useCallback(
@@ -830,27 +948,24 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
 
       subIngredientRef.current = undefined;
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-      if (editIdx >= 0) squashCascade(cascadeStack.slice(0, editIdx + 1));
+      squashCascade(cascadeStack.slice(0, -1));
     },
     [cascadeStack, squashCascade, ingredientMutation]
   );
 
   const handleSubIngredientCancel = useCallback((): void => {
     subIngredientRef.current = undefined;
-    const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-    if (editIdx >= 0) squashCascade(cascadeStack.slice(0, editIdx + 1));
+    squashCascade(cascadeStack.slice(0, -1));
   }, [cascadeStack, squashCascade]);
 
   const handleSubFillingCreate = useCallback(
-    async (entity: Entities.Fillings.IFillingRecipeEntity, __source: 'manual' | 'ai'): Promise<void> => {
-      let fillingCollectionId: CollectionId | undefined;
-      for (const [id, col] of workspace.data.entities.fillings.collections.entries()) {
-        if (col.isMutable) {
-          fillingCollectionId = id as CollectionId;
-          break;
-        }
-      }
+    async (
+      entity: Entities.Fillings.IFillingRecipeEntity,
+      _source: 'manual' | 'ai',
+      selectedCollectionId?: string
+    ): Promise<void> => {
+      const fillingCollectionId =
+        (selectedCollectionId as CollectionId | undefined) ?? fillingMutableCollectionId;
       if (!fillingCollectionId) {
         workspace.data.logger.error('Cannot add filling: no mutable filling collection available');
         return;
@@ -877,15 +992,12 @@ export function ConfectionsTabContent(): React.ReactElement {
       if (wrapperResult.isSuccess()) {
         subFillingRef.current = { id: compositeId, wrapper: wrapperResult.value };
       }
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-      if (editIdx >= 0) {
-        squashCascade([
-          ...cascadeStack.slice(0, editIdx + 1),
-          { entityType: 'filling', entityId: compositeId, mode: 'edit' }
-        ]);
-      }
+      squashCascade([
+        ...cascadeStack.slice(0, -1),
+        { entityType: 'filling', entityId: compositeId, mode: 'edit' }
+      ]);
     },
-    [workspace, cascadeStack, squashCascade, fillingMutation]
+    [workspace, cascadeStack, squashCascade, fillingMutation, fillingMutableCollectionId]
   );
 
   const handleSubFillingSave = useCallback(
@@ -907,27 +1019,24 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
 
       subFillingRef.current = undefined;
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-      if (editIdx >= 0) squashCascade(cascadeStack.slice(0, editIdx + 1));
+      squashCascade(cascadeStack.slice(0, -1));
     },
     [cascadeStack, squashCascade, fillingMutation]
   );
 
   const handleSubFillingCancel = useCallback((): void => {
     subFillingRef.current = undefined;
-    const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-    if (editIdx >= 0) squashCascade(cascadeStack.slice(0, editIdx + 1));
+    squashCascade(cascadeStack.slice(0, -1));
   }, [cascadeStack, squashCascade]);
 
   const handleSubProcedureCreate = useCallback(
-    async (entity: Entities.Procedures.IProcedureEntity, __source: 'manual' | 'ai'): Promise<void> => {
-      let procedureCollectionId: CollectionId | undefined;
-      for (const [id, col] of workspace.data.entities.procedures.collections.entries()) {
-        if (col.isMutable) {
-          procedureCollectionId = id as CollectionId;
-          break;
-        }
-      }
+    async (
+      entity: Entities.Procedures.IProcedureEntity,
+      _source: 'manual' | 'ai',
+      selectedCollectionId?: string
+    ): Promise<void> => {
+      const procedureCollectionId =
+        (selectedCollectionId as CollectionId | undefined) ?? procedureMutableCollectionId;
       if (!procedureCollectionId) {
         workspace.data.logger.error('Cannot add procedure: no mutable procedure collection available');
         return;
@@ -954,15 +1063,12 @@ export function ConfectionsTabContent(): React.ReactElement {
       if (wrapperResult.isSuccess()) {
         subProcedureRef.current = { id: compositeId, wrapper: wrapperResult.value };
       }
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-      if (editIdx >= 0) {
-        squashCascade([
-          ...cascadeStack.slice(0, editIdx + 1),
-          { entityType: 'procedure', entityId: compositeId, mode: 'edit' }
-        ]);
-      }
+      squashCascade([
+        ...cascadeStack.slice(0, -1),
+        { entityType: 'procedure', entityId: compositeId, mode: 'edit' }
+      ]);
     },
-    [workspace, cascadeStack, squashCascade, procedureMutation]
+    [workspace, cascadeStack, squashCascade, procedureMutation, procedureMutableCollectionId]
   );
 
   const handleSubProcedureSave = useCallback(
@@ -983,16 +1089,185 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
 
       subProcedureRef.current = undefined;
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-      if (editIdx >= 0) squashCascade(cascadeStack.slice(0, editIdx + 1));
+      squashCascade(cascadeStack.slice(0, -1));
     },
     [cascadeStack, squashCascade, procedureMutation]
   );
 
   const handleSubProcedureCancel = useCallback((): void => {
     subProcedureRef.current = undefined;
-    const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-    if (editIdx >= 0) squashCascade(cascadeStack.slice(0, editIdx + 1));
+    squashCascade(cascadeStack.slice(0, -1));
+  }, [cascadeStack, squashCascade]);
+
+  const handleSubMoldCreate = useCallback(
+    async (
+      entity: Entities.Molds.IMoldEntity,
+      _source: 'manual' | 'ai',
+      selectedCollectionId?: string
+    ): Promise<void> => {
+      const moldCollectionId = (selectedCollectionId as CollectionId | undefined) ?? moldMutableCollectionId;
+      if (!moldCollectionId) {
+        workspace.data.logger.error('Cannot add mold: no mutable mold collection available');
+        return;
+      }
+      const baseId = entity.baseId as BaseMoldId;
+
+      const createResult = await moldMutation.createEntity({
+        targetCollectionId: moldCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseMoldId) =>
+          `${collectionId}.${nextBaseId}` as MoldId,
+        baseId,
+        entity,
+        exists: (id: MoldId) => workspace.data.molds.get(id).isSuccess(),
+        persistToDisk: true
+      });
+      if (createResult.isFailure()) {
+        return;
+      }
+
+      const compositeId = createResult.value;
+
+      setSubEntitySeed('');
+      const wrapperResult = LibraryRuntime.EditedMold.create(entity);
+      if (wrapperResult.isSuccess()) {
+        subMoldRef.current = { id: compositeId, wrapper: wrapperResult.value };
+      }
+      squashCascade([
+        ...cascadeStack.slice(0, -1),
+        { entityType: 'mold', entityId: compositeId, mode: 'edit' }
+      ]);
+    },
+    [workspace, cascadeStack, squashCascade, moldMutation, moldMutableCollectionId]
+  );
+
+  const handleSubMoldSave = useCallback(
+    async (wrapper: LibraryRuntime.EditedMold): Promise<void> => {
+      const entity = wrapper.current;
+      const compositeId = subMoldRef.current?.id;
+      if (!compositeId) return;
+      const baseId = entity.baseId as BaseMoldId;
+
+      const saveResult = await moldMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
+        return;
+      }
+
+      // Back-populate the mold onto the confection variation being edited
+      const editing = editingRef.current;
+      if (editing) {
+        const moldId = compositeId as MoldId;
+        const spec = editing.selectedVariationSpec;
+        const variation = editing.wrapper.current.variations.find((v) => v.variationSpec === spec);
+        if (variation && Entities.Confections.isMoldedBonBonRecipeVariationEntity(variation)) {
+          const existing = variation.molds;
+          const options = existing.options.some((o) => o.id === moldId)
+            ? existing.options
+            : [...existing.options, { id: moldId }];
+          editing.wrapper.setVariationMolds(spec, { options, preferredId: moldId });
+        }
+      }
+
+      subMoldRef.current = undefined;
+      squashCascade(cascadeStack.slice(0, -1));
+    },
+    [cascadeStack, squashCascade, moldMutation]
+  );
+
+  const handleSubMoldCancel = useCallback((): void => {
+    subMoldRef.current = undefined;
+    squashCascade(cascadeStack.slice(0, -1));
+  }, [cascadeStack, squashCascade]);
+
+  const handleSubDecorationCreate = useCallback(
+    async (
+      entity: Entities.Decorations.IDecorationEntity,
+      _source: 'manual' | 'ai',
+      selectedCollectionId?: string
+    ): Promise<void> => {
+      const decorationCollectionId =
+        (selectedCollectionId as CollectionId | undefined) ?? decorationMutableCollectionId;
+      if (!decorationCollectionId) {
+        workspace.data.logger.error('Cannot add decoration: no mutable decoration collection available');
+        return;
+      }
+      const baseId = entity.baseId as BaseDecorationId;
+
+      const createResult = await decorationMutation.createEntity({
+        targetCollectionId: decorationCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseDecorationId) =>
+          `${collectionId}.${nextBaseId}` as DecorationId,
+        baseId,
+        entity,
+        exists: (id: DecorationId) => workspace.data.decorations.get(id).isSuccess(),
+        persistToDisk: true
+      });
+      if (createResult.isFailure()) {
+        return;
+      }
+
+      const compositeId = createResult.value;
+
+      setSubEntitySeed('');
+      const wrapperResult = LibraryRuntime.EditedDecoration.create(entity);
+      if (wrapperResult.isSuccess()) {
+        subDecorationRef.current = { id: compositeId, wrapper: wrapperResult.value };
+      }
+      squashCascade([
+        ...cascadeStack.slice(0, -1),
+        { entityType: 'decoration', entityId: compositeId, mode: 'edit' }
+      ]);
+    },
+    [workspace, cascadeStack, squashCascade, decorationMutation, decorationMutableCollectionId]
+  );
+
+  const handleSubDecorationSave = useCallback(
+    async (wrapper: LibraryRuntime.EditedDecoration): Promise<void> => {
+      const entity = wrapper.current;
+      const compositeId = subDecorationRef.current?.id;
+      if (!compositeId) return;
+      const baseId = entity.baseId as BaseDecorationId;
+
+      const saveResult = await decorationMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
+        return;
+      }
+
+      // Back-populate the decoration onto the confection variation being edited
+      const editing = editingRef.current;
+      if (editing) {
+        const decorationId = compositeId as DecorationId;
+        const spec = editing.selectedVariationSpec;
+        const variation = editing.wrapper.current.variations.find((v) => v.variationSpec === spec);
+        if (variation) {
+          const current = variation.decorations;
+          const currentOptions = current?.options ?? [];
+          if (!currentOptions.some((o) => o.id === decorationId)) {
+            const newOptions = [...currentOptions, { id: decorationId }];
+            const preferredId = current?.preferredId ?? decorationId;
+            editing.wrapper.setVariationDecorations(spec, { options: newOptions, preferredId });
+          }
+        }
+      }
+
+      subDecorationRef.current = undefined;
+      squashCascade(cascadeStack.slice(0, -1));
+    },
+    [cascadeStack, squashCascade, decorationMutation]
+  );
+
+  const handleSubDecorationCancel = useCallback((): void => {
+    subDecorationRef.current = undefined;
+    squashCascade(cascadeStack.slice(0, -1));
   }, [cascadeStack, squashCascade]);
 
   const handleSaveConfection = useCallback(
@@ -1103,7 +1378,9 @@ export function ConfectionsTabContent(): React.ReactElement {
         editingRef.current = undefined;
       }
       const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'confection' ? { ...e, mode: 'view' as const } : e
+        e.entityId === entityId && e.entityType === 'confection'
+          ? { ...e, mode: 'view' as const, hasChanges: false }
+          : e
       );
       squashCascade(updated);
     },
@@ -1242,6 +1519,8 @@ export function ConfectionsTabContent(): React.ReactElement {
                   onAddProcedure={handleCreateProcedureFromConfection}
                   availableMolds={availableMolds}
                   availableDecorations={availableDecorations}
+                  onAddMold={handleCreateMoldFromConfection}
+                  onAddDecoration={handleCreateDecorationFromConfection}
                   onSave={(mode: ConfectionSaveMode): void => {
                     if (mode === 'new-recipe') {
                       setSaveAsName(result.value.name);
@@ -1332,6 +1611,8 @@ export function ConfectionsTabContent(): React.ReactElement {
                   createBlankFillingRecipeEntity(id as BaseFillingId, name)
                 }
                 initialName={subEntitySeed}
+                writableCollections={writableFillingCollections}
+                defaultTargetCollectionId={fillingMutableCollectionId}
                 onCreate={handleSubFillingCreate}
                 onCancel={handleSubEntityCancel}
               />
@@ -1359,6 +1640,8 @@ export function ConfectionsTabContent(): React.ReactElement {
                     onVariationChange={(): void => undefined}
                     availableIngredients={availableIngredients}
                     availableProcedures={availableProcedures}
+                    onCreateIngredient={handleCreateIngredientFromConfection}
+                    onCreateProcedure={handleCreateProcedureFromConfection}
                     onSave={handleSubFillingSave}
                     onCancel={handleSubFillingCancel}
                   />
@@ -1423,6 +1706,8 @@ export function ConfectionsTabContent(): React.ReactElement {
                   createBlankIngredientEntity(id as BaseIngredientId, name)
                 }
                 initialName={subEntitySeed}
+                writableCollections={writableIngredientCollections}
+                defaultTargetCollectionId={ingredientMutableCollectionId}
                 onCreate={handleSubIngredientCreate}
                 onCancel={handleSubEntityCancel}
               />
@@ -1461,6 +1746,43 @@ export function ConfectionsTabContent(): React.ReactElement {
         };
       }
       if (entry.entityType === 'mold') {
+        if (entry.mode === 'create') {
+          return {
+            key: '__new_mold__',
+            label: 'New Mold',
+            content: (
+              <EntityCreateForm<Entities.Molds.IMoldEntity>
+                slugify={slugify}
+                buildPrompt={AiAssist.buildMoldAiPrompt}
+                convert={(from: unknown) => Entities.Molds.Converters.moldEntity.convert(from)}
+                makeBlank={(name: string, id: string): Entities.Molds.IMoldEntity =>
+                  createBlankMoldEntity(id as BaseMoldId, name, name)
+                }
+                initialName={subEntitySeed}
+                writableCollections={writableMoldCollections}
+                defaultTargetCollectionId={moldMutableCollectionId}
+                onCreate={handleSubMoldCreate}
+                onCancel={handleSubEntityCancel}
+              />
+            )
+          };
+        }
+        if (entry.mode === 'edit') {
+          const subState = subMoldRef.current;
+          if (subState) {
+            return {
+              key: `${entry.entityId}:sub-edit`,
+              label: `Editing: ${subState.wrapper.current.manufacturer} ${subState.wrapper.current.productNumber}`,
+              content: (
+                <MoldEditView
+                  wrapper={subState.wrapper}
+                  onSave={handleSubMoldSave}
+                  onCancel={handleSubMoldCancel}
+                />
+              )
+            };
+          }
+        }
         const result = workspace.data.molds.get(entry.entityId as MoldId);
         if (result.isFailure()) {
           return {
@@ -1476,6 +1798,47 @@ export function ConfectionsTabContent(): React.ReactElement {
         };
       }
       if (entry.entityType === 'decoration') {
+        if (entry.mode === 'create') {
+          return {
+            key: '__new_decoration__',
+            label: 'New Decoration',
+            content: (
+              <EntityCreateForm<Entities.Decorations.IDecorationEntity>
+                slugify={slugify}
+                buildPrompt={AiAssist.buildDecorationAiPrompt}
+                convert={(from: unknown) => Entities.Decorations.Converters.decorationEntity.convert(from)}
+                makeBlank={(name: string, id: string): Entities.Decorations.IDecorationEntity =>
+                  createBlankDecorationEntity(id as BaseDecorationId, name)
+                }
+                initialName={subEntitySeed}
+                writableCollections={writableDecorationCollections}
+                defaultTargetCollectionId={decorationMutableCollectionId}
+                onCreate={handleSubDecorationCreate}
+                onCancel={handleSubEntityCancel}
+              />
+            )
+          };
+        }
+        if (entry.mode === 'edit') {
+          const subState = subDecorationRef.current;
+          if (subState) {
+            return {
+              key: `${entry.entityId}:sub-edit`,
+              label: `Editing: ${subState.wrapper.current.name}`,
+              content: (
+                <DecorationEditView
+                  wrapper={subState.wrapper}
+                  availableIngredients={availableIngredients}
+                  availableProcedures={availableProcedures}
+                  onCreateIngredient={handleCreateIngredientFromConfection}
+                  onCreateProcedure={handleCreateProcedureFromConfection}
+                  onSave={handleSubDecorationSave}
+                  onCancel={handleSubDecorationCancel}
+                />
+              )
+            };
+          }
+        }
         const result = workspace.data.decorations.get(entry.entityId as DecorationId);
         if (result.isFailure()) {
           return {
@@ -1510,6 +1873,8 @@ export function ConfectionsTabContent(): React.ReactElement {
                   createBlankRawProcedureEntity(id as BaseProcedureId, name)
                 }
                 initialName={subEntitySeed}
+                writableCollections={writableProcedureCollections}
+                defaultTargetCollectionId={procedureMutableCollectionId}
                 onCreate={handleSubProcedureCreate}
                 onCancel={handleSubEntityCancel}
               />
@@ -1589,7 +1954,13 @@ export function ConfectionsTabContent(): React.ReactElement {
     writableConfectionCollections,
     mutableCollectionId,
     handleCreateConfection,
-    squashCascade
+    squashCascade,
+    availableIngredients,
+    availableFillings,
+    availableProcedures,
+    availableMolds,
+    availableDecorations,
+    availableTasks
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {

@@ -186,11 +186,11 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
       return;
     }
 
-    const found = writableCollections.some((option) => option.id === targetCollectionId);
-    if (!found) {
-      setTargetCollectionId(writableCollections[0].id);
-    }
-  }, [defaultTargetCollectionId, writableCollections, targetCollectionId]);
+    setTargetCollectionId((prev) => {
+      const found = writableCollections.some((option) => option.id === prev);
+      return found ? prev : writableCollections[0].id;
+    });
+  }, [defaultTargetCollectionId, writableCollections]);
 
   useEffect(() => {
     if (!selectedSourceId) {

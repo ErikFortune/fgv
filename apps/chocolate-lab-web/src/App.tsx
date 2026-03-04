@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ConfirmDialog,
   ModeSelector,
@@ -459,13 +459,27 @@ function AppShell(props: IAppShellProps): React.ReactElement {
   const [pendingSettingsClose, setPendingSettingsClose] = useState(false);
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
-  const { messages, activeToasts, dismissMessage, clearMessages } = useMessages();
+  const { messages, activeToasts, addMessage, dismissMessage, clearMessages } = useMessages();
   const collectionActions = useCollectionActions();
 
   // Set document title to include config namespace
   useEffect(() => {
     document.title = configNamespace ? `Chocolate Lab [${configNamespace}]` : 'Chocolate Lab';
   }, [configNamespace]);
+
+  // Remind users to unlock when the keystore is locked (ref prevents duplicates from strict mode)
+  const lockToastShownRef = useRef(false);
+  useEffect(() => {
+    if (workspaceState === 'locked' && !lockToastShownRef.current) {
+      lockToastShownRef.current = true;
+      addMessage('warning', 'Keystore is locked — edits will be saved to the default collection only.', {
+        label: 'Unlock',
+        onAction: (): void => setUnlockOpen(true)
+      });
+    } else if (workspaceState !== 'locked') {
+      lockToastShownRef.current = false;
+    }
+  }, [workspaceState, addMessage]);
 
   const filteredToasts = useMemo(
     () =>
@@ -478,9 +492,35 @@ function AppShell(props: IAppShellProps): React.ReactElement {
     [activeToasts, toastLevel]
   );
 
-  const hasUnsavedChanges =
-    cascadeStack.some((e) => (e.mode === 'edit' || e.mode === 'create') && e.hasChanges === true) ||
-    collectionActions.hasDirtyTrees;
+  const dirtyEntries = useMemo(
+    () => cascadeStack.filter((e) => (e.mode === 'edit' || e.mode === 'create') && e.hasChanges === true),
+    [cascadeStack]
+  );
+
+  const hasUnsavedChanges = dirtyEntries.length > 0 || collectionActions.hasDirtyTrees;
+
+  const unsavedChangesSummary = useMemo((): React.ReactNode => {
+    const parts: string[] = [];
+    for (const e of dirtyEntries) {
+      parts.push(`${e.entityType} "${e.entityId}" (${e.mode})`);
+    }
+    if (collectionActions.hasDirtyTrees) {
+      parts.push('collection tree changes');
+    }
+    if (parts.length === 0) {
+      return 'You have unsaved changes. Discard them and navigate away?';
+    }
+    return (
+      <div>
+        <p>You have unsaved changes. Discard them and navigate away?</p>
+        <ul className="mt-2 text-xs text-gray-500 list-disc list-inside">
+          {parts.map((p, i) => (
+            <li key={i}>{p}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  }, [dirtyEntries, collectionActions.hasDirtyTrees]);
 
   // Warn on browser close/refresh when there are unsaved changes
   useEffect(() => {
@@ -493,9 +533,21 @@ function AppShell(props: IAppShellProps): React.ReactElement {
     return (): void => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  const logUnsavedChanges = useCallback((): void => {
+    const parts: string[] = [];
+    for (const e of dirtyEntries) {
+      parts.push(`${e.entityType}:${e.entityId} (${e.mode})`);
+    }
+    if (collectionActions.hasDirtyTrees) {
+      parts.push('dirty collection trees');
+    }
+    workspace.data.logger.warn(`Navigation blocked — unsaved: [${parts.join(', ')}]`);
+  }, [dirtyEntries, collectionActions.hasDirtyTrees, workspace]);
+
   const guardedSetTab = useCallback(
     (tab: AppTab): void => {
       if (hasUnsavedChanges) {
+        logUnsavedChanges();
         setPendingNavigation(() => (): void => {
           setTab(tab);
         });
@@ -503,12 +555,13 @@ function AppShell(props: IAppShellProps): React.ReactElement {
         setTab(tab);
       }
     },
-    [hasUnsavedChanges, setTab]
+    [hasUnsavedChanges, logUnsavedChanges, setTab]
   );
 
   const guardedSetMode = useCallback(
     (newMode: AppMode): void => {
       if (hasUnsavedChanges) {
+        logUnsavedChanges();
         setPendingNavigation(() => (): void => {
           setMode(newMode);
         });
@@ -516,7 +569,7 @@ function AppShell(props: IAppShellProps): React.ReactElement {
         setMode(newMode);
       }
     },
-    [hasUnsavedChanges, setMode]
+    [hasUnsavedChanges, logUnsavedChanges, setMode]
   );
 
   const handleNavConfirm = useCallback((): void => {
@@ -582,7 +635,7 @@ function AppShell(props: IAppShellProps): React.ReactElement {
       <ConfirmDialog
         isOpen={pendingNavigation !== null}
         title="Unsaved Changes"
-        message="You have unsaved changes. Discard them and navigate away?"
+        message={unsavedChangesSummary}
         confirmLabel="Discard"
         cancelLabel="Stay"
         severity="warning"

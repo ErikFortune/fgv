@@ -292,6 +292,13 @@ Priority suggestions are checked first during blur resolution, so alternates are
 - `buildTieredSuggestions(all, priority)` — Combines priority + remaining items with a separator for `<datalist>` rendering.
 - `onRequestCreateEntity(entityType, prefillName)` — Callback from the editing panel to the parent tab, which opens a create form via `squashCascade`.
 
+### Cascade Stacking Rule
+
+When a typeahead-on-blur (or any action) pushes a new panel onto the cascade:
+- **Top of stack is an edit panel** — the new panel **stacks on top**, preserving the editor underneath. This allows nested creation (e.g. confection edit → filling edit → ingredient create) without losing in-progress edits.
+- **Top of stack is a create or view panel** — the new panel **replaces** it.
+- **Save/cancel** — always pops the current panel, returning to whatever is underneath.
+
 ### Rationale
 
 This pattern eliminates "unresolved" error states from typeahead fields. Instead of showing an inline error when the user types something that doesn't match, the app proactively helps them create the missing entity. The cascade column pattern makes this feel natural — the create form appears in the next panel, and on save, the user returns to the original editing context.

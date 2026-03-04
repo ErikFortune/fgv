@@ -1,0 +1,12 @@
+{
+  "format": "encrypted-collection-v1",
+  "secretName": "fgv",
+  "algorithm": "AES-256-GCM",
+  "iv": "Jf8WHBoMe5KNRJbQ",
+  "authTag": "MIntQxWwNjyKJVkr+41ZEg==",
+  "encryptedData": "Nrw=",
+  "metadata": {
+    "collectionId": "fgv",
+    "itemCount": 0
+  }
+}
