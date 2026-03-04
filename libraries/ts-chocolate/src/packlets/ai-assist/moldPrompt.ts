@@ -43,7 +43,7 @@ export function buildMoldAiPrompt(
 ): AiAssist.AiPrompt {
   const baseId = Helpers.toKebabCase(moldDescription);
 
-  const userBase = `Generate a JSON object representing the chocolate mold "${moldDescription}" for a chocolate-making application.`;
+  const userBase = `Generate a JSON object representing the polycarbonatechocolate mold "${moldDescription}" for a chocolate-making application.`;
   const user = additionalInstructions
     ? `${userBase}\n\nAdditional instructions from the user:\n${additionalInstructions}`
     : userBase;
@@ -116,7 +116,22 @@ Generate from the description as lowercase-kebab-case: "${baseId}"
 - Include a "notes" array with at least one entry using category "ai" describing any assumptions you made, especially unconfirmed dimensions or weights.
 - Include "urls" if you can identify the manufacturer's product page or a purchase link.
 - Populate as many optional fields as you can reasonably determine.
-- Return ONLY the JSON object, nothing else.`;
+- Return ONLY the JSON object, nothing else.
+- Authoritative manufacturer sites are: https://www.chocolateworld.be, https://www.greyas.com, https://www.martellato.com, https://www.cabrellon.it/en/, https://www.silikomart.com/en/, and https://imrenplastik.com/en (for Implast)
+- Preferred retail sites include https://www.bakedeco.com, https://www.chocolat-chocolat.com and https://www.amazon.com
+- Typical part number prefix: CW for Chocolate World, CM for Greyas, MA for Martellato
+- For generic descriptions (e.g. "sphere mold", "heart bonbon mold"), estimate reasonable values and note your assumptions. This is fine and expected.
+- For specific part numbers or branded products (e.g. "CW1212", "Chocolate World sphere 25mm"), you must be confident you know the actual product. If you are not confident, do NOT guess or hallucinate — return an error object instead (see below).
 
+### Error Object Format
+
+If you cannot confidently identify the requested mold, return this instead of a mold entity:
+\`\`\`json
+{
+  "error": "string describing why you cannot generate the entity",
+  "term": "the original search term"
+}
+\`\`\`
+For example: \`{"error": "Cannot confidently identify mold CW9999 — part number not recognized", "term": "CW9999"}\``;
   return new AiAssist.AiPrompt(user, system);
 }

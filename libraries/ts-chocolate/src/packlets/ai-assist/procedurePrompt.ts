@@ -107,7 +107,18 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - Include temperatures in Celsius for any tempering, melting, or cooling steps.
 - Include a "notes" array with at least one entry using category "ai" describing any assumptions or estimates.
 - Populate as many optional fields as you can reasonably determine.
-- Return ONLY the JSON object, nothing else.`;
+- Return ONLY the JSON object, nothing else.
+- If you cannot confidently generate the requested procedure, do NOT guess or hallucinate details. Instead, return an error object (see below).
+
+### Error Object Format
+
+If you cannot confidently generate the requested procedure, return this instead of a procedure entity:
+\`\`\`json
+{
+  "error": "string describing why you cannot generate the entity",
+  "term": "the original search term"
+}
+\`\`\``;
 
   return new AiAssist.AiPrompt(user, system);
 }

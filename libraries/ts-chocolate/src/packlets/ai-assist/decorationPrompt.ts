@@ -85,7 +85,18 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - Include a "notes" array with at least one entry using category "ai" describing any assumptions, especially about ingredients or application technique.
 - If you can estimate difficulty or appearance ratings, include them.
 - Populate as many optional fields as you can reasonably determine.
-- Return ONLY the JSON object, nothing else.`;
+- Return ONLY the JSON object, nothing else.
+- If you cannot confidently generate the requested decoration, do NOT guess or hallucinate details. Instead, return an error object (see below).
+
+### Error Object Format
+
+If you cannot confidently generate the requested decoration, return this instead of a decoration entity:
+\`\`\`json
+{
+  "error": "string describing why you cannot generate the entity",
+  "term": "the original search term"
+}
+\`\`\``;
 
   return new AiAssist.AiPrompt(user, system);
 }

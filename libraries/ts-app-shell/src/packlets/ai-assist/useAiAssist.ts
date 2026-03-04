@@ -105,6 +105,32 @@ export interface IUseAiAssistResult {
 }
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Checks whether a parsed AI response is an error object (with an "error" field)
+ * rather than a valid entity. AI prompts instruct the model to return
+ * `{ "error": "...", "term": "..." }` when it cannot confidently generate the entity.
+ *
+ * @param parsed - The parsed JSON from the AI response
+ * @returns A failure Result with the error message if it's an error object, or undefined if not
+ */
+export function checkForAiErrorObject(parsed: unknown): Result<never> | undefined {
+  if (
+    typeof parsed === 'object' &&
+    parsed !== null &&
+    'error' in parsed &&
+    typeof (parsed as Record<string, unknown>).error === 'string'
+  ) {
+    const errorObj = parsed as Record<string, unknown>;
+    const term = typeof errorObj.term === 'string' ? ` (term: "${errorObj.term}")` : '';
+    return fail(`AI declined to generate${term}: ${errorObj.error}`);
+  }
+  return undefined;
+}
+
+// ============================================================================
 // Hook
 // ============================================================================
 
@@ -245,6 +271,12 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
             const detail = err instanceof Error ? err.message : String(err);
             // JSON parse failures are not retryable — the model isn't producing valid JSON at all
             return fail(`AI returned invalid JSON: ${detail}`);
+          }
+
+          // Check for AI error object (model declined to generate)
+          const aiError = checkForAiErrorObject(parsed);
+          if (aiError !== undefined) {
+            return aiError;
           }
 
           // Validate with the provided converter

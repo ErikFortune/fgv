@@ -98,7 +98,18 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - The baseWeight should equal the sum of all ingredient amounts converted to grams.
 - Include a "notes" array on the variation with at least one entry using category "ai" describing any assumptions, especially estimated amounts or substitutions.
 - Populate as many optional fields as you can reasonably determine.
-- Return ONLY the JSON object, nothing else.`;
+- Return ONLY the JSON object, nothing else.
+- If you cannot confidently generate the requested recipe, do NOT guess or hallucinate details. Instead, return an error object (see below).
+
+### Error Object Format
+
+If you cannot confidently generate the requested filling, return this instead of a filling entity:
+\`\`\`json
+{
+  "error": "string describing why you cannot generate the entity",
+  "term": "the original search term"
+}
+\`\`\``;
 
   return new AiAssist.AiPrompt(user, system);
 }

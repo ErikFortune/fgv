@@ -117,7 +117,19 @@ Generate from the name as lowercase-kebab-case: "${baseId}"
 - For ganacheCharacteristics, provide your best estimates of each component as a percentage of total weight. The six values (cacaoFat, sugar, milkFat, water, solids, otherFats) represent the ingredient's composition and MUST sum to exactly 100. For example, Valrhona Guanaja 70% dark chocolate might be: cacaoFat 38, sugar 29, milkFat 0, water 1, solids 31, otherFats 1.
 - Include a "notes" array with at least one entry using category "ai" describing any assumptions you made, especially unconfirmed estimates. These notes are preserved on the entity and shown to the user.
 - Populate as many optional fields as you can reasonably determine.
-- Return ONLY the JSON object, nothing else.`;
+- Return ONLY the JSON object, nothing else.
+- For generic ingredients (e.g. "oat milk", "heavy cream", "cocoa butter"), estimate values based on common/typical products and note your assumptions. This is fine and expected.
+- For specific branded products (e.g. "Oatly Barista Blend Oat Milk", "Valrhona Guanaja 70%", "Callebaut 811"), you must be confident you know the actual product data. If you are not confident, do NOT guess or hallucinate — return an error object instead (see below).
+
+### Error Object Format
+
+If you cannot confidently identify a specific branded product, return this instead of an ingredient entity:
+\`\`\`json
+{
+  "error": "string describing why you cannot generate the entity",
+  "term": "the original search term"
+}
+\`\`\``;
 
   return new AiAssist.AiPrompt(user, system);
 }

@@ -4,6 +4,7 @@
  */
 
 export {
+  checkForAiErrorObject,
   useAiAssist,
   type IAiAssistAction,
   type IAiAssistResult,

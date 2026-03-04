@@ -41,6 +41,8 @@ import type { Result } from '@fgv/ts-utils';
 
 import { AiAssist } from '@fgv/ts-extras';
 
+import { checkForAiErrorObject } from '@fgv/ts-app-shell';
+
 import { useAiAssist, type IAiAssistAction } from './useAiAssist';
 
 // ============================================================================
@@ -308,6 +310,13 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
       } catch (err: unknown) {
         const detail = err instanceof Error ? err.message : String(err);
         setPasteError(`Invalid JSON: ${detail}`);
+        return;
+      }
+
+      // Check for AI error object (model declined to generate)
+      const aiError = checkForAiErrorObject(parsed);
+      if (aiError !== undefined) {
+        setPasteError(aiError.message);
         return;
       }
 

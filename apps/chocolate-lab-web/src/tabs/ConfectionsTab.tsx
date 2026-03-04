@@ -16,8 +16,11 @@ import type {
   BaseProcedureId,
   CollectionId,
   ConfectionRecipeVariationSpec,
+  ConfectionName,
+  ConfectionType,
   IngredientId,
   FillingId,
+  Millimeters,
   MoldId,
   TaskId,
   ProcedureId,
@@ -69,6 +72,149 @@ import {
   createBlankRawProcedureEntity,
   createBlankFillingRecipeEntity
 } from '../shared';
+
+// ============================================================================
+// Confection Type Labels
+// ============================================================================
+
+const CONFECTION_TYPE_LABELS: ReadonlyArray<{ readonly type: ConfectionType; readonly label: string }> = [
+  { type: 'molded-bonbon', label: 'Molded Bon Bon' },
+  { type: 'bar-truffle', label: 'Bar Truffle' },
+  { type: 'rolled-truffle', label: 'Rolled Truffle' }
+];
+
+function createBlankConfectionEntity(
+  name: string,
+  id: string,
+  confectionType: ConfectionType
+): Entities.Confections.AnyConfectionRecipeEntity {
+  const today = new Date().toISOString().split('T')[0] ?? '';
+  const variationSpec = Helpers.generateConfectionVariationSpec([], { date: today }).orThrow();
+
+  const base = {
+    baseId: id as BaseConfectionId,
+    name: name as ConfectionName,
+    goldenVariationSpec: variationSpec
+  };
+
+  const baseVariation = {
+    variationSpec,
+    createdDate: today,
+    yield: { count: 1, unit: 'pieces' as const }
+  };
+
+  switch (confectionType) {
+    case 'molded-bonbon':
+      return {
+        ...base,
+        confectionType: 'molded-bonbon',
+        variations: [
+          {
+            ...baseVariation,
+            molds: { options: [] },
+            shellChocolate: { ids: [] }
+          }
+        ]
+      };
+    case 'bar-truffle':
+      return {
+        ...base,
+        confectionType: 'bar-truffle',
+        variations: [
+          {
+            ...baseVariation,
+            frameDimensions: { width: 0 as Millimeters, height: 0 as Millimeters, depth: 0 as Millimeters },
+            singleBonBonDimensions: { width: 0 as Millimeters, height: 0 as Millimeters }
+          }
+        ]
+      };
+    case 'rolled-truffle':
+      return {
+        ...base,
+        confectionType: 'rolled-truffle',
+        variations: [baseVariation]
+      };
+  }
+}
+
+// ============================================================================
+// Confection Create Panel (wraps EntityCreateForm with type selector)
+// ============================================================================
+
+function ConfectionCreatePanel(props: {
+  readonly onCreateConfection: (
+    entity: Entities.Confections.AnyConfectionRecipeEntity,
+    source: 'manual' | 'ai',
+    targetCollectionId?: string
+  ) => void;
+  readonly onCancel: () => void;
+  readonly sourceOptions: ReadonlyArray<{ id: string; name: string }>;
+  readonly onCreateFromSource: (params: {
+    mode: 'copy' | 'derive';
+    sourceId: string;
+    name: string;
+    id: string;
+    targetCollectionId?: string;
+  }) => void;
+  readonly writableCollections: ReadonlyArray<{ id: string; label?: string }>;
+  readonly defaultTargetCollectionId: CollectionId | undefined;
+}): React.ReactElement {
+  const {
+    onCreateConfection,
+    onCancel,
+    sourceOptions,
+    onCreateFromSource,
+    writableCollections,
+    defaultTargetCollectionId
+  } = props;
+  const [confectionType, setConfectionType] = useState<ConfectionType>('rolled-truffle');
+
+  return (
+    <div className="flex flex-col">
+      {/* Confection type selector */}
+      <div className="px-4 pt-4">
+        <label className="text-sm font-medium text-gray-700">Confection Type</label>
+        <select
+          value={confectionType}
+          onChange={(e): void => setConfectionType(e.target.value as ConfectionType)}
+          className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+        >
+          {CONFECTION_TYPE_LABELS.map((ct) => (
+            <option key={ct.type} value={ct.type}>
+              {ct.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <EntityCreateForm<Entities.Confections.AnyConfectionRecipeEntity>
+        slugify={slugify}
+        buildPrompt={(name: string): ExtrasAiAssist.AiPrompt => {
+          const user = `Generate a JSON object representing the chocolate confection recipe "${name}".`;
+          const system = `Return ONLY valid JSON (no markdown). Use confectionType "${confectionType}" with at least one variation and set goldenVariationSpec to that variationSpec.`;
+          return new ExtrasAiAssist.AiPrompt(user, system);
+        }}
+        convert={(from: unknown) => Entities.Confections.Converters.anyConfectionEntity.convert(from)}
+        makeBlank={(name: string, id: string): Entities.Confections.AnyConfectionRecipeEntity =>
+          createBlankConfectionEntity(name, id, confectionType)
+        }
+        onCreate={onCreateConfection}
+        sourceCreateMode="derive"
+        sourceOptions={sourceOptions}
+        onCreateFromSource={onCreateFromSource}
+        writableCollections={writableCollections}
+        defaultTargetCollectionId={defaultTargetCollectionId}
+        onCancel={onCancel}
+        namePlaceholder="e.g. Classic Dark Dome"
+        entityLabel="Confection"
+      />
+    </div>
+  );
+}
+
+// ============================================================================
+// Confection Editing State
+// ============================================================================
 
 interface IConfectionEditingState {
   readonly id: ConfectionId;
@@ -986,47 +1132,13 @@ export function ConfectionsTabContent(): React.ReactElement {
             key: '__new__',
             label: 'New Confection',
             content: (
-              <EntityCreateForm<Entities.Confections.AnyConfectionRecipeEntity>
-                slugify={slugify}
-                buildPrompt={(name: string): ExtrasAiAssist.AiPrompt => {
-                  const user = `Generate a JSON object representing the chocolate confection recipe \"${name}\".`;
-                  const system =
-                    'Return ONLY valid JSON (no markdown). Use confectionType "rolled-truffle" with at least one variation and set goldenVariationSpec to that variationSpec.';
-                  return new ExtrasAiAssist.AiPrompt(user, system);
-                }}
-                convert={(from: unknown) => Entities.Confections.Converters.anyConfectionEntity.convert(from)}
-                makeBlank={(name: string, id: string): Entities.Confections.AnyConfectionRecipeEntity => {
-                  const today = new Date().toISOString().split('T')[0] ?? '';
-                  const variationSpec = Helpers.generateConfectionVariationSpec([], {
-                    date: today
-                  }).orThrow();
-
-                  return {
-                    baseId: id as BaseConfectionId,
-                    confectionType: 'rolled-truffle',
-                    name: name as Entities.Confections.RolledTruffleRecipeEntity['name'],
-                    goldenVariationSpec: variationSpec,
-                    variations: [
-                      {
-                        variationSpec,
-                        createdDate: today,
-                        yield: {
-                          count: 1,
-                          unit: 'pieces'
-                        }
-                      }
-                    ]
-                  };
-                }}
-                onCreate={handleCreateConfection}
-                sourceCreateMode="derive"
+              <ConfectionCreatePanel
+                onCreateConfection={handleCreateConfection}
+                onCancel={handleCreateConfectionCancel}
                 sourceOptions={confectionCreateSourceOptions}
                 onCreateFromSource={handleCreateConfectionFromSource}
                 writableCollections={writableConfectionCollections}
                 defaultTargetCollectionId={mutableCollectionId}
-                onCancel={handleCreateConfectionCancel}
-                namePlaceholder="e.g. Classic Dark Dome"
-                entityLabel="Confection"
               />
             )
           };
