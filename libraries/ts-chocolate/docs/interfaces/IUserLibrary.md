@@ -184,4 +184,17 @@ Saves an active session back to the library.
 Updates the status of an existing persisted session.
 
 </td></tr>
+<tr><td>
+
+[removeSession(sessionId)](./IUserLibrary.removeSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes a session from the library.
+
+</td></tr>
 </tbody></table>

@@ -399,6 +399,16 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     });
   }
 
+  /**
+   * {@inheritDoc IUserLibrary.removeSession}
+   */
+  public removeSession(sessionId: SessionId): Result<SessionId> {
+    return this._entities.sessions.removeSession(sessionId).onSuccess(() => {
+      this._sessions = undefined;
+      return succeed(sessionId);
+    });
+  }
+
   // ============================================================================
   // Private MaterializedLibrary Factories
   // ============================================================================

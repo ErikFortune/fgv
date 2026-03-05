@@ -145,6 +145,13 @@ export interface ISessionActions {
   ) => Result<SessionId>;
 
   /**
+   * Delete a session from the entity library.
+   * @param sessionId - The composite SessionId to delete
+   * @returns Result with the composite SessionId
+   */
+  readonly deleteSession: (sessionId: SessionId) => Result<SessionId>;
+
+  /**
    * The default mutable collection ID for new sessions.
    * Resolved from the sessions sub-library; undefined if no mutable collection exists.
    */
@@ -250,11 +257,29 @@ export function useSessionActions(): ISessionActions {
     [workspace, reactiveWorkspace]
   );
 
+  const deleteSession = useCallback(
+    (sessionId: SessionId): Result<SessionId> => {
+      const collectionId = Helpers.getSessionCollectionId(sessionId);
+      const result = workspace.userData.removeSession(sessionId);
+      if (result.isSuccess()) {
+        persistSessionCollection(workspace.userData.entities.sessions, collectionId, workspace.data.logger);
+        workspace.data.clearCache();
+        reactiveWorkspace.notifyChange();
+        workspace.data.logger.info(`Deleted session '${sessionId}'`);
+      } else {
+        workspace.data.logger.error(`Failed to delete session '${sessionId}': ${result.message}`);
+      }
+      return result;
+    },
+    [workspace, reactiveWorkspace]
+  );
+
   return {
     createFillingSession,
     createConfectionSession,
     saveSession,
     updateSessionStatus,
+    deleteSession,
     defaultCollectionId
   };
 }

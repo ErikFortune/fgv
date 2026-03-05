@@ -6210,6 +6210,7 @@ interface IUserLibrary {
     readonly ingredientInventory: MaterializedLibrary<Inventory.IngredientInventoryEntryId, IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
     readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
     readonly moldInventory: MaterializedLibrary<Inventory.MoldInventoryEntryId, IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
+    removeSession(sessionId: SessionId): Result<SessionId>;
     saveSession(sessionId: SessionId): Result<SessionId>;
     readonly sessions: MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>;
     updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId>;
@@ -8436,6 +8437,10 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     get moldInventory(): MaterializedLibrary<Inventory.MoldInventoryEntryId, Inventory.IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
     get molds(): MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
     get procedures(): MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    removeSession(sessionId: SessionId): Result<SessionId>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)

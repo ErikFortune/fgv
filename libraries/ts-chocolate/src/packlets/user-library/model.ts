@@ -408,4 +408,11 @@ export interface IUserLibrary {
    * @returns Result with the composite SessionId
    */
   updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId>;
+
+  /**
+   * Removes a session from the library.
+   * @param sessionId - Session to remove
+   * @returns Result with the composite SessionId of the removed session
+   */
+  removeSession(sessionId: SessionId): Result<SessionId>;
 }

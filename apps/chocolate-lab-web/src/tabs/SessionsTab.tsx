@@ -97,6 +97,26 @@ export function SessionsTabContent(): React.ReactElement {
     [squashCascade]
   );
 
+  const handleDelete = useCallback(
+    (id: SessionId): void => {
+      sessionActions.deleteSession(id);
+      // If the deleted session is currently selected, clear the cascade
+      if (selectedId === id) {
+        squashCascade([]);
+      }
+    },
+    [sessionActions, selectedId, squashCascade]
+  );
+
+  const canDelete = useCallback(
+    (id: SessionId): boolean => {
+      const collectionId = Helpers.getSessionCollectionId(id);
+      const collection = workspace.userData.entities.sessions.collections.get(collectionId);
+      return collection.isSuccess() && collection.value.isMutable;
+    },
+    [workspace]
+  );
+
   // ============================================================================
   // New Session
   // ============================================================================
@@ -475,6 +495,8 @@ export function SessionsTabContent(): React.ReactElement {
               descriptor={SESSION_DESCRIPTOR}
               selectedId={selectedId}
               onSelect={handleSelect}
+              onDelete={handleDelete}
+              canDelete={canDelete}
               onDrill={collapseList}
               emptyState={{
                 title: 'No Sessions',
