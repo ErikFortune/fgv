@@ -24,6 +24,10 @@ declare namespace AiAssist {
     export {
         AiPrompt,
         AiProviderId,
+        AiServerToolType,
+        AiServerToolConfig,
+        IAiWebSearchToolConfig,
+        IAiToolEnablement,
         IAiCompletionResponse,
         IChatMessage,
         AiApiFormat,
@@ -32,14 +36,27 @@ declare namespace AiAssist {
         IAiAssistSettings,
         DEFAULT_AI_ASSIST,
         IAiAssistKeyStore,
+        ModelSpec,
+        ModelSpecKey,
+        IModelSpecMap,
+        allModelSpecKeys,
+        MODEL_SPEC_BASE_KEY,
+        resolveModel,
         allProviderIds,
         getProviderDescriptors,
         getProviderDescriptor,
         callProviderCompletion,
         IProviderCompletionParams,
         aiProviderId,
+        aiServerToolType,
+        aiWebSearchToolConfig,
+        aiServerToolConfig,
+        aiToolEnablement,
         aiAssistProviderConfig,
-        aiAssistSettings
+        aiAssistSettings,
+        modelSpecKey,
+        modelSpec,
+        resolveEffectiveTools
     }
 }
 export { AiAssist }
@@ -71,7 +88,38 @@ type AiProviderId = 'copy-paste' | 'xai-grok' | 'openai' | 'anthropic' | 'google
 const aiProviderId: Converter<AiProviderId>;
 
 // @public
+type AiServerToolConfig = IAiWebSearchToolConfig;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiServerToolConfig"
+//
+// @public
+const aiServerToolConfig: Converter<AiServerToolConfig>;
+
+// @public
+type AiServerToolType = 'web_search';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiServerToolType"
+//
+// @public
+const aiServerToolType: Converter<AiServerToolType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiToolEnablement"
+//
+// @public
+const aiToolEnablement: Converter<IAiToolEnablement>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiWebSearchToolConfig"
+//
+// @public
+const aiWebSearchToolConfig: Converter<IAiWebSearchToolConfig>;
+
+// @public
 const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+const allModelSpecKeys: ReadonlyArray<ModelSpecKey>;
 
 // @public
 const allProviderIds: ReadonlyArray<AiProviderId>;
@@ -390,9 +438,10 @@ interface IAiAssistKeyStore {
 
 // @public
 interface IAiAssistProviderConfig {
-    readonly model?: string;
+    readonly model?: ModelSpec;
     readonly provider: AiProviderId;
     readonly secretName?: string;
+    readonly tools?: ReadonlyArray<IAiToolEnablement>;
 }
 
 // @public
@@ -412,10 +461,28 @@ interface IAiProviderDescriptor {
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;
-    readonly defaultModel: string;
+    readonly defaultModel: ModelSpec;
     readonly id: AiProviderId;
     readonly label: string;
     readonly needsSecret: boolean;
+    readonly supportedTools: ReadonlyArray<AiServerToolType>;
+}
+
+// @public
+interface IAiToolEnablement {
+    readonly config?: AiServerToolConfig;
+    readonly enabled: boolean;
+    readonly type: AiServerToolType;
+}
+
+// @public
+interface IAiWebSearchToolConfig {
+    readonly allowedDomains?: ReadonlyArray<string>;
+    readonly blockedDomains?: ReadonlyArray<string>;
+    readonly enableImageUnderstanding?: boolean;
+    readonly maxUses?: number;
+    // (undocumented)
+    readonly type: 'web_search';
 }
 
 // @public
@@ -572,6 +639,12 @@ interface IMissingVariableDetail {
 }
 
 // @public
+interface IModelSpecMap {
+    // (undocumented)
+    readonly [key: string]: ModelSpec;
+}
+
+// @public
 interface IMustacheTemplateOptions {
     readonly includeComments?: boolean;
     readonly includePartials?: boolean;
@@ -590,9 +663,10 @@ interface IProviderCompletionParams {
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;
     readonly logger?: Logging.ILogger;
-    readonly modelOverride?: string;
+    readonly modelOverride?: ModelSpec;
     readonly prompt: AiPrompt;
     readonly temperature?: number;
+    readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
 // @public
@@ -754,6 +828,28 @@ class Md5Normalizer extends Hash_2.HashingNormalizer {
 // @public
 const MIN_SALT_LENGTH: number;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+//
+// @public
+const MODEL_SPEC_BASE_KEY: ModelSpecKey;
+
+// @public (undocumented)
+type ModelSpec = string | IModelSpecMap;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+const modelSpec: Converter<ModelSpec>;
+
+// @public
+type ModelSpecKey = 'base' | 'tools' | 'image';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+const modelSpecKey: Converter<ModelSpecKey>;
+
 declare namespace Mustache {
     export {
         IContextValidationResult,
@@ -895,6 +991,15 @@ declare namespace RecordJar {
     }
 }
 export { RecordJar }
+
+// @public
+function resolveEffectiveTools(descriptor: IAiProviderDescriptor, settingsTools?: ReadonlyArray<IAiToolEnablement>, perCallTools?: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<AiServerToolConfig>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_SPEC_BASE_KEY"
+//
+// @public
+function resolveModel(spec: ModelSpec, context?: string): string;
 
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;

@@ -50,7 +50,14 @@ describe('AiAssist.registry', () => {
         expect(desc.needsSecret).toBe(true);
         expect(desc.apiFormat).toBe('openai');
         expect(desc.baseUrl).toBeTruthy();
-        expect(desc.defaultModel).toBeTruthy();
+        expect(desc.defaultModel).toEqual({ base: 'grok-4-1-fast', tools: 'grok-4-1-fast-reasoning' });
+        expect(desc.supportedTools).toContain('web_search');
+      });
+    });
+
+    test('copy-paste provider has no supported tools', () => {
+      expect(AiAssist.getProviderDescriptor('copy-paste')).toSucceedAndSatisfy((desc) => {
+        expect(desc.supportedTools).toEqual([]);
       });
     });
 

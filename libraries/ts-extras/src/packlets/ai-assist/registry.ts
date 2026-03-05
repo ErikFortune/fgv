@@ -43,7 +43,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: false,
     apiFormat: 'openai',
     baseUrl: '',
-    defaultModel: ''
+    defaultModel: '',
+    supportedTools: []
   },
   {
     id: 'anthropic',
@@ -52,7 +53,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'anthropic',
     baseUrl: 'https://api.anthropic.com/v1',
-    defaultModel: 'claude-sonnet-4-5-20250929'
+    defaultModel: 'claude-sonnet-4-5-20250929',
+    supportedTools: ['web_search']
   },
   {
     id: 'google-gemini',
@@ -61,7 +63,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: 'gemini-2.5-flash'
+    defaultModel: 'gemini-2.5-flash',
+    supportedTools: ['web_search']
   },
   {
     id: 'groq',
@@ -70,7 +73,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.groq.com/openai/v1',
-    defaultModel: 'llama-3.3-70b-versatile'
+    defaultModel: 'llama-3.3-70b-versatile',
+    supportedTools: []
   },
   {
     id: 'mistral',
@@ -79,7 +83,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.mistral.ai/v1',
-    defaultModel: 'mistral-large-latest'
+    defaultModel: 'mistral-large-latest',
+    supportedTools: []
   },
   {
     id: 'openai',
@@ -88,7 +93,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o'
+    defaultModel: 'gpt-4o',
+    supportedTools: ['web_search']
   },
   {
     id: 'xai-grok',
@@ -97,7 +103,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.x.ai/v1',
-    defaultModel: 'grok-4-1-fast'
+    defaultModel: { base: 'grok-4-1-fast', tools: 'grok-4-1-fast-reasoning' },
+    supportedTools: ['web_search']
   }
 ];
 

@@ -100,7 +100,8 @@ export interface IUseAiAssistResult {
   readonly generateDirect: <TEntity>(
     provider: AiAssist.AiProviderId,
     prompt: AiAssist.AiPrompt,
-    convert: (from: unknown) => Result<TEntity>
+    convert: (from: unknown) => Result<TEntity>,
+    tools?: ReadonlyArray<AiAssist.AiServerToolConfig>
   ) => Promise<Result<IAiAssistResult<TEntity>>>;
 }
 
@@ -201,7 +202,8 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
     async <TEntity>(
       provider: AiAssist.AiProviderId,
       prompt: AiAssist.AiPrompt,
-      convert: (from: unknown) => Result<TEntity>
+      convert: (from: unknown) => Result<TEntity>,
+      tools?: ReadonlyArray<AiAssist.AiServerToolConfig>
     ): Promise<Result<IAiAssistResult<TEntity>>> => {
       // Find the provider config and descriptor
       const providerConfig = settings?.providers.find((p) => p.provider === provider);
@@ -235,6 +237,9 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
         const correctionMessages: Array<AiAssist.IChatMessage> = [];
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          // Resolve effective tools: per-call override > settings defaults > none
+          const effectiveTools = AiAssist.resolveEffectiveTools(descriptor, providerConfig.tools, tools);
+
           // Call the API (with any correction messages from previous attempts)
           const responseResult = await AiAssist.callProviderCompletion({
             descriptor,
@@ -242,7 +247,8 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
             prompt,
             additionalMessages: correctionMessages.length > 0 ? correctionMessages : undefined,
             modelOverride: providerConfig.model,
-            logger
+            logger,
+            tools: effectiveTools.length > 0 ? effectiveTools : undefined
           });
           if (responseResult.isFailure()) {
             logger?.error(`AI completion failed: ${responseResult.message}`);

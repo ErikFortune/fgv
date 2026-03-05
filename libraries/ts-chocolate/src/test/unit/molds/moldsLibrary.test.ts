@@ -79,7 +79,7 @@ describe('MoldsLibrary', () => {
     test('creates library with built-ins by default', () => {
       expect(MoldsLibrary.create()).toSucceedAndSatisfy((lib) => {
         expect(lib.size).toBeGreaterThan(0);
-        expect(lib.collectionCount).toBe(4); // common.yaml + cw.yaml + greyas + implast
+        expect(lib.collectionCount).toBe(6);
       });
     });
 
@@ -117,7 +117,7 @@ describe('MoldsLibrary', () => {
       });
 
       expect(result).toSucceedAndSatisfy((lib) => {
-        expect(lib.collectionCount).toBe(5); // 4 built-in + 1 custom
+        expect(lib.collectionCount).toBe(7);
         expect(lib.validating.has('test.testMold')).toBe(true);
         expect(lib.validating.has('cw.chocolate-world-cw-2227')).toBe(true);
       });

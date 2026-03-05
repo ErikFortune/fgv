@@ -67,6 +67,148 @@ export interface IChatMessage {
 }
 
 // ============================================================================
+// Server-Side Tools
+// ============================================================================
+
+/**
+ * Built-in server-side tool types supported across providers.
+ * @public
+ */
+export type AiServerToolType = 'web_search';
+
+/**
+ * Configuration specific to web search tools.
+ * @public
+ */
+export interface IAiWebSearchToolConfig {
+  readonly type: 'web_search';
+  /** Optional: restrict search to these domains. */
+  readonly allowedDomains?: ReadonlyArray<string>;
+  /** Optional: exclude these domains from search. */
+  readonly blockedDomains?: ReadonlyArray<string>;
+  /** Optional: max number of searches per request. */
+  readonly maxUses?: number;
+  /**
+   * Optional: enable image understanding during web search.
+   * When true, the model can view and analyze images found during search.
+   * Currently supported by xAI only; ignored by other providers.
+   */
+  readonly enableImageUnderstanding?: boolean;
+}
+
+/**
+ * Union of all server-side tool configurations. Discriminated on `type`.
+ * @public
+ */
+export type AiServerToolConfig = IAiWebSearchToolConfig;
+
+/**
+ * Declares a tool as enabled/disabled in provider settings.
+ * Tools are disabled by default — consuming apps must opt in explicitly.
+ * @public
+ */
+export interface IAiToolEnablement {
+  /** Which tool type. */
+  readonly type: AiServerToolType;
+  /** Whether this tool is enabled by default for this provider. */
+  readonly enabled: boolean;
+  /** Optional tool-specific configuration. */
+  readonly config?: AiServerToolConfig;
+}
+
+// ============================================================================
+// Model Specification
+// ============================================================================
+
+/**
+ * Known context keys for model specification maps.
+ * @public
+ */
+export type ModelSpecKey = 'base' | 'tools' | 'image';
+
+/**
+ * All valid {@link ModelSpecKey} values.
+ * @public
+ */
+export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = ['base', 'tools', 'image'];
+
+/**
+ * Default context key used as fallback when resolving a {@link ModelSpec}.
+ * @public
+ */
+export const MODEL_SPEC_BASE_KEY: ModelSpecKey = 'base';
+
+/**
+ * A model specification: either a simple model string or a record mapping
+ * context keys to nested model specs.
+ *
+ * @remarks
+ * A bare string is equivalent to `{ base: string }`. This keeps the simple
+ * case simple while allowing context-aware model selection (e.g. different
+ * models for tool-augmented vs. base completions).
+ *
+ * @example
+ * ```typescript
+ * // Simple — same model for all contexts:
+ * const simple: ModelSpec = 'grok-4-1-fast';
+ *
+ * // Context-aware — reasoning model when tools are active:
+ * const split: ModelSpec = { base: 'grok-4-1-fast', tools: 'grok-4-1-fast-reasoning' };
+ *
+ * // Future nested — per-tool model selection:
+ * const nested: ModelSpec = { base: 'grok-fast', tools: { base: 'grok-r', image: 'grok-v' } };
+ * ```
+ * @public
+ */
+export interface IModelSpecMap {
+  readonly [key: string]: ModelSpec;
+}
+
+/**
+ * @public
+ */
+export type ModelSpec = string | IModelSpecMap;
+
+/**
+ * Resolves a {@link ModelSpec} to a concrete model string given an optional context key.
+ *
+ * @remarks
+ * Resolution rules:
+ * 1. If the spec is a string, return it directly (context is irrelevant).
+ * 2. If the spec is an object and the context key exists, recurse into that branch.
+ * 3. Otherwise, fall back to the {@link MODEL_SPEC_BASE_KEY | 'base'} key.
+ * 4. If neither context nor `'base'` exists, use the first available value.
+ *
+ * @param spec - The model specification to resolve
+ * @param context - Optional context key (e.g. `'tools'`)
+ * @returns The resolved model string
+ * @public
+ */
+export function resolveModel(spec: ModelSpec, context?: string): string {
+  if (typeof spec === 'string') {
+    return spec;
+  }
+
+  // Try the requested context key first
+  if (context !== undefined && context in spec) {
+    return resolveModel(spec[context]);
+  }
+
+  // Fall back to 'base'
+  if (MODEL_SPEC_BASE_KEY in spec) {
+    return resolveModel(spec[MODEL_SPEC_BASE_KEY]);
+  }
+
+  // Last resort: first value in the record
+  const first = Object.values(spec)[0];
+  /* c8 ignore next 3 - defensive: only reachable with empty object (prevented by converter) */
+  if (first === undefined) {
+    return '';
+  }
+  return resolveModel(first);
+}
+
+// ============================================================================
 // Provider Descriptor
 // ============================================================================
 
@@ -121,8 +263,10 @@ export interface IAiProviderDescriptor {
   readonly apiFormat: AiApiFormat;
   /** Base URL for the API (e.g. 'https://api.x.ai/v1') */
   readonly baseUrl: string;
-  /** Default model identifier (e.g. 'grok-4-1-fast') */
-  readonly defaultModel: string;
+  /** Default model specification — string or context-aware map. */
+  readonly defaultModel: ModelSpec;
+  /** Which server-side tools this provider supports (empty = none). */
+  readonly supportedTools: ReadonlyArray<AiServerToolType>;
 }
 
 // ============================================================================
@@ -138,8 +282,10 @@ export interface IAiAssistProviderConfig {
   readonly provider: AiProviderId;
   /** For API-based providers: the keystore secret name holding the API key */
   readonly secretName?: string;
-  /** Optional model override (provider has a default) */
-  readonly model?: string;
+  /** Optional model override — string or context-aware map. */
+  readonly model?: ModelSpec;
+  /** Tool enablement/configuration. Tools are disabled unless explicitly enabled. */
+  readonly tools?: ReadonlyArray<IAiToolEnablement>;
 }
 
 /**

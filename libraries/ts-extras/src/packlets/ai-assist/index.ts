@@ -6,6 +6,10 @@
 export {
   AiPrompt,
   type AiProviderId,
+  type AiServerToolType,
+  type AiServerToolConfig,
+  type IAiWebSearchToolConfig,
+  type IAiToolEnablement,
   type IAiCompletionResponse,
   type IChatMessage,
   type AiApiFormat,
@@ -13,11 +17,29 @@ export {
   type IAiAssistProviderConfig,
   type IAiAssistSettings,
   DEFAULT_AI_ASSIST,
-  type IAiAssistKeyStore
+  type IAiAssistKeyStore,
+  type ModelSpec,
+  type ModelSpecKey,
+  type IModelSpecMap,
+  allModelSpecKeys,
+  MODEL_SPEC_BASE_KEY,
+  resolveModel
 } from './model';
 
 export { allProviderIds, getProviderDescriptors, getProviderDescriptor } from './registry';
 
 export { callProviderCompletion, type IProviderCompletionParams } from './apiClient';
 
-export { aiProviderId, aiAssistProviderConfig, aiAssistSettings } from './converters';
+export {
+  aiProviderId,
+  aiServerToolType,
+  aiWebSearchToolConfig,
+  aiServerToolConfig,
+  aiToolEnablement,
+  aiAssistProviderConfig,
+  aiAssistSettings,
+  modelSpecKey,
+  modelSpec
+} from './converters';
+
+export { resolveEffectiveTools } from './toolFormats';

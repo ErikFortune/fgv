@@ -39,6 +39,7 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     apiFormat: 'openai',
     baseUrl: 'https://api.x.ai/v1',
     defaultModel: 'grok-4-1-fast',
+    supportedTools: ['web_search'],
     ...overrides
   };
 }
@@ -108,6 +109,43 @@ function geminiResponse(text: string, finishReason: string = 'STOP'): unknown {
     ]
   };
 }
+
+// ============================================================================
+// Responses API response helpers (xAI/OpenAI with tools)
+// ============================================================================
+
+function responsesApiResponse(text: string, status: string = 'completed'): unknown {
+  return {
+    output: [
+      { type: 'web_search_call', id: 'ws_1', status: 'completed' },
+      {
+        type: 'message',
+        id: 'msg_1',
+        role: 'assistant',
+        content: [{ type: 'output_text', text }]
+      }
+    ],
+    status
+  };
+}
+
+// ============================================================================
+// Anthropic with tools response helpers
+// ============================================================================
+
+/* eslint-disable @typescript-eslint/naming-convention */
+function anthropicWithToolsResponse(text: string): unknown {
+  return {
+    content: [
+      { type: 'text', text: "I'll search for that." },
+      { type: 'server_tool_use', id: 'st_1', name: 'web_search', input: { query: 'test' } },
+      { type: 'web_search_tool_result', tool_use_id: 'st_1', content: [] },
+      { type: 'text', text }
+    ],
+    stop_reason: 'end_turn'
+  };
+}
+/* eslint-enable @typescript-eslint/naming-convention */
 
 // ============================================================================
 // Tests
@@ -531,6 +569,298 @@ describe('callProviderCompletion', () => {
       });
 
       expect(result).toFailWith(/DNS resolution failed/);
+    });
+  });
+
+  // ==========================================================================
+  // OpenAI Responses API (with tools)
+  // ==========================================================================
+
+  describe('openai format with tools (Responses API)', () => {
+    const descriptor = makeDescriptor({ apiFormat: 'openai' });
+    const tools: AiAssist.AiServerToolConfig[] = [{ type: 'web_search' }];
+
+    test('switches to /responses endpoint when tools provided', async () => {
+      mockFetchResponse(responsesApiResponse('Result from web search'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.x.ai/v1/responses');
+    });
+
+    test('includes tools in request body', async () => {
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.tools).toEqual([{ type: 'web_search' }]);
+      expect(body.input).toBeDefined();
+    });
+
+    test('selects tools model from ModelSpec when tools provided', async () => {
+      const splitDescriptor = makeDescriptor({
+        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning' }
+      });
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: splitDescriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('grok-reasoning');
+    });
+
+    test('selects base model from ModelSpec when no tools', async () => {
+      const splitDescriptor = makeDescriptor({
+        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning' }
+      });
+      mockFetchResponse(openAiResponse('no tools'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: splitDescriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('grok-fast');
+    });
+
+    test('extracts text from Responses API output', async () => {
+      mockFetchResponse(responsesApiResponse('Web search found: chocolate truffles'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.content).toBe('Web search found: chocolate truffles');
+        expect(response.truncated).toBe(false);
+      });
+    });
+
+    test('detects truncation via incomplete status', async () => {
+      mockFetchResponse(responsesApiResponse('partial...', 'incomplete'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.truncated).toBe(true);
+      });
+    });
+
+    test('fails when output has no message items', async () => {
+      mockFetchResponse({
+        output: [{ type: 'web_search_call', id: 'ws_1', status: 'completed' }],
+        status: 'completed'
+      });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      expect(result).toFailWith(/no message with text content/i);
+    });
+
+    test('fails when fetch throws a network error', async () => {
+      mockFetchError(new Error('ECONNREFUSED'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      expect(result).toFailWith(/ECONNREFUSED/i);
+    });
+
+    test('uses Chat Completions when no tools provided', async () => {
+      mockFetchResponse(openAiResponse('no tools'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.x.ai/v1/chat/completions');
+    });
+  });
+
+  // ==========================================================================
+  // Anthropic with tools
+  // ==========================================================================
+
+  describe('anthropic format with tools', () => {
+    const descriptor = makeDescriptor({
+      id: 'anthropic',
+      apiFormat: 'anthropic',
+      baseUrl: 'https://api.anthropic.com/v1',
+      defaultModel: 'claude-sonnet-4-5-20250929'
+    });
+    const tools: AiAssist.AiServerToolConfig[] = [{ type: 'web_search' }];
+
+    test('includes tools in request body', async () => {
+      mockFetchResponse(anthropicWithToolsResponse('Result with search'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.tools).toEqual([{ type: 'web_search_20250305', name: 'web_search' }]);
+    });
+
+    test('extracts text from mixed content blocks', async () => {
+      mockFetchResponse(anthropicWithToolsResponse('Found via web search'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        // Both text blocks concatenated
+        expect(response.content).toContain('Found via web search');
+        expect(response.truncated).toBe(false);
+      });
+    });
+
+    test('concatenates multiple text blocks', async () => {
+      mockFetchResponse({
+        content: [
+          { type: 'text', text: 'Part one. ' },
+          { type: 'server_tool_use', id: 'st_1', name: 'web_search', input: { query: 'test' } },
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          { type: 'web_search_tool_result', tool_use_id: 'st_1', content: [] },
+          { type: 'text', text: 'Part two.' }
+        ],
+        stop_reason: 'end_turn'
+      });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.content).toBe('Part one. Part two.');
+      });
+    });
+
+    test('fails when no text blocks in response', async () => {
+      mockFetchResponse({
+        content: [
+          { type: 'server_tool_use', id: 'st_1', name: 'web_search', input: { query: 'test' } },
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          { type: 'web_search_tool_result', tool_use_id: 'st_1', content: [] }
+        ],
+        stop_reason: 'end_turn'
+      });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      expect(result).toFailWith(/no text content/i);
+    });
+
+    test('fails when content is not an array', async () => {
+      mockFetchResponse({
+        content: 'not an array',
+        stop_reason: 'end_turn'
+      });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      expect(result).toFailWith(/content is not an array/i);
+    });
+  });
+
+  // ==========================================================================
+  // Gemini with tools
+  // ==========================================================================
+
+  describe('gemini format with tools', () => {
+    const descriptor = makeDescriptor({
+      id: 'google-gemini',
+      apiFormat: 'gemini',
+      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+      defaultModel: 'gemini-2.5-flash'
+    });
+    const tools: AiAssist.AiServerToolConfig[] = [{ type: 'web_search' }];
+
+    test('includes google_search tool in request body', async () => {
+      mockFetchResponse(geminiResponse('Grounded result'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.tools).toEqual([{ google_search: {} }]);
+    });
+
+    test('returns text content with tools', async () => {
+      mockFetchResponse(geminiResponse('Search grounded answer'));
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.content).toBe('Search grounded answer');
+      });
     });
   });
 });

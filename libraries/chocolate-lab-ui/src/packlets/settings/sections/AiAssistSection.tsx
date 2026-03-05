@@ -14,6 +14,31 @@ export interface IAiAssistSectionProps {
 }
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Checks whether web_search is enabled in a provider config's tools array.
+ */
+function isWebSearchEnabled(config: AiAssist.IAiAssistProviderConfig | undefined): boolean {
+  return config?.tools?.some((t) => t.type === 'web_search' && t.enabled) ?? false;
+}
+
+/**
+ * Returns an updated tools array with web_search toggled on or off.
+ */
+function toggleWebSearch(
+  tools: ReadonlyArray<AiAssist.IAiToolEnablement> | undefined,
+  enabled: boolean
+): ReadonlyArray<AiAssist.IAiToolEnablement> {
+  const existing = tools?.filter((t) => t.type !== 'web_search') ?? [];
+  if (enabled) {
+    return [...existing, { type: 'web_search', enabled: true }];
+  }
+  return existing;
+}
+
+// ============================================================================
 // Component
 // ============================================================================
 
@@ -83,6 +108,17 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
     [aiAssist.providers, updateProviders]
   );
 
+  const handleWebSearchToggle = useCallback(
+    (provider: AiAssist.AiProviderId, enabled: boolean): void => {
+      updateProviders(
+        aiAssist.providers.map((p) =>
+          p.provider === provider ? { ...p, tools: toggleWebSearch(p.tools, enabled) } : p
+        )
+      );
+    },
+    [aiAssist.providers, updateProviders]
+  );
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -98,7 +134,8 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
               <th className="py-2 pr-2 w-10">Def</th>
               <th className="py-2 pr-3">Provider</th>
               <th className="py-2 pr-3">API Key Secret</th>
-              <th className="py-2">Model</th>
+              <th className="py-2 pr-3">Model</th>
+              <th className="py-2 w-14">Search</th>
             </tr>
           </thead>
           <tbody>
@@ -107,60 +144,117 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
               const isEnabled = config !== undefined;
               const isCopyPaste = descriptor.id === 'copy-paste';
               const isDefault = effectiveDefault === descriptor.id;
+              const supportsSearch = descriptor.supportedTools.includes('web_search');
+              const searchEnabled = isWebSearchEnabled(config);
+
+              // Resolve the effective model for the current tools context
+              const effectiveModelSpec = config?.model ?? descriptor.defaultModel;
+              const effectiveModel = descriptor.needsSecret
+                ? AiAssist.resolveModel(effectiveModelSpec, searchEnabled ? 'tools' : undefined)
+                : '';
+
+              // Build info chips for enabled providers
+              const infoChips: string[] = [];
+              if (isEnabled && descriptor.needsSecret) {
+                infoChips.push(descriptor.apiFormat);
+                if (searchEnabled) {
+                  const baseModel = AiAssist.resolveModel(effectiveModelSpec);
+                  if (baseModel !== effectiveModel) {
+                    infoChips.push(`tools model: ${effectiveModel}`);
+                  }
+                }
+                if (descriptor.supportedTools.length > 0) {
+                  infoChips.push(`supports: ${descriptor.supportedTools.join(', ')}`);
+                }
+              }
 
               return (
-                <tr key={descriptor.id} className="border-b border-gray-100">
-                  <td className="py-2.5 pr-3">
-                    <input
-                      type="checkbox"
-                      checked={isEnabled}
-                      disabled={isCopyPaste}
-                      onChange={(e): void => handleToggle(descriptor, e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-50"
-                    />
-                  </td>
-                  <td className="py-2.5 pr-2">
-                    <input
-                      type="radio"
-                      name="ai-assist-default"
-                      checked={isDefault}
-                      disabled={!isEnabled}
-                      onChange={(): void => handleDefaultChange(descriptor.id)}
-                      className="w-4 h-4 border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-30"
-                    />
-                  </td>
-                  <td className="py-2.5 pr-3">
-                    <span className={isEnabled ? 'text-gray-900' : 'text-gray-400'}>{descriptor.label}</span>
-                  </td>
-                  <td className="py-2.5 pr-3">
-                    {descriptor.needsSecret ? (
+                <React.Fragment key={descriptor.id}>
+                  <tr className={infoChips.length > 0 ? '' : 'border-b border-gray-100'}>
+                    <td className="py-2.5 pr-3">
                       <input
-                        type="text"
-                        disabled={!isEnabled}
-                        className="w-full max-w-[200px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent disabled:opacity-40 disabled:bg-gray-50"
-                        placeholder="secret name"
-                        defaultValue={config?.secretName ?? ''}
-                        onBlur={(e): void => handleSecretNameChange(descriptor.id, e.target.value)}
+                        type="checkbox"
+                        checked={isEnabled}
+                        disabled={isCopyPaste}
+                        onChange={(e): void => handleToggle(descriptor, e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-50"
                       />
-                    ) : (
-                      <span className="text-xs text-gray-400">&mdash;</span>
-                    )}
-                  </td>
-                  <td className="py-2.5">
-                    {descriptor.needsSecret ? (
+                    </td>
+                    <td className="py-2.5 pr-2">
                       <input
-                        type="text"
+                        type="radio"
+                        name="ai-assist-default"
+                        checked={isDefault}
                         disabled={!isEnabled}
-                        className="w-full max-w-[180px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent disabled:opacity-40 disabled:bg-gray-50"
-                        placeholder={descriptor.defaultModel || 'model'}
-                        defaultValue={config?.model ?? ''}
-                        onBlur={(e): void => handleModelChange(descriptor.id, e.target.value)}
+                        onChange={(): void => handleDefaultChange(descriptor.id)}
+                        className="w-4 h-4 border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-30"
                       />
-                    ) : (
-                      <span className="text-xs text-gray-400">&mdash;</span>
-                    )}
-                  </td>
-                </tr>
+                    </td>
+                    <td className="py-2.5 pr-3">
+                      <span className={isEnabled ? 'text-gray-900' : 'text-gray-400'}>
+                        {descriptor.label}
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-3">
+                      {descriptor.needsSecret ? (
+                        <input
+                          type="text"
+                          disabled={!isEnabled}
+                          className="w-full max-w-[200px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent disabled:opacity-40 disabled:bg-gray-50"
+                          placeholder="secret name"
+                          defaultValue={config?.secretName ?? ''}
+                          onBlur={(e): void => handleSecretNameChange(descriptor.id, e.target.value)}
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-400">&mdash;</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 pr-3">
+                      {descriptor.needsSecret ? (
+                        <input
+                          type="text"
+                          disabled={!isEnabled}
+                          className="w-full max-w-[180px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent disabled:opacity-40 disabled:bg-gray-50"
+                          placeholder={effectiveModel || 'model'}
+                          defaultValue={config?.model ? AiAssist.resolveModel(config.model) : ''}
+                          onBlur={(e): void => handleModelChange(descriptor.id, e.target.value)}
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-400">&mdash;</span>
+                      )}
+                    </td>
+                    <td className="py-2.5">
+                      {supportsSearch ? (
+                        <input
+                          type="checkbox"
+                          checked={searchEnabled}
+                          disabled={!isEnabled}
+                          onChange={(e): void => handleWebSearchToggle(descriptor.id, e.target.checked)}
+                          title="Enable web search"
+                          className="w-4 h-4 rounded border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-30"
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-400">&mdash;</span>
+                      )}
+                    </td>
+                  </tr>
+                  {infoChips.length > 0 && (
+                    <tr className="border-b border-gray-100">
+                      <td colSpan={6} className="pb-2 pt-0 pl-8">
+                        <div className="flex gap-2 flex-wrap">
+                          {infoChips.map((chip) => (
+                            <span
+                              key={chip}
+                              className="inline-block px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded"
+                            >
+                              {chip}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               );
             })}
           </tbody>

@@ -24,13 +24,26 @@
  * Supports OpenAI-compatible providers (xAI, OpenAI, Groq, Mistral) directly,
  * plus adapters for Anthropic and Google Gemini.
  *
+ * When server-side tools (e.g. web_search) are configured, providers that support
+ * them will include tool configuration in the request and handle tool-augmented
+ * responses.
+ *
  * @packageDocumentation
  */
 
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
-import { AiPrompt, type IAiCompletionResponse, type IAiProviderDescriptor, type IChatMessage } from './model';
+import {
+  AiPrompt,
+  type AiServerToolConfig,
+  type IAiCompletionResponse,
+  type IAiProviderDescriptor,
+  type IChatMessage,
+  type ModelSpec,
+  resolveModel
+} from './model';
+import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
 
 // ============================================================================
 // Types
@@ -64,10 +77,12 @@ export interface IProviderCompletionParams {
   readonly additionalMessages?: ReadonlyArray<IChatMessage>;
   /** Sampling temperature (default: 0.7) */
   readonly temperature?: number;
-  /** Optional model override (uses descriptor.defaultModel otherwise) */
-  readonly modelOverride?: string;
+  /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
+  readonly modelOverride?: ModelSpec;
   /** Optional logger for request/response observability. */
   readonly logger?: Logging.ILogger;
+  /** Server-side tools to include in the request. Overrides settings-level tool config when provided. */
+  readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
 // ============================================================================
@@ -104,6 +119,7 @@ async function fetchJson(
   body: unknown,
   logger?: Logging.ILogger
 ): Promise<Result<JsonObject>> {
+  /* c8 ignore next 1 - optional logger */
   logger?.detail(`AI API request: POST ${url}`);
 
   let response: Response;
@@ -118,27 +134,32 @@ async function fetchJson(
     });
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : String(err);
+    /* c8 ignore next 1 - optional logger */
     logger?.error(`AI API request failed: ${detail}`);
     return fail(`AI API request failed: ${detail}`);
   }
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'unknown error');
+    /* c8 ignore next 1 - optional logger */
     logger?.error(`AI API returned ${response.status}: ${errorText}`);
     return fail(`AI API returned ${response.status}: ${errorText}`);
   }
 
+  /* c8 ignore next 1 - optional logger */
   logger?.detail(`AI API response: ${response.status}`);
 
   let json: unknown;
   try {
     json = await response.json();
   } catch {
+    /* c8 ignore next 1 - optional logger */
     logger?.error('AI API returned invalid JSON response');
     return fail('AI API returned invalid JSON response');
   }
 
   if (!isJsonObject(json)) {
+    /* c8 ignore next 1 - optional logger */
     logger?.error('AI API returned non-object JSON response');
     return fail('AI API returned non-object JSON response');
   }
@@ -148,6 +169,8 @@ async function fetchJson(
 // ============================================================================
 // Response validators (non-strict — extra API fields preserved for debugging)
 // ============================================================================
+
+// ---- OpenAI Chat Completions format ----
 
 /** @internal */
 interface IOpenAiMessage {
@@ -174,6 +197,45 @@ const openAiResponse: Validator<IOpenAiResponse> = Validators.object<IOpenAiResp
   choices: Validators.arrayOf(openAiChoice).withConstraint((arr) => arr.length > 0)
 });
 
+// ---- OpenAI/xAI Responses API format ----
+
+/** @internal */
+interface IResponsesApiOutputText {
+  type: 'output_text';
+  text: string;
+}
+/** @internal */
+interface IResponsesApiMessage {
+  type: 'message';
+  role: string;
+  content: IResponsesApiOutputText[];
+}
+/** @internal */
+interface IResponsesApiResponse {
+  output: Array<Record<string, unknown>>;
+  status: string;
+}
+
+const responsesApiOutputText: Validator<IResponsesApiOutputText> = Validators.object<IResponsesApiOutputText>({
+  type: Validators.literal('output_text'),
+  text: Validators.string
+});
+const responsesApiMessage: Validator<IResponsesApiMessage> = Validators.object<IResponsesApiMessage>({
+  type: Validators.literal('message'),
+  role: Validators.string,
+  content: Validators.arrayOf(responsesApiOutputText).withConstraint((arr) => arr.length > 0)
+});
+const responsesApiOutputItem: Validator<Record<string, unknown>> = Validators.isA(
+  'object',
+  (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
+);
+const responsesApiResponse: Validator<IResponsesApiResponse> = Validators.object<IResponsesApiResponse>({
+  output: Validators.arrayOf(responsesApiOutputItem).withConstraint((arr) => arr.length > 0),
+  status: Validators.string
+});
+
+// ---- Anthropic format ----
+
 /** @internal */
 interface IAnthropicContentBlock {
   text: string;
@@ -191,6 +253,8 @@ const anthropicResponse: Validator<IAnthropicResponse> = Validators.object<IAnth
   content: Validators.arrayOf(anthropicContentBlock).withConstraint((arr) => arr.length > 0),
   stop_reason: Validators.string
 });
+
+// ---- Gemini format ----
 
 /** @internal */
 interface IGeminiPart {
@@ -225,7 +289,7 @@ const geminiResponse: Validator<IGeminiResponse> = Validators.object<IGeminiResp
 });
 
 // ============================================================================
-// OpenAI-compatible client
+// OpenAI-compatible client (Chat Completions — no tools)
 // ============================================================================
 
 /**
@@ -244,6 +308,7 @@ async function callOpenAiCompletion(
   const messages = buildMessages(prompt, additionalMessages);
   const body = { model: config.model, messages, temperature };
 
+  /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI completion: model=${config.model}`);
   const jsonResult = await fetchJson(url, { Authorization: `Bearer ${config.apiKey}` }, body, logger);
   if (jsonResult.isFailure()) {
@@ -262,11 +327,98 @@ async function callOpenAiCompletion(
 }
 
 // ============================================================================
+// OpenAI/xAI Responses API (with tools)
+// ============================================================================
+
+/**
+ * Extracts text content from a Responses API output array.
+ * Finds the first message-type output item and concatenates its text content blocks.
+ * @internal
+ */
+function extractResponsesApiText(output: Array<Record<string, unknown>>): Result<string> {
+  for (const item of output) {
+    if (item.type === 'message') {
+      const messageResult = responsesApiMessage.validate(item as JsonObject);
+      if (messageResult.isSuccess()) {
+        return succeed(messageResult.value.content.map((c) => c.text).join(''));
+      }
+    }
+  }
+  return fail('Responses API output contained no message with text content');
+}
+
+/**
+ * Calls the xAI/OpenAI Responses API with server-side tools.
+ * Used when tools are configured for an openai-format provider.
+ * @internal
+ */
+async function callOpenAiResponsesCompletion(
+  config: IAiApiConfig,
+  prompt: AiPrompt,
+  tools: ReadonlyArray<AiServerToolConfig>,
+  additionalMessages?: ReadonlyArray<IChatMessage>,
+  temperature: number = 0.7,
+  logger?: Logging.ILogger
+): Promise<Result<IAiCompletionResponse>> {
+  const url = `${config.baseUrl}/responses`;
+  const input = buildMessages(prompt, additionalMessages);
+  const body: Record<string, unknown> = {
+    model: config.model,
+    input,
+    tools: toResponsesApiTools(tools),
+    temperature
+  };
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`OpenAI Responses API: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
+  const jsonResult = await fetchJson(url, { Authorization: `Bearer ${config.apiKey}` }, body, logger);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return responsesApiResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `Responses API response: ${msg}`)
+    .onSuccess((response) => {
+      return extractResponsesApiText(response.output).onSuccess((text) =>
+        succeed({
+          content: text,
+          truncated: response.status === 'incomplete'
+        })
+      );
+    });
+}
+
+// ============================================================================
 // Anthropic adapter
 // ============================================================================
 
 /**
+ * Extracts text content from Anthropic response content blocks.
+ * When tools are used, the content array contains mixed block types
+ * (text, server_tool_use, web_search_tool_result). We extract and
+ * concatenate only the text blocks.
+ * @internal
+ */
+function extractAnthropicText(content: unknown[]): Result<string> {
+  const textParts: string[] = [];
+  for (const block of content) {
+    if (typeof block === 'object' && block !== null && 'type' in block) {
+      const typed = block as Record<string, unknown>;
+      if (typed.type === 'text' && typeof typed.text === 'string') {
+        textParts.push(typed.text);
+      }
+    }
+  }
+  if (textParts.length === 0) {
+    return fail('Anthropic response contained no text content blocks');
+  }
+  return succeed(textParts.join(''));
+}
+
+/**
  * Calls the Anthropic Messages API.
+ * When tools are configured, includes them in the request and handles
+ * mixed content block responses.
  * @internal
  */
 async function callAnthropicCompletion(
@@ -274,7 +426,8 @@ async function callAnthropicCompletion(
   prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
-  logger?: Logging.ILogger
+  logger?: Logging.ILogger,
+  tools?: ReadonlyArray<AiServerToolConfig>
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
 
@@ -289,7 +442,7 @@ async function callAnthropicCompletion(
     }
   }
 
-  const body = {
+  const body: Record<string, unknown> = {
     model: config.model,
     system: prompt.system,
     messages,
@@ -297,17 +450,44 @@ async function callAnthropicCompletion(
     temperature
   };
 
+  if (tools && tools.length > 0) {
+    body.tools = toAnthropicTools(tools);
+    /* c8 ignore next 3 - optional logger diagnostic output */
+    logger?.info(
+      `Anthropic completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`
+    );
+  } else {
+    /* c8 ignore next 1 - optional logger */
+    logger?.info(`Anthropic completion: model=${config.model}`);
+  }
+
   const headers: Record<string, string> = {
     'x-api-key': config.apiKey,
     'anthropic-version': '2023-06-01',
     'anthropic-dangerous-direct-browser-access': 'true'
   };
 
-  logger?.info(`Anthropic completion: model=${config.model}`);
   const jsonResult = await fetchJson(url, headers, body, logger);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
+
+  // When tools are used, the response content is a mixed array of block types.
+  // We need to extract text from all text blocks.
+  if (tools && tools.length > 0) {
+    const rawContent = (jsonResult.value as Record<string, unknown>).content;
+    const stopReason = (jsonResult.value as Record<string, unknown>).stop_reason;
+    if (!Array.isArray(rawContent)) {
+      return fail('Anthropic API response: content is not an array');
+    }
+    return extractAnthropicText(rawContent).onSuccess((text) =>
+      succeed({
+        content: text,
+        truncated: stopReason === 'max_tokens'
+      })
+    );
+  }
+
   return anthropicResponse
     .validate(jsonResult.value)
     .withErrorFormat((msg) => `Anthropic API response: ${msg}`)
@@ -325,6 +505,7 @@ async function callAnthropicCompletion(
 
 /**
  * Calls the Google Gemini generateContent API.
+ * When tools are configured, includes Google Search grounding.
  * @internal
  */
 async function callGeminiCompletion(
@@ -332,7 +513,8 @@ async function callGeminiCompletion(
   prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
-  logger?: Logging.ILogger
+  logger?: Logging.ILogger,
+  tools?: ReadonlyArray<AiServerToolConfig>
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
@@ -351,17 +533,25 @@ async function callGeminiCompletion(
     }
   }
 
-  const body = {
+  const body: Record<string, unknown> = {
     systemInstruction: { parts: [{ text: prompt.system }] },
     contents,
     generationConfig: { temperature }
   };
 
+  if (tools && tools.length > 0) {
+    body.tools = toGeminiTools(tools);
+    /* c8 ignore next 1 - optional logger */
+    logger?.info(`Gemini completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
+  } else {
+    /* c8 ignore next 1 - optional logger */
+    logger?.info(`Gemini completion: model=${config.model}`);
+  }
+
   const headers: Record<string, string> = {
     'x-goog-api-key': config.apiKey
   };
 
-  logger?.info(`Gemini completion: model=${config.model}`);
   const jsonResult = await fetchJson(url, headers, body, logger);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
@@ -390,34 +580,56 @@ async function callGeminiCompletion(
  * - `'anthropic'` for Anthropic Claude
  * - `'gemini'` for Google Gemini
  *
- * @param params - Request parameters including descriptor, API key, and prompt
+ * When tools are provided and the provider supports them:
+ * - OpenAI-format providers switch to the Responses API
+ * - Anthropic includes tools in the Messages API request
+ * - Gemini includes Google Search grounding
+ *
+ * @param params - Request parameters including descriptor, API key, prompt, and optional tools
  * @returns The completion response with content and truncation status, or a failure
  * @public
  */
 export async function callProviderCompletion(
   params: IProviderCompletionParams
 ): Promise<Result<IAiCompletionResponse>> {
-  const { descriptor, apiKey, prompt, additionalMessages, temperature = 0.7, modelOverride, logger } = params;
+  const {
+    descriptor,
+    apiKey,
+    prompt,
+    additionalMessages,
+    temperature = 0.7,
+    modelOverride,
+    logger,
+    tools
+  } = params;
 
   if (!descriptor.baseUrl) {
     return fail(`provider "${descriptor.id}" has no API endpoint configured`);
   }
 
+  const hasTools = tools !== undefined && tools.length > 0;
+  const modelContext = hasTools ? 'tools' : undefined;
+
   const config: IAiApiConfig = {
     baseUrl: descriptor.baseUrl,
     apiKey,
-    model: modelOverride ?? descriptor.defaultModel
+    model: resolveModel(modelOverride ?? descriptor.defaultModel, modelContext)
   };
-
-  logger?.info(`AI completion: provider=${descriptor.id}, format=${descriptor.apiFormat}`);
+  /* c8 ignore next 3 - optional logger diagnostic output */
+  logger?.info(
+    `AI completion: provider=${descriptor.id}, format=${descriptor.apiFormat}${hasTools ? ', tools=' + tools.map((t) => t.type).join(',') : ''}`
+  );
 
   switch (descriptor.apiFormat) {
     case 'openai':
+      if (hasTools) {
+        return callOpenAiResponsesCompletion(config, prompt, tools, additionalMessages, temperature, logger);
+      }
       return callOpenAiCompletion(config, prompt, additionalMessages, temperature, logger);
     case 'anthropic':
-      return callAnthropicCompletion(config, prompt, additionalMessages, temperature, logger);
+      return callAnthropicCompletion(config, prompt, additionalMessages, temperature, logger, tools);
     case 'gemini':
-      return callGeminiCompletion(config, prompt, additionalMessages, temperature, logger);
+      return callGeminiCompletion(config, prompt, additionalMessages, temperature, logger, tools);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;
