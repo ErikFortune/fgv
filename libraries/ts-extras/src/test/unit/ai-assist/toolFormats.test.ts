@@ -66,6 +66,7 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     baseUrl: 'https://api.x.ai/v1',
     defaultModel: 'grok-4-1-fast',
     supportedTools: ['web_search'],
+    corsRestricted: true,
     ...overrides
   };
 }

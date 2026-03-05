@@ -7,6 +7,7 @@
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
+    "dev:full": "concurrently -n web,api -c blue,green \"rushx dev\" \"node ../../services/chocolate-lab-api/lib/index.js\"",
     "clean": "rimraf lib dist",
     "test": "echo 'Use rushx test:e2e for end-to-end tests' && exit 0",
     "test:e2e": "playwright test",
@@ -75,7 +76,8 @@
     "ts-jest": "^29.4.6",
     "@types/jest": "^29.5.14",
     "identity-obj-proxy": "3",
-    "@playwright/test": "~1.58.2"
+    "@playwright/test": "~1.58.2",
+    "concurrently": "~9.2.1"
   },
   "repository": {
     "type": "git",

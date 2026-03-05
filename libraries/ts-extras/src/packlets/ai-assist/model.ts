@@ -267,6 +267,8 @@ export interface IAiProviderDescriptor {
   readonly defaultModel: ModelSpec;
   /** Which server-side tools this provider supports (empty = none). */
   readonly supportedTools: ReadonlyArray<AiServerToolType>;
+  /** Whether this provider's API enforces CORS restrictions that prevent direct browser calls. */
+  readonly corsRestricted: boolean;
 }
 
 // ============================================================================
@@ -297,8 +299,10 @@ export interface IAiAssistSettings {
   readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
   /** Which enabled provider is the default for the main button. Falls back to first in list. */
   readonly defaultProvider?: AiProviderId;
-  /** Optional proxy URL for routing API requests through a backend server (e.g. `http://localhost:3001`). */
+  /** Optional proxy URL for routing API requests through a backend server (e.g. `http://localhost:3002`). */
   readonly proxyUrl?: string;
+  /** When true, route all providers through the proxy. When false (default), only CORS-restricted providers use the proxy. */
+  readonly proxyAllProviders?: boolean;
 }
 
 /**

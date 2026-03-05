@@ -455,6 +455,7 @@ interface IAiAssistProviderConfig {
 interface IAiAssistSettings {
     readonly defaultProvider?: AiProviderId;
     readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
+    readonly proxyAllProviders?: boolean;
     readonly proxyUrl?: string;
 }
 
@@ -469,6 +470,7 @@ interface IAiProviderDescriptor {
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;
+    readonly corsRestricted: boolean;
     readonly defaultModel: ModelSpec;
     readonly id: AiProviderId;
     readonly label: string;

@@ -13,6 +13,7 @@ import { StorageSection } from './sections/StorageSection';
 import { LibrarySection } from './sections/LibrarySection';
 import { SecuritySection } from './sections/SecuritySection';
 import { AiAssistSection } from './sections/AiAssistSection';
+import { ServicesSection } from './sections/ServicesSection';
 
 // ============================================================================
 // Shared draft context
@@ -44,6 +45,7 @@ type SettingsSection =
   | 'storage'
   | 'libraries'
   | 'ai-assist'
+  | 'services'
   | 'security';
 
 interface ISectionDef {
@@ -59,6 +61,7 @@ const SECTIONS: ReadonlyArray<ISectionDef> = [
   { id: 'storage', label: 'Storage' },
   { id: 'libraries', label: 'Libraries' },
   { id: 'ai-assist', label: 'AI Assist' },
+  { id: 'services', label: 'Services' },
   { id: 'security', label: 'Security' }
 ];
 
@@ -212,6 +215,8 @@ function SectionContent({
       return <LibrarySection />;
     case 'ai-assist':
       return <AiAssistSection aiAssist={preferences.aiAssist} onChange={updatePreferences} />;
+    case 'services':
+      return <ServicesSection aiAssist={preferences.aiAssist} onChange={updatePreferences} />;
     case 'security':
       return <SecuritySection />;
     default:

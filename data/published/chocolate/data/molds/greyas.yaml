@@ -37,3 +37,37 @@ items:
         url: https://homenkitchenshop.com/products/greyas-cm-3843-louis-amado-clear-polycarbonate-chocolate-mold
       - category: purchase
         url: https://amazon.com/dp/B09QD36Q4J
+  cm1207:
+    baseId: cm1207
+    manufacturer: Greyas
+    productNumber: CM1207
+    name: Praline Mayan Pyramide
+    description: Mayan Pyramide praline chocolate mold with 24 cavities, each holding 12g of chocolate.
+    cavities:
+      kind: grid
+      columns: 6
+      rows: 4
+      info:
+        weight: 12
+        dimensions:
+          width: 26
+          length: 26
+          depth: 22
+    format: series-2000
+    tags:
+      - praline
+      - mayan
+      - pyramide
+      - pyramid
+      - polycarbonate
+    notes:
+      - category: ai
+        note: >-
+          Grid layout assumed as 6 columns x 4 rows based on mold dimensions (275x175mm) and 24 cavities, typical for
+          Greyas series-2000 praline molds. Cavity dimensions sourced from retailer ChocDepot.com; confirmed weight 12g
+          per cavity from manufacturer site.
+    urls:
+      - category: manufacturer
+        url: https://www.greyas.com/products/cm-1207-pralin-cikolata-kalibi
+      - category: purchase
+        url: https://www.chocdepot.com/Urun/greyas-cm-1207-polycarbon-chocolate-mold

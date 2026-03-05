@@ -150,5 +150,6 @@ export const aiAssistProviderConfig: Converter<IAiAssistProviderConfig> =
 export const aiAssistSettings: Converter<IAiAssistSettings> = Converters.strictObject<IAiAssistSettings>({
   providers: Converters.arrayOf(aiAssistProviderConfig),
   defaultProvider: aiProviderId.optional(),
-  proxyUrl: Converters.string.optional()
+  proxyUrl: Converters.string.optional(),
+  proxyAllProviders: Converters.boolean.optional()
 });

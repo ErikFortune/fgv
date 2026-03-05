@@ -74,6 +74,14 @@
       "enableParallelism": true,
       "ignoreDependencyOrder": true,
       "ignoreMissingScript": true
+    },
+    {
+      "name": "start-lab:backend",
+      "commandKind": "global",
+      "summary": "Start the Chocolate Lab API backend server",
+      "description": "Starts the chocolate-lab-api server on port 3002 (or PORT env var). Safe to run alongside other Rush processes.",
+      "safeForSimultaneousRushProcesses": true,
+      "shellCommand": "node services/chocolate-lab-api/lib/index.js"
     }
     // {
     //   /**

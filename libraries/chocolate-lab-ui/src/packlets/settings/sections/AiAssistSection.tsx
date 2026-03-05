@@ -153,18 +153,29 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                 ? AiAssist.resolveModel(effectiveModelSpec, searchEnabled ? 'tools' : undefined)
                 : '';
 
+              // Proxy routing status for this provider
+              const willProxy: boolean =
+                !!aiAssist.proxyUrl && (aiAssist.proxyAllProviders === true || descriptor.corsRestricted);
+              const needsProxyWarning: boolean = isEnabled && descriptor.corsRestricted && !aiAssist.proxyUrl;
+
               // Build info chips for enabled providers
-              const infoChips: string[] = [];
+              const infoChips: Array<{ readonly label: string; readonly variant?: 'warning' | 'accent' }> =
+                [];
               if (isEnabled && descriptor.needsSecret) {
-                infoChips.push(descriptor.apiFormat);
+                infoChips.push({ label: descriptor.apiFormat });
+                if (willProxy) {
+                  infoChips.push({ label: 'proxy', variant: 'accent' });
+                } else if (needsProxyWarning) {
+                  infoChips.push({ label: 'needs proxy (CORS)', variant: 'warning' });
+                }
                 if (searchEnabled) {
                   const baseModel = AiAssist.resolveModel(effectiveModelSpec);
                   if (baseModel !== effectiveModel) {
-                    infoChips.push(`tools model: ${effectiveModel}`);
+                    infoChips.push({ label: `tools model: ${effectiveModel}` });
                   }
                 }
                 if (descriptor.supportedTools.length > 0) {
-                  infoChips.push(`supports: ${descriptor.supportedTools.join(', ')}`);
+                  infoChips.push({ label: `supports: ${descriptor.supportedTools.join(', ')}` });
                 }
               }
 
@@ -242,14 +253,22 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                     <tr className="border-b border-gray-100">
                       <td colSpan={6} className="pb-2 pt-0 pl-8">
                         <div className="flex gap-2 flex-wrap">
-                          {infoChips.map((chip) => (
-                            <span
-                              key={chip}
-                              className="inline-block px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded"
-                            >
-                              {chip}
-                            </span>
-                          ))}
+                          {infoChips.map((chip) => {
+                            const variantClass =
+                              chip.variant === 'warning'
+                                ? 'text-amber-700 bg-amber-50'
+                                : chip.variant === 'accent'
+                                ? 'text-choco-accent bg-choco-accent/10'
+                                : 'text-gray-500 bg-gray-100';
+                            return (
+                              <span
+                                key={chip.label}
+                                className={`inline-block px-1.5 py-0.5 text-[10px] font-medium rounded ${variantClass}`}
+                              >
+                                {chip.label}
+                              </span>
+                            );
+                          })}
                         </div>
                       </td>
                     </tr>
@@ -259,23 +278,6 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
             })}
           </tbody>
         </table>
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <label htmlFor="ai-proxy-url" className="block text-xs font-medium text-gray-500 mb-1">
-          API Proxy URL
-        </label>
-        <input
-          id="ai-proxy-url"
-          type="text"
-          className="w-full max-w-[400px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent"
-          placeholder="http://localhost:3002"
-          defaultValue={aiAssist.proxyUrl ?? ''}
-          onBlur={(e): void => onChange({ aiAssist: { ...aiAssist, proxyUrl: e.target.value || undefined } })}
-        />
-        <p className="text-xs text-gray-400 mt-1">
-          Route AI requests through a backend proxy. Required for xAI Grok (CORS).
-        </p>
       </div>
     </div>
   );

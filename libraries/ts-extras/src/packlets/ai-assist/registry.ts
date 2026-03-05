@@ -44,7 +44,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'openai',
     baseUrl: '',
     defaultModel: '',
-    supportedTools: []
+    supportedTools: [],
+    corsRestricted: false
   },
   {
     id: 'anthropic',
@@ -54,7 +55,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'anthropic',
     baseUrl: 'https://api.anthropic.com/v1',
     defaultModel: 'claude-sonnet-4-5-20250929',
-    supportedTools: ['web_search']
+    supportedTools: ['web_search'],
+    corsRestricted: false
   },
   {
     id: 'google-gemini',
@@ -64,7 +66,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     defaultModel: 'gemini-2.5-flash',
-    supportedTools: ['web_search']
+    supportedTools: ['web_search'],
+    corsRestricted: false
   },
   {
     id: 'groq',
@@ -74,7 +77,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'openai',
     baseUrl: 'https://api.groq.com/openai/v1',
     defaultModel: 'llama-3.3-70b-versatile',
-    supportedTools: []
+    supportedTools: [],
+    corsRestricted: false
   },
   {
     id: 'mistral',
@@ -84,7 +88,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'openai',
     baseUrl: 'https://api.mistral.ai/v1',
     defaultModel: 'mistral-large-latest',
-    supportedTools: []
+    supportedTools: [],
+    corsRestricted: false
   },
   {
     id: 'openai',
@@ -94,7 +99,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
     defaultModel: 'gpt-4o',
-    supportedTools: ['web_search']
+    supportedTools: ['web_search'],
+    corsRestricted: false
   },
   {
     id: 'xai-grok',
@@ -104,7 +110,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'openai',
     baseUrl: 'https://api.x.ai/v1',
     defaultModel: { base: 'grok-4-1-fast', tools: 'grok-4-1-fast-reasoning' },
-    supportedTools: ['web_search']
+    supportedTools: ['web_search'],
+    corsRestricted: true
   }
 ];
 

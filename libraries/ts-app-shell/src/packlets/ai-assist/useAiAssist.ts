@@ -250,8 +250,10 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
             logger,
             tools: effectiveTools.length > 0 ? effectiveTools : undefined
           };
-          const responseResult = settings?.proxyUrl
-            ? await AiAssist.callProxiedCompletion(settings.proxyUrl, completionParams)
+          const useProxy: boolean =
+            !!settings?.proxyUrl && (settings.proxyAllProviders === true || descriptor.corsRestricted);
+          const responseResult = useProxy
+            ? await AiAssist.callProxiedCompletion(settings!.proxyUrl!, completionParams)
             : await AiAssist.callProviderCompletion(completionParams);
           if (responseResult.isFailure()) {
             logger?.error(`AI completion failed: ${responseResult.message}`);
