@@ -408,4 +408,17 @@ Creates a persisted session state from this confection editing session.
 Gets the filling session for a specific slot.
 
 </td></tr>
+<tr><td>
+
+[markSaved()](./ConfectionEditingSessionBase.markSaved.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Resets the change-detection baseline to the current produced state.
+
+</td></tr>
 </tbody></table>

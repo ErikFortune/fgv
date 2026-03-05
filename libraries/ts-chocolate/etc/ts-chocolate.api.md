@@ -991,9 +991,10 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
     get label(): string | undefined;
     // @internal
     protected _loadFillingSessions(): Result<Map<SlotId, EditingSession> | undefined>;
+    markSaved(): void;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     // (undocumented)
-    protected readonly _originalSnapshot: T;
+    protected _originalSnapshot: T;
     // (undocumented)
     protected readonly _persistedEntity: IConfectionSessionEntity | undefined;
     get produced(): ProducedConfectionBase<T>;
@@ -2046,6 +2047,7 @@ class EditingSession implements IMaterializedSessionBase {
     get group(): GroupName | undefined;
     get hasChanges(): boolean;
     get label(): string | undefined;
+    markSaved(): void;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get produced(): ProducedFilling;
     redo(): Result<boolean>;
@@ -4381,6 +4383,7 @@ interface IMaterializedSessionBase {
     readonly entity: AnySessionEntity;
     readonly group: GroupName | undefined;
     readonly label: string | undefined;
+    markSaved(): void;
     readonly notes: ReadonlyArray<Model.ICategorizedNote> | undefined;
     readonly sessionType: PersistedSessionType;
     readonly sourceVariationId: FillingRecipeVariationId | ConfectionRecipeVariationId;

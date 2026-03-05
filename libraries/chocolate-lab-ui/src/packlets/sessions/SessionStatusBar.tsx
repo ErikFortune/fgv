@@ -21,13 +21,26 @@
  */
 
 /**
- * Session status bar with undo/redo, status toggle, save, and metadata.
+ * Session status bar with undo/redo, status toggle, save/autosave, and metadata.
  * @packageDocumentation
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ArrowUturnLeftIcon, ArrowUturnRightIcon, CheckIcon, XMarkIcon } from '@heroicons/react/20/solid';
+import { MultiActionButton, type IMultiActionButtonAction } from '@fgv/ts-app-shell';
 import { Entities, type UserLibrary } from '@fgv/ts-chocolate';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+/**
+ * Save mode for the session status bar.
+ * - `manual`: User clicks Save to persist changes.
+ * - `autosave`: Changes are persisted automatically on blur.
+ * @public
+ */
+export type SaveMode = 'manual' | 'autosave';
 
 // ============================================================================
 // Status Colors
@@ -66,6 +79,10 @@ export interface ISessionStatusBarProps {
   readonly onSave: () => void;
   /** Whether the session has unsaved changes */
   readonly hasChanges: boolean;
+  /** Current save mode */
+  readonly saveMode: SaveMode;
+  /** Called when the user toggles save mode */
+  readonly onSaveModeChange: (mode: SaveMode) => void;
   /** Optional callback to close this panel */
   readonly onClose?: () => void;
 }
@@ -78,7 +95,7 @@ export interface ISessionStatusBarProps {
  * Compact status bar for session panels.
  *
  * Provides undo/redo controls, a status dropdown for toggling session
- * lifecycle state, a save button, and session metadata display.
+ * lifecycle state, a save/autosave button, and session metadata display.
  *
  * @public
  */
@@ -91,10 +108,41 @@ export function SessionStatusBar({
   onRedo,
   onSave,
   hasChanges,
+  saveMode,
+  onSaveModeChange,
   onClose
 }: ISessionStatusBarProps): React.ReactElement {
   const statusColor = STATUS_COLORS[session.status] ?? 'bg-gray-100 text-gray-800';
   const hasMetadata = !!(session.group || session.updatedAt);
+
+  const saveAction = useMemo<IMultiActionButtonAction>(
+    () =>
+      saveMode === 'manual'
+        ? { id: 'save', label: 'Save', icon: <CheckIcon className="h-3.5 w-3.5" />, onSelect: onSave }
+        : {
+            id: 'autosave',
+            label: 'Autosave',
+            icon: <CheckIcon className="h-3.5 w-3.5" />,
+            onSelect: (): void => {}
+          },
+    [saveMode, onSave]
+  );
+
+  const saveAlternatives = useMemo<ReadonlyArray<IMultiActionButtonAction>>(
+    () => [
+      saveMode === 'manual'
+        ? {
+            id: 'switch-autosave',
+            label: 'Switch to Autosave',
+            onSelect: (): void => onSaveModeChange('autosave')
+          }
+        : { id: 'switch-manual', label: 'Switch to Save', onSelect: (): void => onSaveModeChange('manual') }
+    ],
+    [saveMode, onSaveModeChange]
+  );
+
+  // In manual mode, disable when no changes. In autosave mode, always disabled (indicator only).
+  const isSaveDisabled = saveMode === 'manual' ? !hasChanges : true;
 
   return (
     <div className="flex flex-col border-b border-gray-200 bg-gray-50">
@@ -156,17 +204,13 @@ export function SessionStatusBar({
           </>
         )}
 
-        {/* Save button */}
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!hasChanges}
-          title={hasChanges ? 'Save session' : 'No changes to save'}
-          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-white bg-choco-primary hover:bg-choco-primary/90"
-        >
-          <CheckIcon className="h-3.5 w-3.5" />
-          <span>Save</span>
-        </button>
+        {/* Save / Autosave button */}
+        <MultiActionButton
+          primaryAction={saveAction}
+          alternativeActions={saveAlternatives}
+          disabled={isSaveDisabled}
+          dropdownDisabled={false}
+        />
       </div>
 
       {/* Metadata row — wraps naturally, only shown when there's metadata */}

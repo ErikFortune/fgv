@@ -58,8 +58,10 @@ export interface IMultiActionButtonProps {
   readonly alternativeActions: readonly IMultiActionButtonAction[];
   /** Optional variant for button styling. */
   readonly variant?: 'primary' | 'default' | 'danger';
-  /** If true, the button is disabled. */
+  /** If true, the primary action button is disabled. */
   readonly disabled?: boolean;
+  /** If true, the dropdown toggle is disabled. Defaults to `disabled`. */
+  readonly dropdownDisabled?: boolean;
   /** Optional CSS class name. */
   readonly className?: string;
 }
@@ -75,7 +77,15 @@ export interface IMultiActionButtonProps {
  * @public
  */
 export function MultiActionButton(props: IMultiActionButtonProps): React.ReactElement {
-  const { primaryAction, alternativeActions, variant = 'primary', disabled = false, className = '' } = props;
+  const {
+    primaryAction,
+    alternativeActions,
+    variant = 'primary',
+    disabled = false,
+    dropdownDisabled,
+    className = ''
+  } = props;
+  const isDropdownDisabled = dropdownDisabled ?? disabled;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -122,7 +132,7 @@ export function MultiActionButton(props: IMultiActionButtonProps): React.ReactEl
         <button
           type="button"
           onClick={(): void => setIsOpen(!isOpen)}
-          disabled={disabled}
+          disabled={isDropdownDisabled}
           className={`${baseClasses} ${variantClasses[variant]} px-1 py-1 rounded-l-none border-l border-white/20`}
         >
           <ChevronDownIcon className="h-3.5 w-3.5" />

@@ -55,7 +55,7 @@ Target collection for the persisted session
 
 </td><td>
 
-Initial session status (default: 'active')
+Initial session status (default: 'planning')
 
 </td></tr>
 <tr><td>

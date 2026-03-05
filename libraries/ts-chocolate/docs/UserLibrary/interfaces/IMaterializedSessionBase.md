@@ -199,3 +199,34 @@ The underlying persisted entity
 
 </td></tr>
 </tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[markSaved()](./IMaterializedSessionBase.markSaved.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Resets the change-detection baseline to the current produced state.
+
+</td></tr>
+</tbody></table>

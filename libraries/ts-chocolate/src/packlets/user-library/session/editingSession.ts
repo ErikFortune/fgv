@@ -77,7 +77,7 @@ import {
 export class EditingSession implements IMaterializedSessionBase {
   private readonly _baseRecipe: IFillingRecipeVariation;
   private readonly _produced: ProducedFilling;
-  private readonly _originalSnapshot: IProducedFillingEntity;
+  private _originalSnapshot: IProducedFillingEntity;
   private readonly _sessionId: SessionSpec;
   private readonly _persistedEntity: IFillingSessionEntity | undefined;
 
@@ -432,7 +432,7 @@ export class EditingSession implements IMaterializedSessionBase {
       const session: IFillingSessionEntity = {
         baseId,
         sessionType: 'filling',
-        status: options.status ?? 'active',
+        status: options.status ?? 'planning',
         createdAt: now,
         updatedAt: now,
         label: options.label,
@@ -518,6 +518,16 @@ export class EditingSession implements IMaterializedSessionBase {
     return this._produced.hasChanges(this._originalSnapshot);
   }
 
+  /**
+   * Resets the change-detection baseline to the current produced state.
+   * Call after a successful save so that `hasChanges` returns false
+   * until the next mutation.
+   * @public
+   */
+  public markSaved(): void {
+    this._originalSnapshot = this._produced.createSnapshot();
+  }
+
   // ============================================================================
   // IMaterializedSessionBase Accessors
   // ============================================================================
@@ -543,7 +553,7 @@ export class EditingSession implements IMaterializedSessionBase {
    * @public
    */
   public get status(): PersistedSessionStatus {
-    return this._persistedEntity?.status ?? 'active';
+    return this._persistedEntity?.status ?? 'planning';
   }
 
   /**

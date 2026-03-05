@@ -376,7 +376,10 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     const persistedResult = session.toPersistedState(persistOptions);
 
     return persistedResult.onSuccess((persisted) => {
-      return this._entities.sessions.upsertSession(collectionId, persisted);
+      return this._entities.sessions.upsertSession(collectionId, persisted).onSuccess((id) => {
+        session.markSaved();
+        return succeed(id);
+      });
     });
   }
 

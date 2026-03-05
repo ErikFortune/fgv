@@ -552,4 +552,17 @@ Creates a production journal entry from this session.
 Creates a persisted session state from this editing session.
 
 </td></tr>
+<tr><td>
+
+[markSaved()](./EditingSession.markSaved.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Resets the change-detection baseline to the current produced state.
+
+</td></tr>
 </tbody></table>

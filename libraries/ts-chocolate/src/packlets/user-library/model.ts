@@ -100,6 +100,13 @@ export interface IMaterializedSessionBase {
   readonly sourceVariationId: FillingRecipeVariationId | ConfectionRecipeVariationId;
   /** The underlying persisted entity */
   readonly entity: AnySessionEntity;
+
+  /**
+   * Resets the change-detection baseline to the current produced state.
+   * Call after a successful save so that `hasChanges` returns false
+   * until the next mutation.
+   */
+  markSaved(): void;
 }
 
 // ============================================================================
@@ -142,7 +149,7 @@ export type AnyMaterializedSession = Session.EditingSession | Session.AnyConfect
 export interface ICreateFillingSessionOptions {
   /** Target collection for the persisted session */
   readonly collectionId: CollectionId;
-  /** Initial session status (default: 'active') */
+  /** Initial session status (default: 'planning') */
   readonly status?: PersistedSessionStatus;
   /** Optional user-provided label */
   readonly label?: string;
@@ -157,7 +164,7 @@ export interface ICreateFillingSessionOptions {
 export interface ICreateConfectionSessionOptions {
   /** Target collection for the persisted session */
   readonly collectionId: CollectionId;
-  /** Initial session status (default: 'active') */
+  /** Initial session status (default: 'planning') */
   readonly status?: PersistedSessionStatus;
   /** Optional user-provided label */
   readonly label?: string;

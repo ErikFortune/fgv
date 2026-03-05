@@ -76,7 +76,7 @@ export abstract class ConfectionEditingSessionBase<
   protected readonly _baseConfection: TRuntime;
   protected readonly _context: ISessionContext;
   protected readonly _produced: ProducedConfectionBase<T>;
-  protected readonly _originalSnapshot: T;
+  protected _originalSnapshot: T;
   protected readonly _sessionId: SessionSpec;
   protected readonly _fillingSessions: Map<SlotId, EditingSession>;
   protected readonly _persistedEntity: IConfectionSessionEntity | undefined;
@@ -318,7 +318,7 @@ export abstract class ConfectionEditingSessionBase<
           baseId,
           sessionType: 'confection',
           confectionType: this._baseConfection.confectionType,
-          status: options.status ?? 'active',
+          status: options.status ?? 'planning',
           createdAt: now,
           updatedAt: now,
           label: options.label,
@@ -416,7 +416,7 @@ export abstract class ConfectionEditingSessionBase<
    * @public
    */
   public get status(): PersistedSessionStatus {
-    return this._persistedEntity?.status ?? 'active';
+    return this._persistedEntity?.status ?? 'planning';
   }
 
   /**
@@ -492,5 +492,15 @@ export abstract class ConfectionEditingSessionBase<
       throw new Error('ConfectionEditingSession has no persisted entity (session was created, not restored)');
     }
     return this._persistedEntity;
+  }
+
+  /**
+   * Resets the change-detection baseline to the current produced state.
+   * Call after a successful save so that `hasChanges` returns false
+   * until the next mutation.
+   * @public
+   */
+  public markSaved(): void {
+    this._originalSnapshot = this._produced.createSnapshot();
   }
 }

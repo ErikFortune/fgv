@@ -2,7 +2,7 @@
 
 ## ICreateFillingSessionOptions.status property
 
-Initial session status (default: 'active')
+Initial session status (default: 'planning')
 
 **Signature:**
 

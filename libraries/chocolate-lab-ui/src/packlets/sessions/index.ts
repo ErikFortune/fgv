@@ -33,7 +33,7 @@ export {
   type IRecipeSwapRequest,
   type RecipeSwapHandler
 } from './FillingSessionPanel';
-export { SessionStatusBar, type ISessionStatusBarProps } from './SessionStatusBar';
+export { SessionStatusBar, type ISessionStatusBarProps, type SaveMode } from './SessionStatusBar';
 export {
   CreateSessionPanel,
   type ICreateSessionPanelProps,

@@ -50,7 +50,7 @@ import type { CascadeEntityType } from '../navigation';
 import { NotesEditor, ChangeSummaryIcons, type IChangeIndicator } from '../editing';
 import { EntityDetailHeader } from '../common';
 import { useWorkspace, useReactiveWorkspace } from '../workspace';
-import { SessionStatusBar } from './SessionStatusBar';
+import { SessionStatusBar, type SaveMode } from './SessionStatusBar';
 import { useSessionActions } from './useSessionActions';
 
 /**
@@ -180,6 +180,11 @@ export function FillingSessionPanel({
   const notifySession = useCallback((): void => {
     setSessionVersion((v) => v + 1);
   }, []);
+
+  // ---- Save mode (manual vs autosave) ----
+
+  const defaultSaveMode: SaveMode = session.status === 'planning' ? 'manual' : 'autosave';
+  const [saveMode, setSaveMode] = useState<SaveMode>(defaultSaveMode);
 
   // ---- Ingredient suggestions ----
 
@@ -328,9 +333,39 @@ export function FillingSessionPanel({
   const handleStatusChange = useCallback(
     async (status: Entities.PersistedSessionStatus): Promise<void> => {
       await sessionActions.updateSessionStatus(sessionId, status);
+      // Reset save mode to match the new status default
+      setSaveMode(status === 'planning' ? 'manual' : 'autosave');
+      notifySession();
     },
-    [sessionActions, sessionId]
+    [sessionActions, sessionId, notifySession]
   );
+
+  // ---- Save mode change ----
+
+  const handleSaveModeChange = useCallback(
+    (mode: SaveMode): void => {
+      setSaveMode(mode);
+      // When switching to autosave, flush any pending changes immediately
+      if (mode === 'autosave' && hasChanges) {
+        sessionActions
+          .saveSession(sessionId)
+          .then(() => notifySession())
+          .catch(() => {});
+      }
+    },
+    [hasChanges, sessionActions, sessionId, notifySession]
+  );
+
+  // ---- Autosave on blur ----
+
+  const handlePanelBlur = useCallback((): void => {
+    if (saveMode === 'autosave' && hasChanges) {
+      sessionActions
+        .saveSession(sessionId)
+        .then(() => notifySession())
+        .catch(() => {});
+    }
+  }, [saveMode, hasChanges, sessionActions, sessionId, notifySession]);
 
   // ---- Undo / Redo ----
 
@@ -348,7 +383,8 @@ export function FillingSessionPanel({
 
   const handleSave = useCallback(async (): Promise<void> => {
     await sessionActions.saveSession(sessionId);
-  }, [sessionActions, sessionId]);
+    notifySession();
+  }, [sessionActions, sessionId, notifySession]);
 
   // ---- Target weight ----
 
@@ -536,7 +572,7 @@ export function FillingSessionPanel({
   // ============================================================================
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="flex flex-col h-full overflow-y-auto" onBlur={handlePanelBlur}>
       {/* Header */}
       <EntityDetailHeader title={session.label ?? session.baseId} subtitle={sessionId} />
 
@@ -550,6 +586,8 @@ export function FillingSessionPanel({
         onRedo={handleRedo}
         onSave={handleSave}
         hasChanges={hasChanges}
+        saveMode={saveMode}
+        onSaveModeChange={handleSaveModeChange}
         onClose={onClose}
       />
 
