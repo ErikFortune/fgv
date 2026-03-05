@@ -50,6 +50,15 @@ User-specific library data (journals, sessions, inventory).
 </td></tr>
 <tr><td>
 
+[IUserEntityPersistenceConfig](./interfaces/IUserEntityPersistenceConfig.md)
+
+</td><td>
+
+Configuration for user entity library persistence.
+
+</td></tr>
+<tr><td>
+
 [IInstantiatedUserEntityLibrarySource](./interfaces/IInstantiatedUserEntityLibrarySource.md)
 
 </td><td>

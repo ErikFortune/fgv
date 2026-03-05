@@ -145,4 +145,82 @@ Description
 Creates a new UserEntities.UserEntityLibrary | UserEntityLibrary instance.
 
 </td></tr>
+<tr><td>
+
+[configurePersistence(config)](./UserEntityLibrary.configurePersistence.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Configures persistence providers for all sub-libraries.
+
+</td></tr>
+<tr><td>
+
+[getPersistedSessionsCollection(collectionId)](./UserEntityLibrary.getPersistedSessionsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted sessions collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedJournalsCollection(collectionId)](./UserEntityLibrary.getPersistedJournalsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted journals collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedMoldInventoryCollection(collectionId)](./UserEntityLibrary.getPersistedMoldInventoryCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted mold inventory collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedIngredientInventoryCollection(collectionId)](./UserEntityLibrary.getPersistedIngredientInventoryCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted ingredient inventory collection.
+
+</td></tr>
+<tr><td>
+
+[saveCollection(collectionId, encryptionProvider, subLibrary)](./UserEntityLibrary.saveCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a collection's current in-memory state to its backing file tree.
+
+</td></tr>
 </tbody></table>

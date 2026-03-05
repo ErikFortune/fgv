@@ -261,7 +261,19 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
 
   // Wire up persistence so PersistedEditableCollection wrappers can sync to disk
   // and can encrypt collections when the KeyStore is unlocked.
+  // Wire up persistence for shared library entities
   workspace.data.entities.configurePersistence({
+    syncProvider: {
+      syncToDisk: async () => {
+        const result = await reactiveWorkspace.syncAllToDisk();
+        return result.isSuccess() ? succeed(true as const) : fail(result.message);
+      }
+    },
+    encryptionProvider: () => workspace.keyStore
+  });
+
+  // Wire up persistence for user entities (sessions, journals, inventory)
+  workspace.userData.entities.configurePersistence({
     syncProvider: {
       syncToDisk: async () => {
         const result = await reactiveWorkspace.syncAllToDisk();

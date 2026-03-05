@@ -91,6 +91,8 @@ export {
   MoldInventoryLibrary,
   IIngredientInventoryEntryEntity,
   IMoldInventoryEntryEntity,
+  IngredientInventoryEntryBaseId,
+  MoldInventoryEntryBaseId,
   InventoryType
 } from './inventory';
 

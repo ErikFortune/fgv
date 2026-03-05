@@ -94,3 +94,99 @@ Ingredient inventory library for tracking ingredient stock.
 
 </td></tr>
 </tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[configurePersistence(config)](./IUserEntityLibrary.configurePersistence.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Configures persistence providers for all sub-libraries.
+
+</td></tr>
+<tr><td>
+
+[getPersistedSessionsCollection(collectionId)](./IUserEntityLibrary.getPersistedSessionsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted sessions collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedJournalsCollection(collectionId)](./IUserEntityLibrary.getPersistedJournalsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted journals collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedMoldInventoryCollection(collectionId)](./IUserEntityLibrary.getPersistedMoldInventoryCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted mold inventory collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedIngredientInventoryCollection(collectionId)](./IUserEntityLibrary.getPersistedIngredientInventoryCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted ingredient inventory collection.
+
+</td></tr>
+<tr><td>
+
+[saveCollection(collectionId, encryptionProvider, subLibrary)](./IUserEntityLibrary.saveCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a collection's current in-memory state to its backing file tree.
+
+</td></tr>
+</tbody></table>

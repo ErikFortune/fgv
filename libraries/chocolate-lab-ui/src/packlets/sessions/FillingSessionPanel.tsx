@@ -326,8 +326,8 @@ export function FillingSessionPanel({
   // ---- Status change ----
 
   const handleStatusChange = useCallback(
-    (status: Entities.PersistedSessionStatus): void => {
-      sessionActions.updateSessionStatus(sessionId, status);
+    async (status: Entities.PersistedSessionStatus): Promise<void> => {
+      await sessionActions.updateSessionStatus(sessionId, status);
     },
     [sessionActions, sessionId]
   );
@@ -346,8 +346,8 @@ export function FillingSessionPanel({
 
   // ---- Save ----
 
-  const handleSave = useCallback((): void => {
-    sessionActions.saveSession(sessionId);
+  const handleSave = useCallback(async (): Promise<void> => {
+    await sessionActions.saveSession(sessionId);
   }, [sessionActions, sessionId]);
 
   // ---- Target weight ----

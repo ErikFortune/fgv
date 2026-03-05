@@ -23,14 +23,23 @@
  * @packageDocumentation
  */
 
-import { Logging } from '@fgv/ts-utils';
+import { Logging, Result } from '@fgv/ts-utils';
+import { CryptoUtils } from '@fgv/ts-extras';
 
+import { BaseJournalId, BaseSessionId, CollectionId } from '../common';
 import {
+  AnyJournalEntryEntity,
+  AnySessionEntity,
+  IIngredientInventoryEntryEntity,
+  IngredientInventoryEntryBaseId,
   IngredientInventoryLibrary,
+  IMoldInventoryEntryEntity,
+  MoldInventoryEntryBaseId,
   JournalLibrary,
   MoldInventoryLibrary,
   SessionLibrary
 } from '../entities';
+import { ISyncProvider, PersistedEditableCollection } from '../editing';
 import { ILibraryFileTreeSource } from '../library-data';
 
 // ============================================================================
@@ -62,6 +71,90 @@ export interface IUserEntityLibrary {
    * Ingredient inventory library for tracking ingredient stock.
    */
   readonly ingredientInventory: IngredientInventoryLibrary;
+
+  // --------------------------------------------------------------------------
+  // Persistence
+  // --------------------------------------------------------------------------
+
+  /**
+   * Configures persistence providers for all sub-libraries.
+   * Must be called before using any `getPersisted*Collection` or `saveCollection` methods.
+   * @param config - Persistence configuration with sync and encryption providers
+   */
+  configurePersistence(config: IUserEntityPersistenceConfig): void;
+
+  /**
+   * Get or create a singleton persisted sessions collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   */
+  getPersistedSessionsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<AnySessionEntity, BaseSessionId>>;
+
+  /**
+   * Get or create a singleton persisted journals collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   */
+  getPersistedJournalsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<AnyJournalEntryEntity, BaseJournalId>>;
+
+  /**
+   * Get or create a singleton persisted mold inventory collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   */
+  getPersistedMoldInventoryCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<IMoldInventoryEntryEntity, MoldInventoryEntryBaseId>>;
+
+  /**
+   * Get or create a singleton persisted ingredient inventory collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   */
+  getPersistedIngredientInventoryCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<IIngredientInventoryEntryEntity, IngredientInventoryEntryBaseId>>;
+
+  /**
+   * Save a collection's current in-memory state to its backing file tree.
+   * Uses the persisted collection singleton for the full save pipeline.
+   *
+   * @param collectionId - Collection to persist
+   * @param encryptionProvider - Optional encryption provider for encrypted collections
+   * @param subLibrary - Optional sub-library hint to disambiguate shared collection IDs
+   * @returns Result with `true` on success, or Failure with context
+   */
+  saveCollection(
+    collectionId: CollectionId,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider,
+    subLibrary?: { collections: { has(id: CollectionId): boolean } }
+  ): Promise<Result<true>>;
+}
+
+// ============================================================================
+// Persistence Configuration
+// ============================================================================
+
+/**
+ * Configuration for user entity library persistence.
+ * @public
+ */
+export interface IUserEntityPersistenceConfig {
+  /**
+   * Provider for flushing FileTree changes to the filesystem.
+   */
+  readonly syncProvider?: ISyncProvider;
+
+  /**
+   * Encryption provider (or lazy getter) for encrypted collections.
+   */
+  readonly encryptionProvider?:
+    | CryptoUtils.IEncryptionProvider
+    | (() => CryptoUtils.IEncryptionProvider | undefined);
 }
 
 // ============================================================================

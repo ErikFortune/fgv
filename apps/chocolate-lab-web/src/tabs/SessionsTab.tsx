@@ -98,11 +98,13 @@ export function SessionsTabContent(): React.ReactElement {
   );
 
   const handleDelete = useCallback(
-    (id: SessionId): void => {
-      sessionActions.deleteSession(id);
-      // If the deleted session is currently selected, clear the cascade
-      if (selectedId === id) {
-        squashCascade([]);
+    async (id: SessionId): Promise<void> => {
+      const result = await sessionActions.deleteSession(id);
+      if (result.isSuccess()) {
+        // If the deleted session is currently selected, clear the cascade
+        if (selectedId === id) {
+          squashCascade([]);
+        }
       }
     },
     [sessionActions, selectedId, squashCascade]
@@ -137,14 +139,14 @@ export function SessionsTabContent(): React.ReactElement {
   );
 
   const handleCreateSession = useCallback(
-    (selection: ISessionRecipeSelection, label: string, slug: string): void => {
+    async (selection: ISessionRecipeSelection, label: string, slug: string): Promise<void> => {
       if (!sessionActions.defaultCollectionId) {
         workspace.data.logger.error('Cannot create session: no mutable collection available');
         return;
       }
 
       if (selection.type === 'confection') {
-        const result = sessionActions.createConfectionSession(selection.confectionId as ConfectionId, {
+        const result = await sessionActions.createConfectionSession(selection.confectionId as ConfectionId, {
           collectionId: sessionActions.defaultCollectionId,
           label,
           slug
@@ -157,7 +159,7 @@ export function SessionsTabContent(): React.ReactElement {
           selection.fillingId as FillingId,
           selection.variationSpec as FillingRecipeVariationSpec
         );
-        const result = sessionActions.createFillingSession(variationId, {
+        const result = await sessionActions.createFillingSession(variationId, {
           collectionId: sessionActions.defaultCollectionId,
           label,
           slug
@@ -276,7 +278,7 @@ export function SessionsTabContent(): React.ReactElement {
   // ============================================================================
 
   const handleRecipeSwap = useCallback(
-    (request: IRecipeSwapRequest): void => {
+    async (request: IRecipeSwapRequest): Promise<void> => {
       if (!sessionActions.defaultCollectionId) {
         workspace.data.logger.error('Cannot swap recipe: no mutable collection available');
         return;
@@ -284,7 +286,7 @@ export function SessionsTabContent(): React.ReactElement {
 
       // Both variation swap and recipe change create a new session for MVP.
       // Future: variation swap could replace in-place.
-      const result = sessionActions.createFillingSession(request.variationId, {
+      const result = await sessionActions.createFillingSession(request.variationId, {
         collectionId: sessionActions.defaultCollectionId
       });
       if (result.isSuccess()) {

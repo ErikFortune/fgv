@@ -771,6 +771,24 @@ Persisted session type discriminator.
 </td></tr>
 <tr><td>
 
+[IngredientInventoryEntryBaseId](./type-aliases/IngredientInventoryEntryBaseId.md)
+
+</td><td>
+
+Base ID for an ingredient inventory entry within an inventory collection.
+
+</td></tr>
+<tr><td>
+
+[MoldInventoryEntryBaseId](./type-aliases/MoldInventoryEntryBaseId.md)
+
+</td><td>
+
+Base ID for a mold inventory entry within an inventory collection.
+
+</td></tr>
+<tr><td>
+
 [InventoryType](./type-aliases/InventoryType.md)
 
 </td><td>

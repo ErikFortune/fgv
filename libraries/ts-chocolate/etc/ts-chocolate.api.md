@@ -2190,6 +2190,8 @@ declare namespace Entities {
         MoldInventoryLibrary,
         IIngredientInventoryEntryEntity,
         IMoldInventoryEntryEntity,
+        IngredientInventoryEntryBaseId,
+        MoldInventoryEntryBaseId,
         InventoryType,
         MoldsLibrary,
         ICavities,
@@ -6187,9 +6189,19 @@ interface IUnitScaler {
 
 // @public
 interface IUserEntityLibrary {
+    configurePersistence(config: IUserEntityPersistenceConfig): void;
+    getPersistedIngredientInventoryCollection(collectionId: CollectionId): Result<PersistedEditableCollection<IIngredientInventoryEntryEntity, IngredientInventoryEntryBaseId>>;
+    getPersistedJournalsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<AnyJournalEntryEntity, BaseJournalId>>;
+    getPersistedMoldInventoryCollection(collectionId: CollectionId): Result<PersistedEditableCollection<IMoldInventoryEntryEntity, MoldInventoryEntryBaseId>>;
+    getPersistedSessionsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<AnySessionEntity, BaseSessionId>>;
     readonly ingredientInventory: IngredientInventoryLibrary;
     readonly journals: JournalLibrary;
     readonly moldInventory: MoldInventoryLibrary;
+    saveCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider, subLibrary?: {
+        collections: {
+            has(id: CollectionId): boolean;
+        };
+    }): Promise<Result<true>>;
     readonly sessions: SessionLibrary;
 }
 
@@ -6200,6 +6212,12 @@ interface IUserEntityLibraryCreateParams {
     readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
     readonly libraries?: IInstantiatedUserEntityLibrarySource;
     readonly logger?: Logging.ILogger;
+}
+
+// @public
+interface IUserEntityPersistenceConfig {
+    readonly encryptionProvider?: CryptoUtils.IEncryptionProvider | (() => CryptoUtils.IEncryptionProvider | undefined);
+    readonly syncProvider?: ISyncProvider;
 }
 
 // @public
@@ -8343,6 +8361,7 @@ declare namespace UserEntities {
         createDefaultUserEntityDirectories,
         UserEntityLibrary,
         IUserEntityLibrary,
+        IUserEntityPersistenceConfig,
         IInstantiatedUserEntityLibrarySource,
         IUserEntityLibraryCreateParams
     }
@@ -8351,9 +8370,29 @@ export { UserEntities }
 
 // @public
 class UserEntityLibrary implements IUserEntityLibrary {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    configurePersistence(config: IUserEntityPersistenceConfig): void;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IUserEntityLibraryCreateParams): Result<UserEntityLibrary>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getPersistedIngredientInventoryCollection(collectionId: CollectionId): Result<PersistedEditableCollection<IIngredientInventoryEntryEntity, IngredientInventoryEntryBaseId>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getPersistedJournalsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<AnyJournalEntryEntity, BaseJournalId>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getPersistedMoldInventoryCollection(collectionId: CollectionId): Result<PersistedEditableCollection<IMoldInventoryEntryEntity, MoldInventoryEntryBaseId>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getPersistedSessionsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<AnySessionEntity, BaseSessionId>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -8367,6 +8406,14 @@ class UserEntityLibrary implements IUserEntityLibrary {
     //
     // (undocumented)
     get moldInventory(): MoldInventoryLibrary;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    saveCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider, subLibrary?: {
+        collections: {
+            has(id: CollectionId): boolean;
+        };
+    }): Promise<Result<true>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)

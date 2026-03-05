@@ -35,8 +35,6 @@ import { useCallback } from 'react';
 import { type Result } from '@fgv/ts-utils';
 
 import {
-  Converters as CommonConverters,
-  Editing,
   Entities,
   Helpers,
   type CollectionId,
@@ -50,52 +48,13 @@ import { useReactiveWorkspace, useWorkspace } from '../workspace';
 import { useMutableCollection } from '../navigation';
 
 // ============================================================================
-// Session Persistence Helper
-// ============================================================================
-
-/**
- * Persists a session collection to its backing file (async, fire-and-forget).
- * Creates an EditableCollection snapshot and saves it.
- * @internal
- */
-function persistSessionCollection(
-  sessionLibrary: Entities.SessionLibrary,
-  collectionId: CollectionId,
-  logger: { error(msg: string): void }
-): void {
-  const editableResult = Editing.EditableCollection.fromLibrary(
-    sessionLibrary,
-    collectionId,
-    CommonConverters.baseSessionId,
-    Entities.Session.Converters.anySessionEntity
-  );
-  if (editableResult.isFailure()) {
-    logger.error(`Session persistence: failed to get editable collection: ${editableResult.message}`);
-    return;
-  }
-  const editable = editableResult.value;
-  if (editable.canSave()) {
-    editable
-      .save()
-      .then((saveResult) => {
-        if (saveResult.isFailure()) {
-          logger.error(`Session persistence: failed to save collection: ${saveResult.message}`);
-        }
-      })
-      .catch((err: unknown) => {
-        logger.error(`Session persistence: unexpected error: ${err}`);
-      });
-  }
-}
-
-// ============================================================================
 // Session Actions Interface
 // ============================================================================
 
 /**
  * Session action callbacks returned by useSessionActions.
  *
- * All mutating actions return `Result<SessionId>` — the composite ID of the
+ * All mutating actions return `Promise<Result<SessionId>>` — the composite ID of the
  * created or updated session. The caller can then look up the materialized
  * session via `workspace.userData.sessions.get(id)` if needed.
  *
@@ -112,7 +71,7 @@ export interface ISessionActions {
   readonly createFillingSession: (
     variationId: FillingRecipeVariationId,
     options: UserLibrary.ICreateFillingSessionOptions
-  ) => Result<SessionId>;
+  ) => Promise<Result<SessionId>>;
 
   /**
    * Create a new confection session from a confection recipe.
@@ -124,14 +83,14 @@ export interface ISessionActions {
   readonly createConfectionSession: (
     confectionId: ConfectionId,
     options: UserLibrary.ICreateConfectionSessionOptions
-  ) => Result<SessionId>;
+  ) => Promise<Result<SessionId>>;
 
   /**
    * Save an active session back to the entity library.
    * @param sessionId - The composite SessionId to save
    * @returns Result with the composite SessionId
    */
-  readonly saveSession: (sessionId: SessionId) => Result<SessionId>;
+  readonly saveSession: (sessionId: SessionId) => Promise<Result<SessionId>>;
 
   /**
    * Update the status of an existing persisted session.
@@ -142,14 +101,14 @@ export interface ISessionActions {
   readonly updateSessionStatus: (
     sessionId: SessionId,
     status: Entities.PersistedSessionStatus
-  ) => Result<SessionId>;
+  ) => Promise<Result<SessionId>>;
 
   /**
    * Delete a session from the entity library.
    * @param sessionId - The composite SessionId to delete
    * @returns Result with the composite SessionId
    */
-  readonly deleteSession: (sessionId: SessionId) => Result<SessionId>;
+  readonly deleteSession: (sessionId: SessionId) => Promise<Result<SessionId>>;
 
   /**
    * The default mutable collection ID for new sessions.
@@ -167,6 +126,7 @@ export interface ISessionActions {
  *
  * Actions create/save sessions through the UserLibrary and trigger
  * workspace cache invalidation + reactive notification after mutations.
+ * Persistence is awaited to prevent silent write cancellation.
  *
  * @public
  */
@@ -181,17 +141,16 @@ export function useSessionActions(): ISessionActions {
   );
 
   const createFillingSession = useCallback(
-    (
+    async (
       variationId: FillingRecipeVariationId,
       options: UserLibrary.ICreateFillingSessionOptions
-    ): Result<SessionId> => {
+    ): Promise<Result<SessionId>> => {
       const result = workspace.userData.createPersistedFillingSession(variationId, options);
       if (result.isSuccess()) {
-        persistSessionCollection(
-          workspace.userData.entities.sessions,
-          options.collectionId,
-          workspace.data.logger
-        );
+        const saveResult = await workspace.userData.entities.saveCollection(options.collectionId);
+        if (saveResult.isFailure()) {
+          workspace.data.logger.error(`Session persistence failed: ${saveResult.message}`);
+        }
         workspace.data.clearCache();
         reactiveWorkspace.notifyChange();
         workspace.data.logger.info(`Created filling session '${result.value}'`);
@@ -204,14 +163,16 @@ export function useSessionActions(): ISessionActions {
   );
 
   const createConfectionSession = useCallback(
-    (confectionId: ConfectionId, options: UserLibrary.ICreateConfectionSessionOptions): Result<SessionId> => {
+    async (
+      confectionId: ConfectionId,
+      options: UserLibrary.ICreateConfectionSessionOptions
+    ): Promise<Result<SessionId>> => {
       const result = workspace.userData.createPersistedConfectionSession(confectionId, options);
       if (result.isSuccess()) {
-        persistSessionCollection(
-          workspace.userData.entities.sessions,
-          options.collectionId,
-          workspace.data.logger
-        );
+        const saveResult = await workspace.userData.entities.saveCollection(options.collectionId);
+        if (saveResult.isFailure()) {
+          workspace.data.logger.error(`Session persistence failed: ${saveResult.message}`);
+        }
         workspace.data.clearCache();
         reactiveWorkspace.notifyChange();
         workspace.data.logger.info(`Created confection session '${result.value}'`);
@@ -224,11 +185,14 @@ export function useSessionActions(): ISessionActions {
   );
 
   const saveSession = useCallback(
-    (sessionId: SessionId): Result<SessionId> => {
+    async (sessionId: SessionId): Promise<Result<SessionId>> => {
       const result = workspace.userData.saveSession(sessionId);
       if (result.isSuccess()) {
         const collectionId = Helpers.getSessionCollectionId(sessionId);
-        persistSessionCollection(workspace.userData.entities.sessions, collectionId, workspace.data.logger);
+        const saveResult = await workspace.userData.entities.saveCollection(collectionId);
+        if (saveResult.isFailure()) {
+          workspace.data.logger.error(`Session persistence failed: ${saveResult.message}`);
+        }
         workspace.data.clearCache();
         reactiveWorkspace.notifyChange();
         workspace.data.logger.info(`Saved session '${result.value}'`);
@@ -241,11 +205,14 @@ export function useSessionActions(): ISessionActions {
   );
 
   const updateSessionStatus = useCallback(
-    (sessionId: SessionId, status: Entities.PersistedSessionStatus): Result<SessionId> => {
+    async (sessionId: SessionId, status: Entities.PersistedSessionStatus): Promise<Result<SessionId>> => {
       const result = workspace.userData.updateSessionStatus(sessionId, status);
       if (result.isSuccess()) {
         const collectionId = Helpers.getSessionCollectionId(sessionId);
-        persistSessionCollection(workspace.userData.entities.sessions, collectionId, workspace.data.logger);
+        const saveResult = await workspace.userData.entities.saveCollection(collectionId);
+        if (saveResult.isFailure()) {
+          workspace.data.logger.error(`Session persistence failed: ${saveResult.message}`);
+        }
         workspace.data.clearCache();
         reactiveWorkspace.notifyChange();
         workspace.data.logger.info(`Updated session '${sessionId}' status to '${status}'`);
@@ -258,11 +225,14 @@ export function useSessionActions(): ISessionActions {
   );
 
   const deleteSession = useCallback(
-    (sessionId: SessionId): Result<SessionId> => {
+    async (sessionId: SessionId): Promise<Result<SessionId>> => {
       const collectionId = Helpers.getSessionCollectionId(sessionId);
       const result = workspace.userData.removeSession(sessionId);
       if (result.isSuccess()) {
-        persistSessionCollection(workspace.userData.entities.sessions, collectionId, workspace.data.logger);
+        const saveResult = await workspace.userData.entities.saveCollection(collectionId);
+        if (saveResult.isFailure()) {
+          workspace.data.logger.error(`Session persistence failed: ${saveResult.message}`);
+        }
         workspace.data.clearCache();
         reactiveWorkspace.notifyChange();
         workspace.data.logger.info(`Deleted session '${sessionId}'`);

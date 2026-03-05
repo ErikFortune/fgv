@@ -26,15 +26,26 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { captureResult, fail, Logging, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, Converter, fail, Logging, Result, succeed } from '@fgv/ts-utils';
+import { CryptoUtils } from '@fgv/ts-extras';
 
-import { CollectionId } from '../common';
+import { BaseJournalId, BaseSessionId, CollectionId, Converters as CommonConverters } from '../common';
 import {
+  AnyJournalEntryEntity,
+  AnySessionEntity,
+  IIngredientInventoryEntryEntity,
+  IngredientInventoryEntryBaseId,
   IngredientInventoryLibrary,
+  IMoldInventoryEntryEntity,
+  MoldInventoryEntryBaseId,
+  Inventory as InventoryEntities,
+  Journal as JournalEntities,
   JournalLibrary,
   MoldInventoryLibrary,
+  Session as SessionEntities,
   SessionLibrary
 } from '../entities';
+import { ISyncProvider, PersistedEditableCollection } from '../editing';
 import {
   IFileTreeSource,
   ILibraryFileTreeSource,
@@ -42,9 +53,10 @@ import {
   LibraryPaths,
   normalizeFileSources,
   resolveSubLibraryLoadSpec,
+  SubLibraryBase,
   SubLibraryId
 } from '../library-data';
-import { IUserEntityLibrary, IUserEntityLibraryCreateParams } from './model';
+import { IUserEntityLibrary, IUserEntityLibraryCreateParams, IUserEntityPersistenceConfig } from './model';
 
 /**
  * Aggregates user-specific data entity libraries.
@@ -59,6 +71,31 @@ export class UserEntityLibrary implements IUserEntityLibrary {
   private readonly _sessions: SessionLibrary;
   private readonly _moldInventory: MoldInventoryLibrary;
   private readonly _ingredientInventory: IngredientInventoryLibrary;
+
+  // Persistence configuration (set via configurePersistence)
+  private _syncProvider: ISyncProvider | undefined;
+  private _encryptionProvider:
+    | CryptoUtils.IEncryptionProvider
+    | (() => CryptoUtils.IEncryptionProvider | undefined)
+    | undefined;
+
+  // Singleton caches for persisted collections (one map per sub-library)
+  private readonly _persistedSessions: Map<
+    CollectionId,
+    PersistedEditableCollection<AnySessionEntity, BaseSessionId>
+  > = new Map();
+  private readonly _persistedJournals: Map<
+    CollectionId,
+    PersistedEditableCollection<AnyJournalEntryEntity, BaseJournalId>
+  > = new Map();
+  private readonly _persistedMoldInventory: Map<
+    CollectionId,
+    PersistedEditableCollection<IMoldInventoryEntryEntity, MoldInventoryEntryBaseId>
+  > = new Map();
+  private readonly _persistedIngredientInventory: Map<
+    CollectionId,
+    PersistedEditableCollection<IIngredientInventoryEntryEntity, IngredientInventoryEntryBaseId>
+  > = new Map();
 
   /**
    * Logger used by this library and its sub-libraries.
@@ -191,6 +228,164 @@ export class UserEntityLibrary implements IUserEntityLibrary {
    */
   public get ingredientInventory(): IngredientInventoryLibrary {
     return this._ingredientInventory;
+  }
+
+  // ==========================================================================
+  // Persistence Configuration
+  // ==========================================================================
+
+  /**
+   * {@inheritDoc UserEntities.IUserEntityLibrary.configurePersistence}
+   */
+  public configurePersistence(config: IUserEntityPersistenceConfig): void {
+    this._syncProvider = config.syncProvider;
+    this._encryptionProvider = config.encryptionProvider;
+  }
+
+  // ==========================================================================
+  // Persisted Collection Singletons
+  // ==========================================================================
+
+  /**
+   * {@inheritDoc UserEntities.IUserEntityLibrary.getPersistedSessionsCollection}
+   */
+  public getPersistedSessionsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<AnySessionEntity, BaseSessionId>> {
+    return this._getOrCreatePersisted(
+      this._persistedSessions,
+      this._sessions,
+      collectionId,
+      CommonConverters.baseSessionId,
+      SessionEntities.Converters.anySessionEntity
+    );
+  }
+
+  /**
+   * {@inheritDoc UserEntities.IUserEntityLibrary.getPersistedJournalsCollection}
+   */
+  public getPersistedJournalsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<AnyJournalEntryEntity, BaseJournalId>> {
+    return this._getOrCreatePersisted(
+      this._persistedJournals,
+      this._journals,
+      collectionId,
+      CommonConverters.baseJournalId,
+      JournalEntities.Converters.anyJournalEntryEntity
+    );
+  }
+
+  /**
+   * {@inheritDoc UserEntities.IUserEntityLibrary.getPersistedMoldInventoryCollection}
+   */
+  public getPersistedMoldInventoryCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<IMoldInventoryEntryEntity, MoldInventoryEntryBaseId>> {
+    return this._getOrCreatePersisted(
+      this._persistedMoldInventory,
+      this._moldInventory,
+      collectionId,
+      InventoryEntities.Converters.moldInventoryEntryBaseId,
+      InventoryEntities.Converters.moldInventoryEntryEntity
+    );
+  }
+
+  /**
+   * {@inheritDoc UserEntities.IUserEntityLibrary.getPersistedIngredientInventoryCollection}
+   */
+  public getPersistedIngredientInventoryCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<IIngredientInventoryEntryEntity, IngredientInventoryEntryBaseId>> {
+    return this._getOrCreatePersisted(
+      this._persistedIngredientInventory,
+      this._ingredientInventory,
+      collectionId,
+      InventoryEntities.Converters.ingredientInventoryEntryBaseId,
+      InventoryEntities.Converters.ingredientInventoryEntryEntity
+    );
+  }
+
+  // ==========================================================================
+  // Generic Collection Persistence
+  // ==========================================================================
+
+  /**
+   * {@inheritDoc UserEntities.IUserEntityLibrary.saveCollection}
+   */
+  public async saveCollection(
+    collectionId: CollectionId,
+    encryptionProvider?: CryptoUtils.IEncryptionProvider,
+    subLibrary?: { collections: { has(id: CollectionId): boolean } }
+  ): Promise<Result<true>> {
+    // When subLibrary is provided, use identity to find the correct match
+    const match = subLibrary
+      ? (lib: { collections: { has(id: CollectionId): boolean } }): boolean =>
+          lib === subLibrary && lib.collections.has(collectionId)
+      : (lib: { collections: { has(id: CollectionId): boolean } }): boolean =>
+          lib.collections.has(collectionId);
+
+    if (match(this._sessions)) {
+      return this._savePersisted(this.getPersistedSessionsCollection(collectionId));
+    }
+    if (match(this._journals)) {
+      return this._savePersisted(this.getPersistedJournalsCollection(collectionId));
+    }
+    if (match(this._moldInventory)) {
+      return this._savePersisted(this.getPersistedMoldInventoryCollection(collectionId));
+    }
+    if (match(this._ingredientInventory)) {
+      return this._savePersisted(this.getPersistedIngredientInventoryCollection(collectionId));
+    }
+    return fail(`Collection '${collectionId}' not found in any user entity sub-library`);
+  }
+
+  // ==========================================================================
+  // Private Helpers
+  // ==========================================================================
+
+  /**
+   * Get or create a singleton persisted collection wrapper.
+   * @internal
+   */
+  private _getOrCreatePersisted<T, TBaseId extends string>(
+    cache: Map<CollectionId, PersistedEditableCollection<T, TBaseId>>,
+    subLibrary: SubLibraryBase<string, TBaseId, T>,
+    collectionId: CollectionId,
+    keyConverter: Converter<TBaseId, unknown>,
+    valueConverter: Converter<T, unknown>
+  ): Result<PersistedEditableCollection<T, TBaseId>> {
+    // Verify the collection exists before creating a wrapper
+    if (!subLibrary.collections.has(collectionId)) {
+      return fail(`Collection "${collectionId}" not found`);
+    }
+
+    let cached = cache.get(collectionId);
+    if (!cached) {
+      cached = new PersistedEditableCollection({
+        subLibrary,
+        collectionId,
+        keyConverter,
+        valueConverter,
+        syncProvider: this._syncProvider,
+        encryptionProvider: this._encryptionProvider
+      });
+      cache.set(collectionId, cached);
+    }
+    return succeed(cached);
+  }
+
+  /**
+   * Save a persisted collection wrapper, handling the Result unwrap.
+   * @internal
+   */
+  private async _savePersisted<T, TBaseId extends string>(
+    persistedResult: Result<PersistedEditableCollection<T, TBaseId>>
+  ): Promise<Result<true>> {
+    if (persistedResult.isFailure()) {
+      return fail(persistedResult.message);
+    }
+    return persistedResult.value.save();
   }
 }
 

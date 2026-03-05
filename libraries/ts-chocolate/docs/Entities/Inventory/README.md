@@ -64,29 +64,11 @@ Description
 <tbody>
 <tr><td>
 
-[MoldInventoryEntryBaseId](./type-aliases/MoldInventoryEntryBaseId.md)
-
-</td><td>
-
-Base ID for a mold inventory entry within an inventory collection.
-
-</td></tr>
-<tr><td>
-
 [MoldInventoryEntryId](./type-aliases/MoldInventoryEntryId.md)
 
 </td><td>
 
 Composite ID for a mold inventory entry (inventoryCollection.entryBaseId).
-
-</td></tr>
-<tr><td>
-
-[IngredientInventoryEntryBaseId](./type-aliases/IngredientInventoryEntryBaseId.md)
-
-</td><td>
-
-Base ID for an ingredient inventory entry within an inventory collection.
 
 </td></tr>
 <tr><td>
