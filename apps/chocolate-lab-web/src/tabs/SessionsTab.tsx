@@ -7,6 +7,8 @@ import {
   type BaseIngredientId,
   type BaseProcedureId,
   type FillingId,
+  type IngredientId,
+  type ProcedureId,
   type SessionId,
   type ConfectionId,
   type FillingRecipeVariationSpec,
@@ -20,6 +22,8 @@ import {
   useFilteredEntities,
   useMutableCollection,
   FillingDetail,
+  IngredientDetail,
+  ProcedureDetail,
   SessionDetailView,
   useSessionActions,
   CreateSessionPanel,
@@ -183,6 +187,20 @@ export function SessionsTabContent(): React.ReactElement {
           prefillName: variationSpec
         }
       ]);
+    },
+    [squashCascade]
+  );
+
+  const handleBrowseIngredientFromSession = useCallback(
+    (sessionEntry: ICascadeEntry, ingredientId: IngredientId): void => {
+      squashCascade([sessionEntry, { entityType: 'ingredient', entityId: ingredientId, mode: 'view' }]);
+    },
+    [squashCascade]
+  );
+
+  const handleBrowseProcedureFromSession = useCallback(
+    (sessionEntry: ICascadeEntry, procedureId: ProcedureId): void => {
+      squashCascade([sessionEntry, { entityType: 'procedure', entityId: procedureId, mode: 'view' }]);
     },
     [squashCascade]
   );
@@ -421,8 +439,48 @@ export function SessionsTabContent(): React.ReactElement {
               onOpenFillingRecipe={(fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): void =>
                 handleOpenFillingRecipeFromSession(entry, fillingId, variationSpec)
               }
+              onBrowseIngredient={(ingredientId: IngredientId): void =>
+                handleBrowseIngredientFromSession(entry, ingredientId)
+              }
+              onBrowseProcedure={(procedureId: ProcedureId): void =>
+                handleBrowseProcedureFromSession(entry, procedureId)
+              }
             />
           )
+        };
+      }
+
+      if (entry.entityType === 'ingredient' && entry.mode === 'view') {
+        const result = workspace.data.ingredients.get(entry.entityId as IngredientId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load ingredient: {entry.entityId}</div>
+          };
+        }
+
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <IngredientDetail ingredient={result.value} onClose={(): void => popCascadeTo(_index)} />
+        };
+      }
+
+      if (entry.entityType === 'procedure' && entry.mode === 'view') {
+        const result = workspace.data.procedures.get(entry.entityId as ProcedureId);
+        if (result.isFailure()) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load procedure: {entry.entityId}</div>
+          };
+        }
+
+        return {
+          key: entry.entityId,
+          label: result.value.name,
+          content: <ProcedureDetail procedure={result.value} onClose={(): void => popCascadeTo(_index)} />
         };
       }
 
@@ -469,6 +527,8 @@ export function SessionsTabContent(): React.ReactElement {
     handleCancelCreateEntity,
     handleRecipeSwap,
     handleOpenFillingRecipeFromSession,
+    handleBrowseIngredientFromSession,
+    handleBrowseProcedureFromSession,
     newProcedureName
   ]);
 

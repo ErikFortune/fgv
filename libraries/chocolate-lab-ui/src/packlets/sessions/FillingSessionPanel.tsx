@@ -27,7 +27,13 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { ArrowPathIcon, BeakerIcon, DocumentTextIcon, ListBulletIcon } from '@heroicons/react/20/solid';
+import {
+  ArrowPathIcon,
+  BeakerIcon,
+  CheckIcon,
+  DocumentTextIcon,
+  ListBulletIcon
+} from '@heroicons/react/20/solid';
 import { DetailSection, EditSection, TypeaheadInput } from '@fgv/ts-app-shell';
 import {
   Entities,
@@ -119,6 +125,10 @@ export interface IFillingSessionPanelProps {
   readonly onRecipeSwap?: RecipeSwapHandler;
   /** Optional callback to open current recipe in a filling browser panel */
   readonly onOpenFillingRecipe?: (fillingId: FillingId, variationSpec: FillingRecipeVariationSpec) => void;
+  /** Optional callback to browse an ingredient in a cascade detail panel */
+  readonly onBrowseIngredient?: (ingredientId: IngredientId) => void;
+  /** Optional callback to browse a procedure in a cascade detail panel */
+  readonly onBrowseProcedure?: (procedureId: ProcedureId) => void;
 }
 
 // ============================================================================
@@ -168,7 +178,9 @@ export function FillingSessionPanel({
   onClose,
   onRequestCreateEntity,
   onRecipeSwap,
-  onOpenFillingRecipe
+  onOpenFillingRecipe,
+  onBrowseIngredient,
+  onBrowseProcedure
 }: IFillingSessionPanelProps): React.ReactElement {
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
@@ -186,6 +198,28 @@ export function FillingSessionPanel({
   const defaultSaveMode: SaveMode = session.status === 'planning' ? 'manual' : 'autosave';
   const [saveMode, setSaveMode] = useState<SaveMode>(defaultSaveMode);
 
+  // ---- Per-item edit mode ----
+
+  const [editingIngredients, setEditingIngredients] = useState<Set<number>>(new Set());
+  const [editingProcedure, setEditingProcedure] = useState(false);
+
+  const toggleIngredientEdit = useCallback((index: number): void => {
+    setEditingIngredients((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  }, []);
+
+  const clearEditState = useCallback((): void => {
+    setEditingIngredients(new Set());
+    setEditingProcedure(false);
+  }, []);
+
   // ---- Ingredient suggestions ----
 
   const ingredientSuggestions = useMemo(() => {
@@ -195,21 +229,27 @@ export function FillingSessionPanel({
     }));
   }, [workspace, reactiveWorkspace.version]);
 
-  // Build priority suggestions from variation alternates
-  const ingredientAlternates = useMemo(() => {
+  // Build per-ingredient priority suggestions from variation alternates.
+  // Maps each ingredient ID (primary or alternate) to the full set of alternates for that slot.
+  const ingredientAlternatesMap = useMemo(() => {
     const result = session.baseRecipe.getIngredients();
-    if (result.isFailure()) return [];
-    const alts: Array<{ id: IngredientId; name: string }> = [];
-    const seen = new Set<IngredientId>();
+    if (result.isFailure()) return new Map<IngredientId, ReadonlyArray<{ id: IngredientId; name: string }>>();
+    const map = new Map<IngredientId, ReadonlyArray<{ id: IngredientId; name: string }>>();
     for (const ri of result.value) {
-      for (const alt of ri.alternates) {
-        if (!seen.has(alt.id)) {
-          seen.add(alt.id);
-          alts.push({ id: alt.id, name: alt.name });
+      // Collect all IDs in this slot (primary ingredient + alternates)
+      const allInSlot = [
+        { id: ri.ingredient.id, name: ri.ingredient.name },
+        ...ri.alternates.map((alt) => ({ id: alt.id, name: alt.name }))
+      ];
+      // For each ID in the slot, map it to the *other* options
+      for (const item of allInSlot) {
+        const others = allInSlot.filter((a) => a.id !== item.id);
+        if (others.length > 0) {
+          map.set(item.id, others);
         }
       }
     }
-    return alts;
+    return map;
   }, [session]);
 
   // ---- Current session state (re-read on sessionVersion change) ----
@@ -349,11 +389,14 @@ export function FillingSessionPanel({
       if (mode === 'autosave' && hasChanges) {
         sessionActions
           .saveSession(sessionId)
-          .then(() => notifySession())
+          .then(() => {
+            clearEditState();
+            notifySession();
+          })
           .catch(() => {});
       }
     },
-    [hasChanges, sessionActions, sessionId, notifySession]
+    [hasChanges, sessionActions, sessionId, clearEditState, notifySession]
   );
 
   // ---- Autosave on blur ----
@@ -362,10 +405,13 @@ export function FillingSessionPanel({
     if (saveMode === 'autosave' && hasChanges) {
       sessionActions
         .saveSession(sessionId)
-        .then(() => notifySession())
+        .then(() => {
+          clearEditState();
+          notifySession();
+        })
         .catch(() => {});
     }
-  }, [saveMode, hasChanges, sessionActions, sessionId, notifySession]);
+  }, [saveMode, hasChanges, sessionActions, sessionId, clearEditState, notifySession]);
 
   // ---- Undo / Redo ----
 
@@ -383,8 +429,9 @@ export function FillingSessionPanel({
 
   const handleSave = useCallback(async (): Promise<void> => {
     await sessionActions.saveSession(sessionId);
+    clearEditState();
     notifySession();
-  }, [sessionActions, sessionId, notifySession]);
+  }, [sessionActions, sessionId, clearEditState, notifySession]);
 
   // ---- Target weight ----
 
@@ -751,9 +798,58 @@ export function FillingSessionPanel({
         <EditSection title={`Ingredients (${producedIngredients.length})`}>
           <div className="space-y-2">
             {producedIngredients.map((ing, index) => {
-              const ingValue =
-                ingredientInputDraft[index] ??
-                getIngredientDisplayName(ing.ingredientId, ingredientSuggestions);
+              const ingName = getIngredientDisplayName(ing.ingredientId, ingredientSuggestions);
+              const isEditing = editingIngredients.has(index);
+
+              // ── View mode ──
+              if (!isEditing) {
+                const hasModifiers =
+                  (ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0) ||
+                  !!ing.modifiers?.processNote ||
+                  !!ing.modifiers?.spoonLevel ||
+                  !!ing.modifiers?.toTaste;
+                return (
+                  <div key={ing.ingredientId} className="rounded border border-gray-200 p-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(): void => toggleIngredientEdit(index)}
+                        title="Edit ingredient"
+                        className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+                      >
+                        <ArrowPathIcon className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(): void => onBrowseIngredient?.(ing.ingredientId)}
+                        className="flex-1 min-w-0 text-sm text-gray-800 hover:text-choco-primary text-left truncate"
+                        title="Browse ingredient"
+                      >
+                        {ingName}
+                      </button>
+                      <span className="text-sm text-gray-600 tabular-nums shrink-0">
+                        {ing.amount}
+                        {ing.unit ?? 'g'}
+                      </span>
+                    </div>
+                    {hasModifiers && (
+                      <div className="flex flex-wrap items-center gap-x-3 mt-1 pl-1 text-xs text-gray-400">
+                        {ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0 && (
+                          <span>yield ×{ing.modifiers.yieldFactor}</span>
+                        )}
+                        {ing.modifiers?.processNote && (
+                          <span className="italic">{ing.modifiers.processNote}</span>
+                        )}
+                        {ing.modifiers?.spoonLevel && <span>{ing.modifiers.spoonLevel}</span>}
+                        {ing.modifiers?.toTaste && <span>to taste</span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // ── Edit mode ──
+              const ingValue = ingredientInputDraft[index] ?? ingName;
               const isSpoonUnit = ing.unit === 'tsp' || ing.unit === 'Tbsp';
               const isWeightUnit = ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined;
               const hasNonDefaultModifiers =
@@ -764,16 +860,28 @@ export function FillingSessionPanel({
               const isExpanded = expandedIngredients.has(index) || hasNonDefaultModifiers;
 
               return (
-                <div key={ing.ingredientId} className="rounded border border-gray-200 p-2">
-                  {/* Main row: name, amount, unit toggle, remove */}
+                <div
+                  key={ing.ingredientId}
+                  className="rounded border border-choco-primary/30 bg-choco-primary/5 p-2"
+                >
+                  {/* Main row: confirm, name, amount, unit toggle, remove */}
                   <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={(): void => toggleIngredientEdit(index)}
+                      title="Done editing"
+                      className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                    >
+                      <CheckIcon className="h-3.5 w-3.5" />
+                    </button>
                     <TypeaheadInput<IngredientId>
                       value={ingValue}
                       onChange={(v): void => setIngredientInputDraft((prev) => ({ ...prev, [index]: v }))}
                       suggestions={ingredientSuggestions}
-                      prioritySuggestions={ingredientAlternates}
+                      prioritySuggestions={ingredientAlternatesMap.get(ing.ingredientId) ?? []}
                       onSelect={(match): void => handleIngredientSelect(index, match)}
                       onUnresolved={onRequestCreateEntity ? handleIngredientUnresolved : undefined}
+                      autoFocus
                       className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
                     />
                     <input
@@ -917,7 +1025,6 @@ export function FillingSessionPanel({
               value={newIngredientText}
               onChange={setNewIngredientText}
               suggestions={ingredientSuggestions}
-              prioritySuggestions={ingredientAlternates}
               onSelect={handleNewIngredientSelect}
               onUnresolved={onRequestCreateEntity ? handleNewIngredientUnresolved : undefined}
               placeholder="+ add ingredient"
@@ -926,21 +1033,60 @@ export function FillingSessionPanel({
           </div>
         </EditSection>
 
-        {/* Procedure (editable) */}
+        {/* Procedure */}
         <EditSection title="Procedure">
           <div className="space-y-2">
-            {currentProcedureId && (
-              <div className="rounded border border-gray-200 p-2 flex items-center gap-2">
-                <span className="flex-1 text-sm text-gray-800">
-                  {getProcedureDisplayName(currentProcedureId, procedureSuggestions)}
-                </span>
+            {currentProcedureId && !editingProcedure && (
+              <div className="rounded border border-gray-200 p-2 flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={handleClearProcedure}
-                  className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                  onClick={(): void => setEditingProcedure(true)}
+                  title="Edit procedure"
+                  className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
                 >
-                  Remove
+                  <ArrowPathIcon className="h-3.5 w-3.5" />
                 </button>
+                <button
+                  type="button"
+                  onClick={(): void => onBrowseProcedure?.(currentProcedureId)}
+                  className="flex-1 text-sm text-gray-800 hover:text-choco-primary text-left truncate"
+                  title="Browse procedure"
+                >
+                  {getProcedureDisplayName(currentProcedureId, procedureSuggestions)}
+                </button>
+              </div>
+            )}
+
+            {currentProcedureId && editingProcedure && (
+              <div className="rounded border border-choco-primary/30 bg-choco-primary/5 p-2">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={(): void => setEditingProcedure(false)}
+                    title="Done editing"
+                    className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                  >
+                    <CheckIcon className="h-3.5 w-3.5" />
+                  </button>
+                  <TypeaheadInput<ProcedureId>
+                    value={getProcedureDisplayName(currentProcedureId, procedureSuggestions)}
+                    onChange={setNewProcedureText}
+                    suggestions={procedureSuggestions}
+                    prioritySuggestions={procedureAlternates}
+                    onSelect={handleProcedureSelect}
+                    onUnresolved={onRequestCreateEntity ? handleProcedureUnresolved : undefined}
+                    autoFocus
+                    className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleClearProcedure}
+                    className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                    aria-label="Remove procedure"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             )}
 

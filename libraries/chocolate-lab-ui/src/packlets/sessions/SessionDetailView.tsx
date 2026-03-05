@@ -30,6 +30,8 @@ import React from 'react';
 import {
   type FillingId,
   type FillingRecipeVariationSpec,
+  type IngredientId,
+  type ProcedureId,
   type SessionId,
   UserLibrary
 } from '@fgv/ts-chocolate';
@@ -59,6 +61,10 @@ export interface ISessionDetailViewProps {
   readonly onRecipeSwap?: RecipeSwapHandler;
   /** Optional callback to open the current filling recipe in a cascade browser panel */
   readonly onOpenFillingRecipe?: (fillingId: FillingId, variationSpec: FillingRecipeVariationSpec) => void;
+  /** Optional callback to browse an ingredient in a cascade detail panel */
+  readonly onBrowseIngredient?: (ingredientId: IngredientId) => void;
+  /** Optional callback to browse a procedure in a cascade detail panel */
+  readonly onBrowseProcedure?: (procedureId: ProcedureId) => void;
 }
 
 // ============================================================================
@@ -80,7 +86,9 @@ export function SessionDetailView({
   onClose,
   onRequestCreateEntity,
   onRecipeSwap,
-  onOpenFillingRecipe
+  onOpenFillingRecipe,
+  onBrowseIngredient,
+  onBrowseProcedure
 }: ISessionDetailViewProps): React.ReactElement {
   if (session.sessionType === 'filling') {
     return (
@@ -91,6 +99,8 @@ export function SessionDetailView({
         onRequestCreateEntity={onRequestCreateEntity}
         onRecipeSwap={onRecipeSwap}
         onOpenFillingRecipe={onOpenFillingRecipe}
+        onBrowseIngredient={onBrowseIngredient}
+        onBrowseProcedure={onBrowseProcedure}
       />
     );
   }

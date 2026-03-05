@@ -58,6 +58,8 @@ export interface ITypeaheadInputProps<TId extends string = string> {
   readonly disabled?: boolean;
   /** Maximum dropdown height in pixels. Default: 240. */
   readonly maxHeight?: number;
+  /** If true, the input is focused on mount. */
+  readonly autoFocus?: boolean;
 }
 
 // ============================================================================
@@ -86,7 +88,8 @@ export function TypeaheadInput<TId extends string = string>(
     placeholder,
     className,
     disabled,
-    maxHeight = 240
+    maxHeight = 240,
+    autoFocus
   } = props;
 
   const [isOpen, setIsOpen] = useState(false);
@@ -272,6 +275,7 @@ export function TypeaheadInput<TId extends string = string>(
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
+        autoFocus={autoFocus}
         className={
           className ??
           'w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary'
