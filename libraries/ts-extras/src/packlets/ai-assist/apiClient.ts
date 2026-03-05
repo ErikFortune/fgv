@@ -216,10 +216,12 @@ interface IResponsesApiResponse {
   status: string;
 }
 
-const responsesApiOutputText: Validator<IResponsesApiOutputText> = Validators.object<IResponsesApiOutputText>({
-  type: Validators.literal('output_text'),
-  text: Validators.string
-});
+const responsesApiOutputText: Validator<IResponsesApiOutputText> = Validators.object<IResponsesApiOutputText>(
+  {
+    type: Validators.literal('output_text'),
+    text: Validators.string
+  }
+);
 const responsesApiMessage: Validator<IResponsesApiMessage> = Validators.object<IResponsesApiMessage>({
   type: Validators.literal('message'),
   role: Validators.string,
@@ -308,9 +310,13 @@ async function callOpenAiCompletion(
   const messages = buildMessages(prompt, additionalMessages);
   const body = { model: config.model, messages, temperature };
 
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${config.apiKey}`
+  };
+
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI completion: model=${config.model}`);
-  const jsonResult = await fetchJson(url, { Authorization: `Bearer ${config.apiKey}` }, body, logger);
+  const jsonResult = await fetchJson(url, headers, body, logger);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -369,9 +375,13 @@ async function callOpenAiResponsesCompletion(
     temperature
   };
 
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${config.apiKey}`
+  };
+
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI Responses API: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
-  const jsonResult = await fetchJson(url, { Authorization: `Bearer ${config.apiKey}` }, body, logger);
+  const jsonResult = await fetchJson(url, headers, body, logger);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -453,9 +463,7 @@ async function callAnthropicCompletion(
   if (tools && tools.length > 0) {
     body.tools = toAnthropicTools(tools);
     /* c8 ignore next 3 - optional logger diagnostic output */
-    logger?.info(
-      `Anthropic completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`
-    );
+    logger?.info(`Anthropic completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
   } else {
     /* c8 ignore next 1 - optional logger */
     logger?.info(`Anthropic completion: model=${config.model}`);
@@ -615,10 +623,15 @@ export async function callProviderCompletion(
     apiKey,
     model: resolveModel(modelOverride ?? descriptor.defaultModel, modelContext)
   };
-  /* c8 ignore next 3 - optional logger diagnostic output */
-  logger?.info(
-    `AI completion: provider=${descriptor.id}, format=${descriptor.apiFormat}${hasTools ? ', tools=' + tools.map((t) => t.type).join(',') : ''}`
-  );
+  /* c8 ignore next 8 - optional logger diagnostic output */
+  if (logger) {
+    const toolTypes = hasTools ? tools.map((t) => t.type).join(',') : 'none';
+    const supported = descriptor.supportedTools.length > 0 ? descriptor.supportedTools.join(',') : 'none';
+    logger.info(
+      `AI completion: provider=${descriptor.id}, format=${descriptor.apiFormat}, model=${config.model}, ` +
+        `tools=${toolTypes}, supported=${supported}`
+    );
+  }
 
   switch (descriptor.apiFormat) {
     case 'openai':

@@ -659,7 +659,10 @@ function AppShell(props: IAppShellProps): React.ReactElement {
         isOpen={unlockOpen}
         onUnlock={async (password: string): Promise<string | undefined> => {
           const err = await unlock(password);
-          if (!err) setUnlockOpen(false);
+          if (!err) {
+            reactiveWorkspace.masterPassword = password;
+            setUnlockOpen(false);
+          }
           return err;
         }}
         onCancel={(): void => setUnlockOpen(false)}
@@ -675,7 +678,10 @@ function AppShell(props: IAppShellProps): React.ReactElement {
           workspaceState !== 'no-keystore' ? (
             <LockButton
               isLocked={workspaceState === 'locked'}
-              onLock={lock}
+              onLock={(): void => {
+                lock();
+                reactiveWorkspace.masterPassword = undefined;
+              }}
               onUnlock={(): void => setUnlockOpen(true)}
             />
           ) : undefined
