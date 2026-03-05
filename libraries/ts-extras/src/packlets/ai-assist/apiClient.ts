@@ -650,3 +650,68 @@ export async function callProviderCompletion(
     }
   }
 }
+
+// ============================================================================
+// Proxied completion (routes through a backend server)
+// ============================================================================
+
+/**
+ * Calls the AI completion endpoint on a proxy server instead of calling
+ * the provider API directly from the browser.
+ *
+ * The proxy server handles provider dispatch, CORS, and API key forwarding.
+ * The request shape mirrors {@link IProviderCompletionParams} but is serialized
+ * as JSON for the proxy endpoint.
+ *
+ * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`)
+ * @param params - Same parameters as {@link callProviderCompletion}
+ * @returns The completion response, or a failure
+ * @public
+ */
+export async function callProxiedCompletion(
+  proxyUrl: string,
+  params: IProviderCompletionParams
+): Promise<Result<IAiCompletionResponse>> {
+  const { descriptor, apiKey, prompt, additionalMessages, temperature, modelOverride, logger, tools } =
+    params;
+
+  const body: Record<string, unknown> = {
+    providerId: descriptor.id,
+    apiKey,
+    prompt: { system: prompt.system, user: prompt.user },
+    temperature: temperature ?? 0.7
+  };
+  if (additionalMessages && additionalMessages.length > 0) {
+    body.additionalMessages = additionalMessages;
+  }
+  if (modelOverride !== undefined) {
+    body.modelOverride = modelOverride;
+  }
+  if (tools && tools.length > 0) {
+    body.tools = tools;
+  }
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`AI proxy request: provider=${descriptor.id}, proxy=${proxyUrl}`);
+
+  const url = `${proxyUrl}/api/ai/completion`;
+  const jsonResult = await fetchJson(url, {}, body, logger);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+
+  // Check for error response from proxy
+  const response = jsonResult.value as Record<string, unknown>;
+  if (typeof response.error === 'string') {
+    return fail(`proxy: ${response.error}`);
+  }
+
+  if (typeof response.content !== 'string') {
+    return fail('proxy returned invalid response: missing content');
+  }
+
+  return succeed({
+    content: response.content,
+    truncated: response.truncated === true
+  });
+}

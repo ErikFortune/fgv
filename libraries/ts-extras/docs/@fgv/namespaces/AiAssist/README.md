@@ -53,6 +53,7 @@ AI assist packlet - provider registry, prompt class, settings, and API client.
 ## Functions
 
 - [callProviderCompletion](functions/callProviderCompletion.md)
+- [callProxiedCompletion](functions/callProxiedCompletion.md)
 - [getProviderDescriptor](functions/getProviderDescriptor.md)
 - [getProviderDescriptors](functions/getProviderDescriptors.md)
 - [resolveEffectiveTools](functions/resolveEffectiveTools.md)

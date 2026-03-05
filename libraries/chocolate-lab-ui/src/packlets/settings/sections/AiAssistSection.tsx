@@ -260,6 +260,23 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
           </tbody>
         </table>
       </div>
+
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <label htmlFor="ai-proxy-url" className="block text-xs font-medium text-gray-500 mb-1">
+          API Proxy URL
+        </label>
+        <input
+          id="ai-proxy-url"
+          type="text"
+          className="w-full max-w-[400px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent"
+          placeholder="http://localhost:3002"
+          defaultValue={aiAssist.proxyUrl ?? ''}
+          onBlur={(e): void => onChange({ aiAssist: { ...aiAssist, proxyUrl: e.target.value || undefined } })}
+        />
+        <p className="text-xs text-gray-400 mt-1">
+          Route AI requests through a backend proxy. Required for xAI Grok (CORS).
+        </p>
+      </div>
     </div>
   );
 }

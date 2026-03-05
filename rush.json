@@ -563,6 +563,12 @@
       "projectFolder": "apps/chocolate-lab-web",
       "shouldPublish": false,
       "tags": ["apps", "ui", "browser", "chocolate"]
+    },
+    {
+      "packageName": "@fgv/chocolate-lab-api",
+      "projectFolder": "services/chocolate-lab-api",
+      "shouldPublish": false,
+      "tags": ["services", "chocolate"]
     }
   ]
 }

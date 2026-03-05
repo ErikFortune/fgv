@@ -297,6 +297,8 @@ export interface IAiAssistSettings {
   readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
   /** Which enabled provider is the default for the main button. Falls back to first in list. */
   readonly defaultProvider?: AiProviderId;
+  /** Optional proxy URL for routing API requests through a backend server (e.g. `http://localhost:3001`). */
+  readonly proxyUrl?: string;
 }
 
 /**

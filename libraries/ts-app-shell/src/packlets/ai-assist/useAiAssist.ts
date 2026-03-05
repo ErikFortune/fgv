@@ -240,8 +240,8 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
           // Resolve effective tools: per-call override > settings defaults > none
           const effectiveTools = AiAssist.resolveEffectiveTools(descriptor, providerConfig.tools, tools);
 
-          // Call the API (with any correction messages from previous attempts)
-          const responseResult = await AiAssist.callProviderCompletion({
+          // Call the API — through proxy if configured, otherwise direct
+          const completionParams: AiAssist.IProviderCompletionParams = {
             descriptor,
             apiKey: apiKeyResult.value,
             prompt,
@@ -249,7 +249,10 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
             modelOverride: providerConfig.model,
             logger,
             tools: effectiveTools.length > 0 ? effectiveTools : undefined
-          });
+          };
+          const responseResult = settings?.proxyUrl
+            ? await AiAssist.callProxiedCompletion(settings.proxyUrl, completionParams)
+            : await AiAssist.callProviderCompletion(completionParams);
           if (responseResult.isFailure()) {
             logger?.error(`AI completion failed: ${responseResult.message}`);
             return fail(responseResult.message);

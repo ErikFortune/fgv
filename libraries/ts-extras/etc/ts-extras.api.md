@@ -46,6 +46,7 @@ declare namespace AiAssist {
         getProviderDescriptors,
         getProviderDescriptor,
         callProviderCompletion,
+        callProxiedCompletion,
         IProviderCompletionParams,
         aiProviderId,
         aiServerToolType,
@@ -129,6 +130,12 @@ const base64String: Converter<string>;
 
 // @public
 function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderCompletionParams"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderCompletion"
+//
+// @public
+function callProxiedCompletion(proxyUrl: string, params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
 
 declare namespace Constants {
     export {
@@ -448,6 +455,7 @@ interface IAiAssistProviderConfig {
 interface IAiAssistSettings {
     readonly defaultProvider?: AiProviderId;
     readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
+    readonly proxyUrl?: string;
 }
 
 // @public

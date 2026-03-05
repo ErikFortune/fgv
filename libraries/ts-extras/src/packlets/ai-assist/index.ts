@@ -28,7 +28,7 @@ export {
 
 export { allProviderIds, getProviderDescriptors, getProviderDescriptor } from './registry';
 
-export { callProviderCompletion, type IProviderCompletionParams } from './apiClient';
+export { callProviderCompletion, callProxiedCompletion, type IProviderCompletionParams } from './apiClient';
 
 export {
   aiProviderId,
