@@ -2050,6 +2050,7 @@ class EditingSession implements IMaterializedSessionBase {
     get produced(): ProducedFilling;
     redo(): Result<boolean>;
     removeIngredient(id: IngredientId): Result<void>;
+    replaceIngredient(oldId: IngredientId, newId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<void>;
     saveAsAlternatives(options: ISaveAlternativesOptions): Result<ISaveResult>;
     saveAsNewRecipe(options: ISaveNewRecipeOptions): Result<ISaveResult>;
     saveAsNewVariation(options: ISaveVariationOptions): Result<ISaveResult>;
@@ -7482,6 +7483,7 @@ class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
     get ingredients(): ReadonlyArray<Fillings.IProducedFillingIngredientEntity>;
     static mergeAsAlternatives(produced: IProducedFillingEntity, original: Fillings.IFillingRecipeVariationEntity): Result<Fillings.IFillingRecipeVariationEntity>;
     removeIngredient(id: IngredientId): Result<void>;
+    replaceIngredient(oldId: IngredientId, newId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<void>;
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<IProducedFillingEntity>): Result<ProducedFilling>;
     scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
     setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<void>;

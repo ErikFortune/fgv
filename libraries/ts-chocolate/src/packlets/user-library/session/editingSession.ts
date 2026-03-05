@@ -148,6 +148,26 @@ export class EditingSession implements IMaterializedSessionBase {
   }
 
   /**
+   * Replaces an existing ingredient with a new one at the same position.
+   * @param oldId - Ingredient ID to replace
+   * @param newId - New ingredient ID
+   * @param amount - Amount of ingredient
+   * @param unit - Optional measurement unit
+   * @param modifiers - Optional ingredient modifiers
+   * @returns Success or failure
+   * @public
+   */
+  public replaceIngredient(
+    oldId: IngredientId,
+    newId: IngredientId,
+    amount: Measurement,
+    unit?: MeasurementUnit,
+    modifiers?: Fillings.IIngredientModifiers
+  ): Result<void> {
+    return this._produced.replaceIngredient(oldId, newId, amount, unit, modifiers);
+  }
+
+  /**
    * Removes an ingredient from the filling.
    * @param id - Ingredient ID to remove
    * @returns Success or failure

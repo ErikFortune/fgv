@@ -227,6 +227,19 @@ Sets or updates an ingredient.
 </td></tr>
 <tr><td>
 
+[replaceIngredient(oldId, newId, amount, unit, modifiers)](./ProducedFilling.replaceIngredient.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Replaces an existing ingredient with a new one at the same position.
+
+</td></tr>
+<tr><td>
+
 [removeIngredient(id)](./ProducedFilling.removeIngredient.md)
 
 </td><td>

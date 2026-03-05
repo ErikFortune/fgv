@@ -376,8 +376,13 @@ export function FillingSessionPanel({
     (index: number, match: { id: IngredientId; name: string }): void => {
       const existing = producedIngredients[index];
       if (match.id !== existing.ingredientId) {
-        session.removeIngredient(existing.ingredientId);
-        session.setIngredient(match.id as IngredientId, existing.amount, existing.unit, existing.modifiers);
+        session.replaceIngredient(
+          existing.ingredientId,
+          match.id as IngredientId,
+          existing.amount,
+          existing.unit,
+          existing.modifiers
+        );
       }
       setIngredientInputDraft((prev) => {
         const next = { ...prev };

@@ -444,6 +444,52 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
   }
 
   /**
+   * Replaces an existing ingredient with a new one at the same position.
+   * Pushes current state to undo before change, clears redo.
+   * @param oldId - Ingredient ID to replace
+   * @param newId - New ingredient ID
+   * @param amount - Amount of ingredient
+   * @param unit - Optional measurement unit
+   * @param modifiers - Optional ingredient modifiers
+   * @returns Success or failure
+   * @public
+   */
+  public replaceIngredient(
+    oldId: IngredientId,
+    newId: IngredientId,
+    amount: Measurement,
+    unit?: MeasurementUnit,
+    modifiers?: Fillings.IIngredientModifiers
+  ): Result<void> {
+    const ingredients = [...this._current.ingredients];
+    const existingIndex = ingredients.findIndex((ing) => ing.ingredientId === oldId);
+
+    if (existingIndex < 0) {
+      return fail(`Ingredient ${oldId} not found in filling`);
+    }
+
+    if (amount < 0) {
+      return fail(`Ingredient amount must be non-negative: ${amount}`);
+    }
+
+    this._pushUndo();
+
+    ingredients[existingIndex] = {
+      ingredientId: newId,
+      amount,
+      unit,
+      modifiers
+    };
+
+    this._current = {
+      ...this._current,
+      ingredients
+    };
+
+    return succeed(undefined);
+  }
+
+  /**
    * Removes an ingredient.
    * Pushes current state to undo before change, clears redo.
    * @param id - Ingredient ID to remove

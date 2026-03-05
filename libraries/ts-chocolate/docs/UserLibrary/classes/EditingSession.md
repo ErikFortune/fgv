@@ -346,6 +346,19 @@ Sets or updates an ingredient in the filling.
 </td></tr>
 <tr><td>
 
+[replaceIngredient(oldId, newId, amount, unit, modifiers)](./EditingSession.replaceIngredient.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Replaces an existing ingredient with a new one at the same position.
+
+</td></tr>
+<tr><td>
+
 [removeIngredient(id)](./EditingSession.removeIngredient.md)
 
 </td><td>
