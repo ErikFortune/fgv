@@ -38,6 +38,7 @@ import type { SessionId, UserLibrary } from '@fgv/ts-chocolate';
 import { ProductionStatusCard } from './ProductionStatusCard';
 import { StepExecutionView } from './StepExecutionView';
 import { useExecutionActions } from './useExecutionActions';
+import { useWorkspace } from '../workspace';
 
 /**
  * Panel expansion state.
@@ -247,6 +248,8 @@ function DetailPanel({
   readonly onCollapse: () => void;
   readonly executionActions: ReturnType<typeof useExecutionActions>;
 }): React.ReactElement {
+  const workspace = useWorkspace();
+
   const stepSummaries = useMemo(
     () => executionActions.getStepSummaries(selectedEntry),
     [executionActions, selectedEntry]
@@ -258,20 +261,28 @@ function DetailPanel({
   );
 
   const handleStart = useCallback(() => {
-    executionActions.startExecution(selectedEntry.sessionId);
+    executionActions.startExecution(selectedEntry.sessionId).catch((err: unknown) => {
+      workspace.data.logger.error(`Failed to start execution: ${String(err)}`);
+    });
   }, [executionActions, selectedEntry.sessionId]);
 
   const handleAdvance = useCallback(() => {
-    executionActions.advanceStep(selectedEntry.sessionId);
+    executionActions.advanceStep(selectedEntry.sessionId).catch((err: unknown) => {
+      workspace.data.logger.error(`Failed to advance execution step: ${String(err)}`);
+    });
   }, [executionActions, selectedEntry.sessionId]);
 
   const handleSkip = useCallback(() => {
-    executionActions.skipStep(selectedEntry.sessionId);
+    executionActions.skipStep(selectedEntry.sessionId).catch((err: unknown) => {
+      workspace.data.logger.error(`Failed to skip execution step: ${String(err)}`);
+    });
   }, [executionActions, selectedEntry.sessionId]);
 
   const handleJumpTo = useCallback(
     (stepIndex: number) => {
-      executionActions.jumpToStep(selectedEntry.sessionId, stepIndex);
+      executionActions.jumpToStep(selectedEntry.sessionId, stepIndex).catch((err: unknown) => {
+        workspace.data.logger.error(`Failed to jump execution step: ${String(err)}`);
+      });
     },
     [executionActions, selectedEntry.sessionId]
   );

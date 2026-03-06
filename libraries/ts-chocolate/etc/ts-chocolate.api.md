@@ -6293,16 +6293,22 @@ interface IUserEntityPersistenceConfig {
 // @public
 interface IUserLibrary {
     createPersistedConfectionSession(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Result<SessionId>;
+    createPersistedConfectionSessionAndSave(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Promise<Result<SessionId>>;
     createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<SessionId>;
+    createPersistedFillingSessionAndSave(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Promise<Result<SessionId>>;
     readonly entities: IUserEntityLibrary;
     readonly ingredientInventory: MaterializedLibrary<Inventory.IngredientInventoryEntryId, IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
     readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
     readonly moldInventory: MaterializedLibrary<Inventory.MoldInventoryEntryId, IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
     removeSession(sessionId: SessionId): Result<SessionId>;
+    removeSessionAndPersist(sessionId: SessionId): Promise<Result<SessionId>>;
     saveSession(sessionId: SessionId): Result<SessionId>;
+    saveSessionAndPersist(sessionId: SessionId): Promise<Result<SessionId>>;
     readonly sessions: MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>;
     updateSessionExecution(sessionId: SessionId, execution: IExecutionState): Result<SessionId>;
+    updateSessionExecutionAndPersist(sessionId: SessionId, execution: IExecutionState): Promise<Result<SessionId>>;
     updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId>;
+    updateSessionStatusAndPersist(sessionId: SessionId, status: PersistedSessionStatus): Promise<Result<SessionId>>;
 }
 
 // @public
@@ -8551,7 +8557,15 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
+    createPersistedConfectionSessionAndSave(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Promise<Result<SessionId>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
     createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<SessionId>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    createPersistedFillingSessionAndSave(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Promise<Result<SessionId>>;
     get decorations(): MaterializedLibrary<DecorationId, IDecorationEntity, IDecoration, never>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
@@ -8581,7 +8595,15 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
+    removeSessionAndPersist(sessionId: SessionId): Promise<Result<SessionId>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
     saveSession(sessionId: SessionId): Result<SessionId>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    saveSessionAndPersist(sessionId: SessionId): Promise<Result<SessionId>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
@@ -8593,7 +8615,15 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
+    updateSessionExecutionAndPersist(sessionId: SessionId, execution: Session.IExecutionState): Promise<Result<SessionId>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
     updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    updateSessionStatusAndPersist(sessionId: SessionId, status: PersistedSessionStatus): Promise<Result<SessionId>>;
 }
 
 // @public

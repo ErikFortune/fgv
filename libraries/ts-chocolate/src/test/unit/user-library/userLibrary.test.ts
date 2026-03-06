@@ -918,6 +918,92 @@ describe('UserLibrary', () => {
   });
 
   // ============================================================================
+  // Persisted-Orchestrated Async Session Methods
+  // ============================================================================
+
+  describe('persisted-orchestrated async session methods', () => {
+    test('createPersistedFillingSessionAndSave succeeds without explicit caller save', async () => {
+      const variationId = 'test.test-ganache@2026-01-01-01' as FillingRecipeVariationId;
+      const result = await userLib.createPersistedFillingSessionAndSave(variationId, {
+        collectionId: 'user' as CollectionId,
+        status: 'planning',
+        label: 'Async Persisted Session'
+      });
+
+      expect(result).toSucceedAndSatisfy((sessionId) => {
+        expect(sessionId).toMatch(/^user\./);
+      });
+
+      expect(userLib.sessions.get(result.orThrow())).toSucceedAndSatisfy((session) => {
+        expect(session.label).toBe('Async Persisted Session');
+      });
+    });
+
+    test('saveSessionAndPersist succeeds for a materialized session', async () => {
+      expect(testSessionId).toBeDefined();
+      expect(userLib.sessions.get(testSessionId!)).toSucceed();
+
+      const result = await userLib.saveSessionAndPersist(testSessionId!);
+      expect(result).toSucceedWith(testSessionId!);
+    });
+
+    test('updateSessionExecutionAndPersist and updateSessionStatusAndPersist both apply', async () => {
+      expect(testSessionId).toBeDefined();
+      const sessionId = testSessionId!;
+      const executionState: SessionEntities.IExecutionState = {
+        currentStepIndex: 0,
+        startedAt: '2026-02-06T12:00:00Z',
+        executionLog: [
+          {
+            stepIndex: 0,
+            status: 'active',
+            startedAt: '2026-02-06T12:00:00Z',
+            notes: []
+          },
+          {
+            stepIndex: 1,
+            status: 'pending'
+          },
+          {
+            stepIndex: 2,
+            status: 'pending'
+          }
+        ]
+      };
+
+      expect(await userLib.updateSessionExecutionAndPersist(sessionId, executionState)).toSucceedWith(
+        sessionId
+      );
+      expect(await userLib.updateSessionStatusAndPersist(sessionId, 'committing')).toSucceedWith(sessionId);
+
+      expect(userLib.sessions.get(sessionId)).toSucceedAndSatisfy((session) => {
+        expect(session.execution).toBeDefined();
+        expect(session.status).toBe('committing');
+      });
+    });
+
+    test('removeSessionAndPersist removes the session without explicit caller save', async () => {
+      const variationId = 'test.test-ganache@2026-01-01-01' as FillingRecipeVariationId;
+      const created = userLib
+        .createPersistedFillingSession(variationId, {
+          collectionId: 'user' as CollectionId,
+          status: 'planning',
+          label: 'Session to Remove'
+        })
+        .orThrow();
+
+      expect(await userLib.removeSessionAndPersist(created)).toSucceedWith(created);
+      expect(userLib.sessions.get(created)).toFail();
+    });
+
+    test('user entity library returns singleton persisted sessions collection wrapper', () => {
+      const first = userLib.entities.getPersistedSessionsCollection('user' as CollectionId).orThrow();
+      const second = userLib.entities.getPersistedSessionsCollection('user' as CollectionId).orThrow();
+      expect(first).toBe(second);
+    });
+  });
+
+  // ============================================================================
   // Error Path Tests
   // ============================================================================
 

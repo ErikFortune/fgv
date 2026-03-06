@@ -314,6 +314,44 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
   }
 
   /**
+   * {@inheritDoc IUserLibrary.createPersistedConfectionSessionAndSave}
+   */
+  public async createPersistedConfectionSessionAndSave(
+    confectionId: ConfectionId,
+    options: ICreateConfectionSessionOptions
+  ): Promise<Result<SessionId>> {
+    const createResult = this.createPersistedConfectionSession(confectionId, options);
+    if (createResult.isFailure()) {
+      return fail(createResult.message);
+    }
+    const persistResult = await this._persistSessionsCollectionIfSupported(options.collectionId);
+    if (persistResult.isFailure()) {
+      return fail(persistResult.message);
+    }
+    this._sessions = undefined;
+    return succeed(createResult.value);
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.createPersistedFillingSessionAndSave}
+   */
+  public async createPersistedFillingSessionAndSave(
+    variationId: FillingRecipeVariationId,
+    options: ICreateFillingSessionOptions
+  ): Promise<Result<SessionId>> {
+    const createResult = this.createPersistedFillingSession(variationId, options);
+    if (createResult.isFailure()) {
+      return fail(createResult.message);
+    }
+    const persistResult = await this._persistSessionsCollectionIfSupported(options.collectionId);
+    if (persistResult.isFailure()) {
+      return fail(persistResult.message);
+    }
+    this._sessions = undefined;
+    return succeed(createResult.value);
+  }
+
+  /**
    * {@inheritDoc IUserLibrary.createPersistedConfectionSession}
    */
   public createPersistedConfectionSession(
@@ -384,6 +422,23 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
   }
 
   /**
+   * {@inheritDoc IUserLibrary.saveSessionAndPersist}
+   */
+  public async saveSessionAndPersist(sessionId: SessionId): Promise<Result<SessionId>> {
+    const saveResult = this.saveSession(sessionId);
+    if (saveResult.isFailure()) {
+      return fail(saveResult.message);
+    }
+
+    const collectionId = Helpers.getSessionCollectionId(sessionId);
+    const persistResult = await this._persistSessionsCollectionIfSupported(collectionId);
+    if (persistResult.isFailure()) {
+      return fail(persistResult.message);
+    }
+    return succeed(saveResult.value);
+  }
+
+  /**
    * {@inheritDoc IUserLibrary.updateSessionStatus}
    */
   public updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId> {
@@ -400,6 +455,46 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
       this._sessions = undefined;
       return succeed(id);
     });
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.updateSessionExecutionAndPersist}
+   */
+  public async updateSessionExecutionAndPersist(
+    sessionId: SessionId,
+    execution: SessionEntities.IExecutionState
+  ): Promise<Result<SessionId>> {
+    const updateResult = this.updateSessionExecution(sessionId, execution);
+    if (updateResult.isFailure()) {
+      return fail(updateResult.message);
+    }
+
+    const collectionId = Helpers.getSessionCollectionId(sessionId);
+    const persistResult = await this._persistSessionsCollectionIfSupported(collectionId);
+    if (persistResult.isFailure()) {
+      return fail(persistResult.message);
+    }
+    return succeed(updateResult.value);
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.updateSessionStatusAndPersist}
+   */
+  public async updateSessionStatusAndPersist(
+    sessionId: SessionId,
+    status: PersistedSessionStatus
+  ): Promise<Result<SessionId>> {
+    const updateResult = this.updateSessionStatus(sessionId, status);
+    if (updateResult.isFailure()) {
+      return fail(updateResult.message);
+    }
+
+    const collectionId = Helpers.getSessionCollectionId(sessionId);
+    const persistResult = await this._persistSessionsCollectionIfSupported(collectionId);
+    if (persistResult.isFailure()) {
+      return fail(persistResult.message);
+    }
+    return succeed(updateResult.value);
   }
 
   /**
@@ -432,6 +527,40 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
       this._sessions = undefined;
       return succeed(sessionId);
     });
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.removeSessionAndPersist}
+   */
+  public async removeSessionAndPersist(sessionId: SessionId): Promise<Result<SessionId>> {
+    const collectionId = Helpers.getSessionCollectionId(sessionId);
+    const removeResult = this.removeSession(sessionId);
+    if (removeResult.isFailure()) {
+      return fail(removeResult.message);
+    }
+
+    const persistResult = await this._persistSessionsCollectionIfSupported(collectionId);
+    if (persistResult.isFailure()) {
+      return fail(persistResult.message);
+    }
+    return succeed(removeResult.value);
+  }
+
+  /**
+   * Persist the sessions collection only when backed by a savable source item.
+   * @internal
+   */
+  private async _persistSessionsCollectionIfSupported(collectionId: CollectionId): Promise<Result<true>> {
+    const persistedResult = this._entities.getPersistedSessionsCollection(collectionId);
+    if (persistedResult.isFailure()) {
+      return fail(`Sessions collection '${collectionId}' is not available: ${persistedResult.message}`);
+    }
+
+    if (!persistedResult.value.canSave()) {
+      return succeed(true as const);
+    }
+
+    return persistedResult.value.save();
   }
 
   // ============================================================================

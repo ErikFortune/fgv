@@ -36,7 +36,6 @@ import { type Result } from '@fgv/ts-utils';
 
 import {
   Entities,
-  Helpers,
   type CollectionId,
   type ConfectionId,
   type FillingRecipeVariationId,
@@ -145,12 +144,8 @@ export function useSessionActions(): ISessionActions {
       variationId: FillingRecipeVariationId,
       options: UserLibrary.ICreateFillingSessionOptions
     ): Promise<Result<SessionId>> => {
-      const result = workspace.userData.createPersistedFillingSession(variationId, options);
+      const result = await workspace.userData.createPersistedFillingSessionAndSave(variationId, options);
       if (result.isSuccess()) {
-        const saveResult = await workspace.userData.entities.saveCollection(options.collectionId);
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Session persistence failed: ${saveResult.message}`);
-        }
         workspace.data.clearCache();
         reactiveWorkspace.notifyChange();
         workspace.data.logger.info(`Created filling session '${result.value}'`);
@@ -167,12 +162,8 @@ export function useSessionActions(): ISessionActions {
       confectionId: ConfectionId,
       options: UserLibrary.ICreateConfectionSessionOptions
     ): Promise<Result<SessionId>> => {
-      const result = workspace.userData.createPersistedConfectionSession(confectionId, options);
+      const result = await workspace.userData.createPersistedConfectionSessionAndSave(confectionId, options);
       if (result.isSuccess()) {
-        const saveResult = await workspace.userData.entities.saveCollection(options.collectionId);
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Session persistence failed: ${saveResult.message}`);
-        }
         workspace.data.clearCache();
         reactiveWorkspace.notifyChange();
         workspace.data.logger.info(`Created confection session '${result.value}'`);
@@ -186,13 +177,8 @@ export function useSessionActions(): ISessionActions {
 
   const saveSession = useCallback(
     async (sessionId: SessionId): Promise<Result<SessionId>> => {
-      const result = workspace.userData.saveSession(sessionId);
+      const result = await workspace.userData.saveSessionAndPersist(sessionId);
       if (result.isSuccess()) {
-        const collectionId = Helpers.getSessionCollectionId(sessionId);
-        const saveResult = await workspace.userData.entities.saveCollection(collectionId);
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Session persistence failed: ${saveResult.message}`);
-        }
         workspace.data.clearCache();
         reactiveWorkspace.notifyChange();
         workspace.data.logger.info(`Saved session '${result.value}'`);
@@ -206,13 +192,8 @@ export function useSessionActions(): ISessionActions {
 
   const updateSessionStatus = useCallback(
     async (sessionId: SessionId, status: Entities.PersistedSessionStatus): Promise<Result<SessionId>> => {
-      const result = workspace.userData.updateSessionStatus(sessionId, status);
+      const result = await workspace.userData.updateSessionStatusAndPersist(sessionId, status);
       if (result.isSuccess()) {
-        const collectionId = Helpers.getSessionCollectionId(sessionId);
-        const saveResult = await workspace.userData.entities.saveCollection(collectionId);
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Session persistence failed: ${saveResult.message}`);
-        }
         workspace.data.clearCache();
         reactiveWorkspace.notifyChange();
         workspace.data.logger.info(`Updated session '${sessionId}' status to '${status}'`);
@@ -226,13 +207,8 @@ export function useSessionActions(): ISessionActions {
 
   const deleteSession = useCallback(
     async (sessionId: SessionId): Promise<Result<SessionId>> => {
-      const collectionId = Helpers.getSessionCollectionId(sessionId);
-      const result = workspace.userData.removeSession(sessionId);
+      const result = await workspace.userData.removeSessionAndPersist(sessionId);
       if (result.isSuccess()) {
-        const saveResult = await workspace.userData.entities.saveCollection(collectionId);
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Session persistence failed: ${saveResult.message}`);
-        }
         workspace.data.clearCache();
         reactiveWorkspace.notifyChange();
         workspace.data.logger.info(`Deleted session '${sessionId}'`);

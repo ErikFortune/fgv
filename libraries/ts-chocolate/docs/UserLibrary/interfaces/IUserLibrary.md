@@ -147,6 +147,19 @@ Creates a new persisted filling session from a filling variation.
 </td></tr>
 <tr><td>
 
+[createPersistedFillingSessionAndSave(variationId, options)](./IUserLibrary.createPersistedFillingSessionAndSave.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates and persists a new filling session in one orchestrated operation.
+
+</td></tr>
+<tr><td>
+
 [createPersistedConfectionSession(confectionId, options)](./IUserLibrary.createPersistedConfectionSession.md)
 
 </td><td>
@@ -156,6 +169,19 @@ Creates a new persisted filling session from a filling variation.
 </td><td>
 
 Creates a new persisted confection session from a confection recipe.
+
+</td></tr>
+<tr><td>
+
+[createPersistedConfectionSessionAndSave(confectionId, options)](./IUserLibrary.createPersistedConfectionSessionAndSave.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates and persists a new confection session in one orchestrated operation.
 
 </td></tr>
 <tr><td>
@@ -173,6 +199,19 @@ Saves an active session back to the library.
 </td></tr>
 <tr><td>
 
+[saveSessionAndPersist(sessionId)](./IUserLibrary.saveSessionAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Saves an active session and persists the owning sessions collection.
+
+</td></tr>
+<tr><td>
+
 [updateSessionStatus(sessionId, status)](./IUserLibrary.updateSessionStatus.md)
 
 </td><td>
@@ -182,6 +221,19 @@ Saves an active session back to the library.
 </td><td>
 
 Updates the status of an existing persisted session.
+
+</td></tr>
+<tr><td>
+
+[updateSessionStatusAndPersist(sessionId, status)](./IUserLibrary.updateSessionStatusAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates session status and persists the owning sessions collection.
 
 </td></tr>
 <tr><td>
@@ -199,6 +251,19 @@ Updates the execution state of an existing persisted session.
 </td></tr>
 <tr><td>
 
+[updateSessionExecutionAndPersist(sessionId, execution)](./IUserLibrary.updateSessionExecutionAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates session execution state and persists the owning sessions collection.
+
+</td></tr>
+<tr><td>
+
 [removeSession(sessionId)](./IUserLibrary.removeSession.md)
 
 </td><td>
@@ -208,6 +273,19 @@ Updates the execution state of an existing persisted session.
 </td><td>
 
 Removes a session from the library.
+
+</td></tr>
+<tr><td>
+
+[removeSessionAndPersist(sessionId)](./IUserLibrary.removeSessionAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes a session and persists the owning sessions collection.
 
 </td></tr>
 </tbody></table>

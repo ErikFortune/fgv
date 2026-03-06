@@ -393,6 +393,18 @@ export interface IUserLibrary {
   ): Result<SessionId>;
 
   /**
+   * Creates and persists a new filling session in one orchestrated operation.
+   * Persists to backing storage when supported by the target collection.
+   * @param variationId - Source filling variation to create session for
+   * @param options - Creation options including target collection
+   * @returns Promise with Result containing the composite SessionId
+   */
+  createPersistedFillingSessionAndSave(
+    variationId: FillingRecipeVariationId,
+    options: ICreateFillingSessionOptions
+  ): Promise<Result<SessionId>>;
+
+  /**
    * Creates a new persisted confection session from a confection recipe.
    * The session is created, persisted to the entity library, and the composite SessionId is returned.
    * @param confectionId - Source confection to create session for
@@ -405,11 +417,30 @@ export interface IUserLibrary {
   ): Result<SessionId>;
 
   /**
+   * Creates and persists a new confection session in one orchestrated operation.
+   * Persists to backing storage when supported by the target collection.
+   * @param confectionId - Source confection to create session for
+   * @param options - Creation options including target collection and optional session params
+   * @returns Promise with Result containing the composite SessionId
+   */
+  createPersistedConfectionSessionAndSave(
+    confectionId: ConfectionId,
+    options: ICreateConfectionSessionOptions
+  ): Promise<Result<SessionId>>;
+
+  /**
    * Saves an active session back to the library.
    * @param sessionId - Session to save
    * @returns Result with the composite SessionId
    */
   saveSession(sessionId: SessionId): Result<SessionId>;
+
+  /**
+   * Saves an active session and persists the owning sessions collection.
+   * @param sessionId - Session to save
+   * @returns Promise with Result containing the composite SessionId
+   */
+  saveSessionAndPersist(sessionId: SessionId): Promise<Result<SessionId>>;
 
   /**
    * Updates the status of an existing persisted session.
@@ -420,6 +451,17 @@ export interface IUserLibrary {
   updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId>;
 
   /**
+   * Updates session status and persists the owning sessions collection.
+   * @param sessionId - Session to update
+   * @param status - New session status
+   * @returns Promise with Result containing the composite SessionId
+   */
+  updateSessionStatusAndPersist(
+    sessionId: SessionId,
+    status: PersistedSessionStatus
+  ): Promise<Result<SessionId>>;
+
+  /**
    * Updates the execution state of an existing persisted session.
    * @param sessionId - Session to update
    * @param execution - New execution state
@@ -428,9 +470,27 @@ export interface IUserLibrary {
   updateSessionExecution(sessionId: SessionId, execution: IExecutionState): Result<SessionId>;
 
   /**
+   * Updates session execution state and persists the owning sessions collection.
+   * @param sessionId - Session to update
+   * @param execution - New execution state
+   * @returns Promise with Result containing the composite SessionId
+   */
+  updateSessionExecutionAndPersist(
+    sessionId: SessionId,
+    execution: IExecutionState
+  ): Promise<Result<SessionId>>;
+
+  /**
    * Removes a session from the library.
    * @param sessionId - Session to remove
    * @returns Result with the composite SessionId of the removed session
    */
   removeSession(sessionId: SessionId): Result<SessionId>;
+
+  /**
+   * Removes a session and persists the owning sessions collection.
+   * @param sessionId - Session to remove
+   * @returns Promise with Result containing the composite SessionId of the removed session
+   */
+  removeSessionAndPersist(sessionId: SessionId): Promise<Result<SessionId>>;
 }

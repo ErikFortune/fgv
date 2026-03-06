@@ -291,6 +291,32 @@ Creates a new persisted filling session from a filling variation.
 </td></tr>
 <tr><td>
 
+[createPersistedConfectionSessionAndSave(confectionId, options)](./UserLibrary.createPersistedConfectionSessionAndSave.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates and persists a new confection session in one orchestrated operation.
+
+</td></tr>
+<tr><td>
+
+[createPersistedFillingSessionAndSave(variationId, options)](./UserLibrary.createPersistedFillingSessionAndSave.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates and persists a new filling session in one orchestrated operation.
+
+</td></tr>
+<tr><td>
+
 [createPersistedConfectionSession(confectionId, options)](./UserLibrary.createPersistedConfectionSession.md)
 
 </td><td>
@@ -317,6 +343,19 @@ Saves an active session back to the library.
 </td></tr>
 <tr><td>
 
+[saveSessionAndPersist(sessionId)](./UserLibrary.saveSessionAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Saves an active session and persists the owning sessions collection.
+
+</td></tr>
+<tr><td>
+
 [updateSessionStatus(sessionId, status)](./UserLibrary.updateSessionStatus.md)
 
 </td><td>
@@ -326,6 +365,32 @@ Saves an active session back to the library.
 </td><td>
 
 Updates the status of an existing persisted session.
+
+</td></tr>
+<tr><td>
+
+[updateSessionExecutionAndPersist(sessionId, execution)](./UserLibrary.updateSessionExecutionAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates session execution state and persists the owning sessions collection.
+
+</td></tr>
+<tr><td>
+
+[updateSessionStatusAndPersist(sessionId, status)](./UserLibrary.updateSessionStatusAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates session status and persists the owning sessions collection.
 
 </td></tr>
 <tr><td>
@@ -352,6 +417,19 @@ Updates the execution state of an existing persisted session.
 </td><td>
 
 Removes a session from the library.
+
+</td></tr>
+<tr><td>
+
+[removeSessionAndPersist(sessionId)](./UserLibrary.removeSessionAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes a session and persists the owning sessions collection.
 
 </td></tr>
 </tbody></table>

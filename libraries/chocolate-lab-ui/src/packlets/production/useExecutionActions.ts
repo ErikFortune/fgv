@@ -27,7 +27,7 @@
 
 import { useCallback, useMemo } from 'react';
 import type { Entities, LibraryRuntime, ProcedureId, SessionId, UserLibrary } from '@fgv/ts-chocolate';
-import { Helpers, UserLibrary as UserLibraryNs } from '@fgv/ts-chocolate';
+import { UserLibrary as UserLibraryNs } from '@fgv/ts-chocolate';
 
 import { renderPreview } from '../tasks';
 import { useWorkspace, useReactiveWorkspace } from '../workspace';
@@ -39,10 +39,10 @@ import type { IStepSummaryView } from './StepExecutionView';
  * @public
  */
 export interface IExecutionActions {
-  readonly startExecution: (sessionId: SessionId) => void;
-  readonly advanceStep: (sessionId: SessionId) => void;
-  readonly skipStep: (sessionId: SessionId) => void;
-  readonly jumpToStep: (sessionId: SessionId, stepIndex: number) => void;
+  readonly startExecution: (sessionId: SessionId) => Promise<void>;
+  readonly advanceStep: (sessionId: SessionId) => Promise<void>;
+  readonly skipStep: (sessionId: SessionId) => Promise<void>;
+  readonly jumpToStep: (sessionId: SessionId, stepIndex: number) => Promise<void>;
   readonly hasExecutionState: (entry: IActiveSessionEntry) => boolean;
   readonly getStepSummaries: (entry: IActiveSessionEntry) => ReadonlyArray<IStepSummaryView>;
   readonly getProgressLabel: (entry: IActiveSessionEntry) => string;
@@ -117,28 +117,23 @@ export function useExecutionActions(): IExecutionActions {
   );
 
   const persistExecution = useCallback(
-    (sessionId: SessionId, executionState: Entities.IExecutionState): void => {
-      const result = workspace.userData.updateSessionExecution(sessionId, executionState);
-      if (result.isSuccess()) {
-        const collectionId = Helpers.getSessionCollectionId(sessionId);
-        workspace.userData.entities
-          .saveCollection(collectionId)
-          .then((saveResult) => {
-            if (saveResult.isFailure()) {
-              workspace.data.logger.error(`Execution state persistence failed: ${saveResult.message}`);
-            }
-          })
-          .catch((err: unknown) => {
-            workspace.data.logger.error(`Execution state persistence error: ${String(err)}`);
-          });
+    async (sessionId: SessionId, executionState: Entities.IExecutionState): Promise<void> => {
+      try {
+        const result = await workspace.userData.updateSessionExecutionAndPersist(sessionId, executionState);
+        if (result.isFailure()) {
+          workspace.data.logger.error(`Execution state persistence failed: ${result.message}`);
+          return;
+        }
         reactiveWorkspace.notifyChange();
+      } catch (err: unknown) {
+        workspace.data.logger.error(`Execution state persistence error: ${String(err)}`);
       }
     },
     [workspace, reactiveWorkspace]
   );
 
   const startExecution = useCallback(
-    (sessionId: SessionId): void => {
+    async (sessionId: SessionId): Promise<void> => {
       const sessionResult = workspace.userData.sessions.get(sessionId);
       if (sessionResult.isFailure()) {
         return;
@@ -148,7 +143,7 @@ export function useExecutionActions(): IExecutionActions {
         return;
       }
       const initialState = UserLibraryNs.Session.ExecutionRuntime.initialize(rawSteps);
-      persistExecution(sessionId, initialState);
+      await persistExecution(sessionId, initialState);
     },
     [workspace, getRawSteps, persistExecution]
   );
@@ -166,42 +161,42 @@ export function useExecutionActions(): IExecutionActions {
   );
 
   const advanceStep = useCallback(
-    (sessionId: SessionId) => {
+    async (sessionId: SessionId): Promise<void> => {
       const runtime = getRuntimeForSession(sessionId);
       if (!runtime) {
         return;
       }
       const result = runtime.advanceStep();
       if (result.isSuccess()) {
-        persistExecution(sessionId, result.value);
+        await persistExecution(sessionId, result.value);
       }
     },
     [getRuntimeForSession, persistExecution]
   );
 
   const skipStep = useCallback(
-    (sessionId: SessionId) => {
+    async (sessionId: SessionId): Promise<void> => {
       const runtime = getRuntimeForSession(sessionId);
       if (!runtime) {
         return;
       }
       const result = runtime.skipStep();
       if (result.isSuccess()) {
-        persistExecution(sessionId, result.value);
+        await persistExecution(sessionId, result.value);
       }
     },
     [getRuntimeForSession, persistExecution]
   );
 
   const jumpToStep = useCallback(
-    (sessionId: SessionId, stepIndex: number) => {
+    async (sessionId: SessionId, stepIndex: number): Promise<void> => {
       const runtime = getRuntimeForSession(sessionId);
       if (!runtime) {
         return;
       }
       const result = runtime.jumpToStep(stepIndex);
       if (result.isSuccess()) {
-        persistExecution(sessionId, result.value);
+        await persistExecution(sessionId, result.value);
       }
     },
     [getRuntimeForSession, persistExecution]

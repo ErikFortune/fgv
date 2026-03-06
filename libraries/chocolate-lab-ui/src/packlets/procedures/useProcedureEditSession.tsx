@@ -258,18 +258,13 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
 
         colResult.value.items.set(baseId, wrapper.current);
 
-        const editableResult = workspace.data.entities.getEditableTasksEntityCollection(
+        const saveResult = await workspace.data.entities.saveCollection(
           mutableTaskCollectionId,
-          workspace.keyStore
+          workspace.keyStore,
+          workspace.data.entities.tasks
         );
-        if (editableResult.isSuccess()) {
-          editableResult.value.set(baseId, wrapper.current);
-          if (editableResult.value.canSave()) {
-            const saveResult = await editableResult.value.save();
-            if (saveResult.isFailure()) {
-              workspace.data.logger.error(`Failed to save task collection: ${saveResult.message}`);
-            }
-          }
+        if (saveResult.isFailure()) {
+          workspace.data.logger.error(`Failed to save task collection: ${saveResult.message}`);
         }
 
         if (currentStep) {
@@ -353,18 +348,13 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
 
         colResult.value.items.set(baseId, session.wrapper.current);
 
-        const editableResult = workspace.data.entities.getEditableTasksEntityCollection(
+        const saveResult = await workspace.data.entities.saveCollection(
           mutableTaskCollectionId,
-          workspace.keyStore
+          workspace.keyStore,
+          workspace.data.entities.tasks
         );
-        if (editableResult.isSuccess()) {
-          editableResult.value.set(baseId, session.wrapper.current);
-          if (editableResult.value.canSave()) {
-            const saveResult = await editableResult.value.save();
-            if (saveResult.isFailure()) {
-              workspace.data.logger.error(`Failed to save task collection: ${saveResult.message}`);
-            }
-          }
+        if (saveResult.isFailure()) {
+          workspace.data.logger.error(`Failed to save task collection: ${saveResult.message}`);
         }
 
         procWrapper.updateStep(session.stepOrder, {
