@@ -25,6 +25,16 @@ A mutable editing session for modifying filling recipe variations.
 </td></tr>
 <tr><td>
 
+[ExecutionRuntime](./classes/ExecutionRuntime.md)
+
+</td><td>
+
+Materializes execution state by combining persisted data with procedure
+step definitions to derive production-relevant properties.
+
+</td></tr>
+<tr><td>
+
 [ConfectionEditingSession](./classes/ConfectionEditingSession.md)
 
 </td><td>
@@ -252,6 +262,15 @@ Result of saving a confection editing session
 </td><td>
 
 Analysis of mold change impact on a molded bonbon confection.
+
+</td></tr>
+<tr><td>
+
+[IStepSummary](./interfaces/IStepSummary.md)
+
+</td><td>
+
+Materialized summary of a procedure step's execution state.
 
 </td></tr>
 <tr><td>

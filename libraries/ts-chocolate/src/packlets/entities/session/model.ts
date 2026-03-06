@@ -109,6 +109,67 @@ export interface ISessionDestinationEntity {
 }
 
 // ============================================================================
+// Execution State
+// ============================================================================
+
+/**
+ * Status of an individual step execution entry.
+ * @public
+ */
+export type StepExecutionStatus = 'pending' | 'active' | 'completed' | 'skipped';
+
+/**
+ * All possible step execution statuses.
+ * @public
+ */
+export const allStepExecutionStatuses: ReadonlyArray<StepExecutionStatus> = [
+  'pending',
+  'active',
+  'completed',
+  'skipped'
+];
+
+/**
+ * A single entry in the append-only execution log.
+ *
+ * Steps can be repeated (e.g. jump back to step 2 after completing step 4),
+ * so the log may contain multiple entries for the same stepIndex. Entries
+ * are never removed — the log always rolls forward.
+ *
+ * @public
+ */
+export interface IStepExecutionEntry {
+  /** Index into the procedure's step array (0-based) */
+  readonly stepIndex: number;
+  /** Current status of this execution entry */
+  readonly status: StepExecutionStatus;
+  /** ISO 8601 timestamp when this step was started */
+  readonly startedAt?: string;
+  /** ISO 8601 timestamp when this step was completed or skipped */
+  readonly completedAt?: string;
+  /** Optional notes recorded during execution */
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
+}
+
+/**
+ * Session-level execution state for production tracking.
+ *
+ * Present only when session status is 'active' or 'committing'.
+ * Persists with the session entity for crash recovery. Execution
+ * state is orthogonal to recipe editing undo/redo.
+ *
+ * @public
+ */
+export interface IExecutionState {
+  /** Index of the currently active procedure step (0-based) */
+  readonly currentStepIndex: number;
+  /** Append-only log of step execution entries */
+  readonly executionLog: ReadonlyArray<IStepExecutionEntry>;
+  /** ISO 8601 timestamp when production started */
+  readonly startedAt: string;
+}
+
+// ============================================================================
 // Serialized Editing History
 // ============================================================================
 
@@ -156,6 +217,8 @@ export interface ISessionEntityBase {
   readonly destination?: ISessionDestinationEntity;
   /** Optional group identifier for organizing related sessions */
   readonly group?: GroupName;
+  /** Execution state for production tracking (present when status is 'active' or 'committing') */
+  readonly execution?: IExecutionState;
 }
 
 // ============================================================================

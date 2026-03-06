@@ -81,9 +81,12 @@ export {
   SessionLibrary,
   AnySessionEntity,
   IConfectionSessionEntity,
+  IExecutionState,
   IFillingSessionEntity,
+  IStepExecutionEntry,
   PersistedSessionStatus,
-  PersistedSessionType
+  PersistedSessionType,
+  StepExecutionStatus
 } from './session';
 
 export {

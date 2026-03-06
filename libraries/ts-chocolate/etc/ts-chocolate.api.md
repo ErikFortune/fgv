@@ -159,6 +159,9 @@ const allSpoonLevels: SpoonLevel[];
 const allSpoonUnits: SpoonUnit[];
 
 // @public
+const allStepExecutionStatuses: ReadonlyArray<StepExecutionStatus>;
+
+// @public
 const allSubLibraryIds: ReadonlyArray<SubLibraryId>;
 
 // @public
@@ -983,6 +986,7 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
     // @internal
     protected _createFillingSessionForSlot(slotId: SlotId, fillingId: FillingId): Result<EditingSession>;
     get entity(): IConfectionSessionEntity;
+    get execution(): Session.IExecutionState | undefined;
     get fillingSessions(): IFillingSessionMap;
     // (undocumented)
     protected readonly _fillingSessions: Map<SlotId, EditingSession>;
@@ -1322,6 +1326,9 @@ declare namespace Converters_10 {
         serializedFillingHistoryEntity,
         serializedConfectionHistoryEntity,
         childSessionIds,
+        stepExecutionStatus,
+        stepExecutionEntry,
+        executionState,
         fillingSessionEntity,
         confectionSessionEntity,
         anySessionEntity
@@ -2043,6 +2050,7 @@ class EditingSession implements IMaterializedSessionBase {
     static create(baseRecipe: IFillingRecipeVariation, initialScale?: number): Result<EditingSession>;
     get createdAt(): string;
     get entity(): IFillingSessionEntity;
+    get execution(): IExecutionState | undefined;
     static fromPersistedState(data: IFillingSessionEntity, baseRecipe: IFillingRecipeVariation): Result<EditingSession>;
     get group(): GroupName | undefined;
     get hasChanges(): boolean;
@@ -2072,6 +2080,7 @@ class EditingSession implements IMaterializedSessionBase {
         readonly status?: PersistedSessionStatus;
         readonly label?: string;
         readonly notes?: Model.ICategorizedNote[];
+        readonly execution?: IExecutionState;
     }): Result<IFillingSessionEntity>;
     toProductionJournalEntry(notes?: Model.ICategorizedNote[]): Result<IFillingProductionJournalEntryEntity>;
     undo(): Result<boolean>;
@@ -2185,9 +2194,12 @@ declare namespace Entities {
         SessionLibrary,
         AnySessionEntity,
         IConfectionSessionEntity,
+        IExecutionState,
         IFillingSessionEntity,
+        IStepExecutionEntry,
         PersistedSessionStatus,
         PersistedSessionType,
+        StepExecutionStatus,
         IngredientInventoryLibrary,
         MoldInventoryLibrary,
         IIngredientInventoryEntryEntity,
@@ -2258,6 +2270,33 @@ declare namespace Enums {
 
 // @public
 function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPredicate<T>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IExecutionState"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IExecutionState"
+//
+// @public
+class ExecutionRuntime {
+    addStepNotes(notes: ReadonlyArray<Model.ICategorizedNote>): Result<IExecutionState>;
+    advanceStep(): Result<IExecutionState>;
+    get completedStepCount(): number;
+    get currentStep(): IProcedureStepEntity | undefined;
+    get currentStepIndex(): number;
+    static from(state: IExecutionState, steps: ReadonlyArray<IProcedureStepEntity>): ExecutionRuntime;
+    getStepSummaries(): ReadonlyArray<IStepSummary>;
+    static initialize(steps: ReadonlyArray<IProcedureStepEntity>): IExecutionState;
+    get isComplete(): boolean;
+    jumpToStep(stepIndex: number): Result<IExecutionState>;
+    get progressLabel(): string;
+    skipStep(): Result<IExecutionState>;
+    get startedAt(): string;
+    get state(): IExecutionState;
+    get totalSteps(): number;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const executionState: Converter<IExecutionState>;
 
 // @public
 type ExternalLibraryRef = Brand<string, 'ExternalLibraryRef'>;
@@ -3694,6 +3733,13 @@ interface IEntityResolver<TEntity, TId> {
 }
 
 // @public
+interface IExecutionState {
+    readonly currentStepIndex: number;
+    readonly executionLog: ReadonlyArray<IStepExecutionEntry>;
+    readonly startedAt: string;
+}
+
+// @public
 interface IExportOptions {
     readonly format: 'yaml' | 'json';
     readonly prettyPrint?: boolean;
@@ -4381,6 +4427,7 @@ interface IMaterializedSessionBase {
     readonly baseId: BaseSessionId;
     readonly createdAt: string;
     readonly entity: AnySessionEntity;
+    readonly execution: IExecutionState | undefined;
     readonly group: GroupName | undefined;
     readonly label: string | undefined;
     markSaved(): void;
@@ -5763,6 +5810,7 @@ interface ISessionEntityBase {
     readonly baseId: BaseSessionId;
     readonly createdAt: string;
     readonly destination?: ISessionDestinationEntity;
+    readonly execution?: IExecutionState;
     readonly group?: GroupName;
     readonly label?: string;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
@@ -5946,6 +5994,25 @@ function isSugarIngredientEntity(ingredient: IngredientEntity): ingredient is IS
 
 // @public
 function isTaskRefEntity(invocation: ITaskEntityInvocation): invocation is ITaskRefEntity;
+
+// @public
+interface IStepExecutionEntry {
+    readonly completedAt?: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly startedAt?: string;
+    readonly status: StepExecutionStatus;
+    readonly stepIndex: number;
+}
+
+// @public
+interface IStepSummary {
+    readonly executionCount: number;
+    readonly isCurrent: boolean;
+    readonly latestEntry: IStepExecutionEntry | undefined;
+    readonly status: StepExecutionStatus;
+    readonly step: IProcedureStepEntity;
+    readonly stepIndex: number;
+}
 
 // @public
 interface ISubLibraryAsyncLoadResult<TBaseId extends string, TItem> {
@@ -6234,6 +6301,7 @@ interface IUserLibrary {
     removeSession(sessionId: SessionId): Result<SessionId>;
     saveSession(sessionId: SessionId): Result<SessionId>;
     readonly sessions: MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>;
+    updateSessionExecution(sessionId: SessionId, execution: IExecutionState): Result<SessionId>;
     updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId>;
 }
 
@@ -7779,6 +7847,10 @@ declare namespace Session {
         PersistedSessionStatus,
         allPersistedSessionStatuses,
         ISessionDestinationEntity,
+        StepExecutionStatus,
+        allStepExecutionStatuses,
+        IStepExecutionEntry,
+        IExecutionState,
         ISerializedEditingHistoryEntity,
         ISessionEntityBase,
         IFillingSessionEntity,
@@ -7799,6 +7871,8 @@ declare namespace Session {
 declare namespace Session_2 {
     export {
         EditingSession,
+        ExecutionRuntime,
+        IStepSummary,
         ConfectionEditingSession,
         AnyConfectionEditingSession,
         ConfectionEditingSessionBase,
@@ -8035,6 +8109,19 @@ const STANDARD_FRACTIONS: ReadonlyArray<IFraction>;
 
 // @public
 export type StartupMode = 'fail-on-error' | 'ignore-errors';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const stepExecutionEntry: Converter<IStepExecutionEntry>;
+
+// @public
+type StepExecutionStatus = 'pending' | 'active' | 'completed' | 'skipped';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const stepExecutionStatus: Converter<StepExecutionStatus>;
 
 // @public
 type StorageRootId = string & {
@@ -8499,6 +8586,10 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     //
     // (undocumented)
     get sessions(): MaterializedLibrary<SessionId, AnySessionEntity, AnyMaterializedSession, never>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    updateSessionExecution(sessionId: SessionId, execution: Session.IExecutionState): Result<SessionId>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)

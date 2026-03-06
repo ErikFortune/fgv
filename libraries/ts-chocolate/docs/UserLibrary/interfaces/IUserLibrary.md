@@ -186,6 +186,19 @@ Updates the status of an existing persisted session.
 </td></tr>
 <tr><td>
 
+[updateSessionExecution(sessionId, execution)](./IUserLibrary.updateSessionExecution.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates the execution state of an existing persisted session.
+
+</td></tr>
+<tr><td>
+
 [removeSession(sessionId)](./IUserLibrary.removeSession.md)
 
 </td><td>

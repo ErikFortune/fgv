@@ -44,6 +44,7 @@ import {
   AnySessionEntity,
   IConfectionEditJournalEntryEntity,
   IConfectionProductionJournalEntryEntity,
+  IExecutionState,
   IFillingEditJournalEntryEntity,
   IFillingProductionJournalEntryEntity,
   IIngredientInventoryEntryEntity,
@@ -98,6 +99,8 @@ export interface IMaterializedSessionBase {
   readonly notes: ReadonlyArray<CommonModel.ICategorizedNote> | undefined;
   /** Source variation ID for this session */
   readonly sourceVariationId: FillingRecipeVariationId | ConfectionRecipeVariationId;
+  /** Execution state for production tracking (present when status is 'active' or 'committing') */
+  readonly execution: IExecutionState | undefined;
   /** The underlying persisted entity */
   readonly entity: AnySessionEntity;
 
@@ -415,6 +418,14 @@ export interface IUserLibrary {
    * @returns Result with the composite SessionId
    */
   updateSessionStatus(sessionId: SessionId, status: PersistedSessionStatus): Result<SessionId>;
+
+  /**
+   * Updates the execution state of an existing persisted session.
+   * @param sessionId - Session to update
+   * @param execution - New execution state
+   * @returns Result with the composite SessionId
+   */
+  updateSessionExecution(sessionId: SessionId, execution: IExecutionState): Result<SessionId>;
 
   /**
    * Removes a session from the library.

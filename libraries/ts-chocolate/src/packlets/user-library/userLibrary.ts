@@ -403,6 +403,28 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
   }
 
   /**
+   * {@inheritDoc IUserLibrary.updateSessionExecution}
+   */
+  public updateSessionExecution(
+    sessionId: SessionId,
+    execution: SessionEntities.IExecutionState
+  ): Result<SessionId> {
+    const existingResult = this._entities.sessions.get(sessionId);
+    if (existingResult.isFailure()) {
+      return fail(`Session ${sessionId} not found: ${existingResult.message}`);
+    }
+
+    const existing = existingResult.value;
+    const collectionId = Helpers.getSessionCollectionId(sessionId);
+    const updated = { ...existing, execution, updatedAt: new Date().toISOString() };
+
+    return this._entities.sessions.upsertSession(collectionId, updated).onSuccess((id) => {
+      this._sessions = undefined;
+      return succeed(id);
+    });
+  }
+
+  /**
    * {@inheritDoc IUserLibrary.removeSession}
    */
   public removeSession(sessionId: SessionId): Result<SessionId> {

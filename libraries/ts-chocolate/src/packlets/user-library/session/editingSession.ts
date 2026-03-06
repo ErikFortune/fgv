@@ -41,6 +41,7 @@ import {
 } from '../../common';
 import {
   Fillings,
+  IExecutionState,
   IFillingEditJournalEntryEntity,
   IFillingProductionJournalEntryEntity,
   IFillingSessionEntity,
@@ -424,11 +425,13 @@ export class EditingSession implements IMaterializedSessionBase {
     readonly status?: PersistedSessionStatus;
     readonly label?: string;
     readonly notes?: CommonModel.ICategorizedNote[];
+    readonly execution?: IExecutionState;
   }): Result<IFillingSessionEntity> {
     const baseIdResult = options.baseId ? succeed(options.baseId) : generateSessionBaseId();
 
     return baseIdResult.onSuccess((baseId) => {
       const now = getCurrentTimestamp();
+      const execution = options.execution ?? this._persistedEntity?.execution;
       const session: IFillingSessionEntity = {
         baseId,
         sessionType: 'filling',
@@ -440,6 +443,7 @@ export class EditingSession implements IMaterializedSessionBase {
         destination: {
           defaultCollectionId: options.collectionId
         },
+        execution,
         sourceVariationId: this._baseRecipe.variationId,
         history: this._produced.getSerializedHistory(this._originalSnapshot)
       };
@@ -602,6 +606,15 @@ export class EditingSession implements IMaterializedSessionBase {
    */
   public get sourceVariationId(): FillingRecipeVariationId {
     return this._baseRecipe.variationId;
+  }
+
+  /**
+   * Execution state for production tracking.
+   * Present only when session status is 'active' or 'committing'.
+   * @public
+   */
+  public get execution(): IExecutionState | undefined {
+    return this._persistedEntity?.execution;
   }
 
   /**

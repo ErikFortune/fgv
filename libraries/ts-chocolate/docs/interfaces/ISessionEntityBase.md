@@ -177,4 +177,21 @@ Destination configuration for saving derived entities
 Optional group identifier for organizing related sessions
 
 </td></tr>
+<tr><td>
+
+[execution](./ISessionEntityBase.execution.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IExecutionState](IExecutionState.md)
+
+</td><td>
+
+Execution state for production tracking (present when status is 'active' or 'committing')
+
+</td></tr>
 </tbody></table>

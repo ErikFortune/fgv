@@ -272,6 +272,23 @@ Source filling variation ID for this session.
 </td></tr>
 <tr><td>
 
+[execution](./EditingSession.execution.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IExecutionState](../../interfaces/IExecutionState.md) | undefined
+
+</td><td>
+
+Execution state for production tracking.
+
+</td></tr>
+<tr><td>
+
 [entity](./EditingSession.entity.md)
 
 </td><td>

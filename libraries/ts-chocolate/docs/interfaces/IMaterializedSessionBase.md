@@ -183,6 +183,23 @@ Source variation ID for this session
 </td></tr>
 <tr><td>
 
+[execution](./IMaterializedSessionBase.execution.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IExecutionState](IExecutionState.md) | undefined
+
+</td><td>
+
+Execution state for production tracking (present when status is 'active' or 'committing')
+
+</td></tr>
+<tr><td>
+
 [entity](./IMaterializedSessionBase.entity.md)
 
 </td><td>

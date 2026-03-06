@@ -232,4 +232,13 @@ All possible persisted session types.
 All possible persisted session statuses.
 
 </td></tr>
+<tr><td>
+
+[allStepExecutionStatuses](./variables/allStepExecutionStatuses.md)
+
+</td><td>
+
+All possible step execution statuses.
+
+</td></tr>
 </tbody></table>

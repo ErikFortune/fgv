@@ -484,6 +484,15 @@ export abstract class ConfectionEditingSessionBase<
   }
 
   /**
+   * Execution state for production tracking.
+   * Present only when session status is 'active' or 'committing'.
+   * @public
+   */
+  public get execution(): SessionEntities.IExecutionState | undefined {
+    return this._persistedEntity?.execution;
+  }
+
+  /**
    * The underlying persisted entity.
    * @public
    */

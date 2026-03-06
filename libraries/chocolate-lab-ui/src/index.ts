@@ -52,3 +52,6 @@ export * from './packlets/settings';
 
 // Session management hooks
 export * from './packlets/sessions';
+
+// Production execution overlay
+export * from './packlets/production';

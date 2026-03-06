@@ -49,7 +49,10 @@ import {
   applyStorageTargetsFromWorkspace,
   SettingsCascadeView,
   RecoveryDialog,
-  type RecoveryAction
+  type RecoveryAction,
+  ProductionOverlayPanel,
+  type ProductionPanelState,
+  type IActiveSessionEntry
 } from '@fgv/chocolate-lab-ui';
 
 import { IngredientsTabContent } from './tabs/IngredientsTab';
@@ -486,6 +489,19 @@ function AppShell(props: IAppShellProps): React.ReactElement {
   const { messages, activeToasts, addMessage, dismissMessage, clearMessages } = useMessages();
   const collectionActions = useCollectionActions();
 
+  // Production overlay panel state
+  const [productionPanelState, setProductionPanelState] = useState<ProductionPanelState>('collapsed');
+
+  const activeSessions = useMemo((): ReadonlyArray<IActiveSessionEntry> => {
+    const entries: IActiveSessionEntry[] = [];
+    for (const [id, session] of workspace.userData.sessions.entries()) {
+      if (session.status === 'active' || session.status === 'committing') {
+        entries.push({ sessionId: id, session });
+      }
+    }
+    return entries;
+  }, [workspace, reactiveWorkspace.version]);
+
   // Set document title to include config namespace
   useEffect(() => {
     document.title = configNamespace ? `Chocolate Lab [${configNamespace}]` : 'Chocolate Lab';
@@ -758,13 +774,22 @@ function AppShell(props: IAppShellProps): React.ReactElement {
           onDirtyClose={(): void => setPendingSettingsClose(true)}
         />
       ) : (
-        <SidebarLayout
-          sidebar={
-            <TabSidebarWithActions optionProvider={filterOptionProvider} actions={collectionActions} />
-          }
-        >
-          <TabContent tab={activeTab} />
-        </SidebarLayout>
+        <div className="flex flex-1 overflow-hidden">
+          <SidebarLayout
+            sidebar={
+              <TabSidebarWithActions optionProvider={filterOptionProvider} actions={collectionActions} />
+            }
+          >
+            <TabContent tab={activeTab} />
+          </SidebarLayout>
+          {activeSessions.length > 0 && (
+            <ProductionOverlayPanel
+              sessions={activeSessions}
+              panelState={productionPanelState}
+              onStateChange={setProductionPanelState}
+            />
+          )}
+        </div>
       )}
 
       {/* Toast notifications */}

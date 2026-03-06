@@ -8,14 +8,14 @@ Captures the complete editing state including undo/redo history.
 **Signature:**
 
 ```typescript
-toPersistedState(options: { collectionId: CollectionId; baseId?: BaseSessionId; status?: PersistedSessionStatus; label?: string; notes?: ICategorizedNote[] }): Result<IFillingSessionEntity>;
+toPersistedState(options: { collectionId: CollectionId; baseId?: BaseSessionId; status?: PersistedSessionStatus; label?: string; notes?: ICategorizedNote[]; execution?: IExecutionState }): Result<IFillingSessionEntity>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>options</td><td>{ collectionId: CollectionId; baseId?: BaseSessionId; status?: PersistedSessionStatus; label?: string; notes?: ICategorizedNote[] }</td><td>Persistence options including collection ID</td></tr>
+<tr><td>options</td><td>{ collectionId: CollectionId; baseId?: BaseSessionId; status?: PersistedSessionStatus; label?: string; notes?: ICategorizedNote[]; execution?: IExecutionState }</td><td>Persistence options including collection ID</td></tr>
 </tbody></table>
 
 **Returns:**

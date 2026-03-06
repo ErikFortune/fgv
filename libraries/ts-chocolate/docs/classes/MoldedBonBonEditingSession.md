@@ -318,6 +318,23 @@ Confection type discriminator.
 </td></tr>
 <tr><td>
 
+[execution](./ConfectionEditingSessionBase.execution.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IExecutionState](../interfaces/IExecutionState.md) | undefined
+
+</td><td>
+
+Execution state for production tracking.
+
+</td></tr>
+<tr><td>
+
 [entity](./ConfectionEditingSessionBase.entity.md)
 
 </td><td>

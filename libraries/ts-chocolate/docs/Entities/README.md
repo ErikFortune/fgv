@@ -469,11 +469,29 @@ Persisted confection editing session with full editing state.
 </td></tr>
 <tr><td>
 
+[IExecutionState](./interfaces/IExecutionState.md)
+
+</td><td>
+
+Session-level execution state for production tracking.
+
+</td></tr>
+<tr><td>
+
 [IFillingSessionEntity](./interfaces/IFillingSessionEntity.md)
 
 </td><td>
 
 Persisted filling editing session with full editing state.
+
+</td></tr>
+<tr><td>
+
+[IStepExecutionEntry](./interfaces/IStepExecutionEntry.md)
+
+</td><td>
+
+A single entry in the append-only execution log.
 
 </td></tr>
 <tr><td>
@@ -767,6 +785,15 @@ Persisted session lifecycle state.
 </td><td>
 
 Persisted session type discriminator.
+
+</td></tr>
+<tr><td>
+
+[StepExecutionStatus](./type-aliases/StepExecutionStatus.md)
+
+</td><td>
+
+Status of an individual step execution entry.
 
 </td></tr>
 <tr><td>

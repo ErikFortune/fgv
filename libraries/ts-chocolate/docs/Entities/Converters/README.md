@@ -72,6 +72,33 @@ Converter for child session IDs mapping (SlotId to PersistedSessionId).
 </td></tr>
 <tr><td>
 
+[stepExecutionStatus](./variables/stepExecutionStatus.md)
+
+</td><td>
+
+Converter for Entities.Session.StepExecutionStatus | StepExecutionStatus.
+
+</td></tr>
+<tr><td>
+
+[stepExecutionEntry](./variables/stepExecutionEntry.md)
+
+</td><td>
+
+Converter for Entities.Session.IStepExecutionEntry | IStepExecutionEntry.
+
+</td></tr>
+<tr><td>
+
+[executionState](./variables/executionState.md)
+
+</td><td>
+
+Converter for Entities.Session.IExecutionState | IExecutionState.
+
+</td></tr>
+<tr><td>
+
 [fillingSessionEntity](./variables/fillingSessionEntity.md)
 
 </td><td>

@@ -35,13 +35,17 @@ import { IProducedFillingEntity } from '../fillings';
 import {
   allPersistedSessionStatuses,
   allPersistedSessionTypes,
+  allStepExecutionStatuses,
   AnySessionEntity,
   IConfectionSessionEntity,
+  IExecutionState,
   IFillingSessionEntity,
   ISessionDestinationEntity,
   ISerializedEditingHistoryEntity,
+  IStepExecutionEntry,
   PersistedSessionStatus,
-  PersistedSessionType
+  PersistedSessionType,
+  StepExecutionStatus
 } from './model';
 
 // ============================================================================
@@ -116,6 +120,40 @@ export const childSessionIds: Converter<Readonly<Record<SlotId, SessionId>>> = C
 ) as Converter<Readonly<Record<SlotId, SessionId>>>;
 
 // ============================================================================
+// Execution State Converters
+// ============================================================================
+
+/**
+ * Converter for {@link Entities.Session.StepExecutionStatus | StepExecutionStatus}.
+ * @public
+ */
+export const stepExecutionStatus: Converter<StepExecutionStatus> =
+  Converters.enumeratedValue(allStepExecutionStatuses);
+
+/**
+ * Converter for {@link Entities.Session.IStepExecutionEntry | IStepExecutionEntry}.
+ * @public
+ */
+export const stepExecutionEntry: Converter<IStepExecutionEntry> =
+  Converters.strictObject<IStepExecutionEntry>({
+    stepIndex: Converters.number,
+    status: stepExecutionStatus,
+    startedAt: Converters.string.optional(),
+    completedAt: Converters.string.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
+
+/**
+ * Converter for {@link Entities.Session.IExecutionState | IExecutionState}.
+ * @public
+ */
+export const executionState: Converter<IExecutionState> = Converters.strictObject<IExecutionState>({
+  currentStepIndex: Converters.number,
+  executionLog: Converters.arrayOf(stepExecutionEntry),
+  startedAt: Converters.string
+});
+
+// ============================================================================
 // Session Converters
 // ============================================================================
 
@@ -134,6 +172,7 @@ export const fillingSessionEntity: Converter<IFillingSessionEntity> =
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     destination: persistedSessionDestinationEntity.optional(),
     group: CommonConverters.groupName.optional(),
+    execution: executionState.optional(),
     sourceVariationId: CommonConverters.fillingRecipeVariationId,
     history: serializedFillingHistoryEntity
   });
@@ -153,6 +192,7 @@ export const confectionSessionEntity: Converter<IConfectionSessionEntity> =
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
     destination: persistedSessionDestinationEntity.optional(),
     group: CommonConverters.groupName.optional(),
+    execution: executionState.optional(),
     confectionType: CommonConverters.confectionType,
     sourceVariationId: CommonConverters.confectionRecipeVariationId,
     history: serializedConfectionHistoryEntity,

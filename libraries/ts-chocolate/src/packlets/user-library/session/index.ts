@@ -20,6 +20,7 @@
 
 export * from './model';
 export { EditingSession } from './editingSession';
+export { ExecutionRuntime, type IStepSummary } from './executionRuntime';
 export { ConfectionEditingSession, type AnyConfectionEditingSession } from './confectionEditingSession';
 export { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
 export { MoldedBonBonEditingSession } from './moldedBonBonEditingSession';
