@@ -49,6 +49,8 @@ function createMockProduced(
     notes: overrides?.notes ?? [],
     setNotes: () => succeed(undefined),
     setProcedure: () => succeed(undefined),
+    setFillingSlot: jest.fn(() => succeed(undefined)),
+    removeFillingSlot: jest.fn(() => succeed(undefined)),
     scaleToYield: () => succeed(yieldSpec)
   } as unknown as UserLibrary.Session.AnyConfectionEditingSession['produced'];
 }
@@ -83,7 +85,13 @@ function createMockSession(overrides?: {
     baseId: 'mock-session',
     sourceVariationId: 'test.source-variation',
     hasChanges: false,
-    baseConfection: { name: 'Mock Confection' },
+    baseConfection: {
+      name: 'Mock Confection',
+      goldenVariation: {
+        name: 'Classic',
+        variationSpec: 'classic-spec'
+      }
+    },
     produced: createMockProduced({
       fillings,
       procedureId: overrides?.procedureId,
@@ -126,12 +134,12 @@ describe('ConfectionSessionPanel', () => {
     renderPanel(createMockSession());
 
     expect(screen.getByText('Mock Confection Session')).toBeInTheDocument();
-    expect(screen.getByText('Mock Confection')).toBeInTheDocument();
     expect(screen.getByText('Bar Truffle')).toBeInTheDocument();
-    expect(screen.getByText('test.source-variation')).toBeInTheDocument();
+    // Recipe name and variation shown in the condensed header
+    expect(screen.getByText(/Classic/)).toBeInTheDocument();
   });
 
-  it('renders yield section with count input for bar-truffle', () => {
+  it('renders yield inline with count input for bar-truffle', () => {
     renderPanel(createMockSession());
 
     expect(screen.getByText('Yield')).toBeInTheDocument();
@@ -143,19 +151,30 @@ describe('ConfectionSessionPanel', () => {
   it('renders filling slots as clickable buttons', () => {
     renderPanel(createMockSession());
 
-    expect(screen.getByText('Filling Slots')).toBeInTheDocument();
-    // The slot button shows the filling name resolved from getFillingSession
-    const slotButton = screen.getByRole('button', { name: /Ganache/i });
-    expect(slotButton).toBeInTheDocument();
+    expect(screen.getByText('Fillings')).toBeInTheDocument();
+    expect(screen.getByText('Ganache')).toBeInTheDocument();
   });
 
   it('calls onSelectFillingSlot when a filling slot is clicked', () => {
     const handleSelectSlot = jest.fn();
     renderPanel(createMockSession(), { onSelectFillingSlot: handleSelectSlot });
 
-    fireEvent.click(screen.getByRole('button', { name: /Ganache/i }));
+    fireEvent.click(screen.getByText('Ganache'));
 
     expect(handleSelectSlot).toHaveBeenCalledWith('slot.1' as SlotId, 'Ganache');
+  });
+
+  it('renders remove button on filling slots', () => {
+    renderPanel(createMockSession());
+
+    const removeButton = screen.getByRole('button', { name: /Remove Ganache/i });
+    expect(removeButton).toBeInTheDocument();
+  });
+
+  it('renders add-filling input', () => {
+    renderPanel(createMockSession());
+
+    expect(screen.getByPlaceholderText('Add filling…')).toBeInTheDocument();
   });
 
   it('renders procedure section when procedureId is present', () => {
@@ -170,7 +189,6 @@ describe('ConfectionSessionPanel', () => {
     const session = createMockSession({ procedureId: 'test.procedure' as ProcedureId });
     renderPanel(session, { onBrowseProcedure: handleBrowseProcedure });
 
-    // The procedure name resolves to the id string since builtin workspace won't have it
     const procButton = screen.getByText('test.procedure');
     fireEvent.click(procButton);
 
@@ -181,7 +199,7 @@ describe('ConfectionSessionPanel', () => {
     const session = createMockSession({ fillings: [] });
     renderPanel(session);
 
-    expect(screen.getByText('No filling slots configured.')).toBeInTheDocument();
+    expect(screen.getByText('No fillings configured.')).toBeInTheDocument();
   });
 
   it('renders notes editor', () => {

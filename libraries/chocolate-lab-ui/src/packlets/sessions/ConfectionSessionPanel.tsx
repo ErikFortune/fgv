@@ -28,9 +28,12 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { DetailSection, DetailRow } from '@fgv/ts-app-shell';
+import { ArrowPathIcon, CheckIcon } from '@heroicons/react/20/solid';
+import { DetailRow, EditSection, TypeaheadInput, type ITypeaheadSuggestion } from '@fgv/ts-app-shell';
 import {
   Entities,
+  LibraryRuntime,
+  type FillingId,
   type IngredientId,
   type IWorkspace,
   type Model,
@@ -81,6 +84,13 @@ function getIngredientName(id: IngredientId, workspace: IWorkspace): string {
 function getProcedureName(id: ProcedureId, workspace: IWorkspace): string {
   const result = workspace.data.procedures.get(id);
   return result.isSuccess() ? result.value.name : String(id);
+}
+
+function formatConfectionType(type: string): string {
+  return type
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 // ============================================================================
@@ -215,8 +225,161 @@ export function ConfectionSessionPanel({
     [onSelectFillingSlot]
   );
 
+  const handleRemoveSlot = useCallback(
+    (slotId: SlotId): void => {
+      const result = session.produced.removeFillingSlot(slotId);
+      if (result.isFailure()) return;
+      notifySession();
+      autosaveIfNeeded();
+    },
+    [session, notifySession, autosaveIfNeeded]
+  );
+
+  // ---- Filling suggestions ----
+  const fillingSuggestions = useMemo(
+    () =>
+      Array.from(workspace.data.fillings.values())
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((f) => ({ id: f.id, name: f.name })),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  const fillingAlternates = useMemo((): ReadonlyArray<ITypeaheadSuggestion<FillingId>> => {
+    const variation = session.baseConfection.goldenVariation;
+    const slots = variation.fillings;
+    if (!slots) return [];
+    const seen = new Set<string>();
+    const alts: Array<{ id: FillingId; name: string }> = [];
+    for (const slot of slots) {
+      for (const opt of slot.filling.options) {
+        if (opt.type === 'recipe' && !seen.has(opt.id)) {
+          seen.add(opt.id);
+          const recipe = workspace.data.fillings.get(opt.id);
+          alts.push({ id: opt.id, name: recipe.isSuccess() ? recipe.value.name : String(opt.id) });
+        }
+      }
+    }
+    return alts;
+  }, [session, workspace, reactiveWorkspace.version]);
+
+  const [newFillingText, setNewFillingText] = useState('');
+
+  const handleAddFilling = useCallback(
+    (suggestion: ITypeaheadSuggestion<FillingId>): void => {
+      const slotId = suggestion.name
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '') as unknown as SlotId;
+      const result = session.produced.setFillingSlot(slotId, { type: 'recipe', fillingId: suggestion.id });
+      if (result.isFailure()) return;
+      setNewFillingText('');
+      notifySession();
+      autosaveIfNeeded();
+    },
+    [session, notifySession, autosaveIfNeeded]
+  );
+
+  // ---- Suggestions for typeahead inputs ----
+  const ingredientSuggestions = useMemo(
+    () =>
+      Array.from(workspace.data.ingredients.values()).map((ing: LibraryRuntime.AnyIngredient) => ({
+        id: ing.id,
+        name: ing.name
+      })),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  const procedureSuggestions = useMemo(
+    () =>
+      Array.from(workspace.data.procedures.values()).map((proc: LibraryRuntime.IProcedure) => ({
+        id: proc.id,
+        name: proc.name
+      })),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  // ---- Priority suggestions from base variation ----
+  const procedureAlternates = useMemo(() => {
+    const procs = session.baseConfection.goldenVariation.procedures;
+    if (!procs) return [];
+    return procs.options.map((rp) => ({
+      id: rp.id,
+      name: rp.procedure.name
+    }));
+  }, [session]);
+
+  const ingredientAlternates = useMemo((): ReadonlyArray<ITypeaheadSuggestion<IngredientId>> => {
+    const variation = session.baseConfection.goldenVariation;
+    const alternates: Array<{ id: IngredientId; name: string }> = [];
+    const seen = new Set<string>();
+
+    const addChocolateSpec = (spec: LibraryRuntime.IResolvedChocolateSpec | undefined): void => {
+      if (!spec) return;
+      if (!seen.has(spec.chocolate.id)) {
+        seen.add(spec.chocolate.id);
+        alternates.push({ id: spec.chocolate.id, name: spec.chocolate.name });
+      }
+      for (const alt of spec.alternates) {
+        if (!seen.has(alt.id)) {
+          seen.add(alt.id);
+          alternates.push({ id: alt.id, name: alt.name });
+        }
+      }
+    };
+
+    if ('shellChocolate' in variation) {
+      const molded = variation as LibraryRuntime.IMoldedBonBonRecipeVariation;
+      addChocolateSpec(molded.shellChocolate);
+      for (const ac of molded.additionalChocolates ?? []) {
+        addChocolateSpec(ac.chocolate);
+      }
+    }
+    if ('enrobingChocolate' in variation) {
+      const withEnrobing = variation as
+        | LibraryRuntime.IBarTruffleRecipeVariation
+        | LibraryRuntime.IRolledTruffleRecipeVariation;
+      addChocolateSpec(withEnrobing.enrobingChocolate);
+    }
+    if ('coatings' in variation) {
+      const rolled = variation as LibraryRuntime.IRolledTruffleRecipeVariation;
+      if (rolled.coatings) {
+        for (const opt of rolled.coatings.options) {
+          if (!seen.has(opt.ingredient.id)) {
+            seen.add(opt.ingredient.id);
+            alternates.push({ id: opt.ingredient.id, name: opt.ingredient.name });
+          }
+        }
+      }
+    }
+
+    return alternates;
+  }, [session]);
+
   // ---- Procedure ----
   const currentProcedureId = useMemo(() => session.produced.procedureId, [session, sessionVersion]);
+  const [editingProcedure, setEditingProcedure] = useState(false);
+  const [newProcedureText, setNewProcedureText] = useState('');
+
+  const handleProcedureSelect = useCallback(
+    (suggestion: ITypeaheadSuggestion<ProcedureId>): void => {
+      const result = session.produced.setProcedure(suggestion.id);
+      if (result.isFailure()) return;
+      setEditingProcedure(false);
+      setNewProcedureText('');
+      notifySession();
+      autosaveIfNeeded();
+    },
+    [session, notifySession, autosaveIfNeeded]
+  );
+
+  const handleClearProcedure = useCallback((): void => {
+    const result = session.produced.setProcedure(undefined);
+    if (result.isFailure()) return;
+    setEditingProcedure(false);
+    setNewProcedureText('');
+    notifySession();
+    autosaveIfNeeded();
+  }, [session, notifySession, autosaveIfNeeded]);
 
   // ---- Render ----
   return (
@@ -244,14 +407,21 @@ export function ConfectionSessionPanel({
       />
 
       <div className="flex flex-col gap-4 p-4">
-        {/* Session info */}
-        <DetailSection title="Confection">
-          <DetailRow label="Recipe" value={session.baseConfection.name} />
-          <DetailRow label="Type" value={formatConfectionType(session.confectionType)} />
-          <DetailRow label="Variation" value={session.sourceVariationId} />
-        </DetailSection>
+        {/* Recipe name with variation */}
+        <div className="text-center">
+          <div className="text-base font-semibold text-gray-900">
+            {session.baseConfection.name}
+            <span className="ml-1 font-normal text-gray-500">
+              (
+              {session.baseConfection.goldenVariation.name ??
+                session.baseConfection.goldenVariation.variationSpec}
+              )
+            </span>
+          </div>
+          <div className="text-xs text-gray-400">{formatConfectionType(session.confectionType)}</div>
+        </div>
 
-        {/* Yield section — type-dispatched */}
+        {/* Yield — compact inline */}
         <YieldSection
           session={session}
           sessionVersion={sessionVersion}
@@ -259,56 +429,137 @@ export function ConfectionSessionPanel({
           autosaveIfNeeded={autosaveIfNeeded}
         />
 
-        {/* Type-specific properties */}
+        {/* Type-specific ingredient properties (no heading) */}
         <TypeSpecificSection
           session={session}
-          sessionVersion={sessionVersion}
           workspace={workspace}
           reactiveVersion={reactiveWorkspace.version}
+          ingredientSuggestions={ingredientSuggestions}
+          ingredientAlternates={ingredientAlternates}
+          notifySession={notifySession}
+          autosaveIfNeeded={autosaveIfNeeded}
           onBrowseIngredient={onBrowseIngredient}
         />
 
-        {/* Filling slots */}
-        <DetailSection title="Filling Slots">
+        {/* Fillings */}
+        <EditSection title="Fillings">
           {fillingSlots.length === 0 ? (
-            <p className="text-sm text-gray-500">No filling slots configured.</p>
+            <p className="text-sm text-gray-500">No fillings configured.</p>
           ) : (
             <div className="space-y-1">
               {fillingSlots.map((slot) => (
-                <button
+                <div
                   key={slot.slotId as string}
-                  type="button"
-                  onClick={(): void => handleSlotClick(slot.slotId, slot.name)}
-                  className="flex w-full items-center justify-between rounded border border-gray-200 bg-white px-3 py-2 text-left hover:bg-gray-50 transition-colors"
+                  className="flex w-full items-center rounded border border-gray-200 bg-white px-3 py-2 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={(): void => handleSlotClick(slot.slotId, slot.name)}
+                    className="flex-1 min-w-0 text-left"
+                  >
                     <div className="text-sm font-medium text-gray-900">{slot.name}</div>
                     <div className="text-xs text-gray-500">
                       {slot.slotId as string}
                       {slot.slotType === 'ingredient' && ' (ingredient)'}
                     </div>
-                  </div>
+                  </button>
                   {slot.targetWeight !== undefined && (
-                    <div className="ml-2 shrink-0 text-xs text-gray-500">{slot.targetWeight}g</div>
+                    <span className="ml-2 shrink-0 text-xs text-gray-500">{slot.targetWeight}g</span>
                   )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={(): void => handleRemoveSlot(slot.slotId)}
+                    className="ml-2 text-gray-300 hover:text-red-500 p-0.5 shrink-0"
+                    aria-label={`Remove ${slot.name}`}
+                  >
+                    ✕
+                  </button>
+                </div>
               ))}
             </div>
           )}
-        </DetailSection>
+          <div className="mt-2">
+            <TypeaheadInput<FillingId>
+              value={newFillingText}
+              onChange={setNewFillingText}
+              suggestions={fillingSuggestions}
+              prioritySuggestions={fillingAlternates}
+              onSelect={handleAddFilling}
+              placeholder="Add filling…"
+              className="text-sm border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
+            />
+          </div>
+        </EditSection>
 
         {/* Procedure */}
-        {currentProcedureId && (
-          <DetailSection title="Procedure">
-            <button
-              type="button"
-              onClick={(): void => onBrowseProcedure?.(currentProcedureId)}
-              className="text-sm text-choco-primary hover:underline"
-            >
-              {getProcedureName(currentProcedureId, workspace)}
-            </button>
-          </DetailSection>
-        )}
+        <EditSection title="Procedure">
+          <div className="space-y-2">
+            {currentProcedureId && !editingProcedure && (
+              <div className="rounded border border-gray-200 p-2 flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={(): void => setEditingProcedure(true)}
+                  title="Edit procedure"
+                  className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+                >
+                  <ArrowPathIcon className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(): void => onBrowseProcedure?.(currentProcedureId)}
+                  className="flex-1 text-sm text-gray-800 hover:text-choco-primary text-left truncate"
+                  title="Browse procedure"
+                >
+                  {getProcedureName(currentProcedureId, workspace)}
+                </button>
+              </div>
+            )}
+
+            {currentProcedureId && editingProcedure && (
+              <div className="rounded border border-choco-primary/30 bg-choco-primary/5 p-2">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={(): void => setEditingProcedure(false)}
+                    title="Done editing"
+                    className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                  >
+                    <CheckIcon className="h-3.5 w-3.5" />
+                  </button>
+                  <TypeaheadInput<ProcedureId>
+                    value={getProcedureName(currentProcedureId, workspace)}
+                    onChange={setNewProcedureText}
+                    suggestions={procedureSuggestions}
+                    prioritySuggestions={procedureAlternates}
+                    onSelect={handleProcedureSelect}
+                    autoFocus
+                    className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleClearProcedure}
+                    className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                    aria-label="Remove procedure"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!currentProcedureId && (
+              <TypeaheadInput<ProcedureId>
+                value={newProcedureText}
+                onChange={setNewProcedureText}
+                suggestions={procedureSuggestions}
+                prioritySuggestions={procedureAlternates}
+                onSelect={handleProcedureSelect}
+                placeholder="Type procedure name to set"
+                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              />
+            )}
+          </div>
+        </EditSection>
 
         {/* Notes */}
         <NotesEditor title="Session Notes" value={currentNotes} onChange={handleNotesChange} />
@@ -318,7 +569,7 @@ export function ConfectionSessionPanel({
 }
 
 // ============================================================================
-// Yield Section
+// Yield Section (compact inline)
 // ============================================================================
 
 function YieldSection({
@@ -357,7 +608,7 @@ function YieldSection({
 }
 
 // ============================================================================
-// Count Yield Editor (bar truffle, rolled truffle)
+// Count Yield Editor (bar truffle, rolled truffle) — compact inline
 // ============================================================================
 
 function CountYieldEditor({
@@ -393,29 +644,27 @@ function CountYieldEditor({
   }, [countInput, session, notifySession, autosaveIfNeeded]);
 
   return (
-    <DetailSection title="Yield">
-      <div className="flex items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs text-gray-600">
-          Count
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={countInput}
-            onChange={(e): void => setCountInput(e.target.value)}
-            onBlur={handleApply}
-            className="w-24 rounded border border-gray-300 px-2 py-1 text-sm"
-          />
-        </label>
-        <span className="pb-1 text-xs text-gray-500">{currentYield.unit ?? 'pieces'}</span>
+    <div>
+      <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Yield</div>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value={countInput}
+          onChange={(e): void => setCountInput(e.target.value)}
+          onBlur={handleApply}
+          className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+        />
+        <span className="text-sm text-gray-700">{currentYield.unit ?? 'pieces'}</span>
       </div>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-    </DetailSection>
+    </div>
   );
 }
 
 // ============================================================================
-// Molded BonBon Yield Editor
+// Molded BonBon Yield Editor — compact inline
 // ============================================================================
 
 function MoldedBonBonYieldEditor({
@@ -459,132 +708,205 @@ function MoldedBonBonYieldEditor({
   }, [framesInput, bufferInput, session, notifySession, autosaveIfNeeded]);
 
   return (
-    <DetailSection title="Yield">
-      <div className="flex items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs text-gray-600">
-          Frames
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={framesInput}
-            onChange={(e): void => setFramesInput(e.target.value)}
-            onBlur={handleApply}
-            className="w-24 rounded border border-gray-300 px-2 py-1 text-sm"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-gray-600">
-          Buffer %
-          <input
-            type="number"
-            min="0"
-            max="100"
-            step="1"
-            value={bufferInput}
-            onChange={(e): void => setBufferInput(e.target.value)}
-            onBlur={handleApply}
-            className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
-          />
-        </label>
-      </div>
-      <div className="mt-1 text-xs text-gray-500">
-        {currentYield.count} {currentYield.unit ?? 'pieces'}
+    <div>
+      <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Yield</div>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value={framesInput}
+          onChange={(e): void => setFramesInput(e.target.value)}
+          onBlur={handleApply}
+          className="w-16 rounded border border-gray-300 px-2 py-1 text-sm"
+        />
+        <span className="text-xs text-gray-500">frames</span>
+        <input
+          type="number"
+          min="0"
+          max="100"
+          step="1"
+          value={bufferInput}
+          onChange={(e): void => setBufferInput(e.target.value)}
+          onBlur={handleApply}
+          className="w-14 rounded border border-gray-300 px-2 py-1 text-sm"
+        />
+        <span className="text-xs text-gray-500">% buffer</span>
+        <span className="text-xs text-gray-400">
+          = {currentYield.count} {currentYield.unit ?? 'pieces'}
+        </span>
       </div>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-    </DetailSection>
+    </div>
   );
 }
 
 // ============================================================================
-// Type-Specific Section
+// Type-Specific Section (no heading — controls shown directly)
 // ============================================================================
 
 function TypeSpecificSection({
   session,
-  sessionVersion,
   workspace,
   reactiveVersion,
+  ingredientSuggestions,
+  ingredientAlternates,
+  notifySession,
+  autosaveIfNeeded,
   onBrowseIngredient
 }: {
   readonly session: UserLibrary.Session.AnyConfectionEditingSession;
-  readonly sessionVersion: number;
   readonly workspace: IWorkspace;
   readonly reactiveVersion: number;
+  readonly ingredientSuggestions: ReadonlyArray<ITypeaheadSuggestion<IngredientId>>;
+  readonly ingredientAlternates: ReadonlyArray<ITypeaheadSuggestion<IngredientId>>;
+  readonly notifySession: () => void;
+  readonly autosaveIfNeeded: () => void;
   readonly onBrowseIngredient?: (ingredientId: IngredientId) => void;
 }): React.ReactElement | null {
-  const produced = useMemo(() => session.produced.current, [session, sessionVersion]);
+  const produced = session.produced;
 
-  if (Entities.Confections.isProducedMoldedBonBonEntity(produced)) {
+  if (produced instanceof LibraryRuntime.ProducedMoldedBonBon) {
     return (
-      <DetailSection title="Molded Bonbon">
+      <div className="space-y-1">
         <DetailRow label="Mold" value={String(produced.moldId)} />
-        <IngredientBrowseRow
+        <IngredientEditRow
           label="Shell Chocolate"
           ingredientId={produced.shellChocolateId}
           workspace={workspace}
           reactiveVersion={reactiveVersion}
+          suggestions={ingredientSuggestions}
+          prioritySuggestions={ingredientAlternates}
+          onSelect={(id): void => {
+            const result = produced.setShellChocolate(id);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
           onBrowse={onBrowseIngredient}
         />
-        {produced.sealChocolateId && (
-          <IngredientBrowseRow
-            label="Seal Chocolate"
-            ingredientId={produced.sealChocolateId}
-            workspace={workspace}
-            reactiveVersion={reactiveVersion}
-            onBrowse={onBrowseIngredient}
-          />
-        )}
-        {produced.decorationChocolateId && (
-          <IngredientBrowseRow
-            label="Decoration Chocolate"
-            ingredientId={produced.decorationChocolateId}
-            workspace={workspace}
-            reactiveVersion={reactiveVersion}
-            onBrowse={onBrowseIngredient}
-          />
-        )}
-      </DetailSection>
+        <IngredientEditRow
+          label="Seal Chocolate"
+          ingredientId={produced.sealChocolateId}
+          workspace={workspace}
+          reactiveVersion={reactiveVersion}
+          suggestions={ingredientSuggestions}
+          prioritySuggestions={ingredientAlternates}
+          onSelect={(id): void => {
+            const result = produced.setSealChocolate(id);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
+          onClear={(): void => {
+            const result = produced.setSealChocolate(undefined);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
+          onBrowse={onBrowseIngredient}
+        />
+        <IngredientEditRow
+          label="Decoration Chocolate"
+          ingredientId={produced.decorationChocolateId}
+          workspace={workspace}
+          reactiveVersion={reactiveVersion}
+          suggestions={ingredientSuggestions}
+          prioritySuggestions={ingredientAlternates}
+          onSelect={(id): void => {
+            const result = produced.setDecorationChocolate(id);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
+          onClear={(): void => {
+            const result = produced.setDecorationChocolate(undefined);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
+          onBrowse={onBrowseIngredient}
+        />
+      </div>
     );
   }
 
-  if (Entities.Confections.isProducedBarTruffleEntity(produced)) {
-    if (!produced.enrobingChocolateId) return null;
+  if (produced instanceof LibraryRuntime.ProducedBarTruffle) {
     return (
-      <DetailSection title="Bar Truffle">
-        <IngredientBrowseRow
+      <div>
+        <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Enrobing Chocolate</div>
+        <IngredientEditRow
           label="Enrobing Chocolate"
           ingredientId={produced.enrobingChocolateId}
           workspace={workspace}
           reactiveVersion={reactiveVersion}
+          suggestions={ingredientSuggestions}
+          prioritySuggestions={ingredientAlternates}
+          hideLabel
+          onSelect={(id): void => {
+            const result = produced.setEnrobingChocolate(id);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
+          onClear={(): void => {
+            const result = produced.setEnrobingChocolate(undefined);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
           onBrowse={onBrowseIngredient}
         />
-      </DetailSection>
+      </div>
     );
   }
 
-  if (Entities.Confections.isProducedRolledTruffleEntity(produced)) {
-    if (!produced.enrobingChocolateId && !produced.coatingId) return null;
+  if (produced instanceof LibraryRuntime.ProducedRolledTruffle) {
     return (
-      <DetailSection title="Rolled Truffle">
-        {produced.enrobingChocolateId && (
-          <IngredientBrowseRow
-            label="Enrobing Chocolate"
-            ingredientId={produced.enrobingChocolateId}
-            workspace={workspace}
-            reactiveVersion={reactiveVersion}
-            onBrowse={onBrowseIngredient}
-          />
-        )}
-        {produced.coatingId && (
-          <IngredientBrowseRow
-            label="Coating"
-            ingredientId={produced.coatingId}
-            workspace={workspace}
-            reactiveVersion={reactiveVersion}
-            onBrowse={onBrowseIngredient}
-          />
-        )}
-      </DetailSection>
+      <div className="space-y-1">
+        <IngredientEditRow
+          label="Enrobing Chocolate"
+          ingredientId={produced.enrobingChocolateId}
+          workspace={workspace}
+          reactiveVersion={reactiveVersion}
+          suggestions={ingredientSuggestions}
+          prioritySuggestions={ingredientAlternates}
+          onSelect={(id): void => {
+            const result = produced.setEnrobingChocolate(id);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
+          onClear={(): void => {
+            const result = produced.setEnrobingChocolate(undefined);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
+          onBrowse={onBrowseIngredient}
+        />
+        <IngredientEditRow
+          label="Coating"
+          ingredientId={produced.coatingId}
+          workspace={workspace}
+          reactiveVersion={reactiveVersion}
+          suggestions={ingredientSuggestions}
+          prioritySuggestions={ingredientAlternates}
+          onSelect={(id): void => {
+            const result = produced.setCoating(id);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
+          onClear={(): void => {
+            const result = produced.setCoating(undefined);
+            if (result.isFailure()) return;
+            notifySession();
+            autosaveIfNeeded();
+          }}
+          onBrowse={onBrowseIngredient}
+        />
+      </div>
     );
   }
 
@@ -592,52 +914,117 @@ function TypeSpecificSection({
 }
 
 // ============================================================================
-// Ingredient Browse Row
+// Ingredient Edit Row (browse + typeahead edit with priority suggestions)
 // ============================================================================
 
-function IngredientBrowseRow({
+function IngredientEditRow({
   label,
   ingredientId,
   workspace,
   reactiveVersion,
+  suggestions,
+  prioritySuggestions,
+  onSelect,
+  onClear,
+  hideLabel,
   onBrowse
 }: {
   readonly label: string;
-  readonly ingredientId: IngredientId;
+  readonly ingredientId: IngredientId | undefined;
   readonly workspace: IWorkspace;
   readonly reactiveVersion: number;
+  readonly suggestions: ReadonlyArray<ITypeaheadSuggestion<IngredientId>>;
+  readonly prioritySuggestions?: ReadonlyArray<ITypeaheadSuggestion<IngredientId>>;
+  readonly onSelect: (id: IngredientId) => void;
+  readonly onClear?: () => void;
+  readonly hideLabel?: boolean;
   readonly onBrowse?: (ingredientId: IngredientId) => void;
 }): React.ReactElement {
+  const [editing, setEditing] = useState(false);
+  const [inputText, setInputText] = useState('');
+
   const name = useMemo(
-    () => getIngredientName(ingredientId, workspace),
+    () => (ingredientId ? getIngredientName(ingredientId, workspace) : undefined),
     [ingredientId, workspace, reactiveVersion]
   );
 
-  if (onBrowse) {
+  const handleSelect = useCallback(
+    (suggestion: ITypeaheadSuggestion<IngredientId>): void => {
+      onSelect(suggestion.id);
+      setEditing(false);
+      setInputText('');
+    },
+    [onSelect]
+  );
+
+  const handleClear = useCallback((): void => {
+    onClear?.();
+    setEditing(false);
+    setInputText('');
+  }, [onClear]);
+
+  // Has a value and not editing — show view mode with edit toggle
+  if (ingredientId && name && !editing) {
     return (
       <div className="flex items-center justify-between py-0.5">
-        <span className="text-xs text-gray-500">{label}</span>
-        <button
-          type="button"
-          onClick={(): void => onBrowse(ingredientId)}
-          className="text-sm text-choco-primary hover:underline"
-        >
-          {name}
-        </button>
+        {!hideLabel && <span className="text-xs text-gray-500">{label}</span>}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={(): void => setEditing(true)}
+            title={`Edit ${label.toLowerCase()}`}
+            className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+          >
+            <ArrowPathIcon className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={(): void => onBrowse?.(ingredientId)}
+            className="text-sm text-choco-primary hover:underline"
+          >
+            {name}
+          </button>
+        </div>
       </div>
     );
   }
 
-  return <DetailRow label={label} value={name} />;
-}
-
-// ============================================================================
-// Formatting Helpers
-// ============================================================================
-
-function formatConfectionType(type: string): string {
-  return type
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  // Editing mode or no current value — show typeahead (full width)
+  return (
+    <div className="py-0.5">
+      {!hideLabel && <div className="text-xs text-gray-500 mb-0.5">{label}</div>}
+      <div className="flex items-center gap-1.5">
+        {editing && (
+          <button
+            type="button"
+            onClick={(): void => setEditing(false)}
+            title="Done editing"
+            className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+          >
+            <CheckIcon className="h-3.5 w-3.5" />
+          </button>
+        )}
+        <TypeaheadInput<IngredientId>
+          value={editing && name ? name : inputText}
+          onChange={setInputText}
+          suggestions={suggestions}
+          prioritySuggestions={prioritySuggestions}
+          onSelect={handleSelect}
+          placeholder={`Type ${label.toLowerCase()} name`}
+          autoFocus={editing}
+          className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+        />
+        {editing && onClear && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+            aria-label={`Remove ${label.toLowerCase()}`}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
