@@ -10,6 +10,7 @@ import {
   type IngredientId,
   type ProcedureId,
   type SessionId,
+  type SlotId,
   type ConfectionId,
   type FillingRecipeVariationSpec,
   LibraryRuntime
@@ -22,6 +23,7 @@ import {
   useFilteredEntities,
   useMutableCollection,
   FillingDetail,
+  FillingSessionPanel,
   IngredientDetail,
   ProcedureDetail,
   SessionDetailView,
@@ -201,6 +203,61 @@ export function SessionsTabContent(): React.ReactElement {
   const handleBrowseProcedureFromSession = useCallback(
     (sessionEntry: ICascadeEntry, procedureId: ProcedureId): void => {
       squashCascade([sessionEntry, { entityType: 'procedure', entityId: procedureId, mode: 'view' }]);
+    },
+    [squashCascade]
+  );
+
+  const handleSelectFillingSlot = useCallback(
+    (sessionEntry: ICascadeEntry, slotId: SlotId, label: string): void => {
+      squashCascade([
+        sessionEntry,
+        {
+          entityType: 'session',
+          entityId: `${sessionEntry.entityId}::${String(slotId)}`,
+          mode: 'view',
+          sourceConfectionId: sessionEntry.entityId,
+          sourceSlotId: String(slotId),
+          prefillName: label
+        }
+      ]);
+    },
+    [squashCascade]
+  );
+
+  const handleBrowseIngredientFromEmbeddedSession = useCallback(
+    (embeddedEntry: ICascadeEntry, ingredientId: IngredientId): void => {
+      if (!embeddedEntry.sourceConfectionId) {
+        return;
+      }
+      const parentEntry: ICascadeEntry = {
+        entityType: 'session',
+        entityId: embeddedEntry.sourceConfectionId,
+        mode: 'view'
+      };
+      squashCascade([
+        parentEntry,
+        embeddedEntry,
+        { entityType: 'ingredient', entityId: ingredientId, mode: 'view' }
+      ]);
+    },
+    [squashCascade]
+  );
+
+  const handleBrowseProcedureFromEmbeddedSession = useCallback(
+    (embeddedEntry: ICascadeEntry, procedureId: ProcedureId): void => {
+      if (!embeddedEntry.sourceConfectionId) {
+        return;
+      }
+      const parentEntry: ICascadeEntry = {
+        entityType: 'session',
+        entityId: embeddedEntry.sourceConfectionId,
+        mode: 'view'
+      };
+      squashCascade([
+        parentEntry,
+        embeddedEntry,
+        { entityType: 'procedure', entityId: procedureId, mode: 'view' }
+      ]);
     },
     [squashCascade]
   );
@@ -413,6 +470,51 @@ export function SessionsTabContent(): React.ReactElement {
           };
         }
 
+        if (entry.sourceConfectionId && entry.sourceSlotId) {
+          const parentResult = workspace.userData.sessions.get(entry.sourceConfectionId as SessionId);
+          if (parentResult.isFailure() || parentResult.value.sessionType !== 'confection') {
+            return {
+              key: entry.entityId,
+              label: entry.prefillName ?? entry.entityId,
+              content: <div className="p-4 text-red-500">Failed to load embedded filling session.</div>
+            };
+          }
+
+          const embedded = parentResult.value.getFillingSession(entry.sourceSlotId as SlotId);
+          if (!embedded) {
+            return {
+              key: entry.entityId,
+              label: entry.prefillName ?? entry.entityId,
+              content: <div className="p-4 text-red-500">Failed to find filling session for slot.</div>
+            };
+          }
+
+          const embeddedLabel =
+            entry.prefillName ?? `${embedded.baseRecipe.fillingRecipe.name} (${entry.sourceSlotId})`;
+
+          return {
+            key: entry.entityId,
+            label: embeddedLabel,
+            content: (
+              <FillingSessionPanel
+                session={embedded}
+                embeddedLabel={embeddedLabel}
+                embeddedParentSessionId={entry.sourceConfectionId as SessionId}
+                onBrowseIngredient={(ingredientId: IngredientId): void =>
+                  handleBrowseIngredientFromEmbeddedSession(entry, ingredientId)
+                }
+                onBrowseProcedure={(procedureId: ProcedureId): void =>
+                  handleBrowseProcedureFromEmbeddedSession(entry, procedureId)
+                }
+                onSaveEmbedded={async (): Promise<void> => {
+                  await sessionActions.saveSession(entry.sourceConfectionId as SessionId);
+                }}
+                onClose={(): void => popCascadeTo(_index)}
+              />
+            )
+          };
+        }
+
         // View mode
         const result = workspace.userData.sessions.get(entry.entityId as SessionId);
         if (result.isFailure()) {
@@ -444,6 +546,9 @@ export function SessionsTabContent(): React.ReactElement {
               }
               onBrowseProcedure={(procedureId: ProcedureId): void =>
                 handleBrowseProcedureFromSession(entry, procedureId)
+              }
+              onSelectFillingSlot={(slotId: SlotId, label: string): void =>
+                handleSelectFillingSlot(entry, slotId, label)
               }
             />
           )
@@ -529,6 +634,10 @@ export function SessionsTabContent(): React.ReactElement {
     handleOpenFillingRecipeFromSession,
     handleBrowseIngredientFromSession,
     handleBrowseProcedureFromSession,
+    handleSelectFillingSlot,
+    handleBrowseIngredientFromEmbeddedSession,
+    handleBrowseProcedureFromEmbeddedSession,
+    sessionActions,
     newProcedureName
   ]);
 

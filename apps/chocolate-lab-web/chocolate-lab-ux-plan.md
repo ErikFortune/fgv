@@ -302,3 +302,34 @@ When a typeahead-on-blur (or any action) pushes a new panel onto the cascade:
 ### Rationale
 
 This pattern eliminates "unresolved" error states from typeahead fields. Instead of showing an inline error when the user types something that doesn't match, the app proactively helps them create the missing entity. The cascade column pattern makes this feel natural — the create form appears in the next panel, and on save, the user returns to the original editing context.
+
+## 11. Production Session Panels
+
+Session panels display and edit production sessions. Two main panel types exist: **FillingSessionPanel** (standalone or embedded filling sessions) and **ConfectionSessionPanel** (confection sessions with filling slots).
+
+### Common Patterns
+
+- **Callback-prop architecture:** Session panels communicate via callback props (`onBrowseIngredient`, `onBrowseProcedure`, `onSelectFillingSlot`, etc.). They never access the navigation store directly — the parent tab owns the cascade stack.
+- **Names over IDs:** Ingredient, procedure, and mold IDs are resolved to display names via workspace lookups. IDs are shown muted as secondary info only.
+- **Clickable browseable entities:** All ingredient and procedure references on a session are clickable. Clicking opens a cascade browser column. Pattern: display name as a `text-choco-primary hover:underline` link.
+- **Typeahead-on-blur for all inputs:** All typeahead inputs follow the §10 pattern. Where applicable, `prioritySuggestions` are drawn from base variation alternatives (e.g., ingredient alternates, variation procedures).
+- **sessionVersion counter:** A `useState(0)` counter incremented after mutations forces re-computation of memoized derived values.
+- **SaveMode (manual/autosave):** Planning sessions default to manual save; active/committed sessions default to autosave. Autosave flushes on panel blur.
+- **Muted chrome:** Session ID, slot IDs, and other technical identifiers appear in `text-xs text-gray-500` — visible but not prominent.
+
+### ConfectionSessionPanel
+
+Displays confection session info, type-dispatched yield editing, filling slots as a clickable list, type-specific properties (mold, chocolates, coatings), procedure, and notes.
+
+- **Yield editing:** Type-dispatched. Molded bonbons: frames + buffer % inputs. Bar/rolled truffles: count input. All apply on blur.
+- **Filling slots:** Each slot is a clickable row showing filling name and target weight. Clicking calls `onSelectFillingSlot(slotId, label)`, which the parent tab uses to push an embedded `FillingSessionPanel` as a cascade column.
+- **Type-specific sections:** Dispatch via entity type guards (`isProducedMoldedBonBonEntity`, etc.). Show ingredient references as clickable browse rows.
+- **No inline filling editing:** All filling editing happens in cascade columns via the existing `FillingSessionPanel`, which already accepts `IEmbeddableFillingSession`.
+
+### FillingSessionPanel (Embedded Mode)
+
+When opened from a confection session's filling slot, `FillingSessionPanel` receives an `IEmbeddableFillingSession` (identity-free interface) plus `embeddedLabel` and `embeddedParentSessionId`. The panel auto-detects embedded mode via a type guard and adjusts its header and save behavior accordingly. Saving the embedded filling session triggers a save of the parent confection session.
+
+### General Principle
+
+When building a new session panel or adding a new interaction pattern: find something similar in the existing panels first. When still in doubt, ask.

@@ -254,7 +254,9 @@ describe('ConfectionEditingSessionBase', () => {
           fillingId: 'test.test-ganache' as FillingId
         })
       ).toSucceedAndSatisfy((result) => {
-        expect(result).toBeInstanceOf(Session.EditingSession);
+        expect(result).toBeDefined();
+        expect(result?.baseRecipe).toBeDefined();
+        expect(result?.scaleToTargetWeight).toBeDefined();
       });
     });
 
@@ -276,7 +278,8 @@ describe('ConfectionEditingSessionBase', () => {
           fillingId: 'test.test-ganache' as FillingId
         })
       ).toSucceedAndSatisfy((result) => {
-        expect(result).toBeInstanceOf(Session.EditingSession);
+        expect(result).toBeDefined();
+        expect(result?.baseRecipe).toBeDefined();
         // Should be a different session instance
         expect(result).not.toBe(originalFilling);
       });
@@ -306,7 +309,8 @@ describe('ConfectionEditingSessionBase', () => {
       }
 
       expect(session.removeFillingSlot(knownSlot)).toSucceedAndSatisfy((removed) => {
-        expect(removed).toBeInstanceOf(Session.EditingSession);
+        expect(removed).toBeDefined();
+        expect(removed?.baseRecipe).toBeDefined();
       });
       expect(session.getFillingSession(knownSlot)).toBeUndefined();
     });
@@ -329,7 +333,9 @@ describe('ConfectionEditingSessionBase', () => {
         throw new Error('Expected at least one filling slot');
       }
 
-      expect(session.getFillingSession(knownSlot)).toBeInstanceOf(Session.EditingSession);
+      const fillingSession = session.getFillingSession(knownSlot);
+      expect(fillingSession).toBeDefined();
+      expect(fillingSession?.produced).toBeDefined();
     });
 
     test('getFillingSession returns undefined for unknown slot', () => {

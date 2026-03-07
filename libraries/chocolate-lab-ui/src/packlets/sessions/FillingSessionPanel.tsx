@@ -113,10 +113,10 @@ const RATING_CATEGORIES: ReadonlyArray<Entities.Fillings.RatingCategory> = [
  * @public
  */
 export interface IFillingSessionPanelProps {
-  /** The composite session ID */
-  readonly sessionId: SessionId;
-  /** The filling editing session */
-  readonly session: UserLibrary.Session.EditingSession;
+  /** The composite session ID (standalone sessions only) */
+  readonly sessionId?: SessionId;
+  /** The filling editing session (standalone or embedded) */
+  readonly session: UserLibrary.Session.EditingSession | UserLibrary.Session.IEmbeddableFillingSession;
   /** Optional callback to close this panel */
   readonly onClose?: () => void;
   /** Optional callback to request creating a new entity (ingredient, procedure) via cascade */
@@ -129,6 +129,12 @@ export interface IFillingSessionPanelProps {
   readonly onBrowseIngredient?: (ingredientId: IngredientId) => void;
   /** Optional callback to browse a procedure in a cascade detail panel */
   readonly onBrowseProcedure?: (procedureId: ProcedureId) => void;
+  /** Parent session ID for embedded filling panels */
+  readonly embeddedParentSessionId?: SessionId;
+  /** Label to display for embedded filling panels */
+  readonly embeddedLabel?: string;
+  /** Save callback for embedded filling panels (should persist parent session) */
+  readonly onSaveEmbedded?: () => Promise<void>;
 }
 
 // ============================================================================
@@ -180,7 +186,10 @@ export function FillingSessionPanel({
   onRecipeSwap,
   onOpenFillingRecipe,
   onBrowseIngredient,
-  onBrowseProcedure
+  onBrowseProcedure,
+  embeddedParentSessionId,
+  embeddedLabel,
+  onSaveEmbedded
 }: IFillingSessionPanelProps): React.ReactElement {
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
@@ -195,7 +204,11 @@ export function FillingSessionPanel({
 
   // ---- Save mode (manual vs autosave) ----
 
-  const defaultSaveMode: SaveMode = session.status === 'planning' ? 'manual' : 'autosave';
+  const isStandaloneSession = (value: typeof session): value is UserLibrary.Session.EditingSession => {
+    return 'status' in value && 'baseId' in value;
+  };
+  const standalone = isStandaloneSession(session) ? session : undefined;
+  const defaultSaveMode: SaveMode = standalone?.status === 'planning' ? 'manual' : 'autosave';
   const [saveMode, setSaveMode] = useState<SaveMode>(defaultSaveMode);
 
   // ---- Per-item edit mode ----
@@ -372,12 +385,15 @@ export function FillingSessionPanel({
 
   const handleStatusChange = useCallback(
     async (status: Entities.PersistedSessionStatus): Promise<void> => {
+      if (!standalone || !sessionId) {
+        return;
+      }
       await sessionActions.updateSessionStatus(sessionId, status);
       // Reset save mode to match the new status default
       setSaveMode(status === 'planning' ? 'manual' : 'autosave');
       notifySession();
     },
-    [sessionActions, sessionId, notifySession]
+    [standalone, sessionActions, sessionId, notifySession]
   );
 
   // ---- Save mode change ----
@@ -387,8 +403,12 @@ export function FillingSessionPanel({
       setSaveMode(mode);
       // When switching to autosave, flush any pending changes immediately
       if (mode === 'autosave' && hasChanges) {
-        sessionActions
-          .saveSession(sessionId)
+        const savePromise = onSaveEmbedded
+          ? onSaveEmbedded()
+          : sessionId
+          ? sessionActions.saveSession(sessionId).then(() => undefined)
+          : Promise.resolve();
+        savePromise
           .then(() => {
             clearEditState();
             notifySession();
@@ -396,22 +416,26 @@ export function FillingSessionPanel({
           .catch(() => {});
       }
     },
-    [hasChanges, sessionActions, sessionId, clearEditState, notifySession]
+    [hasChanges, onSaveEmbedded, sessionActions, sessionId, clearEditState, notifySession]
   );
 
   // ---- Autosave on blur ----
 
   const handlePanelBlur = useCallback((): void => {
     if (saveMode === 'autosave' && hasChanges) {
-      sessionActions
-        .saveSession(sessionId)
+      const savePromise = onSaveEmbedded
+        ? onSaveEmbedded()
+        : sessionId
+        ? sessionActions.saveSession(sessionId).then(() => undefined)
+        : Promise.resolve();
+      savePromise
         .then(() => {
           clearEditState();
           notifySession();
         })
         .catch(() => {});
     }
-  }, [saveMode, hasChanges, sessionActions, sessionId, clearEditState, notifySession]);
+  }, [saveMode, hasChanges, onSaveEmbedded, sessionActions, sessionId, clearEditState, notifySession]);
 
   // ---- Undo / Redo ----
 
@@ -428,10 +452,14 @@ export function FillingSessionPanel({
   // ---- Save ----
 
   const handleSave = useCallback(async (): Promise<void> => {
-    await sessionActions.saveSession(sessionId);
+    if (onSaveEmbedded) {
+      await onSaveEmbedded();
+    } else if (sessionId) {
+      await sessionActions.saveSession(sessionId);
+    }
     clearEditState();
     notifySession();
-  }, [sessionActions, sessionId, clearEditState, notifySession]);
+  }, [onSaveEmbedded, sessionActions, sessionId, clearEditState, notifySession]);
 
   // ---- Target weight ----
 
@@ -621,22 +649,44 @@ export function FillingSessionPanel({
   return (
     <div className="flex flex-col h-full overflow-y-auto" onBlur={handlePanelBlur}>
       {/* Header */}
-      <EntityDetailHeader title={session.label ?? session.baseId} subtitle={sessionId} />
-
-      {/* Status bar with close button */}
-      <SessionStatusBar
-        session={session}
-        onStatusChange={handleStatusChange}
-        canUndo={session.canUndo()}
-        canRedo={session.canRedo()}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onSave={handleSave}
-        hasChanges={hasChanges}
-        saveMode={saveMode}
-        onSaveModeChange={handleSaveModeChange}
+      <EntityDetailHeader
+        title={
+          standalone?.label ?? standalone?.baseId ?? embeddedLabel ?? session.baseRecipe.fillingRecipe.name
+        }
+        subtitle={sessionId ?? embeddedParentSessionId}
         onClose={onClose}
       />
+
+      {/* Status bar with close button */}
+      {standalone ? (
+        <SessionStatusBar
+          session={standalone}
+          onStatusChange={handleStatusChange}
+          canUndo={session.canUndo()}
+          canRedo={session.canRedo()}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onSave={handleSave}
+          hasChanges={hasChanges}
+          saveMode={saveMode}
+          onSaveModeChange={handleSaveModeChange}
+          onClose={onClose}
+        />
+      ) : (
+        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3 py-1.5">
+          <div className="text-xs font-medium text-gray-600">Embedded filling session</div>
+          <button
+            type="button"
+            onClick={(): void => {
+              handleSave().catch(() => undefined);
+            }}
+            disabled={!hasChanges}
+            className="rounded bg-choco-primary px-2 py-1 text-xs font-medium text-white hover:bg-choco-primary/90 disabled:opacity-40"
+          >
+            Save
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col p-4 gap-4">
         {/* Recipe info */}
@@ -1124,7 +1174,11 @@ export function FillingSessionPanel({
         )}
 
         {/* Session Notes (editable) */}
-        <NotesEditor value={session.notes} onChange={handleNotesChange} title="Session Notes" />
+        <NotesEditor
+          value={session.produced.snapshot.notes}
+          onChange={handleNotesChange}
+          title="Session Notes"
+        />
       </div>
     </div>
   );

@@ -33,10 +33,12 @@ import {
   type IngredientId,
   type ProcedureId,
   type SessionId,
+  type SlotId,
   UserLibrary
 } from '@fgv/ts-chocolate';
 
 import type { CascadeEntityType } from '../navigation';
+import { ConfectionSessionPanel } from './ConfectionSessionPanel';
 import { FillingSessionPanel, type RecipeSwapHandler } from './FillingSessionPanel';
 import { GenericSessionDetailView } from './GenericSessionDetailView';
 
@@ -65,6 +67,8 @@ export interface ISessionDetailViewProps {
   readonly onBrowseIngredient?: (ingredientId: IngredientId) => void;
   /** Optional callback to browse a procedure in a cascade detail panel */
   readonly onBrowseProcedure?: (procedureId: ProcedureId) => void;
+  /** Optional callback when user selects a filling slot in a confection session */
+  readonly onSelectFillingSlot?: (slotId: SlotId, label: string) => void;
 }
 
 // ============================================================================
@@ -88,7 +92,8 @@ export function SessionDetailView({
   onRecipeSwap,
   onOpenFillingRecipe,
   onBrowseIngredient,
-  onBrowseProcedure
+  onBrowseProcedure,
+  onSelectFillingSlot
 }: ISessionDetailViewProps): React.ReactElement {
   if (session.sessionType === 'filling') {
     return (
@@ -99,6 +104,19 @@ export function SessionDetailView({
         onRequestCreateEntity={onRequestCreateEntity}
         onRecipeSwap={onRecipeSwap}
         onOpenFillingRecipe={onOpenFillingRecipe}
+        onBrowseIngredient={onBrowseIngredient}
+        onBrowseProcedure={onBrowseProcedure}
+      />
+    );
+  }
+
+  if (session.sessionType === 'confection') {
+    return (
+      <ConfectionSessionPanel
+        sessionId={sessionId}
+        session={session as UserLibrary.Session.AnyConfectionEditingSession}
+        onClose={onClose}
+        onSelectFillingSlot={onSelectFillingSlot}
         onBrowseIngredient={onBrowseIngredient}
         onBrowseProcedure={onBrowseProcedure}
       />

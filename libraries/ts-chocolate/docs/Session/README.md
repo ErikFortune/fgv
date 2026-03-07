@@ -257,6 +257,15 @@ Result of saving a confection editing session
 </td></tr>
 <tr><td>
 
+[IEmbeddableFillingSession](./interfaces/IEmbeddableFillingSession.md)
+
+</td><td>
+
+Identity-free contract for filling editing sessions.
+
+</td></tr>
+<tr><td>
+
 [IMoldChangeAnalysis](./interfaces/IMoldChangeAnalysis.md)
 
 </td><td>

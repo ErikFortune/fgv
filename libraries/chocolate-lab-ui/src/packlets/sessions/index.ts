@@ -33,6 +33,7 @@ export {
   type IRecipeSwapRequest,
   type RecipeSwapHandler
 } from './FillingSessionPanel';
+export { ConfectionSessionPanel, type IConfectionSessionPanelProps } from './ConfectionSessionPanel';
 export { SessionStatusBar, type ISessionStatusBarProps, type SaveMode } from './SessionStatusBar';
 export {
   CreateSessionPanel,

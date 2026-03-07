@@ -977,6 +977,8 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
     // (undocumented)
     protected readonly _baseConfection: TRuntime;
     get baseId(): BaseSessionId;
+    // (undocumented)
+    protected _childSessionsDirty: boolean;
     protected abstract _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
     get confectionType(): ConfectionType;
     get context(): ISessionContext;
@@ -984,19 +986,22 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
     protected readonly _context: ISessionContext;
     get createdAt(): string;
     // @internal
-    protected _createFillingSessionForSlot(slotId: SlotId, fillingId: FillingId): Result<EditingSession>;
+    protected _createFillingSessionForSlot(slotId: SlotId, fillingId: FillingId): Result<IEmbeddableFillingSession>;
     get entity(): IConfectionSessionEntity;
     get execution(): Session.IExecutionState | undefined;
     get fillingSessions(): IFillingSessionMap;
     // (undocumented)
-    protected readonly _fillingSessions: Map<SlotId, EditingSession>;
-    getFillingSession(slotId: SlotId): EditingSession | undefined;
+    protected readonly _fillingSessions: IFillingSessionMap;
+    getFillingSession(slotId: SlotId): IEmbeddableFillingSession | undefined;
     get group(): GroupName | undefined;
+    get hasChanges(): boolean;
     get label(): string | undefined;
     // @internal
-    protected _loadFillingSessions(): Result<Map<SlotId, EditingSession> | undefined>;
+    protected _loadFillingSessions(): Result<IFillingSessionMap | undefined>;
     markSaved(): void;
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
+    // (undocumented)
+    protected _onChildSessionMutation(): void;
     // (undocumented)
     protected _originalSnapshot: T;
     // (undocumented)
@@ -1005,8 +1010,8 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
     // (undocumented)
     protected readonly _produced: ProducedConfectionBase<T>;
     // @internal
-    protected _removeFillingSession(slotId: SlotId): Result<EditingSession | undefined>;
-    removeFillingSlot(slotId: SlotId): Result<EditingSession | undefined>;
+    protected _removeFillingSession(slotId: SlotId): Result<IEmbeddableFillingSession | undefined>;
+    removeFillingSlot(slotId: SlotId): Result<IEmbeddableFillingSession | undefined>;
     // @internal
     protected _scaleAllFillingsByFactor(scaleFactor: number): Result<IFillingSessionMap>;
     // @internal
@@ -1022,7 +1027,7 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
     } | {
         type: 'ingredient';
         ingredientId: IngredientId;
-    }): Result<EditingSession | undefined>;
+    }): Result<IEmbeddableFillingSession | undefined>;
     get sourceVariationId(): ConfectionRecipeVariationId;
     get status(): PersistedSessionStatus;
     toPersistedState(options: {
@@ -3711,6 +3716,34 @@ interface IEditorContextValidatorParams<T, TBaseId extends string = string, TId 
 }
 
 // @public
+interface IEmbeddableFillingSession {
+    analyzeSaveOptions(): ISaveAnalysis;
+    readonly baseRecipe: IFillingRecipeVariation;
+    // (undocumented)
+    canRedo(): boolean;
+    // (undocumented)
+    canUndo(): boolean;
+    readonly hasChanges: boolean;
+    // (undocumented)
+    markSaved(): void;
+    readonly produced: ProducedFilling;
+    // (undocumented)
+    redo(): Result<boolean>;
+    // (undocumented)
+    removeIngredient(id: IngredientId): Result<void>;
+    // (undocumented)
+    replaceIngredient(oldId: IngredientId, newId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<void>;
+    scaleToTargetWeight(targetWeight: Measurement): Result<Measurement>;
+    setIngredient(id: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<void>;
+    // (undocumented)
+    setNotes(notes: Model.ICategorizedNote[]): Result<void>;
+    // (undocumented)
+    setProcedure(id: ProcedureId | undefined): Result<void>;
+    readonly targetWeight: Measurement;
+    undo(): Result<boolean>;
+}
+
+// @public
 interface IEncryptedCollectionMetadata {
     readonly collectionId?: string;
     readonly description?: string;
@@ -3963,7 +3996,7 @@ interface IFillingSessionEntity extends ISessionEntityBase {
 }
 
 // @public
-type IFillingSessionMap = Map<SlotId, EditingSession>;
+type IFillingSessionMap = Map<SlotId, IEmbeddableFillingSession>;
 
 // @public
 type IFillingsLibraryAsyncParams = ISubLibraryAsyncParams<FillingsLibrary, FillingCollectionEntryInit>;
@@ -7912,6 +7945,7 @@ declare namespace Session_2 {
         IConfectionSessionState,
         IConfectionSaveOptions,
         IConfectionSaveResult,
+        IEmbeddableFillingSession,
         IFillingSessionMap,
         IMoldChangeAnalysis
     }

@@ -8,7 +8,7 @@ Creates/updates filling session if recipe slot.
 **Signature:**
 
 ```typescript
-setFillingSlot(slotId: SlotId, choice: { type: "recipe"; fillingId: FillingId } | { type: "ingredient"; ingredientId: IngredientId }): Result<EditingSession | undefined>;
+setFillingSlot(slotId: SlotId, choice: { type: "recipe"; fillingId: FillingId } | { type: "ingredient"; ingredientId: IngredientId }): Result<IEmbeddableFillingSession | undefined>;
 ```
 
 **Parameters:**
@@ -21,6 +21,6 @@ setFillingSlot(slotId: SlotId, choice: { type: "recipe"; fillingId: FillingId } 
 
 **Returns:**
 
-Result&lt;[EditingSession](EditingSession.md) | undefined&gt;
+Result&lt;[IEmbeddableFillingSession](../interfaces/IEmbeddableFillingSession.md) | undefined&gt;
 
 `Success` with the new or updated filling session, or `undefined` for ingredient slots; or `Failure`

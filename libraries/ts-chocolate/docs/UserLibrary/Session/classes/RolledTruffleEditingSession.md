@@ -46,6 +46,23 @@ Gets all filling sessions.
 </td></tr>
 <tr><td>
 
+[hasChanges](./ConfectionEditingSessionBase.hasChanges.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Whether the session or any embedded child session has unsaved changes.
+
+</td></tr>
+<tr><td>
+
 [context](./ConfectionEditingSessionBase.context.md)
 
 </td><td>

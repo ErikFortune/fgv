@@ -1038,7 +1038,7 @@ describe('EditingSession', () => {
         })
       ).toSucceedAndSatisfy((persisted) => {
         expect(persisted.sessionType).toBe('filling');
-        expect(persisted.status).toBe('active');
+        expect(persisted.status).toBe('planning');
         expect(persisted.baseId).toBeDefined();
         expect(persisted.sourceVariationId).toBe('test.test-ganache@2026-01-01-01');
         expect(persisted.history.current).toBeDefined();

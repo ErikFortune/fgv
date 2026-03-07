@@ -175,6 +175,10 @@ export interface ICascadeEntry {
   readonly sourceConfectionId?: string;
   /** Source slot ID within the confection (for live weight recomputation) */
   readonly sourceSlotId?: string;
+  /** Parent session ID when this entry represents an embedded filling session drill-down */
+  readonly embeddedParentSessionId?: string;
+  /** Slot ID for the embedded filling session drill-down */
+  readonly embeddedSlotId?: string;
   /** Whether this cascade entry has unsaved changes (set by the owning tab component). */
   readonly hasChanges?: boolean;
   /** Pre-fill data for session creation (set when opening create-session from a recipe) */

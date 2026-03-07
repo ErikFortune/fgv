@@ -7,7 +7,7 @@ Removes a filling slot.
 **Signature:**
 
 ```typescript
-removeFillingSlot(slotId: SlotId): Result<EditingSession | undefined>;
+removeFillingSlot(slotId: SlotId): Result<IEmbeddableFillingSession | undefined>;
 ```
 
 **Parameters:**
@@ -19,6 +19,6 @@ removeFillingSlot(slotId: SlotId): Result<EditingSession | undefined>;
 
 **Returns:**
 
-Result&lt;[EditingSession](../../../classes/EditingSession.md) | undefined&gt;
+Result&lt;[IEmbeddableFillingSession](../../../interfaces/IEmbeddableFillingSession.md) | undefined&gt;
 
 `Success` with the removed filling session, or `undefined` if none existed; or `Failure`

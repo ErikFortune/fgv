@@ -48,8 +48,8 @@ import {
 } from '../../entities';
 import { IConfectionBase, ProducedConfectionBase } from '../../library-runtime';
 
-import { EditingSession } from './editingSession';
-import { IConfectionEditingSessionParams, IFillingSessionMap } from './model';
+import { EmbeddedFillingSession } from './embeddedFillingSession';
+import { IConfectionEditingSessionParams, IEmbeddableFillingSession, IFillingSessionMap } from './model';
 import { IMaterializedSessionBase, ISessionContext } from '../model';
 import { generateSessionId, generateSessionBaseId, getCurrentTimestamp } from './sessionUtils';
 
@@ -78,7 +78,8 @@ export abstract class ConfectionEditingSessionBase<
   protected readonly _produced: ProducedConfectionBase<T>;
   protected _originalSnapshot: T;
   protected readonly _sessionId: SessionSpec;
-  protected readonly _fillingSessions: Map<SlotId, EditingSession>;
+  protected readonly _fillingSessions: IFillingSessionMap;
+  protected _childSessionsDirty: boolean;
   protected readonly _persistedEntity: IConfectionSessionEntity | undefined;
 
   /**
@@ -103,6 +104,7 @@ export abstract class ConfectionEditingSessionBase<
     this._originalSnapshot = produced.createSnapshot();
     this._sessionId = params?.sessionId ?? generateSessionId().orThrow();
     this._fillingSessions = new Map();
+    this._childSessionsDirty = false;
     this._persistedEntity = persistedEntity;
 
     // Note: Filling sessions are loaded by subclass after type-specific initialization
@@ -118,7 +120,7 @@ export abstract class ConfectionEditingSessionBase<
    * Called during construction to eagerly initialize sessions.
    * @internal
    */
-  protected _loadFillingSessions(): Result<Map<SlotId, EditingSession> | undefined> {
+  protected _loadFillingSessions(): Result<IFillingSessionMap | undefined> {
     const fillings = this._produced.fillings;
     /* c8 ignore next 3 - defensive: confection with no filling slots */
     if (!fillings) {
@@ -145,18 +147,26 @@ export abstract class ConfectionEditingSessionBase<
    * @param fillingId - The filling recipe ID
    * @internal
    */
-  protected _createFillingSessionForSlot(slotId: SlotId, fillingId: FillingId): Result<EditingSession> {
+  protected _createFillingSessionForSlot(
+    slotId: SlotId,
+    fillingId: FillingId
+  ): Result<IEmbeddableFillingSession> {
     // Get the filling recipe from context
     return this._context.fillings.get(fillingId).asResult.onSuccess((filling) => {
       // Compute target weight for this slot
       return this._computeSlotTargetWeight(slotId).onSuccess((targetWeight) => {
         // Create session at target weight
         return this._context.createFillingSession(filling, targetWeight).onSuccess((session) => {
-          this._fillingSessions.set(slotId, session);
-          return succeed(session);
+          const embedded = new EmbeddedFillingSession(session, () => this._onChildSessionMutation());
+          this._fillingSessions.set(slotId, embedded);
+          return succeed(embedded);
         });
       });
     });
+  }
+
+  protected _onChildSessionMutation(): void {
+    this._childSessionsDirty = true;
   }
 
   /**
@@ -164,7 +174,7 @@ export abstract class ConfectionEditingSessionBase<
    * @param slotId - The slot identifier
    * @internal
    */
-  protected _removeFillingSession(slotId: SlotId): Result<EditingSession | undefined> {
+  protected _removeFillingSession(slotId: SlotId): Result<IEmbeddableFillingSession | undefined> {
     const session = this._fillingSessions.get(slotId);
     this._fillingSessions.delete(slotId);
     return succeed(session);
@@ -254,7 +264,7 @@ export abstract class ConfectionEditingSessionBase<
   public setFillingSlot(
     slotId: SlotId,
     choice: { type: 'recipe'; fillingId: FillingId } | { type: 'ingredient'; ingredientId: IngredientId }
-  ): Result<EditingSession | undefined> {
+  ): Result<IEmbeddableFillingSession | undefined> {
     // Remove existing session first
     this._removeFillingSession(slotId);
 
@@ -274,7 +284,7 @@ export abstract class ConfectionEditingSessionBase<
    * @returns `Success` with the removed filling session, or `undefined` if none existed; or `Failure`
    * @public
    */
-  public removeFillingSlot(slotId: SlotId): Result<EditingSession | undefined> {
+  public removeFillingSlot(slotId: SlotId): Result<IEmbeddableFillingSession | undefined> {
     // Convert Result<void> to Result<undefined>
     return this._produced.removeFillingSlot(slotId).onSuccess(() => {
       return this._removeFillingSession(slotId);
@@ -347,7 +357,7 @@ export abstract class ConfectionEditingSessionBase<
    * @returns The editing session, or undefined if not found
    * @public
    */
-  public getFillingSession(slotId: SlotId): EditingSession | undefined {
+  public getFillingSession(slotId: SlotId): IEmbeddableFillingSession | undefined {
     return this._fillingSessions.get(slotId);
   }
 
@@ -357,6 +367,20 @@ export abstract class ConfectionEditingSessionBase<
    */
   public get fillingSessions(): IFillingSessionMap {
     return this._fillingSessions as IFillingSessionMap;
+  }
+
+  /**
+   * Whether the session or any embedded child session has unsaved changes.
+   * @public
+   */
+  public get hasChanges(): boolean {
+    if (this._childSessionsDirty) {
+      return true;
+    }
+    if (this._produced.hasChanges(this._originalSnapshot)) {
+      return true;
+    }
+    return Array.from(this._fillingSessions.values()).some((session) => session.hasChanges);
   }
 
   /**
@@ -511,5 +535,9 @@ export abstract class ConfectionEditingSessionBase<
    */
   public markSaved(): void {
     this._originalSnapshot = this._produced.createSnapshot();
+    this._childSessionsDirty = false;
+    for (const session of this._fillingSessions.values()) {
+      session.markSaved();
+    }
   }
 }

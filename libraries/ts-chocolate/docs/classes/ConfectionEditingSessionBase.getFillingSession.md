@@ -7,7 +7,7 @@ Gets the filling session for a specific slot.
 **Signature:**
 
 ```typescript
-getFillingSession(slotId: SlotId): EditingSession | undefined;
+getFillingSession(slotId: SlotId): IEmbeddableFillingSession | undefined;
 ```
 
 **Parameters:**
@@ -19,6 +19,6 @@ getFillingSession(slotId: SlotId): EditingSession | undefined;
 
 **Returns:**
 
-[EditingSession](EditingSession.md) | undefined
+[IEmbeddableFillingSession](../interfaces/IEmbeddableFillingSession.md) | undefined
 
 The editing session, or undefined if not found

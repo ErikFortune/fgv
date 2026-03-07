@@ -8,5 +8,5 @@ Used by confection editing sessions to manage filling scaling.
 ## Type
 
 ```typescript
-type IFillingSessionMap = Map<SlotId, EditingSession>
+type IFillingSessionMap = Map<SlotId, IEmbeddableFillingSession>
 ```

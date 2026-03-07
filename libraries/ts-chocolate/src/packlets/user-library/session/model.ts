@@ -31,6 +31,7 @@ import {
   FillingRecipeVariationSpec,
   Measurement,
   IngredientId,
+  Model as CommonModel,
   MoldId,
   ProcedureId,
   SessionSpec,
@@ -42,7 +43,7 @@ import {
   Confections,
   Fillings
 } from '../../entities';
-import { IConfectionBase } from '../../library-runtime';
+import { IFillingRecipeVariation, IConfectionBase, ProducedFilling } from '../../library-runtime';
 
 // ============================================================================
 // Save Analysis
@@ -504,11 +505,62 @@ export interface IConfectionSaveResult {
 // ============================================================================
 
 /**
+ * Identity-free contract for filling editing sessions.
+ *
+ * This interface captures behavior shared by embedded child sessions and
+ * standalone persisted sessions. It intentionally excludes session identity
+ * and persistence-specific APIs.
+ *
+ * @public
+ */
+export interface IEmbeddableFillingSession {
+  /** Source recipe variation being edited */
+  readonly baseRecipe: IFillingRecipeVariation;
+  /** Mutable produced filling wrapper */
+  readonly produced: ProducedFilling;
+  /** Current target weight */
+  readonly targetWeight: Measurement;
+  /** Whether the session has unsaved changes */
+  readonly hasChanges: boolean;
+
+  /** Ingredient mutation APIs */
+  setIngredient(
+    id: IngredientId,
+    amount: Measurement,
+    unit?: import('../../common').MeasurementUnit,
+    modifiers?: Fillings.IIngredientModifiers
+  ): import('@fgv/ts-utils').Result<void>;
+  replaceIngredient(
+    oldId: IngredientId,
+    newId: IngredientId,
+    amount: Measurement,
+    unit?: import('../../common').MeasurementUnit,
+    modifiers?: Fillings.IIngredientModifiers
+  ): import('@fgv/ts-utils').Result<void>;
+  removeIngredient(id: IngredientId): import('@fgv/ts-utils').Result<void>;
+
+  /** Scaling/editing APIs */
+  scaleToTargetWeight(targetWeight: Measurement): import('@fgv/ts-utils').Result<Measurement>;
+  setNotes(notes: CommonModel.ICategorizedNote[]): import('@fgv/ts-utils').Result<void>;
+  setProcedure(id: ProcedureId | undefined): import('@fgv/ts-utils').Result<void>;
+
+  /** Undo/redo APIs */
+  undo(): import('@fgv/ts-utils').Result<boolean>;
+  redo(): import('@fgv/ts-utils').Result<boolean>;
+  canUndo(): boolean;
+  canRedo(): boolean;
+
+  /** Save-analysis and dirty baseline */
+  analyzeSaveOptions(): ISaveAnalysis;
+  markSaved(): void;
+}
+
+/**
  * Map of filling editing sessions keyed by slot ID.
  * Used by confection editing sessions to manage filling scaling.
  * @public
  */
-export type IFillingSessionMap = Map<SlotId, import('./editingSession').EditingSession>;
+export type IFillingSessionMap = Map<SlotId, IEmbeddableFillingSession>;
 
 /**
  * Analysis of mold change impact on a molded bonbon confection.
