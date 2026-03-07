@@ -497,10 +497,24 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
 
       return fillingsResult.onSuccess((fillings) => {
         /* c8 ignore next 14 - branch: entity validation ensures optional fields are always present */
+        const mold = source.preferredMold?.mold;
+        const cavityCount = mold?.cavityCount ?? 1;
+        const sourceCount = source.yield.count;
+        const frames = Math.ceil(sourceCount / cavityCount);
+
+        const moldedYield: Confections.IMoldedBonBonYield = {
+          yieldType: 'frames',
+          frames,
+          bufferPercentage: 0.1,
+          count: frames * cavityCount,
+          unit: source.yield.unit ?? 'pieces',
+          weightPerPiece: mold?.cavityWeight
+        };
+
         const produced: IProducedMoldedBonBonEntity = {
           confectionType: 'molded-bonbon',
           variationId,
-          yield: source.yield,
+          yield: moldedYield,
           moldId: source.preferredMold?.id!,
           shellChocolateId: source.shellChocolate.chocolate.id,
           sealChocolateId: source.additionalChocolates?.find((c) => c.purpose === 'seal')?.chocolate.chocolate
@@ -635,6 +649,14 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
   // ============================================================================
   // Type-Specific Read-only Access
   // ============================================================================
+
+  /**
+   * Gets the frame-based yield specification.
+   * @public
+   */
+  public override get yield(): Confections.IMoldedBonBonYield {
+    return this._current.yield;
+  }
 
   /**
    * Gets the mold ID.

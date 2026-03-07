@@ -406,6 +406,9 @@ describe('Confections model', () => {
       confectionType: 'molded-bonbon',
       variationId: 'test.molded-bonbon.2026-01-01-01' as ConfectionRecipeVariationId,
       yield: {
+        yieldType: 'frames',
+        frames: 1,
+        bufferPercentage: 0.1,
         count: 24,
         unit: 'pieces',
         weightPerPiece: 12 as Measurement

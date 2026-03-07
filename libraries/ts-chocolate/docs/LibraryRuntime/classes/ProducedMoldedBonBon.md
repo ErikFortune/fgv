@@ -29,6 +29,23 @@ Description
 <tbody>
 <tr><td>
 
+[yield](./ProducedMoldedBonBon.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IMoldedBonBonYield](../../interfaces/IMoldedBonBonYield.md)
+
+</td><td>
+
+Gets the frame-based yield specification.
+
+</td></tr>
+<tr><td>
+
 [moldId](./ProducedMoldedBonBon.moldId.md)
 
 </td><td>
@@ -110,23 +127,6 @@ Gets the decoration chocolate ID.
 </td><td>
 
 Gets the variation ID.
-
-</td></tr>
-<tr><td>
-
-[yield](./ProducedConfectionBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Gets the yield specification.
 
 </td></tr>
 <tr><td>

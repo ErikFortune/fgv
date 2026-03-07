@@ -272,7 +272,14 @@ describe('Journal Entry Classes', () => {
     produced: {
       confectionType: 'molded-bonbon',
       variationId: 'test.test-molded-bonbon@2026-01-01-01' as ConfectionRecipeVariationId,
-      yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+      yield: {
+        yieldType: 'frames',
+        frames: 1,
+        bufferPercentage: 0.1,
+        count: 24,
+        unit: 'pieces',
+        weightPerPiece: 10 as Measurement
+      },
       moldId: 'test.mold-a' as MoldId,
       shellChocolateId: 'test.dark-chocolate' as IngredientId
     }

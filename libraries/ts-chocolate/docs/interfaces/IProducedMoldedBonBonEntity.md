@@ -45,6 +45,23 @@ Confection type discriminator
 </td></tr>
 <tr><td>
 
+[yield](./IProducedMoldedBonBonEntity.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IMoldedBonBonYield](IMoldedBonBonYield.md)
+
+</td><td>
+
+Frame-based yield specification
+
+</td></tr>
+<tr><td>
+
 [moldId](./IProducedMoldedBonBonEntity.moldId.md)
 
 </td><td>
@@ -126,23 +143,6 @@ Resolved decoration chocolate ingredient ID (if used)
 </td><td>
 
 Confection variation ID that was produced
-
-</td></tr>
-<tr><td>
-
-[yield](./IProducedConfectionEntityBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this production
 
 </td></tr>
 <tr><td>

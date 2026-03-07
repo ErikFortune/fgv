@@ -81,7 +81,14 @@ describe('SessionLibrary', () => {
   const minimalProducedConfection = {
     confectionType: 'molded-bonbon' as const,
     variationId: 'test.truffle@2026-01-01-01' as ConfectionRecipeVariationId,
-    yield: { count: 24, unit: 'pieces' as const, weightPerPiece: 15 as Measurement },
+    yield: {
+      yieldType: 'frames' as const,
+      frames: 1,
+      bufferPercentage: 0.1,
+      count: 24,
+      unit: 'pieces' as const,
+      weightPerPiece: 15 as Measurement
+    },
     fillings: [],
     moldId: 'builtin.half-sphere' as unknown as import('../../../../packlets/common').MoldId,
     shellChocolateId: 'builtin.dark-70' as unknown as import('../../../../packlets/common').IngredientId

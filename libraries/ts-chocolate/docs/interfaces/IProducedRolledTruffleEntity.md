@@ -45,6 +45,23 @@ Confection type discriminator
 </td></tr>
 <tr><td>
 
+[yield](./IProducedRolledTruffleEntity.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IConfectionYield](IConfectionYield.md)
+
+</td><td>
+
+Count-based yield specification
+
+</td></tr>
+<tr><td>
+
 [enrobingChocolateId](./IProducedRolledTruffleEntity.enrobingChocolateId.md)
 
 </td><td>
@@ -92,23 +109,6 @@ Resolved coating ingredient ID (if used)
 </td><td>
 
 Confection variation ID that was produced
-
-</td></tr>
-<tr><td>
-
-[yield](./IProducedConfectionEntityBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this production
 
 </td></tr>
 <tr><td>

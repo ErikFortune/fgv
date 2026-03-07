@@ -630,6 +630,8 @@ export interface IProducedConfectionEntityBase {
 export interface IProducedMoldedBonBonEntity extends IProducedConfectionEntityBase {
   /** Confection type discriminator */
   readonly confectionType: 'molded-bonbon';
+  /** Frame-based yield specification */
+  readonly yield: IMoldedBonBonYield;
   /** Resolved mold ID */
   readonly moldId: MoldId;
   /** Resolved shell chocolate ingredient ID */
@@ -647,6 +649,8 @@ export interface IProducedMoldedBonBonEntity extends IProducedConfectionEntityBa
 export interface IProducedBarTruffleEntity extends IProducedConfectionEntityBase {
   /** Confection type discriminator */
   readonly confectionType: 'bar-truffle';
+  /** Count-based yield specification */
+  readonly yield: IConfectionYield;
   /** Resolved enrobing chocolate ingredient ID (if used) */
   readonly enrobingChocolateId?: IngredientId;
 }
@@ -658,6 +662,8 @@ export interface IProducedBarTruffleEntity extends IProducedConfectionEntityBase
 export interface IProducedRolledTruffleEntity extends IProducedConfectionEntityBase {
   /** Confection type discriminator */
   readonly confectionType: 'rolled-truffle';
+  /** Count-based yield specification */
+  readonly yield: IConfectionYield;
   /** Resolved enrobing chocolate ingredient ID (if used) */
   readonly enrobingChocolateId?: IngredientId;
   /** Resolved coating ingredient ID (if used) */

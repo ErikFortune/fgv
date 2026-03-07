@@ -126,7 +126,7 @@ describe('Journal Model', () => {
     const producedConfection: IProducedMoldedBonBonEntity = {
       confectionType: 'molded-bonbon',
       variationId: 'source.truffle@2026-01-01-01' as IProducedMoldedBonBonEntity['variationId'],
-      yield: { count: 24 },
+      yield: { yieldType: 'frames', frames: 1, bufferPercentage: 0.1, count: 24 },
       moldId: 'mold-1' as IProducedMoldedBonBonEntity['moldId'],
       shellChocolateId: 'choc-1' as IProducedMoldedBonBonEntity['shellChocolateId']
     };

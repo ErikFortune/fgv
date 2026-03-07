@@ -29,6 +29,7 @@ import { Converters as CommonConverters } from '../../common';
 import {
   barTruffleVariationFields,
   confectionYield as confectionYieldConverter,
+  moldedBonBonYield as moldedBonBonYieldConverter,
   commonVariationFields,
   moldedBonBonVariationFields,
   rolledTruffleVariationFields
@@ -202,7 +203,7 @@ export const producedMoldedBonBonEntity: Converter<IProducedMoldedBonBonEntity> 
   Converters.strictObject<IProducedMoldedBonBonEntity>({
     confectionType: Converters.literal('molded-bonbon'),
     variationId: CommonConverters.confectionRecipeVariationId,
-    yield: confectionYieldConverter,
+    yield: moldedBonBonYieldConverter,
     fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),

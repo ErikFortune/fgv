@@ -5285,6 +5285,7 @@ interface IProcedureStepValidation {
 interface IProducedBarTruffleEntity extends IProducedConfectionEntityBase {
     readonly confectionType: 'bar-truffle';
     readonly enrobingChocolateId?: IngredientId;
+    readonly yield: IConfectionYield;
 }
 
 // @public
@@ -5323,6 +5324,7 @@ interface IProducedMoldedBonBonEntity extends IProducedConfectionEntityBase {
     readonly moldId: MoldId;
     readonly sealChocolateId?: IngredientId;
     readonly shellChocolateId: IngredientId;
+    readonly yield: IMoldedBonBonYield;
 }
 
 // @public
@@ -5330,6 +5332,7 @@ interface IProducedRolledTruffleEntity extends IProducedConfectionEntityBase {
     readonly coatingId?: IngredientId;
     readonly confectionType: 'rolled-truffle';
     readonly enrobingChocolateId?: IngredientId;
+    readonly yield: IConfectionYield;
 }
 
 // @public
@@ -7650,6 +7653,7 @@ class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMoldedBonBonE
     setSealChocolate(chocolateId: IngredientId | undefined): Result<void>;
     setShellChocolate(chocolateId: IngredientId): Result<void>;
     get shellChocolateId(): IngredientId;
+    get yield(): Confections.IMoldedBonBonYield;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

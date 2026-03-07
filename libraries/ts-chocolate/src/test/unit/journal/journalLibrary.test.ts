@@ -105,6 +105,9 @@ describe('JournalLibrary (Collection-Based)', () => {
       confectionType: 'molded-bonbon',
       variationId: variationId as ConfectionRecipeVariationId,
       yield: {
+        yieldType: 'frames',
+        frames: 1,
+        bufferPercentage: 0.1,
         count: 24
       },
       fillings: [],
