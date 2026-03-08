@@ -60,48 +60,53 @@ export function useExecutionActions(): IExecutionActions {
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
 
-  const getResolvedSteps = useCallback(
-    (session: UserLibrary.AnyMaterializedSession): ReadonlyArray<LibraryRuntime.IResolvedProcedureStep> => {
-      // For filling sessions, procedure ID is on the produced snapshot
+  const getSessionProcedureId = useCallback(
+    (session: UserLibrary.AnyMaterializedSession): ProcedureId | undefined => {
       if (session.sessionType === 'filling') {
         const fillingSession = session as UserLibrary.Session.EditingSession;
-        const procedureId = fillingSession.produced.snapshot.procedureId;
-        if (!procedureId) {
-          return [];
-        }
-        const proc = workspace.data.procedures.get(procedureId as ProcedureId);
-        if (proc.isFailure()) {
-          return [];
-        }
-        const stepsResult = proc.value.getSteps();
-        if (stepsResult.isFailure()) {
-          return [];
-        }
-        return stepsResult.value;
+        return fillingSession.produced.snapshot.procedureId as ProcedureId | undefined;
       }
-      // For confection sessions, we'd need similar logic — simplified for now
-      return [];
+      if (session.sessionType === 'confection') {
+        const confectionSession = session as UserLibrary.Session.AnyConfectionEditingSession;
+        return confectionSession.produced.procedureId;
+      }
+      return undefined;
     },
-    [workspace]
+    []
+  );
+
+  const getResolvedSteps = useCallback(
+    (session: UserLibrary.AnyMaterializedSession): ReadonlyArray<LibraryRuntime.IResolvedProcedureStep> => {
+      const procedureId = getSessionProcedureId(session);
+      if (!procedureId) {
+        return [];
+      }
+      const proc = workspace.data.procedures.get(procedureId);
+      if (proc.isFailure()) {
+        return [];
+      }
+      const stepsResult = proc.value.getSteps();
+      if (stepsResult.isFailure()) {
+        return [];
+      }
+      return stepsResult.value;
+    },
+    [workspace, getSessionProcedureId]
   );
 
   const getRawSteps = useCallback(
     (session: UserLibrary.AnyMaterializedSession): ReadonlyArray<Entities.IProcedureStepEntity> => {
-      if (session.sessionType === 'filling') {
-        const fillingSession = session as UserLibrary.Session.EditingSession;
-        const procedureId = fillingSession.produced.snapshot.procedureId;
-        if (!procedureId) {
-          return [];
-        }
-        const proc = workspace.data.procedures.get(procedureId as ProcedureId);
-        if (proc.isFailure()) {
-          return [];
-        }
-        return proc.value.entity.steps;
+      const procedureId = getSessionProcedureId(session);
+      if (!procedureId) {
+        return [];
       }
-      return [];
+      const proc = workspace.data.procedures.get(procedureId);
+      if (proc.isFailure()) {
+        return [];
+      }
+      return proc.value.entity.steps;
     },
-    [workspace]
+    [workspace, getSessionProcedureId]
   );
 
   const getExecutionRuntime = useCallback(
