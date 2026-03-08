@@ -787,9 +787,9 @@ function CountYieldEditor({
             <CheckIcon className="h-3.5 w-3.5" />
           </button>
           <input
-            type="number"
-            min="1"
-            step="1"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={countInput}
             onChange={(e): void => setCountInput(e.target.value)}
             autoFocus
@@ -797,10 +797,9 @@ function CountYieldEditor({
           />
           <span className="text-xs text-gray-500">pieces</span>
           <input
-            type="number"
-            min="0"
-            max="100"
-            step="1"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={bufferInput}
             onChange={(e): void => setBufferInput(e.target.value)}
             className="w-14 rounded border border-gray-300 px-2 py-1 text-sm"
@@ -898,9 +897,9 @@ function MoldedBonBonYieldEditor({
             <CheckIcon className="h-3.5 w-3.5" />
           </button>
           <input
-            type="number"
-            min="1"
-            step="1"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={framesInput}
             onChange={(e): void => setFramesInput(e.target.value)}
             autoFocus
@@ -908,10 +907,9 @@ function MoldedBonBonYieldEditor({
           />
           <span className="text-xs text-gray-500">frames</span>
           <input
-            type="number"
-            min="0"
-            max="100"
-            step="1"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={bufferInput}
             onChange={(e): void => setBufferInput(e.target.value)}
             className="w-14 rounded border border-gray-300 px-2 py-1 text-sm"

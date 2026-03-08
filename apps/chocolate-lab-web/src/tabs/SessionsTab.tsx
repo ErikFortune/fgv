@@ -512,6 +512,9 @@ export function SessionsTabContent(): React.ReactElement {
                 session={embedded}
                 embeddedLabel={embeddedLabel}
                 embeddedParentSessionId={entry.sourceConfectionId as SessionId}
+                onRequestCreateEntity={(entityType, prefillName): void =>
+                  handleRequestCreateEntity(entry, entityType, prefillName)
+                }
                 onBrowseIngredient={(ingredientId: IngredientId): void =>
                   handleBrowseIngredientFromEmbeddedSession(entry, ingredientId)
                 }

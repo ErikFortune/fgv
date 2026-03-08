@@ -651,8 +651,9 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
             </label>
             <input
               id="session-yield-frames"
-              type="number"
-              min="1"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={yieldFrames}
               onChange={(e): void => setYieldFrames(e.target.value)}
               placeholder="e.g. 2"
@@ -666,9 +667,9 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
             </label>
             <input
               id="session-yield-buffer"
-              type="number"
-              min="0"
-              max="100"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={yieldBuffer}
               onChange={(e): void => setYieldBuffer(e.target.value)}
               placeholder="10"
@@ -685,8 +686,9 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
             </label>
             <input
               id="session-yield-count"
-              type="number"
-              min="1"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={yieldCount}
               onChange={(e): void => setYieldCount(e.target.value)}
               placeholder="e.g. 48"
@@ -700,9 +702,9 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
             </label>
             <input
               id="session-yield-buffer"
-              type="number"
-              min="0"
-              max="100"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={yieldBuffer}
               onChange={(e): void => setYieldBuffer(e.target.value)}
               placeholder="10"

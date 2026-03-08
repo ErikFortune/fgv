@@ -431,61 +431,126 @@ function ScalingSection({
   if (!onSettingChange) return null;
 
   if (variation.isMoldedBonBonVariation()) {
-    const defaultFrames = Entities.Confections.isYieldInFrames(variation.yield)
-      ? variation.yield.numFrames
-      : 1;
-    const frames = viewSettings?.targetFrames ?? defaultFrames;
-    const buffer = viewSettings?.bufferPercentage ?? 10;
-    const cavityCount = variation.preferredMold?.mold.cavityCount;
-    const effectiveCount = cavityCount !== undefined ? frames * cavityCount : undefined;
     return (
-      <DetailSection title="Scale to Yield">
-        <div className="flex items-center gap-3 px-1 py-1">
-          <label className="text-xs text-gray-500 w-16 shrink-0">Frames</label>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            value={frames}
-            onChange={(e): void => {
-              const v = parseInt(e.target.value, 10);
-              onSettingChange({ targetFrames: isNaN(v) || v <= 0 ? undefined : v });
-            }}
-            className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
-          />
-          <label className="text-xs text-gray-500 w-16 shrink-0">Buffer %</label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            step={5}
-            value={Math.round(buffer)}
-            onChange={(e): void => {
-              const v = parseInt(e.target.value, 10);
-              onSettingChange({ bufferPercentage: isNaN(v) ? 10 : v });
-            }}
-            className="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
-          />
-        </div>
-        {effectiveCount !== undefined && <DetailRow label="Pieces" value={`${effectiveCount} pieces`} />}
-      </DetailSection>
+      <MoldedBonBonScaling
+        variation={variation}
+        viewSettings={viewSettings}
+        onSettingChange={onSettingChange}
+      />
     );
   }
 
+  return (
+    <PieceCountScaling variation={variation} viewSettings={viewSettings} onSettingChange={onSettingChange} />
+  );
+}
+
+function MoldedBonBonScaling({
+  variation,
+  viewSettings,
+  onSettingChange
+}: {
+  readonly variation: LibraryRuntime.IMoldedBonBonRecipeVariation;
+  readonly viewSettings?: IConfectionViewSettings;
+  readonly onSettingChange: (patch: Partial<IConfectionViewSettings>) => void;
+}): React.ReactElement {
+  const defaultFrames = Entities.Confections.isYieldInFrames(variation.yield) ? variation.yield.numFrames : 1;
+  const frames = viewSettings?.targetFrames ?? defaultFrames;
+  const buffer = viewSettings?.bufferPercentage ?? 10;
+  const cavityCount = variation.preferredMold?.mold.cavityCount;
+  const effectiveCount = cavityCount !== undefined ? frames * cavityCount : undefined;
+
+  const [framesInput, setFramesInput] = useState<string>(String(frames));
+  const [bufferInput, setBufferInput] = useState<string>(String(Math.round(buffer)));
+
+  const commitFrames = useCallback((): void => {
+    const v = parseInt(framesInput, 10);
+    if (!isNaN(v) && v > 0) {
+      onSettingChange({ targetFrames: v });
+    } else {
+      setFramesInput(String(frames));
+    }
+  }, [framesInput, frames, onSettingChange]);
+
+  const commitBuffer = useCallback((): void => {
+    const v = parseInt(bufferInput, 10);
+    if (!isNaN(v) && v >= 0 && v <= 100) {
+      onSettingChange({ bufferPercentage: v });
+    } else {
+      setBufferInput(String(Math.round(buffer)));
+    }
+  }, [bufferInput, buffer, onSettingChange]);
+
+  return (
+    <DetailSection title="Scale to Yield">
+      <div className="flex items-center gap-3 px-1 py-1">
+        <label className="text-xs text-gray-500 w-16 shrink-0">Frames</label>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={framesInput}
+          onChange={(e): void => setFramesInput(e.target.value)}
+          onBlur={commitFrames}
+          onKeyDown={(e): void => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+          }}
+          className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+        />
+        <label className="text-xs text-gray-500 w-16 shrink-0">Buffer %</label>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={bufferInput}
+          onChange={(e): void => setBufferInput(e.target.value)}
+          onBlur={commitBuffer}
+          onKeyDown={(e): void => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+          }}
+          className="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+        />
+      </div>
+      {effectiveCount !== undefined && <DetailRow label="Pieces" value={`${effectiveCount} pieces`} />}
+    </DetailSection>
+  );
+}
+
+function PieceCountScaling({
+  variation,
+  viewSettings,
+  onSettingChange
+}: {
+  readonly variation: LibraryRuntime.AnyConfectionRecipeVariation;
+  readonly viewSettings?: IConfectionViewSettings;
+  readonly onSettingChange: (patch: Partial<IConfectionViewSettings>) => void;
+}): React.ReactElement {
   const defaultCount = Entities.Confections.isYieldInFrames(variation.yield) ? 1 : variation.yield.numPieces;
   const count = viewSettings?.targetCount ?? defaultCount;
+  const [countInput, setCountInput] = useState<string>(String(count));
+
+  const commitCount = useCallback((): void => {
+    const v = parseInt(countInput, 10);
+    if (!isNaN(v) && v > 0) {
+      onSettingChange({ targetCount: v });
+    } else {
+      setCountInput(String(count));
+    }
+  }, [countInput, count, onSettingChange]);
+
   return (
     <DetailSection title="Scale to Yield">
       <div className="flex items-center gap-3 px-1 py-1">
         <label className="text-xs text-gray-500 w-16 shrink-0">Pieces</label>
         <input
-          type="number"
-          min={1}
-          step={1}
-          value={count}
-          onChange={(e): void => {
-            const v = parseInt(e.target.value, 10);
-            onSettingChange({ targetCount: isNaN(v) || v <= 0 ? undefined : v });
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={countInput}
+          onChange={(e): void => setCountInput(e.target.value)}
+          onBlur={commitCount}
+          onKeyDown={(e): void => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
           className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
         />

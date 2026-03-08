@@ -438,9 +438,9 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
         <div className="mb-4 flex items-center gap-2">
           <span className="text-xs text-gray-500 shrink-0">Scale to</span>
           <input
-            type="number"
-            min={1}
-            step={10}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="w-24 text-sm border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-choco-primary tabular-nums"
             value={yieldInputValue}
             placeholder={String(Math.round(selectedVariation.baseWeight))}

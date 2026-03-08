@@ -368,6 +368,7 @@ export function FillingSessionPanel({
   const [newIngredientText, setNewIngredientText] = useState('');
   const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set());
   const [targetWeightInput, setTargetWeightInput] = useState<string>(String(session.produced.targetWeight));
+  const [targetWeightEditing, setTargetWeightEditing] = useState(false);
 
   const toggleIngredientExpanded = useCallback((index: number): void => {
     setExpandedIngredients((prev) => {
@@ -470,14 +471,15 @@ export function FillingSessionPanel({
     return Math.abs(factor - 1.0) < 0.001 ? undefined : factor;
   }, [session, sessionVersion]);
 
-  const handleScaleOnBlur = useCallback((): void => {
+  const handleScaleApply = useCallback((): void => {
     const weight = parseFloat(targetWeightInput);
     if (!isNaN(weight) && weight > 0) {
       session.scaleToTargetWeight(weight as Measurement);
       notifySession();
+      setTargetWeightEditing(false);
     } else {
-      // Reset to current target weight if invalid
       setTargetWeightInput(String(session.produced.targetWeight));
+      setTargetWeightEditing(false);
     }
   }, [session, targetWeightInput, notifySession]);
 
@@ -814,35 +816,55 @@ export function FillingSessionPanel({
         </div>
 
         {/* Target Weight */}
-        <EditSection title="Target Weight">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 shrink-0">Scale to</span>
-            <input
-              type="number"
-              className="w-24 text-sm border border-gray-300 rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
-              value={targetWeightInput}
-              placeholder={String(Math.round(session.baseRecipe.baseWeight))}
-              min={1}
-              step={10}
-              onChange={(e): void => setTargetWeightInput(e.target.value)}
-              onBlur={handleScaleOnBlur}
-              onKeyDown={(e): void => {
-                if (e.key === 'Enter') {
-                  (e.target as HTMLInputElement).blur();
-                } else if (e.key === 'Escape') {
+        <div>
+          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Target Weight</div>
+          {!targetWeightEditing ? (
+            <div className="flex items-center gap-1 py-0.5">
+              <button
+                type="button"
+                onClick={(): void => {
                   setTargetWeightInput(String(session.produced.targetWeight));
-                }
-              }}
-            />
-            <span className="text-xs text-gray-500">g</span>
-            {scaleFactor !== undefined && (
-              <span className="text-xs text-amber-600 font-medium">
-                {'\u00d7'}
-                {scaleFactor.toFixed(2)}
+                  setTargetWeightEditing(true);
+                }}
+                title="Edit target weight"
+                className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+              >
+                <ArrowPathIcon className="h-3 w-3" />
+              </button>
+              <span className="text-sm text-gray-700">
+                {Math.round(session.produced.targetWeight)} g
+                {scaleFactor !== undefined && (
+                  <span className="text-xs text-amber-600 font-medium ml-1">
+                    {'\u00d7'}
+                    {scaleFactor.toFixed(2)}
+                  </span>
+                )}
               </span>
-            )}
-          </div>
-        </EditSection>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleScaleApply}
+                title="Done editing"
+                className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+              >
+                <CheckIcon className="h-3.5 w-3.5" />
+              </button>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={targetWeightInput}
+                onChange={(e): void => setTargetWeightInput(e.target.value)}
+                onBlur={handleScaleApply}
+                autoFocus
+                className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+              />
+              <span className="text-xs text-gray-500">g</span>
+            </div>
+          )}
+        </div>
 
         {/* Ingredients */}
         <EditSection title={`Ingredients (${producedIngredients.length})`}>
