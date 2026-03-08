@@ -38,7 +38,9 @@ export interface IConvertingCollectorValidatorCreateParams<
   TITEM extends ICollectible<any, any>,
   TSRC = TITEM
 > {
+  /** The converting collector to validate access to. */
   collector: ConvertingCollector<TITEM, TSRC>;
+  /** The key-value converters for validation. */
   converters: KeyValueConverters<CollectibleKey<TITEM>, TSRC>;
 }
 
@@ -72,12 +74,13 @@ export class ConvertingCollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.ConvertingCollector.(add:1)}
+   * {@inheritDoc Collections.ConvertingCollector.add}
    */
   public add(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritdoc Collections.ConvertingCollector.(add:2)}
+   * Adds an item to the collector using a supplied factory callback
+   * at a specified key, validating the key first.
    */
   public add(
     key: string,
@@ -94,7 +97,7 @@ export class ConvertingCollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.get}
+   * {@inheritDoc Collections.Collector.get}
    */
   public get(key: string): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
@@ -103,12 +106,12 @@ export class ConvertingCollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.ConvertingCollector.(getOrAdd:3)}
+   * {@inheritDoc Collections.ConvertingCollector.getOrAdd}
    */
   public getOrAdd(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:2)}
+   * {@inheritDoc Collections.Collector.getOrAdd}
    */
   public getOrAdd(
     key: string,
@@ -136,14 +139,14 @@ export class ConvertingCollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   public has(key: string): boolean {
     return this._collector.has(key as CollectibleKey<TITEM>);
   }
 
   /**
-   * {@inheritdoc Collections.Collector.toReadOnly}
+   * {@inheritDoc Collections.Collector.toReadOnly}
    */
   public toReadOnly(): IReadOnlyCollectorValidator<TITEM> {
     return this;

@@ -238,4 +238,49 @@ describe('converters', () => {
       }
     );
   });
+
+  describe('jsonConverter', () => {
+    const converter = Converters.jsonConverter(Converters.jsonObject);
+
+    test('parses and converts valid JSON object string', () => {
+      expect(converter.convert('{"name":"test","value":42}')).toSucceedAndSatisfy((v) => {
+        expect(v.name).toBe('test');
+        expect(v.value).toBe(42);
+      });
+    });
+
+    test('fails when input is not a string', () => {
+      expect(converter.convert({ name: 'test' })).toFailWith(/input must be a string/i);
+      expect(converter.convert(42)).toFailWith(/input must be a string/i);
+      expect(converter.convert(true)).toFailWith(/input must be a string/i);
+    });
+
+    test('fails when JSON is malformed', () => {
+      expect(converter.convert('{"name": invalid}')).toFailWith(/failed to parse json/i);
+      expect(converter.convert('{missing: quotes}')).toFailWith(/failed to parse json/i);
+    });
+
+    test('fails when JSON contains a primitive', () => {
+      expect(converter.convert('"hello"')).toFailWith(/json content must be an object/i);
+      expect(converter.convert('42')).toFailWith(/json content must be an object/i);
+      expect(converter.convert('true')).toFailWith(/json content must be an object/i);
+    });
+
+    test('fails when JSON is null', () => {
+      expect(converter.convert('null')).toFailWith(/json content must be an object/i);
+    });
+
+    test('fails when inner converter rejects the parsed value', () => {
+      // jsonObject rejects arrays
+      expect(converter.convert('[1, 2, 3]')).toFailWith(/invalid json object/i);
+    });
+
+    test('handles nested JSON objects', () => {
+      const json = '{"outer":{"inner":"value"},"list":[1,2,3]}';
+      expect(converter.convert(json)).toSucceedAndSatisfy((v) => {
+        expect(v.outer).toEqual({ inner: 'value' });
+        expect(v.list).toEqual([1, 2, 3]);
+      });
+    });
+  });
 });

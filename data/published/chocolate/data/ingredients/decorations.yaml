@@ -1,0 +1,157 @@
+metadata:
+  name: Decorations
+items:
+  lustre-dust:
+    baseId: lustre-dust
+    name: Lustre Dust
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 100
+      otherFats: 0
+    description: >-
+      Edible decorative powder with a shimmering, metallic finish used to add visual appeal to chocolates and
+      confections. Available in various colors including gold, silver, bronze, and pearl. Creates a lustrous sheen when
+      applied to chocolate surfaces.
+    allergens: []
+    traceAllergens: []
+    certifications: []
+    vegan: true
+    tags:
+      - decoration
+      - edible-shimmer
+      - metallic-finish
+      - surface-decoration
+      - powder
+      - food-coloring
+    density: 0.4
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: tsp
+        - id: pinch
+      preferredId: pinch
+    urls: []
+    notes:
+      - category: ai
+        note: >-
+          Lustre dust is typically composed of mica-based pearlescent pigments, titanium dioxide, and approved food
+          colorants. The ganacheCharacteristics reflect it as 100% solids since it's a dry powder with negligible
+          moisture. Density estimated at 0.4 g/mL as a loose powder. This is a surface decoration only and not
+          incorporated into ganache formulations. Vegan status assumed true for most commercial lustre dusts, but
+          specific products may vary - users should verify with manufacturer if using animal-derived pearl pigments.
+      - category: ai
+        note: >-
+          Allergen information is product-specific. While pure lustre dust typically contains no common allergens,
+          cross-contamination may occur during manufacturing. Users should verify with specific product manufacturers.
+    category: decoration
+  cocoa-butter-decorative:
+    baseId: cocoa-butter-decorative
+    name: Cocoa Butter (Decorative)
+    ganacheCharacteristics:
+      cacaoFat: 100
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 0
+      otherFats: 0
+    description: >-
+      Pure cocoa butter specifically intended for decorative applications in chocolate work, including colored cocoa
+      butter for spray work, transfer sheets, and artistic chocolate designs. Provides a stable, crystalline fat
+      structure that adheres well to chocolate surfaces.
+    allergens: []
+    traceAllergens:
+      - milk
+      - soy
+      - nuts
+    certifications:
+      - vegan
+      - gluten-free
+      - kosher
+    vegan: true
+    tags:
+      - cocoa-butter
+      - decorative
+      - spray
+      - coloring
+      - artistic
+      - transfer-sheets
+      - pure-fat
+      - tempering
+    density: 0.91
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+        - id: tsp
+        - id: Tbsp
+      preferredId: g
+    urls: []
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics represent pure cocoa butter at 100% cacao fat. Density of 0.91 g/mL is standard for
+          cocoa butter at room temperature. Melting point of 34°C (93°F) represents the typical melting point for stable
+          Form V crystals in tempered cocoa butter. Trace allergens listed reflect common manufacturing environments
+          where cocoa butter is processed alongside chocolate products. This ingredient is assumed to be pure,
+          deodorized cocoa butter suitable for decorative work, though specific manufacturers may add colorants or have
+          different processing standards.
+      - category: usage
+        note: >-
+          When used for decorative purposes, cocoa butter should be tempered (typically heated to 45-50°C, cooled to
+          26-27°C, then reheated to 31-32°C) to ensure proper crystallization and shine. Colored cocoa butter is often
+          mixed with fat-soluble powder colors at ratios of approximately 10% color to 90% cocoa butter.
+    category: fat
+    meltingPoint: 34
+  gold-leaf:
+    baseId: gold-leaf
+    name: Gold Leaf
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 100
+      otherFats: 0
+    description: >-
+      Edible gold leaf used for decorating chocolates and confections. Typically 23-24 karat gold that has been hammered
+      or rolled into extremely thin sheets. Adds luxury visual appeal and metallic shimmer to finished chocolate pieces.
+    allergens: []
+    traceAllergens: []
+    certifications:
+      - gluten-free
+      - vegan
+      - vegetarian
+      - kosher
+      - halal
+      - all-natural
+    vegan: true
+    tags:
+      - edible-gold
+      - decoration
+      - luxury
+      - metallic
+      - finishing
+      - garnish
+      - 24k
+      - 23k
+    density: 5
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+      preferredId: g
+    urls: []
+    notes:
+      - category: ai
+        note: >-
+          Gold leaf is pure elemental gold and contains no organic compounds, fats, sugars, or water. Actual gold
+          density is 19.3 g/mL but set to maximum allowed value of 5.0 g/mL due to schema constraints. Solids percentage
+          is 100% as it is a pure metal in solid form. Gold is biologically inert and passes through the digestive
+          system unchanged, making it safe for consumption and suitable for all dietary restrictions. Typically sold in
+          books of very thin sheets measured by weight in grams or by sheet count.
+    category: decoration

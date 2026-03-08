@@ -1,0 +1,240 @@
+metadata:
+  name: Chocolate World Molds
+  description: Chocolate World polycarbonate molds
+items:
+  chocolate-world-cw-2227:
+    baseId: chocolate-world-cw-2227
+    manufacturer: Chocolate World
+    productNumber: CW 2227
+    name: Hex Swirl
+    cavities:
+      kind: count
+      count: 32
+      info:
+        weight: 10
+        dimensions:
+          width: 30
+          length: 30
+          depth: 16
+    format: series-2000
+    tags:
+      - hex-swirl
+      - praline
+    urls:
+      - category: product-page
+        url: https://www.chocolateworld.be/winkel/moulds/frame-moulds/CW2227
+  chocolate-world-cw1988:
+    baseId: chocolate-world-cw1988
+    manufacturer: Chocolate World
+    productNumber: CW1988
+    name: Pleated Leaf
+    cavities:
+      kind: grid
+      columns: 7
+      rows: 3
+      info:
+        weight: 12
+        dimensions:
+          width: 30.5
+          length: 33.5
+          depth: 19
+    format: series-1000
+    tags:
+      - leaf
+      - pleated
+      - botanical
+      - polycarbonate
+      - bonbon
+    related: []
+    notes:
+      - category: ai
+        note: >-
+          Dimensions and weight per cavity sourced from multiple retailer listings (Amazon, Vantage House, Pastry Chefs
+          Boutique); consistent across sources as 33.5 x 30.5 x 19 mm and 12g. Mold size confirms series-1000
+          (135x275mm). Layout is grid 3 rows x 7 columns totaling 21 cavities.
+    urls:
+      - category: manufacturer
+        url: https://www.chocolateworld.be/
+      - category: purchase
+        url: https://www.amazon.com/Chocolate-World-CW1988-Pleated-Leaf-Polycarbonate/dp/B08NTNX7F3
+  chocolate-world-cw12060:
+    baseId: chocolate-world-cw12060
+    manufacturer: Chocolate World
+    productNumber: CW12060
+    name: The Duel
+    description: Signature modern square praline with tapered design by Paul Wagemaker
+    cavities:
+      kind: grid
+      columns: 7
+      rows: 3
+      info:
+        weight: 14
+        dimensions:
+          width: 30
+          length: 30
+          depth: 20.5
+    format: series-1000
+    tags:
+      - square
+      - modern
+      - praline
+      - bonbon
+      - polycarbonate
+      - signature
+      - paul-wagemaker
+    related: []
+    notes:
+      - category: ai
+        note: >-
+          CW12060 is a signature mold 'The Duel' designed in collaboration with Paul Wagemaker. Features 21 cavities in
+          3x7 grid layout. Cavity dimensions consistently listed as 30x30x20.5 mm with 14g chocolate capacity across
+          sources (Vantage House, Pastry Chefs Boutique, Chocolate World catalog excerpts, Sweetlink). Mold frame:
+          275x135x26 mm, confirming series-1000 format. Described as a modern square/tapered praline shape suitable for
+          bonbons. Video demo available on Chocolate World's YouTube.
+    urls:
+      - category: manufacturer
+        url: https://www.chocolateworld.be/winkel/moulds/frame-moulds/CW12060
+      - category: manufacturer
+        url: https://www.chocolateworld.be/pdf/Signature_moulds.pdf
+      - category: purchase
+        url: https://www.vantagehouse.com/product/moulds/chocolate-world-moulds/CW12060
+      - category: purchase
+        url: https://www.chocolat-chocolat.com/product/chocolate-mold-the-duel-by-paul-wagemaker
+      - category: purchase
+        url: >-
+          https://www.pastrychefsboutique.com/CHOCOLATE/Chocolate-Molds/polycarbonate-chocolate-molds/Modern-Shaped-Molds/chocolate-world-cw12060-polycarbonate-chocolate-mold-the-duel-by-paul-wagemaker-30mm-x-30mm-x-205mm-14gr-21-cavity-modern-shaped
+      - category: video
+        url: https://www.youtube.com/watch?v=FY8DJTc3eRs
+  chocolate-world-cw12027:
+    baseId: chocolate-world-cw12027
+    manufacturer: Chocolate World
+    productNumber: CW12027
+    name: The Taster
+    description: >-
+      Signature mold 'The Taster' designed by Lana Orlova Bauer, featuring 21 squeezed-in-the-middle half-sphere
+      cavities, ideal for filled pralines or bonbons with glossy finish
+    cavities:
+      kind: grid
+      columns: 7
+      rows: 3
+      info:
+        weight: 13.5
+        dimensions:
+          width: 29.5
+          length: 34.5
+          depth: 17
+    format: series-1000
+    tags:
+      - bonbon
+      - praline
+      - polycarbonate
+      - signature
+      - modern
+      - filled
+    notes:
+      - category: ai
+        note: >-
+          Dimensions consistently listed as 34.5 x 29.5 x 17 mm across sources (length x width x height/depth); weight
+          per cavity 13.5g from official catalog and retailer specs. Format 'series-1000' confirmed via multiple sources
+          as 275x135mm frame. Cavity shape described as 'squeezed-in-the-middle half-sphere' or similar modern abstract
+          form. Grid is 3 rows x 7 columns totaling 21 cavities. Same model referenced as CW2468 in some contexts.
+    urls:
+      - category: manufacturer-catalog-reference
+        url: https://www.chocolateworld.be/pdf/CW_Moulds2026.pdf
+      - category: purchase
+        url: https://www.amazon.com/Chocolate-World-CW12027-Polycarbonate-Lana-Orlova-Bauer/dp/B09L1LSG8Y
+      - category: purchase
+        url: https://www.vantagehouse.com/product/moulds/chocolate-world-moulds/CW12027
+      - category: purchase
+        url: https://zuccherocanada.us/products/the-taster-lana-orlova-bauer-chocolate-mold-cw12027
+  chocolate-world-cw1840:
+    baseId: chocolate-world-cw1840
+    manufacturer: Chocolate World
+    productNumber: CW1840
+    name: Cube with edge
+    description: >-
+      Dan Forgey signature polycarbonate mold featuring 24 modern cube-shaped cavities with a slanted or flattened
+      edge/corner, ideal for glossy pralines or bonbons
+    cavities:
+      kind: grid
+      columns: 8
+      rows: 3
+      info:
+        weight: 12
+        dimensions:
+          width: 23
+          length: 23
+          depth: 20
+    format: series-1000
+    tags:
+      - cube
+      - modern
+      - bonbon
+      - praline
+      - polycarbonate
+      - signature
+      - dan forgey
+    notes:
+      - category: ai
+        note: >-
+          Cavity dimensions consistently reported as 23 x 23 x 20 mm (width x length x depth/height) across multiple
+          retailers and manufacturer specs. Weight per cavity 12g confirmed in official and sales listings. Layout 3
+          rows x 8 columns for 24 cavities. Format 'series-1000' (275x135mm) verified in product details. Shape
+          described as 'cube with edge', 'cube with slanted edge', or 'square flattened at one corner'. Mold overall
+          height ~30mm.
+    urls:
+      - category: manufacturer
+        url: https://www.chocolateworld.be/winkel/vormen/kadervormen/CW1840
+      - category: purchase
+        url: https://www.amazon.com/Chocolate-World-CW1840-Polycarbonate-Dan-Forgey-Square/dp/B09L1KP2ND
+      - category: purchase
+        url: https://www.vantagehouse.com/product/moulds/chocolate-world-moulds/CW1840
+      - category: purchase
+        url: https://zuccherocanada.us/products/dan-forgey-chocolate-mold-cw1840
+      - category: purchase
+        url: >-
+          https://www.pastrychefsboutique.com/CHOCOLATE/Chocolate-Molds/polycarbonate-chocolate-molds/Modern-Shaped-Molds/chocolate-world-cw1840-polycarbonate-cube-with-edge-by-dan-forgey-chocolate-mold-23-x-23-x-20-mm-12gr-3x8-cavity-275x135x24mm-mo
+  chocolate-world-cw1301:
+    baseId: chocolate-world-cw1301
+    manufacturer: Chocolate World
+    productNumber: CW1301
+    name: Wiro
+    description: >-
+      Polycarbonate chocolate mold featuring hexagonal or square cavities with a spiral 'wiro' swirl design on the
+      bottom, creating elegant pralines or bonbons with decorative texture
+    cavities:
+      kind: grid
+      columns: 8
+      rows: 3
+      info:
+        weight: 10
+        dimensions:
+          width: 30
+          length: 30
+          depth: 16
+    format: series-1000
+    tags:
+      - bonbon
+      - praline
+      - swirl
+      - hexagonal
+      - wiro
+      - polycarbonate
+      - fantasy
+    notes:
+      - category: ai
+        note: >-
+          Cavity dimensions Ø30x16 mm (circular/round base with swirl, listed as 30x30x16 mm in rectangular
+          approximation) from multiple retailer specs and catalog. Weight per cavity 10g consistent across sources.
+          Layout 3 rows x 8 columns for 24 cavities in series-1000 (275x135 mm) frame, mold height 24 mm. Shape named
+          'Wiro' referring to spiral/swirl design, often categorized under fantasy or modern pralines; same model as
+          CW2227 in series-2000. Dimensions are internal cavity specs; weight based on solid milk chocolate molding.
+    urls:
+      - category: manufacturer
+        url: https://www.chocolateworld.be/winkel/vormen/kadervormen/CW1301
+      - category: purchase
+        url: https://www.vantagehouse.com/product/moulds/chocolate-world-moulds/CW1301
+      - category: purchase
+        url: https://secure.auifinefoods.com/polycarbonate-mold-wiro-27-5x13-5x2-4cm-8613011301
+      - category: catalog-reference
+        url: https://cocoaoutlet.com/media/pdf/CWmoulds13.pdf

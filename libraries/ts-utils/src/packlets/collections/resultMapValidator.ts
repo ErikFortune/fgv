@@ -31,17 +31,17 @@ import { KeyValueConverters } from './keyValueConverters';
  */
 export interface IReadOnlyResultMapValidator<TK extends string = string, TV = unknown> {
   /**
-   * {@inheritdoc Collections.ResultMapValidator.map}
+   * {@inheritDoc Collections.ReadOnlyResultMapValidator.map}
    */
   readonly map: IReadOnlyResultMap<TK, TV>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.get}
+   * {@inheritDoc Collections.ResultMap.get}
    */
   get(key: string): DetailedResult<TV, ResultMapResultDetail>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   has(key: string): boolean;
 }
@@ -53,6 +53,63 @@ export interface IReadOnlyResultMapValidator<TK extends string = string, TV = un
 export interface IResultMapValidatorCreateParams<TK extends string = string, TV = unknown> {
   map: ResultMap<TK, TV>;
   converters: KeyValueConverters<TK, TV>;
+}
+
+/**
+ * A read-only validator for any {@link Collections.IReadOnlyResultMap | IReadOnlyResultMap}
+ * that validates weakly-typed keys before accessing values.
+ * @public
+ */
+export class ReadOnlyResultMapValidator<TK extends string = string, TV = unknown>
+  implements IReadOnlyResultMapValidator<TK, TV>
+{
+  /**
+   * The key-value converters used for validation.
+   */
+  public readonly converters: KeyValueConverters<TK, TV>;
+
+  /**
+   * The underlying map.
+   */
+  public get map(): IReadOnlyResultMap<TK, TV> {
+    return this._map;
+  }
+
+  private readonly _map: IReadOnlyResultMap<TK, TV>;
+
+  /**
+   * Constructs a new {@link Collections.ReadOnlyResultMapValidator | ReadOnlyResultMapValidator}.
+   * @param map - The map to validate access to.
+   * @param converters - The key-value converters for validation.
+   */
+  public constructor(map: IReadOnlyResultMap<TK, TV>, converters: KeyValueConverters<TK, TV>) {
+    this._map = map;
+    this.converters = converters;
+  }
+
+  /**
+   * Gets a value from the map by key, validating the key first.
+   * @param key - The key to retrieve (will be validated).
+   * @returns `Success` with the value if found, `Failure` otherwise.
+   */
+  public get(key: string): DetailedResult<TV, ResultMapResultDetail> {
+    return this.converters.convertKey(key).onSuccess((validKey) => {
+      return this._map.get(validKey);
+    });
+  }
+
+  /**
+   * Checks if the map contains a key, validating the key first.
+   * @param key - The key to check (will be validated).
+   * @returns `true` if the key exists and is valid, `false` otherwise.
+   */
+  public has(key: string): boolean {
+    const result = this.converters.convertKey(key);
+    if (result.isFailure()) {
+      return false;
+    }
+    return this._map.has(result.value);
+  }
 }
 
 /**
@@ -80,7 +137,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.add}
+   * {@inheritDoc Collections.ResultMap.add}
    */
   public add(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {
@@ -89,7 +146,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.delete}
+   * {@inheritDoc Collections.ResultMap.delete}
    */
   public delete(key: string): DetailedResult<TV, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
@@ -98,7 +155,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.get}
+   * {@inheritDoc Collections.ResultMap.get}
    */
   public get(key: string): DetailedResult<TV, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
@@ -107,12 +164,12 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.(getOrAdd:1)}
+   * {@inheritDoc Collections.ResultMap.getOrAdd}
    */
   public getOrAdd(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.(getOrAdd:2)}
+   * {@inheritDoc Collections.ResultMap.getOrAdd}
    */
   public getOrAdd(
     key: string,
@@ -142,14 +199,14 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   public has(key: string): boolean {
     return this._map.has(key as TK);
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.set}
+   * {@inheritDoc Collections.ResultMap.set}
    */
   public set(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {
@@ -158,7 +215,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.update}
+   * {@inheritDoc Collections.ResultMap.update}
    */
   public update(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {

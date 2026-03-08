@@ -98,10 +98,7 @@ export class ObjectValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
 
   /**
    * Constructs a new {@link Validation.Classes.ObjectValidator | ObjectValidator<T>}.
-   * @param fields - A {@link Validation.Classes.FieldValidators | FieldValidators<T>} containing
-   * a {@link Validation.Validator | Validator} for each field.
-   * @param options - An optional {@link Validation.Classes.ObjectValidatorOptions} to configure
-   * validation.
+   * @param params - Construction parameters including field validators and options.
    */
   public constructor(params: ObjectValidatorConstructorParams<T, TC>) {
     super(params);
@@ -165,7 +162,7 @@ export class ObjectValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
   /**
    * Creates a new {@link Validation.Classes.ObjectValidator | ObjectValidator} derived from this one but with
    * new optional properties as specified by a supplied array of `keyof T`.
-   * @param addOptionalProperties - The keys to be made optional.
+   * @param addOptionalFields - The keys to be made optional.
    * @returns A new {@link Validation.Classes.ObjectValidator | ObjectValidator} with the additional optional
    * source properties.
    */
@@ -176,7 +173,7 @@ export class ObjectValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.ValidatorBase._validate}
+   * {@inheritDoc Validation.ValidatorBase._validate}
    * @internal
    */
   protected _validate(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> {

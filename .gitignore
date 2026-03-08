@@ -72,6 +72,10 @@ common/autoinstallers/*/.npmrc
 # Heft temporary files
 .heft
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
 # built output
 lib/
 dist/
+temp/

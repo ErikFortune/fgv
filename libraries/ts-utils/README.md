@@ -1,132 +1,200 @@
-<div align="center">
-  <h1>ts-utils</h1>
-  Assorted Typescript Utilities
-</div>
+# @fgv/ts-utils
 
-<hr/>
-
-## Summary
-
-Assorted typescript utilities that I'm tired of copying from project to project. Most notable and closest to production-ready are:
-* Result\<T\> - Easily combine inline and exception-based error handling
-* Converter\<T\> - Conversion framework especially useful for type-safe processing of JSON
-
----
-
-- [Summary](#summary)
-- [Installation](#installation)
-- [API Documentation](#api-documentation)
-- [Overview](#overview)
-  - [The Result Pattern](#the-result-pattern)
-  - [Converters](#converters)
-- [API](#api)
-  - [Result\<T\>](#resultt)
-  - [Converter\<T\>](#convertert)
+Type-safe utilities for TypeScript — Result pattern, composable converters and validators, and Result-aware collections.
 
 ## Installation
 
-With npm:
 ```sh
 npm install @fgv/ts-utils
 ```
 
-## API Documentation
-Extracted API documentation is [here](./docs/ts-utils.md).
-
 ## Overview
-### The Result Pattern
 
-A Result\<T\> represents the success or failure of executing some operation.  A successful result contains a return *value* of type *T*, while a failure result contains an error message of type *string*.  Taken by itself, the use of Result\<T\> allows for simple inline error handling.
+`@fgv/ts-utils` provides a cohesive set of utilities built around the Result pattern. Instead of throwing exceptions for expected error conditions, all fallible operations return `Result<T>` — making errors explicit in the type system and enabling safe, composable error handling.
 
-```ts
-const result = functionReturningResult();
-if (result.isSuccess()) {
-    functionAcceptingT(result.value);
+The library is organized into six packlets, each with its own detailed documentation.
+
+## The Result Pattern
+
+A `Result<T>` is either a `Success<T>` containing a value, or a `Failure<T>` containing an error message. This replaces exception-based error handling with explicit, chainable results.
+
+### Creating Results
+
+```typescript
+import { Result, succeed, fail, captureResult } from '@fgv/ts-utils';
+
+function divide(a: number, b: number): Result<number> {
+  if (b === 0) {
+    return fail('Division by zero');
+  }
+  return succeed(a / b);
 }
-else {
-    console.log(result.error);
-}
-```
 
-Use *succeed\<T>()* and *fail\<T\>()* to return success or failure:
-
-```ts
-function thisFunctionSucceeds(): string {
-    return succeed('I succeeded!');
-}
-
-function thisFunctionFails(): number {
-    return fail('Oops!  I failed');
-}
-```
-
-Use *orDefault* when a failure can be safely ignored:
-```ts
-// returns undefined on failure
-const value1: string|undefined = functionReturningResult('whatever').orDefault();
-
-// returns 'oops' on failure
-const value2: string = functionReturningResult('whatever').orDefault('oops');
-```
-
-The *orThrow* method converts a failure result to an exception, for use in contexts (such as constructors) in which an exception is the most appropriate way to handle errors.
-
-```ts
-constructor(param: string) {
-    this._param = validateReturnsResult(param).orThrow();
+// Wrap throwing code
+function parseJson(text: string): Result<unknown> {
+  return captureResult(() => JSON.parse(text));
 }
 ```
 
-The *captureResult* function converts an exception to a failure for simplified inline processing.
+### Extracting Values
 
-```ts
-class Thing {
-    static create(param: string): Result<Thing> {
-        return captureResult(new Thing(param));
-    }
+```typescript
+// In setup/initialization — converts failure to exception
+const config = loadConfig().orThrow();
+
+// Safe fallback
+const port = getPort().orDefault(3000);
+```
+
+### Chaining Operations
+
+```typescript
+function processData(input: string): Result<ProcessedData> {
+  return parseInput(input)
+    .onSuccess((parsed) => validate(parsed))
+    .onSuccess((valid) => transform(valid));
 }
 ```
 
-Other methods and helpers allow for chaining and conversion of results, working with mulitple results and more.  See the [API documentation](#resultt) for details.
+### Error Context
 
-### Converters
-
-The basic *Converter\<T\>* implements a *convert* method which converts *unknown* to *T*, using the result pattern to report success or failure.
-
-```ts
-class Converter<T> {
-    public convert(from: unknown): Result<T>;
+```typescript
+function loadUser(id: string): Result<User> {
+  return fetchUser(id)
+    .withErrorFormat((msg) => `Failed to load user ${id}: ${msg}`);
 }
 ```
 
-But built-in converters, including converters which can extract a field for an object or which apply converters according to the shape of some object can be composed to provide compact and legible type-safe conversion from anything to a strongly typed Typescript object:
+### Error Aggregation
 
-```ts
-interface Thing {
-    title: string;
-    count: number;
-    isGood: boolean;
-    hints: string[];
+```typescript
+import { mapResults, MessageAggregator } from '@fgv/ts-utils';
+
+// Aggregate array of results
+const results = items.map((item) => processItem(item));
+return mapResults(results); // All must succeed, or errors are aggregated
+
+// Collect errors manually
+const aggregator = new MessageAggregator();
+validateA(data).aggregateError(aggregator);
+validateB(data).aggregateError(aggregator);
+if (aggregator.hasMessages) {
+  return fail(aggregator.toString('; '));
+}
+```
+
+### Factory Pattern
+
+```typescript
+class ResourceManager {
+  private constructor(private config: Config) { /* may throw */ }
+
+  public static create(params: Params): Result<ResourceManager> {
+    return validateParams(params)
+      .onSuccess((valid) => loadConfig(valid))
+      .onSuccess((config) => captureResult(() => new ResourceManager(config)));
+  }
+}
+```
+
+### Best Practices
+
+- Return `Result<T>` from fallible operations — never throw in business logic
+- Use `orThrow()` only in setup/initialization
+- Prefer chaining over intermediate variables
+- Add context with `withErrorFormat()` as errors propagate
+- Use `MessageAggregator` for collecting multiple errors
+
+[Full Result pattern documentation &rarr;](./src/packlets/base/README.md)
+
+## Type-Safe Conversion
+
+`Converter<T>` converts `unknown` to `T`, returning `Result<T>`. Converters compose to build type-safe pipelines for JSON parsing and data transformation.
+
+```typescript
+import { Converters } from '@fgv/ts-utils';
+
+interface IConfig {
+  host: string;
+  port: number;
+  debug: boolean;
+  tags: string[];
 }
 
-const thingConverter = Converters.object<Thing>({
-    title: Converters.string,
-    count: Converters.number,
-    isGood: Converters.boolean,
-    hints: Converters.array(Converters.string),
+const configConverter = Converters.object<IConfig>({
+  host: Converters.string,
+  port: Converters.number,
+  debug: Converters.boolean,
+  tags: Converters.arrayOf(Converters.string),
 });
 
-// gets a Thing or throws an error
-const thing: Things = thingConverter.convert(json).orThrow();
+const config = configConverter.convert(json).orThrow();
 ```
 
-Everything is strongly-typed, so Intellisense will autocomplete properties and highlight errors in the object supplied to *Converters.object*.
+Converters support a fluent modifier API:
 
-Other helpers and methods enable optional values or fields, chaining of results and a variety of other conversions and transformations.
+```typescript
+Converters.number
+  .withConstraint((n) => n > 0 && n < 65536, { description: 'valid port' })
+  .withBrand<'Port'>('Port');
+```
 
-## API
+[Full conversion documentation &rarr;](./src/packlets/conversion/README.md)
 
-### Result\<T\>
+## In-Place Validation
 
-### Converter\<T\>
+`Validator<T>` verifies a value is of type `T` without creating a new object — preserving object identity and prototype chains.
 
+```typescript
+import { Validators } from '@fgv/ts-utils';
+
+const userValidator = Validators.object<IUser>({
+  name: Validators.string,
+  age: Validators.number,
+  active: Validators.boolean,
+});
+
+const result = userValidator.validate(input); // Result<IUser>
+```
+
+Converters and Validators interoperate — use either as field definitions in object converters.
+
+[Full validation documentation &rarr;](./src/packlets/validation/README.md)
+
+## Type-Safe Collections
+
+`ResultMap` provides a `Map`-like API where all operations return `DetailedResult` with discriminated details (`'added'`, `'exists'`, `'not-found'`, etc.):
+
+```typescript
+import { ResultMap } from '@fgv/ts-utils';
+
+const map = new ResultMap<string, number>();
+map.add('key', 42);           // detail: 'added'
+map.add('key', 99);           // detail: 'exists' (failure)
+map.get('key');                // detail: 'exists', value: 42
+map.get('missing');            // detail: 'not-found' (failure)
+```
+
+The collections packlet also provides `Collector` (append-only with write-once indexing), `ValidatingResultMap` (weakly-typed access with validation), `ConvertingResultMap` (lazy conversion with caching), and `AggregatedResultMap` (multi-collection composite IDs).
+
+[Full collections documentation &rarr;](./src/packlets/collections/README.md)
+
+## Additional Utilities
+
+- **[Logging](./src/packlets/logging/README.md)** — Level-based logging with `ConsoleLogger`, `InMemoryLogger` (for testing), and `LogReporter` for Result-aware reporting.
+- **[Hashing](./src/packlets/hash/README.md)** — Deterministic hashing of nested objects with `Crc32Normalizer`, producing consistent hashes regardless of property order.
+
+## Packlet Reference
+
+| Packlet | Description | Documentation |
+|---------|-------------|---------------|
+| `base` | Result pattern, error aggregation, branded types | [README](./src/packlets/base/README.md) |
+| `conversion` | Type-safe converters (`unknown` &rarr; `T`) | [README](./src/packlets/conversion/README.md) |
+| `validation` | In-place validators (verify without transforming) | [README](./src/packlets/validation/README.md) |
+| `collections` | Result-aware Map/Collection with validation layers | [README](./src/packlets/collections/README.md) |
+| `logging` | Level-based logging with Result integration | [README](./src/packlets/logging/README.md) |
+| `hash` | Deterministic object hashing | [README](./src/packlets/hash/README.md) |
+
+## API Documentation
+
+Extracted API documentation is [here](./docs/ts-utils.md).

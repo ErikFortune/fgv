@@ -4,17 +4,68 @@
 
 ```ts
 
+import { CryptoUtils as CryptoUtils_2 } from '@fgv/ts-extras';
+import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 
+// Warning: (ae-forgotten-export) The symbol "ICryptoProvider" needs to be exported by the entry point index.d.ts
+//
 // @public
-export class BrowserHashProvider {
+class BrowserCryptoProvider implements ICryptoProvider {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(cryptoApi?: Crypto);
+    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    // Warning: (ae-forgotten-export) The symbol "IEncryptionResult" needs to be exported by the entry point index.d.ts
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    fromBase64(base64: string): Result<Uint8Array>;
+    generateKey(): Promise<Result<Uint8Array>>;
+    generateRandomBytes(length: number): Result<Uint8Array>;
+    toBase64(data: Uint8Array): string;
+}
+
+// @public
+class BrowserHashProvider {
     static hashParts(parts: string[], algorithm?: string, separator?: string): Promise<Result<string>>;
     static hashString(data: string, algorithm?: string): Promise<Result<string>>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
+
+declare namespace CryptoUtils {
+    export {
+        BrowserHashProvider,
+        createBrowserCryptoProvider,
+        BrowserCryptoProvider
+    }
+}
+export { CryptoUtils }
+
+// @public
+export const DEFAULT_DIRECTORY_HANDLE_DB = "chocolate-lab-storage";
+
+// @public
+export const DEFAULT_DIRECTORY_HANDLE_STORE = "directory-handles";
+
 // @public
 const defaultFileApiTreeInitParams: FileTree.IFileTreeInitParams<string>;
+
+// @public
+export class DirectoryHandleStore {
+    constructor(dbName?: string, storeName?: string);
+    getAll(): Promise<Result<Array<{
+        label: string;
+        handle: FileSystemDirectoryHandle_2;
+    }>>>;
+    getAllLabels(): Promise<Result<string[]>>;
+    load(label: string): Promise<Result<FileSystemDirectoryHandle_2 | undefined>>;
+    remove(label: string): Promise<Result<void>>;
+    save(label: string, handle: FileSystemDirectoryHandle_2): Promise<Result<void>>;
+}
 
 // @public
 export function exportAsJson(data: unknown, filename: string): void;
@@ -34,6 +85,9 @@ function extractFileMetadata(file: File): IFileMetadata;
 // @public
 export class FileApiTreeAccessors<TCT extends string = string> {
     static create<TCT extends string = string>(initializers: TreeInitializer[], params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+    static createFromLocalStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<FileTree.FileTree<TCT>>;
+    static createPersistent<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+    static createPersistentFromFile<TCT extends string = string>(fileHandle: FileSystemFileHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static extractFileMetadata(file: File): IFileMetadata;
     static fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static fromFileList<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
@@ -46,6 +100,18 @@ export interface FilePickerAcceptType {
     accept: Record<string, string | string[]>;
     // (undocumented)
     description?: string;
+}
+
+// @public
+export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+    protected constructor(files: FileTree.IInMemoryFile<TCT>[], rootDir: FileSystemDirectoryHandle_2, handles: Map<string, FileSystemFileHandle_2>, params: IFileSystemAccessTreeParams<TCT> | undefined, hasWritePermission: boolean);
+    fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
+    static fromDirectoryHandle<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileSystemAccessTreeAccessors<TCT>>>;
+    static fromFileHandle<TCT extends string = string>(fileHandle: FileSystemFileHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileSystemAccessTreeAccessors<TCT>>>;
+    getDirtyPaths(): string[];
+    isDirty(): boolean;
+    saveFileContents(path: string, contents: string): Result<string>;
+    syncToDisk(): Promise<Result<void>>;
 }
 
 // @public
@@ -201,6 +267,13 @@ export interface IFileMetadata {
 }
 
 // @public
+export interface IFileSystemAccessTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {
+    autoSync?: boolean;
+    filePath?: string;
+    requireWritePermission?: boolean;
+}
+
+// @public
 export interface IFsAccessApis {
     // (undocumented)
     showDirectoryPicker(options?: ShowDirectoryPickerOptions): Promise<FileSystemDirectoryHandle_2>;
@@ -208,6 +281,13 @@ export interface IFsAccessApis {
     showOpenFilePicker(options?: ShowOpenFilePickerOptions): Promise<FileSystemFileHandle_2[]>;
     // (undocumented)
     showSaveFilePicker(options?: ShowSaveFilePickerOptions): Promise<FileSystemFileHandle_2>;
+}
+
+// @public
+export interface ILocalStorageTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {
+    autoSync?: boolean;
+    pathToKeyMap: Record<string, string>;
+    storage?: Storage;
 }
 
 // @public
@@ -234,6 +314,16 @@ export interface IUrlConfigOptions {
     resourceTypes?: string;
     zipFile?: string;
     zipPath?: string;
+}
+
+// @public
+export class LocalStorageTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+    fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
+    static fromStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<LocalStorageTreeAccessors<TCT>>;
+    getDirtyPaths(): string[];
+    isDirty(): boolean;
+    saveFileContents(path: string, contents: string): Result<string>;
+    syncToDisk(): Promise<Result<void>>;
 }
 
 // @public

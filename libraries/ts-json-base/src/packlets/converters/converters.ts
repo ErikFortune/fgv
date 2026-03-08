@@ -26,6 +26,7 @@ import {
   Converters as BaseConverters,
   Result,
   StringConverter,
+  captureResult,
   fail,
   succeed
 } from '@fgv/ts-utils';
@@ -72,7 +73,7 @@ export const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext> = ne
  * An copying converter which converts a supplied `unknown` value into
  * a valid {@link JsonObject | JsonObject}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link Converters.IJsonConverterContext | context} at runtime.
+ * `IJsonConverterContext` at runtime.
  *
  * Guaranteed to return a new object.
  * @public
@@ -115,7 +116,7 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
  * An copying converter which converts a supplied `unknown` value to
  * a valid {@link JsonArray | JsonArray}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link Converters.IJsonConverterContext | context} at runtime.
+ * `IJsonConverterContext` at runtime.
  *
  * Guaranteed to return a new array.
  * @public
@@ -160,7 +161,7 @@ export const jsonArray: Converter<JsonArray, IJsonConverterContext> = new Conver
  * An copying converter which converts a supplied `unknown` value to a
  * valid {@link JsonValue | JsonValue}. Fails by default if any properties or array elements
  * are `undefined` - this default behavior can be overridden by supplying an appropriate
- * {@link Converters.IJsonConverterContext | context} at runtime.
+ * `IJsonConverterContext` at runtime.
  * @public
  */
 export const jsonValue: Converter<JsonValue, IJsonConverterContext> = new Conversion.BaseConverter<
@@ -182,8 +183,8 @@ export const jsonValue: Converter<JsonValue, IJsonConverterContext> = new Conver
 );
 
 /**
- * A {@link Converter | Converter} which converts `unknown` to a `string`.
- * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * A `StringConverter` which converts `unknown` to a `string`.
+ * Accepts `IJsonConverterContext` but ignores it.
  * @public
  */
 export const string: StringConverter<string, IJsonConverterContext> = new StringConverter<
@@ -192,8 +193,8 @@ export const string: StringConverter<string, IJsonConverterContext> = new String
 >();
 
 /**
- * A {@link Converter | Converter} which converts `unknown` to a `number`.
- * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * A `Converter` which converts `unknown` to a `number`.
+ * Accepts `IJsonConverterContext` but ignores it.
  * Mirrors the behavior of `@fgv/ts-utils`.
  * @public
  */
@@ -203,8 +204,8 @@ export const number: Converter<number, IJsonConverterContext> = new Conversion.B
 >((from: unknown): Result<number> => BaseConverters.number.convert(from));
 
 /**
- * A {@link Converter | Converter} which converts `unknown` to a `boolean`.
- * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * A `Converter` which converts `unknown` to a `boolean`.
+ * Accepts `IJsonConverterContext` but ignores it.
  * Mirrors the behavior of `@fgv/ts-utils`.
  * @public
  */
@@ -215,7 +216,7 @@ export const boolean: Converter<boolean, IJsonConverterContext> = new Conversion
 
 /**
  * Helper to create a converter for a literal value.
- * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * Accepts `IJsonConverterContext` but ignores it.
  * Mirrors the behavior of `@fgv/ts-utils`.
  * @public
  */
@@ -224,17 +225,17 @@ export function literal<T>(value: T): Converter<T, IJsonConverterContext> {
 }
 
 /**
- * Helper function to create a {@link Converter | Converter} which converts `unknown` to one of a set of
+ * Helper function to create a `Converter` which converts `unknown` to one of a set of
  * supplied enumerated values. Anything else fails.
  *
  * @remarks
- * This JSON variant accepts an {@link Converters.IJsonConverterContext | IJsonConverterContext} OR
+ * This JSON variant accepts an `IJsonConverterContext` OR
  * a `ReadonlyArray<T>` as its conversion context. If the context is an array, it is used to override the
  * allowed values for that conversion; otherwise, the original `values` supplied at creation time are used.
  *
  * @param values - Array of allowed values.
  * @param message - Optional custom failure message.
- * @returns A new {@link Converter | Converter} returning `<T>`.
+ * @returns A new `Converter` returning `<T>`.
  * @public
  */
 export function enumeratedValue<T>(
@@ -255,4 +256,30 @@ export function enumeratedValue<T>(
       return fail(message ?? `Invalid enumerated value ${JSON.stringify(from)}`);
     }
   );
+}
+
+/**
+ * Creates a converter that parses JSON string content and then applies the supplied converter.
+ * @param converter - Converter to apply to the parsed JSON
+ * @returns Converter that parses JSON then validates
+ * @public
+ */
+export function jsonConverter<T>(converter: Converter<T>): Converter<T> {
+  return new Conversion.BaseConverter<T>((from: unknown): Result<T> => {
+    if (typeof from !== 'string') {
+      return fail('Input must be a string');
+    }
+
+    const parseResult = captureResult(() => JSON.parse(from));
+    if (parseResult.isFailure()) {
+      return fail(`Failed to parse JSON: ${parseResult.message}`);
+    }
+
+    const parsed = parseResult.value;
+    if (typeof parsed !== 'object' || parsed === null) {
+      return fail('Failed to parse JSON: JSON content must be an object');
+    }
+
+    return converter.convert(parsed);
+  });
 }
