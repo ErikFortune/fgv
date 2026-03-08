@@ -33,7 +33,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useTypeaheadMatch } from '@fgv/ts-app-shell';
-import type { LibraryRuntime } from '@fgv/ts-chocolate';
+import { Entities, type LibraryRuntime } from '@fgv/ts-chocolate';
+import type { Entities as EntitiesNS, Percentage } from '@fgv/ts-chocolate';
 
 import type { ICreateSessionInfo } from '../navigation';
 
@@ -71,7 +72,7 @@ export interface ICreateSessionPanelProps {
     selection: ISessionRecipeSelection,
     label: string,
     slug: string,
-    quantity?: number
+    initialYield?: EntitiesNS.Confections.BufferedConfectionYield
   ) => void;
   /** Called when the user cancels */
   readonly onCancel: () => void;
@@ -165,7 +166,15 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
   const [label, setLabel] = useState(initialRecipeName);
   const [slug, setSlug] = useState(toSlug(initialRecipeName));
   const [slugEdited, setSlugEdited] = useState(false);
-  const [quantityInput, setQuantityInput] = useState<string>('');
+  const [yieldFrames, setYieldFrames] = useState<string>(
+    createInfo?.targetFrames !== undefined ? String(createInfo.targetFrames) : ''
+  );
+  const [yieldCount, setYieldCount] = useState<string>(
+    createInfo?.targetCount !== undefined ? String(createInfo.targetCount) : ''
+  );
+  const [yieldBuffer, setYieldBuffer] = useState<string>(
+    createInfo?.bufferPercentage !== undefined ? String(createInfo.bufferPercentage) : '10'
+  );
 
   // --------------------------------------------------------------------------
   // Build datalist suggestions
@@ -198,6 +207,12 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
   const suggestionById = useMemo(
     (): ReadonlyMap<string, IRecipeSuggestion> => new Map(allSuggestions.map((s) => [s.id, s])),
     [allSuggestions]
+  );
+
+  const confectionById = useMemo(
+    (): ReadonlyMap<string, LibraryRuntime.AnyConfection> =>
+      new Map(availableConfections.map((c) => [c.id, c])),
+    [availableConfections]
   );
 
   const matcher = useTypeaheadMatch(filteredSuggestions as ReadonlyArray<{ id: string; name: string }>);
@@ -343,6 +358,35 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
     return true;
   }, [selectedRecipe, label, slug, selectedVariationSpec]);
 
+  // --------------------------------------------------------------------------
+  // Selected confection type + default yield
+  // --------------------------------------------------------------------------
+
+  const selectedConfection = useMemo((): LibraryRuntime.AnyConfection | undefined => {
+    if (!selectedRecipe || selectedRecipe.recipeType !== 'confection') return undefined;
+    return confectionById.get(selectedRecipe.id);
+  }, [selectedRecipe, confectionById]);
+
+  const selectedConfectionType = selectedConfection?.confectionType;
+
+  // Default yield from the confection's golden variation
+  const defaultYield = useMemo((): EntitiesNS.Confections.ConfectionYield | undefined => {
+    if (!selectedConfection) return undefined;
+    const variation = selectedConfection.getVariation(selectedConfection.goldenVariationSpec);
+    if (variation.isFailure()) return undefined;
+    return variation.value.yield;
+  }, [selectedConfection]);
+
+  // Pre-fill yield inputs from default when confection is selected and user hasn't edited
+  useEffect(() => {
+    if (!defaultYield) return;
+    if (Entities.Confections.isYieldInFrames(defaultYield)) {
+      if (!yieldFrames) setYieldFrames(String(defaultYield.numFrames));
+    } else {
+      if (!yieldCount) setYieldCount(String(defaultYield.numPieces));
+    }
+  }, [defaultYield]);
+
   const handleSubmit = useCallback((): void => {
     if (!selectedRecipe || !label.trim() || !slug.trim()) return;
 
@@ -354,10 +398,57 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
       selection = { type: 'filling', fillingId: selectedRecipe.id, variationSpec: selectedVariationSpec };
     }
 
-    const parsedQuantity = parseInt(quantityInput, 10);
-    const quantity = parsedQuantity > 0 ? parsedQuantity : undefined;
-    onConfirm(selection, label.trim(), slug.trim(), quantity);
-  }, [selectedRecipe, selectedVariationSpec, label, slug, quantityInput, onConfirm]);
+    // Build BufferedConfectionYield for confection sessions
+    let initialYield: EntitiesNS.Confections.BufferedConfectionYield | undefined;
+    if (selectedConfectionType && defaultYield) {
+      const buffer = (parseFloat(yieldBuffer) || 10) as Percentage;
+
+      if (selectedConfectionType === 'molded-bonbon') {
+        const frames = parseInt(yieldFrames, 10);
+        if (frames > 0) {
+          initialYield = { numFrames: frames, bufferPercentage: buffer };
+        }
+      } else if (
+        selectedConfectionType === 'bar-truffle' &&
+        Entities.Confections.isBarTruffleYield(defaultYield)
+      ) {
+        const count = parseInt(yieldCount, 10);
+        if (count > 0) {
+          initialYield = {
+            count,
+            weightPerPiece: defaultYield.weightPerPiece,
+            bufferPercentage: buffer,
+            dimensions: defaultYield.dimensions
+          };
+        }
+      } else if (
+        selectedConfectionType === 'rolled-truffle' &&
+        Entities.Confections.isYieldInPieces(defaultYield)
+      ) {
+        const count = parseInt(yieldCount, 10);
+        if (count > 0) {
+          initialYield = {
+            count,
+            weightPerPiece: defaultYield.weightPerPiece,
+            bufferPercentage: buffer
+          };
+        }
+      }
+    }
+
+    onConfirm(selection, label.trim(), slug.trim(), initialYield);
+  }, [
+    selectedRecipe,
+    selectedVariationSpec,
+    label,
+    slug,
+    selectedConfectionType,
+    defaultYield,
+    yieldFrames,
+    yieldCount,
+    yieldBuffer,
+    onConfirm
+  ]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent): void => {
@@ -551,24 +642,78 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
         <p className="mt-1 text-[11px] text-gray-400">Appended to the session ID for easy identification.</p>
       </div>
 
-      {/* Quantity (optional) */}
-      <div>
-        <label htmlFor="session-quantity" className="block text-xs font-medium text-gray-700 mb-1">
-          Target Quantity <span className="text-gray-400 font-normal">(optional)</span>
-        </label>
-        <input
-          id="session-quantity"
-          type="number"
-          min="1"
-          value={quantityInput}
-          onChange={(e): void => setQuantityInput(e.target.value)}
-          placeholder="e.g. 48"
-          className="w-32 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-        />
-        <p className="mt-1 text-[11px] text-gray-400">
-          Number of pieces to produce. Leave empty for recipe default.
-        </p>
-      </div>
+      {/* Yield inputs — type-aware for confections */}
+      {selectedConfectionType === 'molded-bonbon' && (
+        <div className="space-y-2">
+          <div>
+            <label htmlFor="session-yield-frames" className="block text-xs font-medium text-gray-700 mb-1">
+              Frames
+            </label>
+            <input
+              id="session-yield-frames"
+              type="number"
+              min="1"
+              value={yieldFrames}
+              onChange={(e): void => setYieldFrames(e.target.value)}
+              placeholder="e.g. 2"
+              className="w-32 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+            />
+            <p className="mt-1 text-[11px] text-gray-400">Number of mold frames to fill.</p>
+          </div>
+          <div>
+            <label htmlFor="session-yield-buffer" className="block text-xs font-medium text-gray-700 mb-1">
+              Buffer % <span className="text-gray-400 font-normal">(overfill)</span>
+            </label>
+            <input
+              id="session-yield-buffer"
+              type="number"
+              min="0"
+              max="100"
+              value={yieldBuffer}
+              onChange={(e): void => setYieldBuffer(e.target.value)}
+              placeholder="10"
+              className="w-32 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+            />
+          </div>
+        </div>
+      )}
+      {selectedConfectionType && selectedConfectionType !== 'molded-bonbon' && (
+        <div className="space-y-2">
+          <div>
+            <label htmlFor="session-yield-count" className="block text-xs font-medium text-gray-700 mb-1">
+              Piece Count
+            </label>
+            <input
+              id="session-yield-count"
+              type="number"
+              min="1"
+              value={yieldCount}
+              onChange={(e): void => setYieldCount(e.target.value)}
+              placeholder="e.g. 48"
+              className="w-32 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+            />
+            <p className="mt-1 text-[11px] text-gray-400">Number of pieces to produce.</p>
+          </div>
+          <div>
+            <label htmlFor="session-yield-buffer" className="block text-xs font-medium text-gray-700 mb-1">
+              Buffer % <span className="text-gray-400 font-normal">(overfill)</span>
+            </label>
+            <input
+              id="session-yield-buffer"
+              type="number"
+              min="0"
+              max="100"
+              value={yieldBuffer}
+              onChange={(e): void => setYieldBuffer(e.target.value)}
+              placeholder="10"
+              className="w-32 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+            />
+          </div>
+        </div>
+      )}
+      {!selectedConfectionType && selectedRecipe?.recipeType !== 'filling' && (
+        <p className="text-[11px] text-gray-400">Select a confection recipe to configure yield.</p>
+      )}
 
       {/* Buttons */}
       <div className="flex gap-2">

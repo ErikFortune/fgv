@@ -657,6 +657,7 @@ export function ConfectionsTabContent(): React.ReactElement {
     (confectionId: ConfectionId): void => {
       const result = workspace.data.confections.get(confectionId);
       const entityName = result.isSuccess() ? result.value.name : confectionId;
+      const settings = viewSettingsMap.get(confectionId);
       // Navigate to sessions tab and open create panel pre-filled with this confection
       const store = useNavigationStore.getState();
       store.setMode('production');
@@ -666,11 +667,17 @@ export function ConfectionsTabContent(): React.ReactElement {
           entityType: 'session',
           entityId: '__new__',
           mode: 'create',
-          createSessionInfo: { confectionId, entityName }
+          createSessionInfo: {
+            confectionId,
+            entityName,
+            targetFrames: settings?.targetFrames,
+            targetCount: settings?.targetCount,
+            bufferPercentage: settings?.bufferPercentage
+          }
         }
       ]);
     },
-    [workspace]
+    [workspace, viewSettingsMap]
   );
 
   const handleShowCreateConfection = useCallback((): void => {

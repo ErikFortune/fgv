@@ -718,29 +718,42 @@ function CountYieldEditor({
 }): React.ReactElement {
   const [editing, setEditing] = useState(false);
   const [countInput, setCountInput] = useState<string>(String(currentYield.count));
+  const [bufferInput, setBufferInput] = useState<string>(String(Math.round(currentYield.bufferPercentage)));
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const handleApply = useCallback((): void => {
+  const applyValues = useCallback((): boolean => {
     const parsed = Number(countInput.trim());
+    const bufferPercent = Number(bufferInput.trim());
     if (!Number.isFinite(parsed) || parsed <= 0) {
       setError('Count must be a positive number.');
-      return;
+      return false;
+    }
+    if (!Number.isFinite(bufferPercent) || bufferPercent < 0 || bufferPercent > 100) {
+      setError('Buffer % must be between 0 and 100.');
+      return false;
     }
 
     const result = session.scaleToYield({
       ...currentYield,
-      count: parsed
+      count: parsed,
+      bufferPercentage: bufferPercent
     } as Entities.Confections.BufferedConfectionYield);
     if (result.isFailure()) {
       setError(result.message);
-      return;
+      return false;
     }
 
     setError(undefined);
-    setEditing(false);
     notifySession();
     autosaveIfNeeded();
-  }, [countInput, currentYield, session, notifySession, autosaveIfNeeded]);
+    return true;
+  }, [countInput, bufferInput, currentYield, session, notifySession, autosaveIfNeeded]);
+
+  const handleDone = useCallback((): void => {
+    if (applyValues()) {
+      setEditing(false);
+    }
+  }, [applyValues]);
 
   return (
     <div>
@@ -751,6 +764,7 @@ function CountYieldEditor({
             type="button"
             onClick={(): void => {
               setCountInput(String(currentYield.count));
+              setBufferInput(String(Math.round(currentYield.bufferPercentage)));
               setEditing(true);
             }}
             title="Edit yield"
@@ -758,13 +772,15 @@ function CountYieldEditor({
           >
             <ArrowPathIcon className="h-3 w-3" />
           </button>
-          <span className="text-sm text-gray-700">{currentYield.count} pieces</span>
+          <span className="text-sm text-gray-700">
+            {currentYield.count} pieces · {Math.round(currentYield.bufferPercentage)}% buffer
+          </span>
         </div>
       ) : (
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleApply}
+            onClick={handleDone}
             title="Done editing"
             className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
           >
@@ -776,11 +792,20 @@ function CountYieldEditor({
             step="1"
             value={countInput}
             onChange={(e): void => setCountInput(e.target.value)}
-            onBlur={handleApply}
             autoFocus
-            className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+            className="w-16 rounded border border-gray-300 px-2 py-1 text-sm"
           />
-          <span className="text-sm text-gray-700">pieces</span>
+          <span className="text-xs text-gray-500">pieces</span>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            value={bufferInput}
+            onChange={(e): void => setBufferInput(e.target.value)}
+            className="w-14 rounded border border-gray-300 px-2 py-1 text-sm"
+          />
+          <span className="text-xs text-gray-500">% buffer</span>
         </div>
       )}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

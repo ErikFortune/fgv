@@ -13,7 +13,8 @@ import {
   type SlotId,
   type ConfectionId,
   type FillingRecipeVariationSpec,
-  LibraryRuntime
+  LibraryRuntime,
+  type Entities as EntitiesNS
 } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
@@ -146,7 +147,12 @@ export function SessionsTabContent(): React.ReactElement {
   );
 
   const handleCreateSession = useCallback(
-    async (selection: ISessionRecipeSelection, label: string, slug: string): Promise<void> => {
+    async (
+      selection: ISessionRecipeSelection,
+      label: string,
+      slug: string,
+      initialYield?: EntitiesNS.Confections.BufferedConfectionYield
+    ): Promise<void> => {
       if (!sessionActions.defaultCollectionId) {
         workspace.data.logger.error('Cannot create session: no mutable collection available');
         return;
@@ -157,7 +163,7 @@ export function SessionsTabContent(): React.ReactElement {
           collectionId: sessionActions.defaultCollectionId,
           label,
           slug,
-          params: undefined
+          params: initialYield ? { initialYield } : undefined
         });
         if (result.isSuccess()) {
           squashCascade([{ entityType: 'session', entityId: result.value, mode: 'view' }]);

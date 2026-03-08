@@ -156,6 +156,12 @@ export interface ICreateSessionInfo {
   readonly variationSpec?: string;
   /** Pre-filled entity display name for the label field */
   readonly entityName?: string;
+  /** Target frame count for scaling (molded bonbon, from browse panel) */
+  readonly targetFrames?: number;
+  /** Target piece count for scaling (bar/rolled truffle, from browse panel) */
+  readonly targetCount?: number;
+  /** Buffer percentage for overfill (from browse panel) */
+  readonly bufferPercentage?: number;
 }
 
 /**
