@@ -102,6 +102,23 @@ The collection identifier.
 The underlying sub-library containing the collection data.
 
 </td></tr>
+<tr><td>
+
+[operations](./PersistedEditableCollection.operations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ICollectionOperations](../../interfaces/ICollectionOperations.md)&lt;T, TBaseId&gt;
+
+</td><td>
+
+The collection operations delegate.
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -158,6 +175,45 @@ from the SubLibrary on the next access.
 </td><td>
 
 Check whether this collection supports persistence.
+
+</td></tr>
+<tr><td>
+
+[addItem(baseId, entity)](./PersistedEditableCollection.addItem.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Add a new entity and persist.
+
+</td></tr>
+<tr><td>
+
+[upsertItem(baseId, entity)](./PersistedEditableCollection.upsertItem.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Add or update an entity and persist.
+
+</td></tr>
+<tr><td>
+
+[removeItem(baseId)](./PersistedEditableCollection.removeItem.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Remove an entity and persist.
 
 </td></tr>
 <tr><td>

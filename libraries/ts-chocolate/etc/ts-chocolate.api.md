@@ -2053,6 +2053,7 @@ declare namespace Editing {
         IValidationReport,
         IEditableCollection,
         ICollectionManager,
+        ICollectionOperations,
         IExportOptions,
         IImportOptions,
         isValidationSuccess,
@@ -3254,6 +3255,15 @@ interface ICollectionManager<TBaseId extends string = string, TItem = unknown> {
     readonly isMutable: (collectionId: CollectionId) => Result<boolean>;
     readonly moveEntity: (compositeId: string, targetCollectionId: CollectionId, newBaseId?: string) => Result<string>;
     readonly updateMetadata: (collectionId: CollectionId, metadata: Partial<ICollectionRuntimeMetadata>) => Result<ICollectionRuntimeMetadata>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
+//
+// @public
+interface ICollectionOperations<T, TBaseId extends string> {
+    add(baseId: TBaseId, entity: T): Result<string>;
+    remove(baseId: TBaseId): Result<T>;
+    upsert(baseId: TBaseId, entity: T): Result<string>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ICollectionFileMetadata"
@@ -5171,6 +5181,10 @@ interface IPersistedEditableCollectionParams<T, TBaseId extends string> {
     readonly collectionId: CollectionId;
     readonly encryptionProvider?: CryptoUtils.IEncryptionProvider | (() => CryptoUtils.IEncryptionProvider | undefined);
     readonly keyConverter: Converter<TBaseId, unknown>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
+    readonly operations?: ICollectionOperations<T, TBaseId>;
     readonly subLibrary: SubLibraryBase<string, TBaseId, T>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
     readonly syncProvider?: ISyncProvider;
@@ -7447,6 +7461,9 @@ const PERSISTED_SESSION_SCHEMA_VERSION: 1;
 // @public
 class PersistedEditableCollection<T, TBaseId extends string> {
     constructor(params: IPersistedEditableCollectionParams<T, TBaseId>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ICollectionOperations"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
+    addItem(baseId: TBaseId, entity: T): Promise<Result<string>>;
     canSave(): boolean;
     get collectionId(): CollectionId;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EditableCollection"
@@ -7457,12 +7474,19 @@ class PersistedEditableCollection<T, TBaseId extends string> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EditableCollection"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "CollectionManager"
     invalidate(): void;
+    get operations(): ICollectionOperations<T, TBaseId>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ICollectionOperations"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
+    removeItem(baseId: TBaseId): Promise<Result<T>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EditableCollection"
     save(): Promise<Result<true>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EditableCollection"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
     set(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
     get subLibrary(): SubLibraryBase<string, TBaseId, T>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ICollectionOperations"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
+    upsertItem(baseId: TBaseId, entity: T): Promise<Result<string>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -8263,6 +8287,12 @@ const storageRootId: Converter<StorageRootId>;
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata> {
     protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
     createCollectionFile(collectionId: CollectionId, content: string, extension?: 'yaml' | 'json'): Result<FileTree.FileTreeItem>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getCollectionOperations(collectionId: CollectionId): {
+        add(baseId: TBaseId, entity: TItem): Result<string>;
+        upsert(baseId: TBaseId, entity: TItem): Result<string>;
+        remove(baseId: TBaseId): Result<TItem>;
+    };
     getCollectionSourceItem(collectionId: CollectionId): FileTree.FileTreeItem | undefined;
     protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>>;
     loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number>;

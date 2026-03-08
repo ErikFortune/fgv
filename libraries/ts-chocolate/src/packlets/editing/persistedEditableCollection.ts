@@ -43,6 +43,7 @@ import { CryptoUtils } from '@fgv/ts-extras';
 import { CollectionId } from '../common';
 import { SubLibraryBase } from '../library-data';
 import { EditableCollection } from './editableCollection';
+import { type ICollectionOperations } from './model';
 
 // ============================================================================
 // Sync Provider Interface
@@ -121,6 +122,20 @@ export interface IPersistedEditableCollectionParams<T, TBaseId extends string> {
    * @defaultValue `false`
    */
   readonly autoPersist?: boolean;
+
+  /**
+   * Optional custom collection operations delegate.
+   *
+   * When provided, the {@link PersistedEditableCollection.addItem | addItem()},
+   * {@link PersistedEditableCollection.upsertItem | upsertItem()}, and
+   * {@link PersistedEditableCollection.removeItem | removeItem()} methods
+   * delegate to these operations instead of the default from
+   * `SubLibraryBase.getCollectionOperations()`.
+   *
+   * Use this to inject domain-specific behavior (e.g., branded composite ID
+   * construction, field-based validation) without subclassing.
+   */
+  readonly operations?: ICollectionOperations<T, TBaseId>;
 }
 
 // ============================================================================
@@ -160,6 +175,8 @@ export class PersistedEditableCollection<T, TBaseId extends string> {
     | (() => CryptoUtils.IEncryptionProvider | undefined)
     | undefined;
   private readonly _autoPersist: boolean;
+  private readonly _customOperations: ICollectionOperations<T, TBaseId> | undefined;
+  private _defaultOperations: ICollectionOperations<T, TBaseId> | undefined;
 
   /**
    * Creates a new persisted editable collection wrapper.
@@ -173,6 +190,7 @@ export class PersistedEditableCollection<T, TBaseId extends string> {
     this._syncProvider = params.syncProvider;
     this._encryptionProvider = params.encryptionProvider;
     this._autoPersist = params.autoPersist ?? false;
+    this._customOperations = params.operations;
   }
 
   /**
@@ -243,6 +261,96 @@ export class PersistedEditableCollection<T, TBaseId extends string> {
       return false;
     }
     return editableResult.value.canSave();
+  }
+
+  // ==========================================================================
+  // Domain-Aware Mutations (delegate to SubLibrary + auto-persist)
+  // ==========================================================================
+
+  /**
+   * The collection operations delegate.
+   *
+   * Returns the custom operations if provided at construction, otherwise
+   * lazily creates the default from `SubLibraryBase.getCollectionOperations()`.
+   */
+  public get operations(): ICollectionOperations<T, TBaseId> {
+    if (this._customOperations) {
+      return this._customOperations;
+    }
+    if (!this._defaultOperations) {
+      this._defaultOperations = this._subLibrary.getCollectionOperations(
+        this._collectionId
+      ) as ICollectionOperations<T, TBaseId>;
+    }
+    return this._defaultOperations;
+  }
+
+  /**
+   * Add a new entity and persist.
+   *
+   * Delegates to the {@link ICollectionOperations.add | operations delegate} to
+   * perform the domain-aware mutation on the SubLibrary, then runs the full
+   * {@link PersistedEditableCollection.save | save()} pipeline.
+   *
+   * @param baseId - Base entity ID within the collection
+   * @param entity - The entity to add
+   * @returns Success with the composite ID string, or Failure
+   */
+  public async addItem(baseId: TBaseId, entity: T): Promise<Result<string>> {
+    const result = this.operations.add(baseId, entity);
+    if (result.isFailure()) {
+      return result;
+    }
+    const saveResult = await this.save();
+    if (saveResult.isFailure()) {
+      return fail(`${this._collectionId}: add succeeded but persist failed: ${saveResult.message}`);
+    }
+    return result;
+  }
+
+  /**
+   * Add or update an entity and persist.
+   *
+   * Delegates to the {@link ICollectionOperations.upsert | operations delegate} to
+   * perform the domain-aware mutation on the SubLibrary, then runs the full
+   * {@link PersistedEditableCollection.save | save()} pipeline.
+   *
+   * @param baseId - Base entity ID within the collection
+   * @param entity - The entity to set
+   * @returns Success with the composite ID string, or Failure
+   */
+  public async upsertItem(baseId: TBaseId, entity: T): Promise<Result<string>> {
+    const result = this.operations.upsert(baseId, entity);
+    if (result.isFailure()) {
+      return result;
+    }
+    const saveResult = await this.save();
+    if (saveResult.isFailure()) {
+      return fail(`${this._collectionId}: upsert succeeded but persist failed: ${saveResult.message}`);
+    }
+    return result;
+  }
+
+  /**
+   * Remove an entity and persist.
+   *
+   * Delegates to the {@link ICollectionOperations.remove | operations delegate} to
+   * perform the domain-aware mutation on the SubLibrary, then runs the full
+   * {@link PersistedEditableCollection.save | save()} pipeline.
+   *
+   * @param baseId - Base entity ID to remove
+   * @returns Success with the removed entity, or Failure
+   */
+  public async removeItem(baseId: TBaseId): Promise<Result<T>> {
+    const result = this.operations.remove(baseId);
+    if (result.isFailure()) {
+      return result;
+    }
+    const saveResult = await this.save();
+    if (saveResult.isFailure()) {
+      return fail(`${this._collectionId}: remove succeeded but persist failed: ${saveResult.message}`);
+    }
+    return result;
   }
 
   // ==========================================================================

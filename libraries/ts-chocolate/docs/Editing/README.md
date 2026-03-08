@@ -238,6 +238,15 @@ Manager for collection-level CRUD operations.
 </td></tr>
 <tr><td>
 
+[ICollectionOperations](./interfaces/ICollectionOperations.md)
+
+</td><td>
+
+Delegate for domain-aware collection mutations.
+
+</td></tr>
+<tr><td>
+
 [IExportOptions](./interfaces/IExportOptions.md)
 
 </td><td>

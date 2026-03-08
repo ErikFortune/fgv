@@ -1484,6 +1484,64 @@ export abstract class SubLibraryBase<
       });
   }
 
+  // ==========================================================================
+  // Collection Operations (for PersistedEditableCollection)
+  // ==========================================================================
+
+  /**
+   * Returns a default collection operations delegate for the given collection.
+   *
+   * The returned object provides `add`, `upsert`, and `remove` methods that
+   * operate on this sub-library's collection. {@link Editing.PersistedEditableCollection}
+   * uses this to perform domain-aware mutations and then automatically persist.
+   *
+   * Sub-classes can override to add custom behavior (e.g., branded composite ID
+   * construction, field-based validation, cross-collection checks).
+   *
+   * @param collectionId - The collection to operate on
+   * @returns An operations delegate with add/upsert/remove methods
+   * @public
+   */
+  public getCollectionOperations(collectionId: CollectionId): {
+    add(baseId: TBaseId, entity: TItem): Result<string>;
+    upsert(baseId: TBaseId, entity: TItem): Result<string>;
+    remove(baseId: TBaseId): Result<TItem>;
+  } {
+    return {
+      add: (baseId: TBaseId, entity: TItem): Result<string> => {
+        return this.addToCollection(collectionId, baseId, entity)
+          .asResult.withErrorFormat((msg) => `Failed to add ${baseId} to ${collectionId}: ${msg}`)
+          .onSuccess((compositeId) => succeed(compositeId as string));
+      },
+      upsert: (baseId: TBaseId, entity: TItem): Result<string> => {
+        return this.setInCollection(collectionId, baseId, entity)
+          .asResult.withErrorFormat((msg) => `Failed to upsert ${baseId} in ${collectionId}: ${msg}`)
+          .onSuccess((compositeId) => succeed(compositeId as string));
+      },
+      remove: (baseId: TBaseId): Result<TItem> => {
+        const compositeIdResult = this.composeId(collectionId, baseId);
+        if (compositeIdResult.isFailure()) {
+          return fail(`Invalid ID ${collectionId}.${baseId}: ${compositeIdResult.message}`);
+        }
+        const existing = this.get(compositeIdResult.value);
+        if (existing.isFailure()) {
+          return fail(`Entry ${collectionId}.${baseId} not found: ${existing.message}`);
+        }
+        const collectionResult = this.collections.get(collectionId).asResult;
+        if (collectionResult.isFailure()) {
+          return fail(`Collection ${collectionId} not found: ${collectionResult.message}`);
+        }
+        if (!collectionResult.value.isMutable) {
+          return fail(`Cannot remove entry from immutable collection ${collectionId}`);
+        }
+        return collectionResult.value.items
+          .delete(baseId)
+          .asResult.withErrorFormat((msg) => `Failed to delete ${baseId}: ${msg}`)
+          .onSuccess(() => succeed(existing.value));
+      }
+    };
+  }
+
   /**
    * Update collection metadata.
    *

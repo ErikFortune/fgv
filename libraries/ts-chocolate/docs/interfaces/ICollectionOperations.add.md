@@ -1,0 +1,26 @@
+[Home](../README.md) > [ICollectionOperations](./ICollectionOperations.md) > add
+
+## ICollectionOperations.add() method
+
+Add a new entity to the collection.
+
+**Signature:**
+
+```typescript
+add(baseId: TBaseId, entity: T): Result<string>;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>baseId</td><td>TBaseId</td><td>Base entity ID within the collection</td></tr>
+<tr><td>entity</td><td>T</td><td>The entity to add</td></tr>
+</tbody></table>
+
+**Returns:**
+
+Result&lt;string&gt;
+
+Success with the composite ID string, or Failure if the add fails
+  (e.g., duplicate key, immutable collection)

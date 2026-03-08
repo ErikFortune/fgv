@@ -143,4 +143,21 @@ boolean
 When `true`, mutation methods (PersistedEditableCollection.set | set(),
 
 </td></tr>
+<tr><td>
+
+[operations](./IPersistedEditableCollectionParams.operations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ICollectionOperations](ICollectionOperations.md)&lt;T, TBaseId&gt;
+
+</td><td>
+
+Optional custom collection operations delegate.
+
+</td></tr>
 </tbody></table>

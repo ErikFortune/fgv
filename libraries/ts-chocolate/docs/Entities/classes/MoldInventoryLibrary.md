@@ -348,6 +348,19 @@ Remove all mutable collections whose metadata `sourceName` matches the given sou
 </td></tr>
 <tr><td>
 
+[getCollectionOperations(collectionId)](./SubLibraryBase.getCollectionOperations.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Returns a default collection operations delegate for the given collection.
+
+</td></tr>
+<tr><td>
+
 [get(key)](./SubLibraryBase.get.md)
 
 </td><td>

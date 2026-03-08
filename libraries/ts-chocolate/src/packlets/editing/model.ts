@@ -374,6 +374,51 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
 }
 
 // ============================================================================
+// Collection Operations Interface
+// ============================================================================
+
+/**
+ * Delegate for domain-aware collection mutations.
+ *
+ * {@link PersistedEditableCollection} uses this interface to perform mutations
+ * through the SubLibrary (which owns composite ID construction, validation,
+ * and collection routing) and then automatically persists the result.
+ *
+ * A default implementation is provided by `SubLibraryBase.getCollectionOperations()`.
+ * Domain sub-libraries can override to add custom behavior (e.g. field-based lookups,
+ * cross-collection validation).
+ *
+ * @typeParam T - Entity type
+ * @typeParam TBaseId - Base ID type (e.g., MoldInventoryEntryBaseId)
+ * @public
+ */
+export interface ICollectionOperations<T, TBaseId extends string> {
+  /**
+   * Add a new entity to the collection.
+   * @param baseId - Base entity ID within the collection
+   * @param entity - The entity to add
+   * @returns Success with the composite ID string, or Failure if the add fails
+   *   (e.g., duplicate key, immutable collection)
+   */
+  add(baseId: TBaseId, entity: T): Result<string>;
+
+  /**
+   * Add or update an entity in the collection.
+   * @param baseId - Base entity ID within the collection
+   * @param entity - The entity to set
+   * @returns Success with the composite ID string, or Failure if the upsert fails
+   */
+  upsert(baseId: TBaseId, entity: T): Result<string>;
+
+  /**
+   * Remove an entity from the collection.
+   * @param baseId - Base entity ID to remove
+   * @returns Success with the removed entity, or Failure if not found or immutable
+   */
+  remove(baseId: TBaseId): Result<T>;
+}
+
+// ============================================================================
 // Export/Import Options
 // ============================================================================
 

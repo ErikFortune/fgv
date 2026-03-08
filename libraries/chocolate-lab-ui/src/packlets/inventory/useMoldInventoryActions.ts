@@ -155,6 +155,17 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
     return succeed(createResult.value);
   }, [workspace, reactiveWorkspace, defaultCollectionId]);
 
+  /**
+   * Gets the persisted collection wrapper for the given collection ID.
+   * This provides domain-aware mutations with automatic persistence.
+   */
+  const getPersistedCollection = useCallback(
+    (collectionId: CollectionId) => {
+      return workspace.userData.entities.getPersistedMoldInventoryCollection(collectionId);
+    },
+    [workspace]
+  );
+
   const addEntry = useCallback(
     async (moldId: MoldId, count: number, location?: string): Promise<Result<MoldInventoryEntryId>> => {
       const collectionResult = ensureCollectionId();
@@ -163,12 +174,17 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
       }
       const collectionId = collectionResult.value;
 
+      const persistedResult = getPersistedCollection(collectionId);
+      if (persistedResult.isFailure()) {
+        return fail(persistedResult.message);
+      }
+      const persisted = persistedResult.value;
+
       // Generate a base ID from the mold ID, with suffix to avoid collisions
       const moldBaseId = moldId.includes('.') ? moldId.split('.').slice(1).join('.') : moldId;
       let baseId = `inv-${moldBaseId}` as MoldInventoryEntryBaseId;
       const moldInventory = workspace.userData.entities.moldInventory;
 
-      // If an entry with this base ID already exists, append a numeric suffix
       let suffix = 2;
       const compositeExists = (bid: string): boolean => {
         const cid = `${collectionId}.${bid}`;
@@ -189,30 +205,18 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
         ...(location ? { location } : {})
       };
 
-      const result = moldInventory.addEntry(collectionId, baseId, entity);
+      const result = await persisted.addItem(baseId, entity);
       if (result.isFailure()) {
         workspace.data.logger.error(`Failed to add mold inventory entry: ${result.message}`);
-        return result;
-      }
-
-      const entryId = result.value;
-
-      // Persist
-      const persistResult = await workspace.userData.entities.saveCollection(
-        collectionId,
-        undefined,
-        moldInventory
-      );
-      if (persistResult.isFailure()) {
-        workspace.data.logger.error(`Failed to persist mold inventory: ${persistResult.message}`);
+        return fail(result.message);
       }
 
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
-      workspace.data.logger.info(`Added mold inventory entry '${entryId}'`);
-      return result;
+      workspace.data.logger.info(`Added mold inventory entry '${result.value}'`);
+      return succeed(result.value as MoldInventoryEntryId);
     },
-    [workspace, reactiveWorkspace, ensureCollectionId]
+    [workspace, reactiveWorkspace, ensureCollectionId, getPersistedCollection]
   );
 
   const updateEntry = useCallback(
@@ -220,7 +224,6 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
       entryId: MoldInventoryEntryId,
       entity: IMoldInventoryEntryEntity
     ): Promise<Result<MoldInventoryEntryId>> => {
-      // Parse composite ID to get collection and base
       const dotIndex = entryId.indexOf('.');
       if (dotIndex < 0) {
         return fail(`Invalid composite inventory entry ID: ${entryId}`);
@@ -228,29 +231,23 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
       const collectionId = entryId.substring(0, dotIndex) as CollectionId;
       const baseId = entryId.substring(dotIndex + 1) as MoldInventoryEntryBaseId;
 
-      const moldInventory = workspace.userData.entities.moldInventory;
-      const result = moldInventory.upsertEntry(collectionId, baseId, entity);
-      if (result.isFailure()) {
-        workspace.data.logger.error(`Failed to update mold inventory entry: ${result.message}`);
-        return result;
+      const persistedResult = getPersistedCollection(collectionId);
+      if (persistedResult.isFailure()) {
+        return fail(persistedResult.message);
       }
 
-      // Persist
-      const persistResult = await workspace.userData.entities.saveCollection(
-        collectionId,
-        undefined,
-        moldInventory
-      );
-      if (persistResult.isFailure()) {
-        workspace.data.logger.error(`Failed to persist mold inventory: ${persistResult.message}`);
+      const result = await persistedResult.value.upsertItem(baseId, entity);
+      if (result.isFailure()) {
+        workspace.data.logger.error(`Failed to update mold inventory entry: ${result.message}`);
+        return fail(result.message);
       }
 
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       workspace.data.logger.info(`Updated mold inventory entry '${entryId}'`);
-      return result;
+      return succeed(result.value as MoldInventoryEntryId);
     },
-    [workspace, reactiveWorkspace]
+    [workspace, reactiveWorkspace, getPersistedCollection]
   );
 
   const deleteEntry = useCallback(
@@ -260,22 +257,17 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
         return fail(`Invalid composite inventory entry ID: ${entryId}`);
       }
       const collectionId = entryId.substring(0, dotIndex) as CollectionId;
+      const baseId = entryId.substring(dotIndex + 1) as MoldInventoryEntryBaseId;
 
-      const moldInventory = workspace.userData.entities.moldInventory;
-      const result = moldInventory.removeEntry(entryId);
+      const persistedResult = getPersistedCollection(collectionId);
+      if (persistedResult.isFailure()) {
+        return fail(persistedResult.message);
+      }
+
+      const result = await persistedResult.value.removeItem(baseId);
       if (result.isFailure()) {
         workspace.data.logger.error(`Failed to delete mold inventory entry: ${result.message}`);
         return result;
-      }
-
-      // Persist
-      const persistResult = await workspace.userData.entities.saveCollection(
-        collectionId,
-        undefined,
-        moldInventory
-      );
-      if (persistResult.isFailure()) {
-        workspace.data.logger.error(`Failed to persist mold inventory: ${persistResult.message}`);
       }
 
       workspace.data.clearCache();
@@ -283,7 +275,7 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
       workspace.data.logger.info(`Deleted mold inventory entry '${entryId}'`);
       return result;
     },
-    [workspace, reactiveWorkspace]
+    [workspace, reactiveWorkspace, getPersistedCollection]
   );
 
   const hasForMold = useCallback(
