@@ -28,7 +28,7 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { TagIcon, DocumentTextIcon, HashtagIcon, LinkIcon } from '@heroicons/react/20/solid';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { DocumentDuplicateIcon, PlusIcon } from '@heroicons/react/24/outline';
@@ -51,32 +51,18 @@ import type {
   LibraryRuntime,
   MoldId,
   Model,
-  ProcedureId,
-  SlotId
+  ProcedureId
 } from '@fgv/ts-chocolate';
-import { Entities as EntitiesNS } from '@fgv/ts-chocolate';
+import { Entities as EntitiesNS, LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import { EditingToolbar, NotesEditor, useEditingContext, type IChangeIndicator } from '../editing';
 import { DerivedFromIndicator } from '../common';
 import { useWorkspace } from '../workspace';
+import { PreferredWithAlternatesEditor } from './PreferredWithAlternatesEditor';
+import { FillingsEditor } from './FillingsEditor';
+import { VariationChips } from './VariationChips';
 
 type EditedConfectionRecipe = LibraryRuntime.EditedConfectionRecipe;
-
-interface IRecipeFillingOptionSuggestion {
-  readonly id: FillingId;
-  readonly name: string;
-  readonly fillingType: 'recipe';
-  readonly fillingId: FillingId;
-}
-
-interface IIngredientFillingOptionSuggestion {
-  readonly id: IngredientId;
-  readonly name: string;
-  readonly fillingType: 'ingredient';
-  readonly ingredientId: IngredientId;
-}
-
-type IFillingOptionSuggestion = IRecipeFillingOptionSuggestion | IIngredientFillingOptionSuggestion;
 
 // ============================================================================
 // Props
@@ -135,7 +121,12 @@ export interface IConfectionEditViewProps {
   /** Called when typed decoration name doesn't match — open create form with seed text */
   readonly onAddDecoration?: (seed: string) => void;
   /** Callback when a filling recipe is clicked for drill-down */
-  readonly onFillingClick?: (id: FillingId) => void;
+  readonly onFillingClick?: (
+    id: FillingId,
+    targetWeight?: number,
+    sourceConfectionId?: string,
+    sourceSlotId?: string
+  ) => void;
   /** Callback when an ingredient is clicked for drill-down */
   readonly onIngredientClick?: (id: IngredientId) => void;
   /** Callback when a mold is clicked for drill-down */
@@ -228,30 +219,6 @@ export function ConfectionEditView({
     onMutate?.();
   }, [ctx, onMutate]);
 
-  // ---- Add Variation form state ----
-  const [showAddVariationForm, setShowAddVariationForm] = useState(false);
-  const [newVariationDate, setNewVariationDate] = useState('');
-  const [newVariationName, setNewVariationName] = useState('');
-
-  // ---- Pending new filling disambiguation state ----
-  // When the user types something that doesn't match any existing filling or ingredient,
-  // we need to ask whether they want to create a recipe or an ingredient.
-  const [pendingNewFilling, setPendingNewFilling] = useState<{ seed: string; slotId?: string } | null>(null);
-
-  // ---- Pending new slot state: filling chosen, awaiting slot name confirmation ----
-  const [pendingNewSlot, setPendingNewSlot] = useState<{
-    slotName: string;
-    option: Entities.Confections.AnyFillingOptionEntity;
-    optionId: Entities.Confections.FillingOptionId;
-  } | null>(null);
-  const [pendingNewSlotName, setPendingNewSlotName] = useState('');
-
-  // ---- Inline name editing state ----
-  const [editingVariationName, setEditingVariationName] = useState<ConfectionRecipeVariationSpec | null>(
-    null
-  );
-  const [editingVariationNameValue, setEditingVariationNameValue] = useState('');
-
   // ============================================================================
   // Recipe-Level Handlers
   // ============================================================================
@@ -304,40 +271,34 @@ export function ConfectionEditView({
     (spec: ConfectionRecipeVariationSpec, name: string): void => {
       wrapper.setVariationName(spec, name || undefined);
       notifyWrapper();
-      setEditingVariationName(null);
-      setEditingVariationNameValue('');
     },
     [wrapper, notifyWrapper]
   );
 
-  const handleCreateBlankVariation = useCallback((): void => {
-    const date = newVariationDate || undefined;
-    const name = newVariationName.trim() || undefined;
-    const result = wrapper.createBlankVariation({ date, name });
-    if (result.isSuccess()) {
-      notifyWrapper();
-      onVariationChange(result.value);
-      setShowAddVariationForm(false);
-      setNewVariationDate('');
-      setNewVariationName('');
-    }
-  }, [wrapper, newVariationDate, newVariationName, notifyWrapper, onVariationChange]);
+  const handleCreateBlankVariation = useCallback(
+    (date: string | undefined, name: string | undefined): void => {
+      const result = wrapper.createBlankVariation({ date, name });
+      if (result.isSuccess()) {
+        notifyWrapper();
+        onVariationChange(result.value);
+      }
+    },
+    [wrapper, notifyWrapper, onVariationChange]
+  );
 
-  const handleDuplicateVariation = useCallback((): void => {
-    const date = newVariationDate || undefined;
-    const name = newVariationName.trim() || undefined;
-    const result = wrapper.duplicateVariation(selectedVariationSpec, { date, name });
-    if (result.isSuccess()) {
-      notifyWrapper();
-      onVariationChange(result.value);
-      setShowAddVariationForm(false);
-      setNewVariationDate('');
-      setNewVariationName('');
-    }
-  }, [wrapper, selectedVariationSpec, newVariationDate, newVariationName, notifyWrapper, onVariationChange]);
+  const handleDuplicateVariation = useCallback(
+    (date: string | undefined, name: string | undefined): void => {
+      const result = wrapper.duplicateVariation(selectedVariationSpec, { date, name });
+      if (result.isSuccess()) {
+        notifyWrapper();
+        onVariationChange(result.value);
+      }
+    },
+    [wrapper, selectedVariationSpec, notifyWrapper, onVariationChange]
+  );
 
   // ============================================================================
-  // Variation-Level Handlers
+  // Variation-Level Data
   // ============================================================================
 
   const currentVariation = useMemo(
@@ -345,37 +306,32 @@ export function ConfectionEditView({
     [wrapper.variations, selectedVariationSpec, ctx.version]
   );
 
+  // ---- Default-scale slot weights from current (draft) yield ----
+  // Uses the entity yield from the wrapper (reflects unsaved edits) as the
+  // scaling target, but the runtime variation for filling composition.
+  const defaultSlotWeights = useMemo((): Readonly<Record<string, number>> | undefined => {
+    if (!currentVariation) return undefined;
+    const runtimeVariation = confection.getVariation(selectedVariationSpec);
+    if (runtimeVariation.isFailure()) return undefined;
+    const entityYield = currentVariation.yield;
+    const target: LR.IConfectionScalingTarget = EntitiesNS.Confections.isYieldInFrames(entityYield)
+      ? { targetFrames: entityYield.numFrames }
+      : { targetCount: entityYield.numPieces };
+    if (!LR.canScale(runtimeVariation.value, target)) return undefined;
+    const result = LR.computeScaledFillings(runtimeVariation.value, target);
+    if (!result.isSuccess()) return undefined;
+    const weights: Record<string, number> = {};
+    for (const slot of result.value.slots) {
+      weights[slot.slotId] = slot.targetWeight;
+    }
+    return weights;
+  }, [confection, selectedVariationSpec, currentVariation]);
+
   const ingredientSuggestions = useMemo(
     () => availableIngredients.map((i) => ({ id: i.id, name: i.name })),
     [availableIngredients]
   );
-  const fillingSuggestions = useMemo(
-    () => availableFillings.map((f) => ({ id: f.id, name: f.name })),
-    [availableFillings]
-  );
 
-  const fillingOptionSuggestions = useMemo(
-    (): ReadonlyArray<IFillingOptionSuggestion> => [
-      ...availableFillings.map(
-        (f): IFillingOptionSuggestion => ({ id: f.id, name: f.name, fillingType: 'recipe', fillingId: f.id })
-      ),
-      ...availableIngredients.map(
-        (i): IFillingOptionSuggestion => ({
-          id: i.id,
-          name: i.name,
-          fillingType: 'ingredient',
-          ingredientId: i.id
-        })
-      )
-    ],
-    [availableFillings, availableIngredients]
-  );
-
-  const fillingOptionById = useMemo(
-    (): ReadonlyMap<string, IFillingOptionSuggestion> =>
-      new Map(fillingOptionSuggestions.map((s) => [s.id, s])),
-    [fillingOptionSuggestions]
-  );
   const procedureSuggestions = useMemo(
     () => availableProcedures.map((p) => ({ id: p.id, name: p.name })),
     [availableProcedures]
@@ -392,12 +348,13 @@ export function ConfectionEditView({
   );
 
   const ingredientMatcher = useTypeaheadMatch(ingredientSuggestions);
-  const fillingOptionMatcher = useTypeaheadMatch(
-    fillingOptionSuggestions as ReadonlyArray<{ id: string; name: string }>
-  );
   const procedureMatcher = useTypeaheadMatch(procedureSuggestions);
   const moldMatcher = useTypeaheadMatch(moldSuggestions);
   const decorationMatcher = useTypeaheadMatch(decorationSuggestions);
+
+  // ============================================================================
+  // Variation-Level Handlers
+  // ============================================================================
 
   const handleYieldCountChange = useCallback(
     (value: string): void => {
@@ -421,6 +378,16 @@ export function ConfectionEditView({
     },
     [wrapper, selectedVariationSpec, notifyWrapper]
   );
+
+  const handleFillingsChange = useCallback(
+    (fillings: ReadonlyArray<Entities.Confections.IFillingSlotEntity> | undefined): void => {
+      wrapper.setVariationFillings(selectedVariationSpec, fillings);
+      notifyWrapper();
+    },
+    [wrapper, selectedVariationSpec, notifyWrapper]
+  );
+
+  // ---- Procedure handlers ----
 
   const handleAddProcedure = useCallback(
     (input: string): void => {
@@ -458,54 +425,17 @@ export function ConfectionEditView({
     [wrapper, selectedVariationSpec, currentVariation, notifyWrapper]
   );
 
-  const handleAddFilling = useCallback(
-    (input: string): void => {
-      const match = fillingOptionMatcher.resolveOnBlur(input);
-      if (!match) {
-        if (input.trim()) setPendingNewFilling({ seed: input.trim() });
-        return;
-      }
-      const current = currentVariation?.fillings ?? [];
-      if (current.some((s) => s.filling.options.some((o) => o.id === match.id))) return;
-      const typed = fillingOptionById.get(match.id);
-      if (!typed) return;
-      const option: Entities.Confections.AnyFillingOptionEntity =
-        typed.fillingType === 'ingredient'
-          ? { type: 'ingredient' as const, id: typed.ingredientId }
-          : { type: 'recipe' as const, id: typed.fillingId };
-      const slotNumber = current.length + 1;
-      const defaultName = `Layer ${slotNumber}`;
-      setPendingNewSlot({
-        slotName: defaultName,
-        option,
-        optionId: typed.id as Entities.Confections.FillingOptionId
-      });
-      setPendingNewSlotName(defaultName);
+  const handleSetPreferredProcedure = useCallback(
+    (procId: ProcedureId): void => {
+      const current = currentVariation?.procedures;
+      if (!current) return;
+      wrapper.setVariationProcedures(selectedVariationSpec, { ...current, preferredId: procId });
+      notifyWrapper();
     },
-    [currentVariation, fillingOptionMatcher, fillingOptionById]
+    [wrapper, selectedVariationSpec, currentVariation, notifyWrapper]
   );
 
-  const handleCommitNewSlot = useCallback((): void => {
-    if (!pendingNewSlot) return;
-    const current = currentVariation?.fillings ?? [];
-    const slotName = pendingNewSlotName.trim() || pendingNewSlot.slotName;
-    const slotId = slotName
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '') as SlotId;
-    const newSlot: Entities.Confections.IFillingSlotEntity = {
-      slotId,
-      name: slotName,
-      filling: {
-        options: [pendingNewSlot.option],
-        preferredId: pendingNewSlot.optionId
-      }
-    };
-    wrapper.setVariationFillings(selectedVariationSpec, [...current, newSlot]);
-    notifyWrapper();
-    setPendingNewSlot(null);
-    setPendingNewSlotName('');
-  }, [wrapper, selectedVariationSpec, currentVariation, pendingNewSlot, pendingNewSlotName, notifyWrapper]);
+  // ---- Enrobing chocolate handlers ----
 
   const handleSetEnrobingChocolate = useCallback(
     (input: string): void => {
@@ -538,6 +468,8 @@ export function ConfectionEditView({
     wrapper.setVariationEnrobingChocolate(selectedVariationSpec, undefined);
     notifyWrapper();
   }, [wrapper, selectedVariationSpec, notifyWrapper]);
+
+  // ---- Coating handlers (rolled truffle) ----
 
   const handleAddCoating = useCallback(
     (input: string): void => {
@@ -576,99 +508,7 @@ export function ConfectionEditView({
     [wrapper, selectedVariationSpec, currentVariation, notifyWrapper]
   );
 
-  const isMoldedBonBon =
-    currentVariation !== undefined &&
-    EntitiesNS.Confections.isMoldedBonBonRecipeVariationEntity(currentVariation);
-  const isRolledTruffle =
-    currentVariation !== undefined &&
-    EntitiesNS.Confections.isRolledTruffleRecipeVariationEntity(currentVariation);
-  const isBarTruffle =
-    currentVariation !== undefined &&
-    EntitiesNS.Confections.isBarTruffleRecipeVariationEntity(currentVariation);
-
-  const handleSetPreferredProcedure = useCallback(
-    (procId: ProcedureId): void => {
-      const current = currentVariation?.procedures;
-      if (!current) return;
-      wrapper.setVariationProcedures(selectedVariationSpec, { ...current, preferredId: procId });
-      notifyWrapper();
-    },
-    [wrapper, selectedVariationSpec, currentVariation, notifyWrapper]
-  );
-
-  const handleAddFillingAlternate = useCallback(
-    (slotId: string, input: string): void => {
-      const match = fillingOptionMatcher.resolveOnBlur(input);
-      if (!match) {
-        if (input.trim()) setPendingNewFilling({ seed: input.trim(), slotId });
-        return;
-      }
-      const current = currentVariation?.fillings ?? [];
-      const slotIdx = current.findIndex((s) => s.slotId === slotId);
-      if (slotIdx < 0) return;
-      const slot = current[slotIdx]!;
-      if (slot.filling.options.some((o) => o.id === match.id)) return;
-      const typed = fillingOptionById.get(match.id);
-      if (!typed) return;
-      const option: Entities.Confections.AnyFillingOptionEntity =
-        typed.fillingType === 'ingredient'
-          ? { type: 'ingredient' as const, id: typed.ingredientId }
-          : { type: 'recipe' as const, id: typed.fillingId };
-      const newOptions = [...slot.filling.options, option];
-      const updated = [...current];
-      updated[slotIdx] = { ...slot, filling: { ...slot.filling, options: newOptions } };
-      wrapper.setVariationFillings(selectedVariationSpec, updated);
-      notifyWrapper();
-    },
-    [
-      wrapper,
-      selectedVariationSpec,
-      currentVariation,
-      fillingOptionMatcher,
-      fillingOptionById,
-      notifyWrapper,
-      onAddFilling
-    ]
-  );
-
-  const handleRemoveFillingOption = useCallback(
-    (slotId: string, optionId: string): void => {
-      const current = currentVariation?.fillings ?? [];
-      const slotIdx = current.findIndex((s) => s.slotId === slotId);
-      if (slotIdx < 0) return;
-      const slot = current[slotIdx]!;
-      const newOptions = slot.filling.options.filter((o) => o.id !== optionId);
-      if (newOptions.length === 0) {
-        const updated = current.filter((s) => s.slotId !== slotId);
-        wrapper.setVariationFillings(selectedVariationSpec, updated.length > 0 ? updated : undefined);
-      } else {
-        const newPreferred =
-          slot.filling.preferredId === optionId ? newOptions[0]!.id : slot.filling.preferredId;
-        const updated = [...current];
-        updated[slotIdx] = { ...slot, filling: { options: newOptions, preferredId: newPreferred } };
-        wrapper.setVariationFillings(selectedVariationSpec, updated);
-      }
-      notifyWrapper();
-    },
-    [wrapper, selectedVariationSpec, currentVariation, notifyWrapper]
-  );
-
-  const handleSetPreferredFillingOption = useCallback(
-    (slotId: string, optionId: string): void => {
-      const current = currentVariation?.fillings ?? [];
-      const slotIdx = current.findIndex((s) => s.slotId === slotId);
-      if (slotIdx < 0) return;
-      const slot = current[slotIdx]!;
-      const updated = [...current];
-      updated[slotIdx] = {
-        ...slot,
-        filling: { ...slot.filling, preferredId: optionId as Entities.Confections.FillingOptionId }
-      };
-      wrapper.setVariationFillings(selectedVariationSpec, updated);
-      notifyWrapper();
-    },
-    [wrapper, selectedVariationSpec, currentVariation, notifyWrapper]
-  );
+  // ---- Shell chocolate handlers (molded bon-bon) ----
 
   const handleSetShellChocolate = useCallback(
     (input: string): void => {
@@ -733,6 +573,8 @@ export function ConfectionEditView({
     [wrapper, selectedVariationSpec, currentVariation, notifyWrapper]
   );
 
+  // ---- Additional chocolates handlers (molded bon-bon) ----
+
   const handleSetAdditionalChocolate = useCallback(
     (purpose: import('@fgv/ts-chocolate').AdditionalChocolatePurpose, input: string): void => {
       const match = ingredientMatcher.resolveOnBlur(input);
@@ -766,6 +608,8 @@ export function ConfectionEditView({
     },
     [wrapper, selectedVariationSpec, currentVariation, notifyWrapper]
   );
+
+  // ---- Decoration handlers ----
 
   const handleAddDecoration = useCallback(
     (input: string): void => {
@@ -812,6 +656,8 @@ export function ConfectionEditView({
     },
     [wrapper, selectedVariationSpec, currentVariation, notifyWrapper]
   );
+
+  // ---- Mold handlers (molded bon-bon) ----
 
   const handleSetPreferredMold = useCallback(
     (moldId: MoldId): void => {
@@ -864,6 +710,44 @@ export function ConfectionEditView({
   );
 
   // ============================================================================
+  // Confection-type flags
+  // ============================================================================
+
+  const isMoldedBonBon =
+    currentVariation !== undefined &&
+    EntitiesNS.Confections.isMoldedBonBonRecipeVariationEntity(currentVariation);
+  const isRolledTruffle =
+    currentVariation !== undefined &&
+    EntitiesNS.Confections.isRolledTruffleRecipeVariationEntity(currentVariation);
+  const isBarTruffle =
+    currentVariation !== undefined &&
+    EntitiesNS.Confections.isBarTruffleRecipeVariationEntity(currentVariation);
+
+  // ============================================================================
+  // Computed display-name resolvers for PreferredWithAlternatesEditor
+  // ============================================================================
+
+  const getIngredientName = useCallback(
+    (id: string): string => ingredientSuggestions.find((s) => s.id === id)?.name ?? id,
+    [ingredientSuggestions]
+  );
+
+  const getMoldName = useCallback(
+    (id: string): string => moldSuggestions.find((s) => s.id === id)?.name ?? id,
+    [moldSuggestions]
+  );
+
+  const getProcedureName = useCallback(
+    (id: string): string => procedureSuggestions.find((s) => s.id === id)?.name ?? id,
+    [procedureSuggestions]
+  );
+
+  const getDecorationName = useCallback(
+    (id: string): string => decorationSuggestions.find((s) => s.id === id)?.name ?? id,
+    [decorationSuggestions]
+  );
+
+  // ============================================================================
   // Save button
   // ============================================================================
 
@@ -909,6 +793,72 @@ export function ConfectionEditView({
         variant="primary"
       />
     ) : undefined;
+
+  // ============================================================================
+  // Mold/Shell/Additional chocolate section data (molded bon-bon)
+  // ============================================================================
+
+  const moldData = useMemo(() => {
+    if (!isMoldedBonBon) return undefined;
+    const v = currentVariation as Entities.Confections.IMoldedBonBonRecipeVariationEntity;
+    const preferred = v.molds.options.find((o) => o.id === v.molds.preferredId) ?? v.molds.options[0];
+    return {
+      preferredId: preferred?.id as MoldId | undefined,
+      alternateIds: v.molds.options.filter((o) => o.id !== preferred?.id).map((o) => o.id as MoldId)
+    };
+  }, [isMoldedBonBon, currentVariation]);
+
+  const shellData = useMemo(() => {
+    if (!isMoldedBonBon) return undefined;
+    const v = currentVariation as Entities.Confections.IMoldedBonBonRecipeVariationEntity;
+    return {
+      preferredId: v.shellChocolate.preferredId as IngredientId | undefined,
+      alternateIds: v.shellChocolate.ids.filter((id) => id !== v.shellChocolate.preferredId) as IngredientId[]
+    };
+  }, [isMoldedBonBon, currentVariation]);
+
+  const enrobingData = useMemo(() => {
+    if (!isRolledTruffle && !isBarTruffle) return undefined;
+    const v = currentVariation as
+      | Entities.Confections.IRolledTruffleRecipeVariationEntity
+      | Entities.Confections.IBarTruffleRecipeVariationEntity;
+    const ec = v.enrobingChocolate;
+    return {
+      preferredId: ec?.preferredId as IngredientId | undefined,
+      alternateIds: ec ? (ec.ids.filter((id) => id !== ec.preferredId) as IngredientId[]) : []
+    };
+  }, [isRolledTruffle, isBarTruffle, currentVariation]);
+
+  const coatingData = useMemo(() => {
+    if (!isRolledTruffle) return undefined;
+    const v = currentVariation as Entities.Confections.IRolledTruffleRecipeVariationEntity;
+    return {
+      preferredId: v.coatings?.preferredId as IngredientId | undefined,
+      alternateIds: (v.coatings?.ids ?? []).filter((id) => id !== v.coatings?.preferredId) as IngredientId[]
+    };
+  }, [isRolledTruffle, currentVariation]);
+
+  const procedureData = useMemo(() => {
+    const procs = currentVariation?.procedures;
+    const preferred = procs?.options.find((o) => o.id === procs?.preferredId);
+    return {
+      preferredId: preferred?.id as ProcedureId | undefined,
+      alternateIds: (procs?.options.filter((o) => o.id !== preferred?.id) ?? []).map(
+        (o) => o.id as ProcedureId
+      )
+    };
+  }, [currentVariation]);
+
+  const decorationData = useMemo(() => {
+    const decs = currentVariation?.decorations;
+    const preferred = decs?.options.find((o) => o.id === decs?.preferredId);
+    return {
+      preferredId: preferred?.id as DecorationId | undefined,
+      alternateIds: (decs?.options.filter((o) => o.id !== preferred?.id) ?? []).map(
+        (o) => o.id as DecorationId
+      )
+    };
+  }, [currentVariation]);
 
   // ============================================================================
   // Render
@@ -958,180 +908,24 @@ export function ConfectionEditView({
 
       {/* Variation Selector / Curation */}
       {(wrapper.variations.length > 1 || !inputsDisabled) && (
-        <EditSection title="Variations">
-          <div className="flex flex-wrap gap-1.5 items-start">
-            {wrapper.variations.map((v) => {
-              const isSelected = v.variationSpec === selectedVariationSpec;
-              const isGolden = v.variationSpec === wrapper.goldenVariationSpec;
-              const canRemove = !inputsDisabled && !isGolden && wrapper.variations.length > 1;
-              const isEditingName = editingVariationName === v.variationSpec;
-
-              return (
-                <div
-                  key={v.variationSpec}
-                  className={`inline-flex items-center gap-0.5 rounded border text-xs transition-colors ${
-                    isSelected
-                      ? 'bg-choco-primary text-white border-choco-primary'
-                      : 'bg-white text-gray-600 border-gray-300'
-                  }`}
-                >
-                  {/* Golden star toggle */}
-                  {!inputsDisabled && (
-                    <button
-                      type="button"
-                      title={isGolden ? 'Golden variation' : 'Set as golden'}
-                      onClick={(): void => handleSetGoldenVariation(v.variationSpec)}
-                      className={`pl-1.5 py-1 shrink-0 ${
-                        isGolden
-                          ? isSelected
-                            ? 'text-amber-300'
-                            : 'text-amber-500'
-                          : isSelected
-                          ? 'text-white/40 hover:text-amber-300'
-                          : 'text-gray-300 hover:text-amber-400'
-                      }`}
-                    >
-                      ★
-                    </button>
-                  )}
-                  {/* Golden star display (read-only) */}
-                  {inputsDisabled && isGolden && (
-                    <span
-                      className={`pl-1.5 py-1 shrink-0 ${isSelected ? 'text-amber-300' : 'text-amber-500'}`}
-                    >
-                      ★
-                    </span>
-                  )}
-
-                  {/* Variation label — click to select, double-click to rename */}
-                  {isEditingName ? (
-                    <input
-                      autoFocus
-                      type="text"
-                      className="text-xs px-1 py-0.5 w-28 bg-white text-gray-800 border-0 outline-none rounded"
-                      value={editingVariationNameValue}
-                      onChange={(e): void => setEditingVariationNameValue(e.target.value)}
-                      onBlur={(): void =>
-                        handleCommitVariationName(v.variationSpec, editingVariationNameValue)
-                      }
-                      onKeyDown={(e): void => {
-                        if (e.key === 'Enter')
-                          handleCommitVariationName(v.variationSpec, editingVariationNameValue);
-                        if (e.key === 'Escape') {
-                          setEditingVariationName(null);
-                          setEditingVariationNameValue('');
-                        }
-                      }}
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(): void => onVariationChange(v.variationSpec)}
-                      onDoubleClick={(): void => {
-                        if (!inputsDisabled) {
-                          setEditingVariationName(v.variationSpec);
-                          setEditingVariationNameValue(v.name ?? '');
-                        }
-                      }}
-                      className={`px-1.5 py-1 ${isSelected ? '' : 'hover:border-choco-primary'}`}
-                      title={!inputsDisabled ? 'Click to select, double-click to rename' : undefined}
-                    >
-                      {v.name ?? v.variationSpec}
-                    </button>
-                  )}
-
-                  {/* Remove button (non-golden only) */}
-                  {canRemove && (
-                    <button
-                      type="button"
-                      title="Remove variation"
-                      onClick={(): void => handleRemoveVariation(v.variationSpec)}
-                      className={`pr-1 py-1 shrink-0 ${
-                        isSelected ? 'text-white/60 hover:text-white' : 'text-gray-300 hover:text-red-400'
-                      }`}
-                    >
-                      ✕
-                    </button>
-                  )}
-                  {!canRemove && !isEditingName && <span className="pr-1" />}
-                </div>
-              );
-            })}
-
-            {/* Add Variation button / form */}
-            {!inputsDisabled && (
-              <>
-                {!showAddVariationForm ? (
-                  <button
-                    type="button"
-                    onClick={(): void => setShowAddVariationForm(true)}
-                    className="px-2.5 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-400 hover:border-choco-primary hover:text-choco-primary transition-colors"
-                  >
-                    + New
-                  </button>
-                ) : (
-                  <div className="w-full mt-1 p-2 rounded border border-gray-200 bg-gray-50 space-y-2">
-                    <div className="flex gap-2 items-center">
-                      <label className="text-xs text-gray-500 shrink-0 w-10">Date</label>
-                      <input
-                        type="text"
-                        placeholder={new Date().toISOString().split('T')[0]}
-                        pattern="\d{4}-\d{2}-\d{2}"
-                        className="text-xs border border-gray-300 rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                        value={newVariationDate}
-                        onChange={(e): void => setNewVariationDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex gap-2 items-center">
-                      <label className="text-xs text-gray-500 shrink-0 w-10">Name</label>
-                      <input
-                        type="text"
-                        placeholder="optional label"
-                        className="text-xs border border-gray-300 rounded px-1.5 py-0.5 flex-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                        value={newVariationName}
-                        onChange={(e): void => setNewVariationName(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex gap-1.5 justify-end">
-                      <button
-                        type="button"
-                        onClick={(): void => {
-                          setShowAddVariationForm(false);
-                          setNewVariationDate('');
-                          setNewVariationName('');
-                        }}
-                        className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700 rounded"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCreateBlankVariation}
-                        className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      >
-                        Create Blank
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleDuplicateVariation}
-                        className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
-                      >
-                        Duplicate Current
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </EditSection>
+        <VariationChips
+          wrapper={wrapper}
+          selectedVariationSpec={selectedVariationSpec}
+          disabled={inputsDisabled}
+          onVariationChange={onVariationChange}
+          onSetGolden={handleSetGoldenVariation}
+          onRemove={handleRemoveVariation}
+          onRename={handleCommitVariationName}
+          onCreateBlank={handleCreateBlankVariation}
+          onDuplicate={handleDuplicateVariation}
+        />
       )}
 
       {/* Variation Detail — editable sections */}
       {currentVariation && (
         <>
           {/* Yield */}
-          <EditSection title="Yield">
+          <EditSection title="Default Yield">
             <EditField
               label={EntitiesNS.Confections.isYieldInFrames(currentVariation.yield) ? 'Frames' : 'Count'}
             >
@@ -1150,194 +944,45 @@ export function ConfectionEditView({
             </EditField>
           </EditSection>
 
-          {/* Molds (molded bon-bon only) — primary card + alternates chips */}
-          {isMoldedBonBon &&
-            (() => {
-              const v = currentVariation as Entities.Confections.IMoldedBonBonRecipeVariationEntity;
-              const preferred =
-                v.molds.options.find((o) => o.id === v.molds.preferredId) ?? v.molds.options[0];
-              const alternates = v.molds.options.filter((o) => o.id !== preferred?.id);
-              return (
-                <EditSection title="Mold">
-                  <div className="rounded border border-gray-200 p-2 space-y-1.5">
-                    <div className="flex items-start justify-between">
-                      <span className="text-sm font-medium text-gray-800">
-                        {moldSuggestions.find((s) => s.id === preferred?.id)?.name ?? preferred?.id ?? '—'}
-                      </span>
-                    </div>
-                    {!inputsDisabled && (
-                      <input
-                        type="text"
-                        placeholder="Change mold…"
-                        className="text-xs border border-dashed border-gray-300 rounded px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                        list="mold-suggestions"
-                        onBlur={(e): void => {
-                          const val = e.target.value;
-                          const m = moldMatcher.resolveOnBlur(val);
-                          if (m) {
-                            handleSetPreferredMold(m.id as MoldId);
-                          } else if (val.trim()) {
-                            onAddMold?.(val.trim());
-                          }
-                          e.target.value = '';
-                        }}
-                        onKeyDown={(e): void => {
-                          if (e.key === 'Enter') {
-                            const val = (e.target as HTMLInputElement).value;
-                            const m = moldMatcher.resolveOnBlur(val);
-                            if (m) {
-                              handleSetPreferredMold(m.id as MoldId);
-                            } else if (val.trim()) {
-                              onAddMold?.(val.trim());
-                            }
-                            (e.target as HTMLInputElement).value = '';
-                          }
-                        }}
-                      />
-                    )}
-                    <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
-                      <span className="text-xs text-gray-400 shrink-0">also:</span>
-                      {alternates.map((moldRef) => (
-                        <span
-                          key={moldRef.id}
-                          className="inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 bg-gray-100 text-gray-600"
-                        >
-                          {!inputsDisabled && (
-                            <button
-                              type="button"
-                              title="Set as preferred"
-                              onClick={(): void => handleSetPreferredMold(moldRef.id as MoldId)}
-                              className="text-gray-300 hover:text-amber-400 shrink-0"
-                            >
-                              ★
-                            </button>
-                          )}
-                          <span>{moldSuggestions.find((s) => s.id === moldRef.id)?.name ?? moldRef.id}</span>
-                          {!inputsDisabled && (
-                            <button
-                              type="button"
-                              title="Remove"
-                              onClick={(): void => handleRemoveMold(moldRef.id as MoldId)}
-                              className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </span>
-                      ))}
-                      {!inputsDisabled && (
-                        <input
-                          type="text"
-                          placeholder="+ alternate"
-                          className="text-xs border border-dashed border-gray-200 rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                          list="mold-suggestions"
-                          onBlur={(e): void => {
-                            handleAddMold(e.target.value);
-                            e.target.value = '';
-                          }}
-                          onKeyDown={(e): void => {
-                            if (e.key === 'Enter') {
-                              handleAddMold((e.target as HTMLInputElement).value);
-                              (e.target as HTMLInputElement).value = '';
-                            }
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                  <datalist id="mold-suggestions">
-                    {moldSuggestions.map((s) => (
-                      <option key={s.id} value={s.name} />
-                    ))}
-                  </datalist>
-                </EditSection>
-              );
-            })()}
+          {/* Molds (molded bon-bon only) */}
+          {isMoldedBonBon && moldData && (
+            <PreferredWithAlternatesEditor<MoldId>
+              title="Mold"
+              preferredId={moldData.preferredId}
+              alternateIds={moldData.alternateIds}
+              getDisplayName={getMoldName}
+              disabled={inputsDisabled}
+              datalistId="mold-suggestions"
+              changePlaceholder="Change mold…"
+              addPlaceholder="+ alternate"
+              onChangePreferred={(input): void => {
+                const m = moldMatcher.resolveOnBlur(input);
+                if (m) handleSetPreferredMold(m.id as MoldId);
+                else if (input.trim()) onAddMold?.(input.trim());
+              }}
+              onSetPreferred={(id): void => handleSetPreferredMold(id)}
+              onRemove={(id): void => handleRemoveMold(id)}
+              onAddAlternate={(input): void => handleAddMold(input)}
+            />
+          )}
 
-          {/* Shell Chocolate (molded bon-bon only) — primary card + alternates chips */}
-          {isMoldedBonBon &&
-            (() => {
-              const v = currentVariation as Entities.Confections.IMoldedBonBonRecipeVariationEntity;
-              const sc = v.shellChocolate;
-              const preferred = sc.preferredId;
-              const alternates = sc.ids.filter((id) => id !== preferred);
-              return (
-                <EditSection title="Shell Chocolate">
-                  <div className="rounded border border-gray-200 p-2 space-y-1.5">
-                    <span className="text-sm font-medium text-gray-800">
-                      {ingredientSuggestions.find((s) => s.id === preferred)?.name ?? preferred ?? '—'}
-                    </span>
-                    {!inputsDisabled && (
-                      <input
-                        type="text"
-                        placeholder="Change chocolate…"
-                        className="text-xs border border-dashed border-gray-300 rounded px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                        list="ingredient-suggestions"
-                        onBlur={(e): void => {
-                          handleSetShellChocolate(e.target.value);
-                          e.target.value = '';
-                        }}
-                        onKeyDown={(e): void => {
-                          if (e.key === 'Enter') {
-                            handleSetShellChocolate((e.target as HTMLInputElement).value);
-                            (e.target as HTMLInputElement).value = '';
-                          }
-                        }}
-                      />
-                    )}
-                    <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
-                      <span className="text-xs text-gray-400 shrink-0">also:</span>
-                      {alternates.map((id) => (
-                        <span
-                          key={id}
-                          className="inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 bg-gray-100 text-gray-600"
-                        >
-                          {!inputsDisabled && (
-                            <button
-                              type="button"
-                              title="Set as preferred"
-                              onClick={(): void => handleSetPreferredShellChocolate(id as IngredientId)}
-                              className="text-gray-300 hover:text-amber-400 shrink-0"
-                            >
-                              ★
-                            </button>
-                          )}
-                          <span>{ingredientSuggestions.find((s) => s.id === id)?.name ?? id}</span>
-                          {!inputsDisabled && (
-                            <button
-                              type="button"
-                              title="Remove"
-                              onClick={(): void => handleRemoveShellChocolate(id as IngredientId)}
-                              className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </span>
-                      ))}
-                      {!inputsDisabled && (
-                        <input
-                          type="text"
-                          placeholder="+ alternate"
-                          className="text-xs border border-dashed border-gray-200 rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                          list="ingredient-suggestions"
-                          onBlur={(e): void => {
-                            handleAddShellChocolateAlternate(e.target.value);
-                            e.target.value = '';
-                          }}
-                          onKeyDown={(e): void => {
-                            if (e.key === 'Enter') {
-                              handleAddShellChocolateAlternate((e.target as HTMLInputElement).value);
-                              (e.target as HTMLInputElement).value = '';
-                            }
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </EditSection>
-              );
-            })()}
+          {/* Shell Chocolate (molded bon-bon only) */}
+          {isMoldedBonBon && shellData && (
+            <PreferredWithAlternatesEditor<IngredientId>
+              title="Shell Chocolate"
+              preferredId={shellData.preferredId}
+              alternateIds={shellData.alternateIds}
+              getDisplayName={getIngredientName}
+              disabled={inputsDisabled}
+              datalistId="ingredient-suggestions"
+              changePlaceholder="Change chocolate…"
+              addPlaceholder="+ alternate"
+              onChangePreferred={(input): void => handleSetShellChocolate(input)}
+              onSetPreferred={(id): void => handleSetPreferredShellChocolate(id)}
+              onRemove={(id): void => handleRemoveShellChocolate(id)}
+              onAddAlternate={(input): void => handleAddShellChocolateAlternate(input)}
+            />
+          )}
 
           {/* Additional Chocolates: Seal + Decoration (molded bon-bon only) */}
           {isMoldedBonBon &&
@@ -1358,9 +1003,7 @@ export function ConfectionEditView({
                         {ac ? (
                           <div className="rounded border border-gray-200 p-2 flex items-center justify-between">
                             <span className="text-sm font-medium text-gray-800">
-                              {ingredientSuggestions.find((s) => s.id === preferredId)?.name ??
-                                preferredId ??
-                                '—'}
+                              {getIngredientName(preferredId ?? '—')}
                             </span>
                             {!inputsDisabled && (
                               <button
@@ -1399,601 +1042,112 @@ export function ConfectionEditView({
               );
             })()}
 
-          {/* Fillings — each slot as a card with options chips */}
-          <EditSection title="Fillings">
-            <div className="space-y-2">
-              {(currentVariation.fillings ?? []).map((slot) => (
-                <div key={slot.slotId} className="rounded border border-gray-200 p-2 space-y-1.5">
-                  <div className="text-xs text-gray-400 font-medium">{slot.name ?? slot.slotId}</div>
-                  <div className="flex flex-wrap items-center gap-1">
-                    {slot.filling.options.map((opt) => {
-                      const isPreferred = opt.id === slot.filling.preferredId;
-                      const displayName = fillingSuggestions.find((s) => s.id === opt.id)?.name ?? opt.id;
-                      return (
-                        <span
-                          key={opt.id}
-                          className={`inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 ${
-                            isPreferred
-                              ? 'bg-choco-primary/10 text-choco-primary'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          {!inputsDisabled && (
-                            <button
-                              type="button"
-                              title={isPreferred ? 'Preferred' : 'Set as preferred'}
-                              onClick={(): void => handleSetPreferredFillingOption(slot.slotId, opt.id)}
-                              className={`shrink-0 ${
-                                isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
-                              }`}
-                            >
-                              ★
-                            </button>
-                          )}
-                          {inputsDisabled && isPreferred && (
-                            <span className="text-amber-500 shrink-0">★</span>
-                          )}
-                          <span>{displayName}</span>
-                          {!inputsDisabled && (
-                            <button
-                              type="button"
-                              title="Remove option"
-                              onClick={(): void => handleRemoveFillingOption(slot.slotId, opt.id)}
-                              className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </span>
-                      );
-                    })}
-                    {!inputsDisabled &&
-                      (pendingNewFilling?.slotId === slot.slotId ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
-                          <span>"{pendingNewFilling.seed}":</span>
-                          <button
-                            type="button"
-                            onClick={(): void => {
-                              onAddFilling?.(pendingNewFilling.seed);
-                              setPendingNewFilling(null);
-                            }}
-                            className="underline hover:text-choco-primary"
-                          >
-                            recipe
-                          </button>
-                          <span className="text-amber-400">|</span>
-                          <button
-                            type="button"
-                            onClick={(): void => {
-                              onAddIngredient?.(pendingNewFilling.seed);
-                              setPendingNewFilling(null);
-                            }}
-                            className="underline hover:text-choco-primary"
-                          >
-                            ingredient
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(): void => setPendingNewFilling(null)}
-                            className="ml-0.5 text-amber-400 hover:text-amber-600"
-                          >
-                            ✕
-                          </button>
-                        </span>
-                      ) : (
-                        <input
-                          type="text"
-                          placeholder="+ alternate"
-                          className="text-xs border border-dashed border-gray-200 rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                          list="filling-option-suggestions"
-                          onBlur={(e): void => {
-                            handleAddFillingAlternate(slot.slotId, e.target.value);
-                            e.target.value = '';
-                          }}
-                          onKeyDown={(e): void => {
-                            if (e.key === 'Enter') {
-                              handleAddFillingAlternate(slot.slotId, (e.target as HTMLInputElement).value);
-                              (e.target as HTMLInputElement).value = '';
-                            }
-                          }}
-                        />
-                      ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {!inputsDisabled &&
-              (pendingNewFilling ? (
-                <div className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 space-y-1.5">
-                  <div className="text-xs text-amber-800">
-                    <span className="font-medium">"{pendingNewFilling.seed}"</span> not found.{' '}
-                    {pendingNewFilling.slotId ? 'Add as alternate to this slot:' : 'Create as:'}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button
-                      type="button"
-                      onClick={(): void => {
-                        onAddFilling?.(pendingNewFilling.seed);
-                        setPendingNewFilling(null);
-                      }}
-                      className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
-                    >
-                      Filling Recipe
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(): void => {
-                        onAddIngredient?.(pendingNewFilling.seed);
-                        setPendingNewFilling(null);
-                      }}
-                      className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    >
-                      Ingredient
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(): void => setPendingNewFilling(null)}
-                      className="px-2 py-0.5 text-xs text-gray-400 hover:text-gray-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : pendingNewSlot ? (
-                <div className="mt-2 rounded border border-choco-primary/30 bg-choco-primary/5 p-2 space-y-1.5">
-                  <div className="text-xs text-gray-500">Slot name:</div>
-                  <input
-                    type="text"
-                    value={pendingNewSlotName}
-                    onChange={(e): void => setPendingNewSlotName(e.target.value)}
-                    onKeyDown={(e): void => {
-                      if (e.key === 'Enter') handleCommitNewSlot();
-                      if (e.key === 'Escape') {
-                        setPendingNewSlot(null);
-                        setPendingNewSlotName('');
-                      }
-                    }}
-                    className="text-xs border border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                    autoFocus
-                  />
-                  <div className="flex gap-1.5">
-                    <button
-                      type="button"
-                      onClick={handleCommitNewSlot}
-                      className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
-                    >
-                      Add
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(): void => {
-                        setPendingNewSlot(null);
-                        setPendingNewSlotName('');
-                      }}
-                      className="px-2 py-0.5 text-xs text-gray-400 hover:text-gray-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <input
-                  type="text"
-                  placeholder="Add filling slot…"
-                  className="mt-2 text-xs border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                  list="filling-option-suggestions"
-                  onBlur={(e): void => {
-                    handleAddFilling(e.target.value);
-                    e.target.value = '';
-                  }}
-                  onKeyDown={(e): void => {
-                    if (e.key === 'Enter') {
-                      handleAddFilling((e.target as HTMLInputElement).value);
-                      (e.target as HTMLInputElement).value = '';
-                    }
-                  }}
-                />
-              ))}
-            <datalist id="filling-option-suggestions">
-              {fillingOptionSuggestions.map((s) => (
-                <option key={s.id} value={s.name} />
-              ))}
-            </datalist>
-          </EditSection>
+          {/* Fillings */}
+          <FillingsEditor
+            fillings={currentVariation.fillings}
+            disabled={inputsDisabled}
+            defaultSlotWeights={defaultSlotWeights}
+            confectionId={confection.id}
+            availableFillings={availableFillings}
+            availableIngredients={availableIngredients}
+            onFillingsChange={handleFillingsChange}
+            onFillingClick={onFillingClick}
+            onAddFilling={onAddFilling}
+            onAddIngredient={onAddIngredient}
+          />
 
-          {/* Enrobing Chocolate (rolled truffle + bar truffle) — primary card + alternates chips */}
-          {(isRolledTruffle || isBarTruffle) &&
-            (() => {
-              const v = currentVariation as
-                | Entities.Confections.IRolledTruffleRecipeVariationEntity
-                | Entities.Confections.IBarTruffleRecipeVariationEntity;
-              const ec = v.enrobingChocolate;
-              const preferred = ec?.preferredId;
-              const alternates = ec ? ec.ids.filter((id) => id !== preferred) : [];
-              return (
-                <EditSection title="Enrobing Chocolate">
-                  {ec ? (
-                    <div className="rounded border border-gray-200 p-2 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-800">
-                          {ingredientSuggestions.find((s) => s.id === preferred)?.name ?? preferred ?? '—'}
-                        </span>
-                        {!inputsDisabled && (
-                          <button
-                            type="button"
-                            onClick={handleClearEnrobingChocolate}
-                            className="text-xs text-gray-400 hover:text-red-500"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
-                        <span className="text-xs text-gray-400 shrink-0">also:</span>
-                        {alternates.map((id) => (
-                          <span
-                            key={id}
-                            className="inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 bg-gray-100 text-gray-600"
-                          >
-                            <span>{ingredientSuggestions.find((s) => s.id === id)?.name ?? id}</span>
-                          </span>
-                        ))}
-                        {!inputsDisabled && (
-                          <input
-                            type="text"
-                            placeholder="+ alternate"
-                            className="text-xs border border-dashed border-gray-200 rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                            list="ingredient-suggestions"
-                            onBlur={(e): void => {
-                              handleSetEnrobingChocolate(e.target.value);
-                              e.target.value = '';
-                            }}
-                            onKeyDown={(e): void => {
-                              if (e.key === 'Enter') {
-                                handleSetEnrobingChocolate((e.target as HTMLInputElement).value);
-                                (e.target as HTMLInputElement).value = '';
-                              }
-                            }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    !inputsDisabled && (
-                      <input
-                        type="text"
-                        placeholder="Set enrobing chocolate…"
-                        className="text-xs border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                        list="ingredient-suggestions"
-                        onBlur={(e): void => {
-                          handleSetEnrobingChocolate(e.target.value);
-                          e.target.value = '';
-                        }}
-                        onKeyDown={(e): void => {
-                          if (e.key === 'Enter') {
-                            handleSetEnrobingChocolate((e.target as HTMLInputElement).value);
-                            (e.target as HTMLInputElement).value = '';
-                          }
-                        }}
-                      />
-                    )
-                  )}
-                </EditSection>
-              );
-            })()}
+          {/* Enrobing Chocolate (rolled truffle + bar truffle) */}
+          {(isRolledTruffle || isBarTruffle) && enrobingData && (
+            <PreferredWithAlternatesEditor<IngredientId>
+              title="Enrobing Chocolate"
+              preferredId={enrobingData.preferredId}
+              alternateIds={enrobingData.alternateIds}
+              getDisplayName={getIngredientName}
+              disabled={inputsDisabled}
+              datalistId="ingredient-suggestions"
+              changePlaceholder="Set enrobing chocolate…"
+              addPlaceholder="+ alternate"
+              onChangePreferred={(input): void => handleSetEnrobingChocolate(input)}
+              onRemove={(): void => handleClearEnrobingChocolate()}
+              onAddAlternate={(input): void => handleSetEnrobingChocolate(input)}
+              showClear
+              onClear={handleClearEnrobingChocolate}
+            />
+          )}
 
-          {/* Coatings (rolled truffle only) — preferred primary + alternates chips */}
-          {isRolledTruffle &&
-            (() => {
-              const v = currentVariation as Entities.Confections.IRolledTruffleRecipeVariationEntity;
-              const preferred = v.coatings?.preferredId;
-              const alternates = (v.coatings?.ids ?? []).filter((id) => id !== preferred);
-              return (
-                <EditSection title="Coatings">
-                  <div className="space-y-1.5">
-                    {preferred && (
-                      <div className="rounded border border-gray-200 p-2 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-800">
-                            {ingredientSuggestions.find((s) => s.id === preferred)?.name ?? preferred}
-                          </span>
-                          {!inputsDisabled && (
-                            <button
-                              type="button"
-                              onClick={(): void => handleRemoveCoating(preferred as IngredientId)}
-                              className="text-xs text-gray-400 hover:text-red-500"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                        {(alternates.length > 0 || !inputsDisabled) && (
-                          <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
-                            <span className="text-xs text-gray-400 shrink-0">also:</span>
-                            {alternates.map((id) => (
-                              <span
-                                key={id}
-                                className="inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 bg-gray-100 text-gray-600"
-                              >
-                                <span>{ingredientSuggestions.find((s) => s.id === id)?.name ?? id}</span>
-                                {!inputsDisabled && (
-                                  <button
-                                    type="button"
-                                    onClick={(): void => handleRemoveCoating(id as IngredientId)}
-                                    className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
-                                  >
-                                    ✕
-                                  </button>
-                                )}
-                              </span>
-                            ))}
-                            {!inputsDisabled && (
-                              <input
-                                type="text"
-                                placeholder="+ alternate"
-                                className="text-xs border border-dashed border-gray-200 rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                                list="ingredient-suggestions"
-                                onBlur={(e): void => {
-                                  handleAddCoating(e.target.value);
-                                  e.target.value = '';
-                                }}
-                                onKeyDown={(e): void => {
-                                  if (e.key === 'Enter') {
-                                    handleAddCoating((e.target as HTMLInputElement).value);
-                                    (e.target as HTMLInputElement).value = '';
-                                  }
-                                }}
-                              />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {!inputsDisabled && !preferred && (
-                      <input
-                        type="text"
-                        placeholder="Add coating ingredient…"
-                        className="text-xs border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                        list="ingredient-suggestions"
-                        onBlur={(e): void => {
-                          handleAddCoating(e.target.value);
-                          e.target.value = '';
-                        }}
-                        onKeyDown={(e): void => {
-                          if (e.key === 'Enter') {
-                            handleAddCoating((e.target as HTMLInputElement).value);
-                            (e.target as HTMLInputElement).value = '';
-                          }
-                        }}
-                      />
-                    )}
-                  </div>
-                </EditSection>
-              );
-            })()}
+          {/* Coatings (rolled truffle only) */}
+          {isRolledTruffle && coatingData && (
+            <PreferredWithAlternatesEditor<IngredientId>
+              title="Coatings"
+              preferredId={coatingData.preferredId}
+              alternateIds={coatingData.alternateIds}
+              getDisplayName={getIngredientName}
+              disabled={inputsDisabled}
+              datalistId="ingredient-suggestions"
+              changePlaceholder="Add coating ingredient…"
+              addPlaceholder="+ alternate"
+              onChangePreferred={(input): void => handleAddCoating(input)}
+              onRemove={(id): void => handleRemoveCoating(id)}
+              onAddAlternate={(input): void => handleAddCoating(input)}
+            />
+          )}
 
+          {/* Datalists */}
           <datalist id="ingredient-suggestions">
             {ingredientSuggestions.map((s) => (
               <option key={s.id} value={s.name} />
             ))}
           </datalist>
+          <datalist id="mold-suggestions">
+            {moldSuggestions.map((s) => (
+              <option key={s.id} value={s.name} />
+            ))}
+          </datalist>
 
-          {/* Procedures — preferred primary + alternates chips */}
-          <EditSection title="Procedures">
-            {(() => {
-              const procs = currentVariation.procedures;
-              const preferred = procs?.preferredId;
-              const preferredOpt = procs?.options.find((o) => o.id === preferred);
-              const alternates = procs?.options.filter((o) => o.id !== preferred) ?? [];
-              return (
-                <div className="space-y-1.5">
-                  {preferredOpt && (
-                    <div className="rounded border border-gray-200 p-2 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-800">
-                          {procedureSuggestions.find((s) => s.id === preferredOpt.id)?.name ??
-                            preferredOpt.id}
-                        </span>
-                        {!inputsDisabled && (
-                          <button
-                            type="button"
-                            onClick={(): void => handleRemoveProcedure(preferredOpt.id as ProcedureId)}
-                            className="text-xs text-gray-400 hover:text-red-500"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                      {(alternates.length > 0 || !inputsDisabled) && (
-                        <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
-                          <span className="text-xs text-gray-400 shrink-0">also:</span>
-                          {alternates.map((opt) => (
-                            <span
-                              key={opt.id}
-                              className="inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 bg-gray-100 text-gray-600"
-                            >
-                              {!inputsDisabled && (
-                                <button
-                                  type="button"
-                                  title="Set as preferred"
-                                  onClick={(): void => handleSetPreferredProcedure(opt.id as ProcedureId)}
-                                  className="text-gray-300 hover:text-amber-400 shrink-0"
-                                >
-                                  ★
-                                </button>
-                              )}
-                              <span>{procedureSuggestions.find((s) => s.id === opt.id)?.name ?? opt.id}</span>
-                              {!inputsDisabled && (
-                                <button
-                                  type="button"
-                                  title="Remove alternate"
-                                  onClick={(): void => handleRemoveProcedure(opt.id as ProcedureId)}
-                                  className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
-                                >
-                                  ✕
-                                </button>
-                              )}
-                            </span>
-                          ))}
-                          {!inputsDisabled && (
-                            <input
-                              type="text"
-                              placeholder="+ alternate"
-                              className="text-xs border border-dashed border-gray-200 rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                              list="procedure-suggestions"
-                              onBlur={(e): void => {
-                                handleAddProcedure(e.target.value);
-                                e.target.value = '';
-                              }}
-                              onKeyDown={(e): void => {
-                                if (e.key === 'Enter') {
-                                  handleAddProcedure((e.target as HTMLInputElement).value);
-                                  (e.target as HTMLInputElement).value = '';
-                                }
-                              }}
-                            />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {!inputsDisabled && !preferredOpt && (
-                    <input
-                      type="text"
-                      placeholder="Add procedure by name…"
-                      className="text-xs border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                      list="procedure-suggestions"
-                      onBlur={(e): void => {
-                        handleAddProcedure(e.target.value);
-                        e.target.value = '';
-                      }}
-                      onKeyDown={(e): void => {
-                        if (e.key === 'Enter') {
-                          handleAddProcedure((e.target as HTMLInputElement).value);
-                          (e.target as HTMLInputElement).value = '';
-                        }
-                      }}
-                    />
-                  )}
-                </div>
-              );
-            })()}
-            <datalist id="procedure-suggestions">
-              {procedureSuggestions.map((s) => (
-                <option key={s.id} value={s.name} />
-              ))}
-            </datalist>
-          </EditSection>
+          {/* Procedures */}
+          <PreferredWithAlternatesEditor<ProcedureId>
+            title="Procedures"
+            preferredId={procedureData.preferredId}
+            alternateIds={procedureData.alternateIds}
+            getDisplayName={getProcedureName}
+            disabled={inputsDisabled}
+            datalistId="procedure-suggestions"
+            changePlaceholder="Add procedure by name…"
+            addPlaceholder="+ alternate"
+            onChangePreferred={(input): void => handleAddProcedure(input)}
+            onSetPreferred={(id): void => handleSetPreferredProcedure(id)}
+            onRemove={(id): void => handleRemoveProcedure(id)}
+            onAddAlternate={(input): void => handleAddProcedure(input)}
+          />
+          <datalist id="procedure-suggestions">
+            {procedureSuggestions.map((s) => (
+              <option key={s.id} value={s.name} />
+            ))}
+          </datalist>
 
-          {/* Decorations — preferred primary + alternates chips */}
+          {/* Decorations */}
           {(currentVariation.decorations || !inputsDisabled) && (
-            <EditSection title="Decorations">
-              {(() => {
-                const decs = currentVariation.decorations;
-                const preferred = decs?.preferredId;
-                const preferredOpt = decs?.options.find((o) => o.id === preferred);
-                const alternates = decs?.options.filter((o) => o.id !== preferred) ?? [];
-                return (
-                  <div className="space-y-1.5">
-                    {preferredOpt && (
-                      <div className="rounded border border-gray-200 p-2 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-800">
-                            {decorationSuggestions.find((s) => s.id === preferredOpt.id)?.name ??
-                              preferredOpt.id}
-                          </span>
-                          {!inputsDisabled && (
-                            <button
-                              type="button"
-                              onClick={(): void => handleRemoveDecoration(preferredOpt.id as DecorationId)}
-                              className="text-xs text-gray-400 hover:text-red-500"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                        {(alternates.length > 0 || !inputsDisabled) && (
-                          <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
-                            <span className="text-xs text-gray-400 shrink-0">also:</span>
-                            {alternates.map((opt) => (
-                              <span
-                                key={opt.id}
-                                className="inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 bg-gray-100 text-gray-600"
-                              >
-                                {!inputsDisabled && (
-                                  <button
-                                    type="button"
-                                    title="Set as preferred"
-                                    onClick={(): void => handleSetPreferredDecoration(opt.id as DecorationId)}
-                                    className="text-gray-300 hover:text-amber-400 shrink-0"
-                                  >
-                                    ★
-                                  </button>
-                                )}
-                                <span>
-                                  {decorationSuggestions.find((s) => s.id === opt.id)?.name ?? opt.id}
-                                </span>
-                                {!inputsDisabled && (
-                                  <button
-                                    type="button"
-                                    title="Remove alternate"
-                                    onClick={(): void => handleRemoveDecoration(opt.id as DecorationId)}
-                                    className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
-                                  >
-                                    ✕
-                                  </button>
-                                )}
-                              </span>
-                            ))}
-                            {!inputsDisabled && (
-                              <input
-                                type="text"
-                                placeholder="+ alternate"
-                                className="text-xs border border-dashed border-gray-200 rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                                list="decoration-suggestions"
-                                onBlur={(e): void => {
-                                  handleAddDecoration(e.target.value);
-                                  e.target.value = '';
-                                }}
-                                onKeyDown={(e): void => {
-                                  if (e.key === 'Enter') {
-                                    handleAddDecoration((e.target as HTMLInputElement).value);
-                                    (e.target as HTMLInputElement).value = '';
-                                  }
-                                }}
-                              />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {!inputsDisabled && !preferredOpt && (
-                      <input
-                        type="text"
-                        placeholder="Add decoration…"
-                        className="text-xs border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                        list="decoration-suggestions"
-                        onBlur={(e): void => {
-                          handleAddDecoration(e.target.value);
-                          e.target.value = '';
-                        }}
-                        onKeyDown={(e): void => {
-                          if (e.key === 'Enter') {
-                            handleAddDecoration((e.target as HTMLInputElement).value);
-                            (e.target as HTMLInputElement).value = '';
-                          }
-                        }}
-                      />
-                    )}
-                    <datalist id="decoration-suggestions">
-                      {decorationSuggestions.map((s) => (
-                        <option key={s.id} value={s.name} />
-                      ))}
-                    </datalist>
-                  </div>
-                );
-              })()}
-            </EditSection>
+            <>
+              <PreferredWithAlternatesEditor<DecorationId>
+                title="Decorations"
+                preferredId={decorationData.preferredId}
+                alternateIds={decorationData.alternateIds}
+                getDisplayName={getDecorationName}
+                disabled={inputsDisabled}
+                datalistId="decoration-suggestions"
+                changePlaceholder="Add decoration…"
+                addPlaceholder="+ alternate"
+                onChangePreferred={(input): void => handleAddDecoration(input)}
+                onSetPreferred={(id): void => handleSetPreferredDecoration(id)}
+                onRemove={(id): void => handleRemoveDecoration(id)}
+                onAddAlternate={(input): void => handleAddDecoration(input)}
+              />
+              <datalist id="decoration-suggestions">
+                {decorationSuggestions.map((s) => (
+                  <option key={s.id} value={s.name} />
+                ))}
+              </datalist>
+            </>
           )}
 
           {/* Notes */}

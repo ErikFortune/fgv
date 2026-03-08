@@ -1674,15 +1674,20 @@ export function ConfectionsTabContent(): React.ReactElement {
           if (!entry.sourceConfectionId || !entry.sourceSlotId) return entry.targetWeight;
           const confResult = workspace.data.confections.get(entry.sourceConfectionId as ConfectionId);
           if (confResult.isFailure()) return entry.targetWeight;
-          const settings = viewSettingsMap.get(entry.sourceConfectionId);
-          if (!settings) return entry.targetWeight;
           const variation = confResult.value.goldenVariation;
+          const settings = viewSettingsMap.get(entry.sourceConfectionId);
+          // Use viewSettings if available, else default from the recipe yield
+          const defaultTarget: LibraryRuntime.IConfectionScalingTarget = Entities.Confections.isYieldInFrames(
+            variation.yield
+          )
+            ? { targetFrames: variation.yield.numFrames }
+            : { targetCount: variation.yield.numPieces };
           const target: LibraryRuntime.IConfectionScalingTarget = {
-            targetFrames: settings.targetFrames,
-            bufferPercentage: settings.bufferPercentage,
-            targetCount: settings.targetCount,
-            selectedMoldId: settings.moldId,
-            fillingSelections: settings.fillingSelections
+            targetFrames: settings?.targetFrames ?? defaultTarget.targetFrames,
+            bufferPercentage: settings?.bufferPercentage ?? defaultTarget.bufferPercentage,
+            targetCount: settings?.targetCount ?? defaultTarget.targetCount,
+            selectedMoldId: settings?.moldId,
+            fillingSelections: settings?.fillingSelections
           };
           if (!LibraryRuntime.canScale(variation, target)) return undefined;
           const scaleResult = LibraryRuntime.computeScaledFillings(variation, target);

@@ -100,13 +100,13 @@ function YieldSection({
 }): React.ReactElement {
   if (Entities.Confections.isYieldInFrames(yieldSpec)) {
     return (
-      <DetailSection title="Yield">
+      <DetailSection title="Default Yield">
         <DetailRow label="Frames" value={String(yieldSpec.numFrames)} />
       </DetailSection>
     );
   }
   return (
-    <DetailSection title="Yield">
+    <DetailSection title="Default Yield">
       <DetailRow label="Count" value={`${yieldSpec.numPieces} pieces`} />
       <DetailRow label="Weight per piece" value={`${yieldSpec.weightPerPiece}g`} />
     </DetailSection>
@@ -183,6 +183,8 @@ function FillingSlotRow({
     }));
   }, [slot]);
 
+  const weightLabel = scaledTargetWeight !== undefined ? `${Math.round(scaledTargetWeight)}g` : undefined;
+
   const handleClick = useMemo(() => {
     if (!onFillingClick && !onIngredientClick) {
       return undefined;
@@ -199,7 +201,10 @@ function FillingSlotRow({
 
   return (
     <div className="mb-1">
-      <div className="text-xs text-gray-400 mb-0.5 pl-[22px]">{slot.name ?? slot.slotId}</div>
+      <div className="text-xs text-gray-400 mb-0.5 pl-[22px]">
+        {slot.name ?? slot.slotId}
+        {weightLabel && <span className="ml-1 text-amber-600 font-medium">({weightLabel})</span>}
+      </div>
       <EntityRow
         items={items}
         preferredId={slot.filling.preferredId}
@@ -426,11 +431,13 @@ function ScalingSection({
   if (!onSettingChange) return null;
 
   if (variation.isMoldedBonBonVariation()) {
-    const frames = viewSettings?.targetFrames;
+    const defaultFrames = Entities.Confections.isYieldInFrames(variation.yield)
+      ? variation.yield.numFrames
+      : 1;
+    const frames = viewSettings?.targetFrames ?? defaultFrames;
     const buffer = viewSettings?.bufferPercentage ?? 10;
     const cavityCount = variation.preferredMold?.mold.cavityCount;
-    const effectiveCount =
-      frames !== undefined && cavityCount !== undefined ? frames * cavityCount : undefined;
+    const effectiveCount = cavityCount !== undefined ? frames * cavityCount : undefined;
     return (
       <DetailSection title="Scale to Yield">
         <div className="flex items-center gap-3 px-1 py-1">
@@ -439,8 +446,7 @@ function ScalingSection({
             type="number"
             min={1}
             step={1}
-            value={frames ?? ''}
-            placeholder="—"
+            value={frames}
             onChange={(e): void => {
               const v = parseInt(e.target.value, 10);
               onSettingChange({ targetFrames: isNaN(v) || v <= 0 ? undefined : v });
@@ -466,7 +472,8 @@ function ScalingSection({
     );
   }
 
-  const count = viewSettings?.targetCount;
+  const defaultCount = Entities.Confections.isYieldInFrames(variation.yield) ? 1 : variation.yield.numPieces;
+  const count = viewSettings?.targetCount ?? defaultCount;
   return (
     <DetailSection title="Scale to Yield">
       <div className="flex items-center gap-3 px-1 py-1">
@@ -475,8 +482,7 @@ function ScalingSection({
           type="number"
           min={1}
           step={1}
-          value={count ?? ''}
-          placeholder="—"
+          value={count}
           onChange={(e): void => {
             const v = parseInt(e.target.value, 10);
             onSettingChange({ targetCount: isNaN(v) || v <= 0 ? undefined : v });
@@ -719,14 +725,19 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     });
   }, [confection, selectedVariation, selectedSpec]);
 
+  // Build scaling target: explicit viewSettings if set, else recipe default yield
   const scaledSlotWeights = useMemo((): Readonly<Record<string, number>> | undefined => {
-    if (!viewSettings) return undefined;
+    const defaultTarget: LR.IConfectionScalingTarget = Entities.Confections.isYieldInFrames(
+      selectedVariation.yield
+    )
+      ? { targetFrames: selectedVariation.yield.numFrames }
+      : { targetCount: selectedVariation.yield.numPieces };
     const target: LR.IConfectionScalingTarget = {
-      targetFrames: viewSettings.targetFrames,
-      bufferPercentage: viewSettings.bufferPercentage,
-      targetCount: viewSettings.targetCount,
-      selectedMoldId: viewSettings.moldId,
-      fillingSelections: viewSettings.fillingSelections
+      targetFrames: viewSettings?.targetFrames ?? defaultTarget.targetFrames,
+      bufferPercentage: viewSettings?.bufferPercentage ?? defaultTarget.bufferPercentage,
+      targetCount: viewSettings?.targetCount ?? defaultTarget.targetCount,
+      selectedMoldId: viewSettings?.moldId,
+      fillingSelections: viewSettings?.fillingSelections
     };
     if (!LR.canScale(selectedVariation, target)) return undefined;
     const result = LR.computeScaledFillings(selectedVariation, target);

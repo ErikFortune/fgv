@@ -395,7 +395,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
             label="Variations"
           />
           <div className="pl-[22px] mt-1 text-sm text-gray-600">
-            Yield: {formatIngredientAmount(selectedVariation.baseWeight, 'g')}
+            Default target weight: {formatIngredientAmount(selectedVariation.baseWeight, 'g')}
             {selectedVariation.yield && <span className="text-gray-400"> ({selectedVariation.yield})</span>}
           </div>
         </div>
@@ -412,9 +412,25 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
               day: 'numeric'
             })}
           />
-          <DetailRow label="Base Weight" value={formatIngredientAmount(selectedVariation.baseWeight, 'g')} />
+          <DetailRow
+            label="Default Target Weight"
+            value={formatIngredientAmount(selectedVariation.baseWeight, 'g')}
+          />
           {selectedVariation.yield && <DetailRow label="Yield" value={selectedVariation.yield} />}
         </DetailSection>
+      )}
+
+      {/* Current target weight from confection scaling */}
+      {targetYield !== undefined && (
+        <div className="mb-4 px-1 py-1.5 rounded bg-amber-50 border border-amber-200">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-amber-800">Target weight:</span>
+            <span className="text-sm font-semibold text-amber-700">{Math.round(targetYield)}g</span>
+            {scaleFactor !== undefined && (
+              <span className="text-xs text-amber-600">×{scaleFactor.toFixed(2)} from default</span>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Target Yield Scaler */}
