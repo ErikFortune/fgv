@@ -3,6 +3,7 @@
 # Interface: IProducedMoldedBonBonEntity
 
 Produced molded bonbon with concrete choices.
+Yield stores only numFrames + bufferPercentage; count/weightPerPiece/targetWeight are derived.
 
 **Extends:** [`IProducedConfectionEntityBase`](IProducedConfectionEntityBase.md)
 
@@ -53,11 +54,11 @@ Confection type discriminator
 
 </td><td>
 
-[IMoldedBonBonYield](IMoldedBonBonYield.md)
+[IBufferedYieldInFrames](IBufferedYieldInFrames.md)
 
 </td><td>
 
-Frame-based yield specification
+Frame-based yield: numFrames + bufferPercentage stored; rest derived from mold
 
 </td></tr>
 <tr><td>

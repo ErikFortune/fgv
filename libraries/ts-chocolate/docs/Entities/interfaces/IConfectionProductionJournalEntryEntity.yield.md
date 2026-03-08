@@ -7,5 +7,5 @@ Yield specification for this production run
 **Signature:**
 
 ```typescript
-readonly yield: IConfectionYield;
+readonly yield: BufferedConfectionYield;
 ```

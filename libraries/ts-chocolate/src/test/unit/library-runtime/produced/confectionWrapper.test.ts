@@ -74,12 +74,8 @@ const moldedBonBonProduced: IProducedMoldedBonBonEntity = {
   confectionType: 'molded-bonbon',
   variationId: testVariationId,
   yield: {
-    yieldType: 'frames',
-    frames: 1,
-    bufferPercentage: 0.1,
-    count: 24,
-    unit: 'pieces',
-    weightPerPiece: 10 as Measurement
+    numFrames: 1,
+    bufferPercentage: 10 as Percentage
   },
   moldId: 'test.mold-a' as MoldId,
   shellChocolateId: 'test.dark-chocolate' as IngredientId,
@@ -96,7 +92,12 @@ const barTruffleVariationId = 'test.test-bar@2026-01-01-01' as ConfectionRecipeV
 const barTruffleProduced: IProducedBarTruffleEntity = {
   confectionType: 'bar-truffle',
   variationId: barTruffleVariationId,
-  yield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement },
+  yield: {
+    count: 48,
+    weightPerPiece: 10 as Measurement,
+    bufferPercentage: 10 as Percentage,
+    dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+  },
   enrobingChocolateId: 'test.dark-chocolate' as IngredientId,
   fillings: [
     {
@@ -111,7 +112,7 @@ const rolledTruffleVariationId = 'test.test-rolled@2026-01-01-01' as ConfectionR
 const rolledTruffleProduced: IProducedRolledTruffleEntity = {
   confectionType: 'rolled-truffle',
   variationId: rolledTruffleVariationId,
-  yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+  yield: { count: 40, weightPerPiece: 15 as Measurement, bufferPercentage: 10 as Percentage },
   enrobingChocolateId: 'test.dark-chocolate' as IngredientId,
   coatingId: 'test.cocoa-powder' as IngredientId,
   fillings: [
@@ -144,12 +145,8 @@ describe('ProducedMoldedBonBon', () => {
           {
             ...moldedBonBonProduced,
             yield: {
-              yieldType: 'frames',
-              frames: 1,
-              bufferPercentage: 0.1,
-              count: 12,
-              unit: 'pieces',
-              weightPerPiece: 10 as Measurement
+              numFrames: 1,
+              bufferPercentage: 10 as Percentage
             }
           }
         ],
@@ -157,12 +154,8 @@ describe('ProducedMoldedBonBon', () => {
           {
             ...moldedBonBonProduced,
             yield: {
-              yieldType: 'frames',
-              frames: 2,
-              bufferPercentage: 0.1,
-              count: 36,
-              unit: 'pieces',
-              weightPerPiece: 10 as Measurement
+              numFrames: 2,
+              bufferPercentage: 10 as Percentage
             }
           }
         ]
@@ -298,41 +291,26 @@ describe('ProducedMoldedBonBon', () => {
       expect(wrapper.procedureId).toBeUndefined();
     });
 
-    test('scaleToYield() succeeds with valid yield', () => {
+    test('setFrames() succeeds with valid yield', () => {
       const wrapper = ProducedMoldedBonBon.create(moldedBonBonProduced).orThrow();
 
-      const newYield: Confections.IConfectionYield = {
-        count: 48,
-        unit: 'pieces',
-        weightPerPiece: 10 as Measurement
-      };
-
-      expect(wrapper.scaleToYield(newYield)).toSucceedWith(newYield);
-      expect(wrapper.yield).toEqual(newYield);
+      expect(wrapper.setFrames(2, 10 as Percentage)).toSucceedAndSatisfy((result) => {
+        expect(result.numFrames).toBe(2);
+        expect(result.bufferPercentage).toBe(10);
+      });
+      expect(wrapper.yield.numFrames).toBe(2);
     });
 
-    test('scaleToYield() fails with non-positive count', () => {
+    test('setFrames() fails with non-positive frame count', () => {
       const wrapper = ProducedMoldedBonBon.create(moldedBonBonProduced).orThrow();
-
-      const invalidYield: Confections.IConfectionYield = {
-        count: 0,
-        unit: 'pieces',
-        weightPerPiece: 10 as Measurement
-      };
-
-      expect(wrapper.scaleToYield(invalidYield)).toFailWith(/count must be positive/i);
+      expect(wrapper.setFrames(0, 10 as Percentage)).toFailWith(/frame count must be positive/i);
     });
 
-    test('scaleToYield() fails with non-positive weightPerPiece', () => {
+    test('setFrames() fails with negative bufferPercentage', () => {
       const wrapper = ProducedMoldedBonBon.create(moldedBonBonProduced).orThrow();
-
-      const invalidYield: Confections.IConfectionYield = {
-        count: 24,
-        unit: 'pieces',
-        weightPerPiece: -5 as Measurement
-      };
-
-      expect(wrapper.scaleToYield(invalidYield)).toFailWith(/weight per piece must be positive/i);
+      expect(wrapper.setFrames(1, -1 as Percentage)).toFailWith(
+        /buffer percentage must be between 0 and 100/i
+      );
     });
 
     test('setFillingSlot() adds new slot and updates existing', () => {
@@ -781,12 +759,8 @@ describe('ProducedMoldedBonBon', () => {
         confectionType: 'molded-bonbon',
         variationId: 'test.minimal-bonbon@2026-01-01-01' as ConfectionRecipeVariationId,
         yield: {
-          yieldType: 'frames',
-          frames: 1,
-          bufferPercentage: 0.1,
-          count: 24,
-          unit: 'pieces',
-          weightPerPiece: 10 as Measurement
+          numFrames: 1,
+          bufferPercentage: 10 as Percentage
         },
         moldId: 'test.mold-a' as MoldId,
         shellChocolateId: 'test.dark-chocolate' as IngredientId
@@ -845,7 +819,12 @@ describe('ProducedBarTruffle', () => {
       const minimal: IProducedBarTruffleEntity = {
         confectionType: 'bar-truffle',
         variationId: 'test.minimal-bar@2026-01-01-01' as ConfectionRecipeVariationId,
-        yield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement }
+        yield: {
+          count: 48,
+          weightPerPiece: 10 as Measurement,
+          bufferPercentage: 10 as Percentage,
+          dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+        }
       };
 
       const wrapper = ProducedBarTruffle.create(minimal).orThrow();
@@ -865,7 +844,12 @@ describe('ProducedBarTruffle', () => {
       const minimal: IProducedBarTruffleEntity = {
         confectionType: 'bar-truffle',
         variationId: 'test.minimal-bar-2@2026-01-01-02' as ConfectionRecipeVariationId,
-        yield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        yield: {
+          count: 48,
+          weightPerPiece: 10 as Measurement,
+          bufferPercentage: 10 as Percentage,
+          dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+        },
         fillings: undefined,
         enrobingChocolateId: undefined,
         procedureId: undefined,
@@ -955,7 +939,7 @@ describe('ProducedRolledTruffle', () => {
       const minimal: IProducedRolledTruffleEntity = {
         confectionType: 'rolled-truffle',
         variationId: 'test.minimal-rolled@2026-01-01-01' as ConfectionRecipeVariationId,
-        yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement }
+        yield: { count: 40, weightPerPiece: 15 as Measurement, bufferPercentage: 10 as Percentage }
       };
 
       const wrapper = ProducedRolledTruffle.create(minimal).orThrow();
@@ -976,7 +960,7 @@ describe('ProducedRolledTruffle', () => {
       const minimal: IProducedRolledTruffleEntity = {
         confectionType: 'rolled-truffle',
         variationId: 'test.minimal-rolled-2@2026-01-01-02' as ConfectionRecipeVariationId,
-        yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+        yield: { count: 40, weightPerPiece: 15 as Measurement, bufferPercentage: 10 as Percentage },
         fillings: undefined,
         enrobingChocolateId: undefined,
         coatingId: undefined,
@@ -1067,7 +1051,7 @@ describe('Ingredient-type filling slot conversion', () => {
         {
           variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
           createdDate: '2026-01-01',
-          yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+          yield: { numFrames: 1 },
           fillings: [
             {
               slotId: 'coating' as SlotId,
@@ -1214,9 +1198,11 @@ describe('Ingredient-type filling slot conversion', () => {
         {
           variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
           createdDate: '2026-01-01',
-          yield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement },
-          frameDimensions: { width: 300 as Millimeters, height: 200 as Millimeters, depth: 8 as Millimeters },
-          singleBonBonDimensions: { width: 25 as Millimeters, height: 25 as Millimeters },
+          yield: {
+            numPieces: 48,
+            weightPerPiece: 10 as Measurement,
+            dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+          },
           fillings: [
             {
               slotId: 'coating' as SlotId,
@@ -1342,7 +1328,7 @@ describe('Ingredient-type filling slot conversion', () => {
         {
           variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
           createdDate: '2026-01-01',
-          yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+          yield: { numPieces: 40, weightPerPiece: 15 as Measurement },
           fillings: [
             {
               slotId: 'dusting' as SlotId,

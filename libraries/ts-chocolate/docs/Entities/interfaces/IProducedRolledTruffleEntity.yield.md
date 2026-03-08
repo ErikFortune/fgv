@@ -2,10 +2,10 @@
 
 ## IProducedRolledTruffleEntity.yield property
 
-Count-based yield specification
+Count-based yield: count + weightPerPiece + bufferPercentage stored; targetWeight derived
 
 **Signature:**
 
 ```typescript
-readonly yield: IConfectionYield;
+readonly yield: IBufferedYieldInPieces;
 ```

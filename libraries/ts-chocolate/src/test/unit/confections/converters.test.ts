@@ -41,9 +41,7 @@ describe('Confections converters', () => {
         createdDate: '2026-01-01',
         notes: [{ category: 'user', note: 'Basic dome bonbon' }],
         yield: {
-          count: 24,
-          unit: 'pieces',
-          weightPerPiece: 12
+          numFrames: 1
         },
         fillings: [
           {
@@ -79,18 +77,13 @@ describe('Confections converters', () => {
         createdDate: '2026-01-01',
         notes: [{ category: 'user', note: 'Standard bar truffles' }],
         yield: {
-          count: 48,
-          unit: 'pieces',
-          weightPerPiece: 10
-        },
-        frameDimensions: {
-          width: 300,
-          height: 200,
-          depth: 8
-        },
-        singleBonBonDimensions: {
-          width: 25,
-          height: 25
+          numPieces: 48,
+          weightPerPiece: 10,
+          dimensions: {
+            width: 25,
+            height: 25,
+            depth: 8
+          }
         },
         enrobingChocolate: {
           ids: ['cacao-barry.guayaquil-64'],
@@ -112,8 +105,7 @@ describe('Confections converters', () => {
         createdDate: '2026-01-01',
         notes: [{ category: 'user', note: 'Traditional rolled truffle' }],
         yield: {
-          count: 40,
-          unit: 'pieces',
+          numPieces: 40,
           weightPerPiece: 15
         },
         coatings: {
@@ -125,36 +117,35 @@ describe('Confections converters', () => {
   };
 
   // ============================================================================
-  // confectionYield converter
+  // yield converters
   // ============================================================================
 
-  describe('confectionYield', () => {
-    test('converts valid yield with all fields', () => {
-      const input = { count: 24, unit: 'pieces', weightPerPiece: 12 };
-      expect(ConfectionConverters.confectionYield.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.count).toBe(24);
-        expect(result.unit).toBe('pieces');
-        expect(result.weightPerPiece).toBe(12);
+  describe('yieldInFrames', () => {
+    test('converts valid yield in frames', () => {
+      const input = { numFrames: 2 };
+      expect(ConfectionConverters.yieldInFrames.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.numFrames).toBe(2);
       });
     });
 
-    test('converts valid yield with only required fields', () => {
+    test('fails for missing numFrames', () => {
       const input = { count: 24 };
-      expect(ConfectionConverters.confectionYield.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.count).toBe(24);
-        expect(result.unit).toBeUndefined();
-        expect(result.weightPerPiece).toBeUndefined();
+      expect(ConfectionConverters.yieldInFrames.convert(input)).toFail();
+    });
+  });
+
+  describe('yieldInPieces', () => {
+    test('converts valid yield in pieces', () => {
+      const input = { numPieces: 40, weightPerPiece: 15 };
+      expect(ConfectionConverters.yieldInPieces.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.numPieces).toBe(40);
+        expect(result.weightPerPiece).toBe(15);
       });
     });
 
-    test('fails for missing count', () => {
-      const input = { unit: 'pieces' };
-      expect(ConfectionConverters.confectionYield.convert(input)).toFail();
-    });
-
-    test('fails for non-numeric count', () => {
-      const input = { count: 'twenty-four' };
-      expect(ConfectionConverters.confectionYield.convert(input)).toFail();
+    test('fails for missing numPieces', () => {
+      const input = { weightPerPiece: 15 };
+      expect(ConfectionConverters.yieldInPieces.convert(input)).toFail();
     });
   });
 
@@ -277,41 +268,29 @@ describe('Confections converters', () => {
   });
 
   // ============================================================================
-  // frameDimensions converter
+  // barTruffleYield converter
   // ============================================================================
 
-  describe('frameDimensions', () => {
-    test('converts valid dimensions', () => {
-      const input = { width: 300, height: 200, depth: 8 };
-      expect(ConfectionConverters.frameDimensions.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.width).toBe(300);
-        expect(result.height).toBe(200);
-        expect(result.depth).toBe(8);
+  describe('barTruffleYield', () => {
+    test('converts valid bar truffle yield', () => {
+      const input = { numPieces: 48, weightPerPiece: 10, dimensions: { width: 25, height: 25, depth: 8 } };
+      expect(ConfectionConverters.barTruffleYield.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.numPieces).toBe(48);
+        expect(result.weightPerPiece).toBe(10);
+        expect(result.dimensions.width).toBe(25);
+        expect(result.dimensions.height).toBe(25);
+        expect(result.dimensions.depth).toBe(8);
       });
     });
 
-    test('fails for missing required field', () => {
-      const input = { width: 300, height: 200 };
-      expect(ConfectionConverters.frameDimensions.convert(input)).toFail();
-    });
-  });
-
-  // ============================================================================
-  // bonBonDimensions converter
-  // ============================================================================
-
-  describe('bonBonDimensions', () => {
-    test('converts valid dimensions', () => {
-      const input = { width: 25, height: 25 };
-      expect(ConfectionConverters.bonBonDimensions.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.width).toBe(25);
-        expect(result.height).toBe(25);
-      });
+    test('fails for missing dimensions', () => {
+      const input = { numPieces: 48, weightPerPiece: 10 };
+      expect(ConfectionConverters.barTruffleYield.convert(input)).toFail();
     });
 
-    test('fails for missing required field', () => {
-      const input = { width: 25 };
-      expect(ConfectionConverters.bonBonDimensions.convert(input)).toFail();
+    test('fails for missing depth in dimensions', () => {
+      const input = { numPieces: 48, weightPerPiece: 10, dimensions: { width: 25, height: 25 } };
+      expect(ConfectionConverters.barTruffleYield.convert(input)).toFail();
     });
   });
 
@@ -321,7 +300,7 @@ describe('Confections converters', () => {
         variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
         notes: [{ category: 'user', note: 'Initial variation' }],
-        yield: { count: 24 },
+        yield: { numFrames: 1 },
         molds: { options: [{ id: 'common.dome-25mm' }] },
         shellChocolate: { ids: ['common.chocolate-dark-64'] }
       };
@@ -338,9 +317,7 @@ describe('Confections converters', () => {
       const input = {
         variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
-        yield: { count: 48 },
-        frameDimensions: { width: 300, height: 200, depth: 8 },
-        singleBonBonDimensions: { width: 25, height: 25 }
+        yield: { numPieces: 48, weightPerPiece: 10, dimensions: { width: 25, height: 25, depth: 8 } }
       };
       expect(ConfectionConverters.anyConfectionRecipeVariationEntity.convert(input)).toSucceedAndSatisfy(
         (result) => {
@@ -398,8 +375,7 @@ describe('Confections converters', () => {
         expect(result.confectionType).toBe('bar-truffle');
         expect(result.baseId).toBe('dark-bar-truffle');
         const variation = result.variations[0];
-        expect(variation.frameDimensions).toBeDefined();
-        expect(variation.singleBonBonDimensions).toBeDefined();
+        expect(variation.yield.dimensions).toBeDefined();
       });
     });
 
@@ -408,10 +384,10 @@ describe('Confections converters', () => {
       expect(ConfectionConverters.barTruffleEntity.convert(input)).toFail();
     });
 
-    test('fails for variation missing frameDimensions', () => {
+    test('fails for variation missing yield', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { frameDimensions: _frame, ...variationWithoutFrame } = validBarTruffle.variations[0];
-      const input = { ...validBarTruffle, variations: [variationWithoutFrame] };
+      const { yield: _yield, ...variationWithoutYield } = validBarTruffle.variations[0];
+      const input = { ...validBarTruffle, variations: [variationWithoutYield] };
       expect(ConfectionConverters.barTruffleEntity.convert(input)).toFail();
     });
   });

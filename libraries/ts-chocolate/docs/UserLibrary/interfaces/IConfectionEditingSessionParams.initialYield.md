@@ -7,5 +7,5 @@ Initial yield specification (defaults to golden variation yield)
 **Signature:**
 
 ```typescript
-readonly initialYield: AnyConfectionYield;
+readonly initialYield: BufferedConfectionYield;
 ```

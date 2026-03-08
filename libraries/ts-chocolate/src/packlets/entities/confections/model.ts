@@ -38,64 +38,192 @@ import {
   DecorationId,
   ProcedureId,
   FillingId,
-  SlotId
+  SlotId,
+  Percentage
 } from '../../common';
 
 import { IProcedureRefEntity } from '../fillings';
 import { IDecorationRefEntity } from '../decorations';
 
 // ============================================================================
-// Yield and Decoration Types
+// Yield Types — Recipe Variation Layer (template defaults, no bufferPercentage)
 // ============================================================================
 
 /**
- * Yield specification for a {@link Entities.Confections.AnyConfectionEntity | confection}.
+ * Yield specification for a molded bon-bon recipe variation.
+ * Stores only the number of frames as a template default.
+ * Weight-per-piece and cavities-per-frame come from the mold at runtime.
  * @public
  */
-export interface IConfectionYield {
+export interface IYieldInFrames {
+  /** Number of frames to produce (template default) */
+  readonly numFrames: number;
+}
+
+/**
+ * Yield specification for bar truffle and rolled truffle recipe variations.
+ * Stores count and weight-per-piece as template defaults.
+ * @public
+ */
+export interface IYieldInPieces {
+  /** Number of pieces to produce (template default) */
+  readonly numPieces: number;
+  /** Weight per piece in grams */
+  readonly weightPerPiece: Measurement;
+}
+
+/**
+ * Yield specification for a bar truffle recipe variation.
+ * Stores count, weight-per-piece, and piece dimensions as template defaults.
+ * @public
+ */
+export interface IBarTruffleYield {
+  /** Number of pieces to produce (template default) */
+  readonly numPieces: number;
+  /** Weight per piece in grams */
+  readonly weightPerPiece: Measurement;
+  /** Cut dimensions of a single piece */
+  readonly dimensions: IPieceDimensions;
+}
+
+/**
+ * Union type for yield specifications.
+ * @public
+ */
+export type ConfectionYield = IYieldInFrames | IYieldInPieces | IBarTruffleYield;
+
+// ============================================================================
+// Yield Type Guards
+// ============================================================================
+
+/**
+ * Type guard for {@link IYieldInFrames} (molded bon-bon variation yield).
+ * @param y - Yield specification to check
+ * @returns True if the yield is frame-based
+ * @public
+ */
+export function isYieldInFrames(y: ConfectionYield): y is IYieldInFrames {
+  return 'numFrames' in y;
+}
+
+/**
+ * Type guard for {@link IBarTruffleYield} (bar truffle variation yield).
+ * @param y - Yield specification to check
+ * @returns True if the yield includes piece dimensions
+ * @public
+ */
+export function isBarTruffleYield(y: ConfectionYield): y is IBarTruffleYield {
+  return 'dimensions' in y;
+}
+
+/**
+ * Type guard for {@link IYieldInPieces} (rolled truffle variation yield).
+ * @param y - Yield specification to check
+ * @returns True if the yield is piece-based without dimensions
+ * @public
+ */
+export function isYieldInPieces(y: ConfectionYield): y is IYieldInPieces {
+  return !isYieldInFrames(y) && !isBarTruffleYield(y);
+}
+
+// ============================================================================
+// Yield Types — Produced/Session Layer (actual values, includes bufferPercentage)
+// ============================================================================
+
+/**
+ * Yield specification for a produced molded bon-bon.
+ * Stores the minimal essential values; count, weightPerPiece and targetWeight are derived at runtime.
+ * @public
+ */
+export interface IBufferedYieldInFrames {
+  /** Number of frames produced */
+  readonly numFrames: number;
+  /** Buffer percentage (e.g., 10 for 10% overfill) */
+  readonly bufferPercentage: Percentage;
+  // Derived at runtime from mold:
+  //   count = numFrames × mold.cavitiesPerFrame
+  //   weightPerPiece = mold.cavityWeight
+  //   targetWeight = count × weightPerPiece × (1 + bufferPercentage)
+}
+
+/**
+ * Yield specification for a produced bar truffle or rolled truffle.
+ * Stores the minimal essential values; targetWeight is derived at runtime.
+ * @public
+ */
+export interface IBufferedYieldInPieces {
   /** Number of pieces produced */
   readonly count: number;
-  /** Unit description (default: 'pieces') */
-  readonly unit?: string;
   /** Weight per piece in grams */
-  readonly weightPerPiece?: Measurement;
+  readonly weightPerPiece: Measurement;
+  /** Buffer percentage (e.g., 10 for 10% overfill) */
+  readonly bufferPercentage: Percentage;
+  // Derived at runtime:
+  //   targetWeight = count × weightPerPiece × (1 + bufferPercentage)
 }
 
 /**
- * Frame-based yield specification for molded bonbons.
- * Stores frames + buffer percentage as primary values; count is computed from mold.
+ * Yield specification for a produced bar truffle.
+ * Stores the minimal essential values; targetWeight is derived at runtime.
  * @public
  */
-export interface IMoldedBonBonYield {
-  /** Discriminator for yield type */
-  readonly yieldType: 'frames';
-  /** Number of frames to produce (primary storage) */
-  readonly frames: number;
-  /** Buffer percentage (e.g., 0.1 for 10% overfill) */
-  readonly bufferPercentage: number;
-  /** Computed count: frames × cavitiesPerFrame */
+export interface IBufferedBarTruffleYield {
+  /** Number of pieces produced */
   readonly count: number;
-  /** Unit description (usually 'pieces') */
-  readonly unit?: string;
-  /** Weight per piece in grams (from mold.cavityWeight) */
-  readonly weightPerPiece?: Measurement;
+  /** Weight per piece in grams */
+  readonly weightPerPiece: Measurement;
+  /** Buffer percentage (e.g., 10 for 10% overfill) */
+  readonly bufferPercentage: Percentage;
+  /** Cut dimensions of a single piece */
+  readonly dimensions: IPieceDimensions;
 }
 
 /**
- * Discriminated union of all yield types.
+ * Union type for buffered yield specifications.
  * @public
  */
-export type AnyConfectionYield = IConfectionYield | IMoldedBonBonYield;
+export type BufferedConfectionYield =
+  | IBufferedYieldInFrames
+  | IBufferedYieldInPieces
+  | IBufferedBarTruffleYield;
+
+// ============================================================================
+// Buffered Yield Type Guards
+// ============================================================================
 
 /**
- * Type guard to check if a yield is frame-based (for molded bonbons).
- * @param yieldSpec - The yield specification to check
- * @returns True if the yield is a {@link Entities.Confections.IMoldedBonBonYield | frame-based yield}
+ * Type guard for {@link IBufferedYieldInFrames} (produced molded bon-bon yield).
+ * @param y - Buffered yield specification to check
+ * @returns True if the yield is frame-based
  * @public
  */
-export function isMoldedBonBonYield(yieldSpec: AnyConfectionYield): yieldSpec is IMoldedBonBonYield {
-  return 'yieldType' in yieldSpec && yieldSpec.yieldType === 'frames';
+export function isBufferedYieldInFrames(y: BufferedConfectionYield): y is IBufferedYieldInFrames {
+  return 'numFrames' in y;
 }
+
+/**
+ * Type guard for {@link IBufferedBarTruffleYield} (produced bar truffle yield).
+ * @param y - Buffered yield specification to check
+ * @returns True if the yield includes piece dimensions
+ * @public
+ */
+export function isBufferedBarTruffleYield(y: BufferedConfectionYield): y is IBufferedBarTruffleYield {
+  return 'dimensions' in y;
+}
+
+/**
+ * Type guard for {@link IBufferedYieldInPieces} (produced rolled truffle yield).
+ * @param y - Buffered yield specification to check
+ * @returns True if the yield is piece-based without dimensions
+ * @public
+ */
+export function isBufferedYieldInPieces(y: BufferedConfectionYield): y is IBufferedYieldInPieces {
+  return !isBufferedYieldInFrames(y) && !isBufferedBarTruffleYield(y);
+}
+
+// ============================================================================
+// Decoration Types (legacy)
+// ============================================================================
 
 /**
  * @deprecated Use {@link Entities.Decorations.IDecorationRefEntity | IDecorationRefEntity} instead.
@@ -213,27 +341,17 @@ export type IConfectionMoldRef = Model.IRefWithNotes<MoldId>;
 // ============================================================================
 
 /**
- * Frame dimensions for bar truffle production
+ * Single bonbon dimensions for bar truffle cutting.
+ * Used to store the actual size of each piece; frame dimensions are derived at runtime.
  * @public
  */
-export interface IFrameDimensions {
-  /** Width of the frame in millimeters */
-  readonly width: Millimeters;
-  /** Height of the frame in millimeters */
-  readonly height: Millimeters;
-  /** Depth/thickness of the frame in millimeters */
-  readonly depth: Millimeters;
-}
-
-/**
- * Single bonbon dimensions for bar truffle cutting
- * @public
- */
-export interface IBonBonDimensions {
+export interface IPieceDimensions {
   /** Width of a single bonbon in millimeters */
   readonly width: Millimeters;
   /** Height of a single bonbon in millimeters */
   readonly height: Millimeters;
+  /** Depth/thickness of a single bonbon (= ganache slab depth) in millimeters */
+  readonly depth: Millimeters;
 }
 
 // ============================================================================
@@ -255,6 +373,7 @@ export type ICoatingsEntity = Model.IIdsWithPreferred<IngredientId>;
 /**
  * Base variation interface - shared by all confection variation types.
  * Contains the configuration details that can change between variations.
+ * The yield field is typed as ConfectionYield on the base; each subtype narrows it.
  * @public
  */
 export interface IConfectionRecipeVariationEntityBase {
@@ -265,7 +384,7 @@ export interface IConfectionRecipeVariationEntityBase {
   /** Date this variation was created (ISO 8601 format) */
   readonly createdDate: string;
   /** Yield specification for this variation */
-  readonly yield: IConfectionYield;
+  readonly yield: ConfectionYield;
   /** Optional filling slots - each slot has independent options with a preferred selection */
   readonly fillings?: ReadonlyArray<IFillingSlotEntity>;
   /** Optional decoration references with preferred selection */
@@ -283,9 +402,12 @@ export interface IConfectionRecipeVariationEntityBase {
 /**
  * Variation interface for molded bonbon confections.
  * Includes mold and chocolate shell specifications.
+ * Yield stores only numFrames as a template default; weight and cavity count come from mold at runtime.
  * @public
  */
 export interface IMoldedBonBonRecipeVariationEntity extends IConfectionRecipeVariationEntityBase {
+  /** Template yield: number of frames to produce */
+  readonly yield: IYieldInFrames;
   /** Required molds with preferred selection */
   readonly molds: Model.IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
   /** Required shell chocolate specification */
@@ -296,14 +418,13 @@ export interface IMoldedBonBonRecipeVariationEntity extends IConfectionRecipeVar
 
 /**
  * Variation interface for bar truffle confections.
- * Includes frame and cutting dimensions.
+ * Stores bonbon dimensions (including depth = ganache slab depth).
+ * Frame dimensions are derived at runtime from count + bonbon dimensions.
  * @public
  */
 export interface IBarTruffleRecipeVariationEntity extends IConfectionRecipeVariationEntityBase {
-  /** Frame dimensions for ganache slab */
-  readonly frameDimensions: IFrameDimensions;
-  /** Single bonbon dimensions for cutting */
-  readonly singleBonBonDimensions: IBonBonDimensions;
+  /** Template yield: count, weight per piece, and piece dimensions */
+  readonly yield: IBarTruffleYield;
   /** Optional enrobing chocolate specification */
   readonly enrobingChocolate?: IChocolateSpec;
 }
@@ -314,6 +435,8 @@ export interface IBarTruffleRecipeVariationEntity extends IConfectionRecipeVaria
  * @public
  */
 export interface IRolledTruffleRecipeVariationEntity extends IConfectionRecipeVariationEntityBase {
+  /** Template yield: count and weight per piece */
+  readonly yield: IYieldInPieces;
   /** Optional enrobing chocolate specification */
   readonly enrobingChocolate?: IChocolateSpec;
   /** Optional coatings (cocoa powder, nuts, etc.) */
@@ -511,7 +634,7 @@ export function isMoldedBonBonRecipeVariationEntity(
 export function isBarTruffleRecipeVariationEntity(
   variation: AnyConfectionRecipeVariationEntity
 ): variation is IBarTruffleRecipeVariationEntity {
-  return 'frameDimensions' in variation && 'singleBonBonDimensions' in variation;
+  return !('molds' in variation) && 'dimensions' in (variation.yield as unknown as Record<string, unknown>);
 }
 
 /**
@@ -606,6 +729,7 @@ export function isResolvedIngredientSlotEntity(
 /**
  * Base interface for all produced confection types.
  * Contains common fields shared by all confection productions.
+ * Note: yield is NOT on the base — each concrete subtype declares its own yield type.
  * @public
  */
 export interface IProducedConfectionEntityBase {
@@ -613,8 +737,6 @@ export interface IProducedConfectionEntityBase {
   readonly confectionType: ConfectionType;
   /** Confection variation ID that was produced */
   readonly variationId: ConfectionRecipeVariationId;
-  /** Yield specification for this production */
-  readonly yield: IConfectionYield;
   /** Resolved filling slots with concrete selections */
   readonly fillings?: ReadonlyArray<AnyResolvedFillingSlotEntity>;
   /** Resolved procedure ID if one was used */
@@ -625,13 +747,14 @@ export interface IProducedConfectionEntityBase {
 
 /**
  * Produced molded bonbon with concrete choices.
+ * Yield stores only numFrames + bufferPercentage; count/weightPerPiece/targetWeight are derived.
  * @public
  */
 export interface IProducedMoldedBonBonEntity extends IProducedConfectionEntityBase {
   /** Confection type discriminator */
   readonly confectionType: 'molded-bonbon';
-  /** Frame-based yield specification */
-  readonly yield: IMoldedBonBonYield;
+  /** Frame-based yield: numFrames + bufferPercentage stored; rest derived from mold */
+  readonly yield: IBufferedYieldInFrames;
   /** Resolved mold ID */
   readonly moldId: MoldId;
   /** Resolved shell chocolate ingredient ID */
@@ -644,26 +767,29 @@ export interface IProducedMoldedBonBonEntity extends IProducedConfectionEntityBa
 
 /**
  * Produced bar truffle with concrete choices.
+ * Yield stores count + weightPerPiece + bufferPercentage; targetWeight is derived.
+ * Frame dimensions are derived at runtime from count + bonBonDimensions.
  * @public
  */
 export interface IProducedBarTruffleEntity extends IProducedConfectionEntityBase {
   /** Confection type discriminator */
   readonly confectionType: 'bar-truffle';
-  /** Count-based yield specification */
-  readonly yield: IConfectionYield;
+  /** Yield with piece dimensions; targetWeight and frameDimensions derived at runtime */
+  readonly yield: IBufferedBarTruffleYield;
   /** Resolved enrobing chocolate ingredient ID (if used) */
   readonly enrobingChocolateId?: IngredientId;
 }
 
 /**
  * Produced rolled truffle with concrete choices.
+ * Yield stores count + weightPerPiece + bufferPercentage; targetWeight is derived.
  * @public
  */
 export interface IProducedRolledTruffleEntity extends IProducedConfectionEntityBase {
   /** Confection type discriminator */
   readonly confectionType: 'rolled-truffle';
-  /** Count-based yield specification */
-  readonly yield: IConfectionYield;
+  /** Count-based yield: count + weightPerPiece + bufferPercentage stored; targetWeight derived */
+  readonly yield: IBufferedYieldInPieces;
   /** Resolved enrobing chocolate ingredient ID (if used) */
   readonly enrobingChocolateId?: IngredientId;
   /** Resolved coating ingredient ID (if used) */

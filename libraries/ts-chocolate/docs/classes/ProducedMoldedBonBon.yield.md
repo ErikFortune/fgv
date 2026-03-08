@@ -7,5 +7,5 @@ Gets the frame-based yield specification.
 **Signature:**
 
 ```typescript
-readonly yield: IMoldedBonBonYield;
+readonly yield: IBufferedYieldInFrames;
 ```

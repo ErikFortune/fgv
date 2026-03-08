@@ -46,6 +46,23 @@ Description
 </td></tr>
 <tr><td>
 
+[yield](./IRolledTruffleRecipeVariationEntity.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IYieldInPieces](../../interfaces/IYieldInPieces.md)
+
+</td><td>
+
+Template yield: count and weight per piece
+
+</td></tr>
+<tr><td>
+
 [enrobingChocolate](./IRolledTruffleRecipeVariationEntity.enrobingChocolate.md)
 
 </td><td>
@@ -127,23 +144,6 @@ string
 </td><td>
 
 Date this variation was created (ISO 8601 format)
-
-</td></tr>
-<tr><td>
-
-[yield](./IRolledTruffleRecipeVariationEntity.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this variation
 
 </td></tr>
 <tr><td>

@@ -3,6 +3,7 @@
 # Interface: IProducedRolledTruffleEntity
 
 Produced rolled truffle with concrete choices.
+Yield stores count + weightPerPiece + bufferPercentage; targetWeight is derived.
 
 **Extends:** [`IProducedConfectionEntityBase`](../../interfaces/IProducedConfectionEntityBase.md)
 
@@ -53,11 +54,11 @@ Confection type discriminator
 
 </td><td>
 
-[IConfectionYield](../../interfaces/IConfectionYield.md)
+[IBufferedYieldInPieces](../../interfaces/IBufferedYieldInPieces.md)
 
 </td><td>
 
-Count-based yield specification
+Count-based yield: count + weightPerPiece + bufferPercentage stored; targetWeight derived
 
 </td></tr>
 <tr><td>

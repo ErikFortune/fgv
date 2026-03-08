@@ -241,6 +241,13 @@ export class MoldedBonBonRecipeVariation
   /**
    * Gets the underlying molded bonbon variation entity data.
    */
+  /**
+   * Narrowed yield getter returning molded bonbon specific yield data.
+   */
+  public override get yield(): Confections.IYieldInFrames {
+    return this._entity.yield;
+  }
+
   public override get entity(): Confections.IMoldedBonBonRecipeVariationEntity {
     return this._entity;
   }

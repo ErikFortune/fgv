@@ -2,7 +2,8 @@
 
 ## RolledTruffleRecipeVariation.entity property
 
-Gets the underlying rolled truffle variation entity data.
+The underlying confection variation entity.
+Use this to get the variation entity data for persistence or journaling.
 
 **Signature:**
 

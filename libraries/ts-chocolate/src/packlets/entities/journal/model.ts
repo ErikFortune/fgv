@@ -33,9 +33,9 @@ import {
 } from '../../common';
 import {
   AnyProducedConfectionEntity,
+  BufferedConfectionYield,
   ConfectionVariationType,
   IBarTruffleRecipeVariationEntity,
-  IConfectionYield,
   IMoldedBonBonRecipeVariationEntity,
   IRolledTruffleRecipeVariationEntity
 } from '../confections';
@@ -177,7 +177,7 @@ export interface IConfectionProductionJournalEntryEntity
   extends IJournalEntryEntityBase<AnyJournalConfectionVariation, ConfectionRecipeVariationId> {
   readonly type: 'confection-production';
   /** Yield specification for this production run */
-  readonly yield: IConfectionYield;
+  readonly yield: BufferedConfectionYield;
   /** Produced confection with resolved concrete choices */
   readonly produced: AnyProducedConfectionEntity;
 }

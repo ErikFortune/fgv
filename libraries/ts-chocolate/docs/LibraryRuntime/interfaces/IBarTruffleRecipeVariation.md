@@ -28,6 +28,23 @@ Description
 <tbody>
 <tr><td>
 
+[yield](./IBarTruffleRecipeVariation.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IBarTruffleYield](../../interfaces/IBarTruffleYield.md)
+
+</td><td>
+
+Narrowed yield: numPieces, weightPerPiece, and piece dimensions stored as template defaults
+
+</td></tr>
+<tr><td>
+
 [frameDimensions](./IBarTruffleRecipeVariation.frameDimensions.md)
 
 </td><td>
@@ -36,28 +53,11 @@ Description
 
 </td><td>
 
-[IFrameDimensions](../../interfaces/IFrameDimensions.md)
+[IPieceDimensions](../../interfaces/IPieceDimensions.md)
 
 </td><td>
 
-Frame dimensions for ganache slab
-
-</td></tr>
-<tr><td>
-
-[singleBonBonDimensions](./IBarTruffleRecipeVariation.singleBonBonDimensions.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IBonBonDimensions](../../interfaces/IBonBonDimensions.md)
-
-</td><td>
-
-Single bonbon dimensions for cutting
+Derived frame dimensions for ganache slab (computed from yield.numPieces + yield.dimensions)
 
 </td></tr>
 <tr><td>
@@ -177,23 +177,6 @@ The parent confection ID.
 </td><td>
 
 The parent confection - resolved.
-
-</td></tr>
-<tr><td>
-
-[yield](./IConfectionRecipeVariationBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this variation.
 
 </td></tr>
 <tr><td>

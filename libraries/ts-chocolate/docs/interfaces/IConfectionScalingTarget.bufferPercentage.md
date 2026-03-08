@@ -2,7 +2,7 @@
 
 ## IConfectionScalingTarget.bufferPercentage property
 
-Buffer overfill percentage for molded bonbon (default 0.1 = 10%)
+Buffer overfill percentage for molded bonbon (default 10 = 10%)
 
 **Signature:**
 

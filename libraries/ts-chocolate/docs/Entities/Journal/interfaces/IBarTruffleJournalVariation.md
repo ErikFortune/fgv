@@ -46,7 +46,7 @@ Description
 </td></tr>
 <tr><td>
 
-[frameDimensions](./IBarTruffleRecipeVariationEntity.frameDimensions.md)
+[yield](./IBarTruffleRecipeVariationEntity.yield.md)
 
 </td><td>
 
@@ -54,28 +54,11 @@ Description
 
 </td><td>
 
-[IFrameDimensions](../../../interfaces/IFrameDimensions.md)
+[IBarTruffleYield](../../../interfaces/IBarTruffleYield.md)
 
 </td><td>
 
-Frame dimensions for ganache slab
-
-</td></tr>
-<tr><td>
-
-[singleBonBonDimensions](./IBarTruffleRecipeVariationEntity.singleBonBonDimensions.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IBonBonDimensions](../../../interfaces/IBonBonDimensions.md)
-
-</td><td>
-
-Single bonbon dimensions for cutting
+Template yield: count, weight per piece, and piece dimensions
 
 </td></tr>
 <tr><td>
@@ -144,23 +127,6 @@ string
 </td><td>
 
 Date this variation was created (ISO 8601 format)
-
-</td></tr>
-<tr><td>
-
-[yield](./IBarTruffleRecipeVariationEntity.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../../../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this variation
 
 </td></tr>
 <tr><td>

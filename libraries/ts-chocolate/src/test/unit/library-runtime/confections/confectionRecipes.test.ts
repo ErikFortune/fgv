@@ -216,7 +216,7 @@ describe('Confection Recipes', () => {
           ],
           preferredId: 'test.gold-leaf-accent' as DecorationId
         },
-        yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        yield: { numFrames: 1 },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -261,7 +261,7 @@ describe('Confection Recipes', () => {
       {
         variationSpec: '2026-01-02-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-02',
-        yield: { count: 28, unit: 'pieces', weightPerPiece: 12 as Measurement },
+        yield: { numFrames: 1 },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -293,7 +293,11 @@ describe('Confection Recipes', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        yield: {
+          numPieces: 48,
+          weightPerPiece: 10 as Measurement,
+          dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+        },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -304,8 +308,6 @@ describe('Confection Recipes', () => {
             }
           }
         ],
-        frameDimensions: { width: 300 as Millimeters, height: 200 as Millimeters, depth: 8 as Millimeters },
-        singleBonBonDimensions: { width: 25 as Millimeters, height: 25 as Millimeters },
         enrobingChocolate: {
           ids: ['test.dark-chocolate' as IngredientId],
           preferredId: 'test.dark-chocolate' as IngredientId
@@ -314,9 +316,11 @@ describe('Confection Recipes', () => {
       {
         variationSpec: '2026-01-02-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-02',
-        yield: { count: 60, unit: 'pieces', weightPerPiece: 8 as Measurement },
-        frameDimensions: { width: 300 as Millimeters, height: 200 as Millimeters, depth: 6 as Millimeters },
-        singleBonBonDimensions: { width: 20 as Millimeters, height: 20 as Millimeters }
+        yield: {
+          numPieces: 60,
+          weightPerPiece: 8 as Measurement,
+          dimensions: { width: 20 as Millimeters, height: 20 as Millimeters, depth: 6 as Millimeters }
+        }
       }
     ]
   };
@@ -330,7 +334,7 @@ describe('Confection Recipes', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        yield: { numFrames: 1 },
         fillings: [],
         molds: {
           options: [{ id: 'test.mold-a' as MoldId }],
@@ -353,7 +357,7 @@ describe('Confection Recipes', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+        yield: { numPieces: 40, weightPerPiece: 15 as Measurement },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -376,7 +380,7 @@ describe('Confection Recipes', () => {
       {
         variationSpec: '2026-01-02-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-02',
-        yield: { count: 50, unit: 'pieces', weightPerPiece: 12 as Measurement },
+        yield: { numPieces: 50, weightPerPiece: 12 as Measurement },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -391,7 +395,7 @@ describe('Confection Recipes', () => {
       {
         variationSpec: '2026-01-03-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-03',
-        yield: { count: 50, unit: 'pieces', weightPerPiece: 12 as Measurement },
+        yield: { numPieces: 50, weightPerPiece: 12 as Measurement },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -669,8 +673,7 @@ describe('Confection Recipes', () => {
 
           // Yield
           expect(confection.yield).toBeDefined();
-          expect(confection.yield.count).toBe(24);
-          expect(confection.yield.weightPerPiece).toBe(10);
+          expect(confection.yield.numFrames).toBe(1);
 
           // Decorations
           expect(confection.decorations).toBeDefined();
@@ -726,16 +729,14 @@ describe('Confection Recipes', () => {
             throw new Error('Expected bar truffle');
           }
 
-          // Frame dimensions
+          // Frame dimensions (computed from 48 pieces × 25mm: cols=7, rows=7 → 175×175)
           expect(confection.frameDimensions).toBeDefined();
-          expect(confection.frameDimensions.width).toBe(300);
-          expect(confection.frameDimensions.height).toBe(200);
           expect(confection.frameDimensions.depth).toBe(8);
 
-          // Single bonbon dimensions
-          expect(confection.singleBonBonDimensions).toBeDefined();
-          expect(confection.singleBonBonDimensions.width).toBe(25);
-          expect(confection.singleBonBonDimensions.height).toBe(25);
+          // Piece dimensions (from yield)
+          expect(confection.goldenVariation.yield.dimensions).toBeDefined();
+          expect(confection.goldenVariation.yield.dimensions.width).toBe(25);
+          expect(confection.goldenVariation.yield.dimensions.height).toBe(25);
 
           // Enrobing chocolate
           expect(confection.enrobingChocolate).toBeDefined();

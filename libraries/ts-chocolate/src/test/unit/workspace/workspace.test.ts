@@ -128,7 +128,7 @@ describe('Workspace', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+        yield: { numPieces: 40, weightPerPiece: 15 as Measurement },
         fillings: [
           {
             slotId: 'center' as SlotId,

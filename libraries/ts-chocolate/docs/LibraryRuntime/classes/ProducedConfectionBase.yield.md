@@ -7,5 +7,5 @@ Gets the yield specification.
 **Signature:**
 
 ```typescript
-readonly yield: IConfectionYield;
+readonly yield: BufferedConfectionYield;
 ```

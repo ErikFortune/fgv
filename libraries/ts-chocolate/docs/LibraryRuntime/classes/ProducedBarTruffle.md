@@ -29,6 +29,57 @@ Description
 <tbody>
 <tr><td>
 
+[yield](./ProducedBarTruffle.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IBufferedBarTruffleYield](../../interfaces/IBufferedBarTruffleYield.md)
+
+</td><td>
+
+Gets the bar truffle yield specification.
+
+</td></tr>
+<tr><td>
+
+[targetWeight](./ProducedBarTruffle.targetWeight.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[Measurement](../../type-aliases/Measurement.md)
+
+</td><td>
+
+Computed target weight: count × weightPerPiece × (1 + bufferPercentage / 100).
+
+</td></tr>
+<tr><td>
+
+[frameDimensions](./ProducedBarTruffle.frameDimensions.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IPieceDimensions](../../interfaces/IPieceDimensions.md)
+
+</td><td>
+
+Computed frame dimensions derived from piece count and bonbon dimensions.
+
+</td></tr>
+<tr><td>
+
 [enrobingChocolateId](./ProducedBarTruffle.enrobingChocolateId.md)
 
 </td><td>
@@ -59,23 +110,6 @@ Gets the enrobing chocolate ID.
 </td><td>
 
 Gets the variation ID.
-
-</td></tr>
-<tr><td>
-
-[yield](./ProducedConfectionBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Gets the yield specification.
 
 </td></tr>
 <tr><td>
@@ -239,6 +273,19 @@ Restores a ProducedBarTruffle from serialized editing history.
 </td></tr>
 <tr><td>
 
+[scaleToYield(yieldSpec)](./ProducedBarTruffle.scaleToYield.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Scales to a new bar truffle yield specification.
+
+</td></tr>
+<tr><td>
+
 [setEnrobingChocolate(chocolateId)](./ProducedBarTruffle.setEnrobingChocolate.md)
 
 </td><td>
@@ -287,19 +334,6 @@ Sets the notes.
 </td><td>
 
 Sets the procedure.
-
-</td></tr>
-<tr><td>
-
-[scaleToYield(yieldSpec)](./ProducedConfectionBase.scaleToYield.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Scales to a new yield specification.
 
 </td></tr>
 <tr><td>

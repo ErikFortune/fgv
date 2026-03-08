@@ -115,6 +115,23 @@ Gets the preferred procedure, falling back to first available.
 </td></tr>
 <tr><td>
 
+[yield](./MoldedBonBonRecipeVariation.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IYieldInFrames](../interfaces/IYieldInFrames.md)
+
+</td><td>
+
+Narrowed yield getter returning molded bonbon specific yield data.
+
+</td></tr>
+<tr><td>
+
 [entity](./MoldedBonBonRecipeVariation.entity.md)
 
 </td><td>
@@ -127,7 +144,7 @@ Gets the preferred procedure, falling back to first available.
 
 </td><td>
 
-Gets the underlying molded bonbon variation entity data.
+The underlying confection variation entity.
 
 </td></tr>
 <tr><td>
@@ -230,23 +247,6 @@ IConfectionContext
 </td><td>
 
 The runtime context for navigation and resource resolution.
-
-</td></tr>
-<tr><td>
-
-[yield](./ConfectionRecipeVariationBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this variation.
 
 </td></tr>
 <tr><td>

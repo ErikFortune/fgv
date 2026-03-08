@@ -78,7 +78,7 @@ describe('Journal Converters', () => {
           variationType: 'molded-bonbon',
           variationSpec: '2024-01-01-01',
           createdDate: '2024-01-01',
-          yield: { count: 10 },
+          yield: { numFrames: 1 },
           molds: { preferredId: 'test.mold-1', options: [{ notes: [], id: 'test.mold-1' }] },
           shellChocolate: { ids: ['test.choc-1'] }
         }

@@ -125,7 +125,7 @@ The parent confection - resolved.
 
 </td><td>
 
-[IConfectionYield](IConfectionYield.md)
+[ConfectionYield](../type-aliases/ConfectionYield.md)
 
 </td><td>
 

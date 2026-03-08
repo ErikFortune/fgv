@@ -4,6 +4,7 @@
 
 Variation interface for molded bonbon confections.
 Includes mold and chocolate shell specifications.
+Yield stores only numFrames as a template default; weight and cavity count come from mold at runtime.
 
 **Extends:** [`IConfectionRecipeVariationEntityBase`](../../interfaces/IConfectionRecipeVariationEntityBase.md)
 
@@ -27,6 +28,23 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[yield](./IMoldedBonBonRecipeVariationEntity.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IYieldInFrames](../../interfaces/IYieldInFrames.md)
+
+</td><td>
+
+Template yield: number of frames to produce
+
+</td></tr>
 <tr><td>
 
 [molds](./IMoldedBonBonRecipeVariationEntity.molds.md)
@@ -127,23 +145,6 @@ string
 </td><td>
 
 Date this variation was created (ISO 8601 format)
-
-</td></tr>
-<tr><td>
-
-[yield](./IConfectionRecipeVariationEntityBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this variation
 
 </td></tr>
 <tr><td>

@@ -228,6 +228,8 @@ interface IBuildResult {
   warnings: ReadonlyArray<ISettingsValidationWarning>;
   logSettings: Settings.ILogSettings | undefined;
   configNamespace: string | undefined;
+  /** Set when local library data failed to load (e.g. old format). App runs with built-in data only. */
+  dataError?: string;
 }
 
 async function _buildReactiveWorkspace(): Promise<IBuildResult> {
@@ -248,18 +250,43 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     `_buildReactiveWorkspace: includeBuiltIn=${includeBuiltIn}, loadLocalLibrary=${loadLocalLibrary}, loadLocalUserData=${loadLocalUserData}, useLocalStorage=${useLocalStorage}`
   );
 
-  const workspace = platformInit
-    .onSuccess((init) =>
-      createWorkspaceFromPlatform({
-        platformInit: init,
-        builtin: includeBuiltIn,
-        preWarm: includeBuiltIn,
-        userLibrarySourceName: useLocalStorage ? 'localStorage' : undefined,
-        configName: _configNamespace,
-        logger: _bootReporter
-      })
-    )
-    .orThrow();
+  // Use a silent logger for the first attempt — if it fails due to old-format local data,
+  // we don't want verbose parse errors flooding the toast/log system.
+  const workspaceResult = platformInit.onSuccess((init) =>
+    createWorkspaceFromPlatform({
+      platformInit: init,
+      builtin: includeBuiltIn,
+      preWarm: includeBuiltIn,
+      userLibrarySourceName: useLocalStorage ? 'localStorage' : undefined,
+      configName: _configNamespace,
+      logger: Logging.LogReporter.createDefault(new Logging.NoOpLogger()).orThrow()
+    })
+  );
+
+  // If workspace creation failed (e.g. local data in old format), try a fallback
+  // with no user library source so the app can start with built-in data only.
+  let dataError: string | undefined;
+  let workspace;
+  if (workspaceResult.isFailure()) {
+    _bootReporter?.error(
+      `Local library data could not be loaded (format changed after update). Running with built-in data only. Clear browser storage and reload to fix.`
+    );
+    dataError = workspaceResult.message;
+    workspace = platformInit
+      .onSuccess((init) =>
+        createWorkspaceFromPlatform({
+          platformInit: init,
+          builtin: includeBuiltIn,
+          preWarm: includeBuiltIn,
+          userLibrarySourceName: undefined,
+          configName: _configNamespace,
+          logger: _bootReporter
+        })
+      )
+      .orThrow();
+  } else {
+    workspace = workspaceResult.value;
+  }
   const reactiveWorkspace = new ReactiveWorkspace(workspace, true);
 
   // Wire up persistence so PersistedEditableCollection wrappers can sync to disk
@@ -337,7 +364,7 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
 
   const logSettings = workspace.settings?.getBootstrapSettings()?.logging;
 
-  return { reactiveWorkspace, warnings, logSettings, configNamespace: _configNamespace };
+  return { reactiveWorkspace, warnings, logSettings, configNamespace: _configNamespace, dataError };
 }
 
 // Cache the build result so React 18 StrictMode double-invocation
@@ -463,11 +490,19 @@ interface IAppShellProps {
   readonly configNamespace?: string;
   readonly configNamespaceSource: ConfigNamespaceSource;
   readonly initialDefaultConfigNamespace?: string;
+  /** Set when local library data failed to load (e.g. old format after an update). */
+  readonly dataError?: string;
 }
 
 function AppShell(props: IAppShellProps): React.ReactElement {
-  const { displayLevel, toastLevel, configNamespace, configNamespaceSource, initialDefaultConfigNamespace } =
-    props;
+  const {
+    displayLevel,
+    toastLevel,
+    configNamespace,
+    configNamespaceSource,
+    initialDefaultConfigNamespace,
+    dataError
+  } = props;
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
   const { state: workspaceState, unlock, lock } = useWorkspaceState();
@@ -733,6 +768,30 @@ function AppShell(props: IAppShellProps): React.ReactElement {
         }
       />
 
+      {/* Data format error banner — shown when local library data could not be loaded */}
+      {dataError && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border-b border-red-200 text-red-800 text-xs">
+          <svg
+            className="w-4 h-4 text-red-500 flex-shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+            />
+          </svg>
+          <span>
+            <strong>Local library data could not be loaded</strong> — the data format changed after an update.
+            The app is running with built-in data only. Clear browser storage (DevTools → Application →
+            Storage → Clear site data) and reload to fix.
+          </span>
+        </div>
+      )}
+
       {/* Mitigated state banner — shown when some storage roots are unavailable */}
       {reactiveWorkspace.isMitigated && (
         <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-800 text-xs">
@@ -828,6 +887,7 @@ function WorkspaceBootstrap(): React.ReactElement {
   const reporter = useLogReporter({ logLevel: logSettings?.storeLevel ?? 'info' });
   const [reactiveWorkspace, setReactiveWorkspace] = useState<ReactiveWorkspace | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [dataError, setDataError] = useState<string | undefined>(undefined);
   const [pendingWarnings, setPendingWarnings] = useState<ReadonlyArray<ISettingsValidationWarning>>([]);
   const [pendingWorkspace, setPendingWorkspace] = useState<ReactiveWorkspace | undefined>(undefined);
 
@@ -839,8 +899,11 @@ function WorkspaceBootstrap(): React.ReactElement {
 
   useEffect(() => {
     _getOrBuildWorkspace()
-      .then(({ reactiveWorkspace: rw, warnings, logSettings: ls }) => {
+      .then(({ reactiveWorkspace: rw, warnings, logSettings: ls, dataError: de }) => {
         setLogSettings(ls);
+        if (de) {
+          setDataError(de);
+        }
         if (warnings.length > 0) {
           // Hold the workspace and show the recovery dialog
           setPendingWorkspace(rw);
@@ -905,6 +968,7 @@ function WorkspaceBootstrap(): React.ReactElement {
           configNamespace={_configNamespace}
           configNamespaceSource={_resolvedConfigNamespace.source}
           initialDefaultConfigNamespace={_resolvedConfigNamespace.defaultConfigNamespace}
+          dataError={dataError}
         />
       </KeyboardShortcutProvider>
     </WorkspaceProvider>

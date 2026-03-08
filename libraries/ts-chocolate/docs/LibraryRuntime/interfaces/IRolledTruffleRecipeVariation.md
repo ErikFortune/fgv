@@ -28,6 +28,23 @@ Description
 <tbody>
 <tr><td>
 
+[yield](./IRolledTruffleRecipeVariation.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IYieldInPieces](../../interfaces/IYieldInPieces.md)
+
+</td><td>
+
+Narrowed yield: numPieces and weightPerPiece stored as template defaults
+
+</td></tr>
+<tr><td>
+
 [enrobingChocolate](./IRolledTruffleRecipeVariation.enrobingChocolate.md)
 
 </td><td>
@@ -160,23 +177,6 @@ The parent confection ID.
 </td><td>
 
 The parent confection - resolved.
-
-</td></tr>
-<tr><td>
-
-[yield](./IConfectionRecipeVariationBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this variation.
 
 </td></tr>
 <tr><td>

@@ -86,8 +86,10 @@ export function formatConfectionHuman(
   lines.push(`Created: ${variation.createdDate}`);
 
   // Yield
-  lines.push(`Yield: ${variation.yield.count} ${variation.yield.unit ?? 'pieces'}`);
-  if (variation.yield.weightPerPiece !== undefined) {
+  if (Entities.Confections.isYieldInFrames(variation.yield)) {
+    lines.push(`Yield: ${variation.yield.numFrames} frames`);
+  } else {
+    lines.push(`Yield: ${variation.yield.numPieces} pieces`);
     lines.push(`Weight per piece: ${variation.yield.weightPerPiece}g`);
   }
 
@@ -126,14 +128,9 @@ export function formatConfectionHuman(
     }
   } else if (Entities.Confections.isBarTruffleRecipeVariationEntity(variation)) {
     lines.push('');
-    lines.push('Frame Dimensions:');
-    const fd = variation.frameDimensions;
-    lines.push(`  ${fd.width} x ${fd.height} x ${fd.depth} mm`);
-
-    lines.push('');
     lines.push('BonBon Dimensions:');
-    const bd = variation.singleBonBonDimensions;
-    lines.push(`  ${bd.width} x ${bd.height} mm`);
+    const pd = variation.yield.dimensions;
+    lines.push(`  ${pd.width} x ${pd.height} x ${pd.depth} mm`);
 
     if (variation.enrobingChocolate) {
       lines.push('');

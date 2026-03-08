@@ -47,7 +47,7 @@ describe('settings model', () => {
         weightUnit: 'g',
         measurementUnit: 'g',
         batchMultiplier: 1.0,
-        bufferPercentage: 0.1
+        bufferPercentage: 10
       });
     });
 

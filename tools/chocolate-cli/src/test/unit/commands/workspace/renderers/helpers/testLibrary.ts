@@ -460,11 +460,7 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: {
-          count: 24,
-          unit: 'pieces',
-          weightPerPiece: 12 as Measurement
-        },
+        yield: { numFrames: 1 },
         molds: {
           options: [
             {
@@ -535,10 +531,7 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
       {
         variationSpec: '2026-02-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-02-01',
-        yield: {
-          count: 30,
-          unit: 'pieces'
-        },
+        yield: { numFrames: 1 },
         molds: {
           options: [
             {
@@ -569,16 +562,13 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
         yield: {
-          count: 30
-        },
-        frameDimensions: {
-          width: 250 as Millimeters,
-          height: 20 as Millimeters,
-          depth: 300 as Millimeters
-        },
-        singleBonBonDimensions: {
-          width: 25 as Millimeters,
-          height: 20 as Millimeters
+          numPieces: 30,
+          weightPerPiece: 10 as Measurement,
+          dimensions: {
+            width: 25 as Millimeters,
+            height: 20 as Millimeters,
+            depth: 8 as Millimeters
+          }
         },
         enrobingChocolate: {
           ids: ['test.dark-choc-70' as IngredientId, 'test.milk-choc-40' as IngredientId],
@@ -598,8 +588,8 @@ export function createTestLibrary(): LibraryRuntime.ChocolateLibrary {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
         yield: {
-          count: 20,
-          unit: 'truffles'
+          numPieces: 20,
+          weightPerPiece: 15 as Measurement
         },
         enrobingChocolate: {
           ids: ['test.dark-choc-70' as IngredientId, 'test.milk-choc-40' as IngredientId],

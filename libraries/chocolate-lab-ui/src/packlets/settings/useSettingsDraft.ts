@@ -104,7 +104,7 @@ function buildPreferencesDraft(
       weightUnit: prefs.tools?.scaling?.weightUnit ?? 'g',
       measurementUnit: prefs.tools?.scaling?.measurementUnit ?? 'g',
       batchMultiplier: prefs.tools?.scaling?.batchMultiplier ?? 1.0,
-      bufferPercentage: prefs.tools?.scaling?.bufferPercentage ?? 0.1
+      bufferPercentage: prefs.tools?.scaling?.bufferPercentage ?? 10
     },
     workflow: {
       autoSaveIntervalSeconds: prefs.tools?.workflow?.autoSaveIntervalSeconds ?? 60,

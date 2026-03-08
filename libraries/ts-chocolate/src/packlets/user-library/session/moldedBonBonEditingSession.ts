@@ -25,7 +25,7 @@
 
 import { captureResult, fail, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 
-import { Measurement, MoldId, SlotId, ZeroMeasurement } from '../../common';
+import { Measurement, MoldId, SlotId, ZeroMeasurement, Validation as CommonValidation } from '../../common';
 import { Confections, IConfectionSessionEntity, IProducedMoldedBonBonEntity, Session } from '../../entities';
 import { IMoldedBonBonRecipe, IMold, ProducedMoldedBonBon } from '../../library-runtime';
 
@@ -127,32 +127,36 @@ export class MoldedBonBonEditingSession<
    * Sets frames and buffer percentage for yield calculation.
    * Count is computed as: frames × cavitiesPerFrame
    *
-   * @param frames - Number of frames to produce
-   * @param bufferPercentage - Buffer overfill (e.g., 0.1 for 10%)
+   * @param numFrames - Number of frames to produce
+   * @param bufferPercentage - Buffer overfill (e.g., 10 for 10%)
    * @returns Success with computed yield, or Failure if invalid
    * @public
    */
-  public setFrames(frames: number, bufferPercentage: number = 0.1): Result<Confections.IMoldedBonBonYield> {
-    if (frames <= 0) {
-      return fail(`Frames must be positive: ${frames}`);
+  public setFrames(
+    numFrames: number,
+    bufferPercentage: number = 10
+  ): Result<Confections.IBufferedYieldInFrames> {
+    if (numFrames <= 0) {
+      return fail(`Frames must be positive: ${numFrames}`);
     }
-    if (bufferPercentage < 0 || bufferPercentage > 1) {
-      return fail(`Buffer percentage must be between 0 and 1: ${bufferPercentage}`);
+    if (!CommonValidation.isValidPercentage(bufferPercentage)) {
+      return fail(`Buffer percentage must be between 0 and 100: ${bufferPercentage}`);
     }
 
-    // Compute count from frames and mold
-    const count = frames * this._currentMold.cavityCount;
-
-    const yieldSpec: Confections.IMoldedBonBonYield = {
-      yieldType: 'frames',
-      frames,
-      bufferPercentage,
-      count,
-      unit: 'pieces',
-      weightPerPiece: this._currentMold.cavityWeight
+    const yieldSpec: Confections.IBufferedYieldInFrames = {
+      numFrames,
+      bufferPercentage
     };
 
     return this.scaleToYield(yieldSpec).onSuccess(() => succeed(yieldSpec));
+  }
+
+  /**
+   * Narrows the produced getter to return the molded-bonbon-specific wrapper.
+   * @public
+   */
+  public override get produced(): ProducedMoldedBonBon {
+    return this._produced as ProducedMoldedBonBon;
   }
 
   /**
@@ -164,36 +168,17 @@ export class MoldedBonBonEditingSession<
    * @public
    */
   public override scaleToYield(
-    yieldSpec: Confections.AnyConfectionYield
-  ): Result<Confections.IConfectionYield> {
-    // Extract frame-based parameters
-    let frames: number;
-    let bufferPercentage: number;
-
-    if (Confections.isMoldedBonBonYield(yieldSpec)) {
-      frames = yieldSpec.frames;
-      bufferPercentage = yieldSpec.bufferPercentage;
-    } else {
-      // Legacy yield - compute frames from count
-      frames = Math.ceil(yieldSpec.count / this._currentMold.cavityCount);
-      bufferPercentage = 0.1; // Default 10%
+    yieldSpec: Confections.BufferedConfectionYield
+  ): Result<Confections.BufferedConfectionYield> {
+    /* c8 ignore next 3 - defensive: callers should always pass IBufferedYieldInFrames for molded bonbon */
+    if (!Confections.isBufferedYieldInFrames(yieldSpec)) {
+      return fail('Molded bonbon scaling requires a frame-based yield specification');
     }
 
-    // Update produced confection yield
-    const computedYield: Confections.IMoldedBonBonYield = {
-      yieldType: 'frames',
-      frames,
-      bufferPercentage,
-      count: frames * this._currentMold.cavityCount,
-      unit: 'pieces',
-      weightPerPiece: this._currentMold.cavityWeight
-    };
-
     // Update produced confection yield, then scale all fillings
-    return this._produced
-      .scaleToYield(computedYield)
-      .onSuccess(() => this._scaleAllFillingsToYield())
-      .onSuccess(() => succeed(computedYield));
+    return this.produced
+      .setFrames(yieldSpec.numFrames, yieldSpec.bufferPercentage)
+      .onSuccess((updatedYield) => this._scaleAllFillingsToYield().onSuccess(() => succeed(updatedYield)));
   }
 
   // ============================================================================
@@ -302,31 +287,22 @@ export class MoldedBonBonEditingSession<
 
   /**
    * Computes total cavity weight including buffer.
-   * Formula: frames × cavitiesPerFrame × cavityWeight × (1 + bufferPercentage)
+   * Formula: frames × cavitiesPerFrame × cavityWeight × (1 + bufferPercentage / 100)
    *
    * @param mold - The mold to compute weight for
    * @returns Total weight in grams
    * @internal
    */
   private _computeTotalCavityWeight(mold: IMold): Measurement {
-    const currentYield = this._produced.yield;
-
-    let frames: number;
-    let bufferPercentage: number;
-
-    if (Confections.isMoldedBonBonYield(currentYield)) {
-      frames = currentYield.frames;
-      bufferPercentage = currentYield.bufferPercentage;
-    } else {
-      frames = Math.ceil(currentYield.count / mold.cavityCount);
-      bufferPercentage = 0.1;
-    }
+    const currentYield = this.produced.yield;
+    const frames = currentYield.numFrames;
+    const bufferPercentage = currentYield.bufferPercentage;
 
     // TODO: create test molds that don't have cavity weight
     /* c8 ignore next 1 - branch: test molds always have cavityWeight */
     const cavityWeight = mold.cavityWeight ?? ZeroMeasurement;
     const baseWeight = frames * mold.cavityCount * cavityWeight;
-    const totalWeight = baseWeight * (1 + bufferPercentage);
+    const totalWeight = baseWeight * (1 + bufferPercentage / 100);
 
     return totalWeight as Measurement;
   }

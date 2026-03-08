@@ -4,6 +4,7 @@
 
 Base interface for all produced confection types.
 Contains common fields shared by all confection productions.
+Note: yield is NOT on the base — each concrete subtype declares its own yield type.
 
 ## Properties
 
@@ -57,23 +58,6 @@ Confection type discriminator (matches ConfectionType)
 </td><td>
 
 Confection variation ID that was produced
-
-</td></tr>
-<tr><td>
-
-[yield](./IProducedConfectionEntityBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../../../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this production
 
 </td></tr>
 <tr><td>

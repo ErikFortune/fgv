@@ -3,6 +3,8 @@
 # Interface: IProducedBarTruffleEntity
 
 Produced bar truffle with concrete choices.
+Yield stores count + weightPerPiece + bufferPercentage; targetWeight is derived.
+Frame dimensions are derived at runtime from count + bonBonDimensions.
 
 **Extends:** [`IProducedConfectionEntityBase`](../../interfaces/IProducedConfectionEntityBase.md)
 
@@ -53,11 +55,11 @@ Confection type discriminator
 
 </td><td>
 
-[IConfectionYield](../../interfaces/IConfectionYield.md)
+[IBufferedBarTruffleYield](../../interfaces/IBufferedBarTruffleYield.md)
 
 </td><td>
 
-Count-based yield specification
+Yield with piece dimensions; targetWeight and frameDimensions derived at runtime
 
 </td></tr>
 <tr><td>

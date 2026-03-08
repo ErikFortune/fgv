@@ -1135,7 +1135,7 @@ export interface IConfectionBase<
   readonly decorations?: CommonModel.IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId>;
 
   /** Yield specification from the golden variation */
-  readonly yield: Confections.IConfectionYield;
+  readonly yield: Confections.ConfectionYield;
 
   /** Resolved filling slots from the golden variation */
   readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
@@ -1178,6 +1178,9 @@ export interface IMoldedBonBonRecipe
   /** Type is always 'molded-bonbon' for this confection */
   readonly confectionType: 'molded-bonbon';
 
+  /** Narrowed yield: only numFrames stored; weight/count derived from mold at runtime */
+  readonly yield: Confections.IYieldInFrames;
+
   /** Resolved molds with preferred selection (from golden variation) */
   readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
@@ -1197,14 +1200,11 @@ export interface IBarTruffleRecipe
   /** Type is always 'bar-truffle' for this confection */
   readonly confectionType: 'bar-truffle';
 
-  /** Frame dimensions from the golden variation */
-  readonly frameDimensions: Confections.IFrameDimensions;
-
-  /** Single bonbon dimensions from the golden variation */
-  readonly singleBonBonDimensions: Confections.IBonBonDimensions;
-
   /** Resolved enrobing chocolate (from golden variation, optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
+
+  /** Derived frame dimensions for ganache slab (delegated from golden variation) */
+  readonly frameDimensions: Confections.IPieceDimensions;
 }
 
 /**
@@ -1451,7 +1451,7 @@ export interface IConfectionRecipeVariationBase<
   /**
    * Yield specification for this variation.
    */
-  readonly yield: Confections.IConfectionYield;
+  readonly yield: Confections.ConfectionYield;
 
   /**
    * Resolved decorations for this variation.
@@ -1522,6 +1522,9 @@ export interface IMoldedBonBonRecipeVariation
     IMoldedBonBonRecipe,
     Confections.IMoldedBonBonRecipeVariationEntity
   > {
+  /** Narrowed yield: only numFrames stored; weight/count derived from mold at runtime */
+  readonly yield: Confections.IYieldInFrames;
+
   /** Resolved molds with preferred selection */
   readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
@@ -1544,11 +1547,11 @@ export interface IMoldedBonBonRecipeVariation
  */
 export interface IBarTruffleRecipeVariation
   extends IConfectionRecipeVariationBase<IBarTruffleRecipe, Confections.IBarTruffleRecipeVariationEntity> {
-  /** Frame dimensions for ganache slab */
-  readonly frameDimensions: Confections.IFrameDimensions;
+  /** Narrowed yield: numPieces, weightPerPiece, and piece dimensions stored as template defaults */
+  readonly yield: Confections.IBarTruffleYield;
 
-  /** Single bonbon dimensions for cutting */
-  readonly singleBonBonDimensions: Confections.IBonBonDimensions;
+  /** Derived frame dimensions for ganache slab (computed from yield.numPieces + yield.dimensions) */
+  readonly frameDimensions: Confections.IPieceDimensions;
 
   /** Resolved enrobing chocolate specification (optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
@@ -1566,6 +1569,9 @@ export interface IRolledTruffleRecipeVariation
     IRolledTruffleRecipe,
     Confections.IRolledTruffleRecipeVariationEntity
   > {
+  /** Narrowed yield: numPieces and weightPerPiece stored as template defaults */
+  readonly yield: Confections.IYieldInPieces;
+
   /** Resolved enrobing chocolate specification (optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 

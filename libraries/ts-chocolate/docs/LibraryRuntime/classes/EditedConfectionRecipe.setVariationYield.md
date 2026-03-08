@@ -7,7 +7,7 @@ Sets the yield specification on a variation.
 **Signature:**
 
 ```typescript
-setVariationYield(spec: ConfectionRecipeVariationSpec, yieldSpec: AnyConfectionYield): Result<void>;
+setVariationYield(spec: ConfectionRecipeVariationSpec, yieldSpec: ConfectionYield): Result<void>;
 ```
 
 **Parameters:**
@@ -15,7 +15,7 @@ setVariationYield(spec: ConfectionRecipeVariationSpec, yieldSpec: AnyConfectionY
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td>spec</td><td>ConfectionRecipeVariationSpec</td><td>Variation spec to update</td></tr>
-<tr><td>yieldSpec</td><td>AnyConfectionYield</td><td>New yield specification</td></tr>
+<tr><td>yieldSpec</td><td>ConfectionYield</td><td>New yield specification</td></tr>
 </tbody></table>
 
 **Returns:**

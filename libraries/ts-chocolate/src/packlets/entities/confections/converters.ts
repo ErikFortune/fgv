@@ -31,68 +31,139 @@ import {
   AnyConfectionRecipeVariationEntity,
   AnyFillingOptionEntity,
   AnyConfectionRecipeEntity,
+  BarTruffleRecipeEntity,
+  BufferedConfectionYield,
+  ConfectionYield,
   FillingOptionId,
   IAdditionalChocolateEntity,
-  BarTruffleRecipeEntity,
   IBarTruffleRecipeVariationEntity,
-  IBonBonDimensions,
+  IBarTruffleYield,
+  IBufferedBarTruffleYield,
+  IBufferedYieldInFrames,
+  IBufferedYieldInPieces,
   IChocolateSpec,
   ICoatingsEntity,
-  IConfectionRecipeEntityBase,
   IConfectionDecoration,
-  IConfectionMoldRef,
-  IConfectionRecipeVariationEntityBase,
-  IConfectionYield,
-  IMoldedBonBonYield,
-  AnyConfectionYield,
-  IFillingSlotEntity,
   IConfectionDerivationEntity,
-  IFrameDimensions,
+  IConfectionMoldRef,
+  IConfectionRecipeEntityBase,
+  IConfectionRecipeVariationEntityBase,
+  IFillingSlotEntity,
   IIngredientFillingOptionEntity,
-  MoldedBonBonRecipeEntity,
-  IMoldedBonBonRecipeVariationEntity,
+  IPieceDimensions,
   IRecipeFillingOptionEntity,
-  RolledTruffleRecipeEntity,
-  IRolledTruffleRecipeVariationEntity
+  IRolledTruffleRecipeVariationEntity,
+  IMoldedBonBonRecipeVariationEntity,
+  IYieldInFrames,
+  IYieldInPieces,
+  MoldedBonBonRecipeEntity,
+  RolledTruffleRecipeEntity
 } from './model';
 import { Converters as RecipeConverters } from '../fillings';
 
 // ============================================================================
-// Yield and Decoration Converters
+// Yield Converters — Recipe Variation Layer
 // ============================================================================
 
 /**
- * `Converter` for {@link Entities.Confections.IConfectionYield | IConfectionYield}.
+ * `Converter` for {@link Entities.Confections.IYieldInFrames | IYieldInFrames}.
  * @public
  */
-export const confectionYield: Converter<IConfectionYield> = Converters.strictObject<IConfectionYield>({
-  count: Converters.number,
-  unit: Converters.string.optional(),
-  weightPerPiece: CommonConverters.measurement.optional()
+export const yieldInFrames: Converter<IYieldInFrames> = Converters.strictObject<IYieldInFrames>({
+  numFrames: Converters.number
 });
 
 /**
- * `Converter` for {@link Entities.Confections.IMoldedBonBonYield | IMoldedBonBonYield}.
+ * `Converter` for {@link Entities.Confections.IYieldInPieces | IYieldInPieces}.
  * @public
  */
-export const moldedBonBonYield: Converter<IMoldedBonBonYield> = Converters.strictObject<IMoldedBonBonYield>({
-  yieldType: Converters.literal('frames'),
-  frames: Converters.number,
-  bufferPercentage: Converters.number,
-  count: Converters.number,
-  unit: Converters.string.optional(),
-  weightPerPiece: CommonConverters.measurement.optional()
+export const yieldInPieces: Converter<IYieldInPieces> = Converters.strictObject<IYieldInPieces>({
+  numPieces: Converters.number,
+  weightPerPiece: CommonConverters.measurement
 });
 
 /**
- * `Converter` for {@link Entities.Confections.AnyConfectionYield | AnyConfectionYield}.
- * Handles both regular and frame-based yield specifications.
+ * `Converter` for {@link Entities.Confections.IBarTruffleYield | IBarTruffleYield}.
+ * Note: must be tried before `yieldInPieces` in union converters since it is a superset.
  * @public
  */
-export const anyConfectionYield: Converter<AnyConfectionYield> = Converters.oneOf([
-  moldedBonBonYield,
-  confectionYield
+export const barTruffleYield: Converter<IBarTruffleYield> = Converters.strictObject<IBarTruffleYield>({
+  numPieces: Converters.number,
+  weightPerPiece: CommonConverters.measurement,
+  dimensions: Converters.strictObject<IPieceDimensions>({
+    width: CommonConverters.millimeters,
+    height: CommonConverters.millimeters,
+    depth: CommonConverters.millimeters
+  })
+});
+
+/**
+ * `Converter` for {@link Entities.Confections.ConfectionYield | ConfectionYield} (union).
+ * Used for the base variation entity and when the specific type is not known.
+ * @public
+ */
+export const anyConfectionYield: Converter<ConfectionYield> = Converters.oneOf<ConfectionYield>([
+  barTruffleYield, // must come before yieldInPieces (superset)
+  yieldInPieces,
+  yieldInFrames
 ]);
+
+// ============================================================================
+// Yield Converters — Produced/Session Layer
+// ============================================================================
+
+/**
+ * `Converter` for {@link Entities.Confections.IBufferedYieldInFrames | IBufferedYieldInFrames}.
+ * @public
+ */
+export const bufferedYieldInFrames: Converter<IBufferedYieldInFrames> =
+  Converters.strictObject<IBufferedYieldInFrames>({
+    numFrames: Converters.number,
+    bufferPercentage: CommonConverters.percentage
+  });
+
+/**
+ * `Converter` for {@link Entities.Confections.IBufferedYieldInPieces | IBufferedYieldInPieces}.
+ * @public
+ */
+export const bufferedYieldInPieces: Converter<IBufferedYieldInPieces> =
+  Converters.strictObject<IBufferedYieldInPieces>({
+    count: Converters.number,
+    weightPerPiece: CommonConverters.measurement,
+    bufferPercentage: CommonConverters.percentage
+  });
+
+/**
+ * `Converter` for {@link Entities.Confections.IBufferedBarTruffleYield | IBufferedBarTruffleYield}.
+ * Note: must be tried before `bufferedYieldInPieces` in union converters since it is a superset.
+ * @public
+ */
+export const bufferedBarTruffleYield: Converter<IBufferedBarTruffleYield> =
+  Converters.strictObject<IBufferedBarTruffleYield>({
+    count: Converters.number,
+    weightPerPiece: CommonConverters.measurement,
+    bufferPercentage: CommonConverters.percentage,
+    dimensions: Converters.strictObject<IPieceDimensions>({
+      width: CommonConverters.millimeters,
+      height: CommonConverters.millimeters,
+      depth: CommonConverters.millimeters
+    })
+  });
+
+/**
+ * `Converter` for {@link Entities.Confections.BufferedConfectionYield | BufferedConfectionYield} (union).
+ * @public
+ */
+export const anyBufferedConfectionYield: Converter<BufferedConfectionYield> =
+  Converters.oneOf<BufferedConfectionYield>([
+    bufferedBarTruffleYield, // must come before bufferedYieldInPieces (superset)
+    bufferedYieldInPieces,
+    bufferedYieldInFrames
+  ]);
+
+// ============================================================================
+// Decoration Converters
+// ============================================================================
 
 /**
  * `Converter` for {@link Entities.Confections.IConfectionDecoration | IConfectionDecoration}.
@@ -212,29 +283,6 @@ export const confectionMolds: Converter<Model.IOptionsWithPreferred<IConfectionM
   CommonConverters.optionsWithPreferred(confectionMoldRef, CommonConverters.moldId, 'confectionMolds');
 
 // ============================================================================
-// Dimension Converters
-// ============================================================================
-
-/**
- * Converter for {@link Entities.Confections.IFrameDimensions | IFrameDimensions}.
- * @public
- */
-export const frameDimensions: Converter<IFrameDimensions> = Converters.strictObject<IFrameDimensions>({
-  width: CommonConverters.millimeters,
-  height: CommonConverters.millimeters,
-  depth: CommonConverters.millimeters
-});
-
-/**
- * Converter for {@link Entities.Confections.IBonBonDimensions | IBonBonDimensions}.
- * @public
- */
-export const bonBonDimensions: Converter<IBonBonDimensions> = Converters.strictObject<IBonBonDimensions>({
-  width: CommonConverters.millimeters,
-  height: CommonConverters.millimeters
-});
-
-// ============================================================================
 // Coating Converters
 // ============================================================================
 
@@ -253,14 +301,15 @@ export const coatingsEntity: Converter<ICoatingsEntity> = CommonConverters.idsWi
 // ============================================================================
 
 /**
- * Common fields shared by all variation types
+ * Common fields shared by all variation types.
+ * The `yield` field uses the union converter; each type-specific converter overrides it with a narrower type.
  * @internal
  */
 export const commonVariationFields: Conversion.FieldConverters<IConfectionRecipeVariationEntityBase> = {
   variationSpec: CommonConverters.confectionRecipeVariationSpec,
   name: Converters.string.optional(),
   createdDate: Converters.string, // ISO 8601 date string
-  yield: confectionYield,
+  yield: anyConfectionYield,
   fillings: Converters.arrayOf(fillingSlotEntity).optional(),
   decorations: CommonConverters.optionsWithPreferred(
     DecorationConverters.decorationRefEntity,
@@ -292,6 +341,7 @@ export const moldedBonBonVariationFields: Conversion.FieldConverters<
 export const moldedBonBonRecipeVariationEntity: Converter<IMoldedBonBonRecipeVariationEntity> =
   Converters.strictObject<IMoldedBonBonRecipeVariationEntity>({
     ...commonVariationFields,
+    yield: yieldInFrames,
     ...moldedBonBonVariationFields
   });
 
@@ -302,8 +352,6 @@ export const moldedBonBonRecipeVariationEntity: Converter<IMoldedBonBonRecipeVar
 export const barTruffleVariationFields: Conversion.FieldConverters<
   Omit<IBarTruffleRecipeVariationEntity, keyof IConfectionRecipeVariationEntityBase>
 > = {
-  frameDimensions,
-  singleBonBonDimensions: bonBonDimensions,
   enrobingChocolate: chocolateSpec.optional()
 };
 
@@ -314,6 +362,7 @@ export const barTruffleVariationFields: Conversion.FieldConverters<
 export const barTruffleRecipeVariationEntity: Converter<IBarTruffleRecipeVariationEntity> =
   Converters.strictObject<IBarTruffleRecipeVariationEntity>({
     ...commonVariationFields,
+    yield: barTruffleYield,
     ...barTruffleVariationFields
   });
 
@@ -335,6 +384,7 @@ export const rolledTruffleVariationFields: Conversion.FieldConverters<
 export const rolledTruffleRecipeVariationEntity: Converter<IRolledTruffleRecipeVariationEntity> =
   Converters.strictObject<IRolledTruffleRecipeVariationEntity>({
     ...commonVariationFields,
+    yield: yieldInPieces,
     ...rolledTruffleVariationFields
   });
 

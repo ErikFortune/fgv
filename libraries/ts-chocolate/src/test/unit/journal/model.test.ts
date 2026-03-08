@@ -34,7 +34,7 @@ import {
   IProducedFillingEntity,
   IProducedMoldedBonBonEntity
 } from '../../../packlets/entities';
-import { GroupName, NoteCategory } from '../../../packlets/common';
+import { GroupName, NoteCategory, Percentage } from '../../../packlets/common';
 
 describe('Journal Model', () => {
   describe('allJournalEntryTypes', () => {
@@ -113,7 +113,7 @@ describe('Journal Model', () => {
       variationType: 'molded-bonbon',
       variationSpec: 'v1' as Confections.IMoldedBonBonRecipeVariationEntity['variationSpec'],
       createdDate: '2026-01-15',
-      yield: { count: 24 },
+      yield: { numFrames: 1 },
       molds: {
         preferredId: 'mold-1' as Confections.IMoldedBonBonRecipeVariationEntity['molds']['preferredId'],
         options: []
@@ -126,7 +126,7 @@ describe('Journal Model', () => {
     const producedConfection: IProducedMoldedBonBonEntity = {
       confectionType: 'molded-bonbon',
       variationId: 'source.truffle@2026-01-01-01' as IProducedMoldedBonBonEntity['variationId'],
-      yield: { yieldType: 'frames', frames: 1, bufferPercentage: 0.1, count: 24 },
+      yield: { numFrames: 1, bufferPercentage: 10 as Percentage },
       moldId: 'mold-1' as IProducedMoldedBonBonEntity['moldId'],
       shellChocolateId: 'choc-1' as IProducedMoldedBonBonEntity['shellChocolateId']
     };
@@ -145,7 +145,7 @@ describe('Journal Model', () => {
       variationId: 'source.truffle@2026-01-01-01' as IConfectionProductionJournalEntryEntity['variationId'],
       timestamp: '2026-01-15T10:00:00Z',
       recipe: confectionRecipe,
-      yield: { count: 24 },
+      yield: { numFrames: 1, bufferPercentage: 10 as Percentage },
       produced: producedConfection
     };
 
@@ -224,7 +224,9 @@ describe('Journal Model', () => {
         const entry: AnyJournalEntryEntity = confectionProductionEntry;
         if (Journal.isConfectionProductionJournalEntryEntity(entry)) {
           expect(entry.type).toBe('confection-production');
-          expect(entry.yield.count).toBe(24);
+          if (Confections.isBufferedYieldInFrames(entry.yield)) {
+            expect(entry.yield.numFrames).toBe(1);
+          }
         }
       });
     });

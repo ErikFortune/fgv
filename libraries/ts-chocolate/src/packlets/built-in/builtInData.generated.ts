@@ -11,6 +11,7 @@
 //   - data/published/ingredients/flavors.yaml
 //   - data/published/ingredients/guittard.yaml
 //   - data/published/fillings/common.yaml
+//   - data/published/fillings/fgv.json
 //   - data/published/molds/common.yaml
 //   - data/published/molds/cw.yaml
 //   - data/published/molds/greyas.yaml
@@ -20,7 +21,6 @@
 //   - data/published/procedures/common.yaml
 //   - data/published/tasks/common.yaml
 //   - data/published/confections/common.yaml
-//   - data/published/confections/fgv.json
 //   - data/published/decorations/common.yaml
 
 /* eslint-disable max-lines */
@@ -3803,6 +3803,18 @@ export const fillingCollections: Record<string, JsonObject> = {
         goldenVariationSpec: '2026-01-01-01'
       }
     }
+  },
+  fgv: {
+    format: 'encrypted-collection-v1',
+    secretName: 'fgv',
+    algorithm: 'AES-256-GCM',
+    iv: 'qtke5t/fo5NmMI1H',
+    authTag: 'gSpzOWgniA9wH7DhKNe6AQ==',
+    encryptedData: 'rRM=',
+    metadata: {
+      collectionId: 'fgv',
+      itemCount: 0
+    }
   }
 };
 
@@ -4240,6 +4252,44 @@ export const moldCollections: Record<string, JsonObject> = {
           {
             category: 'purchase',
             url: 'https://amazon.com/dp/B09QD36Q4J'
+          }
+        ]
+      },
+      cm1207: {
+        baseId: 'cm1207',
+        manufacturer: 'Greyas',
+        productNumber: 'CM1207',
+        name: 'Praline Mayan Pyramide',
+        description: 'Mayan Pyramide praline chocolate mold with 24 cavities, each holding 12g of chocolate.',
+        cavities: {
+          kind: 'grid',
+          columns: 6,
+          rows: 4,
+          info: {
+            weight: 12,
+            dimensions: {
+              width: 26,
+              length: 26,
+              depth: 22
+            }
+          }
+        },
+        format: 'series-2000',
+        tags: ['praline', 'mayan', 'pyramide', 'pyramid', 'polycarbonate'],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Grid layout assumed as 6 columns x 4 rows based on mold dimensions (275x175mm) and 24 cavities, typical for Greyas series-2000 praline molds. Cavity dimensions sourced from retailer ChocDepot.com; confirmed weight 12g per cavity from manufacturer site.'
+          }
+        ],
+        urls: [
+          {
+            category: 'manufacturer',
+            url: 'https://www.greyas.com/products/cm-1207-pralin-cikolata-kalibi'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.chocdepot.com/Urun/greyas-cm-1207-polycarbon-chocolate-mold'
           }
         ]
       }
@@ -5077,9 +5127,7 @@ export const confectionCollections: Record<string, JsonObject> = {
               }
             ],
             yield: {
-              count: 24,
-              unit: 'pieces',
-              weightPerPiece: 12
+              numFrames: 1
             },
             fillings: [
               {
@@ -5149,9 +5197,7 @@ export const confectionCollections: Record<string, JsonObject> = {
               }
             ],
             yield: {
-              count: 24,
-              unit: 'pieces',
-              weightPerPiece: 14
+              numFrames: 1
             },
             fillings: [
               {
@@ -5244,9 +5290,13 @@ export const confectionCollections: Record<string, JsonObject> = {
               }
             ],
             yield: {
-              count: 48,
-              unit: 'pieces',
-              weightPerPiece: 10
+              numPieces: 48,
+              weightPerPiece: 10,
+              dimensions: {
+                width: 25,
+                height: 25,
+                depth: 8
+              }
             },
             fillings: [
               {
@@ -5262,15 +5312,6 @@ export const confectionCollections: Record<string, JsonObject> = {
                 }
               }
             ],
-            frameDimensions: {
-              width: 300,
-              height: 200,
-              depth: 8
-            },
-            singleBonBonDimensions: {
-              width: 25,
-              height: 25
-            },
             enrobingChocolate: {
               ids: ['cacao-barry.guayaquil-64'],
               preferredId: 'cacao-barry.guayaquil-64'
@@ -5315,8 +5356,7 @@ export const confectionCollections: Record<string, JsonObject> = {
               }
             ],
             yield: {
-              count: 40,
-              unit: 'pieces',
+              numPieces: 40,
               weightPerPiece: 15
             },
             fillings: [
@@ -5348,18 +5388,6 @@ export const confectionCollections: Record<string, JsonObject> = {
           }
         ]
       }
-    }
-  },
-  fgv: {
-    format: 'encrypted-collection-v1',
-    secretName: 'fgv',
-    algorithm: 'AES-256-GCM',
-    iv: 'BNvukisCBmoRemOF',
-    authTag: 'NOC7leJ4RE1fwwYnkbvj3A==',
-    encryptedData: '6FI=',
-    metadata: {
-      collectionId: 'fgv',
-      itemCount: 0
     }
   }
 };

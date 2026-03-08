@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { captureResult, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IConfectionSessionEntity, IProducedBarTruffleEntity, Session } from '../../entities';
@@ -113,6 +113,14 @@ export class BarTruffleEditingSession<
     );
   }
 
+  /**
+   * Narrows the produced getter to return the bar-truffle-specific wrapper.
+   * @public
+   */
+  public override get produced(): ProducedBarTruffle {
+    return this._produced as ProducedBarTruffle;
+  }
+
   // ============================================================================
   // Linear Scaling
   // ============================================================================
@@ -126,16 +134,21 @@ export class BarTruffleEditingSession<
    * @public
    */
   public override scaleToYield(
-    yieldSpec: Confections.AnyConfectionYield
-  ): Result<Confections.IConfectionYield> {
-    const currentYield = this._produced.yield;
+    yieldSpec: Confections.BufferedConfectionYield
+  ): Result<Confections.BufferedConfectionYield> {
+    /* c8 ignore next 3 - defensive: callers should always pass IBufferedBarTruffleYield for bar truffle */
+    if (!Confections.isBufferedBarTruffleYield(yieldSpec)) {
+      return fail('Bar truffle scaling requires a bar truffle yield specification');
+    }
+    const currentYield = this.produced.yield;
     const scaleFactor = yieldSpec.count / currentYield.count;
 
     // Update produced confection yield, then scale all fillings
-    return this._produced
+    return this.produced
       .scaleToYield(yieldSpec)
-      .onSuccess(() => this._scaleAllFillingsByFactor(scaleFactor))
-      .onSuccess(() => succeed(yieldSpec));
+      .onSuccess((updatedYield: Confections.IBufferedBarTruffleYield) =>
+        this._scaleAllFillingsByFactor(scaleFactor).onSuccess(() => succeed(updatedYield))
+      );
   }
 
   // ============================================================================

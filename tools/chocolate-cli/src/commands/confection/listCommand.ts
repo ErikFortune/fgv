@@ -63,7 +63,10 @@ function getYieldString(confection: Entities.Confections.AnyConfectionRecipeEnti
     return '';
   }
   const yieldInfo = goldenVariation.yield;
-  return `${yieldInfo.count} ${yieldInfo.unit ?? 'pieces'}`;
+  if (Entities.Confections.isYieldInFrames(yieldInfo)) {
+    return `${yieldInfo.numFrames} frames`;
+  }
+  return `${yieldInfo.numPieces} pieces`;
 }
 
 /**

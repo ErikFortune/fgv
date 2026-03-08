@@ -67,7 +67,12 @@ export interface ICreateSessionPanelProps {
   /** Available filling recipes for the datalist */
   readonly availableFillings: ReadonlyArray<LibraryRuntime.FillingRecipe>;
   /** Called when the user confirms creation */
-  readonly onConfirm: (selection: ISessionRecipeSelection, label: string, slug: string) => void;
+  readonly onConfirm: (
+    selection: ISessionRecipeSelection,
+    label: string,
+    slug: string,
+    quantity?: number
+  ) => void;
   /** Called when the user cancels */
   readonly onCancel: () => void;
   /** Callback to create a new confection from an unresolved name */
@@ -160,6 +165,7 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
   const [label, setLabel] = useState(initialRecipeName);
   const [slug, setSlug] = useState(toSlug(initialRecipeName));
   const [slugEdited, setSlugEdited] = useState(false);
+  const [quantityInput, setQuantityInput] = useState<string>('');
 
   // --------------------------------------------------------------------------
   // Build datalist suggestions
@@ -348,8 +354,10 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
       selection = { type: 'filling', fillingId: selectedRecipe.id, variationSpec: selectedVariationSpec };
     }
 
-    onConfirm(selection, label.trim(), slug.trim());
-  }, [selectedRecipe, selectedVariationSpec, label, slug, onConfirm]);
+    const parsedQuantity = parseInt(quantityInput, 10);
+    const quantity = parsedQuantity > 0 ? parsedQuantity : undefined;
+    onConfirm(selection, label.trim(), slug.trim(), quantity);
+  }, [selectedRecipe, selectedVariationSpec, label, slug, quantityInput, onConfirm]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent): void => {
@@ -541,6 +549,25 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
           className="w-full border border-gray-300 rounded px-3 py-2 text-sm font-mono text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
         />
         <p className="mt-1 text-[11px] text-gray-400">Appended to the session ID for easy identification.</p>
+      </div>
+
+      {/* Quantity (optional) */}
+      <div>
+        <label htmlFor="session-quantity" className="block text-xs font-medium text-gray-700 mb-1">
+          Target Quantity <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <input
+          id="session-quantity"
+          type="number"
+          min="1"
+          value={quantityInput}
+          onChange={(e): void => setQuantityInput(e.target.value)}
+          placeholder="e.g. 48"
+          className="w-32 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+        />
+        <p className="mt-1 text-[11px] text-gray-400">
+          Number of pieces to produce. Leave empty for recipe default.
+        </p>
       </div>
 
       {/* Buttons */}

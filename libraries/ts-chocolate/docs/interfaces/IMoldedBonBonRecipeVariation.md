@@ -28,6 +28,23 @@ Description
 <tbody>
 <tr><td>
 
+[yield](./IMoldedBonBonRecipeVariation.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IYieldInFrames](IYieldInFrames.md)
+
+</td><td>
+
+Narrowed yield: only numFrames stored; weight/count derived from mold at runtime
+
+</td></tr>
+<tr><td>
+
 [molds](./IMoldedBonBonRecipeVariation.molds.md)
 
 </td><td>
@@ -194,23 +211,6 @@ The parent confection ID.
 </td><td>
 
 The parent confection - resolved.
-
-</td></tr>
-<tr><td>
-
-[yield](./IConfectionRecipeVariationBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this variation.
 
 </td></tr>
 <tr><td>

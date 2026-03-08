@@ -207,7 +207,7 @@ Resolved decorations from the golden variation
 
 </td><td>
 
-[IConfectionYield](../interfaces/IConfectionYield.md)
+[ConfectionYield](../type-aliases/ConfectionYield.md)
 
 </td><td>
 

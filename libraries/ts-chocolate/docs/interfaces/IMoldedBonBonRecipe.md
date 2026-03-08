@@ -45,6 +45,23 @@ Type is always 'molded-bonbon' for this confection
 </td></tr>
 <tr><td>
 
+[yield](./IMoldedBonBonRecipe.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IYieldInFrames](IYieldInFrames.md)
+
+</td><td>
+
+Narrowed yield: only numFrames stored; weight/count derived from mold at runtime
+
+</td></tr>
+<tr><td>
+
 [molds](./IMoldedBonBonRecipe.molds.md)
 
 </td><td>
@@ -313,23 +330,6 @@ Gets effective URLs for the golden variation (base + variation's additional URLs
 </td><td>
 
 Resolved decorations from the golden variation
-
-</td></tr>
-<tr><td>
-
-[yield](./IConfectionBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](IConfectionYield.md)
-
-</td><td>
-
-Yield specification from the golden variation
 
 </td></tr>
 <tr><td>

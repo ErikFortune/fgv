@@ -28,6 +28,7 @@ import {
   DecorationId,
   FillingId,
   IngredientId,
+  Measurement,
   Millimeters,
   MoldId,
   NoteCategory,
@@ -63,7 +64,7 @@ function makeMoldedBonBonVariation(
   return {
     variationSpec: spec as ConfectionRecipeVariationSpec,
     createdDate: date,
-    yield: { count: 24 },
+    yield: { numFrames: 1 },
     molds: { options: [makeMoldRef('round-mold')], preferredId: 'round-mold' as MoldId },
     shellChocolate: makeChocolateSpec('dark-70'),
     ...overrides
@@ -77,9 +78,11 @@ function makeBarTruffleVariation(
   return {
     variationSpec: spec as ConfectionRecipeVariationSpec,
     createdDate: date,
-    yield: { count: 36 },
-    frameDimensions: { width: 200 as Millimeters, height: 200 as Millimeters, depth: 12 as Millimeters },
-    singleBonBonDimensions: { width: 25 as Millimeters, height: 25 as Millimeters },
+    yield: {
+      numPieces: 36,
+      weightPerPiece: 10 as Measurement,
+      dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 12 as Millimeters }
+    },
     ...overrides
   };
 }
@@ -91,7 +94,7 @@ function makeRolledTruffleVariation(
   return {
     variationSpec: spec as ConfectionRecipeVariationSpec,
     createdDate: date,
-    yield: { count: 30 },
+    yield: { numPieces: 30, weightPerPiece: 15 as Measurement },
     ...overrides
   };
 }
@@ -356,10 +359,12 @@ describe('EditedConfectionRecipe', () => {
     test('replaces an existing variation', () => {
       const entity = makeMoldedBonBonEntity();
       const wrapper = EditedConfectionRecipe.create(entity).orThrow();
-      const updated = makeMoldedBonBonVariation('v1', { yield: { count: 48 } });
+      const updated = makeMoldedBonBonVariation('v1', { yield: { numFrames: 2 } });
 
       expect(wrapper.replaceVariation('v1' as ConfectionRecipeVariationSpec, updated)).toSucceed();
-      expect((wrapper.variations[0] as Confections.IMoldedBonBonRecipeVariationEntity).yield.count).toBe(48);
+      expect((wrapper.variations[0] as Confections.IMoldedBonBonRecipeVariationEntity).yield.numFrames).toBe(
+        2
+      );
     });
 
     test('fails when spec does not exist', () => {
@@ -376,11 +381,13 @@ describe('EditedConfectionRecipe', () => {
       const wrapper = EditedConfectionRecipe.create(entity).orThrow();
       wrapper.replaceVariation(
         'v1' as ConfectionRecipeVariationSpec,
-        makeMoldedBonBonVariation('v1', { yield: { count: 48 } })
+        makeMoldedBonBonVariation('v1', { yield: { numFrames: 2 } })
       );
 
       expect(wrapper.undo()).toSucceedWith(true);
-      expect((wrapper.variations[0] as Confections.IMoldedBonBonRecipeVariationEntity).yield.count).toBe(24);
+      expect((wrapper.variations[0] as Confections.IMoldedBonBonRecipeVariationEntity).yield.numFrames).toBe(
+        1
+      );
     });
   });
 
@@ -489,7 +496,7 @@ describe('EditedConfectionRecipe', () => {
       expect(wrapper.variations).toHaveLength(2);
       const newVar = wrapper.variations[1] as Confections.IMoldedBonBonRecipeVariationEntity;
       expect(newVar.variationSpec).toBe(`${date}-02` as ConfectionRecipeVariationSpec);
-      expect(newVar.yield.count).toBe(0);
+      expect(newVar.yield.numFrames).toBe(1);
       expect(newVar.molds.options).toHaveLength(1);
       expect(newVar.molds.preferredId).toBe('round-mold' as MoldId);
       expect(newVar.shellChocolate.ids).toContain('dark-70' as IngredientId);
@@ -559,7 +566,7 @@ describe('EditedConfectionRecipe', () => {
   });
 
   describe('createBlankVariation (bar truffle)', () => {
-    test('creates blank variation with frameDimensions and singleBonBonDimensions from golden', () => {
+    test('creates blank variation with yield dimensions from golden', () => {
       const entity = makeBarTruffleEntity({
         variations: [makeBarTruffleVariation(`${date}-01`)],
         goldenVariationSpec: `${date}-01` as ConfectionRecipeVariationSpec
@@ -571,9 +578,9 @@ describe('EditedConfectionRecipe', () => {
       );
 
       const newVar = wrapper.variations[1] as Confections.IBarTruffleRecipeVariationEntity;
-      expect(newVar.yield.count).toBe(0);
-      expect(newVar.frameDimensions.width).toBe(200 as Millimeters);
-      expect(newVar.singleBonBonDimensions.width).toBe(25 as Millimeters);
+      expect(newVar.yield.numPieces).toBe(36);
+      expect(newVar.yield.dimensions.width).toBe(25 as Millimeters);
+      expect(newVar.yield.dimensions.depth).toBe(12 as Millimeters);
       expect(newVar.enrobingChocolate).toBeUndefined();
     });
   });
@@ -591,7 +598,7 @@ describe('EditedConfectionRecipe', () => {
       );
 
       const newVar = wrapper.variations[1] as Confections.IRolledTruffleRecipeVariationEntity;
-      expect(newVar.yield.count).toBe(0);
+      expect(newVar.yield.numPieces).toBe(30);
       expect(newVar.enrobingChocolate).toBeUndefined();
       expect(newVar.coatings).toBeUndefined();
     });
@@ -607,7 +614,7 @@ describe('EditedConfectionRecipe', () => {
         variations: [
           makeMoldedBonBonVariation(`${date}-01`, {
             name: 'Original',
-            yield: { count: 24 },
+            yield: { numFrames: 1 },
             molds: { options: [makeMoldRef('square-mold')], preferredId: 'square-mold' as MoldId }
           })
         ],
@@ -623,7 +630,7 @@ describe('EditedConfectionRecipe', () => {
       const dup = wrapper.variations[1] as Confections.IMoldedBonBonRecipeVariationEntity;
       expect(dup.variationSpec).toBe(`${date}-02` as ConfectionRecipeVariationSpec);
       expect(dup.name).toBeUndefined();
-      expect(dup.yield.count).toBe(24);
+      expect(dup.yield.numFrames).toBe(1);
       expect(dup.molds.preferredId).toBe('square-mold' as MoldId);
     });
 
@@ -693,7 +700,7 @@ describe('EditedConfectionRecipe', () => {
       wrapper.duplicateVariation(`${date}-01` as ConfectionRecipeVariationSpec, { date }).orThrow();
 
       const dup = wrapper.variations[1] as Confections.IBarTruffleRecipeVariationEntity;
-      expect(dup.frameDimensions.width).toBe(200 as Millimeters);
+      expect(dup.yield.dimensions.width).toBe(25 as Millimeters);
       expect(dup.enrobingChocolate?.ids).toContain('milk-38' as IngredientId);
     });
   });
@@ -1034,24 +1041,39 @@ describe('EditedConfectionRecipe', () => {
     test('sets yield on existing variation', () => {
       const entity = makeRolledTruffleEntity();
       const wrapper = EditedConfectionRecipe.create(entity).orThrow();
-      expect(wrapper.setVariationYield('v1' as ConfectionRecipeVariationSpec, { count: 50 })).toSucceed();
-      expect(wrapper.variations[0].yield.count).toBe(50);
+      expect(
+        wrapper.setVariationYield('v1' as ConfectionRecipeVariationSpec, {
+          numPieces: 50,
+          weightPerPiece: 15 as Measurement
+        })
+      ).toSucceed();
+      expect((wrapper.variations[0] as Confections.IRolledTruffleRecipeVariationEntity).yield.numPieces).toBe(
+        50
+      );
     });
 
     test('fails for non-existent variation', () => {
       const entity = makeRolledTruffleEntity();
       const wrapper = EditedConfectionRecipe.create(entity).orThrow();
-      expect(wrapper.setVariationYield('nope' as ConfectionRecipeVariationSpec, { count: 50 })).toFailWith(
-        /does not exist/
-      );
+      expect(
+        wrapper.setVariationYield('nope' as ConfectionRecipeVariationSpec, {
+          numPieces: 50,
+          weightPerPiece: 15 as Measurement
+        })
+      ).toFailWith(/does not exist/);
     });
 
     test('supports undo', () => {
       const entity = makeRolledTruffleEntity();
       const wrapper = EditedConfectionRecipe.create(entity).orThrow();
-      wrapper.setVariationYield('v1' as ConfectionRecipeVariationSpec, { count: 50 });
+      wrapper.setVariationYield('v1' as ConfectionRecipeVariationSpec, {
+        numPieces: 50,
+        weightPerPiece: 15 as Measurement
+      });
       wrapper.undo();
-      expect(wrapper.variations[0].yield.count).toBe(30);
+      expect((wrapper.variations[0] as Confections.IRolledTruffleRecipeVariationEntity).yield.numPieces).toBe(
+        30
+      );
     });
   });
 

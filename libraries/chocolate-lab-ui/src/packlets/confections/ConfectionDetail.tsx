@@ -96,14 +96,19 @@ export interface IConfectionDetailProps {
 function YieldSection({
   yieldSpec
 }: {
-  readonly yieldSpec: Entities.Confections.IConfectionYield;
+  readonly yieldSpec: Entities.Confections.ConfectionYield;
 }): React.ReactElement {
+  if (Entities.Confections.isYieldInFrames(yieldSpec)) {
+    return (
+      <DetailSection title="Yield">
+        <DetailRow label="Frames" value={String(yieldSpec.numFrames)} />
+      </DetailSection>
+    );
+  }
   return (
     <DetailSection title="Yield">
-      <DetailRow label="Count" value={`${yieldSpec.count} ${yieldSpec.unit ?? 'pieces'}`} />
-      {yieldSpec.weightPerPiece !== undefined && (
-        <DetailRow label="Weight per piece" value={`${yieldSpec.weightPerPiece}g`} />
-      )}
+      <DetailRow label="Count" value={`${yieldSpec.numPieces} pieces`} />
+      <DetailRow label="Weight per piece" value={`${yieldSpec.weightPerPiece}g`} />
     </DetailSection>
   );
 }
@@ -389,10 +394,10 @@ function AdditionalChocolatesSection({
 
 function DimensionsSection({
   frameDimensions,
-  bonBonDimensions
+  pieceDimensions
 }: {
-  readonly frameDimensions: Entities.Confections.IFrameDimensions;
-  readonly bonBonDimensions: Entities.Confections.IBonBonDimensions;
+  readonly frameDimensions: Entities.Confections.IPieceDimensions;
+  readonly pieceDimensions: Entities.Confections.IPieceDimensions;
 }): React.ReactElement {
   return (
     <DetailSection title="Dimensions">
@@ -400,7 +405,7 @@ function DimensionsSection({
         label="Frame"
         value={`${frameDimensions.width} × ${frameDimensions.height} × ${frameDimensions.depth}mm`}
       />
-      <DetailRow label="BonBon" value={`${bonBonDimensions.width} × ${bonBonDimensions.height}mm`} />
+      <DetailRow label="Piece" value={`${pieceDimensions.width} × ${pieceDimensions.height}mm`} />
     </DetailSection>
   );
 }
@@ -422,7 +427,7 @@ function ScalingSection({
 
   if (variation.isMoldedBonBonVariation()) {
     const frames = viewSettings?.targetFrames;
-    const buffer = viewSettings?.bufferPercentage ?? 0.1;
+    const buffer = viewSettings?.bufferPercentage ?? 10;
     const cavityCount = variation.preferredMold?.mold.cavityCount;
     const effectiveCount =
       frames !== undefined && cavityCount !== undefined ? frames * cavityCount : undefined;
@@ -448,10 +453,10 @@ function ScalingSection({
             min={0}
             max={100}
             step={5}
-            value={Math.round(buffer * 100)}
+            value={Math.round(buffer)}
             onChange={(e): void => {
               const v = parseInt(e.target.value, 10);
-              onSettingChange({ bufferPercentage: isNaN(v) ? 0.1 : v / 100 });
+              onSettingChange({ bufferPercentage: isNaN(v) ? 10 : v });
             }}
             className="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
           />
@@ -577,7 +582,7 @@ function BarTruffleContent({
     <>
       <DimensionsSection
         frameDimensions={variation.frameDimensions}
-        bonBonDimensions={variation.singleBonBonDimensions}
+        pieceDimensions={variation.yield.dimensions}
       />
       {variation.enrobingChocolate && (
         <ChocolateSpecSection

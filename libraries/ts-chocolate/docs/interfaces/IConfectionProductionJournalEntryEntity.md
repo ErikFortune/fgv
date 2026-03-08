@@ -53,7 +53,7 @@ Entry type discriminator
 
 </td><td>
 
-[IConfectionYield](IConfectionYield.md)
+[BufferedConfectionYield](../type-aliases/BufferedConfectionYield.md)
 
 </td><td>
 

@@ -440,7 +440,9 @@ export function ConfectionSessionPanel({
         </div>
 
         {/* Yield — compact inline */}
-        <YieldSection session={session} notifySession={notifySession} autosaveIfNeeded={autosaveIfNeeded} />
+        <div data-testid="yield-section">
+          <YieldSection session={session} notifySession={notifySession} autosaveIfNeeded={autosaveIfNeeded} />
+        </div>
 
         {/* Type-specific ingredient properties (no heading) */}
         <TypeSpecificSection
@@ -456,13 +458,14 @@ export function ConfectionSessionPanel({
         />
 
         {/* Fillings */}
-        <div>
+        <div data-testid="fillings-section">
           <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Fillings</div>
           {!editingFillings ? (
             <div className="py-0.5">
               <div className="flex items-center gap-1">
                 <button
                   type="button"
+                  data-testid="edit-fillings-toggle"
                   onClick={(): void => setEditingFillings(true)}
                   title="Edit fillings"
                   className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
@@ -470,7 +473,9 @@ export function ConfectionSessionPanel({
                   <ArrowPathIcon className="h-3 w-3" />
                 </button>
                 {fillingSlots.length === 0 ? (
-                  <span className="text-sm text-gray-400 italic">None</span>
+                  <span data-testid="fillings-empty" className="text-sm text-gray-400 italic">
+                    None
+                  </span>
                 ) : (
                   <div className="space-y-0.5">
                     {fillingSlots.map((slot) => (
@@ -531,7 +536,7 @@ export function ConfectionSessionPanel({
                   ))}
                 </div>
               )}
-              <div className="mt-1">
+              <div className="mt-1" data-testid="add-filling">
                 <TypeaheadInput<FillingId>
                   value={newFillingText}
                   onChange={setNewFillingText}
@@ -705,7 +710,9 @@ function CountYieldEditor({
   autosaveIfNeeded
 }: {
   readonly session: UserLibrary.Session.AnyConfectionEditingSession;
-  readonly currentYield: Entities.Confections.IConfectionYield;
+  readonly currentYield:
+    | Entities.Confections.IBufferedYieldInPieces
+    | Entities.Confections.IBufferedBarTruffleYield;
   readonly notifySession: () => void;
   readonly autosaveIfNeeded: () => void;
 }): React.ReactElement {
@@ -720,7 +727,10 @@ function CountYieldEditor({
       return;
     }
 
-    const result = session.scaleToYield({ count: parsed, unit: 'pieces' });
+    const result = session.scaleToYield({
+      ...currentYield,
+      count: parsed
+    } as Entities.Confections.BufferedConfectionYield);
     if (result.isFailure()) {
       setError(result.message);
       return;
@@ -730,7 +740,7 @@ function CountYieldEditor({
     setEditing(false);
     notifySession();
     autosaveIfNeeded();
-  }, [countInput, session, notifySession, autosaveIfNeeded]);
+  }, [countInput, currentYield, session, notifySession, autosaveIfNeeded]);
 
   return (
     <div>
@@ -748,9 +758,7 @@ function CountYieldEditor({
           >
             <ArrowPathIcon className="h-3 w-3" />
           </button>
-          <span className="text-sm text-gray-700">
-            {currentYield.count} {currentYield.unit ?? 'pieces'}
-          </span>
+          <span className="text-sm text-gray-700">{currentYield.count} pieces</span>
         </div>
       ) : (
         <div className="flex items-center gap-2">
@@ -772,7 +780,7 @@ function CountYieldEditor({
             autoFocus
             className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
           />
-          <span className="text-sm text-gray-700">{currentYield.unit ?? 'pieces'}</span>
+          <span className="text-sm text-gray-700">pieces</span>
         </div>
       )}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
@@ -791,15 +799,13 @@ function MoldedBonBonYieldEditor({
   autosaveIfNeeded
 }: {
   readonly session: UserLibrary.Session.MoldedBonBonEditingSession;
-  readonly currentYield: Entities.Confections.IMoldedBonBonYield;
+  readonly currentYield: Entities.Confections.IBufferedYieldInFrames;
   readonly notifySession: () => void;
   readonly autosaveIfNeeded: () => void;
 }): React.ReactElement {
   const [editing, setEditing] = useState(false);
-  const [framesInput, setFramesInput] = useState<string>(String(currentYield.frames));
-  const [bufferInput, setBufferInput] = useState<string>(
-    String(Math.round((currentYield.bufferPercentage ?? 0) * 100))
-  );
+  const [framesInput, setFramesInput] = useState<string>(String(currentYield.numFrames));
+  const [bufferInput, setBufferInput] = useState<string>(String(Math.round(currentYield.bufferPercentage)));
   const [error, setError] = useState<string | undefined>(undefined);
 
   const applyValues = useCallback((): boolean => {
@@ -814,7 +820,10 @@ function MoldedBonBonYieldEditor({
       return false;
     }
 
-    const result = session.setFrames(frames, bufferPercent / 100);
+    const result = session.scaleToYield({
+      numFrames: frames,
+      bufferPercentage: bufferPercent
+    } as Entities.Confections.BufferedConfectionYield);
     if (result.isFailure()) {
       setError(result.message);
       return false;
@@ -840,8 +849,8 @@ function MoldedBonBonYieldEditor({
           <button
             type="button"
             onClick={(): void => {
-              setFramesInput(String(currentYield.frames));
-              setBufferInput(String(Math.round((currentYield.bufferPercentage ?? 0) * 100)));
+              setFramesInput(String(currentYield.numFrames));
+              setBufferInput(String(Math.round(currentYield.bufferPercentage)));
               setEditing(true);
             }}
             title="Edit yield"
@@ -850,10 +859,7 @@ function MoldedBonBonYieldEditor({
             <ArrowPathIcon className="h-3 w-3" />
           </button>
           <span className="text-sm text-gray-700">
-            {currentYield.frames} frames · {Math.round((currentYield.bufferPercentage ?? 0) * 100)}% buffer
-            <span className="text-gray-400 ml-1">
-              = {currentYield.count} {currentYield.unit ?? 'pieces'}
-            </span>
+            {currentYield.numFrames} frames · {Math.round(currentYield.bufferPercentage)}% buffer
           </span>
         </div>
       ) : (
@@ -886,9 +892,6 @@ function MoldedBonBonYieldEditor({
             className="w-14 rounded border border-gray-300 px-2 py-1 text-sm"
           />
           <span className="text-xs text-gray-500">% buffer</span>
-          <span className="text-xs text-gray-400">
-            = {currentYield.count} {currentYield.unit ?? 'pieces'}
-          </span>
         </div>
       )}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

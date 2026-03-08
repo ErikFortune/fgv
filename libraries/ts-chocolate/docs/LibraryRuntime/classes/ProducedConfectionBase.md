@@ -54,7 +54,7 @@ Gets the variation ID.
 
 </td><td>
 
-[IConfectionYield](../../interfaces/IConfectionYield.md)
+[BufferedConfectionYield](../../type-aliases/BufferedConfectionYield.md)
 
 </td><td>
 
@@ -205,19 +205,6 @@ Sets the notes.
 </td><td>
 
 Sets the procedure.
-
-</td></tr>
-<tr><td>
-
-[scaleToYield(yieldSpec)](./ProducedConfectionBase.scaleToYield.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Scales to a new yield specification.
 
 </td></tr>
 <tr><td>

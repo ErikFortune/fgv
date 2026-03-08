@@ -48,6 +48,23 @@ Confection type is always 'molded-bonbon' for this type
 </td></tr>
 <tr><td>
 
+[yield](./MoldedBonBonRecipe.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IYieldInFrames](../interfaces/IYieldInFrames.md)
+
+</td><td>
+
+Narrowed yield from the golden variation (numFrames only; count/weightPerPiece derived from mold).
+
+</td></tr>
+<tr><td>
+
 [fillings](./MoldedBonBonRecipe.fillings.md)
 
 </td><td>
@@ -299,23 +316,6 @@ The ID of the golden (approved default) variation
 </td><td>
 
 Resolved decorations from the golden variation
-
-</td></tr>
-<tr><td>
-
-[yield](./ConfectionBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Yield specification from the golden variation
 
 </td></tr>
 <tr><td>

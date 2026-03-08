@@ -57,6 +57,6 @@ export interface IConfectionViewSettings {
   readonly targetCount?: number;
   /** Target frame count for scaling (molded bonbon) */
   readonly targetFrames?: number;
-  /** Buffer overfill percentage for molded bonbon scaling (default 0.1 = 10%) */
+  /** Buffer overfill percentage for molded bonbon scaling (default 10 = 10%) */
   readonly bufferPercentage?: number;
 }

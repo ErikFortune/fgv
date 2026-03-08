@@ -82,13 +82,12 @@ describe('confectionRenderer', () => {
       expect(result.text).toContain('Tags: bonbon, test');
     });
 
-    test('renders yield with weight per piece', () => {
+    test('renders yield in frames', () => {
       const bonbon = lib.confections.get('test.test-bonbon' as ConfectionId).orThrow();
 
       const result = renderConfectionDetail(bonbon);
 
-      expect(result.text).toContain('Yield: 24 pieces');
-      expect(result.text).toContain('Weight per piece: 12g');
+      expect(result.text).toContain('Yield: 1 frames');
     });
 
     test('renders molds with preferred and notes', () => {
@@ -220,7 +219,7 @@ describe('confectionRenderer', () => {
       const result = renderConfectionDetail(barTruffle);
 
       expect(result.text).toContain('Frame Dimensions:');
-      expect(result.text).toContain('250 x 20 x 300 mm');
+      expect(result.text).toContain('150 x 100 x 8 mm');
     });
 
     test('renders bonbon dimensions', () => {
@@ -229,7 +228,7 @@ describe('confectionRenderer', () => {
       const result = renderConfectionDetail(barTruffle);
 
       expect(result.text).toContain('BonBon Dimensions:');
-      expect(result.text).toContain('25 x 20 mm');
+      expect(result.text).toContain('25 x 20 x 8 mm');
     });
 
     test('renders enrobing chocolate', () => {
@@ -302,7 +301,7 @@ describe('confectionRenderer', () => {
 
       const result = renderConfectionDetail(rolledTruffle);
 
-      expect(result.text).toContain('Yield: 20 truffles');
+      expect(result.text).toContain('Yield: 20 pieces');
     });
   });
 });

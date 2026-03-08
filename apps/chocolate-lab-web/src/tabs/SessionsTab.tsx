@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { EntityList, type ICascadeColumn, EntityTabLayout } from '@fgv/ts-app-shell';
+import { EntityList, type ICascadeColumn, EntityTabLayout, useMessages } from '@fgv/ts-app-shell';
 import {
   AiAssist,
   Entities,
@@ -59,6 +59,7 @@ export function SessionsTabContent(): React.ReactElement {
   } = useTabNavigation();
 
   const sessionActions = useSessionActions();
+  const { addMessage } = useMessages();
 
   const mutableCollectionId = useMutableCollection(
     workspace.userData.entities.sessions.collections,
@@ -155,10 +156,13 @@ export function SessionsTabContent(): React.ReactElement {
         const result = await sessionActions.createConfectionSession(selection.confectionId as ConfectionId, {
           collectionId: sessionActions.defaultCollectionId,
           label,
-          slug
+          slug,
+          params: undefined
         });
         if (result.isSuccess()) {
           squashCascade([{ entityType: 'session', entityId: result.value, mode: 'view' }]);
+        } else {
+          addMessage('error', `Failed to create session: ${result.message}`);
         }
       } else {
         const variationId = Helpers.createFillingRecipeVariationId(
@@ -172,10 +176,12 @@ export function SessionsTabContent(): React.ReactElement {
         });
         if (result.isSuccess()) {
           squashCascade([{ entityType: 'session', entityId: result.value, mode: 'view' }]);
+        } else {
+          addMessage('error', `Failed to create session: ${result.message}`);
         }
       }
     },
-    [sessionActions, workspace, squashCascade]
+    [sessionActions, addMessage, workspace, squashCascade]
   );
 
   const handleOpenFillingRecipeFromSession = useCallback(

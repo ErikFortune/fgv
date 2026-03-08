@@ -172,7 +172,7 @@ describe('journalRenderer', () => {
       expect(result.actions[0].label).toBe('View confection: Truffle Collection');
     });
 
-    test('renders confection-production entry with custom unit', () => {
+    test('renders confection-production entry with piece-based yield', () => {
       const entry = {
         id: 'journal-004' as JournalId,
         baseId: 'base-004' as BaseJournalId,
@@ -184,7 +184,7 @@ describe('journalRenderer', () => {
         },
         entity: {
           type: 'confection-production',
-          yield: { count: 24, unit: 'bars' }
+          yield: { count: 24 }
         }
       } as unknown as UserLib.AnyJournalEntry;
 
@@ -192,7 +192,7 @@ describe('journalRenderer', () => {
 
       expect(result.text).toContain('Journal Entry: Bar Recipe');
       expect(result.text).toContain('Type: confection-production');
-      expect(result.text).toContain('Yield: 24 bars');
+      expect(result.text).toContain('Yield: 24 pieces');
 
       expect(result.actions).toHaveLength(1);
       expect(result.actions[0].key).toBe('view-confection:recipe-bar');

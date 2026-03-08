@@ -406,7 +406,7 @@ export const DEFAULT_SCALING: IScalingDefaults = {
   weightUnit: 'g',
   measurementUnit: 'g',
   batchMultiplier: 1.0,
-  bufferPercentage: 0.1
+  bufferPercentage: 10
 };
 
 /**

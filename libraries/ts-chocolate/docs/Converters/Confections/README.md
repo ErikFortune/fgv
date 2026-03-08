@@ -18,20 +18,29 @@ Description
 <tbody>
 <tr><td>
 
-[confectionYield](./variables/confectionYield.md)
+[yieldInFrames](./variables/yieldInFrames.md)
 
 </td><td>
 
-`Converter` for Entities.Confections.IConfectionYield | IConfectionYield.
+`Converter` for Entities.Confections.IYieldInFrames | IYieldInFrames.
 
 </td></tr>
 <tr><td>
 
-[moldedBonBonYield](./variables/moldedBonBonYield.md)
+[yieldInPieces](./variables/yieldInPieces.md)
 
 </td><td>
 
-`Converter` for Entities.Confections.IMoldedBonBonYield | IMoldedBonBonYield.
+`Converter` for Entities.Confections.IYieldInPieces | IYieldInPieces.
+
+</td></tr>
+<tr><td>
+
+[barTruffleYield](./variables/barTruffleYield.md)
+
+</td><td>
+
+`Converter` for Entities.Confections.IBarTruffleYield | IBarTruffleYield.
 
 </td></tr>
 <tr><td>
@@ -40,7 +49,43 @@ Description
 
 </td><td>
 
-`Converter` for Entities.Confections.AnyConfectionYield | AnyConfectionYield.
+`Converter` for Entities.Confections.ConfectionYield | ConfectionYield (union).
+
+</td></tr>
+<tr><td>
+
+[bufferedYieldInFrames](./variables/bufferedYieldInFrames.md)
+
+</td><td>
+
+`Converter` for Entities.Confections.IBufferedYieldInFrames | IBufferedYieldInFrames.
+
+</td></tr>
+<tr><td>
+
+[bufferedYieldInPieces](./variables/bufferedYieldInPieces.md)
+
+</td><td>
+
+`Converter` for Entities.Confections.IBufferedYieldInPieces | IBufferedYieldInPieces.
+
+</td></tr>
+<tr><td>
+
+[bufferedBarTruffleYield](./variables/bufferedBarTruffleYield.md)
+
+</td><td>
+
+`Converter` for Entities.Confections.IBufferedBarTruffleYield | IBufferedBarTruffleYield.
+
+</td></tr>
+<tr><td>
+
+[anyBufferedConfectionYield](./variables/anyBufferedConfectionYield.md)
+
+</td><td>
+
+`Converter` for Entities.Confections.BufferedConfectionYield | BufferedConfectionYield (union).
 
 </td></tr>
 <tr><td>
@@ -131,24 +176,6 @@ Converter for Entities.Confections.IConfectionMoldRef | IConfectionMoldRef.
 </td><td>
 
 Converter for confection molds with preferred selection.
-
-</td></tr>
-<tr><td>
-
-[frameDimensions](./variables/frameDimensions.md)
-
-</td><td>
-
-Converter for Entities.Confections.IFrameDimensions | IFrameDimensions.
-
-</td></tr>
-<tr><td>
-
-[bonBonDimensions](./variables/bonBonDimensions.md)
-
-</td><td>
-
-Converter for Entities.Confections.IBonBonDimensions | IBonBonDimensions.
 
 </td></tr>
 <tr><td>

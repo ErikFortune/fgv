@@ -245,8 +245,8 @@ export abstract class ConfectionEditingSessionBase<
    * @public
    */
   public abstract scaleToYield(
-    yieldSpec: Confections.AnyConfectionYield
-  ): Result<Confections.IConfectionYield>;
+    yieldSpec: Confections.BufferedConfectionYield
+  ): Result<Confections.BufferedConfectionYield>;
 
   // ============================================================================
   // Common Editing Methods

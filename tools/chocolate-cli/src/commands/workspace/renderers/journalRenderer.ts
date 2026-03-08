@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { UserLibrary as UserLib } from '@fgv/ts-chocolate';
+import { Entities, UserLibrary as UserLib } from '@fgv/ts-chocolate';
 
 import { formatCategorizedNotes } from '../../shared/outputFormatter';
 import { IEntityAction, IRenderResult } from './rendererTypes';
@@ -56,8 +56,11 @@ export function renderJournalDetail(entry: UserLib.AnyJournalEntry): IRenderResu
     lines.push(`Yield: ${entry.entity.yield}g`);
   } else if (entry.entity.type === 'confection-production') {
     const yieldInfo = entry.entity.yield;
-    const unitStr = yieldInfo.unit ?? 'pieces';
-    lines.push(`Yield: ${yieldInfo.count} ${unitStr}`);
+    if (Entities.Confections.isBufferedYieldInFrames(yieldInfo)) {
+      lines.push(`Yield: ${yieldInfo.numFrames} frames`);
+    } else {
+      lines.push(`Yield: ${yieldInfo.count} pieces`);
+    }
   }
 
   // Updated variation

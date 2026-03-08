@@ -30,6 +30,23 @@ Description
 <tbody>
 <tr><td>
 
+[yield](./BarTruffleRecipeVariation.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IBarTruffleYield](../interfaces/IBarTruffleYield.md)
+
+</td><td>
+
+Narrowed yield getter returning bar truffle specific yield data.
+
+</td></tr>
+<tr><td>
+
 [frameDimensions](./BarTruffleRecipeVariation.frameDimensions.md)
 
 </td><td>
@@ -38,28 +55,11 @@ Description
 
 </td><td>
 
-[IFrameDimensions](../interfaces/IFrameDimensions.md)
+[IPieceDimensions](../interfaces/IPieceDimensions.md)
 
 </td><td>
 
-Frame dimensions for ganache slab.
-
-</td></tr>
-<tr><td>
-
-[singleBonBonDimensions](./BarTruffleRecipeVariation.singleBonBonDimensions.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IBonBonDimensions](../interfaces/IBonBonDimensions.md)
-
-</td><td>
-
-Single bonbon dimensions for cutting.
+Computed frame dimensions derived from piece count and bonbon dimensions.
 
 </td></tr>
 <tr><td>
@@ -213,23 +213,6 @@ IConfectionContext
 </td><td>
 
 The runtime context for navigation and resource resolution.
-
-</td></tr>
-<tr><td>
-
-[yield](./ConfectionRecipeVariationBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Yield specification for this variation.
 
 </td></tr>
 <tr><td>

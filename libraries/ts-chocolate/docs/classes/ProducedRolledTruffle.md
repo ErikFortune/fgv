@@ -29,6 +29,40 @@ Description
 <tbody>
 <tr><td>
 
+[yield](./ProducedRolledTruffle.yield.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IBufferedYieldInPieces](../interfaces/IBufferedYieldInPieces.md)
+
+</td><td>
+
+Gets the rolled truffle yield specification.
+
+</td></tr>
+<tr><td>
+
+[targetWeight](./ProducedRolledTruffle.targetWeight.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[Measurement](../type-aliases/Measurement.md)
+
+</td><td>
+
+Computed target weight: count × weightPerPiece × (1 + bufferPercentage / 100).
+
+</td></tr>
+<tr><td>
+
 [enrobingChocolateId](./ProducedRolledTruffle.enrobingChocolateId.md)
 
 </td><td>
@@ -76,23 +110,6 @@ Gets the coating ID.
 </td><td>
 
 Gets the variation ID.
-
-</td></tr>
-<tr><td>
-
-[yield](./ProducedConfectionBase.yield.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IConfectionYield](../interfaces/IConfectionYield.md)
-
-</td><td>
-
-Gets the yield specification.
 
 </td></tr>
 <tr><td>
@@ -256,6 +273,19 @@ Restores a ProducedRolledTruffle from serialized editing history.
 </td></tr>
 <tr><td>
 
+[scaleToYield(yieldSpec)](./ProducedRolledTruffle.scaleToYield.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Scales to a new rolled truffle yield specification.
+
+</td></tr>
+<tr><td>
+
 [setEnrobingChocolate(chocolateId)](./ProducedRolledTruffle.setEnrobingChocolate.md)
 
 </td><td>
@@ -317,19 +347,6 @@ Sets the notes.
 </td><td>
 
 Sets the procedure.
-
-</td></tr>
-<tr><td>
-
-[scaleToYield(yieldSpec)](./ProducedConfectionBase.scaleToYield.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Scales to a new yield specification.
 
 </td></tr>
 <tr><td>

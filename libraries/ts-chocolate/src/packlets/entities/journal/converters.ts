@@ -27,12 +27,17 @@ import { Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../../common';
 import {
+  anyBufferedConfectionYield,
   barTruffleVariationFields,
-  confectionYield as confectionYieldConverter,
-  moldedBonBonYield as moldedBonBonYieldConverter,
+  barTruffleYield,
+  bufferedBarTruffleYield,
+  bufferedYieldInFrames as moldedBonBonYieldConverter,
+  bufferedYieldInPieces,
   commonVariationFields,
   moldedBonBonVariationFields,
-  rolledTruffleVariationFields
+  rolledTruffleVariationFields,
+  yieldInFrames,
+  yieldInPieces
 } from '../confections/converters';
 import {
   AnyProducedConfectionEntity,
@@ -121,6 +126,7 @@ export const anyResolvedFillingSlotEntity: Converter<AnyResolvedFillingSlotEntit
 export const moldedBonBonJournalVariation: Converter<IMoldedBonBonJournalVariation> =
   Converters.strictObject<IMoldedBonBonJournalVariation>({
     ...commonVariationFields,
+    yield: yieldInFrames,
     ...moldedBonBonVariationFields,
     variationType: Converters.literal('molded-bonbon')
   });
@@ -132,6 +138,7 @@ export const moldedBonBonJournalVariation: Converter<IMoldedBonBonJournalVariati
 export const barTruffleJournalVariation: Converter<IBarTruffleJournalVariation> =
   Converters.strictObject<IBarTruffleJournalVariation>({
     ...commonVariationFields,
+    yield: barTruffleYield,
     ...barTruffleVariationFields,
     variationType: Converters.literal('bar-truffle')
   });
@@ -143,6 +150,7 @@ export const barTruffleJournalVariation: Converter<IBarTruffleJournalVariation> 
 export const rolledTruffleJournalVariation: Converter<IRolledTruffleJournalVariation> =
   Converters.strictObject<IRolledTruffleJournalVariation>({
     ...commonVariationFields,
+    yield: yieldInPieces,
     ...rolledTruffleVariationFields,
     variationType: Converters.literal('rolled-truffle')
   });
@@ -221,7 +229,7 @@ export const producedBarTruffleEntity: Converter<IProducedBarTruffleEntity> =
   Converters.strictObject<IProducedBarTruffleEntity>({
     confectionType: Converters.literal('bar-truffle'),
     variationId: CommonConverters.confectionRecipeVariationId,
-    yield: confectionYieldConverter,
+    yield: bufferedBarTruffleYield,
     fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
@@ -236,7 +244,7 @@ export const producedRolledTruffleEntity: Converter<IProducedRolledTruffleEntity
   Converters.strictObject<IProducedRolledTruffleEntity>({
     confectionType: Converters.literal('rolled-truffle'),
     variationId: CommonConverters.confectionRecipeVariationId,
-    yield: confectionYieldConverter,
+    yield: bufferedYieldInPieces,
     fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
@@ -327,7 +335,7 @@ export const confectionProductionJournalEntryEntity: Converter<IConfectionProduc
     updated: anyJournalConfectionVariation.optional(),
     updatedId: CommonConverters.confectionRecipeVariationId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
-    yield: confectionYieldConverter,
+    yield: anyBufferedConfectionYield,
     produced: anyProducedConfectionEntity
   });
 

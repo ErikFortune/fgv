@@ -122,7 +122,7 @@ describe('RolledTruffleEditingSession', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+        yield: { numPieces: 40, weightPerPiece: 15 as Measurement },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -270,7 +270,13 @@ describe('RolledTruffleEditingSession', () => {
       if (!confection.isRolledTruffle()) throw new Error('Expected rolled truffle');
       expect(Session.RolledTruffleEditingSession.create(confection, sessionContext)).toSucceedAndSatisfy(
         (session) => {
-          expect(session.scaleToYield({ count: 80, unit: 'pieces' })).toSucceed();
+          expect(
+            session.scaleToYield({
+              count: 80,
+              weightPerPiece: 15 as Measurement,
+              bufferPercentage: 10 as Percentage
+            })
+          ).toSucceed();
           expect(session.produced.yield.count).toBe(80);
         }
       );
@@ -282,7 +288,7 @@ describe('RolledTruffleEditingSession', () => {
 
       expect(
         Session.RolledTruffleEditingSession.create(confection, sessionContext, {
-          initialYield: { count: 80, unit: 'pieces' }
+          initialYield: { count: 80, weightPerPiece: 15 as Measurement, bufferPercentage: 10 as Percentage }
         })
       ).toSucceedAndSatisfy((session) => {
         expect(session.produced.yield.count).toBe(80);
@@ -304,7 +310,13 @@ describe('RolledTruffleEditingSession', () => {
       expect(initialFilling).toBeDefined();
       const initialWeight = initialFilling!.produced.targetWeight;
 
-      expect(session.scaleToYield({ count: 80, unit: 'pieces' })).toSucceed();
+      expect(
+        session.scaleToYield({
+          count: 80,
+          weightPerPiece: 15 as Measurement,
+          bufferPercentage: 10 as Percentage
+        })
+      ).toSucceed();
 
       expect(session.produced.yield.count).toBe(80);
 
@@ -319,7 +331,13 @@ describe('RolledTruffleEditingSession', () => {
       if (!confection.isRolledTruffle()) throw new Error('Expected rolled truffle');
       const session = Session.RolledTruffleEditingSession.create(confection, sessionContext).orThrow();
 
-      expect(session.scaleToYield({ count: 40, unit: 'pieces' })).toSucceed();
+      expect(
+        session.scaleToYield({
+          count: 40,
+          weightPerPiece: 15 as Measurement,
+          bufferPercentage: 10 as Percentage
+        })
+      ).toSucceed();
       expect(session.produced.yield.count).toBe(40);
     });
   });
@@ -375,7 +393,9 @@ describe('RolledTruffleEditingSession', () => {
       const session = Session.RolledTruffleEditingSession.create(confection, sessionContext).orThrow();
 
       // Scale to a different yield
-      session.scaleToYield({ count: 96, unit: 'pieces' }).orThrow();
+      session
+        .scaleToYield({ count: 96, weightPerPiece: 15 as Measurement, bufferPercentage: 10 as Percentage })
+        .orThrow();
 
       // Persist
       const persisted = session.toPersistedState({ collectionId: 'test' as CollectionId }).orThrow();

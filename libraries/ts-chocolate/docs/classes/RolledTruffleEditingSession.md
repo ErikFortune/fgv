@@ -29,6 +29,23 @@ Description
 <tbody>
 <tr><td>
 
+[produced](./RolledTruffleEditingSession.produced.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ProducedRolledTruffle](ProducedRolledTruffle.md)
+
+</td><td>
+
+Narrows the produced getter to return the rolled-truffle-specific wrapper.
+
+</td></tr>
+<tr><td>
+
 [fillingSessions](./ConfectionEditingSessionBase.fillingSessions.md)
 
 </td><td>
@@ -93,23 +110,6 @@ Gets the runtime context.
 </td><td>
 
 Gets the session ID.
-
-</td></tr>
-<tr><td>
-
-[produced](./ConfectionEditingSessionBase.produced.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[ProducedConfectionBase](ProducedConfectionBase.md)&lt;T&gt;
-
-</td><td>
-
-Gets the produced confection wrapper.
 
 </td></tr>
 <tr><td>

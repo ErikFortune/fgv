@@ -32,6 +32,7 @@ import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { MessageAggregator } from '@fgv/ts-utils';
 
 import { Measurement, MoldId, SlotId } from '../../common';
+import { Confections } from '../../entities';
 import {
   AnyConfectionRecipeVariation,
   IIngredient,
@@ -56,7 +57,7 @@ import { ProducedFilling } from '../produced';
 export interface IConfectionScalingTarget {
   /** Target frames for molded bonbon (primary input) */
   readonly targetFrames?: number;
-  /** Buffer overfill percentage for molded bonbon (default 0.1 = 10%) */
+  /** Buffer overfill percentage for molded bonbon (default 10 = 10%) */
   readonly bufferPercentage?: number;
   /** Override the mold to use (falls back to variation's preferred mold) */
   readonly selectedMoldId?: MoldId;
@@ -196,7 +197,7 @@ function _scaleMoldedBonBon(
     return fail('targetFrames must be a positive number for molded bonbon scaling');
   }
 
-  const bufferPercentage = target.bufferPercentage ?? 0.1;
+  const bufferPercentage = target.bufferPercentage ?? 10;
 
   // Resolve mold: use selectedMoldId if provided, else preferred
   const selectedMoldId = target.selectedMoldId;
@@ -215,14 +216,17 @@ function _scaleMoldedBonBon(
   }
 
   const effectiveCount = frames * mold.cavityCount;
-  const totalWeight = (frames * mold.cavityCount * cavityWeight * (1 + bufferPercentage)) as Measurement;
+  const totalWeight = (frames *
+    mold.cavityCount *
+    cavityWeight *
+    (1 + bufferPercentage / 100)) as Measurement;
 
   /* c8 ignore next 2 - defensive: fillings always defined for molded bonbon; slotCount guard prevents div/0 */
   const fillings = variation.fillings ?? [];
   const slotCount = fillings.length || 1;
   const perSlotWeight = (totalWeight / slotCount) as Measurement;
 
-  const recipeScaleFactor = effectiveCount / variation.yield.count;
+  const recipeScaleFactor = effectiveCount / (variation.yield.numFrames * mold.cavityCount);
 
   const errors = new MessageAggregator();
   const slotResults = fillings.map((slot) => {
@@ -259,13 +263,18 @@ function _scaleLinear(
     return fail('targetCount must be a positive number for bar/rolled truffle scaling');
   }
 
-  const recipeCount = variation.yield.count;
+  const yld = variation.yield;
+  /* c8 ignore next 3 - defensive: _scaleLinear is only called for bar/rolled truffle which always have numPieces */
+  if (Confections.isYieldInFrames(yld)) {
+    return fail('Recipe yield must have numPieces for bar/rolled truffle scaling');
+  }
+  const recipeCount = yld.numPieces;
   if (recipeCount <= 0) {
     return fail('Recipe yield count must be positive');
   }
 
   const scaleFactor = targetCount / recipeCount;
-  const weightPerPiece = variation.yield.weightPerPiece;
+  const weightPerPiece = yld.weightPerPiece;
 
   /* c8 ignore next 2 - defensive: fillings always defined; slotCount guard prevents div/0 */
   const fillings = variation.fillings ?? [];

@@ -2,10 +2,10 @@
 
 ## BarTruffleRecipe.frameDimensions property
 
-Frame dimensions for ganache slab (from golden variation).
+Computed frame dimensions derived from piece count and bonbon dimensions (from golden variation).
 
 **Signature:**
 
 ```typescript
-readonly frameDimensions: IFrameDimensions;
+readonly frameDimensions: IPieceDimensions;
 ```

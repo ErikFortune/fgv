@@ -125,7 +125,11 @@ describe('ConfectionEditingSessionBase', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        yield: {
+          numPieces: 48,
+          weightPerPiece: 10 as Measurement,
+          dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+        },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -136,12 +140,6 @@ describe('ConfectionEditingSessionBase', () => {
             }
           }
         ],
-        frameDimensions: {
-          width: 300 as Millimeters,
-          height: 200 as Millimeters,
-          depth: 8 as Millimeters
-        },
-        singleBonBonDimensions: { width: 25 as Millimeters, height: 25 as Millimeters },
         enrobingChocolate: {
           ids: ['test.dark-chocolate' as IngredientId],
           preferredId: 'test.dark-chocolate' as IngredientId

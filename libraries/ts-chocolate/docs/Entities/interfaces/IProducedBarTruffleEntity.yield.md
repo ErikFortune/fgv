@@ -2,10 +2,10 @@
 
 ## IProducedBarTruffleEntity.yield property
 
-Count-based yield specification
+Yield with piece dimensions; targetWeight and frameDimensions derived at runtime
 
 **Signature:**
 
 ```typescript
-readonly yield: IConfectionYield;
+readonly yield: IBufferedBarTruffleYield;
 ```

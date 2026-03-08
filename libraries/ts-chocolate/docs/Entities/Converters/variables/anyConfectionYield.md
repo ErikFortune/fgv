@@ -2,9 +2,9 @@
 
 # Variable: anyConfectionYield
 
-`Converter` for Entities.Confections.AnyConfectionYield | AnyConfectionYield.
-Handles both regular and frame-based yield specifications.
+`Converter` for Entities.Confections.ConfectionYield | ConfectionYield (union).
+Used for the base variation entity and when the specific type is not known.
 
 ## Type
 
-`Converter<AnyConfectionYield>`
+`Converter<ConfectionYield>`

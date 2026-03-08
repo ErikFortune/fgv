@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { LibraryRuntime } from '@fgv/ts-chocolate';
+import { Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 
 import { formatCategorizedNotes, formatUrls } from '../../shared/outputFormatter';
 import { IEntityAction, IRenderResult } from './rendererTypes';
@@ -99,8 +99,8 @@ function renderBarTruffleDetails(
   // BonBon Dimensions
   lines.push('');
   lines.push('BonBon Dimensions:');
-  const bd = confection.singleBonBonDimensions;
-  lines.push(`  ${bd.width} x ${bd.height} mm`);
+  const bd = confection.goldenVariation.yield.dimensions;
+  lines.push(`  ${bd.width} x ${bd.height} x ${bd.depth} mm`);
 
   // Enrobing Chocolate
   if (confection.enrobingChocolate) {
@@ -179,8 +179,13 @@ export function renderConfectionDetail(confection: LibraryRuntime.IConfectionBas
 
   // Yield
   lines.push('');
-  lines.push(`Yield: ${confection.yield.count} ${confection.yield.unit ?? 'pieces'}`);
-  if (confection.yield.weightPerPiece !== undefined) {
+  if (Entities.Confections.isYieldInFrames(confection.yield)) {
+    lines.push(`Yield: ${confection.yield.numFrames} frames`);
+  } else if (Entities.Confections.isBarTruffleYield(confection.yield)) {
+    lines.push(`Yield: ${confection.yield.numPieces} pieces`);
+    // Weight per piece omitted for bar truffle — covered by Frame/BonBon Dimensions
+  } else {
+    lines.push(`Yield: ${confection.yield.numPieces} pieces`);
     lines.push(`Weight per piece: ${confection.yield.weightPerPiece}g`);
   }
 

@@ -25,7 +25,7 @@
 
 import { Result, Success, fail, succeed } from '@fgv/ts-utils';
 
-import { ConfectionId, Helpers } from '../../../common';
+import { ConfectionId, Helpers, Millimeters } from '../../../common';
 import { Confections } from '../../../entities';
 import {
   IConfectionContext,
@@ -77,17 +77,25 @@ export class BarTruffleRecipeVariation
   }
 
   /**
-   * Frame dimensions for ganache slab.
+   * Narrowed yield getter returning bar truffle specific yield data.
    */
-  public get frameDimensions(): Confections.IFrameDimensions {
-    return this._entity.frameDimensions;
+  public override get yield(): Confections.IBarTruffleYield {
+    return this._entity.yield;
   }
 
   /**
-   * Single bonbon dimensions for cutting.
+   * Computed frame dimensions derived from piece count and bonbon dimensions.
+   * Layout: cols = ⌈√count⌉, rows = ⌈count/cols⌉
    */
-  public get singleBonBonDimensions(): Confections.IBonBonDimensions {
-    return this._entity.singleBonBonDimensions;
+  public get frameDimensions(): Confections.IPieceDimensions {
+    const { numPieces, dimensions } = this._entity.yield;
+    const cols = Math.ceil(Math.sqrt(numPieces));
+    const rows = Math.ceil(numPieces / cols);
+    return {
+      width: (cols * dimensions.width) as Millimeters,
+      height: (rows * dimensions.height) as Millimeters,
+      depth: dimensions.depth
+    };
   }
 
   /**

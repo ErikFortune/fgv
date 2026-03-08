@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { captureResult, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 
 import { Measurement, SlotId, ZeroMeasurement } from '../../common';
 import { Confections, IConfectionSessionEntity, IProducedRolledTruffleEntity, Session } from '../../entities';
@@ -113,6 +113,14 @@ export class RolledTruffleEditingSession<
     );
   }
 
+  /**
+   * Narrows the produced getter to return the rolled-truffle-specific wrapper.
+   * @public
+   */
+  public override get produced(): ProducedRolledTruffle {
+    return this._produced as ProducedRolledTruffle;
+  }
+
   // ============================================================================
   // Linear Scaling
   // ============================================================================
@@ -126,16 +134,20 @@ export class RolledTruffleEditingSession<
    * @public
    */
   public override scaleToYield(
-    yieldSpec: Confections.AnyConfectionYield
-  ): Result<Confections.IConfectionYield> {
-    const currentYield = this._produced.yield;
+    yieldSpec: Confections.BufferedConfectionYield
+  ): Result<Confections.BufferedConfectionYield> {
+    /* c8 ignore next 3 - defensive: callers should always pass IBufferedYieldInPieces for rolled truffle */
+    if (!Confections.isBufferedYieldInPieces(yieldSpec)) {
+      return fail('Rolled truffle scaling requires a piece-based yield specification');
+    }
+    const currentYield = this.produced.yield;
     const scaleFactor = yieldSpec.count / currentYield.count;
 
-    // Update produced confection yield
-    return this._produced
+    return this.produced
       .scaleToYield(yieldSpec)
-      .onSuccess(() => this._scaleAllFillingsByFactor(scaleFactor))
-      .onSuccess(() => succeed(yieldSpec));
+      .onSuccess((updatedYield: Confections.IBufferedYieldInPieces) =>
+        this._scaleAllFillingsByFactor(scaleFactor).onSuccess(() => succeed(updatedYield))
+      );
   }
 
   // ============================================================================

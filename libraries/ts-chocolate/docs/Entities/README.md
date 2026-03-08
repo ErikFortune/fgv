@@ -307,15 +307,6 @@ Reference to a source confection recipe+variation from which a confection recipe
 </td></tr>
 <tr><td>
 
-[IConfectionYield](./interfaces/IConfectionYield.md)
-
-</td><td>
-
-Yield specification for a Entities.Confections.AnyConfectionEntity | confection.
-
-</td></tr>
-<tr><td>
-
 [IFillingRecipeEntity](./interfaces/IFillingRecipeEntity.md)
 
 </td><td>
@@ -699,6 +690,24 @@ Rolled truffle confection
 </td></tr>
 <tr><td>
 
+[BufferedConfectionYield](./type-aliases/BufferedConfectionYield.md)
+
+</td><td>
+
+Union type for buffered yield specifications.
+
+</td></tr>
+<tr><td>
+
+[ConfectionYield](./type-aliases/ConfectionYield.md)
+
+</td><td>
+
+Union type for yield specifications.
+
+</td></tr>
+<tr><td>
+
 [FillingCategory](./type-aliases/FillingCategory.md)
 
 </td><td>
@@ -855,6 +864,60 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[isYieldInFrames](./functions/isYieldInFrames.md)
+
+</td><td>
+
+Type guard for IYieldInFrames (molded bon-bon variation yield).
+
+</td></tr>
+<tr><td>
+
+[isBarTruffleYield](./functions/isBarTruffleYield.md)
+
+</td><td>
+
+Type guard for IBarTruffleYield (bar truffle variation yield).
+
+</td></tr>
+<tr><td>
+
+[isYieldInPieces](./functions/isYieldInPieces.md)
+
+</td><td>
+
+Type guard for IYieldInPieces (rolled truffle variation yield).
+
+</td></tr>
+<tr><td>
+
+[isBufferedYieldInFrames](./functions/isBufferedYieldInFrames.md)
+
+</td><td>
+
+Type guard for IBufferedYieldInFrames (produced molded bon-bon yield).
+
+</td></tr>
+<tr><td>
+
+[isBufferedBarTruffleYield](./functions/isBufferedBarTruffleYield.md)
+
+</td><td>
+
+Type guard for IBufferedBarTruffleYield (produced bar truffle yield).
+
+</td></tr>
+<tr><td>
+
+[isBufferedYieldInPieces](./functions/isBufferedYieldInPieces.md)
+
+</td><td>
+
+Type guard for IBufferedYieldInPieces (produced rolled truffle yield).
+
+</td></tr>
 <tr><td>
 
 [isTaskRefEntity](./functions/isTaskRefEntity.md)

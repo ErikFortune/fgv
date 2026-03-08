@@ -381,7 +381,7 @@ export interface IConfectionEditingSessionParams {
   /**
    * Initial yield specification (defaults to golden variation yield)
    */
-  readonly initialYield?: Confections.AnyConfectionYield;
+  readonly initialYield?: Confections.BufferedConfectionYield;
 }
 
 // ============================================================================

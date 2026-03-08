@@ -22,7 +22,6 @@ import type {
   ConfectionType,
   IngredientId,
   FillingId,
-  Millimeters,
   MoldId,
   TaskId,
   ProcedureId,
@@ -107,8 +106,7 @@ function createBlankConfectionEntity(
 
   const baseVariation = {
     variationSpec,
-    createdDate: today,
-    yield: { count: 1, unit: 'pieces' as const }
+    createdDate: today
   };
 
   switch (confectionType) {
@@ -119,6 +117,7 @@ function createBlankConfectionEntity(
         variations: [
           {
             ...baseVariation,
+            yield: Entities.Confections.Converters.yieldInFrames.convert({ numFrames: 1 }).orThrow(),
             molds: { options: [] },
             shellChocolate: { ids: [] }
           }
@@ -131,8 +130,13 @@ function createBlankConfectionEntity(
         variations: [
           {
             ...baseVariation,
-            frameDimensions: { width: 0 as Millimeters, height: 0 as Millimeters, depth: 0 as Millimeters },
-            singleBonBonDimensions: { width: 0 as Millimeters, height: 0 as Millimeters }
+            yield: Entities.Confections.Converters.barTruffleYield
+              .convert({
+                numPieces: 48,
+                weightPerPiece: 10,
+                dimensions: { width: 25, height: 25, depth: 16 }
+              })
+              .orThrow()
           }
         ]
       };
@@ -140,7 +144,14 @@ function createBlankConfectionEntity(
       return {
         ...base,
         confectionType: 'rolled-truffle',
-        variations: [baseVariation]
+        variations: [
+          {
+            ...baseVariation,
+            yield: Entities.Confections.Converters.yieldInPieces
+              .convert({ numPieces: 40, weightPerPiece: 15 })
+              .orThrow()
+          }
+        ]
       };
   }
 }
@@ -689,6 +700,7 @@ export function ConfectionsTabContent(): React.ReactElement {
         persistToDisk: false
       });
       if (createResult.isFailure()) {
+        workspace.data.logger.error(`Failed to create confection: ${createResult.message}`);
         return;
       }
 

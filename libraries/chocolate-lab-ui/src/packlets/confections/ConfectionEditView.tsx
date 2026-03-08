@@ -404,7 +404,10 @@ export function ConfectionEditView({
       if (!currentVariation) return;
       const count = parseInt(value, 10);
       if (!isNaN(count) && count > 0) {
-        wrapper.setVariationYield(selectedVariationSpec, { ...currentVariation.yield, count });
+        const yieldSpec = EntitiesNS.Confections.isMoldedBonBonRecipeVariationEntity(currentVariation)
+          ? ({ ...currentVariation.yield, numFrames: count } as Entities.Confections.IYieldInFrames)
+          : ({ ...currentVariation.yield, numPieces: count } as Entities.Confections.IYieldInPieces);
+        wrapper.setVariationYield(selectedVariationSpec, yieldSpec);
         notifyWrapper();
       }
     },
@@ -1129,12 +1132,18 @@ export function ConfectionEditView({
         <>
           {/* Yield */}
           <EditSection title="Yield">
-            <EditField label="Count">
+            <EditField
+              label={EntitiesNS.Confections.isYieldInFrames(currentVariation.yield) ? 'Frames' : 'Count'}
+            >
               <input
                 type="number"
                 min={1}
                 className="text-sm border border-gray-300 rounded px-2 py-1 w-24 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                value={currentVariation.yield.count}
+                value={
+                  EntitiesNS.Confections.isYieldInFrames(currentVariation.yield)
+                    ? currentVariation.yield.numFrames
+                    : currentVariation.yield.numPieces
+                }
                 onChange={(e): void => handleYieldCountChange(e.target.value)}
                 disabled={inputsDisabled}
               />

@@ -189,7 +189,7 @@ export abstract class ConfectionBase<
   /**
    * Yield specification from the golden variation
    */
-  public get yield(): Confections.IConfectionYield {
+  public get yield(): Confections.ConfectionYield {
     return this._goldenVariationEntity.yield;
   }
 

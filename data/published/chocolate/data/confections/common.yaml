@@ -21,9 +21,7 @@ items:
           - category: user
             note: Basic dome bonbon with dark ganache filling
         yield:
-          count: 24
-          unit: pieces
-          weightPerPiece: 12
+          numFrames: 2
         fillings:
           - slotId: center
             filling:
@@ -61,9 +59,7 @@ items:
           - category: user
             note: 'Dual-fill: gianduja base with dark ganache cap'
         yield:
-          count: 24
-          unit: pieces
-          weightPerPiece: 14
+          numFrames: 1
         fillings:
           - slotId: inner
             name: Gianduja Base
@@ -118,9 +114,12 @@ items:
           - category: user
             note: Standard 25mm square bar truffles
         yield:
-          count: 48
-          unit: pieces
+          numPieces: 48
           weightPerPiece: 10
+          dimensions:
+            width: 25
+            height: 25
+            depth: 8
         fillings:
           - slotId: center
             filling:
@@ -128,13 +127,6 @@ items:
                 - type: recipe
                   id: common.dark-ganache-classic
               preferredId: common.dark-ganache-classic
-        frameDimensions:
-          width: 300
-          height: 200
-          depth: 8
-        singleBonBonDimensions:
-          width: 25
-          height: 25
         enrobingChocolate:
           ids:
             - cacao-barry.guayaquil-64
@@ -164,8 +156,7 @@ items:
           - category: user
             note: Traditional rolled truffle with cocoa coating
         yield:
-          count: 40
-          unit: pieces
+          numPieces: 40
           weightPerPiece: 15
         fillings:
           - slotId: center

@@ -9,6 +9,7 @@ import {
   type IngredientId,
   type Measurement,
   type Model,
+  type Percentage,
   type ProcedureId,
   type SessionId,
   type SlotId,
@@ -16,6 +17,7 @@ import {
   Workspace
 } from '@fgv/ts-chocolate';
 import { succeed } from '@fgv/ts-utils';
+import { within } from '@testing-library/react';
 
 import { ReactiveWorkspace, WorkspaceProvider } from '../../../packlets/workspace';
 import { ConfectionSessionPanel } from '../../../packlets/sessions';
@@ -26,14 +28,23 @@ import { ConfectionSessionPanel } from '../../../packlets/sessions';
 
 function createMockProduced(
   overrides?: Partial<{
-    readonly yield: Entities.Confections.IConfectionYield;
+    readonly yield: Entities.Confections.BufferedConfectionYield;
     readonly fillings: ReadonlyArray<Entities.Confections.AnyResolvedFillingSlotEntity>;
     readonly procedureId: ProcedureId | undefined;
     readonly notes: ReadonlyArray<Model.ICategorizedNote> | undefined;
     readonly enrobingChocolateId: IngredientId | undefined;
   }>
 ): UserLibrary.Session.AnyConfectionEditingSession['produced'] {
-  const yieldSpec = overrides?.yield ?? { count: 24, unit: 'pieces' as const };
+  const yieldSpec = overrides?.yield ?? {
+    count: 24,
+    weightPerPiece: 10 as Measurement,
+    bufferPercentage: 10 as Percentage,
+    dimensions: {
+      width: 25 as unknown as Entities.Confections.IPieceDimensions['width'],
+      height: 25 as unknown as Entities.Confections.IPieceDimensions['height'],
+      depth: 10 as unknown as Entities.Confections.IPieceDimensions['depth']
+    }
+  };
   return {
     yield: yieldSpec,
     current: {
@@ -99,7 +110,17 @@ function createMockSession(overrides?: {
     }),
     group: undefined,
     updatedAt: undefined,
-    scaleToYield: () => succeed({ count: 24, unit: 'pieces' as const }),
+    scaleToYield: () =>
+      succeed({
+        count: 24,
+        weightPerPiece: 10 as Measurement,
+        bufferPercentage: 10 as Percentage,
+        dimensions: {
+          width: 25 as unknown as Entities.Confections.IPieceDimensions['width'],
+          height: 25 as unknown as Entities.Confections.IPieceDimensions['height'],
+          depth: 10 as unknown as Entities.Confections.IPieceDimensions['depth']
+        }
+      }),
     setFillingSlot: () => succeed(undefined),
     removeFillingSlot: () => succeed(undefined),
     getFillingSession: () => mockFillingSession
@@ -142,10 +163,9 @@ describe('ConfectionSessionPanel', () => {
   it('renders yield inline with count input for bar-truffle', () => {
     renderPanel(createMockSession());
 
-    expect(screen.getByText('Yield')).toBeInTheDocument();
-    const countInput = screen.getByDisplayValue('24');
-    expect(countInput).toBeInTheDocument();
-    expect(countInput).toHaveAttribute('type', 'number');
+    const yieldSection = screen.getByTestId('yield-section');
+    expect(within(yieldSection).getByText('Yield')).toBeInTheDocument();
+    expect(within(yieldSection).getByText(/24 pieces/)).toBeInTheDocument();
   });
 
   it('renders filling slots as clickable buttons', () => {
@@ -164,17 +184,22 @@ describe('ConfectionSessionPanel', () => {
     expect(handleSelectSlot).toHaveBeenCalledWith('slot.1' as SlotId, 'Ganache');
   });
 
-  it('renders remove button on filling slots', () => {
+  it('renders remove button on filling slots in edit mode', () => {
     renderPanel(createMockSession());
+
+    fireEvent.click(screen.getByTestId('edit-fillings-toggle'));
 
     const removeButton = screen.getByRole('button', { name: /Remove Ganache/i });
     expect(removeButton).toBeInTheDocument();
   });
 
-  it('renders add-filling input', () => {
+  it('renders add-filling input in edit mode', () => {
     renderPanel(createMockSession());
 
-    expect(screen.getByPlaceholderText('Add filling…')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('edit-fillings-toggle'));
+
+    const addFilling = screen.getByTestId('add-filling');
+    expect(within(addFilling).getByPlaceholderText('Add filling…')).toBeInTheDocument();
   });
 
   it('renders procedure section when procedureId is present', () => {
@@ -199,7 +224,7 @@ describe('ConfectionSessionPanel', () => {
     const session = createMockSession({ fillings: [] });
     renderPanel(session);
 
-    expect(screen.getByText('No fillings configured.')).toBeInTheDocument();
+    expect(screen.getByTestId('fillings-empty')).toBeInTheDocument();
   });
 
   it('renders notes editor', () => {

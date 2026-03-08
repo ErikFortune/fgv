@@ -156,7 +156,7 @@ The underlying confection variation entity.
 
 </td><td>
 
-[IConfectionYield](../interfaces/IConfectionYield.md)
+[ConfectionYield](../type-aliases/ConfectionYield.md)
 
 </td><td>
 

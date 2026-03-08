@@ -37,7 +37,7 @@ Description
 
 </td><td>
 
-[IMoldedBonBonYield](../../interfaces/IMoldedBonBonYield.md)
+[IBufferedYieldInFrames](../../interfaces/IBufferedYieldInFrames.md)
 
 </td><td>
 
@@ -290,6 +290,19 @@ Restores a ProducedMoldedBonBon from serialized editing history.
 </td></tr>
 <tr><td>
 
+[setFrames(numFrames, bufferPercentage)](./ProducedMoldedBonBon.setFrames.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets the frame count and buffer percentage for this molded bonbon.
+
+</td></tr>
+<tr><td>
+
 [setMold(moldId)](./ProducedMoldedBonBon.setMold.md)
 
 </td><td>
@@ -377,19 +390,6 @@ Sets the notes.
 </td><td>
 
 Sets the procedure.
-
-</td></tr>
-<tr><td>
-
-[scaleToYield(yieldSpec)](./ProducedConfectionBase.scaleToYield.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Scales to a new yield specification.
 
 </td></tr>
 <tr><td>

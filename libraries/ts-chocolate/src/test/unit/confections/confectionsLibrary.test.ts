@@ -37,7 +37,7 @@ describe('ConfectionsLibrary', () => {
       {
         variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
-        yield: { count: 24 },
+        yield: { numFrames: 1 },
         molds: {
           options: [{ id: 'common.dome-25mm' }]
         },
@@ -57,9 +57,7 @@ describe('ConfectionsLibrary', () => {
       {
         variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
-        yield: { count: 48 },
-        frameDimensions: { width: 300, height: 200, depth: 8 },
-        singleBonBonDimensions: { width: 25, height: 25 }
+        yield: { numPieces: 48, weightPerPiece: 10, dimensions: { width: 25, height: 25, depth: 8 } }
       }
     ]
   };
@@ -73,7 +71,7 @@ describe('ConfectionsLibrary', () => {
       {
         variationSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
-        yield: { count: 40 }
+        yield: { numPieces: 40, weightPerPiece: 15 }
       }
     ]
   };
@@ -266,9 +264,8 @@ describe('ConfectionsLibrary', () => {
       expect(library.get('test.test-bar' as ConfectionId)).toSucceedAndSatisfy((confection) => {
         if (Confections.isBarTruffleEntity(confection)) {
           const variation = confection.variations[0];
-          expect(variation.frameDimensions).toBeDefined();
-          expect(variation.singleBonBonDimensions).toBeDefined();
-          expect(variation.frameDimensions.width).toBe(300);
+          expect(variation.yield.dimensions).toBeDefined();
+          expect(variation.yield.dimensions.width).toBe(25);
         } else {
           fail('Expected bar truffle');
         }
@@ -475,7 +472,11 @@ describe('ConfectionsLibrary.createAsync', () => {
               name: 'External Confection',
               goldenVariationSpec: '2026-01-01-01',
               variations: [
-                { variationSpec: '2026-01-01-01', createdDate: '2026-01-01', yield: { count: 30 } }
+                {
+                  variationSpec: '2026-01-01-01',
+                  createdDate: '2026-01-01',
+                  yield: { numPieces: 30, weightPerPiece: 15 }
+                }
               ]
             }
           }
@@ -509,7 +510,13 @@ describe('ConfectionsLibrary.createAsync', () => {
         confectionType: 'rolled-truffle',
         name: 'Secret Confection',
         goldenVariationSpec: '2026-01-01-01',
-        variations: [{ variationSpec: '2026-01-01-01', createdDate: '2026-01-01', yield: { count: 20 } }]
+        variations: [
+          {
+            variationSpec: '2026-01-01-01',
+            createdDate: '2026-01-01',
+            yield: { numPieces: 20, weightPerPiece: 15 }
+          }
+        ]
       }
     };
 

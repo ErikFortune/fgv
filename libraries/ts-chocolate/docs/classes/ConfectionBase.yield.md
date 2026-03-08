@@ -7,5 +7,5 @@ Yield specification from the golden variation
 **Signature:**
 
 ```typescript
-readonly yield: IConfectionYield;
+readonly yield: ConfectionYield;
 ```

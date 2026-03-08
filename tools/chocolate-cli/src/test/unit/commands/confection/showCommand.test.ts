@@ -32,6 +32,8 @@ import {
   Entities,
   FillingId,
   IngredientId,
+  Measurement,
+  Millimeters,
   MoldId,
   ProcedureId
 } from '@fgv/ts-chocolate';
@@ -48,7 +50,7 @@ function createMoldedBonBonVariation(
   return {
     variationSpec: 'v1' as ConfectionRecipeVariationSpec,
     createdDate: '2026-01-15',
-    yield: { count: 24 },
+    yield: { numFrames: 24 },
     molds: {
       options: [{ id: 'coll.cw1000' as MoldId }],
       preferredId: 'coll.cw1000' as MoldId
@@ -67,9 +69,11 @@ function createBarTruffleVariation(
   return {
     variationSpec: 'v1' as ConfectionRecipeVariationSpec,
     createdDate: '2026-01-15',
-    yield: { count: 30, unit: 'bars', weightPerPiece: 15 },
-    frameDimensions: { width: 300, height: 200, depth: 10 },
-    singleBonBonDimensions: { width: 30, height: 20 },
+    yield: {
+      numPieces: 30,
+      weightPerPiece: 15 as Measurement,
+      dimensions: { width: 30 as Millimeters, height: 20 as Millimeters, depth: 10 as Millimeters }
+    },
     ...overrides
   } as unknown as Entities.Confections.IBarTruffleRecipeVariationEntity;
 }
@@ -80,7 +84,7 @@ function createRolledTruffleVariation(
   return {
     variationSpec: 'v1' as ConfectionRecipeVariationSpec,
     createdDate: '2026-01-15',
-    yield: { count: 40 },
+    yield: { numPieces: 40, weightPerPiece: 10 as Measurement },
     ...overrides
   } as unknown as Entities.Confections.IRolledTruffleRecipeVariationEntity;
 }
@@ -137,14 +141,14 @@ describe('formatConfectionHuman', () => {
     const confection = createConfection('molded-bonbon', variation);
     const output = formatConfectionHuman(confection, 'coll.dark-ganache-bonbon' as ConfectionId);
     expect(output).toContain('Created: 2026-01-15');
-    expect(output).toContain('Yield: 24 pieces');
+    expect(output).toContain('Yield: 24 frames');
   });
 
   test('formats yield with custom unit and weight', () => {
     const variation = createBarTruffleVariation();
     const confection = createConfection('bar-truffle', variation);
     const output = formatConfectionHuman(confection, 'coll.bar-truffle' as ConfectionId);
-    expect(output).toContain('Yield: 30 bars');
+    expect(output).toContain('Yield: 30 pieces');
     expect(output).toContain('Weight per piece: 15g');
   });
 
@@ -187,14 +191,12 @@ describe('formatConfectionHuman', () => {
   });
 
   // Bar truffle specific
-  test('formats bar truffle with frame and bonbon dimensions', () => {
+  test('formats bar truffle with bonbon dimensions', () => {
     const variation = createBarTruffleVariation();
     const confection = createConfection('bar-truffle', variation);
     const output = formatConfectionHuman(confection, 'coll.bar-truffle' as ConfectionId);
-    expect(output).toContain('Frame Dimensions:');
-    expect(output).toContain('300 x 200 x 10 mm');
     expect(output).toContain('BonBon Dimensions:');
-    expect(output).toContain('30 x 20 mm');
+    expect(output).toContain('30 x 20 x 10 mm');
   });
 
   test('formats bar truffle with enrobing chocolate', () => {

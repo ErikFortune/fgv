@@ -40,7 +40,14 @@ export {
   IProducedMoldedBonBonEntity,
   IProducedRolledTruffleEntity,
   IConfectionDerivationEntity,
-  IConfectionYield
+  BufferedConfectionYield,
+  ConfectionYield,
+  isYieldInFrames,
+  isBarTruffleYield,
+  isYieldInPieces,
+  isBufferedYieldInFrames,
+  isBufferedBarTruffleYield,
+  isBufferedYieldInPieces
 } from './confections';
 export {
   FillingsLibrary,

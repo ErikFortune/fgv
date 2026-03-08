@@ -29,7 +29,7 @@ import React, { useMemo } from 'react';
 import { XMarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 
 import type { Entities, IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
-import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
+import { Entities as EntitiesNS, LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import type { IConfectionViewSettings } from './viewSettings';
 import { formatIngredientAmount, formatScaledIngredientAmount } from '../common';
@@ -312,7 +312,7 @@ function BarTruffleSection({
   readonly viewSettings?: IConfectionViewSettings;
 }): React.ReactElement {
   const fd = variation.frameDimensions;
-  const bd = variation.singleBonBonDimensions;
+  const bd = variation.yield.dimensions;
 
   return (
     <>
@@ -465,22 +465,29 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
       {/* Yield */}
       {goldenVariationEntity && (
         <div className="mb-6 flex items-center gap-6 bg-white rounded-lg border border-gray-200 px-4 py-3">
-          <div>
-            <span className="text-xs text-gray-500 uppercase tracking-wide block">Count</span>
-            <span className="text-lg font-semibold text-gray-900">
-              {goldenVariationEntity.yield.count}{' '}
-              <span className="text-sm font-normal text-gray-500">
-                {goldenVariationEntity.yield.unit ?? 'pieces'}
-              </span>
-            </span>
-          </div>
-          {goldenVariationEntity.yield.weightPerPiece !== undefined && (
+          {EntitiesNS.Confections.isYieldInFrames(goldenVariationEntity.yield) ? (
             <div>
-              <span className="text-xs text-gray-500 uppercase tracking-wide block">Weight/piece</span>
+              <span className="text-xs text-gray-500 uppercase tracking-wide block">Frames</span>
               <span className="text-lg font-semibold text-gray-900">
-                {goldenVariationEntity.yield.weightPerPiece}g
+                {goldenVariationEntity.yield.numFrames}
               </span>
             </div>
+          ) : (
+            <>
+              <div>
+                <span className="text-xs text-gray-500 uppercase tracking-wide block">Count</span>
+                <span className="text-lg font-semibold text-gray-900">
+                  {goldenVariationEntity.yield.numPieces}{' '}
+                  <span className="text-sm font-normal text-gray-500">pieces</span>
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-gray-500 uppercase tracking-wide block">Weight/piece</span>
+                <span className="text-lg font-semibold text-gray-900">
+                  {goldenVariationEntity.yield.weightPerPiece}g
+                </span>
+              </div>
+            </>
           )}
         </div>
       )}

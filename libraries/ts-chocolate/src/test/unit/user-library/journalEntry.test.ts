@@ -148,7 +148,7 @@ describe('Journal Entry Classes', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        yield: { numFrames: 1 },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -197,7 +197,7 @@ describe('Journal Entry Classes', () => {
       variationType: 'molded-bonbon' as const,
       variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
       createdDate: '2026-01-01',
-      yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+      yield: { numFrames: 1 },
       fillings: [
         {
           slotId: 'center' as SlotId,
@@ -251,7 +251,7 @@ describe('Journal Entry Classes', () => {
       variationType: 'molded-bonbon' as const,
       variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
       createdDate: '2026-01-01',
-      yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+      yield: { numFrames: 1 },
       fillings: [
         {
           slotId: 'center' as SlotId,
@@ -268,17 +268,13 @@ describe('Journal Entry Classes', () => {
         preferredId: 'test.dark-chocolate' as IngredientId
       }
     },
-    yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+    yield: { numFrames: 1, bufferPercentage: 10 as Percentage },
     produced: {
       confectionType: 'molded-bonbon',
       variationId: 'test.test-molded-bonbon@2026-01-01-01' as ConfectionRecipeVariationId,
       yield: {
-        yieldType: 'frames',
-        frames: 1,
-        bufferPercentage: 0.1,
-        count: 24,
-        unit: 'pieces',
-        weightPerPiece: 10 as Measurement
+        numFrames: 1,
+        bufferPercentage: 10 as Percentage
       },
       moldId: 'test.mold-a' as MoldId,
       shellChocolateId: 'test.dark-chocolate' as IngredientId
@@ -659,7 +655,9 @@ describe('Journal Entry Classes', () => {
         ConfectionProductionJournalEntry.create(sessionContext, id, confectionProductionEntity)
       ).toSucceedAndSatisfy((entry) => {
         expect(entry.entity.yield).toBeDefined();
-        expect(entry.entity.yield.count).toBe(24);
+        if (Confections.isBufferedYieldInFrames(entry.entity.yield)) {
+          expect(entry.entity.yield.numFrames).toBe(1);
+        }
         expect(entry.entity.produced).toBeDefined();
         expect(entry.entity.produced.confectionType).toBe('molded-bonbon');
         if (entry.entity.produced.confectionType === 'molded-bonbon') {

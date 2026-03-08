@@ -45,40 +45,6 @@ Type is always 'bar-truffle' for this confection
 </td></tr>
 <tr><td>
 
-[frameDimensions](./IBarTruffleRecipe.frameDimensions.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IFrameDimensions](IFrameDimensions.md)
-
-</td><td>
-
-Frame dimensions from the golden variation
-
-</td></tr>
-<tr><td>
-
-[singleBonBonDimensions](./IBarTruffleRecipe.singleBonBonDimensions.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IBonBonDimensions](IBonBonDimensions.md)
-
-</td><td>
-
-Single bonbon dimensions from the golden variation
-
-</td></tr>
-<tr><td>
-
 [enrobingChocolate](./IBarTruffleRecipe.enrobingChocolate.md)
 
 </td><td>
@@ -92,6 +58,23 @@ Single bonbon dimensions from the golden variation
 </td><td>
 
 Resolved enrobing chocolate (from golden variation, optional)
+
+</td></tr>
+<tr><td>
+
+[frameDimensions](./IBarTruffleRecipe.frameDimensions.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IPieceDimensions](IPieceDimensions.md)
+
+</td><td>
+
+Derived frame dimensions for ganache slab (delegated from golden variation)
 
 </td></tr>
 <tr><td>
@@ -325,7 +308,7 @@ Resolved decorations from the golden variation
 
 </td><td>
 
-[IConfectionYield](IConfectionYield.md)
+[ConfectionYield](../type-aliases/ConfectionYield.md)
 
 </td><td>
 

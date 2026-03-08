@@ -157,7 +157,7 @@ export abstract class ConfectionRecipeVariationBase<
   /**
    * Yield specification for this variation.
    */
-  public get yield(): Confections.IConfectionYield {
+  public get yield(): Confections.ConfectionYield {
     return this._entity.yield;
   }
 

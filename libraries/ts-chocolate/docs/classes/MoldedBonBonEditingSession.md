@@ -29,6 +29,23 @@ Description
 <tbody>
 <tr><td>
 
+[produced](./MoldedBonBonEditingSession.produced.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ProducedMoldedBonBon](ProducedMoldedBonBon.md)
+
+</td><td>
+
+Narrows the produced getter to return the molded-bonbon-specific wrapper.
+
+</td></tr>
+<tr><td>
+
 [pendingMoldChange](./MoldedBonBonEditingSession.pendingMoldChange.md)
 
 </td><td>
@@ -127,23 +144,6 @@ Gets the runtime context.
 </td><td>
 
 Gets the session ID.
-
-</td></tr>
-<tr><td>
-
-[produced](./ConfectionEditingSessionBase.produced.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[ProducedConfectionBase](ProducedConfectionBase.md)&lt;T&gt;
-
-</td><td>
-
-Gets the produced confection wrapper.
 
 </td></tr>
 <tr><td>
@@ -413,7 +413,7 @@ Restores a MoldedBonBonEditingSession from persisted state.
 </td></tr>
 <tr><td>
 
-[setFrames(frames, bufferPercentage)](./MoldedBonBonEditingSession.setFrames.md)
+[setFrames(numFrames, bufferPercentage)](./MoldedBonBonEditingSession.setFrames.md)
 
 </td><td>
 

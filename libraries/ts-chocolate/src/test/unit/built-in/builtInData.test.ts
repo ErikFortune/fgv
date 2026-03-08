@@ -166,8 +166,8 @@ describe('BuiltInData', () => {
       expect(BuiltInData.getFillingsDirectory()).toSucceedAndSatisfy((dir) => {
         expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
           const names = children.map((c) => c.name).sort();
-          // common.json is unencrypted public recipes
-          expect(names).toEqual(['common.json']);
+          // common.json and fgv.json are unencrypted public recipes
+          expect(names).toEqual(['common.json', 'fgv.json']);
         });
       });
     });

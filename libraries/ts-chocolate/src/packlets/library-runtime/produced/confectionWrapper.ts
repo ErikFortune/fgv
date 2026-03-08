@@ -29,8 +29,11 @@ import {
   ConfectionRecipeVariationId,
   FillingId,
   IngredientId,
+  Measurement,
+  Millimeters,
   MoldId,
   Model as CommonModel,
+  Percentage,
   ProcedureId,
   SlotId,
   Helpers
@@ -138,35 +141,6 @@ export abstract class ProducedConfectionBase<
   }
 
   /**
-   * Scales to a new yield specification.
-   * Pushes current state to undo before change, clears redo.
-   *
-   * Note: This method updates the yield in the confection data. Actual filling scaling
-   * must be handled at a higher level (e.g., in sessions) where the filling library is accessible.
-   *
-   * @param yieldSpec - Target yield specification
-   * @returns Success with actual achieved yield, or failure
-   * @public
-   */
-  public scaleToYield(yieldSpec: Confections.IConfectionYield): Result<Confections.IConfectionYield> {
-    if (yieldSpec.count <= 0) {
-      return fail(`Yield count must be positive: ${yieldSpec.count}`);
-    }
-    if (yieldSpec.weightPerPiece !== undefined && yieldSpec.weightPerPiece <= 0) {
-      return fail(`Weight per piece must be positive: ${yieldSpec.weightPerPiece}`);
-    }
-
-    this._pushUndo();
-
-    this._current = {
-      ...this._current,
-      yield: yieldSpec
-    } as T;
-
-    return succeed(yieldSpec);
-  }
-
-  /**
    * Sets or updates a filling slot.
    * Pushes current state to undo before change, clears redo.
    * @param slotId - Slot ID
@@ -256,7 +230,7 @@ export abstract class ProducedConfectionBase<
    * Gets the yield specification.
    * @public
    */
-  public get yield(): Confections.IConfectionYield {
+  public get yield(): Confections.BufferedConfectionYield {
     return this._current.yield;
   }
 
@@ -344,8 +318,11 @@ export abstract class ProducedConfectionBase<
   /**
    * Compares two yield specifications for equality.
    */
-  private _yieldEqual(a: Confections.IConfectionYield, b: Confections.IConfectionYield): boolean {
-    return a.count === b.count && a.unit === b.unit && a.weightPerPiece === b.weightPerPiece;
+  private _yieldEqual(
+    a: Confections.BufferedConfectionYield,
+    b: Confections.BufferedConfectionYield
+  ): boolean {
+    return JSON.stringify(a) === JSON.stringify(b);
   }
 
   /**
@@ -458,9 +435,11 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
    * @public
    */
   public static fromSource(source: IMoldedBonBonRecipeVariation): Result<ProducedMoldedBonBon> {
-    return ProducedMoldedBonBon._convertFromSource(source).onSuccess((produced) =>
-      ProducedMoldedBonBon.create(produced).onSuccess((p) => p._setInitialSnapshot())
-    );
+    return captureResult(() =>
+      ProducedMoldedBonBon._convertFromSource(source).onSuccess((produced) =>
+        ProducedMoldedBonBon.create(produced).onSuccess((p) => p._setInitialSnapshot())
+      )
+    ).onSuccess((r) => r);
   }
 
   /**
@@ -496,19 +475,10 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
         : succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
-        /* c8 ignore next 14 - branch: entity validation ensures optional fields are always present */
-        const mold = source.preferredMold?.mold;
-        const cavityCount = mold?.cavityCount ?? 1;
-        const sourceCount = source.yield.count;
-        const frames = Math.ceil(sourceCount / cavityCount);
-
-        const moldedYield: Confections.IMoldedBonBonYield = {
-          yieldType: 'frames',
-          frames,
-          bufferPercentage: 0.1,
-          count: frames * cavityCount,
-          unit: source.yield.unit ?? 'pieces',
-          weightPerPiece: mold?.cavityWeight
+        /* c8 ignore next 5 - branch: entity validation ensures optional fields are always present */
+        const moldedYield: Confections.IBufferedYieldInFrames = {
+          numFrames: source.yield.numFrames,
+          bufferPercentage: 10 as Percentage
         };
 
         const produced: IProducedMoldedBonBonEntity = {
@@ -573,6 +543,31 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
   // ============================================================================
   // Type-Specific Editing Methods
   // ============================================================================
+
+  /**
+   * Sets the frame count and buffer percentage for this molded bonbon.
+   * Pushes current state to undo before change, clears redo.
+   * @param numFrames - Number of frames to produce
+   * @param bufferPercentage - Buffer percentage (e.g., 10 for 10%)
+   * @returns Success with updated yield, or failure
+   * @public
+   */
+  public setFrames(
+    numFrames: number,
+    bufferPercentage: Percentage
+  ): Result<Confections.IBufferedYieldInFrames> {
+    if (numFrames <= 0) {
+      return fail(`Frame count must be positive: ${numFrames}`);
+    }
+    if (bufferPercentage < 0 || bufferPercentage > 100) {
+      return fail(`Buffer percentage must be between 0 and 100: ${bufferPercentage}`);
+    }
+
+    this._pushUndo();
+    const yieldSpec: Confections.IBufferedYieldInFrames = { numFrames, bufferPercentage };
+    this._current = { ...this._current, yield: yieldSpec };
+    return succeed(yieldSpec);
+  }
 
   /**
    * Sets the mold.
@@ -654,7 +649,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
    * Gets the frame-based yield specification.
    * @public
    */
-  public override get yield(): Confections.IMoldedBonBonYield {
+  public override get yield(): Confections.IBufferedYieldInFrames {
     return this._current.yield;
   }
 
@@ -769,9 +764,11 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
    * @public
    */
   public static fromSource(source: IBarTruffleRecipeVariation): Result<ProducedBarTruffle> {
-    return ProducedBarTruffle._convertFromSource(source).onSuccess((produced) => {
-      return ProducedBarTruffle.create(produced).onSuccess((t) => t._setInitialSnapshot());
-    });
+    return captureResult(() =>
+      ProducedBarTruffle._convertFromSource(source).onSuccess((produced) =>
+        ProducedBarTruffle.create(produced).onSuccess((t) => t._setInitialSnapshot())
+      )
+    ).onSuccess((r) => r);
   }
 
   /**
@@ -806,10 +803,16 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
 
       return fillingsResult.onSuccess((fillings) => {
         /* c8 ignore next 8 - branch: entity validation ensures optional fields are always present */
+        const sourceYield = source.yield;
         const produced: IProducedBarTruffleEntity = {
           confectionType: 'bar-truffle',
           variationId,
-          yield: source.yield,
+          yield: {
+            count: sourceYield.numPieces,
+            weightPerPiece: sourceYield.weightPerPiece,
+            bufferPercentage: 10 as Percentage,
+            dimensions: sourceYield.dimensions
+          },
           enrobingChocolateId: source.enrobingChocolate?.chocolate.id,
           fillings,
           procedureId: source.preferredProcedure?.id,
@@ -865,6 +868,28 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
   // ============================================================================
 
   /**
+   * Scales to a new bar truffle yield specification.
+   * Pushes current state to undo before change, clears redo.
+   * @param yieldSpec - Target yield specification
+   * @returns Success with updated yield, or failure
+   * @public
+   */
+  public scaleToYield(
+    yieldSpec: Confections.IBufferedBarTruffleYield
+  ): Result<Confections.IBufferedBarTruffleYield> {
+    if (yieldSpec.count <= 0) {
+      return fail(`Yield count must be positive: ${yieldSpec.count}`);
+    }
+    if (yieldSpec.weightPerPiece <= 0) {
+      return fail(`Weight per piece must be positive: ${yieldSpec.weightPerPiece}`);
+    }
+
+    this._pushUndo();
+    this._current = { ...this._current, yield: yieldSpec };
+    return succeed(yieldSpec);
+  }
+
+  /**
    * Sets the enrobing chocolate.
    * Pushes current state to undo before change, clears redo.
    * @param chocolateId - Enrobing chocolate ingredient ID or undefined to clear
@@ -885,6 +910,39 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
   // ============================================================================
   // Type-Specific Read-only Access
   // ============================================================================
+
+  /**
+   * Gets the bar truffle yield specification.
+   * @public
+   */
+  public override get yield(): Confections.IBufferedBarTruffleYield {
+    return this._current.yield;
+  }
+
+  /**
+   * Computed target weight: count × weightPerPiece × (1 + bufferPercentage / 100).
+   * @public
+   */
+  public get targetWeight(): Measurement {
+    const { count, weightPerPiece, bufferPercentage } = this._current.yield;
+    return (count * weightPerPiece * (1 + bufferPercentage / 100)) as Measurement;
+  }
+
+  /**
+   * Computed frame dimensions derived from piece count and bonbon dimensions.
+   * Layout: cols = ⌈√count⌉, rows = ⌈count/cols⌉
+   * @public
+   */
+  public get frameDimensions(): Confections.IPieceDimensions {
+    const { count, dimensions } = this._current.yield;
+    const cols = Math.ceil(Math.sqrt(count));
+    const rows = Math.ceil(count / cols);
+    return {
+      width: (cols * dimensions.width) as Millimeters,
+      height: (rows * dimensions.height) as Millimeters,
+      depth: dimensions.depth
+    };
+  }
 
   /**
    * Gets the enrobing chocolate ID.
@@ -964,9 +1022,11 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
    * @public
    */
   public static fromSource(source: IRolledTruffleRecipeVariation): Result<ProducedRolledTruffle> {
-    return ProducedRolledTruffle._convertFromSource(source).onSuccess((produced) => {
-      return ProducedRolledTruffle.create(produced).onSuccess((p) => p._setInitialSnapshot());
-    });
+    return captureResult(() =>
+      ProducedRolledTruffle._convertFromSource(source).onSuccess((produced) =>
+        ProducedRolledTruffle.create(produced).onSuccess((p) => p._setInitialSnapshot())
+      )
+    ).onSuccess((r) => r);
   }
 
   /**
@@ -1003,11 +1063,16 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
           succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
-        /* c8 ignore next 9 - branch: entity validation ensures optional fields are always present */
+        /* c8 ignore next 8 - branch: entity validation ensures optional fields are always present */
+        const sourceYield = source.yield;
         const produced: IProducedRolledTruffleEntity = {
           confectionType: 'rolled-truffle',
           variationId,
-          yield: source.yield,
+          yield: {
+            count: sourceYield.numPieces,
+            weightPerPiece: sourceYield.weightPerPiece,
+            bufferPercentage: 10 as Percentage
+          },
           enrobingChocolateId: source.enrobingChocolate?.chocolate.id,
           coatingId: source.coatings?.preferred?.id,
           fillings,
@@ -1064,6 +1129,28 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
   // ============================================================================
 
   /**
+   * Scales to a new rolled truffle yield specification.
+   * Pushes current state to undo before change, clears redo.
+   * @param yieldSpec - Target yield specification
+   * @returns Success with updated yield, or failure
+   * @public
+   */
+  public scaleToYield(
+    yieldSpec: Confections.IBufferedYieldInPieces
+  ): Result<Confections.IBufferedYieldInPieces> {
+    if (yieldSpec.count <= 0) {
+      return fail(`Yield count must be positive: ${yieldSpec.count}`);
+    }
+    if (yieldSpec.weightPerPiece <= 0) {
+      return fail(`Weight per piece must be positive: ${yieldSpec.weightPerPiece}`);
+    }
+
+    this._pushUndo();
+    this._current = { ...this._current, yield: yieldSpec };
+    return succeed(yieldSpec);
+  }
+
+  /**
    * Sets the enrobing chocolate.
    * Pushes current state to undo before change, clears redo.
    * @param chocolateId - Enrobing chocolate ingredient ID or undefined to clear
@@ -1102,6 +1189,23 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
   // ============================================================================
   // Type-Specific Read-only Access
   // ============================================================================
+
+  /**
+   * Gets the rolled truffle yield specification.
+   * @public
+   */
+  public override get yield(): Confections.IBufferedYieldInPieces {
+    return this._current.yield;
+  }
+
+  /**
+   * Computed target weight: count × weightPerPiece × (1 + bufferPercentage / 100).
+   * @public
+   */
+  public get targetWeight(): Measurement {
+    const { count, weightPerPiece, bufferPercentage } = this._current.yield;
+    return (count * weightPerPiece * (1 + bufferPercentage / 100)) as Measurement;
+  }
 
   /**
    * Gets the enrobing chocolate ID.

@@ -38,6 +38,7 @@ import {
   IngredientId,
   Measurement,
   MoldId,
+  Percentage,
   Converters as CommonConverters,
   Helpers as CommonHelpers
 } from '../../../packlets/common';
@@ -89,27 +90,18 @@ describe('JournalLibrary (Collection-Based)', () => {
       variationType: 'molded-bonbon' as const,
       variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
       createdDate: '2026-01-01',
-      yield: {
-        count: 24
-      },
+      yield: { numFrames: 1 },
       fillings: [],
       molds: {
         options: []
       },
       shellChocolate: { ids: ['test.dark-chocolate' as IngredientId] }
     },
-    yield: {
-      count: 24
-    },
+    yield: { numFrames: 1, bufferPercentage: 10 as Percentage },
     produced: {
       confectionType: 'molded-bonbon',
       variationId: variationId as ConfectionRecipeVariationId,
-      yield: {
-        yieldType: 'frames',
-        frames: 1,
-        bufferPercentage: 0.1,
-        count: 24
-      },
+      yield: { numFrames: 1, bufferPercentage: 10 as Percentage },
       fillings: [],
       moldId: 'test.mold-a' as MoldId,
       shellChocolateId: 'test.dark-chocolate' as IngredientId

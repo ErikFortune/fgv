@@ -51,7 +51,7 @@ Optional session ID (generated if not provided)
 
 </td><td>
 
-[AnyConfectionYield](../../../type-aliases/AnyConfectionYield.md)
+[BufferedConfectionYield](../../../type-aliases/BufferedConfectionYield.md)
 
 </td><td>
 

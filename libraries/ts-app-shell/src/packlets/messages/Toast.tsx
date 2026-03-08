@@ -71,7 +71,9 @@ export function ToastItem(props: IToastItemProps): React.ReactElement {
       }`}
       role="alert"
     >
-      <div className="flex-1 text-sm">{message.text}</div>
+      <div className="flex-1 text-sm line-clamp-4" title={message.text}>
+        {message.text}
+      </div>
       <div className="flex items-center gap-2 shrink-0">
         {message.action && (
           <button

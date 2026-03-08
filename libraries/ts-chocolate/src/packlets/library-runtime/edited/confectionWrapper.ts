@@ -26,7 +26,7 @@
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
-import { Helpers, Model as CommonModel } from '../../common';
+import { Helpers, Measurement, Model as CommonModel } from '../../common';
 import { Confections, Decorations, Fillings, Session } from '../../entities';
 import { EditableWrapper } from '../editableWrapper';
 
@@ -339,7 +339,7 @@ export class EditedConfectionRecipe extends EditableWrapper<Confections.AnyConfe
    */
   public setVariationYield(
     spec: ConfectionRecipeVariationSpec,
-    yieldSpec: Confections.AnyConfectionYield
+    yieldSpec: Confections.ConfectionYield
   ): Result<void> {
     const index = this._current.variations.findIndex((v) => v.variationSpec === spec);
     if (index < 0) {
@@ -347,7 +347,10 @@ export class EditedConfectionRecipe extends EditableWrapper<Confections.AnyConfe
     }
     this._pushUndo();
     const variations = [...this._current.variations] as Confections.AnyConfectionRecipeVariationEntity[];
-    variations[index] = { ...variations[index], yield: { ...yieldSpec } };
+    variations[index] = {
+      ...variations[index],
+      yield: yieldSpec
+    } as Confections.AnyConfectionRecipeVariationEntity;
     this._current = { ...this._current, variations } as Confections.AnyConfectionRecipeEntity;
     return succeed(undefined);
   }
@@ -701,12 +704,13 @@ export class EditedConfectionRecipe extends EditableWrapper<Confections.AnyConfe
       variationSpec: spec,
       name: name?.trim() || undefined,
       createdDate,
-      yield: { count: 0 }
+      yield: { numFrames: 1 }
     };
 
     if (golden !== undefined && Confections.isMoldedBonBonRecipeVariationEntity(golden)) {
       const moldedBase: Confections.IMoldedBonBonRecipeVariationEntity = {
         ...base,
+        yield: { ...golden.yield },
         molds: {
           options: golden.molds.options.map((m) => ({ ...m, notes: m.notes?.map((n) => ({ ...n })) })),
           preferredId: golden.molds.preferredId
@@ -722,13 +726,18 @@ export class EditedConfectionRecipe extends EditableWrapper<Confections.AnyConfe
     if (golden !== undefined && Confections.isBarTruffleRecipeVariationEntity(golden)) {
       const barBase: Confections.IBarTruffleRecipeVariationEntity = {
         ...base,
-        frameDimensions: { ...golden.frameDimensions },
-        singleBonBonDimensions: { ...golden.singleBonBonDimensions }
+        yield: { ...golden.yield, dimensions: { ...golden.yield.dimensions } }
       };
       return barBase;
     }
 
-    const rolledBase: Confections.IRolledTruffleRecipeVariationEntity = { ...base };
+    const rolledBase: Confections.IRolledTruffleRecipeVariationEntity = {
+      ...base,
+      yield:
+        golden !== undefined && Confections.isRolledTruffleRecipeVariationEntity(golden)
+          ? { ...golden.yield }
+          : { numPieces: 0, weightPerPiece: 0 as Measurement }
+    };
     return rolledBase;
   }
 
@@ -785,6 +794,7 @@ export class EditedConfectionRecipe extends EditableWrapper<Confections.AnyConfe
   ): Confections.IMoldedBonBonRecipeVariationEntity {
     return {
       ...EditedConfectionRecipe._deepCopyVariationBase(variation),
+      yield: { ...variation.yield },
       molds: {
         options: variation.molds.options.map((m) => ({
           ...m,
@@ -811,8 +821,7 @@ export class EditedConfectionRecipe extends EditableWrapper<Confections.AnyConfe
   ): Confections.IBarTruffleRecipeVariationEntity {
     return {
       ...EditedConfectionRecipe._deepCopyVariationBase(variation),
-      frameDimensions: { ...variation.frameDimensions },
-      singleBonBonDimensions: { ...variation.singleBonBonDimensions },
+      yield: { ...variation.yield, dimensions: { ...variation.yield.dimensions } },
       enrobingChocolate: variation.enrobingChocolate
         ? { ids: [...variation.enrobingChocolate.ids], preferredId: variation.enrobingChocolate.preferredId }
         : undefined
@@ -827,6 +836,7 @@ export class EditedConfectionRecipe extends EditableWrapper<Confections.AnyConfe
   ): Confections.IRolledTruffleRecipeVariationEntity {
     return {
       ...EditedConfectionRecipe._deepCopyVariationBase(variation),
+      yield: { ...variation.yield },
       enrobingChocolate: variation.enrobingChocolate
         ? { ids: [...variation.enrobingChocolate.ids], preferredId: variation.enrobingChocolate.preferredId }
         : undefined,

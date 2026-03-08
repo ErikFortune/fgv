@@ -116,6 +116,13 @@ export class MoldedBonBonRecipe
   // ============================================================================
 
   /**
+   * Narrowed yield from the golden variation (numFrames only; count/weightPerPiece derived from mold).
+   */
+  public override get yield(): Confections.IYieldInFrames {
+    return this.goldenVariation.yield;
+  }
+
+  /**
    * Resolved filling slots from the golden variation.
    */
   public get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined {

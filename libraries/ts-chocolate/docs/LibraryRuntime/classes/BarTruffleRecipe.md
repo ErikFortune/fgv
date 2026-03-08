@@ -56,28 +56,11 @@ Confection type is always 'bar-truffle' for this type
 
 </td><td>
 
-[IFrameDimensions](../../interfaces/IFrameDimensions.md)
+[IPieceDimensions](../../interfaces/IPieceDimensions.md)
 
 </td><td>
 
-Frame dimensions for ganache slab (from golden variation).
-
-</td></tr>
-<tr><td>
-
-[singleBonBonDimensions](./BarTruffleRecipe.singleBonBonDimensions.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[IBonBonDimensions](../../interfaces/IBonBonDimensions.md)
-
-</td><td>
-
-Single bonbon dimensions for cutting (from golden variation).
+Computed frame dimensions derived from piece count and bonbon dimensions (from golden variation).
 
 </td></tr>
 <tr><td>
@@ -311,7 +294,7 @@ Resolved decorations from the golden variation
 
 </td><td>
 
-[IConfectionYield](../../interfaces/IConfectionYield.md)
+[ConfectionYield](../../type-aliases/ConfectionYield.md)
 
 </td><td>
 

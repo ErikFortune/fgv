@@ -32,6 +32,7 @@ import {
   FillingId,
   FillingRecipeVariationId,
   Measurement,
+  Percentage,
   SessionId,
   SlotId
 } from '../../../../packlets/common';
@@ -82,12 +83,8 @@ describe('SessionLibrary', () => {
     confectionType: 'molded-bonbon' as const,
     variationId: 'test.truffle@2026-01-01-01' as ConfectionRecipeVariationId,
     yield: {
-      yieldType: 'frames' as const,
-      frames: 1,
-      bufferPercentage: 0.1,
-      count: 24,
-      unit: 'pieces' as const,
-      weightPerPiece: 15 as Measurement
+      numFrames: 1,
+      bufferPercentage: 10 as Percentage
     },
     fillings: [],
     moldId: 'builtin.half-sphere' as unknown as import('../../../../packlets/common').MoldId,

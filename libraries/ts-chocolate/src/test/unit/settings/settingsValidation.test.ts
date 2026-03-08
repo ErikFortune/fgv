@@ -54,7 +54,7 @@ function makeResolved(overrides?: Partial<IResolvedSettings>): IResolvedSettings
         weightUnit: 'g',
         measurementUnit: 'g',
         batchMultiplier: 1,
-        bufferPercentage: 0.1
+        bufferPercentage: 10
       },
       workflow: {}
     },

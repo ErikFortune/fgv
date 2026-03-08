@@ -154,7 +154,7 @@ describe('MoldedBonBonEditingSession', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        yield: { numFrames: 1 },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -336,10 +336,10 @@ describe('MoldedBonBonEditingSession', () => {
 
       expect(
         Session.MoldedBonBonEditingSession.create(confection, sessionContext, {
-          initialYield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement, frames: 2 }
+          initialYield: { numFrames: 2, bufferPercentage: 10 as Percentage }
         })
       ).toSucceedAndSatisfy((session) => {
-        expect(session.produced.yield.count).toBe(48);
+        expect(session.produced.yield.numFrames).toBe(2);
       });
     });
   });
@@ -356,7 +356,7 @@ describe('MoldedBonBonEditingSession', () => {
 
       expect(session.setFrames(2)).toSucceed();
       // 2 frames x 24 cavities = 48 pieces
-      expect(session.produced.yield.count).toBe(48);
+      expect(session.produced.yield.numFrames).toBe(2);
     });
 
     test('setFrames rescales filling sessions', () => {
@@ -396,15 +396,15 @@ describe('MoldedBonBonEditingSession', () => {
       if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
       const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
 
-      expect(session.setFrames(2, -0.5)).toFailWith(/between 0 and 1/i);
+      expect(session.setFrames(2, -0.5)).toFailWith(/between 0 and 100/i);
     });
 
-    test('fails for buffer percentage above 1', () => {
+    test('fails for buffer percentage above 100', () => {
       const confection = ctx.confections.get('test.test-molded-bonbon' as ConfectionId).orThrow();
       if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
       const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
 
-      expect(session.setFrames(2, 1.5)).toFailWith(/between 0 and 1/i);
+      expect(session.setFrames(2, 150)).toFailWith(/between 0 and 100/i);
     });
 
     test('succeeds with buffer percentage of 0', () => {
@@ -415,12 +415,12 @@ describe('MoldedBonBonEditingSession', () => {
       expect(session.setFrames(2, 0)).toSucceed();
     });
 
-    test('succeeds with buffer percentage of 0.2', () => {
+    test('succeeds with buffer percentage of 20', () => {
       const confection = ctx.confections.get('test.test-molded-bonbon' as ConfectionId).orThrow();
       if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
       const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
 
-      expect(session.setFrames(2, 0.2)).toSucceed();
+      expect(session.setFrames(2, 20)).toSucceed();
     });
   });
 
@@ -436,10 +436,8 @@ describe('MoldedBonBonEditingSession', () => {
 
       expect(
         session.scaleToYield({
-          count: 48,
-          unit: 'pieces',
-          weightPerPiece: 10 as Measurement,
-          frames: 2
+          numFrames: 2,
+          bufferPercentage: 10 as Percentage
         })
       ).toSucceed();
     });
@@ -449,7 +447,7 @@ describe('MoldedBonBonEditingSession', () => {
       if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
       const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
 
-      expect(session.scaleToYield({ count: 48, unit: 'pieces' })).toSucceed();
+      expect(session.scaleToYield({ numFrames: 2, bufferPercentage: 10 as Percentage })).toSucceed();
     });
 
     test('fails when produced.scaleToYield fails', () => {
@@ -457,8 +455,8 @@ describe('MoldedBonBonEditingSession', () => {
       if (!confection.isMoldedBonBon()) throw new Error('Expected molded bonbon');
       const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
 
-      // Test with invalid yield (zero count) which should fail
-      expect(session.scaleToYield({ count: 0, unit: 'pieces' })).toFail();
+      // Test with invalid yield (zero frames) which should fail
+      expect(session.scaleToYield({ numFrames: 0, bufferPercentage: 10 as Percentage })).toFail();
     });
   });
 
@@ -715,7 +713,7 @@ describe('MoldedBonBonEditingSession', () => {
       const session = Session.MoldedBonBonEditingSession.create(confection, sessionContext).orThrow();
 
       // Scale to a different yield
-      session.scaleToYield({ count: 48, unit: 'pieces' }).orThrow();
+      session.scaleToYield({ numFrames: 2, bufferPercentage: 10 as Percentage }).orThrow();
 
       // Persist
       const persisted = session.toPersistedState({ collectionId: 'test' as CollectionId }).orThrow();
@@ -725,7 +723,7 @@ describe('MoldedBonBonEditingSession', () => {
         Session.MoldedBonBonEditingSession.fromPersistedState(confection, persisted, sessionContext)
       ).toSucceedAndSatisfy((restored) => {
         expect(restored.baseConfection).toBe(confection);
-        expect(restored.produced.yield.count).toBe(48);
+        expect(restored.produced.yield.numFrames).toBe(2);
       });
     });
   });

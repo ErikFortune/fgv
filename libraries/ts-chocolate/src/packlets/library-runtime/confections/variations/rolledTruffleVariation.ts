@@ -178,6 +178,13 @@ export class RolledTruffleRecipeVariation
   /**
    * Gets the underlying rolled truffle variation entity data.
    */
+  /**
+   * Narrowed yield getter returning rolled truffle specific yield data.
+   */
+  public override get yield(): Confections.IYieldInPieces {
+    return this._entity.yield;
+  }
+
   public override get entity(): Confections.IRolledTruffleRecipeVariationEntity {
     return this._entity;
   }

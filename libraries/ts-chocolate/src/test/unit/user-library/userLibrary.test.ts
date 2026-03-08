@@ -143,7 +143,7 @@ describe('UserLibrary', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 24, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        yield: { numFrames: 1 },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -172,7 +172,7 @@ describe('UserLibrary', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+        yield: { numPieces: 40, weightPerPiece: 15 as Measurement },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -196,7 +196,11 @@ describe('UserLibrary', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 30, unit: 'pieces', weightPerPiece: 20 as Measurement },
+        yield: {
+          numPieces: 30,
+          weightPerPiece: 20 as Measurement,
+          dimensions: { width: 20 as Millimeters, height: 20 as Millimeters, depth: 10 as Millimeters }
+        },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -206,9 +210,7 @@ describe('UserLibrary', () => {
               preferredId: 'test.test-ganache' as FillingId
             }
           }
-        ],
-        frameDimensions: { width: 200 as Millimeters, height: 200 as Millimeters, depth: 10 as Millimeters },
-        singleBonBonDimensions: { width: 20 as Millimeters, height: 20 as Millimeters }
+        ]
       }
     ]
   };
@@ -227,14 +229,7 @@ describe('UserLibrary', () => {
       current: {
         confectionType: 'molded-bonbon',
         variationId: 'test.test-bonbon@2026-01-01-01' as ConfectionRecipeVariationId,
-        yield: {
-          yieldType: 'frames',
-          frames: 1,
-          bufferPercentage: 0.1,
-          count: 24,
-          unit: 'pieces',
-          weightPerPiece: 10 as Measurement
-        },
+        yield: { numFrames: 1, bufferPercentage: 10 as Percentage },
         fillings: [
           {
             slotType: 'recipe',
@@ -248,14 +243,7 @@ describe('UserLibrary', () => {
       original: {
         confectionType: 'molded-bonbon',
         variationId: 'test.test-bonbon@2026-01-01-01' as ConfectionRecipeVariationId,
-        yield: {
-          yieldType: 'frames',
-          frames: 1,
-          bufferPercentage: 0.1,
-          count: 24,
-          unit: 'pieces',
-          weightPerPiece: 10 as Measurement
-        },
+        yield: { numFrames: 1, bufferPercentage: 10 as Percentage },
         fillings: [
           {
             slotType: 'recipe',
@@ -285,7 +273,7 @@ describe('UserLibrary', () => {
       current: {
         confectionType: 'rolled-truffle',
         variationId: 'test.test-rolled-truffle@2026-01-01-01' as ConfectionRecipeVariationId,
-        yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+        yield: { count: 40, weightPerPiece: 15 as Measurement, bufferPercentage: 10 as Percentage },
         fillings: [
           {
             slotType: 'recipe',
@@ -297,7 +285,7 @@ describe('UserLibrary', () => {
       original: {
         confectionType: 'rolled-truffle',
         variationId: 'test.test-rolled-truffle@2026-01-01-01' as ConfectionRecipeVariationId,
-        yield: { count: 40, unit: 'pieces', weightPerPiece: 15 as Measurement },
+        yield: { count: 40, weightPerPiece: 15 as Measurement, bufferPercentage: 10 as Percentage },
         fillings: [
           {
             slotType: 'recipe',
@@ -325,7 +313,12 @@ describe('UserLibrary', () => {
       current: {
         confectionType: 'bar-truffle',
         variationId: 'test.test-bar-truffle@2026-01-01-01' as ConfectionRecipeVariationId,
-        yield: { count: 30, unit: 'pieces', weightPerPiece: 20 as Measurement },
+        yield: {
+          count: 30,
+          weightPerPiece: 20 as Measurement,
+          bufferPercentage: 10 as Percentage,
+          dimensions: { width: 20 as Millimeters, height: 20 as Millimeters, depth: 10 as Millimeters }
+        },
         fillings: [
           {
             slotType: 'recipe',
@@ -337,7 +330,12 @@ describe('UserLibrary', () => {
       original: {
         confectionType: 'bar-truffle',
         variationId: 'test.test-bar-truffle@2026-01-01-01' as ConfectionRecipeVariationId,
-        yield: { count: 30, unit: 'pieces', weightPerPiece: 20 as Measurement },
+        yield: {
+          count: 30,
+          weightPerPiece: 20 as Measurement,
+          bufferPercentage: 10 as Percentage,
+          dimensions: { width: 20 as Millimeters, height: 20 as Millimeters, depth: 10 as Millimeters }
+        },
         fillings: [
           {
             slotType: 'recipe',

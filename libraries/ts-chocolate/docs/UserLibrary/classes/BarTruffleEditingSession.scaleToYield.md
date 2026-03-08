@@ -8,18 +8,18 @@ All filling sessions scale proportionally by the count ratio.
 **Signature:**
 
 ```typescript
-scaleToYield(yieldSpec: AnyConfectionYield): Result<IConfectionYield>;
+scaleToYield(yieldSpec: BufferedConfectionYield): Result<BufferedConfectionYield>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>yieldSpec</td><td>AnyConfectionYield</td><td>The new yield specification</td></tr>
+<tr><td>yieldSpec</td><td>BufferedConfectionYield</td><td>The new yield specification</td></tr>
 </tbody></table>
 
 **Returns:**
 
-Result&lt;[IConfectionYield](../../interfaces/IConfectionYield.md)&gt;
+Result&lt;[BufferedConfectionYield](../../type-aliases/BufferedConfectionYield.md)&gt;
 
 Success with updated yield, or Failure

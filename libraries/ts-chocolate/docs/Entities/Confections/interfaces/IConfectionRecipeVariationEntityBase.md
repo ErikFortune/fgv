@@ -4,6 +4,7 @@
 
 Base variation interface - shared by all confection variation types.
 Contains the configuration details that can change between variations.
+The yield field is typed as ConfectionYield on the base; each subtype narrows it.
 
 ## Properties
 
@@ -86,7 +87,7 @@ Date this variation was created (ISO 8601 format)
 
 </td><td>
 
-[IConfectionYield](../../../interfaces/IConfectionYield.md)
+[ConfectionYield](../../../type-aliases/ConfectionYield.md)
 
 </td><td>
 

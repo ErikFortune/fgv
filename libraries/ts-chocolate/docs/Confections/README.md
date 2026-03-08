@@ -16,11 +16,56 @@ Description
 <tbody>
 <tr><td>
 
-[IMoldedBonBonYield](./interfaces/IMoldedBonBonYield.md)
+[IYieldInFrames](./interfaces/IYieldInFrames.md)
 
 </td><td>
 
-Frame-based yield specification for molded bonbons.
+Yield specification for a molded bon-bon recipe variation.
+
+</td></tr>
+<tr><td>
+
+[IYieldInPieces](./interfaces/IYieldInPieces.md)
+
+</td><td>
+
+Yield specification for bar truffle and rolled truffle recipe variations.
+
+</td></tr>
+<tr><td>
+
+[IBarTruffleYield](./interfaces/IBarTruffleYield.md)
+
+</td><td>
+
+Yield specification for a bar truffle recipe variation.
+
+</td></tr>
+<tr><td>
+
+[IBufferedYieldInFrames](./interfaces/IBufferedYieldInFrames.md)
+
+</td><td>
+
+Yield specification for a produced molded bon-bon.
+
+</td></tr>
+<tr><td>
+
+[IBufferedYieldInPieces](./interfaces/IBufferedYieldInPieces.md)
+
+</td><td>
+
+Yield specification for a produced bar truffle or rolled truffle.
+
+</td></tr>
+<tr><td>
+
+[IBufferedBarTruffleYield](./interfaces/IBufferedBarTruffleYield.md)
+
+</td><td>
+
+Yield specification for a produced bar truffle.
 
 </td></tr>
 <tr><td>
@@ -70,20 +115,11 @@ Additional chocolate specification with purpose.
 </td></tr>
 <tr><td>
 
-[IFrameDimensions](./interfaces/IFrameDimensions.md)
+[IPieceDimensions](./interfaces/IPieceDimensions.md)
 
 </td><td>
 
-Frame dimensions for bar truffle production
-
-</td></tr>
-<tr><td>
-
-[IBonBonDimensions](./interfaces/IBonBonDimensions.md)
-
-</td><td>
-
-Single bonbon dimensions for bar truffle cutting
+Single bonbon dimensions for bar truffle cutting.
 
 </td></tr>
 <tr><td>
@@ -145,15 +181,6 @@ Description
 
 </th></tr></thead>
 <tbody>
-<tr><td>
-
-[AnyConfectionYield](./type-aliases/AnyConfectionYield.md)
-
-</td><td>
-
-Discriminated union of all yield types.
-
-</td></tr>
 <tr><td>
 
 [FillingOptionType](./type-aliases/FillingOptionType.md)
@@ -321,15 +348,6 @@ Description
 
 </th></tr></thead>
 <tbody>
-<tr><td>
-
-[isMoldedBonBonYield](./functions/isMoldedBonBonYield.md)
-
-</td><td>
-
-Type guard to check if a yield is frame-based (for molded bonbons).
-
-</td></tr>
 <tr><td>
 
 [isMoldedBonBonRecipeEntity](./functions/isMoldedBonBonRecipeEntity.md)

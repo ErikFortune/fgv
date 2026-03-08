@@ -2,10 +2,10 @@
 
 ## IProducedMoldedBonBonEntity.yield property
 
-Frame-based yield specification
+Frame-based yield: numFrames + bufferPercentage stored; rest derived from mold
 
 **Signature:**
 
 ```typescript
-readonly yield: IMoldedBonBonYield;
+readonly yield: IBufferedYieldInFrames;
 ```

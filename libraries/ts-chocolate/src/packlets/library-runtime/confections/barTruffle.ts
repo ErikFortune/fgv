@@ -111,17 +111,10 @@ export class BarTruffleRecipe
   // ============================================================================
 
   /**
-   * Frame dimensions for ganache slab (from golden variation).
+   * Computed frame dimensions derived from piece count and bonbon dimensions (from golden variation).
    */
-  public get frameDimensions(): Confections.IFrameDimensions {
+  public get frameDimensions(): Confections.IPieceDimensions {
     return this.goldenVariation.frameDimensions;
-  }
-
-  /**
-   * Single bonbon dimensions for cutting (from golden variation).
-   */
-  public get singleBonBonDimensions(): Confections.IBonBonDimensions {
-    return this.goldenVariation.singleBonBonDimensions;
   }
 
   /**

@@ -123,7 +123,11 @@ describe('BarTruffleEditingSession', () => {
       {
         variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
         createdDate: '2026-01-01',
-        yield: { count: 48, unit: 'pieces', weightPerPiece: 10 as Measurement },
+        yield: {
+          numPieces: 48,
+          weightPerPiece: 10 as Measurement,
+          dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+        },
         fillings: [
           {
             slotId: 'center' as SlotId,
@@ -134,12 +138,6 @@ describe('BarTruffleEditingSession', () => {
             }
           }
         ],
-        frameDimensions: {
-          width: 300 as Millimeters,
-          height: 200 as Millimeters,
-          depth: 8 as Millimeters
-        },
-        singleBonBonDimensions: { width: 25 as Millimeters, height: 25 as Millimeters },
         enrobingChocolate: {
           ids: ['test.dark-chocolate' as IngredientId],
           preferredId: 'test.dark-chocolate' as IngredientId
@@ -281,7 +279,14 @@ describe('BarTruffleEditingSession', () => {
       if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
       expect(Session.BarTruffleEditingSession.create(confection, sessionContext)).toSucceedAndSatisfy(
         (session) => {
-          expect(session.scaleToYield({ count: 96, unit: 'pieces' })).toSucceed();
+          expect(
+            session.scaleToYield({
+              count: 96,
+              weightPerPiece: 10 as Measurement,
+              bufferPercentage: 10 as Percentage,
+              dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+            })
+          ).toSucceed();
           expect(session.produced.yield.count).toBe(96);
         }
       );
@@ -293,7 +298,12 @@ describe('BarTruffleEditingSession', () => {
 
       expect(
         Session.BarTruffleEditingSession.create(confection, sessionContext, {
-          initialYield: { count: 96, unit: 'pieces' }
+          initialYield: {
+            count: 96,
+            weightPerPiece: 10 as Measurement,
+            bufferPercentage: 10 as Percentage,
+            dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+          }
         })
       ).toSucceedAndSatisfy((session) => {
         expect(session.produced.yield.count).toBe(96);
@@ -403,7 +413,14 @@ describe('BarTruffleEditingSession', () => {
       expect(initialFilling).toBeDefined();
       const initialWeight = initialFilling!.produced.targetWeight;
 
-      expect(session.scaleToYield({ count: 96, unit: 'pieces' })).toSucceed();
+      expect(
+        session.scaleToYield({
+          count: 96,
+          weightPerPiece: 10 as Measurement,
+          bufferPercentage: 10 as Percentage,
+          dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+        })
+      ).toSucceed();
 
       expect(session.produced.yield.count).toBe(96);
 
@@ -418,7 +435,14 @@ describe('BarTruffleEditingSession', () => {
       if (!confection.isBarTruffle()) throw new Error('Expected bar truffle');
       const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
 
-      expect(session.scaleToYield({ count: 48, unit: 'pieces' })).toSucceed();
+      expect(
+        session.scaleToYield({
+          count: 48,
+          weightPerPiece: 10 as Measurement,
+          bufferPercentage: 10 as Percentage,
+          dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+        })
+      ).toSucceed();
       expect(session.produced.yield.count).toBe(48);
     });
 
@@ -428,7 +452,14 @@ describe('BarTruffleEditingSession', () => {
       const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
 
       // Test with invalid yield (zero count) which should fail
-      expect(session.scaleToYield({ count: 0, unit: 'pieces' })).toFail();
+      expect(
+        session.scaleToYield({
+          count: 0,
+          weightPerPiece: 10 as Measurement,
+          bufferPercentage: 10 as Percentage,
+          dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+        })
+      ).toFail();
     });
   });
 
@@ -483,7 +514,14 @@ describe('BarTruffleEditingSession', () => {
       const session = Session.BarTruffleEditingSession.create(confection, sessionContext).orThrow();
 
       // Scale to a different yield
-      session.scaleToYield({ count: 96, unit: 'pieces' }).orThrow();
+      session
+        .scaleToYield({
+          count: 96,
+          weightPerPiece: 10 as Measurement,
+          bufferPercentage: 10 as Percentage,
+          dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+        })
+        .orThrow();
 
       // Persist
       const persisted = session.toPersistedState({ collectionId: 'test' as CollectionId }).orThrow();

@@ -31,7 +31,7 @@ import {
   SlotId,
   Model as CommonModel
 } from '../../../packlets/common';
-import { Measurement, Millimeters } from '../../../packlets/common';
+import { Measurement, Millimeters, Percentage } from '../../../packlets/common';
 
 describe('Confections model', () => {
   // ============================================================================
@@ -45,9 +45,7 @@ describe('Confections model', () => {
       { category: 'user', note: 'Basic dome bonbon with dark ganache filling' }
     ] as CommonModel.ICategorizedNote[],
     yield: {
-      count: 24,
-      unit: 'pieces',
-      weightPerPiece: 12 as Measurement
+      numFrames: 1
     },
     fillings: [
       {
@@ -85,9 +83,13 @@ describe('Confections model', () => {
       { category: 'user', note: 'Standard 25mm square bar truffles' }
     ] as CommonModel.ICategorizedNote[],
     yield: {
-      count: 48,
-      unit: 'pieces',
-      weightPerPiece: 10 as Measurement
+      numPieces: 48,
+      weightPerPiece: 10 as Measurement,
+      dimensions: {
+        width: 25 as Millimeters,
+        height: 25 as Millimeters,
+        depth: 8 as Millimeters
+      }
     },
     fillings: [
       {
@@ -98,15 +100,6 @@ describe('Confections model', () => {
         }
       }
     ],
-    frameDimensions: {
-      width: 300 as Millimeters,
-      height: 200 as Millimeters,
-      depth: 8 as Millimeters
-    },
-    singleBonBonDimensions: {
-      width: 25 as Millimeters,
-      height: 25 as Millimeters
-    },
     enrobingChocolate: {
       ids: ['cacao-barry.guayaquil-64' as IngredientId],
       preferredId: 'cacao-barry.guayaquil-64' as IngredientId
@@ -130,8 +123,7 @@ describe('Confections model', () => {
       { category: 'user', note: 'Traditional rolled truffle with cocoa coating' }
     ] as CommonModel.ICategorizedNote[],
     yield: {
-      count: 40,
-      unit: 'pieces',
+      numPieces: 40,
       weightPerPiece: 15 as Measurement
     },
     fillings: [
@@ -224,8 +216,7 @@ describe('Confections model', () => {
         if (Confections.isBarTruffleEntity(confection)) {
           // TypeScript should know this is IBarTruffle
           const variation = confection.variations[0];
-          expect(variation.frameDimensions).toBeDefined();
-          expect(variation.singleBonBonDimensions).toBeDefined();
+          expect(variation.yield.dimensions).toBeDefined();
         } else {
           fail('Expected isBarTruffle to return true');
         }
@@ -321,9 +312,8 @@ describe('Confections model', () => {
 
       test('variation has required properties', () => {
         const variation = baseBarTruffle.variations[0];
-        expect(variation.frameDimensions).toBeDefined();
-        expect(variation.singleBonBonDimensions).toBeDefined();
         expect(variation.yield).toBeDefined();
+        expect(variation.yield.dimensions).toBeDefined();
       });
 
       test('variation has optional properties', () => {
@@ -331,17 +321,11 @@ describe('Confections model', () => {
         expect(variation.enrobingChocolate).toBeDefined();
       });
 
-      test('frame dimensions structure is correct', () => {
+      test('piece dimensions structure is correct', () => {
         const variation = baseBarTruffle.variations[0];
-        expect(variation.frameDimensions.width).toBe(300);
-        expect(variation.frameDimensions.height).toBe(200);
-        expect(variation.frameDimensions.depth).toBe(8);
-      });
-
-      test('single bonbon dimensions structure is correct', () => {
-        const variation = baseBarTruffle.variations[0];
-        expect(variation.singleBonBonDimensions.width).toBe(25);
-        expect(variation.singleBonBonDimensions.height).toBe(25);
+        expect(variation.yield.dimensions.width).toBe(25);
+        expect(variation.yield.dimensions.height).toBe(25);
+        expect(variation.yield.dimensions.depth).toBe(8);
       });
     });
 
@@ -367,12 +351,10 @@ describe('Confections model', () => {
       });
     });
 
-    describe('IConfectionYield', () => {
+    describe('IYieldInFrames', () => {
       test('structure is correct', () => {
         const variation = baseMoldedBonBon.variations[0];
-        expect(variation.yield.count).toBe(24);
-        expect(variation.yield.unit).toBe('pieces');
-        expect(variation.yield.weightPerPiece).toBe(12);
+        expect(variation.yield.numFrames).toBe(1);
       });
     });
 
@@ -406,12 +388,8 @@ describe('Confections model', () => {
       confectionType: 'molded-bonbon',
       variationId: 'test.molded-bonbon.2026-01-01-01' as ConfectionRecipeVariationId,
       yield: {
-        yieldType: 'frames',
-        frames: 1,
-        bufferPercentage: 0.1,
-        count: 24,
-        unit: 'pieces',
-        weightPerPiece: 12 as Measurement
+        numFrames: 1,
+        bufferPercentage: 10 as Percentage
       },
       moldId: 'test.dome-25mm' as MoldId,
       shellChocolateId: 'test.dark-chocolate' as IngredientId
@@ -422,8 +400,13 @@ describe('Confections model', () => {
       variationId: 'test.bar-truffle.2026-01-01-01' as ConfectionRecipeVariationId,
       yield: {
         count: 30,
-        unit: 'pieces',
-        weightPerPiece: 15 as Measurement
+        weightPerPiece: 15 as Measurement,
+        bufferPercentage: 10 as Percentage,
+        dimensions: {
+          width: 25 as Millimeters,
+          height: 25 as Millimeters,
+          depth: 8 as Millimeters
+        }
       }
     };
 
@@ -432,8 +415,8 @@ describe('Confections model', () => {
       variationId: 'test.rolled-truffle.2026-01-01-01' as ConfectionRecipeVariationId,
       yield: {
         count: 20,
-        unit: 'pieces',
-        weightPerPiece: 18 as Measurement
+        weightPerPiece: 18 as Measurement,
+        bufferPercentage: 10 as Percentage
       }
     };
 
