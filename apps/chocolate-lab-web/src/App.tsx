@@ -63,6 +63,7 @@ import { ProceduresTabContent } from './tabs/ProceduresTab';
 import { ConfectionsTabContent } from './tabs/ConfectionsTab';
 import { DecorationsTabContent } from './tabs/DecorationsTab';
 import { SessionsTabContent } from './tabs/SessionsTab';
+import { MoldInventoryTabContent } from './tabs/MoldInventoryTab';
 
 // ============================================================================
 // Mode / Tab Configuration
@@ -429,6 +430,8 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
       return <DecorationsTabContent />;
     case 'sessions':
       return <SessionsTabContent />;
+    case 'mold-inventory':
+      return <MoldInventoryTabContent />;
     default:
       return <TabPlaceholder tab={tab} />;
   }

@@ -299,10 +299,12 @@ export function toUserLibrarySource(
     sourceName,
     directory: userLibraryTree,
     load: {
-      // User library only loads user-specific sub-libraries (journals, sessions).
+      // User library only loads user-specific sub-libraries.
       // Entity libraries (ingredients, fillings, etc.) come from built-in or external sources.
       journals: true,
       sessions: true,
+      moldInventory: true,
+      ingredientInventory: true,
       default: false
     },
     mutable

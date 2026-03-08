@@ -109,6 +109,25 @@ export const SESSION_DESCRIPTOR: IEntityDescriptor<ISessionListEntry, SessionId>
   })
 };
 
+/**
+ * Wrapper for mold inventory list entries, pairing the composite ID with the materialized entry.
+ */
+export interface IMoldInventoryListEntry {
+  readonly id: Entities.Inventory.MoldInventoryEntryId;
+  readonly entry: UserLibrary.IMoldInventoryEntry;
+}
+
+export const MOLD_INVENTORY_DESCRIPTOR: IEntityDescriptor<
+  IMoldInventoryListEntry,
+  Entities.Inventory.MoldInventoryEntryId
+> = {
+  getId: (e: IMoldInventoryListEntry): Entities.Inventory.MoldInventoryEntryId => e.id,
+  getLabel: (e: IMoldInventoryListEntry): string => e.entry.item.displayName,
+  getSublabel: (e: IMoldInventoryListEntry): string | undefined =>
+    [`${e.entry.quantity}×`, e.entry.location].filter(Boolean).join(' · ') || undefined,
+  getStatus: undefined
+};
+
 export const DECORATION_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.IDecoration, DecorationId> = {
   getId: (d: LibraryRuntime.IDecoration): DecorationId => d.id,
   getLabel: (d: LibraryRuntime.IDecoration): string => d.name,
@@ -209,6 +228,16 @@ export const SESSION_FILTER_SPEC: IEntityFilterSpec<ISessionListEntry> = {
     collection: (e) => collectionFromId(e.id),
     status: (e) => e.session.status,
     type: (e) => e.session.sessionType
+  }
+};
+
+export const MOLD_INVENTORY_FILTER_SPEC: IEntityFilterSpec<IMoldInventoryListEntry> = {
+  getSearchText: (e) =>
+    [e.entry.item.displayName, e.entry.item.manufacturer, e.entry.location].filter(Boolean).join(' '),
+  getCollectionId: (e) => collectionFromId(e.id),
+  selectionExtractors: {
+    shape: (e) => e.entry.item.format,
+    available: (e) => (e.entry.quantity > 0 ? 'available' : 'out-of-stock')
   }
 };
 

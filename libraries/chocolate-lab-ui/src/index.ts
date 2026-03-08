@@ -55,3 +55,6 @@ export * from './packlets/sessions';
 
 // Production execution overlay
 export * from './packlets/production';
+
+// Inventory management
+export * from './packlets/inventory';

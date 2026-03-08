@@ -134,7 +134,8 @@ export type CascadeEntityType =
   | 'procedure'
   | 'step-params'
   | 'session'
-  | 'journal-entry';
+  | 'journal-entry'
+  | 'mold-inventory-entry';
 
 /**
  * Mode for a cascade column (view-only, editing, or creating a new entity).
