@@ -68,6 +68,7 @@ import {
   IProcedure,
   MaterializedLibrary
 } from '../library-runtime';
+import { SubLibraryId } from '../library-data';
 import * as Session from './session';
 import { IUserEntityLibrary } from '../user-entities';
 import { createJournalEntry } from './journalEntry';
@@ -193,6 +194,43 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
    */
   public get locations(): MaterializedLibrary<LocationId, ILocationEntity, ILocation, never> {
     return this._getLocations();
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.clearCache}
+   */
+  public clearCache(): void {
+    this._sessions = undefined;
+    this._journals = undefined;
+    this._moldInventory = undefined;
+    this._ingredientInventory = undefined;
+    this._locations = undefined;
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.invalidateCacheEntry}
+   */
+  public invalidateCacheEntry(subLibraryId: SubLibraryId, compositeId: string): void {
+    switch (subLibraryId) {
+      case 'sessions':
+        this._sessions?.clearCacheEntry(compositeId as SessionId);
+        break;
+      case 'journals':
+        this._journals?.clearCacheEntry(compositeId as JournalId);
+        break;
+      case 'moldInventory':
+        this._moldInventory?.clearCacheEntry(compositeId as Inventory.MoldInventoryEntryId);
+        break;
+      case 'ingredientInventory':
+        this._ingredientInventory?.clearCacheEntry(compositeId as Inventory.IngredientInventoryEntryId);
+        break;
+      case 'locations':
+        this._locations?.clearCacheEntry(compositeId as LocationId);
+        break;
+      /* c8 ignore next 1 - defensive: exhaustive sub-library check */
+      default:
+        break;
+    }
   }
 
   // ============================================================================

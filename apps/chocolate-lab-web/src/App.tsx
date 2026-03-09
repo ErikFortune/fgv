@@ -313,7 +313,10 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
         return result.isSuccess() ? succeed(true as const) : fail(result.message);
       }
     },
-    encryptionProvider: () => workspace.keyStore
+    encryptionProvider: () => workspace.keyStore,
+    onMutation: (subLibraryId, compositeId) => {
+      workspace.userData.invalidateCacheEntry(subLibraryId, compositeId);
+    }
   });
 
   const localStorageRootDir = useLocalStorage ? platformInit.value?.userLibraryTree : undefined;

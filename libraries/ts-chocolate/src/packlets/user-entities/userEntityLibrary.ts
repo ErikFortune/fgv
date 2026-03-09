@@ -88,6 +88,7 @@ export class UserEntityLibrary implements IUserEntityLibrary {
     | CryptoUtils.IEncryptionProvider
     | (() => CryptoUtils.IEncryptionProvider | undefined)
     | undefined;
+  private _onMutation: ((subLibraryId: SubLibraryId, compositeId: string) => void) | undefined;
 
   // Singleton caches for persisted collections (one map per sub-library)
   private readonly _persistedSessions: Map<
@@ -281,6 +282,7 @@ export class UserEntityLibrary implements IUserEntityLibrary {
   public configurePersistence(config: IUserEntityPersistenceConfig): void {
     this._syncProvider = config.syncProvider;
     this._encryptionProvider = config.encryptionProvider;
+    this._onMutation = config.onMutation;
   }
 
   // ==========================================================================
@@ -298,7 +300,8 @@ export class UserEntityLibrary implements IUserEntityLibrary {
       this._sessions,
       collectionId,
       CommonConverters.baseSessionId,
-      SessionEntities.Converters.anySessionEntity
+      SessionEntities.Converters.anySessionEntity,
+      'sessions'
     );
   }
 
@@ -313,7 +316,8 @@ export class UserEntityLibrary implements IUserEntityLibrary {
       this._journals,
       collectionId,
       CommonConverters.baseJournalId,
-      JournalEntities.Converters.anyJournalEntryEntity
+      JournalEntities.Converters.anyJournalEntryEntity,
+      'journals'
     );
   }
 
@@ -328,7 +332,8 @@ export class UserEntityLibrary implements IUserEntityLibrary {
       this._moldInventory,
       collectionId,
       InventoryEntities.Converters.moldInventoryEntryBaseId,
-      InventoryEntities.Converters.moldInventoryEntryEntity
+      InventoryEntities.Converters.moldInventoryEntryEntity,
+      'moldInventory'
     );
   }
 
@@ -343,7 +348,8 @@ export class UserEntityLibrary implements IUserEntityLibrary {
       this._ingredientInventory,
       collectionId,
       InventoryEntities.Converters.ingredientInventoryEntryBaseId,
-      InventoryEntities.Converters.ingredientInventoryEntryEntity
+      InventoryEntities.Converters.ingredientInventoryEntryEntity,
+      'ingredientInventory'
     );
   }
 
@@ -358,7 +364,8 @@ export class UserEntityLibrary implements IUserEntityLibrary {
       this._locations,
       collectionId,
       CommonConverters.baseLocationId,
-      LocationEntities.Converters.locationEntity
+      LocationEntities.Converters.locationEntity,
+      'locations'
     );
   }
 
@@ -412,7 +419,8 @@ export class UserEntityLibrary implements IUserEntityLibrary {
     subLibrary: SubLibraryBase<string, TBaseId, T>,
     collectionId: CollectionId,
     keyConverter: Converter<TBaseId, unknown>,
-    valueConverter: Converter<T, unknown>
+    valueConverter: Converter<T, unknown>,
+    subLibraryId: SubLibraryId
   ): Result<PersistedEditableCollection<T, TBaseId>> {
     // Verify the collection exists before creating a wrapper
     if (!subLibrary.collections.has(collectionId)) {
@@ -427,7 +435,10 @@ export class UserEntityLibrary implements IUserEntityLibrary {
         keyConverter,
         valueConverter,
         syncProvider: this._syncProvider,
-        encryptionProvider: this._encryptionProvider
+        encryptionProvider: this._encryptionProvider,
+        onMutation: this._onMutation
+          ? (compositeId: string): void => this._onMutation!(subLibraryId, compositeId)
+          : undefined
       });
       cache.set(collectionId, cached);
     }

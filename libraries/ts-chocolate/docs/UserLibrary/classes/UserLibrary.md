@@ -269,6 +269,32 @@ Creates a new UserLibrary.
 </td></tr>
 <tr><td>
 
+[clearCache()](./UserLibrary.clearCache.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Clears all cached MaterializedLibrary instances.
+
+</td></tr>
+<tr><td>
+
+[invalidateCacheEntry(subLibraryId, compositeId)](./UserLibrary.invalidateCacheEntry.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Evicts a single entry from the appropriate MaterializedLibrary cache.
+
+</td></tr>
+<tr><td>
+
 [createFillingSession(filling, targetWeight)](./UserLibrary.createFillingSession.md)
 
 </td><td>

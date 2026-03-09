@@ -32,7 +32,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { TypeaheadInput, type ITypeaheadSuggestion } from '@fgv/ts-app-shell';
+import { NumericInput, TypeaheadInput, type ITypeaheadSuggestion } from '@fgv/ts-app-shell';
 import type { IngredientId, LocationId, Measurement, MeasurementUnit } from '@fgv/ts-chocolate';
 
 // ============================================================================
@@ -140,7 +140,7 @@ export function CreateIngredientInventoryPanel(
   const [selectedIngredientName, setSelectedIngredientName] = useState<string | undefined>(
     initialIngredientName
   );
-  const [quantity, setQuantity] = useState(0);
+  const [quantity, setQuantity] = useState<number | undefined>(0);
   const [unit, setUnit] = useState<MeasurementUnit>('g');
   const [unitExpanded, setUnitExpanded] = useState(false);
   const [locationInput, setLocationInput] = useState(initialLocationName ?? '');
@@ -197,7 +197,7 @@ export function CreateIngredientInventoryPanel(
   );
 
   const handleConfirm = useCallback((): void => {
-    if (!selectedIngredientId) return;
+    if (!selectedIngredientId || quantity === undefined) return;
     const effectiveUnit = unit === 'g' ? undefined : unit;
     onConfirm(selectedIngredientId, quantity as Measurement, effectiveUnit, selectedLocationId);
   }, [selectedIngredientId, quantity, unit, selectedLocationId, onConfirm]);
@@ -236,19 +236,13 @@ export function CreateIngredientInventoryPanel(
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
         <div className="flex items-center gap-2">
-          <input
-            type="number"
+          <NumericInput
+            value={quantity}
+            onChange={setQuantity}
             min={0}
             step={stepForUnit(unit)}
-            value={quantity}
-            onChange={(e): void => {
-              const num = parseFloat(e.target.value);
-              if (!isNaN(num)) {
-                setQuantity(num);
-              }
-            }}
+            label={`Amount (${unit})`}
             className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary"
-            aria-label={`Amount (${unit})`}
           />
           <button
             type="button"
@@ -305,7 +299,7 @@ export function CreateIngredientInventoryPanel(
       <div className="flex gap-2 pt-2">
         <button
           onClick={handleConfirm}
-          disabled={!selectedIngredientId}
+          disabled={!selectedIngredientId || quantity === undefined}
           className="px-4 py-2 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Add to Inventory

@@ -30,6 +30,8 @@ export {
   type IMultiActionButtonAction
 } from './MultiActionButton';
 
+export { NumericInput, type INumericInputProps } from './NumericInput';
+
 export { TypeaheadInput, type ITypeaheadInputProps } from './TypeaheadInput';
 
 export {

@@ -32,7 +32,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { TypeaheadInput, type ITypeaheadSuggestion } from '@fgv/ts-app-shell';
+import { NumericInput, TypeaheadInput, type ITypeaheadSuggestion } from '@fgv/ts-app-shell';
 import type { LocationId, MoldId } from '@fgv/ts-chocolate';
 
 // ============================================================================
@@ -101,7 +101,7 @@ export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps):
   const [moldInput, setMoldInput] = useState(initialMoldName ?? '');
   const [selectedMoldId, setSelectedMoldId] = useState<MoldId | undefined>(initialMoldId);
   const [selectedMoldName, setSelectedMoldName] = useState<string | undefined>(initialMoldName);
-  const [count, setCount] = useState(1);
+  const [count, setCount] = useState<number | undefined>(1);
   const [locationInput, setLocationInput] = useState(initialLocationName ?? '');
   const [selectedLocationId, setSelectedLocationId] = useState<LocationId | undefined>(initialLocationId);
   const [selectedLocationName, setSelectedLocationName] = useState<string | undefined>(initialLocationName);
@@ -156,7 +156,7 @@ export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps):
   );
 
   const handleConfirm = useCallback((): void => {
-    if (!selectedMoldId) return;
+    if (!selectedMoldId || count === undefined) return;
     onConfirm(selectedMoldId, Math.max(1, count), selectedLocationId);
   }, [selectedMoldId, count, selectedLocationId, onConfirm]);
 
@@ -194,11 +194,12 @@ export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps):
       {/* Count */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Count</label>
-        <input
-          type="number"
-          min={1}
+        <NumericInput
           value={count}
-          onChange={(e): void => setCount(parseInt(e.target.value, 10) || 1)}
+          onChange={setCount}
+          min={1}
+          step={1}
+          label="Count"
           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary"
         />
       </div>
@@ -232,7 +233,7 @@ export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps):
       <div className="flex gap-2 pt-2">
         <button
           onClick={handleConfirm}
-          disabled={!selectedMoldId}
+          disabled={!selectedMoldId || count === undefined}
           className="px-4 py-2 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Add to Inventory

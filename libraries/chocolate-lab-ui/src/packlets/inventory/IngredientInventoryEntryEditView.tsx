@@ -27,7 +27,7 @@
 
 import React, { useCallback, useState } from 'react';
 
-import { TypeaheadInput, type ITypeaheadSuggestion } from '@fgv/ts-app-shell';
+import { NumericInput, TypeaheadInput, type ITypeaheadSuggestion } from '@fgv/ts-app-shell';
 import type {
   Entities,
   LocationId,
@@ -124,7 +124,7 @@ export function IngredientInventoryEntryEditView(
   const effectiveLocationName = initialLocationName ?? entryLocationName;
   const effectiveLocationId = initialLocationId ?? entryLocationId;
 
-  const [quantity, setQuantity] = useState(entry.quantity);
+  const [quantity, setQuantity] = useState<number | undefined>(entry.quantity);
   const [unit, setUnit] = useState<MeasurementUnit>(entry.entity.unit ?? 'g');
   const [unitExpanded, setUnitExpanded] = useState(false);
   const [locationInput, setLocationInput] = useState(effectiveLocationName ?? '');
@@ -146,6 +146,7 @@ export function IngredientInventoryEntryEditView(
   );
 
   const handleSave = useCallback((): void => {
+    if (quantity === undefined) return;
     const effectiveUnit = unit === 'g' ? undefined : unit;
     const entity: IIngredientInventoryEntryEntity = {
       inventoryType: 'ingredient',
@@ -179,20 +180,13 @@ export function IngredientInventoryEntryEditView(
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
         <div className="flex items-center gap-2">
-          <input
-            type="number"
+          <NumericInput
+            value={quantity}
+            onChange={setQuantity}
             min={0}
             step={stepForUnit(unit)}
-            value={quantity}
-            onChange={(e): void => {
-              const num = parseFloat(e.target.value);
-              if (!isNaN(num)) {
-                setQuantity(num);
-              }
-            }}
-            onFocus={(e): void => e.target.select()}
+            label={`Amount (${unit})`}
             className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary"
-            aria-label={`Amount (${unit})`}
           />
           <button
             type="button"

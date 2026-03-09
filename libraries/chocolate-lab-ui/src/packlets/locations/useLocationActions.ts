@@ -171,7 +171,6 @@ export function useLocationActions(): ILocationActions {
         return fail(result.message);
       }
 
-      workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       workspace.data.logger.info(`Added location '${result.value}'`);
       return succeed(result.value as LocationId);
@@ -199,7 +198,6 @@ export function useLocationActions(): ILocationActions {
         return fail(result.message);
       }
 
-      workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       workspace.data.logger.info(`Updated location '${locationId}'`);
       return succeed(result.value as LocationId);
@@ -227,7 +225,6 @@ export function useLocationActions(): ILocationActions {
         return result;
       }
 
-      workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       workspace.data.logger.info(`Deleted location '${locationId}'`);
       return result;

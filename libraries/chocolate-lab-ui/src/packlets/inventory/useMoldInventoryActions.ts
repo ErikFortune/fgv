@@ -211,7 +211,6 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
         return fail(result.message);
       }
 
-      workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       workspace.data.logger.info(`Added mold inventory entry '${result.value}'`);
       return succeed(result.value as MoldInventoryEntryId);
@@ -242,7 +241,6 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
         return fail(result.message);
       }
 
-      workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       workspace.data.logger.info(`Updated mold inventory entry '${entryId}'`);
       return succeed(result.value as MoldInventoryEntryId);
@@ -270,7 +268,6 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
         return result;
       }
 
-      workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       workspace.data.logger.info(`Deleted mold inventory entry '${entryId}'`);
       return result;

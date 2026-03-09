@@ -190,6 +190,32 @@ Gets the preferred item and all alternates from an IOptionsWithPreferred contain
 </td></tr>
 <tr><td>
 
+[clearCache()](./MaterializedLibrary.clearCache.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Clears all cached materialized objects.
+
+</td></tr>
+<tr><td>
+
+[clearCacheEntry(id)](./MaterializedLibrary.clearCacheEntry.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Clears a single cached materialized object by ID.
+
+</td></tr>
+<tr><td>
+
 [get(key)](./MaterializedLibrary.get.md)
 
 </td><td>

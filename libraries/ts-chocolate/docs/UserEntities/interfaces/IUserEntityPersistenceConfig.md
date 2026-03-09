@@ -58,4 +58,21 @@ IEncryptionProvider | (() =&gt; IEncryptionProvider | undefined)
 Encryption provider (or lazy getter) for encrypted collections.
 
 </td></tr>
+<tr><td>
+
+[onMutation](./IUserEntityPersistenceConfig.onMutation.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+(subLibraryId: [SubLibraryId](../../type-aliases/SubLibraryId.md), compositeId: string) =&gt; void
+
+</td><td>
+
+Optional callback invoked after any entity mutation via persisted collections.
+
+</td></tr>
 </tbody></table>

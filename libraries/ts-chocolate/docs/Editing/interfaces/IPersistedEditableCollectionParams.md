@@ -160,4 +160,24 @@ When `true`, mutation methods (PersistedEditableCollection.set | set(),
 Optional custom collection operations delegate.
 
 </td></tr>
+<tr><td>
+
+[onMutation](./IPersistedEditableCollectionParams.onMutation.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+(compositeId: string) =&gt; void
+
+</td><td>
+
+Optional callback invoked after a successful entity mutation
+(PersistedEditableCollection.addItem | addItem,
+PersistedEditableCollection.upsertItem | upsertItem,
+PersistedEditableCollection.removeItem | removeItem).
+
+</td></tr>
 </tbody></table>

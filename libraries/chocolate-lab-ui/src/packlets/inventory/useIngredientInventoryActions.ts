@@ -223,7 +223,6 @@ export function useIngredientInventoryActions(): IIngredientInventoryActions {
         return fail(result.message);
       }
 
-      workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       workspace.data.logger.info(`Added ingredient inventory entry '${result.value}'`);
       return succeed(result.value as IngredientInventoryEntryId);
@@ -254,7 +253,6 @@ export function useIngredientInventoryActions(): IIngredientInventoryActions {
         return fail(result.message);
       }
 
-      workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       workspace.data.logger.info(`Updated ingredient inventory entry '${entryId}'`);
       return succeed(result.value as IngredientInventoryEntryId);
@@ -282,7 +280,6 @@ export function useIngredientInventoryActions(): IIngredientInventoryActions {
         return result;
       }
 
-      workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       workspace.data.logger.info(`Deleted ingredient inventory entry '${entryId}'`);
       return result;

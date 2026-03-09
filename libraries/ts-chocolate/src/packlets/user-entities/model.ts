@@ -27,6 +27,7 @@ import { Logging, Result } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 
 import { BaseJournalId, BaseLocationId, BaseSessionId, CollectionId } from '../common';
+import { SubLibraryId } from '../library-data';
 import {
   AnyJournalEntryEntity,
   AnySessionEntity,
@@ -171,6 +172,15 @@ export interface IUserEntityPersistenceConfig {
   readonly encryptionProvider?:
     | CryptoUtils.IEncryptionProvider
     | (() => CryptoUtils.IEncryptionProvider | undefined);
+
+  /**
+   * Optional callback invoked after any entity mutation via persisted collections.
+   * Use this to invalidate materialized caches that wrap the same SubLibrary.
+   *
+   * @param subLibraryId - Identifies which sub-library was mutated
+   * @param compositeId - The composite entity ID (`collectionId.baseId`) of the mutated entry
+   */
+  readonly onMutation?: (subLibraryId: SubLibraryId, compositeId: string) => void;
 }
 
 // ============================================================================

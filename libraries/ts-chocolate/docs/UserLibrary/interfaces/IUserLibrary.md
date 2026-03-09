@@ -151,6 +151,32 @@ Description
 <tbody>
 <tr><td>
 
+[clearCache()](./IUserLibrary.clearCache.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Clears all cached MaterializedLibrary instances.
+
+</td></tr>
+<tr><td>
+
+[invalidateCacheEntry(subLibraryId, compositeId)](./IUserLibrary.invalidateCacheEntry.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Evicts a single entry from the appropriate MaterializedLibrary cache.
+
+</td></tr>
+<tr><td>
+
 [createPersistedFillingSession(variationId, options)](./IUserLibrary.createPersistedFillingSession.md)
 
 </td><td>

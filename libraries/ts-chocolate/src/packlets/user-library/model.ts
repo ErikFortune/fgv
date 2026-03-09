@@ -65,6 +65,7 @@ import {
   IMold,
   MaterializedLibrary
 } from '../library-runtime';
+import { SubLibraryId } from '../library-data';
 import { IUserEntityLibrary } from '../user-entities';
 import { ILocation } from './location';
 import * as Session from './session';
@@ -395,6 +396,24 @@ export interface IUserLibrary {
    * Locations are materialized lazily on access and cached.
    */
   readonly locations: MaterializedLibrary<LocationId, ILocationEntity, ILocation, never>;
+
+  /**
+   * Clears all cached MaterializedLibrary instances.
+   * Call this after mutations to ensure subsequent reads re-materialize from current entity state.
+   */
+  clearCache(): void;
+
+  /**
+   * Evicts a single entry from the appropriate MaterializedLibrary cache.
+   *
+   * More targeted than {@link IUserLibrary.clearCache | clearCache()}: only
+   * evicts the specified entry, leaving all other cached materialized objects
+   * (including in-progress editing sessions) intact.
+   *
+   * @param subLibraryId - Identifies which sub-library was mutated
+   * @param compositeId - The composite entity ID (`collectionId.baseId`) to evict
+   */
+  invalidateCacheEntry(subLibraryId: SubLibraryId, compositeId: string): void;
 
   /**
    * Creates a new persisted filling session from a filling variation.

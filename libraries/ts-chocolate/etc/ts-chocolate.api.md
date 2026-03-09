@@ -5244,6 +5244,10 @@ interface IPersistedEditableCollectionParams<T, TBaseId extends string> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
+    readonly onMutation?: (compositeId: string) => void;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
     readonly operations?: ICollectionOperations<T, TBaseId>;
     readonly subLibrary: SubLibraryBase<string, TBaseId, T>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
@@ -6465,17 +6469,21 @@ interface IUserEntityLibraryCreateParams {
 // @public
 interface IUserEntityPersistenceConfig {
     readonly encryptionProvider?: CryptoUtils.IEncryptionProvider | (() => CryptoUtils.IEncryptionProvider | undefined);
+    readonly onMutation?: (subLibraryId: SubLibraryId, compositeId: string) => void;
     readonly syncProvider?: ISyncProvider;
 }
 
 // @public
 interface IUserLibrary {
+    clearCache(): void;
     createPersistedConfectionSession(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Result<SessionId>;
     createPersistedConfectionSessionAndSave(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Promise<Result<SessionId>>;
     createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<SessionId>;
     createPersistedFillingSessionAndSave(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Promise<Result<SessionId>>;
     readonly entities: IUserEntityLibrary;
     readonly ingredientInventory: MaterializedLibrary<Inventory.IngredientInventoryEntryId, IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    invalidateCacheEntry(subLibraryId: SubLibraryId, compositeId: string): void;
     readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
     readonly locations: MaterializedLibrary<LocationId, ILocationEntity, ILocation, never>;
     readonly moldInventory: MaterializedLibrary<Inventory.MoldInventoryEntryId, IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
@@ -7135,6 +7143,9 @@ const logSettings: Converter<ILogSettings>;
 // @public
 class MaterializedLibrary<TId extends string, TEntity, TMaterialized, TQuerySpec = never> extends Collections.ReadOnlyConvertingResultMap<TId, TEntity, TMaterialized> {
     constructor(params: IMaterializedLibraryParams<TId, TEntity, TMaterialized, TQuerySpec>);
+    clearCache(): void;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "MaterializedLibrary"
+    clearCacheEntry(id: TId): void;
     find(spec: TQuerySpec, options?: IFindOptions): Result<ReadonlyArray<TMaterialized>>;
     getPreferred(spec: Model.IIdsWithPreferred<TId>): DetailedResult<TMaterialized, Collections.ResultMapResultDetail>;
     getPreferredRef(spec: Model.IOptionsWithPreferred<Model.IRefWithNotes<TId>, TId>): Result<{
@@ -8875,6 +8886,10 @@ export { UserLibrary }
 
 // @public
 class UserLibrary_2 implements IUserLibrary, ISessionContext {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    clearCache(): void;
     get confections(): MaterializedLibrary<ConfectionId, AnyConfectionRecipeEntity, IConfectionBase, never>;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
@@ -8910,6 +8925,10 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     // (undocumented)
     get ingredientInventory(): MaterializedLibrary<Inventory.IngredientInventoryEntryId, Inventory.IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
     get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, IIngredient, Indexers.IIngredientQuerySpec>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    invalidateCacheEntry(subLibraryId: SubLibraryId, compositeId: string): void;
     isCollectionMutable(collectionId: CollectionId): Result<boolean>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //

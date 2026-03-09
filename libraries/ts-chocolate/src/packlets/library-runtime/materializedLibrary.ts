@@ -287,4 +287,26 @@ export class MaterializedLibrary<
         });
       });
   }
+
+  /**
+   * Clears all cached materialized objects.
+   *
+   * Call this after the underlying entity data has been mutated so that
+   * subsequent `get()` calls re-materialize from the current entity state.
+   */
+  public clearCache(): void {
+    this._clearCache();
+  }
+
+  /**
+   * Clears a single cached materialized object by ID.
+   *
+   * More targeted than {@link MaterializedLibrary.clearCache | clearCache()}: only
+   * evicts the specified entry, leaving all other cached objects intact.
+   *
+   * @param id - The composite ID of the entry to evict
+   */
+  public clearCacheEntry(id: TId): void {
+    this._clearCacheEntry(id);
+  }
 }

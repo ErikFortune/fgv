@@ -136,6 +136,20 @@ export interface IPersistedEditableCollectionParams<T, TBaseId extends string> {
    * construction, field-based validation) without subclassing.
    */
   readonly operations?: ICollectionOperations<T, TBaseId>;
+
+  /**
+   * Optional callback invoked after a successful entity mutation
+   * ({@link PersistedEditableCollection.addItem | addItem},
+   * {@link PersistedEditableCollection.upsertItem | upsertItem},
+   * {@link PersistedEditableCollection.removeItem | removeItem}).
+   *
+   * Called after the in-memory mutation succeeds, regardless of whether
+   * the subsequent persist step succeeds. Use this to invalidate
+   * materialized caches that wrap the same SubLibrary.
+   *
+   * @param compositeId - The composite entity ID (`collectionId.baseId`) of the mutated entry
+   */
+  readonly onMutation?: (compositeId: string) => void;
 }
 
 // ============================================================================
@@ -176,6 +190,7 @@ export class PersistedEditableCollection<T, TBaseId extends string> {
     | undefined;
   private readonly _autoPersist: boolean;
   private readonly _customOperations: ICollectionOperations<T, TBaseId> | undefined;
+  private readonly _onMutation: ((compositeId: string) => void) | undefined;
   private _defaultOperations: ICollectionOperations<T, TBaseId> | undefined;
 
   /**
@@ -191,6 +206,7 @@ export class PersistedEditableCollection<T, TBaseId extends string> {
     this._encryptionProvider = params.encryptionProvider;
     this._autoPersist = params.autoPersist ?? false;
     this._customOperations = params.operations;
+    this._onMutation = params.onMutation;
   }
 
   /**
@@ -301,6 +317,7 @@ export class PersistedEditableCollection<T, TBaseId extends string> {
     if (result.isFailure()) {
       return result;
     }
+    this._onMutation?.(`${this._collectionId}.${baseId}`);
     const saveResult = await this.save();
     if (saveResult.isFailure()) {
       return fail(`${this._collectionId}: add succeeded but persist failed: ${saveResult.message}`);
@@ -324,6 +341,7 @@ export class PersistedEditableCollection<T, TBaseId extends string> {
     if (result.isFailure()) {
       return result;
     }
+    this._onMutation?.(`${this._collectionId}.${baseId}`);
     const saveResult = await this.save();
     if (saveResult.isFailure()) {
       return fail(`${this._collectionId}: upsert succeeded but persist failed: ${saveResult.message}`);
@@ -346,6 +364,7 @@ export class PersistedEditableCollection<T, TBaseId extends string> {
     if (result.isFailure()) {
       return result;
     }
+    this._onMutation?.(`${this._collectionId}.${baseId}`);
     const saveResult = await this.save();
     if (saveResult.isFailure()) {
       return fail(`${this._collectionId}: remove succeeded but persist failed: ${saveResult.message}`);
