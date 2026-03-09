@@ -58,19 +58,17 @@
     "ts-node": "^10.9.2",
     "typescript": "5.9.3",
     "eslint-plugin-n": "^17.23.1",
-    "@rushstack/heft": "1.1.7",
-    "@rushstack/heft-jest-plugin": "1.1.7",
+    "@rushstack/heft": "1.2.6",
+    "@rushstack/heft-jest-plugin": "1.2.6",
     "@types/heft-jest": "1.0.6",
     "@microsoft/api-documenter": "^7.28.2",
     "@rushstack/eslint-patch": "1.14.1",
-    "@rushstack/eslint-config": "4.6.1",
-    "eslint-plugin-tsdoc": "~0.4.0",
+    "@rushstack/eslint-config": "4.6.4",
+    "eslint-plugin-tsdoc": "~0.5.2",
     "@types/luxon": "^3.7.1",
     "@fgv/heft-dual-rig": "workspace:*",
-    "@rushstack/heft-node-rig": "2.11.12",
-    "@microsoft/api-extractor": "^7.55.2",
-    "typedoc": "~0.28.16",
-    "typedoc-plugin-markdown": "~4.9.0"
+    "@rushstack/heft-node-rig": "2.11.26",
+    "@microsoft/api-extractor": "^7.55.2"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

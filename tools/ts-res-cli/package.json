@@ -40,9 +40,9 @@
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",
-    "@rushstack/heft": "1.1.7",
-    "@rushstack/heft-node-rig": "2.11.12",
-    "@rushstack/eslint-config": "4.6.1",
+    "@rushstack/heft": "1.2.6",
+    "@rushstack/heft-node-rig": "2.11.26",
+    "@rushstack/eslint-config": "4.6.4",
     "@types/heft-jest": "1.0.6",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.14.9",
@@ -52,6 +52,10 @@
     "jest": "^29.7.0",
     "ts-jest": "^29.4.6",
     "typescript": "5.9.3",
-    "@rushstack/heft-jest-plugin": "1.1.7"
+    "@rushstack/heft-jest-plugin": "1.2.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }
