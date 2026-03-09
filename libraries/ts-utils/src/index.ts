@@ -27,6 +27,7 @@ import * as Logging from './packlets/logging';
 import * as Validation from './packlets/validation';
 
 import {
+  AggregatedResultMap,
   Collector,
   ICollectible,
   ConvertingCollector,
@@ -41,6 +42,7 @@ import { Validator, Validators } from './packlets/validation';
 
 export * from './packlets/base';
 export {
+  AggregatedResultMap,
   Collections,
   Collector,
   ConvertingCollector,

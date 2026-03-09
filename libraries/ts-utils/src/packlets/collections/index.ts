@@ -24,6 +24,7 @@ import * as Utils from './utils';
 
 export * from './collectible';
 export * from './convertingCollector';
+export * from './convertingResultMap';
 export * from './collector';
 export * from './collectorValidator';
 export * from './convertingCollectorValidator';
@@ -31,9 +32,12 @@ export * from './validatingConvertingCollector';
 export * from './common';
 export * from './keyValueConverters';
 export * from './readonlyResultMap';
+export * from './readOnlyConvertingResultMap';
 export * from './resultMap';
 export * from './resultMapValidator';
 export * from './validatingCollector';
+export * from './validatingConvertingResultMap';
 export * from './validatingResultMap';
+export * from './aggregatedResultMap';
 
 export { Utils };

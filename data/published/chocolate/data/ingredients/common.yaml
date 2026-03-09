@@ -1,0 +1,788 @@
+metadata:
+  name: Common Ingredients
+  description: Dairy, fats, sugars, and generic chocolates for recipe substitution
+items:
+  heavy-cream-38:
+    baseId: heavy-cream-38
+    name: Heavy Cream (38% fat)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 38
+      water: 57
+      solids: 5
+      otherFats: 0
+    allergens:
+      - milk
+    vegan: false
+    category: dairy
+    fatContent: 38
+    waterContent: 57
+  butter-82:
+    baseId: butter-82
+    name: Unsalted Butter (82% fat)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 82
+      water: 18
+      solids: 2
+      otherFats: 0
+    allergens:
+      - milk
+    vegan: false
+    category: fat
+    meltingPoint: 32
+  glucose-de43:
+    baseId: glucose-de43
+    name: Glucose Syrup (DE 43)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 80
+      milkFat: 0
+      water: 20
+      solids: 0
+      otherFats: 0
+    vegan: true
+    category: sugar
+    sweetnessPotency: 0.4
+  invert-sugar:
+    baseId: invert-sugar
+    name: Invert Sugar (Trimoline)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 77
+      milkFat: 0
+      water: 23
+      solids: 0
+      otherFats: 0
+    vegan: true
+    category: sugar
+    sweetnessPotency: 1.2
+  sorbitol:
+    baseId: sorbitol
+    name: Sorbitol (70% solution)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 70
+      milkFat: 0
+      water: 30
+      solids: 0
+      otherFats: 0
+    vegan: true
+    category: sugar
+    sweetnessPotency: 0.6
+  granulated-sugar:
+    baseId: granulated-sugar
+    name: Granulated Sugar
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 100
+      milkFat: 0
+      water: 0
+      solids: 0
+      otherFats: 0
+    vegan: true
+    category: sugar
+    sweetnessPotency: 1
+  muscovado-sugar:
+    baseId: muscovado-sugar
+    name: Muscovado Sugar
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 95
+      milkFat: 0
+      water: 3
+      solids: 2
+      otherFats: 0
+    vegan: true
+    category: sugar
+    sweetnessPotency: 1
+  coconut-cream:
+    baseId: coconut-cream
+    name: Coconut Cream (Full Fat)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 2
+      milkFat: 0
+      water: 53
+      solids: 5
+      otherFats: 40
+    vegan: true
+    tags:
+      - vegan
+      - dairy-free
+      - coconut
+    category: fat
+    meltingPoint: 24
+  chocolate-dark-64:
+    baseId: chocolate-dark-64
+    name: Generic Dark Chocolate (64%)
+    ganacheCharacteristics:
+      cacaoFat: 38
+      sugar: 32
+      milkFat: 0
+      water: 1
+      solids: 29
+      otherFats: 0
+    description: Reference dark chocolate for recipe substitution. Use any quality 64% dark couverture.
+    tags:
+      - generic
+      - dark
+      - substitutable
+    category: chocolate
+    chocolateType: dark
+    cacaoPercentage: 64
+  chocolate-milk-38:
+    baseId: chocolate-milk-38
+    name: Generic Milk Chocolate (38%)
+    ganacheCharacteristics:
+      cacaoFat: 22
+      sugar: 42
+      milkFat: 6
+      water: 1
+      solids: 26
+      otherFats: 3
+    description: Reference milk chocolate for recipe substitution. Use any quality 38% milk couverture.
+    allergens:
+      - milk
+    tags:
+      - generic
+      - milk
+      - substitutable
+    category: chocolate
+    chocolateType: milk
+    cacaoPercentage: 38
+  chocolate-white-34:
+    baseId: chocolate-white-34
+    name: Generic White Chocolate (34%)
+    ganacheCharacteristics:
+      cacaoFat: 34
+      sugar: 40
+      milkFat: 5
+      water: 1
+      solids: 18
+      otherFats: 2
+    description: Reference white chocolate for recipe substitution. Use any quality 34% white couverture.
+    allergens:
+      - milk
+    tags:
+      - generic
+      - white
+      - substitutable
+    category: chocolate
+    chocolateType: white
+    cacaoPercentage: 34
+  hazelnut-paste:
+    baseId: hazelnut-paste
+    name: Hazelnut Paste (100% Hazelnuts)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 4
+      milkFat: 0
+      water: 3
+      solids: 38
+      otherFats: 55
+    allergens:
+      - nuts
+    vegan: true
+    tags:
+      - gianduja
+      - praline
+      - hazelnut
+    category: fat
+    meltingPoint: 30
+  cocoa-powder:
+    baseId: cocoa-powder
+    name: Dutch-Process Cocoa Powder
+    ganacheCharacteristics:
+      cacaoFat: 12
+      sugar: 0
+      milkFat: 0
+      water: 3
+      solids: 85
+      otherFats: 0
+    description: Alkalized cocoa powder for truffle coating and finishing
+    vegan: true
+    tags:
+      - coating
+      - truffle
+      - cocoa
+      - finishing
+    category: other
+  soy-milk:
+    baseId: soy-milk
+    name: Soy Milk
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 92
+      solids: 6
+      otherFats: 2
+    description: >-
+      Plant-based milk alternative made from soybeans and water, typically unsweetened with around 3-4% protein, low
+      fat, and high water content. Used in vegan ganache as a dairy cream substitute.
+    allergens:
+      - soy
+    certifications:
+      - vegan
+    vegan: true
+    tags:
+      - plant-based
+      - unsweetened
+    density: 1.03
+    category: liquid
+  raspberry-puree-himbeermark:
+    baseId: raspberry-puree-himbeermark
+    name: Raspberry Puree (Himbeermark)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 5
+      milkFat: 0
+      water: 83
+      solids: 12
+      otherFats: 0
+    description: >-
+      Seedless, finely pureed raspberries (Himbeermark in German), unsweetened fruit puree made by crushing and
+      straining fresh or processed raspberries to remove seeds and fibers. Commonly used in German baking for fillings,
+      mousses, sauces, tortes, or as a flavoring in creams and ganache.
+    certifications:
+      - vegan
+    vegan: true
+    tags:
+      - fruit
+      - puree
+      - unsweetened
+      - seedless
+    density: 1.05
+    category: liquid
+  cocoa-butter:
+    baseId: cocoa-butter
+    name: Cocoa Butter
+    ganacheCharacteristics:
+      cacaoFat: 100
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 0
+      otherFats: 0
+    description: >-
+      Pure edible fat extracted from cocoa beans (Theobroma cacao), consisting almost entirely of triglycerides
+      (primarily saturated and monounsaturated fats like stearic, oleic, and palmitic acids). Pale yellow, solid at room
+      temperature with a melting point around 34-38°C, used in ganache to thin mixtures, enhance snap/crispness, add
+      gloss, and stabilize emulsions. Neutral flavor (deodorized versions) or mild cocoa aroma.
+    certifications:
+      - vegan
+    vegan: true
+    tags:
+      - fat
+      - cacao-fat
+      - chocolate-making
+      - tempering
+      - vegan-fat
+    density: 0.9
+    category: fat
+    meltingPoint: 35
+  lemon-juice:
+    baseId: lemon-juice
+    name: Lemon Juice
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 3
+      milkFat: 0
+      water: 90
+      solids: 7
+      otherFats: 0
+    description: >-
+      Freshly squeezed lemon juice, commonly used for acidity adjustment, flavor enhancement, and preservation in
+      ganache and confectionery.
+    certifications:
+      - all-natural
+    vegan: true
+    tags:
+      - citrus
+      - acidic
+      - fruit-juice
+    density: 1.03
+    category: liquid
+  ghee-clarified-butter:
+    baseId: ghee-clarified-butter
+    name: Ghee (Clarified Butter)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 99
+      water: 0
+      solids: 1
+      otherFats: 0
+    description: >-
+      Ghee is clarified butter in which milk solids and water have been removed, resulting in a pure butterfat product
+      with a rich, nutty flavor. Commonly used in confectionery and ganache for its high fat content and clean dairy
+      notes.
+    allergens:
+      - milk
+    tags:
+      - clarified-butter
+      - butterfat
+      - anhydrous-fat
+    density: 0.91
+    category: fat
+    meltingPoint: 32
+  coconut-oil-deodorized:
+    baseId: coconut-oil-deodorized
+    name: Coconut Oil (Deodorized)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 0
+      otherFats: 100
+    description: >-
+      Refined and deodorized coconut oil with a neutral aroma and flavor, commonly used in confectionery and ganache for
+      its clean fat profile and sharp melting behavior.
+    certifications:
+      - all-natural
+    vegan: true
+    tags:
+      - coconut
+      - refined-fat
+      - neutral-oil
+    density: 0.92
+    category: fat
+    meltingPoint: 24
+  heavy-cream-36:
+    baseId: heavy-cream-36
+    name: Heavy Cream (36%)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 3
+      milkFat: 36
+      water: 58
+      solids: 3
+      otherFats: 0
+    description: >-
+      A rich dairy cream containing a high percentage of milk fat, commonly used in ganache for its emulsifying
+      properties, smooth texture, and balanced water–fat ratio.
+    allergens:
+      - milk
+    tags:
+      - cream
+      - dairy
+      - emulsion
+    density: 1.01
+    category: dairy
+    fatContent: 36
+    waterContent: 58
+  acid-powder:
+    baseId: acid-powder
+    name: Acid Powder (Säurepulver)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 100
+      otherFats: 0
+    description: >-
+      A powdered acid blend typically used in confectionery to adjust acidity, enhance fruit flavors, or provide
+      tartness. Common formulations include citric acid, malic acid, or a mixture of food-grade acids.
+    certifications:
+      - all-natural
+    vegan: true
+    tags:
+      - acidifier
+      - citric-acid
+      - malic-acid
+      - powder
+    density: 1.66
+    category: other
+  apple-pectin:
+    baseId: apple-pectin
+    name: Apple Pectin
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 100
+      otherFats: 0
+    description: >-
+      A gelling agent extracted from apples, commonly used in confectionery to stabilize fruit ganaches, jams, and pâte
+      de fruits. Provides structure by forming a gel network in the presence of sugar and acid.
+    certifications:
+      - all-natural
+    vegan: true
+    tags:
+      - pectin
+      - gelling-agent
+      - apple-derived
+      - stabilizer
+    density: 1.45
+    category: other
+  passion-fruit-juice:
+    baseId: passion-fruit-juice
+    name: Passion Fruit Juice
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 13
+      milkFat: 0
+      water: 82
+      solids: 5
+      otherFats: 0
+    description: >-
+      Juice extracted from passion fruit, known for its intense tropical acidity and aromatic floral–fruity notes.
+      Commonly used in ganache, fruit fillings, and sorbets for its bright flavor and natural tartness.
+    certifications:
+      - all-natural
+    vegan: true
+    tags:
+      - fruit-juice
+      - tropical
+      - acidic
+    density: 1.05
+    category: liquid
+  salt:
+    baseId: salt
+    name: Salt
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 100
+      otherFats: 0
+    description: >-
+      Food‑grade sodium chloride used to enhance flavor, balance sweetness, and sharpen acidity in ganache and
+      confectionery.
+    certifications:
+      - all-natural
+    vegan: true
+    tags:
+      - sodium-chloride
+      - seasoning
+      - mineral
+    density: 2.16
+    category: other
+  hazelnut-praline-70-30:
+    baseId: hazelnut-praline-70-30
+    name: Hazelnut Praliné 70:30
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 30
+      milkFat: 0
+      water: 0
+      solids: 20
+      otherFats: 50
+    description: >-
+      A classic hazelnut praliné made from 70% roasted hazelnuts and 30% caramelized sugar, ground into a smooth paste.
+      Commonly used in ganache, gianduja, and fillings for its rich nut flavor and natural fat–sugar balance.
+    allergens:
+      - nuts
+    certifications:
+      - all-natural
+    vegan: true
+    tags:
+      - hazelnut
+      - praline
+      - nut-paste
+      - gianduja-base
+    density: 1.05
+    category: other
+  hazelnuts-roasted:
+    baseId: hazelnuts-roasted
+    name: Hazelnuts (Roasted)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 4
+      milkFat: 0
+      water: 2
+      solids: 34
+      otherFats: 60
+    description: >-
+      Whole hazelnuts that have been dry‑roasted to enhance aroma, deepen flavor, and reduce moisture. Commonly used in
+      praliné, gianduja, nut pastes, and inclusions.
+    allergens:
+      - nuts
+    certifications:
+      - all-natural
+    vegan: true
+    tags:
+      - hazelnut
+      - nut
+      - roasted
+      - inclusion
+    density: 0.64
+    category: other
+  gold-leaf:
+    baseId: gold-leaf
+    name: Edible Gold Leaf
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 0
+      otherFats: 0
+    description: 23-karat edible gold leaf sheets for elegant decoration
+    vegan: true
+    tags:
+      - decoration
+      - gold
+      - elegant
+    category: decoration
+  cocoa-butter-colored:
+    baseId: cocoa-butter-colored
+    name: Colored Cocoa Butter
+    ganacheCharacteristics:
+      cacaoFat: 100
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 0
+      otherFats: 0
+    description: Pre-colored cocoa butter for transfer sheets and airbrushing
+    vegan: true
+    tags:
+      - decoration
+      - cocoa-butter
+      - color
+      - transfer
+    category: decoration
+  corn-syrup:
+    baseId: corn-syrup
+    name: Corn Syrup
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 76
+      milkFat: 0
+      water: 24
+      solids: 0
+      otherFats: 0
+    description: >-
+      A thick, sweet syrup made from corn starch that has been processed to convert some of its glucose into fructose.
+      Corn syrup is commonly used in confectionery to prevent crystallization, add sweetness, and improve texture. It
+      helps retain moisture and extends shelf life in chocolate ganaches and other confections.
+    allergens: []
+    traceAllergens: []
+    certifications: []
+    vegan: true
+    tags:
+      - sweetener
+      - liquid-sugar
+      - anti-crystallization
+      - humectant
+      - confectionery
+      - glucose-syrup
+    density: 1.4
+    phase: liquid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+        - id: tsp
+        - id: Tbsp
+      preferredId: g
+    urls: []
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics estimated based on typical light corn syrup composition: approximately 76% sugars
+          (primarily glucose with some maltose and higher oligosaccharides) and 24% water. Standard corn syrup contains
+          minimal to no fats or milk solids. Sweetness potency estimated at 0.75 relative to sucrose, as corn syrup is
+          less sweet than table sugar. Density estimated at 1.4 g/mL for standard light corn syrup. These values may
+          vary slightly by manufacturer and whether it's light or dark corn syrup.
+    category: sugar
+    hydrationNumber: 0
+    sweetnessPotency: 0.75
+  goat-cheese-costco:
+    baseId: goat-cheese-costco
+    name: Goat Cheese (Costco)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 1
+      milkFat: 21
+      water: 60
+      solids: 17
+      otherFats: 1
+    description: >-
+      Fresh goat cheese (chèvre) from Costco, typically soft and creamy with a tangy, mild flavor. Commonly used in
+      ganaches for its unique flavor profile and smooth texture when melted.
+    manufacturer: Kirkland (Various Suppliers)
+    allergens:
+      - milk
+    traceAllergens: []
+    certifications: []
+    vegan: false
+    tags:
+      - cheese
+      - goat
+      - chèvre
+      - fresh cheese
+      - tangy
+      - creamy
+      - costco
+    density: 1.03
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+        - id: tsp
+        - id: Tbsp
+      preferredId: g
+    urls: []
+    notes:
+      - category: ai
+        note: >-
+          Nutritional composition estimated based on typical fresh goat cheese (chèvre) values: approximately 22% fat,
+          60% water, 17% protein and other solids, 1% lactose/sugar. Costco sources from multiple suppliers, so exact
+          composition may vary by region and brand. The ganacheCharacteristics represent a typical soft goat cheese
+          composition suitable for ganache applications.
+      - category: ai
+        note: >-
+          Density estimated at 1.03 g/mL based on typical fresh soft cheese density. When using in ganache, the high
+          water content (60%) should be accounted for in shelf life calculations.
+    category: dairy
+    fatContent: 22
+    waterContent: 60
+  mascarpone:
+    baseId: mascarpone
+    name: Mascarpone
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 3
+      milkFat: 44
+      water: 49
+      solids: 4
+      otherFats: 0
+    description: >-
+      Italian cream cheese made from whole cream, coagulated by the addition of citric acid or acetic acid. Known for
+      its rich, creamy texture and slightly sweet flavor. Commonly used in ganaches and desserts like tiramisu.
+    allergens:
+      - milk
+    certifications:
+      - vegetarian
+    vegan: false
+    tags:
+      - italian
+      - cream-cheese
+      - soft-cheese
+      - dessert
+      - ganache
+      - filling
+    density: 1.03
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+        - id: Tbsp
+        - id: tsp
+      preferredId: g
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics estimated based on typical mascarpone composition: approximately 44% milk fat, 49%
+          water, 3% natural milk sugars (lactose), and 4% milk solids (proteins and minerals). Values may vary slightly
+          by manufacturer and production method. Fat content and water content are typical ranges for commercial
+          mascarpone. Density estimated at 1.03 g/mL based on high fat content.
+    category: dairy
+    fatContent: 44
+    waterContent: 49
+  coffee-beans:
+    baseId: coffee-beans
+    name: Coffee Beans
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 3
+      solids: 96
+      otherFats: 1
+    description: >-
+      Whole roasted coffee beans used to infuse flavor into creams, ganaches, and other chocolate preparations. Can be
+      used whole for steeping or ground for direct incorporation. Provides rich coffee flavor and aroma to chocolate
+      confections.
+    allergens: []
+    traceAllergens: []
+    certifications: []
+    vegan: true
+    tags:
+      - coffee
+      - beans
+      - infusion
+      - flavor
+      - aromatic
+      - roasted
+    density: 0.65
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: tsp
+        - id: Tbsp
+      preferredId: g
+    urls: []
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics estimated for typical roasted coffee beans: approximately 96% solids (including
+          cellulose, proteins, minerals, and coffee oils), 3% residual water, and 1% coffee oils (counted as otherFats).
+          These beans are typically used for infusion rather than direct incorporation into ganache, so their
+          composition affects flavor extraction rather than ganache texture. Density estimated at 0.65 g/mL for whole
+          roasted beans. For use in ganache, beans are typically steeped in cream or other liquids to extract flavor
+          compounds, then strained out.
+    category: flavor
+  maple-syrup:
+    baseId: maple-syrup
+    name: Maple Syrup
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 66
+      milkFat: 0
+      water: 33
+      solids: 1
+      otherFats: 0
+    description: >-
+      Pure maple syrup produced by concentrating the sap of sugar maple trees through evaporation. It delivers a
+      distinctive complex sweetness with caramel, woody, and vanilla-like notes, making it ideal for enhancing chocolate
+      ganaches, pralines, and flavored fillings while contributing natural moisture and subtle acidity.
+    allergens: []
+    traceAllergens: []
+    certifications:
+      - all-natural
+      - vegan
+      - vegetarian
+      - non-gmo
+      - kosher
+    vegan: true
+    tags:
+      - sweetener
+      - maple-flavor
+      - natural-syrup
+      - liquid-sweetener
+    density: 1.33
+    phase: liquid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+        - id: tsp
+        - id: Tbsp
+      preferredId: mL
+    urls:
+      - category: wikipedia
+        url: https://en.wikipedia.org/wiki/Maple_syrup
+    notes:
+      - category: ai
+        note: >-
+          GanacheCharacteristics based on standard pure maple syrup composition (minimum 66° Brix): ~66% sugars
+          (primarily sucrose with trace glucose/fructose), ~33% water, ~1% other solids (minerals/organic
+          acids/phenolics). Density averaged from industry sources (1.32–1.37 g/mL). Sweetness potency 0.6 relative to
+          sucrose per Quebec maple industry technical data for the syrup as used. Hydration number 0 (anhydrous sucrose
+          dominant). Generic values for unspecified pure maple syrup; minor batch variations possible by grade/producer.
+    category: sugar
+    hydrationNumber: 0
+    sweetnessPotency: 0.6

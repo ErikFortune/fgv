@@ -20,8 +20,14 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult } from '@fgv/ts-utils';
-import { FileTreeItem, IFileTreeAccessors, IFileTreeDirectoryItem } from './fileTreeAccessors';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import {
+  FileTreeItem,
+  IFileTreeAccessors,
+  IFileTreeDirectoryItem,
+  IFileTreeFileItem,
+  isMutableAccessors
+} from './fileTreeAccessors';
 
 /**
  * Class representing a directory in a file tree.
@@ -29,17 +35,17 @@ import { FileTreeItem, IFileTreeAccessors, IFileTreeDirectoryItem } from './file
  */
 export class DirectoryItem<TCT extends string = string> implements IFileTreeDirectoryItem<TCT> {
   /**
-   * {@inheritdoc FileTree.IFileTreeDirectoryItem."type"}
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem."type"}
    */
   public readonly type: 'directory' = 'directory';
 
   /**
-   * {@inheritdoc FileTree.IFileTreeDirectoryItem.absolutePath}
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.absolutePath}
    */
   public readonly absolutePath: string;
 
   /**
-   * {@inheritdoc FileTree.IFileTreeDirectoryItem.name}
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.name}
    */
   public get name(): string {
     return this._hal.getBaseName(this.absolutePath);
@@ -79,9 +85,46 @@ export class DirectoryItem<TCT extends string = string> implements IFileTreeDire
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeDirectoryItem.getChildren}
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.getChildren}
    */
   public getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>> {
     return this._hal.getChildren(this.absolutePath);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.createChildFile}
+   */
+  public createChildFile(name: string, contents: string): Result<IFileTreeFileItem<TCT>> {
+    if (!isMutableAccessors(this._hal)) {
+      return fail(`${this.absolutePath}: mutation not supported`);
+    }
+
+    const filePath = this._hal.joinPaths(this.absolutePath, name);
+    return this._hal.saveFileContents(filePath, contents).onSuccess(() =>
+      this._hal.getItem(filePath).onSuccess((item) => {
+        /* c8 ignore next 3 - defensive: verifies accessor returned correct item type after save */
+        if (item.type !== 'file') {
+          return fail(`${filePath}: expected file but got ${item.type}`);
+        }
+        return succeed(item);
+      })
+    );
+  }
+
+  /**
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.createChildDirectory}
+   */
+  public createChildDirectory(name: string): Result<IFileTreeDirectoryItem<TCT>> {
+    if (!isMutableAccessors(this._hal)) {
+      return fail(`${this.absolutePath}: mutation not supported`);
+    }
+
+    /* c8 ignore next 3 - defensive: createDirectory should always exist if isMutableAccessors is true */
+    if (this._hal.createDirectory === undefined) {
+      return fail(`${this.absolutePath}: directory creation not supported`);
+    }
+
+    const dirPath = this._hal.joinPaths(this.absolutePath, name);
+    return this._hal.createDirectory(dirPath).onSuccess(() => DirectoryItem.create(dirPath, this._hal));
   }
 }

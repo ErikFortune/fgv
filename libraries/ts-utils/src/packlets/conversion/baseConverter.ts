@@ -31,7 +31,8 @@ import {
 import { GenericDefaultingConverter } from './defaultingConverter';
 
 /**
- * internal
+ * Internal helper that recursively unwraps converter and array types.
+ * @internal
  */
 type InnerInferredType<TCONV> = TCONV extends Converter<infer TTO>
   ? TTO extends Array<infer TTOELEM>
@@ -42,19 +43,35 @@ type InnerInferredType<TCONV> = TCONV extends Converter<infer TTO>
   : TCONV;
 
 /**
- * Infers the type that will be returned by an instantiated converter.  Works
- * for complex as well as simple types.
+ * Infers the type that will be returned by an instantiated converter. Works
+ * for complex as well as simple types, including nested arrays.
  * @example `Infer<typeof Converters.mapOf(Converters.stringArray)>` is `Map<string, string[]>`
- * @beta
+ * @public
  */
 export type Infer<TCONV> = TCONV extends Converter<infer TTO, unknown> ? InnerInferredType<TTO> : never;
 
 /**
- * Deprecated name for Infer<T> retained for compatibility
- * @deprecated use @see Infer instead
- * @internal
+ * Deprecated name for {@link Conversion.Infer | Infer
+ * } retained for compatibility.
+ * @deprecated Use {@link Conversion.Infer | Infer} instead.
+ * @public
  */
 export type ConvertedToType<TCONV> = Infer<TCONV>;
+
+/**
+ * Helper type to extract the result type from a {@link Converter | Converter}.
+ * For simple single-level extraction. For complex nested types, use {@link Conversion.Infer | Infer}.
+ * @public
+ */
+export type ConverterResultType<C> = C extends Converter<infer T, unknown> ? T : never;
+
+/**
+ * Helper type to map a tuple of {@link Converter | Converters} to a tuple of their result types.
+ * @public
+ */
+export type ConverterResultTypes<T extends readonly Converter<unknown, unknown>[]> = {
+  [K in keyof T]: T[K] extends Converter<infer R, unknown> ? R : never;
+};
 
 /**
  * Function signature for a converter function.
@@ -97,28 +114,28 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.isOptional}
+   * {@inheritDoc Converter.isOptional}
    */
   public get isOptional(): boolean {
     return this._isOptional;
   }
 
   /**
-   * {@inheritdoc Converter.brand}
+   * {@inheritDoc Converter.brand}
    */
   public get brand(): string | undefined {
     return this._brand;
   }
 
   /**
-   * {@inheritdoc Converter.convert}
+   * {@inheritDoc Converter.convert}
    */
   public convert(from: unknown, context?: TC): Result<T> {
     return this._converter(from, this, context ?? this._defaultContext);
   }
 
   /**
-   * {@inheritdoc Converter.convertOptional}
+   * {@inheritDoc Converter.convertOptional}
    */
   public convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined> {
     const result = this._converter(from, this, this._context(context));
@@ -130,7 +147,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.optional}
+   * {@inheritDoc Converter.optional}
    */
   public optional(onError?: OnError): Converter<T | undefined, TC> {
     return new BaseConverter((from: unknown, __self: Converter<T | undefined, TC>, context?: TC) => {
@@ -140,7 +157,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.map}
+   * {@inheritDoc Converter.map}
    */
   public map<T2>(mapper: (from: T, context?: TC) => Result<T2>): Converter<T2, TC> {
     return new BaseConverter<T2, TC>((from: unknown, __self: Converter<T2, TC>, context?: TC) => {
@@ -153,7 +170,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.mapConvert}
+   * {@inheritDoc Converter.mapConvert}
    */
   public mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC> {
     return new BaseConverter<T2, TC>((from: unknown, __self: Converter<T2, TC>, context?: TC) => {
@@ -166,7 +183,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.mapItems}
+   * {@inheritDoc Converter.mapItems}
    */
   public mapItems<TI>(mapper: (from: unknown, context?: TC) => Result<TI>): Converter<TI[], TC> {
     return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
@@ -180,7 +197,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.mapConvertItems}
+   * {@inheritDoc Converter.mapConvertItems}
    */
   public mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC> {
     return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
@@ -194,7 +211,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withAction}
+   * {@inheritDoc Converter.withAction}
    */
   public withAction<TI>(action: (result: Result<T>, context?: TC) => Result<TI>): Converter<TI, TC> {
     return new BaseConverter<TI, TC>((from: unknown, __self: Converter<TI, TC>, context?: TC) => {
@@ -203,7 +220,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withTypeGuard}
+   * {@inheritDoc Converter.withTypeGuard}
    */
   public withTypeGuard<TI>(
     guard: (from: unknown, context?: TC) => from is TI,
@@ -220,7 +237,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withItemTypeGuard}
+   * {@inheritDoc Converter.withItemTypeGuard}
    */
   public withItemTypeGuard<TI>(
     guard: (from: unknown, context?: TC) => from is TI,
@@ -244,7 +261,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withConstraint}
+   * {@inheritDoc Converter.withConstraint}
    */
   public withConstraint(
     constraint: (val: T, context?: TC) => boolean | Result<T>,
@@ -268,7 +285,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withBrand}
+   * {@inheritDoc Converter.withBrand}
    */
   public withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC> {
     if (this._brand) {
@@ -283,10 +300,18 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withDefault}
+   * {@inheritDoc Converter.withDefault}
    */
   public withDefault<TD = T>(defaultValue: TD): DefaultingConverter<T, TD, TC> {
     return new GenericDefaultingConverter<T, TD, TC>(this, defaultValue);
+  }
+
+  public or(other: Converter<T, TC>): Converter<T, TC> {
+    return new BaseConverter<T, TC>((from: unknown, __self: Converter<T, TC>, context?: TC) => {
+      return this._converter(from, this, this._context(context)).onFailure(() => {
+        return other.convert(from, this._context(context));
+      });
+    });
   }
 
   /**
@@ -297,7 +322,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withFormattedError}
+   * {@inheritDoc Converter.withFormattedError}
    */
   public withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T, TC> {
     return new BaseConverter<T, TC>((from: unknown, __self: Converter<T, TC>, context?: TC) => {

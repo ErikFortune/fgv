@@ -216,4 +216,28 @@ export class TreeBuilder<TCT extends string = string> {
       return succeed(file);
     });
   }
+
+  /**
+   * Ensures a directory exists at the given absolute path, creating
+   * intermediate directories as needed.
+   * @param absolutePath - The absolute path of the directory.
+   * @returns `Success` with the directory if successful, or
+   * `Failure` with an error message otherwise.
+   * @public
+   */
+  public addDirectory(absolutePath: string): Result<InMemoryDirectory<TCT>> {
+    const parts = absolutePath.split('/').filter((p) => p.length > 0);
+    let dir = this.root;
+    for (const part of parts) {
+      const result = dir.getOrAddDirectory(part);
+      if (result.isFailure()) {
+        return fail(result.message);
+      }
+      dir = result.value;
+      if (!this.byAbsolutePath.has(dir.absolutePath)) {
+        this.byAbsolutePath.set(dir.absolutePath, dir);
+      }
+    }
+    return succeed(dir);
+  }
 }

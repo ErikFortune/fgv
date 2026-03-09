@@ -1,458 +1,141 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with this repository.
 
-## Project Overview
+## Quick Reference
 
-This is a Rush-based monorepo containing TypeScript libraries and tools for internationalization, localization, and resource management. The main project is `@fgv/ts-res`, a sophisticated library for multidimensional resource management with complex conditional logic.
+This is a Rush-based TypeScript monorepo. Key commands:
 
-## Monorepo Structure
+```bash
+rush install          # Install dependencies
+rush build            # Build all projects
+rush test             # Test all projects
+rushx build/test      # Build/test current project (from project dir)
+rushx coverage        # Run with coverage
+```
 
-The repository is organized using Rush.js with the following structure:
+## Core Instructions
+
+All coding standards, testing guidelines, and review checklists are defined in the shared `.ai/` directory. These guidelines apply to all AI assistants and are the authoritative source:
+
+@.ai/instructions/CODING_STANDARDS.md
+@.ai/instructions/TESTING_GUIDELINES.md
+@.ai/instructions/CODE_REVIEW_CHECKLIST.md
+@.ai/instructions/MONOREPO_GUIDE.md
+@.ai/instructions/ACTIVE_DEVELOPMENT.md
+
+## Critical Rules Summary
+
+These rules are **absolute and non-negotiable**:
+
+1. **Never use `any` type** - Use `unknown`, branded types, or proper interfaces. Will fail CI.
+2. **Use Result pattern** - All fallible operations return `Result<T>`, not exceptions
+3. **Use Converters/Validators** - Never manual type checking with unsafe casts
+4. **100% test coverage** - Required for all code
+
+## Project Structure
 
 ### Libraries (`libraries/`)
-- **@fgv/ts-res** - Core multidimensional resource management library
-- **@fgv/ts-bcp47** - BCP47 language tag processing
-- **@fgv/ts-extras** - Additional TypeScript utilities
-- **@fgv/ts-json** - JSON schema validation 
-- **@fgv/ts-json-base** - Base JSON validation and processing
-- **@fgv/ts-sudoku-lib** - Sudoku puzzle library
-- **@fgv/ts-utils** - Core utility functions and Result pattern
-- **@fgv/ts-utils-jest** - Jest testing utilities
+| Library | Purpose |
+|---------|---------|
+| `@fgv/ts-utils` | Core utilities and Result pattern |
+| `@fgv/ts-res` | Multidimensional resource management |
+| `@fgv/ts-bcp47` | BCP47 language tag processing |
+| `@fgv/ts-json` | JSON schema validation |
+| `@fgv/ts-json-base` | Base JSON validation |
+| `@fgv/ts-sudoku-lib` | Sudoku puzzle library |
+| `@fgv/ts-extras` | Additional utilities |
+| `@fgv/ts-utils-jest` | Jest testing utilities |
 
 ### Tools (`tools/`)
-- **@fgv/ts-res-cli** - Command-line interface for ts-res resource compilation
+- `@fgv/ts-res-cli` - CLI for ts-res resource compilation
 
-## Common Development Commands
+## Code Review
 
-### Monorepo Management
-- `rush install` - Install dependencies across all projects
-- `rush build` - Build all projects in dependency order
-- `rush test` - Run tests for all projects
-- `rush update` - Update dependencies and shrinkwrap file
-- `rush prettier` - Run prettier on staged files (used by pre-commit hook)
+When reviewing code, use the checklist in [CODE_REVIEW_CHECKLIST.md](.ai/instructions/CODE_REVIEW_CHECKLIST.md). Key checks:
 
-### Individual Project Commands
-Use `rushx` to run commands within individual project folders:
-- `rushx build` - Build the current project
-- `rushx test` - Run tests for the current project
-- `rushx lint` - Run linting
-- `rushx fixlint` - Fix linting issues automatically
-- `rushx coverage` - Run tests with coverage
-- `rushx clean` - Clean build artifacts
+- No `any` type usage (Priority 1 - blocking)
+- No manual type checking with unsafe casts (Priority 1)
+- Result pattern used correctly (Priority 1)
+- Proper error handling with context (Priority 2)
+- Follows existing codebase patterns (Priority 2)
 
-### Running Tests
-- Single project: `cd libraries/ts-res && rushx test`
-- All projects: `rush test`
-- With coverage: `rushx coverage`
-- Single test file: `jest path/to/test.test.ts`
+## Testing
 
-## Key Architecture Patterns
-
-### Result Pattern
-All operations that can fail return `Result<T>` objects from `@fgv/ts-utils`. This provides consistent error handling across the codebase.  Avoid throwing errors as much as possible, preferring to return a Result and use .orThrow() only on paths that must throw.
-
-**For comprehensive Result pattern guidance, including chaining, error aggregation, MessageAggregator usage, and testing patterns, see the imported guidelines below.**
-
-#### Result Pattern Quick Reference
-- Avoid intermediate result variables when possible
-- Consider chaining operations with `.onSuccess()` or `.onFailure()`.
-  - this is a guideline, not a rule and the priority is understandable and maintainable code.  Chaining with `.onSuccess` is often but not always cleaner, so if it seems more complex to try to chain, it is acceptable to use intermediate result variables.
-- If an `undefined` value is an acceptable value in an error condition, use `.orDefault()` instead of an intermediate result variable.
-- If some other default value is an acceptable value to use in
-an error condition, use `.orDefault(value)` instead of an intermediate result variable.
-- Error return is preferred to throwing an error but on paths that must throw (such as constructors), use `.toThrow()`
-- use `captureResult` around code that might throw (such as constructors) to convert thrown errors to `Failure` results.
-```typescript
-// ✅ Good - Setup uses standard Result methods
-beforeEach(() => {
-  const qualifierTypes = QualifierTypeCollector.create(params).orThrow();  
-  // Or use onSuccess for conditional setup
-  resourceManager = ResourceManager.create(params).onSuccess((manager) => {
-    manager.addResource(testResource).orThrow(); // OK in setup
-    return manager;
-  }).orThrow();
-});
-
-### Collector Pattern
-Used throughout for managing collections with validation (QualifierCollector, ConditionCollector, etc.).
-
-### Packlet Organization
-Libraries are organized into "packlets" - cohesive modules that group related functionality under `src/packlets/`.
-
-### Workspace Dependencies
-Projects use `workspace:*` dependency ranges to reference other projects in the monorepo.
-
-## Build System
-
-- **Rush.js** - Monorepo orchestration with pnpm package manager
-- **Heft** - Build toolchain (TypeScript compilation, testing, linting)
-- **API Extractor** - Generates API documentation and type definitions
-- **Jest** - Testing framework with ts-jest for TypeScript support
-
-## Configuration Files
-
-- `rush.json` - Central Rush configuration defining all projects
-- `common/config/rush/` - Rush configuration files
-- `common/config/rush/command-line.json` - Custom Rush commands
-- Individual project `package.json` files define scripts and dependencies
-
-## Quality Standards
-
-- **100% Test Coverage** - All projects must maintain full test coverage
-- **ESLint** - Consistent code style and quality checks
-- **Prettier** - Automated code formatting (runs on pre-commit)
-- **API Documentation** - Generated from TSDoc comments using API Extractor
-
-## TypeScript Standards
-
-- **NEVER use the `any` type** - This codebase has strict lint rules against `any` that will fail CI/linting
-- Use proper TypeScript types, branded types, or `unknown` with type assertions
-- For branded types, use `as unknown as BrandedType` pattern instead of `as any`
-- Alternative patterns:
-  - `unknown` for truly unknown types
-  - `Record<string, unknown>` for dynamic objects
-  - Proper type assertions with `as unknown as TargetType`
-- **Remember**: `any` defeats TypeScript's purpose and will cause build failures
-
-## Type-Safe Validation Guidelines
-
-### 🚨 CRITICAL ANTI-PATTERN: Manual Type Checking with Unsafe Casts
-
-**This is a MUST-FIX issue in all code reviews. Manual type checking defeats TypeScript's type safety and MUST be replaced with proper Converters or Validators.**
-
-### Converters vs Validators
-- **Converters**: Transform and construct new objects from input data (use for simple types, primitives, plain objects)
-- **Validators**: Validate existing objects in-place without construction (use for complex objects with non-default constructors, class instances)
-
-### ❌ CRITICAL ANTI-PATTERNS - Must Be Fixed Immediately
+Use Result matchers from `@fgv/ts-utils-jest`:
 
 ```typescript
-// ❌ ANTI-PATTERN 1: Manual type checking in Converters.generic
-// Found in: configInitFactory.ts:248-275 and similar locations
-this._configConverter = Converters.generic<unknown, QualifierTypes.Config.IAnyQualifierTypeConfig>(
-  (from: unknown) => {
-    if (typeof from !== 'object' || from === null) {
-      return fail('Configuration must be an object');
-    }
-    const obj = from as Record<string, unknown>;
-    if (typeof obj.name !== 'string') {
-      return fail('Configuration field name not found or not a string');
-    }
-    // ... more manual checks
-    config.configuration = obj.configuration as Record<string, unknown> as JsonObject; // DOUBLE CAST!
-    return succeed(config);
-  }
-);
-
-// ❌ ANTI-PATTERN 2: Manual property checking with unsafe cast
-if (
-  typeof from === 'object' &&
-  from !== null &&
-  'id' in from &&
-  'resourceType' in from &&
-  'decision' in from &&
-  'candidates' in from
-) {
-  return succeed(from as IResource); // Unsafe - properties could have wrong types
-}
-
-// ❌ ANTI-PATTERN 3: Double casting
-const value = someValue as Record<string, unknown> as TargetType; // NEVER do this!
-```
-
-### ✅ REQUIRED PATTERNS - Use These Instead
-
-```typescript
-// ✅ CORRECT: Use Converters.object for data structures
-this._configConverter = Converters.object<QualifierTypes.Config.IAnyQualifierTypeConfig>({
-  name: Converters.string,
-  systemType: Converters.string,
-  configuration: Converters.optionalField(Converters.jsonObject)
-});
-
-// ✅ CORRECT: Use dedicated validator for objects with complex constructors
-const validator = Validators.object<IResource>({
-  id: Convert.resourceId, // Converter for simple branded type
-  resourceType: Validators.isA((v): v is ResourceType => v instanceof ResourceType),
-  decision: Validators.isA((v): v is ConcreteDecision => v instanceof ConcreteDecision),
-  candidates: Validators.arrayOf(resourceCandidateValidator)
-});
-return validator.validate(from);
-
-// ✅ CORRECT: Use converter for plain objects/data structures
-const converter = Converters.object<IResourceData>({
-  id: Convert.resourceId,
-  name: Converters.string,
-  value: Converters.jsonValue
-});
-return converter.convert(from);
-```
-
-### When to Use Each Pattern
-- **Validators**: Objects with class instances, non-default constructors, existing object validation
-- **Converters**: Plain data transformation, building new objects from primitives/JSON
-- **NEVER**: Manual type checking followed by unsafe casts
-
-### Benefits of Proper Validation
-- Type safety: Each property is validated according to its expected type
-- Better error messages: Specific validation failures instead of generic messages
-- Maintainability: Changes to type definitions automatically update validation
-- Consistency: Same validation patterns used throughout the codebase
-- Security: Prevents runtime type confusion attacks
-
-## Testing Standards
-
-**For comprehensive coverage guidelines, systematic approaches to achieving 100% test coverage, and detailed testing methodologies, see the imported guidelines below.**
-
-### Testing Philosophy: Function-First, Coverage-Second
-
-**Primary: Functional Testing**
-Start by writing tests that "make sense" functionally, focusing on the component's intended behavior:
-
-1. **Success Cases**: Test all main functionality with valid inputs
-2. **Error Cases**: Test expected error conditions and validation failures
-3. **Edge Cases**: Test boundary conditions, empty inputs, and reasonable corner cases
-4. **Integration**: Test how components interact with their dependencies
-
-Write these tests based on the component's public API and expected behavior, not based on implementation details or coverage reports.
-
-**Secondary: Coverage Gap Analysis**
-Only after functional tests are complete and correct, use coverage analysis to identify any missed executable paths.
-
-### Coverage Directive Detection Strategy
-
-**Before adding coverage directives, use this test to determine if directives are needed:**
-
-1. **Run Individual File Test**: Test the specific file in isolation
-   ```bash
-   rushx test --test-path-pattern=filename.test
-   ```
-
-2. **Check Individual File Coverage**: If the individual file shows 100% coverage but the full test suite shows gaps, this indicates:
-   - The code paths are functionally tested and working
-   - Coverage tool is having intermittent issues or timing problems
-   - Coverage directives are appropriate for these lines
-
-3. **Apply Coverage Directives**: For lines that are tested individually but missed in full suite, use directives like:
-   ```typescript
-   /* c8 ignore next 2 - functional code tested but coverage intermittently missed */
-   if (someCondition) {
-     return someResult;
-   }
-   ```
-
-### Coverage Gap Analysis and Resolution
-
-When addressing coverage gaps, use this systematic approach:
-
-1. **Analyze Coverage Reports**: Run `rushx coverage` to identify uncovered lines
-2. **Test Individual Files**: Run `rushx test --test-path-pattern=filename.test` to check isolated coverage
-3. **Categorize Coverage Gaps**:
-   - **Business Logic** (HIGH priority): Core functionality that can be reached through normal operation
-   - **Validation Logic** (MEDIUM priority): Input validation and error handling that can be tested
-   - **Defensive Coding** (LOW priority): Internal consistency checks and error paths that are very difficult to trigger
-   - **Intermittent Coverage Issues**: Functional code that tests correctly in isolation but is missed in full suite
-
-4. **Prioritized Resolution Strategy**:
-   - **Step 1**: Test business logic gaps first - these represent important functionality
-   - **Step 2**: Test validation logic gaps - these can usually be tested by providing invalid inputs
-   - **Step 3**: Add `c8 ignore` comments for defensive coding paths that are impractical to test
-
-4. **Documentation**: Create a TODO file to track coverage gaps systematically, including:
-   - Current coverage percentage
-   - Specific file locations and line numbers
-   - Categorization by priority and type
-   - Approach for each gap (test vs ignore)
-   - Progress tracking as gaps are resolved
-
-5. **Examples of Defensive Coding** (candidates for c8 ignore):
-   - Internal collector creation failures that would indicate library bugs
-   - Index validation failures for internally managed collections
-   - Consistency checks between related data structures
-   - Error paths in well-tested internal operations
-
-This approach ensures 100% coverage while maintaining meaningful tests and avoiding brittle tests for defensive code paths.
-
-### Unit Testing Principles
-
-**Core Testing Guidelines:**
-1. **Always ask before changing non-test code** - Test code should not drive changes to production exports or APIs
-2. **Prefer testing via exported functionality** - Test through public APIs rather than creating mocks when possible
-3. **Test interfaces via concrete implementations** - It's perfectly acceptable to test interface contracts using real implementations
-4. **Test internal functionality via exported classes** - Use exported classes, interfaces, objects, or functions that utilize internal functionality
-5. **Don't change exports to make internal functionality testable** - When it's difficult to test internal functionality via exports, import the specific module directly in the test file and disable lint warnings as needed
-
-**Testing Through Public APIs:**
-```typescript
-// ✅ Good - Test internal functionality through exported APIs
-expect(SomeLibrary.Runtime.validator.validate(data)).toSucceed();
-
-// ✅ Good - Test interface through concrete implementation
-const instance: IInterface = ConcreteClass.create(...).orThrow();
-expect(instance.method()).toSucceed();
-
-// ✅ Good - Import module directly when needed, disable lint warnings
-// eslint-disable-next-line import/no-internal-modules
-import { InternalClass } from '../../../packlets/internal/internalModule';
-
-// ❌ Avoid - Adding exports just for testing
-export { InternalValidator }; // Don't add this just for tests
-
-// ❌ Avoid - Excessive mocking when real implementations work
-const mockValidator = jest.fn(); // Use real validator when possible
-```
-
-### Result Pattern Test Matchers
-All tests use custom Jest matchers from `@fgv/ts-utils-jest` for `Result<T>` objects:
-
-- **`toSucceed()`** - Assert that a Result is successful
-- **`toFail()`** - Assert that a Result is a failure
-- **`toSucceedWith(value)`** - Assert success with specific value
-- **`toFailWith(pattern)`** - Assert failure with message matching regex/string
-- **`toSucceedAndSatisfy(callback)`** - Assert success and run assertions on the value
-
-### Idiomatic Test Patterns
-
-#### Setup vs Test Assertions
-```typescript
-// ✅ Good - Use standard Result methods in setup (beforeEach, etc.)
-beforeEach(() => {
-  const setupResult = SomeClass.create(params);
-  instance = setupResult.orThrow(); // OK in setup
-  
-  // Or use onSuccess for conditional setup
-  manager = Manager.create(params).onSuccess((mgr) => {
-    mgr.addItem(testItem).orThrow(); // OK in setup
-    return mgr;
-  }).orThrow();
-});
-
-// ✅ Good - Use Result matchers in test cases
-test('should work correctly', () => {
-  expect(SomeClass.create(params)).toSucceedAndSatisfy((instance) => {
-    expect(instance.property).toBe(expectedValue);
-    expect(instance.method()).toSucceed();
-  });
-});
-
-// ❌ Bad - Don't use Result matchers in setup
-beforeEach(() => {
-  expect(SomeClass.create(params)).toSucceedAndSatisfy((instance) => {
-    testInstance = instance; // Wrong - this is setup, not a test
-  });
+expect(operation()).toSucceed();
+expect(operation()).toSucceedWith(expectedValue);
+expect(operation()).toFailWith(/error pattern/i);
+expect(operation()).toSucceedAndSatisfy((result) => {
+  expect(result.property).toBe(expected);
 });
 ```
 
-#### Test Assertion Patterns
-```typescript
-// ✅ Good - Use toSucceedAndSatisfy for complex assertions
-expect(SomeClass.create(params)).toSucceedAndSatisfy((instance) => {
-  expect(instance.property).toBe(expectedValue);
-  expect(instance.method()).toSucceed();
-});
+## Complex Task Orchestration
 
-// ✅ Good - Use toFailWith for error message testing
-expect(SomeClass.create(invalidParams)).toFailWith(/expected error pattern/i);
+For complex multi-phase tasks (new features, major refactoring), the task-master workflow system is available in `.claude/agents/`. This provides:
 
-// ✅ Good - Use toSucceedWith for simple value checks
-expect(converter.convert('input')).toSucceedWith(expectedOutput);
+- Structured requirements analysis with confirmation gates
+- Design review phases
+- Implementation coordination with specialized agents
+- Automated and manual testing phases
+- Artifact preservation for future reference
 
-// ❌ Bad - Don't extract with .orThrow() in test cases
-const result = SomeClass.create(params);
-expect(result).toSucceed();
-const instance = result.value; // Use toSucceedAndSatisfy instead
+Workflow templates are in `.ai/workflows/`. Use task-master for:
+- Multi-step features requiring coordination
+- Major refactoring with behavior preservation
+- Tasks benefiting from structured documentation
+
+## Claude-Specific Notes
+
+### Avoid Over-Engineering
+- Only make changes that are directly requested
+- Don't add features beyond what was asked
+- Don't refactor surrounding code during bug fixes
+- Keep solutions simple and focused
+
+### Webpack Dev Mode
+Webpack may not pick up library changes. If a web app fails to load:
+1. Kill the dev server
+2. Restart the application
+
+### Package Management
+Always use `rush add -p package-name` or `rush remove -p package-name`. Never use npm directly or edit package.json manually for dependencies.
+
+## File Organization
+
+```
+.ai/                          # Shared AI assistant instructions
+├── instructions/             # Coding standards (all AI tools)
+│   ├── CODING_STANDARDS.md
+│   ├── TESTING_GUIDELINES.md
+│   ├── CODE_REVIEW_CHECKLIST.md
+│   ├── MONOREPO_GUIDE.md
+│   └── ACTIVE_DEVELOPMENT.md
+├── workflows/                # Task orchestration workflows
+└── tasks/                    # Runtime task artifacts
+
+.claude/                      # Claude-specific configuration
+├── agents/                   # Orchestration agents (task-master, etc.)
+├── skills/                   # On-demand skills (e.g. /resolve-regression)
+├── settings.local.json       # Permissions
+└── project/                  # Project-specific design docs
+
+CLAUDE.md                     # This file (Claude entry point)
+.windsurfrules                # Windsurf adapter → .ai/
+.cursorrules                  # Cursor adapter → .ai/
 ```
 
-#### Nested Result Testing
-```typescript
-// Test nested Results within toSucceedAndSatisfy
-expect(collection.create(params)).toSucceedAndSatisfy((collection) => {
-  expect(collection.getItem('id')).toSucceedAndSatisfy((item) => {
-    expect(item.property).toBe(expectedValue);
-  });
-  expect(collection.getItem('missing')).toFailWith(/not found/i);
-});
-```
+## Skills
 
-#### Error Testing Best Practices
-```typescript
-// ✅ Good - Use regex patterns for flexible error matching
-expect(operation()).toFailWith(/invalid.*parameter/i);
+On-demand skills in `.claude/skills/` for common workflows:
 
-// ✅ Good - Test specific error conditions
-expect(parser.parse('')).toFailWith(/empty input/i);
-expect(parser.parse('{')).toFailWith(/syntax error/i);
+- `/resolve-regression` - Structured workflow for fixing regressions in chocolate-lab-web using lite TDD with Playwright
 
-// ❌ Avoid - Brittle exact string matching
-expect(operation()).toFailWith('Invalid parameter: expected string');
-```
+## Additional Resources
 
-#### When to Use Each Matcher
-- **`toSucceed()`** - When you only care that the operation succeeded
-- **`toFail()`** - When you only care that the operation failed
-- **`toSucceedWith(value)`** - When testing simple value equality
-- **`toFailWith(pattern)`** - When testing error messages or types
-- **`toSucceedAndSatisfy(callback)`** - When testing complex objects or multiple properties
-
-#### TypeScript in Tests
-- **NEVER use `any` type** - Will cause lint failures even in tests
-- For corrupted/invalid test data: Use `as unknown as BrandedType` pattern
-- For mock objects: Define proper interfaces or use `Partial<T>`
-- Example:
-```typescript
-// ✅ Good - Proper type assertion for invalid test data
-const corruptedData = {
-  id: 'invalid' as unknown as SomeId,
-  type: 999 as unknown as SomeTypeIndex
-};
-
-// ❌ Bad - Using any
-const corruptedData = {
-  id: 'invalid' as any,
-  type: 999 as any
-};
-```
-
-## Development Workflow
-
-1. **Setup**: Run `rush install` to install all dependencies
-2. **Build**: Run `rush build` to build all projects
-3. **Test**: Run `rush test` to run all tests
-4. **Lint**: Run `rushx lint` in individual projects
-5. **API Changes**: Run `rushx build-docs` to regenerate API documentation
-
-## Important Notes
-
-- The ts-res library has its own detailed CLAUDE.md file in `libraries/ts-res/` with project-specific architecture details
-- All projects use TypeScript 5.7.3 with strict type checking
-- Tests are located in `src/test/unit/` mirroring source structure
-- Documentation is auto-generated and should not be manually edited
-- Rush enforces consistent dependency versions across the monorepo
-
-## Package Manager
-
-- Uses **pnpm 8.15.9** for fast, efficient package management
-- Workspace protocol (`workspace:*`) for inter-project dependencies
-- Shared lockfile at `common/temp/pnpm-lock.yaml`
-
-## Agent Files Organization
-
-**IMPORTANT**: All agent-specific guides, plans, and documentation should be placed in the `.agents/` directory at the repository root. This includes:
-- Development guidelines (e.g., MONOREPO_GUIDELINES.md)
-- Pattern guides (e.g., RESULT_PATTERN_GUIDE.md)
-- Coverage guides (e.g., COVERAGE_GUIDELINES.md)
-- Any future plans or agent-specific documentation
-
-When creating new agent documentation or plans, ALWAYS place them in the `.agents/` directory, not at the repository root or in project directories.
-
-## Imported Agent Guidelines
-
-The following agent-specific guidelines provide detailed information for working with this codebase:
-
-@.agents/MONOREPO_GUIDELINES.md
-@.agents/RESULT_PATTERN_GUIDE.md
-@.agents/COVERAGE_GUIDELINES.md
-- webpack does not pick up library changes in a separate application.  the app must be restarted if the library changes.
-- use rushx or rush instead of npm in the monorepo
-- when a web app running in dev mode fails to load with a missing library that you have edited, try to kill and restart the app.  webpack can lose track of dependencies in a monorepo.
+- The ts-res library has its own CLAUDE.md in `libraries/ts-res/`
+- Project design docs are in `.claude/project/`
+- Workflow templates are in `.ai/workflows/`

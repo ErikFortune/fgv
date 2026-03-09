@@ -523,20 +523,45 @@ function validateStopOnFirst(data: Data): Result<ValidatedData> {
 
 ### Factory Pattern with Results
 
+**Constructors that might throw should be `protected` or `private` and exposed only via a static `create` method that returns `Result<T>`.**
+
+This pattern:
+- Converts thrown errors to `Failure` results via `captureResult()`
+- Makes error handling explicit in the API
+- Allows callers to decide how to handle failures
+- Prevents unexpected exceptions from propagating
+
 ```typescript
 class ResourceManager {
-  private constructor(private config: Config) {}
-  
+  // Constructor is private - can only be called via create()
+  private constructor(private config: Config) {
+    // Validation that throws is acceptable here since create() wraps it
+    if (!config.name) {
+      throw new Error('Config name is required');
+    }
+  }
+
   public static create(params: Params): Result<ResourceManager> {
     return validateParams(params)
       .onSuccess(valid => loadConfig(valid))
-      .onSuccess(config => succeed(new ResourceManager(config)));
+      .onSuccess(config => captureResult(() => new ResourceManager(config)));
   }
 }
 
-// Usage
-const manager = ResourceManager.create(params).orThrow();
+// Usage - caller decides how to handle errors
+const manager = ResourceManager.create(params).orThrow(); // In setup code
+const managerResult = ResourceManager.create(params); // In application code
 ```
+
+**When to use this pattern:**
+- Classes with validation logic that could fail
+- Classes that depend on external resources or configuration
+- Any class where construction isn't guaranteed to succeed
+
+**Constructor visibility rules:**
+- `private` - Use when the class should never be subclassed
+- `protected` - Use when subclasses need to call the constructor
+- Never expose a throwing constructor as `public` without a `create()` factory
 
 ## Anti-Patterns
 

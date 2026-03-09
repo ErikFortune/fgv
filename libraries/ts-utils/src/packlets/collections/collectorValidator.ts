@@ -38,22 +38,22 @@ export interface IReadOnlyCollectorValidator<
   TITEM extends ICollectible<any, any>
 > extends IReadOnlyResultMapValidator<CollectibleKey<TITEM>, TITEM> {
   /**
-   * {@inheritdoc Collections.ConvertingCollectorValidator.map}
+   * {@inheritDoc Collections.ReadOnlyResultMapValidator.map}
    */
   readonly map: IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM>;
 
   /**
-   * {@inheritdoc Collections.Collector.get}
+   * {@inheritDoc Collections.Collector.get}
    */
   get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   has(key: string): boolean;
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:2)}
+   * {@inheritDoc Collections.Collector.getOrAdd}
    */
   getOrAdd(
     key: string,
@@ -69,7 +69,9 @@ export interface ICollectorValidatorCreateParams<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   TITEM extends ICollectible<any, any>
 > {
+  /** The collector to validate access to. */
   readonly collector: Collector<TITEM>;
+  /** The key-value converters for validation. */
   readonly converters: KeyValueConverters<CollectibleKey<TITEM>, TITEM>;
 }
 
@@ -101,7 +103,7 @@ export class CollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.add}
+   * {@inheritDoc Collections.Collector.add}
    */
   public add(item: unknown): DetailedResult<TITEM, CollectorResultDetail> {
     return this._convertValue(item).onSuccess((i) => {
@@ -110,7 +112,7 @@ export class CollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.get}
+   * {@inheritDoc Collections.Collector.get}
    */
   public get(key: string): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
@@ -119,7 +121,7 @@ export class CollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:2)}
+   * {@inheritDoc Collections.Collector.getOrAdd}
    */
   public getOrAdd(
     key: string,
@@ -127,7 +129,7 @@ export class CollectorValidator<
   ): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:1)}
+   * {@inheritDoc Collections.Collector.getOrAdd}
    * @param item - The item to add to the collector.
    */
   public getOrAdd(item: unknown): DetailedResult<TITEM, CollectorResultDetail>;
@@ -147,14 +149,14 @@ export class CollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   public has(key: string): boolean {
     return this._collector.has(key as CollectibleKey<TITEM>);
   }
 
   /**
-   * {@inheritdoc Collections.Collector.toReadOnly}
+   * {@inheritDoc Collections.Collector.toReadOnly}
    */
   public toReadOnly(): IReadOnlyCollectorValidator<TITEM> {
     return this;

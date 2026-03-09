@@ -69,6 +69,7 @@ export interface ConstraintOptions {
 
 export interface Converter<T, TC = unknown> extends ConverterTraits {
   /**
+   *
    * Indicates whether this element is explicitly optional.
    */
   readonly isOptional: boolean;
@@ -238,6 +239,13 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
    * Returns a Converter which always succeeds with a default value rather than failing.
    */
   withDefault<TD = T>(dflt: TD): DefaultingConverter<T, TD, TC>;
+
+  /**
+   * Chains this converter with another of the same type, to be attempted if this
+   * converter fails.
+   * @param other -
+   */
+  or(other: Converter<T, TC>): Converter<T, TC>;
 }
 
 /**

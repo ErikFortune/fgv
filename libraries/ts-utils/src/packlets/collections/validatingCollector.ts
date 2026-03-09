@@ -39,17 +39,17 @@ export interface IReadOnlyValidatingCollector<
   TITEM extends ICollectible<any, any>
 > extends IReadOnlyValidatingResultMap<CollectibleKey<TITEM>, TITEM> {
   /**
-   * {@inheritdoc Collections.ValidatingCollector.validating}
+   * {@inheritDoc Collections.ValidatingCollector.validating}
    */
   readonly validating: IReadOnlyCollectorValidator<TITEM>;
 
   /**
-   * {@inheritdoc Collections.IReadOnlyValidatingCollector.getAt}
+   * {@inheritDoc Collections.IReadOnlyCollector.getAt}
    */
   getAt(index: number): Result<TITEM>;
 
   /**
-   * {@inheritdoc Collections.IReadOnlyCollector.valuesByIndex}
+   * {@inheritDoc Collections.IReadOnlyCollector.valuesByIndex}
    */
   valuesByIndex(): ReadonlyArray<TITEM>;
 }
@@ -63,12 +63,12 @@ export interface IValidatingCollectorConstructorParams<
   TITEM extends ICollectible<any, any>
 > {
   /**
-   * {@inheritdoc Collections.ICollectorValidatorCreateParams.converters}
+   * {@inheritDoc Collections.ICollectorValidatorCreateParams.converters}
    */
   converters: KeyValueConverters<CollectibleKey<TITEM>, TITEM>;
 
   /**
-   * {@inheritdoc Collections.ICollectorConstructorParams.items}
+   * {@inheritDoc Collections.ICollectorConstructorParams.items}
    */
   items?: unknown[];
 }

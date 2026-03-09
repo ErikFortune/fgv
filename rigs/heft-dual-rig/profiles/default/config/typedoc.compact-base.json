@@ -1,0 +1,39 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "readme": "none",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "visibilityFilters": {
+    "inherited": true,
+    "protected": true
+  },
+  "githubPages": false,
+  "disableSources": true,
+  "externalSymbolLinkMappings": {
+    "@fgv/ts-utils": {
+      "*": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs"
+    },
+    "@fgv/ts-json": {
+      "*": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json/docs"
+    },
+    "@fgv/ts-json-base": {
+      "*": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs"
+    },
+    "@fgv/ts-extras": {
+      "*": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras/docs"
+    },
+    "@fgv/ts-bcp47": {
+      "*": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs"
+    },
+    "@fgv/ts-web-extras": {
+      "*": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-web-extras/docs"
+    },
+    "@fgv/ts-res": {
+      "*": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs"
+    },
+    "@fgv/ts-chocolate": {
+      "*": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-chocolate/docs"
+    }
+  }
+}

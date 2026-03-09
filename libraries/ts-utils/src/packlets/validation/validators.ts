@@ -22,6 +22,7 @@
 
 import { Failure, fail, isKeyOf, MessageAggregator } from '../base';
 import { ArrayValidator, ArrayValidatorConstructorParams } from './array';
+import { CompositeIdValidator, CompositeIdValidatorConstructorParams } from './compositeId';
 import { FieldValidators, ObjectValidator, ObjectValidatorConstructorParams } from './object';
 import { TypeGuardValidator, TypeGuardValidatorConstructorParams } from './typeGuard';
 
@@ -205,6 +206,25 @@ export function literal<T extends string | number | boolean | symbol | null | un
         : fail(`Expected literal ${String(value)}, found "${JSON.stringify(from, undefined, 2)}`);
     }
   });
+}
+
+/** Helper function to create a {@link Validation.Validator | Validator} which validates a
+ * strongly-typed composite ID.
+ * @param params - {@link Validation.Classes.CompositeIdValidatorConstructorParams | params}
+ * used to construct the validator.
+ * @returns A new {@link Validation.Validator | Validator} which validates the desired
+ * composite ID in place.
+ * @public
+ */
+export function compositeId<
+  T extends string = string,
+  TCOLLECTIONID extends string = string,
+  TITEMID extends string = string,
+  TC = unknown
+>(
+  params: CompositeIdValidatorConstructorParams<T, TCOLLECTIONID, TITEMID, TC>
+): CompositeIdValidator<T, TCOLLECTIONID, TITEMID, TC> {
+  return new CompositeIdValidator<T, TCOLLECTIONID, TITEMID, TC>(params);
 }
 
 /**

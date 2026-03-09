@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "add aggregated result map, converting result map",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}
