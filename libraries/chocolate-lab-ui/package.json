@@ -62,10 +62,10 @@
     "rimraf": "^6.1.2",
     "ts-jest": "^29.4.6",
     "typescript": "5.9.3",
-    "@rushstack/heft": "1.1.7",
-    "@rushstack/heft-web-rig": "1.2.0",
-    "@rushstack/eslint-config": "4.6.1",
-    "@rushstack/heft-jest-plugin": "1.1.7",
+    "@rushstack/heft": "1.2.6",
+    "@rushstack/heft-web-rig": "1.4.2",
+    "@rushstack/eslint-config": "4.6.4",
+    "@rushstack/heft-jest-plugin": "1.2.6",
     "@testing-library/dom": "^10.4.0"
   },
   "exports": {
