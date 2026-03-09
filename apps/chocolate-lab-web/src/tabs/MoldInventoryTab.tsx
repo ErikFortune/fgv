@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ConfirmDialog,
-  EntityList,
+  GroupedEntityList,
   type ICascadeColumn,
   EntityTabLayout,
   type ITypeaheadSuggestion,
@@ -35,7 +35,7 @@ import {
 } from '@fgv/chocolate-lab-ui';
 
 import {
-  MOLD_INVENTORY_DESCRIPTOR,
+  MOLD_INVENTORY_GROUPED_DESCRIPTOR,
   MOLD_INVENTORY_FILTER_SPEC,
   type IMoldInventoryListEntry,
   slugify,
@@ -680,9 +680,9 @@ export function MoldInventoryTabContent(): React.ReactElement {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <EntityList<IMoldInventoryListEntry, MoldInventoryEntryId>
+              <GroupedEntityList<IMoldInventoryListEntry, MoldInventoryEntryId>
                 entities={useFilteredEntities(inventoryEntries, MOLD_INVENTORY_FILTER_SPEC)}
-                descriptor={MOLD_INVENTORY_DESCRIPTOR}
+                descriptor={MOLD_INVENTORY_GROUPED_DESCRIPTOR}
                 selectedId={selectedId}
                 onSelect={handleSelect}
                 onDelete={handleRequestDelete}

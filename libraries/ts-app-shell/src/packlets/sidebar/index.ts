@@ -21,6 +21,12 @@ export {
 } from './EntityList';
 
 export {
+  GroupedEntityList,
+  type IGroupedEntityListProps,
+  type IEntityGroupDescriptor
+} from './GroupedEntityList';
+
+export {
   CollectionSection,
   type ICollectionSectionProps,
   type ICollectionRowItem

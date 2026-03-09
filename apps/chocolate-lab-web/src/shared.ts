@@ -3,7 +3,7 @@
  * @packageDocumentation
  */
 
-import type { IEntityDescriptor, IEntityStatus } from '@fgv/ts-app-shell';
+import type { IEntityDescriptor, IEntityStatus, IEntityGroupDescriptor } from '@fgv/ts-app-shell';
 import { Entities, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
 import type {
   IngredientId,
@@ -130,6 +130,25 @@ export const MOLD_INVENTORY_DESCRIPTOR: IEntityDescriptor<
     return [`${e.entry.quantity}×`, locationText].filter(Boolean).join(' · ') || undefined;
   },
   getStatus: undefined
+};
+
+const NO_LOCATION_KEY = '__no_location__';
+
+export const MOLD_INVENTORY_GROUPED_DESCRIPTOR: IEntityGroupDescriptor<
+  IMoldInventoryListEntry,
+  Entities.Inventory.MoldInventoryEntryId
+> = {
+  getId: (e: IMoldInventoryListEntry): Entities.Inventory.MoldInventoryEntryId => e.id,
+  getLabel: (e: IMoldInventoryListEntry): string => e.entry.item.displayName,
+  getSublabel: (e: IMoldInventoryListEntry): string | undefined => `${e.entry.quantity}\u00d7`,
+  getStatus: undefined,
+  getGroupKey: (e: IMoldInventoryListEntry): string => e.entry.location?.id ?? NO_LOCATION_KEY,
+  getGroupLabel: (e: IMoldInventoryListEntry): string => e.entry.location?.name ?? 'No Location',
+  compareGroups: (a: string, b: string): number => {
+    if (a === NO_LOCATION_KEY) return 1;
+    if (b === NO_LOCATION_KEY) return -1;
+    return a.localeCompare(b);
+  }
 };
 
 /**
