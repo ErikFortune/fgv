@@ -109,12 +109,12 @@ function buildConditionSetToken(parts: ReadonlyArray<IConditionTokenParts>): Res
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function buildConditionToken({ qualifier, value }: IConditionTokenParts): Result<ConditionToken>;
+function buildConditionToken(input: IConditionTokenParts): Result<ConditionToken>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function buildContextQualifierToken({ qualifier, value }: IContextTokenParts): Result<ContextQualifierToken>;
+function buildContextQualifierToken(input: IContextTokenParts): Result<ContextQualifierToken>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -129,7 +129,7 @@ function buildQualifierDefaultValuesToken(parts: ReadonlyArray<IQualifierDefault
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function buildQualifierDefaultValueToken({ qualifier, value }: IQualifierDefaultValueTokenParts): Result<QualifierDefaultValueToken>;
+function buildQualifierDefaultValueToken(input: IQualifierDefaultValueTokenParts): Result<QualifierDefaultValueToken>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -519,7 +519,7 @@ class ConcreteDecision<TVALUE extends JsonValue = JsonValue> implements IDecisio
 export class Condition implements IValidatedConditionDecl {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ qualifier, value, operator, priority, scoreAsDefault, index }: IValidatedConditionDecl);
+    protected constructor(input: IValidatedConditionDecl);
     canMatchPartialContext(context: Context.IValidatedContextDecl, options?: Context.IContextMatchOptions): boolean;
     // (undocumented)
     protected _collectible: Collections.Collectible<ConditionKey, ConditionIndex>;
@@ -2317,7 +2317,7 @@ type Importable = IImportablePath | IImportableFsItem | IImportableJson | IImpor
 class ImportContext implements IValidatedImportContext {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ baseId, conditions }: IImportContext);
+    protected constructor(input: IImportContext);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -3435,7 +3435,7 @@ const LanguagePrioritySystemConfiguration: ISystemConfiguration;
 // @public
 class LanguageQualifierType extends QualifierType<JsonCompatibleType<Config_2.ILanguageQualifierTypeConfig>> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ name, allowContextList, index }: ILanguageQualifierTypeCreateParams);
+    protected constructor(input: ILanguageQualifierTypeCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3478,7 +3478,7 @@ const languageQualifierTypeConfig: ObjectConverter<Model_2.ILanguageQualifierTyp
 // @public
 class LiteralQualifierType extends QualifierType<JsonCompatibleType<Config_2.ILiteralQualifierTypeConfig>> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ name, caseSensitive, allowContextList, enumeratedValues, hierarchy, index }: ILiteralQualifierTypeCreateParams);
+    protected constructor(input: ILiteralQualifierTypeCreateParams);
     readonly caseSensitive: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3757,7 +3757,7 @@ export class Qualifier implements IValidatedQualifierDecl, ICollectible<Qualifie
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ name, token, type, defaultPriority, tokenIsOptional, defaultValue, index }: IValidatedQualifierDecl);
+    protected constructor(input: IValidatedQualifierDecl);
     // (undocumented)
     protected readonly _collectible: Collections.Collectible<QualifierName, QualifierIndex>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3934,7 +3934,7 @@ export { Qualifiers }
 //
 // @public
 export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject> implements IQualifierType<TCFGJSON> {
-    protected constructor({ name, index, allowContextList }: IQualifierTypeCreateParams);
+    protected constructor(input: IQualifierTypeCreateParams);
     readonly allowContextList: boolean;
     // (undocumented)
     protected readonly _collectible: Collections.Collectible<QualifierTypeName, QualifierTypeIndex>;
@@ -4017,7 +4017,7 @@ const qualifierType: Converter<QualifierType<JsonObject>, IQualifierTypeConvertC
 class QualifierTypeCollector extends ValidatingConvertingCollector<QualifierType, QualifierType> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ qualifierTypes }: IQualifierTypeCollectorCreateParams);
+    protected constructor(input: IQualifierTypeCollectorCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IQualifierTypeCollectorCreateParams): Result<QualifierTypeCollector>;
@@ -4785,7 +4785,7 @@ export abstract class ResourceType<T = unknown> implements IResourceType<T> {
 //
 // @public
 class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
-    protected constructor({ resourceTypes }: IResourceCollectorCreateParams);
+    protected constructor(input: IResourceCollectorCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IResourceCollectorCreateParams): Result<ResourceTypeCollector>;
     // (undocumented)
@@ -4994,7 +4994,7 @@ const TerritoryPrioritySystemConfiguration: ISystemConfiguration;
 // @public
 class TerritoryQualifierType extends QualifierType<JsonCompatibleType<Config_2.ITerritoryQualifierTypeConfig>> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    protected constructor({ acceptLowercase, allowedTerritories, allowContextList, name, index, hierarchy }: ITerritoryQualifierTypeCreateParams);
+    protected constructor(input: ITerritoryQualifierTypeCreateParams);
     readonly acceptLowercase: boolean;
     readonly allowedTerritories?: ReadonlyArray<QualifierConditionValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
