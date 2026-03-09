@@ -8,6 +8,7 @@ import { Entities, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
 import type {
   IngredientId,
   FillingId,
+  LocationId,
   MoldId,
   TaskId,
   ProcedureId,
@@ -128,6 +129,21 @@ export const MOLD_INVENTORY_DESCRIPTOR: IEntityDescriptor<
   getStatus: undefined
 };
 
+/**
+ * Wrapper for location list entries, pairing the composite ID with the entity.
+ */
+export interface ILocationListEntry {
+  readonly id: LocationId;
+  readonly entity: Entities.Locations.ILocationEntity;
+}
+
+export const LOCATION_DESCRIPTOR: IEntityDescriptor<ILocationListEntry, LocationId> = {
+  getId: (e: ILocationListEntry): LocationId => e.id,
+  getLabel: (e: ILocationListEntry): string => e.entity.name,
+  getSublabel: (e: ILocationListEntry): string | undefined => e.entity.description,
+  getStatus: undefined
+};
+
 export const DECORATION_DESCRIPTOR: IEntityDescriptor<LibraryRuntime.IDecoration, DecorationId> = {
   getId: (d: LibraryRuntime.IDecoration): DecorationId => d.id,
   getLabel: (d: LibraryRuntime.IDecoration): string => d.name,
@@ -241,6 +257,14 @@ export const MOLD_INVENTORY_FILTER_SPEC: IEntityFilterSpec<IMoldInventoryListEnt
   }
 };
 
+export const LOCATION_FILTER_SPEC: IEntityFilterSpec<ILocationListEntry> = {
+  getSearchText: (e) => [e.entity.name, e.entity.description].filter(Boolean).join(' '),
+  getCollectionId: (e) => collectionFromId(e.id),
+  selectionExtractors: {
+    collection: (e) => collectionFromId(e.id)
+  }
+};
+
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -261,3 +285,4 @@ export const { createBlankRawTaskEntity } = Entities.Tasks;
 export const { createBlankRawProcedureEntity } = Entities.Procedures;
 export const { createBlankDecorationEntity } = Entities.Decorations;
 export const { createBlankFillingRecipeEntity } = Entities.Fillings;
+export const { createBlankLocationEntity } = Entities.Locations;

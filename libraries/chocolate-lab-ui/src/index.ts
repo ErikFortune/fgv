@@ -58,3 +58,6 @@ export * from './packlets/production';
 
 // Inventory management
 export * from './packlets/inventory';
+
+// Location management
+export * from './packlets/locations';

@@ -40,6 +40,7 @@ import {
   BaseDecorationId,
   BaseFillingId,
   BaseIngredientId,
+  BaseLocationId,
   BaseMoldId,
   BaseProcedureId,
   BaseTaskId,
@@ -53,6 +54,7 @@ import {
   IngredientId,
   BaseJournalId,
   JournalId,
+  LocationId,
   MoldId,
   SessionId,
   ProcedureId,
@@ -67,6 +69,7 @@ import {
   isValidBaseDecorationId,
   isValidBaseFillingId,
   isValidBaseIngredientId,
+  isValidBaseLocationId,
   isValidBaseMoldId,
   isValidBaseProcedureId,
   isValidBaseTaskId,
@@ -113,6 +116,15 @@ export const baseFillingId: Validator<BaseFillingId> = Validators.isA<BaseFillin
  * @public
  */
 export const baseMoldId: Validator<BaseMoldId> = Validators.isA<BaseMoldId>('BaseMoldId', isValidBaseMoldId);
+
+/**
+ * In-place `Validator` for {@link BaseLocationId | BaseLocationId}.
+ * @public
+ */
+export const baseLocationId: Validator<BaseLocationId> = Validators.isA<BaseLocationId>(
+  'BaseLocationId',
+  isValidBaseLocationId
+);
 
 /**
  * In-place `Validator` for {@link BaseProcedureId | BaseProcedureId}.
@@ -203,6 +215,20 @@ export const moldId: Validator<MoldId> = Validators.compositeId<MoldId, Collecti
   collectionId: collectionId,
   separator: ID_SEPARATOR,
   itemId: baseMoldId
+});
+
+/**
+ * In-place `Validator` for {@link LocationId | LocationId} (composite string).
+ * @public
+ */
+export const locationId: Validator<LocationId> = Validators.compositeId<
+  LocationId,
+  CollectionId,
+  BaseLocationId
+>({
+  collectionId: collectionId,
+  separator: ID_SEPARATOR,
+  itemId: baseLocationId
 });
 
 /**

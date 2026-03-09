@@ -123,6 +123,9 @@ export function getSubLibraryPath(subLibraryId: SubLibraryId): string {
     /* c8 ignore next 2 - inventory used only by user library */
     case 'ingredientInventory':
       return LibraryPaths.ingredientInventory;
+    /* c8 ignore next 2 - locations used only by user library */
+    case 'locations':
+      return LibraryPaths.locations;
   }
 }
 

@@ -62,6 +62,15 @@ In-place `Validator` for BaseMoldId | BaseMoldId.
 </td></tr>
 <tr><td>
 
+[baseLocationId](./variables/baseLocationId.md)
+
+</td><td>
+
+In-place `Validator` for BaseLocationId | BaseLocationId.
+
+</td></tr>
+<tr><td>
+
 [baseProcedureId](./variables/baseProcedureId.md)
 
 </td><td>
@@ -139,6 +148,15 @@ In-place `Validator` for FillingId | FillingId (composite string).
 </td><td>
 
 In-place `Validator` for MoldId | MoldId (composite string).
+
+</td></tr>
+<tr><td>
+
+[locationId](./variables/locationId.md)
+
+</td><td>
+
+In-place `Validator` for LocationId | LocationId (composite string).
 
 </td></tr>
 <tr><td>

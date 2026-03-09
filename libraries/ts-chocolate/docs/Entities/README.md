@@ -81,6 +81,15 @@ Inventory entities for the user library.
 </td></tr>
 <tr><td>
 
+[Locations](./Locations/README.md)
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [Molds](./Molds/README.md)
 
 </td><td>
@@ -190,6 +199,15 @@ A library for managing user Entities.Inventory.IIngredientInventoryEntryEntity |
 </td><td>
 
 A library for managing user Entities.Inventory.IMoldInventoryEntryEntity | mold inventory entries.
+
+</td></tr>
+<tr><td>
+
+[LocationsLibrary](./classes/LocationsLibrary.md)
+
+</td><td>
+
+Multi-source location library with type-safe access.
 
 </td></tr>
 <tr><td>
@@ -501,6 +519,15 @@ Inventory entry for ingredients.
 </td><td>
 
 Inventory entry for molds.
+
+</td></tr>
+<tr><td>
+
+[ILocationEntity](./interfaces/ILocationEntity.md)
+
+</td><td>
+
+Represents a production location (e.g., storage area, workspace, shelf).
 
 </td></tr>
 <tr><td>
@@ -916,6 +943,15 @@ Type guard for IBufferedBarTruffleYield (produced bar truffle yield).
 </td><td>
 
 Type guard for IBufferedYieldInPieces (produced rolled truffle yield).
+
+</td></tr>
+<tr><td>
+
+[createBlankLocationEntity](./functions/createBlankLocationEntity.md)
+
+</td><td>
+
+Create a blank location entity with sensible defaults.
 
 </td></tr>
 <tr><td>

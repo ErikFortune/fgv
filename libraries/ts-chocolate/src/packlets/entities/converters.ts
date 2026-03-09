@@ -28,8 +28,9 @@ import * as Decorations from './decorations/converters';
 import * as Fillings from './fillings/converters';
 import * as Ingredients from './ingredients/converters';
 import * as Journal from './journal/converters';
+import * as Locations from './locations/converters';
 import * as Molds from './molds/converters';
 import * as Procedures from './procedures/converters';
 import * as Tasks from './tasks/converters';
 
-export { Confections, Decorations, Fillings, Ingredients, Journal, Molds, Procedures, Tasks };
+export { Confections, Decorations, Fillings, Ingredients, Journal, Locations, Molds, Procedures, Tasks };

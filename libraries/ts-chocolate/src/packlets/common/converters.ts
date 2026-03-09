@@ -32,6 +32,7 @@ import {
   BaseDecorationId,
   BaseFillingId,
   BaseIngredientId,
+  BaseLocationId,
   BaseMoldId,
   BaseProcedureId,
   BaseTaskId,
@@ -58,6 +59,7 @@ import {
   IngredientId,
   IngredientPhase,
   JournalId,
+  LocationId,
   Measurement,
   MeasurementUnit,
   Millimeters,
@@ -114,6 +116,7 @@ import {
   toBaseDecorationId,
   toBaseFillingId,
   toBaseIngredientId,
+  toBaseLocationId,
   toBaseMoldId,
   toBaseProcedureId,
   toBaseTaskId,
@@ -181,6 +184,12 @@ export const baseFillingId: Converter<BaseFillingId> = Converters.generic(toBase
 export const baseMoldId: Converter<BaseMoldId> = Converters.generic(toBaseMoldId);
 
 /**
+ * Converter for {@link BaseLocationId | BaseLocationId}.
+ * @public
+ */
+export const baseLocationId: Converter<BaseLocationId> = Converters.generic(toBaseLocationId);
+
+/**
  * Converter for {@link BaseProcedureId | BaseProcedureId}.
  * @public
  */
@@ -244,6 +253,18 @@ export const moldId: Converter<MoldId> = Converters.compositeIdString(
   collectionId,
   ID_SEPARATOR,
   baseMoldId
+);
+
+/**
+ * Converter for {@link LocationId | LocationId} (composite string).
+ * Accepts either a {@link LocationId | LocationId} string or a `CompositeId` object representation.
+ * @public
+ */
+export const locationId: Converter<LocationId> = Converters.compositeIdString(
+  CommonValidators.locationId,
+  collectionId,
+  ID_SEPARATOR,
+  baseLocationId
 );
 
 /**
@@ -376,6 +397,23 @@ export const parsedMoldId: Converter<ParsedMoldId> = Converters.compositeId(
   collectionId,
   ID_SEPARATOR,
   baseMoldId
+);
+
+/**
+ * Type alias for parsed {@link LocationId | LocationId} components.
+ * @public
+ */
+export type ParsedLocationId = Converters.ICompositeId<CollectionId, BaseLocationId>;
+
+/**
+ * Converter that parses a {@link LocationId | LocationId} string into its component parts
+ * or validates a `CompositeId` object representation.
+ * @public
+ */
+export const parsedLocationId: Converter<ParsedLocationId> = Converters.compositeId(
+  collectionId,
+  ID_SEPARATOR,
+  baseLocationId
 );
 
 /**

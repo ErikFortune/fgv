@@ -74,6 +74,10 @@ export const LibraryPaths = {
    */
   ingredientInventory: 'data/ingredient-inventory',
   /**
+   * Path to the locations data directory (user library).
+   */
+  locations: 'data/locations',
+  /**
    * Path to the settings directory.
    */
   settings: 'data/settings',
@@ -264,6 +268,16 @@ export function getIngredientInventoryDirectory(
   tree: FileTree.FileTreeItem
 ): Result<FileTree.IFileTreeDirectoryItem> {
   return navigateToDirectory(tree, LibraryPaths.ingredientInventory);
+}
+
+/**
+ * Gets the locations directory from a library tree.
+ * @param tree - The root library FileTree item.
+ * @returns `Success` with the locations directory or `Failure` if not found.
+ * @public
+ */
+export function getLocationsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem> {
+  return navigateToDirectory(tree, LibraryPaths.locations);
 }
 
 /**

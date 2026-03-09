@@ -43,7 +43,7 @@ export type AppMode = 'production' | 'library';
  * Tabs available in Production mode.
  * @public
  */
-export type ProductionTab = 'sessions' | 'journal' | 'ingredient-inventory' | 'mold-inventory';
+export type ProductionTab = 'sessions' | 'journal' | 'ingredient-inventory' | 'mold-inventory' | 'locations';
 
 /**
  * Tabs available in Library mode.
@@ -84,7 +84,7 @@ export const DEFAULT_TABS: Record<AppMode, AppTab> = {
  * @public
  */
 export const MODE_TABS: Record<AppMode, ReadonlyArray<AppTab>> = {
-  production: ['sessions', 'journal', 'ingredient-inventory', 'mold-inventory'],
+  production: ['sessions', 'journal', 'ingredient-inventory', 'mold-inventory', 'locations'],
   library: ['confections', 'fillings', 'ingredients', 'molds', 'decorations', 'procedures', 'tasks']
 } as const;
 
@@ -97,6 +97,7 @@ export const TAB_LABELS: Record<AppTab, string> = {
   journal: 'Journal',
   'ingredient-inventory': 'Ingredient Inventory',
   'mold-inventory': 'Mold Inventory',
+  locations: 'Locations',
   ingredients: 'Ingredients',
   fillings: 'Fillings',
   confections: 'Confections',
@@ -135,7 +136,8 @@ export type CascadeEntityType =
   | 'step-params'
   | 'session'
   | 'journal-entry'
-  | 'mold-inventory-entry';
+  | 'mold-inventory-entry'
+  | 'location';
 
 /**
  * Mode for a cascade column (view-only, editing, or creating a new entity).

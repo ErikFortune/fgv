@@ -153,6 +153,12 @@ export interface IDefaultCollectionTargets {
   readonly tasks?: CollectionId;
   /** Default collection for new decorations */
   readonly decorations?: CollectionId;
+  /** Default collection for new locations */
+  readonly locations?: CollectionId;
+  /** Default collection for new mold inventory entries */
+  readonly moldInventory?: CollectionId;
+  /** Default collection for new ingredient inventory entries */
+  readonly ingredientInventory?: CollectionId;
 }
 
 // ============================================================================

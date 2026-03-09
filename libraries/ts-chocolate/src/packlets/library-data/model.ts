@@ -250,7 +250,8 @@ export type SubLibraryId =
   | 'decorations'
   | 'sessions'
   | 'moldInventory'
-  | 'ingredientInventory';
+  | 'ingredientInventory'
+  | 'locations';
 
 /**
  * All valid sub-library identifiers.
@@ -267,7 +268,8 @@ export const allSubLibraryIds: ReadonlyArray<SubLibraryId> = [
   'decorations',
   'sessions',
   'moldInventory',
-  'ingredientInventory'
+  'ingredientInventory',
+  'locations'
 ] as const;
 
 /**

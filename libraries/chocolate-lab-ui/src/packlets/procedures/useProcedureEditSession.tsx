@@ -250,21 +250,17 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
 
         const baseId = wrapper.current.baseId as BaseTaskId;
         const compositeTaskId = `${mutableTaskCollectionId}.${baseId}` as TaskId;
-        const colResult = workspace.data.entities.tasks.collections.get(mutableTaskCollectionId);
-        if (colResult.isFailure() || !colResult.value.isMutable) {
-          workspace.data.logger.error('Cannot save nested library task: mutable collection not available');
+
+        const persistedResult = workspace.data.entities.getPersistedTasksCollection(mutableTaskCollectionId);
+        if (persistedResult.isFailure()) {
+          workspace.data.logger.error(`Failed to get persisted task collection: ${persistedResult.message}`);
           return;
         }
 
-        colResult.value.items.set(baseId, wrapper.current);
-
-        const saveResult = await workspace.data.entities.saveCollection(
-          mutableTaskCollectionId,
-          workspace.keyStore,
-          workspace.data.entities.tasks
-        );
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Failed to save task collection: ${saveResult.message}`);
+        const upsertResult = await persistedResult.value.upsertItem(baseId, wrapper.current);
+        if (upsertResult.isFailure()) {
+          workspace.data.logger.error(`Failed to save task: ${upsertResult.message}`);
+          return;
         }
 
         if (currentStep) {
@@ -340,21 +336,17 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
 
         const baseId = session.wrapper.current.baseId as BaseTaskId;
         const compositeTaskId = `${mutableTaskCollectionId}.${baseId}` as TaskId;
-        const colResult = workspace.data.entities.tasks.collections.get(mutableTaskCollectionId);
-        if (colResult.isFailure() || !colResult.value.isMutable) {
-          workspace.data.logger.error('Cannot convert to library task: mutable collection not available');
+
+        const persistedResult = workspace.data.entities.getPersistedTasksCollection(mutableTaskCollectionId);
+        if (persistedResult.isFailure()) {
+          workspace.data.logger.error(`Failed to get persisted task collection: ${persistedResult.message}`);
           return;
         }
 
-        colResult.value.items.set(baseId, session.wrapper.current);
-
-        const saveResult = await workspace.data.entities.saveCollection(
-          mutableTaskCollectionId,
-          workspace.keyStore,
-          workspace.data.entities.tasks
-        );
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Failed to save task collection: ${saveResult.message}`);
+        const upsertResult = await persistedResult.value.upsertItem(baseId, session.wrapper.current);
+        if (upsertResult.isFailure()) {
+          workspace.data.logger.error(`Failed to save task: ${upsertResult.message}`);
+          return;
         }
 
         procWrapper.updateStep(session.stepOrder, {

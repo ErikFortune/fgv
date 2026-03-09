@@ -13,7 +13,10 @@
     "workspace/browserFactory.js",
     "editing/exportImport.js",
     "entities/session/collection.js",
-    "entities/journal/collection.js"
+    "entities/journal/collection.js",
+    "entities/locations/collection.js",
+    "editing/locations/locationEditorContext.js",
+    "user-library/location.js"
   ],
   "coverageThreshold": {
     "global": {

@@ -106,6 +106,8 @@ export {
   InventoryType
 } from './inventory';
 
+export { LocationsLibrary, ILocationEntity, createBlankLocationEntity } from './locations';
+
 export { MoldsLibrary, ICavities, ICavityDimensions, ICavityInfo, IMoldEntity } from './molds';
 
 export { ProceduresLibrary, IProcedureEntity, IProcedureStepEntity } from './procedures';
@@ -141,6 +143,7 @@ import * as Fillings from './fillings';
 import * as Ingredients from './ingredients';
 import * as Inventory from './inventory';
 import * as Journal from './journal';
+import * as Locations from './locations';
 import * as Molds from './molds';
 import * as Procedures from './procedures';
 import * as Session from './session';
@@ -153,6 +156,7 @@ export {
   Ingredients,
   Inventory,
   Journal,
+  Locations,
   Molds,
   Procedures,
   Session,

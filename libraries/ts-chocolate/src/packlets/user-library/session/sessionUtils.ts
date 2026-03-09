@@ -25,7 +25,13 @@
 
 import { Result } from '@fgv/ts-utils';
 
-import { BaseJournalId, BaseSessionId, SessionSpec, Converters as CommonConverters } from '../../common';
+import {
+  BaseJournalId,
+  BaseSessionId,
+  SessionSpec,
+  Converters as CommonConverters,
+  Helpers
+} from '../../common';
 
 // ============================================================================
 // ID Generators
@@ -70,23 +76,6 @@ export function generateJournalId(): Result<BaseJournalId> {
 }
 
 /**
- * Character replacements applied before general slug normalization.
- * Handles German umlauts/sharp-s and strips apostrophes and similar punctuation.
- * @internal
- */
-const SLUG_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
-  // German umlauts → base vowel + e
-  [/ä/g, 'ae'],
-  [/ö/g, 'oe'],
-  [/ü/g, 'ue'],
-  [/ÿ/g, 'ij'],
-  // Sharp-s
-  [/ß/g, 'ss'],
-  // Apostrophes and similar (strip without inserting a hyphen)
-  [/[\u0027\u2019\u2018\u0060\u00B4]/g, '']
-];
-
-/**
  * Normalizes a string to a kebab-case slug suitable for use in a session ID.
  *
  * - German umlauts are expanded (ä→ae, ö→oe, ü→ue) and ß becomes ss.
@@ -99,11 +88,7 @@ const SLUG_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
  * @public
  */
 export function toSessionSlug(input: string): string | undefined {
-  let s = input.toLowerCase();
-  for (const [pattern, replacement] of SLUG_REPLACEMENTS) {
-    s = s.replace(pattern, replacement);
-  }
-  const slug = s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const slug = Helpers.toKebabCase(input);
   return slug.length > 0 ? slug : undefined;
 }
 

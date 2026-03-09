@@ -81,6 +81,8 @@ export function getSubLibraryForTab(
       return userEntities.moldInventory;
     case 'ingredient-inventory':
       return userEntities.ingredientInventory;
+    case 'locations':
+      return userEntities.locations;
     // No sub-library
     case 'settings':
       return undefined;
@@ -127,6 +129,8 @@ export function getSubLibraryPathForTab(tab: AppTab): string | undefined {
       return LibraryData.LibraryPaths.moldInventory;
     case 'ingredient-inventory':
       return LibraryData.LibraryPaths.ingredientInventory;
+    case 'locations':
+      return LibraryData.LibraryPaths.locations;
     // No path
     case 'settings':
       return undefined;

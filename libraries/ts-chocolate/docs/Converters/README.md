@@ -54,6 +54,15 @@ Type alias for parsed MoldId | MoldId components.
 </td></tr>
 <tr><td>
 
+[ParsedLocationId](./type-aliases/ParsedLocationId.md)
+
+</td><td>
+
+Type alias for parsed LocationId | LocationId components.
+
+</td></tr>
+<tr><td>
+
 [ParsedProcedureId](./type-aliases/ParsedProcedureId.md)
 
 </td><td>
@@ -217,6 +226,15 @@ Converter for BaseMoldId | BaseMoldId.
 </td></tr>
 <tr><td>
 
+[baseLocationId](./variables/baseLocationId.md)
+
+</td><td>
+
+Converter for BaseLocationId | BaseLocationId.
+
+</td></tr>
+<tr><td>
+
 [baseProcedureId](./variables/baseProcedureId.md)
 
 </td><td>
@@ -285,6 +303,15 @@ Converter for FillingId | FillingId (composite string).
 </td><td>
 
 Converter for MoldId | MoldId (composite string).
+
+</td></tr>
+<tr><td>
+
+[locationId](./variables/locationId.md)
+
+</td><td>
+
+Converter for LocationId | LocationId (composite string).
 
 </td></tr>
 <tr><td>
@@ -366,6 +393,15 @@ Converter that parses a FillingId | FillingId string into its component parts
 </td><td>
 
 Converter that parses a MoldId | MoldId string into its component parts
+
+</td></tr>
+<tr><td>
+
+[parsedLocationId](./variables/parsedLocationId.md)
+
+</td><td>
+
+Converter that parses a LocationId | LocationId string into its component parts
 
 </td></tr>
 <tr><td>

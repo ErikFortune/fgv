@@ -62,6 +62,14 @@ export type BaseFillingId = Brand<string, 'BaseFillingId'>;
 export type BaseMoldId = Brand<string, 'BaseMoldId'>;
 
 /**
+ * Location identifier within a single source
+ * Character restrictions: alphanumeric, dashes, underscores only (no dots)
+ * Pattern: /^[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type BaseLocationId = Brand<string, 'BaseLocationId'>;
+
+/**
  * Procedure identifier within a single source
  * Character restrictions: alphanumeric, dashes, underscores only (no dots)
  * Pattern: /^[a-zA-Z0-9_-]+$/
@@ -107,6 +115,15 @@ export type FillingId = Brand<string, 'FillingId'>;
  * @public
  */
 export type MoldId = Brand<string, 'MoldId'>;
+
+/**
+ * Globally unique location identifier (composite)
+ * Format: "collectionId.baseLocationId"
+ * Must contain exactly one dot separator
+ * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type LocationId = Brand<string, 'LocationId'>;
 
 /**
  * Globally unique procedure identifier (composite)

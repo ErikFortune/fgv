@@ -305,6 +305,7 @@ export function toUserLibrarySource(
       sessions: true,
       moldInventory: true,
       ingredientInventory: true,
+      locations: true,
       default: false
     },
     mutable
@@ -333,6 +334,7 @@ const WORKSPACE_DIRECTORY_PATHS: ReadonlyArray<string> = [
   LibraryPaths.journals,
   LibraryPaths.moldInventory,
   LibraryPaths.ingredientInventory,
+  LibraryPaths.locations,
   // Settings
   LibraryPaths.settings
 ];

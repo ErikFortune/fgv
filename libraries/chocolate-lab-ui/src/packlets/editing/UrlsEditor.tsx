@@ -25,10 +25,10 @@
  * @packageDocumentation
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
+import { ArrowPathIcon, CheckIcon } from '@heroicons/react/20/solid';
 
 import { type Model as CommonModel, type UrlCategory, DefaultUrlCategory } from '@fgv/ts-chocolate';
-import { EditSection } from '@fgv/ts-app-shell';
 
 /**
  * Props for the UrlsEditor component.
@@ -50,6 +50,7 @@ export interface IUrlsEditorProps {
  * @public
  */
 export function UrlsEditor({ value, onChange, title }: IUrlsEditorProps): React.ReactElement {
+  const [editing, setEditing] = useState(false);
   const urls = value ?? [];
 
   const handleAdd = useCallback(() => {
@@ -81,40 +82,93 @@ export function UrlsEditor({ value, onChange, title }: IUrlsEditorProps): React.
   );
 
   return (
-    <EditSection title={title ?? 'URLs'}>
-      {urls.map((entry, index) => (
-        <div key={index} className="flex items-center gap-2 py-1">
-          <input
-            type="text"
-            value={entry.category}
-            onChange={(e) => handleCategoryChange(index, e.target.value)}
-            placeholder="category"
-            className="w-28 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-          />
-          <input
-            type="url"
-            value={entry.url}
-            onChange={(e) => handleUrlChange(index, e.target.value)}
-            placeholder="https://..."
-            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-          />
+    <div>
+      <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">{title ?? 'URLs'}</div>
+      {!editing ? (
+        <div className="py-0.5">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={(): void => setEditing(true)}
+              title={`Edit ${(title ?? 'URLs').toLowerCase()}`}
+              className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+            >
+              <ArrowPathIcon className="h-3 w-3" />
+            </button>
+            {urls.length === 0 ? (
+              <span className="text-sm text-gray-400 italic">None</span>
+            ) : (
+              <div className="space-y-0.5">
+                {urls.map((entry, index) => (
+                  <div key={index} className="text-sm text-gray-700">
+                    {entry.category !== DefaultUrlCategory && (
+                      <span className="text-gray-500">{entry.category}: </span>
+                    )}
+                    {entry.url ? (
+                      <a
+                        href={entry.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-choco-primary hover:underline"
+                      >
+                        {entry.url}
+                      </a>
+                    ) : (
+                      <span className="text-gray-400 italic">empty</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div className="flex items-center gap-1 mb-1">
+            <button
+              type="button"
+              onClick={(): void => setEditing(false)}
+              title="Done editing"
+              className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+            >
+              <CheckIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          {urls.map((entry, index) => (
+            <div key={index} className="flex items-center gap-2 py-1">
+              <input
+                type="text"
+                value={entry.category}
+                onChange={(e): void => handleCategoryChange(index, e.target.value)}
+                placeholder="category"
+                className="w-28 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+              />
+              <input
+                type="url"
+                value={entry.url}
+                onChange={(e): void => handleUrlChange(index, e.target.value)}
+                placeholder="https://..."
+                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+              />
+              <button
+                type="button"
+                onClick={(): void => handleRemove(index)}
+                className="text-gray-400 hover:text-red-500 p-1"
+                aria-label="Remove URL"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
           <button
             type="button"
-            onClick={() => handleRemove(index)}
-            className="text-gray-400 hover:text-red-500 p-1"
-            aria-label="Remove URL"
+            onClick={handleAdd}
+            className="text-xs text-choco-primary hover:text-choco-primary/80 mt-1"
           >
-            ✕
+            + Add URL
           </button>
         </div>
-      ))}
-      <button
-        type="button"
-        onClick={handleAdd}
-        className="text-xs text-choco-primary hover:text-choco-primary/80 mt-1"
-      >
-        + Add URL
-      </button>
-    </EditSection>
+      )}
+    </div>
   );
 }

@@ -90,6 +90,24 @@ Validates unknown value is a BaseMoldId | BaseMoldId.
 </td></tr>
 <tr><td>
 
+[isValidBaseLocationId](./functions/isValidBaseLocationId.md)
+
+</td><td>
+
+Type guard for BaseLocationId | BaseLocationId.
+
+</td></tr>
+<tr><td>
+
+[toBaseLocationId](./functions/toBaseLocationId.md)
+
+</td><td>
+
+Validates unknown value is a BaseLocationId | BaseLocationId.
+
+</td></tr>
+<tr><td>
+
 [isValidBaseProcedureId](./functions/isValidBaseProcedureId.md)
 
 </td><td>

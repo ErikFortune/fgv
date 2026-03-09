@@ -43,6 +43,7 @@ import {
   BaseDecorationId,
   BaseFillingId,
   BaseIngredientId,
+  BaseLocationId,
   BaseMoldId,
   BaseProcedureId,
   BaseTaskId,
@@ -173,6 +174,32 @@ export function toBaseMoldId(from: unknown): Result<BaseMoldId> {
     return Success.with(from);
   }
   return Failure.with('Invalid BaseMoldId: must be non-empty alphanumeric with dashes/underscores, no dots');
+}
+
+/**
+ * Type guard for {@link BaseLocationId | BaseLocationId}.
+ * @param from - Value to check
+ * @returns `true` if the value is a valid {@link BaseLocationId | BaseLocationId}.
+ * @public
+ */
+export function isValidBaseLocationId(from: unknown): from is BaseLocationId {
+  return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Validates unknown value is a {@link BaseLocationId | BaseLocationId}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link BaseLocationId | BaseLocationId} or `Failure` with an error
+ * message if validation fails.
+ * @public
+ */
+export function toBaseLocationId(from: unknown): Result<BaseLocationId> {
+  if (isValidBaseLocationId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid BaseLocationId: must be non-empty alphanumeric with dashes/underscores, no dots'
+  );
 }
 
 /**

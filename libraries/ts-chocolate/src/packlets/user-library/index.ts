@@ -27,6 +27,7 @@
 
 export * from './model';
 export * from './userLibrary';
+export { ILocation, Location } from './location';
 
 // Session infrastructure (as namespace)
 import * as Session from './session';

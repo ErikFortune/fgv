@@ -410,6 +410,15 @@ Mold identifier within a single source
 </td></tr>
 <tr><td>
 
+[BaseLocationId](./type-aliases/BaseLocationId.md)
+
+</td><td>
+
+Location identifier within a single source
+
+</td></tr>
+<tr><td>
+
 [BaseProcedureId](./type-aliases/BaseProcedureId.md)
 
 </td><td>
@@ -451,6 +460,15 @@ Globally unique filling recipe identifier (composite)
 </td><td>
 
 Globally unique mold identifier (composite)
+
+</td></tr>
+<tr><td>
+
+[LocationId](./type-aliases/LocationId.md)
+
+</td><td>
+
+Globally unique location identifier (composite)
 
 </td></tr>
 <tr><td>

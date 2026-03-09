@@ -178,4 +178,55 @@ Default collection for new tasks
 Default collection for new decorations
 
 </td></tr>
+<tr><td>
+
+[locations](./IDefaultCollectionTargets.locations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[CollectionId](../type-aliases/CollectionId.md)
+
+</td><td>
+
+Default collection for new locations
+
+</td></tr>
+<tr><td>
+
+[moldInventory](./IDefaultCollectionTargets.moldInventory.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[CollectionId](../type-aliases/CollectionId.md)
+
+</td><td>
+
+Default collection for new mold inventory entries
+
+</td></tr>
+<tr><td>
+
+[ingredientInventory](./IDefaultCollectionTargets.ingredientInventory.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[CollectionId](../type-aliases/CollectionId.md)
+
+</td><td>
+
+Default collection for new ingredient inventory entries
+
+</td></tr>
 </tbody></table>

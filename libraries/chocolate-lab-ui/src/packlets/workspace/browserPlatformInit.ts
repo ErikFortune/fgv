@@ -98,6 +98,7 @@ function createDefaultPathToKeyMap(prefix: string): Record<string, string> {
     [`/${LibraryData.LibraryPaths.sessions}`]: `${prefix}:sessions:v1`,
     [`/${LibraryData.LibraryPaths.moldInventory}`]: `${prefix}:mold-inventory:v1`,
     [`/${LibraryData.LibraryPaths.ingredientInventory}`]: `${prefix}:ingredient-inventory:v1`,
+    [`/${LibraryData.LibraryPaths.locations}`]: `${prefix}:locations:v1`,
     [`/${LibraryData.LibraryPaths.settings}`]: `${prefix}:settings:v1`,
     ['/keystore']: `${prefix}:keystore:v1`
   };

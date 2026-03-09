@@ -478,6 +478,15 @@ const baseJournalId: Converter<BaseJournalId>;
 const baseJournalId_2: Validator<BaseJournalId>;
 
 // @public
+export type BaseLocationId = Brand<string, 'BaseLocationId'>;
+
+// @public
+const baseLocationId: Converter<BaseLocationId>;
+
+// @public
+const baseLocationId_2: Validator<BaseLocationId>;
+
+// @public
 export type BaseMoldId = Brand<string, 'BaseMoldId'>;
 
 // @public
@@ -1269,6 +1278,7 @@ declare namespace Converters {
         baseIngredientId,
         baseFillingId,
         baseMoldId,
+        baseLocationId,
         baseProcedureId,
         baseTaskId,
         baseConfectionId,
@@ -1277,6 +1287,7 @@ declare namespace Converters {
         ingredientId,
         fillingId,
         moldId,
+        locationId,
         procedureId,
         taskId,
         confectionId,
@@ -1290,6 +1301,8 @@ declare namespace Converters {
         parsedFillingId,
         ParsedMoldId,
         parsedMoldId,
+        ParsedLocationId,
+        parsedLocationId,
         ParsedProcedureId,
         parsedProcedureId,
         ParsedTaskId,
@@ -1506,6 +1519,7 @@ declare namespace Converters_7 {
         Converters_3 as Fillings,
         Converters_2 as Ingredients,
         Journal,
+        Locations,
         Molds,
         Procedures,
         Converters_4 as Tasks
@@ -1537,6 +1551,9 @@ function createBlankFillingRecipeEntity(baseId: BaseFillingId, name: string, var
 
 // @public
 function createBlankIngredientEntity(baseId: BaseIngredientId, name: string): IIngredientEntity;
+
+// @public
+function createBlankLocationEntity(baseId: BaseLocationId, name: string): ILocationEntity;
 
 // @public
 function createBlankMoldEntity(baseId: BaseMoldId, manufacturer: string, name: string): IMoldEntity;
@@ -2046,6 +2063,7 @@ declare namespace Editing {
         Procedures_3 as Procedures,
         Decorations_2 as Decorations,
         Fillings_2 as Fillings,
+        Locations_3 as Locations,
         ISnapshotProvider,
         IEditorContext,
         IEditorContextValidator,
@@ -2250,6 +2268,9 @@ declare namespace Entities {
         IngredientInventoryEntryBaseId,
         MoldInventoryEntryBaseId,
         InventoryType,
+        LocationsLibrary,
+        ILocationEntity,
+        createBlankLocationEntity,
         MoldsLibrary,
         ICavities,
         ICavityDimensions,
@@ -2279,6 +2300,7 @@ declare namespace Entities {
         Ingredients,
         Inventory,
         Journal_2 as Journal,
+        Locations_2 as Locations,
         Molds_2 as Molds,
         Procedures_2 as Procedures,
         Session,
@@ -2850,6 +2872,9 @@ function getJournalCollectionId(id: JournalId): CollectionId;
 
 // @public
 function getJournalsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
+function getLocationsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function getMoldInventoryDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
@@ -3654,8 +3679,11 @@ interface IDefaultCollectionTargets {
     readonly confections?: CollectionId;
     readonly decorations?: CollectionId;
     readonly fillings?: CollectionId;
+    readonly ingredientInventory?: CollectionId;
     readonly ingredients?: CollectionId;
     readonly journals?: CollectionId;
+    readonly locations?: CollectionId;
+    readonly moldInventory?: CollectionId;
     readonly molds?: CollectionId;
     readonly procedures?: CollectionId;
     readonly sessions?: CollectionId;
@@ -4376,6 +4404,7 @@ interface IInstantiatedEntityLibrarySources {
 interface IInstantiatedUserEntityLibrarySource {
     readonly ingredientInventory?: IngredientInventoryLibrary;
     readonly journals?: JournalLibrary;
+    readonly locations?: LocationsLibrary;
     readonly moldInventory?: MoldInventoryLibrary;
     readonly sessions?: SessionLibrary;
 }
@@ -4484,6 +4513,37 @@ interface ILocalStorageConfig {
     readonly library?: boolean;
     readonly userData?: boolean;
 }
+
+// @public
+interface ILocation {
+    readonly baseId: BaseLocationId;
+    readonly collectionId: CollectionId;
+    readonly description: string | undefined;
+    readonly displayName: string;
+    readonly entity: ILocationEntity;
+    readonly id: LocationId;
+    readonly name: string;
+    readonly notes: ReadonlyArray<Model.ICategorizedNote> | undefined;
+    readonly urls: ReadonlyArray<Model.ICategorizedUrl> | undefined;
+}
+
+// @public
+interface ILocationEntity {
+    readonly baseId: BaseLocationId;
+    readonly description?: string;
+    readonly name: string;
+    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly urls?: ReadonlyArray<Model.ICategorizedUrl>;
+}
+
+// @public
+type ILocationFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+type ILocationsLibraryAsyncParams = ISubLibraryAsyncParams<LocationsLibrary, LocationCollectionEntryInit>;
+
+// @public
+type ILocationsLibraryParams = ISubLibraryParams<LocationsLibrary, LocationCollectionEntryInit>;
 
 // @public
 interface ILogSettings {
@@ -6190,6 +6250,9 @@ function isValidBaseIngredientId(from: unknown): from is BaseIngredientId;
 function isValidBaseJournalId(from: unknown): from is BaseJournalId;
 
 // @public
+function isValidBaseLocationId(from: unknown): from is BaseLocationId;
+
+// @public
 function isValidBaseMoldId(from: unknown): from is BaseMoldId;
 
 // @public
@@ -6374,10 +6437,12 @@ interface IUserEntityLibrary {
     configurePersistence(config: IUserEntityPersistenceConfig): void;
     getPersistedIngredientInventoryCollection(collectionId: CollectionId): Result<PersistedEditableCollection<IIngredientInventoryEntryEntity, IngredientInventoryEntryBaseId>>;
     getPersistedJournalsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<AnyJournalEntryEntity, BaseJournalId>>;
+    getPersistedLocationsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<ILocationEntity, BaseLocationId>>;
     getPersistedMoldInventoryCollection(collectionId: CollectionId): Result<PersistedEditableCollection<IMoldInventoryEntryEntity, MoldInventoryEntryBaseId>>;
     getPersistedSessionsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<AnySessionEntity, BaseSessionId>>;
     readonly ingredientInventory: IngredientInventoryLibrary;
     readonly journals: JournalLibrary;
+    readonly locations: LocationsLibrary;
     readonly moldInventory: MoldInventoryLibrary;
     saveCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider, subLibrary?: {
         collections: {
@@ -6730,6 +6795,7 @@ declare namespace LibraryData {
         getSessionsDirectory,
         getMoldInventoryDirectory,
         getIngredientInventoryDirectory,
+        getLocationsDirectory,
         createDefaultLibraryDirectories,
         LibraryPaths,
         specToLoadParams,
@@ -6780,6 +6846,7 @@ const LibraryPaths: {
     readonly sessions: "data/sessions";
     readonly moldInventory: "data/mold-inventory";
     readonly ingredientInventory: "data/ingredient-inventory";
+    readonly locations: "data/locations";
     readonly settings: "data/settings";
     readonly settingsBootstrap: "bootstrap.json";
     readonly settingsPreferences: "preferences.json";
@@ -6962,6 +7029,101 @@ const localDirectoryRef: Converter<ILocalDirectoryRef>;
 //
 // @public
 const localStorageConfig: Converter<ILocalStorageConfig>;
+
+// @internal
+class Location_2 implements ILocation {
+    // (undocumented)
+    get baseId(): BaseLocationId;
+    // (undocumented)
+    get collectionId(): CollectionId;
+    static create(id: LocationId, entity: ILocationEntity): Result<Location_2>;
+    // (undocumented)
+    get description(): string | undefined;
+    // (undocumented)
+    get displayName(): string;
+    // (undocumented)
+    get entity(): ILocationEntity;
+    // (undocumented)
+    get id(): LocationId;
+    // (undocumented)
+    get name(): string;
+    // (undocumented)
+    get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
+    // (undocumented)
+    get urls(): ReadonlyArray<Model.ICategorizedUrl> | undefined;
+}
+
+// @public
+type LocationCollection = SubLibraryCollection<BaseLocationId, ILocationEntity>;
+
+// @public
+type LocationCollectionEntry = SubLibraryCollectionEntry<BaseLocationId, ILocationEntity>;
+
+// @public
+type LocationCollectionEntryInit = SubLibraryEntryInit<BaseLocationId, ILocationEntity>;
+
+// @public
+type LocationCollectionValidator = SubLibraryCollectionValidator<LocationId, ILocationEntity>;
+
+// Warning: (ae-forgotten-export) The symbol "ILocationEntity_3" needs to be exported by the entry point index.d.ts
+//
+// @public
+class LocationEditorContext extends ValidatingEditorContext<ILocationEntity_3, BaseLocationId, LocationId> {
+    static createFromCollection(collection: EditableCollection<ILocationEntity_3, BaseLocationId>): Result<LocationEditorContext>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const locationEntity: Converter<ILocationEntity>;
+
+// @public
+export type LocationId = Brand<string, 'LocationId'>;
+
+// @public
+const locationId: Converter<LocationId>;
+
+// @public
+const locationId_2: Validator<LocationId>;
+
+declare namespace Locations {
+    export {
+        locationEntity
+    }
+}
+
+declare namespace Locations_2 {
+    export {
+        Locations as Converters,
+        createBlankLocationEntity,
+        ILocationEntity,
+        LocationCollectionEntry,
+        LocationCollectionEntryInit,
+        LocationCollectionValidator,
+        LocationCollection,
+        ILocationFileTreeSource,
+        LocationsMergeSource,
+        ILocationsLibraryParams,
+        ILocationsLibraryAsyncParams,
+        LocationsLibrary
+    }
+}
+
+declare namespace Locations_3 {
+    export {
+        Validators_8 as Validators,
+        LocationEditorContext
+    }
+}
+
+// @public
+class LocationsLibrary extends SubLibraryBase<LocationId, BaseLocationId, ILocationEntity> {
+    static create(params?: ILocationsLibraryParams): Result<LocationsLibrary>;
+    static createAsync(params?: ILocationsLibraryAsyncParams): Promise<Result<LocationsLibrary>>;
+}
+
+// @public
+type LocationsMergeSource = SubLibraryMergeSource<LocationsLibrary>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ILogSettings"
 //
@@ -7394,6 +7556,12 @@ type ParsedJournalId = Converters_9.ICompositeId<CollectionId, BaseJournalId>;
 
 // @public
 const parsedJournalId: Converter<ParsedJournalId>;
+
+// @public
+type ParsedLocationId = Converters_9.ICompositeId<CollectionId, BaseLocationId>;
+
+// @public
+const parsedLocationId: Converter<ParsedLocationId>;
 
 // @public
 type ParsedMoldId = Converters_9.ICompositeId<CollectionId, BaseMoldId>;
@@ -8337,7 +8505,7 @@ type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.Aggregated
 type SubLibraryFileTreeSource = IFileTreeSource<CollectionId>;
 
 // @public
-type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedures' | 'tasks' | 'confections' | 'decorations' | 'sessions' | 'moldInventory' | 'ingredientInventory';
+type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedures' | 'tasks' | 'confections' | 'decorations' | 'sessions' | 'moldInventory' | 'ingredientInventory' | 'locations';
 
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, CollectionId>;
@@ -8503,6 +8671,9 @@ function toBaseIngredientId(from: unknown): Result<BaseIngredientId>;
 function toBaseJournalId(from: unknown): Result<BaseJournalId>;
 
 // @public
+function toBaseLocationId(from: unknown): Result<BaseLocationId>;
+
+// @public
 function toBaseMoldId(from: unknown): Result<BaseMoldId>;
 
 // @public
@@ -8634,6 +8805,10 @@ class UserEntityLibrary implements IUserEntityLibrary {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
+    getPersistedLocationsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<ILocationEntity, BaseLocationId>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
     getPersistedMoldInventoryCollection(collectionId: CollectionId): Result<PersistedEditableCollection<IMoldInventoryEntryEntity, MoldInventoryEntryBaseId>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -8647,6 +8822,10 @@ class UserEntityLibrary implements IUserEntityLibrary {
     //
     // (undocumented)
     get journals(): JournalLibrary;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get locations(): LocationsLibrary;
     readonly logger: Logging.LogReporter<unknown>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -8668,6 +8847,8 @@ class UserEntityLibrary implements IUserEntityLibrary {
 
 declare namespace UserLibrary {
     export {
+        ILocation,
+        Location_2 as Location,
         Session_2 as Session,
         IMaterializedSessionBase,
         ISessionContext,
@@ -8845,6 +9026,14 @@ function validateIngredientEntity(entity: IngredientEntity): Result<IngredientEn
 // @public
 function validateKebabCase(input: string): Result<string>;
 
+// Warning: (ae-forgotten-export) The symbol "ILocationEntity_2" needs to be exported by the entry point index.d.ts
+//
+// @public
+function validateLocationEntity(entity: ILocationEntity_2): Result<ILocationEntity_2>;
+
+// @public
+function validateLocationName(entity: ILocationEntity_2): Result<true>;
+
 // @public
 function validateMoldEntity(entity: IMoldEntity_2): Result<IMoldEntity_2>;
 
@@ -8928,6 +9117,8 @@ declare namespace Validation {
         toBaseFillingId,
         isValidBaseMoldId,
         toBaseMoldId,
+        isValidBaseLocationId,
+        toBaseLocationId,
         isValidBaseProcedureId,
         toBaseProcedureId,
         isValidBaseTaskId,
@@ -9023,6 +9214,7 @@ declare namespace Validators {
         baseIngredientId_2 as baseIngredientId,
         baseFillingId_2 as baseFillingId,
         baseMoldId_2 as baseMoldId,
+        baseLocationId_2 as baseLocationId,
         baseProcedureId_2 as baseProcedureId,
         baseTaskId_2 as baseTaskId,
         baseConfectionId_2 as baseConfectionId,
@@ -9032,6 +9224,7 @@ declare namespace Validators {
         ingredientId_2 as ingredientId,
         fillingId_2 as fillingId,
         moldId_2 as moldId,
+        locationId_2 as locationId,
         procedureId_2 as procedureId,
         taskId_2 as taskId,
         confectionId_2 as confectionId,
@@ -9101,6 +9294,13 @@ declare namespace Validators_7 {
         validateFillingIngredients,
         validateFillingRatings,
         validateFillingRecipeEntity
+    }
+}
+
+declare namespace Validators_8 {
+    export {
+        validateLocationName,
+        validateLocationEntity
     }
 }
 

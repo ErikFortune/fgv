@@ -556,6 +556,23 @@ export function findById<TOption extends IHasId<TId>, TId extends string>(
 // ============================================================================
 
 /**
+ * Character replacements applied before general slug normalization.
+ * Handles German umlauts/sharp-s and strips apostrophes and similar punctuation.
+ * @internal
+ */
+const KEBAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
+  // German umlauts → base vowel + e
+  [/ä/g, 'ae'],
+  [/ö/g, 'oe'],
+  [/ü/g, 'ue'],
+  [/ÿ/g, 'ij'],
+  // Sharp-s
+  [/ß/g, 'ss'],
+  // Apostrophes and similar (strip without inserting a hyphen)
+  [/[\u0027\u2019\u2018\u0060\u00B4]/g, '']
+];
+
+/**
  * Convert a string to kebab-case.
  * Useful for generating base IDs from names.
  * @param input - String to convert
@@ -563,11 +580,11 @@ export function findById<TOption extends IHasId<TId>, TId extends string>(
  * @public
  */
 export function toKebabCase(input: string): string {
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  let s = input.trim().toLowerCase();
+  for (const [pattern, replacement] of KEBAB_REPLACEMENTS) {
+    s = s.replace(pattern, replacement);
+  }
+  return s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 /**

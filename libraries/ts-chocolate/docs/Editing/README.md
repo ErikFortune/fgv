@@ -71,6 +71,15 @@ Decoration editing - specialized editing functionality for decorations
 Filling editing - specialized editing functionality for filling recipes
 
 </td></tr>
+<tr><td>
+
+[Locations](./Locations/README.md)
+
+</td><td>
+
+Location editing - specialized editing functionality for locations
+
+</td></tr>
 </tbody></table>
 
 ## Classes

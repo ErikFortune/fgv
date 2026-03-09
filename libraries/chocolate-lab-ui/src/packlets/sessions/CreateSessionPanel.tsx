@@ -33,7 +33,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useTypeaheadMatch } from '@fgv/ts-app-shell';
-import { Entities, type LibraryRuntime } from '@fgv/ts-chocolate';
+import { Entities, Helpers, type LibraryRuntime } from '@fgv/ts-chocolate';
 import type { Entities as EntitiesNS, Percentage } from '@fgv/ts-chocolate';
 
 import type { ICreateSessionInfo } from '../navigation';
@@ -87,14 +87,11 @@ export interface ICreateSessionPanelProps {
 // ============================================================================
 
 /**
- * Converts a display name to a kebab-case slug.
+ * Converts a display name to a kebab-case slug using the common helper.
  * @internal
  */
 function toSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  return Helpers.nameToBaseId(name).orDefault('');
 }
 
 // ============================================================================

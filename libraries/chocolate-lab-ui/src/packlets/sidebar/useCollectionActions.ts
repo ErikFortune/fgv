@@ -410,7 +410,10 @@ export function useCollectionActions(): ICollectionActions {
         tasks: 'tasks',
         decorations: 'decorations',
         sessions: 'sessions',
-        journal: 'journals'
+        journal: 'journals',
+        locations: 'locations',
+        'mold-inventory': 'moldInventory',
+        'ingredient-inventory': 'ingredientInventory'
       };
       const key = tabToKey[activeTab as AppTab];
       if (!key) {

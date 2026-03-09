@@ -649,6 +649,15 @@ Gets the ingredient inventory directory from a library tree.
 </td></tr>
 <tr><td>
 
+[getLocationsDirectory](./functions/getLocationsDirectory.md)
+
+</td><td>
+
+Gets the locations directory from a library tree.
+
+</td></tr>
+<tr><td>
+
 [createDefaultLibraryDirectories](./functions/createDefaultLibraryDirectories.md)
 
 </td><td>

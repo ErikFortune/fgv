@@ -78,6 +78,8 @@ function getSubLibrary(
       return userEntities?.moldInventory;
     case 'ingredientInventory':
       return userEntities?.ingredientInventory;
+    case 'locations':
+      return userEntities?.locations;
     default:
       return undefined;
   }
@@ -133,7 +135,8 @@ export function applyStorageTargets(
     'sessions',
     'journals',
     'moldInventory',
-    'ingredientInventory'
+    'ingredientInventory',
+    'locations'
   ];
 
   for (const subLibId of subLibIds) {

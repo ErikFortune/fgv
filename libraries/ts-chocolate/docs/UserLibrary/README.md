@@ -181,6 +181,15 @@ Materialized ingredient inventory entry with resolved ingredient reference.
 Runtime materialization layer for user library data.
 
 </td></tr>
+<tr><td>
+
+[ILocation](./interfaces/ILocation.md)
+
+</td><td>
+
+Materialized location with parsed composite ID.
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases

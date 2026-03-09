@@ -50,18 +50,19 @@ export interface INotesSectionProps {
  * Returns `null` if notes is empty.
  * @public
  */
-export function NotesSection({ notes }: INotesSectionProps): React.ReactElement | null {
-  if (notes.length === 0) {
-    return null;
-  }
+export function NotesSection({ notes }: INotesSectionProps): React.ReactElement {
   return (
     <DetailSection title="Notes">
-      {notes.map((note, i) => (
-        <div key={i} className="text-sm text-gray-700 mb-1">
-          <span className="text-xs text-gray-400 mr-1">[{note.category}]</span>
-          {note.note}
-        </div>
-      ))}
+      {notes.length === 0 ? (
+        <p className="text-sm text-gray-400 italic">(none)</p>
+      ) : (
+        notes.map((note, i) => (
+          <div key={i} className="text-sm text-gray-700 mb-1">
+            <span className="text-xs text-gray-400 mr-1">[{note.category}]</span>
+            {note.note}
+          </div>
+        ))
+      )}
     </DetailSection>
   );
 }
@@ -79,25 +80,26 @@ export interface IUrlsSectionProps {
  * Returns `null` if urls is empty.
  * @public
  */
-export function UrlsSection({ urls }: IUrlsSectionProps): React.ReactElement | null {
-  if (urls.length === 0) {
-    return null;
-  }
+export function UrlsSection({ urls }: IUrlsSectionProps): React.ReactElement {
   return (
     <DetailSection title="Links">
-      {urls.map((u, i) => (
-        <div key={i} className="text-sm mb-1">
-          <span className="text-xs text-gray-400 mr-1">[{u.category}]</span>
-          <a
-            href={u.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-choco-primary hover:underline"
-          >
-            {u.url}
-          </a>
-        </div>
-      ))}
+      {urls.length === 0 ? (
+        <p className="text-sm text-gray-400 italic">(none)</p>
+      ) : (
+        urls.map((u, i) => (
+          <div key={i} className="text-sm mb-1">
+            <span className="text-xs text-gray-400 mr-1">[{u.category}]</span>
+            <a
+              href={u.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-choco-primary hover:underline"
+            >
+              {u.url}
+            </a>
+          </div>
+        ))
+      )}
     </DetailSection>
   );
 }

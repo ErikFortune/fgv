@@ -105,6 +105,7 @@ export const TAB_FILTER_DEFINITIONS: Record<AppTab, ReadonlyArray<IFilterDefinit
     { key: 'shape', label: 'Shape' },
     { key: 'available', label: 'Availability', multiple: false }
   ],
+  locations: [{ key: 'collection', label: 'Collection' }],
 
   // Settings tab — no filters
   settings: []

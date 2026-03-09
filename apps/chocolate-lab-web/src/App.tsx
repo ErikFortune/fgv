@@ -64,6 +64,7 @@ import { ConfectionsTabContent } from './tabs/ConfectionsTab';
 import { DecorationsTabContent } from './tabs/DecorationsTab';
 import { SessionsTabContent } from './tabs/SessionsTab';
 import { MoldInventoryTabContent } from './tabs/MoldInventoryTab';
+import { LocationsTabContent } from './tabs/LocationsTab';
 
 // ============================================================================
 // Mode / Tab Configuration
@@ -388,6 +389,7 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
   journal: 'View journal entries and production history.',
   'ingredient-inventory': 'Track your ingredient stock levels and locations.',
   'mold-inventory': 'Manage your mold collection and availability.',
+  locations: 'Define and manage production and storage locations.',
   ingredients: 'Browse and manage chocolate ingredients with ganache characteristics.',
   fillings: 'Create and refine filling recipes with variation tracking.',
   confections: 'Design confection recipes combining fillings, molds, and chocolates.',
@@ -432,6 +434,8 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
       return <SessionsTabContent />;
     case 'mold-inventory':
       return <MoldInventoryTabContent />;
+    case 'locations':
+      return <LocationsTabContent />;
     default:
       return <TabPlaceholder tab={tab} />;
   }

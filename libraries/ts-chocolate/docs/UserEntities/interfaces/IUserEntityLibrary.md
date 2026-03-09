@@ -93,6 +93,23 @@ Mold inventory library for tracking owned molds.
 Ingredient inventory library for tracking ingredient stock.
 
 </td></tr>
+<tr><td>
+
+[locations](./IUserEntityLibrary.locations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[LocationsLibrary](../../classes/LocationsLibrary.md)
+
+</td><td>
+
+Locations library for tracking production locations.
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -174,6 +191,19 @@ Get or create a singleton persisted mold inventory collection.
 </td><td>
 
 Get or create a singleton persisted ingredient inventory collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedLocationsCollection(collectionId)](./IUserEntityLibrary.getPersistedLocationsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted locations collection.
 
 </td></tr>
 <tr><td>

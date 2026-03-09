@@ -29,18 +29,27 @@ import * as path from 'path';
 import { captureResult, Converter, fail, Logging, Result, succeed } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 
-import { BaseJournalId, BaseSessionId, CollectionId, Converters as CommonConverters } from '../common';
+import {
+  BaseJournalId,
+  BaseLocationId,
+  BaseSessionId,
+  CollectionId,
+  Converters as CommonConverters
+} from '../common';
 import {
   AnyJournalEntryEntity,
   AnySessionEntity,
   IIngredientInventoryEntryEntity,
   IngredientInventoryEntryBaseId,
   IngredientInventoryLibrary,
+  ILocationEntity,
   IMoldInventoryEntryEntity,
   MoldInventoryEntryBaseId,
   Inventory as InventoryEntities,
   Journal as JournalEntities,
   JournalLibrary,
+  Locations as LocationEntities,
+  LocationsLibrary,
   MoldInventoryLibrary,
   Session as SessionEntities,
   SessionLibrary
@@ -71,6 +80,7 @@ export class UserEntityLibrary implements IUserEntityLibrary {
   private readonly _sessions: SessionLibrary;
   private readonly _moldInventory: MoldInventoryLibrary;
   private readonly _ingredientInventory: IngredientInventoryLibrary;
+  private readonly _locations: LocationsLibrary;
 
   // Persistence configuration (set via configurePersistence)
   private _syncProvider: ISyncProvider | undefined;
@@ -96,6 +106,10 @@ export class UserEntityLibrary implements IUserEntityLibrary {
     CollectionId,
     PersistedEditableCollection<IIngredientInventoryEntryEntity, IngredientInventoryEntryBaseId>
   > = new Map();
+  private readonly _persistedLocations: Map<
+    CollectionId,
+    PersistedEditableCollection<ILocationEntity, BaseLocationId>
+  > = new Map();
 
   /**
    * Logger used by this library and its sub-libraries.
@@ -107,12 +121,14 @@ export class UserEntityLibrary implements IUserEntityLibrary {
     sessions: SessionLibrary,
     moldInventory: MoldInventoryLibrary,
     ingredientInventory: IngredientInventoryLibrary,
+    locations: LocationsLibrary,
     logger: Logging.LogReporter<unknown>
   ) {
     this._journals = journals;
     this._sessions = sessions;
     this._moldInventory = moldInventory;
     this._ingredientInventory = ingredientInventory;
+    this._locations = locations;
     this.logger = logger;
   }
 
@@ -166,13 +182,31 @@ export class UserEntityLibrary implements IUserEntityLibrary {
       logger: logReporter
     });
 
+    // Create locations library
+    const locationsSources = UserEntityLibrary._toFileSources(fileSources, 'locations');
+    const locationsResult = LocationsLibrary.create({
+      builtin: false,
+      fileSources: locationsSources.length > 0 ? locationsSources : undefined,
+      mergeLibraries: params.libraries?.locations,
+      logger: logReporter
+    });
+
     return journalsResult.onSuccess((journals) => {
       return sessionsResult.onSuccess((sessions) => {
         return moldInventoryResult.onSuccess((moldInventory) => {
           return ingredientInventoryResult.onSuccess((ingredientInventory) => {
-            return succeed(
-              new UserEntityLibrary(journals, sessions, moldInventory, ingredientInventory, logReporter)
-            );
+            return locationsResult.onSuccess((locations) => {
+              return succeed(
+                new UserEntityLibrary(
+                  journals,
+                  sessions,
+                  moldInventory,
+                  ingredientInventory,
+                  locations,
+                  logReporter
+                )
+              );
+            });
           });
         });
       });
@@ -228,6 +262,13 @@ export class UserEntityLibrary implements IUserEntityLibrary {
    */
   public get ingredientInventory(): IngredientInventoryLibrary {
     return this._ingredientInventory;
+  }
+
+  /**
+   * {@inheritDoc UserEntities.IUserEntityLibrary.locations}
+   */
+  public get locations(): LocationsLibrary {
+    return this._locations;
   }
 
   // ==========================================================================
@@ -306,6 +347,21 @@ export class UserEntityLibrary implements IUserEntityLibrary {
     );
   }
 
+  /**
+   * {@inheritDoc UserEntities.IUserEntityLibrary.getPersistedLocationsCollection}
+   */
+  public getPersistedLocationsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<ILocationEntity, BaseLocationId>> {
+    return this._getOrCreatePersisted(
+      this._persistedLocations,
+      this._locations,
+      collectionId,
+      CommonConverters.baseLocationId,
+      LocationEntities.Converters.locationEntity
+    );
+  }
+
   // ==========================================================================
   // Generic Collection Persistence
   // ==========================================================================
@@ -336,6 +392,9 @@ export class UserEntityLibrary implements IUserEntityLibrary {
     }
     if (match(this._ingredientInventory)) {
       return this._savePersisted(this.getPersistedIngredientInventoryCollection(collectionId));
+    }
+    if (match(this._locations)) {
+      return this._savePersisted(this.getPersistedLocationsCollection(collectionId));
     }
     return fail(`Collection '${collectionId}' not found in any user entity sub-library`);
   }
@@ -402,7 +461,8 @@ export function createDefaultUserEntityDirectories(rootPath: string): Result<voi
     LibraryPaths.sessions,
     LibraryPaths.journals,
     LibraryPaths.moldInventory,
-    LibraryPaths.ingredientInventory
+    LibraryPaths.ingredientInventory,
+    LibraryPaths.locations
   ];
 
   return captureResult(() => {

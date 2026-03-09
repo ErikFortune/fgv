@@ -92,4 +92,21 @@ Pre-built mold inventory library
 Pre-built ingredient inventory library
 
 </td></tr>
+<tr><td>
+
+[locations](./IInstantiatedUserEntityLibrarySource.locations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[LocationsLibrary](../../classes/LocationsLibrary.md)
+
+</td><td>
+
+Pre-built locations library
+
+</td></tr>
 </tbody></table>

@@ -100,6 +100,12 @@ function getDefaultTargetKeyForTab(tab: AppTab): keyof Settings.IDefaultCollecti
       return 'sessions';
     case 'journal':
       return 'journals';
+    case 'locations':
+      return 'locations';
+    case 'mold-inventory':
+      return 'moldInventory';
+    case 'ingredient-inventory':
+      return 'ingredientInventory';
     default:
       return undefined;
   }

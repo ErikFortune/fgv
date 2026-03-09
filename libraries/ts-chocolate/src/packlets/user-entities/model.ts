@@ -26,16 +26,18 @@
 import { Logging, Result } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 
-import { BaseJournalId, BaseSessionId, CollectionId } from '../common';
+import { BaseJournalId, BaseLocationId, BaseSessionId, CollectionId } from '../common';
 import {
   AnyJournalEntryEntity,
   AnySessionEntity,
   IIngredientInventoryEntryEntity,
   IngredientInventoryEntryBaseId,
   IngredientInventoryLibrary,
+  ILocationEntity,
   IMoldInventoryEntryEntity,
   MoldInventoryEntryBaseId,
   JournalLibrary,
+  LocationsLibrary,
   MoldInventoryLibrary,
   SessionLibrary
 } from '../entities';
@@ -71,6 +73,11 @@ export interface IUserEntityLibrary {
    * Ingredient inventory library for tracking ingredient stock.
    */
   readonly ingredientInventory: IngredientInventoryLibrary;
+
+  /**
+   * Locations library for tracking production locations.
+   */
+  readonly locations: LocationsLibrary;
 
   // --------------------------------------------------------------------------
   // Persistence
@@ -118,6 +125,15 @@ export interface IUserEntityLibrary {
   getPersistedIngredientInventoryCollection(
     collectionId: CollectionId
   ): Result<PersistedEditableCollection<IIngredientInventoryEntryEntity, IngredientInventoryEntryBaseId>>;
+
+  /**
+   * Get or create a singleton persisted locations collection.
+   * @param collectionId - ID of the collection
+   * @returns `Success` with persisted wrapper, or `Failure` if collection not found
+   */
+  getPersistedLocationsCollection(
+    collectionId: CollectionId
+  ): Result<PersistedEditableCollection<ILocationEntity, BaseLocationId>>;
 
   /**
    * Save a collection's current in-memory state to its backing file tree.
@@ -185,6 +201,11 @@ export interface IInstantiatedUserEntityLibrarySource {
    * Pre-built ingredient inventory library
    */
   readonly ingredientInventory?: IngredientInventoryLibrary;
+
+  /**
+   * Pre-built locations library
+   */
+  readonly locations?: LocationsLibrary;
 }
 
 // ============================================================================
