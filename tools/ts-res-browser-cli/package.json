@@ -37,9 +37,9 @@
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",
-    "@rushstack/eslint-config": "4.6.1",
-    "@rushstack/heft": "1.1.7",
-    "@rushstack/heft-node-rig": "2.11.12",
+    "@rushstack/eslint-config": "4.6.4",
+    "@rushstack/heft": "1.2.6",
+    "@rushstack/heft-node-rig": "2.11.26",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.14.9",
     "eslint": "^9.39.2",

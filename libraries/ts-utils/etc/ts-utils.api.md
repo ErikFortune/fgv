@@ -1897,7 +1897,7 @@ export function keysForRecord<TK extends string>(obj: Record<TK, unknown>): TK[]
 
 // @public
 class KeyValueConverters<TK extends string = string, TV = unknown> {
-    constructor({ key, value }: IKeyValueConverterConstructorParams<TK, TV>);
+    constructor(input: IKeyValueConverterConstructorParams<TK, TV>);
     convertEntries(entries: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]>;
     // Warning: (ae-incompatible-release-tags) The symbol "convertEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "convertEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
