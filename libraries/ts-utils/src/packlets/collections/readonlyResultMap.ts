@@ -57,37 +57,37 @@ export type ResultMapForEachCb<TK extends string = string, TE = unknown> = (
  */
 export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
   /**
-   * {@inheritdoc Collections.ResultMap.size}
+   * {@inheritDoc Collections.ResultMap.size}
    */
   readonly size: number;
 
   /**
-   * {@inheritdoc Collections.ResultMap.entries}
+   * {@inheritDoc Collections.ResultMap.entries}
    */
   entries(): IterableIterator<KeyValueEntry<TK, TV>>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.forEach}
+   * {@inheritDoc Collections.ResultMap.forEach}
    */
   forEach(cb: ResultMapForEachCb, arg?: unknown): void;
 
   /**
-   * {@inheritdoc Collections.ResultMap.get}
+   * {@inheritDoc Collections.ResultMap.get}
    */
   get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   has(key: TK): boolean;
 
   /**
-   * {@inheritdoc Collections.ResultMap.keys}
+   * {@inheritDoc Collections.ResultMap.keys}
    */
   keys(): IterableIterator<TK>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.values}
+   * {@inheritDoc Collections.ResultMap.values}
    */
   values(): IterableIterator<TV>;
 

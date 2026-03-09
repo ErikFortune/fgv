@@ -114,28 +114,28 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.isOptional}
+   * {@inheritDoc Converter.isOptional}
    */
   public get isOptional(): boolean {
     return this._isOptional;
   }
 
   /**
-   * {@inheritdoc Converter.brand}
+   * {@inheritDoc Converter.brand}
    */
   public get brand(): string | undefined {
     return this._brand;
   }
 
   /**
-   * {@inheritdoc Converter.convert}
+   * {@inheritDoc Converter.convert}
    */
   public convert(from: unknown, context?: TC): Result<T> {
     return this._converter(from, this, context ?? this._defaultContext);
   }
 
   /**
-   * {@inheritdoc Converter.convertOptional}
+   * {@inheritDoc Converter.convertOptional}
    */
   public convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined> {
     const result = this._converter(from, this, this._context(context));
@@ -147,7 +147,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.optional}
+   * {@inheritDoc Converter.optional}
    */
   public optional(onError?: OnError): Converter<T | undefined, TC> {
     return new BaseConverter((from: unknown, __self: Converter<T | undefined, TC>, context?: TC) => {
@@ -157,7 +157,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.map}
+   * {@inheritDoc Converter.map}
    */
   public map<T2>(mapper: (from: T, context?: TC) => Result<T2>): Converter<T2, TC> {
     return new BaseConverter<T2, TC>((from: unknown, __self: Converter<T2, TC>, context?: TC) => {
@@ -170,7 +170,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.mapConvert}
+   * {@inheritDoc Converter.mapConvert}
    */
   public mapConvert<T2>(mapConverter: Converter<T2>): Converter<T2, TC> {
     return new BaseConverter<T2, TC>((from: unknown, __self: Converter<T2, TC>, context?: TC) => {
@@ -183,7 +183,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.mapItems}
+   * {@inheritDoc Converter.mapItems}
    */
   public mapItems<TI>(mapper: (from: unknown, context?: TC) => Result<TI>): Converter<TI[], TC> {
     return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
@@ -197,7 +197,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.mapConvertItems}
+   * {@inheritDoc Converter.mapConvertItems}
    */
   public mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC> {
     return new BaseConverter<TI[], TC>((from: unknown, __self: Converter<TI[], TC>, context?: TC) => {
@@ -211,7 +211,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withAction}
+   * {@inheritDoc Converter.withAction}
    */
   public withAction<TI>(action: (result: Result<T>, context?: TC) => Result<TI>): Converter<TI, TC> {
     return new BaseConverter<TI, TC>((from: unknown, __self: Converter<TI, TC>, context?: TC) => {
@@ -220,7 +220,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withTypeGuard}
+   * {@inheritDoc Converter.withTypeGuard}
    */
   public withTypeGuard<TI>(
     guard: (from: unknown, context?: TC) => from is TI,
@@ -237,7 +237,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withItemTypeGuard}
+   * {@inheritDoc Converter.withItemTypeGuard}
    */
   public withItemTypeGuard<TI>(
     guard: (from: unknown, context?: TC) => from is TI,
@@ -261,7 +261,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withConstraint}
+   * {@inheritDoc Converter.withConstraint}
    */
   public withConstraint(
     constraint: (val: T, context?: TC) => boolean | Result<T>,
@@ -285,7 +285,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withBrand}
+   * {@inheritDoc Converter.withBrand}
    */
   public withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC> {
     if (this._brand) {
@@ -300,7 +300,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withDefault}
+   * {@inheritDoc Converter.withDefault}
    */
   public withDefault<TD = T>(defaultValue: TD): DefaultingConverter<T, TD, TC> {
     return new GenericDefaultingConverter<T, TD, TC>(this, defaultValue);
@@ -322,7 +322,7 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
   }
 
   /**
-   * {@inheritdoc Converter.withFormattedError}
+   * {@inheritDoc Converter.withFormattedError}
    */
   public withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T, TC> {
     return new BaseConverter<T, TC>((from: unknown, __self: Converter<T, TC>, context?: TC) => {

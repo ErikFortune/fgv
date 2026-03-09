@@ -6,11 +6,146 @@
 
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
+
+// @public
+const AES_256_KEY_SIZE: number;
+
+// @public
+type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
+
+declare namespace AiAssist {
+    export {
+        AiPrompt,
+        AiProviderId,
+        AiServerToolType,
+        AiServerToolConfig,
+        IAiWebSearchToolConfig,
+        IAiToolEnablement,
+        IAiCompletionResponse,
+        IChatMessage,
+        AiApiFormat,
+        IAiProviderDescriptor,
+        IAiAssistProviderConfig,
+        IAiAssistSettings,
+        DEFAULT_AI_ASSIST,
+        IAiAssistKeyStore,
+        ModelSpec,
+        ModelSpecKey,
+        IModelSpecMap,
+        allModelSpecKeys,
+        MODEL_SPEC_BASE_KEY,
+        resolveModel,
+        allProviderIds,
+        getProviderDescriptors,
+        getProviderDescriptor,
+        callProviderCompletion,
+        callProxiedCompletion,
+        IProviderCompletionParams,
+        aiProviderId,
+        aiServerToolType,
+        aiWebSearchToolConfig,
+        aiServerToolConfig,
+        aiToolEnablement,
+        aiAssistProviderConfig,
+        aiAssistSettings,
+        modelSpecKey,
+        modelSpec,
+        resolveEffectiveTools
+    }
+}
+export { AiAssist }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiAssistProviderConfig"
+//
+// @public
+const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiAssistSettings"
+//
+// @public
+const aiAssistSettings: Converter<IAiAssistSettings>;
+
+// @public
+class AiPrompt {
+    constructor(user: string, system: string);
+    get combined(): string;
+    readonly system: string;
+    readonly user: string;
+}
+
+// @public
+type AiProviderId = 'copy-paste' | 'xai-grok' | 'openai' | 'anthropic' | 'google-gemini' | 'groq' | 'mistral';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiProviderId"
+//
+// @public
+const aiProviderId: Converter<AiProviderId>;
+
+// @public
+type AiServerToolConfig = IAiWebSearchToolConfig;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiServerToolConfig"
+//
+// @public
+const aiServerToolConfig: Converter<AiServerToolConfig>;
+
+// @public
+type AiServerToolType = 'web_search';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiServerToolType"
+//
+// @public
+const aiServerToolType: Converter<AiServerToolType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiToolEnablement"
+//
+// @public
+const aiToolEnablement: Converter<IAiToolEnablement>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiWebSearchToolConfig"
+//
+// @public
+const aiWebSearchToolConfig: Converter<IAiWebSearchToolConfig>;
+
+// @public
+const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+const allModelSpecKeys: ReadonlyArray<ModelSpecKey>;
+
+// @public
+const allProviderIds: ReadonlyArray<AiProviderId>;
+
+// @public
+const base64String: Converter<string>;
+
+// @public
+function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderCompletionParams"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderCompletion"
+//
+// @public
+function callProxiedCompletion(proxyUrl: string, params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
+
+declare namespace Constants {
+    export {
+        ENCRYPTED_FILE_FORMAT,
+        DEFAULT_ALGORITHM,
+        AES_256_KEY_SIZE,
+        GCM_IV_SIZE,
+        GCM_AUTH_TAG_SIZE
+    }
+}
 
 declare namespace Converters {
     export {
@@ -22,6 +157,76 @@ declare namespace Converters {
     }
 }
 export { Converters }
+
+declare namespace Converters_2 {
+    export {
+        keystoreFormat,
+        keystoreSecretType,
+        keystoreSecretEntryJson,
+        keystoreVaultContents,
+        keystoreFile
+    }
+}
+
+declare namespace Converters_3 {
+    export {
+        createEncryptedFileConverter,
+        encryptionAlgorithm,
+        encryptedFileFormat,
+        encryptedFileErrorMode,
+        keyDerivationFunction,
+        keyDerivationParams,
+        base64String,
+        uint8ArrayFromBase64,
+        namedSecret,
+        encryptedFile
+    }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createEncryptedFile<TMetadata = JsonValue>(params: ICreateEncryptedFileParams<TMetadata>): Promise<Result<IEncryptedFile<TMetadata>>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createEncryptedFileConverter<TMetadata = JsonValue>(metadataConverter?: Converter<TMetadata>): Converter<IEncryptedFile<TMetadata>>;
+
+// @public
+function createZipFromTextFiles(files: ReadonlyArray<IZipTextFile>, options?: ICreateZipOptions): Result<Uint8Array>;
+
+declare namespace CryptoUtils {
+    export {
+        Constants,
+        KeyStore,
+        Converters_3 as Converters,
+        DirectEncryptionProvider,
+        IDirectEncryptionProviderParams,
+        NodeCryptoProvider,
+        nodeCryptoProvider,
+        createEncryptedFile,
+        decryptFile,
+        fromBase64,
+        ICreateEncryptedFileParams,
+        toBase64,
+        tryDecryptFile,
+        isEncryptedFile,
+        EncryptionAlgorithm,
+        EncryptedFileFormat,
+        INamedSecret,
+        IEncryptionResult,
+        KeyDerivationFunction,
+        IKeyDerivationParams,
+        IEncryptedFile,
+        ICryptoProvider,
+        IEncryptionProvider,
+        EncryptedFileErrorMode,
+        SecretProvider,
+        IEncryptionConfig
+    }
+}
+export { CryptoUtils }
 
 declare namespace Csv {
     export {
@@ -45,7 +250,67 @@ interface CsvOptions {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+function decryptFile<TPayload extends JsonValue = JsonValue>(file: IEncryptedFile<unknown>, key: Uint8Array, cryptoProvider: ICryptoProvider, payloadConverter?: Converter<TPayload>): Promise<Result<TPayload>>;
+
+// @public
+const DEFAULT_AI_ASSIST: IAiAssistSettings;
+
+// @public
+const DEFAULT_ALGORITHM: "AES-256-GCM";
+
+// @public
+const DEFAULT_KEYSTORE_ITERATIONS: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 const DEFAULT_RANGEOF_FORMATS: RangeOfFormats;
+
+// @public
+const DEFAULT_SECRET_ITERATIONS: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptionProvider"
+//
+// @public
+class DirectEncryptionProvider implements IEncryptionProvider {
+    get boundSecretName(): string | undefined;
+    static create(params: IDirectEncryptionProviderParams): Result<DirectEncryptionProvider>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptionProvider"
+    //
+    // (undocumented)
+    encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
+}
+
+// @public
+const ENCRYPTED_FILE_FORMAT: "encrypted-collection-v1";
+
+// @public
+const encryptedFile: Converter<IEncryptedFile>;
+
+// @public
+type EncryptedFileErrorMode = 'fail' | 'skip' | 'warn';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const encryptedFileErrorMode: Converter<EncryptedFileErrorMode>;
+
+// @public
+type EncryptedFileFormat = typeof Constants.ENCRYPTED_FILE_FORMAT;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const encryptedFileFormat: Converter<EncryptedFileFormat>;
+
+// @public
+type EncryptionAlgorithm = typeof Constants.DEFAULT_ALGORITHM;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const encryptionAlgorithm: Converter<EncryptionAlgorithm>;
 
 declare namespace Experimental {
     export {
@@ -125,6 +390,21 @@ type FormattersByExtendedTarget<TFT extends FormatTargets, T> = Record<TFT, Form
 // @beta
 type FormattersByTarget<T> = FormattersByExtendedTarget<FormatTargets, T>;
 
+// @public
+function fromBase64(base64: string): Uint8Array;
+
+// @public
+const GCM_AUTH_TAG_SIZE: number;
+
+// @public
+const GCM_IV_SIZE: number;
+
+// @public
+function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>;
+
+// @public
+function getProviderDescriptors(): ReadonlyArray<IAiProviderDescriptor>;
+
 declare namespace Hash {
     export {
         Md5Normalizer
@@ -133,7 +413,296 @@ declare namespace Hash {
 export { Hash }
 
 // @public
+interface IAddSecretFromPasswordOptions extends IAddSecretOptions {
+    readonly iterations?: number;
+    readonly replace?: boolean;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAddSecretResult"
+//
+// @public
+interface IAddSecretFromPasswordResult extends IAddSecretResult {
+    readonly keyDerivation: IKeyDerivationParams;
+}
+
+// @public
+interface IAddSecretOptions {
+    readonly description?: string;
+}
+
+// @public
+interface IAddSecretResult {
+    readonly entry: IKeyStoreSecretEntry;
+    readonly replaced: boolean;
+}
+
+// @public
+interface IAiAssistKeyStore {
+    getApiKey(name: string): Result<string>;
+    hasSecret(name: string): Result<boolean>;
+    readonly isUnlocked: boolean;
+}
+
+// @public
+interface IAiAssistProviderConfig {
+    readonly model?: ModelSpec;
+    readonly provider: AiProviderId;
+    readonly secretName?: string;
+    readonly tools?: ReadonlyArray<IAiToolEnablement>;
+}
+
+// @public
+interface IAiAssistSettings {
+    readonly defaultProvider?: AiProviderId;
+    readonly providers: ReadonlyArray<IAiAssistProviderConfig>;
+    readonly proxyAllProviders?: boolean;
+    readonly proxyUrl?: string;
+}
+
+// @public
+interface IAiCompletionResponse {
+    readonly content: string;
+    readonly truncated: boolean;
+}
+
+// @public
+interface IAiProviderDescriptor {
+    readonly apiFormat: AiApiFormat;
+    readonly baseUrl: string;
+    readonly buttonLabel: string;
+    readonly corsRestricted: boolean;
+    readonly defaultModel: ModelSpec;
+    readonly id: AiProviderId;
+    readonly label: string;
+    readonly needsSecret: boolean;
+    readonly supportedTools: ReadonlyArray<AiServerToolType>;
+}
+
+// @public
+interface IAiToolEnablement {
+    readonly config?: AiServerToolConfig;
+    readonly enabled: boolean;
+    readonly type: AiServerToolType;
+}
+
+// @public
+interface IAiWebSearchToolConfig {
+    readonly allowedDomains?: ReadonlyArray<string>;
+    readonly blockedDomains?: ReadonlyArray<string>;
+    readonly enableImageUnderstanding?: boolean;
+    readonly maxUses?: number;
+    // (undocumented)
+    readonly type: 'web_search';
+}
+
+// @public
+interface IChatMessage {
+    readonly content: string;
+    readonly role: 'system' | 'user' | 'assistant';
+}
+
+// @public
+interface IContextValidationResult {
+    readonly isValid: boolean;
+    readonly missingDetails: readonly IMissingVariableDetail[];
+    readonly missingVariables: readonly string[];
+    readonly presentVariables: readonly string[];
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICreateEncryptedFileParams<TMetadata = JsonValue> {
+    readonly content: JsonValue;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly cryptoProvider: ICryptoProvider;
+    readonly key: Uint8Array;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly keyDerivation?: IKeyDerivationParams;
+    readonly metadata?: TMetadata;
+    readonly metadataConverter?: Converter<TMetadata>;
+    readonly secretName: string;
+}
+
+// @public
+interface ICreateZipOptions {
+    // (undocumented)
+    readonly level?: ZipCompressionLevel;
+}
+
+// @public
+interface ICryptoProvider {
+    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    fromBase64(base64: string): Result<Uint8Array>;
+    generateKey(): Promise<Result<Uint8Array>>;
+    generateRandomBytes(length: number): Result<Uint8Array>;
+    toBase64(data: Uint8Array): string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "DirectEncryptionProvider"
+//
+// @public
+interface IDirectEncryptionProviderParams {
+    readonly boundSecretName?: string;
+    readonly cryptoProvider: ICryptoProvider;
+    readonly key: Uint8Array;
+}
+
+// @public
+interface IEncryptedFile<TMetadata = JsonValue> {
+    readonly algorithm: EncryptionAlgorithm;
+    readonly authTag: string;
+    readonly encryptedData: string;
+    readonly format: EncryptedFileFormat;
+    readonly iv: string;
+    readonly keyDerivation?: IKeyDerivationParams;
+    readonly metadata?: TMetadata;
+    readonly secretName: string;
+}
+
+// @public
+interface IEncryptionConfig {
+    readonly cryptoProvider: ICryptoProvider;
+    readonly onDecryptionError?: EncryptedFileErrorMode;
+    readonly onMissingKey?: EncryptedFileErrorMode;
+    readonly secretProvider?: SecretProvider;
+    readonly secrets?: ReadonlyArray<INamedSecret>;
+}
+
+// @public
+interface IEncryptionProvider {
+    encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
+}
+
+// @public
+interface IEncryptionResult {
+    readonly authTag: Uint8Array;
+    readonly encryptedData: Uint8Array;
+    readonly iv: Uint8Array;
+}
+
+// @public
+interface IImportSecretOptions extends IAddSecretOptions {
+    readonly replace?: boolean;
+}
+
+// @public
+interface IKeyDerivationParams {
+    readonly iterations: number;
+    readonly kdf: KeyDerivationFunction;
+    readonly salt: string;
+}
+
+// @public
+interface IKeyStoreCreateParams {
+    readonly cryptoProvider: ICryptoProvider;
+    readonly iterations?: number;
+}
+
+// @public
+interface IKeyStoreFile {
+    readonly algorithm: EncryptionAlgorithm;
+    readonly authTag: string;
+    readonly encryptedData: string;
+    readonly format: KeyStoreFormat;
+    readonly iv: string;
+    readonly keyDerivation: IKeyDerivationParams;
+}
+
+// @public
+interface IKeyStoreOpenParams {
+    readonly cryptoProvider: ICryptoProvider;
+    readonly keystoreFile: IKeyStoreFile;
+}
+
+// @public
+interface IKeyStoreSecretEntry {
+    readonly createdAt: string;
+    readonly description?: string;
+    readonly key: Uint8Array;
+    readonly name: string;
+    readonly type: KeyStoreSecretType;
+}
+
+// @public
+interface IKeyStoreSecretEntryJson {
+    readonly createdAt: string;
+    readonly description?: string;
+    readonly key: string;
+    readonly name: string;
+    readonly type?: KeyStoreSecretType;
+}
+
+// @public
+interface IKeyStoreVaultContents {
+    readonly secrets: Record<string, IKeyStoreSecretEntryJson>;
+    readonly version: KeyStoreFormat;
+}
+
+// @public
+interface IMissingVariableDetail {
+    readonly existingPath: readonly string[];
+    readonly failedAtSegment?: string;
+    readonly variable: IVariableRef;
+}
+
+// @public
+interface IModelSpecMap {
+    // (undocumented)
+    readonly [key: string]: ModelSpec;
+}
+
+// @public
+interface IMustacheTemplateOptions {
+    readonly includeComments?: boolean;
+    readonly includePartials?: boolean;
+    readonly tags?: readonly [string, string];
+}
+
+// @public
+interface INamedSecret {
+    readonly key: Uint8Array;
+    readonly name: string;
+}
+
+// @public
+interface IProviderCompletionParams {
+    readonly additionalMessages?: ReadonlyArray<IChatMessage>;
+    readonly apiKey: string;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly logger?: Logging.ILogger;
+    readonly modelOverride?: ModelSpec;
+    readonly prompt: AiPrompt;
+    readonly temperature?: number;
+    readonly tools?: ReadonlyArray<AiServerToolConfig>;
+}
+
+// @public
+function isEncryptedFile(json: unknown): boolean;
+
+// @public
+function isKeyStoreFile(json: unknown): boolean;
+
+// @public
 const isoDate: Converter<Date, unknown>;
+
+// @public
+interface IVariableRef {
+    readonly isSection: boolean;
+    readonly name: string;
+    readonly path: readonly string[];
+    readonly tokenType: MustacheTokenType;
+}
+
+// @public
+interface IZipTextFile {
+    // (undocumented)
+    readonly contents: string;
+    // (undocumented)
+    readonly path: string;
+}
 
 // @public (undocumented)
 type JarFieldPicker<T extends JarRecord = JarRecord> = (record: T) => (keyof T)[];
@@ -150,11 +719,199 @@ interface JarRecordParserOptions {
 }
 
 // @public
+type KeyDerivationFunction = 'pbkdf2';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keyDerivationFunction: Converter<KeyDerivationFunction>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keyDerivationParams: Converter<IKeyDerivationParams>;
+
+declare namespace KeyStore {
+    export {
+        Converters_2 as Converters,
+        KeyStore_2 as KeyStore,
+        isKeyStoreFile,
+        KeyStoreFormat,
+        KEYSTORE_FORMAT,
+        DEFAULT_KEYSTORE_ITERATIONS,
+        MIN_SALT_LENGTH,
+        KeyStoreSecretType,
+        allKeyStoreSecretTypes,
+        IKeyStoreSecretEntry,
+        IKeyStoreSecretEntryJson,
+        IKeyStoreVaultContents,
+        IKeyStoreFile,
+        KeyStoreLockState,
+        IKeyStoreCreateParams,
+        IKeyStoreOpenParams,
+        IAddSecretResult,
+        IAddSecretOptions,
+        IImportSecretOptions,
+        IAddSecretFromPasswordOptions,
+        DEFAULT_SECRET_ITERATIONS,
+        IAddSecretFromPasswordResult
+    }
+}
+
+// @public
+class KeyStore_2 implements IEncryptionProvider {
+    addSecret(name: string, options?: IAddSecretOptions): Promise<Result<IAddSecretResult>>;
+    addSecretFromPassword(name: string, password: string, options?: IAddSecretFromPasswordOptions): Promise<Result<IAddSecretFromPasswordResult>>;
+    changePassword(currentPassword: string, newPassword: string): Promise<Result<KeyStore_2>>;
+    static create(params: IKeyStoreCreateParams): Result<KeyStore_2>;
+    get cryptoProvider(): ICryptoProvider;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptionProvider"
+    //
+    // (undocumented)
+    encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
+    getApiKey(name: string): Result<string>;
+    getEncryptionConfig(): Result<Pick<IEncryptionConfig, 'secretProvider' | 'cryptoProvider'>>;
+    getSecret(name: string): Result<IKeyStoreSecretEntry>;
+    getSecretProvider(): Result<SecretProvider>;
+    hasSecret(name: string): Result<boolean>;
+    importApiKey(name: string, apiKey: string, options?: IImportSecretOptions): Result<IAddSecretResult>;
+    importSecret(name: string, key: Uint8Array, options?: IImportSecretOptions): Result<IAddSecretResult>;
+    initialize(password: string): Promise<Result<KeyStore_2>>;
+    get isDirty(): boolean;
+    get isNew(): boolean;
+    get isUnlocked(): boolean;
+    listSecrets(): Result<readonly string[]>;
+    listSecretsByType(type: KeyStoreSecretType): Result<readonly string[]>;
+    lock(force?: boolean): Result<KeyStore_2>;
+    static open(params: IKeyStoreOpenParams): Result<KeyStore_2>;
+    removeSecret(name: string): Result<IKeyStoreSecretEntry>;
+    renameSecret(oldName: string, newName: string): Result<IKeyStoreSecretEntry>;
+    save(password: string): Promise<Result<IKeyStoreFile>>;
+    get state(): KeyStoreLockState;
+    unlock(password: string): Promise<Result<KeyStore_2>>;
+}
+
+// @public
+const KEYSTORE_FORMAT: KeyStoreFormat;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreFile: Converter<IKeyStoreFile>;
+
+// @public
+type KeyStoreFormat = 'keystore-v1';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreFormat: Converter<KeyStoreFormat>;
+
+// @public
+type KeyStoreLockState = 'locked' | 'unlocked';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreSecretEntryJson: Converter<IKeyStoreSecretEntryJson>;
+
+// @public
+type KeyStoreSecretType = 'encryption-key' | 'api-key';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreSecretType: Converter<KeyStoreSecretType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keystoreVaultContents: Converter<IKeyStoreVaultContents>;
+
+// @public
 class Md5Normalizer extends Hash_2.HashingNormalizer {
     constructor();
     // (undocumented)
     static md5Hash(parts: string[]): string;
 }
+
+// @public
+const MIN_SALT_LENGTH: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+//
+// @public
+const MODEL_SPEC_BASE_KEY: ModelSpecKey;
+
+// @public (undocumented)
+type ModelSpec = string | IModelSpecMap;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+const modelSpec: Converter<ModelSpec>;
+
+// @public
+type ModelSpecKey = 'base' | 'tools' | 'image';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+const modelSpecKey: Converter<ModelSpecKey>;
+
+declare namespace Mustache {
+    export {
+        IContextValidationResult,
+        IMissingVariableDetail,
+        IMustacheTemplateOptions,
+        IVariableRef,
+        MustacheTokenType,
+        MustacheTemplate
+    }
+}
+export { Mustache }
+
+// @public
+class MustacheTemplate {
+    static create(template: string, options?: IMustacheTemplateOptions): Result<MustacheTemplate>;
+    extractVariableNames(): readonly string[];
+    extractVariables(): readonly IVariableRef[];
+    // Warning: (ae-forgotten-export) The symbol "IRequiredMustacheTemplateOptions" needs to be exported by the entry point index.d.ts
+    readonly options: Readonly<IRequiredMustacheTemplateOptions>;
+    render(context: unknown): Result<string>;
+    readonly template: string;
+    static validate(template: string, options?: IMustacheTemplateOptions): Result<true>;
+    validate(): Result<true>;
+    validateAndRender(context: unknown): Result<string>;
+    validateContext(context: unknown): Result<IContextValidationResult>;
+}
+
+// @public
+type MustacheTokenType = 'text' | 'name' | '&' | '#' | '^' | '!' | '>' | '=';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const namedSecret: Converter<INamedSecret>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class NodeCryptoProvider implements ICryptoProvider {
+    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    fromBase64(base64: string): Result<Uint8Array>;
+    generateKey(): Promise<Result<Uint8Array>>;
+    generateRandomBytes(length: number): Result<Uint8Array>;
+    toBase64(data: Uint8Array): string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const nodeCryptoProvider: NodeCryptoProvider;
 
 // @beta
 function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
@@ -246,7 +1003,44 @@ declare namespace RecordJar {
 export { RecordJar }
 
 // @public
+function resolveEffectiveTools(descriptor: IAiProviderDescriptor, settingsTools?: ReadonlyArray<IAiToolEnablement>, perCallTools?: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<AiServerToolConfig>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_SPEC_BASE_KEY"
+//
+// @public
+function resolveModel(spec: ModelSpec, context?: string): string;
+
+// @public
+type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
+
+// @public
 function templateString(defaultContext?: unknown): Conversion.StringConverter<string, unknown>;
+
+// @public
+function toBase64(bytes: Uint8Array): string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function tryDecryptFile<TPayload extends JsonValue = JsonValue, TMetadata = JsonValue>(json: JsonValue, key: Uint8Array, cryptoProvider: ICryptoProvider, payloadConverter?: Converter<TPayload>, metadataConverter?: Converter<TMetadata>): Promise<Result<TPayload>>;
+
+// @public
+const uint8ArrayFromBase64: Converter<Uint8Array>;
+
+declare namespace Yaml {
+    export {
+        yamlConverter
+    }
+}
+export { Yaml }
+
+// @public
+function yamlConverter<T>(converter: Converter<T>): Converter<T>;
+
+// @public
+type ZipCompressionLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 // @public
 class ZipDirectoryItem<TCT extends string = string> implements FileTree.IFileTreeDirectoryItem<TCT> {
@@ -267,9 +1061,12 @@ class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFile
     getContents(): Result<JsonValue>;
     // (undocumented)
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
+    getIsMutable(): DetailedResult<boolean, FileTree.SaveDetail>;
     getRawContents(): Result<string>;
     readonly name: string;
+    setContents(json: JsonValue): Result<JsonValue>;
     setContentType(contentType: TCT | undefined): void;
+    setRawContents(contents: string): Result<string>;
     readonly type: 'file';
 }
 
@@ -277,14 +1074,19 @@ declare namespace ZipFileTree {
     export {
         ZipFileTreeAccessors,
         ZipFileItem,
-        ZipDirectoryItem
+        ZipDirectoryItem,
+        createZipFromTextFiles,
+        IZipTextFile,
+        ZipCompressionLevel,
+        ICreateZipOptions
     }
 }
 export { ZipFileTree }
 
 // @public
-class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> {
+class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IMutableFileTreeAccessors<TCT> {
     static defaultInferContentType<TCT extends string = string>(__filePath: string, __provided?: string): Result<TCT | undefined>;
+    fileIsMutable(__path: string): DetailedResult<boolean, FileTree.SaveDetail>;
     static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Result<ZipFileTreeAccessors<TCT>>;
     static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, params?: FileTree.IFileTreeInitParams<TCT>): Result<ZipFileTreeAccessors<TCT>>;
     static fromBufferAsync<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Promise<Result<ZipFileTreeAccessors<TCT>>>;
@@ -298,6 +1100,7 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
     getItem(path: string): Result<FileTree.FileTreeItem<TCT>>;
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
+    saveFileContents(__path: string, __contents: string): Result<string>;
 }
 
 // (No @packageDocumentation comment for this package)

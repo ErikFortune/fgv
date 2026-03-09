@@ -187,7 +187,7 @@ class RecordParser {
   protected _parseContinuation(line: string): Result<IRecordBody> {
     let trimmed = line.trim();
     if (!this._body!.isContinuation) {
-      /* c8 ignore next */
+      /* c8 ignore next - functional code tested but coverage intermittently missed */
       const fixedSize = this.options?.fixedContinuationSize ?? 0;
       if (fixedSize > 0) {
         if (trimmed.length < line.length - fixedSize) {

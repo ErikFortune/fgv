@@ -1026,6 +1026,57 @@ describe('ZipFileTreeAccessors', () => {
     });
   });
 
+  describe('mutation methods (read-only behavior)', () => {
+    let accessors: ZipFileTreeAccessors;
+
+    beforeEach(() => {
+      const zipBuffer = createTestZip();
+      accessors = ZipFileTreeAccessors.fromBuffer(zipBuffer).orThrow();
+    });
+
+    it('fileIsMutable returns not-supported for ZIP files', () => {
+      const result = accessors.fileIsMutable('/manifest.json');
+      expect(result).toFailWith(/ZIP files are read-only/i);
+      expect(result.detail).toBe('not-supported');
+    });
+
+    it('saveFileContents returns not-supported for ZIP files', () => {
+      const result = accessors.saveFileContents('/manifest.json', 'new content');
+      expect(result).toFailWith(/ZIP files are read-only/i);
+    });
+
+    it('ZipFileItem.getIsMutable returns not-supported', () => {
+      const fileResult = accessors.getItem('/manifest.json');
+      expect(fileResult).toSucceedAndSatisfy((item) => {
+        if (item.type === 'file') {
+          const mutableResult = item.getIsMutable();
+          expect(mutableResult).toFailWith(/ZIP files are read-only/i);
+          expect(mutableResult.detail).toBe('not-supported');
+        }
+      });
+    });
+
+    it('ZipFileItem.setRawContents fails because ZIP files are read-only', () => {
+      const fileResult = accessors.getItem('/manifest.json');
+      expect(fileResult).toSucceedAndSatisfy((item) => {
+        if (item.type === 'file') {
+          const setResult = item.setRawContents('new content');
+          expect(setResult).toFailWith(/ZIP files are read-only/i);
+        }
+      });
+    });
+
+    it('ZipFileItem.setContents fails because ZIP files are read-only', () => {
+      const fileResult = accessors.getItem('/manifest.json');
+      expect(fileResult).toSucceedAndSatisfy((item) => {
+        if (item.type === 'file') {
+          const setResult = item.setContents({ key: 'value' });
+          expect(setResult).toFailWith(/ZIP files are read-only/i);
+        }
+      });
+    });
+  });
+
   describe('contentType functionality', () => {
     // Helper function for tests that need special character files
     const createSpecialCharZip = (): Buffer => {

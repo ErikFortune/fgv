@@ -20,9 +20,55 @@
  * SOFTWARE.
  */
 
-import { Result } from '@fgv/ts-utils';
+import { DetailedResult, Result } from '@fgv/ts-utils';
 import { Converter, Validator } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
+
+/**
+ * Indicates the persistence capability of a save operation.
+ * - `persistent`: Changes are saved to durable storage (e.g., file system).
+ * - `transient`: Changes are saved in memory only and will be lost on reload.
+ * @public
+ */
+export type SaveCapability = 'persistent' | 'transient';
+
+/**
+ * Indicates the reason a save operation cannot be performed.
+ * - `not-supported`: The accessors do not support mutation.
+ * - `read-only`: The file or file system is read-only.
+ * - `not-mutable`: Mutability is disabled in configuration.
+ * - `path-excluded`: The path is excluded by the mutability filter.
+ * - `permission-denied`: Insufficient permissions to write.
+ * @public
+ */
+export type SaveFailureReason =
+  | 'not-supported'
+  | 'read-only'
+  | 'not-mutable'
+  | 'path-excluded'
+  | 'permission-denied';
+
+/**
+ * Detail type for getIsMutable results.
+ * @public
+ */
+export type SaveDetail = SaveCapability | SaveFailureReason;
+
+/**
+ * Filter specification for controlling which paths are mutable.
+ * @public
+ */
+export interface IFilterSpec {
+  /**
+   * Paths or patterns to include. If specified, only matching paths are mutable.
+   */
+  include?: (string | RegExp)[];
+
+  /**
+   * Paths or patterns to exclude. Matching paths are not mutable.
+   */
+  exclude?: (string | RegExp)[];
+}
 
 /**
  * Type of item in a file tree.
@@ -46,6 +92,14 @@ export type ContentTypeFactory<TCT extends string = string> = (
 export interface IFileTreeInitParams<TCT extends string = string> {
   prefix?: string;
   inferContentType?: ContentTypeFactory<TCT>;
+
+  /**
+   * Controls mutability of the file tree.
+   * - `undefined` or `false`: No files are mutable.
+   * - `true`: All files are mutable.
+   * - `IFilterSpec`: Only files matching the filter are mutable.
+   */
+  mutable?: boolean | IFilterSpec;
 }
 
 /**
@@ -105,6 +159,30 @@ export interface IFileTreeFileItem<TCT extends string = string> {
    * `Failure` with an error message otherwise.
    */
   getRawContents(): Result<string>;
+
+  /**
+   * Indicates whether this file can be saved.
+   * @returns `DetailedSuccess` with {@link FileTree.SaveCapability} if the file can be saved,
+   * or `DetailedFailure` with {@link FileTree.SaveFailureReason} if it cannot.
+   * @remarks This property is optional. If not present, the file is not mutable.
+   */
+  getIsMutable(): DetailedResult<boolean, SaveDetail>;
+
+  /**
+   * Sets the contents of the file from a JSON value.
+   * @param json - The JSON value to serialize and save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
+   * @remarks This method is optional. If not present, the file is not mutable.
+   */
+  setContents(json: JsonValue): Result<JsonValue>;
+
+  /**
+   * Sets the raw contents of the file.
+   * @param contents - The string contents to save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
+   * @remarks This method is optional. If not present, the file is not mutable.
+   */
+  setRawContents(contents: string): Result<string>;
 }
 
 /**
@@ -133,6 +211,23 @@ export interface IFileTreeDirectoryItem<TCT extends string = string> {
    * or `Failure` with an error message otherwise.
    */
   getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
+
+  /**
+   * Creates a new file as a child of this directory.
+   * @param name - The file name to create.
+   * @param contents - The string contents to write.
+   * @returns `Success` with the new file item, or `Failure` with an error message.
+   * @remarks This method is optional. Only available on mutable directory items.
+   */
+  createChildFile?(name: string, contents: string): Result<IFileTreeFileItem<TCT>>;
+
+  /**
+   * Creates a new subdirectory as a child of this directory.
+   * @param name - The directory name to create.
+   * @returns `Success` with the new directory item, or `Failure` with an error message.
+   * @remarks This method is optional. Only available on mutable directory items.
+   */
+  createChildDirectory?(name: string): Result<IFileTreeDirectoryItem<TCT>>;
 }
 
 /**
@@ -204,4 +299,90 @@ export interface IFileTreeAccessors<TCT extends string = string> {
    * @returns The children of the directory.
    */
   getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>>;
+}
+
+/**
+ * Extended accessors interface that supports mutation operations.
+ * @public
+ */
+export interface IMutableFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
+  /**
+   * Checks if a file at the given path can be saved.
+   * @param path - The path to check.
+   * @returns `DetailedSuccess` with {@link FileTree.SaveCapability} if the file can be saved,
+   * or `DetailedFailure` with {@link FileTree.SaveFailureReason} if it cannot.
+   */
+  fileIsMutable(path: string): DetailedResult<boolean, SaveDetail>;
+
+  /**
+   * Saves the contents to a file at the given path.
+   * @param path - The path of the file to save.
+   * @param contents - The string contents to save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
+   */
+  saveFileContents(path: string, contents: string): Result<string>;
+
+  /**
+   * Creates a directory at the given path, including any missing parent directories.
+   * @param path - The path of the directory to create.
+   * @returns `Success` with the absolute path if created, or `Failure` with an error message.
+   */
+  createDirectory?(path: string): Result<string>;
+}
+
+/**
+ * Extended accessors interface that supports persistence operations.
+ * @public
+ */
+export interface IPersistentFileTreeAccessors<TCT extends string = string>
+  extends IMutableFileTreeAccessors<TCT> {
+  /**
+   * Synchronize all dirty files to persistent storage.
+   * @returns Promise resolving to success or failure
+   */
+  syncToDisk(): Promise<Result<void>>;
+
+  /**
+   * Check if there are unsaved changes.
+   * @returns True if there are dirty files
+   */
+  isDirty(): boolean;
+
+  /**
+   * Get paths of all files with unsaved changes.
+   * @returns Array of dirty file paths
+   */
+  getDirtyPaths(): string[];
+}
+
+/**
+ * Type guard to check if accessors support mutation.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link FileTree.IMutableFileTreeAccessors}.
+ * @public
+ */
+export function isMutableAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IMutableFileTreeAccessors<TCT> {
+  const mutable = accessors as IMutableFileTreeAccessors<TCT>;
+  return typeof mutable.fileIsMutable === 'function' && typeof mutable.saveFileContents === 'function';
+}
+
+/**
+ * Type guard to check if accessors support persistence.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link FileTree.IPersistentFileTreeAccessors}.
+ * @public
+ */
+export function isPersistentAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IPersistentFileTreeAccessors<TCT> {
+  const persistent = accessors as IPersistentFileTreeAccessors<TCT>;
+  /* c8 ignore next 6 - no current accessor implements IPersistentFileTreeAccessors */
+  return (
+    isMutableAccessors(accessors) &&
+    typeof persistent.syncToDisk === 'function' &&
+    typeof persistent.isDirty === 'function' &&
+    typeof persistent.getDirtyPaths === 'function'
+  );
 }

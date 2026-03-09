@@ -207,7 +207,7 @@ export function isValidator<T, TC>(
 
 /**
  * Helper function to create a {@link Converter | Converter} from any {@link Validation.Validator}
- * @param validator - the {@link Validation.Validator} to be wrapped or {@link Converter | Converter}
+ * @param converterOrValidator - the {@link Validation.Validator} to be wrapped or {@link Converter | Converter}
  * to be used directly.
  * @returns A {@link Converter | Converter} which uses the supplied validator.
  * @public
@@ -341,7 +341,7 @@ export function oneOf<T, TC = unknown>(
  * be converted.  If `onError` is `'ignoreErrors'`, then failing elements are silently ignored.
  * @param converter - {@link Converter | Converter} or {@link Validator | Validator} used to convert each
  * item in the array.
- * @param ignoreErrors - Specifies treatment of unconvertible elements.
+ * @param onError - Specifies treatment of unconvertible elements.
  * @returns A {@link Converter | Converter} which returns an array of `<T>`.
  * @public
  */
@@ -388,8 +388,8 @@ export const stringArray: Converter<string[], unknown> = arrayOf(string);
 export const numberArray: Converter<number[], unknown> = arrayOf(number);
 
 /**
- * Options for {@link Converters.(recordOf:3) | Converters.recordOf} and
- * {@link Converters.(mapOf:3) | Converters.mapOf}
+ * Options for {@link recordOf} and
+ * {@link mapOf}
  * helper functions.
  * @public
  */
@@ -465,7 +465,7 @@ export function recordOf<T, TC = unknown, TK extends string = string>(
 /**
  * Concrete implementation of {@link Converters.(recordOf:1) | Converters.recordOf(Converter<T, TC>)},
  * {@link Converters.(recordOf:2) | Converters.recordOf(Converter<T, TC>, 'fail' or 'ignore')}, and
- * {@link Converters.(recordOf:3) | Converters.recordOf(Converter<T, TC>, KeyedConverterOptions)}.
+ * {@link Converters.recordOf | Converters.recordOf(Converter<T, TC>, KeyedConverterOptions)}.
  * @internal
  */
 export function recordOf<T, TC = unknown, TK extends string = string>(
@@ -561,7 +561,7 @@ export function mapOf<T, TC = unknown, TK extends string = string>(
 /**
  * Concrete implementation of {@link Converters.(mapOf:1) | Converters.mapOf(Converter<T, TC>)},
  * {@link Converters.(mapOf:2) | Converters.mapOf(Converter<T, TC>, 'fail' or 'ignore')}, and
- * {@link Converters.(mapOf:3) | Converters.mapOf(Converter<T, TC>, KeyedConverterOptions)}.
+ * {@link Converters.mapOf | Converters.mapOf(Converter<T, TC>, KeyedConverterOptions)}.
  * @internal
  */
 export function mapOf<T, TC = unknown, TK extends string = string>(
@@ -810,7 +810,7 @@ export function object<T, TC>(
 }
 
 /**
- * Options for the {@link Converters.(strictObject:1)} helper function.
+ * Options for the {@link strictObject} helper function.
  * @public
  */
 export type StrictObjectConverterOptions<T> = Omit<ObjectConverterOptions<T>, 'strict'>;
@@ -854,7 +854,7 @@ export function strictObject<T, TC = unknown>(
  * @param optional - An array of `keyof T` containing keys to be considered optional.
  * @returns A new {@link Conversion.ObjectConverter | ObjectConverter} which applies the specified conversions.
  * {@label WITH_KEYS}
- * @deprecated Use {@link Converters.(strictObject:1) | Converters.strictObject(options)} instead.
+ * @deprecated Use {@link Converters.strictObject | Converters.strictObject(options)} instead.
  * @public
  */
 export function strictObject<T, TC = unknown>(
@@ -863,7 +863,7 @@ export function strictObject<T, TC = unknown>(
 ): ObjectConverter<T, TC>;
 
 /**
- * Concrete implementation for {@link Converters.(strictObject:1) | Converters.strictObject(fields, options)}
+ * Concrete implementation for {@link Converters.strictObject | Converters.strictObject(fields, options)}
  * and {@link Converters.strictObject | Converters.strictObject(fields, optional)}.
  * @internal
  */

@@ -23,23 +23,38 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[BrowserHashProvider](./ts-web-extras.browserhashprovider.md)
-
-
-</td><td>
-
-Browser-compatible hash provider using the Web Crypto API. Supports common hash algorithms available in browsers.
-
-
-</td></tr>
-<tr><td>
-
 [FileApiTreeAccessors](./ts-web-extras.fileapitreeaccessors.md)
 
 
 </td><td>
 
 Helper class to create FileTree instances from various file sources. Supports File API (FileList) and File System Access API handles.
+
+
+</td></tr>
+<tr><td>
+
+[FileSystemAccessTreeAccessors](./ts-web-extras.filesystemaccesstreeaccessors.md)
+
+
+</td><td>
+
+Implementation of `FileTree.IPersistentFileTreeAccessors` that uses the File System Access API to provide persistent file editing in browsers.
+
+
+</td></tr>
+<tr><td>
+
+[LocalStorageTreeAccessors](./ts-web-extras.localstoragetreeaccessors.md)
+
+
+</td><td>
+
+Browser localStorage-backed file tree accessors with persistence support.
+
+Maps filesystem-like directory paths to localStorage keys, where each key stores multiple collections as a JSON object. This provides a general-purpose implementation for browser-based file tree persistence without requiring File System Access API.
+
+Storage format per key: `{ "collection-id": { ...collectionData }, ... }` File paths map as: `/data/ingredients/collection-id.json` → stored in key for `/data/ingredients`
 
 
 </td></tr>
@@ -383,12 +398,34 @@ Interface for file metadata.
 </td></tr>
 <tr><td>
 
+[IFileSystemAccessTreeParams](./ts-web-extras.ifilesystemaccesstreeparams.md)
+
+
+</td><td>
+
+Options for creating persistent file trees.
+
+
+</td></tr>
+<tr><td>
+
 [IFsAccessApis](./ts-web-extras.ifsaccessapis.md)
 
 
 </td><td>
 
 File System Access API methods available on Window
+
+
+</td></tr>
+<tr><td>
+
+[ILocalStorageTreeParams](./ts-web-extras.ilocalstoragetreeparams.md)
+
+
+</td><td>
+
+Configuration for LocalStorageTreeAccessors.
 
 
 </td></tr>
@@ -452,6 +489,15 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[CryptoUtils](./ts-web-extras.cryptoutils.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 [FileTreeHelpers](./ts-web-extras.filetreehelpers.md)
 

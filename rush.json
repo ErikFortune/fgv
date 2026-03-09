@@ -38,7 +38,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=14.15.0 <15.0.0 || >=16.13.0 <17.0.0 || >=18.15.0 <19.0.0 || >=20.18.0 <21.0.0",
+  "nodeSupportedVersionRange": ">=14.15.0 <15.0.0 || >=16.13.0 <17.0.0 || >=18.15.0 <19.0.0 || >=20.18.0 <21.0.0 || >= 22.12.0 <23.0.0",
   /**
    * If the version check above fails, Rush will display a message showing the current
    * node version and the supported version range. You can use this setting to provide
@@ -523,6 +523,12 @@
       "projectFolder": "apps/ts-utils-browser-test",
       "shouldPublish": false,
       "tags": ["apps", "tests", "vite"]
+    },
+    {
+      "packageName": "@fgv/typedoc-compact-theme",
+      "projectFolder": "plugins/typedoc-compact-theme",
+      "shouldPublish": false,
+      "tags": ["plugins", "typedoc"]
     }
   ]
 }

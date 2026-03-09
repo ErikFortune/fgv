@@ -70,6 +70,7 @@ export interface ICollectorConstructorParams<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   TITEM extends ICollectible<any, any>
 > {
+  /** Optional initial items to populate the collector. */
   items?: TITEM[];
 }
 
@@ -91,7 +92,7 @@ export class Collector<
   private readonly _byIndex: TITEM[];
 
   /**
-   * {@inheritdoc Collections.ResultMap.size}
+   * {@inheritDoc Collections.ResultMap.size}
    */
   public get size(): number {
     return this._byIndex.length;
@@ -151,14 +152,14 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.entries}
+   * {@inheritDoc Collections.ResultMap.entries}
    */
   public entries(): IterableIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>> {
     return this._byKey.entries();
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.forEach}
+   * {@inheritDoc Collections.ResultMap.forEach}
    */
   public forEach(callback: ResultMapForEachCb<CollectibleKey<TITEM>, TITEM>, arg?: unknown): void {
     for (const [key, value] of this._byKey.entries()) {
@@ -167,7 +168,7 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.get}
+   * {@inheritDoc Collections.ResultMap.get}
    */
   public get(key: CollectibleKey<TITEM>): DetailedResult<TITEM, ResultMapResultDetail> {
     const item = this._byKey.get(key);
@@ -175,7 +176,7 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc Collections.IReadOnlyCollector.getAt}
+   * {@inheritDoc Collections.IReadOnlyCollector.getAt}
    */
   public getAt(index: number): Result<TITEM> {
     if (typeof index !== 'number') {
@@ -211,7 +212,7 @@ export class Collector<
    * Gets an existing item with a key matching the supplied key, or adds a new item to the collector
    * using a factory callback if no item with that key exists.
    * @param key - The key of the item to add.
-   * @param callback - The factory callback to create the item.
+   * @param factory - The factory callback to create the item.
    * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
    * detail `exists` indicates that an existing item return and detail `added` indicates that the
    * item was added. Returns {@link DetailedFailure | Failure} with an error and appropriate
@@ -250,28 +251,28 @@ export class Collector<
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   public has(key: CollectibleKey<TITEM>): boolean {
     return this._byKey.has(key);
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.keys}
+   * {@inheritDoc Collections.ResultMap.keys}
    */
   public keys(): IterableIterator<CollectibleKey<TITEM>> {
     return this._byKey.keys();
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.values}
+   * {@inheritDoc Collections.ResultMap.values}
    */
   public values(): IterableIterator<TITEM> {
     return this._byKey.values();
   }
 
   /**
-   * {@inheritdoc Collections.IReadOnlyCollector.valuesByIndex}
+   * {@inheritDoc Collections.IReadOnlyCollector.valuesByIndex}
    */
   public valuesByIndex(): ReadonlyArray<TITEM> {
     return this._byIndex;

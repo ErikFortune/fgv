@@ -588,4 +588,21 @@ describe('FileItem', () => {
       });
     });
   });
+
+  describe('mutation methods with non-mutable accessors', () => {
+    test('getIsMutable returns not-mutable for non-mutable accessors', () => {
+      const fileItem = FileItem.create('/config.json', accessors).orThrow();
+      expect(fileItem.getIsMutable()).toFailWithDetail(/mutability is disabled/i, 'not-mutable');
+    });
+
+    test('setRawContents fails for non-mutable accessors', () => {
+      const fileItem = FileItem.create('/config.json', accessors).orThrow();
+      expect(fileItem.setRawContents('new content')).toFailWith(/mutability is disabled/i);
+    });
+
+    test('setContents fails for non-mutable accessors', () => {
+      const fileItem = FileItem.create('/config.json', accessors).orThrow();
+      expect(fileItem.setContents({ new: 'data' })).toFailWith(/mutability is disabled/i);
+    });
+  });
 });

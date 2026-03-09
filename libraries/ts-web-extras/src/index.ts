@@ -31,8 +31,8 @@
  * @packageDocumentation
  */
 
-// Export crypto functionality
-export * from './packlets/crypto';
+import * as CryptoUtils from './packlets/crypto-utils';
+export { CryptoUtils };
 
 // Export file tree functionality
 export * from './packlets/file-tree';

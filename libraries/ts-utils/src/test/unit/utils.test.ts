@@ -24,10 +24,13 @@ import '../helpers/jest';
 
 import {
   Result,
+  ensureArray,
+  entriesForRecord,
   fail,
   getTypeOfProperty,
   getValueOfPropertyOrDefault,
   isKeyOf,
+  keysForRecord,
   mapToRecord,
   omit,
   optionalMapToPossiblyEmptyRecord,
@@ -35,8 +38,10 @@ import {
   optionalRecordToMap,
   optionalRecordToPossiblyEmptyMap,
   pick,
+  recordFromEntries,
   recordToMap,
-  succeed
+  succeed,
+  valuesForRecord
 } from '../../packlets/base';
 
 describe('Utils module', () => {
@@ -264,6 +269,180 @@ describe('Utils module', () => {
       expect(getValueOfPropertyOrDefault('a string', obj, 'xyzzy')).toBe('xyzzy');
       expect(getValueOfPropertyOrDefault(2, obj, 'xyzzy')).toBe('xyzzy');
       expect(getValueOfPropertyOrDefault(Symbol('symbol'), obj, 'xyzzy')).toBe('xyzzy');
+    });
+  });
+
+  describe('keysForRecord function', () => {
+    test('returns keys from a record with string keys', () => {
+      const result = keysForRecord(record);
+      expect(result.sort()).toEqual(['first', 'second', 'third'].sort());
+    });
+
+    test('returns an empty array for an empty record', () => {
+      const emptyRecord: Record<string, string> = {};
+      expect(keysForRecord(emptyRecord)).toEqual([]);
+    });
+
+    test('preserves branded string key types', () => {
+      type BrandedKey = 'alpha' | 'beta' | 'gamma';
+      const brandedRecord: Record<BrandedKey, number> = {
+        alpha: 1,
+        beta: 2,
+        gamma: 3
+      };
+      const keys: BrandedKey[] = keysForRecord(brandedRecord);
+      expect(keys.sort()).toEqual(['alpha', 'beta', 'gamma'].sort());
+    });
+  });
+
+  describe('valuesForRecord function', () => {
+    test('returns values from a record', () => {
+      const result = valuesForRecord(record);
+      expect(result.sort()).toEqual(['1st', '2nd', '3rd'].sort());
+    });
+
+    test('returns an empty array for an empty record', () => {
+      const emptyRecord: Record<string, string> = {};
+      expect(valuesForRecord(emptyRecord)).toEqual([]);
+    });
+
+    test('preserves value types', () => {
+      const numRecord: Record<string, number> = {
+        a: 1,
+        b: 2,
+        c: 3
+      };
+      const values: number[] = valuesForRecord(numRecord);
+      expect(values.sort()).toEqual([1, 2, 3].sort());
+    });
+
+    test('handles mixed value types in union records', () => {
+      const mixedRecord: Record<string, string | number> = {
+        str: 'hello',
+        num: 42
+      };
+      const values: (string | number)[] = valuesForRecord(mixedRecord);
+      expect(values).toHaveLength(2);
+      expect(values).toContain('hello');
+      expect(values).toContain(42);
+    });
+  });
+
+  describe('entriesForRecord function', () => {
+    test('returns entries from a record', () => {
+      const result = entriesForRecord(record);
+      const sortedResult = result.sort((a, b) => a[0].localeCompare(b[0]));
+      expect(sortedResult).toEqual([
+        ['first', '1st'],
+        ['second', '2nd'],
+        ['third', '3rd']
+      ]);
+    });
+
+    test('returns an empty array for an empty record', () => {
+      const emptyRecord: Record<string, string> = {};
+      expect(entriesForRecord(emptyRecord)).toEqual([]);
+    });
+
+    test('preserves key and value types in entries', () => {
+      type BrandedKey = 'x' | 'y';
+      const typedRecord: Record<BrandedKey, number> = {
+        x: 10,
+        y: 20
+      };
+      const entries: Array<[BrandedKey, number]> = entriesForRecord(typedRecord);
+      const sortedEntries = entries.sort((a, b) => a[0].localeCompare(b[0]));
+      expect(sortedEntries).toEqual([
+        ['x', 10],
+        ['y', 20]
+      ]);
+    });
+  });
+
+  describe('recordFromEntries function', () => {
+    test('creates a record from entries', () => {
+      const entries: Array<[string, string]> = [
+        ['first', '1st'],
+        ['second', '2nd'],
+        ['third', '3rd']
+      ];
+      expect(recordFromEntries(entries)).toEqual(record);
+    });
+
+    test('returns an empty record for an empty array', () => {
+      const emptyEntries: Array<[string, string]> = [];
+      expect(recordFromEntries(emptyEntries)).toEqual({});
+    });
+
+    test('preserves branded key types', () => {
+      type BrandedKey = 'alpha' | 'beta';
+      const entries: Array<[BrandedKey, number]> = [
+        ['alpha', 1],
+        ['beta', 2]
+      ];
+      const result: Record<BrandedKey, number> = recordFromEntries(entries);
+      expect(result).toEqual({ alpha: 1, beta: 2 });
+    });
+
+    test('round-trips with entriesForRecord', () => {
+      const original: Record<string, number> = { a: 1, b: 2, c: 3 };
+      const entries = entriesForRecord(original);
+      const reconstructed = recordFromEntries(entries);
+      expect(reconstructed).toEqual(original);
+    });
+
+    test('later entries overwrite earlier ones with the same key', () => {
+      const entries: Array<[string, number]> = [
+        ['key', 1],
+        ['key', 2]
+      ];
+      expect(recordFromEntries(entries)).toEqual({ key: 2 });
+    });
+  });
+
+  describe('ensureArray function', () => {
+    test('returns an array unchanged', () => {
+      const arr = [1, 2, 3];
+      const result = ensureArray(arr);
+      expect(result).toBe(arr); // same reference
+      expect(result).toEqual([1, 2, 3]);
+    });
+
+    test('wraps a single item in an array', () => {
+      expect(ensureArray(42)).toEqual([42]);
+      expect(ensureArray('hello')).toEqual(['hello']);
+      expect(ensureArray({ key: 'value' })).toEqual([{ key: 'value' }]);
+    });
+
+    test('handles empty array', () => {
+      const empty: number[] = [];
+      expect(ensureArray(empty)).toBe(empty);
+      expect(ensureArray(empty)).toEqual([]);
+    });
+
+    test('preserves readonly array type', () => {
+      const readonlyArr: readonly number[] = [1, 2, 3];
+      const result: readonly number[] = ensureArray(readonlyArr);
+      expect(result).toBe(readonlyArr);
+    });
+
+    test('preserves mutable array type', () => {
+      const mutableArr: number[] = [1, 2, 3];
+      const result: number[] = ensureArray(mutableArr);
+      expect(result).toBe(mutableArr);
+      result.push(4); // should compile - proves it's mutable
+      expect(result).toEqual([1, 2, 3, 4]);
+    });
+
+    test('wrapping a single item returns a mutable array', () => {
+      const result: number[] = ensureArray(42);
+      result.push(43); // should compile - proves it's mutable
+      expect(result).toEqual([42, 43]);
+    });
+
+    test('handles null and undefined as single items', () => {
+      expect(ensureArray(null)).toEqual([null]);
+      expect(ensureArray(undefined)).toEqual([undefined]);
     });
   });
 

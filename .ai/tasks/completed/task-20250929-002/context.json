@@ -1,0 +1,38 @@
+{
+  "task": {
+    "id": "task-20250929-002",
+    "description": "Upgrade logging system to use ILogReporter from @fgv/ts-utils",
+    "type": "refactor",
+    "priority": "high",
+    "complexity": "moderate"
+  },
+  "artifacts": {
+    "requirements": {
+      "path": ".agents/tasks/active/task-20250929-002/requirements.md",
+      "completed": true,
+      "timestamp": "2025-09-29T23:37:00Z"
+    }
+  },
+  "state": {
+    "currentPhase": "design",
+    "completedPhases": ["requirements_analysis"],
+    "iterations": 0,
+    "blockers": [],
+    "decisions": [
+      {
+        "phase": "requirements",
+        "decision": "Use direct migration with no compatibility wrappers",
+        "rationale": "Clean break from legacy pattern, limited usage makes migration low-risk"
+      },
+      {
+        "phase": "requirements",
+        "decision": "Model UI pattern on ts-res-ui-components ObservabilityContext",
+        "rationale": "Proven pattern with separation of diagnostic vs user logging"
+      }
+    ]
+  },
+  "feedback": {},
+  "workflow": "standard-refactor",
+  "startTime": "2025-09-29T23:28:00Z",
+  "resumedTime": "2025-09-29T23:45:00Z"
+}

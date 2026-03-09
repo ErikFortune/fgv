@@ -574,7 +574,12 @@ describe('Advanced converters', () => {
         expect(converter.convert('users:123')).toSucceedWith('users:123' as CompositeId);
       });
 
-      test('converts object to string representation', () => {
+      test('converts object without separator to string representation', () => {
+        const input = { collectionId: 'users', itemId: '123' };
+        expect(converter.convert(input)).toSucceedWith('users:123' as CompositeId);
+      });
+
+      test('converts object with matching separator to string representation', () => {
         const input = { collectionId: 'users', separator: ':', itemId: '123' };
         expect(converter.convert(input)).toSucceedWith('users:123' as CompositeId);
       });

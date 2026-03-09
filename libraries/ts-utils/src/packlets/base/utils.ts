@@ -71,6 +71,65 @@ export function omit<T extends object, K extends keyof T>(from: T, exclude: K[])
 }
 
 /**
+ * Type-safe(ish) key extractor for typed records.
+ * @param obj - The record from which keys are to be extracted.
+ * @returns The keys of the record as an array.
+ * @public
+ */
+export function keysForRecord<TK extends string>(obj: Record<TK, unknown>): TK[] {
+  return Object.keys(obj) as TK[];
+}
+
+/**
+ * Type-safe(ish) value extractor for typed records.
+ * @param obj - The record from which values are to be extracted.
+ * @returns The values of the record as an array.
+ * @public
+ */
+export function valuesForRecord<TK extends string, TV>(obj: Record<TK, TV>): TV[] {
+  return Object.values(obj) as TV[];
+}
+
+/**
+ * Type-safe(ish) entries extractor for typed records.
+ * @param obj - The record from which entries are to be extracted.
+ * @returns The entries of the record as an array of `[key, value]` tuples.
+ * @public
+ */
+export function entriesForRecord<TK extends string, TV>(obj: Record<TK, TV>): Array<[TK, TV]> {
+  return Object.entries(obj) as Array<[TK, TV]>;
+}
+
+/**
+ * Type-safe(ish) record constructor from an iterable of `[key, value]` tuples.
+ * @param entries - The iterable of `[key, value]` tuples from which to construct the record.
+ * @returns A record constructed from the supplied entries.
+ * @public
+ */
+export function recordFromEntries<TK extends string, TV>(entries: Iterable<[TK, TV]>): Record<TK, TV> {
+  return Object.fromEntries(entries) as Record<TK, TV>;
+}
+
+/**
+ * Helper type to extract the element type and preserve readonly status.
+ * @public
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export type EnsureArrayResult<T> = T extends readonly (infer _U)[] ? T : T[];
+
+/**
+ * Ensures the input is an array. If already an array, returns it as-is.
+ * If a single item, wraps it in an array.
+ * Preserves readonly status of input arrays.
+ * @param items - A single item or an array of items.
+ * @returns The input array unchanged, or a new array containing the single item.
+ * @public
+ */
+export function ensureArray<T>(items: T): EnsureArrayResult<T> {
+  return (Array.isArray(items) ? items : [items]) as EnsureArrayResult<T>;
+}
+
+/**
  * Gets the value of a property specified by key from an arbitrary object,
  * or a default value if the property does not exist.
  * @param key - The key specifying the property to be retrieved.

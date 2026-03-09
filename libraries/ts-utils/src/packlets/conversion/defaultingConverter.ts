@@ -32,19 +32,19 @@ export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements Defa
   private _converter: Converter<T, TC>;
 
   /**
-   * {@inheritdoc Conversion.DefaultingConverter.defaultValue}
+   * {@inheritDoc Conversion.DefaultingConverter.defaultValue}
    */
   public defaultValue: TD;
 
   /**
-   * {@inheritdoc Converter.isOptional}
+   * {@inheritDoc Converter.isOptional}
    */
   public get isOptional(): boolean {
     return this._converter.isOptional;
   }
 
   /**
-   * {@inheritdoc Converter.isOptional}
+   * {@inheritDoc Converter.isOptional}
    */
   public get brand(): string | undefined {
     return this._converter.brand;
@@ -61,14 +61,14 @@ export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements Defa
   }
 
   /**
-   * {@inheritdoc Converter.convert}
+   * {@inheritDoc Converter.convert}
    */
   public convert(from: unknown, ctx?: TC | undefined): Success<T | TD> {
     return this._applyDefault(this._converter.convert(from, ctx));
   }
 
   /**
-   * {@inheritdoc Converter.convertOptional}
+   * {@inheritDoc Converter.convertOptional}
    */
   public convertOptional(
     from: unknown,
@@ -83,7 +83,7 @@ export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements Defa
   }
 
   /**
-   * {@inheritdoc Converter.optional}
+   * {@inheritDoc Converter.optional}
    */
   public optional(onError?: ('failOnError' | 'ignoreErrors') | undefined): Converter<T | TD | undefined, TC> {
     // need to let the inner converter do its optional thing first or our default
@@ -92,42 +92,42 @@ export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements Defa
   }
 
   /**
-   * {@inheritdoc Converter.map}
+   * {@inheritDoc Converter.map}
    */
   public map<T2>(mapper: (from: T | TD) => Result<T2>): Converter<T2, TC> {
     return this._converter.withAction((result) => this._applyDefault(result)).map(mapper);
   }
 
   /**
-   * {@inheritdoc Converter.mapConvert}
+   * {@inheritDoc Converter.mapConvert}
    */
   public mapConvert<T2>(mapConverter: Converter<T2, unknown>): Converter<T2, TC> {
     return this._converter.withAction((result) => this._applyDefault(result)).mapConvert(mapConverter);
   }
 
   /**
-   * {@inheritdoc Converter.mapItems}
+   * {@inheritDoc Converter.mapItems}
    */
   public mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC> {
     return this._converter.withAction((result) => this._applyDefault(result)).mapItems(mapper);
   }
 
   /**
-   * {@inheritdoc Converter.mapConvertItems}
+   * {@inheritDoc Converter.mapConvertItems}
    */
   public mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC> {
     return this._converter.withAction((result) => this._applyDefault(result)).mapConvertItems(mapConverter);
   }
 
   /**
-   * {@inheritdoc Converter.withAction}
+   * {@inheritDoc Converter.withAction}
    */
   public withAction<T2>(action: (result: Result<T | TD>) => Result<T2>): Converter<T2, TC> {
     return this._converter.withAction((result) => this._applyDefault(result)).withAction(action);
   }
 
   /**
-   * {@inheritdoc Converter.withTypeGuard}
+   * {@inheritDoc Converter.withTypeGuard}
    */
   public withTypeGuard<TI>(
     guard: (from: unknown) => from is TI,
@@ -137,7 +137,7 @@ export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements Defa
   }
 
   /**
-   * {@inheritdoc Converter.withItemTypeGuard}
+   * {@inheritDoc Converter.withItemTypeGuard}
    */
   public withItemTypeGuard<TI>(
     guard: (from: unknown) => from is TI,
@@ -147,7 +147,7 @@ export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements Defa
   }
 
   /**
-   * {@inheritdoc Converter.withConstraint}
+   * {@inheritDoc Converter.withConstraint}
    */
   public withConstraint(
     constraint: (val: T | TD) => boolean | Result<T | TD>,
@@ -157,14 +157,14 @@ export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements Defa
   }
 
   /**
-   * {@inheritdoc Converter.withBrand}
+   * {@inheritDoc Converter.withBrand}
    */
   public withBrand<B extends string>(brand: B): Converter<Brand<T | TD, B>, TC> {
     return this._converter.withAction((result) => this._applyDefault(result)).withBrand(brand);
   }
 
   /**
-   * {@inheritdoc Converter.withFormattedError}
+   * {@inheritDoc Converter.withFormattedError}
    */
   public withFormattedError(formatter: ConversionErrorFormatter<TC>): Converter<T | TD, TC> {
     // formatter should never actually be invoked for a defaulting converter
@@ -183,7 +183,7 @@ export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements Defa
   }
 
   /**
-   * {@inheritdoc Converter.or}
+   * {@inheritDoc Converter.or}
    */
   public or(__converter: Converter<T, TC>): DefaultingConverter<T, TD, TC> {
     return this;

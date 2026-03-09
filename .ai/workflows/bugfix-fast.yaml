@@ -1,0 +1,76 @@
+# Fast-Track Bugfix Workflow
+# Used for simple bug fixes that don't require full design phase
+
+name: 'bugfix_fast'
+description: 'Streamlined workflow for simple bug fixes with minimal overhead'
+
+triggers:
+  - task_type: 'bugfix'
+  - complexity: ['trivial', 'simple']
+  - user_request_type: 'fix_existing_functionality'
+
+phases:
+  - phase: implementation
+    agent: code-monkey
+    mode: workflow
+    required: true
+    dependencies: []
+    max_iterations: 2
+    description: 'Implement the bug fix directly'
+
+  - phase: review
+    agent: code-reviewer
+    mode: workflow
+    required: true
+    dependencies: [implementation]
+    max_iterations: 2
+    description: 'Review fix for correctness and patterns'
+
+  - phase: functional_test
+    agent: sdet-functional
+    mode: workflow
+    required: false # Optional for simple fixes
+    dependencies: [implementation]
+    condition: 'if_implementation_affects_user_behavior'
+    max_iterations: 1
+    description: 'Add regression tests if behavior changes'
+
+success_criteria:
+  - bug_fixed: true
+  - no_regressions_introduced: true
+  - code_quality_maintained: true
+
+escalation_rules:
+  - trigger: 'fix_requires_design_changes'
+    action: 'escalate_to_standard_workflow'
+  - trigger: 'multiple_failed_iterations'
+    action: 'escalate_for_guidance'
+
+quality_gates:
+  after_implementation:
+    - builds_successfully: true
+    - bug_reproduction_fixed: true
+    - no_obvious_regressions: true
+
+  after_review:
+    - no_blocking_issues: true
+    - fix_is_minimal_and_targeted: true
+
+  after_functional_test:
+    - regression_tests_added: true
+
+estimated_duration: '30-60 minutes'
+complexity_range: ['trivial', 'simple']
+
+workflow_variations:
+  minimal_fix:
+    skip_phases: [functional_test]
+    conditions:
+      - file_changes_count: '< 10 lines'
+      - affects_only_internal_logic: true
+
+  behavioral_change:
+    require_phases: [functional_test]
+    conditions:
+      - affects_user_visible_behavior: true
+      - changes_api_contracts: true
