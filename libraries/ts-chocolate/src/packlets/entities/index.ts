@@ -80,7 +80,6 @@ export {
   IConfectionEditJournalEntryEntity,
   IFillingProductionJournalEntryEntity,
   IFillingEditJournalEntryEntity,
-  IGroupNotesJournalEntryEntity,
   JournalEntryType
 } from './journal';
 

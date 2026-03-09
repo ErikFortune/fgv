@@ -61,3 +61,6 @@ export * from './packlets/inventory';
 
 // Location management
 export * from './packlets/locations';
+
+// Journal entry display
+export * from './packlets/journal';

@@ -69,6 +69,8 @@ export interface ISessionDetailViewProps {
   readonly onBrowseProcedure?: (procedureId: ProcedureId) => void;
   /** Optional callback when user selects a filling slot in a confection session */
   readonly onSelectFillingSlot?: (slotId: SlotId, label: string) => void;
+  /** Optional callback to open the commit dialog for this session */
+  readonly onCommit?: () => void;
 }
 
 // ============================================================================
@@ -93,7 +95,8 @@ export function SessionDetailView({
   onOpenFillingRecipe,
   onBrowseIngredient,
   onBrowseProcedure,
-  onSelectFillingSlot
+  onSelectFillingSlot,
+  onCommit
 }: ISessionDetailViewProps): React.ReactElement {
   if (session.sessionType === 'filling') {
     return (
@@ -106,6 +109,7 @@ export function SessionDetailView({
         onOpenFillingRecipe={onOpenFillingRecipe}
         onBrowseIngredient={onBrowseIngredient}
         onBrowseProcedure={onBrowseProcedure}
+        onCommit={onCommit}
       />
     );
   }

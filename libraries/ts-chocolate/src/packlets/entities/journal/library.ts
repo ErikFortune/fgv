@@ -26,6 +26,7 @@
 import { captureResult, Logging, Result } from '@fgv/ts-utils';
 
 import {
+  CollectionId,
   ConfectionId,
   ConfectionRecipeVariationId,
   FillingId,
@@ -446,5 +447,25 @@ export class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, Any
    */
   public hasJournal(journalId: JournalId): boolean {
     return this.has(journalId);
+  }
+
+  // ============================================================================
+  // Mutation Methods
+  // ============================================================================
+
+  /**
+   * Adds a journal entry to a collection.
+   * @param collectionId - Target collection for the entry
+   * @param entry - The journal entry entity to add
+   * @returns Success with composite {@link JournalId}, or Failure if the add fails
+   * @public
+   */
+  public addJournal(collectionId: CollectionId, entry: AnyJournalEntryEntity): Result<JournalId> {
+    return this.addToCollection(collectionId, entry.baseId, entry)
+      .asResult.withErrorFormat((msg) => `Failed to add journal ${entry.baseId} to ${collectionId}: ${msg}`)
+      .onSuccess(() => {
+        this._invalidateIndices();
+        return CommonConverters.journalId.convert(`${collectionId}.${entry.baseId}`);
+      });
   }
 }

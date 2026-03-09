@@ -110,10 +110,28 @@ export interface ISessionActions {
   readonly deleteSession: (sessionId: SessionId) => Promise<Result<SessionId>>;
 
   /**
+   * Commit a filling session to the journal.
+   * Creates a journal entry, persists it, and updates session status to 'committed'.
+   * @param sessionId - The composite SessionId to commit
+   * @param journalCollectionId - Target collection for the journal entry
+   * @returns Result with commit result (journalId + saveAnalysis)
+   */
+  readonly commitFillingSession: (
+    sessionId: SessionId,
+    journalCollectionId: CollectionId
+  ) => Promise<Result<UserLibrary.ICommitResult>>;
+
+  /**
    * The default mutable collection ID for new sessions.
    * Resolved from the sessions sub-library; undefined if no mutable collection exists.
    */
   readonly defaultCollectionId: CollectionId | undefined;
+
+  /**
+   * The default mutable collection ID for journal entries.
+   * Resolved from the journals sub-library; undefined if no mutable collection exists.
+   */
+  readonly defaultJournalCollectionId: CollectionId | undefined;
 }
 
 // ============================================================================
@@ -137,6 +155,12 @@ export function useSessionActions(): ISessionActions {
     workspace.userData.entities.sessions.collections,
     [workspace, reactiveWorkspace.version],
     workspace.settings?.getResolvedSettings().defaultTargets.sessions
+  );
+
+  const defaultJournalCollectionId = useMutableCollection(
+    workspace.userData.entities.journals.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.journals
   );
 
   const createFillingSession = useCallback(
@@ -220,12 +244,31 @@ export function useSessionActions(): ISessionActions {
     [workspace, reactiveWorkspace]
   );
 
+  const commitFillingSession = useCallback(
+    async (
+      sessionId: SessionId,
+      journalCollectionId: CollectionId
+    ): Promise<Result<UserLibrary.ICommitResult>> => {
+      const result = await workspace.userData.commitFillingSession(sessionId, journalCollectionId);
+      if (result.isSuccess()) {
+        reactiveWorkspace.notifyChange();
+        workspace.data.logger.info(`Committed session '${sessionId}' → journal '${result.value.journalId}'`);
+      } else {
+        workspace.data.logger.error(`Failed to commit session '${sessionId}': ${result.message}`);
+      }
+      return result;
+    },
+    [workspace, reactiveWorkspace]
+  );
+
   return {
     createFillingSession,
     createConfectionSession,
     saveSession,
     updateSessionStatus,
     deleteSession,
-    defaultCollectionId
+    commitFillingSession,
+    defaultCollectionId,
+    defaultJournalCollectionId
   };
 }

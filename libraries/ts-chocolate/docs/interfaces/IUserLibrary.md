@@ -73,7 +73,7 @@ A materialized library of all sessions, keyed by composite ID.
 
 </td><td>
 
-[MaterializedLibrary](../classes/MaterializedLibrary.md)&lt;[JournalId](../type-aliases/JournalId.md), [AnyJournalEntryEntity](../type-aliases/AnyJournalEntryEntity.md), [AnyJournalEntry](../type-aliases/AnyJournalEntry.md), never&gt;
+[MaterializedLibrary](../classes/MaterializedLibrary.md)&lt;[JournalId](../type-aliases/JournalId.md), [AnyRecipeJournalEntryEntity](../type-aliases/AnyRecipeJournalEntryEntity.md), [AnyJournalEntry](../type-aliases/AnyJournalEntry.md), never&gt;
 
 </td><td>
 
@@ -329,6 +329,32 @@ Removes a session from the library.
 </td><td>
 
 Removes a session and persists the owning sessions collection.
+
+</td></tr>
+<tr><td>
+
+[addJournalEntry(collectionId, entry)](./IUserLibrary.addJournalEntry.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Adds a journal entry to a collection and persists via PEC.
+
+</td></tr>
+<tr><td>
+
+[commitFillingSession(sessionId, journalCollectionId)](./IUserLibrary.commitFillingSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Commits a filling session to the journal.
 
 </td></tr>
 </tbody></table>

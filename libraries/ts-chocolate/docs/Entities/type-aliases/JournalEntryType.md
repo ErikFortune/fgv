@@ -7,5 +7,5 @@ Types of journal entries.
 ## Type
 
 ```typescript
-type JournalEntryType = "confection-production" | "filling-production" | "confection-edit" | "filling-edit" | "group-notes"
+type JournalEntryType = "confection-production" | "filling-production" | "confection-edit" | "filling-edit"
 ```

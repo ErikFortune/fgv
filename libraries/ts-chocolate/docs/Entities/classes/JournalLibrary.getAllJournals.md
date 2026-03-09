@@ -7,11 +7,11 @@ Gets all journal entries across all collections
 **Signature:**
 
 ```typescript
-getAllJournals(): readonly AnyJournalEntryEntity[];
+getAllJournals(): readonly AnyRecipeJournalEntryEntity[];
 ```
 
 **Returns:**
 
-readonly [AnyJournalEntryEntity](../../type-aliases/AnyJournalEntryEntity.md)[]
+readonly [AnyRecipeJournalEntryEntity](../../type-aliases/AnyRecipeJournalEntryEntity.md)[]
 
 Array of all journal entries

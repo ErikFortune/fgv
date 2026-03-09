@@ -44,6 +44,7 @@ import {
 import {
   AnyConfectionRecipeEntity,
   AnyJournalEntryEntity,
+  AnyRecipeJournalEntryEntity,
   AnySessionEntity,
   IConfectionSessionEntity,
   IDecorationEntity,
@@ -58,11 +59,11 @@ import {
   Session as SessionEntities
 } from '../entities';
 import {
+  AnyIngredient,
   IConfectionBase,
   IConfectionContext,
   IDecoration,
   IFillingRecipe,
-  IIngredient,
   IMold,
   Indexers,
   IProcedure,
@@ -77,6 +78,7 @@ import { ILocation, Location } from './location';
 import {
   AnyJournalEntry,
   AnyMaterializedSession,
+  ICommitResult,
   ICreateConfectionSessionOptions,
   ICreateFillingSessionOptions,
   IIngredientInventoryEntry,
@@ -309,7 +311,7 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
   public get ingredients(): MaterializedLibrary<
     IngredientId,
     IngredientEntity,
-    IIngredient,
+    AnyIngredient,
     Indexers.IIngredientQuerySpec
   > {
     return this._confectionContext.ingredients;
@@ -593,6 +595,79 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
       return fail(persistResult.message);
     }
     return succeed(removeResult.value);
+  }
+
+  // ============================================================================
+  // Journal Commit Methods
+  // ============================================================================
+
+  /**
+   * {@inheritDoc IUserLibrary.addJournalEntry}
+   */
+  public async addJournalEntry(
+    collectionId: CollectionId,
+    entry: AnyRecipeJournalEntryEntity
+  ): Promise<Result<JournalId>> {
+    const pecResult = this._entities
+      .getPersistedJournalsCollection(collectionId)
+      .withErrorFormat((msg) => `Journal collection '${collectionId}' is not available: ${msg}`);
+    if (pecResult.isFailure()) {
+      return fail(pecResult.message);
+    }
+
+    const addResult = await pecResult.value.addItem(entry.baseId, entry);
+    if (addResult.isFailure()) {
+      return fail(addResult.message);
+    }
+    return succeed(addResult.value as JournalId);
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.commitFillingSession}
+   */
+  public async commitFillingSession(
+    sessionId: SessionId,
+    journalCollectionId: CollectionId
+  ): Promise<Result<ICommitResult>> {
+    // Get the materialized filling session
+    const sessionResult = this._getSessions().get(sessionId);
+    if (sessionResult.isFailure()) {
+      return fail(`Session ${sessionId} not found: ${sessionResult.message}`);
+    }
+
+    const session = sessionResult.value;
+    if (!(session instanceof Session.EditingSession)) {
+      return fail(`Session ${sessionId} is not a filling session`);
+    }
+
+    // Analyze save options before committing
+    const saveAnalysis = session.analyzeSaveOptions();
+
+    // Create journal entry: production if execution state exists, otherwise edit
+    const journalEntryResult = session.execution
+      ? session.toProductionJournalEntry()
+      : session.toEditJournalEntry();
+
+    if (journalEntryResult.isFailure()) {
+      return fail(`Failed to create journal entry for session ${sessionId}: ${journalEntryResult.message}`);
+    }
+
+    // Persist the journal entry via PEC
+    const addResult = await this.addJournalEntry(journalCollectionId, journalEntryResult.value);
+    if (addResult.isFailure()) {
+      return fail(`Failed to persist journal entry: ${addResult.message}`);
+    }
+
+    // Update session status to committed
+    const statusResult = await this.updateSessionStatusAndPersist(sessionId, 'committed');
+    if (statusResult.isFailure()) {
+      return fail(`Journal entry created but failed to update session status: ${statusResult.message}`);
+    }
+
+    return succeed({
+      journalId: addResult.value,
+      saveAnalysis
+    });
   }
 
   /**

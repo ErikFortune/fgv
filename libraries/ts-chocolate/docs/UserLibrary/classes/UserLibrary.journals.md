@@ -8,5 +8,5 @@ Journal entries are materialized lazily on access and cached.
 **Signature:**
 
 ```typescript
-readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
+readonly journals: MaterializedLibrary<JournalId, AnyRecipeJournalEntryEntity, AnyJournalEntry, never>;
 ```

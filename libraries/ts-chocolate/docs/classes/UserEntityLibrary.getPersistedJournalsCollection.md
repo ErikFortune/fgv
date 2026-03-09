@@ -7,7 +7,7 @@ Get or create a singleton persisted journals collection.
 **Signature:**
 
 ```typescript
-getPersistedJournalsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<AnyJournalEntryEntity, BaseJournalId>>;
+getPersistedJournalsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<AnyRecipeJournalEntryEntity, BaseJournalId>>;
 ```
 
 **Parameters:**
@@ -19,6 +19,6 @@ getPersistedJournalsCollection(collectionId: CollectionId): Result<PersistedEdit
 
 **Returns:**
 
-Result&lt;[PersistedEditableCollection](PersistedEditableCollection.md)&lt;[AnyJournalEntryEntity](../type-aliases/AnyJournalEntryEntity.md), [BaseJournalId](../type-aliases/BaseJournalId.md)&gt;&gt;
+Result&lt;[PersistedEditableCollection](PersistedEditableCollection.md)&lt;[AnyRecipeJournalEntryEntity](../type-aliases/AnyRecipeJournalEntryEntity.md), [BaseJournalId](../type-aliases/BaseJournalId.md)&gt;&gt;
 
 `Success` with persisted wrapper, or `Failure` if collection not found

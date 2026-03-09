@@ -135,6 +135,8 @@ export interface IFillingSessionPanelProps {
   readonly embeddedLabel?: string;
   /** Save callback for embedded filling panels (should persist parent session) */
   readonly onSaveEmbedded?: () => Promise<void>;
+  /** Optional callback to open the commit dialog */
+  readonly onCommit?: () => void;
 }
 
 // ============================================================================
@@ -189,7 +191,8 @@ export function FillingSessionPanel({
   onBrowseProcedure,
   embeddedParentSessionId,
   embeddedLabel,
-  onSaveEmbedded
+  onSaveEmbedded,
+  onCommit
 }: IFillingSessionPanelProps): React.ReactElement {
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
@@ -673,6 +676,7 @@ export function FillingSessionPanel({
           saveMode={saveMode}
           onSaveModeChange={handleSaveModeChange}
           onClose={onClose}
+          onCommit={onCommit}
         />
       ) : (
         <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3 py-1.5">

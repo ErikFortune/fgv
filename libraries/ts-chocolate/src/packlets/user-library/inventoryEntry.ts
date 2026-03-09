@@ -31,7 +31,7 @@ import {
   IMoldInventoryEntryEntity,
   Inventory as InventoryEntities
 } from '../entities';
-import { IIngredient, IMold } from '../library-runtime';
+import { AnyIngredient, IMold } from '../library-runtime';
 import { ISessionContext } from './model';
 import { ILocation } from './location';
 import { IIngredientInventoryEntry, IMoldInventoryEntry, IInventoryEntryBase } from './model';
@@ -199,7 +199,7 @@ export class MoldInventoryEntry
 export class IngredientInventoryEntry
   extends InventoryEntryBase<
     InventoryEntities.IngredientInventoryEntryId,
-    IIngredient,
+    AnyIngredient,
     IIngredientInventoryEntryEntity
   >
   implements IIngredientInventoryEntry
@@ -212,7 +212,7 @@ export class IngredientInventoryEntry
     context: ISessionContext,
     id: InventoryEntities.IngredientInventoryEntryId,
     entity: IIngredientInventoryEntryEntity,
-    ingredient: IIngredient
+    ingredient: AnyIngredient
   ) {
     super(context, id, entity, ingredient);
   }
@@ -220,7 +220,7 @@ export class IngredientInventoryEntry
   /**
    * Convenience accessor for the resolved ingredient.
    */
-  public get ingredient(): IIngredient {
+  public get ingredient(): AnyIngredient {
     return this._item;
   }
 

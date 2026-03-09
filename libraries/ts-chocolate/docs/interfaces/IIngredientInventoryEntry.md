@@ -4,7 +4,7 @@
 
 Materialized ingredient inventory entry with resolved ingredient reference.
 
-**Extends:** [`IInventoryEntryBase<IngredientInventoryEntryId, IIngredient, IIngredientInventoryEntryEntity>`](IInventoryEntryBase.md)
+**Extends:** [`IInventoryEntryBase<IngredientInventoryEntryId, AnyIngredient, IIngredientInventoryEntryEntity>`](IInventoryEntryBase.md)
 
 ## Properties
 
@@ -53,7 +53,7 @@ Composite inventory entry ID (collectionId.baseId)
 
 </td><td>
 
-[IIngredient](IIngredient.md)
+[AnyIngredient](../type-aliases/AnyIngredient.md)
 
 </td><td>
 

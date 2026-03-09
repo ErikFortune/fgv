@@ -8,6 +8,7 @@ import { Entities, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
 import type {
   IngredientId,
   FillingId,
+  JournalId,
   LocationId,
   MoldId,
   TaskId,
@@ -107,6 +108,43 @@ export const SESSION_DESCRIPTOR: IEntityDescriptor<ISessionListEntry, SessionId>
   getStatus: (e: ISessionListEntry): IEntityStatus => ({
     label: SESSION_STATUS_LABELS[e.session.status] ?? e.session.status,
     colorClass: SESSION_STATUS_COLORS[e.session.status] ?? 'bg-gray-400'
+  })
+};
+
+/**
+ * Wrapper for journal list entries, pairing the composite ID with the materialized entry.
+ * Needed because AnyJournalEntry does not expose a composite `id` property directly for list use.
+ */
+export interface IJournalListEntry {
+  readonly id: JournalId;
+  readonly entry: UserLibrary.AnyJournalEntry;
+}
+
+const JOURNAL_TYPE_COLORS: Record<string, string> = {
+  'filling-edit': 'bg-blue-400',
+  'filling-production': 'bg-green-400',
+  'confection-edit': 'bg-purple-400',
+  'confection-production': 'bg-amber-400'
+};
+
+const JOURNAL_TYPE_LABELS: Record<string, string> = {
+  'filling-edit': 'Filling Edit',
+  'filling-production': 'Filling Production',
+  'confection-edit': 'Confection Edit',
+  'confection-production': 'Confection Production'
+};
+
+export const JOURNAL_DESCRIPTOR: IEntityDescriptor<IJournalListEntry, JournalId> = {
+  getId: (e: IJournalListEntry): JournalId => e.id,
+  getLabel: (e: IJournalListEntry): string => e.entry.recipe.name,
+  getSublabel: (e: IJournalListEntry): string | undefined => {
+    const date = new Date(e.entry.timestamp);
+    const dateStr = isNaN(date.getTime()) ? e.entry.timestamp : date.toLocaleDateString();
+    return dateStr;
+  },
+  getStatus: (e: IJournalListEntry): IEntityStatus => ({
+    label: JOURNAL_TYPE_LABELS[e.entry.entity.type] ?? e.entry.entity.type,
+    colorClass: JOURNAL_TYPE_COLORS[e.entry.entity.type] ?? 'bg-gray-400'
   })
 };
 
@@ -292,6 +330,16 @@ export const SESSION_FILTER_SPEC: IEntityFilterSpec<ISessionListEntry> = {
     collection: (e) => collectionFromId(e.id),
     status: (e) => e.session.status,
     type: (e) => e.session.sessionType
+  }
+};
+
+export const JOURNAL_FILTER_SPEC: IEntityFilterSpec<IJournalListEntry> = {
+  getSearchText: (e) =>
+    [e.entry.recipe.name, e.entry.entity.type, e.entry.timestamp].filter(Boolean).join(' '),
+  getCollectionId: (e) => collectionFromId(e.id),
+  selectionExtractors: {
+    collection: (e) => collectionFromId(e.id),
+    type: (e) => e.entry.entity.type
   }
 };
 

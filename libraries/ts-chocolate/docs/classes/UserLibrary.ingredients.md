@@ -8,5 +8,5 @@ Required by IVariationContext.
 **Signature:**
 
 ```typescript
-readonly ingredients: MaterializedLibrary<IngredientId, IngredientEntity, IIngredient<IngredientEntity>, IIngredientQuerySpec>;
+readonly ingredients: MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, IIngredientQuerySpec>;
 ```

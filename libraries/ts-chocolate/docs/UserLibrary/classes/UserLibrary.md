@@ -76,7 +76,7 @@ A materialized library of all sessions, keyed by composite ID.
 
 </td><td>
 
-[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[JournalId](../../type-aliases/JournalId.md), [AnyJournalEntryEntity](../../type-aliases/AnyJournalEntryEntity.md), [AnyJournalEntry](../../type-aliases/AnyJournalEntry.md), never&gt;
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[JournalId](../../type-aliases/JournalId.md), [AnyRecipeJournalEntryEntity](../../type-aliases/AnyRecipeJournalEntryEntity.md), [AnyJournalEntry](../../type-aliases/AnyJournalEntry.md), never&gt;
 
 </td><td>
 
@@ -212,7 +212,7 @@ Gets the materialized decorations library from the confection context.
 
 </td><td>
 
-[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[IngredientId](../../type-aliases/IngredientId.md), [IngredientEntity](../../type-aliases/IngredientEntity.md), [IIngredient](../../interfaces/IIngredient.md)&lt;[IngredientEntity](../../type-aliases/IngredientEntity.md)&gt;, [IIngredientQuerySpec](../../interfaces/IIngredientQuerySpec.md)&gt;
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[IngredientId](../../type-aliases/IngredientId.md), [IngredientEntity](../../type-aliases/IngredientEntity.md), [AnyIngredient](../../type-aliases/AnyIngredient.md), [IIngredientQuerySpec](../../interfaces/IIngredientQuerySpec.md)&gt;
 
 </td><td>
 
@@ -473,6 +473,32 @@ Removes a session from the library.
 </td><td>
 
 Removes a session and persists the owning sessions collection.
+
+</td></tr>
+<tr><td>
+
+[addJournalEntry(collectionId, entry)](./UserLibrary.addJournalEntry.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Adds a journal entry to a collection and persists via PEC.
+
+</td></tr>
+<tr><td>
+
+[commitFillingSession(sessionId, journalCollectionId)](./UserLibrary.commitFillingSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Commits a filling session to the journal.
 
 </td></tr>
 </tbody></table>

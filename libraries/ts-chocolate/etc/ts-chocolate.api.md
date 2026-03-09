@@ -252,7 +252,7 @@ const anyJournalConfectionVariation: Converter<AnyJournalConfectionVariation>;
 type AnyJournalEntry = IFillingEditJournalEntry | IConfectionEditJournalEntry | IFillingProductionJournalEntry | IConfectionProductionJournalEntry;
 
 // @public
-type AnyJournalEntryEntity = AnyRecipeJournalEntryEntity | IGroupNotesJournalEntryEntity;
+type AnyJournalEntryEntity = AnyRecipeJournalEntryEntity;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2250,7 +2250,6 @@ declare namespace Entities {
         IConfectionEditJournalEntryEntity,
         IFillingProductionJournalEntryEntity,
         IFillingEditJournalEntryEntity,
-        IGroupNotesJournalEntryEntity,
         JournalEntryType,
         SessionLibrary,
         AnySessionEntity,
@@ -2929,11 +2928,6 @@ export type GroupName = Brand<string, 'GroupName'>;
 // @public
 const groupName: Converter<GroupName>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const groupNotesJournalEntryEntity: Converter<IGroupNotesJournalEntryEntity>;
-
 // @public
 function hasAllTags<T>(tags: string[], getter: (item: T) => ReadonlyArray<string>): FilterPredicate<T>;
 
@@ -3320,6 +3314,12 @@ interface ICollectionSourceFile<T = JsonObject> {
 }
 
 // @public
+interface ICommitResult {
+    readonly journalId: JournalId;
+    readonly saveAnalysis: Session_2.ISaveAnalysis;
+}
+
+// @public
 export interface ICommonWorkspaceInitParams {
     readonly additionalFileSources?: ReadonlyArray<ILibraryFileTreeSource>;
     readonly builtin?: FullLibraryLoadSpec;
@@ -3374,7 +3374,7 @@ interface IConfectionChanges {
 }
 
 // @internal
-interface IConfectionContext extends IVariationContext<IIngredient> {
+interface IConfectionContext extends IVariationContext<AnyIngredient> {
     readonly confections: MaterializedLibrary<ConfectionId, Confections.AnyConfectionRecipeEntity, IConfectionBase, never>;
     readonly decorations: MaterializedLibrary<DecorationId, IDecorationEntity, IDecoration, never>;
     readonly molds: MaterializedLibrary<MoldId, IMoldEntity, IMold, never>;
@@ -4181,16 +4181,6 @@ interface IGenerateVariationSpecOptions {
 }
 
 // @public
-interface IGroupNotesJournalEntryEntity {
-    readonly baseId: BaseJournalId;
-    readonly group: GroupName;
-    readonly label?: string;
-    readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly timestamp: string;
-    readonly type: 'group-notes';
-}
-
-// @public
 interface IHasId<TId extends string> {
     // (undocumented)
     readonly id: TId;
@@ -4307,7 +4297,7 @@ interface IIngredientFillingOptionEntity {
 }
 
 // @public
-interface IIngredientInventoryEntry extends IInventoryEntryBase<Inventory.IngredientInventoryEntryId, IIngredient, IIngredientInventoryEntryEntity> {
+interface IIngredientInventoryEntry extends IInventoryEntryBase<Inventory.IngredientInventoryEntryId, AnyIngredient, IIngredientInventoryEntryEntity> {
 }
 
 // @public
@@ -6083,11 +6073,6 @@ function isFillingProductionJournalEntryEntity(entry: AnyJournalEntryEntity): en
 // @public
 function isFillingSessionEntity(session: AnySessionEntity): session is IFillingSessionEntity;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-function isGroupNotesJournalEntryEntity(entry: AnyJournalEntryEntity): entry is IGroupNotesJournalEntryEntity;
-
 // @public
 export interface ISingleRootParams {
     readonly mode: 'single-root';
@@ -6475,7 +6460,9 @@ interface IUserEntityPersistenceConfig {
 
 // @public
 interface IUserLibrary {
+    addJournalEntry(collectionId: CollectionId, entry: AnyRecipeJournalEntryEntity): Promise<Result<JournalId>>;
     clearCache(): void;
+    commitFillingSession(sessionId: SessionId, journalCollectionId: CollectionId): Promise<Result<ICommitResult>>;
     createPersistedConfectionSession(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Result<SessionId>;
     createPersistedConfectionSessionAndSave(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Promise<Result<SessionId>>;
     createPersistedFillingSession(variationId: FillingRecipeVariationId, options: ICreateFillingSessionOptions): Result<SessionId>;
@@ -6652,7 +6639,6 @@ declare namespace Journal {
         confectionEditJournalEntryEntity,
         fillingProductionJournalEntryEntity,
         confectionProductionJournalEntryEntity,
-        groupNotesJournalEntryEntity,
         anyJournalEntryEntity
     }
 }
@@ -6664,7 +6650,6 @@ declare namespace Journal_2 {
         isConfectionEditJournalEntryEntity,
         isFillingProductionJournalEntryEntity,
         isConfectionProductionJournalEntryEntity,
-        isGroupNotesJournalEntryEntity,
         IMoldedBonBonJournalVariation,
         IBarTruffleJournalVariation,
         IRolledTruffleJournalVariation,
@@ -6677,7 +6662,6 @@ declare namespace Journal_2 {
         IConfectionEditJournalEntryEntity,
         IFillingProductionJournalEntryEntity,
         IConfectionProductionJournalEntryEntity,
-        IGroupNotesJournalEntryEntity,
         AnyRecipeJournalEntryEntity,
         AnyJournalEntryEntity,
         isFillingJournalEntry,
@@ -6712,7 +6696,7 @@ type JournalCollectionEntryInit = SubLibraryEntryInit<BaseJournalId, AnyJournalE
 type JournalCollectionValidator = SubLibraryCollectionValidator<BaseJournalId, AnyJournalEntryEntity>;
 
 // @public
-type JournalEntryType = 'confection-production' | 'filling-production' | 'confection-edit' | 'filling-edit' | 'group-notes';
+type JournalEntryType = 'confection-production' | 'filling-production' | 'confection-edit' | 'filling-edit';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -6732,6 +6716,7 @@ const journalId_2: Validator<JournalId>;
 //
 // @public
 class JournalLibrary extends SubLibraryBase<JournalId, BaseJournalId, AnyJournalEntryEntity> {
+    addJournal(collectionId: CollectionId, entry: AnyJournalEntryEntity): Result<JournalId>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IJournalLibraryParams): Result<JournalLibrary>;
@@ -8868,6 +8853,7 @@ declare namespace UserLibrary {
         AnyMaterializedSession,
         ICreateFillingSessionOptions,
         ICreateConfectionSessionOptions,
+        ICommitResult,
         IJournalEntryBase,
         IFillingEditJournalEntry,
         IConfectionEditJournalEntry,
@@ -8889,7 +8875,15 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)
+    addJournalEntry(collectionId: CollectionId, entry: AnyRecipeJournalEntryEntity): Promise<Result<JournalId>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
     clearCache(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    commitFillingSession(sessionId: SessionId, journalCollectionId: CollectionId): Promise<Result<ICommitResult>>;
     get confections(): MaterializedLibrary<ConfectionId, AnyConfectionRecipeEntity, IConfectionBase, never>;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
@@ -8924,7 +8918,7 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     //
     // (undocumented)
     get ingredientInventory(): MaterializedLibrary<Inventory.IngredientInventoryEntryId, Inventory.IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
-    get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, IIngredient, Indexers.IIngredientQuerySpec>;
+    get ingredients(): MaterializedLibrary<IngredientId, IngredientEntity, AnyIngredient, Indexers.IIngredientQuerySpec>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)

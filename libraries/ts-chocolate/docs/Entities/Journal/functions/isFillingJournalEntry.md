@@ -7,5 +7,5 @@ Type guard for filling journal entries
 ## Signature
 
 ```typescript
-function isFillingJournalEntry(entry: AnyJournalEntryEntity): entry is AnyFillingJournalEntry
+function isFillingJournalEntry(entry: AnyRecipeJournalEntryEntity): entry is AnyFillingJournalEntry
 ```

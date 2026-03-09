@@ -102,6 +102,15 @@ Options for creating a new persisted confection session.
 </td></tr>
 <tr><td>
 
+[ICommitResult](./interfaces/ICommitResult.md)
+
+</td><td>
+
+Result of committing a session to the journal.
+
+</td></tr>
+<tr><td>
+
 [IJournalEntryBase](./interfaces/IJournalEntryBase.md)
 
 </td><td>

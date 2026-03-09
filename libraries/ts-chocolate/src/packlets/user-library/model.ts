@@ -56,12 +56,12 @@ import {
   PersistedSessionType
 } from '../entities';
 import {
+  AnyIngredient,
   IConfectionBase,
   IConfectionContext,
   IConfectionRecipeVariationBase,
   IFillingRecipe,
   IFillingRecipeVariation,
-  IIngredient,
   IMold,
   MaterializedLibrary
 } from '../library-runtime';
@@ -182,6 +182,21 @@ export interface ICreateConfectionSessionOptions {
   readonly slug?: string;
   /** Optional confection editing session parameters (yield, sessionId) */
   readonly params?: Session.IConfectionEditingSessionParams;
+}
+
+// ============================================================================
+// Commit Result
+// ============================================================================
+
+/**
+ * Result of committing a session to the journal.
+ * @public
+ */
+export interface ICommitResult {
+  /** Composite journal entry ID */
+  readonly journalId: JournalId;
+  /** Save analysis showing what recipe save options would be available */
+  readonly saveAnalysis: Session.ISaveAnalysis;
 }
 
 // ============================================================================
@@ -326,7 +341,7 @@ export interface IMoldInventoryEntry
 export interface IIngredientInventoryEntry
   extends IInventoryEntryBase<
     Inventory.IngredientInventoryEntryId,
-    IIngredient,
+    AnyIngredient,
     IIngredientInventoryEntryEntity
   > {}
 
@@ -528,4 +543,25 @@ export interface IUserLibrary {
    * @returns Promise with Result containing the composite SessionId of the removed session
    */
   removeSessionAndPersist(sessionId: SessionId): Promise<Result<SessionId>>;
+
+  /**
+   * Adds a journal entry to a collection and persists via PEC.
+   * @param collectionId - Target journal collection
+   * @param entry - Journal entry entity to add
+   * @returns Promise with Result containing the composite JournalId
+   */
+  addJournalEntry(collectionId: CollectionId, entry: AnyRecipeJournalEntryEntity): Promise<Result<JournalId>>;
+
+  /**
+   * Commits a filling session to the journal.
+   * Creates a journal entry (edit or production based on execution state),
+   * persists it, and updates the session status to 'committed'.
+   * @param sessionId - Session to commit
+   * @param journalCollectionId - Target collection for the journal entry
+   * @returns Promise with Result containing commit result (journalId + saveAnalysis)
+   */
+  commitFillingSession(
+    sessionId: SessionId,
+    journalCollectionId: CollectionId
+  ): Promise<Result<ICommitResult>>;
 }

@@ -7,5 +7,5 @@ Type guard for confection journal entries
 ## Signature
 
 ```typescript
-function isConfectionJournalEntry(entry: AnyJournalEntryEntity): entry is AnyConfectionJournalEntry
+function isConfectionJournalEntry(entry: AnyRecipeJournalEntryEntity): entry is AnyConfectionJournalEntry
 ```

@@ -27,7 +27,6 @@ import {
   ConfectionRecipeVariationId,
   FillingRecipeVariationId,
   BaseJournalId,
-  GroupName,
   Measurement,
   Model as CommonModel
 } from '../../common';
@@ -100,8 +99,7 @@ export type JournalEntryType =
   | 'confection-production'
   | 'filling-production'
   | 'confection-edit'
-  | 'filling-edit'
-  | 'group-notes';
+  | 'filling-edit';
 
 /**
  * All possible {@link Entities.Journal.JournalEntryType | journal entry types}.
@@ -111,8 +109,7 @@ export const allJournalEntryTypes: JournalEntryType[] = [
   'confection-production',
   'filling-production',
   'confection-edit',
-  'filling-edit',
-  'group-notes'
+  'filling-edit'
 ];
 
 /**
@@ -182,26 +179,6 @@ export interface IConfectionProductionJournalEntryEntity
   readonly produced: AnyProducedConfectionEntity;
 }
 
-/**
- * Journal entry for session group metadata and notes.
- * Used to record notes about a group of related sessions.
- * @public
- */
-export interface IGroupNotesJournalEntryEntity {
-  /** Entry type discriminator */
-  readonly type: 'group-notes';
-  /** Base identifier within collection (no collection prefix) */
-  readonly baseId: BaseJournalId;
-  /** Timestamp when this entry was created (ISO 8601 format) */
-  readonly timestamp: string;
-  /** Group identifier (matches session group field) */
-  readonly group: GroupName;
-  /** Optional label for the group */
-  readonly label?: string;
-  /** Optional categorized notes about this group */
-  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
-}
-
 // ============================================================================
 // Journal Entry Union Type
 // ============================================================================
@@ -222,7 +199,7 @@ export type AnyRecipeJournalEntryEntity =
  * Use type guards to narrow to specific types.
  * @public
  */
-export type AnyJournalEntryEntity = AnyRecipeJournalEntryEntity | IGroupNotesJournalEntryEntity;
+export type AnyJournalEntryEntity = AnyRecipeJournalEntryEntity;
 
 // ============================================================================
 // Journal Entry Type Guards
@@ -274,16 +251,4 @@ export function isConfectionProductionJournalEntryEntity(
   entry: AnyJournalEntryEntity
 ): entry is IConfectionProductionJournalEntryEntity {
   return entry.type === 'confection-production';
-}
-
-/**
- * Type guard for {@link Entities.Journal.IGroupNotesJournalEntryEntity | IGroupNotesJournalEntryEntity}.
- * @param entry - Journal entry to check
- * @returns True if the entry is a group notes journal entry
- * @public
- */
-export function isGroupNotesJournalEntryEntity(
-  entry: AnyJournalEntryEntity
-): entry is IGroupNotesJournalEntryEntity {
-  return entry.type === 'group-notes';
 }

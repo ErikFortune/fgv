@@ -7,5 +7,5 @@ Type guard for Entities.Journal.IFillingProductionJournalEntryEntity | IFillingP
 ## Signature
 
 ```typescript
-function isFillingProductionJournalEntryEntity(entry: AnyJournalEntryEntity): entry is IFillingProductionJournalEntryEntity
+function isFillingProductionJournalEntryEntity(entry: AnyRecipeJournalEntryEntity): entry is IFillingProductionJournalEntryEntity
 ```

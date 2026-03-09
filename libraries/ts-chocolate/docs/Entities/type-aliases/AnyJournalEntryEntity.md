@@ -8,5 +8,5 @@ Use type guards to narrow to specific types.
 ## Type
 
 ```typescript
-type AnyJournalEntryEntity = AnyRecipeJournalEntryEntity | IGroupNotesJournalEntryEntity
+type AnyJournalEntryEntity = AnyRecipeJournalEntryEntity
 ```

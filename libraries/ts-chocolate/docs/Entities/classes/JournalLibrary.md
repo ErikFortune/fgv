@@ -259,6 +259,19 @@ Checks if a journal with the given ID exists (searches all collections)
 </td></tr>
 <tr><td>
 
+[addJournal(collectionId, entry)](./JournalLibrary.addJournal.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Adds a journal entry to a collection.
+
+</td></tr>
+<tr><td>
+
 [loadFromFileTreeSource(source)](./SubLibraryBase.loadFromFileTreeSource.md)
 
 </td><td>

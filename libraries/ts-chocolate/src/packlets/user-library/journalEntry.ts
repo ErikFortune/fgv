@@ -27,7 +27,9 @@ import { Result, fail, succeed } from '@fgv/ts-utils';
 
 import {
   BaseJournalId,
+  ConfectionId,
   ConfectionRecipeVariationId,
+  FillingId,
   FillingRecipeVariationId,
   Helpers,
   JournalId
@@ -41,10 +43,14 @@ import {
   Journal as JournalEntities
 } from '../entities';
 import {
+  BarTruffleRecipeVariation,
+  FillingRecipeVariation,
   IConfectionBase,
   IConfectionRecipeVariationBase,
   IFillingRecipe,
-  IFillingRecipeVariation
+  IFillingRecipeVariation,
+  MoldedBonBonRecipeVariation,
+  RolledTruffleRecipeVariation
 } from '../library-runtime';
 import { ISessionContext } from './model';
 import { JournalEntryBase } from './journalEntryBase';
@@ -55,6 +61,60 @@ import {
   IFillingEditJournalEntry,
   IFillingProductionJournalEntry
 } from './model';
+
+// ============================================================================
+// Updated Variation Materialization Helpers
+// ============================================================================
+
+/**
+ * Materializes an updated filling variation from an embedded entity snapshot.
+ * Returns undefined if no updated variation is present.
+ * @internal
+ */
+function materializeUpdatedFillingVariation(
+  context: ISessionContext,
+  fillingId: FillingId,
+  updated: IFillingEditJournalEntryEntity['updated'],
+  journalId: JournalId
+): Result<IFillingRecipeVariation | undefined> {
+  if (!updated) {
+    return succeed(undefined);
+  }
+  return FillingRecipeVariation.create(context, fillingId, updated).withErrorFormat(
+    (msg) => `journal ${journalId}: failed to materialize updated variation: ${msg}`
+  );
+}
+
+/**
+ * Materializes an updated confection variation from an embedded entity snapshot.
+ * Dispatches to the appropriate variation class based on `variationType` discriminator.
+ * Returns undefined if no updated variation is present.
+ * @internal
+ */
+function materializeUpdatedConfectionVariation(
+  context: ISessionContext,
+  confectionId: ConfectionId,
+  updated: IConfectionEditJournalEntryEntity['updated'],
+  journalId: JournalId
+): Result<IConfectionRecipeVariationBase | undefined> {
+  if (!updated) {
+    return succeed(undefined);
+  }
+  switch (updated.variationType) {
+    case 'molded-bonbon':
+      return MoldedBonBonRecipeVariation.create(context, confectionId, updated).withErrorFormat(
+        (msg) => `journal ${journalId}: failed to materialize updated variation: ${msg}`
+      );
+    case 'bar-truffle':
+      return BarTruffleRecipeVariation.create(context, confectionId, updated).withErrorFormat(
+        (msg) => `journal ${journalId}: failed to materialize updated variation: ${msg}`
+      );
+    case 'rolled-truffle':
+      return RolledTruffleRecipeVariation.create(context, confectionId, updated).withErrorFormat(
+        (msg) => `journal ${journalId}: failed to materialize updated variation: ${msg}`
+      );
+  }
+}
 
 // ============================================================================
 // Filling Edit Journal Entry
@@ -113,13 +173,11 @@ export class FillingEditJournalEntry
         return recipe
           .getVariation(variationSpec)
           .withErrorFormat((msg) => `journal ${id}: ${msg}`)
-          .onSuccess((variation) => {
-            // TODO: Materialize updated variation if present
-            const updated = undefined;
-            return succeed(
-              new FillingEditJournalEntry(context, id, baseId, entity, recipe, variation, updated)
-            );
-          });
+          .onSuccess((variation) =>
+            materializeUpdatedFillingVariation(context, fillingId, entity.updated, id).onSuccess((updated) =>
+              succeed(new FillingEditJournalEntry(context, id, baseId, entity, recipe, variation, updated))
+            )
+          );
       });
   }
 }
@@ -182,13 +240,26 @@ export class ConfectionEditJournalEntry
             return confection
               .getVariation(parsed.itemId)
               .withErrorFormat((msg) => `journal ${id}: ${msg}`)
-              .onSuccess((variation) => {
-                // TODO: Materialize updated variation if present
-                const updated = undefined;
-                return succeed(
-                  new ConfectionEditJournalEntry(context, id, baseId, entity, confection, variation, updated)
-                );
-              });
+              .onSuccess((variation) =>
+                materializeUpdatedConfectionVariation(
+                  context,
+                  parsed.collectionId,
+                  entity.updated,
+                  id
+                ).onSuccess((updated) =>
+                  succeed(
+                    new ConfectionEditJournalEntry(
+                      context,
+                      id,
+                      baseId,
+                      entity,
+                      confection,
+                      variation,
+                      updated
+                    )
+                  )
+                )
+              );
           });
       });
   }
@@ -251,13 +322,13 @@ export class FillingProductionJournalEntry
         return recipe
           .getVariation(variationSpec)
           .withErrorFormat((msg) => `journal ${id}: ${msg}`)
-          .onSuccess((variation) => {
-            // TODO: Materialize updated variation if present
-            const updated = undefined;
-            return succeed(
-              new FillingProductionJournalEntry(context, id, baseId, entity, recipe, variation, updated)
-            );
-          });
+          .onSuccess((variation) =>
+            materializeUpdatedFillingVariation(context, fillingId, entity.updated, id).onSuccess((updated) =>
+              succeed(
+                new FillingProductionJournalEntry(context, id, baseId, entity, recipe, variation, updated)
+              )
+            )
+          );
       });
   }
 }
@@ -320,21 +391,26 @@ export class ConfectionProductionJournalEntry
             return confection
               .getVariation(parsed.itemId)
               .withErrorFormat((msg) => `journal ${id}: ${msg}`)
-              .onSuccess((variation) => {
-                // TODO: Materialize updated variation if present
-                const updated = undefined;
-                return succeed(
-                  new ConfectionProductionJournalEntry(
-                    context,
-                    id,
-                    baseId,
-                    entity,
-                    confection,
-                    variation,
-                    updated
+              .onSuccess((variation) =>
+                materializeUpdatedConfectionVariation(
+                  context,
+                  parsed.collectionId,
+                  entity.updated,
+                  id
+                ).onSuccess((updated) =>
+                  succeed(
+                    new ConfectionProductionJournalEntry(
+                      context,
+                      id,
+                      baseId,
+                      entity,
+                      confection,
+                      variation,
+                      updated
+                    )
                   )
-                );
-              });
+                )
+              );
           });
       });
   }

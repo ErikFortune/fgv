@@ -189,15 +189,6 @@ Converter for Entities.Journal.IConfectionProductionJournalEntryEntity | IConfec
 </td></tr>
 <tr><td>
 
-[groupNotesJournalEntryEntity](./variables/groupNotesJournalEntryEntity.md)
-
-</td><td>
-
-Converter for Entities.Journal.IGroupNotesJournalEntryEntity | IGroupNotesJournalEntryEntity.
-
-</td></tr>
-<tr><td>
-
 [anyJournalEntryEntity](./variables/anyJournalEntryEntity.md)
 
 </td><td>

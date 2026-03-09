@@ -7,5 +7,5 @@ Type guard for Entities.Journal.IConfectionProductionJournalEntryEntity | IConfe
 ## Signature
 
 ```typescript
-function isConfectionProductionJournalEntryEntity(entry: AnyJournalEntryEntity): entry is IConfectionProductionJournalEntryEntity
+function isConfectionProductionJournalEntryEntity(entry: AnyRecipeJournalEntryEntity): entry is IConfectionProductionJournalEntryEntity
 ```

@@ -85,6 +85,8 @@ export interface ISessionStatusBarProps {
   readonly onSaveModeChange: (mode: SaveMode) => void;
   /** Optional callback to close this panel */
   readonly onClose?: () => void;
+  /** Optional callback to commit the session to the journal */
+  readonly onCommit?: () => void;
 }
 
 // ============================================================================
@@ -110,7 +112,8 @@ export function SessionStatusBar({
   hasChanges,
   saveMode,
   onSaveModeChange,
-  onClose
+  onClose,
+  onCommit
 }: ISessionStatusBarProps): React.ReactElement {
   const statusColor = STATUS_COLORS[session.status] ?? 'bg-gray-100 text-gray-800';
   const hasMetadata = !!(session.group || session.updatedAt);
@@ -199,6 +202,20 @@ export function SessionStatusBar({
               className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-gray-800 hover:bg-gray-100"
             >
               <XMarkIcon className="h-3.5 w-3.5" />
+            </button>
+            <div className="w-px h-4 bg-gray-300 mx-1" />
+          </>
+        )}
+
+        {/* Commit button — only for uncommitted sessions */}
+        {onCommit && session.status !== 'committed' && session.status !== 'abandoned' && (
+          <>
+            <button
+              type="button"
+              onClick={onCommit}
+              className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded transition-colors bg-choco-primary text-white hover:bg-choco-primary/90"
+            >
+              Commit
             </button>
             <div className="w-px h-4 bg-gray-300 mx-1" />
           </>

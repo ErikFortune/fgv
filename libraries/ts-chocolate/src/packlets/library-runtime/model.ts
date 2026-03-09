@@ -1600,7 +1600,7 @@ export type AnyConfectionRecipeVariation =
  * Provides materialized libraries for resolution.
  * @internal
  */
-export interface IConfectionContext extends IVariationContext<IIngredient> {
+export interface IConfectionContext extends IVariationContext<AnyIngredient> {
   /**
    * Materialized library of runtime molds.
    * Used for resolving mold references.

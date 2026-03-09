@@ -4,6 +4,7 @@ import {
   AiAssist,
   Entities,
   Helpers,
+  UserLibrary,
   type BaseIngredientId,
   type BaseProcedureId,
   type FillingId,
@@ -30,6 +31,7 @@ import {
   SessionDetailView,
   useSessionActions,
   CreateSessionPanel,
+  CommitSessionDialog,
   EntityCreateForm,
   type ISessionRecipeSelection,
   type IRecipeSwapRequest
@@ -61,6 +63,44 @@ export function SessionsTabContent(): React.ReactElement {
 
   const sessionActions = useSessionActions();
   const { addMessage } = useMessages();
+
+  // ============================================================================
+  // Commit Dialog State
+  // ============================================================================
+
+  const [commitSessionId, setCommitSessionId] = useState<SessionId | undefined>(undefined);
+
+  const commitSession = useMemo(() => {
+    if (!commitSessionId) return undefined;
+    const result = workspace.userData.sessions.get(commitSessionId);
+    if (result.isFailure() || result.value.sessionType !== 'filling') return undefined;
+    return result.value as UserLibrary.Session.EditingSession;
+  }, [commitSessionId, workspace, reactiveWorkspace.version]);
+
+  const handleCommitRequest = useCallback((sessionId: SessionId): void => {
+    setCommitSessionId(sessionId);
+  }, []);
+
+  const handleCommitConfirm = useCallback(async (): Promise<void> => {
+    if (!commitSessionId || !sessionActions.defaultJournalCollectionId) {
+      addMessage('error', 'Cannot commit: no journal collection available');
+      return;
+    }
+    const result = await sessionActions.commitFillingSession(
+      commitSessionId,
+      sessionActions.defaultJournalCollectionId
+    );
+    if (result.isSuccess()) {
+      addMessage('success', `Session committed to journal: ${result.value.journalId}`);
+      setCommitSessionId(undefined);
+    } else {
+      addMessage('error', `Commit failed: ${result.message}`);
+    }
+  }, [commitSessionId, sessionActions, addMessage]);
+
+  const handleCommitCancel = useCallback((): void => {
+    setCommitSessionId(undefined);
+  }, []);
 
   const mutableCollectionId = useMutableCollection(
     workspace.userData.entities.sessions.collections,
@@ -565,6 +605,7 @@ export function SessionsTabContent(): React.ReactElement {
               onSelectFillingSlot={(slotId: SlotId, label: string): void =>
                 handleSelectFillingSlot(entry, slotId, label)
               }
+              onCommit={(): void => handleCommitRequest(entry.entityId as SessionId)}
             />
           )
         };
@@ -661,41 +702,53 @@ export function SessionsTabContent(): React.ReactElement {
   // ============================================================================
 
   return (
-    <EntityTabLayout
-      list={
-        <div className="flex flex-col h-full">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
-            <button
-              onClick={handleNewSession}
-              data-testid="sessions-new-session-button"
-              disabled={mutableCollectionId === undefined}
-              title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
-              className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              + New Session
-            </button>
+    <>
+      <EntityTabLayout
+        list={
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
+              <button
+                onClick={handleNewSession}
+                data-testid="sessions-new-session-button"
+                disabled={mutableCollectionId === undefined}
+                title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
+                className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                + New Session
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <EntityList<ISessionListEntry, SessionId>
+                entities={useFilteredEntities(sessionEntries, SESSION_FILTER_SPEC)}
+                descriptor={SESSION_DESCRIPTOR}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onDelete={handleDelete}
+                canDelete={canDelete}
+                onDrill={collapseList}
+                emptyState={{
+                  title: 'No Sessions',
+                  description: 'No production sessions found. Create one from a Library recipe.'
+                }}
+              />
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <EntityList<ISessionListEntry, SessionId>
-              entities={useFilteredEntities(sessionEntries, SESSION_FILTER_SPEC)}
-              descriptor={SESSION_DESCRIPTOR}
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              onDelete={handleDelete}
-              canDelete={canDelete}
-              onDrill={collapseList}
-              emptyState={{
-                title: 'No Sessions',
-                description: 'No production sessions found. Create one from a Library recipe.'
-              }}
-            />
-          </div>
-        </div>
-      }
-      cascadeColumns={cascadeColumns}
-      onPopTo={popCascadeTo}
-      listCollapsed={listCollapsed}
-      onListCollapse={collapseList}
-    />
+        }
+        cascadeColumns={cascadeColumns}
+        onPopTo={popCascadeTo}
+        listCollapsed={listCollapsed}
+        onListCollapse={collapseList}
+      />
+
+      {/* Commit dialog */}
+      {commitSession && (
+        <CommitSessionDialog
+          isOpen={commitSessionId !== undefined}
+          session={commitSession}
+          onCommit={handleCommitConfirm}
+          onCancel={handleCommitCancel}
+        />
+      )}
+    </>
   );
 }

@@ -460,15 +460,6 @@ Journal entry for filling recipe edits.
 </td></tr>
 <tr><td>
 
-[IGroupNotesJournalEntryEntity](./interfaces/IGroupNotesJournalEntryEntity.md)
-
-</td><td>
-
-Journal entry for session group metadata and notes.
-
-</td></tr>
-<tr><td>
-
 [IConfectionSessionEntity](./interfaces/IConfectionSessionEntity.md)
 
 </td><td>
