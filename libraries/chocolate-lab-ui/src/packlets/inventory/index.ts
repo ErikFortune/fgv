@@ -32,3 +32,20 @@ export {
 } from './MoldInventoryEntryEditView';
 export { CreateMoldInventoryPanel, type ICreateMoldInventoryPanelProps } from './CreateMoldInventoryPanel';
 export { useMoldInventoryActions, type IMoldInventoryActions } from './useMoldInventoryActions';
+
+export {
+  IngredientInventoryEntryDetail,
+  type IIngredientInventoryEntryDetailProps
+} from './IngredientInventoryEntryDetail';
+export {
+  IngredientInventoryEntryEditView,
+  type IIngredientInventoryEntryEditViewProps
+} from './IngredientInventoryEntryEditView';
+export {
+  CreateIngredientInventoryPanel,
+  type ICreateIngredientInventoryPanelProps
+} from './CreateIngredientInventoryPanel';
+export {
+  useIngredientInventoryActions,
+  type IIngredientInventoryActions
+} from './useIngredientInventoryActions';

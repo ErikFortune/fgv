@@ -152,6 +152,32 @@ export const MOLD_INVENTORY_GROUPED_DESCRIPTOR: IEntityGroupDescriptor<
 };
 
 /**
+ * Wrapper for ingredient inventory list entries, pairing the composite ID with the materialized entry.
+ */
+export interface IIngredientInventoryListEntry {
+  readonly id: Entities.Inventory.IngredientInventoryEntryId;
+  readonly entry: UserLibrary.IIngredientInventoryEntry;
+}
+
+export const INGREDIENT_INVENTORY_GROUPED_DESCRIPTOR: IEntityGroupDescriptor<
+  IIngredientInventoryListEntry,
+  Entities.Inventory.IngredientInventoryEntryId
+> = {
+  getId: (e: IIngredientInventoryListEntry): Entities.Inventory.IngredientInventoryEntryId => e.id,
+  getLabel: (e: IIngredientInventoryListEntry): string => e.entry.item.name,
+  getSublabel: (e: IIngredientInventoryListEntry): string | undefined =>
+    `${e.entry.quantity} ${e.entry.entity.unit ?? 'g'}`,
+  getStatus: undefined,
+  getGroupKey: (e: IIngredientInventoryListEntry): string => e.entry.location?.id ?? NO_LOCATION_KEY,
+  getGroupLabel: (e: IIngredientInventoryListEntry): string => e.entry.location?.name ?? 'No Location',
+  compareGroups: (a: string, b: string): number => {
+    if (a === NO_LOCATION_KEY) return 1;
+    if (b === NO_LOCATION_KEY) return -1;
+    return a.localeCompare(b);
+  }
+};
+
+/**
  * Wrapper for location list entries, pairing the composite ID with the entity.
  */
 export interface ILocationListEntry {
@@ -277,6 +303,20 @@ export const MOLD_INVENTORY_FILTER_SPEC: IEntityFilterSpec<IMoldInventoryListEnt
   getCollectionId: (e) => collectionFromId(e.id),
   selectionExtractors: {
     shape: (e) => e.entry.item.format,
+    available: (e) => (e.entry.quantity > 0 ? 'available' : 'out-of-stock')
+  }
+};
+
+export const INGREDIENT_INVENTORY_FILTER_SPEC: IEntityFilterSpec<IIngredientInventoryListEntry> = {
+  getSearchText: (e) => {
+    const locationText = e.entry.location?.name;
+    return [e.entry.item.name, e.entry.item.manufacturer, e.entry.item.category, locationText]
+      .filter(Boolean)
+      .join(' ');
+  },
+  getCollectionId: (e) => collectionFromId(e.id),
+  selectionExtractors: {
+    category: (e) => e.entry.item.category,
     available: (e) => (e.entry.quantity > 0 ? 'available' : 'out-of-stock')
   }
 };

@@ -64,6 +64,7 @@ import { ConfectionsTabContent } from './tabs/ConfectionsTab';
 import { DecorationsTabContent } from './tabs/DecorationsTab';
 import { SessionsTabContent } from './tabs/SessionsTab';
 import { MoldInventoryTabContent } from './tabs/MoldInventoryTab';
+import { IngredientInventoryTabContent } from './tabs/IngredientInventoryTab';
 import { LocationsTabContent } from './tabs/LocationsTab';
 
 // ============================================================================
@@ -434,6 +435,8 @@ function TabContent({ tab }: { readonly tab: AppTab }): React.ReactElement {
       return <SessionsTabContent />;
     case 'mold-inventory':
       return <MoldInventoryTabContent />;
+    case 'ingredient-inventory':
+      return <IngredientInventoryTabContent />;
     case 'locations':
       return <LocationsTabContent />;
     default:
