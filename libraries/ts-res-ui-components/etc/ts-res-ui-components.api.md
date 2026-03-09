@@ -39,12 +39,12 @@ export const AppHeader: React_2.FC<IAppHeaderProps>;
 // Warning: (ae-forgotten-export) The symbol "IAppLayoutProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-export const AppLayout: <TTool = unknown>({ children, selectedTool, onToolSelect, messages, onClearMessages, header: headerComponent, sidebar: sidebarComponent }: IAppLayoutProps<TTool>) => React_2.ReactElement;
+export const AppLayout: <TTool = unknown>(input: IAppLayoutProps<TTool>) => React_2.ReactElement;
 
 // Warning: (ae-forgotten-export) The symbol "IAppSidebarProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-export const AppSidebar: <TTool = unknown>({ selectedTool, onToolSelect, tools, title }: IAppSidebarProps<TTool>) => React_2.ReactElement;
+export const AppSidebar: <TTool = unknown>(input: IAppSidebarProps<TTool>) => React_2.ReactElement;
 
 // Warning: (ae-forgotten-export) The symbol "IBooleanCellProps" needs to be exported by the entry point index.d.ts
 //
@@ -1334,7 +1334,7 @@ export const ResourceListView: React_2.FC<IResourceListViewProps>;
 export const ResourceOrchestrator: React_2.FC<IResourceOrchestratorProps>;
 
 // @public
-const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className }: IResourcePickerProps<T>) => ReactElement;
+const ResourcePicker: <T = unknown>(input: IResourcePickerProps<T>) => ReactElement;
 
 // @public
 const ResourcePickerOptionsControl: React_2.FC<IResourcePickerOptionsControlProps>;

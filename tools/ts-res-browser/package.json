@@ -41,7 +41,7 @@
     "react": "~19.2.0",
     "react-dom": "~19.2.0",
     "@heroicons/react": "~2.2.0",
-    "core-js": "~3.46.0",
+    "core-js": "~3.48.0",
     "whatwg-fetch": "~3.6.20",
     "@fgv/ts-extras": "workspace:*",
     "browserify-zlib": "~0.2.0",

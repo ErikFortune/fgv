@@ -1332,7 +1332,7 @@ interface KeyedConverterOptions<T extends string = string, TC = unknown> {
 class KeyValueConverters<TK extends string = string, TV = unknown> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor({ key, value }: IKeyValueConverterConstructorParams<TK, TV>);
+    constructor(input: IKeyValueConverterConstructorParams<TK, TV>);
     convertEntries(entries: Iterable<unknown>): Result<KeyValueEntry<TK, TV>[]>;
     // Warning: (ae-incompatible-release-tags) The symbol "convertEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "convertEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
