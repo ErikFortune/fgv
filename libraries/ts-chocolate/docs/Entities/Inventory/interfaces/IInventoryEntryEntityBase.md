@@ -43,7 +43,7 @@ Inventory type discriminator
 </td></tr>
 <tr><td>
 
-[location](./IInventoryEntryEntityBase.location.md)
+[locationId](./IInventoryEntryEntityBase.locationId.md)
 
 </td><td>
 
@@ -51,11 +51,11 @@ Inventory type discriminator
 
 </td><td>
 
-string
+[LocationId](../../../type-aliases/LocationId.md)
 
 </td><td>
 
-Optional storage location (e.g., 'pantry shelf 2', 'fridge', 'workshop cabinet')
+Optional location reference (collection.baseId)
 
 </td></tr>
 <tr><td>

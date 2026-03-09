@@ -85,11 +85,11 @@ Quantity on hand
 
 </td><td>
 
-string
+[ILocation](../../interfaces/ILocation.md)
 
 </td><td>
 
-Optional storage location
+Optional resolved storage location
 
 </td></tr>
 <tr><td>

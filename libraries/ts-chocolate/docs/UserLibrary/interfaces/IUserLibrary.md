@@ -114,6 +114,23 @@ A materialized library of mold inventory entries, keyed by composite ID.
 A materialized library of ingredient inventory entries, keyed by composite ID.
 
 </td></tr>
+<tr><td>
+
+[locations](./IUserLibrary.locations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[LocationId](../../type-aliases/LocationId.md), [ILocationEntity](../../interfaces/ILocationEntity.md), [ILocation](../../interfaces/ILocation.md), never&gt;
+
+</td><td>
+
+A materialized library of all locations, keyed by composite ID.
+
+</td></tr>
 </tbody></table>
 
 ## Methods

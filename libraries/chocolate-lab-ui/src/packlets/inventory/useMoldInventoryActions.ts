@@ -33,7 +33,7 @@ import { useCallback } from 'react';
 
 import { fail, succeed, type Result } from '@fgv/ts-utils';
 
-import { type CollectionId, type MoldId, Entities } from '@fgv/ts-chocolate';
+import { type CollectionId, type LocationId, type MoldId, Entities } from '@fgv/ts-chocolate';
 type IMoldInventoryEntryEntity = Entities.Inventory.IMoldInventoryEntryEntity;
 
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -55,13 +55,13 @@ export interface IMoldInventoryActions {
    * Add a new mold inventory entry.
    * @param moldId - The composite MoldId of the mold being inventoried
    * @param count - Number of this mold owned
-   * @param location - Optional storage location
+   * @param locationId - Optional storage location ID
    * @returns Result with the composite MoldInventoryEntryId
    */
   readonly addEntry: (
     moldId: MoldId,
     count: number,
-    location?: string
+    locationId?: LocationId
   ) => Promise<Result<MoldInventoryEntryId>>;
 
   /**
@@ -167,7 +167,7 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
   );
 
   const addEntry = useCallback(
-    async (moldId: MoldId, count: number, location?: string): Promise<Result<MoldInventoryEntryId>> => {
+    async (moldId: MoldId, count: number, locationId?: LocationId): Promise<Result<MoldInventoryEntryId>> => {
       const collectionResult = ensureCollectionId();
       if (collectionResult.isFailure()) {
         return fail(collectionResult.message);
@@ -202,7 +202,7 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
         inventoryType: 'mold',
         moldId,
         count,
-        ...(location ? { location } : {})
+        ...(locationId ? { locationId } : {})
       };
 
       const result = await persisted.addItem(baseId, entity);

@@ -25,6 +25,7 @@ import {
   BaseMoldId,
   CollectionId,
   IngredientId,
+  LocationId,
   Measurement,
   Millimeters,
   MoldId,
@@ -179,7 +180,7 @@ describe('InventoryEntry', () => {
           inventoryType: 'mold',
           moldId: 'test.hemisphere-25' as MoldId,
           count: 5,
-          location: 'workshop shelf 2'
+          locationId: 'test.workshop-shelf-2' as LocationId
         };
 
         const entry = MoldInventoryEntry.create(
@@ -190,7 +191,8 @@ describe('InventoryEntry', () => {
 
         expect(entry.id).toBe('test.mold-003');
         expect(entry.quantity).toBe(5);
-        expect(entry.location).toBe('workshop shelf 2');
+        expect(entry.entity.locationId).toBe('test.workshop-shelf-2');
+        expect(entry.location).toBeUndefined();
         expect(entry.notes).toBeUndefined();
       });
 
@@ -285,7 +287,7 @@ describe('InventoryEntry', () => {
           inventoryType: 'ingredient',
           ingredientId: 'test.dark-chocolate' as IngredientId,
           quantity: 1000 as Measurement,
-          location: 'pantry shelf 3'
+          locationId: 'test.workshop-shelf-2' as LocationId
         };
 
         const entry = IngredientInventoryEntry.create(
@@ -296,7 +298,8 @@ describe('InventoryEntry', () => {
 
         expect(entry.id).toBe('test.ingredient-003');
         expect(entry.quantity).toBe(1000);
-        expect(entry.location).toBe('pantry shelf 3');
+        expect(entry.entity.locationId).toBe('test.workshop-shelf-2');
+        expect(entry.location).toBeUndefined();
         expect(entry.notes).toBeUndefined();
       });
 

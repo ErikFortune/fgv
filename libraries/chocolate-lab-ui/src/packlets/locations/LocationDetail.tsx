@@ -48,8 +48,6 @@ export interface ILocationDetailProps {
   readonly entity: ILocationEntity;
   /** Optional callback to switch to edit mode */
   readonly onEdit?: () => void;
-  /** Optional callback to delete this location */
-  readonly onDelete?: () => void;
   /** Optional callback to close this panel */
   readonly onClose?: () => void;
 }
@@ -69,7 +67,7 @@ export interface ILocationDetailProps {
  * @public
  */
 export function LocationDetail(props: ILocationDetailProps): React.ReactElement {
-  const { locationId, entity, onEdit, onDelete, onClose } = props;
+  const { locationId, entity, onEdit, onClose } = props;
 
   return (
     <div className="p-4 overflow-y-auto h-full">
@@ -96,18 +94,6 @@ export function LocationDetail(props: ILocationDetailProps): React.ReactElement 
 
       {/* URLs */}
       <UrlsSection urls={(entity.urls as ReadonlyArray<CommonModel.ICategorizedUrl>) ?? []} />
-
-      {/* Delete */}
-      {onDelete && (
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <button
-            onClick={onDelete}
-            className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-          >
-            Delete Location
-          </button>
-        </div>
-      )}
     </div>
   );
 }

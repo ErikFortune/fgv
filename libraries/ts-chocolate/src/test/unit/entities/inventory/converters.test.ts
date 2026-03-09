@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { IngredientId, MoldId, Measurement, NoteCategory } from '../../../../packlets/common';
+import { IngredientId, LocationId, MoldId, Measurement, NoteCategory } from '../../../../packlets/common';
 import { Inventory } from '../../../../packlets/entities';
 
 describe('Inventory Converters', () => {
@@ -199,7 +199,7 @@ describe('Inventory Converters', () => {
         expect(entity.inventoryType).toBe('mold');
         expect(entity.moldId).toBe('test.mold-123' as MoldId);
         expect(entity.count).toBe(5);
-        expect(entity.location).toBeUndefined();
+        expect(entity.locationId).toBeUndefined();
         expect(entity.notes).toBeUndefined();
       });
     });
@@ -209,7 +209,7 @@ describe('Inventory Converters', () => {
         inventoryType: 'mold',
         moldId: 'test.mold-456',
         count: 3,
-        location: 'shelf-2',
+        locationId: 'test.shelf-2',
         notes: [
           { category: 'general', note: 'Good condition' },
           { category: 'user', note: 'Purchased 2025' }
@@ -220,7 +220,7 @@ describe('Inventory Converters', () => {
         expect(entity.inventoryType).toBe('mold');
         expect(entity.moldId).toBe('test.mold-456' as MoldId);
         expect(entity.count).toBe(3);
-        expect(entity.location).toBe('shelf-2');
+        expect(entity.locationId).toBe('test.shelf-2' as LocationId);
         expect(entity.notes).toHaveLength(2);
         expect(entity.notes?.[0]?.category).toBe('general' as NoteCategory);
       });
@@ -283,7 +283,7 @@ describe('Inventory Converters', () => {
           expect(entity.ingredientId).toBe('test.chocolate' as IngredientId);
           expect(entity.quantity).toBe(500 as Measurement);
           expect(entity.unit).toBeUndefined();
-          expect(entity.location).toBeUndefined();
+          expect(entity.locationId).toBeUndefined();
           expect(entity.notes).toBeUndefined();
         }
       );
@@ -295,7 +295,7 @@ describe('Inventory Converters', () => {
         ingredientId: 'test.sugar',
         quantity: 1000,
         unit: 'g',
-        location: 'pantry',
+        locationId: 'test.pantry',
         notes: [
           { category: 'general', note: 'Fresh stock' },
           { category: 'user', note: 'Expires 2026' }
@@ -308,7 +308,7 @@ describe('Inventory Converters', () => {
           expect(entity.ingredientId).toBe('test.sugar' as IngredientId);
           expect(entity.quantity).toBe(1000 as Measurement);
           expect(entity.unit).toBe('g');
-          expect(entity.location).toBe('pantry');
+          expect(entity.locationId).toBe('test.pantry' as LocationId);
           expect(entity.notes).toHaveLength(2);
           expect(entity.notes?.[0]?.category).toBe('general' as NoteCategory);
         }

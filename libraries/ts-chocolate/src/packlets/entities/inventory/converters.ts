@@ -195,7 +195,7 @@ export const moldInventoryEntryEntity: Converter<IMoldInventoryEntryEntity> =
     inventoryType: Converters.literal('mold'),
     moldId: CommonConverters.moldId,
     count: Converters.number,
-    location: Converters.string.optional(),
+    locationId: CommonConverters.locationId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
 
@@ -213,7 +213,7 @@ export const ingredientInventoryEntryEntity: Converter<IIngredientInventoryEntry
     ingredientId: CommonConverters.ingredientId,
     quantity: CommonConverters.measurement,
     unit: CommonConverters.measurementUnit.optional(),
-    location: Converters.string.optional(),
+    locationId: CommonConverters.locationId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
 

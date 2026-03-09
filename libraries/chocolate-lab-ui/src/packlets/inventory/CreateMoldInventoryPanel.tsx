@@ -30,10 +30,10 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { TypeaheadInput, type ITypeaheadSuggestion } from '@fgv/ts-app-shell';
-import type { MoldId } from '@fgv/ts-chocolate';
+import type { LocationId, MoldId } from '@fgv/ts-chocolate';
 
 // ============================================================================
 // Props
@@ -46,16 +46,27 @@ import type { MoldId } from '@fgv/ts-chocolate';
 export interface ICreateMoldInventoryPanelProps {
   /** All available molds as typeahead suggestions */
   readonly moldSuggestions: ReadonlyArray<ITypeaheadSuggestion<MoldId>>;
+  /** All available locations as typeahead suggestions */
+  readonly locationSuggestions: ReadonlyArray<ITypeaheadSuggestion<LocationId>>;
   /** Called when the user confirms creation with a selected mold */
-  readonly onConfirm: (moldId: MoldId, count: number, location?: string) => void;
+  readonly onConfirm: (moldId: MoldId, count: number, locationId?: LocationId) => void;
   /** Called when typeahead blur cannot resolve to a single mold */
   readonly onUnresolvedMold: (text: string) => void;
+  /** Called when typeahead blur cannot resolve to a single location */
+  readonly onUnresolvedLocation: (
+    text: string,
+    currentSelection: { moldId?: MoldId; moldName?: string }
+  ) => void;
   /** Called when the user cancels creation */
   readonly onCancel: () => void;
   /** Optional pre-selected mold ID (e.g. after creating a mold via on-blur cascade) */
   readonly initialMoldId?: MoldId;
   /** Optional pre-selected mold display name */
   readonly initialMoldName?: string;
+  /** Optional pre-selected location ID */
+  readonly initialLocationId?: LocationId;
+  /** Optional pre-selected location display name */
+  readonly initialLocationName?: string;
 }
 
 // ============================================================================
@@ -74,13 +85,46 @@ export interface ICreateMoldInventoryPanelProps {
  * @public
  */
 export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps): React.ReactElement {
-  const { moldSuggestions, onConfirm, onUnresolvedMold, onCancel, initialMoldId, initialMoldName } = props;
+  const {
+    moldSuggestions,
+    locationSuggestions,
+    onConfirm,
+    onUnresolvedMold,
+    onUnresolvedLocation,
+    onCancel,
+    initialMoldId,
+    initialMoldName,
+    initialLocationId,
+    initialLocationName
+  } = props;
 
   const [moldInput, setMoldInput] = useState(initialMoldName ?? '');
   const [selectedMoldId, setSelectedMoldId] = useState<MoldId | undefined>(initialMoldId);
   const [selectedMoldName, setSelectedMoldName] = useState<string | undefined>(initialMoldName);
   const [count, setCount] = useState(1);
-  const [location, setLocation] = useState('');
+  const [locationInput, setLocationInput] = useState(initialLocationName ?? '');
+  const [selectedLocationId, setSelectedLocationId] = useState<LocationId | undefined>(initialLocationId);
+  const [selectedLocationName, setSelectedLocationName] = useState<string | undefined>(initialLocationName);
+
+  useEffect(() => {
+    if (initialMoldId !== undefined) {
+      setSelectedMoldId(initialMoldId);
+    }
+    if (initialMoldName !== undefined) {
+      setSelectedMoldName(initialMoldName);
+      setMoldInput(initialMoldName);
+    }
+  }, [initialMoldId, initialMoldName]);
+
+  useEffect(() => {
+    if (initialLocationId !== undefined) {
+      setSelectedLocationId(initialLocationId);
+    }
+    if (initialLocationName !== undefined) {
+      setSelectedLocationName(initialLocationName);
+      setLocationInput(initialLocationName);
+    }
+  }, [initialLocationId, initialLocationName]);
 
   const handleMoldSelect = useCallback((suggestion: ITypeaheadSuggestion<MoldId>): void => {
     setSelectedMoldId(suggestion.id);
@@ -95,10 +139,26 @@ export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps):
     [onUnresolvedMold]
   );
 
+  const handleLocationSelect = useCallback((suggestion: ITypeaheadSuggestion<LocationId>): void => {
+    setSelectedLocationId(suggestion.id);
+    setSelectedLocationName(suggestion.name);
+    setLocationInput(suggestion.name);
+  }, []);
+
+  const handleLocationUnresolved = useCallback(
+    (text: string): void => {
+      onUnresolvedLocation(text, {
+        moldId: selectedMoldId,
+        moldName: selectedMoldName
+      });
+    },
+    [onUnresolvedLocation, selectedMoldId, selectedMoldName]
+  );
+
   const handleConfirm = useCallback((): void => {
     if (!selectedMoldId) return;
-    onConfirm(selectedMoldId, Math.max(1, count), location.trim() || undefined);
-  }, [selectedMoldId, count, location, onConfirm]);
+    onConfirm(selectedMoldId, Math.max(1, count), selectedLocationId);
+  }, [selectedMoldId, count, selectedLocationId, onConfirm]);
 
   return (
     <div className="p-4 space-y-4">
@@ -146,13 +206,26 @@ export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps):
       {/* Location */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Location (optional)</label>
-        <input
-          type="text"
-          value={location}
-          onChange={(e): void => setLocation(e.target.value)}
-          placeholder="e.g. Workshop shelf 3"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary"
+        <TypeaheadInput<LocationId>
+          value={locationInput}
+          onChange={(value): void => {
+            setLocationInput(value);
+            if (selectedLocationName && value !== selectedLocationName) {
+              setSelectedLocationId(undefined);
+              setSelectedLocationName(undefined);
+            }
+          }}
+          suggestions={locationSuggestions}
+          onSelect={handleLocationSelect}
+          onUnresolved={handleLocationUnresolved}
+          placeholder="Type a location name..."
         />
+        {selectedLocationId && (
+          <p className="text-xs text-green-600 mt-1">
+            Selected: {selectedLocationName}
+            <span className="ml-1 text-gray-400 font-mono">{selectedLocationId}</span>
+          </p>
+        )}
       </div>
 
       {/* Actions */}

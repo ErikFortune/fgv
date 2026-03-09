@@ -28,7 +28,14 @@ import {
   IIngredientInventoryEntryEntity,
   AnyInventoryEntryEntity
 } from '../../../../packlets/entities/inventory/model';
-import { MoldId, IngredientId, Measurement, NoteCategory, Model } from '../../../../packlets/common';
+import {
+  MoldId,
+  IngredientId,
+  LocationId,
+  Measurement,
+  NoteCategory,
+  Model
+} from '../../../../packlets/common';
 
 type ICategorizedNote = Model.ICategorizedNote;
 
@@ -69,7 +76,7 @@ describe('Inventory Model', () => {
           inventoryType: 'mold',
           moldId: 'user.custom-mold' as unknown as MoldId,
           count: 5,
-          location: 'Workshop cabinet 3',
+          locationId: 'user.workshop-cabinet-3' as LocationId,
           notes: [
             { category: 'general' as unknown as NoteCategory, note: 'New purchase' }
           ] as ReadonlyArray<ICategorizedNote>
@@ -117,7 +124,7 @@ describe('Inventory Model', () => {
           ingredientId: 'builtin.dark-chocolate' as unknown as IngredientId,
           quantity: 1000 as Measurement,
           unit: 'g',
-          location: 'Pantry shelf 2',
+          locationId: 'user.pantry-shelf-2' as LocationId,
           notes: [
             { category: 'general' as unknown as NoteCategory, note: 'Opened last week' }
           ] as ReadonlyArray<ICategorizedNote>

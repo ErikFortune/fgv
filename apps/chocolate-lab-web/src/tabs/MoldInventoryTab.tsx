@@ -10,8 +10,10 @@ import {
 import {
   AiAssist,
   Entities,
+  type BaseLocationId,
   type BaseMoldId,
   type CollectionId,
+  type LocationId,
   type MoldId,
   LibraryRuntime
 } from '@fgv/ts-chocolate';
@@ -26,7 +28,9 @@ import {
   MoldInventoryEntryDetail,
   MoldInventoryEntryEditView,
   CreateMoldInventoryPanel,
+  CreateLocationPanel,
   useMoldInventoryActions,
+  useLocationActions,
   EntityCreateForm
 } from '@fgv/chocolate-lab-ui';
 
@@ -35,6 +39,7 @@ import {
   MOLD_INVENTORY_FILTER_SPEC,
   type IMoldInventoryListEntry,
   slugify,
+  createBlankLocationEntity,
   createBlankMoldEntity
 } from '../shared';
 
@@ -43,6 +48,17 @@ import {
 // ============================================================================
 
 type MoldInventoryEntryId = Entities.Inventory.MoldInventoryEntryId;
+
+interface ICreateInventoryPrefillState {
+  readonly moldId?: MoldId;
+  readonly moldName?: string;
+  readonly locationId?: LocationId;
+  readonly locationName?: string;
+}
+
+type LocationCreateTarget =
+  | { readonly kind: 'create'; readonly moldId?: MoldId; readonly moldName?: string }
+  | { readonly kind: 'edit'; readonly entryId: MoldInventoryEntryId };
 
 export function MoldInventoryTabContent(): React.ReactElement {
   const {
@@ -56,7 +72,15 @@ export function MoldInventoryTabContent(): React.ReactElement {
   } = useTabNavigation();
 
   const inventoryActions = useMoldInventoryActions();
+  const locationActions = useLocationActions();
   const { addMessage } = useMessages();
+  const [createPrefill, setCreatePrefill] = useState<ICreateInventoryPrefillState>({});
+  const [locationCreateTarget, setLocationCreateTarget] = useState<LocationCreateTarget | undefined>(
+    undefined
+  );
+  const [editLocationPrefillById, setEditLocationPrefillById] = useState<
+    Readonly<Record<string, { readonly id: LocationId; readonly name: string }>>
+  >({});
 
   // ============================================================================
   // Entity List — wraps materialized inventory entries with composite IDs
@@ -93,6 +117,14 @@ export function MoldInventoryTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace.version]
   );
 
+  const locationSuggestions = useMemo<ReadonlyArray<ITypeaheadSuggestion<LocationId>>>(
+    () =>
+      Array.from(workspace.userData.entities.locations.entries())
+        .sort(([, a], [, b]) => a.name.localeCompare(b.name))
+        .map(([id, location]) => ({ id, name: location.name })),
+    [workspace, reactiveWorkspace.version]
+  );
+
   // ============================================================================
   // Selection Handler
   // ============================================================================
@@ -101,6 +133,30 @@ export function MoldInventoryTabContent(): React.ReactElement {
     (id: MoldInventoryEntryId): void => {
       const entry: ICascadeEntry = { entityType: 'mold-inventory-entry', entityId: id, mode: 'view' };
       squashCascade([entry]);
+    },
+    [squashCascade]
+  );
+
+  const handleUnresolvedLocation = useCallback(
+    (text: string, currentSelection: { moldId?: MoldId; moldName?: string }): void => {
+      setLocationCreateTarget({
+        kind: 'create',
+        moldId: currentSelection.moldId,
+        moldName: currentSelection.moldName
+      });
+      setCreatePrefill({
+        moldId: currentSelection.moldId,
+        moldName: currentSelection.moldName
+      });
+      squashCascade([
+        {
+          entityType: 'mold-inventory-entry',
+          entityId: '__new__',
+          mode: 'create',
+          prefillName: currentSelection.moldId
+        },
+        { entityType: 'location', entityId: '__new__', mode: 'create', prefillName: text }
+      ]);
     },
     [squashCascade]
   );
@@ -154,6 +210,7 @@ export function MoldInventoryTabContent(): React.ReactElement {
   // ============================================================================
 
   const handleNewEntry = useCallback((): void => {
+    setCreatePrefill({});
     const entry: ICascadeEntry = {
       entityType: 'mold-inventory-entry',
       entityId: '__new__',
@@ -163,11 +220,11 @@ export function MoldInventoryTabContent(): React.ReactElement {
   }, [squashCascade]);
 
   const handleCreateConfirm = useCallback(
-    async (moldId: MoldId, count: number, location?: string): Promise<void> => {
+    async (moldId: MoldId, count: number, locationId?: LocationId): Promise<void> => {
       // Duplicate guard: same mold + same location
-      const normalizedLocation = location?.trim() || undefined;
       for (const [id, existing] of workspace.userData.moldInventory.entries()) {
-        if (existing.item.id === moldId && (existing.location ?? undefined) === normalizedLocation) {
+        const existingLocationId = existing.location?.id;
+        if (existing.item.id === moldId && existingLocationId === locationId) {
           addMessage(
             'warning',
             'An inventory entry for this mold at this location already exists. Navigating to it.'
@@ -177,8 +234,9 @@ export function MoldInventoryTabContent(): React.ReactElement {
         }
       }
 
-      const result = await inventoryActions.addEntry(moldId, count, location);
+      const result = await inventoryActions.addEntry(moldId, count, locationId);
       if (result.isSuccess()) {
+        setCreatePrefill({});
         squashCascade([{ entityType: 'mold-inventory-entry', entityId: result.value, mode: 'view' }]);
       } else {
         addMessage('error', `Failed to add inventory entry: ${result.message}`);
@@ -188,6 +246,7 @@ export function MoldInventoryTabContent(): React.ReactElement {
   );
 
   const handleCancelCreate = useCallback((): void => {
+    setCreatePrefill({});
     squashCascade([]);
   }, [squashCascade]);
 
@@ -197,6 +256,7 @@ export function MoldInventoryTabContent(): React.ReactElement {
 
   const handleUnresolvedMold = useCallback(
     (text: string): void => {
+      setCreatePrefill({});
       squashCascade([
         { entityType: 'mold-inventory-entry', entityId: '__new__', mode: 'create', prefillName: text },
         { entityType: 'mold', entityId: '__new__', mode: 'create', prefillName: text }
@@ -228,6 +288,11 @@ export function MoldInventoryTabContent(): React.ReactElement {
 
       // Pop the mold create column, return to inventory create with the new mold pre-selected
       const newMoldId = `${mutableMoldCollectionId}.${baseId}` as MoldId;
+      setCreatePrefill((prev) => ({
+        ...prev,
+        moldId: newMoldId,
+        moldName: entity.name
+      }));
       squashCascade([
         {
           entityType: 'mold-inventory-entry',
@@ -244,6 +309,75 @@ export function MoldInventoryTabContent(): React.ReactElement {
     // Pop the mold create column, return to inventory create
     squashCascade([{ entityType: 'mold-inventory-entry', entityId: '__new__', mode: 'create' }]);
   }, [squashCascade]);
+
+  const handleCreateLocationConfirm = useCallback(
+    async (baseId: string, name: string, description?: string): Promise<void> => {
+      const target = locationCreateTarget;
+      if (!target) {
+        return;
+      }
+
+      const entity = createBlankLocationEntity(baseId as BaseLocationId, name);
+      const entityWithDescription: Entities.Locations.ILocationEntity = description
+        ? { ...entity, description }
+        : entity;
+
+      const createResult = await locationActions.addLocation(baseId as BaseLocationId, entityWithDescription);
+      if (createResult.isFailure()) {
+        addMessage('error', `Failed to create location: ${createResult.message}`);
+        return;
+      }
+
+      if (target.kind === 'create') {
+        setCreatePrefill({
+          moldId: target.moldId,
+          moldName: target.moldName,
+          locationId: createResult.value,
+          locationName: name
+        });
+        squashCascade([
+          {
+            entityType: 'mold-inventory-entry',
+            entityId: '__new__',
+            mode: 'create',
+            prefillName: target.moldId
+          }
+        ]);
+      } else {
+        setEditLocationPrefillById((prev) => ({
+          ...prev,
+          [target.entryId]: { id: createResult.value, name }
+        }));
+        squashCascade(cascadeStack.slice(0, -1));
+      }
+
+      setLocationCreateTarget(undefined);
+    },
+    [locationCreateTarget, locationActions, addMessage, squashCascade, cascadeStack]
+  );
+
+  const handleCancelLocationCreate = useCallback((): void => {
+    const target = locationCreateTarget;
+    if (!target) {
+      squashCascade(cascadeStack.slice(0, -1));
+      return;
+    }
+
+    if (target.kind === 'create') {
+      squashCascade([
+        {
+          entityType: 'mold-inventory-entry',
+          entityId: '__new__',
+          mode: 'create',
+          prefillName: target.moldId
+        }
+      ]);
+    } else {
+      squashCascade(cascadeStack.slice(0, -1));
+    }
+
+    setLocationCreateTarget(undefined);
+  }, [locationCreateTarget, squashCascade, cascadeStack]);
 
   // ============================================================================
   // Edit Handler
@@ -263,6 +397,13 @@ export function MoldInventoryTabContent(): React.ReactElement {
 
   const handleCancelEdit = useCallback(
     (entityId: string): void => {
+      setEditLocationPrefillById((prev) => {
+        if (!(entityId in prev)) {
+          return prev;
+        }
+        const { [entityId]: __removed, ...rest } = prev;
+        return rest;
+      });
       const updated = cascadeStack.map((e) =>
         e.entityId === entityId && e.entityType === 'mold-inventory-entry'
           ? { ...e, mode: 'view' as const }
@@ -280,6 +421,13 @@ export function MoldInventoryTabContent(): React.ReactElement {
     ): Promise<void> => {
       const result = await inventoryActions.updateEntry(entryId, entity);
       if (result.isSuccess()) {
+        setEditLocationPrefillById((prev) => {
+          if (!(entryId in prev)) {
+            return prev;
+          }
+          const { [entryId]: __removed, ...rest } = prev;
+          return rest;
+        });
         // Switch back to view mode
         const updated = cascadeStack.map((e) =>
           e.entityId === entryId && e.entityType === 'mold-inventory-entry'
@@ -292,6 +440,17 @@ export function MoldInventoryTabContent(): React.ReactElement {
       }
     },
     [inventoryActions, cascadeStack, squashCascade, addMessage]
+  );
+
+  const handleUnresolvedLocationFromEdit = useCallback(
+    (entryId: MoldInventoryEntryId, text: string): void => {
+      setLocationCreateTarget({ kind: 'edit', entryId });
+      squashCascade([
+        ...cascadeStack,
+        { entityType: 'location', entityId: '__new__', mode: 'create', prefillName: text }
+      ]);
+    },
+    [cascadeStack, squashCascade]
   );
 
   // ============================================================================
@@ -324,7 +483,7 @@ export function MoldInventoryTabContent(): React.ReactElement {
                 Entities.Molds.Converters.moldEntity.convert(from)
               }
               makeBlank={(name: string, id: string): Entities.Molds.IMoldEntity =>
-                createBlankMoldEntity(id as BaseMoldId, name)
+                createBlankMoldEntity(id as BaseMoldId, '', name)
               }
               onCreate={handleMoldCreated}
               onCancel={handleCancelMoldCreate}
@@ -357,8 +516,10 @@ export function MoldInventoryTabContent(): React.ReactElement {
       // Inventory entry create
       if (entry.entityType === 'mold-inventory-entry' && entry.mode === 'create') {
         // If prefillName looks like a MoldId (contains '.'), try to pre-select it
-        const prefill = entry.prefillName;
-        const preSelectedMold = prefill ? moldSuggestions.find((s) => s.id === prefill) : undefined;
+        const prefillMoldId = createPrefill.moldId ?? entry.prefillName;
+        const preSelectedMold = prefillMoldId
+          ? moldSuggestions.find((s) => s.id === prefillMoldId)
+          : undefined;
 
         return {
           key: '__new__inventory',
@@ -366,11 +527,29 @@ export function MoldInventoryTabContent(): React.ReactElement {
           content: (
             <CreateMoldInventoryPanel
               moldSuggestions={moldSuggestions}
+              locationSuggestions={locationSuggestions}
               onConfirm={handleCreateConfirm}
               onUnresolvedMold={handleUnresolvedMold}
+              onUnresolvedLocation={handleUnresolvedLocation}
               onCancel={handleCancelCreate}
-              initialMoldId={preSelectedMold?.id}
-              initialMoldName={preSelectedMold?.name}
+              initialMoldId={preSelectedMold?.id ?? createPrefill.moldId}
+              initialMoldName={preSelectedMold?.name ?? createPrefill.moldName}
+              initialLocationId={createPrefill.locationId}
+              initialLocationName={createPrefill.locationName}
+            />
+          )
+        };
+      }
+
+      if (entry.entityType === 'location' && entry.mode === 'create') {
+        return {
+          key: '__new__location',
+          label: 'New Location',
+          content: (
+            <CreateLocationPanel
+              onConfirm={handleCreateLocationConfirm}
+              onCancel={handleCancelLocationCreate}
+              initialName={entry.prefillName}
             />
           )
         };
@@ -394,7 +573,6 @@ export function MoldInventoryTabContent(): React.ReactElement {
             <MoldInventoryEntryDetail
               entry={result.value}
               onEdit={(): void => handleEdit(entry.entityId)}
-              onDelete={(): void => handleRequestDelete(entry.entityId as MoldInventoryEntryId)}
               onBrowseMold={(moldId: MoldId): void => handleBrowseMold(entry, moldId)}
               onClose={(): void => popCascadeTo(_index)}
             />
@@ -419,9 +597,15 @@ export function MoldInventoryTabContent(): React.ReactElement {
           content: (
             <MoldInventoryEntryEditView
               entry={result.value}
+              locationSuggestions={locationSuggestions}
+              initialLocationId={editLocationPrefillById[entry.entityId]?.id}
+              initialLocationName={editLocationPrefillById[entry.entityId]?.name}
               onSave={(entity): void => {
                 void handleSave(entry.entityId as MoldInventoryEntryId, entity);
               }}
+              onUnresolvedLocation={(text: string): void =>
+                handleUnresolvedLocationFromEdit(entry.entityId as MoldInventoryEntryId, text)
+              }
               onCancel={(): void => handleCancelEdit(entry.entityId)}
             />
           )
@@ -438,17 +622,24 @@ export function MoldInventoryTabContent(): React.ReactElement {
     cascadeStack,
     workspace,
     moldSuggestions,
+    locationSuggestions,
     popCascadeTo,
     handleCreateConfirm,
     handleCancelCreate,
     handleUnresolvedMold,
+    handleUnresolvedLocation,
+    handleCreateLocationConfirm,
+    handleCancelLocationCreate,
     handleMoldCreated,
     handleCancelMoldCreate,
     handleEdit,
     handleCancelEdit,
     handleSave,
+    handleUnresolvedLocationFromEdit,
     handleRequestDelete,
-    handleBrowseMold
+    handleBrowseMold,
+    createPrefill,
+    editLocationPrefillById
   ]);
 
   // ============================================================================

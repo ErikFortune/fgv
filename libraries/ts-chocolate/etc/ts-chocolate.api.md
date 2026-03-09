@@ -4410,11 +4410,11 @@ interface IInstantiatedUserEntityLibrarySource {
 }
 
 // @public
-interface IInventoryEntryBase<TId, TItem, TEntity> {
+interface IInventoryEntryBase<TId, TItem, TEntity extends Inventory.IInventoryEntryEntityBase = Inventory.IInventoryEntryEntityBase> {
     readonly entity: TEntity;
     readonly id: TId;
     readonly item: TItem;
-    readonly location?: string;
+    readonly location?: ILocation;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly quantity: number;
 }
@@ -4422,7 +4422,7 @@ interface IInventoryEntryBase<TId, TItem, TEntity> {
 // @public
 interface IInventoryEntryEntityBase {
     readonly inventoryType: InventoryType;
-    readonly location?: string;
+    readonly locationId?: LocationId;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }
 
@@ -5964,6 +5964,7 @@ interface ISessionCoating {
 // @public
 interface ISessionContext extends IConfectionContext {
     createFillingSession(filling: IFillingRecipe, targetWeight: Measurement): Result<Session_2.EditingSession>;
+    readonly locations?: MaterializedLibrary<LocationId, ILocationEntity, ILocation, never>;
 }
 
 // @public
@@ -6476,6 +6477,7 @@ interface IUserLibrary {
     readonly entities: IUserEntityLibrary;
     readonly ingredientInventory: MaterializedLibrary<Inventory.IngredientInventoryEntryId, IIngredientInventoryEntryEntity, IIngredientInventoryEntry, never>;
     readonly journals: MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
+    readonly locations: MaterializedLibrary<LocationId, ILocationEntity, ILocation, never>;
     readonly moldInventory: MaterializedLibrary<Inventory.MoldInventoryEntryId, IMoldInventoryEntryEntity, IMoldInventoryEntry, never>;
     removeSession(sessionId: SessionId): Result<SessionId>;
     removeSessionAndPersist(sessionId: SessionId): Promise<Result<SessionId>>;
@@ -8913,6 +8915,10 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     //
     // (undocumented)
     get journals(): MaterializedLibrary<JournalId, AnyJournalEntryEntity, AnyJournalEntry, never>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    get locations(): MaterializedLibrary<LocationId, ILocationEntity, ILocation, never>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)

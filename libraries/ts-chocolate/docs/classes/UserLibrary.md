@@ -119,6 +119,23 @@ A materialized library of ingredient inventory entries, keyed by composite ID.
 </td></tr>
 <tr><td>
 
+[locations](./UserLibrary.locations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](MaterializedLibrary.md)&lt;[LocationId](../type-aliases/LocationId.md), [ILocationEntity](../interfaces/ILocationEntity.md), [ILocation](../interfaces/ILocation.md), never&gt;
+
+</td><td>
+
+A materialized library of all locations, keyed by composite ID.
+
+</td></tr>
+<tr><td>
+
 [fillings](./UserLibrary.fillings.md)
 
 </td><td>

@@ -27,7 +27,6 @@
 
 import React from 'react';
 
-import { DetailSection, DetailRow } from '@fgv/ts-app-shell';
 import type { MoldId, UserLibrary } from '@fgv/ts-chocolate';
 import { EntityDetailHeader, NotesSection } from '../common';
 
@@ -44,8 +43,6 @@ export interface IMoldInventoryEntryDetailProps {
   readonly entry: UserLibrary.IMoldInventoryEntry;
   /** Optional callback to switch to edit mode */
   readonly onEdit?: () => void;
-  /** Optional callback to delete this entry */
-  readonly onDelete?: () => void;
   /** Optional callback to browse the referenced mold in cascade */
   readonly onBrowseMold?: (moldId: MoldId) => void;
   /** Optional callback to close this panel */
@@ -68,62 +65,41 @@ export interface IMoldInventoryEntryDetailProps {
  * @public
  */
 export function MoldInventoryEntryDetail(props: IMoldInventoryEntryDetailProps): React.ReactElement {
-  const { entry, onEdit, onDelete, onClose, onBrowseMold } = props;
+  const { entry, onEdit, onClose, onBrowseMold } = props;
   const mold = entry.item;
+  const locationName = entry.location?.name;
 
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
       <EntityDetailHeader
         title={mold.displayName}
-        description={`Inventory entry · ${entry.quantity}×`}
         badge={{ label: mold.format, colorClass: 'bg-choco-primary/10 text-choco-primary' }}
         subtitle={entry.id}
         onEdit={onEdit}
         onClose={onClose}
       />
 
-      {/* Mold Reference */}
-      <DetailSection title="Mold">
-        <div className="flex items-center gap-2">
-          {onBrowseMold ? (
-            <button
-              onClick={(): void => onBrowseMold(mold.id as MoldId)}
-              className="text-sm text-choco-primary hover:underline"
-            >
-              {mold.displayName}
-            </button>
-          ) : (
-            <span className="text-sm text-gray-700">{mold.displayName}</span>
-          )}
-          <span className="text-xs text-gray-400 font-mono">{mold.id}</span>
-        </div>
-        {mold.manufacturer && <DetailRow label="Manufacturer" value={mold.manufacturer} />}
-        {mold.cavityCount !== undefined && (
-          <DetailRow label="Cavities" value={`${mold.cavityCount} cavities`} />
-        )}
-      </DetailSection>
+      {/* Location (centered, title case) */}
+      {locationName && <p className="text-sm text-gray-500 text-center py-2">{locationName}</p>}
 
-      {/* Inventory Details */}
-      <DetailSection title="Inventory">
-        <DetailRow label="Count" value={entry.quantity} />
-        {entry.location && <DetailRow label="Location" value={entry.location} />}
-      </DetailSection>
+      {/* Count × Mold name */}
+      <div className="py-3 text-sm text-gray-700">
+        <span className="font-medium">{entry.quantity}×</span>{' '}
+        {onBrowseMold ? (
+          <button
+            onClick={(): void => onBrowseMold(mold.id as MoldId)}
+            className="text-choco-primary hover:underline"
+          >
+            {mold.displayName}
+          </button>
+        ) : (
+          <span>{mold.displayName}</span>
+        )}
+      </div>
 
       {/* Notes */}
-      {entry.notes && <NotesSection notes={entry.notes} />}
-
-      {/* Delete */}
-      {onDelete && (
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <button
-            onClick={onDelete}
-            className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-          >
-            Delete Entry
-          </button>
-        </div>
-      )}
+      <NotesSection notes={entry.notes ?? []} />
     </div>
   );
 }

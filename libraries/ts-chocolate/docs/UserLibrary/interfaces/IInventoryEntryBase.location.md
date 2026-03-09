@@ -2,10 +2,10 @@
 
 ## IInventoryEntryBase.location property
 
-Optional storage location
+Optional resolved storage location
 
 **Signature:**
 
 ```typescript
-readonly location: string;
+readonly location: ILocation;
 ```

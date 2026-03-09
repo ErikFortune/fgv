@@ -124,8 +124,11 @@ export const MOLD_INVENTORY_DESCRIPTOR: IEntityDescriptor<
 > = {
   getId: (e: IMoldInventoryListEntry): Entities.Inventory.MoldInventoryEntryId => e.id,
   getLabel: (e: IMoldInventoryListEntry): string => e.entry.item.displayName,
-  getSublabel: (e: IMoldInventoryListEntry): string | undefined =>
-    [`${e.entry.quantity}×`, e.entry.location].filter(Boolean).join(' · ') || undefined,
+  getSublabel: (e: IMoldInventoryListEntry): string | undefined => {
+    const locationText = e.entry.location?.name;
+
+    return [`${e.entry.quantity}×`, locationText].filter(Boolean).join(' · ') || undefined;
+  },
   getStatus: undefined
 };
 
@@ -248,8 +251,10 @@ export const SESSION_FILTER_SPEC: IEntityFilterSpec<ISessionListEntry> = {
 };
 
 export const MOLD_INVENTORY_FILTER_SPEC: IEntityFilterSpec<IMoldInventoryListEntry> = {
-  getSearchText: (e) =>
-    [e.entry.item.displayName, e.entry.item.manufacturer, e.entry.location].filter(Boolean).join(' '),
+  getSearchText: (e) => {
+    const locationText = e.entry.location?.name;
+    return [e.entry.item.displayName, e.entry.item.manufacturer, locationText].filter(Boolean).join(' ');
+  },
   getCollectionId: (e) => collectionFromId(e.id),
   selectionExtractors: {
     shape: (e) => e.entry.item.format,

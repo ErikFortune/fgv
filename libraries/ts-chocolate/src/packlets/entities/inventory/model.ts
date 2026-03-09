@@ -29,7 +29,14 @@
 
 import { Brand } from '@fgv/ts-utils';
 
-import { IngredientId, Measurement, MeasurementUnit, Model as CommonModel, MoldId } from '../../common';
+import {
+  IngredientId,
+  LocationId,
+  Measurement,
+  MeasurementUnit,
+  Model as CommonModel,
+  MoldId
+} from '../../common';
 
 // ============================================================================
 // Inventory Entry ID Types
@@ -106,8 +113,8 @@ export const allInventoryTypes: ReadonlyArray<InventoryType> = ['mold', 'ingredi
 export interface IInventoryEntryEntityBase {
   /** Inventory type discriminator */
   readonly inventoryType: InventoryType;
-  /** Optional storage location (e.g., 'pantry shelf 2', 'fridge', 'workshop cabinet') */
-  readonly location?: string;
+  /** Optional location reference (collection.baseId) */
+  readonly locationId?: LocationId;
   /** Optional categorized notes about this inventory item */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
 }

@@ -26,7 +26,7 @@ import {
   IngredientInventoryEntryBaseId,
   IngredientInventoryEntryId
 } from '../../../../packlets/entities/inventory/model';
-import { CollectionId, IngredientId, Measurement } from '../../../../packlets/common';
+import { CollectionId, IngredientId, LocationId, Measurement } from '../../../../packlets/common';
 
 describe('IngredientInventoryLibrary', () => {
   const testCollectionId = 'user-inventory' as CollectionId;
@@ -41,7 +41,7 @@ describe('IngredientInventoryLibrary', () => {
     inventoryType: 'ingredient',
     ingredientId: 'builtin.cream' as IngredientId,
     quantity: 250 as Measurement,
-    location: 'Fridge'
+    locationId: 'user.fridge' as LocationId
   };
 
   // ============================================================================

@@ -29,6 +29,23 @@ Description
 <tbody>
 <tr><td>
 
+[locations](./ISessionContext.locations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](../classes/MaterializedLibrary.md)&lt;[LocationId](../type-aliases/LocationId.md), [ILocationEntity](ILocationEntity.md), [ILocation](ILocation.md), never&gt;
+
+</td><td>
+
+Materialized locations library for resolving inventory location references
+
+</td></tr>
+<tr><td>
+
 [molds](./ISessionContext.molds.md)
 
 </td><td>

@@ -35,6 +35,7 @@ import {
   Helpers,
   IngredientId,
   JournalId,
+  LocationId,
   Measurement,
   MoldId,
   ProcedureId,
@@ -48,6 +49,7 @@ import {
   IDecorationEntity,
   IFillingRecipeEntity,
   IFillingSessionEntity,
+  ILocationEntity,
   IMoldEntity,
   IProcedureEntity,
   IngredientEntity,
@@ -70,6 +72,7 @@ import * as Session from './session';
 import { IUserEntityLibrary } from '../user-entities';
 import { createJournalEntry } from './journalEntry';
 import { IngredientInventoryEntry, MoldInventoryEntry } from './inventoryEntry';
+import { ILocation, Location } from './location';
 import {
   AnyJournalEntry,
   AnyMaterializedSession,
@@ -119,6 +122,7 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
         never
       >
     | undefined;
+  private _locations: MaterializedLibrary<LocationId, ILocationEntity, ILocation, never> | undefined;
 
   private constructor(userEntityLibrary: IUserEntityLibrary, confectionContext: IConfectionContext) {
     this._entities = userEntityLibrary;
@@ -182,6 +186,13 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     never
   > {
     return this._getIngredientInventory();
+  }
+
+  /**
+   * {@inheritDoc IUserLibrary.locations}
+   */
+  public get locations(): MaterializedLibrary<LocationId, ILocationEntity, ILocation, never> {
+    return this._getLocations();
   }
 
   // ============================================================================
@@ -632,6 +643,20 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
       });
     }
     return this._ingredientInventory;
+  }
+
+  /**
+   * Gets or creates the materialized locations library.
+   * @internal
+   */
+  private _getLocations(): MaterializedLibrary<LocationId, ILocationEntity, ILocation, never> {
+    if (!this._locations) {
+      this._locations = new MaterializedLibrary({
+        inner: this._entities.locations,
+        converter: (entity, id) => Location.create(id, entity)
+      });
+    }
+    return this._locations;
   }
 
   // ============================================================================

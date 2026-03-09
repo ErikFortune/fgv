@@ -33,6 +33,7 @@ import {
 } from '../entities';
 import { IIngredient, IMold } from '../library-runtime';
 import { ISessionContext } from './model';
+import { ILocation } from './location';
 import { IIngredientInventoryEntry, IMoldInventoryEntry, IInventoryEntryBase } from './model';
 
 // ============================================================================
@@ -48,8 +49,11 @@ import { IIngredientInventoryEntry, IMoldInventoryEntry, IInventoryEntryBase } f
  * @typeParam TEntity - The specific inventory entry entity type
  * @internal
  */
-export abstract class InventoryEntryBase<TId, TItem, TEntity>
-  implements IInventoryEntryBase<TId, TItem, TEntity>
+export abstract class InventoryEntryBase<
+  TId,
+  TItem,
+  TEntity extends InventoryEntities.IInventoryEntryEntityBase = InventoryEntities.IInventoryEntryEntityBase
+> implements IInventoryEntryBase<TId, TItem, TEntity>
 {
   protected readonly _context: ISessionContext;
   protected readonly _id: TId;
@@ -88,22 +92,31 @@ export abstract class InventoryEntryBase<TId, TItem, TEntity>
   /**
    * {@inheritDoc IInventoryEntryBase.quantity}
    */
-  public get quantity(): number {
-    return (this._entity as { quantity: number }).quantity;
-  }
+  public abstract get quantity(): number;
 
   /**
    * {@inheritDoc IInventoryEntryBase.location}
    */
-  public get location(): string | undefined {
-    return (this._entity as { location?: string }).location;
+  public get location(): ILocation | undefined {
+    const locationId = this._entity.locationId;
+    if (!locationId) {
+      return undefined;
+    }
+
+    const locations = this._context.locations;
+    if (!locations) {
+      return undefined;
+    }
+
+    const locationResult = locations.get(locationId);
+    return locationResult.isSuccess() ? locationResult.value : undefined;
   }
 
   /**
    * {@inheritDoc IInventoryEntryBase.notes}
    */
   public get notes(): ReadonlyArray<CommonModel.ICategorizedNote> | undefined {
-    return (this._entity as { notes?: ReadonlyArray<CommonModel.ICategorizedNote> }).notes;
+    return this._entity.notes;
   }
 
   /**
@@ -209,6 +222,13 @@ export class IngredientInventoryEntry
    */
   public get ingredient(): IIngredient {
     return this._item;
+  }
+
+  /**
+   * {@inheritDoc IInventoryEntryBase.quantity}
+   */
+  public override get quantity(): number {
+    return this._entity.quantity;
   }
 
   /**

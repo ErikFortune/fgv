@@ -26,7 +26,7 @@ import {
   MoldInventoryEntryBaseId,
   MoldInventoryEntryId
 } from '../../../../packlets/entities/inventory/model';
-import { CollectionId, MoldId } from '../../../../packlets/common';
+import { CollectionId, LocationId, MoldId } from '../../../../packlets/common';
 
 describe('MoldInventoryLibrary', () => {
   const testCollectionId = 'user-inventory' as CollectionId;
@@ -41,7 +41,7 @@ describe('MoldInventoryLibrary', () => {
     inventoryType: 'mold',
     moldId: 'builtin.bar-mold-50g' as MoldId,
     count: 1,
-    location: 'Workshop cabinet'
+    locationId: 'user.workshop-cabinet' as LocationId
   };
 
   // ============================================================================

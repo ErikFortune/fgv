@@ -231,7 +231,6 @@ export function LocationsTabContent(): React.ReactElement {
               locationId={entry.entityId as LocationId}
               entity={result.value}
               onEdit={(): void => handleEdit(entry.entityId)}
-              onDelete={(): void => handleRequestDelete(entry.entityId as LocationId)}
               onClose={(): void => popCascadeTo(_index)}
             />
           )

@@ -27,6 +27,7 @@ import { Result } from '@fgv/ts-utils';
 
 import {
   BaseJournalId,
+  LocationId,
   BaseSessionId,
   CollectionId,
   ConfectionId,
@@ -48,6 +49,7 @@ import {
   IFillingEditJournalEntryEntity,
   IFillingProductionJournalEntryEntity,
   IIngredientInventoryEntryEntity,
+  ILocationEntity,
   IMoldInventoryEntryEntity,
   Inventory,
   PersistedSessionStatus,
@@ -64,6 +66,7 @@ import {
   MaterializedLibrary
 } from '../library-runtime';
 import { IUserEntityLibrary } from '../user-entities';
+import { ILocation } from './location';
 import * as Session from './session';
 
 // ============================================================================
@@ -125,6 +128,9 @@ export interface IMaterializedSessionBase {
  * @public
  */
 export interface ISessionContext extends IConfectionContext {
+  /** Materialized locations library for resolving inventory location references */
+  readonly locations?: MaterializedLibrary<LocationId, ILocationEntity, ILocation, never>;
+
   /**
    * Creates an editing session for a filling recipe at a target weight.
    * Used by confection sessions to manage filling scaling.
@@ -286,15 +292,19 @@ export type AnyJournalEntry =
  * @typeParam TEntity - The specific inventory entry entity type
  * @public
  */
-export interface IInventoryEntryBase<TId, TItem, TEntity> {
+export interface IInventoryEntryBase<
+  TId,
+  TItem,
+  TEntity extends Inventory.IInventoryEntryEntityBase = Inventory.IInventoryEntryEntityBase
+> {
   /** Composite inventory entry ID (collectionId.baseId) */
   readonly id: TId;
   /** The resolved item being inventoried */
   readonly item: TItem;
   /** Quantity on hand */
   readonly quantity: number;
-  /** Optional storage location */
-  readonly location?: string;
+  /** Optional resolved storage location */
+  readonly location?: ILocation;
   /** Optional categorized notes */
   readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
   /** The underlying entity */
@@ -379,6 +389,12 @@ export interface IUserLibrary {
     IIngredientInventoryEntry,
     never
   >;
+
+  /**
+   * A materialized library of all locations, keyed by composite ID.
+   * Locations are materialized lazily on access and cached.
+   */
+  readonly locations: MaterializedLibrary<LocationId, ILocationEntity, ILocation, never>;
 
   /**
    * Creates a new persisted filling session from a filling variation.
