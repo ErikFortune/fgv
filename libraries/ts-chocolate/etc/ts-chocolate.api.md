@@ -712,6 +712,19 @@ class ChocolateEntityLibrary {
             has(id: CollectionId): boolean;
         };
     }): Promise<Result<true>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ChocolateEntityLibrary"
+    saveConfectionRecipe(collectionId: CollectionId, baseId: BaseConfectionId, entity: Entities.Confections.AnyConfectionRecipeEntity): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ChocolateEntityLibrary"
+    saveDecoration(collectionId: CollectionId, baseId: BaseDecorationId, entity: IDecorationEntity): Promise<Result<string>>;
+    saveFillingRecipe(collectionId: CollectionId, baseId: BaseFillingId, entity: IFillingRecipeEntity): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ChocolateEntityLibrary"
+    saveIngredient(collectionId: CollectionId, baseId: BaseIngredientId, entity: IngredientEntity): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ChocolateEntityLibrary"
+    saveMold(collectionId: CollectionId, baseId: BaseMoldId, entity: IMoldEntity): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ChocolateEntityLibrary"
+    saveProcedure(collectionId: CollectionId, baseId: BaseProcedureId, entity: IProcedureEntity): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ChocolateEntityLibrary"
+    saveTask(collectionId: CollectionId, baseId: BaseTaskId, entity: IRawTaskEntity): Promise<Result<string>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get tasks(): TasksLibrary;
 }

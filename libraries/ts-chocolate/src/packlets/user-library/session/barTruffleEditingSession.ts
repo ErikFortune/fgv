@@ -92,7 +92,7 @@ export class BarTruffleEditingSession<
    * Note: Child filling sessions are persisted separately and should be accessed
    * via their persisted session IDs from IPersistedConfectionSession.childSessionIds.
    * @param baseConfection - The source bar truffle confection
-   * @param history - Serialized editing history
+   * @param persistedEntity - The persisted confection session entity
    * @param context - The runtime context
    * @param params - Optional session parameters
    * @returns Success with restored session, or Failure

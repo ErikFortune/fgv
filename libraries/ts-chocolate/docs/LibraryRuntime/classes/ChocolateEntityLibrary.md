@@ -302,6 +302,97 @@ Get or create a singleton persisted decorations collection.
 </td></tr>
 <tr><td>
 
+[saveFillingRecipe(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveFillingRecipe.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a filling recipe entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveIngredient(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveIngredient.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save an ingredient entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveProcedure(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveProcedure.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a procedure entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveMold(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveMold.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a mold entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveTask(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveTask.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a task entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveConfectionRecipe(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveConfectionRecipe.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a confection recipe entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveDecoration(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveDecoration.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a decoration entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
 [getEditableIngredientsEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableIngredientsEntityCollection.md)
 
 </td><td>

@@ -643,10 +643,10 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
     // Analyze save options before committing
     const saveAnalysis = session.analyzeSaveOptions();
 
-    // Create journal entry: production if execution state exists, otherwise edit
-    const journalEntryResult = session.execution
-      ? session.toProductionJournalEntry()
-      : session.toEditJournalEntry();
+    // Always create a production journal entry — the produced state captures
+    // the user's actual ingredient/procedure choices regardless of whether
+    // procedure execution tracking was used.
+    const journalEntryResult = session.toProductionJournalEntry();
 
     if (journalEntryResult.isFailure()) {
       return fail(`Failed to create journal entry for session ${sessionId}: ${journalEntryResult.message}`);

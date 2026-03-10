@@ -28,8 +28,9 @@
 import React, { useCallback, useMemo } from 'react';
 
 import { DetailSection, DetailRow } from '@fgv/ts-app-shell';
-import type { UserLibrary } from '@fgv/ts-chocolate';
+import type { Entities, IngredientId, IWorkspace, ProcedureId, UserLibrary } from '@fgv/ts-chocolate';
 import { EntityDetailHeader, NotesSection, copyJsonToClipboard } from '../common';
+import { useWorkspace } from '../workspace';
 
 // ============================================================================
 // Types
@@ -75,11 +76,61 @@ function formatTimestamp(iso: string): string {
   return date.toLocaleString();
 }
 
+function getIngredientName(id: IngredientId, workspace: IWorkspace): string {
+  const result = workspace.data.ingredients.get(id);
+  return result.isSuccess() ? result.value.name : String(id);
+}
+
+function getProcedureName(id: ProcedureId, workspace: IWorkspace): string {
+  const result = workspace.data.procedures.get(id);
+  return result.isSuccess() ? result.value.name : String(id);
+}
+
+function formatUnit(unit: string | undefined): string {
+  return unit ?? 'g';
+}
+
 // ============================================================================
-// Ingredient Summary (for filling entries)
+// Produced Filling Section (for production entries)
 // ============================================================================
 
-function FillingIngredientSummary({
+function ProducedFillingSection({
+  produced,
+  workspace
+}: {
+  readonly produced: Entities.Fillings.IProducedFillingEntity;
+  readonly workspace: IWorkspace;
+}): React.ReactElement {
+  return (
+    <DetailSection title="Produced">
+      <div className="space-y-1">
+        {produced.ingredients.map((ing, index) => (
+          <div key={`${ing.ingredientId}-${index}`} className="flex items-center justify-between text-sm">
+            <span className="text-gray-700">
+              {getIngredientName(ing.ingredientId, workspace)}
+              {ing.modifiers?.toTaste && <span className="ml-1 text-xs text-gray-400 italic">to taste</span>}
+            </span>
+            <span className="text-gray-500 tabular-nums">
+              {Number(ing.amount)}
+              {formatUnit(ing.unit)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {produced.procedureId && (
+        <div className="mt-2 pt-2 border-t border-gray-100">
+          <DetailRow label="Procedure" value={getProcedureName(produced.procedureId, workspace)} />
+        </div>
+      )}
+    </DetailSection>
+  );
+}
+
+// ============================================================================
+// Source Recipe Ingredients (for filling entries — shows original recipe variation)
+// ============================================================================
+
+function FillingRecipeIngredientSummary({
   entry
 }: {
   readonly entry: UserLibrary.IFillingEditJournalEntry | UserLibrary.IFillingProductionJournalEntry;
@@ -94,14 +145,14 @@ function FillingIngredientSummary({
 
   if (ingredients.length === 0) {
     return (
-      <DetailSection title="Ingredients">
+      <DetailSection title="Source Recipe">
         <p className="text-sm text-gray-500 italic">No ingredients</p>
       </DetailSection>
     );
   }
 
   return (
-    <DetailSection title="Ingredients">
+    <DetailSection title="Source Recipe">
       <div className="space-y-1">
         {ingredients.map((ing) => (
           <div key={ing.ingredient.id} className="flex items-center justify-between text-sm">
@@ -130,6 +181,8 @@ function FillingIngredientSummary({
  * @public
  */
 export function JournalEntryDetail({ entry, onClose }: IJournalEntryDetailProps): React.ReactElement {
+  const workspace = useWorkspace();
+
   const handleCopyJson = useCallback((): void => {
     copyJsonToClipboard(entry.entity);
   }, [entry]);
@@ -159,9 +212,20 @@ export function JournalEntryDetail({ entry, onClose }: IJournalEntryDetailProps)
         {entry.updated && <DetailRow label="Modified" value="Yes — variation was edited" />}
       </DetailSection>
 
-      {/* Ingredient summary for filling entries */}
+      {/* Production details for filling production entries */}
+      {entry.entity.type === 'filling-production' && (
+        <>
+          <DetailSection title="Production">
+            <DetailRow label="Target Weight" value={`${Number(entry.entity.yield)}g`} />
+            <DetailRow label="Scale Factor" value={`${entry.entity.produced.scaleFactor}×`} />
+          </DetailSection>
+          <ProducedFillingSection produced={entry.entity.produced} workspace={workspace} />
+        </>
+      )}
+
+      {/* Source recipe ingredients for filling entries (collapsed under production) */}
       {isFillingEntry && (
-        <FillingIngredientSummary
+        <FillingRecipeIngredientSummary
           entry={entry as UserLibrary.IFillingEditJournalEntry | UserLibrary.IFillingProductionJournalEntry}
         />
       )}

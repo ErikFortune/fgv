@@ -21,12 +21,23 @@
  */
 
 /**
- * Commit session dialog — shows save analysis and confirms journal commit.
+ * Commit session dialog — shows save analysis, allows recipe save option
+ * selection, and confirms journal commit.
  * @packageDocumentation
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { UserLibrary } from '@fgv/ts-chocolate';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+/**
+ * Recipe save option selected during commit.
+ * @public
+ */
+export type RecipeSaveOption = 'journal-only' | 'new-variation' | 'alternatives';
 
 // ============================================================================
 // Props
@@ -41,8 +52,8 @@ export interface ICommitSessionDialogProps {
   readonly isOpen: boolean;
   /** The editing session to commit */
   readonly session: UserLibrary.Session.EditingSession;
-  /** Called when the user confirms the commit */
-  readonly onCommit: () => Promise<void>;
+  /** Called when the user confirms the commit with a save option */
+  readonly onCommit: (saveOption: RecipeSaveOption) => Promise<void>;
   /** Called when the user cancels */
   readonly onCancel: () => void;
 }
@@ -52,9 +63,13 @@ export interface ICommitSessionDialogProps {
 // ============================================================================
 
 function SaveAnalysisSection({
-  analysis
+  analysis,
+  saveOption,
+  onSaveOptionChange
 }: {
   readonly analysis: UserLibrary.Session.ISaveAnalysis;
+  readonly saveOption: RecipeSaveOption;
+  readonly onSaveOptionChange: (option: RecipeSaveOption) => void;
 }): React.ReactElement {
   const { changes } = analysis;
 
@@ -91,32 +106,59 @@ function SaveAnalysisSection({
         )}
       </div>
 
-      {/* Save options analysis (informational only) */}
+      {/* Save options — selectable when changes exist */}
       {hasChanges && (
         <div>
           <h4 className="text-xs font-medium text-gray-700 uppercase tracking-wider mb-1.5">
-            Save options (informational)
+            Recipe save option
           </h4>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="radio"
+                name="save-option"
+                value="journal-only"
+                checked={saveOption === 'journal-only'}
+                onChange={(): void => onSaveOptionChange('journal-only')}
+                className="text-choco-primary focus:ring-choco-primary"
+              />
+              Journal only (no recipe changes)
+            </label>
+
             {analysis.canCreateVariation && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                Could save as new variation
-              </span>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="radio"
+                  name="save-option"
+                  value="new-variation"
+                  checked={saveOption === 'new-variation'}
+                  onChange={(): void => onSaveOptionChange('new-variation')}
+                  className="text-choco-primary focus:ring-choco-primary"
+                />
+                Save as new variation
+              </label>
             )}
+
             {analysis.canAddAlternatives && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                Could add as alternatives
-              </span>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="radio"
+                  name="save-option"
+                  value="alternatives"
+                  checked={saveOption === 'alternatives'}
+                  onChange={(): void => onSaveOptionChange('alternatives')}
+                  className="text-choco-primary focus:ring-choco-primary"
+                />
+                Add ingredients as alternatives
+              </label>
             )}
+
             {analysis.mustCreateNew && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
-                Would require new recipe
-              </span>
+              <p className="text-xs text-amber-600 ml-6">
+                More extensive changes would require creating a new recipe (not yet supported from commit).
+              </p>
             )}
           </div>
-          <p className="mt-1 text-xs text-gray-400">
-            Recipe save is not yet implemented. Only the journal entry will be created.
-          </p>
         </div>
       )}
     </div>
@@ -128,11 +170,10 @@ function SaveAnalysisSection({
 // ============================================================================
 
 /**
- * Dialog for committing a filling session to the journal.
+ * Dialog for committing a filling session to the journal with optional recipe save.
  *
- * Shows the save analysis (what changed, what save options would be available)
- * and a "Commit to Journal" button. Currently journal-only — recipe save
- * options are shown as informational badges.
+ * Shows the save analysis (what changed, what save options are available)
+ * and lets the user choose whether to also save recipe changes.
  *
  * @public
  */
@@ -143,17 +184,25 @@ export function CommitSessionDialog({
   onCancel
 }: ICommitSessionDialogProps): React.ReactElement | null {
   const [isCommitting, setIsCommitting] = useState(false);
+  const [saveOption, setSaveOption] = useState<RecipeSaveOption>('journal-only');
 
   const analysis = useMemo(() => session.analyzeSaveOptions(), [session]);
+
+  // Reset save option when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setSaveOption('journal-only');
+    }
+  }, [isOpen]);
 
   const handleCommit = useCallback(async (): Promise<void> => {
     setIsCommitting(true);
     try {
-      await onCommit();
+      await onCommit(saveOption);
     } finally {
       setIsCommitting(false);
     }
-  }, [onCommit]);
+  }, [onCommit, saveOption]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent): void => {
@@ -175,6 +224,13 @@ export function CommitSessionDialog({
   if (!isOpen) {
     return null;
   }
+
+  const commitLabel =
+    saveOption === 'journal-only'
+      ? 'Commit to Journal'
+      : saveOption === 'new-variation'
+      ? 'Save Variation & Commit'
+      : 'Add Alternatives & Commit';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -200,7 +256,11 @@ export function CommitSessionDialog({
             This will create a journal entry with a full recipe snapshot and mark the session as committed.
           </p>
 
-          <SaveAnalysisSection analysis={analysis} />
+          <SaveAnalysisSection
+            analysis={analysis}
+            saveOption={saveOption}
+            onSaveOptionChange={setSaveOption}
+          />
 
           {/* Buttons */}
           <div className="mt-6 flex justify-end gap-3">
@@ -218,7 +278,7 @@ export function CommitSessionDialog({
               disabled={isCommitting}
               className="px-4 py-2 text-sm font-medium text-white bg-choco-primary rounded-md hover:bg-choco-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-choco-primary transition-colors disabled:opacity-50"
             >
-              {isCommitting ? 'Committing...' : 'Commit to Journal'}
+              {isCommitting ? 'Committing...' : commitLabel}
             </button>
           </div>
         </div>

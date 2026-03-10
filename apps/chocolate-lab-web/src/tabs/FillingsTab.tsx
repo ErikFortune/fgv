@@ -60,6 +60,38 @@ import {
   createBlankFillingRecipeEntity
 } from '../shared';
 
+/**
+ * Merges alternate ingredient IDs from the wrapper's variation into a session-derived variation.
+ * The session's produced state only tracks single ingredient IDs, so alternates set via
+ * the wrapper's setVariationIngredientAlternates are lost during produced→source conversion.
+ * This restores them by matching ingredients and copying over the wrapper's ids/preferredId.
+ */
+function mergeAlternatesIntoVariation(
+  sessionVariation: Entities.Fillings.IFillingRecipeVariationEntity,
+  wrapperVariation: Entities.Fillings.IFillingRecipeVariationEntity
+): Entities.Fillings.IFillingRecipeVariationEntity {
+  const mergedIngredients = sessionVariation.ingredients.map((sessionIng) => {
+    // Find the matching ingredient in the wrapper by checking if any IDs overlap
+    const sessionId = sessionIng.ingredient.preferredId ?? sessionIng.ingredient.ids[0];
+    const wrapperIng = wrapperVariation.ingredients.find((wi) => wi.ingredient.ids.includes(sessionId));
+    if (wrapperIng && wrapperIng.ingredient.ids.length > 1) {
+      // Wrapper has alternates — preserve them, but ensure the session's preferred ID is included
+      const mergedIds = wrapperIng.ingredient.ids.includes(sessionId)
+        ? wrapperIng.ingredient.ids
+        : [...wrapperIng.ingredient.ids, sessionId];
+      return {
+        ...sessionIng,
+        ingredient: {
+          ids: mergedIds,
+          preferredId: wrapperIng.ingredient.preferredId
+        }
+      };
+    }
+    return sessionIng;
+  });
+  return { ...sessionVariation, ingredients: mergedIngredients };
+}
+
 interface IFillingEditingState {
   readonly id: FillingId;
   readonly wrapper: LibraryRuntime.EditedFillingRecipe;
@@ -139,13 +171,6 @@ export function FillingsTabContent(): React.ReactElement {
     reactiveWorkspace.version
   ]);
 
-  type FillingCollectionEntry = ResultMapValueType<typeof workspace.data.entities.fillings.collections>;
-  type FillingMutableCollectionEntry = MutableCollectionEntryWithSet<
-    FillingCollectionEntry,
-    BaseFillingId,
-    Entities.Fillings.IFillingRecipeEntity
-  >;
-
   type IngredientCollectionEntry = ResultMapValueType<typeof workspace.data.entities.ingredients.collections>;
   type IngredientMutableCollectionEntry = MutableCollectionEntryWithSet<
     IngredientCollectionEntry,
@@ -162,26 +187,9 @@ export function FillingsTabContent(): React.ReactElement {
 
   const fillingMutation = useEntityMutation<Entities.Fillings.IFillingRecipeEntity, BaseFillingId, FillingId>(
     {
-      setInMutableCollection: createSetInMutableCollection<
-        Entities.Fillings.IFillingRecipeEntity,
-        BaseFillingId,
-        FillingCollectionEntry,
-        FillingMutableCollectionEntry
-      >({
-        getCollection: (collectionId: CollectionId) =>
-          workspace.data.entities.fillings.collections.get(collectionId),
-        isMutable: (entry: FillingCollectionEntry): entry is FillingMutableCollectionEntry =>
-          entry.isMutable && 'set' in entry.items,
-        setEntity: (
-          entry: FillingMutableCollectionEntry,
-          baseId: BaseFillingId,
-          entity: Entities.Fillings.IFillingRecipeEntity
-        ) => entry.items.set(baseId, entity),
-        entityLabel: 'filling'
-      }),
-      entityLabel: 'filling',
-      getPersistedCollection: (collectionId: CollectionId) =>
-        workspace.data.entities.getPersistedFillingsCollection(collectionId)
+      saveToCollection: (collectionId, baseId, entity) =>
+        workspace.data.entities.saveFillingRecipe(collectionId, baseId, entity),
+      entityLabel: 'filling'
     }
   );
 
@@ -484,14 +492,21 @@ export function FillingsTabContent(): React.ReactElement {
       const spec = state.selectedVariationSpec;
 
       if (mode === 'update') {
-        // Overwrite the current variation with session edits
+        // Merge session edits (amounts, ingredient swaps) with wrapper state (alternates).
+        // The session's produced state has the correct amounts but only single ingredient IDs.
+        // The wrapper's variation has the correct alternate IDs set via setVariationIngredientAlternates.
         const saveResult = state.session.saveAsNewVariation({ variationSpec: spec });
         if (saveResult.isFailure()) {
           workspace.data.logger.error(`Save failed (session): ${saveResult.message}`);
           return;
         }
         if (saveResult.value.variationEntity) {
-          const replaceResult = state.wrapper.replaceVariation(spec, saveResult.value.variationEntity);
+          // Preserve alternates from the wrapper's current variation
+          const wrapperVariation = state.wrapper.current.variations.find((v) => v.variationSpec === spec);
+          const mergedVariation = wrapperVariation
+            ? mergeAlternatesIntoVariation(saveResult.value.variationEntity, wrapperVariation)
+            : saveResult.value.variationEntity;
+          const replaceResult = state.wrapper.replaceVariation(spec, mergedVariation);
           if (replaceResult.isFailure()) {
             workspace.data.logger.error(`Save failed (replace variation): ${replaceResult.message}`);
             return;

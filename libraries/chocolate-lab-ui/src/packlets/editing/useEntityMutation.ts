@@ -26,8 +26,7 @@
  * Encapsulates the repeated collection mutation sequence used throughout tabs:
  * - resolve mutable collection
  * - duplicate checks
- * - in-memory set
- * - optional editable persistence
+ * - in-memory set + disk persistence (via library helper or legacy callbacks)
  * - workspace cache invalidation + reactive notification
  *
  * @packageDocumentation
@@ -84,11 +83,39 @@ export interface ISetInMutableCollectionFactoryOptions<
 
 /**
  * Configuration for {@link useEntityMutation}.
+ *
+ * Supports two modes:
+ *
+ * 1. **Library helper** (preferred): Provide {@link IEntityMutationOptions.saveToCollection | saveToCollection}
+ *    backed by a `ChocolateEntityLibrary.saveXxx()` method. The library helper handles
+ *    mutability checks, in-memory set, and disk persistence in one call.
+ *
+ * 2. **Legacy callbacks**: Provide {@link IEntityMutationOptions.setInMutableCollection | setInMutableCollection}
+ *    and optionally {@link IEntityMutationOptions.getPersistedCollection | getPersistedCollection}.
+ *    The hook orchestrates set + persist separately.
+ *
+ * When `saveToCollection` is provided, the legacy callbacks are ignored.
+ *
  * @public
  */
 export interface IEntityMutationOptions<TEntity, TBaseId extends string> {
-  /** Sets an entity in a mutable collection entry, with validation performed by the caller. */
-  readonly setInMutableCollection: (
+  /**
+   * Saves an entity to a mutable collection and persists to disk.
+   *
+   * Backed by `ChocolateEntityLibrary.saveXxx()` methods. When provided,
+   * `setInMutableCollection` and `getPersistedCollection` are ignored.
+   */
+  readonly saveToCollection?: (
+    collectionId: CollectionId,
+    baseId: TBaseId,
+    entity: TEntity
+  ) => Promise<Result<string>>;
+
+  /**
+   * Sets an entity in a mutable collection entry, with validation performed by the caller.
+   * Used when `saveToCollection` is not provided.
+   */
+  readonly setInMutableCollection?: (
     collectionId: CollectionId,
     baseId: TBaseId,
     entity: TEntity
@@ -99,7 +126,7 @@ export interface IEntityMutationOptions<TEntity, TBaseId extends string> {
 
   /**
    * Optional accessor for persisted collection singletons.
-   * If absent, persistence is skipped and mutation remains in-memory.
+   * Used when `saveToCollection` is not provided. If absent, persistence is skipped.
    */
   readonly getPersistedCollection?: (
     collectionId: CollectionId
@@ -191,7 +218,7 @@ export function createSetInMutableCollection<
 export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId extends string>(
   options: IEntityMutationOptions<TEntity, TBaseId>
 ): IEntityMutationActions<TEntity, TBaseId, TCompositeId> {
-  const { setInMutableCollection, entityLabel, getPersistedCollection } = options;
+  const { saveToCollection, setInMutableCollection, entityLabel, getPersistedCollection } = options;
 
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
@@ -201,7 +228,9 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
     reactiveWorkspace.notifyChange();
   }, [workspace, reactiveWorkspace]);
 
-  const persistIfRequested = useCallback(
+  // ---- Legacy persistence path (used when saveToCollection is not provided) ----
+
+  const legacyPersistIfRequested = useCallback(
     async (collectionId: CollectionId, persistToDisk: boolean): Promise<void> => {
       if (!persistToDisk || !getPersistedCollection) {
         return;
@@ -223,6 +252,41 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
     },
     [entityLabel, getPersistedCollection, workspace]
   );
+
+  // ---- Unified save: delegates to library helper or legacy path ----
+
+  const saveToCollectionOrLegacy = useCallback(
+    async (
+      collectionId: CollectionId,
+      baseId: TBaseId,
+      entity: TEntity,
+      persistToDisk: boolean
+    ): Promise<Result<true>> => {
+      if (saveToCollection) {
+        // Library helper path: handles set + persist in one call
+        const result = await saveToCollection(collectionId, baseId, entity);
+        if (result.isFailure()) {
+          return fail(result.message);
+        }
+        return succeed(true);
+      }
+
+      // Legacy path: manual set + separate persist
+      if (!setInMutableCollection) {
+        return fail(`${entityLabel}: no saveToCollection or setInMutableCollection provided`);
+      }
+
+      const setResult = setInMutableCollection(collectionId, baseId, entity);
+      if (setResult.isFailure()) {
+        return fail(setResult.message);
+      }
+      await legacyPersistIfRequested(collectionId, persistToDisk);
+      return succeed(true);
+    },
+    [saveToCollection, setInMutableCollection, entityLabel, legacyPersistIfRequested, workspace]
+  );
+
+  // ---- Public actions ----
 
   const createEntity = useCallback(
     async (
@@ -254,18 +318,17 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
         return fail(message);
       }
 
-      const setResult = setInMutableCollection(mutableCollectionId, baseId, entity);
-      if (setResult.isFailure()) {
-        const message = `Failed to add ${entityLabel}: ${setResult.message}`;
+      const saveResult = await saveToCollectionOrLegacy(mutableCollectionId, baseId, entity, persistToDisk);
+      if (saveResult.isFailure()) {
+        const message = `Failed to add ${entityLabel}: ${saveResult.message}`;
         workspace.data.logger.error(message);
         return fail(message);
       }
 
-      await persistIfRequested(mutableCollectionId, persistToDisk);
       refreshWorkspace();
       return succeed(compositeId);
     },
-    [entityLabel, persistIfRequested, refreshWorkspace, setInMutableCollection, workspace]
+    [entityLabel, saveToCollectionOrLegacy, refreshWorkspace, workspace]
   );
 
   const saveEntity = useCallback(
@@ -282,18 +345,17 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
       }
       const collectionId = collectionPart as CollectionId;
 
-      const setResult = setInMutableCollection(collectionId, baseId, entity);
-      if (setResult.isFailure()) {
-        const message = `Save failed (in-memory): ${setResult.message}`;
+      const saveResult = await saveToCollectionOrLegacy(collectionId, baseId, entity, persistToDisk);
+      if (saveResult.isFailure()) {
+        const message = `Save failed: ${saveResult.message}`;
         workspace.data.logger.error(message);
         return fail(message);
       }
 
-      await persistIfRequested(collectionId, persistToDisk);
       refreshWorkspace();
       return succeed(compositeId);
     },
-    [persistIfRequested, refreshWorkspace, setInMutableCollection, workspace]
+    [saveToCollectionOrLegacy, refreshWorkspace, workspace]
   );
 
   return {

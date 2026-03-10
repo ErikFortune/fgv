@@ -17,7 +17,7 @@ static fromPersistedState(baseConfection: T, persistedEntity: IConfectionSession
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td>baseConfection</td><td>T</td><td>The source bar truffle confection</td></tr>
-<tr><td>persistedEntity</td><td>IConfectionSessionEntity</td><td></td></tr>
+<tr><td>persistedEntity</td><td>IConfectionSessionEntity</td><td>The persisted confection session entity</td></tr>
 <tr><td>context</td><td>ISessionContext</td><td>The runtime context</td></tr>
 <tr><td>params</td><td>IConfectionEditingSessionParams</td><td>Optional session parameters</td></tr>
 </tbody></table>

@@ -562,6 +562,158 @@ export class ChocolateEntityLibrary {
   }
 
   // ==========================================================================
+  // Entity Save Helpers
+  // ==========================================================================
+
+  /**
+   * Save a filling recipe entity to a mutable collection.
+   *
+   * Sets the entity in the SubLibrary (in-memory), then persists to disk
+   * via the persisted collection singleton. Fails if persistence is unavailable
+   * or if disk save fails.
+   *
+   * @param collectionId - Target collection (must be mutable)
+   * @param baseId - Base filling ID
+   * @param entity - The filling recipe entity to save
+   * @returns Composite filling ID on success
+   * @public
+   */
+  public async saveFillingRecipe(
+    collectionId: CollectionId,
+    baseId: BaseFillingId,
+    entity: IFillingRecipeEntity
+  ): Promise<Result<string>> {
+    return this._saveEntityToCollection(
+      this.fillings,
+      collectionId,
+      baseId,
+      entity,
+      (cid) => this.getPersistedFillingsCollection(cid),
+      'filling recipe'
+    );
+  }
+
+  /**
+   * Save an ingredient entity to a mutable collection.
+   * @see {@link ChocolateEntityLibrary.saveFillingRecipe | saveFillingRecipe} for behavior details.
+   * @public
+   */
+  public async saveIngredient(
+    collectionId: CollectionId,
+    baseId: BaseIngredientId,
+    entity: IngredientEntity
+  ): Promise<Result<string>> {
+    return this._saveEntityToCollection(
+      this.ingredients,
+      collectionId,
+      baseId,
+      entity,
+      (cid) => this.getPersistedIngredientsCollection(cid),
+      'ingredient'
+    );
+  }
+
+  /**
+   * Save a procedure entity to a mutable collection.
+   * @see {@link ChocolateEntityLibrary.saveFillingRecipe | saveFillingRecipe} for behavior details.
+   * @public
+   */
+  public async saveProcedure(
+    collectionId: CollectionId,
+    baseId: BaseProcedureId,
+    entity: IProcedureEntity
+  ): Promise<Result<string>> {
+    return this._saveEntityToCollection(
+      this.procedures,
+      collectionId,
+      baseId,
+      entity,
+      (cid) => this.getPersistedProceduresCollection(cid),
+      'procedure'
+    );
+  }
+
+  /**
+   * Save a mold entity to a mutable collection.
+   * @see {@link ChocolateEntityLibrary.saveFillingRecipe | saveFillingRecipe} for behavior details.
+   * @public
+   */
+  public async saveMold(
+    collectionId: CollectionId,
+    baseId: BaseMoldId,
+    entity: IMoldEntity
+  ): Promise<Result<string>> {
+    return this._saveEntityToCollection(
+      this.molds,
+      collectionId,
+      baseId,
+      entity,
+      (cid) => this.getPersistedMoldsCollection(cid),
+      'mold'
+    );
+  }
+
+  /**
+   * Save a task entity to a mutable collection.
+   * @see {@link ChocolateEntityLibrary.saveFillingRecipe | saveFillingRecipe} for behavior details.
+   * @public
+   */
+  public async saveTask(
+    collectionId: CollectionId,
+    baseId: BaseTaskId,
+    entity: IRawTaskEntity
+  ): Promise<Result<string>> {
+    return this._saveEntityToCollection(
+      this.tasks,
+      collectionId,
+      baseId,
+      entity,
+      (cid) => this.getPersistedTasksCollection(cid),
+      'task'
+    );
+  }
+
+  /**
+   * Save a confection recipe entity to a mutable collection.
+   * @see {@link ChocolateEntityLibrary.saveFillingRecipe | saveFillingRecipe} for behavior details.
+   * @public
+   */
+  public async saveConfectionRecipe(
+    collectionId: CollectionId,
+    baseId: BaseConfectionId,
+    entity: Entities.Confections.AnyConfectionRecipeEntity
+  ): Promise<Result<string>> {
+    return this._saveEntityToCollection(
+      this.confections,
+      collectionId,
+      baseId,
+      entity,
+      (cid) => this.getPersistedConfectionsCollection(cid),
+      'confection recipe'
+    );
+  }
+
+  /**
+   * Save a decoration entity to a mutable collection.
+   * @see {@link ChocolateEntityLibrary.saveFillingRecipe | saveFillingRecipe} for behavior details.
+   * @public
+   */
+  public async saveDecoration(
+    collectionId: CollectionId,
+    baseId: BaseDecorationId,
+    entity: IDecorationEntity
+  ): Promise<Result<string>> {
+    return this._saveEntityToCollection(
+      this.decorations,
+      collectionId,
+      baseId,
+      entity,
+      (cid) => this.getPersistedDecorationsCollection(cid),
+      'decoration'
+    );
+  }
+
+  // ==========================================================================
   // Ephemeral Editable Collections (legacy — use getPersisted* for new code)
   // ==========================================================================
 
@@ -810,5 +962,70 @@ export class ChocolateEntityLibrary {
       return fail(persistedResult.message);
     }
     return persistedResult.value.save();
+  }
+
+  /**
+   * Generic implementation for saving an entity to a mutable collection.
+   *
+   * 1. Looks up the collection and verifies it is mutable.
+   * 2. Sets the entity in the SubLibrary (in-memory mutation).
+   * 3. Persists via the persisted collection singleton (disk write).
+   *
+   * If (3) fails, the entity is still in memory but the result is a failure.
+   *
+   * @internal
+   */
+  private async _saveEntityToCollection<TCompositeId extends string, TBaseId extends string, TEntity>(
+    subLibrary: SubLibraryBase<TCompositeId, TBaseId, TEntity>,
+    collectionId: CollectionId,
+    baseId: TBaseId,
+    entity: TEntity,
+    getPersisted: (collectionId: CollectionId) => Result<PersistedEditableCollection<TEntity, TBaseId>>,
+    entityLabel: string
+  ): Promise<Result<string>> {
+    // 1. Look up collection and verify mutability
+    const collectionResult = subLibrary.collections.get(collectionId);
+    if (collectionResult.isFailure()) {
+      return fail(`${entityLabel}: collection '${collectionId}' not found: ${collectionResult.message}`);
+    }
+
+    const collection = collectionResult.value;
+    if (!collection.isMutable) {
+      return fail(`${entityLabel}: collection '${collectionId}' is not mutable`);
+    }
+
+    // 2. Set the entity in the SubLibrary (in-memory)
+    const setResult = collection.items.set(baseId, entity);
+    if (setResult.isFailure()) {
+      return fail(
+        `${entityLabel}: failed to set '${baseId}' in collection '${collectionId}': ${setResult.message}`
+      );
+    }
+
+    // 3. Compute composite ID
+    const compositeIdResult = subLibrary.composeId(collectionId, baseId);
+    if (compositeIdResult.isFailure()) {
+      return fail(
+        `${entityLabel}: failed to compose ID for '${collectionId}.${baseId}': ${compositeIdResult.message}`
+      );
+    }
+    const compositeId = compositeIdResult.value as string;
+
+    // 4. Persist to disk — fail if persistence is unavailable or fails
+    const persistedResult = getPersisted(collectionId);
+    if (persistedResult.isFailure()) {
+      return fail(
+        `Saved ${entityLabel} '${compositeId}' in memory but persistence unavailable: ${persistedResult.message}`
+      );
+    }
+
+    const saveResult = await persistedResult.value.save();
+    if (saveResult.isFailure()) {
+      return fail(
+        `Saved ${entityLabel} '${compositeId}' in memory but disk save failed: ${saveResult.message}`
+      );
+    }
+
+    return succeed(compositeId);
   }
 }

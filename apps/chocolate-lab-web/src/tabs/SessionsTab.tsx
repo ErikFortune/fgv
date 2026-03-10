@@ -5,6 +5,7 @@ import {
   Entities,
   Helpers,
   UserLibrary,
+  type BaseFillingId,
   type BaseIngredientId,
   type BaseProcedureId,
   type FillingId,
@@ -20,8 +21,10 @@ import {
 import {
   type ICascadeEntry,
   type CascadeEntityType,
+  type RecipeSaveOption,
   useTabNavigation,
   useEntityList,
+  useEntityMutation,
   useFilteredEntities,
   useMutableCollection,
   FillingDetail,
@@ -47,6 +50,100 @@ import {
 } from '../shared';
 
 // ============================================================================
+// Recipe Save Helper
+// ============================================================================
+
+type MessageFn = (level: 'success' | 'error' | 'info', message: string) => void;
+
+interface IFillingMutation {
+  readonly saveEntity: (params: {
+    readonly compositeId: FillingId;
+    readonly baseId: BaseFillingId;
+    readonly entity: Entities.Fillings.IFillingRecipeEntity;
+    readonly persistToDisk?: boolean;
+  }) => Promise<import('@fgv/ts-utils').Result<FillingId>>;
+}
+
+/**
+ * Saves recipe changes from a session's produced state back to the entity library.
+ *
+ * For 'new-variation': creates a new variation entity from produced state, adds it to the recipe.
+ * For 'alternatives': merges produced ingredient choices as alternatives into the existing variation.
+ *
+ * @returns `true` if the save succeeded, `false` if it failed (error reported via addMessage)
+ */
+async function saveRecipeFromSession(
+  session: UserLibrary.Session.EditingSession,
+  saveOption: RecipeSaveOption,
+  fillingMutation: IFillingMutation,
+  addMessage: MessageFn
+): Promise<boolean> {
+  const recipeEntity = session.baseRecipe.fillingRecipe.entity;
+
+  // Generate a new variation spec for the save
+  const existingSpecs = recipeEntity.variations.map((v) => v.variationSpec);
+  const specResult = Helpers.generateFillingVariationSpec(existingSpecs);
+  if (specResult.isFailure()) {
+    addMessage('error', `Failed to generate variation spec: ${specResult.message}`);
+    return false;
+  }
+  const newSpec = specResult.value;
+
+  // Get the save result (variation entity + journal entry) from the session
+  const saveResult =
+    saveOption === 'new-variation'
+      ? session.saveAsNewVariation({ variationSpec: newSpec })
+      : session.saveAsAlternatives({ variationSpec: newSpec });
+
+  if (saveResult.isFailure()) {
+    addMessage('error', `Recipe save failed: ${saveResult.message}`);
+    return false;
+  }
+
+  const { variationEntity } = saveResult.value;
+  if (!variationEntity) {
+    addMessage('error', 'Recipe save produced no variation entity');
+    return false;
+  }
+
+  // Create an EditedFillingRecipe wrapper and integrate the variation
+  const wrapperResult = LibraryRuntime.EditedFillingRecipe.create(recipeEntity);
+  if (wrapperResult.isFailure()) {
+    addMessage('error', `Failed to create recipe wrapper: ${wrapperResult.message}`);
+    return false;
+  }
+
+  const wrapper = wrapperResult.value;
+  const integrationResult =
+    saveOption === 'new-variation'
+      ? wrapper.addVariation(variationEntity)
+      : wrapper.replaceVariation(newSpec, variationEntity);
+
+  if (integrationResult.isFailure()) {
+    addMessage('error', `Failed to integrate variation: ${integrationResult.message}`);
+    return false;
+  }
+
+  // Persist the updated recipe entity
+  const fillingId = session.baseRecipe.fillingId;
+  const baseId = recipeEntity.baseId;
+
+  const persistResult = await fillingMutation.saveEntity({
+    compositeId: fillingId,
+    baseId: baseId as BaseFillingId,
+    entity: wrapper.current,
+    persistToDisk: true
+  });
+
+  if (persistResult.isFailure()) {
+    addMessage('error', `Failed to persist recipe: ${persistResult.message}`);
+    return false;
+  }
+
+  return true;
+}
+
+// ============================================================================
 // Tab Content
 // ============================================================================
 
@@ -63,6 +160,14 @@ export function SessionsTabContent(): React.ReactElement {
 
   const sessionActions = useSessionActions();
   const { addMessage } = useMessages();
+
+  const fillingMutation = useEntityMutation<Entities.Fillings.IFillingRecipeEntity, BaseFillingId, FillingId>(
+    {
+      saveToCollection: (collectionId, baseId, entity) =>
+        workspace.data.entities.saveFillingRecipe(collectionId, baseId, entity),
+      entityLabel: 'filling'
+    }
+  );
 
   // ============================================================================
   // Commit Dialog State
@@ -81,22 +186,41 @@ export function SessionsTabContent(): React.ReactElement {
     setCommitSessionId(sessionId);
   }, []);
 
-  const handleCommitConfirm = useCallback(async (): Promise<void> => {
-    if (!commitSessionId || !sessionActions.defaultJournalCollectionId) {
-      addMessage('error', 'Cannot commit: no journal collection available');
-      return;
-    }
-    const result = await sessionActions.commitFillingSession(
-      commitSessionId,
-      sessionActions.defaultJournalCollectionId
-    );
-    if (result.isSuccess()) {
-      addMessage('success', `Session committed to journal: ${result.value.journalId}`);
-      setCommitSessionId(undefined);
-    } else {
-      addMessage('error', `Commit failed: ${result.message}`);
-    }
-  }, [commitSessionId, sessionActions, addMessage]);
+  const handleCommitConfirm = useCallback(
+    async (saveOption: RecipeSaveOption): Promise<void> => {
+      if (!commitSessionId || !sessionActions.defaultJournalCollectionId) {
+        addMessage('error', 'Cannot commit: no journal collection available');
+        return;
+      }
+
+      // Step 1: Recipe save (if requested)
+      if (saveOption !== 'journal-only' && commitSession) {
+        const recipeSaveResult = await saveRecipeFromSession(
+          commitSession,
+          saveOption,
+          fillingMutation,
+          addMessage
+        );
+        if (!recipeSaveResult) {
+          return; // Error already reported
+        }
+      }
+
+      // Step 2: Journal commit + session status update
+      const result = await sessionActions.commitFillingSession(
+        commitSessionId,
+        sessionActions.defaultJournalCollectionId
+      );
+      if (result.isSuccess()) {
+        const saveLabel = saveOption === 'journal-only' ? '' : ' (recipe changes saved)';
+        addMessage('success', `Session committed to journal: ${result.value.journalId}${saveLabel}`);
+        setCommitSessionId(undefined);
+      } else {
+        addMessage('error', `Commit failed: ${result.message}`);
+      }
+    },
+    [commitSessionId, commitSession, sessionActions, fillingMutation, addMessage]
+  );
 
   const handleCommitCancel = useCallback((): void => {
     setCommitSessionId(undefined);
