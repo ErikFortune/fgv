@@ -621,13 +621,15 @@ function MoldedBonBonContent({
         selectedId={viewSettings?.moldId}
         onSelect={onSettingChange ? (id): void => onSettingChange({ moldId: id }) : undefined}
       />
-      <ChocolateSpecSection
-        title="Shell Chocolate"
-        spec={variation.shellChocolate}
-        onIngredientClick={onIngredientClick}
-        selectedId={viewSettings?.shellChocolateId}
-        onSelect={onSettingChange ? (id): void => onSettingChange({ shellChocolateId: id }) : undefined}
-      />
+      {variation.shellChocolate && (
+        <ChocolateSpecSection
+          title="Shell Chocolate"
+          spec={variation.shellChocolate}
+          onIngredientClick={onIngredientClick}
+          selectedId={viewSettings?.shellChocolateId}
+          onSelect={onSettingChange ? (id): void => onSettingChange({ shellChocolateId: id }) : undefined}
+        />
+      )}
       {variation.additionalChocolates && (
         <AdditionalChocolatesSection
           chocolates={variation.additionalChocolates}

@@ -11,7 +11,8 @@ import { Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseProcedureId, CollectionId, TaskId, ProcedureId } from '@fgv/ts-chocolate';
 import type { Result } from '@fgv/ts-utils';
 import {
-  type ICascadeEntry,
+  isProcedureCascadeEntry,
+  CASCADE_NEW_ENTITY_ID,
   type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
@@ -149,10 +150,16 @@ export function ProceduresTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: ProcedureId): void => {
-      const entry: ICascadeEntry = { entityType: 'procedure', entityId: id, mode: 'view' };
-      squashCascade([entry]);
+      squashCascade([
+        {
+          entityType: 'procedure',
+          entityId: id,
+          mode: 'view',
+          entity: workspace.data.procedures.get(id).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleRequestDelete = useCallback(
@@ -259,8 +266,14 @@ export function ProceduresTabContent(): React.ReactElement {
         editingRef.current = undefined;
       }
       procedureSession.cleanup();
+      const refreshedEntity = workspace.data.procedures
+        .get(compositeId as ProcedureId)
+        .report(workspace.data.logger)
+        .orDefault();
       const updated = cascadeStack.map((e) =>
-        e.entityId === compositeId && e.entityType === 'procedure' ? { ...e, mode: 'view' as const } : e
+        e.entityId === compositeId && e.entityType === 'procedure'
+          ? { ...e, mode: 'view' as const, entity: refreshedEntity }
+          : e
       );
       squashCascade(updated.filter((e) => e.entityType !== 'task' || e.mode === 'view'));
     },
@@ -272,9 +285,20 @@ export function ProceduresTabContent(): React.ReactElement {
       const withoutAnyPreview = cascadeStack.filter(
         (e) => !(e.mode === 'preview' && (e.entityType === 'procedure' || e.entityType === 'task'))
       );
-      squashCascade([...withoutAnyPreview, { entityType: 'procedure', entityId, mode: 'preview' }]);
+      squashCascade([
+        ...withoutAnyPreview,
+        {
+          entityType: 'procedure',
+          entityId,
+          mode: 'preview',
+          entity: workspace.data.procedures
+            .get(entityId as ProcedureId)
+            .report(workspace.data.logger)
+            .orDefault()
+        }
+      ]);
     },
-    [cascadeStack, squashCascade]
+    [cascadeStack, squashCascade, workspace]
   );
 
   const handleCloseProcedurePreview = useCallback(
@@ -311,7 +335,14 @@ export function ProceduresTabContent(): React.ReactElement {
         return;
       }
       editingRef.current = { id: compositeId, wrapper: wrapperResult.value };
-      squashCascade([{ entityType: 'procedure', entityId: compositeId, mode: 'edit' }]);
+      squashCascade([
+        {
+          entityType: 'procedure',
+          entityId: compositeId,
+          mode: 'edit',
+          entity: workspace.data.procedures.get(compositeId).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
     [workspace, mutableCollectionId, procedureMutation, squashCascade]
   );
@@ -349,9 +380,9 @@ export function ProceduresTabContent(): React.ReactElement {
         squashAt(index, { entityType: 'task', entityId: id, mode: 'view' });
       };
 
-      if (entry.entityType === 'procedure' && entry.mode === 'create') {
+      if (isProcedureCascadeEntry(entry) && entry.mode === 'create') {
         return {
-          key: '__new__procedure',
+          key: CASCADE_NEW_ENTITY_ID,
           label: 'New Procedure',
           content: (
             <div className="p-4 space-y-4">
@@ -400,9 +431,9 @@ export function ProceduresTabContent(): React.ReactElement {
         };
       }
 
-      if (entry.entityType === 'procedure') {
-        const result = workspace.data.procedures.get(entry.entityId as ProcedureId);
-        if (result.isFailure()) {
+      if (isProcedureCascadeEntry(entry)) {
+        const procedure = entry.entity;
+        if (!procedure) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -415,10 +446,10 @@ export function ProceduresTabContent(): React.ReactElement {
             editingRef.current?.id === entry.entityId ? editingRef.current.wrapper.current : undefined;
           return {
             key: `${entry.entityId}:preview`,
-            label: `${result.value.name} (preview)`,
+            label: `${procedure.name} (preview)`,
             content: (
               <ProcedurePreviewPanel
-                procedure={result.value}
+                procedure={procedure}
                 draftEntity={draftEntity}
                 availableTasks={availableTasks}
                 onClose={(): void => handleCloseProcedurePreview(entry.entityId)}
@@ -428,11 +459,11 @@ export function ProceduresTabContent(): React.ReactElement {
         }
 
         if (entry.mode === 'edit') {
-          const wrapper = getOrCreateWrapper(result.value);
+          const wrapper = getOrCreateWrapper(procedure);
           if (wrapper === undefined) {
             return {
               key: entry.entityId,
-              label: result.value.name,
+              label: procedure.name,
               content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
             };
           }
@@ -445,14 +476,12 @@ export function ProceduresTabContent(): React.ReactElement {
           if (isReadOnly) {
             return {
               key: `${entry.entityId}:edit`,
-              label: result.value.name,
+              label: procedure.name,
               content: (
                 <ReadOnlyEditGate
-                  entityName={result.value.name}
+                  entityName={procedure.name}
                   onSaveCopy={
-                    mutableCollectionId
-                      ? (): void => void openProcedureForEdit(result.value.entity)
-                      : undefined
+                    mutableCollectionId ? (): void => void openProcedureForEdit(procedure.entity) : undefined
                   }
                   onCancel={(): void => handleCancelProcedureEdit(entry.entityId)}
                 />
@@ -462,7 +491,7 @@ export function ProceduresTabContent(): React.ReactElement {
 
           return {
             key: `${entry.entityId}:edit`,
-            label: `${result.value.name} (editing)`,
+            label: `${procedure.name} (editing)`,
             content: (
               <ProcedureEditView
                 wrapper={wrapper}
@@ -483,10 +512,10 @@ export function ProceduresTabContent(): React.ReactElement {
 
         return {
           key: entry.entityId,
-          label: result.value.name,
+          label: procedure.name,
           content: (
             <ProcedureDetail
-              procedure={result.value}
+              procedure={procedure}
               onTaskClick={onTaskClick}
               onEdit={(): void => handleEditProcedure(entry.entityId)}
               onPreview={(): void => handlePreviewProcedure(entry.entityId)}
@@ -577,7 +606,9 @@ export function ProceduresTabContent(): React.ReactElement {
             <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
               <button
                 onClick={(): void =>
-                  squashCascade([{ entityType: 'procedure', entityId: '__new__', mode: 'create' }])
+                  squashCascade([
+                    { entityType: 'procedure', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }
+                  ])
                 }
                 disabled={mutableCollectionId === undefined}
                 title={

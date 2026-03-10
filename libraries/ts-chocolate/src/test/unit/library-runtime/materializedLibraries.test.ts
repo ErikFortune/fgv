@@ -256,7 +256,7 @@ describe('MaterializedLibrary Functionality Tests', () => {
 
         // For molded bonbons, shell chocolate should have materialized ingredients
         if ('shellChocolate' in variation) {
-          const shellChocolate = variation.shellChocolate;
+          const shellChocolate = variation.shellChocolate!;
           expect(shellChocolate.chocolate).toBeDefined();
           expect(typeof shellChocolate.chocolate.isChocolate).toBe('function');
           expect(shellChocolate.chocolate.isChocolate()).toBe(true);

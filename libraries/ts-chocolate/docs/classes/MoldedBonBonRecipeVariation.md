@@ -55,7 +55,7 @@ Resolved molds with preferred selection (lazy-loaded).
 
 </td><td>
 
-[IResolvedChocolateSpec](../interfaces/IResolvedChocolateSpec.md)
+[IResolvedChocolateSpec](../interfaces/IResolvedChocolateSpec.md) | undefined
 
 </td><td>
 

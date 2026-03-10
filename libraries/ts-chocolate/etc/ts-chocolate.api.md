@@ -13,6 +13,7 @@ import { Converters as Converters_9 } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { IResultReporter } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
@@ -4708,17 +4709,18 @@ interface IMoldedBonBonRecipe extends IConfectionBase<IMoldedBonBonRecipeVariati
     readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
     readonly confectionType: 'molded-bonbon';
     readonly molds: Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
-    readonly shellChocolate: IResolvedChocolateSpec;
+    readonly shellChocolate: IResolvedChocolateSpec | undefined;
     readonly yield: Confections.IYieldInFrames;
 }
 
 // @public
 interface IMoldedBonBonRecipeVariation extends IConfectionRecipeVariationBase<IMoldedBonBonRecipe, Confections.IMoldedBonBonRecipeVariationEntity> {
     readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
+    getMolds(): Result<Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>>;
     readonly molds: Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     readonly preferredMold: IResolvedConfectionMoldRef | undefined;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
-    readonly shellChocolate: IResolvedChocolateSpec;
+    readonly shellChocolate: IResolvedChocolateSpec | undefined;
     readonly yield: Confections.IYieldInFrames;
 }
 
@@ -6572,6 +6574,7 @@ interface IVariationContext<TIngredient extends IIngredient = IIngredient> {
     readonly fillings: MaterializedLibrary<FillingId, IFillingRecipeEntity, IFillingRecipe, IFillingRecipeQuerySpec>;
     readonly ingredients: MaterializedLibrary<IngredientId, IngredientEntity, TIngredient, IIngredientQuerySpec>;
     isCollectionMutable(collectionId: CollectionId): Result<boolean>;
+    readonly logger?: IResultReporter<unknown>;
     readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
 }
 
@@ -7339,7 +7342,7 @@ class MoldedBonBonRecipe extends ConfectionBase<IMoldedBonBonRecipeVariation, Co
     get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     get molds(): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     get procedures(): Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
-    get shellChocolate(): IResolvedChocolateSpec;
+    get shellChocolate(): IResolvedChocolateSpec | undefined;
     get yield(): Confections.IYieldInFrames;
 }
 
@@ -7358,11 +7361,11 @@ class MoldedBonBonRecipeVariation extends ConfectionRecipeVariationBase<IMoldedB
     get entity(): Confections.IMoldedBonBonRecipeVariationEntity;
     getAdditionalChocolates(): Result<ReadonlyArray<IResolvedAdditionalChocolate>>;
     getMolds(): Result<Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>>;
-    getShellChocolate(): Result<IResolvedChocolateSpec>;
+    getShellChocolate(): Result<IResolvedChocolateSpec | undefined>;
     get molds(): Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     get preferredMold(): IResolvedConfectionMoldRef | undefined;
     get preferredProcedure(): IResolvedConfectionProcedure | undefined;
-    get shellChocolate(): IResolvedChocolateSpec;
+    get shellChocolate(): IResolvedChocolateSpec | undefined;
     get yield(): Confections.IYieldInFrames;
 }
 

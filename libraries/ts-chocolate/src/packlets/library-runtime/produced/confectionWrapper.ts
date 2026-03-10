@@ -481,12 +481,13 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
           bufferPercentage: 10 as Percentage
         };
 
+        // TODO: shellChocolate?.chocolate.id! is unsafe.  we should make it optional in the produced molded entity too.
         const produced: IProducedMoldedBonBonEntity = {
           confectionType: 'molded-bonbon',
           variationId,
           yield: moldedYield,
           moldId: source.preferredMold?.id!,
-          shellChocolateId: source.shellChocolate.chocolate.id,
+          shellChocolateId: source.shellChocolate?.chocolate.id!,
           sealChocolateId: source.additionalChocolates?.find((c) => c.purpose === 'seal')?.chocolate.chocolate
             .id,
           decorationChocolateId: source.additionalChocolates?.find((c) => c.purpose === 'decoration')

@@ -124,7 +124,7 @@ Resolved molds with preferred selection (from golden variation).
 
 </td><td>
 
-[IResolvedChocolateSpec](../../interfaces/IResolvedChocolateSpec.md)
+[IResolvedChocolateSpec](../../interfaces/IResolvedChocolateSpec.md) | undefined
 
 </td><td>
 

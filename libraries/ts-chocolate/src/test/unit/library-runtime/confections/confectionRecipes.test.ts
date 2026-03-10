@@ -664,7 +664,7 @@ describe('Confection Recipes', () => {
 
           // Shell chocolate
           expect(confection.shellChocolate).toBeDefined();
-          expect(confection.shellChocolate.chocolate.id).toBe('test.dark-chocolate');
+          expect(confection.shellChocolate!.chocolate.id).toBe('test.dark-chocolate');
 
           // Fillings
           expect(confection.fillings).toBeDefined();
@@ -1048,7 +1048,7 @@ describe('Confection Recipes', () => {
             throw new Error('Expected molded bonbon variation');
           }
 
-          const shell = variation.shellChocolate;
+          const shell = variation.shellChocolate!;
           expect(shell.chocolate.id).toBe('test.dark-chocolate');
           expect(shell.chocolate.isChocolate()).toBe(true);
           expect(shell.alternates).toHaveLength(1);

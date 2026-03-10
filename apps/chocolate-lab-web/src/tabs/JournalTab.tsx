@@ -12,6 +12,12 @@ import type {
 } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
+  isJournalEntryCascadeEntry,
+  isIngredientCascadeEntry,
+  isProcedureCascadeEntry,
+  isFillingCascadeEntry,
+  isMoldCascadeEntry,
+  isConfectionCascadeEntry,
   useTabNavigation,
   useEntityList,
   useFilteredEntities,
@@ -36,13 +42,11 @@ import { JOURNAL_DESCRIPTOR, JOURNAL_FILTER_SPEC, type IJournalListEntry } from 
  */
 function findProducedFilling(
   journalEntry: ICascadeEntry,
-  slotId: string,
-  workspace: ReturnType<typeof useTabNavigation>['workspace']
+  slotId: string
 ): Entities.Fillings.IProducedFillingEntity | undefined {
-  const journalResult = workspace.userData.journals.get(journalEntry.entityId as JournalId);
-  if (journalResult.isFailure()) return undefined;
+  if (!isJournalEntryCascadeEntry(journalEntry) || !journalEntry.entity) return undefined;
 
-  const entry = journalResult.value;
+  const entry = journalEntry.entity;
   if (entry.entity.type !== 'confection-production') return undefined;
 
   const confectionEntry = entry.entity as Entities.Journal.IConfectionProductionJournalEntryEntity;
@@ -93,10 +97,16 @@ export function JournalTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: JournalId): void => {
-      const entry: ICascadeEntry = { entityType: 'journal-entry', entityId: id, mode: 'view' };
-      squashCascade([entry]);
+      squashCascade([
+        {
+          entityType: 'journal-entry',
+          entityId: id,
+          mode: 'view',
+          entity: workspace.userData.journals.get(id).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   // ============================================================================
@@ -105,50 +115,94 @@ export function JournalTabContent(): React.ReactElement {
 
   const handleBrowseIngredientFromJournal = useCallback(
     (journalEntry: ICascadeEntry, ingredientId: IngredientId): void => {
-      squashCascade([journalEntry, { entityType: 'ingredient', entityId: ingredientId, mode: 'view' }]);
+      squashCascade([
+        journalEntry,
+        {
+          entityType: 'ingredient',
+          entityId: ingredientId,
+          mode: 'view',
+          entity: workspace.data.ingredients.get(ingredientId).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleBrowseProcedureFromJournal = useCallback(
     (journalEntry: ICascadeEntry, procedureId: ProcedureId): void => {
-      squashCascade([journalEntry, { entityType: 'procedure', entityId: procedureId, mode: 'view' }]);
+      squashCascade([
+        journalEntry,
+        {
+          entityType: 'procedure',
+          entityId: procedureId,
+          mode: 'view',
+          entity: workspace.data.procedures.get(procedureId).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleOpenFillingRecipeFromJournal = useCallback(
     (journalEntry: ICascadeEntry, fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): void => {
       squashCascade([
         journalEntry,
-        { entityType: 'filling', entityId: fillingId, mode: 'view', prefillName: variationSpec }
+        {
+          entityType: 'filling',
+          entityId: fillingId,
+          mode: 'view',
+          prefillName: variationSpec,
+          entity: workspace.data.fillings.get(fillingId).report(workspace.data.logger).orDefault()
+        }
       ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleViewFillingSlotFromJournal = useCallback(
     (journalEntry: ICascadeEntry, fillingId: FillingId, slotId: string): void => {
       squashCascade([
         journalEntry,
-        { entityType: 'filling', entityId: fillingId, mode: 'view', embeddedSlotId: slotId }
+        {
+          entityType: 'filling',
+          entityId: fillingId,
+          mode: 'view',
+          embeddedSlotId: slotId,
+          entity: workspace.data.fillings.get(fillingId).report(workspace.data.logger).orDefault()
+        }
       ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleBrowseMoldFromJournal = useCallback(
     (journalEntry: ICascadeEntry, moldId: MoldId): void => {
-      squashCascade([journalEntry, { entityType: 'mold', entityId: moldId, mode: 'view' }]);
+      squashCascade([
+        journalEntry,
+        {
+          entityType: 'mold',
+          entityId: moldId,
+          mode: 'view',
+          entity: workspace.data.molds.get(moldId).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleBrowseConfectionRecipeFromJournal = useCallback(
     (journalEntry: ICascadeEntry, confectionId: ConfectionId): void => {
-      squashCascade([journalEntry, { entityType: 'confection', entityId: confectionId, mode: 'view' }]);
+      squashCascade([
+        journalEntry,
+        {
+          entityType: 'confection',
+          entityId: confectionId,
+          mode: 'view',
+          entity: workspace.data.confections.get(confectionId).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   // ============================================================================
@@ -157,9 +211,9 @@ export function JournalTabContent(): React.ReactElement {
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, _index) => {
-      if (entry.entityType === 'journal-entry') {
-        const result = workspace.userData.journals.get(entry.entityId as JournalId);
-        if (result.isFailure()) {
+      if (isJournalEntryCascadeEntry(entry)) {
+        const journalEntry = entry.entity;
+        if (!journalEntry) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -167,7 +221,6 @@ export function JournalTabContent(): React.ReactElement {
           };
         }
 
-        const journalEntry = result.value;
         return {
           key: entry.entityId,
           label: journalEntry.recipe.name,
@@ -192,9 +245,9 @@ export function JournalTabContent(): React.ReactElement {
         };
       }
 
-      if (entry.entityType === 'ingredient' && entry.mode === 'view') {
-        const result = workspace.data.ingredients.get(entry.entityId as IngredientId);
-        if (result.isFailure()) {
+      if (isIngredientCascadeEntry(entry) && entry.mode === 'view') {
+        const ingredient = entry.entity;
+        if (!ingredient) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -204,14 +257,14 @@ export function JournalTabContent(): React.ReactElement {
 
         return {
           key: entry.entityId,
-          label: result.value.name,
-          content: <IngredientDetail ingredient={result.value} onClose={(): void => popCascadeTo(_index)} />
+          label: ingredient.name,
+          content: <IngredientDetail ingredient={ingredient} onClose={(): void => popCascadeTo(_index)} />
         };
       }
 
-      if (entry.entityType === 'procedure' && entry.mode === 'view') {
-        const result = workspace.data.procedures.get(entry.entityId as ProcedureId);
-        if (result.isFailure()) {
+      if (isProcedureCascadeEntry(entry) && entry.mode === 'view') {
+        const procedure = entry.entity;
+        if (!procedure) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -221,18 +274,18 @@ export function JournalTabContent(): React.ReactElement {
 
         return {
           key: entry.entityId,
-          label: result.value.name,
-          content: <ProcedureDetail procedure={result.value} onClose={(): void => popCascadeTo(_index)} />
+          label: procedure.name,
+          content: <ProcedureDetail procedure={procedure} onClose={(): void => popCascadeTo(_index)} />
         };
       }
 
-      if (entry.entityType === 'filling') {
+      if (isFillingCascadeEntry(entry)) {
         // Embedded produced filling from a confection production journal entry
         if (entry.embeddedSlotId && _index > 0) {
           const parentEntry = cascadeStack[_index - 1];
-          const produced = findProducedFilling(parentEntry, entry.embeddedSlotId, workspace);
-          const fillingResult = workspace.data.fillings.get(entry.entityId as FillingId);
-          const fillingName = fillingResult.isSuccess() ? fillingResult.value.name : String(entry.entityId);
+          const produced = findProducedFilling(parentEntry, entry.embeddedSlotId);
+          const filling = entry.entity;
+          const fillingName = filling ? filling.name : String(entry.entityId);
 
           if (produced) {
             return {
@@ -243,24 +296,40 @@ export function JournalTabContent(): React.ReactElement {
                   produced={produced}
                   fillingName={fillingName}
                   onClose={(): void => popCascadeTo(_index)}
-                  onBrowseIngredient={(id: IngredientId): void =>
+                  onBrowseIngredient={(id: IngredientId): void => {
                     squashCascade([
                       ...cascadeStack.slice(0, _index + 1),
-                      { entityType: 'ingredient', entityId: id, mode: 'view' }
-                    ])
-                  }
-                  onBrowseProcedure={(id: ProcedureId): void =>
+                      {
+                        entityType: 'ingredient',
+                        entityId: id,
+                        mode: 'view',
+                        entity: workspace.data.ingredients.get(id).report(workspace.data.logger).orDefault()
+                      }
+                    ]);
+                  }}
+                  onBrowseProcedure={(id: ProcedureId): void => {
                     squashCascade([
                       ...cascadeStack.slice(0, _index + 1),
-                      { entityType: 'procedure', entityId: id, mode: 'view' }
-                    ])
-                  }
-                  onOpenFillingRecipe={(id: FillingId, spec: FillingRecipeVariationSpec): void =>
+                      {
+                        entityType: 'procedure',
+                        entityId: id,
+                        mode: 'view',
+                        entity: workspace.data.procedures.get(id).report(workspace.data.logger).orDefault()
+                      }
+                    ]);
+                  }}
+                  onOpenFillingRecipe={(id: FillingId, spec: FillingRecipeVariationSpec): void => {
                     squashCascade([
                       ...cascadeStack.slice(0, _index + 1),
-                      { entityType: 'filling', entityId: id, mode: 'view', prefillName: spec }
-                    ])
-                  }
+                      {
+                        entityType: 'filling',
+                        entityId: id,
+                        mode: 'view',
+                        prefillName: spec,
+                        entity: workspace.data.fillings.get(id).report(workspace.data.logger).orDefault()
+                      }
+                    ]);
+                  }}
                 />
               )
             };
@@ -270,8 +339,8 @@ export function JournalTabContent(): React.ReactElement {
         }
 
         // Standard filling recipe browser
-        const result = workspace.data.fillings.get(entry.entityId as FillingId);
-        if (result.isFailure()) {
+        const filling = entry.entity;
+        if (!filling) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -281,10 +350,10 @@ export function JournalTabContent(): React.ReactElement {
 
         return {
           key: `${entry.entityId}:${entry.prefillName ?? ''}`,
-          label: result.value.name,
+          label: filling.name,
           content: (
             <FillingDetail
-              filling={result.value}
+              filling={filling}
               defaultVariationSpec={entry.prefillName as FillingRecipeVariationSpec | undefined}
               onClose={(): void => popCascadeTo(_index)}
             />
@@ -292,9 +361,9 @@ export function JournalTabContent(): React.ReactElement {
         };
       }
 
-      if (entry.entityType === 'mold' && entry.mode === 'view') {
-        const result = workspace.data.molds.get(entry.entityId as MoldId);
-        if (result.isFailure()) {
+      if (isMoldCascadeEntry(entry) && entry.mode === 'view') {
+        const mold = entry.entity;
+        if (!mold) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -304,14 +373,14 @@ export function JournalTabContent(): React.ReactElement {
 
         return {
           key: entry.entityId,
-          label: result.value.displayName,
-          content: <MoldDetail mold={result.value} onClose={(): void => popCascadeTo(_index)} />
+          label: mold.displayName,
+          content: <MoldDetail mold={mold} onClose={(): void => popCascadeTo(_index)} />
         };
       }
 
-      if (entry.entityType === 'confection' && entry.mode === 'view') {
-        const result = workspace.data.confections.get(entry.entityId as ConfectionId);
-        if (result.isFailure()) {
+      if (isConfectionCascadeEntry(entry) && entry.mode === 'view') {
+        const confection = entry.entity;
+        if (!confection) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -321,8 +390,8 @@ export function JournalTabContent(): React.ReactElement {
 
         return {
           key: entry.entityId,
-          label: result.value.name,
-          content: <ConfectionDetail confection={result.value} />
+          label: confection.name,
+          content: <ConfectionDetail confection={confection} />
         };
       }
 

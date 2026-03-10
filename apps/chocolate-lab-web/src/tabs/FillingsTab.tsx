@@ -19,9 +19,15 @@ import type {
   TaskId,
   ProcedureId
 } from '@fgv/ts-chocolate';
-import type { Result, ResultMapValueType } from '@fgv/ts-utils';
+import { Success } from '@fgv/ts-utils';
+import type { ResultMapValueType } from '@fgv/ts-utils';
 import {
-  type ICascadeEntry,
+  type IFillingCascadeEntry,
+  isFillingCascadeEntry,
+  isIngredientCascadeEntry,
+  isProcedureCascadeEntry,
+  isTaskCascadeEntry,
+  CASCADE_NEW_ENTITY_ID,
   type FillingSaveMode,
   type IReferenceScanResult,
   useTabNavigation,
@@ -228,7 +234,7 @@ export function FillingsTabContent(): React.ReactElement {
       store.squashCascade([
         {
           entityType: 'session',
-          entityId: '__new__',
+          entityId: CASCADE_NEW_ENTITY_ID,
           mode: 'create',
           createSessionInfo: { fillingId, variationSpec, entityName }
         }
@@ -277,10 +283,16 @@ export function FillingsTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: FillingId): void => {
-      const entry: ICascadeEntry = { entityType: 'filling', entityId: id, mode: 'view' };
-      squashCascade([entry]);
+      squashCascade([
+        {
+          entityType: 'filling',
+          entityId: id,
+          mode: 'view',
+          entity: workspace.data.fillings.get(id).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleRequestDelete = useCallback(
@@ -483,7 +495,14 @@ export function FillingsTabContent(): React.ReactElement {
         subIngredientRef.current = undefined;
         subProcedureRef.current = undefined;
         procedureSession.cleanup();
-        squashCascade([{ entityType: 'filling', entityId: newCompositeId, mode: 'view' as const }]);
+        squashCascade([
+          {
+            entityType: 'filling',
+            entityId: newCompositeId,
+            mode: 'view' as const,
+            entity: workspace.data.fillings.get(newCompositeId).report(workspace.data.logger).orDefault()
+          }
+        ]);
         return;
       }
 
@@ -519,8 +538,14 @@ export function FillingsTabContent(): React.ReactElement {
       subIngredientRef.current = undefined;
       subProcedureRef.current = undefined;
       procedureSession.cleanup();
+      const refreshedEntity = workspace.data.fillings
+        .get(compositeId as FillingId)
+        .report(workspace.data.logger)
+        .orDefault();
       const updated = cascadeStack.map((e) =>
-        e.entityId === compositeId && e.entityType === 'filling' ? { ...e, mode: 'view' as const } : e
+        e.entityId === compositeId && e.entityType === 'filling'
+          ? { ...e, mode: 'view' as const, entity: refreshedEntity }
+          : e
       );
       squashCascade(updated);
     },
@@ -532,8 +557,7 @@ export function FillingsTabContent(): React.ReactElement {
   // ============================================================================
 
   const handleNewFilling = useCallback((): void => {
-    const entry: ICascadeEntry = { entityType: 'filling', entityId: '__new__', mode: 'create' };
-    squashCascade([entry]);
+    squashCascade([{ entityType: 'filling', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }]);
   }, [squashCascade]);
 
   const handleCreateFilling = useCallback(
@@ -578,8 +602,14 @@ export function FillingsTabContent(): React.ReactElement {
         workspace.data.logger.info(`Created filling '${entity.name}' from AI-generated data`);
       }
 
-      const entry: ICascadeEntry = { entityType: 'filling', entityId: compositeId, mode: 'edit' };
-      squashCascade([entry]);
+      const cascadeEntry: IFillingCascadeEntry = {
+        entityType: 'filling',
+        entityId: compositeId,
+        mode: 'edit',
+        hasChanges: true,
+        entity: workspace.data.fillings.get(compositeId).report(workspace.data.logger).orDefault()
+      };
+      squashCascade([cascadeEntry]);
     },
     [workspace, mutableCollectionId, fillingMutation, squashCascade]
   );
@@ -643,7 +673,7 @@ export function FillingsTabContent(): React.ReactElement {
       setSubEntitySeed(seed);
       squashCascade([
         ...cascadeStack.slice(0, editIdx + 1),
-        { entityType: 'ingredient', entityId: '__new__', mode: 'create' }
+        { entityType: 'ingredient', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }
       ]);
     },
     [cascadeStack, squashCascade]
@@ -656,7 +686,7 @@ export function FillingsTabContent(): React.ReactElement {
       setSubEntitySeed(seed);
       squashCascade([
         ...cascadeStack.slice(0, editIdx + 1),
-        { entityType: 'procedure', entityId: '__new__', mode: 'create' }
+        { entityType: 'procedure', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }
       ]);
     },
     [cascadeStack, squashCascade]
@@ -695,20 +725,24 @@ export function FillingsTabContent(): React.ReactElement {
       setSubEntitySeed('');
 
       // Open the new ingredient in edit mode
-      const wrapperResult = LibraryRuntime.EditedIngredient.create(entity);
-      if (wrapperResult.isFailure()) {
-        workspace.data.logger.error(`Failed to create ingredient editing wrapper: ${wrapperResult.message}`);
-        return;
-      }
-      subIngredientRef.current = { id: compositeId, wrapper: wrapperResult.value };
-
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'filling' && e.mode === 'edit');
-      if (editIdx >= 0) {
-        squashCascade([
-          ...cascadeStack.slice(0, editIdx + 1),
-          { entityType: 'ingredient', entityId: compositeId, mode: 'edit' }
-        ]);
-      }
+      LibraryRuntime.EditedIngredient.create(entity)
+        .report(workspace.data.logger)
+        .onSuccess((wrapper) => {
+          subIngredientRef.current = { id: compositeId, wrapper };
+          const editIdx = cascadeStack.findIndex((e) => e.entityType === 'filling' && e.mode === 'edit');
+          if (editIdx >= 0) {
+            squashCascade([
+              ...cascadeStack.slice(0, editIdx + 1),
+              {
+                entityType: 'ingredient',
+                entityId: compositeId,
+                mode: 'edit',
+                entity: workspace.data.ingredients.get(compositeId).report(workspace.data.logger).orDefault()
+              }
+            ]);
+          }
+          return Success.with(wrapper);
+        });
     },
     [workspace, cascadeStack, squashCascade, ingredientMutation]
   );
@@ -746,20 +780,24 @@ export function FillingsTabContent(): React.ReactElement {
       setSubEntitySeed('');
 
       // Open the new procedure in edit mode
-      const wrapperResult = LibraryRuntime.EditedProcedure.create(entity);
-      if (wrapperResult.isFailure()) {
-        workspace.data.logger.error(`Failed to create procedure editing wrapper: ${wrapperResult.message}`);
-        return;
-      }
-      subProcedureRef.current = { id: compositeId, wrapper: wrapperResult.value };
-
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'filling' && e.mode === 'edit');
-      if (editIdx >= 0) {
-        squashCascade([
-          ...cascadeStack.slice(0, editIdx + 1),
-          { entityType: 'procedure', entityId: compositeId, mode: 'edit' }
-        ]);
-      }
+      LibraryRuntime.EditedProcedure.create(entity)
+        .report(workspace.data.logger)
+        .onSuccess((wrapper) => {
+          subProcedureRef.current = { id: compositeId, wrapper };
+          const editIdx = cascadeStack.findIndex((e) => e.entityType === 'filling' && e.mode === 'edit');
+          if (editIdx >= 0) {
+            squashCascade([
+              ...cascadeStack.slice(0, editIdx + 1),
+              {
+                entityType: 'procedure',
+                entityId: compositeId,
+                mode: 'edit',
+                entity: workspace.data.procedures.get(compositeId).report(workspace.data.logger).orDefault()
+              }
+            ]);
+          }
+          return Success.with(wrapper);
+        });
     },
     [workspace, cascadeStack, squashCascade, procedureMutation]
   );
@@ -892,15 +930,27 @@ export function FillingsTabContent(): React.ReactElement {
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, index) => {
-      const onIngredientClick = (id: IngredientId): void => drillDown(index, 'ingredient', id);
-      const onProcedureClick = (id: ProcedureId): void => drillDown(index, 'procedure', id);
-      const onTaskClick = (id: TaskId): void => drillDown(index, 'task', id);
+      const onIngredientClick = (id: IngredientId): void => {
+        drillDown(index, 'ingredient', id, {
+          entity: workspace.data.ingredients.get(id).report(workspace.data.logger).orDefault()
+        });
+      };
+      const onProcedureClick = (id: ProcedureId): void => {
+        drillDown(index, 'procedure', id, {
+          entity: workspace.data.procedures.get(id).report(workspace.data.logger).orDefault()
+        });
+      };
+      const onTaskClick = (id: TaskId): void => {
+        drillDown(index, 'task', id, {
+          entity: workspace.data.tasks.get(id).report(workspace.data.logger).orDefault()
+        });
+      };
 
-      if (entry.entityType === 'filling') {
+      if (isFillingCascadeEntry(entry)) {
         // Create mode
         if (entry.mode === 'create') {
           return {
-            key: '__new__',
+            key: CASCADE_NEW_ENTITY_ID,
             label: 'New Filling',
             content: (
               <EntityCreateForm<Entities.Fillings.IFillingRecipeEntity>
@@ -924,8 +974,8 @@ export function FillingsTabContent(): React.ReactElement {
           };
         }
 
-        const result = workspace.data.fillings.get(entry.entityId as FillingId);
-        if (result.isFailure()) {
+        const filling = entry.entity;
+        if (!filling) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -935,12 +985,12 @@ export function FillingsTabContent(): React.ReactElement {
 
         // Edit mode
         if (entry.mode === 'edit') {
-          const state = getOrCreateEditingState(result.value, editVariationSpecRef.current);
+          const state = getOrCreateEditingState(filling, editVariationSpecRef.current);
           editVariationSpecRef.current = undefined;
           if (!state) {
             return {
               key: entry.entityId,
-              label: result.value.name,
+              label: filling.name,
               content: <div className="p-4 text-red-500">Failed to create editing state</div>
             };
           }
@@ -952,10 +1002,10 @@ export function FillingsTabContent(): React.ReactElement {
           if (isSourceReadOnly) {
             return {
               key: `${entry.entityId}:edit`,
-              label: result.value.name,
+              label: filling.name,
               content: (
                 <ReadOnlyEditGate
-                  entityName={result.value.name}
+                  entityName={filling.name}
                   onSaveCopy={
                     mutableCollectionId ? (): void => void handleSaveFilling('new-recipe') : undefined
                   }
@@ -967,7 +1017,7 @@ export function FillingsTabContent(): React.ReactElement {
 
           return {
             key: `${entry.entityId}:edit`,
-            label: `Editing: ${result.value.name}`,
+            label: `Editing: ${filling.name}`,
             content: (
               <FillingEditView
                 wrapper={state.wrapper}
@@ -994,10 +1044,10 @@ export function FillingsTabContent(): React.ReactElement {
             editingRef.current?.id === entry.entityId ? editingRef.current.wrapper.current : undefined;
           return {
             key: `${entry.entityId}:preview`,
-            label: `Preview: ${result.value.name}`,
+            label: `Preview: ${filling.name}`,
             content: (
               <FillingPreviewPanel
-                filling={result.value}
+                filling={filling}
                 draftEntity={draftEntity}
                 targetYield={targetYieldMap.get(entry.entityId)}
                 onClose={(): void => handleCloseFillingPreview(entry.entityId)}
@@ -1012,10 +1062,10 @@ export function FillingsTabContent(): React.ReactElement {
         viewVariationSpecRef.current = undefined;
         return {
           key: entry.entityId,
-          label: result.value.name,
+          label: filling.name,
           content: (
             <FillingDetail
-              filling={result.value}
+              filling={filling}
               defaultVariationSpec={savedVariationSpec}
               onIngredientClick={onIngredientClick}
               onProcedureClick={onProcedureClick}
@@ -1030,11 +1080,11 @@ export function FillingsTabContent(): React.ReactElement {
         };
       }
 
-      if (entry.entityType === 'ingredient') {
+      if (isIngredientCascadeEntry(entry)) {
         // Sub-entity create mode
         if (entry.mode === 'create') {
           return {
-            key: '__new_ingredient__',
+            key: `${CASCADE_NEW_ENTITY_ID}_ingredient`,
             label: 'New Ingredient',
             content: (
               <EntityCreateForm<Entities.Ingredients.IngredientEntity>
@@ -1054,8 +1104,8 @@ export function FillingsTabContent(): React.ReactElement {
           };
         }
 
-        const result = workspace.data.ingredients.get(entry.entityId as IngredientId);
-        if (result.isFailure()) {
+        const ingredient = entry.entity;
+        if (!ingredient) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -1064,17 +1114,17 @@ export function FillingsTabContent(): React.ReactElement {
         }
 
         if (entry.mode === 'edit') {
-          const wrapper = getOrCreateSubIngredientWrapper(result.value);
+          const wrapper = getOrCreateSubIngredientWrapper(ingredient);
           if (!wrapper) {
             return {
               key: entry.entityId,
-              label: result.value.name,
+              label: ingredient.name,
               content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
             };
           }
           return {
             key: `${entry.entityId}:edit`,
-            label: `Editing: ${result.value.name}`,
+            label: `Editing: ${ingredient.name}`,
             content: (
               <IngredientEditView
                 wrapper={wrapper}
@@ -1087,10 +1137,10 @@ export function FillingsTabContent(): React.ReactElement {
 
         return {
           key: entry.entityId,
-          label: result.value.name,
+          label: ingredient.name,
           content: (
             <IngredientDetail
-              ingredient={result.value}
+              ingredient={ingredient}
               onEdit={(): void => {
                 squashCascade([
                   ...cascadeStack.slice(0, index),
@@ -1103,11 +1153,11 @@ export function FillingsTabContent(): React.ReactElement {
         };
       }
 
-      if (entry.entityType === 'procedure') {
+      if (isProcedureCascadeEntry(entry)) {
         // Sub-entity create mode
         if (entry.mode === 'create') {
           return {
-            key: '__new_procedure__',
+            key: `${CASCADE_NEW_ENTITY_ID}_procedure`,
             label: 'New Procedure',
             content: (
               <EntityCreateForm<Entities.Procedures.IProcedureEntity>
@@ -1125,8 +1175,8 @@ export function FillingsTabContent(): React.ReactElement {
           };
         }
 
-        const result = workspace.data.procedures.get(entry.entityId as ProcedureId);
-        if (result.isFailure()) {
+        const procedure = entry.entity;
+        if (!procedure) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -1135,17 +1185,17 @@ export function FillingsTabContent(): React.ReactElement {
         }
 
         if (entry.mode === 'edit') {
-          const wrapper = getOrCreateSubProcedureWrapper(result.value);
+          const wrapper = getOrCreateSubProcedureWrapper(procedure);
           if (!wrapper) {
             return {
               key: entry.entityId,
-              label: result.value.name,
+              label: procedure.name,
               content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
             };
           }
           return {
             key: `${entry.entityId}:edit`,
-            label: `Editing: ${result.value.name}`,
+            label: `Editing: ${procedure.name}`,
             content: (
               <ProcedureEditView
                 wrapper={wrapper}
@@ -1161,10 +1211,10 @@ export function FillingsTabContent(): React.ReactElement {
 
         return {
           key: entry.entityId,
-          label: result.value.name,
+          label: procedure.name,
           content: (
             <ProcedureDetail
-              procedure={result.value}
+              procedure={procedure}
               onTaskClick={onTaskClick}
               onEdit={(): void => {
                 squashCascade([
@@ -1178,17 +1228,14 @@ export function FillingsTabContent(): React.ReactElement {
         };
       }
 
-      if (entry.entityType === 'task') {
-        const result = workspace.data.tasks.get(entry.entityId as TaskId);
-        if (result.isFailure()) {
+      if (isTaskCascadeEntry(entry)) {
+        const task = entry.entity;
+        if (!task) {
           // Check for inline task from parent procedure
-          const parentProcEntry = cascadeStack
-            .slice(0, index)
-            .reverse()
-            .find((e) => e.entityType === 'procedure');
+          const parentProcEntry = cascadeStack.slice(0, index).reverse().find(isProcedureCascadeEntry);
           if (parentProcEntry) {
-            const proc = workspace.data.procedures.get(parentProcEntry.entityId as ProcedureId);
-            const steps = proc.isSuccess() ? proc.value.getSteps() : undefined;
+            const proc = parentProcEntry.entity;
+            const steps = proc ? proc.getSteps() : undefined;
             const inlineStep = steps?.isSuccess()
               ? steps.value.find((s) => s.isInline && s.resolvedTask.id === entry.entityId)
               : undefined;
@@ -1208,8 +1255,8 @@ export function FillingsTabContent(): React.ReactElement {
         }
         return {
           key: entry.entityId,
-          label: result.value.name,
-          content: <TaskDetail task={result.value} />
+          label: task.name,
+          content: <TaskDetail task={task} />
         };
       }
 

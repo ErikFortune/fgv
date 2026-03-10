@@ -57,17 +57,19 @@ function renderMoldedBonBonDetails(
   }
 
   // Shell Chocolate
-  lines.push('');
-  lines.push('Shell Chocolate:');
-  lines.push(`  ${confection.shellChocolate.chocolate.name} (${confection.shellChocolate.chocolate.id})`);
-  if (confection.shellChocolate.alternates.length > 0) {
-    lines.push(`  Alternates: ${confection.shellChocolate.alternates.map((a) => a.id).join(', ')}`);
+  if (confection.shellChocolate) {
+    lines.push('');
+    lines.push('Shell Chocolate:');
+    lines.push(`  ${confection.shellChocolate.chocolate.name} (${confection.shellChocolate.chocolate.id})`);
+    if (confection.shellChocolate.alternates.length > 0) {
+      lines.push(`  Alternates: ${confection.shellChocolate.alternates.map((a) => a.id).join(', ')}`);
+    }
+    actions.push({
+      label: `View chocolate: ${confection.shellChocolate.chocolate.name}`,
+      key: `view-ingredient:${confection.shellChocolate.chocolate.id}`,
+      description: `Navigate to ${confection.shellChocolate.chocolate.id}`
+    });
   }
-  actions.push({
-    label: `View chocolate: ${confection.shellChocolate.chocolate.name}`,
-    key: `view-ingredient:${confection.shellChocolate.chocolate.id}`,
-    description: `Navigate to ${confection.shellChocolate.chocolate.id}`
-  });
 
   // Additional Chocolates
   if (confection.additionalChocolates && confection.additionalChocolates.length > 0) {

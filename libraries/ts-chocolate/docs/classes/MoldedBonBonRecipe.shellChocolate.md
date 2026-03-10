@@ -7,5 +7,5 @@ Resolved shell chocolate specification (from golden variation).
 **Signature:**
 
 ```typescript
-readonly shellChocolate: IResolvedChocolateSpec;
+readonly shellChocolate: IResolvedChocolateSpec | undefined;
 ```

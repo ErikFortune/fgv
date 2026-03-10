@@ -2,10 +2,10 @@
 
 ## IMoldedBonBonRecipeVariation.shellChocolate property
 
-Resolved shell chocolate specification
+Resolved shell chocolate specification (undefined if not configured)
 
 **Signature:**
 
 ```typescript
-readonly shellChocolate: IResolvedChocolateSpec;
+readonly shellChocolate: IResolvedChocolateSpec | undefined;
 ```

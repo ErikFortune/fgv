@@ -28,7 +28,7 @@
  * @packageDocumentation
  */
 
-import { Result } from '@fgv/ts-utils';
+import { Result, type IResultReporter } from '@fgv/ts-utils';
 
 import { IIngredientQuerySpec, IFillingRecipeQuerySpec } from './indexers';
 import type { MaterializedLibrary } from './materializedLibrary';
@@ -891,6 +891,9 @@ export interface IVariationContext<TIngredient extends IIngredient = IIngredient
   /** Map of all procedures, keyed by composite ID. */
   readonly procedures: MaterializedLibrary<ProcedureId, IProcedureEntity, IProcedure, never>;
 
+  /** Optional logger for reporting partial resolution warnings. */
+  readonly logger?: IResultReporter<unknown>;
+
   /** Check if a collection is mutable. */
   isCollectionMutable(collectionId: CollectionId): Result<boolean>;
 }
@@ -1184,8 +1187,8 @@ export interface IMoldedBonBonRecipe
   /** Resolved molds with preferred selection (from golden variation) */
   readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
-  /** Resolved shell chocolate specification (from golden variation) */
-  readonly shellChocolate: IResolvedChocolateSpec;
+  /** Resolved shell chocolate specification (from golden variation, undefined if not configured) */
+  readonly shellChocolate: IResolvedChocolateSpec | undefined;
 
   /** Resolved additional chocolates (from golden variation) */
   readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
@@ -1525,11 +1528,14 @@ export interface IMoldedBonBonRecipeVariation
   /** Narrowed yield: only numFrames stored; weight/count derived from mold at runtime */
   readonly yield: Confections.IYieldInFrames;
 
-  /** Resolved molds with preferred selection */
+  /** Gets resolved molds with preferred selection (Result-returning). */
+  getMolds(): Result<CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>>;
+
+  /** Resolved molds with preferred selection (throws on failure). */
   readonly molds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
-  /** Resolved shell chocolate specification */
-  readonly shellChocolate: IResolvedChocolateSpec;
+  /** Resolved shell chocolate specification (undefined if not configured) */
+  readonly shellChocolate: IResolvedChocolateSpec | undefined;
 
   /** Resolved additional chocolates (optional) */
   readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;

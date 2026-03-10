@@ -359,7 +359,9 @@ export function ConfectionSessionPanel({
 
     if ('shellChocolate' in variation) {
       const molded = variation as LibraryRuntime.IMoldedBonBonRecipeVariation;
-      addChocolateSpec(molded.shellChocolate);
+      if (molded.shellChocolate) {
+        addChocolateSpec(molded.shellChocolate);
+      }
       for (const ac of molded.additionalChocolates ?? []) {
         addChocolateSpec(ac.chocolate);
       }

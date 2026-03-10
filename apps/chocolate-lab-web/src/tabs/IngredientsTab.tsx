@@ -11,8 +11,10 @@ import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseIngredientId, CollectionId, IngredientId } from '@fgv/ts-chocolate';
 import type { Result, ResultMapValueType } from '@fgv/ts-utils';
 import {
-  type ICascadeEntry,
   type IReferenceScanResult,
+  type IIngredientCascadeEntry,
+  isIngredientCascadeEntry,
+  CASCADE_NEW_ENTITY_ID,
   useTabNavigation,
   useEntityList,
   useMutableCollection,
@@ -174,13 +176,14 @@ export function IngredientsTabContent(): React.ReactElement {
         workspace.data.logger.info(`Created ingredient '${entity.name}' from AI-generated data`);
       }
 
-      const entry: ICascadeEntry = {
+      const cascadeEntry: IIngredientCascadeEntry = {
         entityType: 'ingredient',
         entityId: compositeId,
         mode: 'edit',
-        hasChanges: true
+        hasChanges: true,
+        entity: workspace.data.ingredients.get(compositeId).report(workspace.data.logger).orDefault()
       };
-      squashCascade([entry]);
+      squashCascade([cascadeEntry]);
     },
     [workspace, mutableCollectionId, ingredientMutation, squashCascade]
   );
@@ -220,9 +223,16 @@ export function IngredientsTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: IngredientId): void => {
-      squashCascade([{ entityType: 'ingredient', entityId: id, mode: 'view' }]);
+      squashCascade([
+        {
+          entityType: 'ingredient',
+          entityId: id,
+          mode: 'view',
+          entity: workspace.data.ingredients.get(id).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleRequestDelete = useCallback(
@@ -313,8 +323,14 @@ export function IngredientsTabContent(): React.ReactElement {
       if (editingRef.current?.id === compositeId) {
         editingRef.current = undefined;
       }
+      const refreshedEntity = workspace.data.ingredients
+        .get(compositeId as IngredientId)
+        .report(workspace.data.logger)
+        .orDefault();
       const updated = cascadeStack.map((e) =>
-        e.entityId === compositeId && e.entityType === 'ingredient' ? { ...e, mode: 'view' as const } : e
+        e.entityId === compositeId && e.entityType === 'ingredient'
+          ? { ...e, mode: 'view' as const, entity: refreshedEntity }
+          : e
       );
       squashCascade(updated);
     },
@@ -338,7 +354,7 @@ export function IngredientsTabContent(): React.ReactElement {
   );
 
   const handleNewIngredient = useCallback((): void => {
-    squashCascade([{ entityType: 'ingredient', entityId: '__new__', mode: 'create' }]);
+    squashCascade([{ entityType: 'ingredient', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }]);
   }, [squashCascade]);
 
   const handleCreateFormCancel = useCallback((): void => {
@@ -346,116 +362,114 @@ export function IngredientsTabContent(): React.ReactElement {
   }, [squashCascade]);
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack
-      .filter((e) => e.entityType === 'ingredient')
-      .map((entry) => {
-        if (entry.mode === 'create') {
-          return {
-            key: '__new__',
-            label: 'New Ingredient',
-            content: (
-              <EntityCreateForm<Entities.Ingredients.IngredientEntity>
-                slugify={slugify}
-                buildPrompt={AiAssist.buildIngredientAiPrompt}
-                convert={(from: unknown) => Entities.Ingredients.Converters.ingredientEntity.convert(from)}
-                makeBlank={(name: string, id: string): Entities.Ingredients.IngredientEntity =>
-                  createBlankIngredientEntity(id as BaseIngredientId, name)
-                }
-                onCreate={handleCreateIngredient}
-                sourceCreateMode="copy"
-                sourceOptions={ingredientCreateSourceOptions}
-                onCreateFromSource={handleCreateIngredientFromSource}
-                writableCollections={writableIngredientCollections}
-                defaultTargetCollectionId={mutableCollectionId}
-                onCancel={handleCreateFormCancel}
-                namePlaceholder="e.g. Callebaut 811 Dark"
-                entityLabel="Ingredient"
-              />
-            )
-          };
-        }
+    return cascadeStack.filter(isIngredientCascadeEntry).map((entry) => {
+      if (entry.mode === 'create') {
+        return {
+          key: CASCADE_NEW_ENTITY_ID,
+          label: 'New Ingredient',
+          content: (
+            <EntityCreateForm<Entities.Ingredients.IngredientEntity>
+              slugify={slugify}
+              buildPrompt={AiAssist.buildIngredientAiPrompt}
+              convert={(from: unknown) => Entities.Ingredients.Converters.ingredientEntity.convert(from)}
+              makeBlank={(name: string, id: string): Entities.Ingredients.IngredientEntity =>
+                createBlankIngredientEntity(id as BaseIngredientId, name)
+              }
+              onCreate={handleCreateIngredient}
+              sourceCreateMode="copy"
+              sourceOptions={ingredientCreateSourceOptions}
+              onCreateFromSource={handleCreateIngredientFromSource}
+              writableCollections={writableIngredientCollections}
+              defaultTargetCollectionId={mutableCollectionId}
+              onCancel={handleCreateFormCancel}
+              namePlaceholder="e.g. Callebaut 811 Dark"
+              entityLabel="Ingredient"
+            />
+          )
+        };
+      }
 
-        const result = workspace.data.ingredients.get(entry.entityId as IngredientId);
-        if (result.isFailure()) {
+      const ingredient = entry.entity;
+      if (!ingredient) {
+        return {
+          key: entry.entityId,
+          label: entry.entityId,
+          content: <div className="p-4 text-red-500">Failed to load ingredient: {entry.entityId}</div>
+        };
+      }
+
+      if (entry.mode === 'edit') {
+        const wrapper = getOrCreateWrapper(ingredient);
+        if (wrapper === undefined) {
           return {
             key: entry.entityId,
-            label: entry.entityId,
-            content: <div className="p-4 text-red-500">Failed to load ingredient: {entry.entityId}</div>
+            label: ingredient.name,
+            content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
           };
         }
 
-        if (entry.mode === 'edit') {
-          const wrapper = getOrCreateWrapper(result.value);
-          if (wrapper === undefined) {
-            return {
-              key: entry.entityId,
-              label: result.value.name,
-              content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
-            };
-          }
+        const collectionId = entry.entityId.split('.')[0] as CollectionId;
+        const collectionEntry = workspace.data.entities.ingredients.collections.get(collectionId);
+        const isReadOnly = collectionEntry.isSuccess() && !collectionEntry.value.isMutable;
 
-          const collectionId = entry.entityId.split('.')[0] as CollectionId;
-          const collectionEntry = workspace.data.entities.ingredients.collections.get(collectionId);
-          const isReadOnly = collectionEntry.isSuccess() && !collectionEntry.value.isMutable;
-
-          // Read-only source: show gate instead of full editor
-          if (isReadOnly) {
-            return {
-              key: `${entry.entityId}:edit`,
-              label: result.value.name,
-              content: (
-                <ReadOnlyEditGate
-                  entityName={result.value.name}
-                  onSaveCopy={
-                    mutableCollectionId
-                      ? (): void => {
-                          const today = new Date().toISOString().split('T')[0]!;
-                          handleCreateIngredientFromSource({
-                            mode: 'copy',
-                            sourceId: entry.entityId,
-                            name: result.value.name,
-                            id: `${result.value.entity.baseId}-copy-${today}`
-                          });
-                        }
-                      : undefined
-                  }
-                  onCancel={(): void => handleCancelEdit(entry.entityId)}
-                />
-              )
-            };
-          }
-
+        // Read-only source: show gate instead of full editor
+        if (isReadOnly) {
           return {
             key: `${entry.entityId}:edit`,
-            label: `${result.value.name} (editing)`,
+            label: ingredient.name,
             content: (
-              <IngredientEditView
-                wrapper={wrapper}
-                onSave={handleSave}
-                onSaveAs={handleSaveAs}
+              <ReadOnlyEditGate
+                entityName={ingredient.name}
+                onSaveCopy={
+                  mutableCollectionId
+                    ? (): void => {
+                        const today = new Date().toISOString().split('T')[0]!;
+                        handleCreateIngredientFromSource({
+                          mode: 'copy',
+                          sourceId: entry.entityId,
+                          name: ingredient.name,
+                          id: `${ingredient.entity.baseId}-copy-${today}`
+                        });
+                      }
+                    : undefined
+                }
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
-                onMutation={(): void => {
-                  updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
-                }}
-                buildPrompt={AiAssist.buildIngredientAiPrompt}
-                convert={(from: unknown) => Entities.Ingredients.Converters.ingredientEntity.convert(from)}
               />
             )
           };
         }
 
         return {
-          key: entry.entityId,
-          label: result.value.name,
+          key: `${entry.entityId}:edit`,
+          label: `${ingredient.name} (editing)`,
           content: (
-            <IngredientDetail
-              ingredient={result.value}
-              onEdit={(): void => handleEdit(entry.entityId)}
-              onClose={(): void => popCascadeTo(cascadeStack.indexOf(entry))}
+            <IngredientEditView
+              wrapper={wrapper}
+              onSave={handleSave}
+              onSaveAs={handleSaveAs}
+              onCancel={(): void => handleCancelEdit(entry.entityId)}
+              onMutation={(): void => {
+                updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
+              }}
+              buildPrompt={AiAssist.buildIngredientAiPrompt}
+              convert={(from: unknown) => Entities.Ingredients.Converters.ingredientEntity.convert(from)}
             />
           )
         };
-      });
+      }
+
+      return {
+        key: entry.entityId,
+        label: ingredient.name,
+        content: (
+          <IngredientDetail
+            ingredient={ingredient}
+            onEdit={(): void => handleEdit(entry.entityId)}
+            onClose={(): void => popCascadeTo(cascadeStack.indexOf(entry))}
+          />
+        )
+      };
+    });
   }, [
     cascadeStack,
     workspace,

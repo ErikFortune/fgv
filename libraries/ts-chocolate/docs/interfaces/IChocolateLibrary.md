@@ -189,6 +189,23 @@ Map of all ingredients, keyed by composite ID.
 Map of all fillings, keyed by composite ID.
 
 </td></tr>
+<tr><td>
+
+[logger](./IChocolateLibrary.logger.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+IResultReporter&lt;unknown, unknown&gt;
+
+</td><td>
+
+Optional logger for reporting partial resolution warnings.
+
+</td></tr>
 </tbody></table>
 
 ## Methods

@@ -25,6 +25,22 @@
  * @packageDocumentation
  */
 
+import type {
+  ConfectionId,
+  DecorationId,
+  Entities,
+  FillingId,
+  IngredientId,
+  JournalId,
+  LibraryRuntime,
+  LocationId,
+  MoldId,
+  ProcedureId,
+  SessionId,
+  TaskId,
+  UserLibrary
+} from '@fgv/ts-chocolate';
+
 // ============================================================================
 // Modes
 // ============================================================================
@@ -194,6 +210,233 @@ export interface ICascadeEntry {
   readonly createSessionInfo?: ICreateSessionInfo;
   /** Pre-fill name for entity creation (set when on-blur typeahead doesn't match) */
   readonly prefillName?: string;
+  /** Optional pre-resolved materialized entity. Typed variants narrow this to specific entity types. */
+  readonly entity?: unknown;
+}
+
+// ============================================================================
+// Typed Cascade Entry Variants
+// ============================================================================
+
+/**
+ * Sentinel value used as entityId when creating a new entity.
+ * @public
+ */
+export const CASCADE_NEW_ENTITY_ID: '__new__' = '__new__';
+
+/**
+ * Cascade entry for an ingredient.
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface IIngredientCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'ingredient';
+  readonly entityId: IngredientId | typeof CASCADE_NEW_ENTITY_ID;
+  readonly entity?: LibraryRuntime.AnyIngredient;
+}
+
+/**
+ * Cascade entry for a filling recipe.
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface IFillingCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'filling';
+  readonly entityId: FillingId | typeof CASCADE_NEW_ENTITY_ID;
+  readonly entity?: LibraryRuntime.FillingRecipe;
+}
+
+/**
+ * Cascade entry for a confection recipe.
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface IConfectionCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'confection';
+  readonly entityId: ConfectionId | typeof CASCADE_NEW_ENTITY_ID;
+  readonly entity?: LibraryRuntime.IConfectionBase;
+}
+
+/**
+ * Cascade entry for a mold.
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface IMoldCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'mold';
+  readonly entityId: MoldId | typeof CASCADE_NEW_ENTITY_ID;
+  readonly entity?: LibraryRuntime.IMold;
+}
+
+/**
+ * Cascade entry for a decoration.
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface IDecorationCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'decoration';
+  readonly entityId: DecorationId | typeof CASCADE_NEW_ENTITY_ID;
+  readonly entity?: LibraryRuntime.IDecoration;
+}
+
+/**
+ * Cascade entry for a procedure.
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface IProcedureCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'procedure';
+  readonly entityId: ProcedureId | typeof CASCADE_NEW_ENTITY_ID;
+  readonly entity?: LibraryRuntime.IProcedure;
+}
+
+/**
+ * Cascade entry for a task (view-only).
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface ITaskCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'task';
+  readonly entityId: TaskId;
+  readonly entity?: LibraryRuntime.ITask;
+}
+
+/**
+ * Cascade entry for a session.
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface ISessionCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'session';
+  readonly entityId: SessionId | typeof CASCADE_NEW_ENTITY_ID;
+  readonly entity?: UserLibrary.AnyMaterializedSession;
+}
+
+/**
+ * Cascade entry for a journal entry (view-only).
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface IJournalEntryCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'journal-entry';
+  readonly entityId: JournalId;
+  readonly entity?: UserLibrary.AnyJournalEntry;
+}
+
+/**
+ * Cascade entry for a mold inventory entry (view-only).
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface IMoldInventoryEntryCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'mold-inventory-entry';
+  readonly entityId: Entities.Inventory.MoldInventoryEntryId;
+  readonly entity?: UserLibrary.IMoldInventoryEntry;
+}
+
+/**
+ * Cascade entry for a location (view-only).
+ * Narrows {@link ICascadeEntry} with typed `entityId` and optional materialized `entity`.
+ * @public
+ */
+export interface ILocationCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'location';
+  readonly entityId: LocationId;
+  readonly entity?: UserLibrary.ILocation;
+}
+
+/**
+ * Cascade entry for step parameters (session-driven, no entity).
+ * Narrows {@link ICascadeEntry} with `entityType` set to `'step-params'`.
+ * @public
+ */
+export interface IStepParamsCascadeEntry extends ICascadeEntry {
+  readonly entityType: 'step-params';
+}
+
+/**
+ * Discriminated union of all typed cascade entry variants.
+ * Uses `entityType` as the discriminator.
+ * @public
+ */
+export type AnyCascadeEntry =
+  | IIngredientCascadeEntry
+  | IFillingCascadeEntry
+  | IConfectionCascadeEntry
+  | IMoldCascadeEntry
+  | IDecorationCascadeEntry
+  | IProcedureCascadeEntry
+  | ITaskCascadeEntry
+  | ISessionCascadeEntry
+  | IJournalEntryCascadeEntry
+  | IMoldInventoryEntryCascadeEntry
+  | ILocationCascadeEntry
+  | IStepParamsCascadeEntry;
+
+// ============================================================================
+// Cascade Entry Type Guards
+// ============================================================================
+
+/** @public */
+export function isIngredientCascadeEntry(entry: ICascadeEntry): entry is IIngredientCascadeEntry {
+  return entry.entityType === 'ingredient';
+}
+
+/** @public */
+export function isFillingCascadeEntry(entry: ICascadeEntry): entry is IFillingCascadeEntry {
+  return entry.entityType === 'filling';
+}
+
+/** @public */
+export function isConfectionCascadeEntry(entry: ICascadeEntry): entry is IConfectionCascadeEntry {
+  return entry.entityType === 'confection';
+}
+
+/** @public */
+export function isMoldCascadeEntry(entry: ICascadeEntry): entry is IMoldCascadeEntry {
+  return entry.entityType === 'mold';
+}
+
+/** @public */
+export function isDecorationCascadeEntry(entry: ICascadeEntry): entry is IDecorationCascadeEntry {
+  return entry.entityType === 'decoration';
+}
+
+/** @public */
+export function isProcedureCascadeEntry(entry: ICascadeEntry): entry is IProcedureCascadeEntry {
+  return entry.entityType === 'procedure';
+}
+
+/** @public */
+export function isTaskCascadeEntry(entry: ICascadeEntry): entry is ITaskCascadeEntry {
+  return entry.entityType === 'task';
+}
+
+/** @public */
+export function isSessionCascadeEntry(entry: ICascadeEntry): entry is ISessionCascadeEntry {
+  return entry.entityType === 'session';
+}
+
+/** @public */
+export function isJournalEntryCascadeEntry(entry: ICascadeEntry): entry is IJournalEntryCascadeEntry {
+  return entry.entityType === 'journal-entry';
+}
+
+/** @public */
+export function isMoldInventoryEntryCascadeEntry(
+  entry: ICascadeEntry
+): entry is IMoldInventoryEntryCascadeEntry {
+  return entry.entityType === 'mold-inventory-entry';
+}
+
+/** @public */
+export function isLocationCascadeEntry(entry: ICascadeEntry): entry is ILocationCascadeEntry {
+  return entry.entityType === 'location';
+}
+
+/** @public */
+export function isStepParamsCascadeEntry(entry: ICascadeEntry): entry is IStepParamsCascadeEntry {
+  return entry.entityType === 'step-params';
 }
 
 // ============================================================================

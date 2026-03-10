@@ -289,9 +289,11 @@ function MoldedBonBonSection({
           </div>
         </PreviewSection>
       )}
-      <PreviewSection title="Shell Chocolate">
-        <ChocolateSlotDisplay spec={shellChoc} selectedId={viewSettings?.shellChocolateId} />
-      </PreviewSection>
+      {shellChoc && (
+        <PreviewSection title="Shell Chocolate">
+          <ChocolateSlotDisplay spec={shellChoc} selectedId={viewSettings?.shellChocolateId} />
+        </PreviewSection>
+      )}
       {additionalChocs.map((ac, i) => (
         <PreviewSection
           key={i}

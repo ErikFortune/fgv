@@ -31,12 +31,13 @@
 import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { MessageAggregator } from '@fgv/ts-utils';
 
-import { Measurement, MoldId, SlotId } from '../../common';
+import { Helpers, Measurement, MoldId, SlotId } from '../../common';
 import { Confections } from '../../entities';
 import {
   AnyConfectionRecipeVariation,
   IIngredient,
   IMoldedBonBonRecipeVariation,
+  IResolvedConfectionMoldRef,
   IResolvedFillingIngredient,
   IResolvedFillingSlot
 } from '../model';
@@ -200,15 +201,30 @@ function _scaleMoldedBonBon(
   const bufferPercentage = target.bufferPercentage ?? 10;
 
   // Resolve mold: use selectedMoldId if provided, else preferred
-  const selectedMoldId = target.selectedMoldId;
-  const moldRef = selectedMoldId
-    ? variation.molds.options.find((m) => m.id === selectedMoldId) ?? variation.preferredMold
-    : variation.preferredMold;
+  return variation
+    .getMolds()
+    .withErrorFormat((msg) => `Cannot scale: ${msg}`)
+    .onSuccess((molds) => {
+      const selectedMoldId = target.selectedMoldId;
+      const preferredMold = Helpers.getPreferredOrFirst(molds);
+      /* c8 ignore next 3 - defensive: getMolds succeeds only with non-empty options */
+      if (!preferredMold) {
+        return fail('No mold available for scaling');
+      }
+      const moldRef = selectedMoldId
+        ? molds.options.find((m) => m.id === selectedMoldId) ?? preferredMold
+        : preferredMold;
+      return _scaleMoldedBonBonWithMold(variation, moldRef, frames, bufferPercentage, target);
+    });
+}
 
-  /* c8 ignore next 3 - defensive: molds resolver throws if options is empty, so moldRef is always defined */
-  if (!moldRef) {
-    return fail('No mold available for scaling');
-  }
+function _scaleMoldedBonBonWithMold(
+  variation: IMoldedBonBonRecipeVariation,
+  moldRef: IResolvedConfectionMoldRef,
+  frames: number,
+  bufferPercentage: number,
+  target: IConfectionScalingTarget
+): Result<IConfectionScalingResult> {
   const mold = moldRef.mold;
   const cavityWeight = mold.cavityWeight;
   if (cavityWeight === undefined || cavityWeight <= 0) {

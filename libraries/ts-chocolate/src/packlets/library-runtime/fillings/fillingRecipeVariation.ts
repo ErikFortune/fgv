@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Failure, MessageAggregator, Result, Success } from '@fgv/ts-utils';
+import { Failure, MessageAggregator, Result, Success, fail } from '@fgv/ts-utils';
 
 import {
   Measurement,
@@ -437,28 +437,27 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
   // ============================================================================
   // Private Resolution
   // ============================================================================
-
   private _resolveIngredients(): Result<void> {
     const resolved: IResolvedFillingIngredient<AnyIngredient>[] = [];
-    const errors = new MessageAggregator();
+    const logger = this._context.logger;
 
     for (const ri of this._entity.ingredients) {
       // Get primary ingredient ID (preferred or first)
       const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
-      /* c8 ignore next 4 - defensive coding: empty ids array would indicate data corruption */
+      /* c8 ignore next 3 - defensive coding: empty ids array would indicate data corruption */
       if (primaryId === undefined) {
-        errors.addMessage(`Recipe ingredient has no ingredient ids`);
         continue;
       }
 
-      // Resolve primary ingredient
-      this._context.ingredients
-        .get(primaryId)
-        .aggregateError(errors, (msg) => `ingredient ${primaryId}: ${msg}`);
-      if (errors.hasMessages) {
+      // Resolve primary ingredient (warn and skip if unavailable, e.g. in a locked collection)
+      const primaryResult = this._context.ingredients.get(primaryId).asResult;
+      if (primaryResult.isFailure()) {
+        primaryResult
+          .withErrorFormat((msg) => `filling ${this._fillingId}: ingredient ${primaryId}: ${msg}`)
+          .report(logger);
         continue;
       }
-      const ingredient = this._context.ingredients.get(primaryId).orThrow();
+      const ingredient = primaryResult.value;
 
       // Resolve alternates (all ids except primary, skip missing ones)
       const alternates: AnyIngredient[] = [];
@@ -481,9 +480,14 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
       });
     }
 
-    return errors.returnOrReport(Success.with(undefined)).onSuccess(() => {
-      this._resolvedIngredients = resolved;
-      return Success.with(undefined);
-    });
+    // Fail if entity has ingredients but none could be resolved
+    if (resolved.length === 0 && this._entity.ingredients.length > 0) {
+      return fail(
+        `filling ${this._fillingId}: failed to resolve any of ${this._entity.ingredients.length} ingredients`
+      );
+    }
+
+    this._resolvedIngredients = resolved;
+    return Success.with(undefined);
   }
 }

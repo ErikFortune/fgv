@@ -261,6 +261,15 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
     return [];
   }, [selectedVariation]);
 
+  // Detect unresolved ingredients (entity entries whose primary ID is not in the resolved set)
+  const unresolvedIngredients = useMemo(() => {
+    const resolvedIds = new Set(ingredients.map((ri) => ri.ingredient.id));
+    return selectedVariation.entity.ingredients.filter((ei) => {
+      const primaryId = ei.ingredient.preferredId ?? ei.ingredient.ids[0];
+      return primaryId !== undefined && !resolvedIds.has(primaryId);
+    });
+  }, [ingredients, selectedVariation]);
+
   // Compute scale factor and ProducedFilling-based scaled amounts
   const scaleFactor = useMemo<number | undefined>(() => {
     if (targetYield === undefined || selectedVariation.baseWeight <= 0) return undefined;
@@ -484,7 +493,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
       )}
 
       {/* Ingredients */}
-      <DetailSection title={`Ingredients (${ingredients.length})`}>
+      <DetailSection title={`Ingredients (${ingredients.length + unresolvedIngredients.length})`}>
         <div className="divide-y divide-gray-100">
           {ingredients.map((ri, i) => (
             <IngredientRow
@@ -494,8 +503,24 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
               scaleFactor={ingredientScaleFactors[i]}
             />
           ))}
+          {unresolvedIngredients.map((ei) => {
+            const primaryId = ei.ingredient.preferredId ?? ei.ingredient.ids[0]!;
+            return (
+              <div
+                key={primaryId}
+                className="flex items-center justify-between py-1.5 px-2 text-sm text-gray-400 italic"
+              >
+                <span>{primaryId}</span>
+                <span className="text-xs tabular-nums shrink-0">
+                  {formatIngredientAmount(ei.amount, ei.unit ?? 'g')}
+                </span>
+              </div>
+            );
+          })}
         </div>
-        {ingredients.length === 0 && <p className="text-xs text-gray-400 italic">No ingredients resolved.</p>}
+        {ingredients.length === 0 && unresolvedIngredients.length === 0 && (
+          <p className="text-xs text-gray-400 italic">No ingredients.</p>
+        )}
       </DetailSection>
 
       {/* Procedures */}

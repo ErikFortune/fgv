@@ -9,9 +9,11 @@ import {
 } from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseMoldId, CollectionId, MoldId } from '@fgv/ts-chocolate';
-import type { Result, ResultMapValueType } from '@fgv/ts-utils';
+import type { ResultMapValueType } from '@fgv/ts-utils';
 import {
-  type ICascadeEntry,
+  type IMoldCascadeEntry,
+  isMoldCascadeEntry,
+  CASCADE_NEW_ENTITY_ID,
   type IReferenceScanResult,
   useTabNavigation,
   useEntityList,
@@ -146,8 +148,14 @@ export function MoldsTabContent(): React.ReactElement {
         );
       }
 
-      const entry: ICascadeEntry = { entityType: 'mold', entityId: compositeId, mode: 'edit' };
-      squashCascade([entry]);
+      const cascadeEntry: IMoldCascadeEntry = {
+        entityType: 'mold',
+        entityId: compositeId,
+        mode: 'edit',
+        hasChanges: true,
+        entity: workspace.data.molds.get(compositeId).report(workspace.data.logger).orDefault()
+      };
+      squashCascade([cascadeEntry]);
     },
     [workspace, mutableCollectionId, moldMutation, squashCascade]
   );
@@ -205,10 +213,16 @@ export function MoldsTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: MoldId): void => {
-      const entry: ICascadeEntry = { entityType: 'mold', entityId: id, mode: 'view' };
-      squashCascade([entry]);
+      squashCascade([
+        {
+          entityType: 'mold',
+          entityId: id,
+          mode: 'view',
+          entity: workspace.data.molds.get(id).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleRequestDelete = useCallback(
@@ -299,8 +313,14 @@ export function MoldsTabContent(): React.ReactElement {
       if (editingRef.current?.id === entityId) {
         editingRef.current = undefined;
       }
+      const refreshedEntity = workspace.data.molds
+        .get(entityId as MoldId)
+        .report(workspace.data.logger)
+        .orDefault();
       const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'mold' ? { ...e, mode: 'view' as const } : e
+        e.entityId === entityId && e.entityType === 'mold'
+          ? { ...e, mode: 'view' as const, entity: refreshedEntity }
+          : e
       );
       squashCascade(updated);
     },
@@ -324,8 +344,7 @@ export function MoldsTabContent(): React.ReactElement {
   );
 
   const handleNewMold = useCallback((): void => {
-    const entry: ICascadeEntry = { entityType: 'mold', entityId: '__new__', mode: 'create' };
-    squashCascade([entry]);
+    squashCascade([{ entityType: 'mold', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }]);
   }, [squashCascade]);
 
   const handleCreateFormCancel = useCallback((): void => {
@@ -333,115 +352,113 @@ export function MoldsTabContent(): React.ReactElement {
   }, [squashCascade]);
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack
-      .filter((e) => e.entityType === 'mold')
-      .map((entry) => {
-        if (entry.mode === 'create') {
-          return {
-            key: '__new__',
-            label: 'New Mold',
-            content: (
-              <EntityCreateForm<Entities.Molds.IMoldEntity>
-                slugify={slugify}
-                buildPrompt={AiAssist.buildMoldAiPrompt}
-                convert={(from: unknown) => Entities.Molds.Converters.moldEntity.convert(from)}
-                makeBlank={(name: string, id: string): Entities.Molds.IMoldEntity =>
-                  createBlankMoldEntity(id as BaseMoldId, name)
-                }
-                onCreate={handleCreateMold}
-                sourceCreateMode="copy"
-                sourceOptions={moldCreateSourceOptions}
-                onCreateFromSource={handleCreateMoldFromSource}
-                writableCollections={writableMoldCollections}
-                defaultTargetCollectionId={mutableCollectionId}
-                onCancel={handleCreateFormCancel}
-                namePlaceholder="e.g. Chocolate World CW1000"
-                entityLabel="Mold"
-              />
-            )
-          };
-        }
+    return cascadeStack.filter(isMoldCascadeEntry).map((entry) => {
+      if (entry.mode === 'create') {
+        return {
+          key: CASCADE_NEW_ENTITY_ID,
+          label: 'New Mold',
+          content: (
+            <EntityCreateForm<Entities.Molds.IMoldEntity>
+              slugify={slugify}
+              buildPrompt={AiAssist.buildMoldAiPrompt}
+              convert={(from: unknown) => Entities.Molds.Converters.moldEntity.convert(from)}
+              makeBlank={(name: string, id: string): Entities.Molds.IMoldEntity =>
+                createBlankMoldEntity(id as BaseMoldId, name)
+              }
+              onCreate={handleCreateMold}
+              sourceCreateMode="copy"
+              sourceOptions={moldCreateSourceOptions}
+              onCreateFromSource={handleCreateMoldFromSource}
+              writableCollections={writableMoldCollections}
+              defaultTargetCollectionId={mutableCollectionId}
+              onCancel={handleCreateFormCancel}
+              namePlaceholder="e.g. Chocolate World CW1000"
+              entityLabel="Mold"
+            />
+          )
+        };
+      }
 
-        const result = workspace.data.molds.get(entry.entityId as MoldId);
-        if (result.isFailure()) {
+      const mold = entry.entity;
+      if (!mold) {
+        return {
+          key: entry.entityId,
+          label: entry.entityId,
+          content: <div className="p-4 text-red-500">Failed to load mold: {entry.entityId}</div>
+        };
+      }
+
+      if (entry.mode === 'edit') {
+        const wrapper = getOrCreateWrapper(mold);
+        if (wrapper === undefined) {
           return {
             key: entry.entityId,
-            label: entry.entityId,
-            content: <div className="p-4 text-red-500">Failed to load mold: {entry.entityId}</div>
+            label: mold.displayName,
+            content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
           };
         }
 
-        if (entry.mode === 'edit') {
-          const wrapper = getOrCreateWrapper(result.value);
-          if (wrapper === undefined) {
-            return {
-              key: entry.entityId,
-              label: result.value.displayName,
-              content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
-            };
-          }
+        const collectionId = entry.entityId.split('.')[0] as CollectionId;
+        const collectionEntry = workspace.data.entities.molds.collections.get(collectionId);
+        const isReadOnly = collectionEntry.isSuccess() && !collectionEntry.value.isMutable;
 
-          const collectionId = entry.entityId.split('.')[0] as CollectionId;
-          const collectionEntry = workspace.data.entities.molds.collections.get(collectionId);
-          const isReadOnly = collectionEntry.isSuccess() && !collectionEntry.value.isMutable;
-
-          // Read-only source: show gate instead of full editor
-          if (isReadOnly) {
-            return {
-              key: `${entry.entityId}:edit`,
-              label: result.value.displayName,
-              content: (
-                <ReadOnlyEditGate
-                  entityName={result.value.displayName}
-                  onSaveCopy={
-                    mutableCollectionId
-                      ? (): void => {
-                          const today = new Date().toISOString().split('T')[0]!;
-                          handleCreateMoldFromSource({
-                            mode: 'copy',
-                            sourceId: entry.entityId,
-                            name: result.value.displayName,
-                            id: `${result.value.entity.baseId}-copy-${today}`
-                          });
-                        }
-                      : undefined
-                  }
-                  onCancel={(): void => handleCancelEdit(entry.entityId)}
-                />
-              )
-            };
-          }
-
+        // Read-only source: show gate instead of full editor
+        if (isReadOnly) {
           return {
             key: `${entry.entityId}:edit`,
-            label: `${result.value.displayName} (editing)`,
+            label: mold.displayName,
             content: (
-              <MoldEditView
-                wrapper={wrapper}
-                onSave={handleSave}
+              <ReadOnlyEditGate
+                entityName={mold.displayName}
+                onSaveCopy={
+                  mutableCollectionId
+                    ? (): void => {
+                        const today = new Date().toISOString().split('T')[0]!;
+                        handleCreateMoldFromSource({
+                          mode: 'copy',
+                          sourceId: entry.entityId,
+                          name: mold.displayName,
+                          id: `${mold.entity.baseId}-copy-${today}`
+                        });
+                      }
+                    : undefined
+                }
                 onCancel={(): void => handleCancelEdit(entry.entityId)}
-                onMutation={(): void => {
-                  updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
-                }}
-                buildPrompt={AiAssist.buildMoldAiPrompt}
-                convert={(from: unknown) => Entities.Molds.Converters.moldEntity.convert(from)}
               />
             )
           };
         }
 
         return {
-          key: entry.entityId,
-          label: result.value.displayName,
+          key: `${entry.entityId}:edit`,
+          label: `${mold.displayName} (editing)`,
           content: (
-            <MoldDetail
-              mold={result.value}
-              onEdit={(): void => handleEdit(entry.entityId)}
-              onClose={(): void => popCascadeTo(cascadeStack.indexOf(entry))}
+            <MoldEditView
+              wrapper={wrapper}
+              onSave={handleSave}
+              onCancel={(): void => handleCancelEdit(entry.entityId)}
+              onMutation={(): void => {
+                updateCascadeEntryChanges(entry.entityId, wrapper.hasChanges(wrapper.initial));
+              }}
+              buildPrompt={AiAssist.buildMoldAiPrompt}
+              convert={(from: unknown) => Entities.Molds.Converters.moldEntity.convert(from)}
             />
           )
         };
-      });
+      }
+
+      return {
+        key: entry.entityId,
+        label: mold.displayName,
+        content: (
+          <MoldDetail
+            mold={mold}
+            onEdit={(): void => handleEdit(entry.entityId)}
+            onClose={(): void => popCascadeTo(cascadeStack.indexOf(entry))}
+          />
+        )
+      };
+    });
   }, [
     cascadeStack,
     workspace,

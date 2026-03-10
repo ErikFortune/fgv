@@ -148,7 +148,7 @@ export class MoldedBonBonRecipe
   /**
    * Resolved shell chocolate specification (from golden variation).
    */
-  public get shellChocolate(): IResolvedChocolateSpec {
+  public get shellChocolate(): IResolvedChocolateSpec | undefined {
     return this.goldenVariation.shellChocolate;
   }
 

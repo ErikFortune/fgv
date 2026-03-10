@@ -47,7 +47,7 @@ export class MoldedBonBonRecipeVariation
   implements IMoldedBonBonRecipeVariation
 {
   // Lazy-resolved caches (undefined = not yet resolved)
-  private _resolvedShellChocolate: IResolvedChocolateSpec | undefined;
+  private _resolvedShellChocolate: IResolvedChocolateSpec | null | undefined;
   private _resolvedAdditionalChocolates: ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
   private _resolvedMolds: CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> | undefined;
 
@@ -87,6 +87,10 @@ export class MoldedBonBonRecipeVariation
   public getMolds(): Result<CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>> {
     if (this._resolvedMolds === undefined) {
       const moldRefs = this._entity.molds;
+      if (moldRefs.options.length === 0) {
+        this._resolvedMolds = { options: [], preferredId: moldRefs.preferredId };
+        return succeed(this._resolvedMolds);
+      }
       return this._context.molds
         .getRefsWithAlternates(moldRefs)
         .withErrorFormat((msg) => `confection ${this._confectionId}: failed to resolve molds: ${msg}`)
@@ -116,7 +120,7 @@ export class MoldedBonBonRecipeVariation
 
   /**
    * Resolved molds with preferred selection (lazy-loaded).
-   * @throws if resolution fails - prefer getMolds() for proper error handling
+   * Returns empty options if no molds are configured.
    */
   public get molds(): CommonModel.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId> {
     return this.getMolds().orThrow();
@@ -127,9 +131,13 @@ export class MoldedBonBonRecipeVariation
    * @returns Result with resolved chocolate spec, or Failure if resolution fails
    * @public
    */
-  public getShellChocolate(): Result<IResolvedChocolateSpec> {
+  public getShellChocolate(): Result<IResolvedChocolateSpec | undefined> {
     if (this._resolvedShellChocolate === undefined) {
       const spec = this._entity.shellChocolate;
+      if (spec.ids.length === 0) {
+        this._resolvedShellChocolate = null;
+        return succeed(undefined);
+      }
       return this._context.ingredients
         .getWithAlternates(spec)
         .withErrorFormat(
@@ -149,15 +157,15 @@ export class MoldedBonBonRecipeVariation
           return succeed(this._resolvedShellChocolate);
         });
     }
-    return succeed(this._resolvedShellChocolate);
+    return succeed(this._resolvedShellChocolate ?? undefined);
   }
 
   /**
    * Resolved shell chocolate specification (lazy-loaded).
-   * @throws if resolution fails - prefer getShellChocolate() for proper error handling
+   * Returns undefined if no shell chocolate is configured.
    */
-  public get shellChocolate(): IResolvedChocolateSpec {
-    return this.getShellChocolate().orThrow();
+  public get shellChocolate(): IResolvedChocolateSpec | undefined {
+    return this.getShellChocolate().orDefault();
   }
 
   /**

@@ -2,7 +2,7 @@
 
 ## IMoldedBonBonRecipeVariation.molds property
 
-Resolved molds with preferred selection
+Resolved molds with preferred selection (throws on failure).
 
 **Signature:**
 

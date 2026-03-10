@@ -87,11 +87,11 @@ Resolved molds with preferred selection (from golden variation)
 
 </td><td>
 
-[IResolvedChocolateSpec](../../interfaces/IResolvedChocolateSpec.md)
+[IResolvedChocolateSpec](../../interfaces/IResolvedChocolateSpec.md) | undefined
 
 </td><td>
 
-Resolved shell chocolate specification (from golden variation)
+Resolved shell chocolate specification (from golden variation, undefined if not configured)
 
 </td></tr>
 <tr><td>

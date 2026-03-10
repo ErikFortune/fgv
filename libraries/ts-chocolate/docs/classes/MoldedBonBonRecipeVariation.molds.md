@@ -3,6 +3,7 @@
 ## MoldedBonBonRecipeVariation.molds property
 
 Resolved molds with preferred selection (lazy-loaded).
+Returns empty options if no molds are configured.
 
 **Signature:**
 

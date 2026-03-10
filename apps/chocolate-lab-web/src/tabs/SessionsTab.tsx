@@ -21,6 +21,11 @@ import {
 import {
   type ICascadeEntry,
   type CascadeEntityType,
+  CASCADE_NEW_ENTITY_ID,
+  isSessionCascadeEntry,
+  isIngredientCascadeEntry,
+  isProcedureCascadeEntry,
+  isFillingCascadeEntry,
   type RecipeSaveOption,
   useTabNavigation,
   useEntityList,
@@ -277,10 +282,16 @@ export function SessionsTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: SessionId): void => {
-      const entry: ICascadeEntry = { entityType: 'session', entityId: id, mode: 'view' };
-      squashCascade([entry]);
+      squashCascade([
+        {
+          entityType: 'session',
+          entityId: id,
+          mode: 'view',
+          entity: workspace.userData.sessions.get(id).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleDelete = useCallback(
@@ -310,8 +321,7 @@ export function SessionsTabContent(): React.ReactElement {
   // ============================================================================
 
   const handleNewSession = useCallback((): void => {
-    const entry: ICascadeEntry = { entityType: 'session', entityId: '__new__', mode: 'create' };
-    squashCascade([entry]);
+    squashCascade([{ entityType: 'session', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }]);
   }, [squashCascade]);
 
   const availableConfections = useMemo(
@@ -344,7 +354,14 @@ export function SessionsTabContent(): React.ReactElement {
           params: initialYield ? { initialYield } : undefined
         });
         if (result.isSuccess()) {
-          squashCascade([{ entityType: 'session', entityId: result.value, mode: 'view' }]);
+          squashCascade([
+            {
+              entityType: 'session',
+              entityId: result.value,
+              mode: 'view',
+              entity: workspace.userData.sessions.get(result.value).report(workspace.data.logger).orDefault()
+            }
+          ]);
         } else {
           addMessage('error', `Failed to create session: ${result.message}`);
         }
@@ -359,7 +376,14 @@ export function SessionsTabContent(): React.ReactElement {
           slug
         });
         if (result.isSuccess()) {
-          squashCascade([{ entityType: 'session', entityId: result.value, mode: 'view' }]);
+          squashCascade([
+            {
+              entityType: 'session',
+              entityId: result.value,
+              mode: 'view',
+              entity: workspace.userData.sessions.get(result.value).report(workspace.data.logger).orDefault()
+            }
+          ]);
         } else {
           addMessage('error', `Failed to create session: ${result.message}`);
         }
@@ -376,25 +400,42 @@ export function SessionsTabContent(): React.ReactElement {
           entityType: 'filling',
           entityId: fillingId,
           mode: 'view',
-          prefillName: variationSpec
+          prefillName: variationSpec,
+          entity: workspace.data.fillings.get(fillingId).report(workspace.data.logger).orDefault()
         }
       ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleBrowseIngredientFromSession = useCallback(
     (sessionEntry: ICascadeEntry, ingredientId: IngredientId): void => {
-      squashCascade([sessionEntry, { entityType: 'ingredient', entityId: ingredientId, mode: 'view' }]);
+      squashCascade([
+        sessionEntry,
+        {
+          entityType: 'ingredient',
+          entityId: ingredientId,
+          mode: 'view',
+          entity: workspace.data.ingredients.get(ingredientId).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleBrowseProcedureFromSession = useCallback(
     (sessionEntry: ICascadeEntry, procedureId: ProcedureId): void => {
-      squashCascade([sessionEntry, { entityType: 'procedure', entityId: procedureId, mode: 'view' }]);
+      squashCascade([
+        sessionEntry,
+        {
+          entityType: 'procedure',
+          entityId: procedureId,
+          mode: 'view',
+          entity: workspace.data.procedures.get(procedureId).report(workspace.data.logger).orDefault()
+        }
+      ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleSelectFillingSlot = useCallback(
@@ -427,10 +468,15 @@ export function SessionsTabContent(): React.ReactElement {
       squashCascade([
         parentEntry,
         embeddedEntry,
-        { entityType: 'ingredient', entityId: ingredientId, mode: 'view' }
+        {
+          entityType: 'ingredient',
+          entityId: ingredientId,
+          mode: 'view',
+          entity: workspace.data.ingredients.get(ingredientId).report(workspace.data.logger).orDefault()
+        }
       ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleBrowseProcedureFromEmbeddedSession = useCallback(
@@ -446,10 +492,15 @@ export function SessionsTabContent(): React.ReactElement {
       squashCascade([
         parentEntry,
         embeddedEntry,
-        { entityType: 'procedure', entityId: procedureId, mode: 'view' }
+        {
+          entityType: 'procedure',
+          entityId: procedureId,
+          mode: 'view',
+          entity: workspace.data.procedures.get(procedureId).report(workspace.data.logger).orDefault()
+        }
       ]);
     },
-    [squashCascade]
+    [squashCascade, workspace]
   );
 
   const handleCancelCreate = useCallback((): void => {
@@ -462,7 +513,10 @@ export function SessionsTabContent(): React.ReactElement {
 
   const handleRequestCreateEntity = useCallback(
     (sessionEntry: ICascadeEntry, entityType: CascadeEntityType, prefillName: string): void => {
-      squashCascade([sessionEntry, { entityType, entityId: '__new__', mode: 'create', prefillName }]);
+      squashCascade([
+        sessionEntry,
+        { entityType, entityId: CASCADE_NEW_ENTITY_ID, mode: 'create', prefillName }
+      ]);
     },
     [squashCascade]
   );
@@ -555,7 +609,14 @@ export function SessionsTabContent(): React.ReactElement {
         collectionId: sessionActions.defaultCollectionId
       });
       if (result.isSuccess()) {
-        squashCascade([{ entityType: 'session', entityId: result.value, mode: 'view' }]);
+        squashCascade([
+          {
+            entityType: 'session',
+            entityId: result.value,
+            mode: 'view',
+            entity: workspace.userData.sessions.get(result.value).report(workspace.data.logger).orDefault()
+          }
+        ]);
       }
     },
     [sessionActions, workspace, squashCascade]
@@ -642,11 +703,11 @@ export function SessionsTabContent(): React.ReactElement {
         };
       }
 
-      if (entry.entityType === 'session') {
+      if (isSessionCascadeEntry(entry)) {
         // Create mode
         if (entry.mode === 'create') {
           return {
-            key: '__new__',
+            key: CASCADE_NEW_ENTITY_ID,
             label: 'New Session',
             content: (
               <CreateSessionPanel
@@ -708,9 +769,9 @@ export function SessionsTabContent(): React.ReactElement {
           };
         }
 
-        // View mode
-        const result = workspace.userData.sessions.get(entry.entityId as SessionId);
-        if (result.isFailure()) {
+        // View mode — use pre-resolved entity
+        const session = entry.entity;
+        if (!session) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -718,7 +779,6 @@ export function SessionsTabContent(): React.ReactElement {
           };
         }
 
-        const session = result.value;
         return {
           key: entry.entityId,
           label: session.label ?? session.baseId,
@@ -749,9 +809,9 @@ export function SessionsTabContent(): React.ReactElement {
         };
       }
 
-      if (entry.entityType === 'ingredient' && entry.mode === 'view') {
-        const result = workspace.data.ingredients.get(entry.entityId as IngredientId);
-        if (result.isFailure()) {
+      if (isIngredientCascadeEntry(entry) && entry.mode === 'view') {
+        const ingredient = entry.entity;
+        if (!ingredient) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -761,14 +821,14 @@ export function SessionsTabContent(): React.ReactElement {
 
         return {
           key: entry.entityId,
-          label: result.value.name,
-          content: <IngredientDetail ingredient={result.value} onClose={(): void => popCascadeTo(_index)} />
+          label: ingredient.name,
+          content: <IngredientDetail ingredient={ingredient} onClose={(): void => popCascadeTo(_index)} />
         };
       }
 
-      if (entry.entityType === 'procedure' && entry.mode === 'view') {
-        const result = workspace.data.procedures.get(entry.entityId as ProcedureId);
-        if (result.isFailure()) {
+      if (isProcedureCascadeEntry(entry) && entry.mode === 'view') {
+        const procedure = entry.entity;
+        if (!procedure) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -778,14 +838,14 @@ export function SessionsTabContent(): React.ReactElement {
 
         return {
           key: entry.entityId,
-          label: result.value.name,
-          content: <ProcedureDetail procedure={result.value} onClose={(): void => popCascadeTo(_index)} />
+          label: procedure.name,
+          content: <ProcedureDetail procedure={procedure} onClose={(): void => popCascadeTo(_index)} />
         };
       }
 
-      if (entry.entityType === 'filling') {
-        const result = workspace.data.fillings.get(entry.entityId as FillingId);
-        if (result.isFailure()) {
+      if (isFillingCascadeEntry(entry)) {
+        const filling = entry.entity;
+        if (!filling) {
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -795,10 +855,10 @@ export function SessionsTabContent(): React.ReactElement {
 
         return {
           key: `${entry.entityId}:${entry.prefillName ?? ''}`,
-          label: result.value.name,
+          label: filling.name,
           content: (
             <FillingDetail
-              filling={result.value}
+              filling={filling}
               defaultVariationSpec={entry.prefillName as FillingRecipeVariationSpec | undefined}
               onClose={(): void => popCascadeTo(_index)}
             />

@@ -57,7 +57,7 @@ Narrowed yield: only numFrames stored; weight/count derived from mold at runtime
 
 </td><td>
 
-Resolved molds with preferred selection
+Resolved molds with preferred selection (throws on failure).
 
 </td></tr>
 <tr><td>
@@ -70,11 +70,11 @@ Resolved molds with preferred selection
 
 </td><td>
 
-[IResolvedChocolateSpec](IResolvedChocolateSpec.md)
+[IResolvedChocolateSpec](IResolvedChocolateSpec.md) | undefined
 
 </td><td>
 
-Resolved shell chocolate specification
+Resolved shell chocolate specification (undefined if not configured)
 
 </td></tr>
 <tr><td>
@@ -350,6 +350,19 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[getMolds()](./IMoldedBonBonRecipeVariation.getMolds.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets resolved molds with preferred selection (Result-returning).
+
+</td></tr>
 <tr><td>
 
 [isMoldedBonBonVariation()](./IConfectionRecipeVariationBase.isMoldedBonBonVariation.md)
