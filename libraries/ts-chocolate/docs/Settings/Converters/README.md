@@ -153,6 +153,15 @@ Converter for ILocalStorageConfig.
 </td></tr>
 <tr><td>
 
+[cloudStorageConfig](./variables/cloudStorageConfig.md)
+
+</td><td>
+
+Converter for ICloudStorageConfig.
+
+</td></tr>
+<tr><td>
+
 [reporterLogLevel](./variables/reporterLogLevel.md)
 
 </td><td>

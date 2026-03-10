@@ -110,4 +110,38 @@ boolean
 Whether collections from this source are mutable.
 
 </td></tr>
+<tr><td>
+
+[persistentTree](./IResolvedExternalLibrary.persistentTree.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+{ tree: FileTree_2; accessors: IPersistentFileTreeAccessors }
+
+</td><td>
+
+Optional persistent tree details for sources that support syncToDisk.
+
+</td></tr>
+<tr><td>
+
+[skipMissingDirectories](./IResolvedExternalLibrary.skipMissingDirectories.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+If true, missing sub-library directories are treated as empty for this source.
+
+</td></tr>
 </tbody></table>

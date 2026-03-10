@@ -207,6 +207,66 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
         />
       </div>
 
+      {/* Cloud storage */}
+      <div className="space-y-4 pt-2 border-t border-gray-100">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cloud Storage</p>
+        <ToggleRow
+          label="Enable cloud storage"
+          description="Load collections from an HTTP-backed storage endpoint (namespace-scoped)."
+          checked={bootstrap.cloudStorageEnabled}
+          onChange={(v): void => onChange({ cloudStorageEnabled: v })}
+        />
+
+        <div className="space-y-3 pl-12">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Storage API base URL</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+              value={bootstrap.cloudStorageBaseUrl}
+              placeholder="http://localhost:3002/api/storage"
+              onChange={(e): void => onChange({ cloudStorageBaseUrl: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Namespace (optional)</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+                value={bootstrap.cloudStorageNamespace}
+                placeholder="default"
+                onChange={(e): void => onChange({ cloudStorageNamespace: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Source name (optional)</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+                value={bootstrap.cloudStorageSourceName}
+                placeholder="cloud:default"
+                onChange={(e): void => onChange({ cloudStorageSourceName: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <ToggleRow
+            label="Load library data from cloud"
+            description="Load ingredient, filling, confection, decoration, mold, task, and procedure collections."
+            checked={bootstrap.cloudStorageLibrary}
+            onChange={(v): void => onChange({ cloudStorageLibrary: v })}
+          />
+          <ToggleRow
+            label="Load user data from cloud"
+            description="Load journals, sessions, inventory, and locations from cloud storage."
+            checked={bootstrap.cloudStorageUserData}
+            onChange={(v): void => onChange({ cloudStorageUserData: v })}
+          />
+        </div>
+      </div>
+
       {/* Logging */}
       <div className="space-y-4 pt-2 border-t border-gray-100">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Logging</p>

@@ -80,6 +80,23 @@ What to include from local storage.
 </td></tr>
 <tr><td>
 
+[cloudStorage](./IBootstrapSettings.cloudStorage.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ICloudStorageConfig](ICloudStorageConfig.md)
+
+</td><td>
+
+Optional cloud storage source configuration.
+
+</td></tr>
+<tr><td>
+
 [externalLibraries](./IBootstrapSettings.externalLibraries.md)
 
 </td><td>

@@ -85,6 +85,19 @@ export interface IResolvedExternalLibrary {
    * Whether collections from this source are mutable.
    */
   readonly mutable?: boolean;
+
+  /**
+   * Optional persistent tree details for sources that support syncToDisk.
+   */
+  readonly persistentTree?: {
+    readonly tree: FileTree.FileTree;
+    readonly accessors: FileTree.IPersistentFileTreeAccessors;
+  };
+
+  /**
+   * If true, missing sub-library directories are treated as empty for this source.
+   */
+  readonly skipMissingDirectories?: boolean;
 }
 
 // ============================================================================
@@ -278,7 +291,8 @@ export function toLibraryFileSources(
       sourceName: lib.name,
       directory: lib.fileTree,
       load,
-      mutable: lib.mutable
+      mutable: lib.mutable,
+      skipMissingDirectories: lib.skipMissingDirectories
     };
   });
 }

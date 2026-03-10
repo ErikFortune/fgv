@@ -52,6 +52,7 @@ export {
   // Bootstrap and preferences
   type ISettingsFileLocation,
   type ILocalStorageConfig,
+  type ICloudStorageConfig,
   type ILogSettings,
   type IBootstrapSettings,
   type IPreferencesSettings,

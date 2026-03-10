@@ -141,6 +141,15 @@ Controls what is loaded from local (browser) storage.
 </td></tr>
 <tr><td>
 
+[ICloudStorageConfig](./interfaces/ICloudStorageConfig.md)
+
+</td><td>
+
+Controls how cloud-backed HTTP storage is loaded.
+
+</td></tr>
+<tr><td>
+
 [ILogSettings](./interfaces/ILogSettings.md)
 
 </td><td>

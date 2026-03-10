@@ -424,6 +424,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-http-storage",
+      "projectFolder": "libraries/ts-http-storage",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-json",
       "projectFolder": "libraries/ts-json",
       "shouldPublish": true,

@@ -19,6 +19,7 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@fgv/ts-http-storage": "workspace:*",
     "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",

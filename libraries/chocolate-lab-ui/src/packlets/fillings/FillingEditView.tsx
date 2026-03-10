@@ -403,12 +403,9 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
 
   // ---- Helper: get effective ingredient ID from source ingredient ----
 
-  const getEffectiveId = useCallback(
-    (ing: Entities.Fillings.IFillingIngredientEntity): IngredientId => {
-      return (ing.ingredient.preferredId ?? ing.ingredient.ids[0]) as IngredientId;
-    },
-    []
-  );
+  const getEffectiveId = useCallback((ing: Entities.Fillings.IFillingIngredientEntity): IngredientId => {
+    return (ing.ingredient.preferredId ?? ing.ingredient.ids[0]) as IngredientId;
+  }, []);
 
   // ---- Ingredient Handlers (wrapper variation) ----
 
@@ -445,7 +442,14 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         setUnresolvedIngredients((prev) => ({ ...prev, [index]: input.trim() }));
       }
     },
-    [ingredientMatcher, currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
+    [
+      ingredientMatcher,
+      currentVariationIngredients,
+      getEffectiveId,
+      wrapper,
+      selectedVariationSpec,
+      notifyWrapper
+    ]
   );
 
   const handleIngredientAmountChange = useCallback(
@@ -493,7 +497,13 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     (index: number, modifiers: Entities.Fillings.IIngredientModifiers | undefined): void => {
       const existing = currentVariationIngredients[index];
       const effectiveId = getEffectiveId(existing);
-      wrapper.setVariationIngredient(selectedVariationSpec, effectiveId, existing.amount, existing.unit, modifiers);
+      wrapper.setVariationIngredient(
+        selectedVariationSpec,
+        effectiveId,
+        existing.amount,
+        existing.unit,
+        modifiers
+      );
       notifyWrapper();
     },
     [currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
@@ -1006,9 +1016,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                         }
                       }}
                       className={`px-1.5 py-1 ${isSelected ? '' : 'hover:border-choco-primary'}`}
-                      title={
-                        !readOnly ? 'Click to select, double-click to rename' : undefined
-                      }
+                      title={!readOnly ? 'Click to select, double-click to rename' : undefined}
                     >
                       {v.name ?? v.variationSpec}
                     </button>
@@ -1108,8 +1116,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
           {currentVariationIngredients.map((ing, index) => {
             const effectiveId = getEffectiveId(ing);
             const ingValue =
-              ingredientInputDraft[index] ??
-              getIngredientDisplayName(effectiveId, ingredientSuggestions);
+              ingredientInputDraft[index] ?? getIngredientDisplayName(effectiveId, ingredientSuggestions);
             const isSpoonUnit = ing.unit === 'tsp' || ing.unit === 'Tbsp';
             const isWeightUnit = ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined;
             const sourceIds = ing.ingredient.ids;
@@ -1294,7 +1301,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                                 <button
                                   type="button"
                                   title={isPreferred ? 'Preferred' : 'Set as preferred'}
-                                  onClick={(): void => handleSetPreferredAlternate(ing.ingredientId, altId)}
+                                  onClick={(): void => handleSetPreferredAlternate(effectiveId, altId)}
                                   className={`shrink-0 ${
                                     isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
                                   }`}
@@ -1308,7 +1315,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                                 <button
                                   type="button"
                                   title="Remove alternate"
-                                  onClick={(): void => handleRemoveAlternate(ing.ingredientId, altId)}
+                                  onClick={(): void => handleRemoveAlternate(effectiveId, altId)}
                                   className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
                                 >
                                   ✕
@@ -1319,27 +1326,27 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                         })}
                         {!readOnly && (
                           <AlternateAddInput
-                            ingredientId={ing.ingredientId}
+                            ingredientId={effectiveId}
                             onAdd={handleAddAlternate}
                             datalistId="filling-ingredient-suggestions"
                           />
                         )}
-                        {!hasAlternates && (readOnly) && (
+                        {!hasAlternates && readOnly && (
                           <span className="text-xs text-gray-300 italic">none</span>
                         )}
-                        {unresolvedAlternates[ing.ingredientId] && (
+                        {unresolvedAlternates[effectiveId] && (
                           <>
                             <span className="text-xs text-amber-700">
-                              No match for &quot;{unresolvedAlternates[ing.ingredientId]}&quot;.
+                              No match for &quot;{unresolvedAlternates[effectiveId]}&quot;.
                             </span>
                             {onCreateIngredient && (
                               <button
                                 type="button"
                                 onClick={(): void => {
-                                  onCreateIngredient(unresolvedAlternates[ing.ingredientId]);
+                                  onCreateIngredient(unresolvedAlternates[effectiveId]);
                                   setUnresolvedAlternates((prev) => {
                                     const next = { ...prev };
-                                    delete next[ing.ingredientId];
+                                    delete next[effectiveId];
                                     return next;
                                   });
                                 }}
@@ -1539,9 +1546,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     datalistId="filling-procedure-suggestions"
                   />
                 )}
-                {!hasProcAlternates && (readOnly) && (
-                  <span className="text-xs text-gray-300 italic">none</span>
-                )}
+                {!hasProcAlternates && readOnly && <span className="text-xs text-gray-300 italic">none</span>}
                 {unresolvedProcedureAlternate && (
                   <>
                     <span className="text-xs text-amber-700">
@@ -1615,7 +1620,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       </EditSection>
 
       {/* Notes Section (from session) */}
-      <NotesEditor value={session.produced.snapshot.notes} onChange={handleNotesChange} />
+      <NotesEditor value={currentVariation?.notes} onChange={handleNotesChange} />
     </div>
   );
 }

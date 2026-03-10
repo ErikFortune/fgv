@@ -146,8 +146,10 @@ export function useAddStorageRoot(): IAddStorageRootActions {
     applyStorageTargetsFromWorkspace({
       localStorageRootDir: reactiveWorkspace.localStorageRootDir,
       persistentTrees: reactiveWorkspace.persistentTrees,
+      additionalRootDirs: reactiveWorkspace.additionalRootDirs,
       targets: workspace.settings?.getResolvedSettings().defaultStorageTargets,
-      entities
+      entities,
+      userEntities: workspace.userData.entities
     });
 
     workspace.data.clearCache();
