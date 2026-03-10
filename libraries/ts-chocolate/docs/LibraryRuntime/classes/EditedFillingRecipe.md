@@ -3,10 +3,8 @@
 # Class: EditedFillingRecipe
 
 Mutable wrapper for IFillingRecipeEntity with undo/redo support.
-Manages recipe-level fields only (name, category, description, tags, urls, goldenVariationSpec).
-Variation-level editing (ingredients, procedures, ratings, scaling) is handled by EditingSession.
-After an EditingSession save produces a variationEntity, use replaceVariation() or addVariation()
-to integrate it back into this wrapper.
+Manages both recipe-level fields (name, category, description, tags, urls, goldenVariationSpec)
+and variation-level editing (ingredients, procedures, notes, scaling).
 
 **Extends:** [`EditableWrapper<IFillingRecipeEntity>`](../../classes/EditableWrapper.md)
 
@@ -305,6 +303,84 @@ in a variation.
 </td><td>
 
 Updates the procedure options and preferred selection for a specific variation.
+
+</td></tr>
+<tr><td>
+
+[setVariationIngredient(spec, ingredientId, amount, unit, modifiers)](./EditedFillingRecipe.setVariationIngredient.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets or updates an ingredient in a variation.
+
+</td></tr>
+<tr><td>
+
+[replaceVariationIngredient(spec, oldId, newId, amount, unit, modifiers)](./EditedFillingRecipe.replaceVariationIngredient.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Replaces an ingredient in a variation, preserving the alternates list.
+
+</td></tr>
+<tr><td>
+
+[removeVariationIngredient(spec, ingredientId)](./EditedFillingRecipe.removeVariationIngredient.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes an ingredient from a variation.
+
+</td></tr>
+<tr><td>
+
+[setVariationProcedure(spec, procedureId)](./EditedFillingRecipe.setVariationProcedure.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets or clears the procedure for a variation.
+
+</td></tr>
+<tr><td>
+
+[setVariationNotes(spec, notes)](./EditedFillingRecipe.setVariationNotes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets or clears the notes on a variation.
+
+</td></tr>
+<tr><td>
+
+[scaleVariationToTargetWeight(spec, targetWeight)](./EditedFillingRecipe.scaleVariationToTargetWeight.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Scales all weight-contributing ingredients in a variation to achieve a target weight.
 
 </td></tr>
 <tr><td>

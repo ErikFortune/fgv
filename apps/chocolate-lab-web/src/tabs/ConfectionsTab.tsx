@@ -7,7 +7,7 @@ import {
   EntityTabLayout,
   type IComparisonColumn
 } from '@fgv/ts-app-shell';
-import { AiAssist, Entities, Helpers, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
+import { AiAssist, Entities, Helpers, LibraryRuntime } from '@fgv/ts-chocolate';
 import { AiAssist as ExtrasAiAssist } from '@fgv/ts-extras';
 import type {
   BaseConfectionId,
@@ -29,7 +29,7 @@ import type {
   DecorationId
 } from '@fgv/ts-chocolate';
 import { fail } from '@fgv/ts-utils';
-import type { Result, ResultMapValueType } from '@fgv/ts-utils';
+import type { ResultMapValueType } from '@fgv/ts-utils';
 import {
   type ICascadeEntry,
   type CascadeEntityType,
@@ -1643,30 +1643,23 @@ export function ConfectionsTabContent(): React.ReactElement {
           const fillingResult = workspace.data.fillings.get(entry.entityId as FillingId);
           if (subState && fillingResult.isSuccess()) {
             const goldenSpec = fillingResult.value.goldenVariationSpec;
-            const variationResult = fillingResult.value.getVariation(goldenSpec);
-            const sessionResult = variationResult.isSuccess()
-              ? UserLibrary.Session.EditingSession.create(variationResult.value)
-              : undefined;
-            if (sessionResult?.isSuccess()) {
-              return {
-                key: `${entry.entityId}:sub-edit`,
-                label: `Editing: ${fillingResult.value.name}`,
-                content: (
-                  <FillingEditView
-                    wrapper={subState.wrapper}
-                    session={sessionResult.value}
-                    selectedVariationSpec={goldenSpec}
-                    onVariationChange={(): void => undefined}
-                    availableIngredients={availableIngredients}
-                    availableProcedures={availableProcedures}
-                    onCreateIngredient={handleCreateIngredientFromConfection}
-                    onCreateProcedure={handleCreateProcedureFromConfection}
-                    onSave={handleSubFillingSave}
-                    onCancel={handleSubFillingCancel}
-                  />
-                )
-              };
-            }
+            return {
+              key: `${entry.entityId}:sub-edit`,
+              label: `Editing: ${fillingResult.value.name}`,
+              content: (
+                <FillingEditView
+                  wrapper={subState.wrapper}
+                  selectedVariationSpec={goldenSpec}
+                  onVariationChange={(): void => undefined}
+                  availableIngredients={availableIngredients}
+                  availableProcedures={availableProcedures}
+                  onCreateIngredient={handleCreateIngredientFromConfection}
+                  onCreateProcedure={handleCreateProcedureFromConfection}
+                  onSave={handleSubFillingSave}
+                  onCancel={handleSubFillingCancel}
+                />
+              )
+            };
           }
         }
         const result = workspace.data.fillings.get(entry.entityId as FillingId);

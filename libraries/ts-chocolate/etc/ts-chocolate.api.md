@@ -1936,8 +1936,11 @@ class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity>
     hasChanges(original: Fillings.IFillingRecipeEntity): boolean;
     get name(): FillingName;
     removeVariation(spec: FillingRecipeVariationSpec): Result<void>;
+    removeVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: IngredientId): Result<true>;
     replaceVariation(spec: FillingRecipeVariationSpec, variation: Fillings.IFillingRecipeVariationEntity): Result<void>;
+    replaceVariationIngredient(spec: FillingRecipeVariationSpec, oldId: IngredientId, newId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<true>;
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Fillings.IFillingRecipeEntity>): Result<EditedFillingRecipe>;
+    scaleVariationToTargetWeight(spec: FillingRecipeVariationSpec, targetWeight: Measurement): Result<Measurement>;
     // Warning: (ae-forgotten-export) The symbol "FillingCategory_3" needs to be exported by the entry point index.d.ts
     setCategory(category: FillingCategory_3): Result<void>;
     setDescription(description: string | undefined): Result<void>;
@@ -1945,8 +1948,11 @@ class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity>
     setName(name: FillingName): Result<void>;
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
     setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
+    setVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<true>;
     setVariationIngredientAlternates(spec: FillingRecipeVariationSpec, currentPrimaryId: IngredientId, ids: ReadonlyArray<IngredientId>, preferredId: IngredientId): Result<void>;
     setVariationName(spec: FillingRecipeVariationSpec, name: string | undefined): Result<void>;
+    setVariationNotes(spec: FillingRecipeVariationSpec, notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<true>;
+    setVariationProcedure(spec: FillingRecipeVariationSpec, procedureId: ProcedureId | undefined): Result<true>;
     setVariationProcedureAlternates(spec: FillingRecipeVariationSpec, options: ReadonlyArray<Fillings.IProcedureRefEntity>, preferredId: ProcedureId | undefined): Result<void>;
     get variations(): ReadonlyArray<Fillings.IFillingRecipeVariationEntity>;
 }

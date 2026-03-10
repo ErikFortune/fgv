@@ -19,8 +19,9 @@
 // SOFTWARE.
 
 /**
- * EditedFillingRecipe - mutable wrapper for editing recipe-level filling entity fields with undo/redo.
- * Variation-level editing (ingredients, procedures, scaling) is handled by EditingSession.
+ * EditedFillingRecipe - mutable wrapper for editing filling recipe entities with undo/redo.
+ * Supports both recipe-level fields (name, category, etc.) and variation-level editing
+ * (ingredients, procedures, scaling).
  * @packageDocumentation
  */
 
@@ -29,12 +30,14 @@ import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { Helpers, Model as CommonModel } from '../../common';
 import { Fillings, Session } from '../../entities';
 import { EditableWrapper } from '../editableWrapper';
+import { scaleAmount } from '../internal';
 
 import type {
   FillingName,
   FillingRecipeVariationSpec,
   IngredientId,
   Measurement,
+  MeasurementUnit,
   ProcedureId
 } from '../../common';
 
@@ -65,10 +68,8 @@ export interface IFillingRecipeChanges {
 
 /**
  * Mutable wrapper for IFillingRecipeEntity with undo/redo support.
- * Manages recipe-level fields only (name, category, description, tags, urls, goldenVariationSpec).
- * Variation-level editing (ingredients, procedures, ratings, scaling) is handled by EditingSession.
- * After an EditingSession save produces a variationEntity, use replaceVariation() or addVariation()
- * to integrate it back into this wrapper.
+ * Manages both recipe-level fields (name, category, description, tags, urls, goldenVariationSpec)
+ * and variation-level editing (ingredients, procedures, notes, scaling).
  * @public
  */
 export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity> {
@@ -307,6 +308,282 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     return succeed(undefined);
   }
 
+  // ============================================================================
+  // Variation-Level Ingredient/Procedure Editing
+  // ============================================================================
+
+  /**
+   * Sets or updates an ingredient in a variation.
+   * If an ingredient slot whose `ids` contains `ingredientId` already exists, updates it.
+   * Otherwise appends a new ingredient with `ids: [ingredientId]`.
+   * Recalculates baseWeight after the change.
+   * @param spec - Variation spec to update
+   * @param ingredientId - The ingredient ID to set
+   * @param amount - Amount of the ingredient
+   * @param unit - Optional measurement unit (default: 'g')
+   * @param modifiers - Optional ingredient modifiers
+   * @returns Success or failure if spec not found
+   * @public
+   */
+  public setVariationIngredient(
+    spec: FillingRecipeVariationSpec,
+    ingredientId: IngredientId,
+    amount: Measurement,
+    unit?: MeasurementUnit,
+    modifiers?: Fillings.IIngredientModifiers
+  ): Result<true> {
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+
+    this._pushUndo();
+    const variation = this._current.variations[varIndex];
+    const ingredients = [...variation.ingredients];
+    const existingIndex = ingredients.findIndex((ing) => ing.ingredient.ids.includes(ingredientId));
+
+    const newIngredient: Fillings.IFillingIngredientEntity = {
+      ingredient:
+        existingIndex >= 0
+          ? { ...ingredients[existingIndex].ingredient, preferredId: ingredientId }
+          : { ids: [ingredientId], preferredId: ingredientId },
+      amount,
+      unit,
+      modifiers
+    };
+
+    if (existingIndex >= 0) {
+      ingredients[existingIndex] = newIngredient;
+    } else {
+      ingredients.push(newIngredient);
+    }
+
+    const variations = [...this._current.variations];
+    variations[varIndex] = {
+      ...variation,
+      ingredients,
+      baseWeight: EditedFillingRecipe._calculateBaseWeight(ingredients)
+    };
+    this._current = { ...this._current, variations };
+    return succeed(true);
+  }
+
+  /**
+   * Replaces an ingredient in a variation, preserving the alternates list.
+   * Finds the ingredient slot whose `ids` contains `oldId`.
+   * If `newId` is already in `ids`, just updates `preferredId` and amount.
+   * If not, adds `newId` to `ids` and sets it as preferred.
+   * @param spec - Variation spec to update
+   * @param oldId - Current ingredient ID to find the slot
+   * @param newId - New ingredient ID to set as preferred
+   * @param amount - Amount of the ingredient
+   * @param unit - Optional measurement unit
+   * @param modifiers - Optional ingredient modifiers
+   * @returns Success or failure if spec or ingredient not found
+   * @public
+   */
+  public replaceVariationIngredient(
+    spec: FillingRecipeVariationSpec,
+    oldId: IngredientId,
+    newId: IngredientId,
+    amount: Measurement,
+    unit?: MeasurementUnit,
+    modifiers?: Fillings.IIngredientModifiers
+  ): Result<true> {
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+    const variation = this._current.variations[varIndex];
+    const ingIndex = variation.ingredients.findIndex((ing) => ing.ingredient.ids.includes(oldId));
+    if (ingIndex < 0) {
+      return fail(`ingredient '${oldId}' not found in variation '${spec}'`);
+    }
+
+    this._pushUndo();
+    const ingredients = [...variation.ingredients];
+    const existing = ingredients[ingIndex];
+    const existingIds = existing.ingredient.ids;
+    const ids = existingIds.includes(newId) ? [...existingIds] : [...existingIds, newId];
+
+    ingredients[ingIndex] = {
+      ...existing,
+      ingredient: {
+        ...existing.ingredient,
+        ids,
+        preferredId: newId
+      },
+      amount,
+      unit,
+      modifiers
+    };
+
+    const variations = [...this._current.variations];
+    variations[varIndex] = {
+      ...variation,
+      ingredients,
+      baseWeight: EditedFillingRecipe._calculateBaseWeight(ingredients)
+    };
+    this._current = { ...this._current, variations };
+    return succeed(true);
+  }
+
+  /**
+   * Removes an ingredient from a variation.
+   * Removes the entire ingredient slot whose `ids` contains `ingredientId`.
+   * Recalculates baseWeight after the change.
+   * @param spec - Variation spec to update
+   * @param ingredientId - The ingredient ID to find and remove
+   * @returns Success or failure if spec or ingredient not found
+   * @public
+   */
+  public removeVariationIngredient(
+    spec: FillingRecipeVariationSpec,
+    ingredientId: IngredientId
+  ): Result<true> {
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+    const variation = this._current.variations[varIndex];
+    const ingIndex = variation.ingredients.findIndex((ing) => ing.ingredient.ids.includes(ingredientId));
+    if (ingIndex < 0) {
+      return fail(`ingredient '${ingredientId}' not found in variation '${spec}'`);
+    }
+
+    this._pushUndo();
+    const ingredients = [...variation.ingredients];
+    ingredients.splice(ingIndex, 1);
+
+    const variations = [...this._current.variations];
+    variations[varIndex] = {
+      ...variation,
+      ingredients,
+      baseWeight: EditedFillingRecipe._calculateBaseWeight(ingredients)
+    };
+    this._current = { ...this._current, variations };
+    return succeed(true);
+  }
+
+  /**
+   * Sets or clears the procedure for a variation.
+   * If `procedureId` is given, sets it as the sole preferred procedure option
+   * (adding to existing options if present).
+   * If `undefined`, clears procedures entirely.
+   * @param spec - Variation spec to update
+   * @param procedureId - Procedure ID to set, or undefined to clear
+   * @returns Success or failure if spec not found
+   * @public
+   */
+  public setVariationProcedure(
+    spec: FillingRecipeVariationSpec,
+    procedureId: ProcedureId | undefined
+  ): Result<true> {
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+
+    this._pushUndo();
+    const variation = this._current.variations[varIndex];
+    let procedures: CommonModel.IOptionsWithPreferred<Fillings.IProcedureRefEntity, ProcedureId> | undefined;
+
+    if (procedureId !== undefined) {
+      const existingOptions = variation.procedures?.options ?? [];
+      const alreadyExists = existingOptions.some((o) => o.id === procedureId);
+      const options = alreadyExists ? [...existingOptions] : [...existingOptions, { id: procedureId }];
+      procedures = { options, preferredId: procedureId };
+    }
+
+    const variations = [...this._current.variations];
+    variations[varIndex] = { ...variation, procedures };
+    this._current = { ...this._current, variations };
+    return succeed(true);
+  }
+
+  /**
+   * Sets or clears the notes on a variation.
+   * @param spec - Variation spec to update
+   * @param notes - Notes array, or undefined to clear
+   * @returns Success or failure if spec not found
+   * @public
+   */
+  public setVariationNotes(
+    spec: FillingRecipeVariationSpec,
+    notes: ReadonlyArray<CommonModel.ICategorizedNote> | undefined
+  ): Result<true> {
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+
+    this._pushUndo();
+    const variations = [...this._current.variations];
+    variations[varIndex] = {
+      ...variations[varIndex],
+      notes: notes ? notes.map((n) => ({ ...n })) : undefined
+    };
+    this._current = { ...this._current, variations };
+    return succeed(true);
+  }
+
+  /**
+   * Scales all weight-contributing ingredients in a variation to achieve a target weight.
+   * Non-weight-contributing ingredients (tsp, Tbsp, pinch, seeds, pods) remain unchanged.
+   * Recalculates baseWeight after scaling.
+   * @param spec - Variation spec to scale
+   * @param targetWeight - Desired total weight
+   * @returns Success with actual achieved weight, or failure
+   * @public
+   */
+  public scaleVariationToTargetWeight(
+    spec: FillingRecipeVariationSpec,
+    targetWeight: Measurement
+  ): Result<Measurement> {
+    if (targetWeight <= 0) {
+      return fail(`Target weight must be positive: ${targetWeight}`);
+    }
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+
+    const variation = this._current.variations[varIndex];
+    const currentWeight = EditedFillingRecipe._calculateBaseWeight(variation.ingredients);
+    if (currentWeight <= 0) {
+      return fail('Cannot scale: no weight-contributing ingredients');
+    }
+
+    const scaleFactor = targetWeight / currentWeight;
+    this._pushUndo();
+
+    const scaledIngredients = variation.ingredients.map((ing) => {
+      const unit = ing.unit ?? 'g';
+      if (unit === 'g' || unit === 'mL') {
+        const scaled = scaleAmount(ing.amount, unit, scaleFactor);
+        const scaledAmount = scaled.isSuccess()
+          ? scaled.value.value
+          : ((ing.amount * scaleFactor) as Measurement);
+        return { ...ing, amount: scaledAmount };
+      }
+      return ing;
+    });
+
+    const actualWeight = EditedFillingRecipe._calculateBaseWeight(scaledIngredients);
+    const variations = [...this._current.variations];
+    variations[varIndex] = {
+      ...variation,
+      ingredients: scaledIngredients,
+      baseWeight: actualWeight
+    };
+    this._current = { ...this._current, variations };
+    return succeed(actualWeight);
+  }
+
+  // ============================================================================
+  // Variation Management
+  // ============================================================================
+
   /**
    * Creates a new blank variation and adds it to the recipe.
    * Auto-generates a unique spec from the given date (default today) and optional name.
@@ -484,6 +761,25 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
   // ============================================================================
   // Private Helpers
   // ============================================================================
+
+  /**
+   * Calculates base weight from a list of source ingredients.
+   * Only includes weight-contributing units (g, mL).
+   * Applies yieldFactor from modifiers (defaults to 1.0).
+   */
+  private static _calculateBaseWeight(
+    ingredients: ReadonlyArray<Fillings.IFillingIngredientEntity>
+  ): Measurement {
+    const total = ingredients.reduce((sum, ing) => {
+      const unit = ing.unit ?? 'g';
+      const yieldFactor = ing.modifiers?.yieldFactor ?? 1.0;
+      if (unit === 'g' || unit === 'mL') {
+        return sum + ing.amount * yieldFactor;
+      }
+      return sum;
+    }, 0);
+    return total as Measurement;
+  }
 
   protected _deepCopy(entity: Fillings.IFillingRecipeEntity): Fillings.IFillingRecipeEntity {
     return EditedFillingRecipe._copyEntity(entity);

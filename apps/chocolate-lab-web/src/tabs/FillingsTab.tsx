@@ -7,7 +7,7 @@ import {
   EntityTabLayout,
   type IComparisonColumn
 } from '@fgv/ts-app-shell';
-import { AiAssist, Editing, Entities, Helpers, LibraryRuntime, UserLibrary } from '@fgv/ts-chocolate';
+import { AiAssist, Editing, Entities, Helpers, LibraryRuntime } from '@fgv/ts-chocolate';
 import type {
   BaseFillingId,
   BaseIngredientId,
@@ -60,42 +60,9 @@ import {
   createBlankFillingRecipeEntity
 } from '../shared';
 
-/**
- * Merges alternate ingredient IDs from the wrapper's variation into a session-derived variation.
- * The session's produced state only tracks single ingredient IDs, so alternates set via
- * the wrapper's setVariationIngredientAlternates are lost during produced→source conversion.
- * This restores them by matching ingredients and copying over the wrapper's ids/preferredId.
- */
-function mergeAlternatesIntoVariation(
-  sessionVariation: Entities.Fillings.IFillingRecipeVariationEntity,
-  wrapperVariation: Entities.Fillings.IFillingRecipeVariationEntity
-): Entities.Fillings.IFillingRecipeVariationEntity {
-  const mergedIngredients = sessionVariation.ingredients.map((sessionIng) => {
-    // Find the matching ingredient in the wrapper by checking if any IDs overlap
-    const sessionId = sessionIng.ingredient.preferredId ?? sessionIng.ingredient.ids[0];
-    const wrapperIng = wrapperVariation.ingredients.find((wi) => wi.ingredient.ids.includes(sessionId));
-    if (wrapperIng && wrapperIng.ingredient.ids.length > 1) {
-      // Wrapper has alternates — preserve them, but ensure the session's preferred ID is included
-      const mergedIds = wrapperIng.ingredient.ids.includes(sessionId)
-        ? wrapperIng.ingredient.ids
-        : [...wrapperIng.ingredient.ids, sessionId];
-      return {
-        ...sessionIng,
-        ingredient: {
-          ids: mergedIds,
-          preferredId: wrapperIng.ingredient.preferredId
-        }
-      };
-    }
-    return sessionIng;
-  });
-  return { ...sessionVariation, ingredients: mergedIngredients };
-}
-
 interface IFillingEditingState {
   readonly id: FillingId;
   readonly wrapper: LibraryRuntime.EditedFillingRecipe;
-  session: UserLibrary.Session.EditingSession;
   selectedVariationSpec: FillingRecipeVariationSpec;
 }
 
@@ -363,24 +330,11 @@ export function FillingsTabContent(): React.ReactElement {
         return undefined;
       }
 
-      // Create session from preferred variation (or golden if not specified)
       const targetSpec = preferredSpec ?? filling.goldenVariationSpec;
-      const variationResult = filling.getVariation(targetSpec);
-      if (variationResult.isFailure()) {
-        workspace.data.logger.error(`Failed to get variation '${targetSpec}': ${variationResult.message}`);
-        return undefined;
-      }
-
-      const sessionResult = UserLibrary.Session.EditingSession.create(variationResult.value);
-      if (sessionResult.isFailure()) {
-        workspace.data.logger.error(`Failed to create editing session: ${sessionResult.message}`);
-        return undefined;
-      }
 
       const state: IFillingEditingState = {
         id,
         wrapper: wrapperResult.value,
-        session: sessionResult.value,
         selectedVariationSpec: targetSpec
       };
       editingRef.current = state;
@@ -389,43 +343,11 @@ export function FillingsTabContent(): React.ReactElement {
     [workspace]
   );
 
-  const handleVariationChange = useCallback(
-    (spec: FillingRecipeVariationSpec): void => {
-      const state = editingRef.current;
-      if (!state) return;
-
-      // Try the runtime filling first; fall back to the wrapper's current entity
-      // (needed when a new variation was just added to the wrapper but not yet saved)
-      const fillingResult = workspace.data.fillings.get(state.id as FillingId);
-      if (fillingResult.isFailure()) return;
-
-      const filling = fillingResult.value;
-      const fromRuntime = filling.getVariation(spec);
-      const variationResult = fromRuntime.isSuccess()
-        ? fromRuntime
-        : (() => {
-            const entity = state.wrapper.current.variations.find((v) => v.variationSpec === spec);
-            return entity ? filling.getVariationFromEntity(entity) : fromRuntime;
-          })();
-
-      if (variationResult.isFailure()) {
-        workspace.data.logger.error(`Failed to switch to variation '${spec}': ${variationResult.message}`);
-        return;
-      }
-
-      const sessionResult = UserLibrary.Session.EditingSession.create(variationResult.value);
-      if (sessionResult.isFailure()) {
-        workspace.data.logger.error(
-          `Failed to create session for variation '${spec}': ${sessionResult.message}`
-        );
-        return;
-      }
-
-      state.session = sessionResult.value;
-      state.selectedVariationSpec = spec;
-    },
-    [workspace]
-  );
+  const handleVariationChange = useCallback((spec: FillingRecipeVariationSpec): void => {
+    const state = editingRef.current;
+    if (!state) return;
+    state.selectedVariationSpec = spec;
+  }, []);
 
   // ============================================================================
   // Edit / Cancel / Save
@@ -488,62 +410,15 @@ export function FillingsTabContent(): React.ReactElement {
         return;
       }
 
-      // Integrate session variation edits back into the wrapper
-      const spec = state.selectedVariationSpec;
-
       if (mode === 'update') {
-        // Merge session edits (amounts, ingredient swaps) with wrapper state (alternates).
-        // The session's produced state has the correct amounts but only single ingredient IDs.
-        // The wrapper's variation has the correct alternate IDs set via setVariationIngredientAlternates.
-        const saveResult = state.session.saveAsNewVariation({ variationSpec: spec });
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Save failed (session): ${saveResult.message}`);
-          return;
-        }
-        if (saveResult.value.variationEntity) {
-          // Preserve alternates from the wrapper's current variation
-          const wrapperVariation = state.wrapper.current.variations.find((v) => v.variationSpec === spec);
-          const mergedVariation = wrapperVariation
-            ? mergeAlternatesIntoVariation(saveResult.value.variationEntity, wrapperVariation)
-            : saveResult.value.variationEntity;
-          const replaceResult = state.wrapper.replaceVariation(spec, mergedVariation);
-          if (replaceResult.isFailure()) {
-            workspace.data.logger.error(`Save failed (replace variation): ${replaceResult.message}`);
-            return;
-          }
-        }
+        // Wrapper.current IS the final entity — nothing to merge
       } else if (mode === 'new-variation') {
-        // Save session edits as a new variation on the same recipe
-        const today = new Date().toISOString().split('T')[0];
-        const newSpec = `${today}-${String(state.wrapper.variations.length + 1).padStart(
-          2,
-          '0'
-        )}` as FillingRecipeVariationSpec;
-        const saveResult = state.session.saveAsNewVariation({ variationSpec: newSpec });
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Save failed (session): ${saveResult.message}`);
+        // Duplicate the current variation as a new one within the wrapper
+        const spec = state.selectedVariationSpec;
+        const dupResult = state.wrapper.duplicateVariation(spec);
+        if (dupResult.isFailure()) {
+          workspace.data.logger.error(`Save failed (duplicate variation): ${dupResult.message}`);
           return;
-        }
-        if (saveResult.value.variationEntity) {
-          const addResult = state.wrapper.addVariation(saveResult.value.variationEntity);
-          if (addResult.isFailure()) {
-            workspace.data.logger.error(`Save failed (add variation): ${addResult.message}`);
-            return;
-          }
-        }
-      } else if (mode === 'alternatives') {
-        // Augment the current variation with alternative ingredient choices
-        const saveResult = state.session.saveAsAlternatives({ variationSpec: spec });
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Save failed (session): ${saveResult.message}`);
-          return;
-        }
-        if (saveResult.value.variationEntity) {
-          const replaceResult = state.wrapper.replaceVariation(spec, saveResult.value.variationEntity);
-          if (replaceResult.isFailure()) {
-            workspace.data.logger.error(`Save failed (replace variation): ${replaceResult.message}`);
-            return;
-          }
         }
       } else if (mode === 'new-recipe') {
         // Create an entirely new recipe derived from this one
@@ -557,17 +432,20 @@ export function FillingsTabContent(): React.ReactElement {
         const newBaseId = `${originalEntity.baseId}-derived-${today}` as BaseFillingId;
         const newCompositeId = `${mutableCollectionId}.${newBaseId}` as FillingId;
 
-        const saveResult = state.session.saveAsNewRecipe({
-          newId: newCompositeId,
+        // Build the new recipe from the wrapper's current variation
+        const currentVariation = originalEntity.variations.find(
+          (v) => v.variationSpec === state.selectedVariationSpec
+        );
+        const newVariation: Entities.Fillings.IFillingRecipeVariationEntity = {
+          ...(currentVariation ?? originalEntity.variations[0]),
           variationSpec: newSpec
-        });
-        if (saveResult.isFailure()) {
-          workspace.data.logger.error(`Save failed (session): ${saveResult.message}`);
-          return;
-        }
+        };
 
         const sourceCompositeId = state.id as FillingId;
-        const sourceVariationId = Helpers.createFillingRecipeVariationId(sourceCompositeId, spec);
+        const sourceVariationId = Helpers.createFillingRecipeVariationId(
+          sourceCompositeId,
+          state.selectedVariationSpec
+        );
 
         const newEntity: Entities.Fillings.IFillingRecipeEntity = {
           baseId: newBaseId,
@@ -578,7 +456,7 @@ export function FillingsTabContent(): React.ReactElement {
           description: originalEntity.description,
           tags: originalEntity.tags,
           urls: originalEntity.urls,
-          variations: saveResult.value.variationEntity ? [saveResult.value.variationEntity] : [],
+          variations: [newVariation],
           goldenVariationSpec: newSpec,
           derivedFrom: {
             sourceVariationId,
@@ -688,30 +566,11 @@ export function FillingsTabContent(): React.ReactElement {
         return;
       }
 
-      // Get the runtime filling to create a session
-      const fillingResult = workspace.data.fillings.get(compositeId);
-      if (fillingResult.isFailure()) {
-        workspace.data.logger.error(`Failed to load newly created filling: ${fillingResult.message}`);
-        return;
-      }
-
-      const goldenSpec = fillingResult.value.goldenVariationSpec;
-      const variationResult = fillingResult.value.getVariation(goldenSpec);
-      if (variationResult.isFailure()) {
-        workspace.data.logger.error(`Failed to get golden variation: ${variationResult.message}`);
-        return;
-      }
-
-      const sessionResult = UserLibrary.Session.EditingSession.create(variationResult.value);
-      if (sessionResult.isFailure()) {
-        workspace.data.logger.error(`Failed to create editing session: ${sessionResult.message}`);
-        return;
-      }
+      const goldenSpec = entity.goldenVariationSpec;
 
       editingRef.current = {
         id: compositeId,
         wrapper: wrapperResult.value,
-        session: sessionResult.value,
         selectedVariationSpec: goldenSpec
       };
 
@@ -1112,7 +971,6 @@ export function FillingsTabContent(): React.ReactElement {
             content: (
               <FillingEditView
                 wrapper={state.wrapper}
-                session={state.session}
                 selectedVariationSpec={state.selectedVariationSpec}
                 onVariationChange={handleVariationChange}
                 availableIngredients={availableIngredients}
