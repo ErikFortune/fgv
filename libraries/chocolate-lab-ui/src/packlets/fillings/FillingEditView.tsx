@@ -22,7 +22,7 @@
 
 /**
  * Filling recipe edit view.
- * Coordinates recipe-level editing (EditedFillingRecipe) with variation-level editing (EditingSession).
+ * Edits recipe-level and variation-level fields through EditedFillingRecipe (sole state owner).
  * @packageDocumentation
  */
 
@@ -51,8 +51,7 @@ import type {
   ProcedureId,
   RatingScore,
   SpoonLevel,
-  FillingRecipeVariationSpec,
-  UserLibrary
+  FillingRecipeVariationSpec
 } from '@fgv/ts-chocolate';
 
 import { EditingToolbar, NotesEditor, useEditingContext, type IChangeIndicator } from '../editing';
@@ -71,27 +70,16 @@ const ALL_MEASUREMENT_UNITS: ReadonlyArray<MeasurementUnit> = [
 const ALL_SPOON_LEVELS: ReadonlyArray<SpoonLevel> = ['level', 'heaping'];
 
 type EditedFillingRecipe = LibraryRuntime.EditedFillingRecipe;
-type EditingSession = UserLibrary.Session.EditingSession;
-type ISaveAnalysis = UserLibrary.Session.ISaveAnalysis;
 
 // ============================================================================
 // Props
 // ============================================================================
 
-export type FillingSaveMode = 'update' | 'new-variation' | 'alternatives' | 'new-recipe';
-
-/**
- * Controls which editing affordances are available:
- * - 'library': direct alternate editing in collapsible; no 'Save as Alternatives'
- * - 'production': 'Save as Alternatives' available; alternates shown read-only
- */
-export type FillingEditMode = 'library' | 'production';
+export type FillingSaveMode = 'update' | 'new-variation' | 'new-recipe';
 
 export interface IFillingEditViewProps {
-  /** Recipe-level wrapper with undo/redo */
+  /** Recipe-level wrapper with undo/redo (sole state owner) */
   readonly wrapper: EditedFillingRecipe;
-  /** Variation-level editing session */
-  readonly session: EditingSession;
   /** Currently selected variation spec */
   readonly selectedVariationSpec: FillingRecipeVariationSpec;
   /** Callback when user selects a different variation */
@@ -116,8 +104,6 @@ export interface IFillingEditViewProps {
   readonly onCreateIngredient?: (seed: string) => void;
   /** Callback to create a new procedure from an unresolved name */
   readonly onCreateProcedure?: (seed: string) => void;
-  /** Controls which editing affordances are shown; defaults to 'library' */
-  readonly editMode?: FillingEditMode;
 }
 
 // ============================================================================
@@ -267,7 +253,6 @@ function ProcedureAlternateAddInput({
 export function FillingEditView(props: IFillingEditViewProps): React.ReactElement {
   const {
     wrapper,
-    session,
     selectedVariationSpec,
     onVariationChange,
     availableIngredients,
@@ -279,14 +264,10 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     onMutate,
     onPreview,
     onCreateIngredient,
-    onCreateProcedure,
-    editMode = 'library'
+    onCreateProcedure
   } = props;
 
-  const isLibraryMode = editMode === 'library';
-  const isProductionMode = editMode === 'production';
-
-  // Recipe-level editing context (undo/redo for wrapper)
+  // Editing context (undo/redo for wrapper — sole state owner)
   const {
     data: { logger }
   } = useWorkspace();
@@ -299,9 +280,6 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     logger,
     checkHasChanges: (w) => w.hasChanges(w.initial)
   });
-
-  // Separate version counter for session mutations (triggers re-render)
-  const [sessionVersion, setSessionVersion] = useState(0);
 
   // ---- Change indicators ----
 
@@ -373,17 +351,16 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
   const ingredientMatcher = useTypeaheadMatch(ingredientSuggestions);
   const procedureMatcher = useTypeaheadMatch(procedureSuggestions);
 
-  // Current session state
-  const producedIngredients = session.produced.ingredients;
-  const currentProcedureId = session.produced.snapshot.procedureId;
+  // Current variation state (read from wrapper)
+  const currentVariationIngredients = useMemo(() => {
+    const variation = wrapper.current.variations.find((v) => v.variationSpec === selectedVariationSpec);
+    return variation?.ingredients ?? [];
+  }, [wrapper, selectedVariationSpec, ctx.version]);
 
-  // Save analysis (sessionVersion triggers re-computation after mutations)
-  const saveAnalysis = useMemo<ISaveAnalysis>(() => session.analyzeSaveOptions(), [session, sessionVersion]);
-
-  const notifySession = useCallback((): void => {
-    setSessionVersion((v) => v + 1);
-    onMutate?.();
-  }, [onMutate]);
+  const currentProcedureId = useMemo(() => {
+    const variation = wrapper.current.variations.find((v) => v.variationSpec === selectedVariationSpec);
+    return variation?.procedures?.preferredId;
+  }, [wrapper, selectedVariationSpec, ctx.version]);
 
   const notifyWrapper = useCallback((): void => {
     ctx.notifyMutation();
@@ -424,38 +401,33 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     [wrapper, notifyWrapper]
   );
 
-  // ---- Session Ingredient Handlers ----
+  // ---- Helper: get effective ingredient ID from source ingredient ----
+
+  const getEffectiveId = useCallback(
+    (ing: Entities.Fillings.IFillingIngredientEntity): IngredientId => {
+      return (ing.ingredient.preferredId ?? ing.ingredient.ids[0]) as IngredientId;
+    },
+    []
+  );
+
+  // ---- Ingredient Handlers (wrapper variation) ----
 
   const commitIngredientInput = useCallback(
     (index: number, input: string): void => {
       const match = ingredientMatcher.resolveOnBlur(input);
       if (match) {
-        const existing = producedIngredients[index];
-        if (match.id !== existing.ingredientId) {
-          // Replace: remove old then add new (preserves amount/modifiers)
-          session.removeIngredient(existing.ingredientId);
-          session.setIngredient(match.id, existing.amount, existing.unit, existing.modifiers);
-          // Also update preferredId in source variation if this ingredient exists there
-          if (!readOnly) {
-            const sourceVariation = wrapper.current.variations.find(
-              (v) => v.variationSpec === selectedVariationSpec
-            );
-            const sourceIng = sourceVariation?.ingredients.find((ing) =>
-              ing.ingredient.ids.includes(existing.ingredientId)
-            );
-            if (sourceIng) {
-              const currentIds = sourceIng.ingredient.ids;
-              const newId = match.id as IngredientId;
-              const newIds = currentIds.includes(newId) ? currentIds : [...currentIds, newId];
-              wrapper.setVariationIngredientAlternates(
-                selectedVariationSpec,
-                existing.ingredientId,
-                newIds,
-                newId
-              );
-            }
-          }
-          notifySession();
+        const existing = currentVariationIngredients[index];
+        const existingId = getEffectiveId(existing);
+        if (match.id !== existingId) {
+          // Replace ingredient, preserving alternates
+          wrapper.replaceVariationIngredient(
+            selectedVariationSpec,
+            existingId,
+            match.id as IngredientId,
+            existing.amount,
+            existing.unit,
+            existing.modifiers
+          );
           notifyWrapper();
         }
         // Same ingredient — no-op (just clear draft state)
@@ -473,58 +445,65 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         setUnresolvedIngredients((prev) => ({ ...prev, [index]: input.trim() }));
       }
     },
-    [ingredientMatcher, notifySession, session, producedIngredients]
+    [ingredientMatcher, currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
   );
 
   const handleIngredientAmountChange = useCallback(
     (index: number, amount: number): void => {
-      const existing = producedIngredients[index];
-      session.setIngredient(existing.ingredientId, amount as Measurement, existing.unit, existing.modifiers);
-      notifySession();
+      const existing = currentVariationIngredients[index];
+      const effectiveId = getEffectiveId(existing);
+      wrapper.setVariationIngredient(
+        selectedVariationSpec,
+        effectiveId,
+        amount as Measurement,
+        existing.unit,
+        existing.modifiers
+      );
+      notifyWrapper();
     },
-    [notifySession, session, producedIngredients]
+    [currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
   );
 
   const handleIngredientUnitChange = useCallback(
     (index: number, unit: MeasurementUnit): void => {
-      const existing = producedIngredients[index];
+      const existing = currentVariationIngredients[index];
+      const effectiveId = getEffectiveId(existing);
       const newAmount = unit === 'pinch' ? (1 as Measurement) : existing.amount;
       let newModifiers: Entities.Fillings.IIngredientModifiers | undefined;
       if (unit === 'tsp' || unit === 'Tbsp') {
-        // Spoon units: keep spoon-specific modifiers, drop weight-specific ones
         newModifiers =
           existing.modifiers?.spoonLevel !== undefined || existing.modifiers?.toTaste !== undefined
             ? { spoonLevel: existing.modifiers?.spoonLevel, toTaste: existing.modifiers?.toTaste }
             : undefined;
       } else if (unit === 'g' || unit === 'mL') {
-        // Weight units: keep weight-specific modifiers, drop spoon-specific ones
         newModifiers =
           existing.modifiers?.yieldFactor !== undefined || existing.modifiers?.processNote !== undefined
             ? { yieldFactor: existing.modifiers?.yieldFactor, processNote: existing.modifiers?.processNote }
             : undefined;
       } else {
-        // pinch, seeds, pods: no modifiers
         newModifiers = undefined;
       }
-      session.setIngredient(existing.ingredientId, newAmount, unit, newModifiers);
-      notifySession();
+      wrapper.setVariationIngredient(selectedVariationSpec, effectiveId, newAmount, unit, newModifiers);
+      notifyWrapper();
     },
-    [notifySession, session, producedIngredients]
+    [currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
   );
 
   const handleIngredientModifiersChange = useCallback(
     (index: number, modifiers: Entities.Fillings.IIngredientModifiers | undefined): void => {
-      const existing = producedIngredients[index];
-      session.setIngredient(existing.ingredientId, existing.amount, existing.unit, modifiers);
-      notifySession();
+      const existing = currentVariationIngredients[index];
+      const effectiveId = getEffectiveId(existing);
+      wrapper.setVariationIngredient(selectedVariationSpec, effectiveId, existing.amount, existing.unit, modifiers);
+      notifyWrapper();
     },
-    [notifySession, session, producedIngredients]
+    [currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
   );
 
   const handleRemoveIngredient = useCallback(
     (index: number): void => {
-      const existing = producedIngredients[index];
-      session.removeIngredient(existing.ingredientId);
+      const existing = currentVariationIngredients[index];
+      const effectiveId = getEffectiveId(existing);
+      wrapper.removeVariationIngredient(selectedVariationSpec, effectiveId);
       setIngredientInputDraft((prev) => {
         const next = { ...prev };
         delete next[index];
@@ -535,116 +514,115 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         delete next[index];
         return next;
       });
-      notifySession();
+      notifyWrapper();
     },
-    [notifySession, session, producedIngredients]
+    [currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
   );
 
   const commitNewIngredient = useCallback(
     (input: string): void => {
       const match = ingredientMatcher.resolveOnBlur(input);
       if (match) {
-        session.setIngredient(match.id, 0 as Measurement);
+        wrapper.setVariationIngredient(selectedVariationSpec, match.id as IngredientId, 0 as Measurement);
         focusIngredientRef.current = match.id;
         setNewIngredientText('');
         setUnresolvedNewIngredient(undefined);
-        notifySession();
+        notifyWrapper();
       } else if (input.trim()) {
         setUnresolvedNewIngredient(input.trim());
       }
     },
-    [ingredientMatcher, notifySession, session]
+    [ingredientMatcher, wrapper, selectedVariationSpec, notifyWrapper]
   );
 
-  // ---- Session Procedure Handler ----
+  // ---- Procedure Handler (wrapper variation) ----
 
   const commitNewProcedure = useCallback(
     (input: string): void => {
       const match = procedureMatcher.resolveOnBlur(input);
       if (match) {
-        session.setProcedure(match.id);
+        wrapper.setVariationProcedure(selectedVariationSpec, match.id as ProcedureId);
         setNewProcedureText('');
         setUnresolvedNewProcedure(undefined);
-        notifySession();
+        notifyWrapper();
       } else if (input.trim()) {
         setUnresolvedNewProcedure(input.trim());
       }
     },
-    [procedureMatcher, notifySession, session]
+    [procedureMatcher, wrapper, selectedVariationSpec, notifyWrapper]
   );
 
   const handleClearProcedure = useCallback((): void => {
-    session.setProcedure(undefined);
-    notifySession();
-  }, [session, notifySession]);
+    wrapper.setVariationProcedure(selectedVariationSpec, undefined);
+    notifyWrapper();
+  }, [wrapper, selectedVariationSpec, notifyWrapper]);
 
-  // ---- Alternate Ingredient Handlers (wrapper-level, source model) ----
+  // ---- Alternate Ingredient Handlers (directly on variation ingredients) ----
 
-  const getSourceIngredient = useCallback(
-    (producedId: IngredientId) => {
-      const variation = wrapper.current.variations.find((v) => v.variationSpec === selectedVariationSpec);
-      return variation?.ingredients.find((ing) => ing.ingredient.ids.includes(producedId));
+  const getIngredientByEffectiveId = useCallback(
+    (effectiveId: IngredientId) => {
+      return currentVariationIngredients.find((ing) => ing.ingredient.ids.includes(effectiveId));
     },
-    [wrapper, selectedVariationSpec]
+    [currentVariationIngredients]
   );
 
   const handleAddAlternate = useCallback(
-    (producedId: IngredientId, input: string): void => {
+    (effectiveId: IngredientId, input: string): void => {
       const match = ingredientMatcher.resolveOnBlur(input);
       if (!match) {
         if (input.trim()) {
-          setUnresolvedAlternates((prev) => ({ ...prev, [producedId]: input.trim() }));
+          setUnresolvedAlternates((prev) => ({ ...prev, [effectiveId]: input.trim() }));
         }
         return;
       }
       setUnresolvedAlternates((prev) => {
         const next = { ...prev };
-        delete next[producedId];
+        delete next[effectiveId];
         return next;
       });
-      const sourceIng = getSourceIngredient(producedId);
+      const sourceIng = getIngredientByEffectiveId(effectiveId);
       if (!sourceIng) return;
       const currentIds = sourceIng.ingredient.ids;
       if (currentIds.includes(match.id as IngredientId)) return;
       const newIds = [...currentIds, match.id as IngredientId];
       wrapper.setVariationIngredientAlternates(
         selectedVariationSpec,
-        producedId,
+        effectiveId,
         newIds,
-        sourceIng.ingredient.preferredId ?? producedId
+        sourceIng.ingredient.preferredId ?? effectiveId
       );
       notifyWrapper();
     },
-    [wrapper, selectedVariationSpec, ingredientMatcher, getSourceIngredient, notifyWrapper]
+    [wrapper, selectedVariationSpec, ingredientMatcher, getIngredientByEffectiveId, notifyWrapper]
   );
 
   const handleRemoveAlternate = useCallback(
-    (producedId: IngredientId, removeId: IngredientId): void => {
-      const sourceIng = getSourceIngredient(producedId);
+    (effectiveId: IngredientId, removeId: IngredientId): void => {
+      const sourceIng = getIngredientByEffectiveId(effectiveId);
       if (!sourceIng) return;
       const newIds = sourceIng.ingredient.ids.filter((id) => id !== removeId);
       if (newIds.length === 0) return;
-      const currentPreferred = sourceIng.ingredient.preferredId ?? producedId;
+      const currentPreferred = sourceIng.ingredient.preferredId ?? effectiveId;
       const newPreferred = currentPreferred === removeId ? (newIds[0] as IngredientId) : currentPreferred;
-      wrapper.setVariationIngredientAlternates(selectedVariationSpec, producedId, newIds, newPreferred);
+      wrapper.setVariationIngredientAlternates(selectedVariationSpec, effectiveId, newIds, newPreferred);
       notifyWrapper();
     },
-    [wrapper, selectedVariationSpec, getSourceIngredient, notifyWrapper]
+    [wrapper, selectedVariationSpec, getIngredientByEffectiveId, notifyWrapper]
   );
 
   const handleSetPreferredAlternate = useCallback(
-    (producedId: IngredientId, preferredId: IngredientId): void => {
-      const sourceIng = getSourceIngredient(producedId);
+    (effectiveId: IngredientId, preferredId: IngredientId): void => {
+      const sourceIng = getIngredientByEffectiveId(effectiveId);
       if (!sourceIng) return;
       wrapper.setVariationIngredientAlternates(
         selectedVariationSpec,
-        producedId,
+        effectiveId,
         sourceIng.ingredient.ids,
         preferredId
       );
       notifyWrapper();
     },
-    [wrapper, selectedVariationSpec, getSourceIngredient, notifyWrapper]
+    [wrapper, selectedVariationSpec, getIngredientByEffectiveId, notifyWrapper]
   );
 
   // ---- Alternate Procedure Handlers (wrapper-level, source model) ----
@@ -780,14 +758,14 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     [wrapper, selectedVariationSpec, notifyWrapper]
   );
 
-  // ---- Session Notes Handler ----
+  // ---- Notes Handler (wrapper variation) ----
 
   const handleNotesChange = useCallback(
     (value: ReadonlyArray<Model.ICategorizedNote> | undefined) => {
-      session.setNotes(value ? [...value] : []);
-      notifySession();
+      wrapper.setVariationNotes(selectedVariationSpec, value);
+      notifyWrapper();
     },
-    [session, notifySession]
+    [wrapper, selectedVariationSpec, notifyWrapper]
   );
 
   // ---- Clear resolved entries ----
@@ -819,7 +797,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       }
       return changed ? next : prev;
     });
-  }, [producedIngredients, availableIngredients, ingredientMatcher, unresolvedNewIngredient]);
+  }, [currentVariationIngredients, availableIngredients, ingredientMatcher, unresolvedNewIngredient]);
 
   useEffect(() => {
     if (unresolvedNewProcedure && procedureMatcher.findExactMatch(unresolvedNewProcedure)) {
@@ -836,6 +814,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
 
   // ---- Save button ----
 
+  const hasChanges = useMemo(() => wrapper.hasChanges(wrapper.initial), [wrapper, ctx.version]);
+
   const saveActions = useMemo(() => {
     const actions: Array<{
       id: string;
@@ -844,8 +824,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       onSelect: () => void;
     }> = [];
 
-    // When source is read-only, skip actions that write to the same collection
-    if (!readOnly && saveAnalysis.canCreateVariation && !saveAnalysis.mustCreateNew) {
+    // Save in-place (only if not read-only)
+    if (!readOnly) {
       actions.push({
         id: 'update',
         label: 'Save',
@@ -854,21 +834,12 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       });
     }
 
-    if (!readOnly && saveAnalysis.canCreateVariation) {
+    if (!readOnly) {
       actions.push({
         id: 'new-variation',
         label: 'Save as New Variation',
         icon: <PlusIcon className="h-3.5 w-3.5" />,
         onSelect: (): void => onSave('new-variation')
-      });
-    }
-
-    if (!readOnly && isProductionMode && saveAnalysis.canAddAlternatives) {
-      actions.push({
-        id: 'alternatives',
-        label: 'Save as Alternatives',
-        icon: <DocumentDuplicateIcon className="h-3.5 w-3.5" />,
-        onSelect: (): void => onSave('alternatives')
       });
     }
 
@@ -881,7 +852,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     });
 
     return actions;
-  }, [saveAnalysis, onSave, readOnly]);
+  }, [hasChanges, onSave, readOnly]);
 
   const customSaveButton =
     saveActions.length > 0 ? (
@@ -958,13 +929,13 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       </EditSection>
 
       {/* Variation Selector / Curation */}
-      {(wrapper.variations.length > 1 || isLibraryMode) && (
+      {(wrapper.variations.length > 1 || true) && (
         <EditSection title="Variations">
           <div className="flex flex-wrap gap-1.5 items-start">
             {wrapper.variations.map((v) => {
               const isSelected = v.variationSpec === selectedVariationSpec;
               const isGolden = v.variationSpec === wrapper.goldenVariationSpec;
-              const canRemove = isLibraryMode && !readOnly && !isGolden && wrapper.variations.length > 1;
+              const canRemove = !readOnly && !isGolden && wrapper.variations.length > 1;
               const isEditingName = editingVariationName === v.variationSpec;
 
               return (
@@ -977,7 +948,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                   }`}
                 >
                   {/* Golden star toggle (library mode) */}
-                  {isLibraryMode && !readOnly && (
+                  {!readOnly && (
                     <button
                       type="button"
                       title={isGolden ? 'Golden variation' : 'Set as golden'}
@@ -996,7 +967,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     </button>
                   )}
                   {/* Golden star display (production/read-only) */}
-                  {(!isLibraryMode || readOnly) && isGolden && (
+                  {readOnly && isGolden && (
                     <span
                       className={`pl-1.5 py-1 shrink-0 ${isSelected ? 'text-amber-300' : 'text-amber-500'}`}
                     >
@@ -1029,14 +1000,14 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                       type="button"
                       onClick={(): void => onVariationChange(v.variationSpec)}
                       onDoubleClick={(): void => {
-                        if (isLibraryMode && !readOnly) {
+                        if (!readOnly) {
                           setEditingVariationName(v.variationSpec);
                           setEditingVariationNameValue(v.name ?? '');
                         }
                       }}
                       className={`px-1.5 py-1 ${isSelected ? '' : 'hover:border-choco-primary'}`}
                       title={
-                        isLibraryMode && !readOnly ? 'Click to select, double-click to rename' : undefined
+                        !readOnly ? 'Click to select, double-click to rename' : undefined
                       }
                     >
                       {v.name ?? v.variationSpec}
@@ -1063,7 +1034,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
             })}
 
             {/* Add Variation button / form (library mode) */}
-            {isLibraryMode && !readOnly && (
+            {!readOnly && (
               <>
                 {!showAddVariationForm ? (
                   <button
@@ -1131,18 +1102,18 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         </EditSection>
       )}
 
-      {/* Ingredients Section (from EditingSession) */}
-      <EditSection title={`Ingredients (${producedIngredients.length})`}>
+      {/* Ingredients Section */}
+      <EditSection title={`Ingredients (${currentVariationIngredients.length})`}>
         <div className="space-y-2">
-          {producedIngredients.map((ing, index) => {
+          {currentVariationIngredients.map((ing, index) => {
+            const effectiveId = getEffectiveId(ing);
             const ingValue =
               ingredientInputDraft[index] ??
-              getIngredientDisplayName(ing.ingredientId, ingredientSuggestions);
+              getIngredientDisplayName(effectiveId, ingredientSuggestions);
             const isSpoonUnit = ing.unit === 'tsp' || ing.unit === 'Tbsp';
             const isWeightUnit = ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined;
-            const sourceIng = getSourceIngredient(ing.ingredientId);
-            const sourceIds = sourceIng?.ingredient.ids ?? [];
-            const sourcePreferredId = sourceIng?.ingredient.preferredId ?? ing.ingredientId;
+            const sourceIds = ing.ingredient.ids;
+            const sourcePreferredId = ing.ingredient.preferredId ?? effectiveId;
             const hasAlternates = sourceIds.length > 1;
             const hasNonDefaultModifiers =
               (ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0) ||
@@ -1151,7 +1122,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
               !!ing.modifiers?.toTaste;
             const isExpanded = expandedIngredients.has(index) || hasNonDefaultModifiers || hasAlternates;
             return (
-              <div key={ing.ingredientId} className="rounded border border-gray-200 p-2">
+              <div key={effectiveId} className="rounded border border-gray-200 p-2">
                 <div className="flex items-center gap-1.5">
                   <input
                     type="text"
@@ -1170,7 +1141,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                   />
                   <input
                     ref={(el): void => {
-                      if (el && focusIngredientRef.current === ing.ingredientId) {
+                      if (el && focusIngredientRef.current === effectiveId) {
                         focusIngredientRef.current = undefined;
                         requestAnimationFrame(() => el.focus());
                       }
@@ -1303,13 +1274,13 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                       </>
                     )}
                     {/* Alternates row */}
-                    {(hasAlternates || isLibraryMode) && (
+                    {(hasAlternates || true) && (
                       <div className="w-full flex flex-wrap items-center gap-1 mt-1 pt-1 border-t border-gray-100">
                         <span className="text-xs text-gray-400 shrink-0">also:</span>
                         {sourceIds.map((altId) => {
                           const altName = getIngredientDisplayName(altId, ingredientSuggestions);
                           const isPreferred = altId === sourcePreferredId;
-                          const canEdit = isLibraryMode && !readOnly;
+                          const canEdit = !readOnly;
                           return (
                             <span
                               key={altId}
@@ -1346,14 +1317,14 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                             </span>
                           );
                         })}
-                        {isLibraryMode && !readOnly && (
+                        {!readOnly && (
                           <AlternateAddInput
                             ingredientId={ing.ingredientId}
                             onAdd={handleAddAlternate}
                             datalistId="filling-ingredient-suggestions"
                           />
                         )}
-                        {!hasAlternates && (isProductionMode || readOnly) && (
+                        {!hasAlternates && (readOnly) && (
                           <span className="text-xs text-gray-300 italic">none</span>
                         )}
                         {unresolvedAlternates[ing.ingredientId] && (
@@ -1520,14 +1491,14 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
             const procOptions = sourceProcedures?.options ?? [];
             const procPreferredId = sourceProcedures?.preferredId;
             const hasProcAlternates = procOptions.length > 1;
-            if (!hasProcAlternates && !isLibraryMode) return null;
+            if (!hasProcAlternates && !true) return null;
             return (
               <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
                 <span className="text-xs text-gray-400 shrink-0">also:</span>
                 {procOptions.map((opt) => {
                   const name = getProcedureDisplayName(opt.id, procedureSuggestions);
                   const isPreferred = opt.id === procPreferredId;
-                  const canEdit = isLibraryMode && !readOnly;
+                  const canEdit = !readOnly;
                   return (
                     <span
                       key={opt.id}
@@ -1562,13 +1533,13 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     </span>
                   );
                 })}
-                {isLibraryMode && !readOnly && (
+                {!readOnly && (
                   <ProcedureAlternateAddInput
                     onAdd={handleAddProcedureAlternate}
                     datalistId="filling-procedure-suggestions"
                   />
                 )}
-                {!hasProcAlternates && (isProductionMode || readOnly) && (
+                {!hasProcAlternates && (readOnly) && (
                   <span className="text-xs text-gray-300 italic">none</span>
                 )}
                 {unresolvedProcedureAlternate && (
