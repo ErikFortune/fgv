@@ -337,6 +337,19 @@ Creates a new EditingSession from a base recipe variation.
 </td></tr>
 <tr><td>
 
+[createFromProduced(baseRecipe, producedEntity)](./EditingSession.createFromProduced.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Creates a new EditingSession from an existing produced filling snapshot.
+
+</td></tr>
+<tr><td>
+
 [fromPersistedState(data, baseRecipe)](./EditingSession.fromPersistedState.md)
 
 </td><td>

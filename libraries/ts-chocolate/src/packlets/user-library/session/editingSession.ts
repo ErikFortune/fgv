@@ -126,6 +126,23 @@ export class EditingSession implements IMaterializedSessionBase {
     );
   }
 
+  /**
+   * Creates a new EditingSession from an existing produced filling snapshot.
+   * Used to restore embedded filling sessions from persisted confection state.
+   * @param baseRecipe - Source recipe variation
+   * @param producedEntity - Existing produced filling state to restore
+   * @returns Result with new EditingSession or error
+   * @public
+   */
+  public static createFromProduced(
+    baseRecipe: IFillingRecipeVariation,
+    producedEntity: IProducedFillingEntity
+  ): Result<EditingSession> {
+    return ProducedFilling.create(producedEntity).onSuccess((produced) =>
+      captureResult(() => new EditingSession(baseRecipe, produced))
+    );
+  }
+
   // ============================================================================
   // Editing Methods (delegate to _produced)
   // ============================================================================

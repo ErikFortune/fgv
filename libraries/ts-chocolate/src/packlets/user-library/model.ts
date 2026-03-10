@@ -297,6 +297,26 @@ export type AnyJournalEntry =
   | IFillingProductionJournalEntry
   | IConfectionProductionJournalEntry;
 
+/**
+ * Type guard for materialized filling production journal entries.
+ * @public
+ */
+export function isFillingProductionJournalEntry(
+  entry: AnyJournalEntry
+): entry is IFillingProductionJournalEntry {
+  return entry.entity.type === 'filling-production';
+}
+
+/**
+ * Type guard for materialized confection production journal entries.
+ * @public
+ */
+export function isConfectionProductionJournalEntry(
+  entry: AnyJournalEntry
+): entry is IConfectionProductionJournalEntry {
+  return entry.entity.type === 'confection-production';
+}
+
 // ============================================================================
 // Materialized Inventory Types
 // ============================================================================

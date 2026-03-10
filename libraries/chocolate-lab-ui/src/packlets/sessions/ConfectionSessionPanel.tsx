@@ -310,6 +310,15 @@ export function ConfectionSessionPanel({
     [workspace, reactiveWorkspace.version]
   );
 
+  const moldSuggestions = useMemo(
+    () =>
+      Array.from(workspace.data.molds.values()).map((mold: LibraryRuntime.IMold) => ({
+        id: mold.id,
+        name: mold.displayName
+      })),
+    [workspace, reactiveWorkspace.version]
+  );
+
   const procedureSuggestions = useMemo(
     () =>
       Array.from(workspace.data.procedures.values()).map((proc: LibraryRuntime.IProcedure) => ({
@@ -456,6 +465,7 @@ export function ConfectionSessionPanel({
           ingredientSuggestions={ingredientSuggestions}
           chocolateSuggestions={chocolateSuggestions}
           ingredientAlternates={ingredientAlternates}
+          moldSuggestions={moldSuggestions}
           notifySession={notifySession}
           autosaveIfNeeded={autosaveIfNeeded}
           onBrowseIngredient={onBrowseIngredient}
@@ -937,6 +947,7 @@ function TypeSpecificSection({
   ingredientSuggestions,
   chocolateSuggestions,
   ingredientAlternates,
+  moldSuggestions,
   notifySession,
   autosaveIfNeeded,
   onBrowseIngredient
@@ -947,6 +958,7 @@ function TypeSpecificSection({
   readonly ingredientSuggestions: ReadonlyArray<ITypeaheadSuggestion<IngredientId>>;
   readonly chocolateSuggestions: ReadonlyArray<ITypeaheadSuggestion<IngredientId>>;
   readonly ingredientAlternates: ReadonlyArray<ITypeaheadSuggestion<IngredientId>>;
+  readonly moldSuggestions: ReadonlyArray<ITypeaheadSuggestion<MoldId>>;
   readonly notifySession: () => void;
   readonly autosaveIfNeeded: () => void;
   readonly onBrowseIngredient?: (ingredientId: IngredientId) => void;
@@ -958,9 +970,18 @@ function TypeSpecificSection({
       <div className="space-y-2">
         <div>
           <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Mold</div>
-          <div className="flex items-center gap-1 py-0.5">
-            <span className="text-sm text-gray-700">{getMoldName(produced.moldId, workspace)}</span>
-          </div>
+          <MoldEditRow
+            moldId={produced.moldId}
+            workspace={workspace}
+            reactiveVersion={reactiveVersion}
+            suggestions={moldSuggestions}
+            onSelect={(id): void => {
+              const result = produced.setMold(id);
+              if (result.isFailure()) return;
+              notifySession();
+              autosaveIfNeeded();
+            }}
+          />
         </div>
         <div>
           <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Shell Chocolate</div>
@@ -1123,6 +1144,83 @@ function TypeSpecificSection({
   }
 
   return null;
+}
+
+// ============================================================================
+// Mold Edit Row (browse + typeahead edit)
+// ============================================================================
+
+function MoldEditRow({
+  moldId,
+  workspace,
+  reactiveVersion,
+  suggestions,
+  onSelect
+}: {
+  readonly moldId: MoldId;
+  readonly workspace: IWorkspace;
+  readonly reactiveVersion: number;
+  readonly suggestions: ReadonlyArray<ITypeaheadSuggestion<MoldId>>;
+  readonly onSelect: (id: MoldId) => void;
+}): React.ReactElement {
+  const [editing, setEditing] = useState(false);
+  const [inputText, setInputText] = useState('');
+
+  const name = useMemo(() => getMoldName(moldId, workspace), [moldId, workspace, reactiveVersion]);
+
+  const handleSelect = useCallback(
+    (suggestion: ITypeaheadSuggestion<MoldId>): void => {
+      onSelect(suggestion.id);
+      setEditing(false);
+      setInputText('');
+    },
+    [onSelect]
+  );
+
+  if (!editing) {
+    return (
+      <div className="flex items-center justify-between py-0.5">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={(): void => {
+              setInputText(name);
+              setEditing(true);
+            }}
+            title="Edit mold"
+            className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+          >
+            <ArrowPathIcon className="h-3 w-3" />
+          </button>
+          <span className="text-sm text-gray-700">{name}</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-0.5">
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={(): void => setEditing(false)}
+          title="Done editing"
+          className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+        >
+          <CheckIcon className="h-3.5 w-3.5" />
+        </button>
+        <TypeaheadInput<MoldId>
+          value={inputText}
+          onChange={setInputText}
+          suggestions={suggestions}
+          onSelect={handleSelect}
+          placeholder="Type mold name"
+          autoFocus={editing}
+          className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+        />
+      </div>
+    </div>
+  );
 }
 
 // ============================================================================

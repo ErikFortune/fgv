@@ -1056,6 +1056,8 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
     protected _removeFillingSession(slotId: SlotId): Result<IEmbeddableFillingSession | undefined>;
     removeFillingSlot(slotId: SlotId): Result<IEmbeddableFillingSession | undefined>;
     // @internal
+    protected _restoreFillingSessionForSlot(slotId: SlotId, fillingId: FillingId, produced: Fillings.IProducedFillingEntity): Result<IEmbeddableFillingSession>;
+    // @internal
     protected _scaleAllFillingsByFactor(scaleFactor: number): Result<IFillingSessionMap>;
     // @internal
     protected _scaleFillingToWeight(slotId: SlotId, targetWeight: Measurement): Result<Measurement | undefined>;
@@ -2124,6 +2126,7 @@ class EditingSession implements IMaterializedSessionBase {
     canUndo(): boolean;
     static create(baseRecipe: IFillingRecipeVariation, initialScale?: number): Result<EditingSession>;
     get createdAt(): string;
+    static createFromProduced(baseRecipe: IFillingRecipeVariation, producedEntity: IProducedFillingEntity): Result<EditingSession>;
     get entity(): IFillingSessionEntity;
     get execution(): IExecutionState | undefined;
     static fromPersistedState(data: IFillingSessionEntity, baseRecipe: IFillingRecipeVariation): Result<EditingSession>;
@@ -5928,6 +5931,9 @@ function isConfectionEditJournalEntryEntity(entry: AnyJournalEntryEntity): entry
 // @public
 function isConfectionJournalEntry(entry: AnyJournalEntryEntity): entry is AnyConfectionJournalEntry;
 
+// @public
+function isConfectionProductionJournalEntry(entry: AnyJournalEntry): entry is IConfectionProductionJournalEntry;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -6084,6 +6090,9 @@ function isFillingEditJournalEntryEntity(entry: AnyJournalEntryEntity): entry is
 
 // @public
 function isFillingJournalEntry(entry: AnyJournalEntryEntity): entry is AnyFillingJournalEntry;
+
+// @public
+function isFillingProductionJournalEntry(entry: AnyJournalEntry): entry is IFillingProductionJournalEntry;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -8871,6 +8880,8 @@ declare namespace UserLibrary {
         ILocation,
         Location_2 as Location,
         Session_2 as Session,
+        isFillingProductionJournalEntry,
+        isConfectionProductionJournalEntry,
         IMaterializedSessionBase,
         ISessionContext,
         AnyMaterializedSession,

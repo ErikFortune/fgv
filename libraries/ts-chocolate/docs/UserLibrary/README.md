@@ -241,3 +241,35 @@ Union type for any materialized inventory entry.
 
 </td></tr>
 </tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[isFillingProductionJournalEntry](./functions/isFillingProductionJournalEntry.md)
+
+</td><td>
+
+Type guard for materialized filling production journal entries.
+
+</td></tr>
+<tr><td>
+
+[isConfectionProductionJournalEntry](./functions/isConfectionProductionJournalEntry.md)
+
+</td><td>
+
+Type guard for materialized confection production journal entries.
+
+</td></tr>
+</tbody></table>

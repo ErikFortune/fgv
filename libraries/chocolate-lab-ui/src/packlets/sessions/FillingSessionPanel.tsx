@@ -415,6 +415,7 @@ export function FillingSessionPanel({
         savePromise
           .then(() => {
             clearEditState();
+
             notifySession();
           })
           .catch(() => {});

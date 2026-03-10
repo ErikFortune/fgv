@@ -42,6 +42,7 @@ import {
 import {
   Confections,
   AnyProducedConfectionEntity,
+  Fillings,
   IConfectionProductionJournalEntryEntity,
   IConfectionSessionEntity,
   Journal,
@@ -50,6 +51,7 @@ import {
 } from '../../entities';
 import { IConfectionBase, ProducedConfectionBase } from '../../library-runtime';
 
+import { EditingSession } from './editingSession';
 import { EmbeddedFillingSession } from './embeddedFillingSession';
 import {
   IConfectionEditingSessionParams,
@@ -142,10 +144,19 @@ export abstract class ConfectionEditingSessionBase<
     const errors: MessageAggregator = new MessageAggregator();
     for (const slot of fillings) {
       if (slot.slotType === 'recipe') {
-        this._createFillingSessionForSlot(slot.slotId, slot.fillingId).aggregateError(
-          errors,
-          (msg) => `${slot.slotId}: ${msg}`
-        );
+        if (slot.produced) {
+          // Restore from persisted filling snapshot
+          this._restoreFillingSessionForSlot(slot.slotId, slot.fillingId, slot.produced).aggregateError(
+            errors,
+            (msg) => `${slot.slotId}: ${msg}`
+          );
+        } else {
+          // Create fresh from recipe defaults
+          this._createFillingSessionForSlot(slot.slotId, slot.fillingId).aggregateError(
+            errors,
+            (msg) => `${slot.slotId}: ${msg}`
+          );
+        }
       }
       // Ingredient slots don't need sessions
     }
@@ -173,6 +184,27 @@ export abstract class ConfectionEditingSessionBase<
           this._fillingSessions.set(slotId, embedded);
           return succeed(embedded);
         });
+      });
+    });
+  }
+
+  /**
+   * Restores a filling session for a slot from a persisted produced filling snapshot.
+   * @param slotId - The slot identifier
+   * @param fillingId - The filling recipe ID
+   * @param produced - The persisted produced filling data
+   * @internal
+   */
+  protected _restoreFillingSessionForSlot(
+    slotId: SlotId,
+    fillingId: FillingId,
+    produced: Fillings.IProducedFillingEntity
+  ): Result<IEmbeddableFillingSession> {
+    return this._context.fillings.get(fillingId).asResult.onSuccess((filling) => {
+      return EditingSession.createFromProduced(filling.goldenVariation, produced).onSuccess((session) => {
+        const embedded = new EmbeddedFillingSession(session, () => this._onChildSessionMutation());
+        this._fillingSessions.set(slotId, embedded);
+        return succeed(embedded);
       });
     });
   }
@@ -417,9 +449,7 @@ export abstract class ConfectionEditingSessionBase<
             defaultCollectionId: options.collectionId
           },
           sourceVariationId,
-          history: this._produced.getSerializedHistory(
-            this._originalSnapshot
-          ) as SessionEntities.ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>,
+          history: this._getEnrichedSerializedHistory(),
           childSessionIds: {}
         };
         return succeed(session);
@@ -653,18 +683,31 @@ export abstract class ConfectionEditingSessionBase<
   }
 
   /**
-   * Creates a produced confection snapshot enriched with filling production snapshots.
-   * For each recipe-type filling slot, embeds the corresponding filling session's
-   * produced snapshot.
+   * Creates a serialized editing history enriched with filling production snapshots.
+   * The `current` state embeds each filling session's produced snapshot so that
+   * filling edits survive round-trip persistence.
    * @internal
    */
-  private _enrichProducedWithFillingSnapshots(): AnyProducedConfectionEntity {
-    const snapshot = this._produced.snapshot;
-    if (!snapshot.fillings) {
-      return snapshot;
+  private _getEnrichedSerializedHistory(): SessionEntities.ISerializedEditingHistoryEntity<AnyProducedConfectionEntity> {
+    const history = this._produced.getSerializedHistory(
+      this._originalSnapshot
+    ) as SessionEntities.ISerializedEditingHistoryEntity<AnyProducedConfectionEntity>;
+    return {
+      ...history,
+      current: this._enrichFillings(history.current)
+    };
+  }
+
+  /**
+   * Enriches a produced confection entity with filling production snapshots.
+   * @internal
+   */
+  private _enrichFillings(entity: AnyProducedConfectionEntity): AnyProducedConfectionEntity {
+    if (!entity.fillings) {
+      return entity;
     }
 
-    const enrichedFillings = snapshot.fillings.map((slot) => {
+    const enrichedFillings = entity.fillings.map((slot) => {
       if (slot.slotType !== 'recipe') {
         return slot;
       }
@@ -678,6 +721,16 @@ export abstract class ConfectionEditingSessionBase<
       };
     });
 
-    return { ...snapshot, fillings: enrichedFillings };
+    return { ...entity, fillings: enrichedFillings };
+  }
+
+  /**
+   * Creates a produced confection snapshot enriched with filling production snapshots.
+   * For each recipe-type filling slot, embeds the corresponding filling session's
+   * produced snapshot.
+   * @internal
+   */
+  private _enrichProducedWithFillingSnapshots(): AnyProducedConfectionEntity {
+    return this._enrichFillings(this._produced.snapshot);
   }
 }

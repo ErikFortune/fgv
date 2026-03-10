@@ -189,6 +189,7 @@ export function TypeaheadInput<TId extends string = string>(
   );
 
   const handleFocus = useCallback((): void => {
+    inputRef.current?.select();
     if (hasItems) {
       setIsOpen(true);
     }

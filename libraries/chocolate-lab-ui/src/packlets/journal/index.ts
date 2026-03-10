@@ -26,3 +26,5 @@
  */
 
 export { JournalEntryDetail, type IJournalEntryDetailProps } from './JournalEntryDetail';
+export { ProducedFillingContent, type IProducedFillingContentProps } from './ProducedFillingContent';
+export { ProducedFillingDetail, type IProducedFillingDetailProps } from './ProducedFillingDetail';
