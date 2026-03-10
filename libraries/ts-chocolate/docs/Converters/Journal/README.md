@@ -27,6 +27,24 @@ Converter for Entities.Journal.JournalEntryType | JournalEntryType.
 </td></tr>
 <tr><td>
 
+[producedFillingIngredientEntity](./variables/producedFillingIngredientEntity.md)
+
+</td><td>
+
+Converter for Entities.Fillings.IProducedFillingIngredientEntity | IProducedFillingIngredientEntity.
+
+</td></tr>
+<tr><td>
+
+[producedFillingEntity](./variables/producedFillingEntity.md)
+
+</td><td>
+
+Converter for Entities.Fillings.IProducedFillingEntity | IProducedFillingEntity.
+
+</td></tr>
+<tr><td>
+
 [resolvedSlotType](./variables/resolvedSlotType.md)
 
 </td><td>
@@ -95,24 +113,6 @@ Converter for IRolledTruffleJournalVariation — rolled truffle variation snapsh
 </td><td>
 
 Converter for AnyJournalConfectionVariation — discriminated on `variationType`.
-
-</td></tr>
-<tr><td>
-
-[producedFillingIngredientEntity](./variables/producedFillingIngredientEntity.md)
-
-</td><td>
-
-Converter for Entities.Fillings.IProducedFillingIngredientEntity | IProducedFillingIngredientEntity.
-
-</td></tr>
-<tr><td>
-
-[producedFillingEntity](./variables/producedFillingEntity.md)
-
-</td><td>
-
-Converter for Entities.Fillings.IProducedFillingEntity | IProducedFillingEntity.
 
 </td></tr>
 <tr><td>

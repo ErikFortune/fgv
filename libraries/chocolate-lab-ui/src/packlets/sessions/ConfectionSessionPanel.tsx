@@ -71,6 +71,8 @@ export interface IConfectionSessionPanelProps {
   readonly onBrowseIngredient?: (ingredientId: IngredientId) => void;
   /** Optional callback to browse a procedure in a cascade detail panel */
   readonly onBrowseProcedure?: (procedureId: ProcedureId) => void;
+  /** Optional callback to open the commit dialog */
+  readonly onCommit?: () => void;
 }
 
 // ============================================================================
@@ -118,7 +120,8 @@ export function ConfectionSessionPanel({
   onClose,
   onSelectFillingSlot,
   onBrowseIngredient,
-  onBrowseProcedure
+  onBrowseProcedure,
+  onCommit
 }: IConfectionSessionPanelProps): React.ReactElement {
   const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
@@ -422,6 +425,7 @@ export function ConfectionSessionPanel({
         saveMode={saveMode}
         onSaveModeChange={handleSaveModeChange}
         onClose={onClose}
+        onCommit={onCommit}
       />
 
       <div className="flex flex-col gap-4 p-4">

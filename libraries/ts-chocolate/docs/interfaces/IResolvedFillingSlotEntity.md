@@ -75,4 +75,21 @@ Slot identifier
 Resolved filling recipe ID
 
 </td></tr>
+<tr><td>
+
+[produced](./IResolvedFillingSlotEntity.produced.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IProducedFillingEntity](IProducedFillingEntity.md)
+
+</td><td>
+
+Full produced filling snapshot (populated in journal entries)
+
+</td></tr>
 </tbody></table>

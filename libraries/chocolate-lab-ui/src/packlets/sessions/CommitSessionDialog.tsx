@@ -39,6 +39,16 @@ import type { UserLibrary } from '@fgv/ts-chocolate';
  */
 export type RecipeSaveOption = 'journal-only' | 'new-variation' | 'alternatives';
 
+/**
+ * Minimal interface for sessions that can be committed to the journal.
+ * Both filling and confection editing sessions satisfy this contract.
+ * @public
+ */
+export interface ICommittableSession {
+  readonly sessionType: 'filling' | 'confection';
+  analyzeSaveOptions(): UserLibrary.Session.ISaveAnalysis;
+}
+
 // ============================================================================
 // Props
 // ============================================================================
@@ -51,7 +61,7 @@ export interface ICommitSessionDialogProps {
   /** Whether the dialog is open */
   readonly isOpen: boolean;
   /** The editing session to commit */
-  readonly session: UserLibrary.Session.EditingSession;
+  readonly session: ICommittableSession;
   /** Called when the user confirms the commit with a save option */
   readonly onCommit: (saveOption: RecipeSaveOption) => Promise<void>;
   /** Called when the user cancels */
@@ -250,7 +260,7 @@ export function CommitSessionDialog({
       >
         <div className="p-6">
           <h3 id="commit-dialog-title" className="text-base font-semibold text-gray-900 leading-6">
-            Commit Session to Journal
+            Commit {session.sessionType === 'confection' ? 'Confection' : 'Filling'} Session to Journal
           </h3>
           <p className="mt-2 text-sm text-gray-600">
             This will create a journal entry with a full recipe snapshot and mark the session as committed.

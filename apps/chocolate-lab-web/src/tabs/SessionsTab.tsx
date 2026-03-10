@@ -178,8 +178,8 @@ export function SessionsTabContent(): React.ReactElement {
   const commitSession = useMemo(() => {
     if (!commitSessionId) return undefined;
     const result = workspace.userData.sessions.get(commitSessionId);
-    if (result.isFailure() || result.value.sessionType !== 'filling') return undefined;
-    return result.value as UserLibrary.Session.EditingSession;
+    if (result.isFailure()) return undefined;
+    return result.value;
   }, [commitSessionId, workspace, reactiveWorkspace.version]);
 
   const handleCommitRequest = useCallback((sessionId: SessionId): void => {
@@ -188,35 +188,49 @@ export function SessionsTabContent(): React.ReactElement {
 
   const handleCommitConfirm = useCallback(
     async (saveOption: RecipeSaveOption): Promise<void> => {
-      if (!commitSessionId || !sessionActions.defaultJournalCollectionId) {
+      if (!commitSessionId || !commitSession || !sessionActions.defaultJournalCollectionId) {
         addMessage('error', 'Cannot commit: no journal collection available');
         return;
       }
 
-      // Step 1: Recipe save (if requested)
-      if (saveOption !== 'journal-only' && commitSession) {
-        const recipeSaveResult = await saveRecipeFromSession(
-          commitSession,
-          saveOption,
-          fillingMutation,
-          addMessage
-        );
-        if (!recipeSaveResult) {
-          return; // Error already reported
+      if (commitSession.sessionType === 'filling') {
+        // Step 1: Recipe save (if requested) — filling sessions only
+        if (saveOption !== 'journal-only') {
+          const recipeSaveResult = await saveRecipeFromSession(
+            commitSession as UserLibrary.Session.EditingSession,
+            saveOption,
+            fillingMutation,
+            addMessage
+          );
+          if (!recipeSaveResult) {
+            return; // Error already reported
+          }
         }
-      }
 
-      // Step 2: Journal commit + session status update
-      const result = await sessionActions.commitFillingSession(
-        commitSessionId,
-        sessionActions.defaultJournalCollectionId
-      );
-      if (result.isSuccess()) {
-        const saveLabel = saveOption === 'journal-only' ? '' : ' (recipe changes saved)';
-        addMessage('success', `Session committed to journal: ${result.value.journalId}${saveLabel}`);
-        setCommitSessionId(undefined);
+        // Step 2: Journal commit + session status update
+        const result = await sessionActions.commitFillingSession(
+          commitSessionId,
+          sessionActions.defaultJournalCollectionId
+        );
+        if (result.isSuccess()) {
+          const saveLabel = saveOption === 'journal-only' ? '' : ' (recipe changes saved)';
+          addMessage('success', `Session committed to journal: ${result.value.journalId}${saveLabel}`);
+          setCommitSessionId(undefined);
+        } else {
+          addMessage('error', `Commit failed: ${result.message}`);
+        }
       } else {
-        addMessage('error', `Commit failed: ${result.message}`);
+        // Confection session — journal-only commit for now
+        const result = await sessionActions.commitConfectionSession(
+          commitSessionId,
+          sessionActions.defaultJournalCollectionId
+        );
+        if (result.isSuccess()) {
+          addMessage('success', `Confection session committed to journal: ${result.value.journalId}`);
+          setCommitSessionId(undefined);
+        } else {
+          addMessage('error', `Commit failed: ${result.message}`);
+        }
       }
     },
     [commitSessionId, commitSession, sessionActions, fillingMutation, addMessage]

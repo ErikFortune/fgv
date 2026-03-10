@@ -504,6 +504,32 @@ Removes a filling slot.
 </td></tr>
 <tr><td>
 
+[toProductionJournalEntry(notes)](./ConfectionEditingSessionBase.toProductionJournalEntry.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates a production journal entry from this confection session.
+
+</td></tr>
+<tr><td>
+
+[analyzeSaveOptions()](./ConfectionEditingSessionBase.analyzeSaveOptions.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Analyzes current changes and recommends save options.
+
+</td></tr>
+<tr><td>
+
 [toPersistedState(options)](./ConfectionEditingSessionBase.toPersistedState.md)
 
 </td><td>

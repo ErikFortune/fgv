@@ -42,7 +42,7 @@ import {
   Percentage
 } from '../../common';
 
-import { IProcedureRefEntity } from '../fillings';
+import { IProducedFillingEntity, IProcedureRefEntity } from '../fillings';
 import { IDecorationRefEntity } from '../decorations';
 
 // ============================================================================
@@ -676,6 +676,8 @@ export interface IResolvedFillingSlotEntity {
   readonly slotId: SlotId;
   /** Resolved filling recipe ID */
   readonly fillingId: FillingId;
+  /** Full produced filling snapshot (populated in journal entries) */
+  readonly produced?: IProducedFillingEntity;
 }
 
 /**

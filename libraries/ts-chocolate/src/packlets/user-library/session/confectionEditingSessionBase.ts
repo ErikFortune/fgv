@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { MessageAggregator, Result, succeed } from '@fgv/ts-utils';
+import { MessageAggregator, Result, fail, succeed } from '@fgv/ts-utils';
 
 import {
   BaseSessionId,
@@ -42,16 +42,28 @@ import {
 import {
   Confections,
   AnyProducedConfectionEntity,
+  IConfectionProductionJournalEntryEntity,
   IConfectionSessionEntity,
+  Journal,
   PersistedSessionStatus,
   Session as SessionEntities
 } from '../../entities';
 import { IConfectionBase, ProducedConfectionBase } from '../../library-runtime';
 
 import { EmbeddedFillingSession } from './embeddedFillingSession';
-import { IConfectionEditingSessionParams, IEmbeddableFillingSession, IFillingSessionMap } from './model';
+import {
+  IConfectionEditingSessionParams,
+  IEmbeddableFillingSession,
+  IFillingSessionMap,
+  ISaveAnalysis
+} from './model';
 import { IMaterializedSessionBase, ISessionContext } from '../model';
-import { generateSessionId, generateSessionBaseId, getCurrentTimestamp } from './sessionUtils';
+import {
+  generateJournalId,
+  generateSessionId,
+  generateSessionBaseId,
+  getCurrentTimestamp
+} from './sessionUtils';
 
 // ============================================================================
 // Abstract Base Class
@@ -289,6 +301,74 @@ export abstract class ConfectionEditingSessionBase<
     return this._produced.removeFillingSlot(slotId).onSuccess(() => {
       return this._removeFillingSession(slotId);
     });
+  }
+
+  // ============================================================================
+  // Journal Creation
+  // ============================================================================
+
+  /**
+   * Creates a production journal entry from this confection session.
+   * Records the produced confection with resolved concrete choices,
+   * including embedded filling production snapshots for recipe-type filling slots.
+   * @param notes - Optional notes to include in the journal entry
+   * @returns Result with production journal entry
+   * @public
+   */
+  public toProductionJournalEntry(
+    notes?: ReadonlyArray<CommonModel.ICategorizedNote>
+  ): Result<IConfectionProductionJournalEntryEntity> {
+    const goldenVariation = this._baseConfection.goldenVariation;
+
+    return generateJournalId().onSuccess((baseId) => {
+      return Helpers.createConfectionRecipeVariationId({
+        collectionId: goldenVariation.confectionId,
+        itemId: goldenVariation.variationSpec
+      }).onSuccess((variationId) => {
+        return this._createJournalVariationSnapshot().onSuccess((recipe) => {
+          const produced = this._enrichProducedWithFillingSnapshots();
+          return succeed({
+            type: 'confection-production' as const,
+            baseId,
+            timestamp: getCurrentTimestamp(),
+            variationId,
+            recipe,
+            yield: this._produced.yield,
+            produced,
+            notes
+          });
+        });
+      });
+    });
+  }
+
+  // ============================================================================
+  // Save Analysis
+  // ============================================================================
+
+  /**
+   * Analyzes current changes and recommends save options.
+   * @returns Analysis of changes and available save options
+   * @public
+   */
+  public analyzeSaveOptions(): ISaveAnalysis {
+    const changes = this._produced.getChanges(this._originalSnapshot);
+    const isMutable = this._context.isCollectionMutable(this._baseConfection.collectionId).orDefault(false);
+
+    return {
+      canCreateVariation: isMutable,
+      canAddAlternatives: false, // Not yet supported for confections
+      mustCreateNew: !isMutable,
+      recommendedOption: !isMutable ? 'new' : 'variation',
+      changes: {
+        ingredientsAdded: changes.fillingsChanged,
+        ingredientsRemoved: changes.fillingsChanged,
+        ingredientsChanged: changes.fillingsChanged,
+        procedureChanged: changes.procedureChanged,
+        weightChanged: changes.yieldChanged,
+        notesChanged: changes.notesChanged
+      }
+    };
   }
 
   // ============================================================================
@@ -539,5 +619,65 @@ export abstract class ConfectionEditingSessionBase<
     for (const session of this._fillingSessions.values()) {
       session.markSaved();
     }
+  }
+
+  // ============================================================================
+  // Private Journal Helpers
+  // ============================================================================
+
+  /**
+   * Creates a journal variation snapshot with the `variationType` discriminator.
+   * @internal
+   */
+  private _createJournalVariationSnapshot(): Result<Journal.AnyJournalConfectionVariation> {
+    const goldenVariation = this._baseConfection.goldenVariation;
+    const entity = goldenVariation.entity;
+    const confectionType = this._baseConfection.confectionType;
+
+    switch (confectionType) {
+      case 'molded-bonbon':
+        return succeed({
+          ...entity,
+          variationType: 'molded-bonbon'
+        } as Journal.IMoldedBonBonJournalVariation);
+      case 'bar-truffle':
+        return succeed({ ...entity, variationType: 'bar-truffle' } as Journal.IBarTruffleJournalVariation);
+      case 'rolled-truffle':
+        return succeed({
+          ...entity,
+          variationType: 'rolled-truffle'
+        } as Journal.IRolledTruffleJournalVariation);
+      default:
+        return fail(`Unknown confection type: ${confectionType}`);
+    }
+  }
+
+  /**
+   * Creates a produced confection snapshot enriched with filling production snapshots.
+   * For each recipe-type filling slot, embeds the corresponding filling session's
+   * produced snapshot.
+   * @internal
+   */
+  private _enrichProducedWithFillingSnapshots(): AnyProducedConfectionEntity {
+    const snapshot = this._produced.snapshot;
+    if (!snapshot.fillings) {
+      return snapshot;
+    }
+
+    const enrichedFillings = snapshot.fillings.map((slot) => {
+      if (slot.slotType !== 'recipe') {
+        return slot;
+      }
+      const fillingSession = this._fillingSessions.get(slot.slotId);
+      if (!fillingSession) {
+        return slot;
+      }
+      return {
+        ...slot,
+        produced: fillingSession.produced.snapshot
+      };
+    });
+
+    return { ...snapshot, fillings: enrichedFillings };
   }
 }

@@ -564,4 +564,18 @@ export interface IUserLibrary {
     sessionId: SessionId,
     journalCollectionId: CollectionId
   ): Promise<Result<ICommitResult>>;
+
+  /**
+   * Commits a confection session to the journal.
+   * Creates a production journal entry with the produced confection state
+   * (including embedded filling snapshots), persists it, and updates the
+   * session status to 'committed'.
+   * @param sessionId - Session to commit
+   * @param journalCollectionId - Target collection for the journal entry
+   * @returns Promise with Result containing commit result (journalId + saveAnalysis)
+   */
+  commitConfectionSession(
+    sessionId: SessionId,
+    journalCollectionId: CollectionId
+  ): Promise<Result<ICommitResult>>;
 }

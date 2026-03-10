@@ -1015,6 +1015,7 @@ class ConfectionEditingSession {
 abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntity, TRuntime extends IConfectionBase> implements IMaterializedSessionBase {
     // @internal
     protected constructor(baseConfection: TRuntime, produced: ProducedConfectionBase<T>, context: ISessionContext, params?: IConfectionEditingSessionParams, persistedEntity?: IConfectionSessionEntity);
+    analyzeSaveOptions(): ISaveAnalysis;
     get baseConfection(): TRuntime;
     // (undocumented)
     protected readonly _baseConfection: TRuntime;
@@ -1079,6 +1080,7 @@ abstract class ConfectionEditingSessionBase<T extends AnyProducedConfectionEntit
         readonly label?: string;
         readonly notes?: Model.ICategorizedNote[];
     }): Result<IConfectionSessionEntity>;
+    toProductionJournalEntry(notes?: ReadonlyArray<Model.ICategorizedNote>): Result<IConfectionProductionJournalEntryEntity>;
     get updatedAt(): string;
 }
 
@@ -5642,6 +5644,7 @@ interface IResolvedFillingSlot {
 // @public
 interface IResolvedFillingSlotEntity {
     readonly fillingId: FillingId;
+    readonly produced?: IProducedFillingEntity;
     readonly slotId: SlotId;
     readonly slotType: 'recipe';
 }
@@ -6481,6 +6484,7 @@ interface IUserEntityPersistenceConfig {
 interface IUserLibrary {
     addJournalEntry(collectionId: CollectionId, entry: AnyRecipeJournalEntryEntity): Promise<Result<JournalId>>;
     clearCache(): void;
+    commitConfectionSession(sessionId: SessionId, journalCollectionId: CollectionId): Promise<Result<ICommitResult>>;
     commitFillingSession(sessionId: SessionId, journalCollectionId: CollectionId): Promise<Result<ICommitResult>>;
     createPersistedConfectionSession(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Result<SessionId>;
     createPersistedConfectionSessionAndSave(confectionId: ConfectionId, options: ICreateConfectionSessionOptions): Promise<Result<SessionId>>;
@@ -6640,6 +6644,8 @@ interface IYieldInPieces {
 declare namespace Journal {
     export {
         journalEntryType,
+        producedFillingIngredientEntity,
+        producedFillingEntity,
         resolvedSlotType,
         resolvedFillingSlotEntity,
         resolvedIngredientSlotEntity,
@@ -6648,8 +6654,6 @@ declare namespace Journal {
         barTruffleJournalVariation,
         rolledTruffleJournalVariation,
         anyJournalConfectionVariation,
-        producedFillingIngredientEntity,
-        producedFillingEntity,
         producedMoldedBonBonEntity,
         producedBarTruffleEntity,
         producedRolledTruffleEntity,
@@ -8899,6 +8903,10 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     //
     // (undocumented)
     clearCache(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
+    //
+    // (undocumented)
+    commitConfectionSession(sessionId: SessionId, journalCollectionId: CollectionId): Promise<Result<ICommitResult>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IUserLibrary"
     //
     // (undocumented)

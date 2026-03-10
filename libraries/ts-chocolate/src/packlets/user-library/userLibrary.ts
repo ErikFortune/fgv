@@ -671,6 +671,52 @@ export class UserLibrary implements IUserLibrary, ISessionContext {
   }
 
   /**
+   * {@inheritDoc IUserLibrary.commitConfectionSession}
+   */
+  public async commitConfectionSession(
+    sessionId: SessionId,
+    journalCollectionId: CollectionId
+  ): Promise<Result<ICommitResult>> {
+    // Get the materialized confection session
+    const sessionResult = this._getSessions().get(sessionId);
+    if (sessionResult.isFailure()) {
+      return fail(`Session ${sessionId} not found: ${sessionResult.message}`);
+    }
+
+    const session = sessionResult.value;
+    if (!(session instanceof Session.ConfectionEditingSessionBase)) {
+      return fail(`Session ${sessionId} is not a confection session`);
+    }
+
+    // Analyze save options before committing
+    const saveAnalysis = session.analyzeSaveOptions();
+
+    // Create production journal entry with enriched filling snapshots
+    const journalEntryResult = session.toProductionJournalEntry();
+
+    if (journalEntryResult.isFailure()) {
+      return fail(`Failed to create journal entry for session ${sessionId}: ${journalEntryResult.message}`);
+    }
+
+    // Persist the journal entry via PEC
+    const addResult = await this.addJournalEntry(journalCollectionId, journalEntryResult.value);
+    if (addResult.isFailure()) {
+      return fail(`Failed to persist journal entry: ${addResult.message}`);
+    }
+
+    // Update session status to committed
+    const statusResult = await this.updateSessionStatusAndPersist(sessionId, 'committed');
+    if (statusResult.isFailure()) {
+      return fail(`Journal entry created but failed to update session status: ${statusResult.message}`);
+    }
+
+    return succeed({
+      journalId: addResult.value,
+      saveAnalysis
+    });
+  }
+
+  /**
    * Persist the sessions collection only when backed by a savable source item.
    * @internal
    */

@@ -29,6 +29,7 @@ export { useSessionActions, type ISessionActions } from './useSessionActions';
 export { SessionDetailView, type ISessionDetailViewProps } from './SessionDetailView';
 export {
   CommitSessionDialog,
+  type ICommittableSession,
   type ICommitSessionDialogProps,
   type RecipeSaveOption
 } from './CommitSessionDialog';

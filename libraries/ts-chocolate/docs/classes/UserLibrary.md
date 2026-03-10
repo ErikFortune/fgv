@@ -501,4 +501,17 @@ Adds a journal entry to a collection and persists via PEC.
 Commits a filling session to the journal.
 
 </td></tr>
+<tr><td>
+
+[commitConfectionSession(sessionId, journalCollectionId)](./UserLibrary.commitConfectionSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Commits a confection session to the journal.
+
+</td></tr>
 </tbody></table>

@@ -123,6 +123,7 @@ export function SessionDetailView({
         onSelectFillingSlot={onSelectFillingSlot}
         onBrowseIngredient={onBrowseIngredient}
         onBrowseProcedure={onBrowseProcedure}
+        onCommit={onCommit}
       />
     );
   }

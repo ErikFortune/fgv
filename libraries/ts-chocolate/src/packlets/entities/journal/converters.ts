@@ -75,6 +75,41 @@ import {
  */
 export const journalEntryType: Converter<JournalEntryType> = Converters.enumeratedValue(allJournalEntryTypes);
 
+// ============================================================================
+// Produced Filling Converters
+// ============================================================================
+
+/**
+ * Converter for {@link Entities.Fillings.IProducedFillingIngredientEntity | IProducedFillingIngredientEntity}.
+ * @public
+ */
+export const producedFillingIngredientEntity: Converter<IProducedFillingIngredientEntity> =
+  Converters.strictObject<IProducedFillingIngredientEntity>({
+    ingredientId: CommonConverters.ingredientId,
+    amount: CommonConverters.measurement,
+    unit: CommonConverters.measurementUnit.optional(),
+    modifiers: ingredientModifiersConverter.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
+
+/**
+ * Converter for {@link Entities.Fillings.IProducedFillingEntity | IProducedFillingEntity}.
+ * @public
+ */
+export const producedFillingEntity: Converter<IProducedFillingEntity> =
+  Converters.strictObject<IProducedFillingEntity>({
+    variationId: CommonConverters.fillingRecipeVariationId,
+    scaleFactor: Converters.number,
+    targetWeight: CommonConverters.measurement,
+    ingredients: Converters.arrayOf(producedFillingIngredientEntity),
+    procedureId: CommonConverters.procedureId.optional(),
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+  });
+
+// ============================================================================
+// Resolved Filling Slot Converters
+// ============================================================================
+
 /**
  * Converter for {@link Entities.Confections.ResolvedSlotType | ResolvedSlotType}.
  * @public
@@ -89,7 +124,8 @@ export const resolvedFillingSlotEntity: Converter<IResolvedFillingSlotEntity> =
   Converters.strictObject<IResolvedFillingSlotEntity>({
     slotType: Converters.literal('recipe'),
     slotId: CommonConverters.slotId,
-    fillingId: CommonConverters.fillingId
+    fillingId: CommonConverters.fillingId,
+    produced: producedFillingEntity.optional()
   });
 
 /**
@@ -165,37 +201,6 @@ export const anyJournalConfectionVariation: Converter<AnyJournalConfectionVariat
     'bar-truffle': barTruffleJournalVariation,
     'rolled-truffle': rolledTruffleJournalVariation
     /* eslint-enable @typescript-eslint/naming-convention */
-  });
-
-// ============================================================================
-// Produced Filling Converters
-// ============================================================================
-
-/**
- * Converter for {@link Entities.Fillings.IProducedFillingIngredientEntity | IProducedFillingIngredientEntity}.
- * @public
- */
-export const producedFillingIngredientEntity: Converter<IProducedFillingIngredientEntity> =
-  Converters.strictObject<IProducedFillingIngredientEntity>({
-    ingredientId: CommonConverters.ingredientId,
-    amount: CommonConverters.measurement,
-    unit: CommonConverters.measurementUnit.optional(),
-    modifiers: ingredientModifiersConverter.optional(),
-    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
-  });
-
-/**
- * Converter for {@link Entities.Fillings.IProducedFillingEntity | IProducedFillingEntity}.
- * @public
- */
-export const producedFillingEntity: Converter<IProducedFillingEntity> =
-  Converters.strictObject<IProducedFillingEntity>({
-    variationId: CommonConverters.fillingRecipeVariationId,
-    scaleFactor: Converters.number,
-    targetWeight: CommonConverters.measurement,
-    ingredients: Converters.arrayOf(producedFillingIngredientEntity),
-    procedureId: CommonConverters.procedureId.optional(),
-    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
   });
 
 // ============================================================================

@@ -122,6 +122,19 @@ export interface ISessionActions {
   ) => Promise<Result<UserLibrary.ICommitResult>>;
 
   /**
+   * Commit a confection session to the journal.
+   * Creates a production journal entry with enriched filling snapshots,
+   * persists it, and updates session status to 'committed'.
+   * @param sessionId - The composite SessionId to commit
+   * @param journalCollectionId - Target collection for the journal entry
+   * @returns Result with commit result (journalId + saveAnalysis)
+   */
+  readonly commitConfectionSession: (
+    sessionId: SessionId,
+    journalCollectionId: CollectionId
+  ) => Promise<Result<UserLibrary.ICommitResult>>;
+
+  /**
    * The default mutable collection ID for new sessions.
    * Resolved from the sessions sub-library; undefined if no mutable collection exists.
    */
@@ -261,6 +274,25 @@ export function useSessionActions(): ISessionActions {
     [workspace, reactiveWorkspace]
   );
 
+  const commitConfectionSession = useCallback(
+    async (
+      sessionId: SessionId,
+      journalCollectionId: CollectionId
+    ): Promise<Result<UserLibrary.ICommitResult>> => {
+      const result = await workspace.userData.commitConfectionSession(sessionId, journalCollectionId);
+      if (result.isSuccess()) {
+        reactiveWorkspace.notifyChange();
+        workspace.data.logger.info(
+          `Committed confection session '${sessionId}' → journal '${result.value.journalId}'`
+        );
+      } else {
+        workspace.data.logger.error(`Failed to commit confection session '${sessionId}': ${result.message}`);
+      }
+      return result;
+    },
+    [workspace, reactiveWorkspace]
+  );
+
   return {
     createFillingSession,
     createConfectionSession,
@@ -268,6 +300,7 @@ export function useSessionActions(): ISessionActions {
     updateSessionStatus,
     deleteSession,
     commitFillingSession,
+    commitConfectionSession,
     defaultCollectionId,
     defaultJournalCollectionId
   };
