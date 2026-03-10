@@ -30,6 +30,7 @@ import { AiAssist } from '@fgv/ts-extras';
 import { Converters as CommonConverters } from '../common';
 import { SubLibraryId, allSubLibraryIds } from '../library-data';
 import {
+  ICloudStorageConfig,
   DeviceId,
   ExternalLibraryRef,
   IBootstrapSettings,
@@ -356,6 +357,20 @@ export const localStorageConfig: Converter<ILocalStorageConfig> =
     userData: Converters.boolean.optional()
   });
 
+/**
+ * Converter for {@link ICloudStorageConfig}.
+ * @public
+ */
+export const cloudStorageConfig: Converter<ICloudStorageConfig> =
+  Converters.strictObject<ICloudStorageConfig>({
+    enabled: Converters.boolean.optional(),
+    baseUrl: Converters.string,
+    namespace: Converters.string.optional(),
+    library: Converters.boolean.optional(),
+    userData: Converters.boolean.optional(),
+    sourceName: Converters.string.optional()
+  });
+
 // ============================================================================
 // Logging Settings Converter
 // ============================================================================
@@ -396,6 +411,7 @@ export const bootstrapSettings: Converter<IBootstrapSettings> = Converters.stric
   schemaVersion: schemaVersion,
   includeBuiltIn: Converters.boolean.optional(),
   localStorage: localStorageConfig.optional(),
+  cloudStorage: cloudStorageConfig.optional(),
   externalLibraries: Converters.arrayOf(externalLibraryRefConfig).optional(),
   preferencesLocation: settingsFileLocation.optional(),
   keystoreLocation: settingsFileLocation.optional(),

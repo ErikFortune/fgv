@@ -818,6 +818,11 @@ export type ChocolateType = 'dark' | 'milk' | 'white' | 'caramelized' | 'ruby' |
 // @public
 const chocolateType: Converter<ChocolateType>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ICloudStorageConfig"
+//
+// @public
+const cloudStorageConfig: Converter<ICloudStorageConfig>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1430,6 +1435,7 @@ declare namespace Converters_12 {
         partialToolSettings,
         settingsFileLocation,
         localStorageConfig,
+        cloudStorageConfig,
         reporterLogLevel,
         logSettings,
         bootstrapSettings,
@@ -3071,6 +3077,7 @@ interface IBarTruffleYield {
 
 // @public
 interface IBootstrapSettings {
+    readonly cloudStorage?: ICloudStorageConfig;
     readonly deviceName?: string;
     readonly externalLibraries?: ReadonlyArray<IExternalLibraryRefConfig>;
     readonly fileTreeOverrides?: IDeviceFileTreeOverrides;
@@ -3217,6 +3224,16 @@ interface IChocolateLibraryCreateParams {
 
 // @public
 type IChocolateSpec = Model.IIdsWithPreferred<IngredientId>;
+
+// @public
+interface ICloudStorageConfig {
+    readonly baseUrl: string;
+    readonly enabled?: boolean;
+    readonly library?: boolean;
+    readonly namespace?: string;
+    readonly sourceName?: string;
+    readonly userData?: boolean;
+}
 
 // @public
 type ICoatingsEntity = Model.IIdsWithPreferred<IngredientId>;
@@ -5615,6 +5632,11 @@ export interface IResolvedExternalLibrary {
     readonly mutable?: boolean;
     readonly name: string;
     readonly originalRef: ExternalLibraryRef;
+    readonly persistentTree?: {
+        readonly tree: FileTree.FileTree;
+        readonly accessors: FileTree.IPersistentFileTreeAccessors;
+    };
+    readonly skipMissingDirectories?: boolean;
 }
 
 // @public
@@ -8336,6 +8358,7 @@ declare namespace Settings {
         IDefaultStorageTargets,
         ISettingsFileLocation,
         ILocalStorageConfig,
+        ICloudStorageConfig,
         ILogSettings,
         IBootstrapSettings,
         IPreferencesSettings,

@@ -113,6 +113,13 @@ export class ReactiveWorkspace {
   private readonly _listeners: Set<WorkspaceListener> = new Set();
   private _version: number = 0;
   private readonly _persistentTrees: Map<string, IPersistentTreeEntry> = new Map();
+  private readonly _additionalRoots: Map<
+    string,
+    {
+      readonly summary: IStorageRootSummary;
+      readonly rootDir?: FileTree.IFileTreeDirectoryItem;
+    }
+  > = new Map();
   private _builtInLoaded: boolean = false;
   private _localStorageLabel: string | undefined = undefined;
   private _localStorageRootDir: FileTree.IFileTreeDirectoryItem | undefined = undefined;
@@ -238,6 +245,29 @@ export class ReactiveWorkspace {
   }
 
   /**
+   * Registers a non-local additional storage root (e.g. cloud storage).
+   * Does not notify subscribers.
+   */
+  public registerAdditionalRoot(
+    summary: IStorageRootSummary,
+    rootDir?: FileTree.IFileTreeDirectoryItem
+  ): void {
+    this._additionalRoots.set(summary.id, { summary, rootDir });
+  }
+
+  /**
+   * Additional registered root directories keyed by storage root ID.
+   * Used for storage target resolution.
+   */
+  public get additionalRootDirs(): ReadonlyMap<string, FileTree.IFileTreeDirectoryItem> {
+    return new Map(
+      Array.from(this._additionalRoots.values()).flatMap((entry) =>
+        entry.rootDir ? [[entry.summary.id, entry.rootDir] as const] : []
+      )
+    );
+  }
+
+  /**
    * The retained master password for keystore operations.
    * Set during unlock/initialize, cleared on lock.
    */
@@ -266,6 +296,10 @@ export class ReactiveWorkspace {
         isLocal: false,
         categories: ['library']
       });
+    }
+
+    for (const entry of this._additionalRoots.values()) {
+      roots.push(entry.summary);
     }
 
     if (this._localStorageLabel !== undefined) {

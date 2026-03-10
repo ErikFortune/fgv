@@ -119,8 +119,9 @@ function resolveSubLibraryDataDir(
 export function applyStorageTargets(
   targets: Settings.IDefaultStorageTargets | undefined,
   entities: LibraryRuntime.ChocolateEntityLibrary,
-  localStorageRootDir: FileTree.IFileTreeDirectoryItem,
+  localStorageRootDir: FileTree.IFileTreeDirectoryItem | undefined,
   persistentTrees: StorageRootTreeMap,
+  additionalRootDirs: StorageRootTreeMap,
   logger?: { detail(msg: string): void; info(msg: string): void; warn(msg: string): void },
   userEntities?: UserEntities.IUserEntityLibrary
 ): void {
@@ -154,16 +155,26 @@ export function applyStorageTargets(
       rootDir = localStorageRootDir;
       sourceName = 'localStorage';
     } else {
-      rootDir = persistentTrees.get(rootId);
+      rootDir = persistentTrees.get(rootId) ?? additionalRootDirs.get(rootId);
       sourceName = rootId;
     }
 
     if (!rootDir) {
-      logger?.warn(
-        `applyStorageTargets: root '${rootId}' not found for '${subLibId}', falling back to localStorage`
-      );
-      rootDir = localStorageRootDir;
-      sourceName = 'localStorage';
+      if (localStorageRootDir) {
+        logger?.warn(
+          `applyStorageTargets: root '${rootId}' not found for '${subLibId}', falling back to localStorage`
+        );
+        rootDir = localStorageRootDir;
+        sourceName = 'localStorage';
+      } else {
+        logger?.warn(
+          `applyStorageTargets: root '${rootId}' not found for '${subLibId}' and no fallback root`
+        );
+      }
+    }
+
+    if (!rootDir) {
+      continue;
     }
 
     const dataDir = resolveSubLibraryDataDir(rootDir, subLibId);
@@ -188,15 +199,21 @@ export function applyStorageTargets(
 export function applyStorageTargetsFromWorkspace(params: {
   readonly localStorageRootDir: FileTree.IFileTreeDirectoryItem | undefined;
   readonly persistentTrees: ReadonlyMap<string, IPersistentTreeEntry>;
+  readonly additionalRootDirs?: ReadonlyMap<string, FileTree.IFileTreeDirectoryItem>;
   readonly targets: Settings.IDefaultStorageTargets | undefined;
   readonly entities: LibraryRuntime.ChocolateEntityLibrary;
   readonly userEntities?: UserEntities.IUserEntityLibrary;
   readonly logger?: { detail(msg: string): void; info(msg: string): void; warn(msg: string): void };
 }): void {
-  const { localStorageRootDir, persistentTrees, targets, entities, userEntities, logger } = params;
-  if (!localStorageRootDir) {
-    return;
-  }
+  const {
+    localStorageRootDir,
+    persistentTrees,
+    additionalRootDirs,
+    targets,
+    entities,
+    userEntities,
+    logger
+  } = params;
 
   const persistentTreeMap = new Map(
     Array.from(persistentTrees.entries()).flatMap(([id, entry]) => {
@@ -204,5 +221,13 @@ export function applyStorageTargetsFromWorkspace(params: {
       return rootResult.isSuccess() ? [[id, rootResult.value] as const] : [];
     })
   );
-  applyStorageTargets(targets, entities, localStorageRootDir, persistentTreeMap, logger, userEntities);
+  applyStorageTargets(
+    targets,
+    entities,
+    localStorageRootDir,
+    persistentTreeMap,
+    additionalRootDirs ?? new Map(),
+    logger,
+    userEntities
+  );
 }

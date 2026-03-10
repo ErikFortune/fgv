@@ -21,6 +21,7 @@ import {
 import { Logging, type MessageLogLevel, succeed, fail } from '@fgv/ts-utils';
 import {
   createWorkspaceFromPlatform,
+  LibraryData,
   validateResolvedSettings,
   type ISettingsValidationWarning,
   type Settings
@@ -236,12 +237,72 @@ interface IBuildResult {
   dataError?: string;
 }
 
+function inferStorageCategories(
+  load: boolean | Partial<Record<LibraryData.SubLibraryId | 'default', boolean>> | undefined
+): ReadonlyArray<'library' | 'user-data'> {
+  if (load === false) {
+    return [];
+  }
+
+  const hasAnyLibrary =
+    load === true ||
+    (load?.ingredients ?? false) ||
+    (load?.fillings ?? false) ||
+    (load?.confections ?? false) ||
+    (load?.decorations ?? false) ||
+    (load?.molds ?? false) ||
+    (load?.procedures ?? false) ||
+    (load?.tasks ?? false);
+
+  const hasAnyUserData =
+    load === true ||
+    (load?.sessions ?? false) ||
+    (load?.journals ?? false) ||
+    (load?.moldInventory ?? false) ||
+    (load?.ingredientInventory ?? false) ||
+    (load?.locations ?? false);
+
+  const categories: Array<'library' | 'user-data'> = [];
+  if (hasAnyLibrary) {
+    categories.push('library');
+  }
+  if (hasAnyUserData) {
+    categories.push('user-data');
+  }
+  return categories;
+}
+
+function isCloudBackendUnavailableError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  const isCloudInitError = normalized.includes("cloud storage '");
+  const hasFetchFailure =
+    normalized.includes('failed to fetch') ||
+    normalized.includes('fetch failed') ||
+    normalized.includes('networkerror');
+  return isCloudInitError && hasFetchFailure;
+}
+
 async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   const storageKeyPrefix = _configNamespace ? `chocolate-lab:${_configNamespace}` : 'chocolate-lab';
-  const platformInit = await initializeBrowserPlatform({
+  let platformInit = await initializeBrowserPlatform({
     userLibraryPath: 'localStorage',
     storageKeyPrefix
   });
+
+  if (platformInit.isFailure() && isCloudBackendUnavailableError(platformInit.message)) {
+    _bootReporter.warn(
+      `Cloud storage backend is unreachable. Continuing with cloud storage disabled for this session.`
+    );
+
+    platformInit = await initializeBrowserPlatform({
+      userLibraryPath: 'localStorage',
+      storageKeyPrefix,
+      cloudStorage: {
+        enabled: false,
+        baseUrl: ''
+      }
+    });
+  }
 
   // Read bootstrap flags to control what data sources are loaded
   const bootstrap = platformInit.value?.bootstrapSettings;
@@ -263,7 +324,7 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
       preWarm: includeBuiltIn,
       userLibrarySourceName: useLocalStorage ? 'localStorage' : undefined,
       configName: _configNamespace,
-      logger: Logging.LogReporter.createDefault(new Logging.NoOpLogger()).orThrow()
+      logger: _bootReporter
     })
   );
 
@@ -300,6 +361,9 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     syncProvider: {
       syncToDisk: async () => {
         const result = await reactiveWorkspace.syncAllToDisk();
+        if (result.isFailure()) {
+          workspace.data.logger.error(`Cloud/local sync failed: ${result.message}`);
+        }
         return result.isSuccess() ? succeed(true as const) : fail(result.message);
       }
     },
@@ -311,6 +375,9 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     syncProvider: {
       syncToDisk: async () => {
         const result = await reactiveWorkspace.syncAllToDisk();
+        if (result.isFailure()) {
+          workspace.data.logger.error(`Cloud/local sync failed: ${result.message}`);
+        }
         return result.isSuccess() ? succeed(true as const) : fail(result.message);
       }
     },
@@ -326,6 +393,31 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     reactiveWorkspace.registerLocalStorageRoot('Browser Storage', localStorageRootDir);
   }
 
+  const cloudSources = platformInit.value?.externalLibraries ?? [];
+  for (const cloudSource of cloudSources) {
+    const sourceName = cloudSource.name;
+    reactiveWorkspace.registerAdditionalRoot(
+      {
+        id: sourceName,
+        label: sourceName,
+        sourceName,
+        isBuiltIn: false,
+        isMutable: cloudSource.mutable ?? true,
+        isLocal: false,
+        categories: inferStorageCategories(cloudSource.load)
+      },
+      cloudSource.fileTree
+    );
+
+    if (cloudSource.persistentTree) {
+      reactiveWorkspace.registerPersistentTree(sourceName, {
+        tree: cloudSource.persistentTree.tree,
+        accessors: cloudSource.persistentTree.accessors,
+        label: sourceName
+      });
+    }
+  }
+
   await restoreSavedDirectories({
     reactiveWorkspace,
     entities: workspace.data.entities,
@@ -337,6 +429,7 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   applyStorageTargetsFromWorkspace({
     localStorageRootDir,
     persistentTrees: reactiveWorkspace.persistentTrees,
+    additionalRootDirs: reactiveWorkspace.additionalRootDirs,
     targets: workspace.settings?.getResolvedSettings().defaultStorageTargets,
     entities: workspace.data.entities,
     userEntities: workspace.userData.entities,
@@ -351,6 +444,9 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   }
   if (useLocalStorage) {
     storageParts.push('local storage');
+  }
+  if (cloudSources.length > 0) {
+    storageParts.push(`${cloudSources.length} cloud root${cloudSources.length === 1 ? '' : 's'}`);
   }
   if (storage.localDirectoryCount > 0) {
     storageParts.push(

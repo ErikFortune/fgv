@@ -17,6 +17,12 @@ export interface IBootstrapSettingsDraft {
   readonly includeBuiltIn: boolean;
   readonly localStorageLibrary: boolean;
   readonly localStorageUserData: boolean;
+  readonly cloudStorageEnabled: boolean;
+  readonly cloudStorageBaseUrl: string;
+  readonly cloudStorageNamespace: string;
+  readonly cloudStorageLibrary: boolean;
+  readonly cloudStorageUserData: boolean;
+  readonly cloudStorageSourceName: string;
   readonly storeLevel: Settings.ILogSettings['storeLevel'];
   readonly displayLevel: Settings.ILogSettings['displayLevel'];
   readonly toastLevel: Settings.ILogSettings['toastLevel'];
@@ -73,6 +79,12 @@ function buildBootstrapDraft(settings: Settings.IBootstrapSettings | undefined):
     includeBuiltIn: settings?.includeBuiltIn ?? true,
     localStorageLibrary: settings?.localStorage?.library ?? true,
     localStorageUserData: settings?.localStorage?.userData ?? true,
+    cloudStorageEnabled: settings?.cloudStorage?.enabled ?? false,
+    cloudStorageBaseUrl: settings?.cloudStorage?.baseUrl ?? '',
+    cloudStorageNamespace: settings?.cloudStorage?.namespace ?? '',
+    cloudStorageLibrary: settings?.cloudStorage?.library ?? true,
+    cloudStorageUserData: settings?.cloudStorage?.userData ?? true,
+    cloudStorageSourceName: settings?.cloudStorage?.sourceName ?? '',
     storeLevel: settings?.logging?.storeLevel,
     displayLevel: settings?.logging?.displayLevel,
     toastLevel: settings?.logging?.toastLevel,
@@ -85,6 +97,12 @@ function bootstrapDraftsEqual(a: IBootstrapSettingsDraft, b: IBootstrapSettingsD
     a.includeBuiltIn === b.includeBuiltIn &&
     a.localStorageLibrary === b.localStorageLibrary &&
     a.localStorageUserData === b.localStorageUserData &&
+    a.cloudStorageEnabled === b.cloudStorageEnabled &&
+    a.cloudStorageBaseUrl === b.cloudStorageBaseUrl &&
+    a.cloudStorageNamespace === b.cloudStorageNamespace &&
+    a.cloudStorageLibrary === b.cloudStorageLibrary &&
+    a.cloudStorageUserData === b.cloudStorageUserData &&
+    a.cloudStorageSourceName === b.cloudStorageSourceName &&
     a.storeLevel === b.storeLevel &&
     a.displayLevel === b.displayLevel &&
     a.toastLevel === b.toastLevel &&
@@ -195,6 +213,23 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
           library: bootstrapDraft.localStorageLibrary,
           userData: bootstrapDraft.localStorageUserData
         },
+        cloudStorage:
+          bootstrapDraft.cloudStorageEnabled && bootstrapDraft.cloudStorageBaseUrl.trim().length > 0
+            ? {
+                enabled: true,
+                baseUrl: bootstrapDraft.cloudStorageBaseUrl,
+                namespace:
+                  bootstrapDraft.cloudStorageNamespace.trim().length > 0
+                    ? bootstrapDraft.cloudStorageNamespace
+                    : undefined,
+                library: bootstrapDraft.cloudStorageLibrary,
+                userData: bootstrapDraft.cloudStorageUserData,
+                sourceName:
+                  bootstrapDraft.cloudStorageSourceName.trim().length > 0
+                    ? bootstrapDraft.cloudStorageSourceName
+                    : undefined
+              }
+            : undefined,
         logging: hasLogging
           ? {
               storeLevel: bootstrapDraft.storeLevel,
@@ -243,8 +278,10 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
       applyStorageTargetsFromWorkspace({
         localStorageRootDir: reactiveWorkspace.localStorageRootDir,
         persistentTrees: reactiveWorkspace.persistentTrees,
+        additionalRootDirs: reactiveWorkspace.additionalRootDirs,
         targets: preferencesDraft.defaultStorageTargets,
-        entities: workspace.data.entities
+        entities: workspace.data.entities,
+        userEntities: workspace.userData.entities
       });
     }
     setIsSaving(false);

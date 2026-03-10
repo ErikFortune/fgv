@@ -266,6 +266,25 @@ export interface ILocalStorageConfig {
   readonly userData?: boolean;
 }
 
+/**
+ * Controls how cloud-backed HTTP storage is loaded.
+ * @public
+ */
+export interface ICloudStorageConfig {
+  /** Enable cloud storage source during startup. @defaultValue false */
+  readonly enabled?: boolean;
+  /** Base URL for storage API (e.g. `http://localhost:3002/api/storage`). */
+  readonly baseUrl: string;
+  /** Optional namespace used to scope storage requests (future auth-compatible). */
+  readonly namespace?: string;
+  /** Load library collections from cloud source. @defaultValue true */
+  readonly library?: boolean;
+  /** Load user collections from cloud source. @defaultValue true */
+  readonly userData?: boolean;
+  /** Optional source name label shown in storage UI. */
+  readonly sourceName?: string;
+}
+
 // ============================================================================
 // Logging Settings
 // ============================================================================
@@ -315,6 +334,9 @@ export interface IBootstrapSettings {
 
   /** What to include from local storage. Defaults to all enabled. */
   readonly localStorage?: ILocalStorageConfig;
+
+  /** Optional cloud storage source configuration. */
+  readonly cloudStorage?: ICloudStorageConfig;
 
   /** External roots to load and their configuration */
   readonly externalLibraries?: ReadonlyArray<IExternalLibraryRefConfig>;

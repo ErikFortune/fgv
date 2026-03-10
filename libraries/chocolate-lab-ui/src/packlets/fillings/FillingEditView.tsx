@@ -1619,7 +1619,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         </EditField>
       </EditSection>
 
-      {/* Notes Section */}
+      {/* Notes Section (from session) */}
       <NotesEditor value={currentVariation?.notes} onChange={handleNotesChange} />
     </div>
   );

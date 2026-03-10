@@ -29,6 +29,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
 import { aiRoutes } from '../ai';
+import { createApiStorageRoutes } from '../storage';
 
 /**
  * Creates the Hono application with all routes and middleware.
@@ -37,12 +38,14 @@ import { aiRoutes } from '../ai';
  */
 export function createApp(): Hono {
   const app = new Hono();
+  const storageRootPath = process.env.CHOCOLATE_LAB_STORAGE_ROOT ?? './data/storage';
 
   app.use('*', cors());
 
   app.get('/health', (c) => c.json({ status: 'ok' }));
 
   app.route('/api/ai', aiRoutes);
+  app.route('/api/storage', createApiStorageRoutes(storageRootPath));
 
   return app;
 }

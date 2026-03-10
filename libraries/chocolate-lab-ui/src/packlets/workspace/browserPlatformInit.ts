@@ -72,6 +72,12 @@ export interface IBrowserPlatformInitOptions extends Omit<IPlatformInitOptions, 
    * @defaultValue true
    */
   readonly autoSync?: boolean;
+
+  /**
+   * Optional cloud storage configuration override.
+   * If omitted, bootstrap settings are used.
+   */
+  readonly cloudStorage?: Settings.ICloudStorageConfig;
 }
 
 // ============================================================================
@@ -137,52 +143,64 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
     const autoSync = browserOptions.autoSync ?? true;
     const deviceId = options.deviceId ?? this._generateDeviceId(prefix, browserOptions.storage);
 
-    return BrowserCrypto.createBrowserCryptoProvider()
-      .withErrorFormat((msg) => `browser crypto provider: ${msg}`)
-      .onSuccess((cryptoProvider) => {
-        // Create localStorage-backed FileTree
-        const treeParams: ILocalStorageTreeParams = {
-          pathToKeyMap: createDefaultPathToKeyMap(prefix),
-          storage: browserOptions.storage,
-          mutable: true,
-          autoSync
-        };
+    const cryptoProviderResult = BrowserCrypto.createBrowserCryptoProvider().withErrorFormat(
+      (msg) => `browser crypto provider: ${msg}`
+    );
+    if (cryptoProviderResult.isFailure()) {
+      return fail(cryptoProviderResult.message);
+    }
 
-        return FileApiTreeAccessors.createFromLocalStorage(treeParams)
-          .withErrorFormat((msg) => `localStorage FileTree: ${msg}`)
-          .onSuccess((tree) => {
-            return tree
-              .getDirectory('/')
-              .withErrorFormat((msg) => `root directory: ${msg}`)
-              .onSuccess((userLibraryTree) => {
-                // Ensure standard workspace directories exist in the localStorage tree
-                // so sub-libraries have a mutable data directory for collection persistence.
-                const dirsResult = ensureWorkspaceDirectoriesInTree(userLibraryTree);
-                if (dirsResult.isFailure()) {
-                  return fail(`workspace directories: ${dirsResult.message}`);
-                }
+    const treeParams: ILocalStorageTreeParams = {
+      pathToKeyMap: createDefaultPathToKeyMap(prefix),
+      storage: browserOptions.storage,
+      mutable: true,
+      autoSync
+    };
 
-                return this._loadSettings(tree, deviceId)
-                  .withErrorFormat((msg) => `settings: ${msg}`)
-                  .onSuccess(({ bootstrap, resolvedSettings }) => {
-                    const keystoreResult = loadKeystoreFromTree(userLibraryTree);
-                    if (keystoreResult.isFailure()) {
-                      return fail(`keystore: ${keystoreResult.message}`);
-                    }
+    const treeResult = FileApiTreeAccessors.createFromLocalStorage(treeParams).withErrorFormat(
+      (msg) => `localStorage FileTree: ${msg}`
+    );
+    if (treeResult.isFailure()) {
+      return fail(treeResult.message);
+    }
+    const tree = treeResult.value;
 
-                    return succeed({
-                      cryptoProvider,
-                      userLibraryTree,
-                      externalLibraries: [] as IResolvedExternalLibrary[],
-                      keyStoreFile: keystoreResult.value,
-                      bootstrapSettings: bootstrap,
-                      resolvedSettings,
-                      deviceId
-                    });
-                  });
-              });
-          });
-      });
+    const userLibraryTreeResult = tree.getDirectory('/').withErrorFormat((msg) => `root directory: ${msg}`);
+    if (userLibraryTreeResult.isFailure()) {
+      return fail(userLibraryTreeResult.message);
+    }
+    const userLibraryTree = userLibraryTreeResult.value;
+
+    const dirsResult = ensureWorkspaceDirectoriesInTree(userLibraryTree);
+    if (dirsResult.isFailure()) {
+      return fail(`workspace directories: ${dirsResult.message}`);
+    }
+
+    const settingsResult = this._loadSettings(tree, deviceId).withErrorFormat((msg) => `settings: ${msg}`);
+    if (settingsResult.isFailure()) {
+      return fail(settingsResult.message);
+    }
+
+    const cloudConfig = browserOptions.cloudStorage ?? settingsResult.value.bootstrap?.cloudStorage;
+    const cloudLibrariesResult = await this._resolveCloudLibraries(cloudConfig, autoSync);
+    if (cloudLibrariesResult.isFailure()) {
+      return fail(cloudLibrariesResult.message);
+    }
+
+    const keystoreResult = loadKeystoreFromTree(userLibraryTree);
+    if (keystoreResult.isFailure()) {
+      return fail(`keystore: ${keystoreResult.message}`);
+    }
+
+    return succeed({
+      cryptoProvider: cryptoProviderResult.value,
+      userLibraryTree,
+      externalLibraries: cloudLibrariesResult.value,
+      keyStoreFile: keystoreResult.value,
+      bootstrapSettings: settingsResult.value.bootstrap,
+      resolvedSettings: settingsResult.value.resolvedSettings,
+      deviceId
+    });
   }
 
   /**
@@ -304,6 +322,95 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
       .onSuccess((json) =>
         Settings.Converters.preferencesSettings.convert(json).withErrorFormat((e) => `preferences.json: ${e}`)
       );
+  }
+
+  private async _resolveCloudLibraries(
+    config: Settings.ICloudStorageConfig | undefined,
+    autoSync: boolean
+  ): Promise<Result<ReadonlyArray<IResolvedExternalLibrary>>> {
+    if (!config || config.enabled !== true) {
+      return succeed([]);
+    }
+
+    const sourceName = config.sourceName ?? `cloud:${config.namespace ?? 'default'}`;
+    const treeResult = await FileApiTreeAccessors.createFromHttp({
+      baseUrl: config.baseUrl,
+      namespace: config.namespace,
+      autoSync,
+      mutable: true
+    });
+    if (treeResult.isFailure()) {
+      return fail(`cloud storage '${sourceName}': ${treeResult.message}`);
+    }
+
+    const rootResult = treeResult.value.getDirectory('/');
+    if (rootResult.isFailure()) {
+      return fail(`cloud storage '${sourceName}' root: ${rootResult.message}`);
+    }
+
+    const load = this._toCloudLoadSpec(config);
+    const originalRef = Settings.Converters.externalLibraryRef.convert(config.baseUrl);
+    if (originalRef.isFailure()) {
+      return fail(`cloud storage '${sourceName}' ref: ${originalRef.message}`);
+    }
+
+    const accessors = treeResult.value.hal;
+    const persistentTree =
+      'syncToDisk' in accessors && 'isDirty' in accessors
+        ? {
+            tree: treeResult.value,
+            accessors: accessors as FileTree.IPersistentFileTreeAccessors
+          }
+        : undefined;
+
+    return succeed([
+      {
+        name: sourceName,
+        originalRef: originalRef.value,
+        fileTree: rootResult.value,
+        load,
+        mutable: true,
+        persistentTree,
+        skipMissingDirectories: true
+      }
+    ]);
+  }
+
+  private _toCloudLoadSpec(
+    config: Settings.ICloudStorageConfig
+  ): boolean | Partial<Record<LibraryData.SubLibraryId | 'default', boolean>> {
+    const includeLibrary = config.library ?? true;
+    const includeUserData = config.userData ?? true;
+
+    if (includeLibrary && includeUserData) {
+      return true;
+    }
+
+    if (!includeLibrary && !includeUserData) {
+      return false;
+    }
+
+    const spec: Partial<Record<LibraryData.SubLibraryId | 'default', boolean>> = { default: false };
+
+    if (includeLibrary) {
+      spec.ingredients = true;
+      spec.fillings = true;
+      spec.confections = true;
+      spec.decorations = true;
+      spec.molds = true;
+      spec.procedures = true;
+      spec.tasks = true;
+    }
+
+    if (includeUserData) {
+      spec.sessions = true;
+      spec.journals = true;
+      spec.moldInventory = true;
+      spec.ingredientInventory = true;
+      spec.locations = true;
+    }
+
+    return spec;
   }
 }
 
