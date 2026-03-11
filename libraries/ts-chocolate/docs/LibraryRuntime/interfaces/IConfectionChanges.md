@@ -162,6 +162,23 @@ True if decoration chocolate changed (molded bonbon only)
 </td></tr>
 <tr><td>
 
+[decorationChanged](./IConfectionChanges.decorationChanged.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+True if decoration changed
+
+</td></tr>
+<tr><td>
+
 [enrobingChocolateChanged](./IConfectionChanges.enrobingChocolateChanged.md)
 
 </td><td>

@@ -34,6 +34,7 @@
  */
 
 import React from 'react';
+import { XMarkIcon } from '@heroicons/react/20/solid';
 
 // ============================================================================
 // DetailSection
@@ -161,6 +162,8 @@ export interface IDetailHeaderProps {
   readonly indicators?: React.ReactNode;
   /** Right slot of the status bar — action buttons */
   readonly actions?: React.ReactNode;
+  /** If provided, renders a close button in the upper-right corner, inline with the title */
+  readonly onClose?: () => void;
 }
 
 /**
@@ -179,11 +182,24 @@ export function DetailHeader({
   subtitle,
   description,
   indicators,
-  actions
+  actions,
+  onClose
 }: IDetailHeaderProps): React.ReactElement {
   return (
-    <div className="mb-4">
-      <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+    <div className="mb-4 relative">
+      <div className="flex items-start">
+        <h2 className="text-lg font-semibold text-gray-900 flex-1 min-w-0">{title}</h2>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            title="Close"
+            className="shrink-0 ml-2 mt-0.5 p-0.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+          >
+            <XMarkIcon className="w-4 h-4" />
+          </button>
+        )}
+      </div>
       {subtitle && <p className="text-xs text-gray-400 font-mono mt-0.5 mb-1">{subtitle}</p>}
       {(indicators !== undefined || actions !== undefined) && (
         <div className="flex items-center justify-between gap-2 mt-1">

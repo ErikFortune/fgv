@@ -131,6 +131,23 @@ Gets the procedure ID.
 </td></tr>
 <tr><td>
 
+[decorationId](./ProducedConfectionBase.decorationId.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[DecorationId](../type-aliases/DecorationId.md) | undefined
+
+</td><td>
+
+Gets the decoration ID.
+
+</td></tr>
+<tr><td>
+
 [initial](./EditableWrapper.initial.md)
 
 </td><td>
@@ -205,6 +222,19 @@ Sets the notes.
 </td><td>
 
 Sets the procedure.
+
+</td></tr>
+<tr><td>
+
+[setDecoration(id)](./ProducedConfectionBase.setDecoration.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets the decoration.
 
 </td></tr>
 <tr><td>

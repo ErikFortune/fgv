@@ -27,6 +27,7 @@ import { Result, succeed, fail, mapResults, captureResult } from '@fgv/ts-utils'
 
 import {
   ConfectionRecipeVariationId,
+  DecorationId,
   FillingId,
   IngredientId,
   Measurement,
@@ -75,6 +76,8 @@ export interface IConfectionChanges {
   readonly sealChocolateChanged: boolean;
   /** True if decoration chocolate changed (molded bonbon only) */
   readonly decorationChocolateChanged: boolean;
+  /** True if decoration changed */
+  readonly decorationChanged: boolean;
   /** True if enrobing chocolate changed (bar truffle or rolled truffle) */
   readonly enrobingChocolateChanged: boolean;
   /** True if coating changed (rolled truffle only) */
@@ -135,6 +138,24 @@ export abstract class ProducedConfectionBase<
     this._current = {
       ...this._current,
       procedureId: id
+    } as T;
+
+    return succeed(undefined);
+  }
+
+  /**
+   * Sets the decoration.
+   * Pushes current state to undo before change, clears redo.
+   * @param id - Decoration ID or undefined to clear
+   * @returns Success or failure
+   * @public
+   */
+  public setDecoration(id: DecorationId | undefined): Result<void> {
+    this._pushUndo();
+
+    this._current = {
+      ...this._current,
+      decorationId: id
     } as T;
 
     return succeed(undefined);
@@ -266,6 +287,14 @@ export abstract class ProducedConfectionBase<
     return this._current.procedureId;
   }
 
+  /**
+   * Gets the decoration ID.
+   * @public
+   */
+  public get decorationId(): DecorationId | undefined {
+    return this._current.decorationId;
+  }
+
   // ============================================================================
   // Comparison
   // ============================================================================
@@ -306,12 +335,14 @@ export abstract class ProducedConfectionBase<
     const fillingsChanged = !this._fillingsEqual(this._current.fillings, original.fillings);
     const notesChanged = !this._notesEqual(this._current.notes, original.notes);
     const procedureChanged = this._current.procedureId !== original.procedureId;
+    const decorationChanged = this._current.decorationId !== original.decorationId;
 
     return {
       yieldChanged,
       fillingsChanged,
       notesChanged,
-      procedureChanged
+      procedureChanged,
+      decorationChanged
     };
   }
 
@@ -492,6 +523,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
             .id,
           decorationChocolateId: source.additionalChocolates?.find((c) => c.purpose === 'decoration')
             ?.chocolate.chocolate.id,
+          decorationId: source.decorations?.preferredId,
           fillings,
           procedureId: source.preferredProcedure?.id,
           notes: source.entity.notes
@@ -711,6 +743,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
         baseChanges.fillingsChanged ||
         baseChanges.notesChanged ||
         baseChanges.procedureChanged ||
+        baseChanges.decorationChanged ||
         moldChanged ||
         shellChocolateChanged ||
         sealChocolateChanged ||
@@ -731,6 +764,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
       shellChocolateId: confection.shellChocolateId,
       sealChocolateId: confection.sealChocolateId,
       decorationChocolateId: confection.decorationChocolateId,
+      decorationId: confection.decorationId,
       fillings: confection.fillings ? confection.fillings.map((slot) => ({ ...slot })) : undefined,
       procedureId: confection.procedureId,
       notes: confection.notes ? confection.notes.map((note) => ({ ...note })) : undefined
@@ -815,6 +849,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
             dimensions: sourceYield.dimensions
           },
           enrobingChocolateId: source.enrobingChocolate?.chocolate.id,
+          decorationId: source.decorations?.preferredId,
           fillings,
           procedureId: source.preferredProcedure?.id,
           notes: source.entity.notes
@@ -975,6 +1010,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
         baseChanges.fillingsChanged ||
         baseChanges.notesChanged ||
         baseChanges.procedureChanged ||
+        baseChanges.decorationChanged ||
         enrobingChocolateChanged
     } as IConfectionChanges;
   }
@@ -989,6 +1025,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
       variationId: confection.variationId,
       yield: { ...confection.yield },
       enrobingChocolateId: confection.enrobingChocolateId,
+      decorationId: confection.decorationId,
       fillings: confection.fillings ? confection.fillings.map((slot) => ({ ...slot })) : undefined,
       procedureId: confection.procedureId,
       notes: confection.notes ? confection.notes.map((note) => ({ ...note })) : undefined
@@ -1076,6 +1113,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
           },
           enrobingChocolateId: source.enrobingChocolate?.chocolate.id,
           coatingId: source.coatings?.preferred?.id,
+          decorationId: source.decorations?.preferredId,
           fillings,
           procedureId: source.preferredProcedure?.id,
           notes: source.entity.notes
@@ -1247,6 +1285,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
         baseChanges.fillingsChanged ||
         baseChanges.notesChanged ||
         baseChanges.procedureChanged ||
+        baseChanges.decorationChanged ||
         enrobingChocolateChanged ||
         coatingChanged
     } as IConfectionChanges;
@@ -1263,6 +1302,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
       yield: { ...confection.yield },
       enrobingChocolateId: confection.enrobingChocolateId,
       coatingId: confection.coatingId,
+      decorationId: confection.decorationId,
       fillings: confection.fillings ? confection.fillings.map((slot) => ({ ...slot })) : undefined,
       procedureId: confection.procedureId,
       notes: confection.notes ? confection.notes.map((note) => ({ ...note })) : undefined

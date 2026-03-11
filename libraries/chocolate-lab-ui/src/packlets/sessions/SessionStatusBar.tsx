@@ -25,10 +25,10 @@
  * @packageDocumentation
  */
 
-import React, { useMemo } from 'react';
-import { ArrowUturnLeftIcon, ArrowUturnRightIcon, CheckIcon, XMarkIcon } from '@heroicons/react/20/solid';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowUturnLeftIcon, ArrowUturnRightIcon, CheckIcon } from '@heroicons/react/20/solid';
 import { MultiActionButton, type IMultiActionButtonAction } from '@fgv/ts-app-shell';
-import { Entities, type UserLibrary } from '@fgv/ts-chocolate';
+import type { Entities, UserLibrary } from '@fgv/ts-chocolate';
 
 // ============================================================================
 // Types
@@ -41,18 +41,6 @@ import { Entities, type UserLibrary } from '@fgv/ts-chocolate';
  * @public
  */
 export type SaveMode = 'manual' | 'autosave';
-
-// ============================================================================
-// Status Colors
-// ============================================================================
-
-const STATUS_COLORS: Record<string, string> = {
-  planning: 'bg-blue-100 text-blue-800',
-  active: 'bg-green-100 text-green-800',
-  committing: 'bg-yellow-100 text-yellow-800',
-  committed: 'bg-gray-100 text-gray-800',
-  abandoned: 'bg-red-100 text-red-800'
-};
 
 // ============================================================================
 // Props
@@ -83,10 +71,10 @@ export interface ISessionStatusBarProps {
   readonly saveMode: SaveMode;
   /** Called when the user toggles save mode */
   readonly onSaveModeChange: (mode: SaveMode) => void;
-  /** Optional callback to close this panel */
-  readonly onClose?: () => void;
   /** Optional callback to commit the session to the journal */
   readonly onCommit?: () => void;
+  /** Whether execution is complete (all steps done or no steps to track). Defaults to true. */
+  readonly isExecutionComplete?: boolean;
 }
 
 // ============================================================================
@@ -96,8 +84,8 @@ export interface ISessionStatusBarProps {
 /**
  * Compact status bar for session panels.
  *
- * Provides undo/redo controls, a status dropdown for toggling session
- * lifecycle state, a save/autosave button, and session metadata display.
+ * Provides undo/redo controls, a lifecycle multi-action button (Start / In Production / Commit),
+ * a save/autosave button, and session metadata display.
  *
  * @public
  */
@@ -112,11 +100,78 @@ export function SessionStatusBar({
   hasChanges,
   saveMode,
   onSaveModeChange,
-  onClose,
-  onCommit
+  onCommit,
+  isExecutionComplete = true
 }: ISessionStatusBarProps): React.ReactElement {
-  const statusColor = STATUS_COLORS[session.status] ?? 'bg-gray-100 text-gray-800';
   const hasMetadata = !!(session.group || session.updatedAt);
+
+  // ── Local status tracking ──
+  // session.status is a snapshot from the persisted entity and won't update after
+  // onStatusChange is called. Track locally for immediate UI feedback, syncing
+  // from the session when it changes (e.g., navigation).
+  const [localStatus, setLocalStatus] = useState(session.status);
+  useEffect(() => {
+    setLocalStatus(session.status);
+  }, [session.status]);
+
+  const handleStatusChange = useCallback(
+    (status: Entities.PersistedSessionStatus): void => {
+      setLocalStatus(status);
+      onStatusChange(status);
+    },
+    [onStatusChange]
+  );
+
+  // ── Lifecycle multi-action button ──
+
+  const statusAction = useMemo<IMultiActionButtonAction>(() => {
+    switch (localStatus) {
+      case 'planning':
+        return { id: 'start', label: 'Start', onSelect: (): void => handleStatusChange('active') };
+      case 'active':
+        return isExecutionComplete && onCommit
+          ? { id: 'commit', label: 'Commit', onSelect: onCommit }
+          : { id: 'in-production', label: 'In Production', onSelect: (): void => {} };
+      case 'committing':
+        return { id: 'committing', label: 'Committing\u2026', onSelect: (): void => {} };
+      case 'committed':
+        return { id: 'committed', label: 'Committed', onSelect: (): void => {} };
+      case 'abandoned':
+        return { id: 'abandoned', label: 'Abandoned', onSelect: (): void => {} };
+    }
+  }, [localStatus, isExecutionComplete, handleStatusChange, onCommit]);
+
+  const statusAlternatives = useMemo<ReadonlyArray<IMultiActionButtonAction>>(() => {
+    switch (localStatus) {
+      case 'planning':
+        return [
+          ...(onCommit ? [{ id: 'commit', label: 'Commit', onSelect: onCommit }] : []),
+          { id: 'abandon', label: 'Abandon', onSelect: (): void => handleStatusChange('abandoned') }
+        ];
+      case 'active':
+        return [
+          {
+            id: 'back-to-planning',
+            label: 'Back to Planning',
+            onSelect: (): void => handleStatusChange('planning')
+          },
+          ...(onCommit && !isExecutionComplete
+            ? [{ id: 'commit', label: 'Commit', onSelect: onCommit }]
+            : []),
+          { id: 'abandon', label: 'Abandon', onSelect: (): void => handleStatusChange('abandoned') }
+        ];
+      default:
+        return [];
+    }
+  }, [session.status, isExecutionComplete, onStatusChange, onCommit]);
+
+  const isStatusDisabled = localStatus === 'active' && !isExecutionComplete;
+  const statusVariant =
+    localStatus === 'planning' || (localStatus === 'active' && isExecutionComplete)
+      ? ('primary' as const)
+      : ('default' as const);
+
+  // ── Save / Autosave button ──
 
   const saveAction = useMemo<IMultiActionButtonAction>(
     () =>
@@ -173,53 +228,20 @@ export function SessionStatusBar({
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="w-px h-4 bg-gray-300 mx-1" />
+        {/* Spacer — balances save button on the right so status button centers */}
+        <div className="flex-1" />
 
-        {/* Status dropdown (styled with color) */}
-        <select
-          value={session.status}
-          onChange={(e): void => onStatusChange(e.target.value as Entities.PersistedSessionStatus)}
-          className={`text-xs font-medium border-none rounded px-1.5 py-0.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-choco-primary ${statusColor}`}
-        >
-          {Entities.Session.allPersistedSessionStatuses.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+        {/* Lifecycle multi-action button */}
+        <MultiActionButton
+          primaryAction={statusAction}
+          alternativeActions={statusAlternatives}
+          variant={statusVariant}
+          disabled={isStatusDisabled}
+          dropdownDisabled={statusAlternatives.length === 0}
+        />
 
         {/* Spacer */}
         <div className="flex-1" />
-
-        {/* Close button */}
-        {onClose && (
-          <>
-            <button
-              type="button"
-              onClick={onClose}
-              title="Close"
-              className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-            >
-              <XMarkIcon className="h-3.5 w-3.5" />
-            </button>
-            <div className="w-px h-4 bg-gray-300 mx-1" />
-          </>
-        )}
-
-        {/* Commit button — only for uncommitted sessions */}
-        {onCommit && session.status !== 'committed' && session.status !== 'abandoned' && (
-          <>
-            <button
-              type="button"
-              onClick={onCommit}
-              className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded transition-colors bg-choco-primary text-white hover:bg-choco-primary/90"
-            >
-              Commit
-            </button>
-            <div className="w-px h-4 bg-gray-300 mx-1" />
-          </>
-        )}
 
         {/* Save / Autosave button */}
         <MultiActionButton
@@ -230,9 +252,9 @@ export function SessionStatusBar({
         />
       </div>
 
-      {/* Metadata row — wraps naturally, only shown when there's metadata */}
+      {/* Metadata row — centered, only shown when there's metadata */}
       {hasMetadata && (
-        <div className="flex flex-wrap items-center gap-x-3 px-3 pb-1.5 text-[11px] text-gray-400">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 px-3 pb-1.5 text-[11px] text-gray-400">
           {session.group && (
             <span>
               Group: <span className="text-gray-600">{session.group}</span>

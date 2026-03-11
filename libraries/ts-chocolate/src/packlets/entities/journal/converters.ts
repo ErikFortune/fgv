@@ -219,6 +219,7 @@ export const producedMoldedBonBonEntity: Converter<IProducedMoldedBonBonEntity> 
     fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+    decorationId: CommonConverters.decorationId.optional(),
     moldId: CommonConverters.moldId,
     shellChocolateId: CommonConverters.ingredientId,
     sealChocolateId: CommonConverters.ingredientId.optional(),
@@ -237,6 +238,7 @@ export const producedBarTruffleEntity: Converter<IProducedBarTruffleEntity> =
     fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+    decorationId: CommonConverters.decorationId.optional(),
     enrobingChocolateId: CommonConverters.ingredientId.optional()
   });
 
@@ -252,6 +254,7 @@ export const producedRolledTruffleEntity: Converter<IProducedRolledTruffleEntity
     fillings: Converters.arrayOf(anyResolvedFillingSlotEntity).optional(),
     procedureId: CommonConverters.procedureId.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+    decorationId: CommonConverters.decorationId.optional(),
     enrobingChocolateId: CommonConverters.ingredientId.optional(),
     coatingId: CommonConverters.ingredientId.optional()
   });

@@ -28,9 +28,11 @@
 
 import React from 'react';
 import {
+  type DecorationId,
   type FillingId,
   type FillingRecipeVariationSpec,
   type IngredientId,
+  type MoldId,
   type ProcedureId,
   type SessionId,
   type SlotId,
@@ -67,6 +69,10 @@ export interface ISessionDetailViewProps {
   readonly onBrowseIngredient?: (ingredientId: IngredientId) => void;
   /** Optional callback to browse a procedure in a cascade detail panel */
   readonly onBrowseProcedure?: (procedureId: ProcedureId) => void;
+  /** Optional callback to browse a mold in a cascade detail panel */
+  readonly onBrowseMold?: (moldId: MoldId) => void;
+  /** Optional callback to browse a decoration in a cascade detail panel */
+  readonly onBrowseDecoration?: (decorationId: DecorationId) => void;
   /** Optional callback when user selects a filling slot in a confection session */
   readonly onSelectFillingSlot?: (slotId: SlotId, label: string) => void;
   /** Optional callback to open the commit dialog for this session */
@@ -95,6 +101,8 @@ export function SessionDetailView({
   onOpenFillingRecipe,
   onBrowseIngredient,
   onBrowseProcedure,
+  onBrowseMold,
+  onBrowseDecoration,
   onSelectFillingSlot,
   onCommit
 }: ISessionDetailViewProps): React.ReactElement {
@@ -123,6 +131,8 @@ export function SessionDetailView({
         onSelectFillingSlot={onSelectFillingSlot}
         onBrowseIngredient={onBrowseIngredient}
         onBrowseProcedure={onBrowseProcedure}
+        onBrowseMold={onBrowseMold}
+        onBrowseDecoration={onBrowseDecoration}
         onCommit={onCommit}
       />
     );

@@ -132,6 +132,23 @@ Resolved procedure ID if one was used
 </td></tr>
 <tr><td>
 
+[decorationId](./IProducedConfectionEntityBase.decorationId.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[DecorationId](../type-aliases/DecorationId.md)
+
+</td><td>
+
+Resolved decoration ID if one was selected
+
+</td></tr>
+<tr><td>
+
 [notes](./IProducedConfectionEntityBase.notes.md)
 
 </td><td>

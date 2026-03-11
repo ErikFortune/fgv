@@ -33,6 +33,7 @@ import { TypeaheadInput, type ITypeaheadSuggestion } from '@fgv/ts-app-shell';
 import {
   Entities,
   LibraryRuntime,
+  type DecorationId,
   type FillingId,
   type IngredientId,
   type IWorkspace,
@@ -44,7 +45,7 @@ import {
   type UserLibrary
 } from '@fgv/ts-chocolate';
 
-import { EntityDetailHeader } from '../common';
+import { EntityDetailHeader, formatIngredientAmount } from '../common';
 import { NotesEditor } from '../editing';
 import { useWorkspace, useReactiveWorkspace } from '../workspace';
 import { SessionStatusBar, type SaveMode } from './SessionStatusBar';
@@ -71,6 +72,10 @@ export interface IConfectionSessionPanelProps {
   readonly onBrowseIngredient?: (ingredientId: IngredientId) => void;
   /** Optional callback to browse a procedure in a cascade detail panel */
   readonly onBrowseProcedure?: (procedureId: ProcedureId) => void;
+  /** Optional callback to browse a mold in a cascade detail panel */
+  readonly onBrowseMold?: (moldId: MoldId) => void;
+  /** Optional callback to browse a decoration in a cascade detail panel */
+  readonly onBrowseDecoration?: (decorationId: DecorationId) => void;
   /** Optional callback to open the commit dialog */
   readonly onCommit?: () => void;
 }
@@ -86,6 +91,11 @@ function getIngredientName(id: IngredientId, workspace: IWorkspace): string {
 
 function getProcedureName(id: ProcedureId, workspace: IWorkspace): string {
   const result = workspace.data.procedures.get(id);
+  return result.isSuccess() ? result.value.name : String(id);
+}
+
+function getDecorationName(id: DecorationId, workspace: IWorkspace): string {
+  const result = workspace.data.decorations.get(id);
   return result.isSuccess() ? result.value.name : String(id);
 }
 
@@ -121,6 +131,8 @@ export function ConfectionSessionPanel({
   onSelectFillingSlot,
   onBrowseIngredient,
   onBrowseProcedure,
+  onBrowseMold,
+  onBrowseDecoration,
   onCommit
 }: IConfectionSessionPanelProps): React.ReactElement {
   const workspace = useWorkspace();
@@ -413,6 +425,61 @@ export function ConfectionSessionPanel({
     autosaveIfNeeded();
   }, [session, notifySession, autosaveIfNeeded]);
 
+  // ---- Decoration ----
+  const decorationSuggestions = useMemo(
+    () =>
+      Array.from(workspace.data.decorations.values()).map((dec: LibraryRuntime.IDecoration) => ({
+        id: dec.id,
+        name: dec.name
+      })),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  const decorationAlternates = useMemo((): ReadonlyArray<ITypeaheadSuggestion<DecorationId>> => {
+    const decs = session.baseConfection.goldenVariation.decorations;
+    if (!decs) return [];
+    return decs.options.map((d) => ({
+      id: d.id,
+      name: d.decoration.name
+    }));
+  }, [session]);
+
+  const currentDecorationId = useMemo(() => session.produced.decorationId, [session, sessionVersion]);
+  const [editingDecoration, setEditingDecoration] = useState(false);
+  const [newDecorationText, setNewDecorationText] = useState('');
+
+  const handleDecorationSelect = useCallback(
+    (suggestion: ITypeaheadSuggestion<DecorationId>): void => {
+      const result = session.produced.setDecoration(suggestion.id);
+      if (result.isFailure()) return;
+      setEditingDecoration(false);
+      setNewDecorationText('');
+      notifySession();
+      autosaveIfNeeded();
+    },
+    [session, notifySession, autosaveIfNeeded]
+  );
+
+  const handleClearDecoration = useCallback((): void => {
+    const result = session.produced.setDecoration(undefined);
+    if (result.isFailure()) return;
+    setEditingDecoration(false);
+    setNewDecorationText('');
+    notifySession();
+    autosaveIfNeeded();
+  }, [session, notifySession, autosaveIfNeeded]);
+
+  // ---- Execution completion ----
+  const isExecutionComplete = useMemo(() => {
+    const procId = session.produced.procedureId;
+    if (!procId) return true;
+    const stepsResult = workspace.data.procedures.get(procId).asResult.onSuccess((p) => p.getSteps());
+    if (stepsResult.isFailure() || stepsResult.value.length === 0) return true;
+    const execution = session.execution;
+    if (!execution) return false;
+    return execution.currentStepIndex >= stepsResult.value.length;
+  }, [session, sessionVersion, workspace]);
+
   // ---- Render ----
   return (
     <div className="flex h-full flex-col overflow-y-auto" onBlur={handlePanelBlur}>
@@ -435,8 +502,8 @@ export function ConfectionSessionPanel({
         hasChanges={hasChanges}
         saveMode={saveMode}
         onSaveModeChange={handleSaveModeChange}
-        onClose={onClose}
         onCommit={onCommit}
+        isExecutionComplete={isExecutionComplete}
       />
 
       <div className="flex flex-col gap-4 p-4">
@@ -471,6 +538,7 @@ export function ConfectionSessionPanel({
           notifySession={notifySession}
           autosaveIfNeeded={autosaveIfNeeded}
           onBrowseIngredient={onBrowseIngredient}
+          onBrowseMold={onBrowseMold}
         />
 
         {/* Fillings */}
@@ -503,7 +571,9 @@ export function ConfectionSessionPanel({
                       >
                         <span>{slot.name}</span>
                         {slot.targetWeight !== undefined && (
-                          <span className="text-xs text-gray-400">({slot.targetWeight}g)</span>
+                          <span className="text-xs text-gray-400">
+                            ({formatIngredientAmount(slot.targetWeight, 'g')})
+                          </span>
                         )}
                       </button>
                     ))}
@@ -538,7 +608,9 @@ export function ConfectionSessionPanel({
                         )}
                       </button>
                       {slot.targetWeight !== undefined && (
-                        <span className="shrink-0 text-xs text-gray-500 mr-1">{slot.targetWeight}g</span>
+                        <span className="shrink-0 text-xs text-gray-500 mr-1">
+                          {formatIngredientAmount(slot.targetWeight, 'g')}
+                        </span>
                       )}
                       <button
                         type="button"
@@ -563,6 +635,109 @@ export function ConfectionSessionPanel({
                   className="text-sm border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
                 />
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Decorations */}
+        <div>
+          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Decoration</div>
+          {currentDecorationId && !editingDecoration && (
+            <div className="flex items-center gap-1 py-0.5">
+              <button
+                type="button"
+                onClick={(): void => {
+                  setNewDecorationText(getDecorationName(currentDecorationId, workspace));
+                  setEditingDecoration(true);
+                }}
+                title="Edit decoration"
+                className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+              >
+                <ArrowPathIcon className="h-3 w-3" />
+              </button>
+              <button
+                type="button"
+                onClick={(): void => onBrowseDecoration?.(currentDecorationId)}
+                className="text-sm text-choco-primary hover:underline truncate"
+                title="Browse decoration"
+              >
+                {getDecorationName(currentDecorationId, workspace)}
+              </button>
+              <button
+                type="button"
+                onClick={handleClearDecoration}
+                className="text-gray-400 hover:text-red-500 p-0.5 shrink-0"
+                aria-label="Remove decoration"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {currentDecorationId && editingDecoration && (
+            <div className="flex items-center gap-1.5 py-0.5">
+              <button
+                type="button"
+                onClick={(): void => setEditingDecoration(false)}
+                title="Done editing"
+                className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+              >
+                <CheckIcon className="h-3.5 w-3.5" />
+              </button>
+              <TypeaheadInput<DecorationId>
+                value={newDecorationText}
+                onChange={setNewDecorationText}
+                suggestions={decorationSuggestions}
+                prioritySuggestions={decorationAlternates}
+                onSelect={handleDecorationSelect}
+                autoFocus
+                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              />
+              <button
+                type="button"
+                onClick={handleClearDecoration}
+                className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                aria-label="Remove decoration"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {!currentDecorationId && !editingDecoration && (
+            <div className="flex items-center gap-1 py-0.5">
+              <button
+                type="button"
+                onClick={(): void => setEditingDecoration(true)}
+                title="Set decoration"
+                className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+              >
+                <ArrowPathIcon className="h-3 w-3" />
+              </button>
+              <span className="text-sm text-gray-400 italic">None</span>
+            </div>
+          )}
+
+          {!currentDecorationId && editingDecoration && (
+            <div className="flex items-center gap-1.5 py-0.5">
+              <button
+                type="button"
+                onClick={(): void => setEditingDecoration(false)}
+                title="Done editing"
+                className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+              >
+                <CheckIcon className="h-3.5 w-3.5" />
+              </button>
+              <TypeaheadInput<DecorationId>
+                value={newDecorationText}
+                onChange={setNewDecorationText}
+                suggestions={decorationSuggestions}
+                prioritySuggestions={decorationAlternates}
+                onSelect={handleDecorationSelect}
+                placeholder="Type decoration name…"
+                autoFocus
+                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              />
             </div>
           )}
         </div>
@@ -952,7 +1127,8 @@ function TypeSpecificSection({
   moldSuggestions,
   notifySession,
   autosaveIfNeeded,
-  onBrowseIngredient
+  onBrowseIngredient,
+  onBrowseMold
 }: {
   readonly session: UserLibrary.Session.AnyConfectionEditingSession;
   readonly workspace: IWorkspace;
@@ -964,6 +1140,7 @@ function TypeSpecificSection({
   readonly notifySession: () => void;
   readonly autosaveIfNeeded: () => void;
   readonly onBrowseIngredient?: (ingredientId: IngredientId) => void;
+  readonly onBrowseMold?: (moldId: MoldId) => void;
 }): React.ReactElement | null {
   const produced = session.produced;
 
@@ -977,6 +1154,7 @@ function TypeSpecificSection({
             workspace={workspace}
             reactiveVersion={reactiveVersion}
             suggestions={moldSuggestions}
+            onBrowse={onBrowseMold}
             onSelect={(id): void => {
               const result = produced.setMold(id);
               if (result.isFailure()) return;
@@ -1157,13 +1335,15 @@ function MoldEditRow({
   workspace,
   reactiveVersion,
   suggestions,
-  onSelect
+  onSelect,
+  onBrowse
 }: {
   readonly moldId: MoldId;
   readonly workspace: IWorkspace;
   readonly reactiveVersion: number;
   readonly suggestions: ReadonlyArray<ITypeaheadSuggestion<MoldId>>;
   readonly onSelect: (id: MoldId) => void;
+  readonly onBrowse?: (moldId: MoldId) => void;
 }): React.ReactElement {
   const [editing, setEditing] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -1194,7 +1374,14 @@ function MoldEditRow({
           >
             <ArrowPathIcon className="h-3 w-3" />
           </button>
-          <span className="text-sm text-gray-700">{name}</span>
+          <button
+            type="button"
+            onClick={(): void => onBrowse?.(moldId)}
+            className="text-sm text-choco-primary hover:underline"
+            title="Browse mold"
+          >
+            {name}
+          </button>
         </div>
       </div>
     );

@@ -8,8 +8,10 @@ import {
   type BaseFillingId,
   type BaseIngredientId,
   type BaseProcedureId,
+  type DecorationId,
   type FillingId,
   type IngredientId,
+  type MoldId,
   type ProcedureId,
   type SessionId,
   type SlotId,
@@ -26,15 +28,19 @@ import {
   isIngredientCascadeEntry,
   isProcedureCascadeEntry,
   isFillingCascadeEntry,
+  isMoldCascadeEntry,
+  isDecorationCascadeEntry,
   type RecipeSaveOption,
   useTabNavigation,
   useEntityList,
   useEntityMutation,
   useFilteredEntities,
   useMutableCollection,
+  DecorationDetail,
   FillingDetail,
   FillingSessionPanel,
   IngredientDetail,
+  MoldDetail,
   ProcedureDetail,
   SessionDetailView,
   useSessionActions,
@@ -438,6 +444,36 @@ export function SessionsTabContent(): React.ReactElement {
     [squashCascade, workspace]
   );
 
+  const handleBrowseMoldFromSession = useCallback(
+    (sessionEntry: ICascadeEntry, moldId: MoldId): void => {
+      squashCascade([
+        sessionEntry,
+        {
+          entityType: 'mold',
+          entityId: moldId,
+          mode: 'view',
+          entity: workspace.data.molds.get(moldId).report(workspace.data.logger).orDefault()
+        }
+      ]);
+    },
+    [squashCascade, workspace]
+  );
+
+  const handleBrowseDecorationFromSession = useCallback(
+    (sessionEntry: ICascadeEntry, decorationId: DecorationId): void => {
+      squashCascade([
+        sessionEntry,
+        {
+          entityType: 'decoration',
+          entityId: decorationId,
+          mode: 'view',
+          entity: workspace.data.decorations.get(decorationId).report(workspace.data.logger).orDefault()
+        }
+      ]);
+    },
+    [squashCascade, workspace]
+  );
+
   const handleSelectFillingSlot = useCallback(
     (sessionEntry: ICascadeEntry, slotId: SlotId, label: string): void => {
       squashCascade([
@@ -800,6 +836,10 @@ export function SessionsTabContent(): React.ReactElement {
               onBrowseProcedure={(procedureId: ProcedureId): void =>
                 handleBrowseProcedureFromSession(entry, procedureId)
               }
+              onBrowseMold={(moldId: MoldId): void => handleBrowseMoldFromSession(entry, moldId)}
+              onBrowseDecoration={(decorationId: DecorationId): void =>
+                handleBrowseDecorationFromSession(entry, decorationId)
+              }
               onSelectFillingSlot={(slotId: SlotId, label: string): void =>
                 handleSelectFillingSlot(entry, slotId, label)
               }
@@ -866,6 +906,40 @@ export function SessionsTabContent(): React.ReactElement {
         };
       }
 
+      if (isMoldCascadeEntry(entry) && entry.mode === 'view') {
+        const mold = entry.entity;
+        if (!mold) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load mold: {entry.entityId}</div>
+          };
+        }
+
+        return {
+          key: entry.entityId,
+          label: mold.displayName,
+          content: <MoldDetail mold={mold} onClose={(): void => popCascadeTo(_index)} />
+        };
+      }
+
+      if (isDecorationCascadeEntry(entry) && entry.mode === 'view') {
+        const decoration = entry.entity;
+        if (!decoration) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load decoration: {entry.entityId}</div>
+          };
+        }
+
+        return {
+          key: entry.entityId,
+          label: decoration.name,
+          content: <DecorationDetail decoration={decoration} />
+        };
+      }
+
       return {
         key: entry.entityId,
         label: entry.entityId,
@@ -888,6 +962,8 @@ export function SessionsTabContent(): React.ReactElement {
     handleOpenFillingRecipeFromSession,
     handleBrowseIngredientFromSession,
     handleBrowseProcedureFromSession,
+    handleBrowseMoldFromSession,
+    handleBrowseDecorationFromSession,
     handleSelectFillingSlot,
     handleBrowseIngredientFromEmbeddedSession,
     handleBrowseProcedureFromEmbeddedSession,

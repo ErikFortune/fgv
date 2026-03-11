@@ -743,6 +743,8 @@ export interface IProducedConfectionEntityBase {
   readonly fillings?: ReadonlyArray<AnyResolvedFillingSlotEntity>;
   /** Resolved procedure ID if one was used */
   readonly procedureId?: ProcedureId;
+  /** Resolved decoration ID if one was selected */
+  readonly decorationId?: DecorationId;
   /** Optional categorized notes about production */
   readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
 }

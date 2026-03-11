@@ -3403,6 +3403,7 @@ interface IConfectionBase<TVariation extends AnyConfectionRecipeVariation = AnyC
 // @public
 interface IConfectionChanges {
     readonly coatingChanged: boolean;
+    readonly decorationChanged: boolean;
     readonly decorationChocolateChanged: boolean;
     readonly enrobingChocolateChanged: boolean;
     readonly fillingsChanged: boolean;
@@ -5438,6 +5439,7 @@ interface IProducedBarTruffleEntity extends IProducedConfectionEntityBase {
 // @public
 interface IProducedConfectionEntityBase {
     readonly confectionType: ConfectionType;
+    readonly decorationId?: DecorationId;
     readonly fillings?: ReadonlyArray<AnyResolvedFillingSlotEntity>;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
     readonly procedureId?: ProcedureId;
@@ -7906,6 +7908,7 @@ abstract class ProducedConfectionBase<T extends AnyProducedConfectionEntity> ext
     protected constructor(initial: T);
     protected _baseChanges(original: T): Partial<IConfectionChanges>;
     get current(): T;
+    get decorationId(): DecorationId | undefined;
     protected abstract _deepCopy(confection: T): T;
     get fillings(): ReadonlyArray<Confections.AnyResolvedFillingSlotEntity> | undefined;
     abstract getChanges(original: T): IConfectionChanges;
@@ -7913,6 +7916,7 @@ abstract class ProducedConfectionBase<T extends AnyProducedConfectionEntity> ext
     get notes(): ReadonlyArray<Model.ICategorizedNote> | undefined;
     get procedureId(): ProcedureId | undefined;
     removeFillingSlot(slotId: SlotId): Result<void>;
+    setDecoration(id: DecorationId | undefined): Result<void>;
     setFillingSlot(slotId: SlotId, choice: {
         type: 'recipe';
         fillingId: FillingId;

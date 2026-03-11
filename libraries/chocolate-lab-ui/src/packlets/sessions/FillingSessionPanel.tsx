@@ -35,6 +35,7 @@ import {
   ListBulletIcon
 } from '@heroicons/react/20/solid';
 import { DetailSection, EditSection, TypeaheadInput } from '@fgv/ts-app-shell';
+import { formatIngredientAmount } from '../common';
 import {
   Entities,
   Helpers,
@@ -652,6 +653,17 @@ export function FillingSessionPanel({
   // Render
   // ============================================================================
 
+  // ---- Execution completion ----
+  const isExecutionComplete = useMemo(() => {
+    const procId = session.produced.snapshot.procedureId;
+    if (!procId) return true;
+    const stepsResult = workspace.data.procedures.get(procId).asResult.onSuccess((p) => p.getSteps());
+    if (stepsResult.isFailure() || stepsResult.value.length === 0) return true;
+    const execution = standalone?.execution;
+    if (!execution) return false;
+    return execution.currentStepIndex >= stepsResult.value.length;
+  }, [standalone, session, sessionVersion, workspace]);
+
   return (
     <div className="flex flex-col h-full overflow-y-auto" onBlur={handlePanelBlur}>
       {/* Header */}
@@ -676,8 +688,8 @@ export function FillingSessionPanel({
           hasChanges={hasChanges}
           saveMode={saveMode}
           onSaveModeChange={handleSaveModeChange}
-          onClose={onClose}
           onCommit={onCommit}
+          isExecutionComplete={isExecutionComplete}
         />
       ) : (
         <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3 py-1.5">
@@ -905,8 +917,7 @@ export function FillingSessionPanel({
                         {ingName}
                       </button>
                       <span className="text-sm text-gray-600 tabular-nums shrink-0">
-                        {ing.amount}
-                        {ing.unit ?? 'g'}
+                        {formatIngredientAmount(ing.amount, ing.unit, ing.modifiers)}
                       </span>
                     </div>
                     {hasModifiers && (

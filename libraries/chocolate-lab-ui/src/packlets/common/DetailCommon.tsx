@@ -32,7 +32,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { ArrowUturnLeftIcon, EyeIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowUturnLeftIcon, EyeIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { ClipboardDocumentIcon } from '@heroicons/react/20/solid';
 import { DetailHeader, DetailSection, StatusBadge } from '@fgv/ts-app-shell';
 import type { Model } from '@fgv/ts-chocolate';
@@ -230,16 +230,6 @@ export function EntityDetailHeader({
         </button>
       )}
       {extraActions}
-      {onClose && (
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-          title="Close"
-        >
-          <XMarkIcon className="w-4 h-4" />
-        </button>
-      )}
     </>
   );
 
@@ -251,6 +241,7 @@ export function EntityDetailHeader({
         description={derivedFrom ? undefined : description}
         indicators={indicators}
         actions={actions}
+        onClose={onClose}
       />
       {derivedFrom && (
         <div className="px-4 py-2 border-b border-gray-200 space-y-1">
