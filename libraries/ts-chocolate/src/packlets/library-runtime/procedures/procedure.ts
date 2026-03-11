@@ -277,7 +277,11 @@ export class Procedure implements IProcedure {
     }
 
     if (Tasks.isInlineTaskEntity(invocation)) {
-      const syntheticId = `${this._id}.inline-${step.order}` as TaskId;
+      const sep = CommonModel.ID_SEPARATOR;
+      const parts = this._id.split(sep);
+      const collectionId = parts[0];
+      const baseId = parts.slice(1).join('-');
+      const syntheticId = `${collectionId}${sep}${baseId}-inline-${step.order}` as TaskId;
       return Task.create(this._context, syntheticId, invocation.task)
         .withErrorFormat((msg) => `step ${step.order}: inline task: ${msg}`)
         .onSuccess((resolvedTask) => {

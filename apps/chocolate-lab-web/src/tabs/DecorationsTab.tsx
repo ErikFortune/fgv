@@ -821,9 +821,21 @@ export function DecorationsTabContent(): React.ReactElement {
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
     return cascadeStack.map((entry, index) => {
-      const onIngredientClick = (id: IngredientId): void => drillDown(index, 'ingredient', id);
-      const onProcedureClick = (id: ProcedureId): void => drillDown(index, 'procedure', id);
-      const onTaskClick = (id: TaskId): void => drillDown(index, 'task', id);
+      const onIngredientClick = (id: IngredientId): void => {
+        drillDown(index, 'ingredient', id, {
+          entity: workspace.data.ingredients.get(id).report(workspace.data.logger).orDefault()
+        });
+      };
+      const onProcedureClick = (id: ProcedureId): void => {
+        drillDown(index, 'procedure', id, {
+          entity: workspace.data.procedures.get(id).report(workspace.data.logger).orDefault()
+        });
+      };
+      const onTaskClick = (id: TaskId): void => {
+        drillDown(index, 'task', id, {
+          entity: workspace.data.tasks.get(id).report(workspace.data.logger).orDefault()
+        });
+      };
 
       if (isDecorationCascadeEntry(entry)) {
         // Create mode: render EntityCreateForm

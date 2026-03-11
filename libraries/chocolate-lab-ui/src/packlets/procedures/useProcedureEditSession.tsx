@@ -53,6 +53,8 @@ interface INestedTaskSession {
   readonly stepOrder: number;
   readonly taskEntityId: string;
   readonly wrapper: LibraryRuntime.EditedTask;
+  /** Cascade entries that existed before the task entry was pushed. Restored on save/cancel. */
+  readonly parentStack: ReadonlyArray<ICascadeEntry>;
 }
 
 /**
@@ -61,6 +63,8 @@ interface INestedTaskSession {
 interface IStepParamsSession {
   readonly procedureId: string;
   readonly stepOrder: number;
+  /** Cascade entries that existed before the step-params entry was pushed. Restored on save/cancel. */
+  readonly parentStack: ReadonlyArray<ICascadeEntry>;
 }
 
 /**
@@ -138,6 +142,16 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
 
   const mutableTaskCollectionId = useMemo(() => findMutableTaskCollectionId(workspace), [workspace]);
 
+  const makeProcedureEditEntry = useCallback(
+    (procId: string): ICascadeEntry => ({
+      entityType: 'procedure',
+      entityId: procId,
+      mode: 'edit',
+      entity: workspace.data.procedures.get(procId as ProcedureId).orDefault()
+    }),
+    [workspace]
+  );
+
   // --------------------------------------------------------------------------
   // Step Task Editor
   // --------------------------------------------------------------------------
@@ -186,22 +200,24 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
       }
 
       const taskEntityId = `${procId}::__step_${stepOrder}_${mode}`;
-      setNestedTaskSession({
-        mode,
-        stepOrder,
-        taskEntityId,
-        wrapper: wrapperResult.value
-      });
-
       const baseStack = cascadeStack.filter((e) => e.mode !== 'preview' && e.entityType !== 'task');
       const ensuredProcedureEdit = baseStack.some(
         (e) => e.entityType === 'procedure' && e.entityId === procId && e.mode === 'edit'
       )
         ? baseStack
-        : [{ entityType: 'procedure' as const, entityId: procId, mode: 'edit' as const }, ...baseStack];
+        : [makeProcedureEditEntry(procId), ...baseStack];
+
+      setNestedTaskSession({
+        mode,
+        stepOrder,
+        taskEntityId,
+        wrapper: wrapperResult.value,
+        parentStack: ensuredProcedureEdit
+      });
+
       squashCascade([...ensuredProcedureEdit, { entityType: 'task', entityId: taskEntityId, mode: 'edit' }]);
     },
-    [procedureRef, cascadeStack, squashCascade, slugify, workspace]
+    [procedureRef, cascadeStack, squashCascade, slugify, workspace, makeProcedureEditEntry]
   );
 
   // --------------------------------------------------------------------------
@@ -209,12 +225,17 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
   // --------------------------------------------------------------------------
 
   const handleNestedTaskCancel = useCallback((): void => {
-    const procId = procedureRef.current?.id;
+    const parentStack = nestedTaskSession?.parentStack;
     setNestedTaskSession(undefined);
-    if (procId) {
-      squashCascade([{ entityType: 'procedure', entityId: procId, mode: 'edit' }]);
+    if (parentStack) {
+      squashCascade(parentStack);
+    } else {
+      const procId = procedureRef.current?.id;
+      if (procId) {
+        squashCascade([makeProcedureEditEntry(procId)]);
+      }
     }
-  }, [procedureRef, squashCascade]);
+  }, [nestedTaskSession, procedureRef, squashCascade, makeProcedureEditEntry]);
 
   const handleNestedTaskSave = useCallback(
     async (wrapper: LibraryRuntime.EditedTask): Promise<void> => {
@@ -277,8 +298,9 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       onMutate?.();
+      const parentStack = session.parentStack;
       setNestedTaskSession(undefined);
-      squashCascade([{ entityType: 'procedure', entityId: procId, mode: 'edit' }]);
+      squashCascade(parentStack);
     },
     [
       nestedTaskSession,
@@ -378,10 +400,10 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
       const procId = procedureRef.current?.id;
       if (!procId) return;
 
-      setStepParamsSession({ procedureId: procId, stepOrder });
       const withoutPreviewOrStepParams = cascadeStack.filter(
         (e) => e.mode !== 'preview' && e.entityType !== 'step-params'
       );
+      setStepParamsSession({ procedureId: procId, stepOrder, parentStack: withoutPreviewOrStepParams });
       squashCascade([
         ...withoutPreviewOrStepParams,
         { entityType: 'step-params', entityId: `${procId}:${stepOrder}`, mode: 'edit' }
@@ -407,9 +429,10 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
         task: 'taskId' in step.task ? { taskId: step.task.taskId, params } : { task: step.task.task, params }
       });
 
+      const parentStack = session.parentStack;
       setStepParamsSession(undefined);
       onMutate?.();
-      squashCascade([{ entityType: 'procedure', entityId: session.procedureId, mode: 'edit' }]);
+      squashCascade(parentStack);
     },
     [stepParamsSession, procedureRef, squashCascade, onMutate]
   );
@@ -418,8 +441,9 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
     if (!stepParamsSession) {
       return;
     }
+    const parentStack = stepParamsSession.parentStack;
     setStepParamsSession(undefined);
-    squashCascade([{ entityType: 'procedure', entityId: stepParamsSession.procedureId, mode: 'edit' }]);
+    squashCascade(parentStack);
   }, [stepParamsSession, squashCascade]);
 
   // --------------------------------------------------------------------------
