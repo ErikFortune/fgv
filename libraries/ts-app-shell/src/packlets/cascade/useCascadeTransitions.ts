@@ -28,7 +28,7 @@
 
 import { useCallback } from 'react';
 
-import type { CascadeEntityType, ICascadeEntry } from './model';
+import type { ICascadeEntryBase } from './model';
 
 /**
  * Returns a depth-aware squash helper used by cascade views.
@@ -38,11 +38,11 @@ import type { CascadeEntityType, ICascadeEntry } from './model';
  * @public
  */
 export function useSquashAt(
-  cascadeStack: ReadonlyArray<ICascadeEntry>,
-  squashCascade: (entries: ReadonlyArray<ICascadeEntry>) => void
-): (depth: number, entry: ICascadeEntry) => void {
+  cascadeStack: ReadonlyArray<ICascadeEntryBase>,
+  squashCascade: (entries: ReadonlyArray<ICascadeEntryBase>) => void
+): (depth: number, entry: ICascadeEntryBase) => void {
   return useCallback(
-    (depth: number, entry: ICascadeEntry): void => {
+    (depth: number, entry: ICascadeEntryBase): void => {
       squashCascade([...cascadeStack.slice(0, depth + 1), entry]);
     },
     [cascadeStack, squashCascade]
@@ -58,17 +58,12 @@ export function useSquashAt(
  * @public
  */
 export function useCascadeDrillDown(
-  cascadeStack: ReadonlyArray<ICascadeEntry>,
-  squashCascade: (entries: ReadonlyArray<ICascadeEntry>) => void,
-  squashAt: (depth: number, entry: ICascadeEntry) => void
-): (depth: number, entityType: CascadeEntityType, entityId: string, extra?: Partial<ICascadeEntry>) => void {
+  cascadeStack: ReadonlyArray<ICascadeEntryBase>,
+  squashCascade: (entries: ReadonlyArray<ICascadeEntryBase>) => void,
+  squashAt: (depth: number, entry: ICascadeEntryBase) => void
+): (depth: number, entityType: string, entityId: string, extra?: Partial<ICascadeEntryBase>) => void {
   return useCallback(
-    (
-      depth: number,
-      entityType: CascadeEntityType,
-      entityId: string,
-      extra?: Partial<ICascadeEntry>
-    ): void => {
+    (depth: number, entityType: string, entityId: string, extra?: Partial<ICascadeEntryBase>): void => {
       const nextEntry = cascadeStack[depth + 1];
       if (nextEntry?.entityType === entityType && nextEntry.entityId === entityId) {
         squashCascade(cascadeStack.slice(0, depth + 1));

@@ -9,8 +9,6 @@ export {
   type ProductionTab,
   type LibraryTab,
   type CascadeEntityType,
-  type CascadeColumnMode,
-  type CascadeEntryOrigin,
   type ICascadeEntry,
   type ICreateSessionInfo,
   type ICollectionVisibility,
@@ -30,7 +28,6 @@ export {
   type IStepParamsCascadeEntry,
   type AnyCascadeEntry,
   // Cascade entry type guards
-  CASCADE_NEW_ENTITY_ID,
   isIngredientCascadeEntry,
   isFillingCascadeEntry,
   isConfectionCascadeEntry,
@@ -70,15 +67,7 @@ export {
 
 export { type ITabNavigation, useTabNavigation } from './useTabNavigation';
 
-export { useSquashAt, useCascadeDrillDown } from './useCascadeTransitions';
-
-export {
-  type ICascadeConflict,
-  type ICascadeFind,
-  type CascadeEntrySpec,
-  type ICascadeOps,
-  useCascadeOps
-} from './useCascadeOps';
+export { useCascadeOps } from './useCascadeOps';
 
 export { type IEntityListOptions, type IEntityListResult, useEntityList } from './useEntityList';
 

@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { EntityList, type ICascadeColumn, EntityTabLayout, useMessages } from '@fgv/ts-app-shell';
+import {
+  CASCADE_NEW_ENTITY_ID,
+  EntityList,
+  type ICascadeColumn,
+  EntityTabLayout,
+  useMessages
+} from '@fgv/ts-app-shell';
 import {
   AiAssist,
   Entities,
@@ -23,7 +29,6 @@ import {
 import {
   type ICascadeEntry,
   type CascadeEntityType,
-  CASCADE_NEW_ENTITY_ID,
   isSessionCascadeEntry,
   isIngredientCascadeEntry,
   isProcedureCascadeEntry,

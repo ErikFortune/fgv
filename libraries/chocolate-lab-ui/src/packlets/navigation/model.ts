@@ -41,6 +41,9 @@ import type {
   UserLibrary
 } from '@fgv/ts-chocolate';
 
+import type { ICascadeEntryBase } from '@fgv/ts-app-shell';
+import { CASCADE_NEW_ENTITY_ID } from '@fgv/ts-app-shell';
+
 // ============================================================================
 // Modes
 // ============================================================================
@@ -156,23 +159,6 @@ export type CascadeEntityType =
   | 'location';
 
 /**
- * Mode for a cascade column (view-only, editing, or creating a new entity).
- * @public
- */
-export type CascadeColumnMode = 'view' | 'edit' | 'create' | 'preview';
-
-/**
- * How a cascade entry was opened — determines save/cancel behavior.
- *
- * - `'primary'` — selected from the entity list. Save/cancel transitions to view mode in-place.
- * - `'nested'` — reached via drill-down, typeahead-create, or sub-entity editing. Save/cancel pops (removes entry).
- *
- * Entries without an explicit origin are treated as `'primary'` for backwards compatibility.
- * @public
- */
-export type CascadeEntryOrigin = 'primary' | 'nested';
-
-/**
  * Pre-fill data for session creation in the cascade.
  * Used when "Start Session" is invoked from a confection or filling detail view.
  * @public
@@ -196,15 +182,14 @@ export interface ICreateSessionInfo {
 
 /**
  * A single entry in the column cascade stack.
+ *
+ * Extends {@link ICascadeEntryBase} from ts-app-shell with chocolate-specific
+ * fields and narrows `entityType` to the chocolate domain union.
  * @public
  */
-export interface ICascadeEntry {
+export interface ICascadeEntry extends ICascadeEntryBase {
   /** The type of entity displayed in this column */
   readonly entityType: CascadeEntityType;
-  /** The ID of the entity (qualified ID, e.g. 'collection.base-id') */
-  readonly entityId: string;
-  /** Whether the column is in view or edit mode */
-  readonly mode: CascadeColumnMode;
   /** Optional target weight in grams (used when drilling into a filling from a scaled confection) */
   readonly targetWeight?: number;
   /** Source confection ID when drilling into a filling slot (for live weight recomputation) */
@@ -215,27 +200,13 @@ export interface ICascadeEntry {
   readonly embeddedParentSessionId?: string;
   /** Slot ID for the embedded filling session drill-down */
   readonly embeddedSlotId?: string;
-  /** Whether this cascade entry has unsaved changes (set by the owning tab component). */
-  readonly hasChanges?: boolean;
   /** Pre-fill data for session creation (set when opening create-session from a recipe) */
   readonly createSessionInfo?: ICreateSessionInfo;
-  /** Pre-fill name for entity creation (set when on-blur typeahead doesn't match) */
-  readonly prefillName?: string;
-  /** Optional pre-resolved materialized entity. Typed variants narrow this to specific entity types. */
-  readonly entity?: unknown;
-  /** How this entry was opened. Determines save/cancel behavior. @see CascadeEntryOrigin */
-  readonly origin?: CascadeEntryOrigin;
 }
 
 // ============================================================================
 // Typed Cascade Entry Variants
 // ============================================================================
-
-/**
- * Sentinel value used as entityId when creating a new entity.
- * @public
- */
-export const CASCADE_NEW_ENTITY_ID: '__new__' = '__new__';
 
 /**
  * Cascade entry for an ingredient.

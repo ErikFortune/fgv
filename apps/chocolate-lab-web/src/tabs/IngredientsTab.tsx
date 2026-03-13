@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { CursorArrowRaysIcon } from '@heroicons/react/20/solid';
 import {
+  CASCADE_NEW_ENTITY_ID,
   ConfirmDialog,
   EntityList,
   type ICascadeColumn,
@@ -13,7 +14,6 @@ import type { ResultMapValueType } from '@fgv/ts-utils';
 import {
   type IReferenceScanResult,
   isIngredientCascadeEntry,
-  CASCADE_NEW_ENTITY_ID,
   useTabNavigation,
   useCascadeOps,
   useEntityList,

@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { CursorArrowRaysIcon } from '@heroicons/react/20/solid';
 import {
+  CASCADE_NEW_ENTITY_ID,
   ConfirmDialog,
   EntityList,
   type ICascadeColumn,
@@ -40,7 +41,6 @@ import {
   isDecorationCascadeEntry,
   isProcedureCascadeEntry,
   isTaskCascadeEntry,
-  CASCADE_NEW_ENTITY_ID,
   useTabNavigation,
   useEntityList,
   useMutableCollection,
