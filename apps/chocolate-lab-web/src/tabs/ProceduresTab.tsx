@@ -44,7 +44,6 @@ export function ProceduresTabContent(): React.ReactElement {
   const {
     workspace,
     reactiveWorkspace,
-    squashCascade,
     popCascadeTo,
     listCollapsed,
     collapseList,
@@ -259,23 +258,22 @@ export function ProceduresTabContent(): React.ReactElement {
 
   const handlePreviewProcedure = useCallback(
     (entityId: string): void => {
-      const withoutAnyPreview = cascade.stack.filter(
-        (e) => !(e.mode === 'preview' && (e.entityType === 'procedure' || e.entityType === 'task'))
-      );
-      squashCascade([
-        ...withoutAnyPreview,
-        {
-          entityType: 'procedure',
-          entityId,
-          mode: 'preview',
-          entity: workspace.data.procedures
-            .get(entityId as ProcedureId)
-            .report(workspace.data.logger)
-            .orDefault()
-        }
-      ]);
+      // drillDown from the last non-preview entry — replaces any existing preview at top
+      const top = cascade.stack[cascade.stack.length - 1];
+      const hasPreviewOnTop =
+        top?.mode === 'preview' && (top.entityType === 'procedure' || top.entityType === 'task');
+      const fromDepth = hasPreviewOnTop ? cascade.stack.length - 2 : cascade.stack.length - 1;
+      cascade.drillDown(fromDepth, {
+        entityType: 'procedure',
+        entityId,
+        mode: 'preview',
+        entity: workspace.data.procedures
+          .get(entityId as ProcedureId)
+          .report(workspace.data.logger)
+          .orDefault()
+      });
     },
-    [cascade.stack, squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleCloseProcedurePreview = useCallback((): void => {

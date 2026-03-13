@@ -8,8 +8,8 @@ import {
 } from '@fgv/ts-app-shell';
 import { type BaseLocationId, type LocationId, Entities } from '@fgv/ts-chocolate';
 import {
-  type ICascadeEntry,
   useTabNavigation,
+  useCascadeOps,
   useEntityList,
   useFilteredEntities,
   LocationDetail,
@@ -32,15 +32,9 @@ type ILocationEntity = Entities.Locations.ILocationEntity;
 // ============================================================================
 
 export function LocationsTabContent(): React.ReactElement {
-  const {
-    workspace,
-    reactiveWorkspace,
-    squashCascade,
-    popCascadeTo,
-    cascadeStack,
-    listCollapsed,
-    collapseList
-  } = useTabNavigation();
+  const { workspace, reactiveWorkspace, popCascadeTo, listCollapsed, collapseList } = useTabNavigation();
+
+  const cascade = useCascadeOps();
 
   const locationActions = useLocationActions();
   const { addMessage } = useMessages();
@@ -61,7 +55,7 @@ export function LocationsTabContent(): React.ReactElement {
       return a.entity.name.localeCompare(b.entity.name);
     },
     entityType: 'location',
-    cascadeStack,
+    cascadeStack: cascade.stack,
     deps: [workspace, reactiveWorkspace.version]
   });
 
@@ -71,10 +65,9 @@ export function LocationsTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: LocationId): void => {
-      const entry: ICascadeEntry = { entityType: 'location', entityId: id, mode: 'view' };
-      squashCascade([entry]);
+      cascade.select({ entityType: 'location', entityId: id });
     },
-    [squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -100,14 +93,14 @@ export function LocationsTabContent(): React.ReactElement {
       const result = await locationActions.deleteLocation(locationToDelete.id);
       if (result.isSuccess()) {
         if (selectedId === locationToDelete.id) {
-          squashCascade([]);
+          cascade.clear();
         }
       } else {
         addMessage('error', `Failed to delete location: ${result.message}`);
       }
     }
     setLocationToDelete(null);
-  }, [locationToDelete, locationActions, selectedId, squashCascade, addMessage]);
+  }, [locationToDelete, locationActions, selectedId, cascade, addMessage]);
 
   const handleCancelDelete = useCallback((): void => {
     setLocationToDelete(null);
@@ -125,13 +118,8 @@ export function LocationsTabContent(): React.ReactElement {
   // ============================================================================
 
   const handleNewLocation = useCallback((): void => {
-    const entry: ICascadeEntry = {
-      entityType: 'location',
-      entityId: '__new__',
-      mode: 'create'
-    };
-    squashCascade([entry]);
-  }, [squashCascade]);
+    cascade.select({ entityType: 'location', entityId: '__new__', mode: 'create' });
+  }, [cascade]);
 
   const handleCreateConfirm = useCallback(
     async (baseId: string, name: string, description?: string): Promise<void> => {
@@ -140,17 +128,17 @@ export function LocationsTabContent(): React.ReactElement {
 
       const result = await locationActions.addLocation(baseId as BaseLocationId, entityWithDescription);
       if (result.isSuccess()) {
-        squashCascade([{ entityType: 'location', entityId: result.value, mode: 'view' }]);
+        cascade.select({ entityType: 'location', entityId: result.value });
       } else {
         addMessage('error', `Failed to create location: ${result.message}`);
       }
     },
-    [locationActions, squashCascade, addMessage]
+    [locationActions, cascade, addMessage]
   );
 
   const handleCancelCreate = useCallback((): void => {
-    squashCascade([]);
-  }, [squashCascade]);
+    cascade.clear();
+  }, [cascade]);
 
   // ============================================================================
   // Edit Handler
@@ -158,37 +146,34 @@ export function LocationsTabContent(): React.ReactElement {
 
   const handleEdit = useCallback(
     (entityId: string): void => {
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'location' ? { ...e, mode: 'edit' as const } : e
-      );
-      squashCascade(updated);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'location')
+        .onSuccess(({ depth }) => cascade.openEditor(depth));
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleCancelEdit = useCallback(
     (entityId: string): void => {
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'location' ? { ...e, mode: 'view' as const } : e
-      );
-      squashCascade(updated);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'location')
+        .onSuccess(({ depth }) => cascade.popToView(depth));
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleSave = useCallback(
     async (locationId: LocationId, entity: ILocationEntity): Promise<void> => {
       const result = await locationActions.updateLocation(locationId, entity);
       if (result.isSuccess()) {
-        const updated = cascadeStack.map((e) =>
-          e.entityId === locationId && e.entityType === 'location' ? { ...e, mode: 'view' as const } : e
-        );
-        squashCascade(updated);
+        cascade
+          .find((e) => e.entityId === locationId && e.entityType === 'location')
+          .onSuccess(({ depth }) => cascade.popToView(depth));
       } else {
         addMessage('error', `Failed to update location: ${result.message}`);
       }
     },
-    [locationActions, cascadeStack, squashCascade, addMessage]
+    [locationActions, cascade, addMessage]
   );
 
   // ============================================================================
@@ -196,7 +181,7 @@ export function LocationsTabContent(): React.ReactElement {
   // ============================================================================
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack.map((entry, _index) => {
+    return cascade.stack.map((entry, _index) => {
       // Location create
       if (entry.entityType === 'location' && entry.mode === 'create') {
         return {
@@ -271,7 +256,7 @@ export function LocationsTabContent(): React.ReactElement {
       };
     });
   }, [
-    cascadeStack,
+    cascade,
     workspace,
     popCascadeTo,
     handleCreateConfirm,
