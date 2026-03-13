@@ -28,7 +28,7 @@ import type {
   ConfectionId,
   DecorationId
 } from '@fgv/ts-chocolate';
-import { fail, Success } from '@fgv/ts-utils';
+import { fail } from '@fgv/ts-utils';
 import type { ResultMapValueType } from '@fgv/ts-utils';
 import {
   type CascadeEntityType,
@@ -70,8 +70,7 @@ import {
   getWritableCollectionOptions,
   type IConfectionViewSettings,
   useClipboardJsonImport,
-  useCascadeDrillDown,
-  useSquashAt,
+  useCascadeOps,
   useNavigationStore,
   ReadOnlyEditGate
 } from '@fgv/chocolate-lab-ui';
@@ -249,12 +248,11 @@ interface IConfectionEditingState {
 }
 
 export function ConfectionsTabContent(): React.ReactElement {
+  const cascade = useCascadeOps();
   const {
     workspace,
     reactiveWorkspace,
-    squashCascade,
     popCascadeTo,
-    cascadeStack,
     listCollapsed,
     collapseList,
     compareMode,
@@ -611,7 +609,7 @@ export function ConfectionsTabContent(): React.ReactElement {
     getAll: () => workspace.data.confections.values(),
     compare: (a, b) => a.name.localeCompare(b.name),
     entityType: 'confection',
-    cascadeStack,
+    cascadeStack: cascade.stack,
     deps: [workspace, reactiveWorkspace.version]
   });
 
@@ -626,17 +624,13 @@ export function ConfectionsTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: ConfectionId): void => {
-      // TODO: I've reworked this to more appropriately use the result pattern, including chaining, reporting and defaults.  Apply this pattern where appropriate across the changed files.
-      squashCascade([
-        {
-          entityType: 'confection',
-          entityId: id,
-          mode: 'view',
-          entity: workspace.data.confections.get(id).report(workspace.data.logger).orDefault()
-        }
-      ]);
+      cascade.select({
+        entityType: 'confection',
+        entityId: id,
+        entity: workspace.data.confections.get(id).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleRequestDelete = useCallback(
@@ -654,12 +648,10 @@ export function ConfectionsTabContent(): React.ReactElement {
       entityActions.deleteEntity(confectionToDelete.id).catch((err) => {
         workspace.data.logger.error(`Failed to delete confection '${confectionToDelete.name}': ${err}`);
       });
-      if (cascadeStack.some((e) => e.entityId === confectionToDelete.id)) {
-        squashCascade([]);
-      }
+      cascade.clearById(confectionToDelete.id);
     }
     setConfectionToDelete(null);
-  }, [confectionToDelete, entityActions, cascadeStack, squashCascade]);
+  }, [confectionToDelete, entityActions, cascade]);
 
   const handleCancelDelete = useCallback((): void => {
     setConfectionToDelete(null);
@@ -697,12 +689,12 @@ export function ConfectionsTabContent(): React.ReactElement {
   );
 
   const handleShowCreateConfection = useCallback((): void => {
-    squashCascade([{ entityType: 'confection', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }]);
-  }, [squashCascade]);
+    cascade.select({ entityType: 'confection', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' });
+  }, [cascade]);
 
   const handleCreateConfectionCancel = useCallback((): void => {
-    squashCascade([]);
-  }, [squashCascade]);
+    cascade.clear();
+  }, [cascade]);
 
   // Handle creating a confection from a pasted entity (add to mutable collection, open in edit mode)
   const handleCreateConfection = useCallback(
@@ -731,16 +723,14 @@ export function ConfectionsTabContent(): React.ReactElement {
 
       // Open in edit mode
       editVariationSpecRef.current = entity.goldenVariationSpec;
-      squashCascade([
-        {
-          entityType: 'confection',
-          entityId: compositeId,
-          mode: 'edit' as const,
-          entity: workspace.data.confections.get(compositeId).report(workspace.data.logger).orDefault()
-        }
-      ]);
+      cascade.select({
+        entityType: 'confection',
+        entityId: compositeId,
+        mode: 'edit' as const,
+        entity: workspace.data.confections.get(compositeId).report(workspace.data.logger).orDefault()
+      });
     },
-    [workspace, mutableCollectionId, confectionMutation, squashCascade]
+    [workspace, mutableCollectionId, confectionMutation, cascade]
   );
 
   const handleCreateConfectionFromSource = useCallback(
@@ -790,8 +780,6 @@ export function ConfectionsTabContent(): React.ReactElement {
       `Opened '${entity.name}' for review — save when ready`
   });
 
-  const squashAt = useSquashAt(cascadeStack, squashCascade);
-
   // ============================================================================
   // Editing State Management
   // ============================================================================
@@ -836,35 +824,30 @@ export function ConfectionsTabContent(): React.ReactElement {
 
   const handleEditConfection = useCallback(
     (entityId: string, variationSpec?: ConfectionRecipeVariationSpec): void => {
-      const idx = cascadeStack.findIndex((e) => e.entityId === entityId && e.entityType === 'confection');
-      if (idx < 0) return;
       editVariationSpecRef.current = variationSpec;
-      squashCascade([...cascadeStack.slice(0, idx), { ...cascadeStack[idx], mode: 'edit' as const }]);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'confection')
+        .onSuccess(({ depth }) => cascade.openEditor(depth));
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handlePreviewConfection = useCallback(
     (entityId: string): void => {
-      const idx = cascadeStack.findIndex((e) => e.entityId === entityId && e.entityType === 'confection');
-      if (idx < 0) return;
-      squashCascade([
-        ...cascadeStack.slice(0, idx + 1),
-        { entityType: 'confection', entityId, mode: 'preview' }
-      ]);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'confection')
+        .onSuccess(({ depth }) =>
+          cascade.openNested(depth, { entityType: 'confection', entityId, mode: 'preview' })
+        );
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleCloseConfectionPreview = useCallback(
-    (entityId: string): void => {
-      squashCascade(
-        cascadeStack.filter(
-          (e) => !(e.entityType === 'confection' && e.entityId === entityId && e.mode === 'preview')
-        )
-      );
+    (_entityId: string): void => {
+      cascade.pop();
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleCancelConfectionEdit = useCallback(
@@ -877,14 +860,11 @@ export function ConfectionsTabContent(): React.ReactElement {
       subProcedureRef.current = undefined;
       subMoldRef.current = undefined;
       subDecorationRef.current = undefined;
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'confection'
-          ? { ...e, mode: 'view' as const, hasChanges: false }
-          : e
-      );
-      squashCascade(updated);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'confection')
+        .onSuccess(({ depth }) => cascade.popToView(depth));
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -894,14 +874,14 @@ export function ConfectionsTabContent(): React.ReactElement {
   const makeSubEntityCascadeHandler = useCallback(
     (entityType: CascadeEntityType) =>
       (seed: string): void => {
-        const editIdx = cascadeStack.findIndex((e) => e.entityType === 'confection' && e.mode === 'edit');
-        if (editIdx < 0) return;
-        setSubEntitySeed(seed);
-        const last = cascadeStack[cascadeStack.length - 1];
-        const base = last && last.mode !== 'edit' ? cascadeStack.slice(0, -1) : cascadeStack;
-        squashCascade([...base, { entityType, entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }]);
+        cascade
+          .find((e) => e.entityType === 'confection' && e.mode === 'edit')
+          .onSuccess(({ depth }) => {
+            setSubEntitySeed(seed);
+            return cascade.openNested(depth, { entityType, entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' });
+          });
       },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleCreateIngredientFromConfection = useMemo(
@@ -927,8 +907,8 @@ export function ConfectionsTabContent(): React.ReactElement {
 
   const handleSubEntityCancel = useCallback((): void => {
     setSubEntitySeed('');
-    squashCascade(cascadeStack.slice(0, -1));
-  }, [cascadeStack, squashCascade]);
+    cascade.pop();
+  }, [cascade]);
 
   const handleSubIngredientCreate = useCallback(
     async (
@@ -960,25 +940,23 @@ export function ConfectionsTabContent(): React.ReactElement {
       const compositeId = createResult.value;
 
       setSubEntitySeed('');
-      // TODO: reworked to use result pattern appropriately.  apply elsewhere.
       LibraryRuntime.EditedIngredient.create(entity)
         .report(workspace.data.logger)
         .onSuccess((wrapper) => {
           subIngredientRef.current = { id: compositeId, wrapper };
-          // TODO: consider smarter helpers e.g. squashEditor(cascadeStack, 'ingredient', compositeId, entity) as squash has semantics (editors always replace non-editors but stack with each other)
-          squashCascade([
-            ...cascadeStack.slice(0, -1),
-            {
-              entityType: 'ingredient',
-              entityId: compositeId,
-              mode: 'edit',
-              entity: workspace.data.ingredients.get(compositeId).report(workspace.data.logger).orDefault()
-            }
-          ]);
-          return Success.with(wrapper);
+          return cascade
+            .find((e) => e.entityType === 'confection' && e.mode === 'edit')
+            .onSuccess(({ depth }) =>
+              cascade.openNested(depth, {
+                entityType: 'ingredient',
+                entityId: compositeId,
+                mode: 'edit',
+                entity: workspace.data.ingredients.get(compositeId).report(workspace.data.logger).orDefault()
+              })
+            );
         });
     },
-    [workspace, cascadeStack, squashCascade, ingredientMutation, ingredientMutableCollectionId]
+    [workspace, cascade, ingredientMutation, ingredientMutableCollectionId]
   );
 
   const handleSubIngredientSave = useCallback(
@@ -999,15 +977,15 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
 
       subIngredientRef.current = undefined;
-      squashCascade(cascadeStack.slice(0, -1));
+      cascade.pop();
     },
-    [cascadeStack, squashCascade, ingredientMutation]
+    [cascade, ingredientMutation]
   );
 
   const handleSubIngredientCancel = useCallback((): void => {
     subIngredientRef.current = undefined;
-    squashCascade(cascadeStack.slice(0, -1));
-  }, [cascadeStack, squashCascade]);
+    cascade.pop();
+  }, [cascade]);
 
   const handleSubFillingCreate = useCallback(
     async (
@@ -1043,19 +1021,19 @@ export function ConfectionsTabContent(): React.ReactElement {
         .report(workspace.data.logger)
         .onSuccess((wrapper) => {
           subFillingRef.current = { id: compositeId, wrapper };
-          squashCascade([
-            ...cascadeStack.slice(0, -1),
-            {
-              entityType: 'filling',
-              entityId: compositeId,
-              mode: 'edit',
-              entity: workspace.data.fillings.get(compositeId).report(workspace.data.logger).orDefault()
-            }
-          ]);
-          return Success.with(wrapper);
+          return cascade
+            .find((e) => e.entityType === 'confection' && e.mode === 'edit')
+            .onSuccess(({ depth }) =>
+              cascade.openNested(depth, {
+                entityType: 'filling',
+                entityId: compositeId,
+                mode: 'edit',
+                entity: workspace.data.fillings.get(compositeId).report(workspace.data.logger).orDefault()
+              })
+            );
         });
     },
-    [workspace, cascadeStack, squashCascade, fillingMutation, fillingMutableCollectionId]
+    [workspace, cascade, fillingMutation, fillingMutableCollectionId]
   );
 
   const handleSubFillingSave = useCallback(
@@ -1077,15 +1055,15 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
 
       subFillingRef.current = undefined;
-      squashCascade(cascadeStack.slice(0, -1));
+      cascade.pop();
     },
-    [cascadeStack, squashCascade, fillingMutation]
+    [cascade, fillingMutation]
   );
 
   const handleSubFillingCancel = useCallback((): void => {
     subFillingRef.current = undefined;
-    squashCascade(cascadeStack.slice(0, -1));
-  }, [cascadeStack, squashCascade]);
+    cascade.pop();
+  }, [cascade]);
 
   const handleSubProcedureCreate = useCallback(
     async (
@@ -1121,19 +1099,19 @@ export function ConfectionsTabContent(): React.ReactElement {
         .report(workspace.data.logger)
         .onSuccess((wrapper) => {
           subProcedureRef.current = { id: compositeId, wrapper };
-          squashCascade([
-            ...cascadeStack.slice(0, -1),
-            {
-              entityType: 'procedure',
-              entityId: compositeId,
-              mode: 'edit',
-              entity: workspace.data.procedures.get(compositeId).report(workspace.data.logger).orDefault()
-            }
-          ]);
-          return Success.with(wrapper);
+          return cascade
+            .find((e) => e.entityType === 'confection' && e.mode === 'edit')
+            .onSuccess(({ depth }) =>
+              cascade.openNested(depth, {
+                entityType: 'procedure',
+                entityId: compositeId,
+                mode: 'edit',
+                entity: workspace.data.procedures.get(compositeId).report(workspace.data.logger).orDefault()
+              })
+            );
         });
     },
-    [workspace, cascadeStack, squashCascade, procedureMutation, procedureMutableCollectionId]
+    [workspace, cascade, procedureMutation, procedureMutableCollectionId]
   );
 
   const handleSubProcedureSave = useCallback(
@@ -1154,15 +1132,15 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
 
       subProcedureRef.current = undefined;
-      squashCascade(cascadeStack.slice(0, -1));
+      cascade.pop();
     },
-    [cascadeStack, squashCascade, procedureMutation]
+    [cascade, procedureMutation]
   );
 
   const handleSubProcedureCancel = useCallback((): void => {
     subProcedureRef.current = undefined;
-    squashCascade(cascadeStack.slice(0, -1));
-  }, [cascadeStack, squashCascade]);
+    cascade.pop();
+  }, [cascade]);
 
   const handleSubMoldCreate = useCallback(
     async (
@@ -1197,19 +1175,19 @@ export function ConfectionsTabContent(): React.ReactElement {
         .report(workspace.data.logger)
         .onSuccess((wrapper) => {
           subMoldRef.current = { id: compositeId, wrapper };
-          squashCascade([
-            ...cascadeStack.slice(0, -1),
-            {
-              entityType: 'mold',
-              entityId: compositeId,
-              mode: 'edit',
-              entity: workspace.data.molds.get(compositeId).report(workspace.data.logger).orDefault()
-            }
-          ]);
-          return Success.with(wrapper);
+          return cascade
+            .find((e) => e.entityType === 'confection' && e.mode === 'edit')
+            .onSuccess(({ depth }) =>
+              cascade.openNested(depth, {
+                entityType: 'mold',
+                entityId: compositeId,
+                mode: 'edit',
+                entity: workspace.data.molds.get(compositeId).report(workspace.data.logger).orDefault()
+              })
+            );
         });
     },
-    [workspace, cascadeStack, squashCascade, moldMutation, moldMutableCollectionId]
+    [workspace, cascade, moldMutation, moldMutableCollectionId]
   );
 
   const handleSubMoldSave = useCallback(
@@ -1245,15 +1223,15 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
 
       subMoldRef.current = undefined;
-      squashCascade(cascadeStack.slice(0, -1));
+      cascade.pop();
     },
-    [cascadeStack, squashCascade, moldMutation]
+    [cascade, moldMutation]
   );
 
   const handleSubMoldCancel = useCallback((): void => {
     subMoldRef.current = undefined;
-    squashCascade(cascadeStack.slice(0, -1));
-  }, [cascadeStack, squashCascade]);
+    cascade.pop();
+  }, [cascade]);
 
   const handleSubDecorationCreate = useCallback(
     async (
@@ -1289,19 +1267,19 @@ export function ConfectionsTabContent(): React.ReactElement {
         .report(workspace.data.logger)
         .onSuccess((wrapper) => {
           subDecorationRef.current = { id: compositeId, wrapper };
-          squashCascade([
-            ...cascadeStack.slice(0, -1),
-            {
-              entityType: 'decoration',
-              entityId: compositeId,
-              mode: 'edit',
-              entity: workspace.data.decorations.get(compositeId).report(workspace.data.logger).orDefault()
-            }
-          ]);
-          return Success.with(wrapper);
+          return cascade
+            .find((e) => e.entityType === 'confection' && e.mode === 'edit')
+            .onSuccess(({ depth }) =>
+              cascade.openNested(depth, {
+                entityType: 'decoration',
+                entityId: compositeId,
+                mode: 'edit',
+                entity: workspace.data.decorations.get(compositeId).report(workspace.data.logger).orDefault()
+              })
+            );
         });
     },
-    [workspace, cascadeStack, squashCascade, decorationMutation, decorationMutableCollectionId]
+    [workspace, cascade, decorationMutation, decorationMutableCollectionId]
   );
 
   const handleSubDecorationSave = useCallback(
@@ -1339,15 +1317,15 @@ export function ConfectionsTabContent(): React.ReactElement {
       }
 
       subDecorationRef.current = undefined;
-      squashCascade(cascadeStack.slice(0, -1));
+      cascade.pop();
     },
-    [cascadeStack, squashCascade, decorationMutation]
+    [cascade, decorationMutation]
   );
 
   const handleSubDecorationCancel = useCallback((): void => {
     subDecorationRef.current = undefined;
-    squashCascade(cascadeStack.slice(0, -1));
-  }, [cascadeStack, squashCascade]);
+    cascade.pop();
+  }, [cascade]);
 
   const handleSaveConfection = useCallback(
     async (entityId: string, mode: ConfectionSaveMode): Promise<void> => {
@@ -1401,14 +1379,11 @@ export function ConfectionsTabContent(): React.ReactElement {
         editingRef.current = undefined;
         setShowSaveAsForm(false);
         setSaveAsName('');
-        squashCascade([
-          {
-            entityType: 'confection',
-            entityId: newCompositeId,
-            mode: 'view' as const,
-            entity: workspace.data.confections.get(newCompositeId).report(workspace.data.logger).orDefault()
-          }
-        ]);
+        cascade.select({
+          entityType: 'confection',
+          entityId: newCompositeId,
+          entity: workspace.data.confections.get(newCompositeId).report(workspace.data.logger).orDefault()
+        });
         return;
       }
 
@@ -1467,22 +1442,19 @@ export function ConfectionsTabContent(): React.ReactElement {
         .get(entityId as ConfectionId)
         .report(workspace.data.logger)
         .orDefault();
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'confection'
-          ? { ...e, mode: 'view' as const, hasChanges: false, entity: refreshedEntity }
-          : e
-      );
-      squashCascade(updated);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'confection')
+        .onSuccess(({ depth }) => cascade.popToView(depth, refreshedEntity));
     },
-    [workspace, cascadeStack, squashCascade, mutableCollectionId, saveAsName, confectionMutation]
+    [workspace, cascade, mutableCollectionId, saveAsName, confectionMutation]
   );
 
-  const drillDown = useCascadeDrillDown(cascadeStack, squashCascade, squashAt);
-
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack.map((entry, index) => {
+    return cascade.stack.map((entry, index) => {
       const onIngredientClick = (id: IngredientId): void => {
-        drillDown(index, 'ingredient', id, {
+        cascade.drillDown(index, {
+          entityType: 'ingredient',
+          entityId: id,
           entity: workspace.data.ingredients.get(id).report(workspace.data.logger).orDefault()
         });
       };
@@ -1492,7 +1464,9 @@ export function ConfectionsTabContent(): React.ReactElement {
         sourceConfectionId?: string,
         sourceSlotId?: string
       ): void => {
-        drillDown(index, 'filling', id, {
+        cascade.drillDown(index, {
+          entityType: 'filling',
+          entityId: id,
           targetWeight,
           sourceConfectionId,
           sourceSlotId,
@@ -1500,22 +1474,30 @@ export function ConfectionsTabContent(): React.ReactElement {
         });
       };
       const onMoldClick = (id: MoldId): void => {
-        drillDown(index, 'mold', id, {
+        cascade.drillDown(index, {
+          entityType: 'mold',
+          entityId: id,
           entity: workspace.data.molds.get(id).report(workspace.data.logger).orDefault()
         });
       };
       const onProcedureClick = (id: ProcedureId): void => {
-        drillDown(index, 'procedure', id, {
+        cascade.drillDown(index, {
+          entityType: 'procedure',
+          entityId: id,
           entity: workspace.data.procedures.get(id).report(workspace.data.logger).orDefault()
         });
       };
       const onDecorationClick = (id: DecorationId): void => {
-        drillDown(index, 'decoration', id, {
+        cascade.drillDown(index, {
+          entityType: 'decoration',
+          entityId: id,
           entity: workspace.data.decorations.get(id).report(workspace.data.logger).orDefault()
         });
       };
       const onTaskClick = (id: TaskId): void => {
-        drillDown(index, 'task', id, {
+        cascade.drillDown(index, {
+          entityType: 'task',
+          entityId: id,
           entity: workspace.data.tasks.get(id).report(workspace.data.logger).orDefault()
         });
       };
@@ -2069,7 +2051,7 @@ export function ConfectionsTabContent(): React.ReactElement {
     writableConfectionCollections,
     mutableCollectionId,
     handleCreateConfection,
-    squashCascade,
+    cascade,
     availableIngredients,
     availableFillings,
     availableProcedures,

@@ -48,7 +48,8 @@ import {
   CommitSessionDialog,
   EntityCreateForm,
   type ISessionRecipeSelection,
-  type IRecipeSwapRequest
+  type IRecipeSwapRequest,
+  useCascadeOps
 } from '@fgv/chocolate-lab-ui';
 
 import {
@@ -159,15 +160,9 @@ async function saveRecipeFromSession(
 // ============================================================================
 
 export function SessionsTabContent(): React.ReactElement {
-  const {
-    workspace,
-    reactiveWorkspace,
-    squashCascade,
-    popCascadeTo,
-    cascadeStack,
-    listCollapsed,
-    collapseList
-  } = useTabNavigation();
+  const { workspace, reactiveWorkspace, popCascadeTo, listCollapsed, collapseList } = useTabNavigation();
+
+  const cascade = useCascadeOps();
 
   const sessionActions = useSessionActions();
   const { addMessage } = useMessages();
@@ -278,7 +273,7 @@ export function SessionsTabContent(): React.ReactElement {
       return (a.session.label ?? a.session.baseId).localeCompare(b.session.label ?? b.session.baseId);
     },
     entityType: 'session',
-    cascadeStack,
+    cascadeStack: cascade.stack,
     deps: [workspace, reactiveWorkspace.version]
   });
 
@@ -288,16 +283,13 @@ export function SessionsTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: SessionId): void => {
-      squashCascade([
-        {
-          entityType: 'session',
-          entityId: id,
-          mode: 'view',
-          entity: workspace.userData.sessions.get(id).report(workspace.data.logger).orDefault()
-        }
-      ]);
+      cascade.select({
+        entityType: 'session',
+        entityId: id,
+        entity: workspace.userData.sessions.get(id).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleDelete = useCallback(
@@ -306,11 +298,11 @@ export function SessionsTabContent(): React.ReactElement {
       if (result.isSuccess()) {
         // If the deleted session is currently selected, clear the cascade
         if (selectedId === id) {
-          squashCascade([]);
+          cascade.clear();
         }
       }
     },
-    [sessionActions, selectedId, squashCascade]
+    [sessionActions, selectedId, cascade]
   );
 
   const canDelete = useCallback(
@@ -327,8 +319,8 @@ export function SessionsTabContent(): React.ReactElement {
   // ============================================================================
 
   const handleNewSession = useCallback((): void => {
-    squashCascade([{ entityType: 'session', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }]);
-  }, [squashCascade]);
+    cascade.select({ entityType: 'session', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' });
+  }, [cascade]);
 
   const availableConfections = useMemo(
     () => Array.from(workspace.data.confections.values()).sort((a, b) => a.name.localeCompare(b.name)),
@@ -360,14 +352,11 @@ export function SessionsTabContent(): React.ReactElement {
           params: initialYield ? { initialYield } : undefined
         });
         if (result.isSuccess()) {
-          squashCascade([
-            {
-              entityType: 'session',
-              entityId: result.value,
-              mode: 'view',
-              entity: workspace.userData.sessions.get(result.value).report(workspace.data.logger).orDefault()
-            }
-          ]);
+          cascade.select({
+            entityType: 'session',
+            entityId: result.value,
+            entity: workspace.userData.sessions.get(result.value).report(workspace.data.logger).orDefault()
+          });
         } else {
           addMessage('error', `Failed to create session: ${result.message}`);
         }
@@ -382,179 +371,132 @@ export function SessionsTabContent(): React.ReactElement {
           slug
         });
         if (result.isSuccess()) {
-          squashCascade([
-            {
-              entityType: 'session',
-              entityId: result.value,
-              mode: 'view',
-              entity: workspace.userData.sessions.get(result.value).report(workspace.data.logger).orDefault()
-            }
-          ]);
+          cascade.select({
+            entityType: 'session',
+            entityId: result.value,
+            entity: workspace.userData.sessions.get(result.value).report(workspace.data.logger).orDefault()
+          });
         } else {
           addMessage('error', `Failed to create session: ${result.message}`);
         }
       }
     },
-    [sessionActions, addMessage, workspace, squashCascade]
+    [sessionActions, addMessage, workspace, cascade]
   );
 
   const handleOpenFillingRecipeFromSession = useCallback(
-    (sessionEntry: ICascadeEntry, fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): void => {
-      squashCascade([
-        sessionEntry,
-        {
-          entityType: 'filling',
-          entityId: fillingId,
-          mode: 'view',
-          prefillName: variationSpec,
-          entity: workspace.data.fillings.get(fillingId).report(workspace.data.logger).orDefault()
-        }
-      ]);
+    (_sessionEntry: ICascadeEntry, fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): void => {
+      cascade.drillDown(0, {
+        entityType: 'filling',
+        entityId: fillingId,
+        prefillName: variationSpec,
+        entity: workspace.data.fillings.get(fillingId).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleBrowseIngredientFromSession = useCallback(
-    (sessionEntry: ICascadeEntry, ingredientId: IngredientId): void => {
-      squashCascade([
-        sessionEntry,
-        {
-          entityType: 'ingredient',
-          entityId: ingredientId,
-          mode: 'view',
-          entity: workspace.data.ingredients.get(ingredientId).report(workspace.data.logger).orDefault()
-        }
-      ]);
+    (_sessionEntry: ICascadeEntry, ingredientId: IngredientId): void => {
+      cascade.drillDown(0, {
+        entityType: 'ingredient',
+        entityId: ingredientId,
+        entity: workspace.data.ingredients.get(ingredientId).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleBrowseProcedureFromSession = useCallback(
-    (sessionEntry: ICascadeEntry, procedureId: ProcedureId): void => {
-      squashCascade([
-        sessionEntry,
-        {
-          entityType: 'procedure',
-          entityId: procedureId,
-          mode: 'view',
-          entity: workspace.data.procedures.get(procedureId).report(workspace.data.logger).orDefault()
-        }
-      ]);
+    (_sessionEntry: ICascadeEntry, procedureId: ProcedureId): void => {
+      cascade.drillDown(0, {
+        entityType: 'procedure',
+        entityId: procedureId,
+        entity: workspace.data.procedures.get(procedureId).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleBrowseMoldFromSession = useCallback(
-    (sessionEntry: ICascadeEntry, moldId: MoldId): void => {
-      squashCascade([
-        sessionEntry,
-        {
-          entityType: 'mold',
-          entityId: moldId,
-          mode: 'view',
-          entity: workspace.data.molds.get(moldId).report(workspace.data.logger).orDefault()
-        }
-      ]);
+    (_sessionEntry: ICascadeEntry, moldId: MoldId): void => {
+      cascade.drillDown(0, {
+        entityType: 'mold',
+        entityId: moldId,
+        entity: workspace.data.molds.get(moldId).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleBrowseDecorationFromSession = useCallback(
-    (sessionEntry: ICascadeEntry, decorationId: DecorationId): void => {
-      squashCascade([
-        sessionEntry,
-        {
-          entityType: 'decoration',
-          entityId: decorationId,
-          mode: 'view',
-          entity: workspace.data.decorations.get(decorationId).report(workspace.data.logger).orDefault()
-        }
-      ]);
+    (_sessionEntry: ICascadeEntry, decorationId: DecorationId): void => {
+      cascade.drillDown(0, {
+        entityType: 'decoration',
+        entityId: decorationId,
+        entity: workspace.data.decorations.get(decorationId).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleSelectFillingSlot = useCallback(
     (sessionEntry: ICascadeEntry, slotId: SlotId, label: string): void => {
-      squashCascade([
-        sessionEntry,
-        {
-          entityType: 'session',
-          entityId: `${sessionEntry.entityId}::${String(slotId)}`,
-          mode: 'view',
-          sourceConfectionId: sessionEntry.entityId,
-          sourceSlotId: String(slotId),
-          prefillName: label
-        }
-      ]);
+      cascade.drillDown(0, {
+        entityType: 'session',
+        entityId: `${sessionEntry.entityId}::${String(slotId)}`,
+        sourceConfectionId: sessionEntry.entityId,
+        sourceSlotId: String(slotId),
+        prefillName: label
+      });
     },
-    [squashCascade]
+    [cascade]
   );
 
   const handleBrowseIngredientFromEmbeddedSession = useCallback(
-    (embeddedEntry: ICascadeEntry, ingredientId: IngredientId): void => {
-      if (!embeddedEntry.sourceConfectionId) {
-        return;
-      }
-      const parentEntry: ICascadeEntry = {
-        entityType: 'session',
-        entityId: embeddedEntry.sourceConfectionId,
-        mode: 'view'
-      };
-      squashCascade([
-        parentEntry,
-        embeddedEntry,
-        {
-          entityType: 'ingredient',
-          entityId: ingredientId,
-          mode: 'view',
-          entity: workspace.data.ingredients.get(ingredientId).report(workspace.data.logger).orDefault()
-        }
-      ]);
+    (_embeddedEntry: ICascadeEntry, ingredientId: IngredientId): void => {
+      cascade.drillDown(1, {
+        entityType: 'ingredient',
+        entityId: ingredientId,
+        entity: workspace.data.ingredients.get(ingredientId).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleBrowseProcedureFromEmbeddedSession = useCallback(
-    (embeddedEntry: ICascadeEntry, procedureId: ProcedureId): void => {
-      if (!embeddedEntry.sourceConfectionId) {
-        return;
-      }
-      const parentEntry: ICascadeEntry = {
-        entityType: 'session',
-        entityId: embeddedEntry.sourceConfectionId,
-        mode: 'view'
-      };
-      squashCascade([
-        parentEntry,
-        embeddedEntry,
-        {
-          entityType: 'procedure',
-          entityId: procedureId,
-          mode: 'view',
-          entity: workspace.data.procedures.get(procedureId).report(workspace.data.logger).orDefault()
-        }
-      ]);
+    (_embeddedEntry: ICascadeEntry, procedureId: ProcedureId): void => {
+      cascade.drillDown(1, {
+        entityType: 'procedure',
+        entityId: procedureId,
+        entity: workspace.data.procedures.get(procedureId).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleCancelCreate = useCallback((): void => {
-    squashCascade([]);
-  }, [squashCascade]);
+    cascade.clear();
+  }, [cascade]);
 
   // ============================================================================
   // Create Entity from Session (on-blur cascade)
   // ============================================================================
 
   const handleRequestCreateEntity = useCallback(
-    (sessionEntry: ICascadeEntry, entityType: CascadeEntityType, prefillName: string): void => {
-      squashCascade([
-        sessionEntry,
-        { entityType, entityId: CASCADE_NEW_ENTITY_ID, mode: 'create', prefillName }
-      ]);
+    (_sessionEntry: ICascadeEntry, entityType: CascadeEntityType, prefillName: string): void => {
+      cascade
+        .find((e) => e.entityType === 'session')
+        .onSuccess(({ depth }) =>
+          cascade.openNested(depth, {
+            entityType,
+            entityId: CASCADE_NEW_ENTITY_ID,
+            mode: 'create',
+            prefillName
+          })
+        );
     },
-    [squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -586,12 +528,9 @@ export function SessionsTabContent(): React.ReactElement {
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
       // Pop the create column, leaving the session column
-      const sessionEntry = cascadeStack.find((e) => e.entityType === 'session' && e.mode === 'view');
-      if (sessionEntry) {
-        squashCascade([sessionEntry]);
-      }
+      cascade.pop();
     },
-    [mutableIngredientCollectionId, workspace, reactiveWorkspace, cascadeStack, squashCascade]
+    [mutableIngredientCollectionId, workspace, reactiveWorkspace, cascade]
   );
 
   const handleProcedureCreated = useCallback((): void => {
@@ -607,26 +546,13 @@ export function SessionsTabContent(): React.ReactElement {
     reactiveWorkspace.notifyChange();
     setNewProcedureName('');
     // Pop the create column, leaving the session column
-    const sessionEntry = cascadeStack.find((e) => e.entityType === 'session' && e.mode === 'view');
-    if (sessionEntry) {
-      squashCascade([sessionEntry]);
-    }
-  }, [
-    newProcedureName,
-    mutableProcedureCollectionId,
-    workspace,
-    reactiveWorkspace,
-    cascadeStack,
-    squashCascade
-  ]);
+    cascade.pop();
+  }, [newProcedureName, mutableProcedureCollectionId, workspace, reactiveWorkspace, cascade]);
 
   const handleCancelCreateEntity = useCallback((): void => {
     setNewProcedureName('');
-    const sessionEntry = cascadeStack.find((e) => e.entityType === 'session' && e.mode === 'view');
-    if (sessionEntry) {
-      squashCascade([sessionEntry]);
-    }
-  }, [cascadeStack, squashCascade]);
+    cascade.pop();
+  }, [cascade]);
 
   // ============================================================================
   // Recipe Swap Handler
@@ -645,17 +571,14 @@ export function SessionsTabContent(): React.ReactElement {
         collectionId: sessionActions.defaultCollectionId
       });
       if (result.isSuccess()) {
-        squashCascade([
-          {
-            entityType: 'session',
-            entityId: result.value,
-            mode: 'view',
-            entity: workspace.userData.sessions.get(result.value).report(workspace.data.logger).orDefault()
-          }
-        ]);
+        cascade.select({
+          entityType: 'session',
+          entityId: result.value,
+          entity: workspace.userData.sessions.get(result.value).report(workspace.data.logger).orDefault()
+        });
       }
     },
-    [sessionActions, workspace, squashCascade]
+    [sessionActions, workspace, cascade]
   );
 
   // ============================================================================
@@ -663,7 +586,7 @@ export function SessionsTabContent(): React.ReactElement {
   // ============================================================================
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack.map((entry, _index) => {
+    return cascade.stack.map((entry, _index) => {
       // Ingredient create (from on-blur cascade)
       if (entry.entityType === 'ingredient' && entry.mode === 'create') {
         return {
@@ -947,7 +870,7 @@ export function SessionsTabContent(): React.ReactElement {
       };
     });
   }, [
-    cascadeStack,
+    cascade,
     workspace,
     popCascadeTo,
     availableConfections,
