@@ -209,7 +209,9 @@ export function TasksTabContent(): React.ReactElement {
 
   const handleConfirmDelete = useCallback((): void => {
     if (taskToDelete) {
-      entityActions.deleteEntity(taskToDelete.id);
+      entityActions.deleteEntity(taskToDelete.id).catch((err) => {
+        workspace.data.logger.error(`Failed to delete task '${taskToDelete.name}': ${err}`);
+      });
       cascade.clearById(taskToDelete.id);
     }
     setTaskToDelete(null);

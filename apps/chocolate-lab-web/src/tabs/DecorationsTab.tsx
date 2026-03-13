@@ -255,8 +255,6 @@ export function DecorationsTabContent(): React.ReactElement {
   const procedureSession = useProcedureEditSession({
     procedureRef: subProcedureRef,
     availableTasks,
-    cascadeStack,
-    squashCascade,
     slugify,
     onMutate: undefined
   });
@@ -287,7 +285,9 @@ export function DecorationsTabContent(): React.ReactElement {
 
   const handleConfirmDelete = useCallback((): void => {
     if (decorationToDelete) {
-      entityActions.deleteEntity(decorationToDelete.id);
+      entityActions.deleteEntity(decorationToDelete.id).catch((err) => {
+        workspace.data.logger.error(`Failed to delete decoration '${decorationToDelete.name}': ${err}`);
+      });
       if (cascadeStack.some((e) => e.entityId === decorationToDelete.id)) {
         squashCascade([]);
       }

@@ -247,7 +247,9 @@ export function IngredientsTabContent(): React.ReactElement {
 
   const handleConfirmDelete = useCallback((): void => {
     if (ingredientToDelete) {
-      entityActions.deleteEntity(ingredientToDelete.id);
+      entityActions.deleteEntity(ingredientToDelete.id).catch((err) => {
+        workspace.data.logger.error(`Failed to delete ingredient '${ingredientToDelete.name}': ${err}`);
+      });
       // If the deleted entity is currently selected, clear the cascade
       if (cascadeStack.some((e) => e.entityId === ingredientToDelete.id)) {
         squashCascade([]);

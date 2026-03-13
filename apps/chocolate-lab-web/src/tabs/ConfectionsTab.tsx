@@ -651,7 +651,9 @@ export function ConfectionsTabContent(): React.ReactElement {
 
   const handleConfirmDelete = useCallback((): void => {
     if (confectionToDelete) {
-      entityActions.deleteEntity(confectionToDelete.id);
+      entityActions.deleteEntity(confectionToDelete.id).catch((err) => {
+        workspace.data.logger.error(`Failed to delete confection '${confectionToDelete.name}': ${err}`);
+      });
       if (cascadeStack.some((e) => e.entityId === confectionToDelete.id)) {
         squashCascade([]);
       }

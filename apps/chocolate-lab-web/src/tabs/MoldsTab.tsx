@@ -237,7 +237,9 @@ export function MoldsTabContent(): React.ReactElement {
 
   const handleConfirmDelete = useCallback((): void => {
     if (moldToDelete) {
-      entityActions.deleteEntity(moldToDelete.id);
+      entityActions.deleteEntity(moldToDelete.id).catch((err) => {
+        workspace.data.logger.error(`Failed to delete mold '${moldToDelete.name}': ${err}`);
+      });
       if (cascadeStack.some((e) => e.entityId === moldToDelete.id)) {
         squashCascade([]);
       }

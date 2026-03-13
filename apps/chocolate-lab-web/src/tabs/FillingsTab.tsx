@@ -275,8 +275,6 @@ export function FillingsTabContent(): React.ReactElement {
   const procedureSession = useProcedureEditSession({
     procedureRef: subProcedureRef,
     availableTasks,
-    cascadeStack,
-    squashCascade,
     slugify,
     onMutate: undefined
   });
@@ -307,7 +305,9 @@ export function FillingsTabContent(): React.ReactElement {
 
   const handleConfirmDelete = useCallback((): void => {
     if (fillingToDelete) {
-      entityActions.deleteEntity(fillingToDelete.id);
+      entityActions.deleteEntity(fillingToDelete.id).catch((err) => {
+        workspace.data.logger.error(`Failed to delete filling '${fillingToDelete.name}': ${err}`);
+      });
       if (cascadeStack.some((e) => e.entityId === fillingToDelete.id)) {
         squashCascade([]);
       }
