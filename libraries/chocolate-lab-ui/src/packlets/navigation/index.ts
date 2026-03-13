@@ -10,6 +10,7 @@ export {
   type LibraryTab,
   type CascadeEntityType,
   type CascadeColumnMode,
+  type CascadeEntryOrigin,
   type ICascadeEntry,
   type ICreateSessionInfo,
   type ICollectionVisibility,
@@ -70,6 +71,13 @@ export {
 export { type ITabNavigation, useTabNavigation } from './useTabNavigation';
 
 export { useSquashAt, useCascadeDrillDown } from './useCascadeTransitions';
+
+export {
+  type ICascadeConflict,
+  type CascadeEntrySpec,
+  type ICascadeOps,
+  useCascadeOps
+} from './useCascadeOps';
 
 export { type IEntityListOptions, type IEntityListResult, useEntityList } from './useEntityList';
 

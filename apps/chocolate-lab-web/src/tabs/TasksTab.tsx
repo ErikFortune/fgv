@@ -11,9 +11,9 @@ import { Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseTaskId, CollectionId, TaskId } from '@fgv/ts-chocolate';
 import type { Result } from '@fgv/ts-utils';
 import {
-  type ICascadeEntry,
   type IReferenceScanResult,
   useTabNavigation,
+  useCascadeOps,
   useEntityList,
   useMutableCollection,
   useCanDeleteFromCollections,
@@ -43,9 +43,7 @@ export function TasksTabContent(): React.ReactElement {
   const {
     workspace,
     reactiveWorkspace,
-    squashCascade,
     popCascadeTo,
-    cascadeStack,
     listCollapsed,
     collapseList,
     compareMode,
@@ -56,6 +54,7 @@ export function TasksTabContent(): React.ReactElement {
     startComparison,
     exitComparison
   } = useTabNavigation();
+  const cascade = useCascadeOps();
 
   const editingRef = useRef<{ id: TaskId; wrapper: LibraryRuntime.EditedTask } | undefined>(undefined);
   const [taskToDelete, setTaskToDelete] = useState<{
@@ -144,17 +143,16 @@ export function TasksTabContent(): React.ReactElement {
         workspace.data.logger.info(`Created task '${entity.name}' — edit and save when ready`);
       }
 
-      const entry: ICascadeEntry = { entityType: 'task', entityId: compositeId, mode: 'edit' };
-      squashCascade([entry]);
+      cascade.select({ entityType: 'task', entityId: compositeId, mode: 'edit' });
     },
-    [workspace, mutableCollectionId, taskMutation, squashCascade]
+    [workspace, mutableCollectionId, taskMutation, cascade]
   );
 
   const { entities: tasks, selectedId } = useEntityList<LibraryRuntime.ITask, TaskId>({
     getAll: () => workspace.data.tasks.values(),
     compare: (a, b) => a.name.localeCompare(b.name),
     entityType: 'task',
-    cascadeStack,
+    cascadeStack: cascade.stack,
     deps: [workspace, reactiveWorkspace.version]
   });
 
@@ -194,10 +192,9 @@ export function TasksTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: TaskId): void => {
-      const entry: ICascadeEntry = { entityType: 'task', entityId: id, mode: 'view' };
-      squashCascade([entry]);
+      cascade.select({ entityType: 'task', entityId: id });
     },
-    [squashCascade]
+    [cascade]
   );
 
   const handleRequestDelete = useCallback(
@@ -213,25 +210,21 @@ export function TasksTabContent(): React.ReactElement {
   const handleConfirmDelete = useCallback((): void => {
     if (taskToDelete) {
       entityActions.deleteEntity(taskToDelete.id);
-      if (cascadeStack.some((e) => e.entityId === taskToDelete.id)) {
-        squashCascade([]);
-      }
+      cascade.clearById(taskToDelete.id);
     }
     setTaskToDelete(null);
-  }, [taskToDelete, entityActions, cascadeStack, squashCascade]);
+  }, [taskToDelete, entityActions, cascade]);
 
   const handleCancelDelete = useCallback((): void => {
     setTaskToDelete(null);
   }, []);
 
   const handleEdit = useCallback(
-    (entityId: string): void => {
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'task' ? { ...e, mode: 'edit' as const } : e
-      );
-      squashCascade(updated);
+    (_entityId: string): void => {
+      // openEditor(0) trims views/previews above depth 0 and switches to edit mode
+      cascade.openEditor(0);
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleCancelEdit = useCallback(
@@ -239,12 +232,9 @@ export function TasksTabContent(): React.ReactElement {
       if (editingRef.current?.id === entityId) {
         editingRef.current = undefined;
       }
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'task' ? { ...e, mode: 'view' as const } : e
-      );
-      squashCascade(updated);
+      cascade.popToView(0);
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleSaveAs = useCallback(
@@ -284,16 +274,12 @@ export function TasksTabContent(): React.ReactElement {
         return;
       }
 
-      const entityId = compositeId;
-      if (editingRef.current?.id === entityId) {
+      if (editingRef.current?.id === compositeId) {
         editingRef.current = undefined;
       }
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'task' ? { ...e, mode: 'view' as const } : e
-      );
-      squashCascade(updated);
+      cascade.popToView(0);
     },
-    [workspace, taskMutation, cascadeStack, squashCascade]
+    [workspace, taskMutation, cascade]
   );
 
   const getOrCreateWrapper = useCallback(
@@ -314,19 +300,17 @@ export function TasksTabContent(): React.ReactElement {
 
   const handlePreview = useCallback(
     (entityId: string): void => {
-      const withoutPreview = cascadeStack.filter(
-        (e) => !(e.entityType === 'task' && e.entityId === entityId && e.mode === 'preview')
-      );
-      squashCascade([...withoutPreview, { entityType: 'task', entityId, mode: 'preview' }]);
+      // drillDown toggles: opens preview if not present, collapses if already showing
+      cascade.drillDown(0, { entityType: 'task', entityId, mode: 'preview' });
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleClosePreview = useCallback(
-    (entityId: string): void => {
-      squashCascade(cascadeStack.filter((e) => !(e.entityId === entityId && e.mode === 'preview')));
+    (_entityId: string): void => {
+      cascade.pop();
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleListHeaderPaste = useClipboardJsonImport<Entities.Tasks.IRawTaskEntity>({
@@ -338,9 +322,8 @@ export function TasksTabContent(): React.ReactElement {
   });
 
   const handleNewTask = useCallback((): void => {
-    const entry: ICascadeEntry = { entityType: 'task', entityId: '__new__', mode: 'create' };
-    squashCascade([entry]);
-  }, [squashCascade]);
+    cascade.select({ entityType: 'task', entityId: '__new__', mode: 'create' });
+  }, [cascade]);
 
   const [newTaskName, setNewTaskName] = useState('');
 
@@ -355,11 +338,11 @@ export function TasksTabContent(): React.ReactElement {
 
   const handleCreateFormCancel = useCallback((): void => {
     setNewTaskName('');
-    squashCascade([]);
-  }, [squashCascade]);
+    cascade.clear();
+  }, [cascade]);
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack
+    return cascade.stack
       .filter((e) => e.entityType === 'task')
       .map((entry) => {
         if (entry.mode === 'create') {
@@ -507,7 +490,7 @@ export function TasksTabContent(): React.ReactElement {
         };
       });
   }, [
-    cascadeStack,
+    cascade.stack,
     workspace,
     newTaskName,
     getOrCreateWrapper,

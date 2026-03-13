@@ -162,6 +162,17 @@ export type CascadeEntityType =
 export type CascadeColumnMode = 'view' | 'edit' | 'create' | 'preview';
 
 /**
+ * How a cascade entry was opened — determines save/cancel behavior.
+ *
+ * - `'primary'` — selected from the entity list. Save/cancel transitions to view mode in-place.
+ * - `'nested'` — reached via drill-down, typeahead-create, or sub-entity editing. Save/cancel pops (removes entry).
+ *
+ * Entries without an explicit origin are treated as `'primary'` for backwards compatibility.
+ * @public
+ */
+export type CascadeEntryOrigin = 'primary' | 'nested';
+
+/**
  * Pre-fill data for session creation in the cascade.
  * Used when "Start Session" is invoked from a confection or filling detail view.
  * @public
@@ -212,6 +223,8 @@ export interface ICascadeEntry {
   readonly prefillName?: string;
   /** Optional pre-resolved materialized entity. Typed variants narrow this to specific entity types. */
   readonly entity?: unknown;
+  /** How this entry was opened. Determines save/cancel behavior. @see CascadeEntryOrigin */
+  readonly origin?: CascadeEntryOrigin;
 }
 
 // ============================================================================
