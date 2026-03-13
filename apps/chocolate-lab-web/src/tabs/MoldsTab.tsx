@@ -11,11 +11,11 @@ import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseMoldId, CollectionId, MoldId } from '@fgv/ts-chocolate';
 import type { ResultMapValueType } from '@fgv/ts-utils';
 import {
-  type IMoldCascadeEntry,
   isMoldCascadeEntry,
   CASCADE_NEW_ENTITY_ID,
   type IReferenceScanResult,
   useTabNavigation,
+  useCascadeOps,
   useEntityList,
   useMutableCollection,
   useCanDeleteFromCollections,
@@ -39,9 +39,7 @@ export function MoldsTabContent(): React.ReactElement {
   const {
     workspace,
     reactiveWorkspace,
-    squashCascade,
     popCascadeTo,
-    cascadeStack,
     listCollapsed,
     collapseList,
     compareMode,
@@ -52,6 +50,7 @@ export function MoldsTabContent(): React.ReactElement {
     startComparison,
     exitComparison
   } = useTabNavigation();
+  const cascade = useCascadeOps();
 
   type MoldCollectionEntry = ResultMapValueType<typeof workspace.data.entities.molds.collections>;
   type MoldMutableCollectionEntry = MutableCollectionEntryWithSet<
@@ -148,16 +147,15 @@ export function MoldsTabContent(): React.ReactElement {
         );
       }
 
-      const cascadeEntry: IMoldCascadeEntry = {
+      cascade.select({
         entityType: 'mold',
         entityId: compositeId,
         mode: 'edit',
         hasChanges: true,
         entity: workspace.data.molds.get(compositeId).report(workspace.data.logger).orDefault()
-      };
-      squashCascade([cascadeEntry]);
+      });
     },
-    [workspace, mutableCollectionId, moldMutation, squashCascade]
+    [workspace, mutableCollectionId, moldMutation, cascade]
   );
 
   const handleListHeaderPaste = useClipboardJsonImport<Entities.Molds.IMoldEntity>({
@@ -172,7 +170,7 @@ export function MoldsTabContent(): React.ReactElement {
     getAll: () => workspace.data.molds.values(),
     compare: (a, b) => a.id.localeCompare(b.id),
     entityType: 'mold',
-    cascadeStack,
+    cascadeStack: cascade.stack,
     deps: [workspace, reactiveWorkspace.version]
   });
 
@@ -213,16 +211,13 @@ export function MoldsTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: MoldId): void => {
-      squashCascade([
-        {
-          entityType: 'mold',
-          entityId: id,
-          mode: 'view',
-          entity: workspace.data.molds.get(id).report(workspace.data.logger).orDefault()
-        }
-      ]);
+      cascade.select({
+        entityType: 'mold',
+        entityId: id,
+        entity: workspace.data.molds.get(id).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleRequestDelete = useCallback(
@@ -240,12 +235,10 @@ export function MoldsTabContent(): React.ReactElement {
       entityActions.deleteEntity(moldToDelete.id).catch((err) => {
         workspace.data.logger.error(`Failed to delete mold '${moldToDelete.name}': ${err}`);
       });
-      if (cascadeStack.some((e) => e.entityId === moldToDelete.id)) {
-        squashCascade([]);
-      }
+      cascade.clearById(moldToDelete.id);
     }
     setMoldToDelete(null);
-  }, [moldToDelete, entityActions, cascadeStack, squashCascade]);
+  }, [moldToDelete, entityActions, cascade]);
 
   const handleCancelDelete = useCallback((): void => {
     setMoldToDelete(null);
@@ -253,12 +246,12 @@ export function MoldsTabContent(): React.ReactElement {
 
   const handleEdit = useCallback(
     (entityId: string): void => {
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'mold' ? { ...e, mode: 'edit' as const } : e
-      );
-      squashCascade(updated);
+      const index = cascade.stack.findIndex((e) => e.entityId === entityId && e.entityType === 'mold');
+      if (index >= 0) {
+        cascade.openEditor(index);
+      }
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleCancelEdit = useCallback(
@@ -266,12 +259,12 @@ export function MoldsTabContent(): React.ReactElement {
       if (editingRef.current?.id === entityId) {
         editingRef.current = undefined;
       }
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'mold' ? { ...e, mode: 'view' as const } : e
-      );
-      squashCascade(updated);
+      const index = cascade.stack.findIndex((e) => e.entityId === entityId && e.entityType === 'mold');
+      if (index >= 0) {
+        cascade.popToView(index);
+      }
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleSaveAs = useCallback(
@@ -311,22 +304,19 @@ export function MoldsTabContent(): React.ReactElement {
         return;
       }
 
-      const entityId = compositeId;
-      if (editingRef.current?.id === entityId) {
+      if (editingRef.current?.id === compositeId) {
         editingRef.current = undefined;
       }
       const refreshedEntity = workspace.data.molds
-        .get(entityId as MoldId)
+        .get(compositeId as MoldId)
         .report(workspace.data.logger)
         .orDefault();
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'mold'
-          ? { ...e, mode: 'view' as const, entity: refreshedEntity }
-          : e
-      );
-      squashCascade(updated);
+      const index = cascade.stack.findIndex((e) => e.entityId === compositeId && e.entityType === 'mold');
+      if (index >= 0) {
+        cascade.popToView(index, refreshedEntity);
+      }
     },
-    [workspace, moldMutation, cascadeStack, squashCascade]
+    [workspace, moldMutation, cascade]
   );
 
   const getOrCreateWrapper = useCallback(
@@ -346,15 +336,15 @@ export function MoldsTabContent(): React.ReactElement {
   );
 
   const handleNewMold = useCallback((): void => {
-    squashCascade([{ entityType: 'mold', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }]);
-  }, [squashCascade]);
+    cascade.select({ entityType: 'mold', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' });
+  }, [cascade]);
 
   const handleCreateFormCancel = useCallback((): void => {
-    squashCascade([]);
-  }, [squashCascade]);
+    cascade.clear();
+  }, [cascade]);
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack.filter(isMoldCascadeEntry).map((entry) => {
+    return cascade.stack.filter(isMoldCascadeEntry).map((entry) => {
       if (entry.mode === 'create') {
         return {
           key: CASCADE_NEW_ENTITY_ID,
@@ -456,13 +446,13 @@ export function MoldsTabContent(): React.ReactElement {
           <MoldDetail
             mold={mold}
             onEdit={(): void => handleEdit(entry.entityId)}
-            onClose={(): void => popCascadeTo(cascadeStack.indexOf(entry))}
+            onClose={(): void => popCascadeTo(cascade.stack.indexOf(entry))}
           />
         )
       };
     });
   }, [
-    cascadeStack,
+    cascade,
     workspace,
     getOrCreateWrapper,
     handleSave,
@@ -473,7 +463,8 @@ export function MoldsTabContent(): React.ReactElement {
     handleCreateMoldFromSource,
     moldCreateSourceOptions,
     writableMoldCollections,
-    handleCreateFormCancel
+    handleCreateFormCancel,
+    popCascadeTo
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {

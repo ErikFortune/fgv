@@ -9,13 +9,13 @@ import {
 } from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseIngredientId, CollectionId, IngredientId } from '@fgv/ts-chocolate';
-import type { Result, ResultMapValueType } from '@fgv/ts-utils';
+import type { ResultMapValueType } from '@fgv/ts-utils';
 import {
   type IReferenceScanResult,
-  type IIngredientCascadeEntry,
   isIngredientCascadeEntry,
   CASCADE_NEW_ENTITY_ID,
   useTabNavigation,
+  useCascadeOps,
   useEntityList,
   useMutableCollection,
   useCanDeleteFromCollections,
@@ -44,9 +44,7 @@ export function IngredientsTabContent(): React.ReactElement {
   const {
     workspace,
     reactiveWorkspace,
-    squashCascade,
     popCascadeTo,
-    cascadeStack,
     listCollapsed,
     collapseList,
     compareMode,
@@ -57,6 +55,7 @@ export function IngredientsTabContent(): React.ReactElement {
     startComparison,
     exitComparison
   } = useTabNavigation();
+  const cascade = useCascadeOps();
   const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
   type IngredientCollectionEntry = ResultMapValueType<typeof workspace.data.entities.ingredients.collections>;
@@ -127,7 +126,7 @@ export function IngredientsTabContent(): React.ReactElement {
     getAll: () => workspace.data.ingredients.values(),
     compare: (a, b) => a.name.localeCompare(b.name),
     entityType: 'ingredient',
-    cascadeStack,
+    cascadeStack: cascade.stack,
     deps: [workspace, reactiveWorkspace.version]
   });
 
@@ -176,16 +175,15 @@ export function IngredientsTabContent(): React.ReactElement {
         workspace.data.logger.info(`Created ingredient '${entity.name}' from AI-generated data`);
       }
 
-      const cascadeEntry: IIngredientCascadeEntry = {
+      cascade.select({
         entityType: 'ingredient',
         entityId: compositeId,
         mode: 'edit',
         hasChanges: true,
         entity: workspace.data.ingredients.get(compositeId).report(workspace.data.logger).orDefault()
-      };
-      squashCascade([cascadeEntry]);
+      });
     },
-    [workspace, mutableCollectionId, ingredientMutation, squashCascade]
+    [workspace, mutableCollectionId, ingredientMutation, cascade]
   );
 
   const handleCreateIngredientFromSource = useCallback(
@@ -223,16 +221,13 @@ export function IngredientsTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: IngredientId): void => {
-      squashCascade([
-        {
-          entityType: 'ingredient',
-          entityId: id,
-          mode: 'view',
-          entity: workspace.data.ingredients.get(id).report(workspace.data.logger).orDefault()
-        }
-      ]);
+      cascade.select({
+        entityType: 'ingredient',
+        entityId: id,
+        entity: workspace.data.ingredients.get(id).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleRequestDelete = useCallback(
@@ -250,13 +245,10 @@ export function IngredientsTabContent(): React.ReactElement {
       entityActions.deleteEntity(ingredientToDelete.id).catch((err) => {
         workspace.data.logger.error(`Failed to delete ingredient '${ingredientToDelete.name}': ${err}`);
       });
-      // If the deleted entity is currently selected, clear the cascade
-      if (cascadeStack.some((e) => e.entityId === ingredientToDelete.id)) {
-        squashCascade([]);
-      }
+      cascade.clearById(ingredientToDelete.id);
     }
     setIngredientToDelete(null);
-  }, [ingredientToDelete, entityActions, cascadeStack, squashCascade]);
+  }, [ingredientToDelete, entityActions, cascade]);
 
   const handleCancelDelete = useCallback((): void => {
     setIngredientToDelete(null);
@@ -264,12 +256,12 @@ export function IngredientsTabContent(): React.ReactElement {
 
   const handleEdit = useCallback(
     (entityId: string): void => {
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'ingredient' ? { ...e, mode: 'edit' as const } : e
-      );
-      squashCascade(updated);
+      const index = cascade.stack.findIndex((e) => e.entityId === entityId && e.entityType === 'ingredient');
+      if (index >= 0) {
+        cascade.openEditor(index);
+      }
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleCancelEdit = useCallback(
@@ -277,12 +269,12 @@ export function IngredientsTabContent(): React.ReactElement {
       if (editingRef.current?.id === entityId) {
         editingRef.current = undefined;
       }
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'ingredient' ? { ...e, mode: 'view' as const } : e
-      );
-      squashCascade(updated);
+      const index = cascade.stack.findIndex((e) => e.entityId === entityId && e.entityType === 'ingredient');
+      if (index >= 0) {
+        cascade.popToView(index);
+      }
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleSaveAs = useCallback(
@@ -329,14 +321,14 @@ export function IngredientsTabContent(): React.ReactElement {
         .get(compositeId as IngredientId)
         .report(workspace.data.logger)
         .orDefault();
-      const updated = cascadeStack.map((e) =>
-        e.entityId === compositeId && e.entityType === 'ingredient'
-          ? { ...e, mode: 'view' as const, entity: refreshedEntity }
-          : e
+      const index = cascade.stack.findIndex(
+        (e) => e.entityId === compositeId && e.entityType === 'ingredient'
       );
-      squashCascade(updated);
+      if (index >= 0) {
+        cascade.popToView(index, refreshedEntity);
+      }
     },
-    [workspace, ingredientMutation, cascadeStack, squashCascade]
+    [workspace, ingredientMutation, cascade]
   );
 
   const getOrCreateWrapper = useCallback(
@@ -356,15 +348,15 @@ export function IngredientsTabContent(): React.ReactElement {
   );
 
   const handleNewIngredient = useCallback((): void => {
-    squashCascade([{ entityType: 'ingredient', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }]);
-  }, [squashCascade]);
+    cascade.select({ entityType: 'ingredient', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' });
+  }, [cascade]);
 
   const handleCreateFormCancel = useCallback((): void => {
-    squashCascade([]);
-  }, [squashCascade]);
+    cascade.clear();
+  }, [cascade]);
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack.filter(isIngredientCascadeEntry).map((entry) => {
+    return cascade.stack.filter(isIngredientCascadeEntry).map((entry) => {
       if (entry.mode === 'create') {
         return {
           key: CASCADE_NEW_ENTITY_ID,
@@ -467,13 +459,13 @@ export function IngredientsTabContent(): React.ReactElement {
           <IngredientDetail
             ingredient={ingredient}
             onEdit={(): void => handleEdit(entry.entityId)}
-            onClose={(): void => popCascadeTo(cascadeStack.indexOf(entry))}
+            onClose={(): void => popCascadeTo(cascade.stack.indexOf(entry))}
           />
         )
       };
     });
   }, [
-    cascadeStack,
+    cascade,
     workspace,
     getOrCreateWrapper,
     handleSave,
@@ -484,7 +476,8 @@ export function IngredientsTabContent(): React.ReactElement {
     handleCreateIngredientFromSource,
     ingredientCreateSourceOptions,
     writableIngredientCollections,
-    handleCreateFormCancel
+    handleCreateFormCancel,
+    popCascadeTo
   ]);
 
   const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
