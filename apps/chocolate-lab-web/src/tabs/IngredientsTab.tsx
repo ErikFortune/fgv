@@ -256,10 +256,9 @@ export function IngredientsTabContent(): React.ReactElement {
 
   const handleEdit = useCallback(
     (entityId: string): void => {
-      const index = cascade.stack.findIndex((e) => e.entityId === entityId && e.entityType === 'ingredient');
-      if (index >= 0) {
-        cascade.openEditor(index);
-      }
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'ingredient')
+        .onSuccess(({ depth }) => cascade.openEditor(depth));
     },
     [cascade]
   );
@@ -269,10 +268,9 @@ export function IngredientsTabContent(): React.ReactElement {
       if (editingRef.current?.id === entityId) {
         editingRef.current = undefined;
       }
-      const index = cascade.stack.findIndex((e) => e.entityId === entityId && e.entityType === 'ingredient');
-      if (index >= 0) {
-        cascade.popToView(index);
-      }
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'ingredient')
+        .onSuccess(({ depth }) => cascade.popToView(depth));
     },
     [cascade]
   );
@@ -321,12 +319,9 @@ export function IngredientsTabContent(): React.ReactElement {
         .get(compositeId as IngredientId)
         .report(workspace.data.logger)
         .orDefault();
-      const index = cascade.stack.findIndex(
-        (e) => e.entityId === compositeId && e.entityType === 'ingredient'
-      );
-      if (index >= 0) {
-        cascade.popToView(index, refreshedEntity);
-      }
+      cascade
+        .find((e) => e.entityId === compositeId && e.entityType === 'ingredient')
+        .onSuccess(({ depth }) => cascade.popToView(depth, refreshedEntity));
     },
     [workspace, ingredientMutation, cascade]
   );

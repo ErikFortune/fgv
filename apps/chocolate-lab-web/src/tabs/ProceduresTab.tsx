@@ -572,13 +572,13 @@ export function ProceduresTabContent(): React.ReactElement {
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
               <button
-                onClick={(): void =>
+                onClick={(): void => {
                   cascade.select({
                     entityType: 'procedure',
                     entityId: CASCADE_NEW_ENTITY_ID,
                     mode: 'create'
-                  })
-                }
+                  });
+                }}
                 disabled={mutableCollectionId === undefined}
                 title={
                   mutableCollectionId === undefined ? 'No mutable procedure collection available' : undefined

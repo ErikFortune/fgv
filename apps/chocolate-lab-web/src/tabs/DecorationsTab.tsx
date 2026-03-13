@@ -18,15 +18,15 @@ import type {
   ProcedureId,
   DecorationId
 } from '@fgv/ts-chocolate';
-import { fail, Success } from '@fgv/ts-utils';
+import { fail } from '@fgv/ts-utils';
 import {
-  type IDecorationCascadeEntry,
   isDecorationCascadeEntry,
   isIngredientCascadeEntry,
   isProcedureCascadeEntry,
   CASCADE_NEW_ENTITY_ID,
   type IReferenceScanResult,
   useTabNavigation,
+  useCascadeOps,
   useEntityList,
   useMutableCollection,
   useCanDeleteFromCollections,
@@ -45,8 +45,6 @@ import {
   getWritableCollectionOptions,
   useFilteredEntities,
   useClipboardJsonImport,
-  useCascadeDrillDown,
-  useSquashAt,
   useProcedureEditSession,
   useNavigationStore,
   ReadOnlyEditGate
@@ -65,9 +63,7 @@ export function DecorationsTabContent(): React.ReactElement {
   const {
     workspace,
     reactiveWorkspace,
-    squashCascade,
     popCascadeTo,
-    cascadeStack,
     listCollapsed,
     collapseList,
     compareMode,
@@ -78,6 +74,7 @@ export function DecorationsTabContent(): React.ReactElement {
     startComparison,
     exitComparison
   } = useTabNavigation();
+  const cascade = useCascadeOps();
 
   const editingRef = useRef<{ id: DecorationId; wrapper: LibraryRuntime.EditedDecoration } | undefined>(
     undefined
@@ -227,7 +224,7 @@ export function DecorationsTabContent(): React.ReactElement {
     getAll: () => workspace.data.decorations.values(),
     compare: (a, b) => a.name.localeCompare(b.name),
     entityType: 'decoration',
-    cascadeStack,
+    cascadeStack: cascade.stack,
     deps: [workspace, reactiveWorkspace.version]
   });
 
@@ -261,16 +258,13 @@ export function DecorationsTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: DecorationId): void => {
-      squashCascade([
-        {
-          entityType: 'decoration',
-          entityId: id,
-          mode: 'view',
-          entity: workspace.data.decorations.get(id).report(workspace.data.logger).orDefault()
-        }
-      ]);
+      cascade.select({
+        entityType: 'decoration',
+        entityId: id,
+        entity: workspace.data.decorations.get(id).report(workspace.data.logger).orDefault()
+      });
     },
-    [squashCascade, workspace]
+    [cascade, workspace]
   );
 
   const handleRequestDelete = useCallback(
@@ -288,18 +282,14 @@ export function DecorationsTabContent(): React.ReactElement {
       entityActions.deleteEntity(decorationToDelete.id).catch((err) => {
         workspace.data.logger.error(`Failed to delete decoration '${decorationToDelete.name}': ${err}`);
       });
-      if (cascadeStack.some((e) => e.entityId === decorationToDelete.id)) {
-        squashCascade([]);
-      }
+      cascade.clearById(decorationToDelete.id);
     }
     setDecorationToDelete(null);
-  }, [decorationToDelete, entityActions, cascadeStack, squashCascade]);
+  }, [decorationToDelete, entityActions, cascade]);
 
   const handleCancelDelete = useCallback((): void => {
     setDecorationToDelete(null);
   }, []);
-
-  const squashAt = useSquashAt(cascadeStack, squashCascade);
 
   const getOrCreateWrapper = useCallback(
     (decoration: LibraryRuntime.IDecoration): LibraryRuntime.EditedDecoration | undefined => {
@@ -319,11 +309,11 @@ export function DecorationsTabContent(): React.ReactElement {
 
   const handleEditDecoration = useCallback(
     (entityId: string): void => {
-      const idx = cascadeStack.findIndex((e) => e.entityId === entityId && e.entityType === 'decoration');
-      if (idx < 0) return;
-      squashCascade([...cascadeStack.slice(0, idx), { ...cascadeStack[idx], mode: 'edit' as const }]);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'decoration')
+        .onSuccess(({ depth }) => cascade.openEditor(depth));
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleCancelDecorationEdit = useCallback(
@@ -334,12 +324,11 @@ export function DecorationsTabContent(): React.ReactElement {
       subIngredientRef.current = undefined;
       subProcedureRef.current = undefined;
       procedureSession.cleanup();
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'decoration' ? { ...e, mode: 'view' as const } : e
-      );
-      squashCascade(updated);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'decoration')
+        .onSuccess(({ depth }) => cascade.popToView(depth));
     },
-    [cascadeStack, squashCascade, procedureSession]
+    [cascade, procedureSession]
   );
 
   const handleSaveDecorationAs = useCallback(
@@ -388,14 +377,11 @@ export function DecorationsTabContent(): React.ReactElement {
         .get(compositeId as DecorationId)
         .report(workspace.data.logger)
         .orDefault();
-      const updated = cascadeStack.map((e) =>
-        e.entityId === compositeId && e.entityType === 'decoration'
-          ? { ...e, mode: 'view' as const, entity: refreshedEntity }
-          : e
-      );
-      squashCascade(updated);
+      cascade
+        .find((e) => e.entityId === compositeId && e.entityType === 'decoration')
+        .onSuccess(({ depth }) => cascade.popToView(depth, refreshedEntity));
     },
-    [workspace, decorationMutation, cascadeStack, squashCascade, procedureSession]
+    [workspace, decorationMutation, cascade, procedureSession]
   );
 
   // Create a new decoration from an entity, add to mutable collection, and open in edit mode
@@ -433,16 +419,15 @@ export function DecorationsTabContent(): React.ReactElement {
         workspace.data.logger.info(`Created decoration '${entity.name}' from AI-generated data`);
       }
 
-      const cascadeEntry: IDecorationCascadeEntry = {
+      cascade.select({
         entityType: 'decoration',
         entityId: compositeId,
         mode: 'edit',
         hasChanges: true,
         entity: workspace.data.decorations.get(compositeId).report(workspace.data.logger).orDefault()
-      };
-      squashCascade([cascadeEntry]);
+      });
     },
-    [workspace, mutableCollectionId, decorationMutation, squashCascade]
+    [workspace, mutableCollectionId, decorationMutation, cascade]
   );
 
   const handleCreateDecorationFromSource = useCallback(
@@ -479,59 +464,64 @@ export function DecorationsTabContent(): React.ReactElement {
   });
 
   const handleNewDecoration = useCallback((): void => {
-    squashCascade([{ entityType: 'decoration', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }]);
-  }, [squashCascade]);
+    cascade.select({ entityType: 'decoration', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' });
+  }, [cascade]);
 
   const handleCreateFormCancel = useCallback((): void => {
-    squashCascade([]);
-  }, [squashCascade]);
+    cascade.clear();
+  }, [cascade]);
 
   const handlePreviewDecoration = useCallback(
     (entityId: string): void => {
-      const idx = cascadeStack.findIndex((e) => e.entityId === entityId && e.entityType === 'decoration');
-      if (idx < 0) return;
-      squashCascade([
-        ...cascadeStack.slice(0, idx + 1),
-        {
-          entityType: 'decoration',
-          entityId,
-          mode: 'preview',
-          entity: workspace.data.decorations
-            .get(entityId as DecorationId)
-            .report(workspace.data.logger)
-            .orDefault()
-        }
-      ]);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'decoration')
+        .onSuccess(({ depth }) =>
+          cascade.openNested(depth, {
+            entityType: 'decoration',
+            entityId,
+            mode: 'preview',
+            entity: workspace.data.decorations
+              .get(entityId as DecorationId)
+              .report(workspace.data.logger)
+              .orDefault()
+          })
+        );
     },
-    [cascadeStack, squashCascade, workspace]
+    [cascade, workspace]
   );
 
   // Sub-entity creation: open ingredient create form in cascade from decoration editor
   const handleCreateIngredientFromDecoration = useCallback(
     (seed: string): void => {
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
-      if (editIdx < 0) return;
-      setSubEntitySeed(seed);
-      squashCascade([
-        ...cascadeStack.slice(0, editIdx + 1),
-        { entityType: 'ingredient', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }
-      ]);
+      cascade
+        .find((e) => e.entityType === 'decoration' && e.mode === 'edit')
+        .onSuccess(({ depth }) => {
+          setSubEntitySeed(seed);
+          return cascade.openNested(depth, {
+            entityType: 'ingredient',
+            entityId: CASCADE_NEW_ENTITY_ID,
+            mode: 'create'
+          });
+        });
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   // Sub-entity creation: open procedure create form in cascade from decoration editor
   const handleCreateProcedureFromDecoration = useCallback(
     (seed: string): void => {
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
-      if (editIdx < 0) return;
-      setSubEntitySeed(seed);
-      squashCascade([
-        ...cascadeStack.slice(0, editIdx + 1),
-        { entityType: 'procedure', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' }
-      ]);
+      cascade
+        .find((e) => e.entityType === 'decoration' && e.mode === 'edit')
+        .onSuccess(({ depth }) => {
+          setSubEntitySeed(seed);
+          return cascade.openNested(depth, {
+            entityType: 'procedure',
+            entityId: CASCADE_NEW_ENTITY_ID,
+            mode: 'create'
+          });
+        });
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   // Paste ingredient from clipboard (AI-generated JSON)
@@ -619,27 +609,24 @@ export function DecorationsTabContent(): React.ReactElement {
 
       setSubEntitySeed('');
 
-      // Open the new ingredient in edit mode (squashed after decoration editor)
+      // Open the new ingredient in edit mode (nested after decoration editor)
       LibraryRuntime.EditedIngredient.create(entity)
         .report(workspace.data.logger)
         .onSuccess((wrapper) => {
           subIngredientRef.current = { id: compositeId, wrapper };
-          const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
-          if (editIdx >= 0) {
-            squashCascade([
-              ...cascadeStack.slice(0, editIdx + 1),
-              {
+          return cascade
+            .find((e) => e.entityType === 'decoration' && e.mode === 'edit')
+            .onSuccess(({ depth }) =>
+              cascade.openNested(depth, {
                 entityType: 'ingredient',
                 entityId: compositeId,
                 mode: 'edit',
                 entity: workspace.data.ingredients.get(compositeId).report(workspace.data.logger).orDefault()
-              }
-            ]);
-          }
-          return Success.with(wrapper);
+              })
+            );
         });
     },
-    [workspace, cascadeStack, squashCascade, ingredientMutation, ingredientMutableCollectionId]
+    [workspace, cascade, ingredientMutation, ingredientMutableCollectionId]
   );
 
   // Handle procedure creation from sub-entity create form
@@ -669,39 +656,37 @@ export function DecorationsTabContent(): React.ReactElement {
 
       setSubEntitySeed('');
 
-      // Open the new procedure in edit mode (squashed after decoration editor)
+      // Open the new procedure in edit mode (nested after decoration editor)
       LibraryRuntime.EditedProcedure.create(entity)
         .report(workspace.data.logger)
         .onSuccess((wrapper) => {
           subProcedureRef.current = { id: compositeId, wrapper };
-          const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
-          if (editIdx >= 0) {
-            squashCascade([
-              ...cascadeStack.slice(0, editIdx + 1),
-              {
+          return cascade
+            .find((e) => e.entityType === 'decoration' && e.mode === 'edit')
+            .onSuccess(({ depth }) =>
+              cascade.openNested(depth, {
                 entityType: 'procedure',
                 entityId: compositeId,
                 mode: 'edit',
                 entity: workspace.data.procedures.get(compositeId).report(workspace.data.logger).orDefault()
-              }
-            ]);
-          }
-          return Success.with(wrapper);
+              })
+            );
         });
     },
-    [workspace, cascadeStack, squashCascade, procedureMutation, procedureMutableCollectionId]
+    [workspace, cascade, procedureMutation, procedureMutableCollectionId]
   );
 
   // Cancel sub-entity creation — pop back to decoration editor
   const handleSubEntityCancel = useCallback((): void => {
     setSubEntitySeed('');
-    const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
-    if (editIdx >= 0) {
-      squashCascade(cascadeStack.slice(0, editIdx + 1));
-    } else {
-      squashCascade([]);
-    }
-  }, [cascadeStack, squashCascade]);
+    cascade
+      .find((e) => e.entityType === 'decoration' && e.mode === 'edit')
+      .onSuccess(({ depth }) => cascade.trimTo(depth))
+      .onFailure(() => {
+        cascade.clear();
+        return fail('no decoration editor found');
+      });
+  }, [cascade]);
 
   // Get or create an EditedIngredient wrapper for sub-entity editing
   const getOrCreateSubIngredientWrapper = useCallback(
@@ -759,22 +744,22 @@ export function DecorationsTabContent(): React.ReactElement {
 
       subIngredientRef.current = undefined;
 
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
-      if (editIdx >= 0) {
-        squashCascade(cascadeStack.slice(0, editIdx + 1));
-      }
+      cascade
+        .find((e) => e.entityType === 'decoration' && e.mode === 'edit')
+        .onSuccess(({ depth }) => cascade.trimTo(depth))
+        .onFailure(() => cascade.pop());
     },
-    [cascadeStack, squashCascade, ingredientMutation]
+    [cascade, ingredientMutation]
   );
 
   // Cancel sub-entity ingredient editing — pop back to decoration editor
   const handleSubIngredientCancel = useCallback((): void => {
     subIngredientRef.current = undefined;
-    const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
-    if (editIdx >= 0) {
-      squashCascade(cascadeStack.slice(0, editIdx + 1));
-    }
-  }, [cascadeStack, squashCascade]);
+    cascade
+      .find((e) => e.entityType === 'decoration' && e.mode === 'edit')
+      .onSuccess(({ depth }) => cascade.trimTo(depth))
+      .onFailure(() => cascade.pop());
+  }, [cascade]);
 
   // Save a sub-entity procedure and pop back to decoration editor
   const handleSubProcedureSave = useCallback(
@@ -799,40 +784,44 @@ export function DecorationsTabContent(): React.ReactElement {
       subProcedureRef.current = undefined;
       procedureSession.cleanup();
 
-      const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
-      if (editIdx >= 0) {
-        squashCascade(cascadeStack.slice(0, editIdx + 1));
-      }
+      cascade
+        .find((e) => e.entityType === 'decoration' && e.mode === 'edit')
+        .onSuccess(({ depth }) => cascade.trimTo(depth))
+        .onFailure(() => cascade.pop());
     },
-    [cascadeStack, squashCascade, procedureMutation, procedureSession]
+    [cascade, procedureMutation, procedureSession]
   );
 
   // Cancel sub-entity procedure editing — pop back to decoration editor
   const handleSubProcedureCancel = useCallback((): void => {
     subProcedureRef.current = undefined;
     procedureSession.cleanup();
-    const editIdx = cascadeStack.findIndex((e) => e.entityType === 'decoration' && e.mode === 'edit');
-    if (editIdx >= 0) {
-      squashCascade(cascadeStack.slice(0, editIdx + 1));
-    }
-  }, [cascadeStack, squashCascade, procedureSession]);
-
-  const drillDown = useCascadeDrillDown(cascadeStack, squashCascade, squashAt);
+    cascade
+      .find((e) => e.entityType === 'decoration' && e.mode === 'edit')
+      .onSuccess(({ depth }) => cascade.trimTo(depth))
+      .onFailure(() => cascade.pop());
+  }, [cascade, procedureSession]);
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack.map((entry, index) => {
+    return cascade.stack.map((entry, index) => {
       const onIngredientClick = (id: IngredientId): void => {
-        drillDown(index, 'ingredient', id, {
+        cascade.drillDown(index, {
+          entityType: 'ingredient',
+          entityId: id,
           entity: workspace.data.ingredients.get(id).report(workspace.data.logger).orDefault()
         });
       };
       const onProcedureClick = (id: ProcedureId): void => {
-        drillDown(index, 'procedure', id, {
+        cascade.drillDown(index, {
+          entityType: 'procedure',
+          entityId: id,
           entity: workspace.data.procedures.get(id).report(workspace.data.logger).orDefault()
         });
       };
       const onTaskClick = (id: TaskId): void => {
-        drillDown(index, 'task', id, {
+        cascade.drillDown(index, {
+          entityType: 'task',
+          entityId: id,
           entity: workspace.data.tasks.get(id).report(workspace.data.logger).orDefault()
         });
       };
@@ -1031,10 +1020,7 @@ export function DecorationsTabContent(): React.ReactElement {
             <IngredientDetail
               ingredient={ingredient}
               onEdit={(): void => {
-                squashCascade([
-                  ...cascadeStack.slice(0, index),
-                  { ...cascadeStack[index], mode: 'edit' as const }
-                ]);
+                cascade.openEditor(index);
               }}
               onClose={(): void => popCascadeTo(index)}
             />
@@ -1107,10 +1093,7 @@ export function DecorationsTabContent(): React.ReactElement {
               procedure={procedure}
               onTaskClick={onTaskClick}
               onEdit={(): void => {
-                squashCascade([
-                  ...cascadeStack.slice(0, index),
-                  { ...cascadeStack[index], mode: 'edit' as const }
-                ]);
+                cascade.openEditor(index);
               }}
               onClose={(): void => popCascadeTo(index)}
             />
@@ -1130,9 +1113,8 @@ export function DecorationsTabContent(): React.ReactElement {
       };
     });
   }, [
-    cascadeStack,
+    cascade,
     workspace,
-    squashAt,
     popCascadeTo,
     availableIngredients,
     availableProcedures,

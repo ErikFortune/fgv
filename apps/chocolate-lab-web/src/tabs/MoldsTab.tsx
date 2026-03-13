@@ -246,10 +246,9 @@ export function MoldsTabContent(): React.ReactElement {
 
   const handleEdit = useCallback(
     (entityId: string): void => {
-      const index = cascade.stack.findIndex((e) => e.entityId === entityId && e.entityType === 'mold');
-      if (index >= 0) {
-        cascade.openEditor(index);
-      }
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'mold')
+        .onSuccess(({ depth }) => cascade.openEditor(depth));
     },
     [cascade]
   );
@@ -259,10 +258,9 @@ export function MoldsTabContent(): React.ReactElement {
       if (editingRef.current?.id === entityId) {
         editingRef.current = undefined;
       }
-      const index = cascade.stack.findIndex((e) => e.entityId === entityId && e.entityType === 'mold');
-      if (index >= 0) {
-        cascade.popToView(index);
-      }
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'mold')
+        .onSuccess(({ depth }) => cascade.popToView(depth));
     },
     [cascade]
   );
@@ -311,10 +309,9 @@ export function MoldsTabContent(): React.ReactElement {
         .get(compositeId as MoldId)
         .report(workspace.data.logger)
         .orDefault();
-      const index = cascade.stack.findIndex((e) => e.entityId === compositeId && e.entityType === 'mold');
-      if (index >= 0) {
-        cascade.popToView(index, refreshedEntity);
-      }
+      cascade
+        .find((e) => e.entityId === compositeId && e.entityType === 'mold')
+        .onSuccess(({ depth }) => cascade.popToView(depth, refreshedEntity));
     },
     [workspace, moldMutation, cascade]
   );

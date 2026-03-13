@@ -77,7 +77,8 @@
     "@types/jest": "^29.5.14",
     "identity-obj-proxy": "3",
     "@playwright/test": "~1.58.2",
-    "concurrently": "~9.2.1"
+    "concurrently": "~9.2.1",
+    "@fgv/typedoc-compact-theme": "workspace:*"
   },
   "repository": {
     "type": "git",

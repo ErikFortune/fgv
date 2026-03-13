@@ -74,6 +74,7 @@ export { useSquashAt, useCascadeDrillDown } from './useCascadeTransitions';
 
 export {
   type ICascadeConflict,
+  type ICascadeFind,
   type CascadeEntrySpec,
   type ICascadeOps,
   useCascadeOps

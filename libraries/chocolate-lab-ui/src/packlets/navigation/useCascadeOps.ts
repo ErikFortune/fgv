@@ -31,6 +31,8 @@
 
 import { useCallback, useMemo } from 'react';
 
+import { type Result, fail, succeed } from '@fgv/ts-utils';
+
 import type { CascadeColumnMode, ICascadeEntry } from './model';
 import { useNavigationStore } from './store';
 
@@ -45,6 +47,15 @@ import { useNavigationStore } from './store';
  */
 export interface ICascadeConflict {
   readonly conflictingEditors: ReadonlyArray<{ readonly depth: number; readonly entry: ICascadeEntry }>;
+}
+
+/**
+ * Describes a located entry in the cascade stack.
+ * @public
+ */
+export interface ICascadeFind {
+  readonly depth: number;
+  readonly entry: ICascadeEntry;
 }
 
 /**
@@ -68,36 +79,52 @@ export type CascadeEntrySpec = Omit<ICascadeEntry, 'mode' | 'origin'> & { readon
  * @public
  */
 export interface ICascadeOps {
-  /** Replace entire stack with a single view entry (from list selection). */
-  readonly select: (entry: CascadeEntrySpec) => void;
+  /**
+   * Replace entire stack with a single view entry (from list selection).
+   * @returns The created entry at depth 0.
+   */
+  readonly select: (entry: CascadeEntrySpec) => Result<ICascadeFind>;
 
   /**
    * Push a view entry after `fromDepth`, trimming anything beyond.
    * Toggle: if the same entity is already at `fromDepth + 1`, collapse instead.
+   * @returns The pushed entry, or the collapsed entry on toggle.
    */
-  readonly drillDown: (fromDepth: number, entry: CascadeEntrySpec) => void;
+  readonly drillDown: (fromDepth: number, entry: CascadeEntrySpec) => Result<ICascadeFind>;
 
   /**
    * Switch panel at `depth` to edit mode.
    * Trims view/preview panels above `depth`. Blocked if editors/creates exist above.
-   * @returns A conflict descriptor if blocked, or `undefined` if the operation succeeded.
+   * @returns The entry switched to edit mode, or failure if blocked by conflicting editors.
    */
-  readonly openEditor: (depth: number) => ICascadeConflict | undefined;
+  readonly openEditor: (depth: number) => Result<ICascadeFind>;
 
   /**
    * Push a nested panel (create or edit) on top of the current stack.
    * Used for typeahead-on-blur creation and sub-entity editing.
+   * @returns The pushed nested entry.
    */
-  readonly openNested: (fromDepth: number, entry: Omit<ICascadeEntry, 'origin'>) => void;
+  readonly openNested: (fromDepth: number, entry: Omit<ICascadeEntry, 'origin'>) => Result<ICascadeFind>;
 
-  /** Pop the topmost entry (for nested save/cancel). Always safe. */
-  readonly pop: () => void;
+  /**
+   * Pop the topmost entry (for nested save/cancel). Always safe.
+   * @returns The removed entry, or failure if the stack was empty.
+   */
+  readonly pop: () => Result<ICascadeFind>;
 
   /**
    * Transition entry at `depth` from edit/create to view mode.
    * Used for primary entity save/cancel.
+   * @returns The entry transitioned to view mode.
    */
-  readonly popToView: (depth: number, refreshedEntity?: unknown) => void;
+  readonly popToView: (depth: number, refreshedEntity?: unknown) => Result<ICascadeFind>;
+
+  /**
+   * Trim the stack to keep only entries below `depth` (exclusive).
+   * Removes the entry at `depth` and everything above it.
+   * @returns The last remaining entry after trimming, or failure if stack becomes empty.
+   */
+  readonly trimTo: (depth: number) => Result<ICascadeFind>;
 
   /** Return editors/creates above a given depth. */
   readonly editorsAbove: (
@@ -118,6 +145,9 @@ export interface ICascadeOps {
 
   /** Clear the cascade if any entry matches the predicate. */
   readonly clearIf: (predicate: (entry: ICascadeEntry) => boolean) => void;
+
+  /** Find the first entry matching a predicate. */
+  readonly find: (predicate: (entry: ICascadeEntry) => boolean) => Result<ICascadeFind>;
 
   /** The current cascade stack (for rendering). */
   readonly stack: ReadonlyArray<ICascadeEntry>;
@@ -162,24 +192,25 @@ export function useCascadeOps(): ICascadeOps {
   const squashCascade = useNavigationStore((s) => s.squashCascade);
 
   const select = useCallback(
-    (entry: CascadeEntrySpec): void => {
-      squashCascade([{ ...entry, mode: entry.mode ?? 'view', origin: 'primary' }]);
+    (entry: CascadeEntrySpec): Result<ICascadeFind> => {
+      const created: ICascadeEntry = { ...entry, mode: entry.mode ?? 'view', origin: 'primary' };
+      squashCascade([created]);
+      return succeed({ depth: 0, entry: created });
     },
     [squashCascade]
   );
 
   const drillDown = useCallback(
-    (fromDepth: number, entry: CascadeEntrySpec): void => {
+    (fromDepth: number, entry: CascadeEntrySpec): Result<ICascadeFind> => {
       const nextEntry = cascadeStack[fromDepth + 1];
       if (nextEntry?.entityType === entry.entityType && nextEntry.entityId === entry.entityId) {
         // Toggle: collapse if same entity is already at fromDepth + 1
         squashCascade(cascadeStack.slice(0, fromDepth + 1));
-        return;
+        return succeed({ depth: fromDepth + 1, entry: nextEntry });
       }
-      squashCascade([
-        ...cascadeStack.slice(0, fromDepth + 1),
-        { ...entry, mode: entry.mode ?? 'view', origin: 'nested' }
-      ]);
+      const created: ICascadeEntry = { ...entry, mode: entry.mode ?? 'view', origin: 'nested' };
+      squashCascade([...cascadeStack.slice(0, fromDepth + 1), created]);
+      return succeed({ depth: fromDepth + 1, entry: created });
     },
     [cascadeStack, squashCascade]
   );
@@ -192,53 +223,74 @@ export function useCascadeOps(): ICascadeOps {
   );
 
   const openEditor = useCallback(
-    (depth: number): ICascadeConflict | undefined => {
+    (depth: number): Result<ICascadeFind> => {
       const entry = cascadeStack[depth];
       if (!entry) {
-        return undefined;
+        return fail(`depth ${depth} out of bounds for cascade stack of length ${cascadeStack.length}`);
       }
 
       // Check for editors above the target depth
       const conflicts = findEditorsAbove(cascadeStack, depth);
       if (conflicts.length > 0) {
-        return { conflictingEditors: conflicts };
+        const names = conflicts.map((c) => `${c.entry.entityType}(${c.entry.mode}) at depth ${c.depth}`);
+        return fail(`blocked by editors above: ${names.join(', ')}`);
       }
 
       // Trim everything above depth (downstream views become incoherent),
       // switch target to edit mode, preserving origin
-      squashCascade([...cascadeStack.slice(0, depth), { ...entry, mode: 'edit' }]);
-      return undefined;
+      const edited: ICascadeEntry = { ...entry, mode: 'edit' };
+      squashCascade([...cascadeStack.slice(0, depth), edited]);
+      return succeed({ depth, entry: edited });
     },
     [cascadeStack, squashCascade]
   );
 
   const openNested = useCallback(
-    (fromDepth: number, entry: Omit<ICascadeEntry, 'origin'>): void => {
-      squashCascade([...cascadeStack.slice(0, fromDepth + 1), { ...entry, origin: 'nested' }]);
+    (fromDepth: number, entry: Omit<ICascadeEntry, 'origin'>): Result<ICascadeFind> => {
+      const created: ICascadeEntry = { ...entry, origin: 'nested' };
+      const newDepth = fromDepth + 1;
+      squashCascade([...cascadeStack.slice(0, newDepth), created]);
+      return succeed({ depth: newDepth, entry: created });
     },
     [cascadeStack, squashCascade]
   );
 
-  const pop = useCallback((): void => {
-    if (cascadeStack.length > 0) {
-      squashCascade(cascadeStack.slice(0, -1));
+  const pop = useCallback((): Result<ICascadeFind> => {
+    if (cascadeStack.length === 0) {
+      return fail('cannot pop from empty cascade stack');
     }
+    const removed = cascadeStack[cascadeStack.length - 1];
+    squashCascade(cascadeStack.slice(0, -1));
+    return succeed({ depth: cascadeStack.length - 1, entry: removed });
   }, [cascadeStack, squashCascade]);
 
   const popToView = useCallback(
-    (depth: number, refreshedEntity?: unknown): void => {
+    (depth: number, refreshedEntity?: unknown): Result<ICascadeFind> => {
       const entry = cascadeStack[depth];
       if (!entry) {
-        return;
+        return fail(`depth ${depth} out of bounds for cascade stack of length ${cascadeStack.length}`);
       }
-      squashCascade([
-        ...cascadeStack.slice(0, depth),
-        {
-          ...entry,
-          mode: 'view' as const,
-          ...(refreshedEntity !== undefined ? { entity: refreshedEntity } : {})
-        }
-      ]);
+      const viewed: ICascadeEntry = {
+        ...entry,
+        mode: 'view' as const,
+        ...(refreshedEntity !== undefined ? { entity: refreshedEntity } : {})
+      };
+      squashCascade([...cascadeStack.slice(0, depth), viewed]);
+      return succeed({ depth, entry: viewed });
+    },
+    [cascadeStack, squashCascade]
+  );
+
+  const trimTo = useCallback(
+    (depth: number): Result<ICascadeFind> => {
+      const trimmed = Math.max(0, depth);
+      const newStack = cascadeStack.slice(0, trimmed);
+      squashCascade(newStack);
+      if (newStack.length === 0) {
+        return fail('cascade stack is empty after trim');
+      }
+      const lastIdx = newStack.length - 1;
+      return succeed({ depth: lastIdx, entry: newStack[lastIdx] });
     },
     [cascadeStack, squashCascade]
   );
@@ -274,6 +326,17 @@ export function useCascadeOps(): ICascadeOps {
     [clearIf]
   );
 
+  const find = useCallback(
+    (predicate: (entry: ICascadeEntry) => boolean): Result<ICascadeFind> => {
+      const depth = cascadeStack.findIndex(predicate);
+      if (depth < 0) {
+        return fail('no matching entry in cascade stack');
+      }
+      return succeed({ depth, entry: cascadeStack[depth] });
+    },
+    [cascadeStack]
+  );
+
   return useMemo(
     () => ({
       select,
@@ -282,12 +345,14 @@ export function useCascadeOps(): ICascadeOps {
       openNested,
       pop,
       popToView,
+      trimTo,
       editorsAbove,
       hasUnsavedEditors,
       canSaveOrCancel,
       clear,
       clearById,
       clearIf,
+      find,
       stack: cascadeStack
     }),
     [
@@ -297,12 +362,14 @@ export function useCascadeOps(): ICascadeOps {
       openNested,
       pop,
       popToView,
+      trimTo,
       editorsAbove,
       hasUnsavedEditors,
       canSaveOrCancel,
       clear,
       clearById,
       clearIf,
+      find,
       cascadeStack
     ]
   );

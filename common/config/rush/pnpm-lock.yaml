@@ -77,6 +77,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../../libraries/ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@playwright/test':
         specifier: ~1.58.2
         version: 1.58.2
