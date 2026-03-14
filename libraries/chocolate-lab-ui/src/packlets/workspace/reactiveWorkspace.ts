@@ -315,6 +315,11 @@ export class ReactiveWorkspace {
     }
 
     for (const [id, entry] of this._persistentTrees) {
+      // Skip persistent trees that are already listed as additional roots
+      // (e.g. cloud sources registered via registerAdditionalRoot)
+      if (this._additionalRoots.has(id)) {
+        continue;
+      }
       roots.push({
         id,
         label: entry.label,
@@ -329,7 +334,9 @@ export class ReactiveWorkspace {
     return {
       roots,
       hasBuiltIn: this._builtInLoaded,
-      localDirectoryCount: this._persistentTrees.size
+      localDirectoryCount: Array.from(this._persistentTrees.keys()).filter(
+        (id) => !this._additionalRoots.has(id)
+      ).length
     };
   }
 

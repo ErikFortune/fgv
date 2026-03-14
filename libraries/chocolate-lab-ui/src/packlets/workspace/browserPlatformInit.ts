@@ -181,7 +181,14 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
       return fail(settingsResult.message);
     }
 
-    const cloudConfig = browserOptions.cloudStorage ?? settingsResult.value.bootstrap?.cloudStorage;
+    let cloudConfig = browserOptions.cloudStorage ?? settingsResult.value.bootstrap?.cloudStorage;
+    // If cloud storage is enabled but no explicit base URL, derive from proxy URL
+    if (cloudConfig?.enabled && !cloudConfig.baseUrl?.trim()) {
+      const proxyUrl = settingsResult.value.resolvedSettings.tools?.aiAssist?.proxyUrl;
+      if (proxyUrl) {
+        cloudConfig = { ...cloudConfig, baseUrl: `${proxyUrl}/api/storage` };
+      }
+    }
     const cloudLibrariesResult = await this._resolveCloudLibraries(cloudConfig, autoSync);
     if (cloudLibrariesResult.isFailure()) {
       return fail(cloudLibrariesResult.message);

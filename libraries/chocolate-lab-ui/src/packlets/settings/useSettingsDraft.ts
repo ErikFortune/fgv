@@ -213,23 +213,22 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
           library: bootstrapDraft.localStorageLibrary,
           userData: bootstrapDraft.localStorageUserData
         },
-        cloudStorage:
-          bootstrapDraft.cloudStorageEnabled && bootstrapDraft.cloudStorageBaseUrl.trim().length > 0
-            ? {
-                enabled: true,
-                baseUrl: bootstrapDraft.cloudStorageBaseUrl,
-                namespace:
-                  bootstrapDraft.cloudStorageNamespace.trim().length > 0
-                    ? bootstrapDraft.cloudStorageNamespace
-                    : undefined,
-                library: bootstrapDraft.cloudStorageLibrary,
-                userData: bootstrapDraft.cloudStorageUserData,
-                sourceName:
-                  bootstrapDraft.cloudStorageSourceName.trim().length > 0
-                    ? bootstrapDraft.cloudStorageSourceName
-                    : undefined
-              }
-            : undefined,
+        cloudStorage: bootstrapDraft.cloudStorageEnabled
+          ? {
+              enabled: true,
+              baseUrl: bootstrapDraft.cloudStorageBaseUrl,
+              namespace:
+                bootstrapDraft.cloudStorageNamespace.trim().length > 0
+                  ? bootstrapDraft.cloudStorageNamespace
+                  : undefined,
+              library: bootstrapDraft.cloudStorageLibrary,
+              userData: bootstrapDraft.cloudStorageUserData,
+              sourceName:
+                bootstrapDraft.cloudStorageSourceName.trim().length > 0
+                  ? bootstrapDraft.cloudStorageSourceName
+                  : undefined
+            }
+          : undefined,
         logging: hasLogging
           ? {
               storeLevel: bootstrapDraft.storeLevel,

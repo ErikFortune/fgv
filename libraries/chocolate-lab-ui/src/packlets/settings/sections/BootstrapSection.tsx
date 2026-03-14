@@ -139,6 +139,7 @@ export interface IBootstrapSectionProps {
   readonly bootstrap: IBootstrapSettingsDraft;
   readonly onChange: (updates: Partial<IBootstrapSettingsDraft>) => void;
   readonly hasRestartPending: boolean;
+  readonly proxyUrl?: string;
 }
 
 // ============================================================================
@@ -146,7 +147,7 @@ export interface IBootstrapSectionProps {
 // ============================================================================
 
 export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElement {
-  const { bootstrap, onChange, hasRestartPending } = props;
+  const { bootstrap, onChange, hasRestartPending, proxyUrl } = props;
 
   return (
     <div className="p-6 space-y-6">
@@ -227,6 +228,12 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
               placeholder="http://localhost:3002/api/storage"
               onChange={(e): void => onChange({ cloudStorageBaseUrl: e.target.value })}
             />
+            {!bootstrap.cloudStorageBaseUrl.trim() && proxyUrl?.trim() && (
+              <p className="text-xs text-gray-400 mt-1">
+                Will use <span className="font-mono text-gray-500">{proxyUrl}/api/storage</span> from Services
+                configuration
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -328,27 +328,77 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     })
   );
 
-  // If workspace creation failed (e.g. local data in old format), try a fallback
-  // with no user library source so the app can start with built-in data only.
+  // If workspace creation failed, try progressively more aggressive fallbacks:
+  // 1. If cloud libraries are present, strip them and retry (backend error)
+  // 2. If still failing, strip local storage too (corrupt local data)
   let dataError: string | undefined;
   let workspace;
+  let cloudStripped = false;
   if (workspaceResult.isFailure()) {
-    _bootReporter?.error(
-      `Local library data could not be loaded (format changed after update). Running with built-in data only. Clear browser storage and reload to fix.`
-    );
-    dataError = workspaceResult.message;
-    workspace = platformInit
-      .onSuccess((init) =>
+    const hasCloudLibraries =
+      platformInit.isSuccess() && (platformInit.value.externalLibraries?.length ?? 0) > 0;
+
+    if (hasCloudLibraries) {
+      // Cloud backend returned an error loading one or more collections.
+      // Retry without cloud libraries so the app can still start.
+      _bootReporter?.warn(
+        `Cloud storage could not be loaded: ${workspaceResult.message}. Continuing without cloud data for this session.`
+      );
+      dataError = workspaceResult.message;
+
+      const retryWithoutCloud = platformInit.onSuccess((init) =>
         createWorkspaceFromPlatform({
-          platformInit: init,
+          platformInit: { ...init, externalLibraries: [] },
           builtin: includeBuiltIn,
           preWarm: includeBuiltIn,
-          userLibrarySourceName: undefined,
+          userLibrarySourceName: useLocalStorage ? 'localStorage' : undefined,
           configName: _configNamespace,
           logger: _bootReporter
         })
-      )
-      .orThrow();
+      );
+
+      if (retryWithoutCloud.isSuccess()) {
+        workspace = retryWithoutCloud.value;
+        cloudStripped = true;
+      } else {
+        // Cloud + local both failing — fall through to local-stripped fallback
+        _bootReporter?.error(
+          `Local library data could not be loaded either. Running with built-in data only.`
+        );
+        dataError = retryWithoutCloud.message;
+        cloudStripped = true;
+        workspace = platformInit
+          .onSuccess((init) =>
+            createWorkspaceFromPlatform({
+              platformInit: { ...init, externalLibraries: [] },
+              builtin: includeBuiltIn,
+              preWarm: includeBuiltIn,
+              userLibrarySourceName: undefined,
+              configName: _configNamespace,
+              logger: _bootReporter
+            })
+          )
+          .orThrow();
+      }
+    } else {
+      // No cloud libraries — original fallback: local data is corrupt
+      _bootReporter?.error(
+        `Local library data could not be loaded (format changed after update). Running with built-in data only. Clear browser storage and reload to fix.`
+      );
+      dataError = workspaceResult.message;
+      workspace = platformInit
+        .onSuccess((init) =>
+          createWorkspaceFromPlatform({
+            platformInit: init,
+            builtin: includeBuiltIn,
+            preWarm: includeBuiltIn,
+            userLibrarySourceName: undefined,
+            configName: _configNamespace,
+            logger: _bootReporter
+          })
+        )
+        .orThrow();
+    }
   } else {
     workspace = workspaceResult.value;
   }
@@ -393,7 +443,7 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     reactiveWorkspace.registerLocalStorageRoot('Browser Storage', localStorageRootDir);
   }
 
-  const cloudSources = platformInit.value?.externalLibraries ?? [];
+  const cloudSources = cloudStripped ? [] : platformInit.value?.externalLibraries ?? [];
   for (const cloudSource of cloudSources) {
     const sourceName = cloudSource.name;
     reactiveWorkspace.registerAdditionalRoot(

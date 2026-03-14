@@ -183,6 +183,7 @@ function SectionContent({
           bootstrap={bootstrap}
           onChange={updateBootstrap}
           hasRestartPending={hasBootstrapChanges}
+          proxyUrl={preferences.aiAssist.proxyUrl}
         />
       );
     case 'workspace':
