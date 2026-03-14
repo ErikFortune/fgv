@@ -12,15 +12,13 @@ import {
   Entities,
   type BaseLocationId,
   type BaseMoldId,
-  type CollectionId,
   type LocationId,
-  type MoldId,
-  LibraryRuntime
+  type MoldId
 } from '@fgv/ts-chocolate';
 import type { Entities as EntitiesNS } from '@fgv/ts-chocolate';
 import {
-  type ICascadeEntry,
   useTabNavigation,
+  useCascadeOps,
   useEntityList,
   useFilteredEntities,
   useMutableCollection,
@@ -61,15 +59,9 @@ type LocationCreateTarget =
   | { readonly kind: 'edit'; readonly entryId: MoldInventoryEntryId };
 
 export function MoldInventoryTabContent(): React.ReactElement {
-  const {
-    workspace,
-    reactiveWorkspace,
-    squashCascade,
-    popCascadeTo,
-    cascadeStack,
-    listCollapsed,
-    collapseList
-  } = useTabNavigation();
+  const { workspace, reactiveWorkspace, popCascadeTo, listCollapsed, collapseList } = useTabNavigation();
+
+  const cascade = useCascadeOps();
 
   const inventoryActions = useMoldInventoryActions();
   const locationActions = useLocationActions();
@@ -101,7 +93,7 @@ export function MoldInventoryTabContent(): React.ReactElement {
       return a.entry.item.displayName.localeCompare(b.entry.item.displayName);
     },
     entityType: 'mold-inventory-entry',
-    cascadeStack,
+    cascadeStack: cascade.stack,
     deps: [workspace, reactiveWorkspace.version]
   });
 
@@ -131,10 +123,9 @@ export function MoldInventoryTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: MoldInventoryEntryId): void => {
-      const entry: ICascadeEntry = { entityType: 'mold-inventory-entry', entityId: id, mode: 'view' };
-      squashCascade([entry]);
+      cascade.select({ entityType: 'mold-inventory-entry', entityId: id });
     },
-    [squashCascade]
+    [cascade]
   );
 
   const handleUnresolvedLocation = useCallback(
@@ -148,17 +139,14 @@ export function MoldInventoryTabContent(): React.ReactElement {
         moldId: currentSelection.moldId,
         moldName: currentSelection.moldName
       });
-      squashCascade([
-        {
-          entityType: 'mold-inventory-entry',
-          entityId: '__new__',
-          mode: 'create',
-          prefillName: currentSelection.moldId
-        },
-        { entityType: 'location', entityId: '__new__', mode: 'create', prefillName: text }
-      ]);
+      cascade.openNested(0, {
+        entityType: 'location',
+        entityId: '__new__',
+        mode: 'create',
+        prefillName: text
+      });
     },
-    [squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -184,14 +172,14 @@ export function MoldInventoryTabContent(): React.ReactElement {
       const result = await inventoryActions.deleteEntry(entryToDelete.id);
       if (result.isSuccess()) {
         if (selectedId === entryToDelete.id) {
-          squashCascade([]);
+          cascade.clear();
         }
       } else {
         addMessage('error', `Failed to delete inventory entry: ${result.message}`);
       }
     }
     setEntryToDelete(null);
-  }, [entryToDelete, inventoryActions, selectedId, squashCascade, addMessage]);
+  }, [entryToDelete, inventoryActions, selectedId, cascade, addMessage]);
 
   const handleCancelDelete = useCallback((): void => {
     setEntryToDelete(null);
@@ -211,13 +199,8 @@ export function MoldInventoryTabContent(): React.ReactElement {
 
   const handleNewEntry = useCallback((): void => {
     setCreatePrefill({});
-    const entry: ICascadeEntry = {
-      entityType: 'mold-inventory-entry',
-      entityId: '__new__',
-      mode: 'create'
-    };
-    squashCascade([entry]);
-  }, [squashCascade]);
+    cascade.select({ entityType: 'mold-inventory-entry', entityId: '__new__', mode: 'create' });
+  }, [cascade]);
 
   const handleCreateConfirm = useCallback(
     async (moldId: MoldId, count: number, locationId?: LocationId): Promise<void> => {
@@ -229,7 +212,7 @@ export function MoldInventoryTabContent(): React.ReactElement {
             'warning',
             'An inventory entry for this mold at this location already exists. Navigating to it.'
           );
-          squashCascade([{ entityType: 'mold-inventory-entry', entityId: id, mode: 'view' }]);
+          cascade.select({ entityType: 'mold-inventory-entry', entityId: id });
           return;
         }
       }
@@ -237,18 +220,18 @@ export function MoldInventoryTabContent(): React.ReactElement {
       const result = await inventoryActions.addEntry(moldId, count, locationId);
       if (result.isSuccess()) {
         setCreatePrefill({});
-        squashCascade([{ entityType: 'mold-inventory-entry', entityId: result.value, mode: 'view' }]);
+        cascade.select({ entityType: 'mold-inventory-entry', entityId: result.value });
       } else {
         addMessage('error', `Failed to add inventory entry: ${result.message}`);
       }
     },
-    [inventoryActions, workspace, squashCascade, addMessage]
+    [inventoryActions, workspace, cascade, addMessage]
   );
 
   const handleCancelCreate = useCallback((): void => {
     setCreatePrefill({});
-    squashCascade([]);
-  }, [squashCascade]);
+    cascade.clear();
+  }, [cascade]);
 
   // ============================================================================
   // Mold On-Blur Unresolved → Cascade Mold Creation
@@ -257,12 +240,9 @@ export function MoldInventoryTabContent(): React.ReactElement {
   const handleUnresolvedMold = useCallback(
     (text: string): void => {
       setCreatePrefill({});
-      squashCascade([
-        { entityType: 'mold-inventory-entry', entityId: '__new__', mode: 'create', prefillName: text },
-        { entityType: 'mold', entityId: '__new__', mode: 'create', prefillName: text }
-      ]);
+      cascade.openNested(0, { entityType: 'mold', entityId: '__new__', mode: 'create', prefillName: text });
     },
-    [squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -293,22 +273,15 @@ export function MoldInventoryTabContent(): React.ReactElement {
         moldId: newMoldId,
         moldName: entity.name
       }));
-      squashCascade([
-        {
-          entityType: 'mold-inventory-entry',
-          entityId: '__new__',
-          mode: 'create',
-          prefillName: newMoldId
-        }
-      ]);
+      cascade.pop();
     },
-    [mutableMoldCollectionId, workspace, reactiveWorkspace, squashCascade]
+    [mutableMoldCollectionId, workspace, reactiveWorkspace, cascade]
   );
 
   const handleCancelMoldCreate = useCallback((): void => {
     // Pop the mold create column, return to inventory create
-    squashCascade([{ entityType: 'mold-inventory-entry', entityId: '__new__', mode: 'create' }]);
-  }, [squashCascade]);
+    cascade.pop();
+  }, [cascade]);
 
   const handleCreateLocationConfirm = useCallback(
     async (baseId: string, name: string, description?: string): Promise<void> => {
@@ -335,49 +308,23 @@ export function MoldInventoryTabContent(): React.ReactElement {
           locationId: createResult.value,
           locationName: name
         });
-        squashCascade([
-          {
-            entityType: 'mold-inventory-entry',
-            entityId: '__new__',
-            mode: 'create',
-            prefillName: target.moldId
-          }
-        ]);
       } else {
         setEditLocationPrefillById((prev) => ({
           ...prev,
           [target.entryId]: { id: createResult.value, name }
         }));
-        squashCascade(cascadeStack.slice(0, -1));
       }
 
+      cascade.pop();
       setLocationCreateTarget(undefined);
     },
-    [locationCreateTarget, locationActions, addMessage, squashCascade, cascadeStack]
+    [locationCreateTarget, locationActions, addMessage, cascade]
   );
 
   const handleCancelLocationCreate = useCallback((): void => {
-    const target = locationCreateTarget;
-    if (!target) {
-      squashCascade(cascadeStack.slice(0, -1));
-      return;
-    }
-
-    if (target.kind === 'create') {
-      squashCascade([
-        {
-          entityType: 'mold-inventory-entry',
-          entityId: '__new__',
-          mode: 'create',
-          prefillName: target.moldId
-        }
-      ]);
-    } else {
-      squashCascade(cascadeStack.slice(0, -1));
-    }
-
+    cascade.pop();
     setLocationCreateTarget(undefined);
-  }, [locationCreateTarget, squashCascade, cascadeStack]);
+  }, [cascade]);
 
   // ============================================================================
   // Edit Handler
@@ -385,14 +332,11 @@ export function MoldInventoryTabContent(): React.ReactElement {
 
   const handleEdit = useCallback(
     (entityId: string): void => {
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'mold-inventory-entry'
-          ? { ...e, mode: 'edit' as const }
-          : e
-      );
-      squashCascade(updated);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'mold-inventory-entry')
+        .onSuccess(({ depth }) => cascade.openEditor(depth));
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleCancelEdit = useCallback(
@@ -404,14 +348,11 @@ export function MoldInventoryTabContent(): React.ReactElement {
         const { [entityId]: __removed, ...rest } = prev;
         return rest;
       });
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'mold-inventory-entry'
-          ? { ...e, mode: 'view' as const }
-          : e
-      );
-      squashCascade(updated);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'mold-inventory-entry')
+        .onSuccess(({ depth }) => cascade.popToView(depth));
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleSave = useCallback(
@@ -428,29 +369,31 @@ export function MoldInventoryTabContent(): React.ReactElement {
           const { [entryId]: __removed, ...rest } = prev;
           return rest;
         });
-        // Switch back to view mode
-        const updated = cascadeStack.map((e) =>
-          e.entityId === entryId && e.entityType === 'mold-inventory-entry'
-            ? { ...e, mode: 'view' as const }
-            : e
-        );
-        squashCascade(updated);
+        cascade
+          .find((e) => e.entityId === entryId && e.entityType === 'mold-inventory-entry')
+          .onSuccess(({ depth }) => cascade.popToView(depth));
       } else {
         addMessage('error', `Failed to update inventory entry: ${result.message}`);
       }
     },
-    [inventoryActions, cascadeStack, squashCascade, addMessage]
+    [inventoryActions, cascade, addMessage]
   );
 
   const handleUnresolvedLocationFromEdit = useCallback(
     (entryId: MoldInventoryEntryId, text: string): void => {
       setLocationCreateTarget({ kind: 'edit', entryId });
-      squashCascade([
-        ...cascadeStack,
-        { entityType: 'location', entityId: '__new__', mode: 'create', prefillName: text }
-      ]);
+      cascade
+        .find((e) => e.entityId === entryId && e.entityType === 'mold-inventory-entry')
+        .onSuccess(({ depth }) =>
+          cascade.openNested(depth, {
+            entityType: 'location',
+            entityId: '__new__',
+            mode: 'create',
+            prefillName: text
+          })
+        );
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -458,10 +401,10 @@ export function MoldInventoryTabContent(): React.ReactElement {
   // ============================================================================
 
   const handleBrowseMold = useCallback(
-    (inventoryEntry: ICascadeEntry, moldId: MoldId): void => {
-      squashCascade([inventoryEntry, { entityType: 'mold', entityId: moldId, mode: 'view' }]);
+    (_inventoryEntry: unknown, moldId: MoldId): void => {
+      cascade.drillDown(0, { entityType: 'mold', entityId: moldId, mode: 'view' });
     },
-    [squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -469,7 +412,7 @@ export function MoldInventoryTabContent(): React.ReactElement {
   // ============================================================================
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack.map((entry, _index) => {
+    return cascade.stack.map((entry, _index) => {
       // Mold create (from on-blur cascade)
       if (entry.entityType === 'mold' && entry.mode === 'create') {
         return {
@@ -619,7 +562,7 @@ export function MoldInventoryTabContent(): React.ReactElement {
       };
     });
   }, [
-    cascadeStack,
+    cascade,
     workspace,
     moldSuggestions,
     locationSuggestions,

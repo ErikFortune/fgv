@@ -23,6 +23,7 @@ import type { Entities as EntitiesNS } from '@fgv/ts-chocolate';
 import {
   type ICascadeEntry,
   useTabNavigation,
+  useCascadeOps,
   useEntityList,
   useFilteredEntities,
   useMutableCollection,
@@ -63,15 +64,9 @@ type LocationCreateTarget =
   | { readonly kind: 'edit'; readonly entryId: IngredientInventoryEntryId };
 
 export function IngredientInventoryTabContent(): React.ReactElement {
-  const {
-    workspace,
-    reactiveWorkspace,
-    squashCascade,
-    popCascadeTo,
-    cascadeStack,
-    listCollapsed,
-    collapseList
-  } = useTabNavigation();
+  const { workspace, reactiveWorkspace, popCascadeTo, listCollapsed, collapseList } = useTabNavigation();
+
+  const cascade = useCascadeOps();
 
   const inventoryActions = useIngredientInventoryActions();
   const locationActions = useLocationActions();
@@ -103,7 +98,7 @@ export function IngredientInventoryTabContent(): React.ReactElement {
       return a.entry.item.name.localeCompare(b.entry.item.name);
     },
     entityType: 'ingredient-inventory-entry',
-    cascadeStack,
+    cascadeStack: cascade.stack,
     deps: [workspace, reactiveWorkspace.version]
   });
 
@@ -133,14 +128,9 @@ export function IngredientInventoryTabContent(): React.ReactElement {
 
   const handleSelect = useCallback(
     (id: IngredientInventoryEntryId): void => {
-      const entry: ICascadeEntry = {
-        entityType: 'ingredient-inventory-entry',
-        entityId: id,
-        mode: 'view'
-      };
-      squashCascade([entry]);
+      cascade.select({ entityType: 'ingredient-inventory-entry', entityId: id });
     },
-    [squashCascade]
+    [cascade]
   );
 
   const handleUnresolvedLocation = useCallback(
@@ -154,17 +144,14 @@ export function IngredientInventoryTabContent(): React.ReactElement {
         ingredientId: currentSelection.ingredientId,
         ingredientName: currentSelection.ingredientName
       });
-      squashCascade([
-        {
-          entityType: 'ingredient-inventory-entry',
-          entityId: '__new__',
-          mode: 'create',
-          prefillName: currentSelection.ingredientId
-        },
-        { entityType: 'location', entityId: '__new__', mode: 'create', prefillName: text }
-      ]);
+      cascade.openNested(0, {
+        entityType: 'location',
+        entityId: '__new__',
+        mode: 'create',
+        prefillName: text
+      });
     },
-    [squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -190,14 +177,14 @@ export function IngredientInventoryTabContent(): React.ReactElement {
       const result = await inventoryActions.deleteEntry(entryToDelete.id);
       if (result.isSuccess()) {
         if (selectedId === entryToDelete.id) {
-          squashCascade([]);
+          cascade.clear();
         }
       } else {
         addMessage('error', `Failed to delete inventory entry: ${result.message}`);
       }
     }
     setEntryToDelete(null);
-  }, [entryToDelete, inventoryActions, selectedId, squashCascade, addMessage]);
+  }, [entryToDelete, inventoryActions, selectedId, cascade, addMessage]);
 
   const handleCancelDelete = useCallback((): void => {
     setEntryToDelete(null);
@@ -216,13 +203,8 @@ export function IngredientInventoryTabContent(): React.ReactElement {
 
   const handleNewEntry = useCallback((): void => {
     setCreatePrefill({});
-    const entry: ICascadeEntry = {
-      entityType: 'ingredient-inventory-entry',
-      entityId: '__new__',
-      mode: 'create'
-    };
-    squashCascade([entry]);
-  }, [squashCascade]);
+    cascade.select({ entityType: 'ingredient-inventory-entry', entityId: '__new__', mode: 'create' });
+  }, [cascade]);
 
   const handleCreateConfirm = useCallback(
     async (
@@ -239,7 +221,7 @@ export function IngredientInventoryTabContent(): React.ReactElement {
             'warning',
             'An inventory entry for this ingredient at this location already exists. Navigating to it.'
           );
-          squashCascade([{ entityType: 'ingredient-inventory-entry', entityId: id, mode: 'view' }]);
+          cascade.select({ entityType: 'ingredient-inventory-entry', entityId: id });
           return;
         }
       }
@@ -247,18 +229,18 @@ export function IngredientInventoryTabContent(): React.ReactElement {
       const result = await inventoryActions.addEntry(ingredientId, quantity, unit, locationId);
       if (result.isSuccess()) {
         setCreatePrefill({});
-        squashCascade([{ entityType: 'ingredient-inventory-entry', entityId: result.value, mode: 'view' }]);
+        cascade.select({ entityType: 'ingredient-inventory-entry', entityId: result.value });
       } else {
         addMessage('error', `Failed to add inventory entry: ${result.message}`);
       }
     },
-    [inventoryActions, workspace, squashCascade, addMessage]
+    [inventoryActions, workspace, cascade, addMessage]
   );
 
   const handleCancelCreate = useCallback((): void => {
     setCreatePrefill({});
-    squashCascade([]);
-  }, [squashCascade]);
+    cascade.clear();
+  }, [cascade]);
 
   // ============================================================================
   // Ingredient On-Blur Unresolved → Cascade Ingredient Creation
@@ -267,17 +249,14 @@ export function IngredientInventoryTabContent(): React.ReactElement {
   const handleUnresolvedIngredient = useCallback(
     (text: string): void => {
       setCreatePrefill({});
-      squashCascade([
-        {
-          entityType: 'ingredient-inventory-entry',
-          entityId: '__new__',
-          mode: 'create',
-          prefillName: text
-        },
-        { entityType: 'ingredient', entityId: '__new__', mode: 'create', prefillName: text }
-      ]);
+      cascade.openNested(0, {
+        entityType: 'ingredient',
+        entityId: '__new__',
+        mode: 'create',
+        prefillName: text
+      });
     },
-    [squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -308,22 +287,15 @@ export function IngredientInventoryTabContent(): React.ReactElement {
         ingredientId: newIngredientId,
         ingredientName: entity.name
       }));
-      squashCascade([
-        {
-          entityType: 'ingredient-inventory-entry',
-          entityId: '__new__',
-          mode: 'create',
-          prefillName: newIngredientId
-        }
-      ]);
+      cascade.pop();
     },
-    [mutableIngredientCollectionId, workspace, reactiveWorkspace, squashCascade]
+    [mutableIngredientCollectionId, workspace, reactiveWorkspace, cascade]
   );
 
   const handleCancelIngredientCreate = useCallback((): void => {
     // Pop the ingredient create column, return to inventory create
-    squashCascade([{ entityType: 'ingredient-inventory-entry', entityId: '__new__', mode: 'create' }]);
-  }, [squashCascade]);
+    cascade.pop();
+  }, [cascade]);
 
   const handleCreateLocationConfirm = useCallback(
     async (baseId: string, name: string, description?: string): Promise<void> => {
@@ -350,49 +322,23 @@ export function IngredientInventoryTabContent(): React.ReactElement {
           locationId: createResult.value,
           locationName: name
         });
-        squashCascade([
-          {
-            entityType: 'ingredient-inventory-entry',
-            entityId: '__new__',
-            mode: 'create',
-            prefillName: target.ingredientId
-          }
-        ]);
       } else {
         setEditLocationPrefillById((prev) => ({
           ...prev,
           [target.entryId]: { id: createResult.value, name }
         }));
-        squashCascade(cascadeStack.slice(0, -1));
       }
 
+      cascade.pop();
       setLocationCreateTarget(undefined);
     },
-    [locationCreateTarget, locationActions, addMessage, squashCascade, cascadeStack]
+    [locationCreateTarget, locationActions, addMessage, cascade]
   );
 
   const handleCancelLocationCreate = useCallback((): void => {
-    const target = locationCreateTarget;
-    if (!target) {
-      squashCascade(cascadeStack.slice(0, -1));
-      return;
-    }
-
-    if (target.kind === 'create') {
-      squashCascade([
-        {
-          entityType: 'ingredient-inventory-entry',
-          entityId: '__new__',
-          mode: 'create',
-          prefillName: target.ingredientId
-        }
-      ]);
-    } else {
-      squashCascade(cascadeStack.slice(0, -1));
-    }
-
+    cascade.pop();
     setLocationCreateTarget(undefined);
-  }, [locationCreateTarget, squashCascade, cascadeStack]);
+  }, [cascade]);
 
   // ============================================================================
   // Edit Handler
@@ -400,14 +346,11 @@ export function IngredientInventoryTabContent(): React.ReactElement {
 
   const handleEdit = useCallback(
     (entityId: string): void => {
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'ingredient-inventory-entry'
-          ? { ...e, mode: 'edit' as const }
-          : e
-      );
-      squashCascade(updated);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'ingredient-inventory-entry')
+        .onSuccess(({ depth }) => cascade.openEditor(depth));
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleCancelEdit = useCallback(
@@ -419,14 +362,11 @@ export function IngredientInventoryTabContent(): React.ReactElement {
         const { [entityId]: __removed, ...rest } = prev;
         return rest;
       });
-      const updated = cascadeStack.map((e) =>
-        e.entityId === entityId && e.entityType === 'ingredient-inventory-entry'
-          ? { ...e, mode: 'view' as const }
-          : e
-      );
-      squashCascade(updated);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'ingredient-inventory-entry')
+        .onSuccess(({ depth }) => cascade.popToView(depth));
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   const handleSave = useCallback(
@@ -443,28 +383,31 @@ export function IngredientInventoryTabContent(): React.ReactElement {
           const { [entryId]: __removed, ...rest } = prev;
           return rest;
         });
-        const updated = cascadeStack.map((e) =>
-          e.entityId === entryId && e.entityType === 'ingredient-inventory-entry'
-            ? { ...e, mode: 'view' as const }
-            : e
-        );
-        squashCascade(updated);
+        cascade
+          .find((e) => e.entityId === entryId && e.entityType === 'ingredient-inventory-entry')
+          .onSuccess(({ depth }) => cascade.popToView(depth));
       } else {
         addMessage('error', `Failed to update inventory entry: ${result.message}`);
       }
     },
-    [inventoryActions, cascadeStack, squashCascade, addMessage]
+    [inventoryActions, cascade, addMessage]
   );
 
   const handleUnresolvedLocationFromEdit = useCallback(
     (entryId: IngredientInventoryEntryId, text: string): void => {
       setLocationCreateTarget({ kind: 'edit', entryId });
-      squashCascade([
-        ...cascadeStack,
-        { entityType: 'location', entityId: '__new__', mode: 'create', prefillName: text }
-      ]);
+      cascade
+        .find((e) => e.entityId === entryId && e.entityType === 'ingredient-inventory-entry')
+        .onSuccess(({ depth }) =>
+          cascade.openNested(depth, {
+            entityType: 'location',
+            entityId: '__new__',
+            mode: 'create',
+            prefillName: text
+          })
+        );
     },
-    [cascadeStack, squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -472,10 +415,10 @@ export function IngredientInventoryTabContent(): React.ReactElement {
   // ============================================================================
 
   const handleBrowseIngredient = useCallback(
-    (inventoryEntry: ICascadeEntry, ingredientId: IngredientId): void => {
-      squashCascade([inventoryEntry, { entityType: 'ingredient', entityId: ingredientId, mode: 'view' }]);
+    (_inventoryEntry: ICascadeEntry, ingredientId: IngredientId): void => {
+      cascade.drillDown(0, { entityType: 'ingredient', entityId: ingredientId });
     },
-    [squashCascade]
+    [cascade]
   );
 
   // ============================================================================
@@ -483,7 +426,7 @@ export function IngredientInventoryTabContent(): React.ReactElement {
   // ============================================================================
 
   const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
-    return cascadeStack.map((entry, _index) => {
+    return cascade.stack.map((entry, _index) => {
       // Ingredient create (from on-blur cascade)
       if (entry.entityType === 'ingredient' && entry.mode === 'create') {
         return {
@@ -640,7 +583,7 @@ export function IngredientInventoryTabContent(): React.ReactElement {
       };
     });
   }, [
-    cascadeStack,
+    cascade,
     workspace,
     ingredientSuggestions,
     locationSuggestions,
