@@ -65,7 +65,8 @@ import {
 import {
   ChocolateEntityLibrary,
   ChocolateLibrary,
-  ConfectionRecipeVariationBase
+  ConfectionRecipeVariationBase,
+  MoldedBonBonRecipeVariation
 } from '../../../../packlets/library-runtime';
 
 describe('Confection Recipes', () => {
@@ -348,6 +349,29 @@ describe('Confection Recipes', () => {
     ]
   };
 
+  const noShellMoldedBonBonEntity: Confections.MoldedBonBonRecipeEntity = {
+    baseId: 'no-shell-molded-bonbon' as BaseConfectionId,
+    confectionType: 'molded-bonbon',
+    name: 'No Shell Molded BonBon' as ConfectionName,
+    goldenVariationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+    variations: [
+      {
+        variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+        createdDate: '2026-01-01',
+        yield: { numFrames: 1 },
+        fillings: [],
+        molds: {
+          options: [{ id: 'test.mold-a' as MoldId }],
+          preferredId: 'test.mold-a' as MoldId
+        },
+        shellChocolate: {
+          ids: [],
+          preferredId: undefined as unknown as IngredientId
+        }
+      }
+    ]
+  };
+
   const rolledTruffleEntity: Confections.RolledTruffleRecipeEntity = {
     baseId: 'test-rolled-truffle' as BaseConfectionId,
     confectionType: 'rolled-truffle',
@@ -520,6 +544,7 @@ describe('Confection Recipes', () => {
             /* eslint-disable @typescript-eslint/naming-convention */
             'test-molded-bonbon': moldedBonBonEntity,
             'broken-molded-bonbon': brokenMoldedBonBonEntity,
+            'no-shell-molded-bonbon': noShellMoldedBonBonEntity,
             'test-bar-truffle': barTruffleEntity,
             'test-rolled-truffle': rolledTruffleEntity
             /* eslint-enable @typescript-eslint/naming-convention */
@@ -1086,6 +1111,31 @@ describe('Confection Recipes', () => {
 
             expect(variation.additionalChocolates).toBeUndefined();
           });
+        }
+      );
+    });
+
+    test('getShellChocolate returns Success with undefined when no shell chocolate configured', () => {
+      expect(ctx.confections.get('test.no-shell-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+          if (!variation.isMoldedBonBonVariation()) {
+            throw new Error('Expected molded bonbon variation');
+          }
+
+          expect((variation as MoldedBonBonRecipeVariation).getShellChocolate()).toSucceedWith(undefined);
+        }
+      );
+    });
+
+    test('shellChocolate returns undefined when no shell chocolate configured', () => {
+      expect(ctx.confections.get('test.no-shell-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          if (!confection.isMoldedBonBon()) {
+            throw new Error('Expected molded bonbon');
+          }
+
+          expect(confection.shellChocolate).toBeUndefined();
         }
       );
     });

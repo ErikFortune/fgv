@@ -165,7 +165,7 @@ export class MoldedBonBonRecipeVariation
    * Returns undefined if no shell chocolate is configured.
    */
   public get shellChocolate(): IResolvedChocolateSpec | undefined {
-    return this.getShellChocolate().orDefault();
+    return this.getShellChocolate().orThrow();
   }
 
   /**
