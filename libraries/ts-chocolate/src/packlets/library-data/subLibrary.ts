@@ -393,7 +393,7 @@ export abstract class SubLibraryBase<
 
   /**
    * FileTree source items for collections loaded from FileTree.
-   * Maps collection ID to its source FileTree item for persistence.
+   * Maps collection ID to its backing file item for persistence and deletion.
    */
   private readonly _sourceItems: Map<CollectionId, FileTree.FileTreeItem>;
 
@@ -1310,6 +1310,27 @@ export abstract class SubLibraryBase<
   }
 
   /**
+   * Deletes the backing file for a collection from its source FileTree.
+   * Called during removeCollection to ensure the file doesn't reappear on restart.
+   * @internal
+   */
+  private _deleteSourceFile(collectionId: CollectionId): void {
+    const sourceItem = this._sourceItems.get(collectionId);
+    if (!sourceItem) {
+      return;
+    }
+
+    // Delete the backing file if the file item supports deletion.
+    // FileItem.delete() delegates to the accessors layer, which handles
+    // both in-memory removal and storage cleanup (e.g., localStorage).
+    if (sourceItem.type === 'file' && sourceItem.delete) {
+      sourceItem.delete();
+    }
+
+    this._sourceItems.delete(collectionId);
+  }
+
+  /**
    * Ensures that a mutable data directory is available, creating it if necessary.
    * @returns Success with the mutable data directory, or Failure if not available
    */
@@ -1479,6 +1500,10 @@ export abstract class SubLibraryBase<
         if (!collection.isMutable) {
           return Failure.with(`Cannot delete immutable collection "${collectionId}"`);
         }
+
+        // Delete the backing file from the FileTree (if one exists).
+        this._deleteSourceFile(collectionId);
+
         // Use the protected method from AggregatedResultMapBase
         return this._deleteCollection(collectionId).asResult;
       });

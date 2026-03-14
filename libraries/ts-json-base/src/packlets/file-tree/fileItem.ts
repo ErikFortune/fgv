@@ -174,6 +174,19 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
+   * {@inheritDoc FileTree.IFileTreeFileItem.delete}
+   */
+  public delete(): Result<boolean> {
+    if (!isMutableAccessors(this._hal)) {
+      return fail(`${this.absolutePath}: mutation not supported`);
+    }
+    if (this._hal.deleteFile === undefined) {
+      return fail(`${this.absolutePath}: file deletion not supported`);
+    }
+    return this._hal.deleteFile(this.absolutePath);
+  }
+
+  /**
    * Default function to infer the content type of a file.
    * @param filePath - The path of the file.
    * @param provided - Optional supplied content type.

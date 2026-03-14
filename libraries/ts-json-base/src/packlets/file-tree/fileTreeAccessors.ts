@@ -183,6 +183,14 @@ export interface IFileTreeFileItem<TCT extends string = string> {
    * @remarks This method is optional. If not present, the file is not mutable.
    */
   setRawContents(contents: string): Result<string>;
+
+  /**
+   * Deletes this file from its backing store.
+   * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
+   * @remarks This method is optional. Only available on mutable file items
+   * with accessors that support deletion.
+   */
+  delete?(): Result<boolean>;
 }
 
 /**
@@ -228,6 +236,14 @@ export interface IFileTreeDirectoryItem<TCT extends string = string> {
    * @remarks This method is optional. Only available on mutable directory items.
    */
   createChildDirectory?(name: string): Result<IFileTreeDirectoryItem<TCT>>;
+
+  /**
+   * Deletes a child file from this directory.
+   * @param name - The file name to delete.
+   * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
+   * @remarks This method is optional. Only available on mutable directory items.
+   */
+  deleteChild?(name: string): Result<boolean>;
 }
 
 /**
@@ -328,6 +344,13 @@ export interface IMutableFileTreeAccessors<TCT extends string = string> extends 
    * @returns `Success` with the absolute path if created, or `Failure` with an error message.
    */
   createDirectory?(path: string): Result<string>;
+
+  /**
+   * Deletes a file at the given path.
+   * @param path - The path of the file to delete.
+   * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
+   */
+  deleteFile?(path: string): Result<boolean>;
 }
 
 /**

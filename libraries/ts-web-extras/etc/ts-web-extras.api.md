@@ -341,6 +341,7 @@ export interface IUrlConfigOptions {
 
 // @public
 export class LocalStorageTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+    deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
     static fromStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<LocalStorageTreeAccessors<TCT>>;
     getDirtyPaths(): string[];

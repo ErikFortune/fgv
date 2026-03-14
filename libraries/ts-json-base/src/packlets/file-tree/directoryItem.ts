@@ -127,4 +127,20 @@ export class DirectoryItem<TCT extends string = string> implements IFileTreeDire
     const dirPath = this._hal.joinPaths(this.absolutePath, name);
     return this._hal.createDirectory(dirPath).onSuccess(() => DirectoryItem.create(dirPath, this._hal));
   }
+
+  /**
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.deleteChild}
+   */
+  public deleteChild(name: string): Result<boolean> {
+    if (!isMutableAccessors(this._hal)) {
+      return fail(`${this.absolutePath}: mutation not supported`);
+    }
+
+    if (this._hal.deleteFile === undefined) {
+      return fail(`${this.absolutePath}: file deletion not supported`);
+    }
+
+    const filePath = this._hal.joinPaths(this.absolutePath, name);
+    return this._hal.deleteFile(filePath);
+  }
 }
