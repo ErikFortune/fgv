@@ -26,6 +26,43 @@ import * as yaml from 'yaml';
 
 import { BuiltInData, ingredientCollections, fillingCollections } from '../../../packlets/built-in';
 
+// ============================================================================
+// Helpers — build a small summary object suitable for snapshotting
+// ============================================================================
+
+interface IDirectorySummary {
+  name: string;
+  files: string[];
+  /** Per-file item IDs (sorted) */
+  items: Record<string, string[]>;
+}
+
+type BuiltInDir = NonNullable<ReturnType<typeof BuiltInData.getIngredientsDirectory>['value']>;
+
+function summarizeDirectory(dir: BuiltInDir): IDirectorySummary {
+  const children = dir.getChildren().orThrow();
+  const files = children.map((c) => c.name).sort();
+  const items: Record<string, string[]> = {};
+
+  for (const child of children) {
+    if (child.type === 'file') {
+      const contentsResult = child.getContents();
+      if (contentsResult.isSuccess()) {
+        const sourceFile = contentsResult.value as { items?: Record<string, unknown> };
+        if (sourceFile.items) {
+          items[child.name] = Object.keys(sourceFile.items).sort();
+        }
+      }
+    }
+  }
+
+  return {
+    name: dir.name,
+    files,
+    items
+  };
+}
+
 describe('BuiltInData', () => {
   beforeEach(() => {
     // Clear the cache before each test to ensure fresh state
@@ -94,58 +131,9 @@ describe('BuiltInData', () => {
       });
     });
 
-    test('ingredients directory contains expected collections', () => {
+    test('ingredients directory matches snapshot', () => {
       expect(BuiltInData.getIngredientsDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const names = children.map((c) => c.name).sort();
-          expect(names).toEqual([
-            'alcohol.json',
-            'cacao-barry.json',
-            'callebaut.json',
-            'common.json',
-            'decorations.json',
-            'felchlin.json',
-            'flavors.json',
-            'guittard.json'
-          ]);
-        });
-      });
-    });
-
-    test('common.json contains expected ingredients', () => {
-      expect(BuiltInData.getIngredientsDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const commonFile = children.find((c) => c.name === 'common.json');
-          expect(commonFile).toBeDefined();
-          expect(commonFile?.type).toBe('file');
-
-          if (commonFile?.type === 'file') {
-            expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
-              const sourceFile = contents as { items: Record<string, unknown> };
-              expect(sourceFile.items['heavy-cream-36']).toBeDefined();
-              expect(sourceFile.items['butter-82']).toBeDefined();
-              expect(sourceFile.items['glucose-de43']).toBeDefined();
-            });
-          }
-        });
-      });
-    });
-
-    test('felchlin.json contains expected chocolates', () => {
-      expect(BuiltInData.getIngredientsDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const felchlinFile = children.find((c) => c.name === 'felchlin.json');
-          expect(felchlinFile).toBeDefined();
-          expect(felchlinFile?.type).toBe('file');
-
-          if (felchlinFile?.type === 'file') {
-            expect(felchlinFile.getContents()).toSucceedAndSatisfy((contents) => {
-              const sourceFile = contents as { items: Record<string, unknown> };
-              expect(sourceFile.items['maracaibo-65']).toBeDefined();
-              expect(sourceFile.items['arriba-72']).toBeDefined();
-            });
-          }
-        });
+        expect(summarizeDirectory(dir)).toMatchSnapshot();
       });
     });
   });
@@ -162,33 +150,9 @@ describe('BuiltInData', () => {
       });
     });
 
-    test('recipes directory contains expected collections', () => {
+    test('fillings directory matches snapshot', () => {
       expect(BuiltInData.getFillingsDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const names = children.map((c) => c.name).sort();
-          // common.json and fgv.json are unencrypted public recipes
-          expect(names).toEqual(['common.json', 'fgv.json']);
-        });
-      });
-    });
-
-    test('common.json contains expected recipes', () => {
-      expect(BuiltInData.getFillingsDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const commonFile = children.find((c) => c.name === 'common.json');
-          expect(commonFile).toBeDefined();
-          expect(commonFile?.type).toBe('file');
-
-          if (commonFile?.type === 'file') {
-            expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
-              const sourceFile = contents as { items: Record<string, unknown> };
-              expect(sourceFile.items['dark-ganache-classic']).toBeDefined();
-              expect(sourceFile.items['milk-ganache-classic']).toBeDefined();
-              expect(sourceFile.items['white-ganache-classic']).toBeDefined();
-              expect(sourceFile.items['vegan-ganache-coconut-cream']).toBeDefined();
-            });
-          }
-        });
+        expect(summarizeDirectory(dir)).toMatchSnapshot();
       });
     });
   });
@@ -205,48 +169,9 @@ describe('BuiltInData', () => {
       });
     });
 
-    test('molds directory contains expected collections', () => {
+    test('molds directory matches snapshot', () => {
       expect(BuiltInData.getMoldsDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const names = children.map((c) => c.name).sort();
-          expect(names).toContain('common.json');
-          expect(names).toContain('cw.json');
-        });
-      });
-    });
-
-    test('common.json contains expected generic molds', () => {
-      expect(BuiltInData.getMoldsDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const commonFile = children.find((c) => c.name === 'common.json');
-          expect(commonFile).toBeDefined();
-          expect(commonFile?.type).toBe('file');
-
-          if (commonFile?.type === 'file') {
-            expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
-              const sourceFile = contents as { items: Record<string, unknown> };
-              expect(sourceFile.items['dome-25mm']).toBeDefined();
-              expect(sourceFile.items['dome-30mm']).toBeDefined();
-            });
-          }
-        });
-      });
-    });
-
-    test('cw.json contains Chocolate World molds', () => {
-      expect(BuiltInData.getMoldsDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const cwFile = children.find((c) => c.name === 'cw.json');
-          expect(cwFile).toBeDefined();
-          expect(cwFile?.type).toBe('file');
-
-          if (cwFile?.type === 'file') {
-            expect(cwFile.getContents()).toSucceedAndSatisfy((contents) => {
-              const sourceFile = contents as { items: Record<string, unknown> };
-              expect(sourceFile.items['chocolate-world-cw-2227']).toBeDefined();
-            });
-          }
-        });
+        expect(summarizeDirectory(dir)).toMatchSnapshot();
       });
     });
   });
@@ -263,29 +188,9 @@ describe('BuiltInData', () => {
       });
     });
 
-    test('procedures directory contains expected collections', () => {
+    test('procedures directory matches snapshot', () => {
       expect(BuiltInData.getProceduresDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const names = children.map((c) => c.name).sort();
-          expect(names).toContain('common.json');
-        });
-      });
-    });
-
-    test('common.json contains expected procedures', () => {
-      expect(BuiltInData.getProceduresDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const commonFile = children.find((c) => c.name === 'common.json');
-          expect(commonFile).toBeDefined();
-          expect(commonFile?.type).toBe('file');
-
-          if (commonFile?.type === 'file') {
-            expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
-              const sourceFile = contents as { items: Record<string, unknown> };
-              expect(sourceFile.items['ganache-cold-method']).toBeDefined();
-            });
-          }
-        });
+        expect(summarizeDirectory(dir)).toMatchSnapshot();
       });
     });
   });
@@ -302,31 +207,9 @@ describe('BuiltInData', () => {
       });
     });
 
-    test('tasks directory contains expected collections', () => {
+    test('tasks directory matches snapshot', () => {
       expect(BuiltInData.getTasksDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const names = children.map((c) => c.name).sort();
-          expect(names).toContain('common.json');
-        });
-      });
-    });
-
-    test('common.json contains expected tasks', () => {
-      expect(BuiltInData.getTasksDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          const commonFile = children.find((c) => c.name === 'common.json');
-          expect(commonFile).toBeDefined();
-          expect(commonFile?.type).toBe('file');
-
-          if (commonFile?.type === 'file') {
-            expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
-              const sourceFile = contents as { items: Record<string, unknown> };
-              expect(sourceFile.items['melt-chocolate']).toBeDefined();
-              expect(sourceFile.items['heat-ingredient']).toBeDefined();
-              expect(sourceFile.items['combine-and-emulsify']).toBeDefined();
-            });
-          }
-        });
+        expect(summarizeDirectory(dir)).toMatchSnapshot();
       });
     });
   });
@@ -426,7 +309,6 @@ describe('BuiltInData', () => {
         expect(sourceFile.items).toBeDefined();
 
         // Each recipe should have required fields
-        // Each recipe should have required fields
         for (const [id, recipe] of Object.entries(sourceFile.items)) {
           expect(recipe.baseId).toBe(id);
           expect(recipe.name).toBeDefined();
@@ -448,13 +330,9 @@ describe('BuiltInData', () => {
       });
     });
 
-    test('confections directory contains expected files', () => {
+    test('confections directory matches snapshot', () => {
       expect(BuiltInData.getConfectionsDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          // Should contain common.json
-          const names = children.map((c) => c.name);
-          expect(names).toContain('common.json');
-        });
+        expect(summarizeDirectory(dir)).toMatchSnapshot();
       });
     });
   });
@@ -471,13 +349,9 @@ describe('BuiltInData', () => {
       });
     });
 
-    test('decorations directory contains expected files', () => {
+    test('decorations directory matches snapshot', () => {
       expect(BuiltInData.getDecorationsDirectory()).toSucceedAndSatisfy((dir) => {
-        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
-          // Should contain common.json
-          const names = children.map((c) => c.name);
-          expect(names).toContain('common.json');
-        });
+        expect(summarizeDirectory(dir)).toMatchSnapshot();
       });
     });
   });

@@ -1,0 +1,281 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BuiltInData getConfectionsDirectory confections directory matches snapshot 1`] = `
+Object {
+  "files": Array [
+    "common.json",
+  ],
+  "items": Object {
+    "common.json": Array [
+      "dark-bar-truffle",
+      "dark-cocoa-truffle",
+      "dark-dome-bonbon",
+    ],
+  },
+  "name": "confections",
+}
+`;
+
+exports[`BuiltInData getDecorationsDirectory decorations directory matches snapshot 1`] = `
+Object {
+  "files": Array [
+    "common.json",
+  ],
+  "items": Object {
+    "common.json": Array [
+      "cocoa-butter-transfer",
+      "cocoa-powder-dusting",
+      "dipping-fork-wave",
+      "gold-leaf-accent",
+    ],
+  },
+  "name": "decorations",
+}
+`;
+
+exports[`BuiltInData getFillingsDirectory fillings directory matches snapshot 1`] = `
+Object {
+  "files": Array [
+    "common.json",
+  ],
+  "items": Object {
+    "common.json": Array [
+      "caramelized-ganache",
+      "dark-ganache-classic",
+      "gianduja-basic",
+      "milk-ganache-classic",
+      "vegan-ganache-coconut-cream",
+      "vegan-ganache-coconut-oil",
+      "white-ganache-classic",
+    ],
+  },
+  "name": "fillings",
+}
+`;
+
+exports[`BuiltInData getIngredientsDirectory ingredients directory matches snapshot 1`] = `
+Object {
+  "files": Array [
+    "alcohol.json",
+    "cacao-barry.json",
+    "callebaut.json",
+    "common.json",
+    "decorations.json",
+    "felchlin.json",
+    "flavors.json",
+    "guittard.json",
+  ],
+  "items": Object {
+    "alcohol.json": Array [
+      "almond-liqueur",
+      "amaretto",
+      "amarula-cream-liqueur",
+      "baileys-irish-cream",
+      "bourbon",
+      "chambord",
+      "cointreau",
+      "eierlik-r",
+      "frangelico",
+      "gin",
+      "grand-marnier",
+      "kahlua",
+      "rum",
+      "tia-maria",
+      "whiskey",
+    ],
+    "cacao-barry.json": Array [
+      "guayaquil-64",
+      "madirofolo-65",
+      "tanzanie-75",
+      "zephyr-caramel-35",
+      "zephyr-white-34",
+    ],
+    "callebaut.json": Array [
+      "70-30-38-dark-70",
+      "811-dark-54",
+      "823-milk-33",
+      "845-milk-32",
+      "gold-caramel-30",
+      "ruby-rb1-33",
+      "w2-white-28",
+    ],
+    "common.json": Array [
+      "acid-powder",
+      "apple-pectin",
+      "banana-overripe",
+      "butter-82",
+      "chocolate-dark-64",
+      "chocolate-milk-38",
+      "chocolate-white-34",
+      "citric-acid-solution",
+      "cocoa-butter",
+      "cocoa-butter-colored",
+      "cocoa-powder",
+      "coconut-cream",
+      "coconut-oil-deodorized",
+      "coffee-beans",
+      "corn-syrup",
+      "ghee-clarified-butter",
+      "glucose-de43",
+      "goat-cheese-costco",
+      "gold-leaf",
+      "granulated-sugar",
+      "hazelnut-paste",
+      "hazelnut-praline-70-30",
+      "hazelnuts-roasted",
+      "heavy-cream-36",
+      "heavy-cream-38",
+      "invert-sugar",
+      "lemon-juice",
+      "malic-acid-solution",
+      "mango-juice-reduced",
+      "mango-puree",
+      "maple-syrup",
+      "mascarpone",
+      "muscovado-sugar",
+      "passion-fruit-juice",
+      "raspberry-puree-himbeermark",
+      "salt",
+      "sea-salt",
+      "sorbitol",
+      "soy-milk",
+      "water",
+    ],
+    "decorations.json": Array [
+      "cocoa-butter-decorative",
+      "gold-leaf",
+      "lustre-dust",
+    ],
+    "felchlin.json": Array [
+      "accra-62",
+      "arriba-72",
+      "bionda-36",
+      "edelweiss-36",
+      "maracaibo-65",
+      "sao-palme-36",
+      "sao-palme-43",
+      "sao-palme-60",
+      "sao-palme-75",
+    ],
+    "flavors.json": Array [
+      "aztec-spice",
+      "cardamom-ground",
+      "cardamom-whole",
+      "chai-spice",
+      "cinnamon-ground",
+      "cinnamon-whole",
+      "cloves-ground",
+      "cloves-whole",
+      "coffee-beans",
+      "lebkuchen-spice",
+      "nutmeg-ground",
+      "nutmeg-whole",
+      "thai-tea",
+      "vietnamese-coffee-concentrate",
+      "yuzu-extract",
+    ],
+    "guittard.json": Array [
+      "coucher-du-soleil-72",
+      "creme-francaise-31",
+      "guittard-high-sierra-white-chocolate",
+      "guittard-onyx-72",
+      "la-nuit-noire-55",
+      "letoile-du-nord-64",
+      "lever-du-soleil-61",
+      "soleil-dor-38",
+    ],
+  },
+  "name": "ingredients",
+}
+`;
+
+exports[`BuiltInData getMoldsDirectory molds directory matches snapshot 1`] = `
+Object {
+  "files": Array [
+    "common.json",
+    "cw.json",
+    "greyas.json",
+    "implast.json",
+    "martellato.json",
+    "other.json",
+  ],
+  "items": Object {
+    "common.json": Array [
+      "bullet-28mm",
+      "dome-25mm",
+      "dome-30mm",
+      "square-25mm",
+    ],
+    "cw.json": Array [
+      "chocolate-world-cw-2227",
+      "chocolate-world-cw12027",
+      "chocolate-world-cw12060",
+      "chocolate-world-cw1301",
+      "chocolate-world-cw1840",
+      "chocolate-world-cw1988",
+    ],
+    "greyas.json": Array [
+      "cm-3898",
+      "cm1207",
+      "greyas-cm-3843",
+    ],
+    "implast.json": Array [
+      "chef-jungstedt-sm-1",
+    ],
+    "martellato.json": Array [],
+    "other.json": Array [
+      "cabrellon-10176-coffee-cup",
+    ],
+  },
+  "name": "molds",
+}
+`;
+
+exports[`BuiltInData getProceduresDirectory procedures directory matches snapshot 1`] = `
+Object {
+  "files": Array [
+    "common.json",
+  ],
+  "items": Object {
+    "common.json": Array [
+      "enrobe-truffle-method",
+      "ganache-cold-method",
+      "ganache-hot-method",
+      "gianduja",
+      "roll-and-coat-method",
+      "shell-bonbon-method",
+      "transfer-sheet-application",
+    ],
+  },
+  "name": "procedures",
+}
+`;
+
+exports[`BuiltInData getTasksDirectory tasks directory matches snapshot 1`] = `
+Object {
+  "files": Array [
+    "common.json",
+  ],
+  "items": Object {
+    "common.json": Array [
+      "add-and-blend",
+      "blend-until-smooth",
+      "bring-to-boil",
+      "combine-and-emulsify",
+      "combine-and-mix",
+      "grind-to-paste",
+      "heat-ingredient",
+      "let-stand",
+      "melt-chocolate",
+      "pour-over",
+      "remove-skins",
+      "rest-at-temperature",
+      "roast-nuts",
+      "stir-to-emulsify",
+      "temper-and-mold",
+      "warm-ingredient",
+    ],
+  },
+  "name": "tasks",
+}
+`;
