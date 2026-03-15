@@ -37,6 +37,33 @@ import { Converters as EntityConverters } from '../../../packlets/entities';
 import { ISyncProvider, ICollectionOperations, PersistedEditableCollection } from '../../../packlets/editing';
 
 // ============================================================================
+// Mock Helpers
+// ============================================================================
+
+interface IMockMutableFileItemOptions {
+  name?: string;
+  getIsMutable?: () => Result<boolean>;
+  setRawContents?: (content: string) => Result<undefined>;
+}
+
+function createMockMutableFileItem(options?: IMockMutableFileItemOptions): FileTree.IMutableFileTreeFileItem {
+  return {
+    type: 'file' as const,
+    absolutePath: `/${options?.name ?? 'test.yaml'}`,
+    name: options?.name ?? 'test.yaml',
+    baseName: options?.name ?? 'test',
+    extension: '.yaml',
+    contentType: undefined,
+    getContents: () => succeed({}),
+    getRawContents: () => succeed(''),
+    getIsMutable: options?.getIsMutable ?? (() => succeed(true)),
+    setContents: () => succeed(undefined),
+    setRawContents: options?.setRawContents ?? ((_content: string) => succeed(undefined)),
+    delete: () => succeed(true)
+  } as unknown as FileTree.IMutableFileTreeFileItem;
+}
+
+// ============================================================================
 // Test Data
 // ============================================================================
 
@@ -354,11 +381,7 @@ describe('PersistedEditableCollection', () => {
       };
 
       // Use a mock library with a saveable editable collection
-      const mockSourceItem = {
-        name: 'user.yaml',
-        getIsMutable: () => succeed(true),
-        setRawContents: (_content: string) => succeed(undefined)
-      } as unknown as FileTree.FileTreeItem;
+      const mockSourceItem = createMockMutableFileItem({ name: 'user.yaml' });
 
       const mockLibrary = {
         collections: {
@@ -413,11 +436,7 @@ describe('PersistedEditableCollection', () => {
           } as unknown as Result<true>)
       };
 
-      const mockSourceItem = {
-        name: 'user.yaml',
-        getIsMutable: () => succeed(true),
-        setRawContents: (_content: string) => succeed(undefined)
-      } as unknown as FileTree.FileTreeItem;
+      const mockSourceItem = createMockMutableFileItem({ name: 'user.yaml' });
 
       const mockLibrary = {
         collections: {
@@ -844,11 +863,7 @@ describe('PersistedEditableCollection', () => {
     ): import('../../../packlets/library-data').SubLibraryBase<string, string, TestItem> {
       const itemMap = new Map(Object.entries(items));
       const mockSourceItem = saveRawContents
-        ? ({
-            name: 'test.yaml',
-            getIsMutable: () => succeed(true),
-            setRawContents: saveRawContents
-          } as unknown as FileTree.FileTreeItem)
+        ? createMockMutableFileItem({ name: 'test.yaml', setRawContents: saveRawContents })
         : undefined;
       return {
         collections: {

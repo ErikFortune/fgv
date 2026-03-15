@@ -54,7 +54,7 @@ Identifies which storage root loaded collections from this source.
 
 </td><td>
 
-IFileTreeDirectoryItem
+AnyFileTreeDirectoryItem
 
 </td><td>
 

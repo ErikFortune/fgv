@@ -401,13 +401,13 @@ export abstract class SubLibraryBase<
    * Mutable data directory for creating new collection files.
    * Set during construction if a mutable file source was configured.
    */
-  private _mutableDataDirectory: FileTree.IFileTreeDirectoryItem | undefined;
+  private _mutableDataDirectory: FileTree.IMutableFileTreeDirectoryItem | undefined;
 
   /**
    * Mutable source root directory for lazy creation of data directories.
    * Used when the data directory doesn't exist yet at construction time.
    */
-  private _mutableSourceRoot: FileTree.IFileTreeDirectoryItem | undefined;
+  private _mutableSourceRoot: FileTree.IMutableFileTreeDirectoryItem | undefined;
 
   /**
    * Source name for the mutable file source.
@@ -561,14 +561,14 @@ export abstract class SubLibraryBase<
         continue;
       }
       const dataDirResult = params.directoryNavigator(source.directory);
-      if (dataDirResult.isSuccess()) {
+      if (dataDirResult.isSuccess() && FileTree.isMutableDirectoryItem(dataDirResult.value)) {
         this._mutableSourceName = source.sourceName;
         this._mutableDataDirectory = dataDirResult.value;
         break;
       }
       // Data directory doesn't exist yet - try to create it on demand
       // Store the source root and navigator for lazy creation in createCollectionFile
-      if (source.directory.createChildDirectory !== undefined) {
+      if (FileTree.isMutableDirectoryItem(source.directory)) {
         this._mutableSourceName = source.sourceName;
         this._mutableSourceRoot = source.directory;
         break;
@@ -1297,10 +1297,6 @@ export abstract class SubLibraryBase<
     return this._ensureMutableDataDirectory().onSuccess((dataDir) => {
       /* c8 ignore next 1 - coverage intermittently missed in full suite */
       const fileName = `${collectionId}.${extension}`;
-      /* c8 ignore next 3 - defensive: createChildFile always available on DirectoryItem */
-      if (dataDir.createChildFile === undefined) {
-        return fail(`${dataDir.absolutePath}: file creation not supported`);
-      }
       /* c8 ignore next 4 - success path tested but coverage intermittently missed */
       return dataDir.createChildFile(fileName, content).onSuccess((fileItem) => {
         this._sourceItems.set(collectionId, fileItem);
@@ -1323,7 +1319,7 @@ export abstract class SubLibraryBase<
     // Delete the backing file if the file item supports deletion.
     // FileItem.delete() delegates to the accessors layer, which handles
     // both in-memory removal and storage cleanup (e.g., localStorage).
-    if (sourceItem.type === 'file' && sourceItem.delete) {
+    if (FileTree.isMutableFileItem(sourceItem)) {
       sourceItem.delete();
     }
 
@@ -1334,7 +1330,7 @@ export abstract class SubLibraryBase<
    * Ensures that a mutable data directory is available, creating it if necessary.
    * @returns Success with the mutable data directory, or Failure if not available
    */
-  private _ensureMutableDataDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
+  private _ensureMutableDataDirectory(): Result<FileTree.IMutableFileTreeDirectoryItem> {
     /* c8 ignore next 3 - caching logic tested but coverage intermittently missed */
     if (this._mutableDataDirectory !== undefined) {
       return succeed(this._mutableDataDirectory);
@@ -1343,13 +1339,17 @@ export abstract class SubLibraryBase<
     if (this._mutableSourceRoot === undefined) {
       return fail('No writable data directory available');
     }
-    /* c8 ignore next 13 - lazy directory creation only when data dir absent at construction */
+    /* c8 ignore next 17 - lazy directory creation only when data dir absent at construction */
     // Try to create the data directory structure by navigating from the source root.
     // The navigator knows the path (e.g., "data/ingredients").
     // First try navigating (in case it was created since construction).
     const navResult = this._directoryNavigator(this._mutableSourceRoot);
     if (navResult.isSuccess()) {
-      this._mutableDataDirectory = navResult.value;
+      const dir = navResult.value;
+      if (!FileTree.isMutableDirectoryItem(dir)) {
+        return fail(`${dir.absolutePath}: directory is not mutable`);
+      }
+      this._mutableDataDirectory = dir;
       return succeed(this._mutableDataDirectory);
     }
 
@@ -1368,13 +1368,17 @@ export abstract class SubLibraryBase<
    */
   /* c8 ignore next 56 - directory creation fallback: tested via integration tests with real filesystem */
   private _createDataDirectoryPath(
-    sourceRoot: FileTree.IFileTreeDirectoryItem
-  ): Result<FileTree.IFileTreeDirectoryItem> {
+    sourceRoot: FileTree.IMutableFileTreeDirectoryItem
+  ): Result<FileTree.IMutableFileTreeDirectoryItem> {
     // Create missing directories one at a time (max depth 5).
     for (let attempts = 0; attempts < 5; attempts++) {
       const navResult = this._directoryNavigator(sourceRoot);
       if (navResult.isSuccess()) {
-        this._mutableDataDirectory = navResult.value;
+        const dir = navResult.value;
+        if (!FileTree.isMutableDirectoryItem(dir)) {
+          return fail(`${dir.absolutePath}: directory is not mutable`);
+        }
+        this._mutableDataDirectory = dir;
         return succeed(this._mutableDataDirectory);
       }
 
@@ -1394,8 +1398,8 @@ export abstract class SubLibraryBase<
       const missingIndex = pathParts.indexOf(missingSegment);
       const parentPath = missingIndex > 0 ? pathParts.slice(0, missingIndex).join('/') : '';
 
-      // Navigate to the parent directory
-      let parent: FileTree.IFileTreeDirectoryItem;
+      // Navigate to the parent directory and narrow to mutable
+      let parent: FileTree.AnyFileTreeDirectoryItem;
       if (parentPath === '') {
         parent = sourceRoot;
       } else {
@@ -1406,7 +1410,7 @@ export abstract class SubLibraryBase<
         parent = parentResult.value;
       }
 
-      if (parent.createChildDirectory === undefined) {
+      if (!FileTree.isMutableDirectoryItem(parent)) {
         return fail(`${parent.absolutePath}: directory creation not supported`);
       }
 
@@ -1418,6 +1422,9 @@ export abstract class SubLibraryBase<
 
     // Final attempt
     return this._directoryNavigator(sourceRoot).onSuccess((dir) => {
+      if (!FileTree.isMutableDirectoryItem(dir)) {
+        return fail(`${dir.absolutePath}: directory is not mutable`);
+      }
       this._mutableDataDirectory = dir;
       return succeed(dir);
     });
@@ -1444,8 +1451,8 @@ export abstract class SubLibraryBase<
    */
   public setActiveMutableSource(
     sourceName: string,
-    dataDirectory: FileTree.IFileTreeDirectoryItem | undefined,
-    sourceRoot?: FileTree.IFileTreeDirectoryItem
+    dataDirectory: FileTree.IMutableFileTreeDirectoryItem | undefined,
+    sourceRoot?: FileTree.IMutableFileTreeDirectoryItem
   ): void {
     this._mutableSourceName = sourceName;
     this._mutableDataDirectory = dataDirectory;

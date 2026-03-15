@@ -19,10 +19,34 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import { Converters, succeed } from '@fgv/ts-utils';
+import { Converters, Result, succeed } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
+import { FileTree } from '@fgv/ts-json-base';
 import { CollectionId } from '../../../index';
 import { EditableCollection } from '../../../packlets/editing';
+
+interface IMockMutableFileItemOptions {
+  name?: string;
+  getIsMutable?: () => Result<boolean>;
+  setRawContents?: (content: string) => Result<undefined>;
+}
+
+function createMockMutableFileItem(options?: IMockMutableFileItemOptions): FileTree.IMutableFileTreeFileItem {
+  return {
+    type: 'file' as const,
+    absolutePath: `/${options?.name ?? 'test'}`,
+    name: options?.name ?? 'test',
+    baseName: options?.name ?? 'test',
+    extension: '.yaml',
+    contentType: undefined,
+    getContents: () => succeed({}),
+    getRawContents: () => succeed(''),
+    getIsMutable: options?.getIsMutable ?? (() => succeed(true)),
+    setContents: () => succeed(undefined),
+    setRawContents: options?.setRawContents ?? ((_content: string) => succeed(undefined)),
+    delete: () => succeed(true)
+  } as unknown as FileTree.IMutableFileTreeFileItem;
+}
 
 const TEST_SOURCE_ID = 'test' as CollectionId;
 const testKeyConverter = Converters.string;
@@ -797,11 +821,6 @@ items:
     });
 
     test('should return true when sourceItem is mutable file', () => {
-      const mockSourceItem = {
-        name: 'test',
-        getIsMutable: () => succeed(true)
-      };
-
       const collection = EditableCollection.createEditable<TestItem>({
         collectionId: TEST_SOURCE_ID,
         metadata: testMetadata,
@@ -809,18 +828,13 @@ items:
         initialItems: new Map(),
         keyConverter: testKeyConverter,
         valueConverter: testValueConverter,
-        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+        sourceItem: createMockMutableFileItem()
       }).orThrow();
 
       expect(collection.canSave()).toBe(true);
     });
 
     test('should return false when sourceItem is immutable file', () => {
-      const mockSourceItem = {
-        name: 'test',
-        getIsMutable: () => succeed(false)
-      };
-
       const collection = EditableCollection.createEditable<TestItem>({
         collectionId: TEST_SOURCE_ID,
         metadata: testMetadata,
@@ -828,7 +842,7 @@ items:
         initialItems: new Map(),
         keyConverter: testKeyConverter,
         valueConverter: testValueConverter,
-        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+        sourceItem: createMockMutableFileItem({ getIsMutable: () => succeed(false) })
       }).orThrow();
 
       expect(collection.canSave()).toBe(false);
@@ -877,15 +891,10 @@ items:
         sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
       }).orThrow();
 
-      expect(await collection.save()).toFailWith(/not a file/i);
+      expect(await collection.save()).toFailWith(/not a mutable file/i);
     });
 
     test('should fail when sourceItem file is immutable', async () => {
-      const mockSourceItem = {
-        name: 'test',
-        getIsMutable: () => succeed(false)
-      };
-
       const collection = EditableCollection.createEditable<TestItem>({
         collectionId: TEST_SOURCE_ID,
         metadata: testMetadata,
@@ -893,22 +902,19 @@ items:
         initialItems: new Map(),
         keyConverter: testKeyConverter,
         valueConverter: testValueConverter,
-        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+        sourceItem: createMockMutableFileItem({ getIsMutable: () => succeed(false) })
       }).orThrow();
 
       expect(await collection.save()).toFailWith(/not mutable/i);
     });
 
     test('should fail when getIsMutable returns failure', async () => {
-      const mockSourceItem = {
-        name: 'test',
-        getIsMutable: () => {
-          return {
-            isSuccess: () => false,
-            isFailure: () => true,
-            message: 'Failed to check mutability'
-          } as unknown as import('@fgv/ts-utils').Result<boolean>;
-        }
+      const mockGetIsMutable = (): Result<boolean> => {
+        return {
+          isSuccess: () => false,
+          isFailure: () => true,
+          message: 'Failed to check mutability'
+        } as unknown as Result<boolean>;
       };
 
       const collection = EditableCollection.createEditable<TestItem>({
@@ -918,21 +924,13 @@ items:
         initialItems: new Map(),
         keyConverter: testKeyConverter,
         valueConverter: testValueConverter,
-        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+        sourceItem: createMockMutableFileItem({ getIsMutable: mockGetIsMutable })
       }).orThrow();
 
       expect(await collection.save()).toFailWith(/not mutable.*Failed to check mutability/i);
     });
 
     test('should save as plain YAML when no secretName', async () => {
-      const mockSourceItem = {
-        name: 'test',
-        getIsMutable: () => succeed(true),
-        setRawContents: (_content: string) => {
-          return succeed(undefined);
-        }
-      };
-
       const collection = EditableCollection.createEditable<TestItem>({
         collectionId: TEST_SOURCE_ID,
         metadata: testMetadata,
@@ -940,21 +938,13 @@ items:
         initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
         keyConverter: testKeyConverter,
         valueConverter: testValueConverter,
-        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+        sourceItem: createMockMutableFileItem()
       }).orThrow();
 
       expect(await collection.save()).toSucceedWith(true);
     });
 
     test('should save as plain YAML when secretName present but no keyStore', async () => {
-      const mockSourceItem = {
-        name: 'test',
-        getIsMutable: () => succeed(true),
-        setRawContents: (_content: string) => {
-          return succeed(undefined);
-        }
-      };
-
       const collection = EditableCollection.createEditable<TestItem>({
         collectionId: TEST_SOURCE_ID,
         metadata: { ...testMetadata, secretName: 'my-secret' },
@@ -962,7 +952,7 @@ items:
         initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
         keyConverter: testKeyConverter,
         valueConverter: testValueConverter,
-        sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+        sourceItem: createMockMutableFileItem()
       }).orThrow();
 
       expect(await collection.save()).toSucceedWith(true);
@@ -982,14 +972,12 @@ items:
 
       test('should encrypt when secretName and keyStore are provided via constructor', async () => {
         let savedContent = '';
-        const mockSourceItem = {
-          name: 'test',
-          getIsMutable: () => succeed(true),
+        const mockSourceItem = createMockMutableFileItem({
           setRawContents: (content: string) => {
             savedContent = content;
             return succeed(undefined);
           }
-        };
+        });
 
         const collection = EditableCollection.createEditable<TestItem>({
           collectionId: TEST_SOURCE_ID,
@@ -998,7 +986,7 @@ items:
           initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
           keyConverter: testKeyConverter,
           valueConverter: testValueConverter,
-          sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem,
+          sourceItem: mockSourceItem,
           encryptionProvider: keyStore
         }).orThrow();
 
@@ -1013,14 +1001,12 @@ items:
 
       test('should encrypt when encryptionProvider is provided via save options', async () => {
         let savedContent = '';
-        const mockSourceItem = {
-          name: 'test',
-          getIsMutable: () => succeed(true),
+        const mockSourceItem = createMockMutableFileItem({
           setRawContents: (content: string) => {
             savedContent = content;
             return succeed(undefined);
           }
-        };
+        });
 
         const collection = EditableCollection.createEditable<TestItem>({
           collectionId: TEST_SOURCE_ID,
@@ -1029,7 +1015,7 @@ items:
           initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
           keyConverter: testKeyConverter,
           valueConverter: testValueConverter,
-          sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem
+          sourceItem: mockSourceItem
         }).orThrow();
 
         expect(await collection.save({ encryptionProvider: keyStore })).toSucceedWith(true);
@@ -1040,12 +1026,6 @@ items:
       });
 
       test('should fail when secret is not found in encryptionProvider', async () => {
-        const mockSourceItem = {
-          name: 'test',
-          getIsMutable: () => succeed(true),
-          setRawContents: (_content: string) => succeed(undefined)
-        };
-
         const collection = EditableCollection.createEditable<TestItem>({
           collectionId: TEST_SOURCE_ID,
           metadata: { ...testMetadata, secretName: 'nonexistent-secret' },
@@ -1053,7 +1033,7 @@ items:
           initialItems: new Map(),
           keyConverter: testKeyConverter,
           valueConverter: testValueConverter,
-          sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem,
+          sourceItem: createMockMutableFileItem(),
           encryptionProvider: keyStore
         }).orThrow();
 
@@ -1063,12 +1043,6 @@ items:
       test('should fail when keyStore is locked', async () => {
         keyStore.lock(true);
 
-        const mockSourceItem = {
-          name: 'test',
-          getIsMutable: () => succeed(true),
-          setRawContents: (_content: string) => succeed(undefined)
-        };
-
         const collection = EditableCollection.createEditable<TestItem>({
           collectionId: TEST_SOURCE_ID,
           metadata: { ...testMetadata, secretName: 'my-secret' },
@@ -1076,7 +1050,7 @@ items:
           initialItems: new Map(),
           keyConverter: testKeyConverter,
           valueConverter: testValueConverter,
-          sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem,
+          sourceItem: createMockMutableFileItem(),
           encryptionProvider: keyStore
         }).orThrow();
 
@@ -1089,14 +1063,12 @@ items:
         await otherKeyStore.addSecret('other-secret');
 
         let savedContent = '';
-        const mockSourceItem = {
-          name: 'test',
-          getIsMutable: () => succeed(true),
+        const mockSourceItem = createMockMutableFileItem({
           setRawContents: (content: string) => {
             savedContent = content;
             return succeed(undefined);
           }
-        };
+        });
 
         // Constructor encryptionProvider doesn't have 'other-secret', but options one does
         const collection = EditableCollection.createEditable<TestItem>({
@@ -1106,7 +1078,7 @@ items:
           initialItems: new Map([['item1', { name: 'Item 1', value: 10 }]]),
           keyConverter: testKeyConverter,
           valueConverter: testValueConverter,
-          sourceItem: mockSourceItem as unknown as import('@fgv/ts-json-base').FileTree.FileTreeItem,
+          sourceItem: mockSourceItem,
           encryptionProvider: keyStore
         }).orThrow();
 

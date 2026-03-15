@@ -23,13 +23,18 @@
 import { captureResult, DetailedResult, fail, failWithDetail, Result, succeed, Success } from '@fgv/ts-utils';
 import { Converter, Validator } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
-import { IFileTreeAccessors, IFileTreeFileItem, isMutableAccessors, SaveDetail } from './fileTreeAccessors';
+import {
+  IFileTreeAccessors,
+  IMutableFileTreeFileItem,
+  isMutableAccessors,
+  SaveDetail
+} from './fileTreeAccessors';
 
 /**
  * Class representing a file in a file tree.
  * @public
  */
-export class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> {
+export class FileItem<TCT extends string = string> implements IMutableFileTreeFileItem<TCT> {
   /**
    * {@inheritDoc FileTree.IFileTreeFileItem."type"}
    */
@@ -178,11 +183,8 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
    */
   public delete(): Result<boolean> {
     if (!isMutableAccessors(this._hal)) {
+      /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
       return fail(`${this.absolutePath}: mutation not supported`);
-    }
-    /* c8 ignore next 3 - defensive: deleteFile should always exist on mutable accessors that support deletion */
-    if (this._hal.deleteFile === undefined) {
-      return fail(`${this.absolutePath}: file deletion not supported`);
     }
     return this._hal.deleteFile(this.absolutePath);
   }

@@ -8,5 +8,5 @@ directories as needed (analogous to `mkdir -p`).
 ## Signature
 
 ```typescript
-function ensureDirectoryPath(root: IFileTreeDirectoryItem, relativePath: string): Result<IFileTreeDirectoryItem<string>>
+function ensureDirectoryPath(root: AnyFileTreeDirectoryItem, relativePath: string): Result<AnyFileTreeDirectoryItem>
 ```

@@ -499,7 +499,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
    * @returns True if the collection can be saved, false otherwise
    */
   public canSave(): boolean {
-    if (!this.sourceItem || !('getIsMutable' in this.sourceItem)) {
+    if (!this.sourceItem || !FileTree.isMutableFileItem(this.sourceItem)) {
       return false;
     }
     const result = this.sourceItem.getIsMutable();
@@ -543,9 +543,9 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
       );
     }
 
-    // Check if source item is a file (has getIsMutable method)
-    if (!('getIsMutable' in this.sourceItem)) {
-      return Failure.with(`Source item for collection "${this.collectionId}" is not a file`);
+    // Check if source item is a mutable file
+    if (!FileTree.isMutableFileItem(this.sourceItem)) {
+      return Failure.with(`Source item for collection "${this.collectionId}" is not a mutable file`);
     }
 
     // Check if the file is mutable
@@ -558,7 +558,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
       );
     }
 
-    const fileItem = this.sourceItem as FileTree.IFileTreeFileItem;
+    const fileItem = this.sourceItem;
     const provider = options?.encryptionProvider ?? this._encryptionProvider;
     const secretName = this._metadata.secretName;
 
@@ -582,7 +582,7 @@ export class EditableCollection<T, TBaseId extends string = string> extends Vali
    * @internal
    */
   private async _saveEncrypted(
-    fileItem: FileTree.IFileTreeFileItem,
+    fileItem: FileTree.IMutableFileTreeFileItem,
     provider: CryptoUtils.IEncryptionProvider,
     secretName: string
   ): Promise<Result<true>> {

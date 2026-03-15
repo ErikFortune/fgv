@@ -1838,7 +1838,7 @@ describe('CollectionLoader', () => {
 
       test('fails when getContents fails', async () => {
         // Create a mock file tree item that fails on getContents
-        const mockFileItem: FileTree.IFileTreeFileItem = {
+        const mockFileItem: FileTree.IMutableFileTreeFileItem = {
           name: 'failing.json',
           type: 'file',
           absolutePath: '/collections/failing.json',
@@ -1848,6 +1848,7 @@ describe('CollectionLoader', () => {
           getIsMutable: () => succeedWithDetail(false, 'not-supported'),
           setContents: () => fail('File write error'),
           setRawContents: () => fail('File write error'),
+          delete: () => fail('File delete error'),
           getContents: () => fail<JsonValue>('File read error'),
           getRawContents: () => fail<string>('File read error')
         };

@@ -540,7 +540,10 @@ describe('LocalStorageTreeAccessors', () => {
       expect(FileTree.isPersistentAccessors(tree.hal)).toBe(true);
 
       const file = tree.getFile('/data/ingredients/collection1.json').orThrow();
-      expect(file.getIsMutable()).toSucceedWithDetail(true, 'persistent');
+      expect(FileTree.isMutableFileItem(file)).toBe(true);
+      if (FileTree.isMutableFileItem(file)) {
+        expect(file.getIsMutable()).toSucceedWithDetail(true, 'persistent');
+      }
     });
 
     test('createFromLocalStorage with multiple paths', () => {

@@ -15,6 +15,18 @@ import { Validation } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 import { Validators as Validators_3 } from '@fgv/ts-utils';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type AnyFileTreeDirectoryItem<TCT extends string = string> = IFileTreeDirectoryItem<TCT> | IMutableFileTreeDirectoryItem<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type AnyFileTreeFileItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IMutableFileTreeFileItem<TCT>;
+
 // @public
 type ArrayConverter<T, TC = unknown> = Converter<JsonCompatibleType<T>[], TC>;
 
@@ -106,7 +118,7 @@ const DefaultJsonLike: IJsonLike;
 const DefaultJsonTreeHelper: JsonTreeHelper;
 
 // @public
-class DirectoryItem<TCT extends string = string> implements IFileTreeDirectoryItem<TCT> {
+class DirectoryItem<TCT extends string = string> implements IMutableFileTreeDirectoryItem<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(path: string, hal: IFileTreeAccessors<TCT>);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -119,15 +131,19 @@ class DirectoryItem<TCT extends string = string> implements IFileTreeDirectoryIt
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    createChildDirectory(name: string): Result<IFileTreeDirectoryItem<TCT>>;
+    createChildDirectory(name: string): Result<IMutableFileTreeDirectoryItem<TCT>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    createChildFile(name: string, contents: string): Result<IFileTreeFileItem<TCT>>;
+    createChildFile(name: string, contents: string): Result<IMutableFileTreeFileItem<TCT>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    deleteChild(name: string): Result<boolean>;
+    delete(): Result<boolean>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    deleteChild(name: string, options?: IDeleteChildOptions): Result<boolean>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -157,7 +173,7 @@ function enumeratedValue<T>(values: ReadonlyArray<T>, message?: string): Convert
 function enumeratedValue_2<T>(values: ReadonlyArray<T>, message?: string): Validator<T, IJsonValidatorContext | ReadonlyArray<T>>;
 
 // @public
-class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> {
+class FileItem<TCT extends string = string> implements IMutableFileTreeFileItem<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(path: string, hal: IFileTreeAccessors<TCT>);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -227,6 +243,8 @@ declare namespace FileTree {
         inMemory,
         isMutableAccessors,
         isPersistentAccessors,
+        isMutableFileItem,
+        isMutableDirectoryItem,
         SaveCapability,
         SaveFailureReason,
         SaveDetail,
@@ -234,9 +252,15 @@ declare namespace FileTree {
         FileTreeItemType,
         ContentTypeFactory,
         IFileTreeInitParams,
+        IDeleteChildOptions,
         IFileTreeFileItem,
+        IMutableFileTreeFileItem,
         IFileTreeDirectoryItem,
+        IMutableFileTreeDirectoryItem,
         FileTreeItem,
+        MutableFileTreeItem,
+        AnyFileTreeFileItem,
+        AnyFileTreeDirectoryItem,
         IFileTreeAccessors,
         IMutableFileTreeAccessors,
         IPersistentFileTreeAccessors,
@@ -301,6 +325,10 @@ class FsFileTreeAccessors<TCT extends string = string> implements IMutableFileTr
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
+    deleteDirectory(dirPath: string): Result<boolean>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
     deleteFile(path: string): Result<boolean>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -347,6 +375,11 @@ class FsFileTreeAccessors<TCT extends string = string> implements IMutableFileTr
 }
 
 // @public
+interface IDeleteChildOptions {
+    recursive?: boolean;
+}
+
+// @public
 interface IFileTreeAccessors<TCT extends string = string> {
     getBaseName(path: string, suffix?: string): string;
     getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>>;
@@ -361,9 +394,6 @@ interface IFileTreeAccessors<TCT extends string = string> {
 // @public
 interface IFileTreeDirectoryItem<TCT extends string = string> {
     readonly absolutePath: string;
-    createChildDirectory?(name: string): Result<IFileTreeDirectoryItem<TCT>>;
-    createChildFile?(name: string, contents: string): Result<IFileTreeFileItem<TCT>>;
-    deleteChild?(name: string): Result<boolean>;
     getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
     readonly name: string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -375,17 +405,11 @@ interface IFileTreeFileItem<TCT extends string = string> {
     readonly absolutePath: string;
     readonly baseName: string;
     readonly contentType: TCT | undefined;
-    delete?(): Result<boolean>;
     readonly extension: string;
     getContents(): Result<JsonValue>;
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getIsMutable(): DetailedResult<boolean, SaveDetail>;
     getRawContents(): Result<string>;
     readonly name: string;
-    setContents(json: JsonValue): Result<JsonValue>;
-    setRawContents(contents: string): Result<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly type: 'file';
 }
@@ -458,14 +482,40 @@ interface IJsonValidatorContext {
     ignoreUndefinedProperties?: boolean;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 interface IMutableFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
-    createDirectory?(path: string): Result<string>;
-    deleteFile?(path: string): Result<boolean>;
+    createDirectory(path: string): Result<string>;
+    deleteDirectory(path: string): Result<boolean>;
+    deleteFile(path: string): Result<boolean>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     fileIsMutable(path: string): DetailedResult<boolean, SaveDetail>;
     saveFileContents(path: string, contents: string): Result<string>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IMutableFileTreeDirectoryItem<TCT extends string = string> extends IFileTreeDirectoryItem<TCT> {
+    createChildDirectory(name: string): Result<IMutableFileTreeDirectoryItem<TCT>>;
+    createChildFile(name: string, contents: string): Result<IMutableFileTreeFileItem<TCT>>;
+    delete(): Result<boolean>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    deleteChild(name: string, options?: IDeleteChildOptions): Result<boolean>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IMutableFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
+    delete(): Result<boolean>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getIsMutable(): DetailedResult<boolean, SaveDetail>;
+    setContents(json: JsonValue): Result<JsonValue>;
+    setRawContents(contents: string): Result<string>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -499,6 +549,10 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
     //
     // (undocumented)
     createDirectory(dirPath: string): Result<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    deleteDirectory(path: string): Result<boolean>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -571,6 +625,16 @@ export function isJsonPrimitive(from: unknown): from is JsonPrimitive;
 //
 // @public
 function isMutableAccessors<TCT extends string = string>(accessors: IFileTreeAccessors<TCT>): accessors is IMutableFileTreeAccessors<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isMutableDirectoryItem<TCT extends string = string>(item: AnyFileTreeDirectoryItem<TCT> | FileTreeItem<TCT>): item is IMutableFileTreeDirectoryItem<TCT>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isMutableFileItem<TCT extends string = string>(item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>): item is IMutableFileTreeFileItem<TCT>;
 
 // @public
 function isPathMutable(path: string, mutable: boolean | IFilterSpec | undefined): boolean;
@@ -740,6 +804,9 @@ function literal<T>(value: T): Converter<T, IJsonConverterContext>;
 
 // @public
 function literal_2<T>(value: T): Validator<T, IJsonValidatorContext>;
+
+// @public
+type MutableFileTreeItem<TCT extends string = string> = IMutableFileTreeFileItem<TCT> | IMutableFileTreeDirectoryItem<TCT>;
 
 // @public
 const number: Converter<number, IJsonConverterContext>;

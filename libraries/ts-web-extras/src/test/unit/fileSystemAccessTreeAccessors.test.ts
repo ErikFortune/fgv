@@ -535,7 +535,10 @@ describe('FileSystemAccessTreeAccessors', () => {
       expect(FileTree.isPersistentAccessors(tree.hal)).toBe(true);
 
       const file = tree.getFile('/test.txt').orThrow();
-      expect(file.getIsMutable()).toSucceedWithDetail(true, 'persistent');
+      expect(FileTree.isMutableFileItem(file)).toBe(true);
+      if (FileTree.isMutableFileItem(file)) {
+        expect(file.getIsMutable()).toSucceedWithDetail(true, 'persistent');
+      }
     });
 
     test('createPersistent with autoSync option', async () => {
@@ -554,7 +557,10 @@ describe('FileSystemAccessTreeAccessors', () => {
 
       const tree = result.orThrow();
       const file = tree.getFile('/test.txt').orThrow();
-      file.setRawContents('modified').orThrow();
+      expect(FileTree.isMutableFileItem(file)).toBe(true);
+      if (FileTree.isMutableFileItem(file)) {
+        file.setRawContents('modified').orThrow();
+      }
 
       // Give auto-sync time to complete
       await new Promise((resolve) => setTimeout(resolve, 10));

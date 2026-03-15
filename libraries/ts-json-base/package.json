@@ -25,7 +25,6 @@
     "build-all": "rushx build; rushx build-docs",
     "test-handles": "jest --runInBand --detectOpenHandles",
     "clean-jest": "jest --clear-cache",
-    "coverage": "jest --coverage --no-cache",
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix"
   },

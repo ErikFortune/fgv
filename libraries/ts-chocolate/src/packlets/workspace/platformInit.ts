@@ -363,18 +363,19 @@ const WORKSPACE_DIRECTORY_PATHS: ReadonlyArray<string> = [
  * @public
  */
 export function ensureDirectoryPath(
-  root: FileTree.IFileTreeDirectoryItem,
+  root: FileTree.AnyFileTreeDirectoryItem,
   relativePath: string
-): Result<FileTree.IFileTreeDirectoryItem> {
+): Result<FileTree.AnyFileTreeDirectoryItem> {
   const segments = relativePath.split('/').filter((s) => s.length > 0);
-  let current = root;
+  let current: FileTree.AnyFileTreeDirectoryItem = root;
 
   for (const segment of segments) {
     // Check if child already exists
     const childrenResult = current.getChildren();
     if (childrenResult.isSuccess()) {
       const existing = childrenResult.value.find(
-        (child): child is FileTree.IFileTreeDirectoryItem => 'getChildren' in child && child.name === segment
+        (child): child is FileTree.IFileTreeDirectoryItem =>
+          child.type === 'directory' && child.name === segment
       );
       if (existing) {
         current = existing;
@@ -382,9 +383,8 @@ export function ensureDirectoryPath(
       }
     }
 
-    // Create the directory
-    /* c8 ignore next 3 - coverage intermittently missed in full suite */
-    if (current.createChildDirectory === undefined) {
+    // Create the directory — requires mutable directory
+    if (!FileTree.isMutableDirectoryItem(current)) {
       return fail(`${current.absolutePath}: directory creation not supported`);
     }
     const createResult = current.createChildDirectory(segment);

@@ -51,7 +51,7 @@ import { LibraryData } from '@fgv/ts-chocolate';
 export async function saveKeystoreToFile(
   keyStore: CryptoUtils.KeyStore.KeyStore,
   password: string,
-  fileItem: FileTree.IFileTreeFileItem
+  fileItem: FileTree.IMutableFileTreeFileItem
 ): Promise<Result<true>> {
   const saveResult = await keyStore.save(password);
   if (saveResult.isFailure()) {
@@ -147,12 +147,12 @@ export function loadKeystoreFromTree(
  * @public
  */
 export function getOrCreateKeystoreFileItem(
-  userLibraryTree: FileTree.IFileTreeDirectoryItem
-): Result<FileTree.IFileTreeFileItem> {
+  userLibraryTree: FileTree.AnyFileTreeDirectoryItem
+): Result<FileTree.IMutableFileTreeFileItem> {
   // Find or create the keystore directory
-  let keystoreDir = findKeystoreDir(userLibraryTree);
+  let keystoreDir: FileTree.AnyFileTreeDirectoryItem | undefined = findKeystoreDir(userLibraryTree);
   if (!keystoreDir) {
-    if (!userLibraryTree.createChildDirectory) {
+    if (!FileTree.isMutableDirectoryItem(userLibraryTree)) {
       return fail('keystore: directory creation not supported on this tree');
     }
     const dirResult = userLibraryTree.createChildDirectory(KEYSTORE_DIR);
@@ -166,16 +166,15 @@ export function getOrCreateKeystoreFileItem(
   const childrenResult = keystoreDir.getChildren();
   if (childrenResult.isSuccess()) {
     const existing = childrenResult.value.find(
-      (child): child is FileTree.IFileTreeFileItem =>
-        child.type === 'file' && child.name === LibraryData.LibraryPaths.keyStore
+      (child) => child.type === 'file' && child.name === LibraryData.LibraryPaths.keyStore
     );
-    if (existing) {
+    if (existing && FileTree.isMutableFileItem(existing)) {
       return succeed(existing);
     }
   }
 
   // Create the file
-  if (!keystoreDir.createChildFile) {
+  if (!FileTree.isMutableDirectoryItem(keystoreDir)) {
     return fail('keystore: file creation not supported on this tree');
   }
 

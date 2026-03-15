@@ -2226,7 +2226,7 @@ const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata>;
 type EncryptedFileHandling = 'fail' | 'skip' | 'warn' | 'capture';
 
 // @public
-export function ensureDirectoryPath(root: FileTree.IFileTreeDirectoryItem, relativePath: string): Result<FileTree.IFileTreeDirectoryItem>;
+export function ensureDirectoryPath(root: FileTree.AnyFileTreeDirectoryItem, relativePath: string): Result<FileTree.AnyFileTreeDirectoryItem>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "createWorkspaceDirectories"
 //
@@ -3928,7 +3928,7 @@ interface IFatIngredientEntity extends IIngredientEntity {
 
 // @public
 interface IFileTreeSource<TCollectionId extends string = string> {
-    readonly directory: FileTree.IFileTreeDirectoryItem;
+    readonly directory: FileTree.AnyFileTreeDirectoryItem;
     readonly load?: LibraryLoadSpec<TCollectionId>;
     readonly mutable?: MutabilitySpec;
     readonly skipMissingDirectories?: boolean;
@@ -4502,7 +4502,7 @@ type IJournalLibraryParams = ISubLibraryParams<JournalLibrary, JournalCollection
 
 // @public
 interface ILibraryFileTreeSource {
-    readonly directory: FileTree.IFileTreeDirectoryItem;
+    readonly directory: FileTree.AnyFileTreeDirectoryItem;
     readonly load?: FullLibraryLoadSpec;
     readonly mutable?: MutabilitySpec;
     readonly skipMissingDirectories?: boolean;
@@ -8535,7 +8535,7 @@ abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends strin
     // @internal
     removeCollection(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>;
     removeSource(sourceName: string): number;
-    setActiveMutableSource(sourceName: string, dataDirectory: FileTree.IFileTreeDirectoryItem | undefined, sourceRoot?: FileTree.IFileTreeDirectoryItem): void;
+    setActiveMutableSource(sourceName: string, dataDirectory: FileTree.IMutableFileTreeDirectoryItem | undefined, sourceRoot?: FileTree.IMutableFileTreeDirectoryItem): void;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //

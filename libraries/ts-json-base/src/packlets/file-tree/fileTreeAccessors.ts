@@ -103,7 +103,23 @@ export interface IFileTreeInitParams<TCT extends string = string> {
 }
 
 /**
- * Interface for a file in a file tree.
+ * Options for deleting a child item from a directory.
+ * @public
+ */
+export interface IDeleteChildOptions {
+  /**
+   * If true, recursively delete directory children and their contents.
+   * Default: false (fail if directory is non-empty).
+   */
+  recursive?: boolean;
+}
+
+// ============================================================================
+// File Item Interfaces
+// ============================================================================
+
+/**
+ * Interface for a read-only file in a file tree.
  * @public
  */
 export interface IFileTreeFileItem<TCT extends string = string> {
@@ -159,12 +175,18 @@ export interface IFileTreeFileItem<TCT extends string = string> {
    * `Failure` with an error message otherwise.
    */
   getRawContents(): Result<string>;
+}
 
+/**
+ * Extended file item interface that supports mutation operations.
+ * Use {@link FileTree.isMutableFileItem | isMutableFileItem} type guard to narrow.
+ * @public
+ */
+export interface IMutableFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
   /**
    * Indicates whether this file can be saved.
    * @returns `DetailedSuccess` with {@link FileTree.SaveCapability} if the file can be saved,
    * or `DetailedFailure` with {@link FileTree.SaveFailureReason} if it cannot.
-   * @remarks This property is optional. If not present, the file is not mutable.
    */
   getIsMutable(): DetailedResult<boolean, SaveDetail>;
 
@@ -172,7 +194,6 @@ export interface IFileTreeFileItem<TCT extends string = string> {
    * Sets the contents of the file from a JSON value.
    * @param json - The JSON value to serialize and save.
    * @returns `Success` if the file was saved, or `Failure` with an error message.
-   * @remarks This method is optional. If not present, the file is not mutable.
    */
   setContents(json: JsonValue): Result<JsonValue>;
 
@@ -180,21 +201,22 @@ export interface IFileTreeFileItem<TCT extends string = string> {
    * Sets the raw contents of the file.
    * @param contents - The string contents to save.
    * @returns `Success` if the file was saved, or `Failure` with an error message.
-   * @remarks This method is optional. If not present, the file is not mutable.
    */
   setRawContents(contents: string): Result<string>;
 
   /**
    * Deletes this file from its backing store.
    * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
-   * @remarks This method is optional. Only available on mutable file items
-   * with accessors that support deletion.
    */
-  delete?(): Result<boolean>;
+  delete(): Result<boolean>;
 }
 
+// ============================================================================
+// Directory Item Interfaces
+// ============================================================================
+
 /**
- * Interface for a directory in a file tree.
+ * Interface for a read-only directory in a file tree.
  * @public
  */
 export interface IFileTreeDirectoryItem<TCT extends string = string> {
@@ -219,38 +241,95 @@ export interface IFileTreeDirectoryItem<TCT extends string = string> {
    * or `Failure` with an error message otherwise.
    */
   getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
+}
 
+/**
+ * Extended directory item interface that supports mutation operations.
+ * Use {@link FileTree.isMutableDirectoryItem | isMutableDirectoryItem} type guard to narrow.
+ * @public
+ */
+export interface IMutableFileTreeDirectoryItem<TCT extends string = string>
+  extends IFileTreeDirectoryItem<TCT> {
   /**
    * Creates a new file as a child of this directory.
    * @param name - The file name to create.
    * @param contents - The string contents to write.
    * @returns `Success` with the new file item, or `Failure` with an error message.
-   * @remarks This method is optional. Only available on mutable directory items.
    */
-  createChildFile?(name: string, contents: string): Result<IFileTreeFileItem<TCT>>;
+  createChildFile(name: string, contents: string): Result<IMutableFileTreeFileItem<TCT>>;
 
   /**
    * Creates a new subdirectory as a child of this directory.
    * @param name - The directory name to create.
    * @returns `Success` with the new directory item, or `Failure` with an error message.
-   * @remarks This method is optional. Only available on mutable directory items.
    */
-  createChildDirectory?(name: string): Result<IFileTreeDirectoryItem<TCT>>;
+  createChildDirectory(name: string): Result<IMutableFileTreeDirectoryItem<TCT>>;
 
   /**
-   * Deletes a child file from this directory.
-   * @param name - The file name to delete.
-   * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
-   * @remarks This method is optional. Only available on mutable directory items.
+   * Deletes a child item from this directory.
+   * @param name - The name of the child to delete.
+   * @param options - Optional {@link FileTree.IDeleteChildOptions | options} controlling deletion behavior.
+   * @returns `Success` with `true` if the child was deleted, or `Failure` with an error message.
    */
-  deleteChild?(name: string): Result<boolean>;
+  deleteChild(name: string, options?: IDeleteChildOptions): Result<boolean>;
+
+  /**
+   * Deletes this directory from its backing store.
+   * The directory must be empty or the operation will fail.
+   * @returns `Success` with `true` if the directory was deleted, or `Failure` with an error message.
+   */
+  delete(): Result<boolean>;
 }
+
+// ============================================================================
+// Union Types
+// ============================================================================
 
 /**
  * Type for an item in a file tree.
  * @public
  */
 export type FileTreeItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IFileTreeDirectoryItem<TCT>;
+
+/**
+ * Type for a mutable item in a file tree.
+ * @public
+ */
+export type MutableFileTreeItem<TCT extends string = string> =
+  | IMutableFileTreeFileItem<TCT>
+  | IMutableFileTreeDirectoryItem<TCT>;
+
+/**
+ * A file item that may or may not be mutable at runtime.
+ *
+ * Use this type for parameters or fields where the code checks for mutability
+ * and handles the read-only case gracefully. Use {@link FileTree.IMutableFileTreeFileItem}
+ * when mutation is required.
+ *
+ * Narrow with {@link FileTree.isMutableFileItem} to access mutation methods.
+ * @public
+ */
+export type AnyFileTreeFileItem<TCT extends string = string> =
+  | IFileTreeFileItem<TCT>
+  | IMutableFileTreeFileItem<TCT>;
+
+/**
+ * A directory item that may or may not be mutable at runtime.
+ *
+ * Use this type for parameters or fields where the code checks for mutability
+ * and handles the read-only case gracefully. Use {@link FileTree.IMutableFileTreeDirectoryItem}
+ * when mutation is required.
+ *
+ * Narrow with {@link FileTree.isMutableDirectoryItem} to access mutation methods.
+ * @public
+ */
+export type AnyFileTreeDirectoryItem<TCT extends string = string> =
+  | IFileTreeDirectoryItem<TCT>
+  | IMutableFileTreeDirectoryItem<TCT>;
+
+// ============================================================================
+// Accessor Interfaces
+// ============================================================================
 
 /**
  * Common abstraction layer interface for a tree of files
@@ -319,6 +398,8 @@ export interface IFileTreeAccessors<TCT extends string = string> {
 
 /**
  * Extended accessors interface that supports mutation operations.
+ * All mutation methods are required — use {@link FileTree.isMutableAccessors | isMutableAccessors}
+ * type guard to check if an accessor supports mutation.
  * @public
  */
 export interface IMutableFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
@@ -339,18 +420,26 @@ export interface IMutableFileTreeAccessors<TCT extends string = string> extends 
   saveFileContents(path: string, contents: string): Result<string>;
 
   /**
-   * Creates a directory at the given path, including any missing parent directories.
-   * @param path - The path of the directory to create.
-   * @returns `Success` with the absolute path if created, or `Failure` with an error message.
-   */
-  createDirectory?(path: string): Result<string>;
-
-  /**
    * Deletes a file at the given path.
    * @param path - The path of the file to delete.
    * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
    */
-  deleteFile?(path: string): Result<boolean>;
+  deleteFile(path: string): Result<boolean>;
+
+  /**
+   * Creates a directory at the given path, including any missing parent directories.
+   * @param path - The path of the directory to create.
+   * @returns `Success` with the absolute path if created, or `Failure` with an error message.
+   */
+  createDirectory(path: string): Result<string>;
+
+  /**
+   * Deletes a directory at the given path.
+   * The directory must be empty or the operation will fail.
+   * @param path - The path of the directory to delete.
+   * @returns `Success` with `true` if the directory was deleted, or `Failure` with an error message.
+   */
+  deleteDirectory(path: string): Result<boolean>;
 }
 
 /**
@@ -378,6 +467,10 @@ export interface IPersistentFileTreeAccessors<TCT extends string = string>
   getDirtyPaths(): string[];
 }
 
+// ============================================================================
+// Type Guards
+// ============================================================================
+
 /**
  * Type guard to check if accessors support mutation.
  * @param accessors - The accessors to check.
@@ -388,7 +481,13 @@ export function isMutableAccessors<TCT extends string = string>(
   accessors: IFileTreeAccessors<TCT>
 ): accessors is IMutableFileTreeAccessors<TCT> {
   const mutable = accessors as IMutableFileTreeAccessors<TCT>;
-  return typeof mutable.fileIsMutable === 'function' && typeof mutable.saveFileContents === 'function';
+  return (
+    typeof mutable.fileIsMutable === 'function' &&
+    typeof mutable.saveFileContents === 'function' &&
+    typeof mutable.deleteFile === 'function' &&
+    typeof mutable.createDirectory === 'function' &&
+    typeof mutable.deleteDirectory === 'function'
+  );
 }
 
 /**
@@ -407,5 +506,43 @@ export function isPersistentAccessors<TCT extends string = string>(
     typeof persistent.syncToDisk === 'function' &&
     typeof persistent.isDirty === 'function' &&
     typeof persistent.getDirtyPaths === 'function'
+  );
+}
+
+/**
+ * Type guard to check if a file item supports mutation.
+ * @param item - The file item to check.
+ * @returns `true` if the item implements {@link FileTree.IMutableFileTreeFileItem}.
+ * @public
+ */
+export function isMutableFileItem<TCT extends string = string>(
+  item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>
+): item is IMutableFileTreeFileItem<TCT> {
+  const mutable = item as IMutableFileTreeFileItem<TCT>;
+  return (
+    mutable.type === 'file' &&
+    typeof mutable.getIsMutable === 'function' &&
+    typeof mutable.setContents === 'function' &&
+    typeof mutable.setRawContents === 'function' &&
+    typeof mutable.delete === 'function'
+  );
+}
+
+/**
+ * Type guard to check if a directory item supports mutation.
+ * @param item - The directory item to check.
+ * @returns `true` if the item implements {@link FileTree.IMutableFileTreeDirectoryItem}.
+ * @public
+ */
+export function isMutableDirectoryItem<TCT extends string = string>(
+  item: AnyFileTreeDirectoryItem<TCT> | FileTreeItem<TCT>
+): item is IMutableFileTreeDirectoryItem<TCT> {
+  const mutable = item as IMutableFileTreeDirectoryItem<TCT>;
+  return (
+    mutable.type === 'directory' &&
+    typeof mutable.createChildFile === 'function' &&
+    typeof mutable.createChildDirectory === 'function' &&
+    typeof mutable.deleteChild === 'function' &&
+    typeof mutable.delete === 'function'
   );
 }

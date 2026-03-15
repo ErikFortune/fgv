@@ -8,5 +8,5 @@ The loader will navigate to sub-paths like 'data/ingredients' and 'data/recipes'
 **Signature:**
 
 ```typescript
-readonly directory: IFileTreeDirectoryItem;
+readonly directory: AnyFileTreeDirectoryItem;
 ```

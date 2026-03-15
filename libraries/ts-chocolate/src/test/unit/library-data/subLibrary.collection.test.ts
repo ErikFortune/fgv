@@ -492,7 +492,7 @@ describe('SubLibraryBase Collection Management', () => {
   describe('setActiveMutableSource', () => {
     test('sets mutable source name and data directory', () => {
       const tree = FileTree.inMemory([{ path: '/data/ingredients/placeholder.txt', contents: '' }]).orThrow();
-      const dir = tree.getItem('/data/ingredients').orThrow() as FileTree.IFileTreeDirectoryItem;
+      const dir = tree.getItem('/data/ingredients').orThrow() as FileTree.IMutableFileTreeDirectoryItem;
 
       library.setActiveMutableSource('my-source', dir);
 
@@ -507,8 +507,8 @@ describe('SubLibraryBase Collection Management', () => {
 
     test('sets mutable source name with optional sourceRoot', () => {
       const tree = FileTree.inMemory([{ path: '/data/ingredients/placeholder.txt', contents: '' }]).orThrow();
-      const dir = tree.getItem('/data/ingredients').orThrow() as FileTree.IFileTreeDirectoryItem;
-      const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+      const dir = tree.getItem('/data/ingredients').orThrow() as FileTree.IMutableFileTreeDirectoryItem;
+      const root = tree.getItem('/').orThrow() as FileTree.IMutableFileTreeDirectoryItem;
 
       library.setActiveMutableSource('rooted-source', dir, root);
 
@@ -517,7 +517,7 @@ describe('SubLibraryBase Collection Management', () => {
 
     test('overwrites previously set mutable source', () => {
       const tree = FileTree.inMemory([{ path: '/data/ingredients/placeholder.txt', contents: '' }]).orThrow();
-      const dir = tree.getItem('/data/ingredients').orThrow() as FileTree.IFileTreeDirectoryItem;
+      const dir = tree.getItem('/data/ingredients').orThrow() as FileTree.IMutableFileTreeDirectoryItem;
 
       library.setActiveMutableSource('first-source', dir);
       library.setActiveMutableSource('second-source', undefined);

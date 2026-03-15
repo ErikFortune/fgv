@@ -477,6 +477,54 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IMuta
   }
 
   /**
+   * {@inheritDoc FileTree.IMutableFileTreeAccessors.deleteDirectory}
+   */
+  public deleteDirectory(path: string): Result<boolean> {
+    const absolutePath = this.resolveAbsolutePath(path);
+    const parts = absolutePath.split('/').filter((p) => p.length > 0);
+    if (parts.length === 0) {
+      return fail(`${absolutePath}: invalid directory path`);
+    }
+
+    const dirName = parts.pop()!;
+
+    // Navigate to parent directory
+    let parentDir: MutableInMemoryDirectory<TCT> = this._mutableRoot;
+    for (const part of parts) {
+      const child = parentDir.children.get(part);
+      if (!child || !(child instanceof MutableInMemoryDirectory)) {
+        return fail(`${absolutePath}: parent directory not found`);
+      }
+      parentDir = child;
+    }
+
+    // Verify target is a directory
+    const target = parentDir.children.get(dirName);
+    if (!target || !(target instanceof MutableInMemoryDirectory)) {
+      return fail(`${absolutePath}: not a directory`);
+    }
+
+    // Check non-empty
+    if (target.children.size > 0) {
+      return fail(`${absolutePath}: directory is not empty`);
+    }
+
+    parentDir.removeChild(dirName);
+
+    // Also remove from the read layer
+    /* c8 ignore next 1 - defensive: branch for top-level directory deletion */
+    const readParentPath = parts.length === 0 ? '/' : '/' + parts.join('/');
+    const readParent = this._tree.byAbsolutePath.get(readParentPath);
+    if (readParent instanceof InMemoryDirectory) {
+      readParent.removeChild(dirName);
+    }
+    this._tree.byAbsolutePath.delete(absolutePath);
+    this._mutableByPath.delete(absolutePath);
+
+    return succeed(true);
+  }
+
+  /**
    * {@inheritDoc FileTree.IMutableFileTreeAccessors.saveFileContents}
    */
   public saveFileContents(path: string, contents: string): Result<string> {

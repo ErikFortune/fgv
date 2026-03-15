@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { InMemoryTreeAccessors, isMutableAccessors } from '../../../packlets/file-tree';
+import { InMemoryTreeAccessors, isMutableAccessors, isMutableFileItem } from '../../../packlets/file-tree';
 
 describe('InMemoryTreeAccessors', () => {
   const testFiles = [
@@ -244,6 +244,42 @@ describe('InMemoryTreeAccessors', () => {
     });
   });
 
+  describe('deleteDirectory', () => {
+    it('deletes an empty directory', () => {
+      const files = [{ path: '/data/subdir/file.txt', contents: 'content' }];
+      const accessors = InMemoryTreeAccessors.create(files, { mutable: true }).orThrow();
+      // Delete the file first to make the directory empty
+      expect(accessors.deleteFile('/data/subdir/file.txt')).toSucceedWith(true);
+      expect(accessors.deleteDirectory('/data/subdir')).toSucceedWith(true);
+    });
+
+    it('fails on non-empty directory', () => {
+      const files = [{ path: '/data/subdir/file.txt', contents: 'content' }];
+      const accessors = InMemoryTreeAccessors.create(files, { mutable: true }).orThrow();
+      expect(accessors.deleteDirectory('/data/subdir')).toFailWith(/not empty/i);
+    });
+
+    it('fails for non-existent directory', () => {
+      const accessors = InMemoryTreeAccessors.create(testFiles, { mutable: true }).orThrow();
+      expect(accessors.deleteDirectory('/nonexistent')).toFail();
+    });
+
+    it('fails when target is a file', () => {
+      const accessors = InMemoryTreeAccessors.create(testFiles, { mutable: true }).orThrow();
+      expect(accessors.deleteDirectory('/data/file1.json')).toFailWith(/not a directory/i);
+    });
+
+    it('fails on invalid root path', () => {
+      const accessors = InMemoryTreeAccessors.create(testFiles, { mutable: true }).orThrow();
+      expect(accessors.deleteDirectory('/')).toFailWith(/invalid/i);
+    });
+
+    it('fails when parent directory does not exist', () => {
+      const accessors = InMemoryTreeAccessors.create(testFiles, { mutable: true }).orThrow();
+      expect(accessors.deleteDirectory('/nonexistent/subdir')).toFailWith(/parent directory not found/i);
+    });
+  });
+
   describe('integration with FileItem', () => {
     it('FileItem.getIsMutable returns transient for mutable in-memory accessors', () => {
       const accessors = InMemoryTreeAccessors.create(testFiles, { mutable: true }).orThrow();
@@ -251,8 +287,8 @@ describe('InMemoryTreeAccessors', () => {
       expect(itemResult.isSuccess()).toBe(true);
 
       const item = itemResult.value!;
-      expect(item.type).toBe('file');
-      if (item.type === 'file') {
+      expect(isMutableFileItem(item)).toBe(true);
+      if (isMutableFileItem(item)) {
         expect(item.getIsMutable()).toSucceedWithDetail(true, 'transient');
       }
     });
@@ -263,7 +299,7 @@ describe('InMemoryTreeAccessors', () => {
       expect(itemResult.isSuccess()).toBe(true);
 
       const item = itemResult.value!;
-      if (item.type === 'file' && item.setContents) {
+      if (isMutableFileItem(item)) {
         const saveResult = item.setContents({ updated: 'value' });
         expect(saveResult.isSuccess()).toBe(true);
 
@@ -279,7 +315,7 @@ describe('InMemoryTreeAccessors', () => {
       expect(itemResult.isSuccess()).toBe(true);
 
       const item = itemResult.value!;
-      if (item.type === 'file' && item.setRawContents) {
+      if (isMutableFileItem(item)) {
         const saveResult = item.setRawContents('updated content');
         expect(saveResult.isSuccess()).toBe(true);
 

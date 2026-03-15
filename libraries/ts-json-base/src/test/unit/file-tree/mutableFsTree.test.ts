@@ -24,7 +24,7 @@ import '@fgv/ts-utils-jest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { FsFileTreeAccessors, isMutableAccessors } from '../../../packlets/file-tree';
+import { FsFileTreeAccessors, isMutableAccessors, isMutableFileItem } from '../../../packlets/file-tree';
 
 describe('FsFileTreeAccessors', () => {
   let tempDir: string;
@@ -204,6 +204,62 @@ describe('FsFileTreeAccessors', () => {
     });
   });
 
+  describe('deleteDirectory', () => {
+    it('deletes an empty directory', () => {
+      const dirPath = path.join(tempDir, 'emptydir');
+      fs.mkdirSync(dirPath);
+
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      expect(accessors.deleteDirectory('emptydir')).toSucceedWith(true);
+      expect(fs.existsSync(dirPath)).toBe(false);
+    });
+
+    it('fails on non-empty directory', () => {
+      const dirPath = path.join(tempDir, 'nonempty');
+      fs.mkdirSync(dirPath);
+      fs.writeFileSync(path.join(dirPath, 'file.txt'), 'content');
+
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      expect(accessors.deleteDirectory('nonempty')).toFail();
+      expect(fs.existsSync(dirPath)).toBe(true);
+    });
+
+    it('fails for non-existent directory', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      expect(accessors.deleteDirectory('nonexistent')).toFail();
+    });
+
+    it('fails when mutability is disabled', () => {
+      const dirPath = path.join(tempDir, 'immutable-dir');
+      fs.mkdirSync(dirPath);
+
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: false });
+      expect(accessors.deleteDirectory('immutable-dir')).toFailWith(/mutability is disabled/i);
+      expect(fs.existsSync(dirPath)).toBe(true);
+    });
+
+    it('fails when path is excluded by filter', () => {
+      const dirPath = path.join(tempDir, 'excluded');
+      fs.mkdirSync(dirPath);
+
+      const accessors = new FsFileTreeAccessors({
+        prefix: tempDir,
+        mutable: { exclude: [/excluded/] }
+      });
+      expect(accessors.deleteDirectory('excluded')).toFailWith(/path is excluded/i);
+      expect(fs.existsSync(dirPath)).toBe(true);
+    });
+
+    it('fails when target is a file', () => {
+      const filePath = path.join(tempDir, 'afile.txt');
+      fs.writeFileSync(filePath, 'content');
+
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      expect(accessors.deleteDirectory('afile.txt')).toFailWith(/not a directory/i);
+      expect(fs.existsSync(filePath)).toBe(true);
+    });
+  });
+
   describe('integration with FileItem', () => {
     it('FileItem.getIsMutable returns correct result for mutable accessors', () => {
       const filePath = path.join(tempDir, 'test.json');
@@ -211,8 +267,8 @@ describe('FsFileTreeAccessors', () => {
 
       const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
       expect(accessors.getItem('test.json')).toSucceedAndSatisfy((item) => {
-        expect(item.type).toBe('file');
-        if (item.type === 'file') {
+        expect(isMutableFileItem(item)).toBe(true);
+        if (isMutableFileItem(item)) {
           expect(item.getIsMutable()).toSucceedWithDetail(true, 'persistent');
         }
       });
@@ -227,7 +283,7 @@ describe('FsFileTreeAccessors', () => {
       expect(itemResult.isSuccess()).toBe(true);
 
       const item = itemResult.value!;
-      if (item.type === 'file' && item.setContents) {
+      if (isMutableFileItem(item)) {
         const saveResult = item.setContents({ updated: 'value' });
         expect(saveResult.isSuccess()).toBe(true);
 
@@ -242,8 +298,8 @@ describe('FsFileTreeAccessors', () => {
 
       const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
       expect(accessors.getItem('deletable.json')).toSucceedAndSatisfy((item) => {
-        expect(item.type).toBe('file');
-        if (item.type === 'file' && item.delete) {
+        expect(isMutableFileItem(item)).toBe(true);
+        if (isMutableFileItem(item)) {
           expect(item.delete()).toSucceedWith(true);
           expect(fs.existsSync(filePath)).toBe(false);
         }
@@ -259,7 +315,7 @@ describe('FsFileTreeAccessors', () => {
       expect(itemResult.isSuccess()).toBe(true);
 
       const item = itemResult.value!;
-      if (item.type === 'file' && item.setRawContents) {
+      if (isMutableFileItem(item)) {
         const saveResult = item.setRawContents('updated content');
         expect(saveResult.isSuccess()).toBe(true);
 

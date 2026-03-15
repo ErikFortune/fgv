@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import { zipSync, Zippable } from 'fflate';
 import { Validators, fail, succeed, Result } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { ZipFileTreeAccessors, ZipFileItem } from '../../packlets/zip-file-tree';
 
 describe('ZipFileTreeAccessors', () => {
@@ -1026,7 +1027,7 @@ describe('ZipFileTreeAccessors', () => {
     });
   });
 
-  describe('mutation methods (read-only behavior)', () => {
+  describe('read-only behavior', () => {
     let accessors: ZipFileTreeAccessors;
 
     beforeEach(() => {
@@ -1034,45 +1035,19 @@ describe('ZipFileTreeAccessors', () => {
       accessors = ZipFileTreeAccessors.fromBuffer(zipBuffer).orThrow();
     });
 
-    it('fileIsMutable returns not-supported for ZIP files', () => {
-      const result = accessors.fileIsMutable('/manifest.json');
-      expect(result).toFailWith(/ZIP files are read-only/i);
-      expect(result.detail).toBe('not-supported');
+    it('isMutableAccessors returns false for ZIP accessors', () => {
+      expect(FileTree.isMutableAccessors(accessors)).toBe(false);
     });
 
-    it('saveFileContents returns not-supported for ZIP files', () => {
-      const result = accessors.saveFileContents('/manifest.json', 'new content');
-      expect(result).toFailWith(/ZIP files are read-only/i);
-    });
-
-    it('ZipFileItem.getIsMutable returns not-supported', () => {
-      const fileResult = accessors.getItem('/manifest.json');
-      expect(fileResult).toSucceedAndSatisfy((item) => {
-        if (item.type === 'file') {
-          const mutableResult = item.getIsMutable();
-          expect(mutableResult).toFailWith(/ZIP files are read-only/i);
-          expect(mutableResult.detail).toBe('not-supported');
-        }
+    it('isMutableFileItem returns false for ZIP file items', () => {
+      expect(accessors.getItem('/manifest.json')).toSucceedAndSatisfy((item) => {
+        expect(FileTree.isMutableFileItem(item)).toBe(false);
       });
     });
 
-    it('ZipFileItem.setRawContents fails because ZIP files are read-only', () => {
-      const fileResult = accessors.getItem('/manifest.json');
-      expect(fileResult).toSucceedAndSatisfy((item) => {
-        if (item.type === 'file') {
-          const setResult = item.setRawContents('new content');
-          expect(setResult).toFailWith(/ZIP files are read-only/i);
-        }
-      });
-    });
-
-    it('ZipFileItem.setContents fails because ZIP files are read-only', () => {
-      const fileResult = accessors.getItem('/manifest.json');
-      expect(fileResult).toSucceedAndSatisfy((item) => {
-        if (item.type === 'file') {
-          const setResult = item.setContents({ key: 'value' });
-          expect(setResult).toFailWith(/ZIP files are read-only/i);
-        }
+    it('isMutableDirectoryItem returns false for ZIP directory items', () => {
+      expect(accessors.getItem('/input')).toSucceedAndSatisfy((item) => {
+        expect(FileTree.isMutableDirectoryItem(item)).toBe(false);
       });
     });
   });

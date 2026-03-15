@@ -26,7 +26,7 @@
  * @packageDocumentation
  */
 
-import { type FileTree } from '@fgv/ts-json-base';
+import { FileTree } from '@fgv/ts-json-base';
 import { LibraryData, type LibraryRuntime, type Settings, type UserEntities } from '@fgv/ts-chocolate';
 
 import type { IPersistentTreeEntry } from './reactiveWorkspace';
@@ -40,7 +40,7 @@ import type { IPersistentTreeEntry } from './reactiveWorkspace';
  * Used to resolve which directory a sub-library should write to.
  * @public
  */
-export type StorageRootTreeMap = ReadonlyMap<string, FileTree.IFileTreeDirectoryItem>;
+export type StorageRootTreeMap = ReadonlyMap<string, FileTree.AnyFileTreeDirectoryItem>;
 
 // ============================================================================
 // Internal helpers
@@ -90,9 +90,9 @@ function getSubLibrary(
  * @internal
  */
 function resolveSubLibraryDataDir(
-  rootDir: FileTree.IFileTreeDirectoryItem,
+  rootDir: FileTree.AnyFileTreeDirectoryItem,
   subLibId: LibraryData.SubLibraryId
-): FileTree.IFileTreeDirectoryItem | undefined {
+): FileTree.AnyFileTreeDirectoryItem | undefined {
   const result = LibraryData.navigateToDirectory(rootDir, LibraryData.getSubLibraryPath(subLibId));
   return result.isSuccess() ? result.value : undefined;
 }
@@ -119,7 +119,7 @@ function resolveSubLibraryDataDir(
 export function applyStorageTargets(
   targets: Settings.IDefaultStorageTargets | undefined,
   entities: LibraryRuntime.ChocolateEntityLibrary,
-  localStorageRootDir: FileTree.IFileTreeDirectoryItem | undefined,
+  localStorageRootDir: FileTree.AnyFileTreeDirectoryItem | undefined,
   persistentTrees: StorageRootTreeMap,
   additionalRootDirs: StorageRootTreeMap,
   logger?: { detail(msg: string): void; info(msg: string): void; warn(msg: string): void },
@@ -148,7 +148,7 @@ export function applyStorageTargets(
 
     const rootId = targets?.sublibraryOverrides?.[subLibId] ?? targets?.libraryDefault ?? 'localStorage';
 
-    let rootDir: FileTree.IFileTreeDirectoryItem | undefined;
+    let rootDir: FileTree.AnyFileTreeDirectoryItem | undefined;
     let sourceName: string;
 
     if (rootId === 'localStorage') {
@@ -177,14 +177,22 @@ export function applyStorageTargets(
       continue;
     }
 
+    // Narrow to mutable before setting as active source
+    if (!FileTree.isMutableDirectoryItem(rootDir)) {
+      logger?.warn(`applyStorageTargets: root '${rootId}' for '${subLibId}' is not mutable`);
+      continue;
+    }
+
     const dataDir = resolveSubLibraryDataDir(rootDir, subLibId);
-    if (!dataDir) {
+    const mutableDataDir = dataDir && FileTree.isMutableDirectoryItem(dataDir) ? dataDir : undefined;
+
+    if (!mutableDataDir) {
       subLib.setActiveMutableSource(sourceName, undefined, rootDir);
       logger?.detail(`applyStorageTargets: '${subLibId}' → '${sourceName}' (data dir pending creation)`);
       continue;
     }
 
-    subLib.setActiveMutableSource(sourceName, dataDir);
+    subLib.setActiveMutableSource(sourceName, mutableDataDir);
     logger?.detail(`applyStorageTargets: '${subLibId}' → '${sourceName}'`);
   }
 }

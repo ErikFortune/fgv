@@ -11,7 +11,6 @@
 //   - data/published/ingredients/flavors.yaml
 //   - data/published/ingredients/guittard.yaml
 //   - data/published/fillings/common.yaml
-//   - data/published/fillings/fgv.json
 //   - data/published/molds/common.yaml
 //   - data/published/molds/cw.yaml
 //   - data/published/molds/greyas.yaml
@@ -3803,18 +3802,6 @@ export const fillingCollections: Record<string, JsonObject> = {
         goldenVariationSpec: '2026-01-01-01'
       }
     }
-  },
-  fgv: {
-    format: 'encrypted-collection-v1',
-    secretName: 'fgv',
-    algorithm: 'AES-256-GCM',
-    iv: 'qtke5t/fo5NmMI1H',
-    authTag: 'gSpzOWgniA9wH7DhKNe6AQ==',
-    encryptedData: 'rRM=',
-    metadata: {
-      collectionId: 'fgv',
-      itemCount: 0
-    }
   }
 };
 
@@ -5127,7 +5114,7 @@ export const confectionCollections: Record<string, JsonObject> = {
               }
             ],
             yield: {
-              numFrames: 1
+              numFrames: 2
             },
             fillings: [
               {

@@ -104,13 +104,13 @@ export async function saveEditableCollection(
     return succeed({ outcome: 'no-source-item', collectionId });
   }
 
-  // TODO: use or create a proper helper (in ts-json base) - these sorts of tests in code are obscure and fragile
-  // Check if source is a writable file
-  if (!('setRawContents' in collection.sourceItem)) {
-    return fail(`${collectionId}: source item is not a file`);
+  // Check if source is a mutable file - capture to local for TypeScript narrowing
+  const sourceItem = collection.sourceItem;
+  if (!FileTree.isMutableFileItem(sourceItem)) {
+    return fail(`${collectionId}: source item is not a mutable file`);
   }
 
-  const fileItem = collection.sourceItem;
+  const fileItem = sourceItem;
   const secretName = collection.metadata.secretName;
 
   // Try encrypted save if collection has a secretName and we have a keystore with the key
@@ -144,7 +144,7 @@ export async function saveEditableCollection(
  */
 async function tryEncryptedSave(
   collection: Editing.EditableCollection<unknown, string>,
-  fileItem: FileTree.IFileTreeFileItem,
+  fileItem: FileTree.IMutableFileTreeFileItem,
   keyStore: CryptoUtils.KeyStore.KeyStore,
   secretName: string,
   keyDerivation?: CryptoUtils.IKeyDerivationParams

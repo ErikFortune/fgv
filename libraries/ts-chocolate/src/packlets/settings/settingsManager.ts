@@ -495,12 +495,10 @@ export class SettingsManager implements ISettingsManager {
       return fail(childrenResult.message);
     }
 
-    const existingFile = childrenResult.value.find((c) => c.name === fileName && c.type === 'file') as
-      | FileTree.IFileTreeFileItem
-      | undefined;
+    const existingFile = childrenResult.value.find((c) => c.name === fileName && c.type === 'file');
 
-    if (existingFile) {
-      // File exists - use setContents
+    if (existingFile && FileTree.isMutableFileItem(existingFile)) {
+      // File exists and is mutable - use setContents
       const setResult = existingFile.setContents(settings as unknown as JsonValue);
       if (setResult.isFailure()) {
         return fail(`Failed to save ${path}: ${setResult.message}`);
@@ -508,8 +506,10 @@ export class SettingsManager implements ISettingsManager {
       return succeed(true);
     }
 
-    // File doesn't exist - we need to create it
-    // Check if the directory supports mutable accessors for creating new files
+    // File doesn't exist or isn't mutable - try to create it
+    if (!FileTree.isMutableDirectoryItem(dir)) {
+      return fail(`Cannot save settings file ${fileName}: directory is not mutable`);
+    }
     return this._createNewSettingsFile(dir, fileName, settings);
   }
 
@@ -536,14 +536,10 @@ export class SettingsManager implements ISettingsManager {
    * @internal
    */
   private _createNewSettingsFile(
-    dir: FileTree.IFileTreeDirectoryItem,
+    dir: FileTree.IMutableFileTreeDirectoryItem,
     fileName: string,
     settings: IBootstrapSettings | IPreferencesSettings
   ): Result<boolean> {
-    /* c8 ignore next 3 - defensive: all current implementations define createChildFile */
-    if (dir.createChildFile === undefined) {
-      return fail(`Cannot create new settings file ${fileName}: file creation not supported`);
-    }
     const content = JSON.stringify(settings, null, 2);
     return dir
       .createChildFile(fileName, content)

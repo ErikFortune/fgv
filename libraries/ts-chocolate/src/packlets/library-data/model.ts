@@ -343,7 +343,7 @@ export interface IFileTreeSource<TCollectionId extends string = string> {
    * Root directory of the library tree.
    * The loader will navigate to the appropriate sub-path (e.g., 'data/ingredients' or 'data/recipes').
    */
-  readonly directory: FileTree.IFileTreeDirectoryItem;
+  readonly directory: FileTree.AnyFileTreeDirectoryItem;
 
   /**
    * Controls which collections to load from this source.
@@ -389,7 +389,7 @@ export interface ILibraryFileTreeSource {
    * Root directory of the library tree.
    * The loader will navigate to sub-paths like 'data/ingredients' and 'data/recipes'.
    */
-  readonly directory: FileTree.IFileTreeDirectoryItem;
+  readonly directory: FileTree.AnyFileTreeDirectoryItem;
 
   /**
    * Which sub-libraries to load from this source.
