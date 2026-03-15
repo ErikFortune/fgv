@@ -137,6 +137,73 @@ describe('FsFileTreeAccessors', () => {
     });
   });
 
+  describe('deleteFile', () => {
+    it('deletes an existing file successfully', () => {
+      const filePath = path.join(tempDir, 'to-delete.json');
+      fs.writeFileSync(filePath, '{"delete": "me"}');
+
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      expect(accessors.deleteFile('to-delete.json')).toSucceedWith(true);
+      expect(fs.existsSync(filePath)).toBe(false);
+    });
+
+    it('file is no longer readable after deletion', () => {
+      const filePath = path.join(tempDir, 'to-delete.json');
+      fs.writeFileSync(filePath, '{}');
+
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      expect(accessors.deleteFile('to-delete.json')).toSucceedWith(true);
+      expect(accessors.getFileContents('to-delete.json')).toFail();
+    });
+
+    it('fails when file does not exist', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      expect(accessors.deleteFile('nonexistent.json')).toFail();
+    });
+
+    it('fails when mutability is disabled', () => {
+      const filePath = path.join(tempDir, 'test.json');
+      fs.writeFileSync(filePath, '{}');
+
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: false });
+      expect(accessors.deleteFile('test.json')).toFailWith(/mutability is disabled/i);
+      expect(fs.existsSync(filePath)).toBe(true);
+    });
+
+    it('fails when path is excluded by filter', () => {
+      const filePath = path.join(tempDir, 'excluded.json');
+      fs.writeFileSync(filePath, '{}');
+
+      const accessors = new FsFileTreeAccessors({
+        prefix: tempDir,
+        mutable: { exclude: [/\.json$/] }
+      });
+      expect(accessors.deleteFile('excluded.json')).toFailWith(/path is excluded/i);
+      expect(fs.existsSync(filePath)).toBe(true);
+    });
+
+    it('fails when target is a directory', () => {
+      const dirPath = path.join(tempDir, 'subdir');
+      fs.mkdirSync(dirPath);
+
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      expect(accessors.deleteFile('subdir')).toFailWith(/not a file/i);
+      expect(fs.existsSync(dirPath)).toBe(true);
+    });
+
+    it('succeeds when path matches include filter', () => {
+      const filePath = path.join(tempDir, 'included.json');
+      fs.writeFileSync(filePath, '{}');
+
+      const accessors = new FsFileTreeAccessors({
+        prefix: tempDir,
+        mutable: { include: [/\.json$/] }
+      });
+      expect(accessors.deleteFile('included.json')).toSucceedWith(true);
+      expect(fs.existsSync(filePath)).toBe(false);
+    });
+  });
+
   describe('integration with FileItem', () => {
     it('FileItem.getIsMutable returns correct result for mutable accessors', () => {
       const filePath = path.join(tempDir, 'test.json');
@@ -167,6 +234,20 @@ describe('FsFileTreeAccessors', () => {
         const contents = fs.readFileSync(filePath, 'utf8');
         expect(JSON.parse(contents)).toEqual({ updated: 'value' });
       }
+    });
+
+    it('FileItem.delete removes file from disk', () => {
+      const filePath = path.join(tempDir, 'deletable.json');
+      fs.writeFileSync(filePath, '{"will": "delete"}');
+
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      expect(accessors.getItem('deletable.json')).toSucceedAndSatisfy((item) => {
+        expect(item.type).toBe('file');
+        if (item.type === 'file' && item.delete) {
+          expect(item.delete()).toSucceedWith(true);
+          expect(fs.existsSync(filePath)).toBe(false);
+        }
+      });
     });
 
     it('FileItem.setRawContents saves raw string', () => {
