@@ -50,6 +50,7 @@ import type {
   Model,
   ProcedureId,
   RatingScore,
+  SlotId,
   SpoonLevel,
   FillingRecipeVariationSpec
 } from '@fgv/ts-chocolate';
@@ -250,6 +251,48 @@ function ProcedureAlternateAddInput({
 }
 
 // ============================================================================
+// IngredientRoleInput Component
+// ============================================================================
+
+function IngredientRoleInput({
+  value,
+  index,
+  onChange
+}: {
+  readonly value: string | undefined;
+  readonly index: number;
+  readonly onChange: (index: number, role: string | undefined) => void;
+}): React.ReactElement {
+  const [draft, setDraft] = useState<string>(value ?? '');
+
+  // Sync draft when external value changes (e.g. undo/redo)
+  useEffect(() => {
+    setDraft(value ?? '');
+  }, [value]);
+
+  const commit = (v: string): void => {
+    onChange(index, v.trim() || undefined);
+  };
+
+  return (
+    <input
+      type="text"
+      className="w-24 text-xs border border-gray-200 rounded px-1.5 py-1 text-gray-500 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+      value={draft}
+      placeholder="role…"
+      onChange={(e): void => setDraft(e.target.value)}
+      onBlur={(): void => commit(draft)}
+      onKeyDown={(e): void => {
+        if (e.key === 'Enter') {
+          commit(draft);
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+    />
+  );
+}
+
+// ============================================================================
 // FillingEditView Component
 // ============================================================================
 
@@ -438,7 +481,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
             match.id as IngredientId,
             existing.amount,
             existing.unit,
-            existing.modifiers
+            existing.modifiers,
+            existing.ingredient.slotId
           );
           notifyWrapper();
         }
@@ -476,7 +520,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         effectiveId,
         amount as Measurement,
         existing.unit,
-        existing.modifiers
+        existing.modifiers,
+        existing.ingredient.slotId
       );
       notifyWrapper();
     },
@@ -502,7 +547,14 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       } else {
         newModifiers = undefined;
       }
-      wrapper.setVariationIngredient(selectedVariationSpec, effectiveId, newAmount, unit, newModifiers);
+      wrapper.setVariationIngredient(
+        selectedVariationSpec,
+        effectiveId,
+        newAmount,
+        unit,
+        newModifiers,
+        existing.ingredient.slotId
+      );
       notifyWrapper();
     },
     [currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
@@ -517,7 +569,40 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         effectiveId,
         existing.amount,
         existing.unit,
-        modifiers
+        modifiers,
+        existing.ingredient.slotId
+      );
+      notifyWrapper();
+    },
+    [currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
+  );
+
+  const handleIngredientRoleChange = useCallback(
+    (index: number, role: string | undefined): void => {
+      const existing = currentVariationIngredients[index];
+      const effectiveId = getEffectiveId(existing);
+      wrapper.setVariationIngredientRole(
+        selectedVariationSpec,
+        effectiveId,
+        role,
+        existing.ingredient.slotId
+      );
+      notifyWrapper();
+    },
+    [currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
+  );
+
+  const handleIngredientSlotIdChange = useCallback(
+    (index: number, newSlotId: string | undefined): void => {
+      const existing = currentVariationIngredients[index];
+      const effectiveId = getEffectiveId(existing);
+      const currentSlotId = existing.ingredient.slotId;
+      const trimmed = newSlotId?.trim() || undefined;
+      wrapper.setVariationIngredientSlotId(
+        selectedVariationSpec,
+        effectiveId,
+        currentSlotId,
+        trimmed as SlotId | undefined
       );
       notifyWrapper();
     },
@@ -528,7 +613,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     (index: number): void => {
       const existing = currentVariationIngredients[index];
       const effectiveId = getEffectiveId(existing);
-      wrapper.removeVariationIngredient(selectedVariationSpec, effectiveId);
+      wrapper.removeVariationIngredient(selectedVariationSpec, effectiveId, existing.ingredient.slotId);
       setIngredientInputDraft((prev) => {
         const next = { ...prev };
         delete next[index];
@@ -548,7 +633,53 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     (input: string): void => {
       const match = ingredientMatcher.resolveOnBlur(input);
       if (match) {
-        wrapper.setVariationIngredient(selectedVariationSpec, match.id as IngredientId, 0 as Measurement);
+        const ingredientId = match.id as IngredientId;
+        // Check if this ingredient already exists in the variation
+        const existingIndex = currentVariationIngredients.findIndex(
+          (ing: Entities.Fillings.IFillingIngredientEntity) =>
+            ing.ingredient.ids.some((id) => id === ingredientId)
+        );
+
+        if (existingIndex >= 0) {
+          // Duplicate ingredient — auto-assign slotIds and add as new entry
+          const existing = currentVariationIngredients[existingIndex];
+          const existingSlotId = existing.ingredient.slotId;
+
+          // Auto-assign a slotId to the existing entry if it doesn't have one
+          if (!existingSlotId) {
+            const autoId = `${match.id}-1` as SlotId;
+            wrapper.setVariationIngredientSlotId(
+              selectedVariationSpec,
+              getEffectiveId(existing),
+              undefined,
+              autoId
+            );
+          }
+
+          // Add the new entry with its own slotId
+          const newSlotId = `${match.id}-${existingSlotId ? 2 : 2}` as SlotId;
+          wrapper.setVariationIngredient(
+            selectedVariationSpec,
+            ingredientId,
+            0 as Measurement,
+            undefined,
+            undefined,
+            newSlotId
+          );
+
+          // Expand the new entry (it will be at the end) so the user sees role/slotId fields
+          const newIndex = currentVariationIngredients.length;
+          setExpandedIngredients((prev) => {
+            const next = new Set(prev);
+            next.add(newIndex);
+            // Also expand the existing entry so user can see/edit its slotId
+            next.add(existingIndex);
+            return next;
+          });
+        } else {
+          wrapper.setVariationIngredient(selectedVariationSpec, ingredientId, 0 as Measurement);
+        }
+
         focusIngredientRef.current = match.id;
         setNewIngredientText('');
         setUnresolvedNewIngredient(undefined);
@@ -557,7 +688,14 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         setUnresolvedNewIngredient(input.trim());
       }
     },
-    [ingredientMatcher, wrapper, selectedVariationSpec, notifyWrapper]
+    [
+      ingredientMatcher,
+      wrapper,
+      selectedVariationSpec,
+      notifyWrapper,
+      currentVariationIngredients,
+      getEffectiveId
+    ]
   );
 
   // ---- Procedure Handler (wrapper variation) ----
@@ -614,7 +752,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         selectedVariationSpec,
         effectiveId,
         newIds,
-        sourceIng.ingredient.preferredId ?? effectiveId
+        sourceIng.ingredient.preferredId ?? effectiveId,
+        sourceIng.ingredient.slotId
       );
       notifyWrapper();
     },
@@ -629,7 +768,13 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       if (newIds.length === 0) return;
       const currentPreferred = sourceIng.ingredient.preferredId ?? effectiveId;
       const newPreferred = currentPreferred === removeId ? (newIds[0] as IngredientId) : currentPreferred;
-      wrapper.setVariationIngredientAlternates(selectedVariationSpec, effectiveId, newIds, newPreferred);
+      wrapper.setVariationIngredientAlternates(
+        selectedVariationSpec,
+        effectiveId,
+        newIds,
+        newPreferred,
+        sourceIng.ingredient.slotId
+      );
       notifyWrapper();
     },
     [wrapper, selectedVariationSpec, getIngredientByEffectiveId, notifyWrapper]
@@ -643,7 +788,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         selectedVariationSpec,
         effectiveId,
         sourceIng.ingredient.ids,
-        preferredId
+        preferredId,
+        sourceIng.ingredient.slotId
       );
       notifyWrapper();
     },
@@ -1370,6 +1516,48 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                                 Create Ingredient
                               </button>
                             )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {/* Role & Slot ID for disambiguating duplicate ingredients */}
+                    {!readOnly && (
+                      <div className="w-full flex items-center gap-2 mt-1 pt-1 border-t border-gray-100">
+                        <label className="text-xs text-gray-400 shrink-0">role:</label>
+                        <IngredientRoleInput
+                          value={ing.role}
+                          index={index}
+                          onChange={handleIngredientRoleChange}
+                        />
+                        <label className="text-xs text-gray-400 shrink-0">slot ID:</label>
+                        <input
+                          type="text"
+                          className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                          defaultValue={ing.ingredient.slotId ?? ''}
+                          placeholder="e.g. ganache-base"
+                          onBlur={(e): void => {
+                            handleIngredientSlotIdChange(index, e.target.value);
+                          }}
+                          onKeyDown={(e): void => {
+                            if (e.key === 'Enter') {
+                              handleIngredientSlotIdChange(index, (e.target as HTMLInputElement).value);
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+                    {readOnly && (ing.ingredient.slotId || ing.role) && (
+                      <div className="w-full flex items-center gap-2 mt-1 pt-1 border-t border-gray-100">
+                        {ing.role && (
+                          <>
+                            <span className="text-xs text-gray-400">role:</span>
+                            <span className="text-xs text-gray-500">{ing.role}</span>
+                          </>
+                        )}
+                        {ing.ingredient.slotId && (
+                          <>
+                            <span className="text-xs text-gray-400">slot ID:</span>
+                            <span className="text-xs text-gray-500">{ing.ingredient.slotId}</span>
                           </>
                         )}
                       </div>

@@ -237,17 +237,17 @@ function _scaleMoldedBonBonWithMold(
     cavityWeight *
     (1 + bufferPercentage / 100)) as Measurement;
 
-  /* c8 ignore next 2 - defensive: fillings always defined for molded bonbon; slotCount guard prevents div/0 */
+  /* c8 ignore next 1 - defensive: fillings always defined for molded bonbon */
   const fillings = variation.fillings ?? [];
-  const slotCount = fillings.length || 1;
-  const perSlotWeight = (totalWeight / slotCount) as Measurement;
+  const ratioSum = fillings.reduce((sum, s) => sum + (s.ratio ?? 1), 0) || 1;
 
   const recipeScaleFactor = effectiveCount / (variation.yield.numFrames * mold.cavityCount);
 
   const errors = new MessageAggregator();
   const slotResults = fillings.map((slot) => {
+    const slotWeight = (totalWeight * ((slot.ratio ?? 1) / ratioSum)) as Measurement;
     const option = _resolveSlotOption(slot, target.fillingSelections);
-    return _buildScaledSlot(slot, option, perSlotWeight).withErrorFormat(
+    return _buildScaledSlot(slot, option, slotWeight).withErrorFormat(
       (msg) => `slot '${slot.slotId}': ${msg}`
     );
   });
@@ -292,9 +292,9 @@ function _scaleLinear(
   const scaleFactor = targetCount / recipeCount;
   const weightPerPiece = yld.weightPerPiece;
 
-  /* c8 ignore next 2 - defensive: fillings always defined; slotCount guard prevents div/0 */
+  /* c8 ignore next 1 - defensive: fillings always defined */
   const fillings = variation.fillings ?? [];
-  const slotCount = fillings.length || 1;
+  const ratioSum = fillings.reduce((sum, s) => sum + (s.ratio ?? 1), 0) || 1;
 
   const errors = new MessageAggregator();
   const slotResults = fillings.map((slot) => {
@@ -305,10 +305,11 @@ function _scaleLinear(
       const baseWeight = option.filling.goldenVariation.baseWeight;
       targetWeight = (baseWeight * scaleFactor) as Measurement;
     } else {
-      // Ingredient slot: use weightPerPiece if available, else proportional estimate
+      // Ingredient slot: use weightPerPiece with ratio-weighted distribution
       /* c8 ignore next 1 - defensive: weightPerPiece is undefined only for recipes without weight */
       const perPieceWeight = weightPerPiece ?? 0;
-      targetWeight = ((perPieceWeight * targetCount) / slotCount) as Measurement;
+      const slotRatio = (slot.ratio ?? 1) / ratioSum;
+      targetWeight = (perPieceWeight * targetCount * slotRatio) as Measurement;
     }
 
     return _buildScaledSlot(slot, option, targetWeight).withErrorFormat(

@@ -476,7 +476,9 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
         amount: ri.amount,
         notes: ri.notes,
         alternates,
-        entity: ri
+        entity: ri,
+        role: ri.role,
+        slotId: ri.ingredient.slotId
       });
     }
 

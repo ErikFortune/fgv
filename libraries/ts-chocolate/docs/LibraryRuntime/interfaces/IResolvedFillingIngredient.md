@@ -110,4 +110,38 @@ Resolved alternate ingredients that can substitute for the primary
 The original ingredient entity reference data
 
 </td></tr>
+<tr><td>
+
+[role](./IResolvedFillingIngredient.role.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional free-text label describing the role or purpose of this ingredient entry.
+
+</td></tr>
+<tr><td>
+
+[slotId](./IResolvedFillingIngredient.slotId.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[SlotId](../../type-aliases/SlotId.md)
+
+</td><td>
+
+Optional slot identifier for disambiguating duplicate ingredients.
+
+</td></tr>
 </tbody></table>

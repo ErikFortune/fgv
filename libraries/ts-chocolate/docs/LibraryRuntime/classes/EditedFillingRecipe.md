@@ -280,7 +280,7 @@ Adds a new variation entity (from EditingSession saveAsNewVariation).
 </td></tr>
 <tr><td>
 
-[setVariationIngredientAlternates(spec, currentPrimaryId, ids, preferredId)](./EditedFillingRecipe.setVariationIngredientAlternates.md)
+[setVariationIngredientAlternates(spec, currentPrimaryId, ids, preferredId, slotId)](./EditedFillingRecipe.setVariationIngredientAlternates.md)
 
 </td><td>
 
@@ -307,7 +307,7 @@ Updates the procedure options and preferred selection for a specific variation.
 </td></tr>
 <tr><td>
 
-[setVariationIngredient(spec, ingredientId, amount, unit, modifiers)](./EditedFillingRecipe.setVariationIngredient.md)
+[setVariationIngredient(spec, ingredientId, amount, unit, modifiers, slotId)](./EditedFillingRecipe.setVariationIngredient.md)
 
 </td><td>
 
@@ -320,7 +320,7 @@ Sets or updates an ingredient in a variation.
 </td></tr>
 <tr><td>
 
-[replaceVariationIngredient(spec, oldId, newId, amount, unit, modifiers)](./EditedFillingRecipe.replaceVariationIngredient.md)
+[replaceVariationIngredient(spec, oldId, newId, amount, unit, modifiers, slotId)](./EditedFillingRecipe.replaceVariationIngredient.md)
 
 </td><td>
 
@@ -333,7 +333,7 @@ Replaces an ingredient in a variation, preserving the alternates list.
 </td></tr>
 <tr><td>
 
-[removeVariationIngredient(spec, ingredientId)](./EditedFillingRecipe.removeVariationIngredient.md)
+[removeVariationIngredient(spec, ingredientId, slotId)](./EditedFillingRecipe.removeVariationIngredient.md)
 
 </td><td>
 
@@ -368,6 +368,32 @@ Sets or clears the procedure for a variation.
 </td><td>
 
 Sets or clears the notes on a variation.
+
+</td></tr>
+<tr><td>
+
+[setVariationIngredientRole(spec, ingredientId, role, slotId)](./EditedFillingRecipe.setVariationIngredientRole.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets or clears the role label on a specific ingredient in a variation.
+
+</td></tr>
+<tr><td>
+
+[setVariationIngredientSlotId(spec, ingredientId, currentSlotId, newSlotId)](./EditedFillingRecipe.setVariationIngredientSlotId.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets or clears the slotId on a specific ingredient in a variation.
 
 </td></tr>
 <tr><td>

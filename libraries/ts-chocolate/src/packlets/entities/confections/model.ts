@@ -297,6 +297,12 @@ export interface IFillingSlotEntity {
   readonly slotId: SlotId;
   /** Human-readable name for display (e.g., "Inner Layer", "Ganache Center") */
   readonly name?: string;
+  /**
+   * Relative volume ratio for this slot. Default is 1 (equal distribution).
+   * For a 2:1 ratio between two slots, set 2 and 1 respectively.
+   * The scaling code computes each slot's share as (ratio / sumOfAllRatios).
+   */
+  readonly ratio?: number;
   /** Available filling options with preferred selection */
   readonly filling: Model.IOptionsWithPreferred<AnyFillingOptionEntity, FillingOptionId>;
 }

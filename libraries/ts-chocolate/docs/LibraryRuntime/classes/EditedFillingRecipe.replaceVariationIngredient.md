@@ -3,14 +3,14 @@
 ## EditedFillingRecipe.replaceVariationIngredient() method
 
 Replaces an ingredient in a variation, preserving the alternates list.
-Finds the ingredient slot whose `ids` contains `oldId`.
+Finds the ingredient slot by slotId (if provided) or by `ids.includes(oldId)`.
 If `newId` is already in `ids`, just updates `preferredId` and amount.
 If not, adds `newId` to `ids` and sets it as preferred.
 
 **Signature:**
 
 ```typescript
-replaceVariationIngredient(spec: FillingRecipeVariationSpec, oldId: IngredientId, newId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers): Result<true>;
+replaceVariationIngredient(spec: FillingRecipeVariationSpec, oldId: IngredientId, newId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers, slotId?: SlotId): Result<true>;
 ```
 
 **Parameters:**
@@ -23,6 +23,7 @@ replaceVariationIngredient(spec: FillingRecipeVariationSpec, oldId: IngredientId
 <tr><td>amount</td><td>Measurement</td><td>Amount of the ingredient</td></tr>
 <tr><td>unit</td><td>MeasurementUnit</td><td>Optional measurement unit</td></tr>
 <tr><td>modifiers</td><td>IIngredientModifiers</td><td>Optional ingredient modifiers</td></tr>
+<tr><td>slotId</td><td>SlotId</td><td>Optional slot ID for disambiguation</td></tr>
 </tbody></table>
 
 **Returns:**

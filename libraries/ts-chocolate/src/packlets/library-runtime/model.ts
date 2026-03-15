@@ -716,6 +716,18 @@ export interface IResolvedFillingIngredient<TIngredient extends IIngredient = II
    * The original ingredient entity reference data
    */
   readonly entity: Fillings.IFillingIngredientEntity;
+
+  /**
+   * Optional free-text label describing the role or purpose of this ingredient entry.
+   * Used to distinguish duplicate uses of the same ingredient in a recipe.
+   */
+  readonly role?: string;
+
+  /**
+   * Optional slot identifier for disambiguating duplicate ingredients.
+   * When present, uniquely identifies this ingredient entry within the variation.
+   */
+  readonly slotId?: SlotId;
 }
 
 // ============================================================================
@@ -1276,6 +1288,11 @@ export interface IResolvedFillingSlot {
   readonly slotId: SlotId;
   /** Human-readable name for display */
   readonly name?: string;
+  /**
+   * Relative volume ratio for this slot. Default is 1 (equal distribution).
+   * For a 2:1 ratio between two slots, set 2 and 1 respectively.
+   */
+  readonly ratio?: number;
   /** Resolved filling options with preferred selection */
   readonly filling: CommonModel.IOptionsWithPreferred<IResolvedFillingOption, Confections.FillingOptionId>;
 }

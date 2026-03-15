@@ -1947,9 +1947,9 @@ class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity>
     hasChanges(original: Fillings.IFillingRecipeEntity): boolean;
     get name(): FillingName;
     removeVariation(spec: FillingRecipeVariationSpec): Result<void>;
-    removeVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: IngredientId): Result<true>;
+    removeVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, slotId?: SlotId): Result<true>;
     replaceVariation(spec: FillingRecipeVariationSpec, variation: Fillings.IFillingRecipeVariationEntity): Result<void>;
-    replaceVariationIngredient(spec: FillingRecipeVariationSpec, oldId: IngredientId, newId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<true>;
+    replaceVariationIngredient(spec: FillingRecipeVariationSpec, oldId: IngredientId, newId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers, slotId?: SlotId): Result<true>;
     static restoreFromHistory(history: Session.ISerializedEditingHistoryEntity<Fillings.IFillingRecipeEntity>): Result<EditedFillingRecipe>;
     scaleVariationToTargetWeight(spec: FillingRecipeVariationSpec, targetWeight: Measurement): Result<Measurement>;
     // Warning: (ae-forgotten-export) The symbol "FillingCategory_3" needs to be exported by the entry point index.d.ts
@@ -1959,8 +1959,10 @@ class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity>
     setName(name: FillingName): Result<void>;
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
     setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
-    setVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers): Result<true>;
-    setVariationIngredientAlternates(spec: FillingRecipeVariationSpec, currentPrimaryId: IngredientId, ids: ReadonlyArray<IngredientId>, preferredId: IngredientId): Result<void>;
+    setVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers, slotId?: SlotId): Result<true>;
+    setVariationIngredientAlternates(spec: FillingRecipeVariationSpec, currentPrimaryId: IngredientId, ids: ReadonlyArray<IngredientId>, preferredId: IngredientId, slotId?: SlotId): Result<void>;
+    setVariationIngredientRole(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, role: string | undefined, slotId?: SlotId): Result<true>;
+    setVariationIngredientSlotId(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, currentSlotId: SlotId | undefined, newSlotId: SlotId | undefined): Result<true>;
     setVariationName(spec: FillingRecipeVariationSpec, name: string | undefined): Result<void>;
     setVariationNotes(spec: FillingRecipeVariationSpec, notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<true>;
     setVariationProcedure(spec: FillingRecipeVariationSpec, procedureId: ProcedureId | undefined): Result<true>;
@@ -3970,6 +3972,7 @@ interface IFillingIngredientEntity {
     readonly ingredient: Model.IIdsWithPreferred<IngredientId>;
     readonly modifiers?: IIngredientModifiers;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly role?: string;
     readonly unit?: MeasurementUnit;
 }
 
@@ -4132,6 +4135,7 @@ type IFillingsLibraryParams = ISubLibraryParams<FillingsLibrary, FillingCollecti
 interface IFillingSlotEntity {
     readonly filling: Model.IOptionsWithPreferred<AnyFillingOptionEntity, FillingOptionId>;
     readonly name?: string;
+    readonly ratio?: number;
     readonly slotId: SlotId;
 }
 
@@ -5650,6 +5654,8 @@ interface IResolvedFillingIngredient<TIngredient extends IIngredient = IIngredie
     readonly entity: Fillings.IFillingIngredientEntity;
     readonly ingredient: TIngredient;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly role?: string;
+    readonly slotId?: SlotId;
 }
 
 // @public
@@ -5667,6 +5673,7 @@ interface IResolvedFillingRecipeProcedure {
 interface IResolvedFillingSlot {
     readonly filling: Model.IOptionsWithPreferred<IResolvedFillingOption, Confections.FillingOptionId>;
     readonly name?: string;
+    readonly ratio?: number;
     readonly slotId: SlotId;
 }
 

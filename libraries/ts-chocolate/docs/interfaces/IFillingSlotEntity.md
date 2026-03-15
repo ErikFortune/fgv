@@ -61,6 +61,23 @@ Human-readable name for display (e.g., "Inner Layer", "Ganache Center")
 </td></tr>
 <tr><td>
 
+[ratio](./IFillingSlotEntity.ratio.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+Relative volume ratio for this slot.
+
+</td></tr>
+<tr><td>
+
 [filling](./IFillingSlotEntity.filling.md)
 
 </td><td>

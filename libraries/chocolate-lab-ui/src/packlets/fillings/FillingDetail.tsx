@@ -102,7 +102,10 @@ function IngredientRow({
   readonly scaleFactor?: number;
 }): React.ReactElement {
   const items = useMemo(() => {
-    const result = [{ id: resolved.ingredient.id, label: resolved.ingredient.name }];
+    const primaryLabel = resolved.role
+      ? `${resolved.ingredient.name} (${resolved.role})`
+      : resolved.ingredient.name;
+    const result = [{ id: resolved.ingredient.id, label: primaryLabel }];
     for (const alt of resolved.alternates) {
       result.push({ id: alt.id, label: alt.name });
     }

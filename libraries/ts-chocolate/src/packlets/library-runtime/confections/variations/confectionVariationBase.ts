@@ -254,6 +254,7 @@ export abstract class ConfectionRecipeVariationBase<
         succeed({
           slotId: slot.slotId,
           name: slot.name,
+          ratio: slot.ratio,
           filling
         })
       );

@@ -69,7 +69,8 @@ export const fillingIngredientEntity: Converter<IFillingIngredientEntity> =
     amount: CommonConverters.measurement,
     unit: CommonConverters.measurementUnit.optional(),
     modifiers: ingredientModifiers.optional(),
-    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+    role: Converters.string.optional()
   });
 
 /**

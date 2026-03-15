@@ -8,7 +8,7 @@ in a variation. Matched by finding the ingredient whose ids array contains curre
 **Signature:**
 
 ```typescript
-setVariationIngredientAlternates(spec: FillingRecipeVariationSpec, currentPrimaryId: IngredientId, ids: readonly IngredientId[], preferredId: IngredientId): Result<void>;
+setVariationIngredientAlternates(spec: FillingRecipeVariationSpec, currentPrimaryId: IngredientId, ids: readonly IngredientId[], preferredId: IngredientId, slotId?: SlotId): Result<void>;
 ```
 
 **Parameters:**
@@ -19,6 +19,7 @@ setVariationIngredientAlternates(spec: FillingRecipeVariationSpec, currentPrimar
 <tr><td>currentPrimaryId</td><td>IngredientId</td><td>The ingredient ID currently used to identify the slot</td></tr>
 <tr><td>ids</td><td>readonly IngredientId[]</td><td>New full list of ingredient IDs (primary + alternates)</td></tr>
 <tr><td>preferredId</td><td>IngredientId</td><td>Which ID to mark as preferred</td></tr>
+<tr><td>slotId</td><td>SlotId</td><td></td></tr>
 </tbody></table>
 
 **Returns:**

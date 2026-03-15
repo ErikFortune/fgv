@@ -235,6 +235,7 @@ export const fillingOptionEntities: Converter<
 export const fillingSlotEntity: Converter<IFillingSlotEntity> = Converters.strictObject<IFillingSlotEntity>({
   slotId: CommonConverters.slotId,
   name: Converters.string.optional(),
+  ratio: Converters.number.withConstraint((n) => n > 0, { description: 'must be positive' }).optional(),
   filling: fillingOptionEntities
 });
 

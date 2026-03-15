@@ -38,7 +38,8 @@ import type {
   IngredientId,
   Measurement,
   MeasurementUnit,
-  ProcedureId
+  ProcedureId,
+  SlotId
 } from '../../common';
 
 type FillingCategory = Fillings.FillingCategory;
@@ -250,14 +251,19 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     spec: FillingRecipeVariationSpec,
     currentPrimaryId: IngredientId,
     ids: ReadonlyArray<IngredientId>,
-    preferredId: IngredientId
+    preferredId: IngredientId,
+    slotId?: SlotId
   ): Result<void> {
     const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
     if (varIndex < 0) {
       return fail(`variation '${spec}' does not exist in this recipe`);
     }
     const variation = this._current.variations[varIndex];
-    const ingIndex = variation.ingredients.findIndex((ing) => ing.ingredient.ids.includes(currentPrimaryId));
+    const ingIndex = EditedFillingRecipe._findIngredientIndex(
+      variation.ingredients,
+      currentPrimaryId,
+      slotId
+    );
     if (ingIndex < 0) {
       return fail(`ingredient '${currentPrimaryId}' not found in variation '${spec}'`);
     }
@@ -314,14 +320,17 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
 
   /**
    * Sets or updates an ingredient in a variation.
-   * If an ingredient slot whose `ids` contains `ingredientId` already exists, updates it.
-   * Otherwise appends a new ingredient with `ids: [ingredientId]`.
+   * If `slotId` is provided, matches by slotId for disambiguation (required when the
+   * same ingredient appears multiple times). Otherwise falls back to matching by
+   * `ids.includes(ingredientId)`.
+   * When no match is found, appends a new ingredient entry.
    * Recalculates baseWeight after the change.
    * @param spec - Variation spec to update
    * @param ingredientId - The ingredient ID to set
    * @param amount - Amount of the ingredient
    * @param unit - Optional measurement unit (default: 'g')
    * @param modifiers - Optional ingredient modifiers
+   * @param slotId - Optional slot ID for disambiguation when the same ingredient appears multiple times
    * @returns Success or failure if spec not found
    * @public
    */
@@ -330,7 +339,8 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     ingredientId: IngredientId,
     amount: Measurement,
     unit?: MeasurementUnit,
-    modifiers?: Fillings.IIngredientModifiers
+    modifiers?: Fillings.IIngredientModifiers,
+    slotId?: SlotId
   ): Result<true> {
     const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
     if (varIndex < 0) {
@@ -340,13 +350,17 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     this._pushUndo();
     const variation = this._current.variations[varIndex];
     const ingredients = [...variation.ingredients];
-    const existingIndex = ingredients.findIndex((ing) => ing.ingredient.ids.includes(ingredientId));
+    const existingIndex = EditedFillingRecipe._findIngredientIndex(ingredients, ingredientId, slotId);
 
     const newIngredient: Fillings.IFillingIngredientEntity = {
       ingredient:
         existingIndex >= 0
-          ? { ...ingredients[existingIndex].ingredient, preferredId: ingredientId }
-          : { ids: [ingredientId], preferredId: ingredientId },
+          ? {
+              ...ingredients[existingIndex].ingredient,
+              preferredId: ingredientId,
+              slotId: slotId ?? ingredients[existingIndex].ingredient.slotId
+            }
+          : { ids: [ingredientId], preferredId: ingredientId, slotId },
       amount,
       unit,
       modifiers
@@ -370,7 +384,7 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
 
   /**
    * Replaces an ingredient in a variation, preserving the alternates list.
-   * Finds the ingredient slot whose `ids` contains `oldId`.
+   * Finds the ingredient slot by slotId (if provided) or by `ids.includes(oldId)`.
    * If `newId` is already in `ids`, just updates `preferredId` and amount.
    * If not, adds `newId` to `ids` and sets it as preferred.
    * @param spec - Variation spec to update
@@ -379,6 +393,7 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
    * @param amount - Amount of the ingredient
    * @param unit - Optional measurement unit
    * @param modifiers - Optional ingredient modifiers
+   * @param slotId - Optional slot ID for disambiguation
    * @returns Success or failure if spec or ingredient not found
    * @public
    */
@@ -388,14 +403,15 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     newId: IngredientId,
     amount: Measurement,
     unit?: MeasurementUnit,
-    modifiers?: Fillings.IIngredientModifiers
+    modifiers?: Fillings.IIngredientModifiers,
+    slotId?: SlotId
   ): Result<true> {
     const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
     if (varIndex < 0) {
       return fail(`variation '${spec}' does not exist in this recipe`);
     }
     const variation = this._current.variations[varIndex];
-    const ingIndex = variation.ingredients.findIndex((ing) => ing.ingredient.ids.includes(oldId));
+    const ingIndex = EditedFillingRecipe._findIngredientIndex(variation.ingredients, oldId, slotId);
     if (ingIndex < 0) {
       return fail(`ingredient '${oldId}' not found in variation '${spec}'`);
     }
@@ -430,23 +446,26 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
 
   /**
    * Removes an ingredient from a variation.
-   * Removes the entire ingredient slot whose `ids` contains `ingredientId`.
+   * Removes the entire ingredient slot matched by slotId (if provided) or by
+   * `ids.includes(ingredientId)`.
    * Recalculates baseWeight after the change.
    * @param spec - Variation spec to update
    * @param ingredientId - The ingredient ID to find and remove
+   * @param slotId - Optional slot ID for disambiguation
    * @returns Success or failure if spec or ingredient not found
    * @public
    */
   public removeVariationIngredient(
     spec: FillingRecipeVariationSpec,
-    ingredientId: IngredientId
+    ingredientId: IngredientId,
+    slotId?: SlotId
   ): Result<true> {
     const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
     if (varIndex < 0) {
       return fail(`variation '${spec}' does not exist in this recipe`);
     }
     const variation = this._current.variations[varIndex];
-    const ingIndex = variation.ingredients.findIndex((ing) => ing.ingredient.ids.includes(ingredientId));
+    const ingIndex = EditedFillingRecipe._findIngredientIndex(variation.ingredients, ingredientId, slotId);
     if (ingIndex < 0) {
       return fail(`ingredient '${ingredientId}' not found in variation '${spec}'`);
     }
@@ -523,6 +542,91 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
       ...variations[varIndex],
       notes: notes ? notes.map((n) => ({ ...n })) : undefined
     };
+    this._current = { ...this._current, variations };
+    return succeed(true);
+  }
+
+  /**
+   * Sets or clears the role label on a specific ingredient in a variation.
+   * The role is a free-text label describing the purpose of this ingredient entry
+   * (e.g., "heated", "cold", "for ganache base"), used to distinguish duplicate
+   * uses of the same ingredient.
+   * @param spec - Variation spec to update
+   * @param ingredientId - The ingredient ID to find
+   * @param role - Role label, or undefined to clear
+   * @param slotId - Optional slot ID for disambiguation
+   * @returns Success or failure if spec or ingredient not found
+   * @public
+   */
+  public setVariationIngredientRole(
+    spec: FillingRecipeVariationSpec,
+    ingredientId: IngredientId,
+    role: string | undefined,
+    slotId?: SlotId
+  ): Result<true> {
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+    const variation = this._current.variations[varIndex];
+    const ingIndex = EditedFillingRecipe._findIngredientIndex(variation.ingredients, ingredientId, slotId);
+    if (ingIndex < 0) {
+      return fail(`ingredient '${ingredientId}' not found in variation '${spec}'`);
+    }
+
+    this._pushUndo();
+    const ingredients = [...variation.ingredients];
+    ingredients[ingIndex] = {
+      ...ingredients[ingIndex],
+      role: role?.trim() || undefined
+    };
+    const variations = [...this._current.variations];
+    variations[varIndex] = { ...variation, ingredients };
+    this._current = { ...this._current, variations };
+    return succeed(true);
+  }
+
+  /**
+   * Sets or clears the slotId on a specific ingredient in a variation.
+   * The slotId is used as a stable identifier for disambiguating duplicate ingredients.
+   * @param spec - Variation spec to update
+   * @param ingredientId - The ingredient ID to find
+   * @param currentSlotId - Current slotId to locate the ingredient (undefined to match by ingredientId only)
+   * @param newSlotId - New slotId to set, or undefined to clear
+   * @returns Success or failure if spec or ingredient not found
+   * @public
+   */
+  public setVariationIngredientSlotId(
+    spec: FillingRecipeVariationSpec,
+    ingredientId: IngredientId,
+    currentSlotId: SlotId | undefined,
+    newSlotId: SlotId | undefined
+  ): Result<true> {
+    const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
+    if (varIndex < 0) {
+      return fail(`variation '${spec}' does not exist in this recipe`);
+    }
+    const variation = this._current.variations[varIndex];
+    const ingIndex = EditedFillingRecipe._findIngredientIndex(
+      variation.ingredients,
+      ingredientId,
+      currentSlotId
+    );
+    if (ingIndex < 0) {
+      return fail(`ingredient '${ingredientId}' not found in variation '${spec}'`);
+    }
+
+    this._pushUndo();
+    const ingredients = [...variation.ingredients];
+    ingredients[ingIndex] = {
+      ...ingredients[ingIndex],
+      ingredient: {
+        ...ingredients[ingIndex].ingredient,
+        slotId: newSlotId
+      }
+    };
+    const variations = [...this._current.variations];
+    variations[varIndex] = { ...variation, ingredients };
     this._current = { ...this._current, variations };
     return succeed(true);
   }
@@ -760,6 +864,22 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
   // ============================================================================
   // Private Helpers
   // ============================================================================
+
+  /**
+   * Finds an ingredient index by slotId (if provided) or by ids.includes(ingredientId).
+   * When slotId is given, matches only by slotId for exact disambiguation.
+   * When slotId is absent, falls back to the legacy ids.includes() match.
+   */
+  private static _findIngredientIndex(
+    ingredients: ReadonlyArray<Fillings.IFillingIngredientEntity>,
+    ingredientId: IngredientId,
+    slotId?: SlotId
+  ): number {
+    if (slotId !== undefined) {
+      return ingredients.findIndex((ing) => ing.ingredient.slotId === slotId);
+    }
+    return ingredients.findIndex((ing) => ing.ingredient.ids.includes(ingredientId));
+  }
 
   /**
    * Calculates base weight from a list of source ingredients.

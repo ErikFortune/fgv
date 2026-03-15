@@ -145,6 +145,30 @@ export function FillingsEditor({
 
   const slots = fillings ?? [];
 
+  const handleRatioChange = useCallback(
+    (slotId: string, value: string): void => {
+      const slotIdx = slots.findIndex((s) => s.slotId === slotId);
+      if (slotIdx < 0) return;
+      const slot = slots[slotIdx]!;
+      const parsed = parseFloat(value);
+      const ratio = !isNaN(parsed) && parsed > 0 ? parsed : undefined;
+      const updated = [...slots];
+      updated[slotIdx] = { ...slot, ratio };
+      onFillingsChange(updated);
+    },
+    [slots, onFillingsChange]
+  );
+
+  const slotPercentages = useMemo((): ReadonlyArray<{ slotId: string; name: string; pct: number }> => {
+    if (slots.length < 2) return [];
+    const sumOfRatios = slots.reduce((acc, s) => acc + (s.ratio ?? 1), 0);
+    return slots.map((s, i) => ({
+      slotId: s.slotId,
+      name: s.name ?? `Slot ${i + 1}`,
+      pct: Math.round(((s.ratio ?? 1) / sumOfRatios) * 100)
+    }));
+  }, [slots]);
+
   const handleAddFilling = useCallback(
     (input: string): void => {
       const match = fillingOptionMatcher.resolveOnBlur(input);
@@ -256,12 +280,30 @@ export function FillingsEditor({
       <div className="space-y-2">
         {slots.map((slot) => (
           <div key={slot.slotId} className="rounded border border-gray-200 p-2 space-y-1.5">
-            <div className="text-xs text-gray-400 font-medium">
-              {slot.name ?? slot.slotId}
-              {defaultSlotWeights?.[slot.slotId] !== undefined && (
-                <span className="ml-1 text-amber-600 font-medium">
-                  ({Math.round(defaultSlotWeights[slot.slotId]!)}g)
-                </span>
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-gray-400 font-medium">
+                {slot.name ?? slot.slotId}
+                {defaultSlotWeights?.[slot.slotId] !== undefined && (
+                  <span className="ml-1 text-amber-600 font-medium">
+                    ({Math.round(defaultSlotWeights[slot.slotId]!)}g)
+                  </span>
+                )}
+              </div>
+              {!disabled && (
+                <label className="flex items-center gap-1 text-xs text-gray-400">
+                  <span>Ratio</span>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.5"
+                    value={slot.ratio ?? 1}
+                    onChange={(e): void => handleRatioChange(slot.slotId, e.target.value)}
+                    className="w-14 border border-gray-200 rounded px-1 py-0.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                  />
+                </label>
+              )}
+              {disabled && slot.ratio !== undefined && slot.ratio !== 1 && (
+                <span className="text-xs text-gray-400">Ratio: {slot.ratio}</span>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-1">
@@ -373,6 +415,18 @@ export function FillingsEditor({
             </div>
           </div>
         ))}
+        {slotPercentages.length > 0 && (
+          <div className="text-xs text-gray-400 pt-1">
+            {slotPercentages.map((sp, i) => (
+              <span key={sp.slotId}>
+                {i > 0 && <span className="mx-1">·</span>}
+                <span className="font-medium text-gray-500">{sp.name}</span>
+                {': '}
+                <span>{sp.pct}%</span>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       {!disabled &&
         (pendingNewFilling && !pendingNewFilling.slotId ? (

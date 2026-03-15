@@ -60,6 +60,23 @@ Human-readable name for display
 </td></tr>
 <tr><td>
 
+[ratio](./IResolvedFillingSlot.ratio.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+Relative volume ratio for this slot.
+
+</td></tr>
+<tr><td>
+
 [filling](./IResolvedFillingSlot.filling.md)
 
 </td><td>
