@@ -1,0 +1,1034 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+import '@fgv/ts-utils-jest';
+
+import {
+  BaseConfectionId,
+  BaseIngredientId,
+  BaseFillingId,
+  ConfectionId,
+  ConfectionName,
+  ConfectionRecipeVariationId,
+  ConfectionRecipeVariationSpec,
+  Converters as CommonConverters,
+  Measurement,
+  Helpers,
+  IngredientId,
+  Percentage,
+  RatingScore,
+  FillingId,
+  FillingRecipeVariationId,
+  FillingRecipeVariationSpec,
+  SessionSpec,
+  SlotId,
+  CollectionId,
+  UrlCategory,
+  Validation,
+  BaseJournalId,
+  NoteCategory,
+  GroupName,
+  SessionId,
+  JournalId
+} from '../../../packlets/common';
+
+const {
+  isValidCollectionId: isValidSourceId,
+  isValidBaseIngredientId,
+  isValidBaseMoldId,
+  isValidBaseProcedureId,
+  isValidBaseFillingId,
+  isValidBaseDecorationId,
+  isValidFillingName,
+  isValidFillingRecipeVariationSpec,
+  isValidSessionSpec,
+  isValidBaseJournalId,
+  isValidRatingScore,
+  isValidMeasurement,
+  isValidPercentage,
+  isValidCelsius,
+  isValidDegreesMacMichael,
+  toCollectionId: toSourceId,
+  toBaseIngredientId,
+  toBaseMoldId,
+  toBaseProcedureId,
+  toBaseTaskId,
+  toBaseFillingId,
+  toBaseDecorationId,
+  toFillingName,
+  toFillingRecipeVariationSpec,
+  toSessionSpec,
+  toBaseJournalId,
+  isValidSlotId,
+  toSlotId,
+  toRatingScore,
+  toMeasurement,
+  toPercentage,
+  toCelsius,
+  toDegreesMacMichael,
+  toBaseConfectionId,
+  toConfectionName,
+  toConvectionRecipeVariationSpec,
+  isValidUrlCategory,
+  toUrlCategory,
+  isValidNoteCategory,
+  toNoteCategory,
+  isValidGroupName,
+  toGroupName,
+  isValidSessionId,
+  toSessionId,
+  isValidJournalId,
+  toJournalId
+} = Validation;
+
+const {
+  ingredientId: ingredientIdConverter,
+  moldId: moldIdConverter,
+  procedureId: procedureIdConverter,
+  taskId: taskIdConverter,
+  fillingId: fillingIdConverter,
+  fillingRecipeVariationId: fillingRecipeVariationIdConverter,
+  confectionId: confectionIdConverter,
+  confectionRecipeVariationId: confectionRecipeVariationIdConverter
+} = CommonConverters;
+
+const {
+  createIngredientId,
+  createFillingId,
+  createFillingRecipeVariationId,
+  parseIngredientId,
+  parseFillingId,
+  parseFillingRecipeVariationId,
+  getIngredientCollectionId,
+  getIngredientBaseId,
+  getFillingCollectionId,
+  getFillingBaseId,
+  getFillingRecipeVariationFillingId,
+  getFillingRecipeVariationSpec
+} = Helpers;
+
+describe('Common validation', () => {
+  // ============================================================================
+  // Base ID Type Guards - All use same pattern
+  // ============================================================================
+
+  describe('Base ID type guards', () => {
+    const validBaseIds: [string, unknown][] = [
+      ['simple', 'common'],
+      ['with-dashes', 'my-source'],
+      ['with_underscores', 'my_source'],
+      ['alphanumeric', 'Source123']
+    ];
+
+    const invalidBaseIds: [string, unknown][] = [
+      ['empty string', ''],
+      ['with dot', 'source.id'],
+      ['with slash', 'source/id'],
+      ['number', 123],
+      ['null', null],
+      ['undefined', undefined]
+    ];
+
+    describe.each([
+      ['isValidSourceId', isValidSourceId],
+      ['isValidBaseIngredientId', isValidBaseIngredientId],
+      ['isValidBaseMoldId', isValidBaseMoldId],
+      ['isValidBaseProcedureId', isValidBaseProcedureId],
+      ['isValidBaseFillingId', isValidBaseFillingId],
+      ['isValidBaseDecorationId', isValidBaseDecorationId]
+    ])('%s', (_name, fn) => {
+      test.each(validBaseIds)('returns true for %s', (_desc, input) => {
+        expect(fn(input)).toBe(true);
+      });
+
+      test.each(invalidBaseIds)('returns false for %s', (_desc, input) => {
+        expect(fn(input)).toBe(false);
+      });
+    });
+  });
+
+  // ============================================================================
+  describe('isValidFillingName', () => {
+    test.each([
+      ['valid name', 'Classic Dark Chocolate Ganache', true],
+      ['short name', 'Test', true],
+      ['empty string', '', false],
+      ['number', 123, false],
+      ['null', null, false]
+    ])('%s: isValidFillingName(%p) returns %p', (_desc, input, expected) => {
+      expect(isValidFillingName(input)).toBe(expected);
+    });
+  });
+
+  describe('isValidFillingRecipeVariationSpec', () => {
+    test.each([
+      ['basic variation', '2026-01-03-01', true],
+      ['with label', '2026-01-03-02-tweaked', true],
+      ['with longer label', '2026-01-03-05-less-sugar', true],
+      ['with numbers in label', '2026-12-31-99-v2', true],
+      ['missing counter', '2026-01-03', false],
+      ['invalid date format', '26-01-03-01', false],
+      ['uppercase label', '2026-01-03-01-TWEAKED', false],
+      ['spaces in label', '2026-01-03-01-less sugar', false],
+      ['empty string', '', false],
+      ['number', 123, false],
+      ['null', null, false]
+    ])('%s: isValidFillingRecipeVariationSpec(%p) returns %p', (_desc, input, expected) => {
+      expect(isValidFillingRecipeVariationSpec(input)).toBe(expected);
+    });
+  });
+
+  // ============================================================================
+  // Numeric Type Guards
+  // ============================================================================
+
+  describe('Numeric type guards', () => {
+    describe('isValidMeasurement', () => {
+      test.each([
+        ['positive integer', 100, true],
+        ['zero', 0, true],
+        ['positive decimal', 0.5, true],
+        ['large decimal', 1000.5, true],
+        ['negative', -1, false],
+        ['infinity', Infinity, false],
+        ['NaN', NaN, false],
+        ['string', '100', false]
+      ])('%s: isValidMeasurement(%p) returns %p', (_desc, input, expected) => {
+        expect(isValidMeasurement(input)).toBe(expected);
+      });
+    });
+
+    describe('isValidPercentage', () => {
+      test.each([
+        ['middle value', 50, true],
+        ['zero', 0, true],
+        ['hundred', 100, true],
+        ['decimal', 0.5, true],
+        ['negative', -1, false],
+        ['over 100', 101, false],
+        ['infinity', Infinity, false],
+        ['string', '50', false]
+      ])('%s: isValidPercentage(%p) returns %p', (_desc, input, expected) => {
+        expect(isValidPercentage(input)).toBe(expected);
+      });
+    });
+
+    describe('isValidCelsius', () => {
+      test.each([
+        ['positive', 25, true],
+        ['negative', -40, true],
+        ['zero', 0, true],
+        ['decimal', 100.5, true],
+        ['infinity', Infinity, false],
+        ['NaN', NaN, false],
+        ['string', '25', false]
+      ])('%s: isValidCelsius(%p) returns %p', (_desc, input, expected) => {
+        expect(isValidCelsius(input)).toBe(expected);
+      });
+    });
+
+    describe('isValidDegreesMacMichael', () => {
+      test.each([
+        ['positive', 100, true],
+        ['zero', 0, true],
+        ['decimal', 500.5, true],
+        ['negative', -1, false],
+        ['infinity', Infinity, false],
+        ['string', '100', false]
+      ])('%s: isValidDegreesMacMichael(%p) returns %p', (_desc, input, expected) => {
+        expect(isValidDegreesMacMichael(input)).toBe(expected);
+      });
+    });
+
+    describe('isValidRatingScore', () => {
+      test.each([
+        ['minimum (1)', 1, true],
+        ['middle (3)', 3, true],
+        ['maximum (5)', 5, true],
+        ['zero', 0, false],
+        ['negative', -1, false],
+        ['above max (6)', 6, false],
+        ['decimal', 3.5, false],
+        ['infinity', Infinity, false],
+        ['NaN', NaN, false],
+        ['string', '3', false],
+        ['null', null, false]
+      ])('%s: isValidRatingScore(%p) returns %p', (_desc, input, expected) => {
+        expect(isValidRatingScore(input)).toBe(expected);
+      });
+    });
+  });
+
+  // ============================================================================
+  // Base ID Converters
+  // ============================================================================
+
+  describe('Base ID converters', () => {
+    describe.each([
+      ['toSourceId', toSourceId, 'felchlin', 'source.id', /Invalid CollectionId/],
+      ['toBaseIngredientId', toBaseIngredientId, 'maracaibo-65', 'base.id', /Invalid BaseIngredientId/],
+      ['toBaseMoldId', toBaseMoldId, 'cw-2227', 'mold.id', /Invalid BaseMoldId/],
+      ['toBaseProcedureId', toBaseProcedureId, 'ganache-cold', 'proc.id', /Invalid BaseProcedureId/],
+      ['toBaseTaskId', toBaseTaskId, 'melt-chocolate', 'task.id', /Invalid BaseTaskId/],
+      ['toBaseFillingId', toBaseFillingId, 'classic-ganache', 'recipe.id', /Invalid BaseFillingId/],
+      ['toBaseDecorationId', toBaseDecorationId, 'gold-leaf', 'dec.id', /Invalid BaseDecorationId/]
+    ])('%s', (_name, fn, validInput, invalidInput, errorPattern) => {
+      test(`succeeds with valid input "${validInput}"`, () => {
+        expect(fn(validInput)).toSucceedAndSatisfy((result) => {
+          expect(result).toBe(validInput);
+        });
+      });
+
+      test(`fails with invalid input "${invalidInput}"`, () => {
+        expect(fn(invalidInput)).toFailWith(errorPattern);
+      });
+
+      test('fails with empty string', () => {
+        expect(fn('')).toFail();
+      });
+    });
+  });
+
+  // ============================================================================
+  // Composite ID Converters
+  // ============================================================================
+
+  describe('Composite ID converters', () => {
+    describe.each([
+      ['ingredientId', ingredientIdConverter, toBaseIngredientId, 'felchlin', 'maracaibo-65'],
+      ['moldId', moldIdConverter, toBaseMoldId, 'common', 'cw-2227'],
+      ['procedureId', procedureIdConverter, toBaseProcedureId, 'common', 'ganache-cold'],
+      ['taskId', taskIdConverter, toBaseTaskId, 'common', 'melt-chocolate'],
+      ['fillingId', fillingIdConverter, toBaseFillingId, 'user', 'classic-ganache']
+    ])('%s', (_name, converter, toBase, collectionIdText, baseIdText) => {
+      const validInput = `${collectionIdText}.${baseIdText}`;
+
+      test(`accepts a valid string: "${validInput}"`, () => {
+        expect(converter.convert(validInput)).toSucceedAndSatisfy((result) => {
+          expect(result).toBe(validInput);
+        });
+      });
+
+      test('accepts a CompositeId object and returns the string form', () => {
+        const collectionId = toSourceId(collectionIdText).orThrow();
+        const baseId = toBase(baseIdText).orThrow();
+        expect(converter.convert({ collectionId, itemId: baseId })).toSucceedAndSatisfy((result) => {
+          expect(result).toBe(validInput);
+        });
+      });
+
+      test(`fails with base ID only: "${baseIdText}"`, () => {
+        expect(converter.convert(baseIdText)).toFail();
+      });
+
+      test('fails with too many dots', () => {
+        expect(converter.convert('source.item.extra')).toFail();
+      });
+    });
+  });
+
+  describe('toFillingName', () => {
+    test('succeeds with valid recipe name', () => {
+      expect(toFillingName('My Recipe')).toSucceedAndSatisfy((result) => {
+        expect(result).toBe('My Recipe');
+      });
+    });
+
+    test('fails with empty string', () => {
+      expect(toFillingName('')).toFailWith(/Invalid FillingName/);
+    });
+  });
+
+  describe('toFillingRecipeVariationSpec', () => {
+    test('succeeds with valid basic variation ID', () => {
+      expect(toFillingRecipeVariationSpec('2026-01-03-01')).toSucceedWith(
+        '2026-01-03-01' as FillingRecipeVariationSpec
+      );
+    });
+
+    test('succeeds with variation ID with label', () => {
+      expect(toFillingRecipeVariationSpec('2026-01-03-02-tweaked')).toSucceedWith(
+        '2026-01-03-02-tweaked' as FillingRecipeVariationSpec
+      );
+    });
+
+    test('fails with missing counter', () => {
+      expect(toFillingRecipeVariationSpec('2026-01-03')).toFailWith(/Invalid FillingRecipeVariationSpec/);
+    });
+
+    test('fails with invalid format', () => {
+      expect(toFillingRecipeVariationSpec('invalid')).toFailWith(/Invalid FillingRecipeVariationSpec/);
+    });
+
+    test('fails with uppercase label', () => {
+      expect(toFillingRecipeVariationSpec('2026-01-03-01-WRONG')).toFailWith(
+        /Invalid FillingRecipeVariationSpec/
+      );
+    });
+
+    test('fails with empty string', () => {
+      expect(toFillingRecipeVariationSpec('')).toFailWith(/Invalid FillingRecipeVariationSpec/);
+    });
+
+    test('fails with non-string', () => {
+      expect(toFillingRecipeVariationSpec(123)).toFailWith(/Invalid FillingRecipeVariationSpec/);
+    });
+  });
+
+  // ============================================================================
+  // SessionId Validation
+  // ============================================================================
+
+  describe('SessionSpec validation', () => {
+    const validSessionSpecs: [string, string][] = [
+      ['basic format', '2026-01-15-143025-a1b2c3d4'],
+      ['midnight', '2026-01-01-000000-00000000'],
+      ['end of day', '2026-12-31-235959-ffffffff'],
+      ['hex digits', '2026-06-15-120030-abcdef12']
+    ];
+
+    const invalidSessionSpecs: [string, unknown][] = [
+      ['empty string', ''],
+      ['missing random part', '2026-01-15-143025'],
+      ['wrong date format', '26-01-15-143025-a1b2c3d4'],
+      ['uppercase hex', '2026-01-15-143025-A1B2C3D4'],
+      ['too short random', '2026-01-15-143025-a1b2c3'],
+      ['too long random', '2026-01-15-143025-a1b2c3d4e5'],
+      ['non-hex characters', '2026-01-15-143025-ghijklmn'],
+      ['too short time (4 digits)', '2026-01-15-1430-a1b2c3d4'],
+      ['number', 123],
+      ['null', null],
+      ['undefined', undefined],
+      ['old format', 'l1234567-abc12345']
+    ];
+
+    describe('isValidSessionSpec', () => {
+      test.each(validSessionSpecs)('returns true for %s', (_desc, value) => {
+        expect(isValidSessionSpec(value)).toBe(true);
+      });
+
+      test.each(invalidSessionSpecs)('returns false for %s', (_desc, value) => {
+        expect(isValidSessionSpec(value)).toBe(false);
+      });
+    });
+
+    describe('toSessionSpec', () => {
+      test.each(validSessionSpecs)('succeeds with %s', (_desc, value) => {
+        expect(toSessionSpec(value)).toSucceedWith(value as SessionSpec);
+      });
+
+      test.each(invalidSessionSpecs)('fails with %s', (_desc, value) => {
+        expect(toSessionSpec(value)).toFailWith(/Invalid SessionSpec/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // JournalId Validation
+  // ============================================================================
+
+  describe('JournalId validation', () => {
+    const validJournalIds: [string, string][] = [
+      ['basic format', '2026-01-15-143025-a1b2c3d4'],
+      ['midnight', '2026-01-01-000000-00000000'],
+      ['end of day', '2026-12-31-235959-ffffffff'],
+      ['hex digits', '2026-06-15-120030-abcdef12']
+    ];
+
+    const invalidJournalIds: [string, unknown][] = [
+      ['empty string', ''],
+      ['missing random part', '2026-01-15-143025'],
+      ['wrong date format', '26-01-15-143025-a1b2c3d4'],
+      ['uppercase hex', '2026-01-15-143025-A1B2C3D4'],
+      ['too short random', '2026-01-15-143025-a1b2c3'],
+      ['too long random', '2026-01-15-143025-a1b2c3d4e5'],
+      ['non-hex characters', '2026-01-15-143025-ghijklmn'],
+      ['too short time (4 digits)', '2026-01-15-1430-a1b2c3d4'],
+      ['number', 123],
+      ['null', null],
+      ['undefined', undefined],
+      ['old format', 'journal-l1234567-abc12345']
+    ];
+
+    describe('isValidBaseJournalId', () => {
+      test.each(validJournalIds)('returns true for %s', (_desc, value) => {
+        expect(isValidBaseJournalId(value)).toBe(true);
+      });
+
+      test.each(invalidJournalIds)('returns false for %s', (_desc, value) => {
+        expect(isValidBaseJournalId(value)).toBe(false);
+      });
+    });
+
+    describe('toBaseJournalId', () => {
+      test.each(validJournalIds)('succeeds with %s', (_desc, value) => {
+        expect(toBaseJournalId(value)).toSucceedWith(value as BaseJournalId);
+      });
+
+      test.each(invalidJournalIds)('fails with %s', (_desc, value) => {
+        expect(toBaseJournalId(value)).toFailWith(/Invalid BaseJournalId/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // SlotId Validation
+  // ============================================================================
+
+  describe('SlotId validation', () => {
+    const validSlotIds: [string, string][] = [
+      ['simple id', 'center'],
+      ['with dash', 'outer-layer'],
+      ['with underscore', 'layer_1'],
+      ['mixed', 'inner-layer_2'],
+      ['numbers only', '123'],
+      ['alphanumeric', 'slot1abc']
+    ];
+
+    const invalidSlotIds: [string, unknown][] = [
+      ['empty string', ''],
+      ['with dot', 'center.layer'],
+      ['with space', 'center layer'],
+      ['number', 123],
+      ['null', null],
+      ['undefined', undefined]
+    ];
+
+    describe('isValidSlotId', () => {
+      test.each(validSlotIds)('returns true for %s', (_desc, value) => {
+        expect(isValidSlotId(value)).toBe(true);
+      });
+
+      test.each(invalidSlotIds)('returns false for %s', (_desc, value) => {
+        expect(isValidSlotId(value)).toBe(false);
+      });
+    });
+
+    describe('toSlotId', () => {
+      test.each(validSlotIds)('succeeds with %s', (_desc, value) => {
+        expect(toSlotId(value)).toSucceedWith(value as SlotId);
+      });
+
+      test.each(invalidSlotIds)('fails with %s', (_desc, value) => {
+        expect(toSlotId(value)).toFailWith(/Invalid SlotId/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // Numeric Converters
+  // ============================================================================
+
+  describe('Numeric converters', () => {
+    describe('toMeasurement', () => {
+      test.each([
+        ['valid measurement', 100, 100],
+        ['zero', 0, 0],
+        ['decimal', 50.5, 50.5]
+      ])('succeeds with %s', (_desc, input, expected) => {
+        expect(toMeasurement(input)).toSucceedWith(expected as Measurement);
+      });
+
+      test('fails with negative value', () => {
+        expect(toMeasurement(-1)).toFailWith(/Invalid Measurement/);
+      });
+    });
+
+    describe('toPercentage', () => {
+      test.each([
+        ['middle value', 50, 50],
+        ['zero', 0, 0],
+        ['hundred', 100, 100]
+      ])('succeeds with %s', (_desc, input, expected) => {
+        expect(toPercentage(input)).toSucceedWith(expected as Percentage);
+      });
+
+      test.each([
+        ['negative', -1],
+        ['over 100', 101]
+      ])('fails with %s', (_desc, input) => {
+        expect(toPercentage(input)).toFailWith(/Invalid Percentage/);
+      });
+    });
+
+    describe('toCelsius', () => {
+      test.each([25, -40, 0, 100.5])('succeeds with %p', (input) => {
+        expect(toCelsius(input)).toSucceed();
+      });
+
+      test('fails with non-finite value', () => {
+        expect(toCelsius(Infinity)).toFailWith(/Invalid Celsius/);
+      });
+    });
+
+    describe('toDegreesMacMichael', () => {
+      test('succeeds with valid value', () => {
+        expect(toDegreesMacMichael(100)).toSucceed();
+      });
+
+      test('fails with negative value', () => {
+        expect(toDegreesMacMichael(-1)).toFailWith(/Invalid DegreesMacMichael/);
+      });
+    });
+
+    describe('toRatingScore', () => {
+      test.each([
+        ['minimum (1)', 1, 1],
+        ['middle (3)', 3, 3],
+        ['maximum (5)', 5, 5]
+      ])('succeeds with %s', (_desc, input, expected) => {
+        expect(toRatingScore(input)).toSucceedWith(expected as RatingScore);
+      });
+
+      test.each([
+        ['zero', 0],
+        ['negative', -1],
+        ['above max (6)', 6],
+        ['decimal', 3.5]
+      ])('fails with %s', (_desc, input) => {
+        expect(toRatingScore(input)).toFailWith(/Invalid RatingScore/);
+      });
+
+      test('fails with non-number', () => {
+        expect(toRatingScore('3')).toFailWith(/Invalid RatingScore/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // Composite ID Helpers
+  // ============================================================================
+
+  describe('Composite ID helpers', () => {
+    describe('create helpers', () => {
+      test('createIngredientId creates composite ID', () => {
+        const sourceId = 'felchlin' as CollectionId;
+        const baseId = 'maracaibo-65' as BaseIngredientId;
+        expect(createIngredientId(sourceId, baseId)).toBe('felchlin.maracaibo-65');
+      });
+
+      test('createFillingId creates composite ID', () => {
+        const sourceId = 'user' as CollectionId;
+        const baseId = 'classic-ganache' as BaseFillingId;
+        expect(createFillingId(sourceId, baseId)).toBe('user.classic-ganache');
+      });
+    });
+
+    describe('parse helpers', () => {
+      test('parseIngredientId parses composite ID', () => {
+        const id = 'felchlin.maracaibo-65' as IngredientId;
+        expect(parseIngredientId(id)).toSucceedAndSatisfy((parsed) => {
+          expect(parsed.collectionId).toBe('felchlin');
+          expect(parsed.itemId).toBe('maracaibo-65');
+          expect(parsed.separator).toBe('.');
+        });
+      });
+
+      test('parseIngredientId fails with invalid format', () => {
+        expect(parseIngredientId('invalid' as IngredientId)).toFailWith(/separator.*not found/i);
+      });
+
+      test('parseFillingId parses composite ID', () => {
+        const id = 'user.classic-ganache' as FillingId;
+        expect(parseFillingId(id)).toSucceedAndSatisfy((parsed) => {
+          expect(parsed.collectionId).toBe('user');
+          expect(parsed.itemId).toBe('classic-ganache');
+          expect(parsed.separator).toBe('.');
+        });
+      });
+
+      test('parseFillingId fails with invalid format', () => {
+        expect(parseFillingId('invalid' as unknown as FillingId)).toFailWith(/separator.*not found/i);
+      });
+    });
+
+    describe('get helpers', () => {
+      test.each([
+        ['getIngredientSourceId', getIngredientCollectionId, 'felchlin.maracaibo-65', 'felchlin'],
+        ['getIngredientBaseId', getIngredientBaseId, 'felchlin.maracaibo-65', 'maracaibo-65'],
+        ['getFillingSourceId', getFillingCollectionId, 'user.classic-ganache', 'user'],
+        ['getFillingBaseId', getFillingBaseId, 'user.classic-ganache', 'classic-ganache']
+      ])('%s extracts correct part', (_name, fn, input, expected) => {
+        expect(fn(input as IngredientId & FillingId)).toBe(expected);
+      });
+    });
+  });
+
+  describe('FillingRecipeVariationId validation', () => {
+    const validVariationIds: [string, string][] = [
+      ['simple', 'user.ganache@2026-01-03-01'],
+      ['with label', 'felchlin.truffle@2026-01-03-02-less-sugar'],
+      ['complex recipe id', 'my-source.my_recipe@2026-12-31-99']
+    ];
+
+    const invalidVariationIds: [string, unknown][] = [
+      ['missing @', 'user.ganache2026-01-03-01'],
+      ['missing recipe id', '@2026-01-03-01'],
+      ['missing variation spec', 'user.ganache@'],
+      ['invalid recipe id', 'invalid@2026-01-03-01'],
+      ['invalid variation spec', 'user.ganache@invalid'],
+      ['multiple @', 'user.ganache@2026-01-03-01@extra'],
+      ['empty string', ''],
+      ['number', 123],
+      ['null', null]
+    ];
+
+    describe('fillingRecipeVariationId converter', () => {
+      test.each(validVariationIds)('%s: succeeds for valid FillingRecipeVariationId', (_name, value) => {
+        expect(fillingRecipeVariationIdConverter.convert(value)).toSucceedWith(
+          value as FillingRecipeVariationId
+        );
+      });
+
+      test.each(invalidVariationIds)('%s: fails for invalid FillingRecipeVariationId', (_name, value) => {
+        expect(fillingRecipeVariationIdConverter.convert(value)).toFail();
+      });
+
+      test('accepts a CompositeId object (collectionId + itemId)', () => {
+        const fillingId = fillingIdConverter.convert('user.ganache').orThrow();
+        const variationSpec = toFillingRecipeVariationSpec('2026-01-03-01').orThrow();
+        expect(
+          fillingRecipeVariationIdConverter.convert({ collectionId: fillingId, itemId: variationSpec })
+        ).toSucceedWith('user.ganache@2026-01-03-01' as FillingRecipeVariationId);
+      });
+    });
+  });
+
+  describe('FillingRecipeVariationId helpers', () => {
+    describe('createFillingRecipeVariationId', () => {
+      test('creates composite ID', () => {
+        const recipeId = fillingIdConverter.convert('user.ganache').orThrow();
+        const variationSpec = toFillingRecipeVariationSpec('2026-01-03-01').orThrow();
+        expect(createFillingRecipeVariationId(recipeId, variationSpec)).toBe('user.ganache@2026-01-03-01');
+      });
+
+      test('creates composite ID with label', () => {
+        const recipeId = fillingIdConverter.convert('felchlin.truffle').orThrow();
+        const variationSpec = toFillingRecipeVariationSpec('2026-01-03-02-less-sugar').orThrow();
+        expect(createFillingRecipeVariationId(recipeId, variationSpec)).toBe(
+          'felchlin.truffle@2026-01-03-02-less-sugar'
+        );
+      });
+    });
+
+    describe('parseFillingRecipeVariationId', () => {
+      test('parses composite ID', () => {
+        const id = 'user.ganache@2026-01-03-01' as FillingRecipeVariationId;
+        expect(parseFillingRecipeVariationId(id)).toSucceedAndSatisfy((parsed) => {
+          expect(parsed.collectionId).toBe('user.ganache');
+          expect(parsed.itemId).toBe('2026-01-03-01');
+          expect(parsed.separator).toBe('@');
+        });
+      });
+
+      test('parses composite ID with label', () => {
+        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as FillingRecipeVariationId;
+        expect(parseFillingRecipeVariationId(id)).toSucceedAndSatisfy((parsed) => {
+          expect(parsed.collectionId).toBe('felchlin.truffle');
+          expect(parsed.itemId).toBe('2026-01-03-02-less-sugar');
+          expect(parsed.separator).toBe('@');
+        });
+      });
+
+      test('fails with invalid format', () => {
+        expect(parseFillingRecipeVariationId('invalid' as FillingRecipeVariationId)).toFailWith(
+          /separator.*not found/i
+        );
+      });
+    });
+
+    describe('get helpers', () => {
+      test('getFillingRecipeVariationFillingId extracts recipe ID', () => {
+        const id = 'user.ganache@2026-01-03-01' as FillingRecipeVariationId;
+        expect(getFillingRecipeVariationFillingId(id)).toBe('user.ganache');
+      });
+
+      test('getFillingRecipeVariationSpec extracts variation spec', () => {
+        const id = 'user.ganache@2026-01-03-01' as FillingRecipeVariationId;
+        expect(getFillingRecipeVariationSpec(id)).toBe('2026-01-03-01');
+      });
+
+      test('getFillingRecipeVariationSpec extracts variation spec with label', () => {
+        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as FillingRecipeVariationId;
+        expect(getFillingRecipeVariationSpec(id)).toBe('2026-01-03-02-less-sugar');
+      });
+    });
+  });
+
+  // ============================================================================
+  // Confection ID Validators
+  // ============================================================================
+
+  describe('Confection ID validators', () => {
+    describe('toBaseConfectionId', () => {
+      test('succeeds with valid ID', () => {
+        expect(toBaseConfectionId('dark-dome-bonbon')).toSucceedWith('dark-dome-bonbon' as BaseConfectionId);
+      });
+
+      test('fails with empty string', () => {
+        expect(toBaseConfectionId('')).toFailWith(/Invalid BaseConfectionId/);
+      });
+
+      test('fails with dots', () => {
+        expect(toBaseConfectionId('bad.id')).toFailWith(/Invalid BaseConfectionId/);
+      });
+    });
+
+    describe('toConfectionId', () => {
+      test('succeeds with valid composite ID', () => {
+        expect(confectionIdConverter.convert('common.dark-dome-bonbon')).toSucceedWith(
+          'common.dark-dome-bonbon' as ConfectionId
+        );
+      });
+
+      test('fails with missing dot', () => {
+        expect(confectionIdConverter.convert('nobonbondot')).toFail();
+      });
+    });
+
+    describe('toConfectionName', () => {
+      test('succeeds with valid name', () => {
+        expect(toConfectionName('Classic Dark Dome Bonbon')).toSucceedWith(
+          'Classic Dark Dome Bonbon' as ConfectionName
+        );
+      });
+
+      test('fails with empty string', () => {
+        expect(toConfectionName('')).toFailWith(/Invalid ConfectionName/);
+      });
+    });
+
+    describe('toConfectionRecipeVariationSpec', () => {
+      test('succeeds with valid spec', () => {
+        expect(toConvectionRecipeVariationSpec('2026-01-01-01')).toSucceedWith(
+          '2026-01-01-01' as ConfectionRecipeVariationSpec
+        );
+      });
+
+      test('fails with invalid format', () => {
+        expect(toConvectionRecipeVariationSpec('invalid')).toFailWith(
+          /Invalid ConfectionRecipeVariationSpec/
+        );
+      });
+    });
+
+    describe('confectionRecipeVariationId converter', () => {
+      test('succeeds with valid ID', () => {
+        expect(confectionRecipeVariationIdConverter.convert('common.bonbon@2026-01-01-01')).toSucceedWith(
+          'common.bonbon@2026-01-01-01' as ConfectionRecipeVariationId
+        );
+      });
+
+      test('fails with invalid format', () => {
+        expect(confectionRecipeVariationIdConverter.convert('invalid')).toFail();
+      });
+
+      test('accepts a CompositeId object (collectionId + itemId)', () => {
+        const confectionId = confectionIdConverter.convert('common.bonbon').orThrow();
+        const variationSpec = toConvectionRecipeVariationSpec('2026-01-01-01').orThrow();
+        expect(
+          confectionRecipeVariationIdConverter.convert({ collectionId: confectionId, itemId: variationSpec })
+        ).toSucceedWith('common.bonbon@2026-01-01-01' as ConfectionRecipeVariationId);
+      });
+    });
+  });
+
+  describe('URL Category validators', () => {
+    describe('isValidUrlCategory', () => {
+      test('returns true for valid categories', () => {
+        expect(isValidUrlCategory('manufacturer')).toBe(true);
+        expect(isValidUrlCategory('product-page')).toBe(true);
+        expect(isValidUrlCategory('video_tutorial')).toBe(true);
+        expect(isValidUrlCategory('documentation123')).toBe(true);
+      });
+
+      test('returns false for non-string', () => {
+        expect(isValidUrlCategory(123)).toBe(false);
+        expect(isValidUrlCategory(null)).toBe(false);
+        expect(isValidUrlCategory(undefined)).toBe(false);
+      });
+
+      test('returns false for empty string', () => {
+        expect(isValidUrlCategory('')).toBe(false);
+      });
+
+      test('returns false for strings with dots', () => {
+        expect(isValidUrlCategory('bad.category')).toBe(false);
+      });
+
+      test('returns false for strings with invalid characters', () => {
+        expect(isValidUrlCategory('bad category')).toBe(false);
+        expect(isValidUrlCategory('bad@category')).toBe(false);
+      });
+    });
+
+    describe('toUrlCategory', () => {
+      test('succeeds with valid category', () => {
+        expect(toUrlCategory('manufacturer')).toSucceedWith('manufacturer' as UrlCategory);
+        expect(toUrlCategory('product-page')).toSucceedWith('product-page' as UrlCategory);
+        expect(toUrlCategory('video_tutorial')).toSucceedWith('video_tutorial' as UrlCategory);
+      });
+
+      test('fails with empty string', () => {
+        expect(toUrlCategory('')).toFailWith(/Invalid UrlCategory/);
+      });
+
+      test('fails with dots', () => {
+        expect(toUrlCategory('bad.category')).toFailWith(/Invalid UrlCategory/);
+      });
+
+      test('fails with non-string', () => {
+        expect(toUrlCategory(123)).toFailWith(/Invalid UrlCategory/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // NoteCategory Validation
+  // ============================================================================
+
+  describe('NoteCategory validation', () => {
+    describe('isValidNoteCategory', () => {
+      test('returns true for valid categories', () => {
+        expect(isValidNoteCategory('user')).toBe(true);
+        expect(isValidNoteCategory('recipe-note')).toBe(true);
+        expect(isValidNoteCategory('tasting_note')).toBe(true);
+      });
+
+      test('returns false for invalid categories', () => {
+        expect(isValidNoteCategory('')).toBe(false);
+        expect(isValidNoteCategory('bad.category')).toBe(false);
+        expect(isValidNoteCategory(123)).toBe(false);
+      });
+    });
+
+    describe('toNoteCategory', () => {
+      test('succeeds with valid category', () => {
+        expect(toNoteCategory('user')).toSucceedWith('user' as NoteCategory);
+        expect(toNoteCategory('recipe-note')).toSucceedWith('recipe-note' as NoteCategory);
+      });
+
+      test('fails with invalid category', () => {
+        expect(toNoteCategory('')).toFailWith(/Invalid NoteCategory/);
+        expect(toNoteCategory('bad.category')).toFailWith(/Invalid NoteCategory/);
+        expect(toNoteCategory(123)).toFailWith(/Invalid NoteCategory/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // GroupName Validation
+  // ============================================================================
+
+  describe('GroupName validation', () => {
+    describe('isValidGroupName', () => {
+      test('returns true for valid group names', () => {
+        expect(isValidGroupName('2026-01-15-valentines')).toBe(true);
+        expect(isValidGroupName('weekly-batch-03')).toBe(true);
+        expect(isValidGroupName('experiment_dark_ganache')).toBe(true);
+      });
+
+      test('returns false for invalid group names', () => {
+        expect(isValidGroupName('')).toBe(false);
+        expect(isValidGroupName('bad.group')).toBe(false);
+        expect(isValidGroupName(123)).toBe(false);
+      });
+    });
+
+    describe('toGroupName', () => {
+      test('succeeds with valid group name', () => {
+        expect(toGroupName('2026-01-15-valentines')).toSucceedWith('2026-01-15-valentines' as GroupName);
+        expect(toGroupName('weekly-batch-03')).toSucceedWith('weekly-batch-03' as GroupName);
+      });
+
+      test('fails with invalid group name', () => {
+        expect(toGroupName('')).toFailWith(/Invalid GroupName/);
+        expect(toGroupName('bad.group')).toFailWith(/Invalid GroupName/);
+        expect(toGroupName(123)).toFailWith(/Invalid GroupName/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // SessionId Validation
+  // ============================================================================
+
+  describe('SessionId validation', () => {
+    describe('isValidSessionId', () => {
+      test('returns true for valid session IDs', () => {
+        expect(isValidSessionId('user-sessions.2026-01-15-143025-a1b2c3d4')).toBe(true);
+        expect(isValidSessionId('test-sessions.2026-12-31-235959-ffffffff')).toBe(true);
+      });
+
+      test('returns false for invalid session IDs', () => {
+        expect(isValidSessionId('invalid')).toBe(false);
+        expect(isValidSessionId('2026-01-15-143025-a1b2c3d4')).toBe(false);
+        expect(isValidSessionId(123)).toBe(false);
+      });
+    });
+
+    describe('toSessionId', () => {
+      test('succeeds with valid session ID', () => {
+        expect(toSessionId('user-sessions.2026-01-15-143025-a1b2c3d4')).toSucceedWith(
+          'user-sessions.2026-01-15-143025-a1b2c3d4' as SessionId
+        );
+      });
+
+      test('fails with invalid session ID', () => {
+        expect(toSessionId('invalid')).toFailWith(/Invalid SessionId/);
+        expect(toSessionId('')).toFailWith(/Invalid SessionId/);
+        expect(toSessionId(123)).toFailWith(/Invalid SessionId/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // JournalId Validation
+  // ============================================================================
+
+  describe('JournalId validation (composite)', () => {
+    describe('isValidJournalId', () => {
+      test('returns true for valid journal IDs', () => {
+        expect(isValidJournalId('user-journals.2026-01-15-143025-a1b2c3d4')).toBe(true);
+        expect(isValidJournalId('test-journals.2026-12-31-235959-ffffffff')).toBe(true);
+      });
+
+      test('returns false for invalid journal IDs', () => {
+        expect(isValidJournalId('invalid')).toBe(false);
+        expect(isValidJournalId('2026-01-15-143025-a1b2c3d4')).toBe(false);
+        expect(isValidJournalId(123)).toBe(false);
+      });
+    });
+
+    describe('toJournalId', () => {
+      test('succeeds with valid journal ID', () => {
+        expect(toJournalId('user-journals.2026-01-15-143025-a1b2c3d4')).toSucceedWith(
+          'user-journals.2026-01-15-143025-a1b2c3d4' as JournalId
+        );
+      });
+
+      test('fails with invalid journal ID', () => {
+        expect(toJournalId('invalid')).toFailWith(/Invalid JournalId/);
+        expect(toJournalId('')).toFailWith(/Invalid JournalId/);
+        expect(toJournalId(123)).toFailWith(/Invalid JournalId/);
+      });
+    });
+  });
+});

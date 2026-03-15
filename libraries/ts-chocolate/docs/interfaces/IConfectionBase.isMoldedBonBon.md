@@ -1,0 +1,16 @@
+[Home](../README.md) > [IConfectionBase](./IConfectionBase.md) > isMoldedBonBon
+
+## IConfectionBase.isMoldedBonBon() method
+
+Returns true if this is a molded bonbon confection.
+When true, molded bonbon-specific properties are available.
+
+**Signature:**
+
+```typescript
+isMoldedBonBon(): this is IMoldedBonBonRecipe;
+```
+
+**Returns:**
+
+this is [IMoldedBonBonRecipe](IMoldedBonBonRecipe.md)

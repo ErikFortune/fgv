@@ -1,0 +1,498 @@
+[Home](../README.md) > ChocolateEntityLibrary
+
+# Class: ChocolateEntityLibrary
+
+Main entry point for the chocolate data entity library
+
+Provides unified access to:
+- Ingredient management (multi-source with built-ins)
+- Recipe management (multi-source)
+- Molds, procedures, tasks, and confections
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[logger](./ChocolateEntityLibrary.logger.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+LogReporter&lt;unknown&gt;
+
+</td><td>
+
+Logger used by this library and its sub-libraries.
+
+</td></tr>
+<tr><td>
+
+[ingredients](./ChocolateEntityLibrary.ingredients.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IngredientsLibrary](IngredientsLibrary.md)
+
+</td><td>
+
+The Entities.Ingredients.IngredientsLibrary | ingredients library.
+
+</td></tr>
+<tr><td>
+
+[fillings](./ChocolateEntityLibrary.fillings.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[FillingsLibrary](FillingsLibrary.md)
+
+</td><td>
+
+The Entities.Fillings.FillingsLibrary | fillings library.
+
+</td></tr>
+<tr><td>
+
+[molds](./ChocolateEntityLibrary.molds.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MoldsLibrary](MoldsLibrary.md)
+
+</td><td>
+
+The Entities.Molds.MoldsLibrary | molds library.
+
+</td></tr>
+<tr><td>
+
+[procedures](./ChocolateEntityLibrary.procedures.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ProceduresLibrary](ProceduresLibrary.md)
+
+</td><td>
+
+The Entities.Procedures.ProceduresLibrary | procedures library.
+
+</td></tr>
+<tr><td>
+
+[tasks](./ChocolateEntityLibrary.tasks.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[TasksLibrary](TasksLibrary.md)
+
+</td><td>
+
+The Entities.Tasks.TasksLibrary | tasks library.
+
+</td></tr>
+<tr><td>
+
+[confections](./ChocolateEntityLibrary.confections.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ConfectionsLibrary](ConfectionsLibrary.md)
+
+</td><td>
+
+The Entities.Confections.ConfectionsLibrary | confections library.
+
+</td></tr>
+<tr><td>
+
+[decorations](./ChocolateEntityLibrary.decorations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[DecorationsLibrary](DecorationsLibrary.md)
+
+</td><td>
+
+The Entities.Decorations.DecorationsLibrary | decorations library.
+
+</td></tr>
+</tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[create(params)](./ChocolateEntityLibrary.create.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Creates a new LibraryRuntime.ChocolateEntityLibrary | ChocolateEntityLibrary instance.
+
+</td></tr>
+<tr><td>
+
+[configurePersistence(config)](./ChocolateEntityLibrary.configurePersistence.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Configure the persistence pipeline for this library.
+
+</td></tr>
+<tr><td>
+
+[getPersistedIngredientsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedIngredientsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted ingredients collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedFillingsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedFillingsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted fillings collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedMoldsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedMoldsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted molds collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedProceduresCollection(collectionId)](./ChocolateEntityLibrary.getPersistedProceduresCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted procedures collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedTasksCollection(collectionId)](./ChocolateEntityLibrary.getPersistedTasksCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted tasks collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedConfectionsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedConfectionsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted confections collection.
+
+</td></tr>
+<tr><td>
+
+[getPersistedDecorationsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedDecorationsCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get or create a singleton persisted decorations collection.
+
+</td></tr>
+<tr><td>
+
+[saveFillingRecipe(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveFillingRecipe.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a filling recipe entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveIngredient(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveIngredient.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save an ingredient entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveProcedure(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveProcedure.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a procedure entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveMold(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveMold.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a mold entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveTask(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveTask.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a task entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveConfectionRecipe(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveConfectionRecipe.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a confection recipe entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[saveDecoration(collectionId, baseId, entity)](./ChocolateEntityLibrary.saveDecoration.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a decoration entity to a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[getEditableIngredientsEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableIngredientsEntityCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get an editable ingredients collection with persistence enabled.
+
+</td></tr>
+<tr><td>
+
+[getEditableFillingsRecipeEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableFillingsRecipeEntityCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get an editable fillings collection with persistence enabled.
+
+</td></tr>
+<tr><td>
+
+[getEditableMoldsEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableMoldsEntityCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get an editable molds collection with persistence enabled.
+
+</td></tr>
+<tr><td>
+
+[getEditableProceduresEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableProceduresEntityCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get an editable procedures collection with persistence enabled.
+
+</td></tr>
+<tr><td>
+
+[getEditableTasksEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableTasksEntityCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get an editable tasks collection with persistence enabled.
+
+</td></tr>
+<tr><td>
+
+[getEditableConfectionsEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableConfectionsEntityCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get an editable confections collection with persistence enabled.
+
+</td></tr>
+<tr><td>
+
+[getEditableDecorationsEntityCollection(collectionId, encryptionProvider)](./ChocolateEntityLibrary.getEditableDecorationsEntityCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get an editable decorations collection with persistence enabled.
+
+</td></tr>
+<tr><td>
+
+[saveCollection(collectionId, encryptionProvider, subLibrary)](./ChocolateEntityLibrary.saveCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Save a collection's current in-memory state to its backing file tree.
+
+</td></tr>
+</tbody></table>

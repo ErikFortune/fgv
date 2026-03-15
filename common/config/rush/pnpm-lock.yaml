@@ -8,6 +8,157 @@ importers:
 
   .: {}
 
+  ../../apps/chocolate-lab-web:
+    dependencies:
+      '@fgv/chocolate-lab-ui':
+        specifier: workspace:*
+        version: link:../../libraries/chocolate-lab-ui
+      '@fgv/ts-app-shell':
+        specifier: workspace:*
+        version: link:../../libraries/ts-app-shell
+      '@fgv/ts-chocolate':
+        specifier: workspace:*
+        version: link:../../libraries/ts-chocolate
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-extras
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../../libraries/ts-json-base
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils
+      '@fgv/ts-web-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-web-extras
+      '@heroicons/react':
+        specifier: ~2.2.0
+        version: 2.2.0(react@19.2.4)
+      buffer:
+        specifier: ~6.0.3
+        version: 6.0.3
+      core-js:
+        specifier: ~3.48.0
+        version: 3.48.0
+      process:
+        specifier: ~0.11.10
+        version: 0.11.10
+      react:
+        specifier: ~19.2.3
+        version: 19.2.4
+      react-dom:
+        specifier: ~19.2.3
+        version: 19.2.4(react@19.2.4)
+      stream-browserify:
+        specifier: ~3.0.0
+        version: 3.0.0
+      util:
+        specifier: ~0.12.5
+        version: 0.12.5
+      whatwg-fetch:
+        specifier: ~3.6.20
+        version: 3.6.20
+      zustand:
+        specifier: ~5.0.0
+        version: 5.0.11(@types/react@19.2.14)(react@19.2.4)
+    devDependencies:
+      '@babel/core':
+        specifier: ~7.29.0
+        version: 7.29.0
+      '@babel/preset-env':
+        specifier: ~7.29.0
+        version: 7.29.0(@babel/core@7.29.0)
+      '@babel/preset-react':
+        specifier: ~7.28.5
+        version: 7.28.5(@babel/core@7.29.0)
+      '@babel/preset-typescript':
+        specifier: ~7.28.5
+        version: 7.28.5(@babel/core@7.29.0)
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
+      '@playwright/test':
+        specifier: ~1.58.2
+        version: 1.58.2
+      '@testing-library/dom':
+        specifier: ^10.4.0
+        version: 10.4.1
+      '@testing-library/jest-dom':
+        specifier: ^6.4.2
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3)(@types/react@19.2.14)(react-dom@19.2.4)(react@19.2.4)
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/js-yaml':
+        specifier: ~4.0.9
+        version: 4.0.9
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.37
+      '@types/react':
+        specifier: ~19.2.8
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ~19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      autoprefixer:
+        specifier: ~10.4.23
+        version: 10.4.27(postcss@8.5.8)
+      babel-loader:
+        specifier: ~10.1.0
+        version: 10.1.0(@babel/core@7.29.0)(webpack@5.105.4)
+      concurrently:
+        specifier: ~9.2.1
+        version: 9.2.1
+      css-loader:
+        specifier: ~7.1.2
+        version: 7.1.4(webpack@5.105.4)
+      html-webpack-plugin:
+        specifier: ~5.6.5
+        version: 5.6.6(webpack@5.105.4)
+      identity-obj-proxy:
+        specifier: '3'
+        version: 3.0.0
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2)
+      postcss:
+        specifier: ~8.5.6
+        version: 8.5.8
+      postcss-loader:
+        specifier: ~8.2.0
+        version: 8.2.1(postcss@8.5.8)(typescript@5.9.3)(webpack@5.105.4)
+      rimraf:
+        specifier: ^6.1.2
+        version: 6.1.3
+      style-loader:
+        specifier: ~4.0.0
+        version: 4.0.0(webpack@5.105.4)
+      tailwindcss:
+        specifier: ^3.4.0
+        version: 3.4.19
+      ts-jest:
+        specifier: ^29.4.6
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      webpack:
+        specifier: ~5.105.4
+        version: 5.105.4(webpack-cli@6.0.1)
+      webpack-cli:
+        specifier: ~6.0.1
+        version: 6.0.1(webpack-dev-server@5.2.3)(webpack@5.105.4)
+      webpack-dev-server:
+        specifier: ~5.2.2
+        version: 5.2.3(webpack-cli@6.0.1)(webpack@5.105.4)
+
   ../../apps/sudoku:
     dependencies:
       '@fgv/ts-json-base':
@@ -136,6 +287,221 @@ importers:
         specifier: ^2.1.1
         version: 2.1.9(jsdom@25.0.1)
 
+  ../../libraries/chocolate-lab-ui:
+    dependencies:
+      '@fgv/ts-app-shell':
+        specifier: workspace:*
+        version: link:../ts-app-shell
+      '@fgv/ts-chocolate':
+        specifier: workspace:*
+        version: link:../ts-chocolate
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../ts-extras
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../ts-json-base
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../ts-utils
+      '@fgv/ts-web-extras':
+        specifier: workspace:*
+        version: link:../ts-web-extras
+      '@heroicons/react':
+        specifier: ~2.2.0
+        version: 2.2.0(react@19.2.4)
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
+      zustand:
+        specifier: ~5.0.0
+        version: 5.0.11(@types/react@19.2.14)(react@19.2.4)
+    devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../rigs/heft-dual-rig
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../ts-utils-jest
+      '@rushstack/eslint-config':
+        specifier: 4.6.4
+        version: 4.6.4(eslint@9.39.4)(typescript@5.9.3)
+      '@rushstack/heft':
+        specifier: 1.2.6
+        version: 1.2.6(@types/node@20.19.37)
+      '@rushstack/heft-jest-plugin':
+        specifier: 1.2.6
+        version: 1.2.6(@rushstack/heft@1.2.6)(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)
+      '@rushstack/heft-web-rig':
+        specifier: 1.4.2
+        version: 1.4.2(@rushstack/heft@1.2.6)(@types/node@20.19.37)(webpack-cli@6.0.1)
+      '@testing-library/dom':
+        specifier: ^10.4.0
+        version: 10.4.1
+      '@testing-library/jest-dom':
+        specifier: ^6.4.2
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3)(@types/react@19.2.14)(react-dom@19.2.4)(react@19.2.4)
+      '@testing-library/user-event':
+        specifier: ^14.6.1
+        version: 14.6.1(@testing-library/dom@10.4.1)
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.37
+      '@types/react':
+        specifier: ~19.2.8
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ~19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.52.0
+        version: 8.56.1(@typescript-eslint/parser@8.56.1)(eslint@9.39.4)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.52.0
+        version: 8.56.1(eslint@9.39.4)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.4
+      eslint-plugin-import:
+        specifier: ^2.32.0
+        version: 2.32.0(eslint@9.39.4)
+      eslint-plugin-node:
+        specifier: ^11.1.0
+        version: 11.1.0(eslint@9.39.4)
+      eslint-plugin-promise:
+        specifier: ^7.2.1
+        version: 7.2.1(eslint@9.39.4)
+      eslint-plugin-react:
+        specifier: ^7.34.0
+        version: 7.37.5(eslint@9.39.4)
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.39.4)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2)
+      react:
+        specifier: ~19.2.3
+        version: 19.2.4
+      react-dom:
+        specifier: ~19.2.3
+        version: 19.2.4(react@19.2.4)
+      rimraf:
+        specifier: ^6.1.2
+        version: 6.1.3
+      ts-jest:
+        specifier: ^29.4.6
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  ../../libraries/ts-app-shell:
+    dependencies:
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../ts-extras
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../ts-utils
+      '@heroicons/react':
+        specifier: ~2.2.0
+        version: 2.2.0(react@19.2.4)
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
+    devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../rigs/heft-dual-rig
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../ts-utils-jest
+      '@rushstack/eslint-config':
+        specifier: 4.6.4
+        version: 4.6.4(eslint@9.39.4)(typescript@5.9.3)
+      '@rushstack/heft':
+        specifier: 1.2.6
+        version: 1.2.6(@types/node@20.19.37)
+      '@rushstack/heft-jest-plugin':
+        specifier: 1.2.6
+        version: 1.2.6(@rushstack/heft@1.2.6)(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)
+      '@rushstack/heft-node-rig':
+        specifier: 2.11.26
+        version: 2.11.26(@rushstack/heft@1.2.6)(@types/node@20.19.37)
+      '@testing-library/dom':
+        specifier: ^10.4.0
+        version: 10.4.1
+      '@testing-library/jest-dom':
+        specifier: ^6.4.2
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3)(@types/react@19.2.14)(react-dom@19.2.4)(react@19.2.4)
+      '@testing-library/user-event':
+        specifier: ^14.6.1
+        version: 14.6.1(@testing-library/dom@10.4.1)
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.37
+      '@types/react':
+        specifier: ~19.2.8
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ~19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.52.0
+        version: 8.56.1(@typescript-eslint/parser@8.56.1)(eslint@9.39.4)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.52.0
+        version: 8.56.1(eslint@9.39.4)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.4
+      eslint-plugin-import:
+        specifier: ^2.32.0
+        version: 2.32.0(eslint@9.39.4)
+      eslint-plugin-node:
+        specifier: ^11.1.0
+        version: 11.1.0(eslint@9.39.4)
+      eslint-plugin-promise:
+        specifier: ^7.2.1
+        version: 7.2.1(eslint@9.39.4)
+      eslint-plugin-react:
+        specifier: ^7.34.0
+        version: 7.37.5(eslint@9.39.4)
+      eslint-plugin-react-hooks:
+        specifier: ^5.2.0
+        version: 5.2.0(eslint@9.39.4)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2)
+      react:
+        specifier: ~19.2.3
+        version: 19.2.4
+      react-dom:
+        specifier: ~19.2.3
+        version: 19.2.4(react@19.2.4)
+      rimraf:
+        specifier: ^6.1.2
+        version: 6.1.3
+      ts-jest:
+        specifier: ^29.4.6
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   ../../libraries/ts-bcp47:
     dependencies:
       luxon:
@@ -228,13 +594,110 @@ importers:
         version: 6.1.3
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.37)(typescript@5.9.3)
       typescript:
         specifier: 5.9.3
         version: 5.9.3
+
+  ../../libraries/ts-chocolate:
+    dependencies:
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../ts-extras
+      '@fgv/ts-json':
+        specifier: workspace:*
+        version: link:../ts-json
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../ts-json-base
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../ts-utils
+      js-yaml:
+        specifier: ~4.1.1
+        version: 4.1.1
+    devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../rigs/heft-dual-rig
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
+      '@microsoft/api-documenter':
+        specifier: ^7.28.2
+        version: 7.29.6(@types/node@20.19.37)
+      '@microsoft/api-extractor':
+        specifier: ^7.55.2
+        version: 7.57.6(@types/node@20.19.37)
+      '@rushstack/eslint-config':
+        specifier: 4.6.4
+        version: 4.6.4(eslint@9.39.4)(typescript@5.9.3)
+      '@rushstack/heft':
+        specifier: 1.2.6
+        version: 1.2.6(@types/node@20.19.37)
+      '@rushstack/heft-jest-plugin':
+        specifier: 1.2.6
+        version: 1.2.6(@rushstack/heft@1.2.6)(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)
+      '@rushstack/heft-node-rig':
+        specifier: 2.11.26
+        version: 2.11.26(@rushstack/heft@1.2.6)(@types/node@20.19.37)
+      '@types/heft-jest':
+        specifier: 1.0.6
+        version: 1.0.6
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/js-yaml':
+        specifier: ~4.0.9
+        version: 4.0.9
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.37
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.52.0
+        version: 8.56.1(@typescript-eslint/parser@8.56.1)(eslint@9.39.4)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.52.0
+        version: 8.56.1(eslint@9.39.4)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.4
+      eslint-plugin-import:
+        specifier: ^2.32.0
+        version: 2.32.0(eslint@9.39.4)
+      eslint-plugin-node:
+        specifier: ^11.1.0
+        version: 11.1.0(eslint@9.39.4)
+      eslint-plugin-promise:
+        specifier: ^7.2.1
+        version: 7.2.1(eslint@9.39.4)
+      eslint-plugin-tsdoc:
+        specifier: ~0.5.2
+        version: 0.5.2(eslint@9.39.4)(typescript@5.9.3)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2)
+      ts-jest:
+        specifier: ^29.4.6
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
+      typedoc:
+        specifier: ~0.28.16
+        version: 0.28.17(typescript@5.9.3)
+      typedoc-plugin-markdown:
+        specifier: ~4.9.0
+        version: 4.9.0(typedoc@0.28.17)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      yaml:
+        specifier: ~2.8.2
+        version: 2.8.2
 
   ../../libraries/ts-extras:
     dependencies:
@@ -349,10 +812,83 @@ importers:
         version: 6.1.3
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.37)(typescript@5.9.3)
+      typedoc:
+        specifier: ~0.28.16
+        version: 0.28.17(typescript@5.9.3)
+      typedoc-plugin-markdown:
+        specifier: ~4.9.0
+        version: 4.9.0(typedoc@0.28.17)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  ../../libraries/ts-http-storage:
+    dependencies:
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../ts-utils
+      hono:
+        specifier: ~4.7.11
+        version: 4.7.11
+    devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../rigs/heft-dual-rig
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
+      '@microsoft/api-documenter':
+        specifier: ^7.28.2
+        version: 7.29.6(@types/node@20.19.37)
+      '@microsoft/api-extractor':
+        specifier: ^7.55.2
+        version: 7.57.6(@types/node@20.19.37)
+      '@rushstack/eslint-config':
+        specifier: 4.6.4
+        version: 4.6.4(eslint@9.39.4)(typescript@5.9.3)
+      '@rushstack/heft':
+        specifier: 1.2.6
+        version: 1.2.6(@types/node@20.19.37)
+      '@rushstack/heft-jest-plugin':
+        specifier: 1.2.6
+        version: 1.2.6(@rushstack/heft@1.2.6)(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)
+      '@rushstack/heft-node-rig':
+        specifier: 2.11.26
+        version: 2.11.26(@rushstack/heft@1.2.6)(@types/node@20.19.37)
+      '@types/heft-jest':
+        specifier: 1.0.6
+        version: 1.0.6
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.37
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.52.0
+        version: 8.56.1(@typescript-eslint/parser@8.56.1)(eslint@9.39.4)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.52.0
+        version: 8.56.1(eslint@9.39.4)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.4
+      eslint-plugin-tsdoc:
+        specifier: ~0.5.2
+        version: 0.5.2(eslint@9.39.4)(typescript@5.9.3)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2)
+      ts-jest:
+        specifier: ^29.4.6
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       typedoc:
         specifier: ~0.28.16
         version: 0.28.17(typescript@5.9.3)
@@ -448,7 +984,7 @@ importers:
         version: 6.1.3
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.37)(typescript@5.9.3)
@@ -539,7 +1075,7 @@ importers:
         version: 6.1.3
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.37)(typescript@5.9.3)
@@ -648,7 +1184,7 @@ importers:
         version: 6.1.3
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.37)(typescript@5.9.3)
@@ -772,7 +1308,7 @@ importers:
         version: 6.1.3
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -865,7 +1401,7 @@ importers:
         version: 6.1.3
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.37)(typescript@5.9.3)
@@ -983,7 +1519,7 @@ importers:
         version: 3.4.19
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       typedoc:
         specifier: ~0.28.16
         version: 0.28.17(typescript@5.9.3)
@@ -1076,7 +1612,7 @@ importers:
         version: 6.1.3
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.37)(typescript@5.9.3)
@@ -1164,7 +1700,7 @@ importers:
         version: 6.1.3
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.37)(typescript@5.9.3)
@@ -1267,7 +1803,7 @@ importers:
         version: 6.1.3
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.37)(typescript@5.9.3)
@@ -1304,6 +1840,140 @@ importers:
       '@rushstack/heft-node-rig':
         specifier: 2.11.26
         version: 2.11.26(@rushstack/heft@1.2.6)(@types/node@20.19.37)
+
+  ../../services/chocolate-lab-api:
+    dependencies:
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-extras
+      '@fgv/ts-http-storage':
+        specifier: workspace:*
+        version: link:../../libraries/ts-http-storage
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../../libraries/ts-json-base
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils
+      '@hono/node-server':
+        specifier: ~1.14.1
+        version: 1.14.4(hono@4.7.11)
+      hono:
+        specifier: ~4.7.11
+        version: 4.7.11
+    devDependencies:
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils-jest
+      '@rushstack/eslint-config':
+        specifier: 4.6.4
+        version: 4.6.4(eslint@9.39.4)(typescript@5.9.3)
+      '@rushstack/heft':
+        specifier: 1.2.6
+        version: 1.2.6(@types/node@20.19.37)
+      '@rushstack/heft-jest-plugin':
+        specifier: 1.2.6
+        version: 1.2.6(@rushstack/heft@1.2.6)(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)
+      '@rushstack/heft-node-rig':
+        specifier: 2.11.26
+        version: 2.11.26(@rushstack/heft@1.2.6)(@types/node@20.19.37)
+      '@types/heft-jest':
+        specifier: 1.0.6
+        version: 1.0.6
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.37
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.52.0
+        version: 8.56.1(@typescript-eslint/parser@8.56.1)(eslint@9.39.4)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.52.0
+        version: 8.56.1(eslint@9.39.4)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.4
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2)
+      ts-jest:
+        specifier: ^29.4.6
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  ../../tools/chocolate-cli:
+    dependencies:
+      '@fgv/ts-chocolate':
+        specifier: workspace:*
+        version: link:../../libraries/ts-chocolate
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-extras
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../../libraries/ts-json-base
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils
+      '@inquirer/prompts':
+        specifier: ~8.2.0
+        version: 8.2.1(@types/node@20.19.37)
+      chalk:
+        specifier: ^5.3.0
+        version: 5.6.2
+      commander:
+        specifier: ^11.0.0
+        version: 11.1.0
+      yaml:
+        specifier: ~2.8.2
+        version: 2.8.2
+    devDependencies:
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils-jest
+      '@rushstack/eslint-config':
+        specifier: 4.6.4
+        version: 4.6.4(eslint@9.39.4)(typescript@5.9.3)
+      '@rushstack/heft':
+        specifier: 1.2.6
+        version: 1.2.6(@types/node@20.19.37)
+      '@rushstack/heft-jest-plugin':
+        specifier: 1.2.6
+        version: 1.2.6(@rushstack/heft@1.2.6)(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)
+      '@rushstack/heft-node-rig':
+        specifier: 2.11.26
+        version: 2.11.26(@rushstack/heft@1.2.6)(@types/node@20.19.37)
+      '@types/heft-jest':
+        specifier: 1.0.6
+        version: 1.0.6
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.37
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.52.0
+        version: 8.56.1(@typescript-eslint/parser@8.56.1)(eslint@9.39.4)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.52.0
+        version: 8.56.1(eslint@9.39.4)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.4
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2)
+      ts-jest:
+        specifier: ^29.4.6
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
   ../../tools/ts-res-browser:
     dependencies:
@@ -1570,7 +2240,7 @@ importers:
         version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2)
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(jest@29.7.0)(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3)
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -3758,6 +4428,15 @@ packages:
       react: 19.2.4
     dev: false
 
+  /@hono/node-server@1.14.4(hono@4.7.11):
+    resolution: {integrity: sha512-DnxpshhYewr2q9ZN8ez/M5mmc3sucr8CT1sIgIy1bkeUXut9XWDkqHoFHRhWIQgkYnKpVRxunyhK7WzpJeJ6qQ==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
+    dependencies:
+      hono: 4.7.11
+    dev: false
+
   /@humanfs/core@0.19.1:
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -3776,6 +4455,230 @@ packages:
   /@humanwhocodes/retry@0.4.3:
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  /@inquirer/ansi@2.0.3:
+    resolution: {integrity: sha512-g44zhR3NIKVs0zUesa4iMzExmZpLUdTLRMCStqX3GE5NT6VkPcxQGJ+uC8tDgBUC/vB1rUhUd55cOf++4NZcmw==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    dev: false
+
+  /@inquirer/checkbox@5.1.0(@types/node@20.19.37):
+    resolution: {integrity: sha512-/HjF1LN0a1h4/OFsbGKHNDtWICFU/dqXCdym719HFTyJo9IG7Otr+ziGWc9S0iQuohRZllh+WprSgd5UW5Fw0g==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/ansi': 2.0.3
+      '@inquirer/core': 11.1.5(@types/node@20.19.37)
+      '@inquirer/figures': 2.0.3
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/confirm@6.0.8(@types/node@20.19.37):
+    resolution: {integrity: sha512-Di6dgmiZ9xCSUxWUReWTqDtbhXCuG2MQm2xmgSAIruzQzBqNf49b8E07/vbCYY506kDe8BiwJbegXweG8M1klw==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/core': 11.1.5(@types/node@20.19.37)
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/core@11.1.5(@types/node@20.19.37):
+    resolution: {integrity: sha512-QQPAX+lka8GyLcZ7u7Nb1h6q72iZ/oy0blilC3IB2nSt1Qqxp7akt94Jqhi/DzARuN3Eo9QwJRvtl4tmVe4T5A==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/ansi': 2.0.3
+      '@inquirer/figures': 2.0.3
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+      cli-width: 4.1.0
+      fast-wrap-ansi: 0.2.0
+      mute-stream: 3.0.0
+      signal-exit: 4.1.0
+    dev: false
+
+  /@inquirer/editor@5.0.8(@types/node@20.19.37):
+    resolution: {integrity: sha512-sLcpbb9B3XqUEGrj1N66KwhDhEckzZ4nI/W6SvLXyBX8Wic3LDLENlWRvkOGpCPoserabe+MxQkpiMoI8irvyA==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/core': 11.1.5(@types/node@20.19.37)
+      '@inquirer/external-editor': 2.0.3(@types/node@20.19.37)
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/expand@5.0.8(@types/node@20.19.37):
+    resolution: {integrity: sha512-QieW3F1prNw3j+hxO7/NKkG1pk3oz7pOB6+5Upwu3OIwADfPX0oZVppsqlL+Vl/uBHHDSOBY0BirLctLnXwGGg==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/core': 11.1.5(@types/node@20.19.37)
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/external-editor@2.0.3(@types/node@20.19.37):
+    resolution: {integrity: sha512-LgyI7Agbda74/cL5MvA88iDpvdXI2KuMBCGRkbCl2Dg1vzHeOgs+s0SDcXV7b+WZJrv2+ERpWSM65Fpi9VfY3w==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@types/node': 20.19.37
+      chardet: 2.1.1
+      iconv-lite: 0.7.2
+    dev: false
+
+  /@inquirer/figures@2.0.3:
+    resolution: {integrity: sha512-y09iGt3JKoOCBQ3w4YrSJdokcD8ciSlMIWsD+auPu+OZpfxLuyz+gICAQ6GCBOmJJt4KEQGHuZSVff2jiNOy7g==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    dev: false
+
+  /@inquirer/input@5.0.8(@types/node@20.19.37):
+    resolution: {integrity: sha512-p0IJslw0AmedLEkOU+yrEX3Aj2RTpQq7ZOf8nc1DIhjzaxRWrrgeuE5Kyh39fVRgtcACaMXx/9WNo8+GjgBOfw==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/core': 11.1.5(@types/node@20.19.37)
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/number@4.0.8(@types/node@20.19.37):
+    resolution: {integrity: sha512-uGLiQah9A0F9UIvJBX52m0CnqtLaym0WpT9V4YZrjZ+YRDKZdwwoEPz06N6w8ChE2lrnsdyhY9sL+Y690Kh9gQ==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/core': 11.1.5(@types/node@20.19.37)
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/password@5.0.8(@types/node@20.19.37):
+    resolution: {integrity: sha512-zt1sF4lYLdvPqvmvHdmjOzuUUjuCQ897pdUCO8RbXMUDKXJTTyOQgtn23le+jwcb+MpHl3VAFvzIdxRAf6aPlA==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/ansi': 2.0.3
+      '@inquirer/core': 11.1.5(@types/node@20.19.37)
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/prompts@8.2.1(@types/node@20.19.37):
+    resolution: {integrity: sha512-76knJFW2oXdI6If5YRmEoT5u7l+QroXYrMiINFcb97LsyECgsbO9m6iWlPuhBtaFgNITPHQCk3wbex38q8gsjg==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/checkbox': 5.1.0(@types/node@20.19.37)
+      '@inquirer/confirm': 6.0.8(@types/node@20.19.37)
+      '@inquirer/editor': 5.0.8(@types/node@20.19.37)
+      '@inquirer/expand': 5.0.8(@types/node@20.19.37)
+      '@inquirer/input': 5.0.8(@types/node@20.19.37)
+      '@inquirer/number': 4.0.8(@types/node@20.19.37)
+      '@inquirer/password': 5.0.8(@types/node@20.19.37)
+      '@inquirer/rawlist': 5.2.4(@types/node@20.19.37)
+      '@inquirer/search': 4.1.4(@types/node@20.19.37)
+      '@inquirer/select': 5.1.0(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/rawlist@5.2.4(@types/node@20.19.37):
+    resolution: {integrity: sha512-fTuJ5Cq9W286isLxwj6GGyfTjx1Zdk4qppVEPexFuA6yioCCXS4V1zfKroQqw7QdbDPN73xs2DiIAlo55+kBqg==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/core': 11.1.5(@types/node@20.19.37)
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/search@4.1.4(@types/node@20.19.37):
+    resolution: {integrity: sha512-9yPTxq7LPmYjrGn3DRuaPuPbmC6u3fiWcsE9ggfLcdgO/ICHYgxq7mEy1yJ39brVvgXhtOtvDVjDh9slJxE4LQ==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/core': 11.1.5(@types/node@20.19.37)
+      '@inquirer/figures': 2.0.3
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/select@5.1.0(@types/node@20.19.37):
+    resolution: {integrity: sha512-OyYbKnchS1u+zRe14LpYrN8S0wH1vD0p2yKISvSsJdH2TpI87fh4eZdWnpdbrGauCRWDph3NwxRmM4Pcm/hx1Q==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/ansi': 2.0.3
+      '@inquirer/core': 11.1.5(@types/node@20.19.37)
+      '@inquirer/figures': 2.0.3
+      '@inquirer/type': 4.0.3(@types/node@20.19.37)
+      '@types/node': 20.19.37
+    dev: false
+
+  /@inquirer/type@4.0.3(@types/node@20.19.37):
+    resolution: {integrity: sha512-cKZN7qcXOpj1h+1eTTcGDVLaBIHNMT1Rz9JqJP5MnEJ0JhgVWllx7H/tahUp5YEK1qaByH2Itb8wLG/iScD5kw==}
+    engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@types/node': 20.19.37
+    dev: false
 
   /@istanbuljs/load-nyc-config@1.1.0:
     resolution: {integrity: sha512-VjeHSlIzpv/NyD3N0YuHfXOPDIixcA1q2ZV98wsMqcYlPmv2n3Yb2lYP9XMElnaFVXg5A7YLTeLu6V84uQDjmQ==}
@@ -3812,9 +4715,9 @@ packages:
         optional: true
     dependencies:
       '@jest/console': 29.7.0
-      '@jest/reporters': 29.5.0
+      '@jest/reporters': 29.7.0
       '@jest/test-result': 29.7.0
-      '@jest/transform': 29.5.0
+      '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@types/node': 20.19.37
       ansi-escapes: 4.3.2
@@ -3823,11 +4726,11 @@ packages:
       exit: 0.1.2
       graceful-fs: 4.2.11
       jest-changed-files: 29.7.0
-      jest-config: 29.5.0(@types/node@20.19.37)(ts-node@10.9.2)
+      jest-config: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2)
       jest-haste-map: 29.7.0
       jest-message-util: 29.7.0
       jest-regex-util: 29.6.3
-      jest-resolve: 29.5.0
+      jest-resolve: 29.7.0
       jest-resolve-dependencies: 29.7.0
       jest-runner: 29.7.0
       jest-runtime: 29.7.0
@@ -3945,7 +4848,7 @@ packages:
       '@bcoe/v8-coverage': 0.2.3
       '@jest/console': 29.7.0
       '@jest/test-result': 29.7.0
-      '@jest/transform': 29.5.0
+      '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@jridgewell/trace-mapping': 0.3.31
       '@types/node': 20.19.37
@@ -4004,7 +4907,6 @@ packages:
       v8-to-istanbul: 9.3.0
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@jest/schemas@29.6.3:
     resolution: {integrity: sha512-mo5j5X+jIZmJQveBKeS/clAueipV7KgiX1vMgCxam1RNYiqE1w62n0/tJJnHtjW8ZHcQco5gY85jA3mi0L+nSA==}
@@ -4539,6 +5441,14 @@ packages:
   /@pkgr/core@0.2.9:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
+    dev: true
+
+  /@playwright/test@1.58.2:
+    resolution: {integrity: sha512-akea+6bHYBBfA9uQqSYmlJXn61cTa+jbO87xVLCWbTqbWadRVmhxlXATaOjOgcBaWU4ePo0wB41KMFv3o35IXA==}
+    engines: {node: '>=18'}
+    hasBin: true
+    dependencies:
+      playwright: 1.58.2
     dev: true
 
   /@polka/url@1.0.0-next.29:
@@ -5613,7 +6523,6 @@ packages:
     resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
     dependencies:
       csstype: 3.2.3
-    dev: true
 
   /@types/retry@0.12.2:
     resolution: {integrity: sha512-XISRgDJ2Tc5q4TRqvgJtzsRkFYNJzZrhTdtMoGVBttwzzQJkPnS3WWTFc7kuDRoPtPakl+T+OfdEUjYJj7Jbow==}
@@ -6877,11 +7786,14 @@ packages:
   /chalk@5.6.2:
     resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
-    dev: true
 
   /char-regex@1.0.2:
     resolution: {integrity: sha512-kWWXztvZ5SBQV+eRgKFeh8q5sLuZY2+8WUIzlxWVTg+oGwY14qylx1KbKzHd8P6ZYkAg0xyIDU9JMHhyJMZ1jw==}
     engines: {node: '>=10'}
+
+  /chardet@2.1.1:
+    resolution: {integrity: sha512-PsezH1rqdV9VvyNhxxOW32/d75r01NY7TQCmOqomRo15ZSOKbpTFVsfjghxo6JloQUCGnH4k1LGu0R4yCLlWQQ==}
+    dev: false
 
   /check-error@2.1.3:
     resolution: {integrity: sha512-PAJdDJusoxnwm1VwW07VWwUN1sl7smmC3OKggvndJFadxxDRyFJBX/ggnu/KE4kQAB7a3Dp8f/YXC1FlUprWmA==}
@@ -6935,6 +7847,11 @@ packages:
       parent-module: 2.0.0
       resolve-from: 5.0.0
     dev: true
+
+  /cli-width@4.1.0:
+    resolution: {integrity: sha512-ouuZd4/dm2Sw5Gmqy6bGyNNNe1qt9RpmxveLSO7KcgsTnU7RXfsw+/bukWGo1abgBiMAic068rclZsO4IWmmxQ==}
+    engines: {node: '>= 12'}
+    dev: false
 
   /cliui@8.0.1:
     resolution: {integrity: sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==}
@@ -7042,6 +7959,19 @@ packages:
 
   /concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
+
+  /concurrently@9.2.1:
+    resolution: {integrity: sha512-fsfrO0MxV64Znoy8/l1vVIjjHa29SZyyqPgQBwhiDcaW8wJc2W3XWVOGx4M3oJBnv/zdUZIIp1gDeS98GzP8Ng==}
+    engines: {node: '>=18'}
+    hasBin: true
+    dependencies:
+      chalk: 4.1.2
+      rxjs: 7.8.2
+      shell-quote: 1.8.3
+      supports-color: 8.1.1
+      tree-kill: 1.2.2
+      yargs: 17.7.2
+    dev: true
 
   /connect-history-api-fallback@2.0.0:
     resolution: {integrity: sha512-U73+6lQFmfiNPrYbXqr6kZ1i1wiRqXnp2nhMsINseWXO8lDau0LGEffJ8kQi4EjLZympVgRdvqjAgiZ1tgzDDA==}
@@ -7496,7 +8426,6 @@ packages:
 
   /csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
-    dev: true
 
   /data-urls@3.0.2:
     resolution: {integrity: sha512-Jy/tj3ldjZJo63sVAvg6LHt2mHvl4V6AgRAmNDtLdm7faqtsx+aJG42rsyCo9JCoRVKwPFzKlIPx3DIibwSIaQ==}
@@ -8554,8 +9483,24 @@ packages:
   /fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
 
+  /fast-string-truncated-width@3.0.3:
+    resolution: {integrity: sha512-0jjjIEL6+0jag3l2XWWizO64/aZVtpiGE3t0Zgqxv0DPuxiMjvB3M24fCyhZUO4KomJQPj3LTSUnDP3GpdwC0g==}
+    dev: false
+
+  /fast-string-width@3.0.2:
+    resolution: {integrity: sha512-gX8LrtNEI5hq8DVUfRQMbr5lpaS4nMIWV+7XEbXk2b8kiQIizgnlr12B4dA3ZEx3308ze0O4Q1R+cHts8kyUJg==}
+    dependencies:
+      fast-string-truncated-width: 3.0.3
+    dev: false
+
   /fast-uri@3.1.0:
     resolution: {integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==}
+
+  /fast-wrap-ansi@0.2.0:
+    resolution: {integrity: sha512-rLV8JHxTyhVmFYhBJuMujcrHqOT2cnO5Zxj37qROj23CP39GXubJRBUFF0z8KFK77Uc0SukZUf7JZhsVEQ6n8w==}
+    dependencies:
+      fast-string-width: 3.0.2
+    dev: false
 
   /fastest-levenshtein@1.0.16:
     resolution: {integrity: sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==}
@@ -8705,6 +9650,14 @@ packages:
 
   /fs.realpath@1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
+
+  /fsevents@2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
 
   /fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -8900,6 +9853,10 @@ packages:
       uglify-js: 3.19.3
     dev: true
 
+  /harmony-reflect@1.6.2:
+    resolution: {integrity: sha512-HIp/n38R9kQjDEziXyDTuW3vvoxxyxjxFzXLrBr18uB47GnSt+G9D29fqrpM5ZkspMcPICud3XsBJQ4Y2URg8g==}
+    dev: true
+
   /has-bigints@1.1.0:
     resolution: {integrity: sha512-R3pbpkcIqv2Pm3dUwgjclDRVmWpTJW2DcMzcIhEXEx1oh/CEMObMm3KLmRJOdvhM7o4uQBnwr8pzRK2sJWIqfg==}
     engines: {node: '>= 0.4'}
@@ -8974,6 +9931,11 @@ packages:
       hash.js: 1.1.7
       minimalistic-assert: 1.0.1
       minimalistic-crypto-utils: 1.0.1
+    dev: false
+
+  /hono@4.7.11:
+    resolution: {integrity: sha512-rv0JMwC0KALbbmwJDEnxvQCeJh+xbS3KEWW5PC9cMJ08Ur9xgatI0HmtgYZfOdOSOeYsp5LO2cOhdI8cLEbDEQ==}
+    engines: {node: '>=16.9.0'}
     dev: false
 
   /hpack.js@2.1.6:
@@ -9167,6 +10129,13 @@ packages:
     dependencies:
       safer-buffer: 2.1.2
 
+  /iconv-lite@0.7.2:
+    resolution: {integrity: sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw==}
+    engines: {node: '>=0.10.0'}
+    dependencies:
+      safer-buffer: 2.1.2
+    dev: false
+
   /icss-utils@5.1.0(postcss@8.4.49):
     resolution: {integrity: sha512-soFhflCVWLfRNOPU3iv5Z9VUdT44xFRbzjLsEzSr5AQmgqPMTHdU3PMT1Cf1ssx8fLNJDA1juftYl+PUcv3MqA==}
     engines: {node: ^10 || ^12 || >= 14}
@@ -9186,6 +10155,13 @@ packages:
   /idb-keyval@6.2.2:
     resolution: {integrity: sha512-yjD9nARJ/jb1g+CvD0tlhUHOrJ9Sy0P8T9MF3YaLlHnSRpwPfpTX0XIvpmw3gAJUmEu3FiICLBDPXVwyEvrleg==}
     dev: false
+
+  /identity-obj-proxy@3.0.0:
+    resolution: {integrity: sha512-00n6YnVHKrinT9t0d9+5yZC6UBNJANpYEQvL2LlX6Ab9lnmxzIRcEmTPuyGScvl1+jKuCICX1Z0Ab1pPKKdikA==}
+    engines: {node: '>=4'}
+    dependencies:
+      harmony-reflect: 1.6.2
+    dev: true
 
   /ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
@@ -9545,7 +10521,6 @@ packages:
       semver: 7.7.4
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /istanbul-lib-report@3.0.1:
     resolution: {integrity: sha512-GCfE1mtsHGOELCU8e/Z7YWzpmybrx/+dSTfLrvY8qRmaY6zXTKWn6WQIjaAFw069icm6GVMNkgu0NzI4iPZUNw==}
@@ -9673,7 +10648,7 @@ packages:
       jest-environment-node: 29.7.0
       jest-get-type: 29.6.3
       jest-regex-util: 29.6.3
-      jest-resolve: 29.5.0
+      jest-resolve: 29.7.0
       jest-runner: 29.7.0
       jest-util: 29.7.0
       jest-validate: 29.7.0
@@ -9726,7 +10701,6 @@ packages:
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
-    dev: true
 
   /jest-diff@29.7.0:
     resolution: {integrity: sha512-LMIgiIrhigmPrs03JHpxUh2yISK3vLFPkAodPeo0+BuF7wA2FoQbkEg1u8gBYBThncu7e1oEDUfIXVuTqLRUjw==}
@@ -10002,7 +10976,7 @@ packages:
       '@babel/traverse': 7.29.0
       '@babel/types': 7.29.0
       '@jest/expect-utils': 29.7.0
-      '@jest/transform': 29.5.0
+      '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@types/babel__traverse': 7.28.0
       '@types/prettier': 2.7.3
@@ -10664,6 +11638,11 @@ packages:
     resolution: {integrity: sha512-71ippSywq5Yb7/tVYyGbkBggbU8H3u5Rz56fH60jGFgr8uHwxs+aSKeqmluIVzM0m0kB7xQjKS6qPfd0b2ZoqQ==}
     hasBin: true
 
+  /mute-stream@3.0.0:
+    resolution: {integrity: sha512-dkEJPVvun4FryqBmZ5KhDo0K9iDXAwn08tMLDinNdRBNPcYEDiWYysLcc6k3mjTMlbP9KyylvRpd4wFtwrT9rw==}
+    engines: {node: ^20.17.0 || >=22.9.0}
+    dev: false
+
   /mz@2.7.0:
     resolution: {integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==}
     dependencies:
@@ -11075,6 +12054,22 @@ packages:
       pvtsutils: 1.3.6
       pvutils: 1.1.5
       tslib: 2.8.1
+
+  /playwright-core@1.58.2:
+    resolution: {integrity: sha512-yZkEtftgwS8CsfYo7nm0KE8jsvm6i/PTgVtB8DL726wNf6H2IMsDuxCpJj59KDaxCtSnrWan2AeDqM7JBaultg==}
+    engines: {node: '>=18'}
+    hasBin: true
+    dev: true
+
+  /playwright@1.58.2:
+    resolution: {integrity: sha512-vA30H8Nvkq/cPBnNw4Q8TWz1EJyqgpuinBcHET0YVJVFldr8JDNiU9LaWAE1KqSkRYazuaBhTpB5ZzShOezQ6A==}
+    engines: {node: '>=18'}
+    hasBin: true
+    dependencies:
+      playwright-core: 1.58.2
+    optionalDependencies:
+      fsevents: 2.3.2
+    dev: true
 
   /possible-typed-array-names@1.1.0:
     resolution: {integrity: sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==}
@@ -12489,6 +13484,11 @@ packages:
   /signal-exit@3.0.7:
     resolution: {integrity: sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==}
 
+  /signal-exit@4.1.0:
+    resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
+    engines: {node: '>=14'}
+    dev: false
+
   /sirv@1.0.19:
     resolution: {integrity: sha512-JuLThK3TnZG1TAKDwNIqNq6QA2afLOCcm+iE8D1Kj3GA40pSPsxQjjJl0J8X3tsR7T+CP1GavpzLwYkgVLWrZQ==}
     engines: {node: '>= 10'}
@@ -13023,6 +14023,11 @@ packages:
     dependencies:
       tslib: 2.8.1
 
+  /tree-kill@1.2.2:
+    resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
+    hasBin: true
+    dev: true
+
   /ts-api-utils@2.4.0(typescript@5.8.3):
     resolution: {integrity: sha512-3TaVTaAv2gTiMB35i3FiGJaRfwb3Pyn/j3m/bfAvGe8FB7CF6u+LMYqYlDh7reQf7UNvoTvdfAqHGmPGOSsPmA==}
     engines: {node: '>=18.12'}
@@ -13053,7 +14058,7 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /ts-jest@29.4.6(jest@29.7.0)(typescript@5.9.3):
+  /ts-jest@29.4.6(@babel/core@7.29.0)(jest@29.7.0)(typescript@5.9.3):
     resolution: {integrity: sha512-fSpWtOO/1AjSNQguk43hb/JCo16oJDnMJf3CdEGNkqsEX3t0KX96xvyX1D7PfLCpVoKu4MfVrqUkFyblYoY4lA==}
     engines: {node: ^14.15.0 || ^16.10.0 || ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -13080,6 +14085,7 @@ packages:
       jest-util:
         optional: true
     dependencies:
+      '@babel/core': 7.29.0
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
       handlebars: 4.7.8
@@ -13942,7 +14948,6 @@ packages:
     resolution: {integrity: sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==}
     engines: {node: '>= 14.6'}
     hasBin: true
-    dev: true
 
   /yargs-parser@21.1.1:
     resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}
@@ -13969,3 +14974,25 @@ packages:
   /yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  /zustand@5.0.11(@types/react@19.2.14)(react@19.2.4):
+    resolution: {integrity: sha512-fdZY+dk7zn/vbWNCYmzZULHRrss0jx5pPFiOuMZ/5HJN6Yv3u+1Wswy/4MpZEkEGhtNH+pwxZB8OKgUBPzYAGg==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
+    dependencies:
+      '@types/react': 19.2.14
+      react: 19.2.4
+    dev: false

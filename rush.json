@@ -424,6 +424,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-http-storage",
+      "projectFolder": "libraries/ts-http-storage",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-json",
       "projectFolder": "libraries/ts-json",
       "shouldPublish": true,
@@ -525,10 +532,50 @@
       "tags": ["apps", "tests", "vite"]
     },
     {
+      "packageName": "@fgv/ts-chocolate",
+      "projectFolder": "libraries/ts-chocolate",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/chocolate-cli",
+      "projectFolder": "tools/chocolate-cli",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["tools", "cli"]
+    },
+    {
       "packageName": "@fgv/typedoc-compact-theme",
       "projectFolder": "plugins/typedoc-compact-theme",
       "shouldPublish": false,
       "tags": ["plugins", "typedoc"]
+    },
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "projectFolder": "libraries/ts-app-shell",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "ui", "react"]
+    },
+    {
+      "packageName": "@fgv/chocolate-lab-ui",
+      "projectFolder": "libraries/chocolate-lab-ui",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "ui", "react", "chocolate"]
+    },
+    {
+      "packageName": "@fgv/chocolate-lab-web",
+      "projectFolder": "apps/chocolate-lab-web",
+      "shouldPublish": false,
+      "tags": ["apps", "ui", "browser", "chocolate"]
+    },
+    {
+      "packageName": "@fgv/chocolate-lab-api",
+      "projectFolder": "services/chocolate-lab-api",
+      "shouldPublish": false,
+      "tags": ["services", "chocolate"]
     }
   ]
 }

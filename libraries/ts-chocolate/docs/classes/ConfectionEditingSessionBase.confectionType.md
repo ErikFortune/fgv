@@ -1,0 +1,11 @@
+[Home](../README.md) > [ConfectionEditingSessionBase](./ConfectionEditingSessionBase.md) > confectionType
+
+## ConfectionEditingSessionBase.confectionType property
+
+Confection type discriminator.
+
+**Signature:**
+
+```typescript
+readonly confectionType: ConfectionType;
+```

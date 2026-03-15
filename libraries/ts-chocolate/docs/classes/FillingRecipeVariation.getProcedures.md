@@ -1,0 +1,19 @@
+[Home](../README.md) > [FillingRecipeVariation](./FillingRecipeVariation.md) > getProcedures
+
+## FillingRecipeVariation.getProcedures() method
+
+Gets resolved procedures associated with this variation.
+Returns Result with procedures, or Success with undefined if variation has no procedures.
+Resolved lazily on first access.
+
+**Signature:**
+
+```typescript
+getProcedures(): Result<IResolvedProcedures | undefined>;
+```
+
+**Returns:**
+
+Result&lt;[IResolvedProcedures](../interfaces/IResolvedProcedures.md) | undefined&gt;
+
+Result with resolved procedures or undefined, or Failure if resolution fails

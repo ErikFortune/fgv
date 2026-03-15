@@ -1,0 +1,11 @@
+[Home](../../README.md) > [UserLibrary](../README.md) > [IJournalEntryBase](./IJournalEntryBase.md) > timestamp
+
+## IJournalEntryBase.timestamp property
+
+Timestamp when this entry was created (ISO 8601 format)
+
+**Signature:**
+
+```typescript
+readonly timestamp: string;
+```

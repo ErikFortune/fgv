@@ -1,0 +1,281 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/* c8 ignore file - interface definitions only, no runtime code */
+
+/**
+ * Runtime procedure model types
+ * @packageDocumentation
+ */
+
+import { Result } from '@fgv/ts-utils';
+
+import {
+  BaseProcedureId,
+  Celsius,
+  Minutes,
+  Model as CommonModel,
+  ProcedureId,
+  ProcedureType,
+  TaskId
+} from '../../common';
+import { IMoldEntity } from '../../entities';
+import { Fillings, IProcedureEntity } from '../../entities';
+import { IRawTaskEntity } from '../../entities';
+import { Task } from '../tasks';
+import type { MaterializedLibrary } from '../materializedLibrary';
+
+// ============================================================================
+// Procedure Context
+// ============================================================================
+
+/**
+ * Minimal context interface for Procedure.
+ * Provides task resolution capabilities.
+ * @internal
+ */
+export interface IProcedureContext {
+  /**
+   * Materialized library of runtime tasks.
+   */
+  readonly tasks: MaterializedLibrary<TaskId, IRawTaskEntity, Task, never>;
+}
+
+// ============================================================================
+// Procedure Render Context
+// ============================================================================
+
+/**
+ * Context for rendering a procedure with full library access.
+ *
+ * Unlike the data-layer IProcedureRenderContext (which uses `unknown` for library),
+ * this interface has properly typed library access for task resolution.
+ *
+ * @public
+ */
+export interface IProcedureRenderContext {
+  /**
+   * The procedure context for task resolution.
+   * This provides type-safe access to tasks, unlike the data-layer's `unknown` library.
+   */
+  readonly context: IProcedureContext;
+
+  /**
+   * The specific produced filling this procedure is being rendered for
+   */
+  readonly recipe: Fillings.IProducedFillingEntity;
+
+  /**
+   * Optional mold being used for this recipe
+   */
+  readonly mold?: IMoldEntity;
+
+  /**
+   * Optional parameter overrides for rendering.
+   * These override any params configured in the procedure steps or tasks.
+   */
+  readonly params?: Readonly<Record<string, unknown>>;
+}
+
+// ============================================================================
+// Resolved Procedure Step
+// ============================================================================
+
+/**
+ * A procedure step with a fully materialized runtime Task.
+ *
+ * Unlike the entity-layer {@link IProcedureStepEntity}, this interface does not
+ * expose raw task entities. Both task-ref and inline tasks are materialized into
+ * a runtime {@link Task} object.
+ *
+ * @public
+ */
+export interface IResolvedProcedureStep {
+  /** Step order number (1-based) */
+  readonly order: number;
+
+  /** The materialized runtime task (always present for both refs and inline) */
+  readonly resolvedTask: Task;
+
+  /** Parameter values for template rendering */
+  readonly params: Record<string, unknown>;
+
+  /** True if this step uses an inline task definition (not a library reference) */
+  readonly isInline: boolean;
+
+  /** Time actively working on this step (overrides task default) */
+  readonly activeTime?: Minutes;
+
+  /** Passive waiting time (overrides task default) */
+  readonly waitTime?: Minutes;
+
+  /** Time to hold at a temperature (overrides task default) */
+  readonly holdTime?: Minutes;
+
+  /** Target temperature for this step (overrides task default) */
+  readonly temperature?: Celsius;
+
+  /** Optional categorized notes for this step */
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
+}
+
+// ============================================================================
+// Rendered Step
+// ============================================================================
+
+/**
+ * A rendered procedure step with resolved template values.
+ * @public
+ */
+export interface IRenderedStep extends IResolvedProcedureStep {
+  /**
+   * The rendered description with all template values resolved.
+   * Unlike the data-layer placeholder, this contains actual rendered content.
+   */
+  readonly renderedDescription: string;
+}
+
+// ============================================================================
+// Rendered Procedure
+// ============================================================================
+
+/**
+ * A rendered procedure with all template values resolved.
+ * @public
+ */
+export interface IRenderedProcedure {
+  /**
+   * Name of the procedure
+   */
+  readonly name: string;
+
+  /**
+   * Optional description
+   */
+  readonly description?: string;
+
+  /**
+   * Rendered steps with resolved task templates
+   */
+  readonly steps: ReadonlyArray<IRenderedStep>;
+
+  /**
+   * Total active time for all steps
+   */
+  readonly totalActiveTime?: Minutes;
+
+  /**
+   * Total wait time for all steps
+   */
+  readonly totalWaitTime?: Minutes;
+
+  /**
+   * Total hold time for all steps
+   */
+  readonly totalHoldTime?: Minutes;
+}
+
+// ============================================================================
+// Procedure Interface
+// ============================================================================
+
+/**
+ * A resolved runtime view of a procedure with rendering capabilities.
+ *
+ * This interface provides runtime-layer access to procedure data with:
+ * - Composite identity (`id`, `collectionId`) for cross-source references
+ * - Proper task resolution (not placeholders)
+ * - Computed timing properties
+ *
+ * @public
+ */
+export interface IProcedure {
+  // ---- Composite Identity ----
+
+  /**
+   * The composite procedure ID (e.g., "common.ganache-basic").
+   * Combines source and base ID for unique identification across sources.
+   */
+  readonly id: ProcedureId;
+
+  /**
+   * The base procedure ID within the source.
+   */
+  readonly baseId: BaseProcedureId;
+
+  // ---- Core Properties ----
+
+  /** Human-readable name */
+  readonly name: string;
+
+  /** Optional description */
+  readonly description?: string;
+
+  /** Optional category this procedure applies to */
+  readonly category?: ProcedureType;
+
+  /**
+   * Gets the procedure steps with fully materialized runtime tasks.
+   * Resolution is lazy (on first call) and cached.
+   * @returns Success with resolved steps, or Failure if task materialization fails
+   */
+  getSteps(): Result<ReadonlyArray<IResolvedProcedureStep>>;
+
+  /** Optional tags */
+  readonly tags?: ReadonlyArray<string>;
+
+  /** Optional categorized notes */
+  readonly notes?: ReadonlyArray<CommonModel.ICategorizedNote>;
+
+  // ---- Computed Properties ----
+
+  /** Total active time for all steps */
+  readonly totalActiveTime: Minutes | undefined;
+
+  /** Total wait time for all steps */
+  readonly totalWaitTime: Minutes | undefined;
+
+  /** Total hold time for all steps */
+  readonly totalHoldTime: Minutes | undefined;
+
+  /** Total time (active + wait + hold) */
+  readonly totalTime: Minutes | undefined;
+
+  /** Number of steps */
+  readonly stepCount: number;
+
+  /** Whether this procedure is category-specific */
+  readonly isCategorySpecific: boolean;
+
+  // ---- Operations ----
+
+  /**
+   * Renders the procedure with the given context.
+   * Resolves task references to actual task content (not placeholders).
+   * @param context - The render context with recipe and library access
+   * @returns Success with rendered procedure, or Failure if rendering fails
+   */
+  render(context: IProcedureRenderContext): Result<IRenderedProcedure>;
+
+  /**
+   * Gets the underlying procedure data entity
+   */
+  readonly entity: IProcedureEntity;
+}

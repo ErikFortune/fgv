@@ -1,0 +1,91 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Workspace packlet - the primary entry point for chocolate applications.
+ *
+ * Provides unified access to:
+ * - Library content (ingredients, fillings, confections, etc.)
+ * - Key store for encrypted collection support
+ * - Session creation for editing
+ *
+ * @packageDocumentation
+ */
+
+// Model types
+export * from './model';
+
+// Platform initialization types and functions
+export {
+  type IResolvedExternalLibrary,
+  type IPlatformInitResult,
+  type IPlatformInitOptions,
+  type IPlatformInitializer,
+  type ICommonWorkspaceInitParams,
+  toLibraryFileSources,
+  toUserLibrarySource,
+  createWorkspaceFromPlatform,
+  ensureDirectoryPath,
+  ensureWorkspaceDirectoriesInTree
+} from './platformInit';
+
+// Workspace class
+export { Workspace } from './workspace';
+
+// Node.js factory
+export {
+  createNodeWorkspace,
+  createNodeWorkspaceLegacy,
+  type ICreateNodeWorkspaceParams,
+  type DirectoryLayoutParams,
+  type ISingleRootParams,
+  type IDualRootParams,
+  type IMultiRootParams,
+  type StartupMode,
+  type MissingFileBehavior,
+  type DirectoryLayoutMode
+} from './nodeFactory';
+
+// Node.js platform initializer
+export {
+  NodePlatformInitializer,
+  createNodePlatformInitializer,
+  initializeNodePlatform
+} from './nodePlatformInit';
+
+// Settings validation (re-exported for convenience)
+export {
+  type ISettingsValidationWarning,
+  type IMissingRootWarning,
+  type IMissingCollectionWarning,
+  type IMissingPreferencesLocationWarning,
+  type ISettingsValidationContext,
+  validateResolvedSettings
+} from '../settings';
+
+// Workspace initialization helpers
+export {
+  type IWorkspaceInitParams,
+  type IWorkspaceInitResult,
+  initializeWorkspace,
+  createWorkspaceDirectories,
+  writeBootstrapSettings,
+  writePreferencesSettings
+} from './workspaceInit';

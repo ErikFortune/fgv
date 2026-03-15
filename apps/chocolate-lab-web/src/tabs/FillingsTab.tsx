@@ -1,0 +1,1461 @@
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { CursorArrowRaysIcon } from '@heroicons/react/20/solid';
+import {
+  CASCADE_NEW_ENTITY_ID,
+  ConfirmDialog,
+  EntityList,
+  type ICascadeColumn,
+  EntityTabLayout,
+  type IComparisonColumn
+} from '@fgv/ts-app-shell';
+import { AiAssist, Editing, Entities, Helpers, LibraryRuntime } from '@fgv/ts-chocolate';
+import type {
+  BaseFillingId,
+  BaseIngredientId,
+  BaseProcedureId,
+  CollectionId,
+  FillingId,
+  FillingRecipeVariationSpec,
+  IngredientId,
+  TaskId,
+  ProcedureId
+} from '@fgv/ts-chocolate';
+import { Success, fail } from '@fgv/ts-utils';
+import type { ResultMapValueType } from '@fgv/ts-utils';
+import {
+  type IFillingCascadeEntry,
+  isFillingCascadeEntry,
+  isIngredientCascadeEntry,
+  isProcedureCascadeEntry,
+  isTaskCascadeEntry,
+  type FillingSaveMode,
+  type IReferenceScanResult,
+  useTabNavigation,
+  useEntityList,
+  useMutableCollection,
+  useCanDeleteFromCollections,
+  useEntityActions,
+  createSetInMutableCollection,
+  type MutableCollectionEntryWithSet,
+  useEntityMutation,
+  IngredientDetail,
+  IngredientEditView,
+  FillingDetail,
+  FillingEditView,
+  FillingPreviewPanel,
+  ProcedureDetail,
+  ProcedureEditView,
+  TaskDetail,
+  EntityCreateForm,
+  getWritableCollectionOptions,
+  useFilteredEntities,
+  useClipboardJsonImport,
+  useCascadeOps,
+  useProcedureEditSession,
+  useNavigationStore,
+  ReadOnlyEditGate
+} from '@fgv/chocolate-lab-ui';
+
+import {
+  FILLING_DESCRIPTOR,
+  FILLING_FILTER_SPEC,
+  slugify,
+  createBlankIngredientEntity,
+  createBlankRawProcedureEntity,
+  createBlankFillingRecipeEntity
+} from '../shared';
+
+interface IFillingEditingState {
+  readonly id: FillingId;
+  readonly wrapper: LibraryRuntime.EditedFillingRecipe;
+  selectedVariationSpec: FillingRecipeVariationSpec;
+}
+
+export function FillingsTabContent(): React.ReactElement {
+  const {
+    workspace,
+    reactiveWorkspace,
+    popCascadeTo,
+    listCollapsed,
+    collapseList,
+    compareMode,
+    compareIds,
+    toggleCompareMode,
+    toggleCompareId,
+    showingComparison,
+    startComparison,
+    exitComparison
+  } = useTabNavigation();
+  const cascade = useCascadeOps();
+  const [variationCompare, setVariationCompare] = useState<
+    { id: FillingId; specs: ReadonlyArray<string> } | undefined
+  >(undefined);
+  const [targetYieldMap, setTargetYieldMap] = useState<Map<string, number>>(() => new Map());
+
+  const handleTargetYieldChange = useCallback((fillingId: string, grams: number | undefined): void => {
+    setTargetYieldMap((prev) => {
+      const next = new Map(prev);
+      if (grams === undefined) {
+        next.delete(fillingId);
+      } else {
+        next.set(fillingId, grams);
+      }
+      return next;
+    });
+  }, []);
+
+  const editingRef = useRef<IFillingEditingState | undefined>(undefined);
+  const editVariationSpecRef = useRef<FillingRecipeVariationSpec | undefined>(undefined);
+  const viewVariationSpecRef = useRef<FillingRecipeVariationSpec | undefined>(undefined);
+  const [previewVariationSpec, setPreviewVariationSpec] = useState<FillingRecipeVariationSpec | undefined>(
+    undefined
+  );
+  const subIngredientRef = useRef<{ id: IngredientId; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
+    undefined
+  );
+  const subProcedureRef = useRef<{ id: ProcedureId; wrapper: LibraryRuntime.EditedProcedure } | undefined>(
+    undefined
+  );
+  const [subEntitySeed, setSubEntitySeed] = useState('');
+  const [fillingToDelete, setFillingToDelete] = useState<{
+    id: FillingId;
+    name: string;
+    references: IReferenceScanResult;
+  } | null>(null);
+  const entityActions = useEntityActions();
+  const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
+
+  const mutableCollectionId = useMutableCollection(
+    workspace.data.entities.fillings.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.fillings
+  );
+
+  const writableFillingCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.fillings.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.fillings
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  const canDeleteFilling = useCanDeleteFromCollections(workspace.data.entities.fillings.collections, [
+    workspace,
+    reactiveWorkspace.version
+  ]);
+
+  const mutableIngredientCollectionId = useMutableCollection(
+    workspace.data.entities.ingredients.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.ingredients
+  );
+
+  const writableIngredientCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.ingredients.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.ingredients
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  const mutableProcedureCollectionId = useMutableCollection(
+    workspace.data.entities.procedures.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.procedures
+  );
+
+  const writableProcedureCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.procedures.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.procedures
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  type IngredientCollectionEntry = ResultMapValueType<typeof workspace.data.entities.ingredients.collections>;
+  type IngredientMutableCollectionEntry = MutableCollectionEntryWithSet<
+    IngredientCollectionEntry,
+    BaseIngredientId,
+    Entities.Ingredients.IngredientEntity
+  >;
+
+  type ProcedureCollectionEntry = ResultMapValueType<typeof workspace.data.entities.procedures.collections>;
+  type ProcedureMutableCollectionEntry = MutableCollectionEntryWithSet<
+    ProcedureCollectionEntry,
+    BaseProcedureId,
+    Entities.Procedures.IProcedureEntity
+  >;
+
+  const fillingMutation = useEntityMutation<Entities.Fillings.IFillingRecipeEntity, BaseFillingId, FillingId>(
+    {
+      saveToCollection: (collectionId, baseId, entity) =>
+        workspace.data.entities.saveFillingRecipe(collectionId, baseId, entity),
+      entityLabel: 'filling'
+    }
+  );
+
+  const ingredientMutation = useEntityMutation<
+    Entities.Ingredients.IngredientEntity,
+    BaseIngredientId,
+    IngredientId
+  >({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Ingredients.IngredientEntity,
+      BaseIngredientId,
+      IngredientCollectionEntry,
+      IngredientMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.ingredients.collections.get(collectionId),
+      isMutable: (entry: IngredientCollectionEntry): entry is IngredientMutableCollectionEntry =>
+        entry.isMutable && 'set' in entry.items,
+      setEntity: (
+        entry: IngredientMutableCollectionEntry,
+        baseId: BaseIngredientId,
+        entity: Entities.Ingredients.IngredientEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'ingredient'
+    }),
+    entityLabel: 'ingredient',
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedIngredientsCollection(collectionId)
+  });
+
+  const procedureMutation = useEntityMutation<
+    Entities.Procedures.IProcedureEntity,
+    BaseProcedureId,
+    ProcedureId
+  >({
+    setInMutableCollection: createSetInMutableCollection<
+      Entities.Procedures.IProcedureEntity,
+      BaseProcedureId,
+      ProcedureCollectionEntry,
+      ProcedureMutableCollectionEntry
+    >({
+      getCollection: (collectionId: CollectionId) =>
+        workspace.data.entities.procedures.collections.get(collectionId),
+      isMutable: (entry: ProcedureCollectionEntry): entry is ProcedureMutableCollectionEntry =>
+        entry.isMutable && 'set' in entry.items,
+      setEntity: (
+        entry: ProcedureMutableCollectionEntry,
+        baseId: BaseProcedureId,
+        entity: Entities.Procedures.IProcedureEntity
+      ) => entry.items.set(baseId, entity),
+      entityLabel: 'procedure'
+    }),
+    entityLabel: 'procedure',
+    getPersistedCollection: (collectionId: CollectionId) =>
+      workspace.data.entities.getPersistedProceduresCollection(collectionId)
+  });
+
+  // --------------------------------------------------------------------------
+  // Start Session — navigate to sessions tab with pre-filled cascade
+  // --------------------------------------------------------------------------
+
+  const handleRequestStartSession = useCallback(
+    (fillingId: FillingId, variationSpec: FillingRecipeVariationSpec): void => {
+      const result = workspace.data.fillings.get(fillingId);
+      const entityName = result.isSuccess() ? result.value.name : fillingId;
+      const store = useNavigationStore.getState();
+      store.setMode('production');
+      store.setTab('sessions');
+      store.squashCascade([
+        {
+          entityType: 'session',
+          entityId: CASCADE_NEW_ENTITY_ID,
+          mode: 'create',
+          createSessionInfo: { fillingId, variationSpec, entityName }
+        }
+      ]);
+    },
+    [workspace]
+  );
+
+  const { entities: fillings, selectedId } = useEntityList<LibraryRuntime.FillingRecipe, FillingId>({
+    getAll: () => workspace.data.fillings.values(),
+    compare: (a, b) => a.name.localeCompare(b.name),
+    entityType: 'filling',
+    cascadeStack: cascade.stack,
+    deps: [workspace, reactiveWorkspace.version]
+  });
+
+  const fillingCreateSourceOptions = useMemo(
+    (): ReadonlyArray<{ id: string; name: string }> =>
+      fillings.map((filling) => ({
+        id: filling.id,
+        name: filling.name
+      })),
+    [fillings]
+  );
+
+  const availableIngredients = useMemo<ReadonlyArray<LibraryRuntime.AnyIngredient>>(() => {
+    return Array.from(workspace.data.ingredients.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [workspace, reactiveWorkspace.version]);
+
+  const availableProcedures = useMemo<ReadonlyArray<LibraryRuntime.IProcedure>>(() => {
+    return Array.from(workspace.data.procedures.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [workspace, reactiveWorkspace.version]);
+
+  const availableTasks = useMemo<ReadonlyArray<LibraryRuntime.ITask>>(() => {
+    return Array.from(workspace.data.tasks.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [workspace, reactiveWorkspace.version]);
+
+  const procedureSession = useProcedureEditSession({
+    procedureRef: subProcedureRef,
+    availableTasks,
+    slugify,
+    onMutate: undefined
+  });
+
+  const handleSelect = useCallback(
+    (id: FillingId): void => {
+      cascade.select({
+        entityType: 'filling',
+        entityId: id,
+        entity: workspace.data.fillings.get(id).report(workspace.data.logger).orDefault()
+      });
+    },
+    [cascade, workspace]
+  );
+
+  const handleRequestDelete = useCallback(
+    (id: FillingId): void => {
+      const result = workspace.data.fillings.get(id);
+      const name = result.isSuccess() ? result.value.name : id;
+      const references = entityActions.scanReferences(id);
+      setFillingToDelete({ id, name, references });
+    },
+    [workspace, entityActions]
+  );
+
+  const handleConfirmDelete = useCallback((): void => {
+    if (fillingToDelete) {
+      entityActions.deleteEntity(fillingToDelete.id).catch((err) => {
+        workspace.data.logger.error(`Failed to delete filling '${fillingToDelete.name}': ${err}`);
+      });
+      cascade.clearById(fillingToDelete.id);
+    }
+    setFillingToDelete(null);
+  }, [fillingToDelete, entityActions, cascade]);
+
+  const handleCancelDelete = useCallback((): void => {
+    setFillingToDelete(null);
+  }, []);
+
+  // ============================================================================
+  // Editing State Management
+  // ============================================================================
+
+  const getOrCreateEditingState = useCallback(
+    (
+      filling: LibraryRuntime.FillingRecipe,
+      preferredSpec?: FillingRecipeVariationSpec
+    ): IFillingEditingState | undefined => {
+      const id = filling.id;
+      if (editingRef.current?.id === id) {
+        return editingRef.current;
+      }
+
+      // Create wrapper from entity
+      const wrapperResult = LibraryRuntime.EditedFillingRecipe.create(filling.entity);
+      if (wrapperResult.isFailure()) {
+        workspace.data.logger.error(`Failed to create filling wrapper: ${wrapperResult.message}`);
+        return undefined;
+      }
+
+      const targetSpec = preferredSpec ?? filling.goldenVariationSpec;
+
+      const state: IFillingEditingState = {
+        id,
+        wrapper: wrapperResult.value,
+        selectedVariationSpec: targetSpec
+      };
+      editingRef.current = state;
+      return state;
+    },
+    [workspace]
+  );
+
+  const handleVariationChange = useCallback((spec: FillingRecipeVariationSpec): void => {
+    const state = editingRef.current;
+    if (!state) return;
+    state.selectedVariationSpec = spec;
+  }, []);
+
+  // ============================================================================
+  // Edit / Cancel / Save
+  // ============================================================================
+
+  const handleEditFilling = useCallback(
+    (entityId: string, variationSpec?: FillingRecipeVariationSpec): void => {
+      editVariationSpecRef.current = variationSpec;
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'filling')
+        .onSuccess(({ depth }) => cascade.openEditor(depth));
+    },
+    [cascade]
+  );
+
+  const handlePreviewFilling = useCallback(
+    (entityId: string, variationSpec?: FillingRecipeVariationSpec): void => {
+      setPreviewVariationSpec(variationSpec);
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'filling')
+        .onSuccess(({ depth }) =>
+          cascade.openNested(depth, {
+            entityType: 'filling',
+            entityId,
+            mode: 'preview',
+            entity: workspace.data.fillings
+              .get(entityId as FillingId)
+              .report(workspace.data.logger)
+              .orDefault()
+          })
+        );
+    },
+    [cascade, workspace]
+  );
+
+  const handleCloseFillingPreview = useCallback(
+    (_entityId: string): void => {
+      cascade.pop();
+    },
+    [cascade]
+  );
+
+  const handleCancelFillingEdit = useCallback(
+    (entityId: string): void => {
+      if (editingRef.current?.id === entityId) {
+        editingRef.current = undefined;
+      }
+      subIngredientRef.current = undefined;
+      subProcedureRef.current = undefined;
+      procedureSession.cleanup();
+      cascade
+        .find((e) => e.entityId === entityId && e.entityType === 'filling')
+        .onSuccess(({ depth }) => cascade.popToView(depth));
+    },
+    [cascade, procedureSession]
+  );
+
+  const handleSaveFilling = useCallback(
+    async (mode: FillingSaveMode): Promise<void> => {
+      const state = editingRef.current;
+      if (!state) {
+        workspace.data.logger.error('Save failed: no editing state');
+        return;
+      }
+
+      if (mode === 'update') {
+        // Wrapper.current IS the final entity — nothing to merge
+      } else if (mode === 'new-variation') {
+        // Duplicate the current variation as a new one within the wrapper
+        const spec = state.selectedVariationSpec;
+        const dupResult = state.wrapper.duplicateVariation(spec);
+        if (dupResult.isFailure()) {
+          workspace.data.logger.error(`Save failed (duplicate variation): ${dupResult.message}`);
+          return;
+        }
+      } else if (mode === 'new-recipe') {
+        // Create an entirely new recipe derived from this one
+        if (!mutableCollectionId) {
+          workspace.data.logger.error('Save failed: no mutable collection available');
+          return;
+        }
+        const originalEntity = state.wrapper.current;
+        const today = new Date().toISOString().split('T')[0];
+        const newSpec = `${today}-01` as FillingRecipeVariationSpec;
+        const newBaseId = `${originalEntity.baseId}-derived-${today}` as BaseFillingId;
+        const newCompositeId = `${mutableCollectionId}.${newBaseId}` as FillingId;
+
+        // Build the new recipe from the wrapper's current variation
+        const currentVariation = originalEntity.variations.find(
+          (v) => v.variationSpec === state.selectedVariationSpec
+        );
+        const newVariation: Entities.Fillings.IFillingRecipeVariationEntity = {
+          ...(currentVariation ?? originalEntity.variations[0]),
+          variationSpec: newSpec
+        };
+
+        const sourceCompositeId = state.id as FillingId;
+        const sourceVariationId = Helpers.createFillingRecipeVariationId(
+          sourceCompositeId,
+          state.selectedVariationSpec
+        );
+
+        const newEntity: Entities.Fillings.IFillingRecipeEntity = {
+          baseId: newBaseId,
+          name: `${originalEntity.name}${
+            workspace.settings?.getResolvedSettings()?.workflow?.adaptedRecipeNameSuffix ?? ' (adapted)'
+          }` as typeof originalEntity.name,
+          category: originalEntity.category,
+          description: originalEntity.description,
+          tags: originalEntity.tags,
+          urls: originalEntity.urls,
+          variations: [newVariation],
+          goldenVariationSpec: newSpec,
+          derivedFrom: {
+            sourceVariationId,
+            derivedDate: today
+          }
+        };
+
+        const createResult = await fillingMutation.createEntity({
+          targetCollectionId: mutableCollectionId,
+          getCompositeId: (collectionId: CollectionId, nextBaseId: BaseFillingId) =>
+            `${collectionId}.${nextBaseId}` as FillingId,
+          baseId: newBaseId,
+          entity: newEntity,
+          exists: (id: FillingId) => workspace.data.fillings.get(id).isSuccess(),
+          persistToDisk: true
+        });
+        if (createResult.isFailure()) {
+          return;
+        }
+        workspace.data.logger.info(`Created new recipe '${newEntity.name}' from '${originalEntity.name}'`);
+
+        // Clean up editing state and navigate to the new recipe
+        editingRef.current = undefined;
+        subIngredientRef.current = undefined;
+        subProcedureRef.current = undefined;
+        procedureSession.cleanup();
+        cascade.select({
+          entityType: 'filling',
+          entityId: newCompositeId,
+          entity: workspace.data.fillings.get(newCompositeId).report(workspace.data.logger).orDefault()
+        });
+        return;
+      }
+
+      // For update and new-variation: persist the existing recipe entity
+      const entity = state.wrapper.current;
+
+      // Validate the entity
+      const validationResult = Editing.Fillings.Validators.validateFillingRecipeEntity(entity);
+      if (validationResult.isFailure()) {
+        workspace.data.logger.error(`Save failed: ${validationResult.message}`);
+        return;
+      }
+
+      const compositeId = state.id;
+      const baseId = entity.baseId as BaseFillingId;
+
+      const saveResult = await fillingMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
+        return;
+      }
+
+      // Preserve edited variation spec for detail view
+      viewVariationSpecRef.current = editingRef.current?.selectedVariationSpec;
+
+      if (editingRef.current?.id === compositeId) {
+        editingRef.current = undefined;
+      }
+      subIngredientRef.current = undefined;
+      subProcedureRef.current = undefined;
+      procedureSession.cleanup();
+      const refreshedEntity = workspace.data.fillings
+        .get(compositeId as FillingId)
+        .report(workspace.data.logger)
+        .orDefault();
+      cascade
+        .find((e) => e.entityId === compositeId && e.entityType === 'filling')
+        .onSuccess(({ depth }) => cascade.popToView(depth, refreshedEntity));
+    },
+    [workspace, cascade, procedureSession, mutableCollectionId, fillingMutation]
+  );
+
+  // ============================================================================
+  // Create Flow
+  // ============================================================================
+
+  const handleNewFilling = useCallback((): void => {
+    cascade.select({ entityType: 'filling', entityId: CASCADE_NEW_ENTITY_ID, mode: 'create' });
+  }, [cascade]);
+
+  const handleCreateFilling = useCallback(
+    async (
+      entity: Entities.Fillings.IFillingRecipeEntity,
+      source: 'manual' | 'ai',
+      targetCollectionId?: string
+    ): Promise<void> => {
+      const baseId = entity.baseId as BaseFillingId;
+      const createResult = await fillingMutation.createEntity({
+        targetCollectionId: targetCollectionId as CollectionId | undefined,
+        defaultCollectionId: mutableCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseFillingId) =>
+          `${collectionId}.${nextBaseId}` as FillingId,
+        baseId,
+        entity,
+        exists: (id: FillingId) => workspace.data.fillings.get(id).isSuccess(),
+        persistToDisk: false
+      });
+      if (createResult.isFailure()) {
+        return;
+      }
+
+      const compositeId = createResult.value;
+
+      // Create editing state for the new filling
+      const wrapperResult = LibraryRuntime.EditedFillingRecipe.create(entity);
+      if (wrapperResult.isFailure()) {
+        workspace.data.logger.error(`Failed to create editing wrapper: ${wrapperResult.message}`);
+        return;
+      }
+
+      const goldenSpec = entity.goldenVariationSpec;
+
+      editingRef.current = {
+        id: compositeId,
+        wrapper: wrapperResult.value,
+        selectedVariationSpec: goldenSpec
+      };
+
+      if (source === 'ai') {
+        workspace.data.logger.info(`Created filling '${entity.name}' from AI-generated data`);
+      }
+
+      const cascadeEntry: IFillingCascadeEntry = {
+        entityType: 'filling',
+        entityId: compositeId,
+        mode: 'edit',
+        hasChanges: true,
+        entity: workspace.data.fillings.get(compositeId).report(workspace.data.logger).orDefault()
+      };
+      cascade.select(cascadeEntry);
+    },
+    [workspace, mutableCollectionId, fillingMutation, cascade]
+  );
+
+  const handleCreateFillingFromSource = useCallback(
+    (params: {
+      mode: 'copy' | 'derive';
+      sourceId: string;
+      name: string;
+      id: string;
+      targetCollectionId?: string;
+    }): void => {
+      const sourceResult = workspace.data.fillings.get(params.sourceId as FillingId);
+      if (sourceResult.isFailure()) {
+        workspace.data.logger.error(`Cannot ${params.mode} filling '${params.sourceId}': not found`);
+        return;
+      }
+
+      const source = sourceResult.value;
+      const today = new Date().toISOString().split('T')[0] ?? '';
+      const sourceVariationId = Helpers.createFillingRecipeVariationId(source.id, source.goldenVariationSpec);
+
+      const nextEntity: Entities.Fillings.IFillingRecipeEntity = {
+        ...source.entity,
+        baseId: params.id as BaseFillingId,
+        name: params.name as typeof source.entity.name,
+        derivedFrom:
+          params.mode === 'derive'
+            ? {
+                sourceVariationId,
+                derivedDate: today
+              }
+            : source.entity.derivedFrom
+      };
+
+      void handleCreateFilling(nextEntity, 'manual', params.targetCollectionId);
+    },
+    [workspace, handleCreateFilling]
+  );
+
+  const handleCreateFormCancel = useCallback((): void => {
+    cascade.clear();
+  }, [cascade]);
+
+  const handleListHeaderPaste = useClipboardJsonImport<Entities.Fillings.IFillingRecipeEntity>({
+    entityLabel: 'filling',
+    convert: (from: unknown) => Entities.Fillings.Converters.fillingRecipeEntity.convert(from),
+    onValid: (entity: Entities.Fillings.IFillingRecipeEntity) => handleCreateFilling(entity, 'ai'),
+    onValidSuccessMessage: (entity: Entities.Fillings.IFillingRecipeEntity) =>
+      `Opened '${entity.name}' for review — save when ready`
+  });
+
+  // ============================================================================
+  // Sub-Entity Creation (Ingredients / Procedures from Filling Editor)
+  // ============================================================================
+
+  const handleCreateIngredientFromFilling = useCallback(
+    (seed: string): void => {
+      cascade
+        .find((e) => e.entityType === 'filling' && e.mode === 'edit')
+        .onSuccess(({ depth }) => {
+          setSubEntitySeed(seed);
+          return cascade.openNested(depth, {
+            entityType: 'ingredient',
+            entityId: CASCADE_NEW_ENTITY_ID,
+            mode: 'create'
+          });
+        });
+    },
+    [cascade]
+  );
+
+  const handleCreateProcedureFromFilling = useCallback(
+    (seed: string): void => {
+      cascade
+        .find((e) => e.entityType === 'filling' && e.mode === 'edit')
+        .onSuccess(({ depth }) => {
+          setSubEntitySeed(seed);
+          return cascade.openNested(depth, {
+            entityType: 'procedure',
+            entityId: CASCADE_NEW_ENTITY_ID,
+            mode: 'create'
+          });
+        });
+    },
+    [cascade]
+  );
+
+  const handleSubEntityIngredientCreate = useCallback(
+    async (
+      entity: Entities.Ingredients.IngredientEntity,
+      _source: 'manual' | 'ai',
+      targetCollectionId?: string
+    ): Promise<void> => {
+      const ingredientCollectionId =
+        (targetCollectionId as CollectionId | undefined) ?? mutableIngredientCollectionId;
+      if (!ingredientCollectionId) {
+        workspace.data.logger.error('Cannot add ingredient: no mutable ingredient collection available');
+        return;
+      }
+
+      const baseId = entity.baseId as BaseIngredientId;
+      const compositeId = `${ingredientCollectionId}.${baseId}` as IngredientId;
+
+      const createResult = await ingredientMutation.createEntity({
+        targetCollectionId: ingredientCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseIngredientId) =>
+          `${collectionId}.${nextBaseId}` as IngredientId,
+        baseId,
+        entity,
+        exists: (id: IngredientId) => workspace.data.ingredients.get(id).isSuccess(),
+        persistToDisk: true
+      });
+      if (createResult.isFailure()) {
+        return;
+      }
+
+      setSubEntitySeed('');
+
+      // Open the new ingredient in edit mode (nested after filling editor)
+      LibraryRuntime.EditedIngredient.create(entity)
+        .report(workspace.data.logger)
+        .onSuccess((wrapper) => {
+          subIngredientRef.current = { id: compositeId, wrapper };
+          return cascade
+            .find((e) => e.entityType === 'filling' && e.mode === 'edit')
+            .onSuccess(({ depth }) =>
+              cascade.openNested(depth, {
+                entityType: 'ingredient',
+                entityId: compositeId,
+                mode: 'edit',
+                entity: workspace.data.ingredients.get(compositeId).report(workspace.data.logger).orDefault()
+              })
+            );
+        });
+    },
+    [workspace, cascade, ingredientMutation, mutableIngredientCollectionId]
+  );
+
+  const handleSubEntityProcedureCreate = useCallback(
+    async (
+      entity: Entities.Procedures.IProcedureEntity,
+      _source: 'manual' | 'ai',
+      targetCollectionId?: string
+    ): Promise<void> => {
+      const procedureCollectionId =
+        (targetCollectionId as CollectionId | undefined) ?? mutableProcedureCollectionId;
+      if (!procedureCollectionId) {
+        workspace.data.logger.error('Cannot add procedure: no mutable procedure collection available');
+        return;
+      }
+
+      const baseId = entity.baseId as BaseProcedureId;
+      const compositeId = `${procedureCollectionId}.${baseId}` as ProcedureId;
+
+      const createResult = await procedureMutation.createEntity({
+        targetCollectionId: procedureCollectionId,
+        getCompositeId: (collectionId: CollectionId, nextBaseId: BaseProcedureId) =>
+          `${collectionId}.${nextBaseId}` as ProcedureId,
+        baseId,
+        entity,
+        exists: (id: ProcedureId) => workspace.data.procedures.get(id).isSuccess(),
+        persistToDisk: true
+      });
+      if (createResult.isFailure()) {
+        return;
+      }
+
+      setSubEntitySeed('');
+
+      // Open the new procedure in edit mode (nested after filling editor)
+      LibraryRuntime.EditedProcedure.create(entity)
+        .report(workspace.data.logger)
+        .onSuccess((wrapper) => {
+          subProcedureRef.current = { id: compositeId, wrapper };
+          return cascade
+            .find((e) => e.entityType === 'filling' && e.mode === 'edit')
+            .onSuccess(({ depth }) =>
+              cascade.openNested(depth, {
+                entityType: 'procedure',
+                entityId: compositeId,
+                mode: 'edit',
+                entity: workspace.data.procedures.get(compositeId).report(workspace.data.logger).orDefault()
+              })
+            );
+        });
+    },
+    [workspace, cascade, procedureMutation, mutableProcedureCollectionId]
+  );
+
+  const handleSubEntityCancel = useCallback((): void => {
+    setSubEntitySeed('');
+    cascade
+      .find((e) => e.entityType === 'filling' && e.mode === 'edit')
+      .onSuccess(({ depth }) => cascade.trimTo(depth))
+      .onFailure(() => {
+        cascade.clear();
+        return fail('no filling editor found');
+      });
+  }, [cascade]);
+
+  // ============================================================================
+  // Sub-Entity Editing (Ingredient / Procedure opened from Filling Editor)
+  // ============================================================================
+
+  const getOrCreateSubIngredientWrapper = useCallback(
+    (ingredient: LibraryRuntime.AnyIngredient): LibraryRuntime.EditedIngredient | undefined => {
+      const id = ingredient.id;
+      if (subIngredientRef.current?.id === id) {
+        return subIngredientRef.current.wrapper;
+      }
+      const result = LibraryRuntime.EditedIngredient.create(ingredient.entity);
+      if (result.isFailure()) {
+        return undefined;
+      }
+      subIngredientRef.current = { id, wrapper: result.value };
+      return result.value;
+    },
+    []
+  );
+
+  const getOrCreateSubProcedureWrapper = useCallback(
+    (procedure: LibraryRuntime.IProcedure): LibraryRuntime.EditedProcedure | undefined => {
+      const id = procedure.id;
+      if (subProcedureRef.current?.id === id) {
+        return subProcedureRef.current.wrapper;
+      }
+      const result = LibraryRuntime.EditedProcedure.create(procedure.entity);
+      if (result.isFailure()) {
+        return undefined;
+      }
+      subProcedureRef.current = { id, wrapper: result.value };
+      return result.value;
+    },
+    []
+  );
+
+  const handleSubIngredientSave = useCallback(
+    async (wrapper: LibraryRuntime.EditedIngredient): Promise<void> => {
+      const entity = wrapper.current;
+      const compositeId = subIngredientRef.current?.id;
+      if (!compositeId) return;
+
+      const baseId = entity.baseId as BaseIngredientId;
+
+      const saveResult = await ingredientMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
+        return;
+      }
+
+      subIngredientRef.current = undefined;
+
+      cascade
+        .find((e) => e.entityType === 'filling' && e.mode === 'edit')
+        .onSuccess(({ depth }) => cascade.trimTo(depth))
+        .onFailure(() => cascade.pop());
+    },
+    [cascade, ingredientMutation]
+  );
+
+  const handleSubIngredientCancel = useCallback((): void => {
+    subIngredientRef.current = undefined;
+    cascade
+      .find((e) => e.entityType === 'filling' && e.mode === 'edit')
+      .onSuccess(({ depth }) => cascade.trimTo(depth))
+      .onFailure(() => cascade.pop());
+  }, [cascade]);
+
+  const handleSubProcedureSave = useCallback(
+    async (wrapper: LibraryRuntime.EditedProcedure): Promise<void> => {
+      const entity = wrapper.current;
+      const compositeId = subProcedureRef.current?.id;
+      if (!compositeId) return;
+
+      const baseId = entity.baseId as BaseProcedureId;
+
+      const saveResult = await procedureMutation.saveEntity({
+        compositeId,
+        baseId,
+        entity,
+        persistToDisk: true
+      });
+      if (saveResult.isFailure()) {
+        return;
+      }
+
+      subProcedureRef.current = undefined;
+      procedureSession.cleanup();
+
+      cascade
+        .find((e) => e.entityType === 'filling' && e.mode === 'edit')
+        .onSuccess(({ depth }) => cascade.trimTo(depth))
+        .onFailure(() => cascade.pop());
+    },
+    [cascade, procedureMutation, procedureSession]
+  );
+
+  const handleSubProcedureCancel = useCallback((): void => {
+    subProcedureRef.current = undefined;
+    procedureSession.cleanup();
+    cascade
+      .find((e) => e.entityType === 'filling' && e.mode === 'edit')
+      .onSuccess(({ depth }) => cascade.trimTo(depth))
+      .onFailure(() => cascade.pop());
+  }, [cascade, procedureSession]);
+
+  // ============================================================================
+  // Cascade Columns
+  // ============================================================================
+
+  const cascadeColumns = useMemo<ReadonlyArray<ICascadeColumn>>(() => {
+    return cascade.stack.map((entry, index) => {
+      const onIngredientClick = (id: IngredientId): void => {
+        cascade.drillDown(index, {
+          entityType: 'ingredient',
+          entityId: id,
+          entity: workspace.data.ingredients.get(id).report(workspace.data.logger).orDefault()
+        });
+      };
+      const onProcedureClick = (id: ProcedureId): void => {
+        cascade.drillDown(index, {
+          entityType: 'procedure',
+          entityId: id,
+          entity: workspace.data.procedures.get(id).report(workspace.data.logger).orDefault()
+        });
+      };
+      const onTaskClick = (id: TaskId): void => {
+        cascade.drillDown(index, {
+          entityType: 'task',
+          entityId: id,
+          entity: workspace.data.tasks.get(id).report(workspace.data.logger).orDefault()
+        });
+      };
+
+      if (isFillingCascadeEntry(entry)) {
+        // Create mode
+        if (entry.mode === 'create') {
+          return {
+            key: CASCADE_NEW_ENTITY_ID,
+            label: 'New Filling',
+            content: (
+              <EntityCreateForm<Entities.Fillings.IFillingRecipeEntity>
+                slugify={slugify}
+                buildPrompt={AiAssist.buildFillingAiPrompt}
+                convert={(from: unknown) => Entities.Fillings.Converters.fillingRecipeEntity.convert(from)}
+                makeBlank={(name: string, id: string): Entities.Fillings.IFillingRecipeEntity =>
+                  createBlankFillingRecipeEntity(id as BaseFillingId, name)
+                }
+                onCreate={handleCreateFilling}
+                sourceCreateMode="derive"
+                sourceOptions={fillingCreateSourceOptions}
+                onCreateFromSource={handleCreateFillingFromSource}
+                writableCollections={writableFillingCollections}
+                defaultTargetCollectionId={mutableCollectionId}
+                onCancel={handleCreateFormCancel}
+                namePlaceholder="e.g. Dark Chocolate Ganache"
+                entityLabel="Filling"
+              />
+            )
+          };
+        }
+
+        const filling = entry.entity;
+        if (!filling) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load filling: {entry.entityId}</div>
+          };
+        }
+
+        // Edit mode
+        if (entry.mode === 'edit') {
+          const state = getOrCreateEditingState(filling, editVariationSpecRef.current);
+          editVariationSpecRef.current = undefined;
+          if (!state) {
+            return {
+              key: entry.entityId,
+              label: filling.name,
+              content: <div className="p-4 text-red-500">Failed to create editing state</div>
+            };
+          }
+          const sourceCollectionId = (state.id as string).split('.')[0] as CollectionId;
+          const sourceColResult = workspace.data.entities.fillings.collections.get(sourceCollectionId);
+          const isSourceReadOnly = sourceColResult.isSuccess() && !sourceColResult.value.isMutable;
+
+          // Read-only source: show gate instead of full editor
+          if (isSourceReadOnly) {
+            return {
+              key: `${entry.entityId}:edit`,
+              label: filling.name,
+              content: (
+                <ReadOnlyEditGate
+                  entityName={filling.name}
+                  onSaveCopy={
+                    mutableCollectionId ? (): void => void handleSaveFilling('new-recipe') : undefined
+                  }
+                  onCancel={(): void => handleCancelFillingEdit(entry.entityId)}
+                />
+              )
+            };
+          }
+
+          return {
+            key: `${entry.entityId}:edit`,
+            label: `Editing: ${filling.name}`,
+            content: (
+              <FillingEditView
+                wrapper={state.wrapper}
+                selectedVariationSpec={state.selectedVariationSpec}
+                onVariationChange={handleVariationChange}
+                availableIngredients={availableIngredients}
+                availableProcedures={availableProcedures}
+                onSave={handleSaveFilling}
+                onCancel={(): void => handleCancelFillingEdit(entry.entityId)}
+                onPreview={(spec: FillingRecipeVariationSpec): void =>
+                  handlePreviewFilling(entry.entityId, spec)
+                }
+                onCreateIngredient={handleCreateIngredientFromFilling}
+                onCreateProcedure={handleCreateProcedureFromFilling}
+                onMutation={(): void => {
+                  updateCascadeEntryChanges(entry.entityId, state.wrapper.hasChanges(state.wrapper.initial));
+                }}
+              />
+            )
+          };
+        }
+
+        // Preview mode
+        if (entry.mode === 'preview') {
+          const draftEntity =
+            editingRef.current?.id === entry.entityId ? editingRef.current.wrapper.current : undefined;
+          return {
+            key: `${entry.entityId}:preview`,
+            label: `Preview: ${filling.name}`,
+            content: (
+              <FillingPreviewPanel
+                filling={filling}
+                draftEntity={draftEntity}
+                variationSpec={previewVariationSpec}
+                targetYield={targetYieldMap.get(entry.entityId)}
+                onClose={(): void => handleCloseFillingPreview(entry.entityId)}
+              />
+            )
+          };
+        }
+
+        // View mode
+        const fillingId = entry.entityId as FillingId;
+        const savedVariationSpec = viewVariationSpecRef.current;
+        viewVariationSpecRef.current = undefined;
+        return {
+          key: entry.entityId,
+          label: filling.name,
+          content: (
+            <FillingDetail
+              filling={filling}
+              defaultVariationSpec={savedVariationSpec}
+              onIngredientClick={onIngredientClick}
+              onProcedureClick={onProcedureClick}
+              onCompareVariations={(specs): void => setVariationCompare({ id: fillingId, specs })}
+              onEdit={(spec): void => handleEditFilling(entry.entityId, spec)}
+              onPreview={(spec: FillingRecipeVariationSpec): void =>
+                handlePreviewFilling(entry.entityId, spec)
+              }
+              onStartSession={(spec): void => handleRequestStartSession(fillingId, spec)}
+              targetYield={targetYieldMap.get(entry.entityId)}
+              onTargetYieldChange={(g): void => handleTargetYieldChange(entry.entityId, g)}
+            />
+          )
+        };
+      }
+
+      if (isIngredientCascadeEntry(entry)) {
+        // Sub-entity create mode
+        if (entry.mode === 'create') {
+          return {
+            key: `${CASCADE_NEW_ENTITY_ID}_ingredient`,
+            label: 'New Ingredient',
+            content: (
+              <EntityCreateForm<Entities.Ingredients.IngredientEntity>
+                slugify={slugify}
+                buildPrompt={AiAssist.buildIngredientAiPrompt}
+                convert={(from: unknown) => Entities.Ingredients.Converters.ingredientEntity.convert(from)}
+                makeBlank={(name: string, id: string): Entities.Ingredients.IngredientEntity =>
+                  createBlankIngredientEntity(id as BaseIngredientId, name)
+                }
+                onCreate={handleSubEntityIngredientCreate}
+                writableCollections={writableIngredientCollections}
+                defaultTargetCollectionId={mutableIngredientCollectionId}
+                onCancel={handleSubEntityCancel}
+                namePlaceholder="e.g. Callebaut 811 Dark"
+                entityLabel="Ingredient"
+                initialName={subEntitySeed}
+              />
+            )
+          };
+        }
+
+        const ingredient = entry.entity;
+        if (!ingredient) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load ingredient: {entry.entityId}</div>
+          };
+        }
+
+        if (entry.mode === 'edit') {
+          const wrapper = getOrCreateSubIngredientWrapper(ingredient);
+          if (!wrapper) {
+            return {
+              key: entry.entityId,
+              label: ingredient.name,
+              content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
+            };
+          }
+          return {
+            key: `${entry.entityId}:edit`,
+            label: `Editing: ${ingredient.name}`,
+            content: (
+              <IngredientEditView
+                wrapper={wrapper}
+                onSave={handleSubIngredientSave}
+                onCancel={handleSubIngredientCancel}
+              />
+            )
+          };
+        }
+
+        return {
+          key: entry.entityId,
+          label: ingredient.name,
+          content: (
+            <IngredientDetail
+              ingredient={ingredient}
+              onEdit={(): void => {
+                cascade.openEditor(index);
+              }}
+              onClose={(): void => popCascadeTo(index)}
+            />
+          )
+        };
+      }
+
+      if (isProcedureCascadeEntry(entry)) {
+        // Sub-entity create mode
+        if (entry.mode === 'create') {
+          return {
+            key: `${CASCADE_NEW_ENTITY_ID}_procedure`,
+            label: 'New Procedure',
+            content: (
+              <EntityCreateForm<Entities.Procedures.IProcedureEntity>
+                slugify={slugify}
+                buildPrompt={AiAssist.buildProcedureAiPrompt}
+                convert={(from: unknown) => Entities.Procedures.Converters.procedureEntity.convert(from)}
+                makeBlank={(name: string, id: string): Entities.Procedures.IProcedureEntity =>
+                  createBlankRawProcedureEntity(id as BaseProcedureId, name)
+                }
+                initialName={subEntitySeed}
+                onCreate={handleSubEntityProcedureCreate}
+                writableCollections={writableProcedureCollections}
+                defaultTargetCollectionId={mutableProcedureCollectionId}
+                onCancel={handleSubEntityCancel}
+              />
+            )
+          };
+        }
+
+        const procedure = entry.entity;
+        if (!procedure) {
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load procedure: {entry.entityId}</div>
+          };
+        }
+
+        if (entry.mode === 'edit') {
+          const wrapper = getOrCreateSubProcedureWrapper(procedure);
+          if (!wrapper) {
+            return {
+              key: entry.entityId,
+              label: procedure.name,
+              content: <div className="p-4 text-red-500">Failed to create editing wrapper</div>
+            };
+          }
+          return {
+            key: `${entry.entityId}:edit`,
+            label: `Editing: ${procedure.name}`,
+            content: (
+              <ProcedureEditView
+                wrapper={wrapper}
+                availableTasks={availableTasks}
+                onSave={handleSubProcedureSave}
+                onCancel={handleSubProcedureCancel}
+                onEditStepTask={procedureSession.onEditStepTask}
+                onEditStepParams={procedureSession.onEditStepParams}
+              />
+            )
+          };
+        }
+
+        return {
+          key: entry.entityId,
+          label: procedure.name,
+          content: (
+            <ProcedureDetail
+              procedure={procedure}
+              onTaskClick={onTaskClick}
+              onEdit={(): void => {
+                cascade.openEditor(index);
+              }}
+              onClose={(): void => popCascadeTo(index)}
+            />
+          )
+        };
+      }
+
+      // Delegate step-params and synthetic task entries to the procedure editing session hook.
+      // This must run BEFORE the isTaskCascadeEntry block because the hook generates synthetic
+      // task IDs (e.g. "procId::__step_1_library") that aren't real task IDs — the generic
+      // task block would fail to resolve them and show "Failed to load task".
+      const hookColumn = procedureSession.renderCascadeEntry(entry, index);
+      if (hookColumn) {
+        return hookColumn;
+      }
+
+      if (isTaskCascadeEntry(entry)) {
+        const task = entry.entity;
+        if (!task) {
+          // Check for inline task from parent procedure
+          const parentProcEntry = cascade.stack.slice(0, index).reverse().find(isProcedureCascadeEntry);
+          if (parentProcEntry) {
+            const proc = parentProcEntry.entity;
+            const steps = proc ? proc.getSteps() : undefined;
+            const inlineStep = steps?.isSuccess()
+              ? steps.value.find((s) => s.isInline && s.resolvedTask.id === entry.entityId)
+              : undefined;
+            if (inlineStep) {
+              return {
+                key: entry.entityId,
+                label: `${inlineStep.resolvedTask.name} (inline)`,
+                content: <TaskDetail task={inlineStep.resolvedTask} />
+              };
+            }
+          }
+          return {
+            key: entry.entityId,
+            label: entry.entityId,
+            content: <div className="p-4 text-red-500">Failed to load task: {entry.entityId}</div>
+          };
+        }
+        return {
+          key: entry.entityId,
+          label: task.name,
+          content: <TaskDetail task={task} />
+        };
+      }
+
+      return {
+        key: entry.entityId,
+        label: entry.entityId,
+        content: <div className="p-4 text-gray-500">Unknown entity type: {entry.entityType}</div>
+      };
+    });
+  }, [
+    cascade,
+    workspace,
+    popCascadeTo,
+    availableIngredients,
+    availableProcedures,
+    availableTasks,
+    getOrCreateEditingState,
+    getOrCreateSubIngredientWrapper,
+    getOrCreateSubProcedureWrapper,
+    handleEditFilling,
+    handlePreviewFilling,
+    handleCloseFillingPreview,
+    previewVariationSpec,
+    handleTargetYieldChange,
+    targetYieldMap,
+    handleCancelFillingEdit,
+    handleSaveFilling,
+    handleVariationChange,
+    handleCreateFilling,
+    handleCreateFillingFromSource,
+    handleCreateFormCancel,
+    fillingCreateSourceOptions,
+    writableFillingCollections,
+    handleCreateIngredientFromFilling,
+    handleCreateProcedureFromFilling,
+    handleSubEntityIngredientCreate,
+    handleSubEntityProcedureCreate,
+    handleSubEntityCancel,
+    handleSubIngredientSave,
+    handleSubIngredientCancel,
+    handleSubProcedureSave,
+    handleSubProcedureCancel,
+    procedureSession,
+    subEntitySeed,
+    handleRequestStartSession
+  ]);
+
+  const comparisonColumns = useMemo<ReadonlyArray<IComparisonColumn>>(() => {
+    return Array.from(compareIds).map((id) => {
+      const result = workspace.data.fillings.get(id as FillingId);
+      if (result.isFailure()) {
+        return { key: id, label: id, content: <div className="p-4 text-red-500">Not found: {id}</div> };
+      }
+      return { key: id, label: result.value.name, content: <FillingDetail filling={result.value} /> };
+    });
+  }, [compareIds, workspace]);
+
+  const variationCompareColumns = useMemo<ReadonlyArray<IComparisonColumn> | undefined>(() => {
+    if (variationCompare === undefined) {
+      return undefined;
+    }
+    const result = workspace.data.fillings.get(variationCompare.id);
+    if (result.isFailure()) {
+      return undefined;
+    }
+    const filling = result.value;
+    const specsSet = new Set(variationCompare.specs);
+    return filling.variations
+      .filter((v) => specsSet.has(v.variationSpec))
+      .map((v) => ({
+        key: v.variationSpec,
+        label: `${filling.name} — ${v.variationSpec}${
+          v.variationSpec === filling.goldenVariationSpec ? ' ★' : ''
+        }`,
+        content: <FillingDetail filling={filling} defaultVariationSpec={v.variationSpec} />
+      }));
+  }, [variationCompare, workspace]);
+
+  return (
+    <>
+      <ConfirmDialog
+        isOpen={fillingToDelete !== null}
+        title="Delete Filling"
+        message={
+          <>
+            Delete <strong>{fillingToDelete?.name}</strong>? This cannot be undone.
+            {fillingToDelete?.references.hasReferences && (
+              <>
+                <br />
+                <br />
+                <span className="text-red-600 font-medium">Referenced by:</span>
+                <ul className="mt-1 ml-4 list-disc text-sm">
+                  {fillingToDelete.references.hits.map((hit) => (
+                    <li key={hit.compositeId}>
+                      <span className="capitalize">{hit.entityType}</span>:{' '}
+                      <strong>{hit.displayName ?? hit.compositeId}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        }
+        confirmLabel="Delete"
+        severity="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+      <EntityTabLayout
+        list={
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200">
+              <button
+                onClick={handleNewFilling}
+                disabled={mutableCollectionId === undefined}
+                title={mutableCollectionId === undefined ? 'No mutable collection available' : undefined}
+                className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                + New Filling
+              </button>
+              <button
+                onClick={handleListHeaderPaste}
+                disabled={mutableCollectionId === undefined}
+                title="Paste filling from clipboard (JSON)"
+                className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <CursorArrowRaysIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <EntityList<LibraryRuntime.FillingRecipe, FillingId>
+                entities={useFilteredEntities(fillings, FILLING_FILTER_SPEC)}
+                descriptor={FILLING_DESCRIPTOR}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onDrill={collapseList}
+                compareMode={compareMode}
+                checkedIds={compareIds}
+                onCheckedChange={toggleCompareId}
+                onToggleCompare={toggleCompareMode}
+                compareCount={compareIds.size}
+                onStartComparison={startComparison}
+                onDelete={handleRequestDelete}
+                canDelete={canDeleteFilling}
+                emptyState={{
+                  title: 'No Fillings',
+                  description: 'No filling recipes found in the library.'
+                }}
+              />
+            </div>
+          </div>
+        }
+        cascadeColumns={cascadeColumns}
+        onPopTo={popCascadeTo}
+        listCollapsed={listCollapsed}
+        onListCollapse={collapseList}
+        compareMode={compareMode}
+        comparisonColumns={comparisonColumns}
+        showingComparison={showingComparison}
+        onExitComparison={exitComparison}
+        variationCompareColumns={variationCompareColumns}
+        onExitVariationCompare={(): void => setVariationCompare(undefined)}
+      />
+    </>
+  );
+}

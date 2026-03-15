@@ -1,0 +1,9 @@
+[Home](../../../README.md) > [Entities](../../README.md) > [Session](../README.md) > fillingSessionEntity
+
+# Variable: fillingSessionEntity
+
+Converter for Entities.Session.IFillingSessionEntity | IFillingSessionEntity.
+
+## Type
+
+`Converter<IFillingSessionEntity>`

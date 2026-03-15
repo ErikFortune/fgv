@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters } from '@fgv/ts-utils';
+import { Converters, fail, succeed } from '@fgv/ts-utils';
 import { FileItem, InMemoryTreeAccessors, IInMemoryFile } from '../../../packlets/file-tree';
 
 describe('FileItem', () => {
@@ -586,6 +586,46 @@ describe('FileItem', () => {
         expect(content).toHaveLength(10000);
         expect(content).toBe(largeContent);
       });
+    });
+  });
+
+  describe('delete method', () => {
+    test('succeeds with mutable InMemoryTreeAccessors and removes the file', () => {
+      const mutableAccessors = InMemoryTreeAccessors.create([{ path: '/file.json', contents: '{}' }], {
+        mutable: true
+      }).orThrow();
+      const fileItem = FileItem.create('/file.json', mutableAccessors).orThrow();
+
+      expect(fileItem.delete?.()).toSucceedWith(true);
+      expect(mutableAccessors.getFileContents('/file.json')).toFailWith(/not found/i);
+    });
+
+    test('file is no longer accessible via getItem after deletion', () => {
+      const mutableAccessors = InMemoryTreeAccessors.create(
+        [{ path: '/data/item.json', contents: '{"x": 1}' }],
+        { mutable: true }
+      ).orThrow();
+      const fileItem = FileItem.create('/data/item.json', mutableAccessors).orThrow();
+
+      expect(fileItem.delete?.()).toSucceedWith(true);
+      expect(mutableAccessors.getItem('/data/item.json')).toFailWith(/not found/i);
+    });
+
+    test('fails with non-mutable accessors (no fileIsMutable or saveFileContents)', () => {
+      const mockAccessor = {
+        resolveAbsolutePath: (...paths: string[]) => `/${paths.join('/').replace(/^\//, '')}`,
+        getExtension: (p: string) => '',
+        getBaseName: (p: string) => p.split('/').pop() ?? '',
+        joinPaths: (...paths: string[]) => paths.join('/'),
+        getItem: () => fail('not implemented') as unknown as ReturnType<typeof accessors.getItem>,
+        getFileContents: () =>
+          fail('not implemented') as unknown as ReturnType<typeof accessors.getFileContents>,
+        getFileContentType: () => succeed(undefined),
+        getChildren: () => succeed([]) as unknown as ReturnType<typeof accessors.getChildren>
+      };
+
+      const fileItem = FileItem.create('/file.json', mockAccessor).orThrow();
+      expect(fileItem.delete?.()).toFailWith(/mutation not supported/i);
     });
   });
 

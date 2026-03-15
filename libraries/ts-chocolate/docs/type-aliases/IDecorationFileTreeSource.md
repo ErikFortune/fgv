@@ -1,0 +1,11 @@
+[Home](../README.md) > IDecorationFileTreeSource
+
+# Type Alias: IDecorationFileTreeSource
+
+File tree source for decoration data.
+
+## Type
+
+```typescript
+type IDecorationFileTreeSource = SubLibraryFileTreeSource
+```

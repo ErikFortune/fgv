@@ -23,17 +23,19 @@
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import {
   FileTreeItem,
+  IDeleteChildOptions,
   IFileTreeAccessors,
-  IFileTreeDirectoryItem,
-  IFileTreeFileItem,
-  isMutableAccessors
+  IMutableFileTreeDirectoryItem,
+  IMutableFileTreeFileItem,
+  isMutableAccessors,
+  isMutableFileItem
 } from './fileTreeAccessors';
 
 /**
  * Class representing a directory in a file tree.
  * @public
  */
-export class DirectoryItem<TCT extends string = string> implements IFileTreeDirectoryItem<TCT> {
+export class DirectoryItem<TCT extends string = string> implements IMutableFileTreeDirectoryItem<TCT> {
   /**
    * {@inheritDoc FileTree.IFileTreeDirectoryItem."type"}
    */
@@ -92,19 +94,21 @@ export class DirectoryItem<TCT extends string = string> implements IFileTreeDire
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeDirectoryItem.createChildFile}
+   * {@inheritDoc FileTree.IMutableFileTreeDirectoryItem.createChildFile}
    */
-  public createChildFile(name: string, contents: string): Result<IFileTreeFileItem<TCT>> {
-    if (!isMutableAccessors(this._hal)) {
+  public createChildFile(name: string, contents: string): Result<IMutableFileTreeFileItem<TCT>> {
+    const hal = this._hal;
+    if (!isMutableAccessors(hal)) {
+      /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
       return fail(`${this.absolutePath}: mutation not supported`);
     }
 
-    const filePath = this._hal.joinPaths(this.absolutePath, name);
-    return this._hal.saveFileContents(filePath, contents).onSuccess(() =>
-      this._hal.getItem(filePath).onSuccess((item) => {
+    const filePath = hal.joinPaths(this.absolutePath, name);
+    return hal.saveFileContents(filePath, contents).onSuccess(() =>
+      hal.getItem(filePath).onSuccess((item) => {
         /* c8 ignore next 3 - defensive: verifies accessor returned correct item type after save */
-        if (item.type !== 'file') {
-          return fail(`${filePath}: expected file but got ${item.type}`);
+        if (!isMutableFileItem(item)) {
+          return fail(`${filePath}: expected mutable file but got ${item.type}`);
         }
         return succeed(item);
       })
@@ -112,19 +116,83 @@ export class DirectoryItem<TCT extends string = string> implements IFileTreeDire
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeDirectoryItem.createChildDirectory}
+   * {@inheritDoc FileTree.IMutableFileTreeDirectoryItem.createChildDirectory}
    */
-  public createChildDirectory(name: string): Result<IFileTreeDirectoryItem<TCT>> {
-    if (!isMutableAccessors(this._hal)) {
+  public createChildDirectory(name: string): Result<IMutableFileTreeDirectoryItem<TCT>> {
+    const hal = this._hal;
+    if (!isMutableAccessors(hal)) {
+      /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
       return fail(`${this.absolutePath}: mutation not supported`);
     }
 
-    /* c8 ignore next 3 - defensive: createDirectory should always exist if isMutableAccessors is true */
-    if (this._hal.createDirectory === undefined) {
-      return fail(`${this.absolutePath}: directory creation not supported`);
+    const dirPath = hal.joinPaths(this.absolutePath, name);
+    return hal.createDirectory(dirPath).onSuccess(() => DirectoryItem.create(dirPath, hal));
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableFileTreeDirectoryItem.deleteChild}
+   */
+  public deleteChild(name: string, options?: IDeleteChildOptions): Result<boolean> {
+    const hal = this._hal;
+    if (!isMutableAccessors(hal)) {
+      /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
+      return fail(`${this.absolutePath}: mutation not supported`);
     }
 
-    const dirPath = this._hal.joinPaths(this.absolutePath, name);
-    return this._hal.createDirectory(dirPath).onSuccess(() => DirectoryItem.create(dirPath, this._hal));
+    const childPath = hal.joinPaths(this.absolutePath, name);
+    return hal.getItem(childPath).onSuccess((item) => {
+      if (item.type === 'file') {
+        return hal.deleteFile(childPath);
+      }
+      // Directory child
+      if (options?.recursive) {
+        return this._deleteRecursive(childPath);
+      }
+      return hal.deleteDirectory(childPath);
+    });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableFileTreeDirectoryItem.delete}
+   */
+  public delete(): Result<boolean> {
+    const hal = this._hal;
+    if (!isMutableAccessors(hal)) {
+      /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
+      return fail(`${this.absolutePath}: mutation not supported`);
+    }
+    return hal.deleteDirectory(this.absolutePath);
+  }
+
+  /**
+   * Recursively deletes all children of a directory and then the directory itself.
+   * @param dirPath - The absolute path of the directory to delete.
+   * @returns `Success` with `true` if the directory was deleted, or `Failure` with an error message.
+   * @internal
+   */
+  private _deleteRecursive(dirPath: string): Result<boolean> {
+    const hal = this._hal;
+    /* c8 ignore next 2 - defensive: caller already verified mutable */
+    if (!isMutableAccessors(hal)) {
+      return fail(`${dirPath}: mutation not supported`);
+    }
+    return hal.getChildren(dirPath).onSuccess((children) => {
+      for (const child of children) {
+        if (child.type === 'file') {
+          const result = hal.deleteFile(child.absolutePath);
+          /* c8 ignore next 2 - defensive: error propagation during recursive delete */
+          if (result.isFailure()) {
+            return result;
+          }
+        } else {
+          const result = this._deleteRecursive(child.absolutePath);
+          /* c8 ignore next 2 - defensive: error propagation during recursive delete */
+          if (result.isFailure()) {
+            return result;
+          }
+        }
+      }
+      return hal.deleteDirectory(dirPath);
+    });
   }
 }

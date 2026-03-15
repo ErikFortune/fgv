@@ -1,0 +1,761 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+import '@fgv/ts-utils-jest';
+
+import {
+  BaseIngredientId,
+  BaseFillingId,
+  Celsius,
+  DegreesMacMichael,
+  Measurement,
+  IngredientId,
+  Percentage,
+  FillingName,
+  FillingRecipeVariationSpec,
+  CollectionId
+} from '../../../packlets/common';
+
+import {
+  IGanacheCharacteristics,
+  IChocolateIngredientEntity,
+  IDairyIngredientEntity,
+  ISugarIngredientEntity,
+  IFatIngredientEntity,
+  IAlcoholIngredientEntity,
+  Ingredients,
+  IngredientsLibrary
+} from '../../../packlets/entities';
+import { IFillingRecipeEntity, FillingsLibrary } from '../../../packlets/entities';
+import { ChocolateEntityLibrary } from '../../../packlets/library-runtime';
+import { ChocolateLibrary } from '../../../packlets/library-runtime';
+import {
+  Ingredient,
+  ChocolateIngredient,
+  DairyIngredient,
+  SugarIngredient,
+  FatIngredient,
+  AlcoholIngredient
+} from '../../../packlets/library-runtime';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { GenericIngredient } from '../../../packlets/library-runtime/ingredients/genericIngredient';
+
+describe('RuntimeIngredient', () => {
+  // ============================================================================
+  // Test Data
+  // ============================================================================
+
+  const testChars: IGanacheCharacteristics = {
+    cacaoFat: 36 as Percentage,
+    sugar: 34 as Percentage,
+    milkFat: 0 as Percentage,
+    water: 1 as Percentage,
+    solids: 29 as Percentage,
+    otherFats: 0 as Percentage
+  };
+
+  const darkChocolate: IChocolateIngredientEntity = {
+    baseId: 'dark-chocolate' as BaseIngredientId,
+    name: 'Dark Chocolate 70%',
+    description: 'Premium dark chocolate',
+    category: 'chocolate',
+    chocolateType: 'dark',
+    cacaoPercentage: 70 as Percentage,
+    ganacheCharacteristics: testChars,
+    tags: ['premium', 'single-origin'],
+    manufacturer: 'Test Manufacturer',
+    allergens: ['soy'],
+    traceAllergens: ['milk'],
+    certifications: ['organic', 'fair-trade'],
+    vegan: true,
+    fluidityStars: 3,
+    viscosityMcM: 2500 as DegreesMacMichael,
+    temperatureCurve: { melt: 50 as Celsius, cool: 28 as Celsius, working: 31 as Celsius },
+    beanVarieties: ['Criollo'],
+    applications: ['ganache', 'molding'],
+    origins: ['Venezuela']
+  };
+
+  const milkChocolate: IChocolateIngredientEntity = {
+    baseId: 'milk-chocolate' as BaseIngredientId,
+    name: 'Milk Chocolate 40%',
+    category: 'chocolate',
+    chocolateType: 'milk',
+    cacaoPercentage: 40 as Percentage,
+    ganacheCharacteristics: {
+      cacaoFat: 24 as Percentage,
+      sugar: 42 as Percentage,
+      milkFat: 8 as Percentage,
+      water: 1 as Percentage,
+      solids: 25 as Percentage,
+      otherFats: 0 as Percentage
+    }
+    // No beanVarieties, viscosityMcM to test undefined cases
+  };
+
+  const cream: IDairyIngredientEntity = {
+    baseId: 'cream' as BaseIngredientId,
+    name: 'Heavy Cream',
+    category: 'dairy',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 3 as Percentage,
+      milkFat: 38 as Percentage,
+      water: 55 as Percentage,
+      solids: 4 as Percentage,
+      otherFats: 0 as Percentage
+    },
+    fatContent: 38 as Percentage,
+    waterContent: 55 as Percentage
+  };
+
+  const sugar: ISugarIngredientEntity = {
+    baseId: 'sugar' as BaseIngredientId,
+    name: 'Granulated Sugar',
+    category: 'sugar',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 100 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 0 as Percentage,
+      solids: 0 as Percentage,
+      otherFats: 0 as Percentage
+    },
+    hydrationNumber: 1.0,
+    sweetnessPotency: 1.0
+  };
+
+  const butter: IFatIngredientEntity = {
+    baseId: 'butter' as BaseIngredientId,
+    name: 'Unsalted Butter',
+    category: 'fat',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 0 as Percentage,
+      milkFat: 82 as Percentage,
+      water: 16 as Percentage,
+      solids: 2 as Percentage,
+      otherFats: 0 as Percentage
+    },
+    meltingPoint: 32 as Celsius
+  };
+
+  const rum: IAlcoholIngredientEntity = {
+    baseId: 'rum' as BaseIngredientId,
+    name: 'Dark Rum',
+    category: 'alcohol',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 0 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 60 as Percentage,
+      solids: 0 as Percentage,
+      otherFats: 0 as Percentage
+    },
+    alcoholByVolume: 40 as Percentage,
+    flavorProfile: 'Rich, sweet, with vanilla and caramel notes'
+  };
+
+  // Generic ingredient categories (liquid, flavor, other)
+  const water: Ingredients.IIngredientEntity = {
+    baseId: 'water' as BaseIngredientId,
+    name: 'Water',
+    category: 'liquid',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 0 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 100 as Percentage,
+      solids: 0 as Percentage,
+      otherFats: 0 as Percentage
+    }
+  };
+
+  const vanillaExtract: Ingredients.IIngredientEntity = {
+    baseId: 'vanilla-extract' as BaseIngredientId,
+    name: 'Vanilla Extract',
+    category: 'flavor',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 0 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 35 as Percentage,
+      solids: 0 as Percentage,
+      otherFats: 0 as Percentage
+    },
+    tags: ['natural', 'aroma']
+  };
+
+  const lecithin: Ingredients.IIngredientEntity = {
+    baseId: 'lecithin' as BaseIngredientId,
+    name: 'Soy Lecithin',
+    category: 'other',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 0 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 0 as Percentage,
+      solids: 100 as Percentage,
+      otherFats: 0 as Percentage
+    },
+    description: 'Emulsifier used in chocolate production',
+    allergens: ['soy']
+  };
+
+  const testRecipe: IFillingRecipeEntity = {
+    baseId: 'ganache' as BaseFillingId,
+    name: 'Test Ganache' as FillingName,
+    category: 'ganache',
+    goldenVariationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+    variations: [
+      {
+        variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+        createdDate: '2026-01-01',
+        ingredients: [
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }
+        ],
+        baseWeight: 300 as Measurement
+      }
+    ]
+  };
+
+  let ctx: ChocolateLibrary;
+
+  beforeEach(() => {
+    const ingredients = IngredientsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as CollectionId,
+          isMutable: false,
+          items: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'dark-chocolate': darkChocolate,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'milk-chocolate': milkChocolate,
+            cream,
+            sugar,
+            butter,
+            rum,
+            water,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'vanilla-extract': vanillaExtract,
+            lecithin
+          }
+        }
+      ]
+    }).orThrow();
+
+    const recipes = FillingsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as CollectionId,
+          isMutable: false,
+          items: { ganache: testRecipe }
+        }
+      ]
+    }).orThrow();
+
+    const library = ChocolateEntityLibrary.create({
+      builtin: false,
+      libraries: { ingredients, fillings: recipes }
+    }).orThrow();
+
+    ctx = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
+  });
+
+  // ============================================================================
+  // Factory Method Tests
+  // ============================================================================
+
+  describe('create', () => {
+    test('create factory method succeeds', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(Ingredient.create(ctx as never, ingredient.id, ingredient.entity)).toSucceed();
+    });
+  });
+
+  // ============================================================================
+  // Identity Tests
+  // ============================================================================
+
+  describe('identity', () => {
+    test('provides composite ID', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.id).toBe('test.dark-chocolate');
+    });
+
+    test('provides source ID', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.collectionId).toBe('test');
+    });
+
+    test('provides base ID', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.baseId).toBe('dark-chocolate');
+    });
+  });
+
+  // ============================================================================
+  // Core Properties Tests
+  // ============================================================================
+
+  describe('core properties', () => {
+    test('provides name', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.name).toBe('Dark Chocolate 70%');
+    });
+
+    test('provides category', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.category).toBe('chocolate');
+    });
+
+    test('provides description', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.description).toBe('Premium dark chocolate');
+    });
+
+    test('provides manufacturer', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.manufacturer).toBe('Test Manufacturer');
+    });
+
+    test('provides ganache characteristics', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.ganacheCharacteristics.cacaoFat).toBe(36);
+    });
+
+    test('provides tags', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.tags).toContain('premium');
+      expect(ingredient.tags).toContain('single-origin');
+    });
+
+    test('provides empty tags when none defined', () => {
+      const ingredient = ctx.ingredients.get('test.sugar' as IngredientId).orThrow();
+      expect(ingredient.tags).toEqual([]);
+    });
+
+    test('provides allergens', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.allergens).toContain('soy');
+    });
+
+    test('provides trace allergens', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.traceAllergens).toContain('milk');
+    });
+
+    test('returns empty array when traceAllergens is undefined', () => {
+      const ingredient = ctx.ingredients.get('test.milk-chocolate' as IngredientId).orThrow();
+      expect(ingredient.traceAllergens).toEqual([]);
+    });
+
+    test('provides certifications', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.certifications).toContain('organic');
+    });
+
+    test('provides vegan status', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      // vegan: true is set in the test fixture
+      expect(ingredient.vegan).toBe(true);
+    });
+
+    test('provides notes', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      // notes getter returns empty array when not set
+      expect(ingredient.notes).toEqual(expect.arrayContaining([]));
+    });
+  });
+
+  // ============================================================================
+  // Type Guard Tests
+  // ============================================================================
+
+  describe('type guards', () => {
+    test('isChocolate returns true for chocolate', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.isChocolate()).toBe(true);
+    });
+
+    test('isChocolate returns false for non-chocolate', () => {
+      const ingredient = ctx.ingredients.get('test.cream' as IngredientId).orThrow();
+      expect(ingredient.isChocolate()).toBe(false);
+    });
+
+    test('isDairy returns true for dairy', () => {
+      const ingredient = ctx.ingredients.get('test.cream' as IngredientId).orThrow();
+      expect(ingredient.isDairy()).toBe(true);
+    });
+
+    test('isDairy returns false for non-dairy', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.isDairy()).toBe(false);
+    });
+
+    test('isSugar returns true for sugar', () => {
+      const ingredient = ctx.ingredients.get('test.sugar' as IngredientId).orThrow();
+      expect(ingredient.isSugar()).toBe(true);
+    });
+
+    test('isFat returns true for fat', () => {
+      const ingredient = ctx.ingredients.get('test.butter' as IngredientId).orThrow();
+      expect(ingredient.isFat()).toBe(true);
+    });
+
+    test('isAlcohol returns true for alcohol', () => {
+      const ingredient = ctx.ingredients.get('test.rum' as IngredientId).orThrow();
+      expect(ingredient.isAlcohol()).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // Chocolate-Specific Properties Tests
+  // ============================================================================
+
+  describe('chocolate-specific properties', () => {
+    test('provides chocolateType via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.isChocolate()).toBe(true);
+      if (ingredient.isChocolate()) {
+        expect(ingredient.chocolateType).toBe('dark');
+      }
+    });
+
+    test('isChocolate returns false for non-chocolate', () => {
+      const ingredient = ctx.ingredients.get('test.cream' as IngredientId).orThrow();
+      expect(ingredient.isChocolate()).toBe(false);
+    });
+
+    test('provides cacaoPercentage via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.cacaoPercentage).toBe(70);
+      }
+    });
+
+    test('provides fluidityStars via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.fluidityStars).toBe(3);
+      }
+    });
+
+    test('provides viscosityMcM via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.viscosityMcM).toBe(2500);
+      }
+    });
+
+    test('provides fluidityMacMichael via deprecated getter', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.fluidityMacMichael).toBe(2500);
+      }
+    });
+
+    test('provides temperatureCurve via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.temperatureCurve).toEqual({ melt: 50, cool: 28, working: 31 });
+      }
+    });
+
+    test('provides beanVarieties via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.beanVarieties).toContain('Criollo');
+      }
+    });
+
+    test('provides cacaoVariety via deprecated getter (first variety)', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.cacaoVariety).toBe('Criollo');
+      }
+    });
+
+    test('cacaoVariety returns undefined when beanVarieties is undefined', () => {
+      const ingredient = ctx.ingredients.get('test.milk-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.cacaoVariety).toBeUndefined();
+      }
+    });
+
+    test('fluidityMacMichael returns undefined when viscosityMcM is undefined', () => {
+      const ingredient = ctx.ingredients.get('test.milk-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.fluidityMacMichael).toBeUndefined();
+      }
+    });
+
+    test('provides applications via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.applications).toContain('ganache');
+      }
+    });
+
+    test('provides origins via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      if (ingredient.isChocolate()) {
+        expect(ingredient.origins).toContain('Venezuela');
+      }
+    });
+
+    test('returns RuntimeChocolateIngredient instance', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient).toBeInstanceOf(ChocolateIngredient);
+    });
+  });
+
+  // ============================================================================
+  // Category-Specific Properties Tests
+  // ============================================================================
+
+  describe('dairy-specific properties', () => {
+    test('provides fatContent via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.cream' as IngredientId).orThrow();
+      if (ingredient.isDairy()) {
+        expect(ingredient.fatContent).toBe(38);
+      }
+    });
+
+    test('provides waterContent via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.cream' as IngredientId).orThrow();
+      if (ingredient.isDairy()) {
+        expect(ingredient.waterContent).toBe(55);
+      }
+    });
+
+    test('isDairy returns false for non-dairy', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.isDairy()).toBe(false);
+    });
+
+    test('returns RuntimeDairyIngredient instance', () => {
+      const ingredient = ctx.ingredients.get('test.cream' as IngredientId).orThrow();
+      expect(ingredient).toBeInstanceOf(DairyIngredient);
+    });
+  });
+
+  describe('sugar-specific properties', () => {
+    test('provides hydrationNumber via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.sugar' as IngredientId).orThrow();
+      if (ingredient.isSugar()) {
+        expect(ingredient.hydrationNumber).toBe(1.0);
+      }
+    });
+
+    test('provides sweetnessPotency via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.sugar' as IngredientId).orThrow();
+      if (ingredient.isSugar()) {
+        expect(ingredient.sweetnessPotency).toBe(1.0);
+      }
+    });
+
+    test('isSugar returns false for non-sugar', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.isSugar()).toBe(false);
+    });
+
+    test('returns RuntimeSugarIngredient instance', () => {
+      const ingredient = ctx.ingredients.get('test.sugar' as IngredientId).orThrow();
+      expect(ingredient).toBeInstanceOf(SugarIngredient);
+    });
+
+    test('provides raw access to underlying sugar ingredient', () => {
+      const ingredient = ctx.ingredients.get('test.sugar' as IngredientId).orThrow();
+      if (ingredient.isSugar()) {
+        expect(ingredient.entity.category).toBe('sugar');
+        expect(ingredient.entity.baseId).toBe('sugar');
+      }
+    });
+  });
+
+  describe('fat-specific properties', () => {
+    test('provides meltingPoint via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.butter' as IngredientId).orThrow();
+      if (ingredient.isFat()) {
+        expect(ingredient.meltingPoint).toBe(32);
+      }
+    });
+
+    test('isFat returns false for non-fat', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.isFat()).toBe(false);
+    });
+
+    test('returns RuntimeFatIngredient instance', () => {
+      const ingredient = ctx.ingredients.get('test.butter' as IngredientId).orThrow();
+      expect(ingredient).toBeInstanceOf(FatIngredient);
+    });
+
+    test('provides raw access to underlying fat ingredient', () => {
+      const ingredient = ctx.ingredients.get('test.butter' as IngredientId).orThrow();
+      if (ingredient.isFat()) {
+        expect(ingredient.entity.category).toBe('fat');
+        expect(ingredient.entity.baseId).toBe('butter');
+      }
+    });
+  });
+
+  describe('alcohol-specific properties', () => {
+    test('provides alcoholByVolume via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.rum' as IngredientId).orThrow();
+      if (ingredient.isAlcohol()) {
+        expect(ingredient.alcoholByVolume).toBe(40);
+      }
+    });
+
+    test('provides flavorProfile via type narrowing', () => {
+      const ingredient = ctx.ingredients.get('test.rum' as IngredientId).orThrow();
+      if (ingredient.isAlcohol()) {
+        expect(ingredient.flavorProfile).toContain('vanilla');
+      }
+    });
+
+    test('isAlcohol returns false for non-alcohol', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.isAlcohol()).toBe(false);
+    });
+
+    test('returns RuntimeAlcoholIngredient instance', () => {
+      const ingredient = ctx.ingredients.get('test.rum' as IngredientId).orThrow();
+      expect(ingredient).toBeInstanceOf(AlcoholIngredient);
+    });
+
+    test('provides raw access to underlying alcohol ingredient', () => {
+      const ingredient = ctx.ingredients.get('test.rum' as IngredientId).orThrow();
+      if (ingredient.isAlcohol()) {
+        expect(ingredient.entity.category).toBe('alcohol');
+        expect(ingredient.entity.baseId).toBe('rum');
+      }
+    });
+  });
+
+  // ============================================================================
+  // Navigation Tests
+  // ============================================================================
+
+  describe('navigation', () => {
+    test('usedByFillings returns recipes using ingredient', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      const recipes = ingredient.usedByFillings();
+      expect(recipes.length).toBe(1);
+      expect(recipes[0].id).toBe('test.ganache');
+    });
+
+    test('primaryInFillings returns primary usages', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      const recipes = ingredient.primaryInFillings();
+      expect(recipes.length).toBe(1);
+    });
+
+    test('alternateInFillings returns alternate usages', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      const recipes = ingredient.alternateInFillings();
+      expect(recipes.length).toBe(0);
+    });
+  });
+
+  // ============================================================================
+  // Raw Access Tests
+  // ============================================================================
+
+  describe('raw access', () => {
+    test('raw returns underlying ingredient', () => {
+      const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
+      expect(ingredient.entity.name).toBe('Dark Chocolate 70%');
+    });
+  });
+
+  // ============================================================================
+  // Generic Ingredient Tests (liquid, flavor, other categories)
+  // ============================================================================
+
+  describe('generic ingredients', () => {
+    describe('liquid category', () => {
+      test('creates RuntimeGenericIngredient for liquid category', () => {
+        const ingredient = ctx.ingredients.get('test.water' as IngredientId).orThrow();
+        expect(ingredient).toBeInstanceOf(GenericIngredient);
+        expect(ingredient.category).toBe('liquid');
+      });
+
+      test('liquid ingredient has correct raw data', () => {
+        const ingredient = ctx.ingredients.get('test.water' as IngredientId).orThrow();
+        expect(ingredient.entity.name).toBe('Water');
+        expect(ingredient.entity.ganacheCharacteristics.water).toBe(100);
+      });
+    });
+
+    describe('flavor category', () => {
+      test('creates RuntimeGenericIngredient for flavor category', () => {
+        const ingredient = ctx.ingredients.get('test.vanilla-extract' as IngredientId).orThrow();
+        expect(ingredient).toBeInstanceOf(GenericIngredient);
+        expect(ingredient.category).toBe('flavor');
+      });
+
+      test('flavor ingredient has correct raw data and tags', () => {
+        const ingredient = ctx.ingredients.get('test.vanilla-extract' as IngredientId).orThrow();
+        expect(ingredient.entity.name).toBe('Vanilla Extract');
+        expect(ingredient.entity.tags).toContain('natural');
+        expect(ingredient.entity.tags).toContain('aroma');
+      });
+    });
+
+    describe('other category', () => {
+      test('creates RuntimeGenericIngredient for other category', () => {
+        const ingredient = ctx.ingredients.get('test.lecithin' as IngredientId).orThrow();
+        expect(ingredient).toBeInstanceOf(GenericIngredient);
+        expect(ingredient.category).toBe('other');
+      });
+
+      test('other ingredient has correct raw data and description', () => {
+        const ingredient = ctx.ingredients.get('test.lecithin' as IngredientId).orThrow();
+        expect(ingredient.entity.name).toBe('Soy Lecithin');
+        expect(ingredient.entity.description).toBe('Emulsifier used in chocolate production');
+        expect(ingredient.entity.allergens).toContain('soy');
+      });
+    });
+
+    describe('RuntimeGenericIngredient factory', () => {
+      test('create succeeds with valid parameters', () => {
+        const ingredient = ctx.ingredients.get('test.water' as IngredientId).orThrow();
+        expect(GenericIngredient.create(ctx as never, ingredient.id, ingredient.entity)).toSucceed();
+      });
+
+      test('created instance has correct category and raw access', () => {
+        const originalIngredient = ctx.ingredients.get('test.vanilla-extract' as IngredientId).orThrow();
+        expect(
+          GenericIngredient.create(ctx as never, originalIngredient.id, originalIngredient.entity)
+        ).toSucceedAndSatisfy((newIngredient) => {
+          expect(newIngredient.category).toBe('flavor');
+          expect(newIngredient.entity.name).toBe('Vanilla Extract');
+        });
+      });
+    });
+  });
+});

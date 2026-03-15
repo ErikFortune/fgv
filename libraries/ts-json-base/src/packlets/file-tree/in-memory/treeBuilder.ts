@@ -118,6 +118,15 @@ export class InMemoryDirectory<TCT extends string = string> {
   }
 
   /**
+   * Removes a child from the directory.
+   * @param name - The name of the child to remove.
+   * @returns `true` if the child was found and removed, `false` otherwise.
+   */
+  public removeChild(name: string): boolean {
+    return this._children.delete(name);
+  }
+
+  /**
    * Gets the absolute path for a child of this directory with the supplied
    * name.
    * @param name - The name of the child.

@@ -1,0 +1,62 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+// ============================================================================
+// Type aliases for Collections types
+// ============================================================================
+
+import { BaseConfectionId, ConfectionId } from '../../common';
+import {
+  SubLibraryCollection,
+  SubLibraryCollectionEntry,
+  SubLibraryCollectionValidator,
+  SubLibraryEntryInit
+} from '../../library-data';
+import { AnyConfectionRecipeEntity } from './model';
+
+/**
+ * A single entry in a confections collection.
+ * @public
+ */
+export type ConfectionCollectionEntry = SubLibraryCollectionEntry<
+  BaseConfectionId,
+  AnyConfectionRecipeEntity
+>;
+
+/**
+ * Initialization type for a ConfectionsLibrary collection entry.
+ * @public
+ */
+export type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, AnyConfectionRecipeEntity>;
+
+/**
+ * Validator type for ConfectionsLibrary collections.
+ * @public
+ */
+export type ConfectionCollectionValidator = SubLibraryCollectionValidator<
+  ConfectionId,
+  AnyConfectionRecipeEntity
+>;
+
+/**
+ * Type for the collections in a ConfectionsLibrary.
+ * @public
+ */
+export type ConfectionCollection = SubLibraryCollection<BaseConfectionId, AnyConfectionRecipeEntity>;

@@ -1,0 +1,11 @@
+[Home](../../../README.md) > [Editing](../../README.md) > [Ingredients](../README.md) > validateChocolateFields
+
+# Function: validateChocolateFields
+
+Validate chocolate-specific fields.
+
+## Signature
+
+```typescript
+function validateChocolateFields(entity: IngredientEntity): Result<true>
+```

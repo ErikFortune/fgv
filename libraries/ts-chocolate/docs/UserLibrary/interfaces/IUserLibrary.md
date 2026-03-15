@@ -1,0 +1,373 @@
+[Home](../../README.md) > [UserLibrary](../README.md) > IUserLibrary
+
+# Interface: IUserLibrary
+
+Runtime materialization layer for user library data.
+
+Follows the library-runtime pattern:
+- Exposes underlying entity library for direct access
+- Provides MaterializedLibrary instances for sessions, journals, and inventory
+- Lazy resolution and caching of materialized objects
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[entities](./IUserLibrary.entities.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IUserEntityLibrary](../../interfaces/IUserEntityLibrary.md)
+
+</td><td>
+
+The underlying user entity library for collection management operations.
+
+</td></tr>
+<tr><td>
+
+[sessions](./IUserLibrary.sessions.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[SessionId](../../type-aliases/SessionId.md), [AnySessionEntity](../../type-aliases/AnySessionEntity.md), [AnyMaterializedSession](../../type-aliases/AnyMaterializedSession.md), never&gt;
+
+</td><td>
+
+A materialized library of all sessions, keyed by composite ID.
+
+</td></tr>
+<tr><td>
+
+[journals](./IUserLibrary.journals.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[JournalId](../../type-aliases/JournalId.md), [AnyRecipeJournalEntryEntity](../../type-aliases/AnyRecipeJournalEntryEntity.md), [AnyJournalEntry](../../type-aliases/AnyJournalEntry.md), never&gt;
+
+</td><td>
+
+A materialized library of all journal entries, keyed by composite ID.
+
+</td></tr>
+<tr><td>
+
+[moldInventory](./IUserLibrary.moldInventory.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[MoldInventoryEntryId](../../type-aliases/MoldInventoryEntryId.md), [IMoldInventoryEntryEntity](../../interfaces/IMoldInventoryEntryEntity.md), [IMoldInventoryEntry](../../interfaces/IMoldInventoryEntry.md), never&gt;
+
+</td><td>
+
+A materialized library of mold inventory entries, keyed by composite ID.
+
+</td></tr>
+<tr><td>
+
+[ingredientInventory](./IUserLibrary.ingredientInventory.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[IngredientInventoryEntryId](../../type-aliases/IngredientInventoryEntryId.md), [IIngredientInventoryEntryEntity](../../interfaces/IIngredientInventoryEntryEntity.md), [IIngredientInventoryEntry](../../interfaces/IIngredientInventoryEntry.md), never&gt;
+
+</td><td>
+
+A materialized library of ingredient inventory entries, keyed by composite ID.
+
+</td></tr>
+<tr><td>
+
+[locations](./IUserLibrary.locations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[MaterializedLibrary](../../classes/MaterializedLibrary.md)&lt;[LocationId](../../type-aliases/LocationId.md), [ILocationEntity](../../interfaces/ILocationEntity.md), [ILocation](../../interfaces/ILocation.md), never&gt;
+
+</td><td>
+
+A materialized library of all locations, keyed by composite ID.
+
+</td></tr>
+</tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[clearCache()](./IUserLibrary.clearCache.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Clears all cached MaterializedLibrary instances.
+
+</td></tr>
+<tr><td>
+
+[invalidateCacheEntry(subLibraryId, compositeId)](./IUserLibrary.invalidateCacheEntry.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Evicts a single entry from the appropriate MaterializedLibrary cache.
+
+</td></tr>
+<tr><td>
+
+[createPersistedFillingSession(variationId, options)](./IUserLibrary.createPersistedFillingSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates a new persisted filling session from a filling variation.
+
+</td></tr>
+<tr><td>
+
+[createPersistedFillingSessionAndSave(variationId, options)](./IUserLibrary.createPersistedFillingSessionAndSave.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates and persists a new filling session in one orchestrated operation.
+
+</td></tr>
+<tr><td>
+
+[createPersistedConfectionSession(confectionId, options)](./IUserLibrary.createPersistedConfectionSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates a new persisted confection session from a confection recipe.
+
+</td></tr>
+<tr><td>
+
+[createPersistedConfectionSessionAndSave(confectionId, options)](./IUserLibrary.createPersistedConfectionSessionAndSave.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates and persists a new confection session in one orchestrated operation.
+
+</td></tr>
+<tr><td>
+
+[saveSession(sessionId)](./IUserLibrary.saveSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Saves an active session back to the library.
+
+</td></tr>
+<tr><td>
+
+[saveSessionAndPersist(sessionId)](./IUserLibrary.saveSessionAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Saves an active session and persists the owning sessions collection.
+
+</td></tr>
+<tr><td>
+
+[updateSessionStatus(sessionId, status)](./IUserLibrary.updateSessionStatus.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates the status of an existing persisted session.
+
+</td></tr>
+<tr><td>
+
+[updateSessionStatusAndPersist(sessionId, status)](./IUserLibrary.updateSessionStatusAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates session status and persists the owning sessions collection.
+
+</td></tr>
+<tr><td>
+
+[updateSessionExecution(sessionId, execution)](./IUserLibrary.updateSessionExecution.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates the execution state of an existing persisted session.
+
+</td></tr>
+<tr><td>
+
+[updateSessionExecutionAndPersist(sessionId, execution)](./IUserLibrary.updateSessionExecutionAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates session execution state and persists the owning sessions collection.
+
+</td></tr>
+<tr><td>
+
+[removeSession(sessionId)](./IUserLibrary.removeSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes a session from the library.
+
+</td></tr>
+<tr><td>
+
+[removeSessionAndPersist(sessionId)](./IUserLibrary.removeSessionAndPersist.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes a session and persists the owning sessions collection.
+
+</td></tr>
+<tr><td>
+
+[addJournalEntry(collectionId, entry)](./IUserLibrary.addJournalEntry.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Adds a journal entry to a collection and persists via PEC.
+
+</td></tr>
+<tr><td>
+
+[commitFillingSession(sessionId, journalCollectionId)](./IUserLibrary.commitFillingSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Commits a filling session to the journal.
+
+</td></tr>
+<tr><td>
+
+[commitConfectionSession(sessionId, journalCollectionId)](./IUserLibrary.commitConfectionSession.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Commits a confection session to the journal.
+
+</td></tr>
+</tbody></table>

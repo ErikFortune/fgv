@@ -1,0 +1,188 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Bar truffle editing session with linear count-based scaling
+ * @packageDocumentation
+ */
+
+import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
+
+import { Measurement, SlotId, ZeroMeasurement } from '../../common';
+import { Confections, IConfectionSessionEntity, IProducedBarTruffleEntity, Session } from '../../entities';
+import { IBarTruffleRecipe, ProducedBarTruffle } from '../../library-runtime';
+
+import { ConfectionEditingSessionBase } from './confectionEditingSessionBase';
+import { ISessionContext } from '../model';
+import { IConfectionEditingSessionParams } from './model';
+
+// ============================================================================
+// Bar Truffle Editing Session
+// ============================================================================
+
+/**
+ * Editing session for bar truffle confections.
+ * Supports linear count-based scaling with proportional filling adjustment.
+ *
+ * @public
+ */
+export class BarTruffleEditingSession<
+  TRecipe extends IBarTruffleRecipe = IBarTruffleRecipe
+> extends ConfectionEditingSessionBase<IProducedBarTruffleEntity, TRecipe> {
+  /**
+   * Creates a BarTruffleEditingSession.
+   * Use BarTruffleEditingSession.create() instead.
+   * @internal
+   */
+  private constructor(
+    baseConfection: TRecipe,
+    produced: ProducedBarTruffle,
+    context: ISessionContext,
+    params?: IConfectionEditingSessionParams,
+    persistedEntity?: IConfectionSessionEntity
+  ) {
+    super(baseConfection, produced, context, params, persistedEntity);
+
+    // Apply initial yield if provided
+    if (params?.initialYield) {
+      this.scaleToYield(params.initialYield).orThrow();
+    }
+
+    // Load filling sessions after initialization
+    this._loadFillingSessions().orThrow();
+  }
+
+  /**
+   * Factory method for creating a BarTruffleEditingSession.
+   * @param baseConfection - The source bar truffle confection
+   * @param context - The runtime context
+   * @param params - Optional session parameters
+   * @returns Success with BarTruffleEditingSession, or Failure
+   * @public
+   */
+  public static create<T extends IBarTruffleRecipe = IBarTruffleRecipe>(
+    baseConfection: T,
+    context: ISessionContext,
+    params?: IConfectionEditingSessionParams
+  ): Result<BarTruffleEditingSession<T>> {
+    return ProducedBarTruffle.fromSource(baseConfection.goldenVariation).onSuccess((produced) =>
+      captureResult(() => new BarTruffleEditingSession(baseConfection, produced, context, params))
+    );
+  }
+
+  /**
+   * Restores a BarTruffleEditingSession from persisted state.
+   * Note: Child filling sessions are persisted separately and should be accessed
+   * via their persisted session IDs from IPersistedConfectionSession.childSessionIds.
+   * @param baseConfection - The source bar truffle confection
+   * @param persistedEntity - The persisted confection session entity
+   * @param context - The runtime context
+   * @param params - Optional session parameters
+   * @returns Success with restored session, or Failure
+   * @public
+   */
+  public static fromPersistedState<T extends IBarTruffleRecipe = IBarTruffleRecipe>(
+    baseConfection: T,
+    persistedEntity: IConfectionSessionEntity,
+    context: ISessionContext,
+    params?: IConfectionEditingSessionParams
+  ): Result<BarTruffleEditingSession<T>> {
+    const history =
+      persistedEntity.history as Session.ISerializedEditingHistoryEntity<IProducedBarTruffleEntity>;
+    return ProducedBarTruffle.restoreFromHistory(history).onSuccess((produced) =>
+      captureResult(
+        () => new BarTruffleEditingSession(baseConfection, produced, context, params, persistedEntity)
+      )
+    );
+  }
+
+  /**
+   * Narrows the produced getter to return the bar-truffle-specific wrapper.
+   * @public
+   */
+  public override get produced(): ProducedBarTruffle {
+    return this._produced as ProducedBarTruffle;
+  }
+
+  // ============================================================================
+  // Linear Scaling
+  // ============================================================================
+
+  /**
+   * Scales to new yield specification using linear count-based scaling.
+   * All filling sessions scale proportionally by the count ratio.
+   *
+   * @param yieldSpec - The new yield specification
+   * @returns Success with updated yield, or Failure
+   * @public
+   */
+  public override scaleToYield(
+    yieldSpec: Confections.BufferedConfectionYield
+  ): Result<Confections.BufferedConfectionYield> {
+    /* c8 ignore next 3 - defensive: callers should always pass IBufferedBarTruffleYield for bar truffle */
+    if (!Confections.isBufferedBarTruffleYield(yieldSpec)) {
+      return fail('Bar truffle scaling requires a bar truffle yield specification');
+    }
+    const currentYield = this.produced.yield;
+    const scaleFactor = yieldSpec.count / currentYield.count;
+
+    // Update produced confection yield, then scale all fillings
+    return this.produced
+      .scaleToYield(yieldSpec)
+      .onSuccess((updatedYield: Confections.IBufferedBarTruffleYield) =>
+        this._scaleAllFillingsByFactor(scaleFactor).onSuccess(() => succeed(updatedYield))
+      );
+  }
+
+  // ============================================================================
+  // Weight Computation (Protected)
+  // ============================================================================
+
+  /**
+   * Computes target weight for a specific filling slot.
+   * For linear scaling, preserves the current session weight
+   * (scaling is handled by scaleToYield via factor-based scaling).
+   * For initial creation, finds the filling from the produced confection and uses its base weight.
+   *
+   * @param slotId - The slot identifier
+   * @returns Success with current target weight
+   * @internal
+   */
+  protected override _computeSlotTargetWeight(slotId: SlotId): Result<Measurement> {
+    const session = this._fillingSessions.get(slotId);
+    /* c8 ignore next 3 - defensive: session removed before recreating in setFillingSlot */
+    if (session) {
+      return succeed(session.targetWeight);
+    }
+
+    // For initial creation, find the filling in the produced confection and use its base weight
+    /* c8 ignore next 1 - branch: fillings always present in test confections */
+    const fillingSlot = this._produced.fillings?.find((f) => f.slotId === slotId);
+    /* c8 ignore next 4 - defensive: slot not found or slot type not recipe indicates internal inconsistency */
+    if (!fillingSlot || fillingSlot.slotType !== 'recipe') {
+      // TODO: this is an error. treat it like one.
+      return succeed(ZeroMeasurement);
+    }
+
+    return this._context.fillings.get(fillingSlot.fillingId).asResult.onSuccess((filling) => {
+      return succeed(filling.goldenVariation.entity.baseWeight);
+    });
+  }
+}

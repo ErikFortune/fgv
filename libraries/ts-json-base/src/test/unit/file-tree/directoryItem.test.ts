@@ -367,6 +367,62 @@ describe('DirectoryItem', () => {
     });
   });
 
+  describe('deleteChild method', () => {
+    test('succeeds with mutable InMemoryTreeAccessors and removes the file', () => {
+      const mutableAccessors = InMemoryTreeAccessors.create([{ path: '/dir/file.json', contents: '{}' }], {
+        mutable: true
+      }).orThrow();
+      const directoryItem = DirectoryItem.create('/dir', mutableAccessors).orThrow();
+
+      expect(directoryItem.deleteChild?.('file.json')).toSucceedWith(true);
+      expect(mutableAccessors.getFileContents('/dir/file.json')).toFailWith(/not found/i);
+    });
+
+    test('deleted child no longer appears in getChildren', () => {
+      const mutableAccessors = InMemoryTreeAccessors.create(
+        [
+          { path: '/dir/file1.json', contents: '{}' },
+          { path: '/dir/file2.json', contents: '{}' }
+        ],
+        { mutable: true }
+      ).orThrow();
+      const directoryItem = DirectoryItem.create('/dir', mutableAccessors).orThrow();
+
+      expect(directoryItem.deleteChild?.('file1.json')).toSucceedWith(true);
+      expect(directoryItem.getChildren()).toSucceedAndSatisfy((children) => {
+        const names = children.map((c) => c.name);
+        expect(names).not.toContain('file1.json');
+        expect(names).toContain('file2.json');
+      });
+    });
+
+    test('fails when child does not exist', () => {
+      const mutableAccessors = InMemoryTreeAccessors.create([{ path: '/dir/file.json', contents: '{}' }], {
+        mutable: true
+      }).orThrow();
+      const directoryItem = DirectoryItem.create('/dir', mutableAccessors).orThrow();
+
+      expect(directoryItem.deleteChild('missing.json')).toFailWith(/not found/i);
+    });
+
+    test('fails with non-mutable accessors (no fileIsMutable or saveFileContents)', () => {
+      const mockAccessor = {
+        resolveAbsolutePath: (...paths: string[]) => paths.join('/').replace(/\/+/g, '/'),
+        getExtension: (p: string) => '',
+        getBaseName: (p: string) => p.split('/').pop() ?? '',
+        joinPaths: (...paths: string[]) => paths.join('/'),
+        getItem: () => fail('not implemented') as unknown as ReturnType<typeof accessors.getItem>,
+        getFileContents: () =>
+          fail('not implemented') as unknown as ReturnType<typeof accessors.getFileContents>,
+        getFileContentType: () => succeed(undefined),
+        getChildren: () => succeed([]) as unknown as ReturnType<typeof accessors.getChildren>
+      };
+
+      const directoryItem = DirectoryItem.create('/dir', mockAccessor).orThrow();
+      expect(directoryItem.deleteChild?.('file.json')).toFailWith(/mutation not supported/i);
+    });
+  });
+
   describe('createChildFile method', () => {
     let tempDir: string;
 
@@ -527,8 +583,8 @@ describe('DirectoryItem', () => {
       const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
       const directoryItem = DirectoryItem.create('.', accessors).orThrow();
 
-      expect(directoryItem.createChildDirectory?.('parent')).toSucceedAndSatisfy((parentDir) => {
-        expect(parentDir.createChildDirectory?.('child')).toSucceedAndSatisfy((childDir) => {
+      expect(directoryItem.createChildDirectory('parent')).toSucceedAndSatisfy((parentDir) => {
+        expect(parentDir.createChildDirectory('child')).toSucceedAndSatisfy((childDir) => {
           expect(childDir.name).toBe('child');
           expect(fs.existsSync(path.join(tempDir, 'parent', 'child'))).toBe(true);
         });
@@ -539,12 +595,75 @@ describe('DirectoryItem', () => {
       const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
       const directoryItem = DirectoryItem.create('.', accessors).orThrow();
 
-      expect(directoryItem.createChildDirectory?.('workdir')).toSucceedAndSatisfy((workdir) => {
-        expect(workdir.createChildFile?.('file.txt', 'test content')).toSucceedAndSatisfy((file) => {
+      expect(directoryItem.createChildDirectory('workdir')).toSucceedAndSatisfy((workdir) => {
+        expect(workdir.createChildFile('file.txt', 'test content')).toSucceedAndSatisfy((file) => {
           expect(file.name).toBe('file.txt');
           expect(file.getRawContents()).toSucceedWith('test content');
         });
       });
+    });
+
+    test('deleteChild removes a file child', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      const directoryItem = DirectoryItem.create('.', accessors).orThrow();
+
+      directoryItem.createChildFile('deleteme.txt', 'content').orThrow();
+      expect(fs.existsSync(path.join(tempDir, 'deleteme.txt'))).toBe(true);
+
+      expect(directoryItem.deleteChild('deleteme.txt')).toSucceedWith(true);
+      expect(fs.existsSync(path.join(tempDir, 'deleteme.txt'))).toBe(false);
+    });
+
+    test('deleteChild removes an empty directory child', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      const directoryItem = DirectoryItem.create('.', accessors).orThrow();
+
+      directoryItem.createChildDirectory('emptydir').orThrow();
+      expect(fs.existsSync(path.join(tempDir, 'emptydir'))).toBe(true);
+
+      expect(directoryItem.deleteChild('emptydir')).toSucceedWith(true);
+      expect(fs.existsSync(path.join(tempDir, 'emptydir'))).toBe(false);
+    });
+
+    test('deleteChild fails on non-empty directory without recursive option', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      const directoryItem = DirectoryItem.create('.', accessors).orThrow();
+
+      const subdir = directoryItem.createChildDirectory('nonempty').orThrow();
+      subdir.createChildFile('file.txt', 'content').orThrow();
+
+      expect(directoryItem.deleteChild('nonempty')).toFail();
+      expect(fs.existsSync(path.join(tempDir, 'nonempty'))).toBe(true);
+    });
+
+    test('deleteChild with recursive option removes non-empty directory', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      const directoryItem = DirectoryItem.create('.', accessors).orThrow();
+
+      const subdir = directoryItem.createChildDirectory('recursive').orThrow();
+      subdir.createChildFile('file1.txt', 'content').orThrow();
+      const nested = subdir.createChildDirectory('nested').orThrow();
+      nested.createChildFile('file2.txt', 'content').orThrow();
+
+      expect(directoryItem.deleteChild('recursive', { recursive: true })).toSucceedWith(true);
+      expect(fs.existsSync(path.join(tempDir, 'recursive'))).toBe(false);
+    });
+
+    test('deleteChild fails for non-existent child', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      const directoryItem = DirectoryItem.create('.', accessors).orThrow();
+
+      expect(directoryItem.deleteChild('nonexistent')).toFail();
+    });
+
+    test('delete removes the directory itself', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      const dirPath = path.join(tempDir, 'todelete');
+      fs.mkdirSync(dirPath);
+
+      const directoryItem = DirectoryItem.create('todelete', accessors).orThrow();
+      expect(directoryItem.delete()).toSucceedWith(true);
+      expect(fs.existsSync(dirPath)).toBe(false);
     });
 
     test('fails when accessor lacks IMutableFileTreeAccessors (mutation not supported)', () => {
@@ -563,7 +682,9 @@ describe('DirectoryItem', () => {
 
       const directoryItem = DirectoryItem.create('.', mockAccessor).orThrow();
 
-      expect(directoryItem.createChildDirectory?.('newdir')).toFailWith(/mutation not supported/i);
+      expect(directoryItem.createChildDirectory('newdir')).toFailWith(/mutation not supported/i);
+      expect(directoryItem.deleteChild('anything')).toFailWith(/mutation not supported/i);
+      expect(directoryItem.delete()).toFailWith(/mutation not supported/i);
     });
   });
 });

@@ -7,6 +7,8 @@
 # Class: ZipFileItem\<TCT\>
 
 Implementation of `FileTree.IFileTreeFileItem` for files in a ZIP archive.
+ZIP files are read-only, so this item does not support mutation.
+Use [isMutableFileItem](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) to check before attempting mutations.
 
 ## Type Parameters
 
@@ -115,22 +117,6 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 
 ***
 
-### getIsMutable()
-
-> **getIsMutable**(): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
-
-Returns a boolean indicating whether this file can be saved.
-
-#### Returns
-
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
-
-#### Implementation of
-
-`FileTree.IFileTreeFileItem.getIsMutable`
-
-***
-
 ### getRawContents()
 
 > **getRawContents**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
@@ -144,30 +130,6 @@ Gets the raw contents of the file as a string.
 #### Implementation of
 
 `FileTree.IFileTreeFileItem.getRawContents`
-
-***
-
-### setContents()
-
-> **setContents**(`json`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
-
-Sets the contents of the file as parsed JSON.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `json` | [`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The JSON to set as the contents of the file. |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
-
-A Result indicating success or failure.
-
-#### Implementation of
-
-`FileTree.IFileTreeFileItem.setContents`
 
 ***
 
@@ -186,27 +148,3 @@ Sets the content type of the file.
 #### Returns
 
 `void`
-
-***
-
-### setRawContents()
-
-> **setRawContents**(`contents`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-Sets the contents of the file as a string.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `contents` | `string` | The string to set as the contents of the file. |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-A Result indicating success or failure.
-
-#### Implementation of
-
-`FileTree.IFileTreeFileItem.setRawContents`
