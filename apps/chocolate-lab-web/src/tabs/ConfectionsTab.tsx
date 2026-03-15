@@ -837,10 +837,15 @@ export function ConfectionsTabContent(): React.ReactElement {
       cascade
         .find((e) => e.entityId === entityId && e.entityType === 'confection')
         .onSuccess(({ depth }) =>
-          cascade.openNested(depth, { entityType: 'confection', entityId, mode: 'preview' })
+          cascade.openNested(depth, {
+            entityType: 'confection',
+            entityId,
+            mode: 'preview',
+            entity: workspace.data.confections.get(entityId as ConfectionId).orDefault()
+          })
         );
     },
-    [cascade]
+    [cascade, workspace]
   );
 
   const handleCloseConfectionPreview = useCallback(
@@ -1667,6 +1672,8 @@ export function ConfectionsTabContent(): React.ReactElement {
                 confection={confection}
                 viewSettings={viewSettingsMap.get(entityId)}
                 onClose={(): void => handleCloseConfectionPreview(entityId)}
+                onFillingClick={(id, targetWeight): void => onFillingClick(id, targetWeight, entityId)}
+                onIngredientClick={onIngredientClick}
               />
             )
           };

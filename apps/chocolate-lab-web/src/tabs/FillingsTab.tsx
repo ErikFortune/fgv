@@ -107,6 +107,9 @@ export function FillingsTabContent(): React.ReactElement {
   const editingRef = useRef<IFillingEditingState | undefined>(undefined);
   const editVariationSpecRef = useRef<FillingRecipeVariationSpec | undefined>(undefined);
   const viewVariationSpecRef = useRef<FillingRecipeVariationSpec | undefined>(undefined);
+  const [previewVariationSpec, setPreviewVariationSpec] = useState<FillingRecipeVariationSpec | undefined>(
+    undefined
+  );
   const subIngredientRef = useRef<{ id: IngredientId; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
     undefined
   );
@@ -141,6 +144,36 @@ export function FillingsTabContent(): React.ReactElement {
     workspace,
     reactiveWorkspace.version
   ]);
+
+  const mutableIngredientCollectionId = useMutableCollection(
+    workspace.data.entities.ingredients.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.ingredients
+  );
+
+  const writableIngredientCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.ingredients.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.ingredients
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
+
+  const mutableProcedureCollectionId = useMutableCollection(
+    workspace.data.entities.procedures.collections,
+    [workspace, reactiveWorkspace.version],
+    workspace.settings?.getResolvedSettings().defaultTargets.procedures
+  );
+
+  const writableProcedureCollections = useMemo(
+    (): ReadonlyArray<{ id: string; label?: string }> =>
+      getWritableCollectionOptions(
+        workspace.data.entities.procedures.collections.entries(),
+        workspace.settings?.getResolvedSettings().defaultTargets.procedures
+      ),
+    [workspace, reactiveWorkspace.version]
+  );
 
   type IngredientCollectionEntry = ResultMapValueType<typeof workspace.data.entities.ingredients.collections>;
   type IngredientMutableCollectionEntry = MutableCollectionEntryWithSet<
@@ -367,7 +400,8 @@ export function FillingsTabContent(): React.ReactElement {
   );
 
   const handlePreviewFilling = useCallback(
-    (entityId: string): void => {
+    (entityId: string, variationSpec?: FillingRecipeVariationSpec): void => {
+      setPreviewVariationSpec(variationSpec);
       cascade
         .find((e) => e.entityId === entityId && e.entityType === 'filling')
         .onSuccess(({ depth }) =>
@@ -686,14 +720,13 @@ export function FillingsTabContent(): React.ReactElement {
   );
 
   const handleSubEntityIngredientCreate = useCallback(
-    async (entity: Entities.Ingredients.IngredientEntity, __source: 'manual' | 'ai'): Promise<void> => {
-      let ingredientCollectionId: CollectionId | undefined;
-      for (const [id, col] of workspace.data.entities.ingredients.collections.entries()) {
-        if (col.isMutable) {
-          ingredientCollectionId = id as CollectionId;
-          break;
-        }
-      }
+    async (
+      entity: Entities.Ingredients.IngredientEntity,
+      _source: 'manual' | 'ai',
+      targetCollectionId?: string
+    ): Promise<void> => {
+      const ingredientCollectionId =
+        (targetCollectionId as CollectionId | undefined) ?? mutableIngredientCollectionId;
       if (!ingredientCollectionId) {
         workspace.data.logger.error('Cannot add ingredient: no mutable ingredient collection available');
         return;
@@ -734,18 +767,17 @@ export function FillingsTabContent(): React.ReactElement {
             );
         });
     },
-    [workspace, cascade, ingredientMutation]
+    [workspace, cascade, ingredientMutation, mutableIngredientCollectionId]
   );
 
   const handleSubEntityProcedureCreate = useCallback(
-    async (entity: Entities.Procedures.IProcedureEntity, __source: 'manual' | 'ai'): Promise<void> => {
-      let procedureCollectionId: CollectionId | undefined;
-      for (const [id, col] of workspace.data.entities.procedures.collections.entries()) {
-        if (col.isMutable) {
-          procedureCollectionId = id as CollectionId;
-          break;
-        }
-      }
+    async (
+      entity: Entities.Procedures.IProcedureEntity,
+      _source: 'manual' | 'ai',
+      targetCollectionId?: string
+    ): Promise<void> => {
+      const procedureCollectionId =
+        (targetCollectionId as CollectionId | undefined) ?? mutableProcedureCollectionId;
       if (!procedureCollectionId) {
         workspace.data.logger.error('Cannot add procedure: no mutable procedure collection available');
         return;
@@ -786,7 +818,7 @@ export function FillingsTabContent(): React.ReactElement {
             );
         });
     },
-    [workspace, cascade, procedureMutation]
+    [workspace, cascade, procedureMutation, mutableProcedureCollectionId]
   );
 
   const handleSubEntityCancel = useCallback((): void => {
@@ -1019,7 +1051,9 @@ export function FillingsTabContent(): React.ReactElement {
                 availableProcedures={availableProcedures}
                 onSave={handleSaveFilling}
                 onCancel={(): void => handleCancelFillingEdit(entry.entityId)}
-                onPreview={(): void => handlePreviewFilling(entry.entityId)}
+                onPreview={(spec: FillingRecipeVariationSpec): void =>
+                  handlePreviewFilling(entry.entityId, spec)
+                }
                 onCreateIngredient={handleCreateIngredientFromFilling}
                 onCreateProcedure={handleCreateProcedureFromFilling}
                 onMutation={(): void => {
@@ -1041,6 +1075,7 @@ export function FillingsTabContent(): React.ReactElement {
               <FillingPreviewPanel
                 filling={filling}
                 draftEntity={draftEntity}
+                variationSpec={previewVariationSpec}
                 targetYield={targetYieldMap.get(entry.entityId)}
                 onClose={(): void => handleCloseFillingPreview(entry.entityId)}
               />
@@ -1063,7 +1098,9 @@ export function FillingsTabContent(): React.ReactElement {
               onProcedureClick={onProcedureClick}
               onCompareVariations={(specs): void => setVariationCompare({ id: fillingId, specs })}
               onEdit={(spec): void => handleEditFilling(entry.entityId, spec)}
-              onPreview={(): void => handlePreviewFilling(entry.entityId)}
+              onPreview={(spec: FillingRecipeVariationSpec): void =>
+                handlePreviewFilling(entry.entityId, spec)
+              }
               onStartSession={(spec): void => handleRequestStartSession(fillingId, spec)}
               targetYield={targetYieldMap.get(entry.entityId)}
               onTargetYieldChange={(g): void => handleTargetYieldChange(entry.entityId, g)}
@@ -1087,6 +1124,8 @@ export function FillingsTabContent(): React.ReactElement {
                   createBlankIngredientEntity(id as BaseIngredientId, name)
                 }
                 onCreate={handleSubEntityIngredientCreate}
+                writableCollections={writableIngredientCollections}
+                defaultTargetCollectionId={mutableIngredientCollectionId}
                 onCancel={handleSubEntityCancel}
                 namePlaceholder="e.g. Callebaut 811 Dark"
                 entityLabel="Ingredient"
@@ -1158,6 +1197,8 @@ export function FillingsTabContent(): React.ReactElement {
                 }
                 initialName={subEntitySeed}
                 onCreate={handleSubEntityProcedureCreate}
+                writableCollections={writableProcedureCollections}
+                defaultTargetCollectionId={mutableProcedureCollectionId}
                 onCancel={handleSubEntityCancel}
               />
             )
@@ -1274,6 +1315,7 @@ export function FillingsTabContent(): React.ReactElement {
     handleEditFilling,
     handlePreviewFilling,
     handleCloseFillingPreview,
+    previewVariationSpec,
     handleTargetYieldChange,
     targetYieldMap,
     handleCancelFillingEdit,

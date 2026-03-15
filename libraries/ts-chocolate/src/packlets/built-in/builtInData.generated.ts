@@ -1888,6 +1888,281 @@ export const ingredientCollections: Record<string, JsonObject> = {
         category: 'sugar',
         hydrationNumber: 0,
         sweetnessPotency: 0.6
+      },
+      'banana-overripe': {
+        baseId: 'banana-overripe',
+        name: 'Banana (Overripe)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 16,
+          milkFat: 0,
+          water: 79,
+          solids: 4.8,
+          otherFats: 0.2
+        },
+        description:
+          'Overripe bananas are soft, with brown spots, and have heightened sweetness due to starch converting to simple sugars (fructose, glucose, sucrose). Ideal for mashing or pureeing into ganaches, truffles, or fillings in chocolate making for natural sweetness and banana flavor.',
+        allergens: [],
+        traceAllergens: [],
+        vegan: true,
+        tags: ['fruit', 'banana', 'natural-sugar', 'puree', 'sweetener'],
+        density: 1.05,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            }
+          ],
+          preferredId: 'g'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics based on USDA-style data for overripe raw bananas: ~78.8% water, ~15.8-16% sugars, ~0.22% fat (as otherFats), ~4.8% solids (protein ~0.7%, fiber ~1.8%, starch ~0.4%, ash ~0.7%, etc.). Rounded for sum to 100. Water slightly adjusted to 79% for rounding. Sources: nutritionvalue.org, myfooddata.com, virhex.com.'
+          }
+        ],
+        category: 'flavor'
+      },
+      water: {
+        baseId: 'water',
+        name: 'Water',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 100,
+          solids: 0,
+          otherFats: 0
+        },
+        description:
+          'Water is a clear, tasteless, odorless, and nearly colorless substance that is essential for most forms of life. In chocolate making, it is used carefully as it can affect the texture and flavor of chocolate.',
+        vegan: true,
+        tags: ['liquid', 'essential', 'neutral'],
+        density: 1,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'mL'
+            },
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Water is assumed to be pure and its characteristics are based on typical properties of distilled water.'
+          }
+        ],
+        category: 'liquid'
+      },
+      'sea-salt': {
+        baseId: 'sea-salt',
+        name: 'Sea Salt',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 0.2,
+          solids: 99.8,
+          otherFats: 0
+        },
+        description:
+          'Sea salt is harvested from evaporated seawater and contains trace minerals like magnesium and potassium, giving it a more complex flavor than refined table salt. In chocolate-making, it is used sparingly to balance sweetness and enhance chocolate flavors in ganache, caramels, and truffles.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: ['salt', 'sea-salt', 'mineral', 'seasoning', 'savory'],
+        density: 2.16,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'g'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated for dry sea salt: ~99.8% solids (primarily NaCl with trace minerals), 0.2% water (typical residual moisture). No cacao, sugar, milk, or fats present. Density based on sodium chloride crystal density (2.165 g/mL). Composition typical for generic sea salt; specific products may vary slightly.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'malic-acid-solution': {
+        baseId: 'malic-acid-solution',
+        name: 'Malic Acid Solution',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 60,
+          solids: 40,
+          otherFats: 0
+        },
+        description:
+          'A solution containing 60% water and 40% malic acid, used to add tartness and acidity to culinary applications.',
+        vegan: true,
+        tags: ['acidic', 'solution', 'tartness'],
+        density: 1.2,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'mL'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Assumed density based on typical malic acid solution concentrations. Adjust if precise density measurement is available.'
+          }
+        ],
+        category: 'other'
+      },
+      'citric-acid-solution': {
+        baseId: 'citric-acid-solution',
+        name: 'Citric acid solution',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 50,
+          solids: 50,
+          otherFats: 0
+        },
+        description:
+          'A 50% w/w solution of citric acid in water, commonly used in chocolate and confectionery applications to impart tartness and acidity to ganaches, pates de fruit, fruit fillings, and other components.',
+        vegan: true,
+        tags: ['acidulant', 'citric-acid', 'sour', 'flavor-enhancer', 'preservative'],
+        density: 1.24,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'g'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Assumed typical 50% w/w citric acid solution (equal parts citric acid powder and water by weight), as commonly referenced in chocolate and confectionery recipes (e.g., 1:1 ratio). Ganache characteristics: 50% water, 50% citric acid counted as solids. Density ~1.24 g/mL based on supplier specifications for 50% solutions at ~20°C.'
+          }
+        ],
+        category: 'flavor'
+      },
+      'mango-puree': {
+        baseId: 'mango-puree',
+        name: 'Mango Puree',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 15,
+          milkFat: 0,
+          water: 81,
+          solids: 3.6,
+          otherFats: 0.4
+        },
+        description:
+          'Smooth puree derived from ripe mango fruit, providing intense tropical mango flavor and aroma. Commonly used in chocolate ganaches, mousses, ice creams, and fruit-based confections. Typically around 12-15° Brix for natural unsweetened varieties.',
+        vegan: true,
+        tags: ['fruit', 'mango', 'tropical', 'puree', 'ganache', 'mousse'],
+        density: 1.05,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            }
+          ],
+          preferredId: 'g'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated from typical unsweetened mango puree nutritional data across sources (e.g., 80-85% water, 15-18g carbs/100g mostly sugars, 0.4g fat, 0.8g protein, implied fiber ~2-3g). Adjusted to sum 100: sugar 15% (natural soluble carbs ~14-16 Brix equiv.), solids 3.6% (fiber + protein + ash), otherFats 0.4%, water 81%. Sweetened varieties add cane sugar (e.g., Perfect Puree ~10% added), but generic assumed unsweetened. Density estimated typical for fruit purees ~1.05 g/mL. Vegan confirmed, no common allergens.<grok:render type="render_inline_citation"><argument name="citation_id">23</argument></grok:render><grok:render type="render_inline_citation"><argument name="citation_id">24</argument></grok:render><grok:render type="render_inline_citation"><argument name="citation_id">9</argument></grok:render>'
+          }
+        ],
+        category: 'flavor'
+      },
+      'mango-juice-reduced': {
+        baseId: 'mango-juice-reduced',
+        name: 'Mango Juice (Reduced)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 60,
+          milkFat: 0,
+          water: 35,
+          solids: 4,
+          otherFats: 1
+        },
+        description:
+          'Concentrated mango juice, typically reduced to around 65° Brix by evaporating water, used as a flavoring agent in chocolate ganaches and confections. Provides intense mango flavor with reduced water content to minimize impact on ganache texture.',
+        vegan: true,
+        tags: ['mango', 'fruit', 'juice', 'concentrate', 'tropical', 'flavoring'],
+        density: 1.32,
+        phase: 'liquid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            }
+          ],
+          preferredId: 'g'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Composition estimated from typical 65 Brix mango juice concentrate nutritional data: ~35% water (100% - 65% Brix), ~60% sugars (carbs), ~4% solids (proteins ~3g, fiber/minerals), ~1% other fats. Density from product spec sheets (specific gravity ~1.32). Assumed for generic reduced mango juice used in chocolate applications.'
+          }
+        ],
+        category: 'liquid'
       }
     }
   },
@@ -3294,6 +3569,57 @@ export const ingredientCollections: Record<string, JsonObject> = {
         origins: ["Côte d'Ivoire", 'Ghana'],
         beanVarieties: ['Blend'],
         applications: ['baking', 'confectionary', 'ganache', 'molding', 'enrobing', 'pralines']
+      },
+      'guittard-high-sierra-white-chocolate': {
+        baseId: 'guittard-high-sierra-white-chocolate',
+        name: 'Guittard High Sierra White Chocolate',
+        ganacheCharacteristics: {
+          cacaoFat: 30,
+          sugar: 45,
+          milkFat: 20,
+          water: 1,
+          solids: 3,
+          otherFats: 1
+        },
+        manufacturer: 'Guittard',
+        allergens: ['milk', 'soy'],
+        traceAllergens: [],
+        certifications: ['non-gmo', 'kosher-dairy'],
+        vegan: false,
+        tags: ['white chocolate', 'Guittard', 'baking'],
+        density: 1.1,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [],
+        notes: [
+          {
+            category: 'ai',
+            note: 'The ganache characteristics are estimated based on typical white chocolate composition. Specific product details may vary.'
+          }
+        ],
+        category: 'chocolate',
+        chocolateType: 'white',
+        cacaoPercentage: 0,
+        fluidityStars: 3,
+        viscosityMcM: 80,
+        temperatureCurve: {
+          melt: 45,
+          cool: 27,
+          working: 29
+        },
+        origins: ['Various'],
+        beanVarieties: ['Blend'],
+        applications: ['baking', 'confectionary', 'ganache', 'molding', 'cremeux']
       }
     }
   }
@@ -4277,6 +4603,41 @@ export const moldCollections: Record<string, JsonObject> = {
           {
             category: 'purchase',
             url: 'https://www.chocdepot.com/Urun/greyas-cm-1207-polycarbon-chocolate-mold'
+          }
+        ]
+      },
+      'cm-3898': {
+        baseId: 'cm-3898',
+        manufacturer: 'Greyas',
+        productNumber: 'CM-3898',
+        name: 'Soft Square Praline',
+        description:
+          'Soft square praline chocolate mould with 24 cavities, each holding 12g of chocolate. Mold dimensions: 275 x 175 mm.',
+        cavities: {
+          kind: 'grid',
+          columns: 6,
+          rows: 4,
+          info: {
+            weight: 12,
+            dimensions: {
+              width: 36,
+              length: 36,
+              depth: 15.9
+            }
+          }
+        },
+        format: 'series-2000',
+        tags: ['praline', 'square', 'soft square', 'bonbon', 'polycarbonate'],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Grid layout estimated as 4 rows x 6 columns based on mold size (275x175mm) and cavity dimensions (36x36mm); not explicitly stated on manufacturer page. Cavity depth and weight directly from product specifications.'
+          }
+        ],
+        urls: [
+          {
+            category: 'manufacturer',
+            url: 'https://www.greyas.com/products/cm-3898'
           }
         ]
       }

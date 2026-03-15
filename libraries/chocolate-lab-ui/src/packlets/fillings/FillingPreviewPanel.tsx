@@ -25,10 +25,10 @@
  * @packageDocumentation
  */
 
-import React, { useMemo } from 'react';
+import React, { useCallback, useRef, useMemo } from 'react';
 import { XMarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 
-import type { Entities, LibraryRuntime } from '@fgv/ts-chocolate';
+import type { Entities, FillingRecipeVariationSpec, LibraryRuntime } from '@fgv/ts-chocolate';
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import { renderPreview } from '../tasks';
@@ -41,6 +41,8 @@ import { formatIngredientAmount, formatScaledIngredientAmount } from '../common'
 export interface IFillingPreviewPanelProps {
   readonly filling: LibraryRuntime.FillingRecipe;
   readonly draftEntity?: Entities.Fillings.IFillingRecipeEntity;
+  /** Variation to preview (defaults to golden variation) */
+  readonly variationSpec?: FillingRecipeVariationSpec;
   readonly targetYield?: number;
   readonly onClose?: () => void;
 }
@@ -71,39 +73,60 @@ function formatResolvedStepTiming(step: LibraryRuntime.IResolvedProcedureStep): 
 // ============================================================================
 
 export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.ReactElement {
-  const { filling, draftEntity, targetYield, onClose } = props;
+  const { filling, draftEntity, variationSpec, targetYield, onClose } = props;
 
   const entity = draftEntity ?? filling.entity;
 
-  const goldenVariation = filling.goldenVariation;
-  const goldenVariationEntity = entity.variations.find((v) => v.variationSpec === entity.goldenVariationSpec);
+  // Use requested variation, falling back to golden
+  const selectedSpec = variationSpec ?? entity.goldenVariationSpec;
+  const variation = useMemo(() => {
+    const result = filling.getVariation(selectedSpec);
+    return result.isSuccess() ? result.value : filling.goldenVariation;
+  }, [filling, selectedSpec]);
+  const variationEntity = entity.variations.find((v) => v.variationSpec === selectedSpec);
 
-  const ingredientsResult = goldenVariation.getIngredients();
+  const ingredientsResult = variation.getIngredients();
   const ingredients = ingredientsResult.isSuccess() ? Array.from(ingredientsResult.value) : [];
 
-  const selectedProcedure = goldenVariation.preferredProcedure;
+  const selectedProcedure = variation.preferredProcedure;
   const stepsResult = selectedProcedure?.procedure.getSteps();
   const steps = stepsResult?.isSuccess() ? stepsResult.value : [];
 
-  const ratings = goldenVariationEntity?.ratings ?? [];
-  const notes = goldenVariationEntity?.notes ?? [];
+  const ratings = variationEntity?.ratings ?? [];
+  const notes = variationEntity?.notes ?? [];
+
+  // Variation display name (show when not the golden variation or when there are multiple)
+  const variationLabel = useMemo(() => {
+    if (entity.variations.length <= 1) return undefined;
+    return variationEntity?.name ?? selectedSpec;
+  }, [entity.variations.length, variationEntity, selectedSpec]);
+
+  // Print just the preview panel content
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useCallback((): void => {
+    const el = printRef.current;
+    if (!el) return;
+    el.classList.add('printing');
+    window.print();
+    el.classList.remove('printing');
+  }, []);
 
   // Compute scaling via ProducedFilling (handles non-scaling units correctly)
   const scaleFactor = useMemo<number | undefined>(() => {
-    if (targetYield === undefined || goldenVariation.baseWeight <= 0) return undefined;
-    const factor = targetYield / goldenVariation.baseWeight;
+    if (targetYield === undefined || variation.baseWeight <= 0) return undefined;
+    const factor = targetYield / variation.baseWeight;
     return Math.abs(factor - 1.0) < 0.001 ? undefined : factor;
-  }, [targetYield, goldenVariation]);
+  }, [targetYield, variation]);
 
   const scaledAmounts = useMemo<ReadonlyArray<number> | undefined>(() => {
     if (scaleFactor === undefined) return undefined;
-    const result = LR.ProducedFilling.fromSource(goldenVariation, scaleFactor);
+    const result = LR.ProducedFilling.fromSource(variation, scaleFactor);
     if (!result.isSuccess()) return undefined;
     return result.value.ingredients.map((ing) => ing.amount);
-  }, [goldenVariation, scaleFactor]);
+  }, [variation, scaleFactor]);
 
   return (
-    <div className="p-4 overflow-y-auto h-full bg-gray-50">
+    <div ref={printRef} className="p-4 overflow-y-auto h-full bg-gray-50">
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
@@ -113,12 +136,17 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
             <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
               {entity.category}
             </span>
+            {variationLabel && (
+              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                {variationLabel}
+              </span>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0 print:hidden">
           <button
             type="button"
-            onClick={(): void => window.print()}
+            onClick={handlePrint}
             className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
             title="Print recipe"
           >
@@ -144,18 +172,18 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
       )}
 
       {/* Yield / Base Weight */}
-      {goldenVariationEntity && (
+      {variationEntity && (
         <div className="mb-6 flex items-center gap-6 bg-white rounded-lg border border-gray-200 px-4 py-3">
           <div>
             <span className="text-xs text-gray-500 uppercase tracking-wide block">Base Weight</span>
             <span className="text-lg font-semibold text-gray-900">
-              {formatIngredientAmount(goldenVariationEntity.baseWeight, 'g')}
+              {formatIngredientAmount(variationEntity.baseWeight, 'g')}
             </span>
           </div>
-          {goldenVariationEntity.yield && (
+          {variationEntity.yield && (
             <div>
               <span className="text-xs text-gray-500 uppercase tracking-wide block">Yield</span>
-              <span className="text-lg font-semibold text-gray-900">{goldenVariationEntity.yield}</span>
+              <span className="text-lg font-semibold text-gray-900">{variationEntity.yield}</span>
             </div>
           )}
           {scaleFactor !== undefined && targetYield !== undefined && (

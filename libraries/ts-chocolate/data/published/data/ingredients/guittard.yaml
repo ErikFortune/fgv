@@ -337,3 +337,58 @@ items:
       - molding
       - enrobing
       - pralines
+  guittard-high-sierra-white-chocolate:
+    baseId: guittard-high-sierra-white-chocolate
+    name: Guittard High Sierra White Chocolate
+    ganacheCharacteristics:
+      cacaoFat: 30
+      sugar: 45
+      milkFat: 20
+      water: 1
+      solids: 3
+      otherFats: 1
+    manufacturer: Guittard
+    allergens:
+      - milk
+      - soy
+    traceAllergens: []
+    certifications:
+      - non-gmo
+      - kosher-dairy
+    vegan: false
+    tags:
+      - white chocolate
+      - Guittard
+      - baking
+    density: 1.1
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+      preferredId: g
+    urls: []
+    notes:
+      - category: ai
+        note: >-
+          The ganache characteristics are estimated based on typical white chocolate composition. Specific product
+          details may vary.
+    category: chocolate
+    chocolateType: white
+    cacaoPercentage: 0
+    fluidityStars: 3
+    viscosityMcM: 80
+    temperatureCurve:
+      melt: 45
+      cool: 27
+      working: 29
+    origins:
+      - Various
+    beanVarieties:
+      - Blend
+    applications:
+      - baking
+      - confectionary
+      - ganache
+      - molding
+      - cremeux

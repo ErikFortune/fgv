@@ -61,8 +61,8 @@ export interface IFillingDetailProps {
   readonly defaultVariationSpec?: FillingRecipeVariationSpec;
   /** Optional callback to enter edit mode for the currently viewed variation */
   readonly onEdit?: (variationSpec: FillingRecipeVariationSpec) => void;
-  /** Optional callback to open the preview pane */
-  readonly onPreview?: () => void;
+  /** Optional callback to open the preview pane for the currently selected variation */
+  readonly onPreview?: (variationSpec: FillingRecipeVariationSpec) => void;
   /** Optional callback to start a production session for the current variation */
   readonly onStartSession?: (variationSpec: FillingRecipeVariationSpec) => void;
   /** Optional callback to close this panel */
@@ -348,7 +348,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
             {onPreview && (
               <button
                 type="button"
-                onClick={onPreview}
+                onClick={(): void => onPreview(selectedSpec)}
                 className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
                 title="Preview filling"
               >

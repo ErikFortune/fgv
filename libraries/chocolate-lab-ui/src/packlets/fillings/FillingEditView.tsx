@@ -98,8 +98,8 @@ export interface IFillingEditViewProps {
   readonly readOnly?: boolean;
   /** Callback after any mutation for parent state tracking */
   readonly onMutate?: () => void;
-  /** Optional callback to open the preview pane */
-  readonly onPreview?: () => void;
+  /** Optional callback to open the preview pane for the currently selected variation */
+  readonly onPreview?: (variationSpec: FillingRecipeVariationSpec) => void;
   /** Callback to create a new ingredient from an unresolved name */
   readonly onCreateIngredient?: (seed: string) => void;
   /** Callback to create a new procedure from an unresolved name */
@@ -883,7 +883,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
           onPreview ? (
             <button
               type="button"
-              onClick={onPreview}
+              onClick={(): void => onPreview(selectedVariationSpec)}
               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-choco-primary hover:bg-gray-100"
               title="Open filling preview pane"
             >

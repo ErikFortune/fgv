@@ -71,3 +71,36 @@ items:
         url: https://www.greyas.com/products/cm-1207-pralin-cikolata-kalibi
       - category: purchase
         url: https://www.chocdepot.com/Urun/greyas-cm-1207-polycarbon-chocolate-mold
+  cm-3898:
+    baseId: cm-3898
+    manufacturer: Greyas
+    productNumber: CM-3898
+    name: Soft Square Praline
+    description: >-
+      Soft square praline chocolate mould with 24 cavities, each holding 12g of chocolate. Mold dimensions: 275 x 175
+      mm.
+    cavities:
+      kind: grid
+      columns: 6
+      rows: 4
+      info:
+        weight: 12
+        dimensions:
+          width: 36
+          length: 36
+          depth: 15.9
+    format: series-2000
+    tags:
+      - praline
+      - square
+      - soft square
+      - bonbon
+      - polycarbonate
+    notes:
+      - category: ai
+        note: >-
+          Grid layout estimated as 4 rows x 6 columns based on mold size (275x175mm) and cavity dimensions (36x36mm);
+          not explicitly stated on manufacturer page. Cavity depth and weight directly from product specifications.
+    urls:
+      - category: manufacturer
+        url: https://www.greyas.com/products/cm-3898

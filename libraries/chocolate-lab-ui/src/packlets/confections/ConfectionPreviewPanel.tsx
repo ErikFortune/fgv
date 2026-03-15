@@ -25,10 +25,10 @@
  * @packageDocumentation
  */
 
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { XMarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 
-import type { Entities, IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
+import type { Entities, FillingId, IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
 import { Entities as EntitiesNS, LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import type { IConfectionViewSettings } from './viewSettings';
@@ -45,6 +45,10 @@ export interface IConfectionPreviewPanelProps {
   readonly draftEntity?: Entities.Confections.AnyConfectionRecipeEntity;
   readonly viewSettings?: IConfectionViewSettings;
   readonly onClose?: () => void;
+  /** Callback when a filling recipe is clicked for drill-down */
+  readonly onFillingClick?: (id: FillingId, targetWeight?: number) => void;
+  /** Callback when an ingredient filling is clicked for drill-down */
+  readonly onIngredientClick?: (id: IngredientId) => void;
 }
 
 // ============================================================================
@@ -96,42 +100,89 @@ function MetaRow({
 
 function FillingSlotSection({
   slot,
-  selectedOptionId
+  selectedOptionId,
+  targetWeight,
+  onFillingClick,
+  onIngredientClick
 }: {
   readonly slot: LibraryRuntime.IResolvedFillingSlot;
   readonly selectedOptionId?: string;
+  readonly targetWeight?: number;
+  readonly onFillingClick?: (id: FillingId, targetWeight?: number) => void;
+  readonly onIngredientClick?: (id: IngredientId) => void;
 }): React.ReactElement {
   const displayId = selectedOptionId ?? slot.filling.preferredId;
   const displayed = slot.filling.options.find((o) => o.id === displayId) ?? slot.filling.options[0];
   const displayedName = displayed?.type === 'recipe' ? displayed.filling.name : displayed?.ingredient.name;
   const isPreferred = displayed?.id === slot.filling.preferredId;
+  const isClickable =
+    (displayed?.type === 'recipe' && onFillingClick !== undefined) ||
+    (displayed?.type === 'ingredient' && onIngredientClick !== undefined);
+
+  const handleClick = (): void => {
+    if (displayed?.type === 'recipe' && onFillingClick) {
+      onFillingClick(displayed.id as FillingId, targetWeight);
+    } else if (displayed?.type === 'ingredient' && onIngredientClick) {
+      onIngredientClick(displayed.id as IngredientId);
+    }
+  };
 
   return (
-    <div className="px-4 py-2.5 flex items-start hover:bg-gray-50">
+    <div
+      className={`px-4 py-2.5 flex items-start hover:bg-gray-50${isClickable ? ' cursor-pointer' : ''}`}
+      onClick={isClickable ? handleClick : undefined}
+    >
       <div className="flex-1">
         <span className="text-xs text-gray-400 block mb-0.5">
           {slot.name ?? slot.slotId}
           {!isPreferred ? ' (alternate)' : ''}
         </span>
-        <span className="text-sm font-medium text-gray-900">{displayedName ?? '—'}</span>
+        <span
+          className={`text-sm font-medium ${
+            isClickable ? 'text-choco-primary hover:underline' : 'text-gray-900'
+          }`}
+        >
+          {displayedName ?? '—'}
+        </span>
       </div>
+      {targetWeight !== undefined && (
+        <span className="text-sm font-semibold text-choco-primary ml-4 shrink-0">
+          {formatIngredientAmount(targetWeight, 'g')}
+        </span>
+      )}
     </div>
   );
 }
 
 function ScaledFillingSlotSection({
-  scaledSlot
+  scaledSlot,
+  fillingOptionId,
+  onFillingClick,
+  onIngredientClick
 }: {
   readonly scaledSlot: LR.AnyScaledSlot;
+  readonly fillingOptionId?: FillingId;
+  readonly onFillingClick?: (id: FillingId, targetWeight?: number) => void;
+  readonly onIngredientClick?: (id: IngredientId) => void;
 }): React.ReactElement {
   const slotLabel = scaledSlot.name ?? scaledSlot.slotId;
 
   if (scaledSlot.type === 'ingredient') {
+    const isClickable = onIngredientClick !== undefined;
     return (
-      <div className="px-4 py-3">
+      <div
+        className={`px-4 py-3${isClickable ? ' cursor-pointer hover:bg-gray-50' : ''}`}
+        onClick={isClickable ? (): void => onIngredientClick(scaledSlot.ingredient.id) : undefined}
+      >
         <span className="text-xs text-gray-400 block mb-1">{slotLabel}</span>
         <div className="flex items-baseline justify-between">
-          <span className="text-sm font-medium text-gray-900">{scaledSlot.ingredient.name}</span>
+          <span
+            className={`text-sm font-medium ${
+              isClickable ? 'text-choco-primary hover:underline' : 'text-gray-900'
+            }`}
+          >
+            {scaledSlot.ingredient.name}
+          </span>
           <span className="text-sm font-semibold text-choco-primary">
             {formatIngredientAmount(scaledSlot.targetWeight, 'g')}
           </span>
@@ -142,10 +193,14 @@ function ScaledFillingSlotSection({
 
   const producedIngredients = scaledSlot.produced.ingredients;
   const resolvedIngredients = scaledSlot.resolvedIngredients;
+  const isClickable = fillingOptionId !== undefined && onFillingClick !== undefined;
   return (
-    <div className="px-4 py-3">
+    <div
+      className={`px-4 py-3${isClickable ? ' cursor-pointer hover:bg-gray-50' : ''}`}
+      onClick={isClickable ? (): void => onFillingClick(fillingOptionId, scaledSlot.targetWeight) : undefined}
+    >
       <div className="flex items-baseline justify-between mb-2">
-        <span className="text-xs text-gray-400">{slotLabel}</span>
+        <span className={`text-xs ${isClickable ? 'text-choco-primary' : 'text-gray-400'}`}>{slotLabel}</span>
         <span className="text-xs text-gray-400">
           {formatIngredientAmount(scaledSlot.targetWeight, 'g')} total
         </span>
@@ -394,11 +449,21 @@ function RolledTruffleSection({
  * @public
  */
 export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): React.ReactElement {
-  const { confection, draftEntity, viewSettings, onClose } = props;
+  const { confection, draftEntity, viewSettings, onClose, onFillingClick, onIngredientClick } = props;
 
   const entity = draftEntity ?? confection.entity;
   const goldenVariation = confection.goldenVariation;
   const goldenVariationEntity = entity.variations.find((v) => v.variationSpec === entity.goldenVariationSpec);
+
+  // Print just the preview panel content
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useCallback((): void => {
+    const el = printRef.current;
+    if (!el) return;
+    el.classList.add('printing');
+    window.print();
+    el.classList.remove('printing');
+  }, []);
 
   const scalingTarget = useMemo((): LR.IConfectionScalingTarget | undefined => {
     if (!viewSettings) return undefined;
@@ -417,6 +482,30 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
     return result.isSuccess() ? result.value : undefined;
   }, [goldenVariation, scalingTarget]);
 
+  // Compute default scaling (using recipe default yield) for showing weights even without explicit scaling
+  const defaultScalingResult = useMemo(() => {
+    if (scalingResult) return undefined; // already have explicit scaling
+    const defaultTarget: LR.IConfectionScalingTarget = EntitiesNS.Confections.isYieldInFrames(
+      goldenVariation.yield
+    )
+      ? { targetFrames: goldenVariation.yield.numFrames }
+      : { targetCount: goldenVariation.yield.numPieces };
+    if (!LR.canScale(goldenVariation, defaultTarget)) return undefined;
+    const result = LR.computeScaledFillings(goldenVariation, defaultTarget);
+    return result.isSuccess() ? result.value : undefined;
+  }, [goldenVariation, scalingResult]);
+
+  // Build per-slot target weights from either explicit or default scaling
+  const slotWeights = useMemo((): Readonly<Record<string, number>> | undefined => {
+    const sr = scalingResult ?? defaultScalingResult;
+    if (!sr) return undefined;
+    const weights: Record<string, number> = {};
+    for (const slot of sr.slots) {
+      weights[slot.slotId] = slot.targetWeight;
+    }
+    return weights;
+  }, [scalingResult, defaultScalingResult]);
+
   const fillings = goldenVariation.fillings ?? [];
   const decorations = goldenVariation.decorations;
   const notes = goldenVariationEntity?.notes ?? [];
@@ -424,7 +513,7 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
   const effectiveUrls = confection.effectiveUrls;
 
   return (
-    <div className="p-4 overflow-y-auto h-full bg-gray-50">
+    <div ref={printRef} className="p-4 overflow-y-auto h-full bg-gray-50">
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
@@ -436,10 +525,10 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0 print:hidden">
           <button
             type="button"
-            onClick={(): void => window.print()}
+            onClick={handlePrint}
             className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
             title="Print recipe"
           >
@@ -508,14 +597,33 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
           )}
           <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
             {scalingResult
-              ? scalingResult.slots.map((scaledSlot) => (
-                  <ScaledFillingSlotSection key={scaledSlot.slotId} scaledSlot={scaledSlot} />
-                ))
+              ? scalingResult.slots.map((scaledSlot) => {
+                  const originalSlot = fillings.find((f) => f.slotId === scaledSlot.slotId);
+                  const selectedId = viewSettings?.fillingSelections?.[scaledSlot.slotId];
+                  const option = originalSlot
+                    ? originalSlot.filling.options.find((o) => o.id === selectedId) ??
+                      originalSlot.filling.options.find((o) => o.id === originalSlot.filling.preferredId) ??
+                      originalSlot.filling.options[0]
+                    : undefined;
+                  const recipeId = option?.type === 'recipe' ? (option.id as FillingId) : undefined;
+                  return (
+                    <ScaledFillingSlotSection
+                      key={scaledSlot.slotId}
+                      scaledSlot={scaledSlot}
+                      fillingOptionId={recipeId}
+                      onFillingClick={onFillingClick}
+                      onIngredientClick={onIngredientClick}
+                    />
+                  );
+                })
               : fillings.map((slot) => (
                   <FillingSlotSection
                     key={slot.slotId}
                     slot={slot}
                     selectedOptionId={viewSettings?.fillingSelections?.[slot.slotId]}
+                    targetWeight={slotWeights?.[slot.slotId]}
+                    onFillingClick={onFillingClick}
+                    onIngredientClick={onIngredientClick}
                   />
                 ))}
           </div>

@@ -327,7 +327,7 @@ export class ReactiveWorkspace {
         isBuiltIn: false,
         isMutable: true,
         isLocal: true,
-        categories: ['library']
+        categories: ['library', 'user-data']
       });
     }
 
