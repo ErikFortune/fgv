@@ -95,5 +95,19 @@ describe('buildDecorationAiPrompt', () => {
       expect(prompt.combined).toContain('no markdown');
       expect(prompt.combined).toContain('no code fences');
     });
+
+    test('includes additional instructions when provided', () => {
+      const promptWithInstructions = buildDecorationAiPrompt(
+        'Gold Leaf',
+        'Focus on edible gold leaf applications only'
+      );
+      expect(promptWithInstructions.combined).toContain('Focus on edible gold leaf applications only');
+      expect(promptWithInstructions.combined).toContain('Additional instructions from the user:');
+    });
+
+    test('does not include additional instructions section when not provided', () => {
+      const promptWithout = buildDecorationAiPrompt('Gold Leaf');
+      expect(promptWithout.combined).not.toContain('Additional instructions from the user:');
+    });
   });
 });

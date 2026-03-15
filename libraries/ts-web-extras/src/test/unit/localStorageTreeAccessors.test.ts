@@ -743,4 +743,214 @@ describe('LocalStorageTreeAccessors', () => {
       expect(saveResult).toFailWith(/No storage key configured for path/i);
     });
   });
+
+  describe('deleteFile', () => {
+    test('deletes a file from in-memory storage and from localStorage', () => {
+      mockStorage.setItem(
+        'test:ingredients:v1',
+        JSON.stringify({
+          collection1: '{"items":{}}',
+          collection2: '{"items":{}}'
+        })
+      );
+
+      const accessors = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      const result = accessors.deleteFile('/data/ingredients/collection1.json');
+      expect(result).toSucceedWith(true);
+
+      // File should no longer be accessible in-memory
+      expect(accessors.getFileContents('/data/ingredients/collection1.json')).toFail();
+
+      // The deleted collection should be removed from localStorage; collection2 remains
+      const stored = mockStorage.getItem('test:ingredients:v1');
+      expect(stored).toBeTruthy();
+      const parsed = JSON.parse(stored!);
+      expect(parsed).not.toHaveProperty('collection1');
+      expect(parsed).toHaveProperty('collection2');
+    });
+
+    test('removes the storage key entirely when last entry is deleted', () => {
+      mockStorage.setItem('test:ingredients:v1', JSON.stringify({ onlyCollection: '{"items":{}}' }));
+
+      const accessors = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      const result = accessors.deleteFile('/data/ingredients/onlyCollection.json');
+      expect(result).toSucceedWith(true);
+
+      // Storage key should be removed entirely since no more entries remain
+      expect(mockStorage.getItem('test:ingredients:v1')).toBeNull();
+    });
+
+    test('removes path from dirty set when deleting a dirty file', () => {
+      mockStorage.setItem('test:ingredients:v1', JSON.stringify({ collection1: '{"items":{}}' }));
+
+      const accessors = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      // Mark file as dirty first
+      accessors
+        .saveFileContents('/data/ingredients/collection1.json', JSON.stringify({ items: { modified: true } }))
+        .orThrow();
+      expect(accessors.isDirty()).toBe(true);
+
+      // Deleting the file should clean it from the dirty set
+      const result = accessors.deleteFile('/data/ingredients/collection1.json');
+      expect(result).toSucceedWith(true);
+      expect(accessors.isDirty()).toBe(false);
+      expect(accessors.getDirtyPaths()).not.toContain('/data/ingredients/collection1.json');
+    });
+
+    test('fails when deleting a non-existent file', () => {
+      const accessors = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      const result = accessors.deleteFile('/data/ingredients/nonexistent.json');
+      expect(result).toFail();
+    });
+
+    test('does not modify storage when file has no matching storage key', () => {
+      // Create accessors with one path, but a file that will be stored outside that path
+      const accessors = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      // Add and delete a file inside the configured path but with no existing storage entry
+      accessors.saveFileContents('/data/ingredients/newfile.json', '{"items":{}}').orThrow();
+      // Sync so it exists in storage
+      mockStorage.setItem('test:ingredients:v1', JSON.stringify({ newfile: '{"items":{}}' }));
+
+      // Now re-load and delete — the file should be removed from storage
+      const accessors2 = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      const result = accessors2.deleteFile('/data/ingredients/newfile.json');
+      expect(result).toSucceedWith(true);
+      expect(mockStorage.getItem('test:ingredients:v1')).toBeNull();
+    });
+
+    test('handles deletion when localStorage key has no entry for the file', () => {
+      // Storage key exists but does not contain an entry for the file being deleted
+      mockStorage.setItem('test:ingredients:v1', JSON.stringify({ other: '{"items":{}}' }));
+
+      // Manually add a file to in-memory without it being in the storage JSON
+      const accessors = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      // Save a new file (marks dirty but does not update storage yet)
+      accessors.saveFileContents('/data/ingredients/newfile.json', '{"items":{}}').orThrow();
+
+      // Clear the dirty flag by directly removing from storage (simulate storage mismatch)
+      // Then delete the file — _deleteFileFromStorage gets the existing JSON which lacks 'newfile'
+      // This exercises the path where the collection is not in the existing JSON
+      mockStorage.setItem('test:ingredients:v1', JSON.stringify({ other: '{"items":{}}' }));
+
+      const result = accessors.deleteFile('/data/ingredients/newfile.json');
+      expect(result).toSucceedWith(true);
+
+      // 'other' should still remain in storage since only 'newfile' was deleted (which wasn't there)
+      const stored = mockStorage.getItem('test:ingredients:v1');
+      expect(stored).toBeTruthy();
+      const parsed = JSON.parse(stored!);
+      expect(parsed).toHaveProperty('other');
+    });
+
+    test('handles deletion when storage entry for key is missing entirely', () => {
+      // No storage key at all — _deleteFileFromStorage should return early
+      const accessors = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      // Manually put a file in memory by saving it
+      accessors.saveFileContents('/data/ingredients/newfile.json', '{"items":{}}').orThrow();
+
+      // Delete the storage key so getItem returns null
+      mockStorage.removeItem('test:ingredients:v1');
+
+      // deleteFile should still succeed (in-memory deletion succeeds; storage cleanup is a no-op)
+      const result = accessors.deleteFile('/data/ingredients/newfile.json');
+      expect(result).toSucceedWith(true);
+    });
+
+    test('handles deletion when storage contains corrupted JSON', () => {
+      mockStorage.setItem('test:ingredients:v1', JSON.stringify({ collection1: '{"items":{}}' }));
+
+      const accessors = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      // Corrupt the storage so JSON.parse fails in _deleteFileFromStorage
+      mockStorage.setItem('test:ingredients:v1', 'not valid json {{{');
+
+      // deleteFile should still succeed — corrupted JSON is silently ignored
+      const result = accessors.deleteFile('/data/ingredients/collection1.json');
+      expect(result).toSucceedWith(true);
+    });
+
+    test('deletes a file at a path outside all configured storage keys', () => {
+      // A file can be saved in-memory at a path that has no matching storage key.
+      // When deleted, _deleteFileFromStorage should return early without touching storage.
+      const accessors = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      // Save a file outside the configured path (succeeds in-memory, marks dirty)
+      accessors.saveFileContents('/untracked/file.json', '{"items":{}}').orThrow();
+
+      // Delete it — should succeed even though there is no storage key for this path
+      const result = accessors.deleteFile('/untracked/file.json');
+      expect(result).toSucceedWith(true);
+
+      // Storage should be untouched
+      expect(mockStorage.getItem('test:ingredients:v1')).toBeNull();
+    });
+  });
 });

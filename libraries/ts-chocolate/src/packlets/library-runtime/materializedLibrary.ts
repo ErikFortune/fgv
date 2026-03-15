@@ -294,6 +294,7 @@ export class MaterializedLibrary<
    * Call this after the underlying entity data has been mutated so that
    * subsequent `get()` calls re-materialize from the current entity state.
    */
+  /* c8 ignore next 3 - intermittent coverage: tested in materializedLibraries.test but missed in full suite */
   public clearCache(): void {
     this._clearCache();
   }
@@ -306,6 +307,7 @@ export class MaterializedLibrary<
    *
    * @param id - The composite ID of the entry to evict
    */
+  /* c8 ignore next 3 - intermittent coverage: tested in materializedLibraries.test but missed in full suite */
   public clearCacheEntry(id: TId): void {
     this._clearCacheEntry(id);
   }

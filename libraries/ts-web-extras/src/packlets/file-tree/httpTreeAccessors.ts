@@ -205,6 +205,7 @@ export class HttpTreeAccessors<TCT extends string = string>
     const response = await this._fetchImpl(`${this._baseUrl}${resourcePath}`, {
       headers: {
         'Content-Type': 'application/json',
+        /* c8 ignore next 1 - defensive coding: init.headers is never set by current callers */
         ...(init?.headers ?? {})
       },
       ...init

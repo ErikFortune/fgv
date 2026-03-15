@@ -602,6 +602,23 @@ describe('EditedConfectionRecipe', () => {
       expect(newVar.enrobingChocolate).toBeUndefined();
       expect(newVar.coatings).toBeUndefined();
     });
+
+    test('creates blank variation with default zero yield when golden variation is not found', () => {
+      // goldenVariationSpec points to a non-existent spec, so golden is undefined
+      const entity = makeRolledTruffleEntity({
+        variations: [makeRolledTruffleVariation(`${date}-01`)],
+        goldenVariationSpec: 'nonexistent' as ConfectionRecipeVariationSpec
+      });
+      const wrapper = EditedConfectionRecipe.create(entity).orThrow();
+
+      expect(wrapper.createBlankVariation({ date })).toSucceedWith(
+        `${date}-02` as ConfectionRecipeVariationSpec
+      );
+
+      const newVar = wrapper.variations[1] as Confections.IRolledTruffleRecipeVariationEntity;
+      expect(newVar.yield.numPieces).toBe(0);
+      expect(newVar.yield.weightPerPiece).toBe(0 as Measurement);
+    });
   });
 
   // ============================================================================

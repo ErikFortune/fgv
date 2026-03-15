@@ -358,6 +358,61 @@ describe('Confections model', () => {
       });
     });
 
+    describe('yield type guards', () => {
+      const framesYield: Confections.IYieldInFrames = { numFrames: 2 };
+      const barTruffleYield: Confections.IBarTruffleYield = {
+        numPieces: 24,
+        weightPerPiece: 12 as Measurement,
+        dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+      };
+      const piecesYield: Confections.IYieldInPieces = {
+        numPieces: 36,
+        weightPerPiece: 15 as Measurement
+      };
+
+      describe('isBarTruffleYield', () => {
+        test('returns true for bar truffle yield (has dimensions)', () => {
+          expect(Confections.isBarTruffleYield(barTruffleYield)).toBe(true);
+        });
+
+        test('returns false for frames yield', () => {
+          expect(Confections.isBarTruffleYield(framesYield as Confections.ConfectionYield)).toBe(false);
+        });
+
+        test('returns false for pieces yield (no dimensions)', () => {
+          expect(Confections.isBarTruffleYield(piecesYield)).toBe(false);
+        });
+      });
+
+      describe('isYieldInPieces', () => {
+        test('returns true for pieces yield (not frames, not bar truffle)', () => {
+          expect(Confections.isYieldInPieces(piecesYield)).toBe(true);
+        });
+
+        test('returns false for frames yield', () => {
+          expect(Confections.isYieldInPieces(framesYield as Confections.ConfectionYield)).toBe(false);
+        });
+
+        test('returns false for bar truffle yield', () => {
+          expect(Confections.isYieldInPieces(barTruffleYield)).toBe(false);
+        });
+      });
+
+      describe('isYieldInFrames', () => {
+        test('returns true for frames yield', () => {
+          expect(Confections.isYieldInFrames(framesYield as Confections.ConfectionYield)).toBe(true);
+        });
+
+        test('returns false for bar truffle yield', () => {
+          expect(Confections.isYieldInFrames(barTruffleYield)).toBe(false);
+        });
+
+        test('returns false for pieces yield', () => {
+          expect(Confections.isYieldInFrames(piecesYield)).toBe(false);
+        });
+      });
+    });
+
     describe('IFillingSlot', () => {
       test('structure is correct', () => {
         const variation = baseMoldedBonBon.variations[0];

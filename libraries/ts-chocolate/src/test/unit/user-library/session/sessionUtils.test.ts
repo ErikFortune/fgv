@@ -26,7 +26,8 @@ import {
   generateSessionBaseId,
   generateSessionId,
   getCurrentDateString,
-  getCurrentTimestamp
+  getCurrentTimestamp,
+  toSessionSlug
 } from '../../../../packlets/user-library/session/sessionUtils';
 
 describe('Session Utils', () => {
@@ -64,6 +65,18 @@ describe('Session Utils', () => {
     });
   });
 
+  describe('toSessionSlug', () => {
+    test('returns kebab-case slug for normal input', () => {
+      expect(toSessionSlug('My Recipe')).toBe('my-recipe');
+    });
+
+    test('returns undefined when slug normalizes to empty string', () => {
+      // Input consisting only of characters that are stripped (apostrophes, punctuation)
+      // toKebabCase strips apostrophes and similar, then trims hyphens
+      expect(toSessionSlug("'''")).toBeUndefined();
+    });
+  });
+
   describe('generateSessionBaseId', () => {
     test('generates a valid session base ID', () => {
       expect(generateSessionBaseId()).toSucceedAndSatisfy((sessionBaseId) => {
@@ -91,6 +104,14 @@ describe('Session Utils', () => {
       const specificDate = new Date('2026-02-17T12:00:00Z');
       expect(generateSessionBaseId(specificDate)).toSucceedAndSatisfy((sessionBaseId) => {
         expect(sessionBaseId).toMatch(/^2026-02-17-/);
+      });
+    });
+
+    test('uses slug when provided instead of random hex', () => {
+      const specificDate = new Date('2026-02-17T12:00:00Z');
+      expect(generateSessionBaseId(specificDate, 'My Batch')).toSucceedAndSatisfy((sessionBaseId) => {
+        // Slug 'My Batch' normalizes to 'my-batch'
+        expect(sessionBaseId).toMatch(/^2026-02-17-\d{6}-my-batch$/);
       });
     });
   });

@@ -372,6 +372,29 @@ describe('Confection Recipes', () => {
     ]
   };
 
+  const noMoldsMoldedBonBonEntity: Confections.MoldedBonBonRecipeEntity = {
+    baseId: 'no-molds-molded-bonbon' as BaseConfectionId,
+    confectionType: 'molded-bonbon',
+    name: 'No Molds Molded BonBon' as ConfectionName,
+    goldenVariationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+    variations: [
+      {
+        variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+        createdDate: '2026-01-01',
+        yield: { numFrames: 1 },
+        fillings: [],
+        molds: {
+          options: [],
+          preferredId: undefined as unknown as MoldId
+        },
+        shellChocolate: {
+          ids: ['test.dark-chocolate' as IngredientId],
+          preferredId: 'test.dark-chocolate' as IngredientId
+        }
+      }
+    ]
+  };
+
   const rolledTruffleEntity: Confections.RolledTruffleRecipeEntity = {
     baseId: 'test-rolled-truffle' as BaseConfectionId,
     confectionType: 'rolled-truffle',
@@ -545,6 +568,7 @@ describe('Confection Recipes', () => {
             'test-molded-bonbon': moldedBonBonEntity,
             'broken-molded-bonbon': brokenMoldedBonBonEntity,
             'no-shell-molded-bonbon': noShellMoldedBonBonEntity,
+            'no-molds-molded-bonbon': noMoldsMoldedBonBonEntity,
             'test-bar-truffle': barTruffleEntity,
             'test-rolled-truffle': rolledTruffleEntity
             /* eslint-enable @typescript-eslint/naming-convention */
@@ -1151,6 +1175,43 @@ describe('Confection Recipes', () => {
           expect(() => confection.shellChocolate).toThrow(/not a chocolate/i);
         }
       );
+    });
+
+    test('getShellChocolate returns memoized result on second call', () => {
+      expect(ctx.confections.get('test.test-molded-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+        (confection) => {
+          const variation = confection.goldenVariation;
+          if (!variation.isMoldedBonBonVariation()) {
+            throw new Error('Expected molded bonbon variation');
+          }
+
+          const moldedVariation = variation as MoldedBonBonRecipeVariation;
+
+          // First call resolves and caches the result
+          expect(moldedVariation.getShellChocolate()).toSucceedAndSatisfy((shell) => {
+            expect(shell).toBeDefined();
+            expect(shell!.chocolate.id).toBe('test.dark-chocolate');
+          });
+
+          // Second call returns the memoized result (exercises line 160)
+          expect(moldedVariation.getShellChocolate()).toSucceedAndSatisfy((shell) => {
+            expect(shell).toBeDefined();
+            expect(shell!.chocolate.id).toBe('test.dark-chocolate');
+          });
+        }
+      );
+    });
+
+    test('getMolds returns empty options list when no molds configured', () => {
+      const confection = ctx.confections.get('test.no-molds-molded-bonbon' as ConfectionId).orThrow();
+      const variation = confection.goldenVariation;
+      if (!variation.isMoldedBonBonVariation()) {
+        throw new Error('Expected molded bonbon variation');
+      }
+
+      const molds = (variation as MoldedBonBonRecipeVariation).getMolds().orThrow();
+      expect(molds.options).toHaveLength(0);
+      expect(molds.preferredId).toBeUndefined();
     });
   });
 

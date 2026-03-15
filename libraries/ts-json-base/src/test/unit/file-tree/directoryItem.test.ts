@@ -367,6 +367,62 @@ describe('DirectoryItem', () => {
     });
   });
 
+  describe('deleteChild method', () => {
+    test('succeeds with mutable InMemoryTreeAccessors and removes the file', () => {
+      const mutableAccessors = InMemoryTreeAccessors.create([{ path: '/dir/file.json', contents: '{}' }], {
+        mutable: true
+      }).orThrow();
+      const directoryItem = DirectoryItem.create('/dir', mutableAccessors).orThrow();
+
+      expect(directoryItem.deleteChild?.('file.json')).toSucceedWith(true);
+      expect(mutableAccessors.getFileContents('/dir/file.json')).toFailWith(/not found/i);
+    });
+
+    test('deleted child no longer appears in getChildren', () => {
+      const mutableAccessors = InMemoryTreeAccessors.create(
+        [
+          { path: '/dir/file1.json', contents: '{}' },
+          { path: '/dir/file2.json', contents: '{}' }
+        ],
+        { mutable: true }
+      ).orThrow();
+      const directoryItem = DirectoryItem.create('/dir', mutableAccessors).orThrow();
+
+      expect(directoryItem.deleteChild?.('file1.json')).toSucceedWith(true);
+      expect(directoryItem.getChildren()).toSucceedAndSatisfy((children) => {
+        const names = children.map((c) => c.name);
+        expect(names).not.toContain('file1.json');
+        expect(names).toContain('file2.json');
+      });
+    });
+
+    test('fails when child does not exist', () => {
+      const mutableAccessors = InMemoryTreeAccessors.create([{ path: '/dir/file.json', contents: '{}' }], {
+        mutable: true
+      }).orThrow();
+      const directoryItem = DirectoryItem.create('/dir', mutableAccessors).orThrow();
+
+      expect(directoryItem.deleteChild?.('missing.json')).toFailWith(/file not found/i);
+    });
+
+    test('fails with non-mutable accessors (no fileIsMutable or saveFileContents)', () => {
+      const mockAccessor = {
+        resolveAbsolutePath: (...paths: string[]) => paths.join('/').replace(/\/+/g, '/'),
+        getExtension: (p: string) => '',
+        getBaseName: (p: string) => p.split('/').pop() ?? '',
+        joinPaths: (...paths: string[]) => paths.join('/'),
+        getItem: () => fail('not implemented') as unknown as ReturnType<typeof accessors.getItem>,
+        getFileContents: () =>
+          fail('not implemented') as unknown as ReturnType<typeof accessors.getFileContents>,
+        getFileContentType: () => succeed(undefined),
+        getChildren: () => succeed([]) as unknown as ReturnType<typeof accessors.getChildren>
+      };
+
+      const directoryItem = DirectoryItem.create('/dir', mockAccessor).orThrow();
+      expect(directoryItem.deleteChild?.('file.json')).toFailWith(/mutation not supported/i);
+    });
+  });
+
   describe('createChildFile method', () => {
     let tempDir: string;
 

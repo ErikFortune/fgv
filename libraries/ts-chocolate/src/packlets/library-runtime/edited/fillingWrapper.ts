@@ -560,10 +560,9 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     const scaledIngredients = variation.ingredients.map((ing) => {
       const unit = ing.unit ?? 'g';
       if (unit === 'g' || unit === 'mL') {
-        const scaled = scaleAmount(ing.amount, unit, scaleFactor);
-        const scaledAmount = scaled.isSuccess()
-          ? scaled.value.value
-          : ((ing.amount * scaleFactor) as Measurement);
+        const scaledAmount = scaleAmount(ing.amount, unit, scaleFactor)
+          .onSuccess((s) => succeed(s.value))
+          .orDefault((ing.amount * scaleFactor) as Measurement);
         return { ...ing, amount: scaledAmount };
       }
       return ing;

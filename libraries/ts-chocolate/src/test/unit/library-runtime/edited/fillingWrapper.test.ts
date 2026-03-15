@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/* eslint-disable max-lines -- comprehensive test file covering all editing methods requires more than 2000 lines */
+
 import '@fgv/ts-utils-jest';
 
 import {
@@ -1463,6 +1465,546 @@ describe('EditedFillingRecipe', () => {
 
       const changes = wrapper.getChanges(entity);
       expect(changes.tagsChanged).toBe(true);
+    });
+  });
+
+  describe('setVariationIngredient()', () => {
+    const chocolateId = 'dark-chocolate' as unknown as IngredientId;
+    const creamId = 'cream' as unknown as IngredientId;
+
+    function makeEntityWithIngredient(): Fillings.IFillingRecipeEntity {
+      return makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId], preferredId: chocolateId },
+                amount: 100 as Measurement
+              }
+            ],
+            baseWeight: 100 as Measurement
+          })
+        ]
+      });
+    }
+
+    test('adds a new ingredient to the variation', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      expect(
+        wrapper.setVariationIngredient('v1' as FillingRecipeVariationSpec, creamId, 50 as Measurement)
+      ).toSucceedWith(true);
+
+      expect(wrapper.variations[0].ingredients).toHaveLength(2);
+      const cream = wrapper.variations[0].ingredients.find((i) => i.ingredient.ids.includes(creamId));
+      expect(cream?.amount).toBe(50);
+    });
+
+    test('updates an existing ingredient in the variation', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      expect(
+        wrapper.setVariationIngredient('v1' as FillingRecipeVariationSpec, chocolateId, 200 as Measurement)
+      ).toSucceedWith(true);
+
+      expect(wrapper.variations[0].ingredients).toHaveLength(1);
+      expect(wrapper.variations[0].ingredients[0].amount).toBe(200);
+      expect(wrapper.variations[0].ingredients[0].ingredient.preferredId).toBe(chocolateId);
+    });
+
+    test('recalculates baseWeight after adding ingredient', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+      wrapper
+        .setVariationIngredient('v1' as FillingRecipeVariationSpec, creamId, 50 as Measurement)
+        .orThrow();
+
+      // 100 (chocolate) + 50 (cream) = 150
+      expect(wrapper.variations[0].baseWeight).toBe(150);
+    });
+
+    test('sets unit and modifiers when provided', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      wrapper
+        .setVariationIngredient('v1' as FillingRecipeVariationSpec, creamId, 2 as Measurement, 'tsp', {
+          toTaste: true
+        })
+        .orThrow();
+
+      const cream = wrapper.variations[0].ingredients.find((i) => i.ingredient.ids.includes(creamId));
+      expect(cream?.unit).toBe('tsp');
+      expect(cream?.modifiers?.toTaste).toBe(true);
+    });
+
+    test('fails when variation spec not found', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      expect(
+        wrapper.setVariationIngredient('v99' as FillingRecipeVariationSpec, chocolateId, 100 as Measurement)
+      ).toFailWith(/variation 'v99' does not exist/i);
+    });
+
+    test('pushes undo on success', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      wrapper
+        .setVariationIngredient('v1' as FillingRecipeVariationSpec, creamId, 50 as Measurement)
+        .orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      expect(wrapper.variations[0].ingredients).toHaveLength(1);
+    });
+  });
+
+  describe('replaceVariationIngredient()', () => {
+    const chocolateId = 'dark-chocolate' as unknown as IngredientId;
+    const newChocolateId = 'milk-chocolate' as unknown as IngredientId;
+
+    function makeEntityWithIngredient(): Fillings.IFillingRecipeEntity {
+      return makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId], preferredId: chocolateId },
+                amount: 100 as Measurement
+              }
+            ],
+            baseWeight: 100 as Measurement
+          })
+        ]
+      });
+    }
+
+    test('replaces with a new ingredient id and updates preferred', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      expect(
+        wrapper.replaceVariationIngredient(
+          'v1' as FillingRecipeVariationSpec,
+          chocolateId,
+          newChocolateId,
+          90 as Measurement
+        )
+      ).toSucceedWith(true);
+
+      const ing = wrapper.variations[0].ingredients[0];
+      expect(ing.ingredient.ids).toContain(newChocolateId);
+      expect(ing.ingredient.preferredId).toBe(newChocolateId);
+      expect(ing.amount).toBe(90);
+    });
+
+    test('when newId is already in ids, only updates preferred and amount', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId, newChocolateId], preferredId: chocolateId },
+                amount: 100 as Measurement
+              }
+            ],
+            baseWeight: 100 as Measurement
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper
+        .replaceVariationIngredient(
+          'v1' as FillingRecipeVariationSpec,
+          chocolateId,
+          newChocolateId,
+          80 as Measurement
+        )
+        .orThrow();
+
+      const ing = wrapper.variations[0].ingredients[0];
+      // ids should still be [chocolateId, newChocolateId] - not duplicated
+      expect(ing.ingredient.ids).toEqual([chocolateId, newChocolateId]);
+      expect(ing.ingredient.preferredId).toBe(newChocolateId);
+      expect(ing.amount).toBe(80);
+    });
+
+    test('fails when variation spec not found', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      expect(
+        wrapper.replaceVariationIngredient(
+          'v99' as FillingRecipeVariationSpec,
+          chocolateId,
+          newChocolateId,
+          100 as Measurement
+        )
+      ).toFailWith(/variation 'v99' does not exist/i);
+    });
+
+    test('fails when ingredient not found in variation', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      expect(
+        wrapper.replaceVariationIngredient(
+          'v1' as FillingRecipeVariationSpec,
+          'unknown' as unknown as IngredientId,
+          newChocolateId,
+          100 as Measurement
+        )
+      ).toFailWith(/ingredient 'unknown' not found/i);
+    });
+
+    test('pushes undo on success', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      wrapper
+        .replaceVariationIngredient(
+          'v1' as FillingRecipeVariationSpec,
+          chocolateId,
+          newChocolateId,
+          90 as Measurement
+        )
+        .orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      const ing = wrapper.variations[0].ingredients[0];
+      expect(ing.ingredient.preferredId).toBe(chocolateId);
+    });
+  });
+
+  describe('removeVariationIngredient()', () => {
+    const chocolateId = 'dark-chocolate' as unknown as IngredientId;
+    const creamId = 'cream' as unknown as IngredientId;
+
+    function makeEntityWithTwoIngredients(): Fillings.IFillingRecipeEntity {
+      return makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId], preferredId: chocolateId },
+                amount: 100 as Measurement
+              },
+              {
+                ingredient: { ids: [creamId] },
+                amount: 50 as Measurement
+              }
+            ],
+            baseWeight: 150 as Measurement
+          })
+        ]
+      });
+    }
+
+    test('removes an ingredient by id', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+
+      expect(wrapper.removeVariationIngredient('v1' as FillingRecipeVariationSpec, creamId)).toSucceedWith(
+        true
+      );
+
+      expect(wrapper.variations[0].ingredients).toHaveLength(1);
+      expect(wrapper.variations[0].ingredients[0].ingredient.ids).not.toContain(creamId);
+    });
+
+    test('recalculates baseWeight after removal', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+
+      wrapper.removeVariationIngredient('v1' as FillingRecipeVariationSpec, creamId).orThrow();
+
+      expect(wrapper.variations[0].baseWeight).toBe(100);
+    });
+
+    test('fails when variation spec not found', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+
+      expect(wrapper.removeVariationIngredient('v99' as FillingRecipeVariationSpec, creamId)).toFailWith(
+        /variation 'v99' does not exist/i
+      );
+    });
+
+    test('fails when ingredient not found in variation', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+
+      expect(
+        wrapper.removeVariationIngredient(
+          'v1' as FillingRecipeVariationSpec,
+          'unknown' as unknown as IngredientId
+        )
+      ).toFailWith(/ingredient 'unknown' not found/i);
+    });
+
+    test('pushes undo on success', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+
+      wrapper.removeVariationIngredient('v1' as FillingRecipeVariationSpec, creamId).orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      expect(wrapper.variations[0].ingredients).toHaveLength(2);
+    });
+  });
+
+  describe('setVariationProcedure()', () => {
+    const procedureId = 'proc-1' as unknown as ProcedureId;
+    const procedure2Id = 'proc-2' as unknown as ProcedureId;
+
+    test('sets a new procedure when none exists', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+
+      expect(wrapper.setVariationProcedure('v1' as FillingRecipeVariationSpec, procedureId)).toSucceedWith(
+        true
+      );
+
+      const procs = wrapper.variations[0].procedures;
+      expect(procs).toBeDefined();
+      expect(procs?.preferredId).toBe(procedureId);
+      expect(procs?.options).toHaveLength(1);
+    });
+
+    test('adds to existing options and updates preferred', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            procedures: { options: [{ id: procedureId }], preferredId: procedureId }
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper.setVariationProcedure('v1' as FillingRecipeVariationSpec, procedure2Id).orThrow();
+
+      const procs = wrapper.variations[0].procedures;
+      expect(procs?.options).toHaveLength(2);
+      expect(procs?.preferredId).toBe(procedure2Id);
+    });
+
+    test('does not duplicate when setting same procedure again', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            procedures: { options: [{ id: procedureId }], preferredId: procedureId }
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper.setVariationProcedure('v1' as FillingRecipeVariationSpec, procedureId).orThrow();
+
+      const procs = wrapper.variations[0].procedures;
+      expect(procs?.options).toHaveLength(1);
+      expect(procs?.preferredId).toBe(procedureId);
+    });
+
+    test('clears procedures when undefined is passed', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            procedures: { options: [{ id: procedureId }], preferredId: procedureId }
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper.setVariationProcedure('v1' as FillingRecipeVariationSpec, undefined).orThrow();
+
+      expect(wrapper.variations[0].procedures).toBeUndefined();
+    });
+
+    test('fails when variation spec not found', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+
+      expect(wrapper.setVariationProcedure('v99' as FillingRecipeVariationSpec, procedureId)).toFailWith(
+        /variation 'v99' does not exist/i
+      );
+    });
+
+    test('pushes undo on success', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+
+      wrapper.setVariationProcedure('v1' as FillingRecipeVariationSpec, procedureId).orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      expect(wrapper.variations[0].procedures).toBeUndefined();
+    });
+  });
+
+  describe('setVariationNotes()', () => {
+    test('sets notes on a variation', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+      const notes = [{ category: 'general' as NoteCategory, note: 'Test note' }];
+
+      expect(wrapper.setVariationNotes('v1' as FillingRecipeVariationSpec, notes)).toSucceedWith(true);
+
+      expect(wrapper.variations[0].notes).toHaveLength(1);
+      expect(wrapper.variations[0].notes?.[0].note).toBe('Test note');
+    });
+
+    test('clears notes when undefined is passed', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            notes: [{ category: 'general' as NoteCategory, note: 'Old note' }]
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper.setVariationNotes('v1' as FillingRecipeVariationSpec, undefined).orThrow();
+
+      expect(wrapper.variations[0].notes).toBeUndefined();
+    });
+
+    test('fails when variation spec not found', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+
+      expect(wrapper.setVariationNotes('v99' as FillingRecipeVariationSpec, [])).toFailWith(
+        /variation 'v99' does not exist/i
+      );
+    });
+
+    test('pushes undo on success', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntity()).orThrow();
+      const notes = [{ category: 'general' as NoteCategory, note: 'New note' }];
+
+      wrapper.setVariationNotes('v1' as FillingRecipeVariationSpec, notes).orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      expect(wrapper.variations[0].notes).toBeUndefined();
+    });
+  });
+
+  describe('scaleVariationToTargetWeight()', () => {
+    const chocolateId = 'dark-chocolate' as unknown as IngredientId;
+    const creamId = 'cream' as unknown as IngredientId;
+
+    function makeEntityWithWeightIngredients(): Fillings.IFillingRecipeEntity {
+      return makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId] },
+                amount: 200 as Measurement,
+                unit: 'g' as const
+              },
+              {
+                ingredient: { ids: [creamId] },
+                amount: 100 as Measurement,
+                unit: 'mL' as const
+              }
+            ],
+            baseWeight: 300 as Measurement
+          })
+        ]
+      });
+    }
+
+    test('scales weight ingredients proportionally to target weight', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithWeightIngredients()).orThrow();
+
+      expect(
+        wrapper.scaleVariationToTargetWeight('v1' as FillingRecipeVariationSpec, 600 as Measurement)
+      ).toSucceedAndSatisfy((actualWeight) => {
+        expect(actualWeight).toBe(600);
+      });
+
+      const ingredients = wrapper.variations[0].ingredients;
+      expect(ingredients[0].amount).toBe(400); // 200 × 2
+      expect(ingredients[1].amount).toBe(200); // 100 × 2
+    });
+
+    test('leaves non-weight ingredients unchanged', () => {
+      const saltId = 'salt' as unknown as IngredientId;
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              { ingredient: { ids: [chocolateId] }, amount: 200 as Measurement, unit: 'g' as const },
+              { ingredient: { ids: [saltId] }, amount: 1 as Measurement, unit: 'tsp' as const }
+            ],
+            baseWeight: 200 as Measurement
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper.scaleVariationToTargetWeight('v1' as FillingRecipeVariationSpec, 400 as Measurement).orThrow();
+
+      const ingredients = wrapper.variations[0].ingredients;
+      // chocolate scaled 200 → 400
+      expect(ingredients[0].amount).toBe(400);
+      // salt stays at 1 (non-weight unit)
+      expect(ingredients[1].amount).toBe(1);
+    });
+
+    test('fails when targetWeight is not positive', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithWeightIngredients()).orThrow();
+
+      expect(
+        wrapper.scaleVariationToTargetWeight('v1' as FillingRecipeVariationSpec, 0 as Measurement)
+      ).toFailWith(/target weight must be positive/i);
+    });
+
+    test('fails when variation spec not found', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithWeightIngredients()).orThrow();
+
+      expect(
+        wrapper.scaleVariationToTargetWeight('v99' as FillingRecipeVariationSpec, 300 as Measurement)
+      ).toFailWith(/variation 'v99' does not exist/i);
+    });
+
+    test('fails when no weight-contributing ingredients exist', () => {
+      const saltId = 'salt' as unknown as IngredientId;
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [{ ingredient: { ids: [saltId] }, amount: 1 as Measurement, unit: 'tsp' as const }],
+            baseWeight: 0 as Measurement
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      expect(
+        wrapper.scaleVariationToTargetWeight('v1' as FillingRecipeVariationSpec, 300 as Measurement)
+      ).toFailWith(/cannot scale.*no weight-contributing ingredients/i);
+    });
+
+    test('applies yieldFactor modifier in baseWeight calculation', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId] },
+                amount: 100 as Measurement,
+                modifiers: { yieldFactor: 0.8 }
+              }
+            ],
+            baseWeight: 80 as Measurement
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      // baseWeight = 100 × 0.8 = 80; scale to 160 means scaleFactor=2; scaled amount = 200
+      const result = wrapper
+        .scaleVariationToTargetWeight('v1' as FillingRecipeVariationSpec, 160 as Measurement)
+        .orThrow();
+      expect(result).toBe(160);
+    });
+
+    test('pushes undo on success', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithWeightIngredients()).orThrow();
+
+      wrapper.scaleVariationToTargetWeight('v1' as FillingRecipeVariationSpec, 600 as Measurement).orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      expect(wrapper.variations[0].ingredients[0].amount).toBe(200);
     });
   });
 });

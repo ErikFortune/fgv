@@ -104,6 +104,7 @@ export abstract class InventoryEntryBase<
     }
 
     const locations = this._context.locations;
+    /* c8 ignore next 3 - defensive: locations is always present in current session contexts */
     if (!locations) {
       return undefined;
     }

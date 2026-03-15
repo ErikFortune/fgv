@@ -313,6 +313,17 @@ describe('EditedMold', () => {
       expect(wrapper.current.name).toBe('Another name');
     });
 
+    test('setDescription() sets and clears description', () => {
+      const wrapper = EditedMold.create(baseMold).orThrow();
+
+      expect(wrapper.setDescription('A detailed description')).toSucceed();
+      expect(wrapper.current.description).toBe('A detailed description');
+      expect(wrapper.canUndo()).toBe(true);
+
+      expect(wrapper.setDescription(undefined)).toSucceed();
+      expect(wrapper.current.description).toBeUndefined();
+    });
+
     test('setCavities() updates cavities with grid', () => {
       const wrapper = EditedMold.create(baseMold).orThrow();
       const newCavities: Molds.ICavities = {
@@ -542,6 +553,15 @@ describe('EditedMold', () => {
       const changes = wrapper.getChanges(baseMold);
 
       expect(changes.nameChanged).toBe(true);
+      expect(changes.hasChanges).toBe(true);
+    });
+
+    test('getChanges() detects description change', () => {
+      const wrapper = EditedMold.create(baseMold).orThrow();
+      wrapper.setDescription('A new description').orThrow();
+      const changes = wrapper.getChanges(baseMold);
+
+      expect(changes.descriptionChanged).toBe(true);
       expect(changes.hasChanges).toBe(true);
     });
 

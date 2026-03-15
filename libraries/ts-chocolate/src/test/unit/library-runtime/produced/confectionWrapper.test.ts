@@ -29,6 +29,7 @@ import {
   ConfectionName,
   ConfectionRecipeVariationId,
   ConfectionRecipeVariationSpec,
+  DecorationId,
   FillingId,
   IngredientId,
   Measurement,
@@ -289,6 +290,19 @@ describe('ProducedMoldedBonBon', () => {
 
       expect(wrapper.setProcedure(undefined)).toSucceed();
       expect(wrapper.procedureId).toBeUndefined();
+    });
+
+    test('setDecoration() sets decoration and decorationId getter returns it', () => {
+      const wrapper = ProducedMoldedBonBon.create(moldedBonBonProduced).orThrow();
+
+      expect(wrapper.decorationId).toBeUndefined();
+
+      const decorationId = 'test.decoration-a' as DecorationId;
+      expect(wrapper.setDecoration(decorationId)).toSucceed();
+      expect(wrapper.decorationId).toBe(decorationId);
+
+      expect(wrapper.setDecoration(undefined)).toSucceed();
+      expect(wrapper.decorationId).toBeUndefined();
     });
 
     test('setFrames() succeeds with valid yield', () => {
@@ -791,6 +805,32 @@ describe('ProducedBarTruffle', () => {
     });
   });
 
+  test('scaleToYield() fails when weightPerPiece is not positive', () => {
+    const wrapper = ProducedBarTruffle.create(barTruffleProduced).orThrow();
+    const invalidYield: Confections.IBufferedBarTruffleYield = {
+      ...barTruffleProduced.yield,
+      count: 24,
+      weightPerPiece: 0 as Measurement
+    };
+    expect(wrapper.scaleToYield(invalidYield)).toFailWith(/weight per piece must be positive/i);
+  });
+
+  test('targetWeight computes count × weightPerPiece × buffer factor', () => {
+    const wrapper = ProducedBarTruffle.create(barTruffleProduced).orThrow();
+    // 48 × 10 × (1 + 10/100) = 480 × 1.1 = 528
+    expect(wrapper.targetWeight).toBe(528 as Measurement);
+  });
+
+  test('frameDimensions computes grid dimensions from count and piece size', () => {
+    const wrapper = ProducedBarTruffle.create(barTruffleProduced).orThrow();
+    const dims = wrapper.frameDimensions;
+    // count=48, cols=ceil(sqrt(48))=7, rows=ceil(48/7)=7
+    // width=7×25=175, height=7×25=175, depth=8
+    expect(dims.width).toBe(175 as Millimeters);
+    expect(dims.height).toBe(175 as Millimeters);
+    expect(dims.depth).toBe(8 as Millimeters);
+  });
+
   test('setEnrobingChocolate() sets and clears enrobing chocolate', () => {
     const wrapper = ProducedBarTruffle.create(barTruffleProduced).orThrow();
 
@@ -890,6 +930,30 @@ describe('ProducedRolledTruffle', () => {
       expect(wrapper.variationId).toBe(rolledTruffleVariationId);
       expect(wrapper.yield).toEqual(rolledTruffleProduced.yield);
     });
+  });
+
+  test('scaleToYield() fails when count is not positive', () => {
+    const wrapper = ProducedRolledTruffle.create(rolledTruffleProduced).orThrow();
+    const invalidYield: Confections.IBufferedYieldInPieces = {
+      ...rolledTruffleProduced.yield,
+      count: 0
+    };
+    expect(wrapper.scaleToYield(invalidYield)).toFailWith(/yield count must be positive/i);
+  });
+
+  test('scaleToYield() fails when weightPerPiece is not positive', () => {
+    const wrapper = ProducedRolledTruffle.create(rolledTruffleProduced).orThrow();
+    const invalidYield: Confections.IBufferedYieldInPieces = {
+      ...rolledTruffleProduced.yield,
+      weightPerPiece: 0 as Measurement
+    };
+    expect(wrapper.scaleToYield(invalidYield)).toFailWith(/weight per piece must be positive/i);
+  });
+
+  test('targetWeight computes count × weightPerPiece × buffer factor', () => {
+    const wrapper = ProducedRolledTruffle.create(rolledTruffleProduced).orThrow();
+    // 40 × 15 × (1 + 10/100) = 600 × 1.1 = 660
+    expect(wrapper.targetWeight).toBe(660 as Measurement);
   });
 
   test('setEnrobingChocolate() and setCoating() set and clear', () => {

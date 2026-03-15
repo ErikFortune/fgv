@@ -23,6 +23,7 @@ import '@fgv/ts-utils-jest';
 import {
   BaseIngredientId,
   BaseFillingId,
+  GroupName,
   Measurement,
   IngredientId,
   Percentage,
@@ -232,6 +233,50 @@ describe('EditingSession', () => {
       const ingredient = session.produced.snapshot.ingredients.find((i) => i.ingredientId === 'test.butter');
       expect(ingredient).toBeDefined();
       expect(ingredient?.amount).toBe(30);
+    });
+  });
+
+  describe('replaceIngredient', () => {
+    test('replaces an existing ingredient with a new one', () => {
+      const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+      const session = Session.EditingSession.create(variation).orThrow();
+
+      expect(
+        session.replaceIngredient(
+          'test.dark-chocolate' as IngredientId,
+          'test.butter' as IngredientId,
+          200 as Measurement
+        )
+      ).toSucceed();
+      expect(session.hasChanges).toBe(true);
+
+      const original = session.produced.snapshot.ingredients.find(
+        (i) => i.ingredientId === 'test.dark-chocolate'
+      );
+      const replacement = session.produced.snapshot.ingredients.find((i) => i.ingredientId === 'test.butter');
+      expect(original).toBeUndefined();
+      expect(replacement).toBeDefined();
+      expect(replacement?.amount).toBe(200);
+    });
+
+    test('preserves position of the replaced ingredient', () => {
+      const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+      const session = Session.EditingSession.create(variation).orThrow();
+
+      // cream is the second ingredient — replace it with butter
+      expect(
+        session.replaceIngredient(
+          'test.cream' as IngredientId,
+          'test.butter' as IngredientId,
+          80 as Measurement
+        )
+      ).toSucceed();
+
+      const ingredients = session.produced.snapshot.ingredients;
+      expect(ingredients).toHaveLength(2);
+      expect(ingredients[0].ingredientId).toBe('test.dark-chocolate');
+      expect(ingredients[1].ingredientId).toBe('test.butter');
+      expect(ingredients[1].amount).toBe(80);
     });
   });
 
@@ -1020,6 +1065,158 @@ describe('EditingSession', () => {
 
       expect(session.produced).toBeDefined();
       expect(session.produced.snapshot).toBeDefined();
+    });
+
+    describe('IMaterializedSessionBase fallback values (no persisted entity)', () => {
+      test('baseId returns empty string when session has no persisted entity', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(session.baseId).toBe('');
+      });
+
+      test('sessionType is always filling', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(session.sessionType).toBe('filling');
+      });
+
+      test('status defaults to planning when no persisted entity', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(session.status).toBe('planning');
+      });
+
+      test('label returns undefined when no persisted entity', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(session.label).toBeUndefined();
+      });
+
+      test('group returns undefined when no persisted entity', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(session.group).toBeUndefined();
+      });
+
+      test('createdAt returns empty string when no persisted entity', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(session.createdAt).toBe('');
+      });
+
+      test('updatedAt returns empty string when no persisted entity', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(session.updatedAt).toBe('');
+      });
+
+      test('notes returns undefined when no persisted entity', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(session.notes).toBeUndefined();
+      });
+
+      test('sourceVariationId returns the base recipe variation ID', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(session.sourceVariationId).toBe(variation.variationId);
+      });
+
+      test('execution returns undefined when no persisted entity', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(session.execution).toBeUndefined();
+      });
+
+      test('entity throws when no persisted entity', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        expect(() => session.entity).toThrow(/no persisted entity/i);
+      });
+    });
+
+    describe('IMaterializedSessionBase values from persisted entity', () => {
+      test('restored session exposes persisted baseId, status, label, notes, createdAt, updatedAt', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        const notes = [{ category: 'session' as NoteCategory, note: 'Persisted note' }];
+        const persisted = session
+          .toPersistedState({
+            collectionId: 'user' as CollectionId,
+            baseId: '2026-02-01-120000-aabbccdd' as BaseSessionId,
+            status: 'active',
+            label: 'My Saved Session',
+            notes
+          })
+          .orThrow();
+
+        expect(Session.EditingSession.fromPersistedState(persisted, variation)).toSucceedAndSatisfy(
+          (restored) => {
+            expect(restored.baseId).toBe('2026-02-01-120000-aabbccdd');
+            expect(restored.status).toBe('active');
+            expect(restored.label).toBe('My Saved Session');
+            expect(restored.notes).toEqual(notes);
+            expect(restored.createdAt).toBeTruthy();
+            expect(restored.updatedAt).toBeTruthy();
+            expect(restored.sessionType).toBe('filling');
+          }
+        );
+      });
+
+      test('execution returns persisted execution state when present', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+
+        const executionState = {
+          currentStepIndex: 2,
+          executionLog: [],
+          startedAt: '2026-02-01T12:00:00.000Z'
+        };
+
+        const persisted = session
+          .toPersistedState({
+            collectionId: 'user' as CollectionId,
+            status: 'active',
+            execution: executionState
+          })
+          .orThrow();
+
+        expect(Session.EditingSession.fromPersistedState(persisted, variation)).toSucceedAndSatisfy(
+          (restored) => {
+            expect(restored.execution).toBeDefined();
+            expect(restored.execution?.currentStepIndex).toBe(2);
+            expect(restored.execution?.startedAt).toBe('2026-02-01T12:00:00.000Z');
+          }
+        );
+      });
+
+      test('entity returns the persisted entity when session was restored', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        const persisted = session.toPersistedState({ collectionId: 'user' as CollectionId }).orThrow();
+
+        expect(Session.EditingSession.fromPersistedState(persisted, variation)).toSucceedAndSatisfy(
+          (restored) => {
+            expect(restored.entity).toBeDefined();
+            expect(restored.entity.sessionType).toBe('filling');
+          }
+        );
+      });
+
+      test('group returns the group name when persisted entity has a group', () => {
+        const variation = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVariation;
+        const session = Session.EditingSession.create(variation).orThrow();
+        const persisted = session.toPersistedState({ collectionId: 'user' as CollectionId }).orThrow();
+
+        // Spread the persisted entity and add a group field
+        const persistedWithGroup = { ...persisted, group: 'batch-2026-01' as GroupName };
+
+        expect(Session.EditingSession.fromPersistedState(persistedWithGroup, variation)).toSucceedAndSatisfy(
+          (restored: Session.EditingSession) => {
+            expect(restored.group).toBe('batch-2026-01');
+          }
+        );
+      });
     });
   });
 

@@ -110,5 +110,21 @@ describe('buildFillingAiPrompt', () => {
       expect(prompt.combined).toContain('no markdown');
       expect(prompt.combined).toContain('no code fences');
     });
+
+    test('includes additional instructions when provided', () => {
+      const promptWithInstructions = buildFillingAiPrompt(
+        'Dark Ganache',
+        'Use metric measurements and assume a professional chocolatier audience'
+      );
+      expect(promptWithInstructions.combined).toContain(
+        'Use metric measurements and assume a professional chocolatier audience'
+      );
+      expect(promptWithInstructions.combined).toContain('Additional instructions from the user:');
+    });
+
+    test('does not include additional instructions section when not provided', () => {
+      const promptWithout = buildFillingAiPrompt('Dark Ganache');
+      expect(promptWithout.combined).not.toContain('Additional instructions from the user:');
+    });
   });
 });

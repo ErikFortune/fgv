@@ -166,7 +166,7 @@ describe('FileSystemAccessTreeAccessors', () => {
 
     test('fails gracefully when queryPermission throws', async () => {
       const fileHandle = {
-        kind: 'file' as const,
+        kind: 'file',
         name: 'collection.yaml',
         async getFile(): Promise<File> {
           return createMockFileHandle('collection.yaml', {

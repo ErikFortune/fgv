@@ -135,4 +135,15 @@ describe('buildMoldAiPrompt', () => {
     // Should convert to lowercase
     expect(prompt.combined).toContain('chocolate-world');
   });
+
+  test('includes additional instructions when provided', () => {
+    const prompt = buildMoldAiPrompt('Test Mold', 'Focus on polycarbonate molds only');
+    expect(prompt.combined).toContain('Focus on polycarbonate molds only');
+    expect(prompt.combined).toContain('Additional instructions from the user:');
+  });
+
+  test('does not include additional instructions section when not provided', () => {
+    const prompt = buildMoldAiPrompt('Test Mold');
+    expect(prompt.combined).not.toContain('Additional instructions from the user:');
+  });
 });

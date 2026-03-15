@@ -20,8 +20,8 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
-import { IngredientsLibrary } from '../../../packlets/entities';
-import { CollectionId } from '../../../packlets/common';
+import { IngredientsLibrary, IngredientEntity } from '../../../packlets/entities';
+import { BaseIngredientId, CollectionId, Percentage } from '../../../packlets/common';
 import { ICollectionRuntimeMetadata } from '../../../packlets/library-data';
 
 describe('SubLibraryBase Collection Management', () => {
@@ -95,6 +95,51 @@ describe('SubLibraryBase Collection Management', () => {
       expect(library.removeCollection('empty-collection' as CollectionId)).toSucceed();
 
       expect(library.collections.has('empty-collection' as CollectionId)).toBe(false);
+    });
+
+    test('removes a file-tree-backed collection and deletes the source file', () => {
+      // Create a file-tree-backed ingredients library with a mutable collection
+      const ganacheChars = {
+        cacaoFat: 36 as Percentage,
+        sugar: 34 as Percentage,
+        milkFat: 0 as Percentage,
+        water: 1 as Percentage,
+        solids: 29 as Percentage,
+        otherFats: 0 as Percentage
+      };
+      const fileContents = {
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'dark-chocolate': {
+            baseId: 'dark-chocolate' as BaseIngredientId,
+            name: 'Dark Chocolate',
+            category: 'other',
+            ganacheCharacteristics: ganacheChars
+          }
+        }
+      };
+      const accessors = FileTree.InMemoryTreeAccessors.create(
+        [{ path: '/data/ingredients/tree-collection.yaml', contents: fileContents }],
+        { mutable: true }
+      ).orThrow();
+      const fileTree = FileTree.FileTree.create(accessors).orThrow();
+
+      const treeLibrary = IngredientsLibrary.create({ builtin: false }).orThrow();
+      treeLibrary
+        .loadFromFileTreeSource({
+          sourceName: 'test-source',
+          directory: fileTree.getDirectory('/').orThrow(),
+          mutable: true,
+          skipMissingDirectories: true
+        })
+        .orThrow();
+
+      // Verify collection was loaded
+      expect(treeLibrary.collections.has('tree-collection' as CollectionId)).toBe(true);
+
+      // Remove it — this triggers _deleteSourceFile which cleans up the backing file
+      expect(treeLibrary.removeCollection('tree-collection' as CollectionId)).toSucceed();
+      expect(treeLibrary.collections.has('tree-collection' as CollectionId)).toBe(false);
     });
 
     test('can add collection after removing it', () => {
@@ -579,6 +624,113 @@ describe('SubLibraryBase Collection Management', () => {
       expect(removed).toBe(1);
       expect(library.collections.has('immutable-match' as CollectionId)).toBe(true);
       expect(library.collections.has('mutable-match' as CollectionId)).toBe(false);
+    });
+  });
+
+  // ============================================================================
+  // getCollectionOperations()
+  // ============================================================================
+
+  describe('getCollectionOperations', () => {
+    beforeEach(() => {
+      library.addCollectionEntry({
+        id: 'ops-collection' as CollectionId,
+        isMutable: true,
+        items: {}
+      });
+    });
+
+    describe('remove', () => {
+      test('successfully removes an entry from a mutable collection', () => {
+        // First add an entry using the add operation
+        const ops = library.getCollectionOperations('ops-collection' as CollectionId);
+        ops
+          .add(
+            'dark-chocolate' as BaseIngredientId,
+            {
+              baseId: 'dark-chocolate' as BaseIngredientId,
+              name: 'Dark Chocolate',
+              category: 'other'
+            } as IngredientEntity
+          )
+          .orThrow();
+
+        expect(ops.remove('dark-chocolate' as BaseIngredientId)).toSucceedAndSatisfy((removed) => {
+          expect(removed.baseId).toBe('dark-chocolate');
+        });
+      });
+
+      test('fails to remove entry from immutable collection', () => {
+        // Create a library with a proper immutable collection containing a valid ingredient
+        const immutableLibrary = IngredientsLibrary.create({
+          builtin: false,
+          collections: [
+            {
+              id: 'immutable-ops' as CollectionId,
+              isMutable: false,
+              items: {
+                /* eslint-disable @typescript-eslint/naming-convention */
+                'dark-chocolate': {
+                  baseId: 'dark-chocolate' as BaseIngredientId,
+                  name: 'Dark Chocolate',
+                  category: 'other',
+                  ganacheCharacteristics: {
+                    cacaoFat: 36 as Percentage,
+                    sugar: 34 as Percentage,
+                    milkFat: 0 as Percentage,
+                    water: 1 as Percentage,
+                    solids: 29 as Percentage,
+                    otherFats: 0 as Percentage
+                  }
+                }
+                /* eslint-enable @typescript-eslint/naming-convention */
+              }
+            }
+          ]
+        }).orThrow();
+
+        const ops = immutableLibrary.getCollectionOperations('immutable-ops' as CollectionId);
+        expect(ops.remove('dark-chocolate' as BaseIngredientId)).toFailWith(
+          /cannot remove entry from immutable collection/i
+        );
+      });
+
+      test('fails when entry does not exist', () => {
+        const ops = library.getCollectionOperations('ops-collection' as CollectionId);
+        expect(ops.remove('nonexistent' as BaseIngredientId)).toFailWith(/not found/i);
+      });
+    });
+
+    describe('add', () => {
+      test('successfully adds an entry to a mutable collection', () => {
+        const ops = library.getCollectionOperations('ops-collection' as CollectionId);
+        expect(
+          ops.add(
+            'dark-chocolate' as BaseIngredientId,
+            {
+              baseId: 'dark-chocolate' as BaseIngredientId,
+              name: 'Dark Chocolate',
+              category: 'other'
+            } as IngredientEntity
+          )
+        ).toSucceed();
+      });
+    });
+
+    describe('upsert', () => {
+      test('successfully upserts an entry in a mutable collection', () => {
+        const ops = library.getCollectionOperations('ops-collection' as CollectionId);
+        expect(
+          ops.upsert(
+            'dark-chocolate' as BaseIngredientId,
+            {
+              baseId: 'dark-chocolate' as BaseIngredientId,
+              name: 'Dark Chocolate Updated',
+              category: 'other'
+            } as IngredientEntity
+          )
+        ).toSucceed();
+      });
     });
   });
 

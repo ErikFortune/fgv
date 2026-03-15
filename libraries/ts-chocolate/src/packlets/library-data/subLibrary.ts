@@ -1544,25 +1544,27 @@ export abstract class SubLibraryBase<
           .onSuccess((compositeId) => succeed(compositeId as string));
       },
       remove: (baseId: TBaseId): Result<TItem> => {
-        const compositeIdResult = this.composeId(collectionId, baseId);
-        if (compositeIdResult.isFailure()) {
-          return fail(`Invalid ID ${collectionId}.${baseId}: ${compositeIdResult.message}`);
-        }
-        const existing = this.get(compositeIdResult.value);
-        if (existing.isFailure()) {
-          return fail(`Entry ${collectionId}.${baseId} not found: ${existing.message}`);
-        }
-        const collectionResult = this.collections.get(collectionId).asResult;
-        if (collectionResult.isFailure()) {
-          return fail(`Collection ${collectionId} not found: ${collectionResult.message}`);
-        }
-        if (!collectionResult.value.isMutable) {
-          return fail(`Cannot remove entry from immutable collection ${collectionId}`);
-        }
-        return collectionResult.value.items
-          .delete(baseId)
-          .asResult.withErrorFormat((msg) => `Failed to delete ${baseId}: ${msg}`)
-          .onSuccess(() => succeed(existing.value));
+        return this.composeId(collectionId, baseId)
+          .withErrorFormat((msg) => `Invalid ID ${collectionId}.${baseId}: ${msg}`)
+          .onSuccess((compositeId) =>
+            this.get(compositeId).withErrorFormat(
+              (msg) => `Entry ${collectionId}.${baseId} not found: ${msg}`
+            )
+          )
+          .onSuccess((existing) => {
+            return this.collections
+              .get(collectionId)
+              .asResult.withErrorFormat((msg) => `Collection ${collectionId} not found: ${msg}`)
+              .onSuccess((collection) => {
+                if (!collection.isMutable) {
+                  return fail(`Cannot remove entry from immutable collection ${collectionId}`);
+                }
+                return collection.items
+                  .delete(baseId)
+                  .asResult.withErrorFormat((msg) => `Failed to delete ${baseId}: ${msg}`)
+                  .onSuccess(() => succeed(existing));
+              });
+          });
       }
     };
   }

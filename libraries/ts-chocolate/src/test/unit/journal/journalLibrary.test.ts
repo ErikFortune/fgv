@@ -29,6 +29,7 @@ import {
   JournalLibrary
 } from '../../../packlets/entities/journal/library';
 import {
+  CollectionId,
   ConfectionId,
   ConfectionRecipeVariationId,
   ConfectionRecipeVariationSpec,
@@ -588,6 +589,47 @@ describe('JournalLibrary (Collection-Based)', () => {
   // ============================================================================
   // Multi-Collection Tests
   // ============================================================================
+
+  // ============================================================================
+  // addJournal Tests
+  // ============================================================================
+
+  describe('addJournal', () => {
+    test('successfully adds a journal entry and returns a JournalId', () => {
+      const lib = createLibraryWithJournals([]);
+      const newJournal = makeFillingJournal('2026-03-01-100000-00000099', 'source.recipe-a@2026-01-01-01');
+
+      expect(lib.addJournal('test-collection' as CollectionId, newJournal)).toSucceedAndSatisfy(
+        (journalId) => {
+          expect(journalId).toMatch(/test-collection/);
+          expect(lib.hasJournal(journalId)).toBe(true);
+        }
+      );
+    });
+
+    test('invalidates indices so queries reflect the newly added journal', () => {
+      const lib = createLibraryWithJournals([]);
+      const newJournal = makeFillingJournal('2026-03-01-100000-00000099', 'source.recipe-a@2026-01-01-01');
+
+      lib.addJournal('test-collection' as CollectionId, newJournal).orThrow();
+
+      const results = lib.getJournalsForFilling('source.recipe-a' as FillingId);
+      expect(results).toHaveLength(1);
+      expect(results[0].baseId).toBe(newJournal.baseId);
+    });
+
+    test('adds journal to a new collection and returns composite journal ID', () => {
+      const lib = createLibraryWithJournals([]);
+      const newJournal = makeFillingJournal('2026-03-01-100000-00000099', 'source.recipe-a@2026-01-01-01');
+
+      expect(lib.addJournal('new-collection' as CollectionId, newJournal)).toSucceedAndSatisfy(
+        (journalId) => {
+          expect(journalId).toMatch(/new-collection/);
+          expect(lib.hasJournal(journalId)).toBe(true);
+        }
+      );
+    });
+  });
 
   describe('multi-collection support', () => {
     test('queries span multiple collections', () => {

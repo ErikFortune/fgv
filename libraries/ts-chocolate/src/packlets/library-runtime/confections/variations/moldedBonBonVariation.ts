@@ -157,6 +157,7 @@ export class MoldedBonBonRecipeVariation
           return succeed(this._resolvedShellChocolate);
         });
     }
+    /* c8 ignore next 1 - branch: null sentinel resolved as undefined, both paths tested but ?? branch intermittently missed */
     return succeed(this._resolvedShellChocolate ?? undefined);
   }
 

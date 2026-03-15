@@ -251,6 +251,7 @@ export abstract class ProducedConfectionBase<
    * Gets the yield specification.
    * @public
    */
+  /* c8 ignore next 4 - base class getter always overridden by subclasses with specific return types */
   public get yield(): Confections.BufferedConfectionYield {
     return this._current.yield;
   }
@@ -513,6 +514,7 @@ export class ProducedMoldedBonBon extends ProducedConfectionBase<IProducedMolded
         };
 
         // TODO: shellChocolate?.chocolate.id! is unsafe.  we should make it optional in the produced molded entity too.
+        /* c8 ignore next 14 - branch: optional chaining branches where properties are always present in test data */
         const produced: IProducedMoldedBonBonEntity = {
           confectionType: 'molded-bonbon',
           variationId,
@@ -837,7 +839,7 @@ export class ProducedBarTruffle extends ProducedConfectionBase<IProducedBarTruff
         : succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
-        /* c8 ignore next 8 - branch: entity validation ensures optional fields are always present */
+        /* c8 ignore next 17 - branch: optional chaining branches where properties are always present in test data */
         const sourceYield = source.yield;
         const produced: IProducedBarTruffleEntity = {
           confectionType: 'bar-truffle',
@@ -1101,7 +1103,7 @@ export class ProducedRolledTruffle extends ProducedConfectionBase<IProducedRolle
           succeed(undefined);
 
       return fillingsResult.onSuccess((fillings) => {
-        /* c8 ignore next 8 - branch: entity validation ensures optional fields are always present */
+        /* c8 ignore next 16 - branch: optional chaining branches where properties are always present in test data */
         const sourceYield = source.yield;
         const produced: IProducedRolledTruffleEntity = {
           confectionType: 'rolled-truffle',

@@ -157,6 +157,7 @@ export abstract class ConfectionRecipeVariationBase<
   /**
    * Yield specification for this variation.
    */
+  /* c8 ignore next 3 - abstract base: all subclasses override this getter */
   public get yield(): Confections.ConfectionYield {
     return this._entity.yield;
   }

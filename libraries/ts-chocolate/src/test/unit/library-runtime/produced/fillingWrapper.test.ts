@@ -1169,4 +1169,107 @@ describe('ProducedFilling', () => {
       );
     });
   });
+
+  describe('replaceIngredient()', () => {
+    test('fails when old ingredient is not found', () => {
+      const wrapper = ProducedFilling.create(baseProducedFilling).orThrow();
+      expect(
+        wrapper.replaceIngredient(
+          'test.nonexistent' as IngredientId,
+          'test.new-ingredient' as IngredientId,
+          100 as Measurement,
+          'g' as MeasurementUnit
+        )
+      ).toFailWith(/test\.nonexistent not found/i);
+    });
+
+    test('fails when amount is negative', () => {
+      const wrapper = ProducedFilling.create(baseProducedFilling).orThrow();
+      expect(
+        wrapper.replaceIngredient(
+          'test.dark-chocolate' as IngredientId,
+          'test.milk-chocolate' as IngredientId,
+          -1 as Measurement,
+          'g' as MeasurementUnit
+        )
+      ).toFailWith(/amount must be non-negative/i);
+    });
+  });
+
+  describe('getChanges() — non-weight unit amounts differ', () => {
+    test('detects amount difference for non-weight unit ingredients', () => {
+      // Use fillingWithNonWeightIngredients which has a tsp vanilla ingredient
+      const wrapper1 = ProducedFilling.create(fillingWithNonWeightIngredients).orThrow();
+      wrapper1
+        .setIngredient('test.vanilla' as IngredientId, 2 as Measurement, 'tsp' as MeasurementUnit)
+        .orThrow();
+
+      const changes = wrapper1.getChanges(fillingWithNonWeightIngredients);
+      expect(changes.ingredientsChanged).toBe(true);
+    });
+  });
+
+  describe('getChanges() — processNote difference only', () => {
+    test('detects difference when only processNote differs between modifiers', () => {
+      const wrapper1 = ProducedFilling.create(baseProducedFilling).orThrow();
+      wrapper1
+        .setIngredient('test.dark-chocolate' as IngredientId, 200 as Measurement, 'g' as MeasurementUnit, {
+          spoonLevel: 'level',
+          toTaste: false,
+          yieldFactor: 1.0,
+          processNote: 'tempered'
+        })
+        .orThrow();
+
+      const wrapper2 = ProducedFilling.create(baseProducedFilling).orThrow();
+      wrapper2
+        .setIngredient('test.dark-chocolate' as IngredientId, 200 as Measurement, 'g' as MeasurementUnit, {
+          spoonLevel: 'level',
+          toTaste: false,
+          yieldFactor: 1.0,
+          processNote: 'melted'
+        })
+        .orThrow();
+
+      const changes = wrapper1.getChanges(wrapper2.snapshot);
+      expect(changes.ingredientsChanged).toBe(true);
+    });
+  });
+
+  describe('getChanges() — zero total weight ingredients', () => {
+    test('uses factor 1.0 when both sides have only non-weight ingredients', () => {
+      // Create a filling with only non-weight-contributing ingredients (tsp, pinch)
+      // This triggers the factor = 1.0 fallback in _ingredientsEqual
+      const nonWeightFilling: IProducedFillingEntity = {
+        variationId: testVariationId,
+        scaleFactor: 1.0,
+        targetWeight: 0 as Measurement,
+        ingredients: [
+          {
+            ingredientId: 'test.vanilla' as IngredientId,
+            amount: 1 as Measurement,
+            unit: 'tsp' as MeasurementUnit
+          },
+          {
+            ingredientId: 'test.salt' as IngredientId,
+            amount: 1 as Measurement,
+            unit: 'pinch' as MeasurementUnit
+          }
+        ]
+      };
+
+      const wrapper = ProducedFilling.create(nonWeightFilling).orThrow();
+
+      // No changes - same non-weight amounts with zero total weight on both sides
+      const noChanges = wrapper.getChanges(nonWeightFilling);
+      expect(noChanges.ingredientsChanged).toBe(false);
+
+      // Changed amount - still zero total weight on both sides, factor stays 1.0
+      wrapper
+        .setIngredient('test.vanilla' as IngredientId, 2 as Measurement, 'tsp' as MeasurementUnit)
+        .orThrow();
+      const withChanges = wrapper.getChanges(nonWeightFilling);
+      expect(withChanges.ingredientsChanged).toBe(true);
+    });
+  });
 });

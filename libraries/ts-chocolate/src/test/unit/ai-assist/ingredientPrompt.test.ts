@@ -132,5 +132,19 @@ describe('buildIngredientAiPrompt', () => {
       expect(prompt.combined).toContain('no markdown');
       expect(prompt.combined).toContain('no code fences');
     });
+
+    test('includes additional instructions when provided', () => {
+      const promptWithInstructions = buildIngredientAiPrompt(
+        'Cocoa Butter',
+        'Specify the origin and processing method if known'
+      );
+      expect(promptWithInstructions.combined).toContain('Specify the origin and processing method if known');
+      expect(promptWithInstructions.combined).toContain('Additional instructions from the user:');
+    });
+
+    test('does not include additional instructions section when not provided', () => {
+      const promptWithout = buildIngredientAiPrompt('Cocoa Butter');
+      expect(promptWithout.combined).not.toContain('Additional instructions from the user:');
+    });
   });
 });

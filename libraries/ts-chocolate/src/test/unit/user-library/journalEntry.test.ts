@@ -31,6 +31,7 @@ import {
   FillingRecipeVariationSpec,
   FillingRecipeVariationId,
   CollectionId,
+  Millimeters,
   MoldId,
   BaseMoldId,
   MoldFormat,
@@ -61,7 +62,11 @@ import {
   AnyJournalEntryEntity
 } from '../../../packlets/entities';
 import { ChocolateEntityLibrary, ChocolateLibrary, IFillingRecipe } from '../../../packlets/library-runtime';
-import { ISessionContext } from '../../../packlets/user-library';
+import {
+  ISessionContext,
+  isFillingProductionJournalEntry,
+  isConfectionProductionJournalEntry
+} from '../../../packlets/user-library';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
   FillingEditJournalEntry,
@@ -766,6 +771,401 @@ describe('Journal Entry Classes', () => {
           expect(entry.updatedId).toBe('test.test-ganache@2026-01-02-01' as FillingRecipeVariationId);
         }
       );
+    });
+  });
+
+  // ============================================================================
+  // Updated Variation Materialization Tests
+  // ============================================================================
+
+  describe('updated variation materialization', () => {
+    test('FillingEditJournalEntry with updated variation materializes the updated path', () => {
+      const id = 'journals.2026-01-15-143025-a1b2c3d4' as JournalId;
+      const entityWithUpdated: IFillingEditJournalEntryEntity = {
+        ...fillingEditEntity,
+        updated: {
+          variationSpec: '2026-01-01-01' as FillingRecipeVariationSpec,
+          createdDate: '2026-01-01',
+          ingredients: [
+            { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 250 as Measurement },
+            { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 125 as Measurement }
+          ],
+          baseWeight: 375 as Measurement
+        }
+      };
+
+      expect(FillingEditJournalEntry.create(sessionContext, id, entityWithUpdated)).toSucceedAndSatisfy(
+        (entry) => {
+          expect(entry.updated).toBeDefined();
+          expect(entry.updated?.entity.baseWeight).toBe(375 as Measurement);
+        }
+      );
+    });
+
+    test('ConfectionEditJournalEntry with bar-truffle updated variation materializes correctly', () => {
+      const barTruffleEntity: Confections.BarTruffleRecipeEntity = {
+        baseId: 'test-bar-truffle' as BaseConfectionId,
+        confectionType: 'bar-truffle',
+        name: 'Test Bar Truffle' as ConfectionName,
+        goldenVariationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+        variations: [
+          {
+            variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+            createdDate: '2026-01-01',
+            yield: {
+              numPieces: 48,
+              weightPerPiece: 10 as Measurement,
+              dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+            }
+          }
+        ]
+      };
+
+      const confections = ConfectionsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-molded-bonbon': moldedBonBonEntity,
+              'test-bar-truffle': barTruffleEntity
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const ingredients = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'dark-chocolate': darkChocolate,
+              cream
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const fillings = FillingsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-ganache': testRecipe
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const molds = MoldsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'mold-a': moldA
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const library = ChocolateEntityLibrary.create({
+        builtin: false,
+        libraries: { ingredients, fillings, molds, confections }
+      }).orThrow();
+
+      const ctx = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
+      const barTruffleSessionContext: ISessionContext = {
+        get ingredients() {
+          return ctx.ingredients;
+        },
+        get fillings() {
+          return ctx.fillings;
+        },
+        get procedures() {
+          return ctx.procedures;
+        },
+        get molds() {
+          return ctx.molds;
+        },
+        get decorations() {
+          return ctx.decorations;
+        },
+        get confections() {
+          return ctx.confections;
+        },
+        isCollectionMutable(collectionId: CollectionId) {
+          return ctx.isCollectionMutable(collectionId);
+        },
+        createFillingSession(filling: IFillingRecipe, targetWeight: Measurement) {
+          const variation = filling.goldenVariation;
+          const baseWeight = variation.entity.baseWeight;
+          const scaleFactor = targetWeight / baseWeight;
+          return { variation, scaleFactor } as unknown as ReturnType<ISessionContext['createFillingSession']>;
+        }
+      };
+
+      const id = 'journals.2026-01-15-150000-b2c3d4e5' as JournalId;
+      const barTruffleEditEntity: IConfectionEditJournalEntryEntity = {
+        type: 'confection-edit',
+        baseId: '2026-01-15-150000-b2c3d4e5' as BaseJournalId,
+        timestamp: '2026-01-15T15:00:00Z',
+        variationId: 'test.test-bar-truffle@2026-01-01-01' as ConfectionRecipeVariationId,
+        recipe: {
+          variationType: 'bar-truffle' as const,
+          variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+          createdDate: '2026-01-01',
+          yield: {
+            numPieces: 48,
+            weightPerPiece: 10 as Measurement,
+            dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+          }
+        },
+        updated: {
+          variationType: 'bar-truffle' as const,
+          variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+          createdDate: '2026-01-01',
+          yield: {
+            numPieces: 60,
+            weightPerPiece: 12 as Measurement,
+            dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 8 as Millimeters }
+          }
+        }
+      };
+
+      expect(
+        ConfectionEditJournalEntry.create(barTruffleSessionContext, id, barTruffleEditEntity)
+      ).toSucceedAndSatisfy((entry) => {
+        expect(entry.updated).toBeDefined();
+        expect(entry.variationId).toBe('test.test-bar-truffle@2026-01-01-01' as ConfectionRecipeVariationId);
+      });
+    });
+
+    test('ConfectionEditJournalEntry with rolled-truffle updated variation materializes correctly', () => {
+      const rolledTruffleRecipeEntity: Confections.RolledTruffleRecipeEntity = {
+        baseId: 'test-rolled-truffle' as BaseConfectionId,
+        confectionType: 'rolled-truffle',
+        name: 'Test Rolled Truffle' as ConfectionName,
+        goldenVariationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+        variations: [
+          {
+            variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+            createdDate: '2026-01-01',
+            yield: { numPieces: 40, weightPerPiece: 15 as Measurement }
+          }
+        ]
+      };
+
+      const confections = ConfectionsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-molded-bonbon': moldedBonBonEntity,
+              'test-rolled-truffle': rolledTruffleRecipeEntity
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const ingredients = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'dark-chocolate': darkChocolate,
+              cream
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const fillings = FillingsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'test-ganache': testRecipe
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const molds = MoldsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'mold-a': moldA
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const library = ChocolateEntityLibrary.create({
+        builtin: false,
+        libraries: { ingredients, fillings, molds, confections }
+      }).orThrow();
+
+      const ctx = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
+      const rolledTruffleSessionContext: ISessionContext = {
+        get ingredients() {
+          return ctx.ingredients;
+        },
+        get fillings() {
+          return ctx.fillings;
+        },
+        get procedures() {
+          return ctx.procedures;
+        },
+        get molds() {
+          return ctx.molds;
+        },
+        get decorations() {
+          return ctx.decorations;
+        },
+        get confections() {
+          return ctx.confections;
+        },
+        isCollectionMutable(collectionId: CollectionId) {
+          return ctx.isCollectionMutable(collectionId);
+        },
+        createFillingSession(filling: IFillingRecipe, targetWeight: Measurement) {
+          const variation = filling.goldenVariation;
+          const baseWeight = variation.entity.baseWeight;
+          const scaleFactor = targetWeight / baseWeight;
+          return { variation, scaleFactor } as unknown as ReturnType<ISessionContext['createFillingSession']>;
+        }
+      };
+
+      const id = 'journals.2026-01-15-160000-c3d4e5f6' as JournalId;
+      const rolledTruffleEditEntity: IConfectionEditJournalEntryEntity = {
+        type: 'confection-edit',
+        baseId: '2026-01-15-160000-c3d4e5f6' as BaseJournalId,
+        timestamp: '2026-01-15T16:00:00Z',
+        variationId: 'test.test-rolled-truffle@2026-01-01-01' as ConfectionRecipeVariationId,
+        recipe: {
+          variationType: 'rolled-truffle' as const,
+          variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+          createdDate: '2026-01-01',
+          yield: { numPieces: 40, weightPerPiece: 15 as Measurement }
+        },
+        updated: {
+          variationType: 'rolled-truffle' as const,
+          variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+          createdDate: '2026-01-01',
+          yield: { numPieces: 50, weightPerPiece: 12 as Measurement }
+        }
+      };
+
+      expect(
+        ConfectionEditJournalEntry.create(rolledTruffleSessionContext, id, rolledTruffleEditEntity)
+      ).toSucceedAndSatisfy((entry) => {
+        expect(entry.updated).toBeDefined();
+        expect(entry.variationId).toBe(
+          'test.test-rolled-truffle@2026-01-01-01' as ConfectionRecipeVariationId
+        );
+      });
+    });
+
+    test('ConfectionEditJournalEntry with molded-bonbon updated variation materializes correctly', () => {
+      const id = 'journals.2026-01-15-143025-a1b2c3d4' as JournalId;
+      const entityWithUpdated: IConfectionEditJournalEntryEntity = {
+        ...confectionEditEntity,
+        updated: {
+          variationType: 'molded-bonbon' as const,
+          variationSpec: '2026-01-01-01' as ConfectionRecipeVariationSpec,
+          createdDate: '2026-01-01',
+          yield: { numFrames: 2 },
+          fillings: [
+            {
+              slotId: 'center' as SlotId,
+              name: 'Ganache Center',
+              filling: {
+                options: [{ type: 'recipe' as const, id: 'test.test-ganache' as FillingId }],
+                preferredId: 'test.test-ganache' as FillingId
+              }
+            }
+          ],
+          molds: { options: [{ id: 'test.mold-a' as MoldId }], preferredId: 'test.mold-a' as MoldId },
+          shellChocolate: {
+            ids: ['test.dark-chocolate' as IngredientId],
+            preferredId: 'test.dark-chocolate' as IngredientId
+          }
+        }
+      };
+
+      expect(ConfectionEditJournalEntry.create(sessionContext, id, entityWithUpdated)).toSucceedAndSatisfy(
+        (entry) => {
+          expect(entry.updated).toBeDefined();
+        }
+      );
+    });
+  });
+
+  // ============================================================================
+  // AnyJournalEntry Type Guard Tests
+  // ============================================================================
+
+  describe('AnyJournalEntry type guards', () => {
+    const id = 'journals.2026-01-15-143025-a1b2c3d4' as JournalId;
+
+    test('isFillingProductionJournalEntry returns true for filling-production entries', () => {
+      const entry = FillingProductionJournalEntry.create(
+        sessionContext,
+        id,
+        fillingProductionEntity
+      ).orThrow();
+      expect(isFillingProductionJournalEntry(entry)).toBe(true);
+    });
+
+    test('isFillingProductionJournalEntry returns false for non-filling-production entries', () => {
+      const entry = FillingEditJournalEntry.create(sessionContext, id, fillingEditEntity).orThrow();
+      expect(isFillingProductionJournalEntry(entry)).toBe(false);
+    });
+
+    test('isConfectionProductionJournalEntry returns true for confection-production entries', () => {
+      const entry = ConfectionProductionJournalEntry.create(
+        sessionContext,
+        id,
+        confectionProductionEntity
+      ).orThrow();
+      expect(isConfectionProductionJournalEntry(entry)).toBe(true);
+    });
+
+    test('isConfectionProductionJournalEntry returns false for non-confection-production entries', () => {
+      const entry = ConfectionEditJournalEntry.create(sessionContext, id, confectionEditEntity).orThrow();
+      expect(isConfectionProductionJournalEntry(entry)).toBe(false);
     });
   });
 });

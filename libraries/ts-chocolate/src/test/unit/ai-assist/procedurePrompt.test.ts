@@ -111,5 +111,21 @@ describe('buildProcedureAiPrompt', () => {
       expect(prompt.combined).toContain('no markdown');
       expect(prompt.combined).toContain('no code fences');
     });
+
+    test('includes additional instructions when provided', () => {
+      const promptWithInstructions = buildProcedureAiPrompt(
+        'Temper Chocolate',
+        'Assume a home kitchen environment with no specialized equipment'
+      );
+      expect(promptWithInstructions.combined).toContain(
+        'Assume a home kitchen environment with no specialized equipment'
+      );
+      expect(promptWithInstructions.combined).toContain('Additional instructions from the user:');
+    });
+
+    test('does not include additional instructions section when not provided', () => {
+      const promptWithout = buildProcedureAiPrompt('Temper Chocolate');
+      expect(promptWithout.combined).not.toContain('Additional instructions from the user:');
+    });
   });
 });

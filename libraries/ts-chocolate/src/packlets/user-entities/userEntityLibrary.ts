@@ -452,6 +452,7 @@ export class UserEntityLibrary implements IUserEntityLibrary {
   private async _savePersisted<T, TBaseId extends string>(
     persistedResult: Result<PersistedEditableCollection<T, TBaseId>>
   ): Promise<Result<true>> {
+    /* c8 ignore next 3 - defensive: saveCollection checks collections.has() before calling getPersistedXxx */
     if (persistedResult.isFailure()) {
       return fail(persistedResult.message);
     }

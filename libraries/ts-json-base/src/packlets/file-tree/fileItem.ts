@@ -180,6 +180,7 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
     if (!isMutableAccessors(this._hal)) {
       return fail(`${this.absolutePath}: mutation not supported`);
     }
+    /* c8 ignore next 3 - defensive: deleteFile should always exist on mutable accessors that support deletion */
     if (this._hal.deleteFile === undefined) {
       return fail(`${this.absolutePath}: file deletion not supported`);
     }

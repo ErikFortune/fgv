@@ -958,6 +958,7 @@ export class ChocolateEntityLibrary {
   private async _savePersisted<T, TBaseId extends string>(
     persistedResult: Result<PersistedEditableCollection<T, TBaseId>>
   ): Promise<Result<true>> {
+    /* c8 ignore next 3 - defensive: saveCollection checks collections.has() before calling getPersistedXxx */
     if (persistedResult.isFailure()) {
       return fail(persistedResult.message);
     }
@@ -996,6 +997,7 @@ export class ChocolateEntityLibrary {
 
     // 2. Set the entity in the SubLibrary (in-memory)
     const setResult = collection.items.set(baseId, entity);
+    /* c8 ignore next 5 - defensive: typed entities from the public API should always pass the converter */
     if (setResult.isFailure()) {
       return fail(
         `${entityLabel}: failed to set '${baseId}' in collection '${collectionId}': ${setResult.message}`
@@ -1004,6 +1006,7 @@ export class ChocolateEntityLibrary {
 
     // 3. Compute composite ID
     const compositeIdResult = subLibrary.composeId(collectionId, baseId);
+    /* c8 ignore next 5 - defensive: branded collectionId and baseId should always produce a valid composite ID */
     if (compositeIdResult.isFailure()) {
       return fail(
         `${entityLabel}: failed to compose ID for '${collectionId}.${baseId}': ${compositeIdResult.message}`
@@ -1013,6 +1016,7 @@ export class ChocolateEntityLibrary {
 
     // 4. Persist to disk — fail if persistence is unavailable or fails
     const persistedResult = getPersisted(collectionId);
+    /* c8 ignore next 5 - defensive: collection existence already verified above before calling getPersisted */
     if (persistedResult.isFailure()) {
       return fail(
         `Saved ${entityLabel} '${compositeId}' in memory but persistence unavailable: ${persistedResult.message}`

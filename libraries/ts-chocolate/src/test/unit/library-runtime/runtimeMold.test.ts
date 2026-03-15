@@ -175,6 +175,26 @@ describe('RuntimeMold', () => {
     });
   });
 
+  describe('description', () => {
+    test('should return description when present', () => {
+      const moldId = 'cw.cw-2227' as MoldId;
+      const moldWithDescription: IMoldEntity = {
+        ...simpleMold,
+        description: 'A classic rectangular bar mold'
+      };
+      const runtimeMold = Mold.create(mockContext, moldId, moldWithDescription).orThrow();
+
+      expect(runtimeMold.description).toBe('A classic rectangular bar mold');
+    });
+
+    test('should return undefined when description is absent', () => {
+      const moldId = 'custom.custom-mold' as MoldId;
+      const runtimeMold = Mold.create(mockContext, moldId, moldWithoutWeight).orThrow();
+
+      expect(runtimeMold.description).toBeUndefined();
+    });
+  });
+
   describe('cavities', () => {
     test('should expose cavities definition directly', () => {
       const moldId = 'cw.cw-2227' as MoldId;

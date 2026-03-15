@@ -22,6 +22,7 @@ import '@fgv/ts-utils-jest';
 
 import {
   BaseIngredientId,
+  BaseLocationId,
   BaseMoldId,
   CollectionId,
   IngredientId,
@@ -37,16 +38,25 @@ import {
   IGanacheCharacteristics,
   IIngredientEntity,
   IIngredientInventoryEntryEntity,
+  ILocationEntity,
   IMoldEntity,
   IMoldInventoryEntryEntity,
+  IngredientInventoryLibrary,
   IngredientsLibrary,
   Inventory as InventoryEntities,
-  MoldsLibrary
+  JournalLibrary,
+  LocationsLibrary,
+  MoldInventoryLibrary,
+  MoldsLibrary,
+  SessionLibrary
 } from '../../../packlets/entities';
 import { ChocolateEntityLibrary, ChocolateLibrary } from '../../../packlets/library-runtime';
 import { ISessionContext } from '../../../packlets/user-library';
+import { UserEntityLibrary } from '../../../packlets/user-entities';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { IngredientInventoryEntry, MoldInventoryEntry } from '../../../packlets/user-library/inventoryEntry';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { UserLibrary } from '../../../packlets/user-library/userLibrary';
 
 describe('InventoryEntry', () => {
   // ============================================================================
@@ -340,6 +350,111 @@ describe('InventoryEntry', () => {
 
         expect(entry.location).toBeUndefined();
       });
+    });
+  });
+
+  // ============================================================================
+  // Location Resolution Tests (requires context with locations library)
+  // ============================================================================
+
+  describe('location resolution with locations context', () => {
+    const testLocation: ILocationEntity = {
+      baseId: 'workshop-shelf' as BaseLocationId,
+      name: 'Workshop Shelf'
+    };
+
+    let locationContext: ISessionContext;
+
+    beforeEach(() => {
+      const ingredients = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as CollectionId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'dark-chocolate': {
+                baseId: 'dark-chocolate' as BaseIngredientId,
+                name: 'Dark Chocolate 70%',
+                category: 'other',
+                ganacheCharacteristics: testGanacheChars
+              }
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const molds = MoldsLibrary.create({ builtin: false }).orThrow();
+
+      const locations = LocationsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'user' as CollectionId,
+            isMutable: true,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'workshop-shelf': testLocation
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const library = ChocolateEntityLibrary.create({
+        libraries: { ingredients, molds }
+      }).orThrow();
+
+      const ctx = ChocolateLibrary.fromChocolateEntityLibrary(library).orThrow();
+
+      const userEntities = UserEntityLibrary.create({
+        libraries: {
+          sessions: SessionLibrary.create({ builtin: false }).orThrow(),
+          journals: JournalLibrary.create({ builtin: false }).orThrow(),
+          moldInventory: MoldInventoryLibrary.create({ builtin: false }).orThrow(),
+          ingredientInventory: IngredientInventoryLibrary.create({ builtin: false }).orThrow(),
+          locations
+        }
+      }).orThrow();
+
+      locationContext = UserLibrary.create(userEntities, ctx).orThrow();
+    });
+
+    test('returns resolved location when locationId is set and locations library is present', () => {
+      const entity: IIngredientInventoryEntryEntity = {
+        inventoryType: 'ingredient',
+        ingredientId: 'test.dark-chocolate' as IngredientId,
+        quantity: 500 as Measurement,
+        locationId: 'user.workshop-shelf' as LocationId
+      };
+
+      const entry = IngredientInventoryEntry.create(
+        locationContext,
+        'test.ingredient-loc-001' as InventoryEntities.IngredientInventoryEntryId,
+        entity
+      ).orThrow();
+
+      expect(entry.location).toBeDefined();
+      expect(entry.location?.name).toBe('Workshop Shelf');
+    });
+
+    test('returns undefined when locationId is set but location is not found', () => {
+      const entity: IIngredientInventoryEntryEntity = {
+        inventoryType: 'ingredient',
+        ingredientId: 'test.dark-chocolate' as IngredientId,
+        quantity: 500 as Measurement,
+        locationId: 'user.nonexistent-location' as LocationId
+      };
+
+      const entry = IngredientInventoryEntry.create(
+        locationContext,
+        'test.ingredient-loc-002' as InventoryEntities.IngredientInventoryEntryId,
+        entity
+      ).orThrow();
+
+      expect(entry.location).toBeUndefined();
     });
   });
 });

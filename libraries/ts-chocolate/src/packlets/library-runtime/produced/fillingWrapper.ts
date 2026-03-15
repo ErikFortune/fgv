@@ -543,10 +543,9 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
 
       // Only scale weight-contributing units (g, mL)
       if (unit === 'g' || unit === 'mL') {
-        const scaled = scaleAmount(ing.amount, unit, scaleFactor);
-        const scaledAmount = scaled.isSuccess()
-          ? scaled.value.value
-          : ((ing.amount * scaleFactor) as Measurement);
+        const scaledAmount = scaleAmount(ing.amount, unit, scaleFactor)
+          .onSuccess((s) => succeed(s.value))
+          .orDefault((ing.amount * scaleFactor) as Measurement);
         return { ...ing, amount: scaledAmount };
       }
 
@@ -764,8 +763,9 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
     const isWeightUnit = unit === 'g' || unit === 'mL';
     if (isWeightUnit && factor !== 1.0) {
       // Scale b's amount to a's weight using the same rounding as scaleToTargetWeight
-      const scaled = scaleAmount(b.amount, unit, factor);
-      const scaledAmount = scaled.isSuccess() ? scaled.value.value : b.amount * factor;
+      const scaledAmount = scaleAmount(b.amount, unit, factor)
+        .onSuccess((s) => succeed(s.value))
+        .orDefault((b.amount * factor) as Measurement);
       if (a.amount !== scaledAmount) {
         return false;
       }

@@ -189,6 +189,7 @@ export abstract class ConfectionBase<
   /**
    * Yield specification from the golden variation
    */
+  /* c8 ignore next 3 - abstract base: all subclasses override this getter */
   public get yield(): Confections.ConfectionYield {
     return this._goldenVariationEntity.yield;
   }
