@@ -39,6 +39,11 @@ import {
   copyJsonToClipboard,
   DerivedFromIndicator
 } from '../common';
+import {
+  useGanacheCalculation,
+  GanacheCharacteristicsDisplay,
+  CollapsibleGanacheSection
+} from './GanacheAnalysisSection';
 
 // ============================================================================
 // Props
@@ -302,6 +307,9 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
     targetYield !== undefined ? String(targetYield) : ''
   );
 
+  // Ganache analysis for the selected variation
+  const ganacheCalc = useGanacheCalculation(selectedVariation);
+
   // Copy JSON: recipe metadata + selected variation only
   const [copied, setCopied] = useState(false);
   const handleCopyJson = useCallback((): void => {
@@ -522,6 +530,13 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
           <p className="text-xs text-gray-400 italic">No ingredients.</p>
         )}
       </DetailSection>
+
+      {/* Ganache Analysis */}
+      {ganacheCalc && (
+        <CollapsibleGanacheSection category={filling.entity.category}>
+          <GanacheCharacteristicsDisplay calculation={ganacheCalc} variant="detail" />
+        </CollapsibleGanacheSection>
+      )}
 
       {/* Procedures */}
       {selectedVariation.procedures && (

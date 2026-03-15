@@ -33,6 +33,11 @@ import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import { renderPreview } from '../tasks';
 import { formatIngredientAmount, formatScaledIngredientAmount } from '../common';
+import {
+  useGanacheCalculation,
+  GanacheCharacteristicsDisplay,
+  CollapsibleGanacheSection
+} from './GanacheAnalysisSection';
 
 // ============================================================================
 // Props
@@ -84,6 +89,8 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
     return result.isSuccess() ? result.value : filling.goldenVariation;
   }, [filling, selectedSpec]);
   const variationEntity = entity.variations.find((v) => v.variationSpec === selectedSpec);
+
+  const ganacheCalc = useGanacheCalculation(variation);
 
   const ingredientsResult = variation.getIngredients();
   const ingredients = ingredientsResult.isSuccess() ? Array.from(ingredientsResult.value) : [];
@@ -193,6 +200,15 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
               <span className="text-xs text-amber-600 ml-1">×{scaleFactor.toFixed(2)}</span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Ganache Analysis */}
+      {ganacheCalc && (
+        <div className="mb-6">
+          <CollapsibleGanacheSection category={entity.category}>
+            <GanacheCharacteristicsDisplay calculation={ganacheCalc} variant="preview" />
+          </CollapsibleGanacheSection>
         </div>
       )}
 

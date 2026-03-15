@@ -1038,3 +1038,181 @@ items:
           Brix), ~60% sugars (carbs), ~4% solids (proteins ~3g, fiber/minerals), ~1% other fats. Density from product
           spec sheets (specific gravity ~1.32). Assumed for generic reduced mango juice used in chocolate applications.
     category: liquid
+  cookie-crumbs:
+    baseId: cookie-crumbs
+    name: Cookie Crumbs
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 22
+      milkFat: 8
+      water: 4
+      solids: 56
+      otherFats: 10
+    description: >-
+      Crumbs from average cookies without fillings or icings, such as butter cookies, spritz cookies, or graham
+      crackers. Used as a base for chocolate ganaches, crusts, pralines, or decorations in chocolate-making.
+    allergens:
+      - gluten
+      - milk
+    traceAllergens:
+      - eggs
+    vegan: false
+    tags:
+      - cookie
+      - crumbs
+      - base
+      - graham
+      - butter
+    density: 0.45
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+      preferredId: g
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics estimated by averaging nutritional compositions from web sources: graham cracker
+          crumbs (~11g total fat mostly otherFats [web:4], ~75g total carbs with ~18-21% sugars [web:2][web:3], ~7g
+          protein, ~4g water); butter cookies (~19g fat as milkFat [web:22], ~69g total carbs with ~25% sugars
+          estimated, ~6g protein, ~3g water [web:20]). Solids include starch, protein, fiber. Percentages rounded to sum
+          exactly 100. Density averaged from bulk densities ~0.36-0.47 g/mL for crumbs [web:10][web:11][web:19]. Assumed
+          allergens based on common recipes including butter (milk) and flour (gluten), possible eggs.
+    category: other
+  butter-browned:
+    baseId: butter-browned
+    name: Butter (Browned)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 98
+      water: 0
+      solids: 2
+      otherFats: 0
+    description: >-
+      Browned butter, also known as beurre noisette, is unsalted butter that has been gently heated to evaporate its
+      water content and toast the milk solids, resulting in a rich, nutty, caramel-like flavor. It is prized in
+      chocolate making for infusing ganaches, pralines, and truffles with complex toasty notes.
+    allergens:
+      - milk
+    vegan: false
+    tags:
+      - browned
+      - beurre-noisette
+      - nutty
+      - toasted
+      - ganache
+      - pralines
+    density: 0.91
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+        - id: tsp
+        - id: Tbsp
+      preferredId: g
+    notes:
+      - category: ai
+        note: >-
+          Composition estimated from typical unsalted butter: 80-82% milk fat, 16-18% water, ~2% milk solids (proteins,
+          lactose, minerals). Browning evaporates nearly all water (~18% weight loss), renormalizing to ~98% milk fat
+          and ~2% solids. Rounded for simplicity; actual values vary slightly by butter type (e.g., US vs. European).
+    category: dairy
+    fatContent: 98
+    waterContent: 0
+  vegan-white-chocolate:
+    baseId: vegan-white-chocolate
+    name: Vegan White Chocolate
+    ganacheCharacteristics:
+      cacaoFat: 35
+      sugar: 40
+      milkFat: 0
+      water: 1
+      solids: 20
+      otherFats: 4
+    description: >-
+      A dairy-free alternative to traditional white chocolate, made primarily from cocoa butter, sugar, and plant-based
+      milk powders such as coconut, rice, or soy. Provides creamy texture and vanilla-like flavor without animal
+      products.
+    certifications:
+      - vegan
+    vegan: true
+    tags:
+      - vegan
+      - dairy-free
+      - plant-based
+      - white-chocolate
+    density: 1.1
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+      preferredId: g
+    notes:
+      - category: ai
+        note: >-
+          Composition estimates derived from common recipes and brand nutritional data (e.g., Nora Cooks recipe: ~113g
+          cocoa butter, 54g vegetable shortening, 90g powdered sugar, 50g coconut milk powder per ~307g total; Pascha
+          Vegan White: ~48% total fat, 48% carbs). Ganache characteristics aggregated: cacaoFat primarily cocoa butter
+          (~30-50% in recipes), sugar ~30-50%, solids from plant milk powders (~10-20%, adjusted for non-fat portions),
+          otherFats from shortenings/emulsifiers/plant fats (~5-20%), water minimal. CacaoPercentage set to 35 as
+          representative cocoa butter content in white chocolates. Fluidity and temperature based on standard cocoa
+          butter properties. Variations exist across formulations.
+    category: chocolate
+    chocolateType: white
+    cacaoPercentage: 35
+    fluidityStars: 3
+    temperatureCurve:
+      melt: 34
+    applications:
+      - confectionary
+      - ganache
+      - molding
+      - enrobing
+  tortilla-chips-white-corn:
+    baseId: tortilla-chips-white-corn
+    name: Tortilla Chips (White Corn)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 1
+      milkFat: 0
+      water: 2
+      solids: 67
+      otherFats: 30
+    description: >-
+      Thin, crispy chips made from white corn masa flour, water, and lime, fried in vegetable oil, and lightly salted.
+      Adds savory corn flavor and crunch to chocolate confections like bars, clusters, or inclusions.
+    allergens: []
+    traceAllergens: []
+    certifications:
+      - gluten-free
+      - vegan
+      - vegetarian
+    vegan: true
+    tags:
+      - tortilla
+      - corn
+      - white-corn
+      - chips
+      - crunchy
+      - savory
+      - gluten-free
+      - inclusion
+    density: 0.3
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+      preferredId: g
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics estimated from typical nutritional profiles of white corn tortilla chips (e.g., ~30%
+          fat from frying oil as otherFats, ~2% moisture, ~1% sugars, ~67% non-fat solids including corn starch,
+          protein, fiber, and minerals; 0% cacao or milk fats). Density estimated as bulk density for crushed/broken
+          chips (~0.3 g/mL). Certifications based on common attributes for plain, non-dairy corn chips; actual products
+          may vary.
+    category: other

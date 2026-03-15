@@ -174,3 +174,54 @@ items:
     tags: [caramelized, blond, dulce]
     allergens: [milk]
     vegan: false
+
+  valencia-fina-noble-pralin:
+    baseId: valencia-fina-noble-pralin
+    name: Felchlin Fina Noble Valencia 60% Praliné
+    ganacheCharacteristics:
+      cacaoFat: 7
+      sugar: 33
+      milkFat: 0
+      water: 1
+      solids: 29
+      otherFats: 30
+    description: >-
+      Fine praline paste almond made from the finest Valencia almonds (60%, Spain), sugar, and cocoa butter. Used for
+      making pralines, chocolate specialities, filling cookies, flavoring creams and ice creams. Forms firm gianduja
+      base: 1000g basis mass + 500g white/milk or 400g dark couverture.
+    manufacturer: Felchlin (Switzerland)
+    allergens:
+      - nuts
+    traceAllergens:
+      - milk
+      - nuts
+    certifications:
+      - halal
+      - kosher-dairy
+    vegan: false
+    tags:
+      - praline
+      - almond
+      - valencia-almonds
+      - felchlin
+      - gianduja
+      - paste
+    density: 1.1
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+      preferredId: g
+    urls:
+      - category: product
+        url: https://shop.felchlin.com/en/Fina-Noble-Valencia-60/DF84B
+      - category: b2b
+        url: https://b2b.felchlin.com/en/Fina-Noble-Valencia-60/DC78B
+    notes:
+      - category: ai
+        note: >-
+          ganacheCharacteristics estimated from nutritional data: almonds 60% (fat ~30% otherFats, solids ~29%, water
+          ~1%), sugar ~33%, cocoa butter ~7% cacaoFat. Matches total fat 39.7g, sugars 35.1g, protein 13.3g, fiber 7.2g.
+          Phase 'solid' as thick paste. Density estimated for nut paste.
+    category: flavor

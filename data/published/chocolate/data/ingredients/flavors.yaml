@@ -749,3 +749,56 @@ items:
           formulations. When calculating water activity and shelf life, the water content (85%) should be factored into
           ganache recipes.
     category: flavor
+  taijin-spice-mix:
+    baseId: taijin-spice-mix
+    name: Taijin Spice Mix
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 4
+      solids: 96
+      otherFats: 0
+    description: >-
+      Taijin (commonly known as Tajín) Clásico is a unique Mexican seasoning blend made from mild chili peppers, sea
+      salt, citric acid, dehydrated lime juice, and silicon dioxide (anti-caking agent). It provides a tangy, mildly
+      spicy flavor, popular for fruits, snacks, rims on cocktails, and as a topping or flavor enhancer in chocolate
+      confections like truffles, bars, and ganache for a chili-lime kick.
+    manufacturer: Tajín
+    allergens: []
+    traceAllergens: []
+    certifications: []
+    vegan: true
+    tags:
+      - spice
+      - seasoning
+      - chili-lime
+      - mexican
+      - tajin
+      - chili
+      - lime
+      - salt
+      - flavoring
+      - chocolate-topping
+      - ganache
+    density: 0.6
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: tsp
+        - id: pinch
+      preferredId: tsp
+    urls:
+      - category: official
+        url: https://www.tajin.com/us/tajin-clasico
+    notes:
+      - category: ai
+        note: >-
+          Identified as Tajín Clásico seasoning based on search results matching 'Taijin' to the popular branded
+          product. Ingredients confirmed from multiple sources: chili peppers, sea salt, citric acid, dehydrated lime
+          (minor), silicon dioxide. Ganache characteristics estimated: dry powder with ~4% moisture (typical for
+          dehydrated spices), 96% solids (salts, fibers, minerals from chili/lime), no fats/sugars. Density estimated
+          for fine spice powders (~0.5-0.7 g/mL). No exact nutritional breakdown available for precise water/solids;
+          used general dry seasoning profile. Suitable for chocolate as topping/flavor per culinary uses found.
+    category: flavor

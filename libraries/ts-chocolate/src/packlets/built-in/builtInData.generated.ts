@@ -2163,6 +2163,169 @@ export const ingredientCollections: Record<string, JsonObject> = {
           }
         ],
         category: 'liquid'
+      },
+      'cookie-crumbs': {
+        baseId: 'cookie-crumbs',
+        name: 'Cookie Crumbs',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 22,
+          milkFat: 8,
+          water: 4,
+          solids: 56,
+          otherFats: 10
+        },
+        description:
+          'Crumbs from average cookies without fillings or icings, such as butter cookies, spritz cookies, or graham crackers. Used as a base for chocolate ganaches, crusts, pralines, or decorations in chocolate-making.',
+        allergens: ['gluten', 'milk'],
+        traceAllergens: ['eggs'],
+        vegan: false,
+        tags: ['cookie', 'crumbs', 'base', 'graham', 'butter'],
+        density: 0.45,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            }
+          ],
+          preferredId: 'g'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated by averaging nutritional compositions from web sources: graham cracker crumbs (~11g total fat mostly otherFats [web:4], ~75g total carbs with ~18-21% sugars [web:2][web:3], ~7g protein, ~4g water); butter cookies (~19g fat as milkFat [web:22], ~69g total carbs with ~25% sugars estimated, ~6g protein, ~3g water [web:20]). Solids include starch, protein, fiber. Percentages rounded to sum exactly 100. Density averaged from bulk densities ~0.36-0.47 g/mL for crumbs [web:10][web:11][web:19]. Assumed allergens based on common recipes including butter (milk) and flour (gluten), possible eggs.'
+          }
+        ],
+        category: 'other'
+      },
+      'butter-browned': {
+        baseId: 'butter-browned',
+        name: 'Butter (Browned)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 98,
+          water: 0,
+          solids: 2,
+          otherFats: 0
+        },
+        description:
+          'Browned butter, also known as beurre noisette, is unsalted butter that has been gently heated to evaporate its water content and toast the milk solids, resulting in a rich, nutty, caramel-like flavor. It is prized in chocolate making for infusing ganaches, pralines, and truffles with complex toasty notes.',
+        allergens: ['milk'],
+        vegan: false,
+        tags: ['browned', 'beurre-noisette', 'nutty', 'toasted', 'ganache', 'pralines'],
+        density: 0.91,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'Tbsp'
+            }
+          ],
+          preferredId: 'g'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Composition estimated from typical unsalted butter: 80-82% milk fat, 16-18% water, ~2% milk solids (proteins, lactose, minerals). Browning evaporates nearly all water (~18% weight loss), renormalizing to ~98% milk fat and ~2% solids. Rounded for simplicity; actual values vary slightly by butter type (e.g., US vs. European).'
+          }
+        ],
+        category: 'dairy',
+        fatContent: 98,
+        waterContent: 0
+      },
+      'vegan-white-chocolate': {
+        baseId: 'vegan-white-chocolate',
+        name: 'Vegan White Chocolate',
+        ganacheCharacteristics: {
+          cacaoFat: 35,
+          sugar: 40,
+          milkFat: 0,
+          water: 1,
+          solids: 20,
+          otherFats: 4
+        },
+        description:
+          'A dairy-free alternative to traditional white chocolate, made primarily from cocoa butter, sugar, and plant-based milk powders such as coconut, rice, or soy. Provides creamy texture and vanilla-like flavor without animal products.',
+        certifications: ['vegan'],
+        vegan: true,
+        tags: ['vegan', 'dairy-free', 'plant-based', 'white-chocolate'],
+        density: 1.1,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            }
+          ],
+          preferredId: 'g'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Composition estimates derived from common recipes and brand nutritional data (e.g., Nora Cooks recipe: ~113g cocoa butter, 54g vegetable shortening, 90g powdered sugar, 50g coconut milk powder per ~307g total; Pascha Vegan White: ~48% total fat, 48% carbs). Ganache characteristics aggregated: cacaoFat primarily cocoa butter (~30-50% in recipes), sugar ~30-50%, solids from plant milk powders (~10-20%, adjusted for non-fat portions), otherFats from shortenings/emulsifiers/plant fats (~5-20%), water minimal. CacaoPercentage set to 35 as representative cocoa butter content in white chocolates. Fluidity and temperature based on standard cocoa butter properties. Variations exist across formulations.'
+          }
+        ],
+        category: 'chocolate',
+        chocolateType: 'white',
+        cacaoPercentage: 35,
+        fluidityStars: 3,
+        temperatureCurve: {
+          melt: 34
+        },
+        applications: ['confectionary', 'ganache', 'molding', 'enrobing']
+      },
+      'tortilla-chips-white-corn': {
+        baseId: 'tortilla-chips-white-corn',
+        name: 'Tortilla Chips (White Corn)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 1,
+          milkFat: 0,
+          water: 2,
+          solids: 67,
+          otherFats: 30
+        },
+        description:
+          'Thin, crispy chips made from white corn masa flour, water, and lime, fried in vegetable oil, and lightly salted. Adds savory corn flavor and crunch to chocolate confections like bars, clusters, or inclusions.',
+        allergens: [],
+        traceAllergens: [],
+        certifications: ['gluten-free', 'vegan', 'vegetarian'],
+        vegan: true,
+        tags: ['tortilla', 'corn', 'white-corn', 'chips', 'crunchy', 'savory', 'gluten-free', 'inclusion'],
+        density: 0.3,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            }
+          ],
+          preferredId: 'g'
+        },
+        notes: [
+          {
+            category: 'ai',
+            note: 'Ganache characteristics estimated from typical nutritional profiles of white corn tortilla chips (e.g., ~30% fat from frying oil as otherFats, ~2% moisture, ~1% sugars, ~67% non-fat solids including corn starch, protein, fiber, and minerals; 0% cacao or milk fats). Density estimated as bulk density for crushed/broken chips (~0.3 g/mL). Certifications based on common attributes for plain, non-dairy corn chips; actual products may vary.'
+          }
+        ],
+        category: 'other'
       }
     }
   },
@@ -2508,6 +2671,56 @@ export const ingredientCollections: Record<string, JsonObject> = {
         tags: ['caramelized', 'blond', 'dulce'],
         allergens: ['milk'],
         vegan: false
+      },
+      'valencia-fina-noble-pralin': {
+        baseId: 'valencia-fina-noble-pralin',
+        name: 'Felchlin Fina Noble Valencia 60% Praliné',
+        ganacheCharacteristics: {
+          cacaoFat: 7,
+          sugar: 33,
+          milkFat: 0,
+          water: 1,
+          solids: 29,
+          otherFats: 30
+        },
+        description:
+          'Fine praline paste almond made from the finest Valencia almonds (60%, Spain), sugar, and cocoa butter. Used for making pralines, chocolate specialities, filling cookies, flavoring creams and ice creams. Forms firm gianduja base: 1000g basis mass + 500g white/milk or 400g dark couverture.',
+        manufacturer: 'Felchlin (Switzerland)',
+        allergens: ['nuts'],
+        traceAllergens: ['milk', 'nuts'],
+        certifications: ['halal', 'kosher-dairy'],
+        vegan: false,
+        tags: ['praline', 'almond', 'valencia-almonds', 'felchlin', 'gianduja', 'paste'],
+        density: 1.1,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'mL'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [
+          {
+            category: 'product',
+            url: 'https://shop.felchlin.com/en/Fina-Noble-Valencia-60/DF84B'
+          },
+          {
+            category: 'b2b',
+            url: 'https://b2b.felchlin.com/en/Fina-Noble-Valencia-60/DC78B'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: "ganacheCharacteristics estimated from nutritional data: almonds 60% (fat ~30% otherFats, solids ~29%, water ~1%), sugar ~33%, cocoa butter ~7% cacaoFat. Matches total fat 39.7g, sugars 35.1g, protein 13.3g, fiber 7.2g. Phase 'solid' as thick paste. Density estimated for nut paste."
+          }
+        ],
+        category: 'flavor'
       }
     }
   },
@@ -3297,6 +3510,67 @@ export const ingredientCollections: Record<string, JsonObject> = {
           {
             category: 'ai',
             note: "This ingredient is categorized as 'flavor' rather than 'liquid' because its primary function in chocolate-making is flavoring rather than hydration, though it does contribute water content to ganache formulations. When calculating water activity and shelf life, the water content (85%) should be factored into ganache recipes."
+          }
+        ],
+        category: 'flavor'
+      },
+      'taijin-spice-mix': {
+        baseId: 'taijin-spice-mix',
+        name: 'Taijin Spice Mix',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 4,
+          solids: 96,
+          otherFats: 0
+        },
+        description:
+          'Taijin (commonly known as Tajín) Clásico is a unique Mexican seasoning blend made from mild chili peppers, sea salt, citric acid, dehydrated lime juice, and silicon dioxide (anti-caking agent). It provides a tangy, mildly spicy flavor, popular for fruits, snacks, rims on cocktails, and as a topping or flavor enhancer in chocolate confections like truffles, bars, and ganache for a chili-lime kick.',
+        manufacturer: 'Tajín',
+        allergens: [],
+        traceAllergens: [],
+        certifications: [],
+        vegan: true,
+        tags: [
+          'spice',
+          'seasoning',
+          'chili-lime',
+          'mexican',
+          'tajin',
+          'chili',
+          'lime',
+          'salt',
+          'flavoring',
+          'chocolate-topping',
+          'ganache'
+        ],
+        density: 0.6,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            },
+            {
+              id: 'tsp'
+            },
+            {
+              id: 'pinch'
+            }
+          ],
+          preferredId: 'tsp'
+        },
+        urls: [
+          {
+            category: 'official',
+            url: 'https://www.tajin.com/us/tajin-clasico'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: "Identified as Tajín Clásico seasoning based on search results matching 'Taijin' to the popular branded product. Ingredients confirmed from multiple sources: chili peppers, sea salt, citric acid, dehydrated lime (minor), silicon dioxide. Ganache characteristics estimated: dry powder with ~4% moisture (typical for dehydrated spices), 96% solids (salts, fibers, minerals from chili/lime), no fats/sugars. Density estimated for fine spice powders (~0.5-0.7 g/mL). No exact nutritional breakdown available for precise water/solids; used general dry seasoning profile. Suitable for chocolate as topping/flavor per culinary uses found."
           }
         ],
         category: 'flavor'
@@ -5330,12 +5604,12 @@ export const taskCollections: Record<string, JsonObject> = {
         baseId: 'melt-chocolate',
         name: 'Melt Chocolate',
         template: 'Melt {{ingredient}} to {{temp}}',
+        defaultActiveTime: 5,
+        tags: ['chocolate', 'melting', 'heating'],
         defaults: {
           ingredient: 'chocolate',
           temp: '40C'
-        },
-        defaultActiveTime: 5,
-        tags: ['chocolate', 'melting', 'heating']
+        }
       },
       'heat-ingredient': {
         baseId: 'heat-ingredient',
@@ -5440,6 +5714,28 @@ export const taskCollections: Record<string, JsonObject> = {
         template: 'Temper and pour into molds',
         defaultActiveTime: 15,
         tags: ['tempering', 'molding']
+      },
+      'blend-everything': {
+        baseId: 'blend-everything',
+        name: 'Blend with Tool',
+        template: 'Blend {{ingredients}} with a {{tool}} until the mixture is smooth and lump free.'
+      },
+      'add-silk': {
+        baseId: 'add-silk',
+        name: 'Add Silk',
+        template: 'At {{temperature}} add {{percentage}} {{silk}} and blend.',
+        defaultTemperature: 32
+      },
+      'fill-piping-bag': {
+        baseId: 'fill-piping-bag',
+        name: 'Fill Piping Bag',
+        template: 'Pour {{ingredient}} into a {{size}} piping bag'
+      },
+      'pipe-into-shells': {
+        baseId: 'pipe-into-shells',
+        name: 'Pipe into Shells',
+        template: 'At {{temperature}} pipe into prepared shells.',
+        defaultTemperature: 29
       }
     }
   }

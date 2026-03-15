@@ -1,142 +1,152 @@
-# Common tasks collection
-# Reusable task templates for chocolate-making procedures
-
 metadata:
   name: Common Tasks
   description: Reusable task templates for chocolate-making
-
 items:
-  # ============================================================================
-  # Chocolate Melting Tasks
-  # ============================================================================
   melt-chocolate:
     baseId: melt-chocolate
     name: Melt Chocolate
-    template: 'Melt {{ingredient}} to {{temp}}'
+    template: Melt {{ingredient}} to {{temp}}
+    defaultActiveTime: 5
+    tags:
+      - chocolate
+      - melting
+      - heating
     defaults:
       ingredient: chocolate
       temp: 40C
-    defaultActiveTime: 5
-    tags: [chocolate, melting, heating]
-
-  # ============================================================================
-  # Heating Tasks
-  # ============================================================================
   heat-ingredient:
     baseId: heat-ingredient
     name: Heat Ingredient
-    template: 'Heat {{ingredient}} to {{temp}}C'
+    template: Heat {{ingredient}} to {{temp}}C
     defaultActiveTime: 3
-    tags: [heating]
-
+    tags:
+      - heating
   warm-ingredient:
     baseId: warm-ingredient
     name: Warm Ingredient
-    template: 'Warm {{ingredient}} to {{temp}}C'
+    template: Warm {{ingredient}} to {{temp}}C
     defaultActiveTime: 3
-    tags: [heating, warming]
-
+    tags:
+      - heating
+      - warming
   bring-to-boil:
     baseId: bring-to-boil
     name: Bring to Boil
-    template: 'Bring {{ingredient}} to boil'
+    template: Bring {{ingredient}} to boil
     defaultActiveTime: 5
     defaultTemperature: 100
-    tags: [heating, boiling]
-
-  # ============================================================================
-  # Mixing and Combining Tasks
-  # ============================================================================
+    tags:
+      - heating
+      - boiling
   combine-and-emulsify:
     baseId: combine-and-emulsify
     name: Combine and Emulsify
-    template: 'Combine {{ingredients}} and emulsify{{#tool}} with {{tool}}{{/tool}}'
+    template: Combine {{ingredients}} and emulsify{{#tool}} with {{tool}}{{/tool}}
     defaultActiveTime: 5
-    tags: [mixing, emulsion]
-
+    tags:
+      - mixing
+      - emulsion
   stir-to-emulsify:
     baseId: stir-to-emulsify
     name: Stir to Emulsify
-    template: 'Stir from center outward to emulsify'
+    template: Stir from center outward to emulsify
     defaultActiveTime: 5
-    tags: [mixing, emulsion, stirring]
-
+    tags:
+      - mixing
+      - emulsion
+      - stirring
   add-and-blend:
     baseId: add-and-blend
     name: Add and Blend
-    template: 'Add {{ingredient}} at {{temp}}C and blend until smooth'
+    template: Add {{ingredient}} at {{temp}}C and blend until smooth
     defaultActiveTime: 2
-    tags: [mixing, blending]
-
+    tags:
+      - mixing
+      - blending
   blend-until-smooth:
     baseId: blend-until-smooth
     name: Blend Until Smooth
-    template: 'Add {{ingredient}} and blend until smooth'
+    template: Add {{ingredient}} and blend until smooth
     defaultActiveTime: 2
-    tags: [mixing, blending]
-
+    tags:
+      - mixing
+      - blending
   combine-and-mix:
     baseId: combine-and-mix
     name: Combine and Mix
-    template: 'Combine {{ingredients}}, mix until smooth'
+    template: Combine {{ingredients}}, mix until smooth
     defaultActiveTime: 5
-    tags: [mixing]
-
-  # ============================================================================
-  # Pouring and Transferring Tasks
-  # ============================================================================
+    tags:
+      - mixing
   pour-over:
     baseId: pour-over
     name: Pour Over
-    template: 'Pour {{source}} over {{target}}'
+    template: Pour {{source}} over {{target}}
     defaultActiveTime: 1
-    tags: [pouring, transferring]
-
-  # ============================================================================
-  # Resting and Waiting Tasks
-  # ============================================================================
+    tags:
+      - pouring
+      - transferring
   rest-at-temperature:
     baseId: rest-at-temperature
     name: Rest at Temperature
-    template: 'Rest at {{temp}}'
-    tags: [resting, waiting]
-
+    template: Rest at {{temp}}
+    tags:
+      - resting
+      - waiting
   let-stand:
     baseId: let-stand
     name: Let Stand
-    template: 'Let stand {{duration}} minutes'
-    tags: [resting, waiting]
-
-  # ============================================================================
-  # Nut Processing Tasks
-  # ============================================================================
+    template: Let stand {{duration}} minutes
+    tags:
+      - resting
+      - waiting
   roast-nuts:
     baseId: roast-nuts
     name: Roast Nuts
-    template: 'Roast {{nuts}} at {{temp}}C until golden'
+    template: Roast {{nuts}} at {{temp}}C until golden
     defaultActiveTime: 15
-    tags: [roasting, nuts]
-
+    tags:
+      - roasting
+      - nuts
   remove-skins:
     baseId: remove-skins
     name: Remove Skins
-    template: 'Rub off skins while warm'
+    template: Rub off skins while warm
     defaultActiveTime: 5
-    tags: [preparation, nuts]
-
+    tags:
+      - preparation
+      - nuts
   grind-to-paste:
     baseId: grind-to-paste
     name: Grind to Paste
-    template: 'Grind {{ingredient}} to paste in food processor'
+    template: Grind {{ingredient}} to paste in food processor
     defaultActiveTime: 10
-    tags: [grinding, processing]
-
-  # ============================================================================
-  # Tempering and Molding Tasks
-  # ============================================================================
+    tags:
+      - grinding
+      - processing
   temper-and-mold:
     baseId: temper-and-mold
     name: Temper and Mold
-    template: 'Temper and pour into molds'
+    template: Temper and pour into molds
     defaultActiveTime: 15
-    tags: [tempering, molding]
+    tags:
+      - tempering
+      - molding
+  blend-everything:
+    baseId: blend-everything
+    name: Blend with Tool
+    template: Blend {{ingredients}} with a {{tool}} until the mixture is smooth and lump free.
+  add-silk:
+    baseId: add-silk
+    name: Add Silk
+    template: At {{temperature}} add {{percentage}} {{silk}} and blend.
+    defaultTemperature: 32
+  fill-piping-bag:
+    baseId: fill-piping-bag
+    name: Fill Piping Bag
+    template: Pour {{ingredient}} into a {{size}} piping bag
+  pipe-into-shells:
+    baseId: pipe-into-shells
+    name: Pipe into Shells
+    template: At {{temperature}} pipe into prepared shells.
+    defaultTemperature: 29

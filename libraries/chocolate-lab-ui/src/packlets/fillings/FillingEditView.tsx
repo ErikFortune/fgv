@@ -53,10 +53,13 @@ import type {
   SpoonLevel,
   FillingRecipeVariationSpec
 } from '@fgv/ts-chocolate';
+import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
+import { succeed } from '@fgv/ts-utils';
 
 import { EditingToolbar, NotesEditor, useEditingContext, type IChangeIndicator } from '../editing';
 import { DerivedFromIndicator } from '../common';
 import { useWorkspace } from '../workspace';
+import { GanacheCharacteristicsDisplay, CollapsibleGanacheSection } from './GanacheAnalysisSection';
 
 const ALL_MEASUREMENT_UNITS: ReadonlyArray<MeasurementUnit> = [
   'g',
@@ -268,9 +271,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
   } = props;
 
   // Editing context (undo/redo for wrapper — sole state owner)
-  const {
-    data: { logger }
-  } = useWorkspace();
+  const { data } = useWorkspace();
+  const { logger } = data;
   const ctx = useEditingContext<EditedFillingRecipe>({
     wrapper,
     onSave: (): void => onSave('update'),
@@ -361,6 +363,19 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     const variation = wrapper.current.variations.find((v) => v.variationSpec === selectedVariationSpec);
     return variation?.procedures?.preferredId;
   }, [wrapper, selectedVariationSpec, ctx.version]);
+
+  // Ganache analysis (live feedback from draft entity)
+  const ingredientResolver = useCallback(
+    (id: IngredientId) => {
+      return data.ingredients.get(id).asResult.onSuccess((ing) => succeed(ing.entity));
+    },
+    [data]
+  );
+
+  const ganacheCalc = useMemo(() => {
+    const result = LR.Internal.calculateGanache(wrapper.current, ingredientResolver, selectedVariationSpec);
+    return result.isSuccess() ? result.value : undefined;
+  }, [wrapper, ingredientResolver, selectedVariationSpec, ctx.version]);
 
   const notifyWrapper = useCallback((): void => {
     ctx.notifyMutation();
@@ -1579,6 +1594,13 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
           </datalist>
         </div>
       </EditSection>
+
+      {/* Ganache Analysis (read-only, computed from draft) */}
+      {ganacheCalc && (
+        <CollapsibleGanacheSection category={wrapper.current.category}>
+          <GanacheCharacteristicsDisplay calculation={ganacheCalc} variant="detail" />
+        </CollapsibleGanacheSection>
+      )}
 
       {/* Ratings Section (on variation entity, via wrapper) */}
       <div className="mb-4">
