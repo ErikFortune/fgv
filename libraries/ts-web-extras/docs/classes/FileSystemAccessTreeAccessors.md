@@ -77,6 +77,32 @@ FileTree.IMutableFileTreeAccessors.createDirectory
 
 ***
 
+### deleteDirectory()
+
+> **deleteDirectory**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+FileTree.IMutableFileTreeAccessors.deleteDirectory
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `path` | `string` |
+
+#### Returns
+
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+#### Implementation of
+
+`FileTree.IPersistentFileTreeAccessors.deleteDirectory`
+
+#### Inherited from
+
+`FileTree.InMemoryTreeAccessors.deleteDirectory`
+
+***
+
 ### deleteFile()
 
 > **deleteFile**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>

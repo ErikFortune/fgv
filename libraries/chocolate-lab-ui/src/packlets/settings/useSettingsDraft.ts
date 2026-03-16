@@ -23,6 +23,7 @@ export interface IBootstrapSettingsDraft {
   readonly cloudStorageLibrary: boolean;
   readonly cloudStorageUserData: boolean;
   readonly cloudStorageSourceName: string;
+  readonly cloudStorageUserId: string;
   readonly storeLevel: Settings.ILogSettings['storeLevel'];
   readonly displayLevel: Settings.ILogSettings['displayLevel'];
   readonly toastLevel: Settings.ILogSettings['toastLevel'];
@@ -85,6 +86,7 @@ function buildBootstrapDraft(settings: Settings.IBootstrapSettings | undefined):
     cloudStorageLibrary: settings?.cloudStorage?.library ?? true,
     cloudStorageUserData: settings?.cloudStorage?.userData ?? true,
     cloudStorageSourceName: settings?.cloudStorage?.sourceName ?? '',
+    cloudStorageUserId: settings?.cloudStorage?.userId ?? '',
     storeLevel: settings?.logging?.storeLevel,
     displayLevel: settings?.logging?.displayLevel,
     toastLevel: settings?.logging?.toastLevel,
@@ -103,6 +105,7 @@ function bootstrapDraftsEqual(a: IBootstrapSettingsDraft, b: IBootstrapSettingsD
     a.cloudStorageLibrary === b.cloudStorageLibrary &&
     a.cloudStorageUserData === b.cloudStorageUserData &&
     a.cloudStorageSourceName === b.cloudStorageSourceName &&
+    a.cloudStorageUserId === b.cloudStorageUserId &&
     a.storeLevel === b.storeLevel &&
     a.displayLevel === b.displayLevel &&
     a.toastLevel === b.toastLevel &&
@@ -226,6 +229,10 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
               sourceName:
                 bootstrapDraft.cloudStorageSourceName.trim().length > 0
                   ? bootstrapDraft.cloudStorageSourceName
+                  : undefined,
+              userId:
+                bootstrapDraft.cloudStorageUserId.trim().length > 0
+                  ? bootstrapDraft.cloudStorageUserId
                   : undefined
             }
           : undefined,

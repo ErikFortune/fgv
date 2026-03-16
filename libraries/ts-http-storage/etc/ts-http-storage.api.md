@@ -16,15 +16,15 @@ export function createStorageRoutes(options: ICreateStorageRoutesOptions): Hono;
 export class FsStorageProvider implements IHttpStorageProvider {
     constructor(rootPath: string);
     // (undocumented)
-    createDirectory(itemPath: string): Result<IStorageTreeItem>;
+    createDirectory(itemPath: string): Promise<Result<IStorageTreeItem>>;
     // (undocumented)
-    getChildren(itemPath: string): Result<ReadonlyArray<IStorageTreeItem>>;
+    getChildren(itemPath: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>>;
     // (undocumented)
-    getFile(itemPath: string): Result<IStorageFileResponse>;
+    getFile(itemPath: string): Promise<Result<IStorageFileResponse>>;
     // (undocumented)
-    getItem(itemPath: string): Result<IStorageTreeItem>;
+    getItem(itemPath: string): Promise<Result<IStorageTreeItem>>;
     // (undocumented)
-    saveFile(itemPath: string, contents: string, contentType?: string): Result<IStorageFileResponse>;
+    saveFile(itemPath: string, contents: string, contentType?: string): Promise<Result<IStorageFileResponse>>;
     // (undocumented)
     sync(): Promise<Result<IStorageSyncResponse>>;
 }
@@ -40,15 +40,15 @@ export class FsStorageProviderFactory implements IHttpStorageProviderFactory {
 export class HttpStorageService {
     constructor(providers: IHttpStorageProviderFactory);
     // (undocumented)
-    createDirectory(request: IStoragePathRequest): Result<IStorageTreeItem>;
+    createDirectory(request: IStoragePathRequest): Promise<Result<IStorageTreeItem>>;
     // (undocumented)
-    getChildren(request: IStoragePathRequest): Result<IStorageTreeChildrenResponse>;
+    getChildren(request: IStoragePathRequest): Promise<Result<IStorageTreeChildrenResponse>>;
     // (undocumented)
-    getFile(request: IStoragePathRequest): Result<IStorageFileResponse>;
+    getFile(request: IStoragePathRequest): Promise<Result<IStorageFileResponse>>;
     // (undocumented)
-    getItem(request: IStoragePathRequest): Result<IStorageTreeItem>;
+    getItem(request: IStoragePathRequest): Promise<Result<IStorageTreeItem>>;
     // (undocumented)
-    saveFile(request: IStorageWriteFileRequest): Result<IStorageFileResponse>;
+    saveFile(request: IStorageWriteFileRequest): Promise<Result<IStorageFileResponse>>;
     // (undocumented)
     sync(request: IStorageSyncRequest): Promise<Result<IStorageSyncResponse>>;
 }
@@ -70,15 +70,15 @@ export interface IFsStorageProviderFactoryOptions {
 // @public
 export interface IHttpStorageProvider {
     // (undocumented)
-    createDirectory(path: string): Result<IStorageTreeItem>;
+    createDirectory(path: string): Promise<Result<IStorageTreeItem>>;
     // (undocumented)
-    getChildren(path: string): Result<ReadonlyArray<IStorageTreeItem>>;
+    getChildren(path: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>>;
     // (undocumented)
-    getFile(path: string): Result<IStorageFileResponse>;
+    getFile(path: string): Promise<Result<IStorageFileResponse>>;
     // (undocumented)
-    getItem(path: string): Result<IStorageTreeItem>;
+    getItem(path: string): Promise<Result<IStorageTreeItem>>;
     // (undocumented)
-    saveFile(path: string, contents: string, contentType?: string): Result<IStorageFileResponse>;
+    saveFile(path: string, contents: string, contentType?: string): Promise<Result<IStorageFileResponse>>;
     // (undocumented)
     sync(): Promise<Result<IStorageSyncResponse>>;
 }
@@ -144,6 +144,9 @@ export interface IStorageWriteFileRequest extends IStoragePathRequest {
     // (undocumented)
     readonly contentType?: string;
 }
+
+// @public
+export function normalizeRequestPath(requestPath: string): string;
 
 // @public
 export function sanitizeNamespace(namespace?: string): Result<string>;

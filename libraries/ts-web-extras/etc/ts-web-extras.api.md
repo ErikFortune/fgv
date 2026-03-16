@@ -304,6 +304,8 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
     readonly fetchImpl?: typeof fetch;
     // (undocumented)
     readonly namespace?: string;
+    // (undocumented)
+    readonly userId?: string;
 }
 
 // @public

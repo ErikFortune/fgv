@@ -3237,6 +3237,7 @@ interface ICloudStorageConfig {
     readonly namespace?: string;
     readonly sourceName?: string;
     readonly userData?: boolean;
+    readonly userId?: string;
 }
 
 // @public

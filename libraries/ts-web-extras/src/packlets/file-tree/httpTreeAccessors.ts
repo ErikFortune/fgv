@@ -58,6 +58,7 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
   readonly namespace?: string;
   readonly autoSync?: boolean;
   readonly fetchImpl?: typeof fetch;
+  readonly userId?: string;
 }
 
 /**
@@ -73,6 +74,7 @@ export class HttpTreeAccessors<TCT extends string = string>
   private readonly _fetchImpl: typeof fetch;
   private readonly _dirtyFiles: Set<string> = new Set();
   private readonly _autoSync: boolean;
+  private readonly _userId: string | undefined;
 
   private constructor(files: FileTree.IInMemoryFile<TCT>[], params: IHttpTreeParams<TCT>) {
     super(files, params);
@@ -80,6 +82,7 @@ export class HttpTreeAccessors<TCT extends string = string>
     this._namespace = params.namespace;
     this._fetchImpl = normalizeFetch(params.fetchImpl);
     this._autoSync = params.autoSync ?? false;
+    this._userId = params.userId;
   }
 
   /**
@@ -205,6 +208,7 @@ export class HttpTreeAccessors<TCT extends string = string>
     const response = await this._fetchImpl(`${this._baseUrl}${resourcePath}`, {
       headers: {
         'Content-Type': 'application/json',
+        ...(this._userId ? { 'X-User-Id': this._userId } : {}),
         /* c8 ignore next 1 - defensive coding: init.headers is never set by current callers */
         ...(init?.headers ?? {})
       },
@@ -300,8 +304,12 @@ export class HttpTreeAccessors<TCT extends string = string>
     }
 
     const fetchImpl = normalizeFetch(params.fetchImpl);
+    const userIdHeaders: RequestInit | undefined = /* istanbul ignore next */ params.userId
+      ? { headers: { 'X-User-Id': params.userId } }
+      : undefined;
     const response = await fetchImpl(
-      `${params.baseUrl.replace(/\/$/, '')}${resourcePath}?${search.toString()}`
+      `${params.baseUrl.replace(/\/$/, '')}${resourcePath}?${search.toString()}`,
+      userIdHeaders
     ).catch((err: unknown) => ({ err } as const));
 
     if ('err' in response) {

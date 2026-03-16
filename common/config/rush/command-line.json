@@ -82,6 +82,22 @@
       "description": "Starts the chocolate-lab-api server on port 3002 (or PORT env var). Safe to run alongside other Rush processes.",
       "safeForSimultaneousRushProcesses": true,
       "shellCommand": "node services/chocolate-lab-api/lib/index.js"
+    },
+    {
+      "name": "start-lab:stack",
+      "commandKind": "global",
+      "summary": "Start the Chocolate Lab Docker stack (app + MongoDB)",
+      "description": "Builds the monorepo, runs rush deploy, builds the frontend, then starts the Docker Compose stack.",
+      "safeForSimultaneousRushProcesses": true,
+      "shellCommand": "node common/scripts/install-run-rush.js build; node common/scripts/install-run-rush.js deploy --scenario chocolate-lab --target-folder deploy --overwrite && docker compose up -d --build"
+    },
+    {
+      "name": "stop-lab:stack",
+      "commandKind": "global",
+      "summary": "Stop the Chocolate Lab Docker stack",
+      "description": "Stops the Docker Compose stack without removing volumes.",
+      "safeForSimultaneousRushProcesses": true,
+      "shellCommand": "docker compose down"
     }
     // {
     //   /**

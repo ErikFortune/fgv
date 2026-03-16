@@ -228,6 +228,27 @@ function _resolveConfigNamespace(): IResolvedConfigNamespace {
 const _resolvedConfigNamespace = _resolveConfigNamespace();
 const _configNamespace = _resolvedConfigNamespace.effectiveConfigNamespace;
 
+/**
+ * Server-provided frontend defaults (e.g. cloud storage config in container mode).
+ * Returns undefined when running locally or if the server has no config to offer.
+ */
+interface IServerConfig {
+  readonly cloudStorage?: {
+    readonly enabled: boolean;
+    readonly baseUrl: string;
+  };
+}
+
+async function _fetchServerConfig(): Promise<IServerConfig | undefined> {
+  try {
+    const response = await fetch('/api/config');
+    if (!response.ok) return undefined;
+    return (await response.json()) as IServerConfig;
+  } catch {
+    return undefined;
+  }
+}
+
 interface IBuildResult {
   reactiveWorkspace: ReactiveWorkspace;
   warnings: ReadonlyArray<ISettingsValidationWarning>;
@@ -284,9 +305,21 @@ function isCloudBackendUnavailableError(message: string): boolean {
 
 async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   const storageKeyPrefix = _configNamespace ? `chocolate-lab:${_configNamespace}` : 'chocolate-lab';
+
+  // Fetch server-provided defaults (container mode). If the server isn't reachable
+  // (local dev), this returns undefined and we fall back to normal defaults.
+  const serverConfig = await _fetchServerConfig();
+  const defaultCloudStorage = serverConfig?.cloudStorage
+    ? {
+        ...serverConfig.cloudStorage,
+        userId: _configNamespace ?? undefined
+      }
+    : undefined;
+
   let platformInit = await initializeBrowserPlatform({
     userLibraryPath: 'localStorage',
-    storageKeyPrefix
+    storageKeyPrefix,
+    defaultCloudStorage
   });
 
   if (platformInit.isFailure() && isCloudBackendUnavailableError(platformInit.message)) {

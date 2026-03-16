@@ -21,13 +21,17 @@
  */
 
 import { serve } from '@hono/node-server';
-import { type Hono } from 'hono';
 
 import { createApp } from './packlets/server';
 
 const port: number = parseInt(process.env.PORT ?? '3002', 10);
-const app: Hono = createApp();
 
-serve({ fetch: app.fetch, port }, (info) => {
-  console.log(`chocolate-lab-api listening on http://localhost:${info.port}`);
+(async (): Promise<void> => {
+  const app = await createApp();
+  serve({ fetch: app.fetch, port }, (info) => {
+    console.log(`chocolate-lab-api listening on http://localhost:${info.port}`);
+  });
+})().catch((err: unknown) => {
+  console.error(`Fatal: failed to start server: ${err instanceof Error ? err.message : String(err)}`);
+  process.exit(1);
 });

@@ -5,7 +5,7 @@
 **Signature:**
 
 ```typescript
-createDirectory(request: IStoragePathRequest): Result<IStorageTreeItem>;
+createDirectory(request: IStoragePathRequest): Promise<Result<IStorageTreeItem>>;
 ```
 
 **Parameters:**
@@ -17,4 +17,4 @@ createDirectory(request: IStoragePathRequest): Result<IStorageTreeItem>;
 
 **Returns:**
 
-Result&lt;[IStorageTreeItem](../interfaces/IStorageTreeItem.md)&gt;
+Promise&lt;Result&lt;[IStorageTreeItem](../interfaces/IStorageTreeItem.md)&gt;&gt;

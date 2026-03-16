@@ -29,3 +29,4 @@ Configuration for creating HTTP-backed tree accessors.
 | <a id="mutable"></a> `mutable?` | `public` | `boolean` \| [`IFilterSpec`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | Controls mutability of the file tree. - `undefined` or `false`: No files are mutable. - `true`: All files are mutable. - `IFilterSpec`: Only files matching the filter are mutable. |
 | <a id="namespace"></a> `namespace?` | `readonly` | `string` | - |
 | <a id="prefix"></a> `prefix?` | `public` | `string` | - |
+| <a id="userid"></a> `userId?` | `readonly` | `string` | - |

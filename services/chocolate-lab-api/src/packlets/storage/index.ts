@@ -21,21 +21,9 @@
  */
 
 /**
- * Storage routes for cloud/file-backed data access.
+ * Storage routes for file-backed and MongoDB-backed data access.
  * @packageDocumentation
  */
 
-import { createStorageRoutes, FsStorageProviderFactory } from '@fgv/ts-http-storage';
-
-import type { Hono } from 'hono';
-
-/**
- * Creates namespace-aware storage routes backed by the local filesystem.
- * @param rootPath - Root directory for storage namespaces
- * @returns Hono sub-app for /api/storage
- * @public
- */
-export function createApiStorageRoutes(rootPath: string): Hono {
-  const providers = new FsStorageProviderFactory({ rootPath });
-  return createStorageRoutes({ providers });
-}
+export { MongoStorageProvider, MongoStorageProviderFactory } from './mongoProvider';
+export type { IMongoStorageProviderFactoryOptions } from './mongoProvider';

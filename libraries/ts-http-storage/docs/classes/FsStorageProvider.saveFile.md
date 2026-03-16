@@ -5,7 +5,7 @@
 **Signature:**
 
 ```typescript
-saveFile(itemPath: string, contents: string, contentType?: string): Result<IStorageFileResponse>;
+saveFile(itemPath: string, contents: string, contentType?: string): Promise<Result<IStorageFileResponse>>;
 ```
 
 **Parameters:**
@@ -19,4 +19,4 @@ saveFile(itemPath: string, contents: string, contentType?: string): Result<IStor
 
 **Returns:**
 
-Result&lt;[IStorageFileResponse](../interfaces/IStorageFileResponse.md)&gt;
+Promise&lt;Result&lt;[IStorageFileResponse](../interfaces/IStorageFileResponse.md)&gt;&gt;

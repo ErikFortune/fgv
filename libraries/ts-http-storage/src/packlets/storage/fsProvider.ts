@@ -21,6 +21,7 @@
  */
 
 import * as fs from 'fs';
+import * as fsp from 'fs/promises';
 import * as path from 'path';
 
 import { captureResult, fail, type Result, succeed } from '@fgv/ts-utils';
@@ -57,67 +58,90 @@ export class FsStorageProvider implements IHttpStorageProvider {
     this._rootPath = rootPath;
   }
 
-  public getItem(itemPath: string): Result<IStorageTreeItem> {
-    return this._resolveAbsolutePath(itemPath).onSuccess((absolutePath) => {
-      return captureResult(() => fs.statSync(absolutePath)).onSuccess((stats) =>
-        succeed(this._toTreeItem(itemPath, toItemType(stats)))
-      );
-    });
+  public async getItem(itemPath: string): Promise<Result<IStorageTreeItem>> {
+    const resolved = this._resolveAbsolutePath(itemPath);
+    if (resolved.isFailure()) {
+      return fail(resolved.message);
+    }
+    try {
+      const stats = await fsp.stat(resolved.value);
+      return succeed(this._toTreeItem(itemPath, toItemType(stats)));
+    } catch (err: unknown) {
+      return fail(`${itemPath}: ${_toMessage(err)}`);
+    }
   }
 
-  public getChildren(itemPath: string): Result<ReadonlyArray<IStorageTreeItem>> {
-    return this._resolveAbsolutePath(itemPath).onSuccess((absolutePath) => {
-      return captureResult(() => fs.readdirSync(absolutePath, { withFileTypes: true })).onSuccess(
-        (entries) => {
-          return mapEntries(entries, itemPath);
-        }
-      );
-    });
+  public async getChildren(itemPath: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>> {
+    const resolved = this._resolveAbsolutePath(itemPath);
+    if (resolved.isFailure()) {
+      return fail(resolved.message);
+    }
+    try {
+      const entries = await fsp.readdir(resolved.value, { withFileTypes: true });
+      return _mapEntries(entries, itemPath);
+    } catch (err: unknown) {
+      return fail(`${itemPath}: ${_toMessage(err)}`);
+    }
   }
 
-  public getFile(itemPath: string): Result<IStorageFileResponse> {
-    return this._resolveAbsolutePath(itemPath).onSuccess((absolutePath) => {
-      return captureResult(() => {
-        const stats = fs.statSync(absolutePath);
-        if (!stats.isFile()) {
-          throw new Error(`${itemPath}: not a file`);
-        }
-        return fs.readFileSync(absolutePath, 'utf8');
-      }).onSuccess((contents) =>
-        succeed({
-          path: normalizeRequestPath(itemPath),
-          contents
-        })
-      );
-    });
+  public async getFile(itemPath: string): Promise<Result<IStorageFileResponse>> {
+    const resolved = this._resolveAbsolutePath(itemPath);
+    if (resolved.isFailure()) {
+      return fail(resolved.message);
+    }
+    try {
+      const stats = await fsp.stat(resolved.value);
+      if (!stats.isFile()) {
+        return fail(`${itemPath}: not a file`);
+      }
+      const contents = await fsp.readFile(resolved.value, 'utf8');
+      return succeed({
+        path: normalizeRequestPath(itemPath),
+        contents
+      });
+    } catch (err: unknown) {
+      return fail(`${itemPath}: ${_toMessage(err)}`);
+    }
   }
 
-  public saveFile(itemPath: string, contents: string, contentType?: string): Result<IStorageFileResponse> {
-    return this._resolveAbsolutePath(itemPath).onSuccess((absolutePath) => {
-      return captureResult(() => {
-        const parentDir = path.dirname(absolutePath);
-        fs.mkdirSync(parentDir, { recursive: true });
-        fs.writeFileSync(absolutePath, contents, 'utf8');
-      }).onSuccess(() =>
-        succeed({
-          path: normalizeRequestPath(itemPath),
-          contents,
-          contentType
-        })
-      );
-    });
+  public async saveFile(
+    itemPath: string,
+    contents: string,
+    contentType?: string
+  ): Promise<Result<IStorageFileResponse>> {
+    const resolved = this._resolveAbsolutePath(itemPath);
+    if (resolved.isFailure()) {
+      return fail(resolved.message);
+    }
+    try {
+      const parentDir = path.dirname(resolved.value);
+      await fsp.mkdir(parentDir, { recursive: true });
+      await fsp.writeFile(resolved.value, contents, 'utf8');
+      return succeed({
+        path: normalizeRequestPath(itemPath),
+        contents,
+        contentType
+      });
+    } catch (err: unknown) {
+      return fail(`${itemPath}: ${_toMessage(err)}`);
+    }
   }
 
-  public createDirectory(itemPath: string): Result<IStorageTreeItem> {
-    return this._resolveAbsolutePath(itemPath).onSuccess((absolutePath) => {
-      return captureResult(() => fs.mkdirSync(absolutePath, { recursive: true })).onSuccess(() =>
-        succeed(this._toTreeItem(itemPath, 'directory'))
-      );
-    });
+  public async createDirectory(itemPath: string): Promise<Result<IStorageTreeItem>> {
+    const resolved = this._resolveAbsolutePath(itemPath);
+    if (resolved.isFailure()) {
+      return fail(resolved.message);
+    }
+    try {
+      await fsp.mkdir(resolved.value, { recursive: true });
+      return succeed(this._toTreeItem(itemPath, 'directory'));
+    } catch (err: unknown) {
+      return fail(`${itemPath}: ${_toMessage(err)}`);
+    }
   }
 
   public async sync(): Promise<Result<IStorageSyncResponse>> {
-    return Promise.resolve(succeed({ synced: 0 }));
+    return succeed({ synced: 0 });
   }
 
   private _resolveAbsolutePath(requestPath: string): Result<string> {
@@ -141,7 +165,7 @@ export class FsStorageProvider implements IHttpStorageProvider {
   }
 }
 
-function mapEntries(
+function _mapEntries(
   entries: ReadonlyArray<fs.Dirent>,
   parentPath: string
 ): Result<ReadonlyArray<IStorageTreeItem>> {
@@ -158,7 +182,15 @@ function mapEntries(
   return succeed(items);
 }
 
-function normalizeRequestPath(requestPath: string): string {
+function _toMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * Normalizes a request path to a consistent POSIX format.
+ * @public
+ */
+export function normalizeRequestPath(requestPath: string): string {
   if (requestPath.length === 0) {
     return '/';
   }

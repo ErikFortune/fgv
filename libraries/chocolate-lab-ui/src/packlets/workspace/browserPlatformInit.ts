@@ -78,6 +78,13 @@ export interface IBrowserPlatformInitOptions extends Omit<IPlatformInitOptions, 
    * If omitted, bootstrap settings are used.
    */
   readonly cloudStorage?: Settings.ICloudStorageConfig;
+
+  /**
+   * Default cloud storage configuration used when no saved bootstrap settings exist.
+   * Typically provided by a server config endpoint so container deployments can
+   * auto-enable cloud storage for first-time users without affecting local dev.
+   */
+  readonly defaultCloudStorage?: Settings.ICloudStorageConfig;
 }
 
 // ============================================================================
@@ -181,7 +188,10 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
       return fail(settingsResult.message);
     }
 
-    let cloudConfig = browserOptions.cloudStorage ?? settingsResult.value.bootstrap?.cloudStorage;
+    let cloudConfig =
+      browserOptions.cloudStorage ??
+      settingsResult.value.bootstrap?.cloudStorage ??
+      browserOptions.defaultCloudStorage;
     // If cloud storage is enabled but no explicit base URL, derive from proxy URL
     if (cloudConfig?.enabled && !cloudConfig.baseUrl?.trim()) {
       const proxyUrl = settingsResult.value.resolvedSettings.tools?.aiAssist?.proxyUrl;
@@ -343,6 +353,7 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
     const treeResult = await FileApiTreeAccessors.createFromHttp({
       baseUrl: config.baseUrl,
       namespace: config.namespace,
+      userId: config.userId,
       autoSync,
       mutable: true
     });

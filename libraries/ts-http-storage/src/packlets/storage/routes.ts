@@ -73,13 +73,13 @@ export function createStorageRoutes(options: ICreateStorageRoutesOptions): Hono 
     return c.json({ status: 'ok', namespace: namespace ?? 'default' });
   });
 
-  routes.get('/tree/item', (c) => {
+  routes.get('/tree/item', async (c) => {
     const parsed = storagePathRequest.convert(parsePathQuery(c.req.query('path'), c.req.query('namespace')));
     if (parsed.isFailure()) {
       return c.json({ error: `invalid request: ${parsed.message}` }, 400);
     }
 
-    const result = service.getItem(parsed.value);
+    const result = await service.getItem(parsed.value);
     if (result.isFailure()) {
       return c.json({ error: result.message }, 404);
     }
@@ -91,13 +91,13 @@ export function createStorageRoutes(options: ICreateStorageRoutesOptions): Hono 
     return c.json(converted.value);
   });
 
-  routes.get('/tree/children', (c) => {
+  routes.get('/tree/children', async (c) => {
     const parsed = storagePathRequest.convert(parsePathQuery(c.req.query('path'), c.req.query('namespace')));
     if (parsed.isFailure()) {
       return c.json({ error: `invalid request: ${parsed.message}` }, 400);
     }
 
-    const result = service.getChildren(parsed.value);
+    const result = await service.getChildren(parsed.value);
     if (result.isFailure()) {
       return c.json({ error: result.message }, 404);
     }
@@ -109,13 +109,13 @@ export function createStorageRoutes(options: ICreateStorageRoutesOptions): Hono 
     return c.json(converted.value);
   });
 
-  routes.get('/file', (c) => {
+  routes.get('/file', async (c) => {
     const parsed = storagePathRequest.convert(parsePathQuery(c.req.query('path'), c.req.query('namespace')));
     if (parsed.isFailure()) {
       return c.json({ error: `invalid request: ${parsed.message}` }, 400);
     }
 
-    const result = service.getFile(parsed.value);
+    const result = await service.getFile(parsed.value);
     if (result.isFailure()) {
       return c.json({ error: result.message }, 404);
     }
@@ -138,7 +138,7 @@ export function createStorageRoutes(options: ICreateStorageRoutesOptions): Hono 
       return c.json({ error: `invalid request: ${parsed.message}` }, 400);
     }
 
-    const result = service.saveFile(parsed.value);
+    const result = await service.saveFile(parsed.value);
     if (result.isFailure()) {
       return c.json({ error: result.message }, 400);
     }
@@ -163,7 +163,7 @@ export function createStorageRoutes(options: ICreateStorageRoutesOptions): Hono 
       return c.json({ error: `invalid request: ${parsed.message}` }, 400);
     }
 
-    const result = service.createDirectory(parsed.value);
+    const result = await service.createDirectory(parsed.value);
     if (result.isFailure()) {
       return c.json({ error: result.message }, 400);
     }

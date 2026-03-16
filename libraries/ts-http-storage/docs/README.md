@@ -202,6 +202,15 @@ Description
 <tbody>
 <tr><td>
 
+[normalizeRequestPath](./functions/normalizeRequestPath.md)
+
+</td><td>
+
+Normalizes a request path to a consistent POSIX format.
+
+</td></tr>
+<tr><td>
+
 [sanitizeNamespace](./functions/sanitizeNamespace.md)
 
 </td><td>

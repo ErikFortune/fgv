@@ -368,7 +368,8 @@ export const cloudStorageConfig: Converter<ICloudStorageConfig> =
     namespace: Converters.string.optional(),
     library: Converters.boolean.optional(),
     userData: Converters.boolean.optional(),
-    sourceName: Converters.string.optional()
+    sourceName: Converters.string.optional(),
+    userId: Converters.string.optional()
   });
 
 // ============================================================================

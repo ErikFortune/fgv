@@ -10,28 +10,32 @@ import {
 } from '../../../packlets/storage';
 
 class StubProvider implements IHttpStorageProvider {
-  public getItem(path: string): Result<IStorageTreeItem> {
+  public async getItem(path: string): Promise<Result<IStorageTreeItem>> {
     return succeed({ path, name: 'item', type: 'file' });
   }
 
-  public getChildren(path: string): Result<ReadonlyArray<IStorageTreeItem>> {
+  public async getChildren(path: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>> {
     return succeed([{ path: `${path}/child.txt`, name: 'child.txt', type: 'file' }]);
   }
 
-  public getFile(path: string): Result<IStorageFileResponse> {
+  public async getFile(path: string): Promise<Result<IStorageFileResponse>> {
     return succeed({ path, contents: 'contents' });
   }
 
-  public saveFile(path: string, contents: string, contentType?: string): Result<IStorageFileResponse> {
+  public async saveFile(
+    path: string,
+    contents: string,
+    contentType?: string
+  ): Promise<Result<IStorageFileResponse>> {
     return succeed({ path, contents, contentType });
   }
 
-  public createDirectory(path: string): Result<IStorageTreeItem> {
+  public async createDirectory(path: string): Promise<Result<IStorageTreeItem>> {
     return succeed({ path, name: 'created', type: 'directory' });
   }
 
   public async sync(): Promise<Result<IStorageSyncResponse>> {
-    return Promise.resolve(succeed({ synced: 7 }));
+    return succeed({ synced: 7 });
   }
 }
 
@@ -54,10 +58,10 @@ class FailingProviderFactory implements IHttpStorageProviderFactory {
 }
 
 describe('HttpStorageService', () => {
-  test('maps getChildren response shape', () => {
+  test('maps getChildren response shape', async () => {
     const service = new HttpStorageService(new StubProviderFactory(new StubProvider()));
 
-    const result = service.getChildren({ path: '/data', namespace: 'default' });
+    const result = await service.getChildren({ path: '/data', namespace: 'default' });
     expect(result.isSuccess()).toBe(true);
     expect(result.orThrow()).toEqual({
       path: '/data',
@@ -68,7 +72,7 @@ describe('HttpStorageService', () => {
   test('formats provider lookup failures', async () => {
     const service = new HttpStorageService(new FailingProviderFactory());
 
-    const getResult = service.getFile({ path: '/missing', namespace: 'default' });
+    const getResult = await service.getFile({ path: '/missing', namespace: 'default' });
     expect(getResult.isFailure()).toBe(true);
     expect(getResult.message).toBe('provider: missing provider');
 

@@ -24,7 +24,8 @@
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "hono": "~4.7.11",
-    "@hono/node-server": "~1.14.1"
+    "@hono/node-server": "~1.14.1",
+    "mongodb": "~7.1.0"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",

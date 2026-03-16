@@ -5,7 +5,7 @@
 **Signature:**
 
 ```typescript
-getItem(path: string): Result<IStorageTreeItem>;
+getItem(path: string): Promise<Result<IStorageTreeItem>>;
 ```
 
 **Parameters:**
@@ -17,4 +17,4 @@ getItem(path: string): Result<IStorageTreeItem>;
 
 **Returns:**
 
-Result&lt;[IStorageTreeItem](IStorageTreeItem.md)&gt;
+Promise&lt;Result&lt;[IStorageTreeItem](IStorageTreeItem.md)&gt;&gt;

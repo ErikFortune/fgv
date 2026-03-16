@@ -35,13 +35,13 @@ describe('FsStorageProvider', () => {
     fs.rmSync(rootPath, { recursive: true, force: true });
   });
 
-  test('saves and loads files', () => {
+  test('saves and loads files', async () => {
     const provider = new FsStorageProvider(rootPath);
 
-    const saveResult = provider.saveFile('/data/example.txt', 'hello');
+    const saveResult = await provider.saveFile('/data/example.txt', 'hello');
     expect(saveResult.isSuccess()).toBe(true);
 
-    const fileResult = provider.getFile('/data/example.txt');
+    const fileResult = await provider.getFile('/data/example.txt');
     expect(fileResult.isSuccess()).toBe(true);
     expect(fileResult.orThrow()).toEqual({
       path: '/data/example.txt',
@@ -49,12 +49,12 @@ describe('FsStorageProvider', () => {
     });
   });
 
-  test('lists children in a directory', () => {
+  test('lists children in a directory', async () => {
     const provider = new FsStorageProvider(rootPath);
-    provider.saveFile('/data/one.txt', 'one');
-    provider.saveFile('/data/two.txt', 'two');
+    await provider.saveFile('/data/one.txt', 'one');
+    await provider.saveFile('/data/two.txt', 'two');
 
-    const childrenResult = provider.getChildren('/data');
+    const childrenResult = await provider.getChildren('/data');
     expect(childrenResult.isSuccess()).toBe(true);
 
     const childNames = childrenResult
@@ -64,10 +64,10 @@ describe('FsStorageProvider', () => {
     expect(childNames).toEqual(['one.txt', 'two.txt']);
   });
 
-  test('normalizes traversal-like request paths under storage root', () => {
+  test('normalizes traversal-like request paths under storage root', async () => {
     const provider = new FsStorageProvider(rootPath);
 
-    const result = provider.getItem('../../etc/passwd');
+    const result = await provider.getItem('../../etc/passwd');
     expect(result.isFailure()).toBe(true);
     expect(result.message).toContain('ENOENT');
     expect(result.message).toContain(path.join(rootPath, 'etc/passwd'));
@@ -85,14 +85,14 @@ describe('FsStorageProviderFactory', () => {
     fs.rmSync(rootPath, { recursive: true, force: true });
   });
 
-  test('creates namespace-scoped providers', () => {
+  test('creates namespace-scoped providers', async () => {
     const factory = new FsStorageProviderFactory({ rootPath });
 
     const providerResult = factory.forNamespace('team-a');
     expect(providerResult.isSuccess()).toBe(true);
 
     const provider = providerResult.orThrow();
-    const saveResult = provider.saveFile('/notes.txt', 'namespaced');
+    const saveResult = await provider.saveFile('/notes.txt', 'namespaced');
     expect(saveResult.isSuccess()).toBe(true);
 
     const expectedPath = path.join(rootPath, 'team-a', 'notes.txt');

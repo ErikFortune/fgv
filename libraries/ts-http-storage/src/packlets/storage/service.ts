@@ -45,35 +45,51 @@ export class HttpStorageService {
     this._providers = providers;
   }
 
-  public getItem(request: IStoragePathRequest): Result<IStorageTreeItem> {
-    return this._getProvider(request.namespace).onSuccess((provider) => provider.getItem(request.path));
+  public async getItem(request: IStoragePathRequest): Promise<Result<IStorageTreeItem>> {
+    const providerResult = this._getProvider(request.namespace);
+    if (providerResult.isFailure()) {
+      return fail(providerResult.message);
+    }
+    return providerResult.value.getItem(request.path);
   }
 
-  public getChildren(request: IStoragePathRequest): Result<IStorageTreeChildrenResponse> {
-    return this._getProvider(request.namespace)
-      .onSuccess((provider) => provider.getChildren(request.path))
-      .onSuccess((children) =>
-        succeed({
-          path: request.path,
-          children
-        })
-      );
+  public async getChildren(request: IStoragePathRequest): Promise<Result<IStorageTreeChildrenResponse>> {
+    const providerResult = this._getProvider(request.namespace);
+    if (providerResult.isFailure()) {
+      return fail(providerResult.message);
+    }
+    const childrenResult = await providerResult.value.getChildren(request.path);
+    if (childrenResult.isFailure()) {
+      return fail(childrenResult.message);
+    }
+    return succeed({
+      path: request.path,
+      children: childrenResult.value
+    });
   }
 
-  public getFile(request: IStoragePathRequest): Result<IStorageFileResponse> {
-    return this._getProvider(request.namespace).onSuccess((provider) => provider.getFile(request.path));
+  public async getFile(request: IStoragePathRequest): Promise<Result<IStorageFileResponse>> {
+    const providerResult = this._getProvider(request.namespace);
+    if (providerResult.isFailure()) {
+      return fail(providerResult.message);
+    }
+    return providerResult.value.getFile(request.path);
   }
 
-  public saveFile(request: IStorageWriteFileRequest): Result<IStorageFileResponse> {
-    return this._getProvider(request.namespace).onSuccess((provider) =>
-      provider.saveFile(request.path, request.contents, request.contentType)
-    );
+  public async saveFile(request: IStorageWriteFileRequest): Promise<Result<IStorageFileResponse>> {
+    const providerResult = this._getProvider(request.namespace);
+    if (providerResult.isFailure()) {
+      return fail(providerResult.message);
+    }
+    return providerResult.value.saveFile(request.path, request.contents, request.contentType);
   }
 
-  public createDirectory(request: IStoragePathRequest): Result<IStorageTreeItem> {
-    return this._getProvider(request.namespace).onSuccess((provider) =>
-      provider.createDirectory(request.path)
-    );
+  public async createDirectory(request: IStoragePathRequest): Promise<Result<IStorageTreeItem>> {
+    const providerResult = this._getProvider(request.namespace);
+    if (providerResult.isFailure()) {
+      return fail(providerResult.message);
+    }
+    return providerResult.value.createDirectory(request.path);
   }
 
   public async sync(request: IStorageSyncRequest): Promise<Result<IStorageSyncResponse>> {

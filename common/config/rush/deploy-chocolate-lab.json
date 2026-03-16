@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/rush/v5/deploy-scenario.schema.json",
+
+  "deploymentProjectNames": ["@fgv/chocolate-lab-api"],
+
+  "includeDevDependencies": false,
+  "includeNpmIgnoreFiles": false,
+
+  "linkCreation": "default",
+  "folderToCopy": "services/chocolate-lab-api"
+}

@@ -5,7 +5,7 @@
 **Signature:**
 
 ```typescript
-getChildren(path: string): Result<readonly IStorageTreeItem[]>;
+getChildren(path: string): Promise<Result<readonly IStorageTreeItem[]>>;
 ```
 
 **Parameters:**
@@ -17,4 +17,4 @@ getChildren(path: string): Result<readonly IStorageTreeItem[]>;
 
 **Returns:**
 
-Result&lt;readonly [IStorageTreeItem](IStorageTreeItem.md)[]&gt;
+Promise&lt;Result&lt;readonly [IStorageTreeItem](IStorageTreeItem.md)[]&gt;&gt;

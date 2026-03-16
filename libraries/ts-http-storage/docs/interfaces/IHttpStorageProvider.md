@@ -3,6 +3,7 @@
 # Interface: IHttpStorageProvider
 
 Provider contract for storage backends.
+All methods are async to support both filesystem and database backends.
 
 ## Methods
 

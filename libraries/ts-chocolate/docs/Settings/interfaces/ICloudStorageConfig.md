@@ -126,4 +126,21 @@ string
 Optional source name label shown in storage UI.
 
 </td></tr>
+<tr><td>
+
+[userId](./ICloudStorageConfig.userId.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Temporary user ID sent as X-User-Id header for per-user data isolation.
+
+</td></tr>
 </tbody></table>

@@ -17,14 +17,14 @@ class InMemoryProvider implements IHttpStorageProvider {
     return parts[parts.length - 1] ?? '';
   }
 
-  public getItem(path: string): Result<IStorageTreeItem> {
+  public async getItem(path: string): Promise<Result<IStorageTreeItem>> {
     if (this._files.has(path)) {
       return succeed({ path, name: this._basename(path), type: 'file' as const });
     }
     return fail(`${path}: not found`);
   }
 
-  public getChildren(path: string): Result<ReadonlyArray<IStorageTreeItem>> {
+  public async getChildren(path: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>> {
     const children: IStorageTreeItem[] = [];
     for (const filePath of this._files.keys()) {
       if (filePath.startsWith(`${path}/`)) {
@@ -37,7 +37,7 @@ class InMemoryProvider implements IHttpStorageProvider {
     return succeed(children);
   }
 
-  public getFile(path: string): Result<IStorageFileResponse> {
+  public async getFile(path: string): Promise<Result<IStorageFileResponse>> {
     const contents = this._files.get(path);
     if (contents === undefined) {
       return fail(`${path}: not found`);
@@ -45,17 +45,17 @@ class InMemoryProvider implements IHttpStorageProvider {
     return succeed({ path, contents });
   }
 
-  public saveFile(path: string, contents: string): Result<IStorageFileResponse> {
+  public async saveFile(path: string, contents: string): Promise<Result<IStorageFileResponse>> {
     this._files.set(path, contents);
     return succeed({ path, contents });
   }
 
-  public createDirectory(path: string): Result<IStorageTreeItem> {
+  public async createDirectory(path: string): Promise<Result<IStorageTreeItem>> {
     return succeed({ path, name: this._basename(path), type: 'directory' });
   }
 
   public async sync(): Promise<Result<IStorageSyncResponse>> {
-    return Promise.resolve(succeed({ synced: this._files.size }));
+    return succeed({ synced: this._files.size });
   }
 }
 

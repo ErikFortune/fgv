@@ -5,7 +5,7 @@
 **Signature:**
 
 ```typescript
-getFile(itemPath: string): Result<IStorageFileResponse>;
+getFile(itemPath: string): Promise<Result<IStorageFileResponse>>;
 ```
 
 **Parameters:**
@@ -17,4 +17,4 @@ getFile(itemPath: string): Result<IStorageFileResponse>;
 
 **Returns:**
 
-Result&lt;[IStorageFileResponse](../interfaces/IStorageFileResponse.md)&gt;
+Promise&lt;Result&lt;[IStorageFileResponse](../interfaces/IStorageFileResponse.md)&gt;&gt;

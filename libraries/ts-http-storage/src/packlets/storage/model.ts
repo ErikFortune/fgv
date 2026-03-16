@@ -99,13 +99,14 @@ export interface IStorageSyncResponse {
 
 /**
  * Provider contract for storage backends.
+ * All methods are async to support both filesystem and database backends.
  * @public
  */
 export interface IHttpStorageProvider {
-  getItem(path: string): Result<IStorageTreeItem>;
-  getChildren(path: string): Result<ReadonlyArray<IStorageTreeItem>>;
-  getFile(path: string): Result<IStorageFileResponse>;
-  saveFile(path: string, contents: string, contentType?: string): Result<IStorageFileResponse>;
-  createDirectory(path: string): Result<IStorageTreeItem>;
+  getItem(path: string): Promise<Result<IStorageTreeItem>>;
+  getChildren(path: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>>;
+  getFile(path: string): Promise<Result<IStorageFileResponse>>;
+  saveFile(path: string, contents: string, contentType?: string): Promise<Result<IStorageFileResponse>>;
+  createDirectory(path: string): Promise<Result<IStorageTreeItem>>;
   sync(): Promise<Result<IStorageSyncResponse>>;
 }

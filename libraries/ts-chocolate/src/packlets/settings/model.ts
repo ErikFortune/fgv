@@ -283,6 +283,8 @@ export interface ICloudStorageConfig {
   readonly userData?: boolean;
   /** Optional source name label shown in storage UI. */
   readonly sourceName?: string;
+  /** Temporary user ID sent as X-User-Id header for per-user data isolation. */
+  readonly userId?: string;
 }
 
 // ============================================================================

@@ -5,7 +5,7 @@
 **Signature:**
 
 ```typescript
-getChildren(request: IStoragePathRequest): Result<IStorageTreeChildrenResponse>;
+getChildren(request: IStoragePathRequest): Promise<Result<IStorageTreeChildrenResponse>>;
 ```
 
 **Parameters:**
@@ -17,4 +17,4 @@ getChildren(request: IStoragePathRequest): Result<IStorageTreeChildrenResponse>;
 
 **Returns:**
 
-Result&lt;[IStorageTreeChildrenResponse](../interfaces/IStorageTreeChildrenResponse.md)&gt;
+Promise&lt;Result&lt;[IStorageTreeChildrenResponse](../interfaces/IStorageTreeChildrenResponse.md)&gt;&gt;

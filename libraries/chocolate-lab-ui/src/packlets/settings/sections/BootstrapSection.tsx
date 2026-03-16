@@ -259,6 +259,20 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">User ID (temporary)</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+              value={bootstrap.cloudStorageUserId}
+              placeholder="default-user"
+              onChange={(e): void => onChange({ cloudStorageUserId: e.target.value })}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Sent as X-User-Id header to isolate per-user data. Will be replaced by a real identity system.
+            </p>
+          </div>
+
           <ToggleRow
             label="Load library data from cloud"
             description="Load ingredient, filling, confection, decoration, mold, task, and procedure collections."
