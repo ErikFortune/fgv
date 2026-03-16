@@ -96,11 +96,25 @@ export function groupByRole<T>(
     group.push({ item: items[i], originalIndex: i });
   }
 
+  // When there are multiple groups (some with roles, some without),
+  // give the default group a visible label so it doesn't silently merge
+  // with an adjacent role group.
+  const hasRoleGroups = groupOrder.some((key) => key !== DEFAULT_KEY);
+  const hasDefaultGroup = groupOrder.indexOf(DEFAULT_KEY) >= 0;
+  const showDefaultLabel = hasRoleGroups && hasDefaultGroup;
+
+  // Move default group to end when role groups exist, so "Other" always appears last.
+  if (showDefaultLabel) {
+    const idx = groupOrder.indexOf(DEFAULT_KEY);
+    groupOrder.splice(idx, 1);
+    groupOrder.push(DEFAULT_KEY);
+  }
+
   return groupOrder.map((key) => {
     const role = key === DEFAULT_KEY ? undefined : (key as IngredientRole);
     return {
       role,
-      label: role !== undefined ? roleToLabel(role) : undefined,
+      label: role !== undefined ? roleToLabel(role) : showDefaultLabel ? 'Other' : undefined,
       items: groupMap.get(key)!
     };
   });

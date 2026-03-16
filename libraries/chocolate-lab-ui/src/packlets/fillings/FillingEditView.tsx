@@ -61,7 +61,7 @@ import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 import { succeed } from '@fgv/ts-utils';
 
 import { EditingToolbar, NotesEditor, useEditingContext, type IChangeIndicator } from '../editing';
-import { DerivedFromIndicator } from '../common';
+import { DerivedFromIndicator, groupByRole, RoleGroupHeader } from '../common';
 import { useWorkspace } from '../workspace';
 import { GanacheCharacteristicsDisplay, CollapsibleGanacheSection } from './GanacheAnalysisSection';
 import {
@@ -1225,323 +1225,328 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       {/* Ingredients Section */}
       <EditSection title={`Ingredients (${currentVariationIngredients.length})`}>
         <div className="space-y-2">
-          {currentVariationIngredients.map((ing, index) => {
-            const effectiveId = getEffectiveId(ing);
-            const ingValue =
-              ingredientInputDraft[index] ?? getIngredientDisplayName(effectiveId, ingredientSuggestions);
-            const isSpoonUnit = ing.unit === 'tsp' || ing.unit === 'Tbsp';
-            const isWeightUnit = ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined;
-            const sourceIds = ing.ingredient.ids;
-            const sourcePreferredId = ing.ingredient.preferredId ?? effectiveId;
-            const hasAlternates = sourceIds.length > 1;
-            const hasNonDefaultModifiers =
-              (ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0) ||
-              !!ing.modifiers?.processNote ||
-              !!ing.modifiers?.spoonLevel ||
-              !!ing.modifiers?.toTaste;
-            const isExpanded = expandedIngredients.has(index) || hasNonDefaultModifiers || hasAlternates;
-            return (
-              <div
-                key={ing.ingredient.slotId ? `${effectiveId}:${ing.ingredient.slotId}` : effectiveId}
-                className="rounded border border-gray-200 p-2"
-              >
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="text"
-                    className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                    value={ingValue}
-                    list="filling-ingredient-suggestions"
-                    onChange={(e): void => {
-                      setIngredientInputDraft((prev) => ({ ...prev, [index]: e.target.value }));
-                    }}
-                    onBlur={(): void => commitIngredientInput(index, ingValue)}
-                    onKeyDown={(e): void => {
-                      if (e.key === 'Enter' || e.key === 'Tab') {
-                        commitIngredientInput(index, ingValue);
-                      }
-                    }}
-                  />
-                  <span
-                    ref={(el): void => {
-                      if (
-                        el &&
-                        focusIngredientRef.current !== undefined &&
-                        (focusIngredientRef.current === effectiveId ||
-                          focusIngredientRef.current === ing.ingredient.slotId)
-                      ) {
-                        focusIngredientRef.current = undefined;
-                        const input = el.querySelector('input');
-                        if (input) requestAnimationFrame(() => input.focus());
-                      }
-                    }}
+          {groupByRole(currentVariationIngredients, (ing) => ing.role).map((group) => (
+            <React.Fragment key={group.role ?? '__default__'}>
+              <RoleGroupHeader label={group.label} />
+              {group.items.map(({ item: ing, originalIndex: index }) => {
+                const effectiveId = getEffectiveId(ing);
+                const ingValue =
+                  ingredientInputDraft[index] ?? getIngredientDisplayName(effectiveId, ingredientSuggestions);
+                const isSpoonUnit = ing.unit === 'tsp' || ing.unit === 'Tbsp';
+                const isWeightUnit = ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined;
+                const sourceIds = ing.ingredient.ids;
+                const sourcePreferredId = ing.ingredient.preferredId ?? effectiveId;
+                const hasAlternates = sourceIds.length > 1;
+                const hasNonDefaultModifiers =
+                  (ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0) ||
+                  !!ing.modifiers?.processNote ||
+                  !!ing.modifiers?.spoonLevel ||
+                  !!ing.modifiers?.toTaste;
+                const isExpanded = expandedIngredients.has(index) || hasNonDefaultModifiers || hasAlternates;
+                return (
+                  <div
+                    key={ing.ingredient.slotId ? `${effectiveId}:${ing.ingredient.slotId}` : effectiveId}
+                    className="rounded border border-gray-200 p-2"
                   >
-                    <NumericInput
-                      className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary disabled:bg-gray-50 disabled:text-gray-400"
-                      value={ing.amount}
-                      min={0}
-                      step={isSpoonUnit ? 0.25 : 0.1}
-                      disabled={ing.unit === 'pinch'}
-                      onChange={(num): void => {
-                        handleIngredientAmountChange(index, num ?? 0);
-                      }}
-                      label={`Amount (${ing.unit ?? 'g'})`}
-                    />
-                  </span>
-                  <button
-                    type="button"
-                    onClick={(): void => toggleIngredientExpanded(index)}
-                    className="text-xs text-gray-500 hover:text-choco-primary cursor-pointer px-0.5 select-none shrink-0"
-                    title="Click to show/hide details"
-                  >
-                    {ing.unit ?? 'g'}
-                    {isExpanded ? '▾' : '▸'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(): void => handleRemoveIngredient(index)}
-                    className="text-gray-400 hover:text-red-500 p-1 shrink-0"
-                    aria-label="Remove ingredient"
-                  >
-                    ✕
-                  </button>
-                </div>
-                {isExpanded && (
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5 pl-1">
-                    <select
-                      className="text-xs bg-transparent border-none text-gray-600 cursor-pointer p-0 focus:outline-none focus:ring-0"
-                      value={ing.unit ?? 'g'}
-                      onChange={(e): void =>
-                        handleIngredientUnitChange(index, e.target.value as MeasurementUnit)
-                      }
-                    >
-                      {ALL_MEASUREMENT_UNITS.map((u: MeasurementUnit) => (
-                        <option key={u} value={u}>
-                          {u}
-                        </option>
-                      ))}
-                    </select>
-                    {isSpoonUnit && (
-                      <>
-                        <select
-                          className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                          value={ing.modifiers?.spoonLevel ?? ''}
-                          onChange={(e): void => {
-                            const val = e.target.value;
-                            handleIngredientModifiersChange(index, {
-                              ...ing.modifiers,
-                              spoonLevel: val ? (val as SpoonLevel) : undefined
-                            });
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                        value={ingValue}
+                        list="filling-ingredient-suggestions"
+                        onChange={(e): void => {
+                          setIngredientInputDraft((prev) => ({ ...prev, [index]: e.target.value }));
+                        }}
+                        onBlur={(): void => commitIngredientInput(index, ingValue)}
+                        onKeyDown={(e): void => {
+                          if (e.key === 'Enter' || e.key === 'Tab') {
+                            commitIngredientInput(index, ingValue);
+                          }
+                        }}
+                      />
+                      <span
+                        ref={(el): void => {
+                          if (
+                            el &&
+                            focusIngredientRef.current !== undefined &&
+                            (focusIngredientRef.current === effectiveId ||
+                              focusIngredientRef.current === ing.ingredient.slotId)
+                          ) {
+                            focusIngredientRef.current = undefined;
+                            const input = el.querySelector('input');
+                            if (input) requestAnimationFrame(() => input.focus());
+                          }
+                        }}
+                      >
+                        <NumericInput
+                          className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary disabled:bg-gray-50 disabled:text-gray-400"
+                          value={ing.amount}
+                          min={0}
+                          step={isSpoonUnit ? 0.25 : 0.1}
+                          disabled={ing.unit === 'pinch'}
+                          onChange={(num): void => {
+                            handleIngredientAmountChange(index, num ?? 0);
                           }}
+                          label={`Amount (${ing.unit ?? 'g'})`}
+                        />
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(): void => toggleIngredientExpanded(index)}
+                        className="text-xs text-gray-500 hover:text-choco-primary cursor-pointer px-0.5 select-none shrink-0"
+                        title="Click to show/hide details"
+                      >
+                        {ing.unit ?? 'g'}
+                        {isExpanded ? '▾' : '▸'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(): void => handleRemoveIngredient(index)}
+                        className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                        aria-label="Remove ingredient"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5 pl-1">
+                        <select
+                          className="text-xs bg-transparent border-none text-gray-600 cursor-pointer p-0 focus:outline-none focus:ring-0"
+                          value={ing.unit ?? 'g'}
+                          onChange={(e): void =>
+                            handleIngredientUnitChange(index, e.target.value as MeasurementUnit)
+                          }
                         >
-                          <option value="">level (default)</option>
-                          {ALL_SPOON_LEVELS.map((sl: SpoonLevel) => (
-                            <option key={sl} value={sl}>
-                              {sl}
+                          {ALL_MEASUREMENT_UNITS.map((u: MeasurementUnit) => (
+                            <option key={u} value={u}>
+                              {u}
                             </option>
                           ))}
                         </select>
-                        <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={ing.modifiers?.toTaste ?? false}
-                            onChange={(e): void => {
-                              handleIngredientModifiersChange(index, {
-                                ...ing.modifiers,
-                                toTaste: e.target.checked ? true : undefined
-                              });
-                            }}
-                          />
-                          to taste
-                        </label>
-                      </>
-                    )}
-                    {isWeightUnit && (
-                      <>
-                        <label className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
-                          yield
-                        </label>
-                        <input
-                          type="number"
-                          className="w-16 text-xs border border-gray-200 rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                          value={ing.modifiers?.yieldFactor ?? 1}
-                          min={0}
-                          max={1}
-                          step={0.05}
-                          onChange={(e): void => {
-                            const val = parseFloat(e.target.value);
-                            if (!isNaN(val) && val >= 0 && val <= 1) {
-                              handleIngredientModifiersChange(index, {
-                                ...ing.modifiers,
-                                yieldFactor: val === 1 ? undefined : val
-                              });
-                            }
-                          }}
-                        />
-                        <input
-                          type="text"
-                          className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                          value={ing.modifiers?.processNote ?? ''}
-                          placeholder="process note (e.g. steeped and strained)"
-                          onChange={(e): void => {
-                            handleIngredientModifiersChange(index, {
-                              ...ing.modifiers,
-                              processNote: e.target.value || undefined
-                            });
-                          }}
-                          onBlur={(e): void => {
-                            const val = e.target.value.trim();
-                            if (val !== (ing.modifiers?.processNote ?? '')) {
-                              handleIngredientModifiersChange(index, {
-                                ...ing.modifiers,
-                                processNote: val || undefined
-                              });
-                            }
-                          }}
-                        />
-                      </>
-                    )}
-                    {/* Alternates row */}
-                    {(hasAlternates || true) && (
-                      <div className="w-full flex flex-wrap items-center gap-1 mt-1 pt-1 border-t border-gray-100">
-                        <span className="text-xs text-gray-400 shrink-0">also:</span>
-                        {sourceIds.map((altId) => {
-                          const altName = getIngredientDisplayName(altId, ingredientSuggestions);
-                          const isPreferred = altId === sourcePreferredId;
-                          const canEdit = !readOnly;
-                          return (
-                            <span
-                              key={altId}
-                              className={`inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 ${
-                                isPreferred
-                                  ? 'bg-choco-primary/10 text-choco-primary'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}
-                            >
-                              {canEdit && (
-                                <button
-                                  type="button"
-                                  title={isPreferred ? 'Preferred' : 'Set as preferred'}
-                                  onClick={(): void => handleSetPreferredAlternate(effectiveId, altId)}
-                                  className={`shrink-0 ${
-                                    isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
-                                  }`}
-                                >
-                                  ★
-                                </button>
-                              )}
-                              {isPreferred && !canEdit && <span className="text-amber-500">★</span>}
-                              <span>{altName}</span>
-                              {canEdit && (
-                                <button
-                                  type="button"
-                                  title="Remove alternate"
-                                  onClick={(): void => handleRemoveAlternate(effectiveId, altId)}
-                                  className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
-                                >
-                                  ✕
-                                </button>
-                              )}
-                            </span>
-                          );
-                        })}
-                        {!readOnly && (
-                          <AlternateAddInput
-                            ingredientId={effectiveId}
-                            onAdd={handleAddAlternate}
-                            datalistId="filling-ingredient-suggestions"
-                          />
-                        )}
-                        {!hasAlternates && readOnly && (
-                          <span className="text-xs text-gray-300 italic">none</span>
-                        )}
-                        {unresolvedAlternates[effectiveId] && (
+                        {isSpoonUnit && (
                           <>
-                            <span className="text-xs text-amber-700">
-                              No match for &quot;{unresolvedAlternates[effectiveId]}&quot;.
-                            </span>
-                            {onCreateIngredient && (
-                              <button
-                                type="button"
-                                onClick={(): void => {
-                                  onCreateIngredient(unresolvedAlternates[effectiveId]);
-                                  setUnresolvedAlternates((prev) => {
-                                    const next = { ...prev };
-                                    delete next[effectiveId];
-                                    return next;
+                            <select
+                              className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                              value={ing.modifiers?.spoonLevel ?? ''}
+                              onChange={(e): void => {
+                                const val = e.target.value;
+                                handleIngredientModifiersChange(index, {
+                                  ...ing.modifiers,
+                                  spoonLevel: val ? (val as SpoonLevel) : undefined
+                                });
+                              }}
+                            >
+                              <option value="">level (default)</option>
+                              {ALL_SPOON_LEVELS.map((sl: SpoonLevel) => (
+                                <option key={sl} value={sl}>
+                                  {sl}
+                                </option>
+                              ))}
+                            </select>
+                            <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={ing.modifiers?.toTaste ?? false}
+                                onChange={(e): void => {
+                                  handleIngredientModifiersChange(index, {
+                                    ...ing.modifiers,
+                                    toTaste: e.target.checked ? true : undefined
                                   });
                                 }}
-                                className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90 shrink-0"
-                              >
-                                Create Ingredient
-                              </button>
+                              />
+                              to taste
+                            </label>
+                          </>
+                        )}
+                        {isWeightUnit && (
+                          <>
+                            <label className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
+                              yield
+                            </label>
+                            <input
+                              type="number"
+                              className="w-16 text-xs border border-gray-200 rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                              value={ing.modifiers?.yieldFactor ?? 1}
+                              min={0}
+                              max={1}
+                              step={0.05}
+                              onChange={(e): void => {
+                                const val = parseFloat(e.target.value);
+                                if (!isNaN(val) && val >= 0 && val <= 1) {
+                                  handleIngredientModifiersChange(index, {
+                                    ...ing.modifiers,
+                                    yieldFactor: val === 1 ? undefined : val
+                                  });
+                                }
+                              }}
+                            />
+                            <input
+                              type="text"
+                              className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                              value={ing.modifiers?.processNote ?? ''}
+                              placeholder="process note (e.g. steeped and strained)"
+                              onChange={(e): void => {
+                                handleIngredientModifiersChange(index, {
+                                  ...ing.modifiers,
+                                  processNote: e.target.value || undefined
+                                });
+                              }}
+                              onBlur={(e): void => {
+                                const val = e.target.value.trim();
+                                if (val !== (ing.modifiers?.processNote ?? '')) {
+                                  handleIngredientModifiersChange(index, {
+                                    ...ing.modifiers,
+                                    processNote: val || undefined
+                                  });
+                                }
+                              }}
+                            />
+                          </>
+                        )}
+                        {/* Alternates row */}
+                        {(hasAlternates || true) && (
+                          <div className="w-full flex flex-wrap items-center gap-1 mt-1 pt-1 border-t border-gray-100">
+                            <span className="text-xs text-gray-400 shrink-0">also:</span>
+                            {sourceIds.map((altId) => {
+                              const altName = getIngredientDisplayName(altId, ingredientSuggestions);
+                              const isPreferred = altId === sourcePreferredId;
+                              const canEdit = !readOnly;
+                              return (
+                                <span
+                                  key={altId}
+                                  className={`inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 ${
+                                    isPreferred
+                                      ? 'bg-choco-primary/10 text-choco-primary'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}
+                                >
+                                  {canEdit && (
+                                    <button
+                                      type="button"
+                                      title={isPreferred ? 'Preferred' : 'Set as preferred'}
+                                      onClick={(): void => handleSetPreferredAlternate(effectiveId, altId)}
+                                      className={`shrink-0 ${
+                                        isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
+                                      }`}
+                                    >
+                                      ★
+                                    </button>
+                                  )}
+                                  {isPreferred && !canEdit && <span className="text-amber-500">★</span>}
+                                  <span>{altName}</span>
+                                  {canEdit && (
+                                    <button
+                                      type="button"
+                                      title="Remove alternate"
+                                      onClick={(): void => handleRemoveAlternate(effectiveId, altId)}
+                                      className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </span>
+                              );
+                            })}
+                            {!readOnly && (
+                              <AlternateAddInput
+                                ingredientId={effectiveId}
+                                onAdd={handleAddAlternate}
+                                datalistId="filling-ingredient-suggestions"
+                              />
                             )}
-                          </>
+                            {!hasAlternates && readOnly && (
+                              <span className="text-xs text-gray-300 italic">none</span>
+                            )}
+                            {unresolvedAlternates[effectiveId] && (
+                              <>
+                                <span className="text-xs text-amber-700">
+                                  No match for &quot;{unresolvedAlternates[effectiveId]}&quot;.
+                                </span>
+                                {onCreateIngredient && (
+                                  <button
+                                    type="button"
+                                    onClick={(): void => {
+                                      onCreateIngredient(unresolvedAlternates[effectiveId]);
+                                      setUnresolvedAlternates((prev) => {
+                                        const next = { ...prev };
+                                        delete next[effectiveId];
+                                        return next;
+                                      });
+                                    }}
+                                    className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90 shrink-0"
+                                  >
+                                    Create Ingredient
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {/* Role & Slot ID for disambiguating duplicate ingredients */}
+                        {!readOnly && (
+                          <div className="w-full flex items-center gap-2 mt-1 pt-1 border-t border-gray-100">
+                            <label className="text-xs text-gray-400 shrink-0">role:</label>
+                            <IngredientRoleInput
+                              value={ing.role}
+                              index={index}
+                              onChange={handleIngredientRoleChange}
+                            />
+                            <label className="text-xs text-gray-400 shrink-0">slot ID:</label>
+                            <input
+                              type="text"
+                              className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                              defaultValue={ing.ingredient.slotId ?? ''}
+                              placeholder="e.g. ganache-base"
+                              onBlur={(e): void => {
+                                handleIngredientSlotIdChange(index, e.target.value);
+                              }}
+                              onKeyDown={(e): void => {
+                                if (e.key === 'Enter') {
+                                  handleIngredientSlotIdChange(index, (e.target as HTMLInputElement).value);
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
+                        {readOnly && (ing.ingredient.slotId || ing.role) && (
+                          <div className="w-full flex items-center gap-2 mt-1 pt-1 border-t border-gray-100">
+                            {ing.role && (
+                              <>
+                                <span className="text-xs text-gray-400">role:</span>
+                                <span className="text-xs text-gray-500">{ing.role}</span>
+                              </>
+                            )}
+                            {ing.ingredient.slotId && (
+                              <>
+                                <span className="text-xs text-gray-400">slot ID:</span>
+                                <span className="text-xs text-gray-500">{ing.ingredient.slotId}</span>
+                              </>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
-                    {/* Role & Slot ID for disambiguating duplicate ingredients */}
-                    {!readOnly && (
-                      <div className="w-full flex items-center gap-2 mt-1 pt-1 border-t border-gray-100">
-                        <label className="text-xs text-gray-400 shrink-0">role:</label>
-                        <IngredientRoleInput
-                          value={ing.role}
-                          index={index}
-                          onChange={handleIngredientRoleChange}
-                        />
-                        <label className="text-xs text-gray-400 shrink-0">slot ID:</label>
-                        <input
-                          type="text"
-                          className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                          defaultValue={ing.ingredient.slotId ?? ''}
-                          placeholder="e.g. ganache-base"
-                          onBlur={(e): void => {
-                            handleIngredientSlotIdChange(index, e.target.value);
-                          }}
-                          onKeyDown={(e): void => {
-                            if (e.key === 'Enter') {
-                              handleIngredientSlotIdChange(index, (e.target as HTMLInputElement).value);
-                            }
-                          }}
-                        />
-                      </div>
-                    )}
-                    {readOnly && (ing.ingredient.slotId || ing.role) && (
-                      <div className="w-full flex items-center gap-2 mt-1 pt-1 border-t border-gray-100">
-                        {ing.role && (
-                          <>
-                            <span className="text-xs text-gray-400">role:</span>
-                            <span className="text-xs text-gray-500">{ing.role}</span>
-                          </>
-                        )}
-                        {ing.ingredient.slotId && (
-                          <>
-                            <span className="text-xs text-gray-400">slot ID:</span>
-                            <span className="text-xs text-gray-500">{ing.ingredient.slotId}</span>
-                          </>
+                    {unresolvedIngredients[index] && (
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <span className="text-xs text-amber-700">
+                          No match for &quot;{unresolvedIngredients[index]}&quot;.
+                        </span>
+                        {onCreateIngredient && (
+                          <button
+                            type="button"
+                            onClick={(): void => onCreateIngredient(unresolvedIngredients[index])}
+                            className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                          >
+                            Create Ingredient
+                          </button>
                         )}
                       </div>
                     )}
                   </div>
-                )}
-                {unresolvedIngredients[index] && (
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <span className="text-xs text-amber-700">
-                      No match for &quot;{unresolvedIngredients[index]}&quot;.
-                    </span>
-                    {onCreateIngredient && (
-                      <button
-                        type="button"
-                        onClick={(): void => onCreateIngredient(unresolvedIngredients[index])}
-                        className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
-                      >
-                        Create Ingredient
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </React.Fragment>
+          ))}
 
           <div className="flex items-center gap-2 pt-1">
             <input
