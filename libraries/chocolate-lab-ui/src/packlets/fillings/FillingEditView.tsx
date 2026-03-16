@@ -35,6 +35,7 @@ import { TagIcon, DocumentTextIcon, HashtagIcon } from '@heroicons/react/20/soli
 import {
   EditField,
   EditSection,
+  NumericInput,
   TextInput,
   TagsInput,
   MultiActionButton,
@@ -1260,7 +1261,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                       }
                     }}
                   />
-                  <input
+                  <span
                     ref={(el): void => {
                       if (
                         el &&
@@ -1269,23 +1270,23 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                           focusIngredientRef.current === ing.ingredient.slotId)
                       ) {
                         focusIngredientRef.current = undefined;
-                        requestAnimationFrame(() => el.focus());
+                        const input = el.querySelector('input');
+                        if (input) requestAnimationFrame(() => input.focus());
                       }
                     }}
-                    type="number"
-                    className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary disabled:bg-gray-50 disabled:text-gray-400"
-                    value={ing.amount}
-                    min={0}
-                    step={isSpoonUnit ? 0.25 : 0.1}
-                    disabled={ing.unit === 'pinch'}
-                    onChange={(e): void => {
-                      const num = parseFloat(e.target.value);
-                      if (!isNaN(num)) {
-                        handleIngredientAmountChange(index, num);
-                      }
-                    }}
-                    aria-label={`Amount (${ing.unit ?? 'g'})`}
-                  />
+                  >
+                    <NumericInput
+                      className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary disabled:bg-gray-50 disabled:text-gray-400"
+                      value={ing.amount}
+                      min={0}
+                      step={isSpoonUnit ? 0.25 : 0.1}
+                      disabled={ing.unit === 'pinch'}
+                      onChange={(num): void => {
+                        handleIngredientAmountChange(index, num ?? 0);
+                      }}
+                      label={`Amount (${ing.unit ?? 'g'})`}
+                    />
+                  </span>
                   <button
                     type="button"
                     onClick={(): void => toggleIngredientExpanded(index)}
