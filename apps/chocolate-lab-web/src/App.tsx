@@ -548,6 +548,18 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
       })
     : [];
 
+  // Persist server-provided defaults as initial bootstrap settings so the Settings UI
+  // shows them pre-populated and they survive across sessions.
+  if (defaultCloudStorage && !bootstrap) {
+    const settings = workspace.settings;
+    if (settings) {
+      const updateResult = settings.updateBootstrapSettings({ cloudStorage: defaultCloudStorage });
+      if (updateResult.isSuccess()) {
+        await settings.save();
+      }
+    }
+  }
+
   const logSettings = workspace.settings?.getBootstrapSettings()?.logging;
 
   return { reactiveWorkspace, warnings, logSettings, configNamespace: _configNamespace, dataError };
