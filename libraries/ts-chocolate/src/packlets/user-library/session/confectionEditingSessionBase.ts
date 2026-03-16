@@ -115,7 +115,7 @@ export abstract class ConfectionEditingSessionBase<
     this._baseConfection = baseConfection;
     this._context = context;
     this._produced = produced;
-    this._originalSnapshot = produced.createSnapshot();
+    this._originalSnapshot = persistedEntity ? produced.initial : produced.createSnapshot();
     this._sessionId = params?.sessionId ?? generateSessionId().orThrow();
     this._fillingSessions = new Map();
     this._childSessionsDirty = false;
