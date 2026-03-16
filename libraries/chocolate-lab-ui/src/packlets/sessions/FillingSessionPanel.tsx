@@ -35,7 +35,7 @@ import {
   ListBulletIcon
 } from '@heroicons/react/20/solid';
 import { DetailSection, EditSection, TypeaheadInput } from '@fgv/ts-app-shell';
-import { formatIngredientAmount } from '../common';
+import { formatIngredientAmount, groupByRole, RoleGroupHeader } from '../common';
 import {
   Entities,
   Helpers,
@@ -886,227 +886,233 @@ export function FillingSessionPanel({
         {/* Ingredients */}
         <EditSection title={`Ingredients (${producedIngredients.length})`}>
           <div className="space-y-2">
-            {producedIngredients.map((ing, index) => {
-              const ingName = getIngredientDisplayName(ing.ingredientId, ingredientSuggestions);
-              const isEditing = editingIngredients.has(index);
+            {groupByRole(producedIngredients, (ing) => ing.role).map((group) => (
+              <React.Fragment key={group.role ?? '__default__'}>
+                <RoleGroupHeader label={group.label} />
+                {group.items.map(({ item: ing, originalIndex: index }) => {
+                  const ingName = getIngredientDisplayName(ing.ingredientId, ingredientSuggestions);
+                  const isEditing = editingIngredients.has(index);
 
-              // ── View mode ──
-              if (!isEditing) {
-                const hasModifiers =
-                  (ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0) ||
-                  !!ing.modifiers?.processNote ||
-                  !!ing.modifiers?.spoonLevel ||
-                  !!ing.modifiers?.toTaste;
-                return (
-                  <div key={ing.ingredientId} className="rounded border border-gray-200 p-2">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={(): void => toggleIngredientEdit(index)}
-                        title="Edit ingredient"
-                        className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
-                      >
-                        <ArrowPathIcon className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(): void => onBrowseIngredient?.(ing.ingredientId)}
-                        className="flex-1 min-w-0 text-sm text-gray-800 hover:text-choco-primary text-left truncate"
-                        title="Browse ingredient"
-                      >
-                        {ingName}
-                      </button>
-                      <span className="text-sm text-gray-600 tabular-nums shrink-0">
-                        {formatIngredientAmount(ing.amount, ing.unit, ing.modifiers)}
-                      </span>
-                    </div>
-                    {hasModifiers && (
-                      <div className="flex flex-wrap items-center gap-x-3 mt-1 pl-1 text-xs text-gray-400">
-                        {ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0 && (
-                          <span>yield ×{ing.modifiers.yieldFactor}</span>
-                        )}
-                        {ing.modifiers?.processNote && (
-                          <span className="italic">{ing.modifiers.processNote}</span>
-                        )}
-                        {ing.modifiers?.spoonLevel && <span>{ing.modifiers.spoonLevel}</span>}
-                        {ing.modifiers?.toTaste && <span>to taste</span>}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-
-              // ── Edit mode ──
-              const ingValue = ingredientInputDraft[index] ?? ingName;
-              const isSpoonUnit = ing.unit === 'tsp' || ing.unit === 'Tbsp';
-              const isWeightUnit = ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined;
-              const hasNonDefaultModifiers =
-                (ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0) ||
-                !!ing.modifiers?.processNote ||
-                !!ing.modifiers?.spoonLevel ||
-                !!ing.modifiers?.toTaste;
-              const isExpanded = expandedIngredients.has(index) || hasNonDefaultModifiers;
-
-              return (
-                <div
-                  key={ing.ingredientId}
-                  className="rounded border border-choco-primary/30 bg-choco-primary/5 p-2"
-                >
-                  {/* Main row: confirm, name, amount, unit toggle, remove */}
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={(): void => toggleIngredientEdit(index)}
-                      title="Done editing"
-                      className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
-                    >
-                      <CheckIcon className="h-3.5 w-3.5" />
-                    </button>
-                    <TypeaheadInput<IngredientId>
-                      value={ingValue}
-                      onChange={(v): void => setIngredientInputDraft((prev) => ({ ...prev, [index]: v }))}
-                      suggestions={ingredientSuggestions}
-                      prioritySuggestions={ingredientAlternatesMap.get(ing.ingredientId) ?? []}
-                      onSelect={(match): void => handleIngredientSelect(index, match)}
-                      onUnresolved={onRequestCreateEntity ? handleIngredientUnresolved : undefined}
-                      autoFocus
-                      className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                    />
-                    <input
-                      type="number"
-                      className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary disabled:bg-gray-50 disabled:text-gray-400"
-                      value={ing.amount}
-                      min={0}
-                      step={isSpoonUnit ? 0.25 : 0.1}
-                      disabled={ing.unit === 'pinch'}
-                      onChange={(e): void => {
-                        const num = parseFloat(e.target.value);
-                        if (!isNaN(num)) {
-                          handleIngredientAmountChange(index, num);
-                        }
-                      }}
-                      aria-label={`Amount (${ing.unit ?? 'g'})`}
-                    />
-                    <button
-                      type="button"
-                      onClick={(): void => toggleIngredientExpanded(index)}
-                      className="text-xs text-gray-500 hover:text-choco-primary cursor-pointer px-0.5 select-none shrink-0"
-                      title="Click to show/hide details"
-                    >
-                      {ing.unit ?? 'g'}
-                      {isExpanded ? '▾' : '▸'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(): void => handleRemoveIngredient(index)}
-                      className="text-gray-400 hover:text-red-500 p-1 shrink-0"
-                      aria-label="Remove ingredient"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  {/* Expanded details */}
-                  {isExpanded && (
-                    <div className="flex flex-wrap items-center gap-2 mt-1.5 pl-1">
-                      <select
-                        className="text-xs bg-transparent border-none text-gray-600 cursor-pointer p-0 focus:outline-none focus:ring-0"
-                        value={ing.unit ?? 'g'}
-                        onChange={(e): void =>
-                          handleIngredientUnitChange(index, e.target.value as MeasurementUnit)
-                        }
-                      >
-                        {ALL_MEASUREMENT_UNITS.map((u: MeasurementUnit) => (
-                          <option key={u} value={u}>
-                            {u}
-                          </option>
-                        ))}
-                      </select>
-                      {isSpoonUnit && (
-                        <>
-                          <select
-                            className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                            value={ing.modifiers?.spoonLevel ?? ''}
-                            onChange={(e): void => {
-                              const val = e.target.value;
-                              handleIngredientModifiersChange(index, {
-                                ...ing.modifiers,
-                                spoonLevel: val ? (val as SpoonLevel) : undefined
-                              });
-                            }}
+                  // ── View mode ──
+                  if (!isEditing) {
+                    const hasModifiers =
+                      (ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0) ||
+                      !!ing.modifiers?.processNote ||
+                      !!ing.modifiers?.spoonLevel ||
+                      !!ing.modifiers?.toTaste;
+                    return (
+                      <div key={ing.ingredientId} className="rounded border border-gray-200 p-2">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(): void => toggleIngredientEdit(index)}
+                            title="Edit ingredient"
+                            className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
                           >
-                            <option value="">level (default)</option>
-                            {ALL_SPOON_LEVELS.map((sl: SpoonLevel) => (
-                              <option key={sl} value={sl}>
-                                {sl}
+                            <ArrowPathIcon className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(): void => onBrowseIngredient?.(ing.ingredientId)}
+                            className="flex-1 min-w-0 text-sm text-gray-800 hover:text-choco-primary text-left truncate"
+                            title="Browse ingredient"
+                          >
+                            {ingName}
+                          </button>
+                          <span className="text-sm text-gray-600 tabular-nums shrink-0">
+                            {formatIngredientAmount(ing.amount, ing.unit, ing.modifiers)}
+                          </span>
+                        </div>
+                        {hasModifiers && (
+                          <div className="flex flex-wrap items-center gap-x-3 mt-1 pl-1 text-xs text-gray-400">
+                            {ing.modifiers?.yieldFactor !== undefined &&
+                              ing.modifiers.yieldFactor !== 1.0 && (
+                                <span>yield ×{ing.modifiers.yieldFactor}</span>
+                              )}
+                            {ing.modifiers?.processNote && (
+                              <span className="italic">{ing.modifiers.processNote}</span>
+                            )}
+                            {ing.modifiers?.spoonLevel && <span>{ing.modifiers.spoonLevel}</span>}
+                            {ing.modifiers?.toTaste && <span>to taste</span>}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // ── Edit mode ──
+                  const ingValue = ingredientInputDraft[index] ?? ingName;
+                  const isSpoonUnit = ing.unit === 'tsp' || ing.unit === 'Tbsp';
+                  const isWeightUnit = ing.unit === 'g' || ing.unit === 'mL' || ing.unit === undefined;
+                  const hasNonDefaultModifiers =
+                    (ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0) ||
+                    !!ing.modifiers?.processNote ||
+                    !!ing.modifiers?.spoonLevel ||
+                    !!ing.modifiers?.toTaste;
+                  const isExpanded = expandedIngredients.has(index) || hasNonDefaultModifiers;
+
+                  return (
+                    <div
+                      key={ing.ingredientId}
+                      className="rounded border border-choco-primary/30 bg-choco-primary/5 p-2"
+                    >
+                      {/* Main row: confirm, name, amount, unit toggle, remove */}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(): void => toggleIngredientEdit(index)}
+                          title="Done editing"
+                          className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                        >
+                          <CheckIcon className="h-3.5 w-3.5" />
+                        </button>
+                        <TypeaheadInput<IngredientId>
+                          value={ingValue}
+                          onChange={(v): void => setIngredientInputDraft((prev) => ({ ...prev, [index]: v }))}
+                          suggestions={ingredientSuggestions}
+                          prioritySuggestions={ingredientAlternatesMap.get(ing.ingredientId) ?? []}
+                          onSelect={(match): void => handleIngredientSelect(index, match)}
+                          onUnresolved={onRequestCreateEntity ? handleIngredientUnresolved : undefined}
+                          autoFocus
+                          className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                        />
+                        <input
+                          type="number"
+                          className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary disabled:bg-gray-50 disabled:text-gray-400"
+                          value={ing.amount}
+                          min={0}
+                          step={isSpoonUnit ? 0.25 : 0.1}
+                          disabled={ing.unit === 'pinch'}
+                          onChange={(e): void => {
+                            const num = parseFloat(e.target.value);
+                            if (!isNaN(num)) {
+                              handleIngredientAmountChange(index, num);
+                            }
+                          }}
+                          aria-label={`Amount (${ing.unit ?? 'g'})`}
+                        />
+                        <button
+                          type="button"
+                          onClick={(): void => toggleIngredientExpanded(index)}
+                          className="text-xs text-gray-500 hover:text-choco-primary cursor-pointer px-0.5 select-none shrink-0"
+                          title="Click to show/hide details"
+                        >
+                          {ing.unit ?? 'g'}
+                          {isExpanded ? '▾' : '▸'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(): void => handleRemoveIngredient(index)}
+                          className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                          aria-label="Remove ingredient"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {/* Expanded details */}
+                      {isExpanded && (
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5 pl-1">
+                          <select
+                            className="text-xs bg-transparent border-none text-gray-600 cursor-pointer p-0 focus:outline-none focus:ring-0"
+                            value={ing.unit ?? 'g'}
+                            onChange={(e): void =>
+                              handleIngredientUnitChange(index, e.target.value as MeasurementUnit)
+                            }
+                          >
+                            {ALL_MEASUREMENT_UNITS.map((u: MeasurementUnit) => (
+                              <option key={u} value={u}>
+                                {u}
                               </option>
                             ))}
                           </select>
-                          <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={ing.modifiers?.toTaste ?? false}
-                              onChange={(e): void => {
-                                handleIngredientModifiersChange(index, {
-                                  ...ing.modifiers,
-                                  toTaste: e.target.checked ? true : undefined
-                                });
-                              }}
-                            />
-                            to taste
-                          </label>
-                        </>
-                      )}
-                      {isWeightUnit && (
-                        <>
-                          <label className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
-                            yield
-                          </label>
-                          <input
-                            type="number"
-                            className="w-16 text-xs border border-gray-200 rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                            value={ing.modifiers?.yieldFactor ?? 1}
-                            min={0}
-                            max={1}
-                            step={0.05}
-                            onChange={(e): void => {
-                              const val = parseFloat(e.target.value);
-                              if (!isNaN(val) && val >= 0 && val <= 1) {
-                                handleIngredientModifiersChange(index, {
-                                  ...ing.modifiers,
-                                  yieldFactor: val === 1 ? undefined : val
-                                });
-                              }
-                            }}
-                          />
-                          <input
-                            type="text"
-                            className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
-                            value={ing.modifiers?.processNote ?? ''}
-                            placeholder="process note (e.g. steeped and strained)"
-                            onChange={(e): void => {
-                              handleIngredientModifiersChange(index, {
-                                ...ing.modifiers,
-                                processNote: e.target.value || undefined
-                              });
-                            }}
-                            onBlur={(e): void => {
-                              const val = e.target.value.trim();
-                              if (val !== (ing.modifiers?.processNote ?? '')) {
-                                handleIngredientModifiersChange(index, {
-                                  ...ing.modifiers,
-                                  processNote: val || undefined
-                                });
-                              }
-                            }}
-                          />
-                        </>
+                          {isSpoonUnit && (
+                            <>
+                              <select
+                                className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                                value={ing.modifiers?.spoonLevel ?? ''}
+                                onChange={(e): void => {
+                                  const val = e.target.value;
+                                  handleIngredientModifiersChange(index, {
+                                    ...ing.modifiers,
+                                    spoonLevel: val ? (val as SpoonLevel) : undefined
+                                  });
+                                }}
+                              >
+                                <option value="">level (default)</option>
+                                {ALL_SPOON_LEVELS.map((sl: SpoonLevel) => (
+                                  <option key={sl} value={sl}>
+                                    {sl}
+                                  </option>
+                                ))}
+                              </select>
+                              <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={ing.modifiers?.toTaste ?? false}
+                                  onChange={(e): void => {
+                                    handleIngredientModifiersChange(index, {
+                                      ...ing.modifiers,
+                                      toTaste: e.target.checked ? true : undefined
+                                    });
+                                  }}
+                                />
+                                to taste
+                              </label>
+                            </>
+                          )}
+                          {isWeightUnit && (
+                            <>
+                              <label className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
+                                yield
+                              </label>
+                              <input
+                                type="number"
+                                className="w-16 text-xs border border-gray-200 rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                                value={ing.modifiers?.yieldFactor ?? 1}
+                                min={0}
+                                max={1}
+                                step={0.05}
+                                onChange={(e): void => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val) && val >= 0 && val <= 1) {
+                                    handleIngredientModifiersChange(index, {
+                                      ...ing.modifiers,
+                                      yieldFactor: val === 1 ? undefined : val
+                                    });
+                                  }
+                                }}
+                              />
+                              <input
+                                type="text"
+                                className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                                value={ing.modifiers?.processNote ?? ''}
+                                placeholder="process note (e.g. steeped and strained)"
+                                onChange={(e): void => {
+                                  handleIngredientModifiersChange(index, {
+                                    ...ing.modifiers,
+                                    processNote: e.target.value || undefined
+                                  });
+                                }}
+                                onBlur={(e): void => {
+                                  const val = e.target.value.trim();
+                                  if (val !== (ing.modifiers?.processNote ?? '')) {
+                                    handleIngredientModifiersChange(index, {
+                                      ...ing.modifiers,
+                                      processNote: val || undefined
+                                    });
+                                  }
+                                }}
+                              />
+                            </>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </React.Fragment>
+            ))}
 
             {/* Add ingredient row */}
             <TypeaheadInput<IngredientId>

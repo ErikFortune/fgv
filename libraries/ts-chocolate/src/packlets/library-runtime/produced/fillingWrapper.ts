@@ -169,7 +169,8 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
         amount,
         unit: ing.unit,
         modifiers: ing.modifiers,
-        notes: ing.notes
+        notes: ing.notes,
+        role: ing.role
       })
     );
   }
@@ -252,7 +253,8 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
         amount,
         unit: ing.unit,
         modifiers: ing.modifiers,
-        notes: ing.notes
+        notes: ing.notes,
+        role: ing.role
       })
     );
   }
@@ -296,7 +298,8 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
         amount: producedIng.amount,
         unit: producedIng.unit,
         modifiers: producedIng.modifiers,
-        notes: producedIng.notes
+        notes: producedIng.notes,
+        role: producedIng.role
       });
     }
 
@@ -706,7 +709,8 @@ export class ProducedFilling extends EditableWrapper<IProducedFillingEntity> {
         amount: ing.amount,
         unit: ing.unit,
         modifiers: ing.modifiers ? { ...ing.modifiers } : undefined,
-        notes: ing.notes
+        notes: ing.notes,
+        role: ing.role
       })),
       procedureId: filling.procedureId,
       notes: filling.notes ? filling.notes.map((note) => ({ ...note })) : undefined

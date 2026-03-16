@@ -89,7 +89,8 @@ export const producedFillingIngredientEntity: Converter<IProducedFillingIngredie
     amount: CommonConverters.measurement,
     unit: CommonConverters.measurementUnit.optional(),
     modifiers: ingredientModifiersConverter.optional(),
-    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional()
+    notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
+    role: CommonConverters.ingredientRole.optional()
   });
 
 /**

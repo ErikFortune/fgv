@@ -28,10 +28,12 @@ import {
   FillingRecipeVariationId,
   FillingRecipeVariationSpec,
   IngredientId,
+  IngredientRole,
   Measurement,
   NoteCategory,
   ProcedureId,
   RatingScore,
+  SlotId,
   UrlCategory
 } from '../../../../packlets/common';
 import { Fillings, Session } from '../../../../packlets/entities';
@@ -2005,6 +2007,312 @@ describe('EditedFillingRecipe', () => {
       expect(wrapper.canUndo()).toBe(true);
       wrapper.undo().orThrow();
       expect(wrapper.variations[0].ingredients[0].amount).toBe(200);
+    });
+  });
+
+  describe('setVariationIngredientRole()', () => {
+    const chocolateId = 'dark-chocolate' as unknown as IngredientId;
+    const creamId = 'cream' as unknown as IngredientId;
+    const heatedRole = 'heated' as unknown as IngredientRole;
+    const slot1 = 'slot-1' as unknown as SlotId;
+
+    function makeEntityWithIngredient(): Fillings.IFillingRecipeEntity {
+      return makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId], preferredId: chocolateId },
+                amount: 100 as Measurement
+              }
+            ]
+          })
+        ]
+      });
+    }
+
+    test('sets a role on an existing ingredient', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientRole('v1' as FillingRecipeVariationSpec, chocolateId, heatedRole)
+      ).toSucceedWith(true);
+
+      expect(wrapper.variations[0].ingredients[0].role).toBe(heatedRole);
+    });
+
+    test('clears the role when undefined is passed', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId], preferredId: chocolateId },
+                amount: 100 as Measurement,
+                role: heatedRole
+              }
+            ]
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper
+        .setVariationIngredientRole('v1' as FillingRecipeVariationSpec, chocolateId, undefined)
+        .orThrow();
+
+      expect(wrapper.variations[0].ingredients[0].role).toBeUndefined();
+    });
+
+    test('finds ingredient by slotId when provided', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId], preferredId: chocolateId, slotId: slot1 },
+                amount: 100 as Measurement
+              },
+              {
+                ingredient: { ids: [creamId] },
+                amount: 50 as Measurement
+              }
+            ]
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientRole('v1' as FillingRecipeVariationSpec, chocolateId, heatedRole, slot1)
+      ).toSucceedWith(true);
+
+      expect(wrapper.variations[0].ingredients[0].role).toBe(heatedRole);
+      expect(wrapper.variations[0].ingredients[1].role).toBeUndefined();
+    });
+
+    test('preserves other ingredient fields when setting role', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId], preferredId: chocolateId },
+                amount: 200 as Measurement,
+                unit: 'mL',
+                modifiers: { yieldFactor: 0.9 }
+              }
+            ]
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper
+        .setVariationIngredientRole('v1' as FillingRecipeVariationSpec, chocolateId, heatedRole)
+        .orThrow();
+
+      const ing = wrapper.variations[0].ingredients[0];
+      expect(ing.amount).toBe(200);
+      expect(ing.unit).toBe('mL');
+      expect(ing.modifiers?.yieldFactor).toBe(0.9);
+      expect(ing.role).toBe(heatedRole);
+    });
+
+    test('fails when variation does not exist', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientRole('v99' as FillingRecipeVariationSpec, chocolateId, heatedRole)
+      ).toFailWith(/variation 'v99' does not exist/i);
+    });
+
+    test('fails when ingredient not found in variation', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientRole(
+          'v1' as FillingRecipeVariationSpec,
+          'unknown' as unknown as IngredientId,
+          heatedRole
+        )
+      ).toFailWith(/ingredient 'unknown' not found/i);
+    });
+
+    test('pushes undo on success', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+
+      wrapper
+        .setVariationIngredientRole('v1' as FillingRecipeVariationSpec, chocolateId, heatedRole)
+        .orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      expect(wrapper.variations[0].ingredients[0].role).toBeUndefined();
+    });
+
+    test('does not push undo on failure', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithIngredient()).orThrow();
+      expect(wrapper.canUndo()).toBe(false);
+
+      wrapper.setVariationIngredientRole('v99' as FillingRecipeVariationSpec, chocolateId, heatedRole);
+      expect(wrapper.canUndo()).toBe(false);
+    });
+  });
+
+  describe('setVariationIngredientSlotId()', () => {
+    const chocolateId = 'dark-chocolate' as unknown as IngredientId;
+    const creamId = 'cream' as unknown as IngredientId;
+    const slot1 = 'slot-1' as unknown as SlotId;
+    const slot2 = 'slot-2' as unknown as SlotId;
+
+    function makeEntityWithTwoIngredients(): Fillings.IFillingRecipeEntity {
+      return makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId], preferredId: chocolateId },
+                amount: 100 as Measurement
+              },
+              {
+                ingredient: { ids: [creamId] },
+                amount: 50 as Measurement
+              }
+            ]
+          })
+        ]
+      });
+    }
+
+    test('sets a slotId on an existing ingredient found by ingredientId', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientSlotId(
+          'v1' as FillingRecipeVariationSpec,
+          chocolateId,
+          undefined,
+          slot1
+        )
+      ).toSucceedWith(true);
+
+      expect(wrapper.variations[0].ingredients[0].ingredient.slotId).toBe(slot1);
+      expect(wrapper.variations[0].ingredients[1].ingredient.slotId).toBeUndefined();
+    });
+
+    test('clears the slotId when newSlotId is undefined', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId], preferredId: chocolateId, slotId: slot1 },
+                amount: 100 as Measurement
+              }
+            ]
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      wrapper
+        .setVariationIngredientSlotId('v1' as FillingRecipeVariationSpec, chocolateId, slot1, undefined)
+        .orThrow();
+
+      expect(wrapper.variations[0].ingredients[0].ingredient.slotId).toBeUndefined();
+    });
+
+    test('finds ingredient by currentSlotId when provided', () => {
+      const entity = makeEntity({
+        variations: [
+          makeVariation('v1', {
+            ingredients: [
+              {
+                ingredient: { ids: [chocolateId], preferredId: chocolateId, slotId: slot1 },
+                amount: 100 as Measurement
+              },
+              {
+                ingredient: { ids: [creamId] },
+                amount: 50 as Measurement
+              }
+            ]
+          })
+        ]
+      });
+      const wrapper = EditedFillingRecipe.create(entity).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientSlotId('v1' as FillingRecipeVariationSpec, chocolateId, slot1, slot2)
+      ).toSucceedWith(true);
+
+      expect(wrapper.variations[0].ingredients[0].ingredient.slotId).toBe(slot2);
+      expect(wrapper.variations[0].ingredients[1].ingredient.slotId).toBeUndefined();
+    });
+
+    test('preserves other ingredient fields when setting slotId', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+
+      wrapper
+        .setVariationIngredientSlotId('v1' as FillingRecipeVariationSpec, chocolateId, undefined, slot1)
+        .orThrow();
+
+      const ing = wrapper.variations[0].ingredients[0];
+      expect(ing.amount).toBe(100);
+      expect(ing.ingredient.ids).toContain(chocolateId);
+      expect(ing.ingredient.preferredId).toBe(chocolateId);
+      expect(ing.ingredient.slotId).toBe(slot1);
+    });
+
+    test('fails when variation does not exist', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientSlotId(
+          'v99' as FillingRecipeVariationSpec,
+          chocolateId,
+          undefined,
+          slot1
+        )
+      ).toFailWith(/variation 'v99' does not exist/i);
+    });
+
+    test('fails when ingredient not found in variation', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+
+      expect(
+        wrapper.setVariationIngredientSlotId(
+          'v1' as FillingRecipeVariationSpec,
+          'unknown' as unknown as IngredientId,
+          undefined,
+          slot1
+        )
+      ).toFailWith(/ingredient 'unknown' not found/i);
+    });
+
+    test('pushes undo on success', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+
+      wrapper
+        .setVariationIngredientSlotId('v1' as FillingRecipeVariationSpec, chocolateId, undefined, slot1)
+        .orThrow();
+
+      expect(wrapper.canUndo()).toBe(true);
+      wrapper.undo().orThrow();
+      expect(wrapper.variations[0].ingredients[0].ingredient.slotId).toBeUndefined();
+    });
+
+    test('does not push undo on failure', () => {
+      const wrapper = EditedFillingRecipe.create(makeEntityWithTwoIngredients()).orThrow();
+      expect(wrapper.canUndo()).toBe(false);
+
+      wrapper.setVariationIngredientSlotId(
+        'v99' as FillingRecipeVariationSpec,
+        chocolateId,
+        undefined,
+        slot1
+      );
+      expect(wrapper.canUndo()).toBe(false);
     });
   });
 });

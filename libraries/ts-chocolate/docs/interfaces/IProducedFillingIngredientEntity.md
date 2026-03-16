@@ -111,4 +111,21 @@ readonly [ICategorizedNote](ICategorizedNote.md)[]
 Optional categorized notes about this ingredient usage
 
 </td></tr>
+<tr><td>
+
+[role](./IProducedFillingIngredientEntity.role.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IngredientRole](../type-aliases/IngredientRole.md)
+
+</td><td>
+
+Optional free-text label describing the role or purpose of this ingredient entry.
+
+</td></tr>
 </tbody></table>

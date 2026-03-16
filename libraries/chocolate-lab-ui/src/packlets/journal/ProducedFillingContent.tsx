@@ -42,7 +42,7 @@ import {
   type IWorkspace,
   type ProcedureId
 } from '@fgv/ts-chocolate';
-import { formatIngredientAmount } from '../common';
+import { formatIngredientAmount, InlineRoleLabel } from '../common';
 import { useWorkspace } from '../workspace';
 
 // ============================================================================
@@ -194,6 +194,7 @@ export function ProducedFillingContent({
                       {getIngredientName(ing.ingredientId, workspace)}
                     </span>
                   )}
+                  <InlineRoleLabel role={ing.role} />
                   <span className="text-sm text-gray-600 tabular-nums shrink-0">
                     {formatIngredientAmount(Number(ing.amount), ing.unit)}
                   </span>

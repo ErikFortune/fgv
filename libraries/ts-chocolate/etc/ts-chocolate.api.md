@@ -5473,6 +5473,7 @@ interface IProducedFillingIngredientEntity {
     readonly ingredientId: IngredientId;
     readonly modifiers?: IIngredientModifiers;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
+    readonly role?: IngredientRole;
     readonly unit?: MeasurementUnit;
 }
 
