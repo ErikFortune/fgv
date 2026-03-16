@@ -121,7 +121,7 @@ Optional categorized notes for this specific ingredient usage
 
 </td><td>
 
-string
+[IngredientRole](../../type-aliases/IngredientRole.md)
 
 </td><td>
 

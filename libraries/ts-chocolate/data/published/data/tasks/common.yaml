@@ -150,3 +150,16 @@ items:
     name: Pipe into Shells
     template: At {{temperature}} pipe into prepared shells.
     defaultTemperature: 29
+  caramelize-wet-method:
+    baseId: caramelize-wet-method
+    name: Caramelize (Wet method)
+    template: Caramelize the {{sugars}} and water to a {{color}} color.
+  allow-to-cool:
+    baseId: allow-to-cool
+    name: Allow to Cool
+    template: Let the mixture cool to {{temperature}}
+    defaultTemperature: 80
+  pour-over-chocolate:
+    baseId: pour-over-chocolate
+    name: Pour over Chocolate
+    template: Pour {{mixture}} over the {{chocolates}}

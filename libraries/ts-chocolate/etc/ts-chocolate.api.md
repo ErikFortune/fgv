@@ -1342,6 +1342,7 @@ declare namespace Converters {
         sessionId,
         ParsedSessionId,
         parsedSessionId,
+        ingredientRole,
         slotId,
         ParsedConfectionId,
         parsedConfectionId,
@@ -1959,9 +1960,9 @@ class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipeEntity>
     setName(name: FillingName): Result<void>;
     setTags(tags: ReadonlyArray<string> | undefined): Result<void>;
     setUrls(urls: ReadonlyArray<Model.ICategorizedUrl> | undefined): Result<void>;
-    setVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers, slotId?: SlotId): Result<true>;
+    setVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: Fillings.IIngredientModifiers, slotId?: SlotId, role?: IngredientRole): Result<true>;
     setVariationIngredientAlternates(spec: FillingRecipeVariationSpec, currentPrimaryId: IngredientId, ids: ReadonlyArray<IngredientId>, preferredId: IngredientId, slotId?: SlotId): Result<void>;
-    setVariationIngredientRole(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, role: string | undefined, slotId?: SlotId): Result<true>;
+    setVariationIngredientRole(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, role: IngredientRole | undefined, slotId?: SlotId): Result<true>;
     setVariationIngredientSlotId(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, currentSlotId: SlotId | undefined, newSlotId: SlotId | undefined): Result<true>;
     setVariationName(spec: FillingRecipeVariationSpec, name: string | undefined): Result<void>;
     setVariationNotes(spec: FillingRecipeVariationSpec, notes: ReadonlyArray<Model.ICategorizedNote> | undefined): Result<true>;
@@ -3972,7 +3973,7 @@ interface IFillingIngredientEntity {
     readonly ingredient: Model.IIdsWithPreferred<IngredientId>;
     readonly modifiers?: IIngredientModifiers;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly role?: string;
+    readonly role?: IngredientRole;
     readonly unit?: MeasurementUnit;
 }
 
@@ -5070,6 +5071,12 @@ type IngredientResolver = (id: IngredientId) => Result<AnyIngredient>;
 // @public
 type IngredientResolver_2 = (id: IngredientId) => Result<IngredientEntity>;
 
+// @public
+export type IngredientRole = Brand<string, 'IngredientRole'>;
+
+// @public
+const ingredientRole: Converter<IngredientRole>;
+
 declare namespace Ingredients {
     export {
         Converters_2 as Converters,
@@ -5654,7 +5661,7 @@ interface IResolvedFillingIngredient<TIngredient extends IIngredient = IIngredie
     readonly entity: Fillings.IFillingIngredientEntity;
     readonly ingredient: TIngredient;
     readonly notes?: ReadonlyArray<Model.ICategorizedNote>;
-    readonly role?: string;
+    readonly role?: IngredientRole;
     readonly slotId?: SlotId;
 }
 
@@ -6341,6 +6348,9 @@ function isValidFillingRecipeVariationSpec(from: unknown): from is FillingRecipe
 
 // @public
 function isValidGroupName(from: unknown): from is GroupName;
+
+// @public
+function isValidIngredientRole(from: unknown): from is IngredientRole;
 
 // @public
 function isValidJournalId(from: unknown): from is JournalId;
@@ -8777,6 +8787,9 @@ function toFillingRecipeVariationSpec(from: unknown): Result<FillingRecipeVariat
 function toGroupName(from: unknown): Result<GroupName>;
 
 // @public
+function toIngredientRole(from: unknown): Result<IngredientRole>;
+
+// @public
 function toJournalId(from: unknown): Result<JournalId>;
 
 // @public
@@ -9259,6 +9272,8 @@ declare namespace Validation {
         toBaseJournalId,
         isValidJournalId,
         toJournalId,
+        isValidIngredientRole,
+        toIngredientRole,
         isValidSlotId,
         toSlotId,
         validateOptionsWithPreferred,

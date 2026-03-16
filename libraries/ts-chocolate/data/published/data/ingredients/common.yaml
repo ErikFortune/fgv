@@ -1216,3 +1216,83 @@ items:
           chips (~0.3 g/mL). Certifications based on common attributes for plain, non-dairy corn chips; actual products
           may vary.
     category: other
+  citric-acid:
+    baseId: citric-acid
+    name: Citric Acid
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 0
+      milkFat: 0
+      water: 0
+      solids: 100
+      otherFats: 0
+    description: >-
+      A weak organic acid naturally found in citrus fruits, commonly used as a preservative, flavor enhancer, and pH
+      adjuster in chocolate and confectionery. Adds tartness and brightness to ganaches and fillings.
+    allergens: []
+    traceAllergens: []
+    certifications: []
+    vegan: true
+    tags:
+      - acid
+      - preservative
+      - flavor-enhancer
+      - pH-adjuster
+      - tart
+      - citrus
+    density: 1.665
+    phase: solid
+    measurementUnits:
+      options:
+        - id: g
+        - id: tsp
+        - id: pinch
+      preferredId: g
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics represent anhydrous citric acid as 100% solids. Density based on crystalline citric
+          acid monohydrate (1.665 g/mL). Citric acid is typically used in very small quantities (0.1-0.5% of total
+          weight) in chocolate applications.
+    category: other
+  alphonso-mango-pulp-unsweetened:
+    baseId: alphonso-mango-pulp-unsweetened
+    name: Alphonso Mango Pulp (Unsweetened)
+    ganacheCharacteristics:
+      cacaoFat: 0
+      sugar: 14
+      milkFat: 0
+      water: 83
+      solids: 2.6
+      otherFats: 0.4
+    description: >-
+      Premium unsweetened puree made from Alphonso mangoes, the 'King of Mangoes' from India, known for intense
+      sweetness, floral aroma, and vibrant orange color. No added sugars, preservatives, or additives. Perfect for
+      infusing ganaches, mousses, and fruit-based chocolate centers.
+    allergens: []
+    traceAllergens: []
+    vegan: true
+    tags:
+      - fruit
+      - mango
+      - pulp
+      - alphonso
+      - unsweetened
+      - tropical
+      - puree
+    density: 1.04
+    phase: liquid
+    measurementUnits:
+      options:
+        - id: g
+        - id: mL
+      preferredId: g
+    notes:
+      - category: ai
+        note: >-
+          Ganache characteristics estimated from standard mango nutritional composition (USDA data for mango flesh):
+          approximately 83% water, 14% natural sugars, 2.6% solids (fiber ~1.6%, protein ~0.8%, minerals), 0.4% other
+          fats. Alphonso variety may have slightly higher sugars (up to 16-18%), but unsweetened pulp matches fresh
+          puree closely. Values averaged from search results on unsweetened pulps showing 49-94 kcal/100g, low fat. No
+          specific manufacturer data used as product is generic.
+    category: flavor

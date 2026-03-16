@@ -522,6 +522,24 @@ Validates unknown value is a JournalId | JournalId (composite).
 </td></tr>
 <tr><td>
 
+[isValidIngredientRole](./functions/isValidIngredientRole.md)
+
+</td><td>
+
+Type guard for IngredientRole | IngredientRole.
+
+</td></tr>
+<tr><td>
+
+[toIngredientRole](./functions/toIngredientRole.md)
+
+</td><td>
+
+Validates unknown value is a IngredientRole | IngredientRole.
+
+</td></tr>
+<tr><td>
+
 [isValidSlotId](./functions/isValidSlotId.md)
 
 </td><td>

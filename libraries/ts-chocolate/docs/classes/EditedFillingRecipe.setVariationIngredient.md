@@ -12,7 +12,7 @@ Recalculates baseWeight after the change.
 **Signature:**
 
 ```typescript
-setVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers, slotId?: SlotId): Result<true>;
+setVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, amount: Measurement, unit?: MeasurementUnit, modifiers?: IIngredientModifiers, slotId?: SlotId, role?: IngredientRole): Result<true>;
 ```
 
 **Parameters:**
@@ -25,6 +25,7 @@ setVariationIngredient(spec: FillingRecipeVariationSpec, ingredientId: Ingredien
 <tr><td>unit</td><td>MeasurementUnit</td><td>Optional measurement unit (default: 'g')</td></tr>
 <tr><td>modifiers</td><td>IIngredientModifiers</td><td>Optional ingredient modifiers</td></tr>
 <tr><td>slotId</td><td>SlotId</td><td>Optional slot ID for disambiguation when the same ingredient appears multiple times</td></tr>
+<tr><td>role</td><td>IngredientRole</td><td>Optional role label for distinguishing duplicate uses of the same ingredient</td></tr>
 </tbody></table>
 
 **Returns:**

@@ -61,6 +61,7 @@ import {
   FluidityStars,
   IngredientCategory,
   IngredientId,
+  IngredientRole,
   Measurement,
   DecorationId,
   MoldId,
@@ -721,7 +722,7 @@ export interface IResolvedFillingIngredient<TIngredient extends IIngredient = II
    * Optional free-text label describing the role or purpose of this ingredient entry.
    * Used to distinguish duplicate uses of the same ingredient in a recipe.
    */
-  readonly role?: string;
+  readonly role?: IngredientRole;
 
   /**
    * Optional slot identifier for disambiguating duplicate ingredients.

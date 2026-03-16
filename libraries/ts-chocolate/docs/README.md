@@ -635,6 +635,15 @@ Globally unique persisted session identifier (composite).
 </td></tr>
 <tr><td>
 
+[IngredientRole](./type-aliases/IngredientRole.md)
+
+</td><td>
+
+Ingredient role identifier used to disambiguate duplicate ingredients in a filling recipe.
+
+</td></tr>
+<tr><td>
+
 [SlotId](./type-aliases/SlotId.md)
 
 </td><td>

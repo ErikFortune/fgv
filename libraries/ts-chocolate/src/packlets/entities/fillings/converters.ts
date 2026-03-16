@@ -70,7 +70,7 @@ export const fillingIngredientEntity: Converter<IFillingIngredientEntity> =
     unit: CommonConverters.measurementUnit.optional(),
     modifiers: ingredientModifiers.optional(),
     notes: Converters.arrayOf(CommonConverters.categorizedNote).optional(),
-    role: Converters.string.optional()
+    role: CommonConverters.ingredientRole.optional()
   });
 
 /**

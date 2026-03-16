@@ -8,5 +8,5 @@ Used to distinguish duplicate uses of the same ingredient in a recipe.
 **Signature:**
 
 ```typescript
-readonly role: string;
+readonly role: IngredientRole;
 ```

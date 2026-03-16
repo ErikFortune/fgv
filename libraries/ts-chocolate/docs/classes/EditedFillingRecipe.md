@@ -307,7 +307,7 @@ Updates the procedure options and preferred selection for a specific variation.
 </td></tr>
 <tr><td>
 
-[setVariationIngredient(spec, ingredientId, amount, unit, modifiers, slotId)](./EditedFillingRecipe.setVariationIngredient.md)
+[setVariationIngredient(spec, ingredientId, amount, unit, modifiers, slotId, role)](./EditedFillingRecipe.setVariationIngredient.md)
 
 </td><td>
 

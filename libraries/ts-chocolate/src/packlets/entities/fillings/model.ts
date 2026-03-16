@@ -30,6 +30,7 @@ import {
   FillingRecipeVariationSpec,
   Helpers,
   IngredientId,
+  IngredientRole,
   Measurement,
   MeasurementUnit,
   Model,
@@ -122,7 +123,7 @@ export interface IFillingIngredientEntity {
    * Used to distinguish duplicate uses of the same ingredient in a recipe
    * (e.g., "heated", "cold", "for ganache base").
    */
-  readonly role?: string;
+  readonly role?: IngredientRole;
 }
 
 /**

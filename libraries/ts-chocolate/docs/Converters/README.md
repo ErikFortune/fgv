@@ -505,6 +505,15 @@ Converter that parses a SessionId | SessionId string into its component parts
 </td></tr>
 <tr><td>
 
+[ingredientRole](./variables/ingredientRole.md)
+
+</td><td>
+
+Converter for IngredientRole | IngredientRole.
+
+</td></tr>
+<tr><td>
+
 [slotId](./variables/slotId.md)
 
 </td><td>

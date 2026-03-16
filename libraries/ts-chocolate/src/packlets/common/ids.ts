@@ -265,6 +265,14 @@ export type BaseSessionId = Brand<string, 'BaseSessionId'>;
 export type SessionId = Brand<string, 'SessionId'>;
 
 /**
+ * Ingredient role identifier used to disambiguate duplicate ingredients in a filling recipe.
+ * Pattern: kebab-case (lowercase letters, numbers, and hyphens only)
+ * Examples: "heated", "cold", "ganache-base", "texture-adjust"
+ * @public
+ */
+export type IngredientRole = Brand<string, 'IngredientRole'>;
+
+/**
  * Unique identifier for a filling slot within a confection or recipe
  * Character restrictions: alphanumeric, dashes, underscores only (no dots)
  * Pattern: /^[a-zA-Z0-9_-]+$/

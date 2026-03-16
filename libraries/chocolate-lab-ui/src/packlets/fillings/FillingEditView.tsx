@@ -44,6 +44,7 @@ import type {
   Entities,
   FillingName,
   IngredientId,
+  IngredientRole,
   LibraryRuntime,
   Measurement,
   MeasurementUnit,
@@ -54,6 +55,7 @@ import type {
   SpoonLevel,
   FillingRecipeVariationSpec
 } from '@fgv/ts-chocolate';
+import { Validation } from '@fgv/ts-chocolate';
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 import { succeed } from '@fgv/ts-utils';
 
@@ -61,6 +63,14 @@ import { EditingToolbar, NotesEditor, useEditingContext, type IChangeIndicator }
 import { DerivedFromIndicator } from '../common';
 import { useWorkspace } from '../workspace';
 import { GanacheCharacteristicsDisplay, CollapsibleGanacheSection } from './GanacheAnalysisSection';
+import {
+  AlternateAddInput,
+  ProcedureAlternateAddInput,
+  IngredientRoleInput,
+  DuplicateIngredientPrompt,
+  type IPendingDuplicate,
+  type IDuplicateConfirmResult
+} from './FillingEditHelpers';
 
 const ALL_MEASUREMENT_UNITS: ReadonlyArray<MeasurementUnit> = [
   'g',
@@ -173,126 +183,6 @@ function getProcedureDisplayName(
 }
 
 // ============================================================================
-// AlternateAddInput Component
-// ============================================================================
-
-function AlternateAddInput({
-  ingredientId,
-  onAdd,
-  datalistId
-}: {
-  readonly ingredientId: IngredientId;
-  readonly onAdd: (producedId: IngredientId, input: string) => void;
-  readonly datalistId: string;
-}): React.ReactElement {
-  const [value, setValue] = useState('');
-
-  const commit = (v: string): void => {
-    if (v.trim()) {
-      onAdd(ingredientId, v);
-      setValue('');
-    }
-  };
-
-  return (
-    <input
-      type="text"
-      className="text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 w-32 text-gray-500 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-      value={value}
-      list={datalistId}
-      placeholder="+ add alternate"
-      onChange={(e): void => setValue(e.target.value)}
-      onBlur={(): void => commit(value)}
-      onKeyDown={(e): void => {
-        if (e.key === 'Enter' || e.key === 'Tab') {
-          commit(value);
-        }
-      }}
-    />
-  );
-}
-
-// ============================================================================
-// ProcedureAlternateAddInput Component
-// ============================================================================
-
-function ProcedureAlternateAddInput({
-  onAdd,
-  datalistId
-}: {
-  readonly onAdd: (input: string) => void;
-  readonly datalistId: string;
-}): React.ReactElement {
-  const [value, setValue] = useState('');
-
-  const commit = (v: string): void => {
-    if (v.trim()) {
-      onAdd(v);
-      setValue('');
-    }
-  };
-
-  return (
-    <input
-      type="text"
-      className="text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 w-32 text-gray-500 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-      value={value}
-      list={datalistId}
-      placeholder="+ add alternate"
-      onChange={(e): void => setValue(e.target.value)}
-      onBlur={(): void => commit(value)}
-      onKeyDown={(e): void => {
-        if (e.key === 'Enter' || e.key === 'Tab') {
-          commit(value);
-        }
-      }}
-    />
-  );
-}
-
-// ============================================================================
-// IngredientRoleInput Component
-// ============================================================================
-
-function IngredientRoleInput({
-  value,
-  index,
-  onChange
-}: {
-  readonly value: string | undefined;
-  readonly index: number;
-  readonly onChange: (index: number, role: string | undefined) => void;
-}): React.ReactElement {
-  const [draft, setDraft] = useState<string>(value ?? '');
-
-  // Sync draft when external value changes (e.g. undo/redo)
-  useEffect(() => {
-    setDraft(value ?? '');
-  }, [value]);
-
-  const commit = (v: string): void => {
-    onChange(index, v.trim() || undefined);
-  };
-
-  return (
-    <input
-      type="text"
-      className="w-24 text-xs border border-gray-200 rounded px-1.5 py-1 text-gray-500 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
-      value={draft}
-      placeholder="role…"
-      onChange={(e): void => setDraft(e.target.value)}
-      onBlur={(): void => commit(draft)}
-      onKeyDown={(e): void => {
-        if (e.key === 'Enter') {
-          commit(draft);
-          (e.target as HTMLInputElement).blur();
-        }
-      }}
-    />
-  );
-}
-
-// ============================================================================
 // FillingEditView Component
 // ============================================================================
 
@@ -356,6 +246,9 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
   const [newIngredientText, setNewIngredientText] = useState('');
   const [newProcedureText, setNewProcedureText] = useState('');
   const focusIngredientRef = useRef<string | undefined>(undefined);
+
+  // Pending duplicate ingredient prompt
+  const [pendingDuplicate, setPendingDuplicate] = useState<IPendingDuplicate | undefined>(undefined);
 
   // Unresolved state
   const [unresolvedIngredients, setUnresolvedIngredients] = useState<Record<number, string>>({});
@@ -578,7 +471,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
   );
 
   const handleIngredientRoleChange = useCallback(
-    (index: number, role: string | undefined): void => {
+    (index: number, role: IngredientRole | undefined): void => {
       const existing = currentVariationIngredients[index];
       const effectiveId = getEffectiveId(existing);
       wrapper.setVariationIngredientRole(
@@ -629,8 +522,15 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
     [currentVariationIngredients, getEffectiveId, wrapper, selectedVariationSpec, notifyWrapper]
   );
 
+  // Extract the base ingredient ID (after the dot) for generating valid slotIds
+  const getBaseIngredientId = useCallback((id: string): string => {
+    const dotIndex = id.lastIndexOf('.');
+    return dotIndex >= 0 ? id.slice(dotIndex + 1) : id;
+  }, []);
+
   const commitNewIngredient = useCallback(
     (input: string): void => {
+      if (pendingDuplicate) return; // Don't commit while a duplicate prompt is open
       const match = ingredientMatcher.resolveOnBlur(input);
       if (match) {
         const ingredientId = match.id as IngredientId;
@@ -641,49 +541,27 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         );
 
         if (existingIndex >= 0) {
-          // Duplicate ingredient — auto-assign slotIds and add as new entry
+          // Duplicate detected — show inline prompt instead of immediately adding
           const existing = currentVariationIngredients[existingIndex];
-          const existingSlotId = existing.ingredient.slotId;
-
-          // Auto-assign a slotId to the existing entry if it doesn't have one
-          if (!existingSlotId) {
-            const autoId = `${match.id}-1` as SlotId;
-            wrapper.setVariationIngredientSlotId(
-              selectedVariationSpec,
-              getEffectiveId(existing),
-              undefined,
-              autoId
-            );
-          }
-
-          // Add the new entry with its own slotId
-          const newSlotId = `${match.id}-${existingSlotId ? 2 : 2}` as SlotId;
-          wrapper.setVariationIngredient(
-            selectedVariationSpec,
+          const baseId = getBaseIngredientId(match.id);
+          setPendingDuplicate({
             ingredientId,
-            0 as Measurement,
-            undefined,
-            undefined,
-            newSlotId
-          );
-
-          // Expand the new entry (it will be at the end) so the user sees role/slotId fields
-          const newIndex = currentVariationIngredients.length;
-          setExpandedIngredients((prev) => {
-            const next = new Set(prev);
-            next.add(newIndex);
-            // Also expand the existing entry so user can see/edit its slotId
-            next.add(existingIndex);
-            return next;
+            ingredientName: getIngredientDisplayName(ingredientId, ingredientSuggestions),
+            baseIngredientId: baseId,
+            existingIndex,
+            existingSlotId: existing.ingredient.slotId,
+            existingRole: existing.role,
+            existingAmount: existing.amount
           });
+          setNewIngredientText('');
+          setUnresolvedNewIngredient(undefined);
         } else {
           wrapper.setVariationIngredient(selectedVariationSpec, ingredientId, 0 as Measurement);
+          focusIngredientRef.current = match.id;
+          setNewIngredientText('');
+          setUnresolvedNewIngredient(undefined);
+          notifyWrapper();
         }
-
-        focusIngredientRef.current = match.id;
-        setNewIngredientText('');
-        setUnresolvedNewIngredient(undefined);
-        notifyWrapper();
       } else if (input.trim()) {
         setUnresolvedNewIngredient(input.trim());
       }
@@ -694,9 +572,81 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       selectedVariationSpec,
       notifyWrapper,
       currentVariationIngredients,
-      getEffectiveId
+      getEffectiveId,
+      getBaseIngredientId,
+      ingredientSuggestions,
+      pendingDuplicate
     ]
   );
+
+  const confirmDuplicate = useCallback(
+    (result: IDuplicateConfirmResult): void => {
+      if (!pendingDuplicate) return;
+
+      // Validate slotIds (prompt already validated, but be safe)
+      const existingSlotResult = Validation.toSlotId(result.existingSlotId);
+      const newSlotResult = Validation.toSlotId(result.newSlotId);
+      if (existingSlotResult.isFailure() || newSlotResult.isFailure()) return;
+
+      const existing = currentVariationIngredients[pendingDuplicate.existingIndex];
+      const effectiveId = getEffectiveId(existing);
+
+      // Assign slotId and role to existing entry if it doesn't already have a slotId
+      if (!pendingDuplicate.existingSlotId) {
+        wrapper.setVariationIngredientSlotId(
+          selectedVariationSpec,
+          effectiveId,
+          undefined,
+          existingSlotResult.value
+        );
+      }
+      // Set role on existing entry if provided and different from current
+      if (result.existingRole && result.existingRole !== existing.role) {
+        wrapper.setVariationIngredientRole(
+          selectedVariationSpec,
+          effectiveId,
+          result.existingRole,
+          existingSlotResult.value
+        );
+      }
+
+      // Add the new duplicate entry with its slotId and role atomically
+      wrapper.setVariationIngredient(
+        selectedVariationSpec,
+        pendingDuplicate.ingredientId,
+        0 as Measurement,
+        undefined,
+        undefined,
+        newSlotResult.value,
+        result.newRole
+      );
+
+      // Expand both entries so the user sees role/slotId fields
+      const newIndex = currentVariationIngredients.length;
+      setExpandedIngredients((prev) => {
+        const next = new Set(prev);
+        next.add(newIndex);
+        next.add(pendingDuplicate.existingIndex);
+        return next;
+      });
+
+      focusIngredientRef.current = result.newSlotId;
+      setPendingDuplicate(undefined);
+      notifyWrapper();
+    },
+    [
+      pendingDuplicate,
+      currentVariationIngredients,
+      wrapper,
+      selectedVariationSpec,
+      getEffectiveId,
+      notifyWrapper
+    ]
+  );
+
+  const cancelDuplicate = useCallback((): void => {
+    setPendingDuplicate(undefined);
+  }, []);
 
   // ---- Procedure Handler (wrapper variation) ----
 
@@ -1290,7 +1240,10 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
               !!ing.modifiers?.toTaste;
             const isExpanded = expandedIngredients.has(index) || hasNonDefaultModifiers || hasAlternates;
             return (
-              <div key={effectiveId} className="rounded border border-gray-200 p-2">
+              <div
+                key={ing.ingredient.slotId ? `${effectiveId}:${ing.ingredient.slotId}` : effectiveId}
+                className="rounded border border-gray-200 p-2"
+              >
                 <div className="flex items-center gap-1.5">
                   <input
                     type="text"
@@ -1309,7 +1262,12 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                   />
                   <input
                     ref={(el): void => {
-                      if (el && focusIngredientRef.current === effectiveId) {
+                      if (
+                        el &&
+                        focusIngredientRef.current !== undefined &&
+                        (focusIngredientRef.current === effectiveId ||
+                          focusIngredientRef.current === ing.ingredient.slotId)
+                      ) {
                         focusIngredientRef.current = undefined;
                         requestAnimationFrame(() => el.focus());
                       }
@@ -1626,6 +1584,14 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                 </button>
               )}
             </div>
+          )}
+
+          {pendingDuplicate && (
+            <DuplicateIngredientPrompt
+              pending={pendingDuplicate}
+              onConfirm={confirmDuplicate}
+              onCancel={cancelDuplicate}
+            />
           )}
 
           <datalist id="filling-ingredient-suggestions">

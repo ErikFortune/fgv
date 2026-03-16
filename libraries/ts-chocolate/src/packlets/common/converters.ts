@@ -72,6 +72,7 @@ import {
   RatingScore,
   BaseSessionId,
   SessionSpec,
+  IngredientRole,
   SlotId,
   CollectionId,
   SpoonLevel,
@@ -136,6 +137,7 @@ import {
   toRatingScore,
   toBaseSessionId,
   toSessionSpec,
+  toIngredientRole,
   toSlotId,
   toCollectionId,
   toUrlCategory,
@@ -547,6 +549,12 @@ export const parsedSessionId: Converter<ParsedSessionId> = Converters.compositeI
   ID_SEPARATOR,
   baseSessionId
 );
+
+/**
+ * Converter for {@link IngredientRole | IngredientRole}.
+ * @public
+ */
+export const ingredientRole: Converter<IngredientRole> = Converters.generic(toIngredientRole);
 
 /**
  * Converter for {@link SlotId | SlotId}.

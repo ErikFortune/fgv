@@ -10,7 +10,7 @@ uses of the same ingredient.
 **Signature:**
 
 ```typescript
-setVariationIngredientRole(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, role: string | undefined, slotId?: SlotId): Result<true>;
+setVariationIngredientRole(spec: FillingRecipeVariationSpec, ingredientId: IngredientId, role: IngredientRole | undefined, slotId?: SlotId): Result<true>;
 ```
 
 **Parameters:**
@@ -19,7 +19,7 @@ setVariationIngredientRole(spec: FillingRecipeVariationSpec, ingredientId: Ingre
 <tbody>
 <tr><td>spec</td><td>FillingRecipeVariationSpec</td><td>Variation spec to update</td></tr>
 <tr><td>ingredientId</td><td>IngredientId</td><td>The ingredient ID to find</td></tr>
-<tr><td>role</td><td>string | undefined</td><td>Role label, or undefined to clear</td></tr>
+<tr><td>role</td><td>IngredientRole | undefined</td><td>Role label, or undefined to clear</td></tr>
 <tr><td>slotId</td><td>SlotId</td><td>Optional slot ID for disambiguation</td></tr>
 </tbody></table>
 

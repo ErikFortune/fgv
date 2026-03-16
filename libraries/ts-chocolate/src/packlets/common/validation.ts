@@ -63,6 +63,7 @@ import {
   RatingScore,
   BaseSessionId,
   SessionSpec,
+  IngredientRole,
   SlotId,
   CollectionId,
   UrlCategory,
@@ -785,6 +786,36 @@ export function toJournalId(from: unknown): Result<JournalId> {
   }
   return Failure.with(
     `Invalid JournalId: must be in format collectionId.baseJournalId (e.g., "user-journals.2026-01-15-143025-a1b2c3d4")`
+  );
+}
+
+// ============================================================================
+// Ingredient Role Validators
+// ============================================================================
+
+/**
+ * Type guard for {@link IngredientRole | IngredientRole}.
+ * @param from - Value to check
+ * @returns `true` if the value is a valid {@link IngredientRole | IngredientRole}.
+ * @public
+ */
+export function isValidIngredientRole(from: unknown): from is IngredientRole {
+  return typeof from === 'string' && from.length > 0 && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(from);
+}
+
+/**
+ * Validates unknown value is a {@link IngredientRole | IngredientRole}.
+ * @param from - Value to validate
+ * @returns `Success` with {@link IngredientRole | IngredientRole} or `Failure` with an error
+ * message if validation fails.
+ * @public
+ */
+export function toIngredientRole(from: unknown): Result<IngredientRole> {
+  if (isValidIngredientRole(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid IngredientRole: must be kebab-case (lowercase letters, numbers, and hyphens only)'
   );
 }
 

@@ -36,6 +36,7 @@ import type {
   FillingName,
   FillingRecipeVariationSpec,
   IngredientId,
+  IngredientRole,
   Measurement,
   MeasurementUnit,
   ProcedureId,
@@ -331,6 +332,7 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
    * @param unit - Optional measurement unit (default: 'g')
    * @param modifiers - Optional ingredient modifiers
    * @param slotId - Optional slot ID for disambiguation when the same ingredient appears multiple times
+   * @param role - Optional role label for distinguishing duplicate uses of the same ingredient
    * @returns Success or failure if spec not found
    * @public
    */
@@ -340,7 +342,8 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     amount: Measurement,
     unit?: MeasurementUnit,
     modifiers?: Fillings.IIngredientModifiers,
-    slotId?: SlotId
+    slotId?: SlotId,
+    role?: IngredientRole
   ): Result<true> {
     const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
     if (varIndex < 0) {
@@ -363,7 +366,8 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
           : { ids: [ingredientId], preferredId: ingredientId, slotId },
       amount,
       unit,
-      modifiers
+      modifiers,
+      role: role ?? (existingIndex >= 0 ? ingredients[existingIndex].role : undefined)
     };
 
     if (existingIndex >= 0) {
@@ -561,7 +565,7 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
   public setVariationIngredientRole(
     spec: FillingRecipeVariationSpec,
     ingredientId: IngredientId,
-    role: string | undefined,
+    role: IngredientRole | undefined,
     slotId?: SlotId
   ): Result<true> {
     const varIndex = this._current.variations.findIndex((v) => v.variationSpec === spec);
@@ -578,7 +582,7 @@ export class EditedFillingRecipe extends EditableWrapper<Fillings.IFillingRecipe
     const ingredients = [...variation.ingredients];
     ingredients[ingIndex] = {
       ...ingredients[ingIndex],
-      role: role?.trim() || undefined
+      role
     };
     const variations = [...this._current.variations];
     variations[varIndex] = { ...variation, ingredients };
