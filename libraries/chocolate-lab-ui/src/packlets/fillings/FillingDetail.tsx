@@ -37,7 +37,9 @@ import {
   formatIngredientAmount,
   formatScaledIngredientAmount,
   copyJsonToClipboard,
-  DerivedFromIndicator
+  DerivedFromIndicator,
+  groupByRole,
+  RoleGroupHeader
 } from '../common';
 import {
   useGanacheCalculation,
@@ -506,13 +508,18 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
       {/* Ingredients */}
       <DetailSection title={`Ingredients (${ingredients.length + unresolvedIngredients.length})`}>
         <div className="divide-y divide-gray-100">
-          {ingredients.map((ri, i) => (
-            <IngredientRow
-              key={ri.ingredient.id}
-              resolved={ri}
-              onClick={onIngredientClick}
-              scaleFactor={ingredientScaleFactors[i]}
-            />
+          {groupByRole(ingredients, (ri) => ri.role).map((group) => (
+            <React.Fragment key={group.role ?? '__default__'}>
+              <RoleGroupHeader label={group.label} className="px-2" />
+              {group.items.map(({ item: ri, originalIndex }) => (
+                <IngredientRow
+                  key={ri.slotId ? `${ri.ingredient.id}:${ri.slotId}` : ri.ingredient.id}
+                  resolved={ri}
+                  onClick={onIngredientClick}
+                  scaleFactor={ingredientScaleFactors[originalIndex]}
+                />
+              ))}
+            </React.Fragment>
           ))}
           {unresolvedIngredients.map((ei) => {
             const primaryId = ei.ingredient.preferredId ?? ei.ingredient.ids[0]!;

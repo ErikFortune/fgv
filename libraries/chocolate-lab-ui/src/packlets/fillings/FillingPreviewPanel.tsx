@@ -32,7 +32,12 @@ import type { Entities, FillingRecipeVariationSpec, LibraryRuntime } from '@fgv/
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
 
 import { renderPreview } from '../tasks';
-import { formatIngredientAmount, formatScaledIngredientAmount } from '../common';
+import {
+  formatIngredientAmount,
+  formatScaledIngredientAmount,
+  groupByRole,
+  RoleGroupHeader
+} from '../common';
 import {
   useGanacheCalculation,
   GanacheCharacteristicsDisplay,
@@ -220,60 +225,73 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
             <span className="text-xs text-gray-500">{ingredients.length} items</span>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-            {ingredients.map((ing, i) => {
-              const unit = ing.entity.unit;
-              const modifiers = ing.entity.modifiers;
-              const rawScaled = scaledAmounts?.[i];
-              const isScaled =
-                scaleFactor !== undefined &&
-                rawScaled !== undefined &&
-                Math.abs(rawScaled - ing.amount) >= 0.001;
-              const displayAmount = isScaled
-                ? formatScaledIngredientAmount(ing.amount, unit, scaleFactor, modifiers)
-                : formatIngredientAmount(ing.amount, unit, modifiers);
-              const processNote = ing.entity.modifiers?.processNote;
-              const yieldFactor = ing.entity.modifiers?.yieldFactor;
-              const ingUnit = ing.entity.unit ?? 'g';
-              const hasYield =
-                yieldFactor !== undefined && yieldFactor !== 1.0 && (ingUnit === 'g' || ingUnit === 'mL');
-              const contributedAmount = hasYield
-                ? formatIngredientAmount(ing.amount * (yieldFactor ?? 1), ingUnit)
-                : undefined;
-              return (
-                <div key={ing.ingredient.id} className="hover:bg-gray-50">
-                  <div className="px-4 py-2.5 flex items-start justify-between">
-                    <div className="flex-1">
-                      <span className="text-sm font-medium text-gray-900">{ing.ingredient.name}</span>
-                      {ing.alternates.length > 0 && (
-                        <span className="ml-2 text-xs text-amber-600">
-                          or {ing.alternates.map((alt) => alt.name).join(', ')}
-                        </span>
-                      )}
-                      {!hasYield && processNote && (
-                        <p className="text-xs text-gray-400 italic mt-0.5">{processNote}</p>
-                      )}
-                    </div>
-                    <span
-                      className={`text-sm font-mono ml-4 shrink-0 ${
-                        isScaled ? 'text-amber-700 font-semibold' : 'text-gray-600'
-                      }`}
+            {groupByRole(ingredients, (ing) => ing.role).map((group) => (
+              <React.Fragment key={group.role ?? '__default__'}>
+                <RoleGroupHeader label={group.label} className="px-4 pt-1" />
+                {group.items.map(({ item: ing, originalIndex }) => {
+                  const unit = ing.entity.unit;
+                  const modifiers = ing.entity.modifiers;
+                  const rawScaled = scaledAmounts?.[originalIndex];
+                  const isScaled =
+                    scaleFactor !== undefined &&
+                    rawScaled !== undefined &&
+                    Math.abs(rawScaled - ing.amount) >= 0.001;
+                  const displayAmount = isScaled
+                    ? formatScaledIngredientAmount(ing.amount, unit, scaleFactor, modifiers)
+                    : formatIngredientAmount(ing.amount, unit, modifiers);
+                  const processNote = ing.entity.modifiers?.processNote;
+                  const yieldFactor = ing.entity.modifiers?.yieldFactor;
+                  const ingUnit = ing.entity.unit ?? 'g';
+                  const hasYield =
+                    yieldFactor !== undefined && yieldFactor !== 1.0 && (ingUnit === 'g' || ingUnit === 'mL');
+                  const contributedAmount = hasYield
+                    ? formatIngredientAmount(ing.amount * (yieldFactor ?? 1), ingUnit)
+                    : undefined;
+                  return (
+                    <div
+                      key={ing.slotId ? `${ing.ingredient.id}:${ing.slotId}` : ing.ingredient.id}
+                      className="hover:bg-gray-50"
                     >
-                      {displayAmount}
-                    </span>
-                  </div>
-                  {hasYield && (
-                    <div className="flex items-baseline justify-between px-4 -mt-1.5 pb-2">
-                      <span className="text-xs text-gray-400 italic">
-                        {processNote
-                          ? `${processNote} (×${yieldFactor!.toFixed(2)})`
-                          : `×${yieldFactor!.toFixed(2)}`}
-                      </span>
-                      <span className="text-xs text-gray-400 tabular-nums">{contributedAmount}</span>
+                      <div className="px-4 py-2.5 flex items-start justify-between">
+                        <div className="flex-1">
+                          <span className="text-sm font-medium text-gray-900">
+                            {ing.ingredient.name}
+                            {ing.role && (
+                              <span className="ml-1 text-xs font-normal text-gray-400">({ing.role})</span>
+                            )}
+                          </span>
+                          {ing.alternates.length > 0 && (
+                            <span className="ml-2 text-xs text-amber-600">
+                              or {ing.alternates.map((alt) => alt.name).join(', ')}
+                            </span>
+                          )}
+                          {!hasYield && processNote && (
+                            <p className="text-xs text-gray-400 italic mt-0.5">{processNote}</p>
+                          )}
+                        </div>
+                        <span
+                          className={`text-sm font-mono ml-4 shrink-0 ${
+                            isScaled ? 'text-amber-700 font-semibold' : 'text-gray-600'
+                          }`}
+                        >
+                          {displayAmount}
+                        </span>
+                      </div>
+                      {hasYield && (
+                        <div className="flex items-baseline justify-between px-4 -mt-1.5 pb-2">
+                          <span className="text-xs text-gray-400 italic">
+                            {processNote
+                              ? `${processNote} (×${yieldFactor!.toFixed(2)})`
+                              : `×${yieldFactor!.toFixed(2)}`}
+                          </span>
+                          <span className="text-xs text-gray-400 tabular-nums">{contributedAmount}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </div>
         </div>
       )}
