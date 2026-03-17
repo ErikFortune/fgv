@@ -237,6 +237,8 @@ interface IServerConfig {
     readonly enabled: boolean;
     readonly baseUrl: string;
   };
+  readonly proxyAvailable?: boolean;
+  readonly keystoreInCloud?: boolean;
 }
 
 async function _fetchServerConfig(): Promise<IServerConfig | undefined> {
@@ -501,6 +503,15 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
     }
   }
 
+  // Point keystore operations at the cloud tree when keystoreLocation says external
+  const keystoreLocation = bootstrap?.keystoreLocation;
+  if (keystoreLocation?.type === 'external' && cloudSources.length > 0) {
+    const match = cloudSources.find((s) => s.name === keystoreLocation.rootName);
+    if (match) {
+      reactiveWorkspace.keystoreRootDir = match.fileTree;
+    }
+  }
+
   await restoreSavedDirectories({
     reactiveWorkspace,
     entities: workspace.data.entities,
@@ -548,15 +559,51 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
       })
     : [];
 
-  // Persist server-provided defaults as initial bootstrap settings so the Settings UI
-  // shows them pre-populated and they survive across sessions.
-  if (defaultCloudStorage && !bootstrap) {
+  // Persist server-provided defaults as initial bootstrap/preferences settings so the
+  // Settings UI shows them pre-populated and they survive across sessions.
+  if (serverConfig && !bootstrap) {
     const settings = workspace.settings;
     if (settings) {
-      const updateResult = settings.updateBootstrapSettings({ cloudStorage: defaultCloudStorage });
-      if (updateResult.isSuccess()) {
-        await settings.save();
+      // Bootstrap: cloud storage + keystore location
+      const cloudRootName = cloudSources.length > 0 ? cloudSources[0].name : undefined;
+      settings.updateBootstrapSettings({
+        ...(defaultCloudStorage ? { cloudStorage: defaultCloudStorage } : {}),
+        ...(serverConfig.keystoreInCloud && cloudRootName
+          ? { keystoreLocation: { type: 'external' as const, rootName: cloudRootName } }
+          : {})
+      });
+      // Also wire up the keystore tree for this session
+      if (serverConfig.keystoreInCloud && cloudSources.length > 0) {
+        reactiveWorkspace.keystoreRootDir = cloudSources[0].fileTree;
       }
+
+      // Preferences: default storage targets + AI assist proxy
+      const currentPrefs = settings.getPreferencesSettings();
+      settings.updatePreferencesSettings({
+        ...(cloudRootName
+          ? {
+              defaultStorageTargets: {
+                libraryDefault: cloudRootName as unknown as Settings.StorageRootId,
+                userDataDefault: cloudRootName as unknown as Settings.StorageRootId
+              }
+            }
+          : {}),
+        ...(serverConfig.proxyAvailable
+          ? {
+              tools: {
+                ...currentPrefs.tools,
+                aiAssist: {
+                  ...currentPrefs.tools?.aiAssist,
+                  providers: currentPrefs.tools?.aiAssist?.providers ?? [{ provider: 'copy-paste' }],
+                  proxyUrl: window.location.origin,
+                  proxyAllProviders: true
+                }
+              }
+            }
+          : {})
+      });
+
+      await settings.save();
     }
   }
 

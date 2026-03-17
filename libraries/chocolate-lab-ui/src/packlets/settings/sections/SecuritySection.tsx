@@ -135,7 +135,7 @@ export function SecuritySection(): React.ReactElement {
 
   const persistKeyStore = useCallback(
     async (ks: NonNullable<typeof keyStore>, pw: string): Promise<void> => {
-      const rootDir = reactiveWorkspace.localStorageRootDir;
+      const rootDir = reactiveWorkspace.keystoreRootDir;
       if (!rootDir) return;
 
       const fileItemResult = getOrCreateKeystoreFileItem(rootDir);

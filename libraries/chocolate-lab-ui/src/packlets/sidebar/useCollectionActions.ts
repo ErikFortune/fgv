@@ -150,7 +150,7 @@ export function useCollectionActions(): ICollectionActions {
 
   const persistKeyStore = useCallback(
     async (ks: CryptoUtils.KeyStore.KeyStore, pw: string): Promise<void> => {
-      const rootDir = reactiveWorkspace.localStorageRootDir;
+      const rootDir = reactiveWorkspace.keystoreRootDir;
       if (!rootDir) return;
       const fileItemResult = getOrCreateKeystoreFileItem(rootDir);
       if (fileItemResult.isFailure()) {

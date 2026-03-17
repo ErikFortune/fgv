@@ -126,6 +126,7 @@ export class ReactiveWorkspace {
   private _mitigatedRoots: ReadonlySet<string> = new Set();
   private _validationWarnings: ReadonlyArray<ISettingsValidationWarning> = [];
   private _masterPassword: string | undefined = undefined;
+  private _keystoreRootDir: FileTree.IFileTreeDirectoryItem | undefined = undefined;
 
   public constructor(workspace: IWorkspace, builtInLoaded: boolean = false) {
     this._workspace = workspace;
@@ -242,6 +243,19 @@ export class ReactiveWorkspace {
    */
   public get localStorageRootDir(): FileTree.IFileTreeDirectoryItem | undefined {
     return this._localStorageRootDir;
+  }
+
+  /**
+   * The root directory for keystore operations (load/save).
+   * Defaults to {@link localStorageRootDir} when not explicitly set.
+   * Set to a cloud root dir when keystoreLocation is external.
+   */
+  public get keystoreRootDir(): FileTree.IFileTreeDirectoryItem | undefined {
+    return this._keystoreRootDir ?? this._localStorageRootDir;
+  }
+
+  public set keystoreRootDir(dir: FileTree.IFileTreeDirectoryItem | undefined) {
+    this._keystoreRootDir = dir;
   }
 
   /**

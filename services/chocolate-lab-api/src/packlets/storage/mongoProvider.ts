@@ -151,7 +151,7 @@ export class MongoStorageProvider implements IHttpStorageProvider {
       return succeed({
         path: entry.path,
         contents: entry.contents ?? '',
-        contentType: entry.contentType
+        contentType: entry.contentType ?? undefined
       });
     } catch (err: unknown) {
       return fail(`${normalized}: ${_toMessage(err)}`);
@@ -197,7 +197,7 @@ export class MongoStorageProvider implements IHttpStorageProvider {
       return succeed({
         path: normalized,
         contents,
-        contentType
+        contentType: contentType ?? undefined
       });
     } catch (err: unknown) {
       return fail(`${normalized}: ${_toMessage(err)}`);

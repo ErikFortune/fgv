@@ -83,7 +83,9 @@ export async function createApp(): Promise<Hono> {
       cloudStorage: {
         enabled: true,
         baseUrl: '/api/storage'
-      }
+      },
+      proxyAvailable: true,
+      keystoreInCloud: true
     });
   });
 

@@ -204,7 +204,20 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
       return fail(cloudLibrariesResult.message);
     }
 
-    const keystoreResult = loadKeystoreFromTree(userLibraryTree);
+    // Determine which tree to load the keystore from based on keystoreLocation.
+    // If the bootstrap says 'external', look for a matching cloud tree by name.
+    const keystoreLocation = settingsResult.value.bootstrap?.keystoreLocation;
+    let keystoreTree: FileTree.IFileTreeDirectoryItem = userLibraryTree;
+    if (keystoreLocation?.type === 'external') {
+      const match = cloudLibrariesResult.value.find(
+        (lib: IResolvedExternalLibrary) => lib.name === keystoreLocation.rootName
+      );
+      if (match) {
+        keystoreTree = match.fileTree;
+      }
+    }
+
+    const keystoreResult = loadKeystoreFromTree(keystoreTree);
     if (keystoreResult.isFailure()) {
       return fail(`keystore: ${keystoreResult.message}`);
     }
