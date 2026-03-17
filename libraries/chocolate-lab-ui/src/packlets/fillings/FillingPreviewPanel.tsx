@@ -25,8 +25,10 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useRef, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { XMarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
+
+import { openPrintWindow } from '@fgv/ts-app-shell';
 
 import type { Entities, FillingRecipeVariationSpec, LibraryRuntime } from '@fgv/ts-chocolate';
 import { LibraryRuntime as LR } from '@fgv/ts-chocolate';
@@ -55,6 +57,8 @@ export interface IFillingPreviewPanelProps {
   readonly variationSpec?: FillingRecipeVariationSpec;
   readonly targetYield?: number;
   readonly onClose?: () => void;
+  /** When true, renders for print layout: no buttons, no scroll constraints, page-break hints. */
+  readonly printMode?: boolean;
 }
 
 // ============================================================================
@@ -83,7 +87,7 @@ function formatResolvedStepTiming(step: LibraryRuntime.IResolvedProcedureStep): 
 // ============================================================================
 
 export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.ReactElement {
-  const { filling, draftEntity, variationSpec, targetYield, onClose } = props;
+  const { filling, draftEntity, variationSpec, targetYield, onClose, printMode } = props;
 
   const entity = draftEntity ?? filling.entity;
 
@@ -113,15 +117,19 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
     return variationEntity?.name ?? selectedSpec;
   }, [entity.variations.length, variationEntity, selectedSpec]);
 
-  // Print just the preview panel content
-  const printRef = useRef<HTMLDivElement>(null);
+  // Open a popup window with the recipe in print-optimized layout
   const handlePrint = useCallback((): void => {
-    const el = printRef.current;
-    if (!el) return;
-    el.classList.add('printing');
-    window.print();
-    el.classList.remove('printing');
-  }, []);
+    openPrintWindow(
+      <FillingPreviewPanel
+        filling={filling}
+        draftEntity={draftEntity}
+        variationSpec={variationSpec}
+        targetYield={targetYield}
+        printMode={true}
+      />,
+      { title: `Print: ${entity.name}` }
+    );
+  }, [filling, draftEntity, variationSpec, targetYield, entity.name]);
 
   // Compute scaling via ProducedFilling (handles non-scaling units correctly)
   const scaleFactor = useMemo<number | undefined>(() => {
@@ -138,7 +146,7 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
   }, [variation, scaleFactor]);
 
   return (
-    <div ref={printRef} className="p-4 overflow-y-auto h-full bg-gray-50">
+    <div className={printMode ? 'p-4 bg-gray-50' : 'p-4 overflow-y-auto h-full bg-gray-50'}>
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
@@ -155,26 +163,28 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0 print:hidden">
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            title="Print recipe"
-          >
-            <PrinterIcon className="w-5 h-5" />
-          </button>
-          {onClose && (
+        {!printMode && (
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handlePrint}
               className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-              title="Close preview"
+              title="Print recipe"
             >
-              <XMarkIcon className="w-5 h-5" />
+              <PrinterIcon className="w-5 h-5" />
             </button>
-          )}
-        </div>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                title="Close preview"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {entity.description && (

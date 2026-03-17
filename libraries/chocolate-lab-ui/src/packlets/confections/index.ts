@@ -10,4 +10,5 @@ export {
   type ConfectionSaveMode
 } from './ConfectionEditView';
 export { ConfectionPreviewPanel, type IConfectionPreviewPanelProps } from './ConfectionPreviewPanel';
+export { openConfectionPrintWindow, type IConfectionPrintViewProps } from './ConfectionPrintView';
 export { type IConfectionViewSettings } from './viewSettings';

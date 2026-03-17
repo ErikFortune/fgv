@@ -25,7 +25,7 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { XMarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 
 import type { Entities, FillingId, IngredientId, LibraryRuntime } from '@fgv/ts-chocolate';
@@ -33,6 +33,7 @@ import { Entities as EntitiesNS, LibraryRuntime as LR } from '@fgv/ts-chocolate'
 
 import type { IConfectionViewSettings } from './viewSettings';
 import { formatIngredientAmount, formatScaledIngredientAmount } from '../common';
+import { openConfectionPrintWindow } from './ConfectionPrintView';
 
 import { renderPreview } from '../tasks';
 
@@ -49,6 +50,8 @@ export interface IConfectionPreviewPanelProps {
   readonly onFillingClick?: (id: FillingId, targetWeight?: number) => void;
   /** Callback when an ingredient filling is clicked for drill-down */
   readonly onIngredientClick?: (id: IngredientId) => void;
+  /** When true, renders for print layout: no buttons, no scroll constraints, page-break hints. */
+  readonly printMode?: boolean;
 }
 
 // ============================================================================
@@ -449,21 +452,12 @@ function RolledTruffleSection({
  * @public
  */
 export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): React.ReactElement {
-  const { confection, draftEntity, viewSettings, onClose, onFillingClick, onIngredientClick } = props;
+  const { confection, draftEntity, viewSettings, onClose, onFillingClick, onIngredientClick, printMode } =
+    props;
 
   const entity = draftEntity ?? confection.entity;
   const goldenVariation = confection.goldenVariation;
   const goldenVariationEntity = entity.variations.find((v) => v.variationSpec === entity.goldenVariationSpec);
-
-  // Print just the preview panel content
-  const printRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useCallback((): void => {
-    const el = printRef.current;
-    if (!el) return;
-    el.classList.add('printing');
-    window.print();
-    el.classList.remove('printing');
-  }, []);
 
   const scalingTarget = useMemo((): LR.IConfectionScalingTarget | undefined => {
     if (!viewSettings) return undefined;
@@ -506,6 +500,15 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
     return weights;
   }, [scalingResult, defaultScalingResult]);
 
+  // Open a popup window with the confection recipe (and optional fillings) in print-optimized layout
+  const handlePrint = useCallback((): void => {
+    openConfectionPrintWindow({
+      confection,
+      draftEntity,
+      viewSettings
+    });
+  }, [confection, draftEntity, viewSettings]);
+
   const fillings = goldenVariation.fillings ?? [];
   const decorations = goldenVariation.decorations;
   const notes = goldenVariationEntity?.notes ?? [];
@@ -513,7 +516,7 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
   const effectiveUrls = confection.effectiveUrls;
 
   return (
-    <div ref={printRef} className="p-4 overflow-y-auto h-full bg-gray-50">
+    <div className={printMode ? 'p-4 bg-gray-50' : 'p-4 overflow-y-auto h-full bg-gray-50'}>
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
@@ -525,26 +528,28 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0 print:hidden">
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            title="Print recipe"
-          >
-            <PrinterIcon className="w-5 h-5" />
-          </button>
-          {onClose && (
+        {!printMode && (
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handlePrint}
               className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-              title="Close preview"
+              title="Print recipe"
             >
-              <XMarkIcon className="w-5 h-5" />
+              <PrinterIcon className="w-5 h-5" />
             </button>
-          )}
-        </div>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                title="Close preview"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {entity.description && (
