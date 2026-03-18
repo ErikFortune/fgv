@@ -6,6 +6,7 @@
 
 services:
   app:
+    image: chocolate-lab:latest
     build:
       context: .
       dockerfile: services/chocolate-lab-api/Dockerfile

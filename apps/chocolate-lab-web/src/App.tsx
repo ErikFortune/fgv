@@ -239,6 +239,7 @@ interface IServerConfig {
   };
   readonly proxyAvailable?: boolean;
   readonly keystoreInCloud?: boolean;
+  readonly error?: string;
 }
 
 async function _fetchServerConfig(): Promise<IServerConfig | undefined> {
@@ -311,7 +312,10 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   // Fetch server-provided defaults (container mode). If the server isn't reachable
   // (local dev), this returns undefined and we fall back to normal defaults.
   const serverConfig = await _fetchServerConfig();
-  const defaultCloudStorage = serverConfig?.cloudStorage
+  if (serverConfig?.error) {
+    _bootReporter.warn(`Server reported error: ${serverConfig.error}`);
+  }
+  const defaultCloudStorage = serverConfig?.cloudStorage?.enabled
     ? {
         ...serverConfig.cloudStorage,
         userId: _configNamespace ?? undefined

@@ -27,6 +27,7 @@
 
 import { AsyncLocalStorage } from 'async_hooks';
 
+import { type Result, fail, succeed } from '@fgv/ts-utils';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { MongoClient } from 'mongodb';
@@ -63,6 +64,9 @@ export async function createApp(): Promise<Hono> {
   const defaultUserId = process.env.MONGODB_DEFAULT_USER_ID ?? 'default-user';
   const staticPath = process.env.STATIC_FILES_PATH;
 
+  // Track startup errors for health/config reporting
+  let startupError: string | undefined;
+
   app.use('*', cors());
 
   // Extract X-User-Id from request headers and store in AsyncLocalStorage
@@ -71,7 +75,12 @@ export async function createApp(): Promise<Hono> {
     return _requestUserId.run(userId, () => next());
   });
 
-  app.get('/health', (c) => c.json({ status: 'ok' }));
+  app.get('/health', (c) => {
+    if (startupError) {
+      return c.json({ status: 'degraded', error: startupError }, 503);
+    }
+    return c.json({ status: 'ok' });
+  });
 
   // Serve frontend defaults when running in container mode (STATIC_FILES_PATH set).
   // The frontend fetches this at startup to auto-enable cloud storage for first-time users.
@@ -81,18 +90,28 @@ export async function createApp(): Promise<Hono> {
     }
     return c.json({
       cloudStorage: {
-        enabled: true,
+        enabled: !startupError,
         baseUrl: '/api/storage'
       },
       proxyAvailable: true,
-      keystoreInCloud: true
+      keystoreInCloud: true,
+      ...(startupError ? { error: startupError } : {})
     });
   });
 
   app.route('/api/ai', aiRoutes);
 
-  const providers = await _createProviderFactory(storageType, defaultUserId);
-  app.route('/api/storage', createStorageRoutes({ providers }));
+  const factoryResult = await _createProviderFactory(storageType, defaultUserId);
+  if (factoryResult.isSuccess()) {
+    app.route('/api/storage', createStorageRoutes({ providers: factoryResult.value }));
+  } else {
+    startupError = factoryResult.message;
+    console.error(`Storage unavailable: ${startupError}`);
+    // Mount a stub so storage routes return 503 instead of 404
+    const storageStub = new Hono();
+    storageStub.all('*', (c) => c.json({ error: `Storage unavailable: ${startupError}` }, 503));
+    app.route('/api/storage', storageStub);
+  }
 
   // Serve static frontend files when STATIC_FILES_PATH is set (container mode)
   if (staticPath) {
@@ -106,46 +125,86 @@ export async function createApp(): Promise<Hono> {
   return app;
 }
 
+/**
+ * Builds a MongoDB connection URI from individual environment variables.
+ * Used when MONGODB_CONNECTION_STRING is not set (e.g. Olares middleware injection).
+ */
+function _buildMongoUri(): string {
+  const host = process.env.MONGODB_HOST || 'localhost';
+  const port = process.env.MONGODB_PORT || '27017';
+  const user = process.env.MONGODB_USER;
+  const password = process.env.MONGODB_PASSWORD;
+  const authSource = process.env.MONGODB_AUTH_SOURCE || process.env.MONGODB_DATABASE;
+  if (user && password) {
+    const base = `mongodb://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}`;
+    return authSource ? `${base}/?authSource=${encodeURIComponent(authSource)}` : base;
+  }
+  return `mongodb://${host}:${port}`;
+}
+
 async function _createProviderFactory(
   storageType: StorageType,
   defaultUserId: string
-): Promise<IHttpStorageProviderFactory> {
+): Promise<Result<IHttpStorageProviderFactory>> {
   if (storageType === 'mongo') {
-    const connectionString = process.env.MONGODB_CONNECTION_STRING ?? 'mongodb://localhost:27017';
-    const dbName = process.env.MONGODB_DB_NAME ?? 'chocolate-lab';
-
-    const client = new MongoClient(connectionString);
-    await client.connect();
-    console.log(`Connected to MongoDB at ${connectionString} (db: ${dbName})`);
-
-    const db = client.db(dbName);
-    // Read userId per-request from AsyncLocalStorage (set by middleware from X-User-Id header).
-    // Falls back to the env var default when no header is present.
-    const factory = new MongoStorageProviderFactory({
-      db,
-      userId: (): string => _requestUserId.getStore() ?? defaultUserId
+    // Log raw env vars for diagnostics
+    console.log('MongoDB env vars:', {
+      MONGODB_CONNECTION_STRING: process.env.MONGODB_CONNECTION_STRING ? '(set)' : '(unset)',
+      MONGODB_HOST: process.env.MONGODB_HOST || '(unset)',
+      MONGODB_PORT: process.env.MONGODB_PORT || '(unset)',
+      MONGODB_USER: process.env.MONGODB_USER ? '(set)' : '(unset)',
+      MONGODB_PASSWORD: process.env.MONGODB_PASSWORD ? '(set)' : '(unset)',
+      MONGODB_DATABASE: process.env.MONGODB_DATABASE || '(unset)',
+      MONGODB_DB_NAME: process.env.MONGODB_DB_NAME || '(unset)'
     });
 
-    // Ensure indexes exist at startup
-    const indexResult = await factory.ensureIndexes();
-    if (indexResult.isFailure()) {
-      console.error(`Warning: failed to ensure indexes: ${indexResult.message}`);
-    }
+    const connectionString = process.env.MONGODB_CONNECTION_STRING || _buildMongoUri();
+    const dbName = process.env.MONGODB_DATABASE || process.env.MONGODB_DB_NAME || 'chocolate-lab';
 
-    // Graceful shutdown
-    const shutdown = (): void => {
-      console.log('Closing MongoDB connection...');
-      client.close().catch((err: unknown) => {
-        console.error(`Error closing MongoDB: ${err instanceof Error ? err.message : String(err)}`);
+    // Log connection details (mask password) for diagnostics
+    const safeUri = connectionString.replace(/:([^@/]+)@/, ':***@');
+    console.log(`Connecting to MongoDB at ${safeUri} (db: ${dbName})...`);
+
+    try {
+      const client = new MongoClient(connectionString);
+      await client.connect();
+      console.log(`Connected to MongoDB at ${safeUri} (db: ${dbName})`);
+
+      const db = client.db(dbName);
+      // Read userId per-request from AsyncLocalStorage (set by middleware from X-User-Id header).
+      // Falls back to the env var default when no header is present.
+      const factory = new MongoStorageProviderFactory({
+        db,
+        userId: (): string => _requestUserId.getStore() ?? defaultUserId
       });
-    };
-    process.on('SIGTERM', shutdown);
-    process.on('SIGINT', shutdown);
 
-    return factory;
+      // Ensure indexes exist at startup
+      const indexResult = await factory.ensureIndexes();
+      if (indexResult.isFailure()) {
+        console.error(`Warning: failed to ensure indexes: ${indexResult.message}`);
+      }
+
+      // Graceful shutdown
+      const shutdown = (): void => {
+        console.log('Closing MongoDB connection...');
+        client.close().catch((err: unknown) => {
+          console.error(`Error closing MongoDB: ${err instanceof Error ? err.message : String(err)}`);
+        });
+      };
+      process.on('SIGTERM', shutdown);
+      process.on('SIGINT', shutdown);
+
+      return succeed(factory);
+    } catch (err: unknown) {
+      const message = `MongoDB connection failed (${safeUri}, db: ${dbName}): ${
+        err instanceof Error ? err.message : String(err)
+      }`;
+      console.error(message);
+      return fail(message);
+    }
   }
 
   // Default: filesystem storage
   const storageRootPath = process.env.CHOCOLATE_LAB_STORAGE_ROOT ?? './data/storage';
-  return new FsStorageProviderFactory({ rootPath: storageRootPath });
+  return succeed(new FsStorageProviderFactory({ rootPath: storageRootPath }));
 }

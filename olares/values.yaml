@@ -1,0 +1,2 @@
+# Default values for chocolatelab.
+# Olares injects mongodb.* values at deploy time — these are fallback defaults only.

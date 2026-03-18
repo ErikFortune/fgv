@@ -1,0 +1,6 @@
+apiVersion: v2
+name: chocolatelab
+description: A chocolate-making recipe manager and production tracker
+type: application
+version: 0.1.0
+appVersion: '0.1.0'

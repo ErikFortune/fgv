@@ -1,0 +1,48 @@
+olaresManifest.version: '0.10.0'
+olaresManifest.type: app
+metadata:
+  name: chocolatelab
+  icon: https://raw.githubusercontent.com/AEriksen/chocolate-lab/main/icon.png
+  description: Chocolate-making recipe manager and production tracker.
+  appid: chocolatelab
+  title: Chocolate Lab
+  version: '0.1.0'
+  categories:
+    - Lifestyle
+entrances:
+  - name: chocolatelab
+    port: 3002
+    host: chocolatelab
+    title: Chocolate Lab
+    authLevel: private
+spec:
+  versionName: '0.1.0'
+  fullDescription: |
+    Chocolate Lab is a recipe manager and production tracker for artisan
+    chocolate making. Manage ingredients, fillings, confections, molds,
+    and production sessions with full version tracking and cloud sync.
+  developer: Erik Fortune
+  requiredMemory: 256Mi
+  requiredDisk: 50Mi
+  requiredCpu: 0.25
+  limitedMemory: 1024Mi
+  limitedCpu: '2'
+  supportArch:
+    - amd64
+    - arm64
+permission:
+  appData: true
+middleware:
+  mongodb:
+    username: chocolatelab
+    databases:
+      - name: chocolatelab
+options:
+  dependencies:
+    - name: olares
+      type: system
+      version: '>=1.6.0-0'
+    - name: mongodb
+      type: middleware
+      version: '>=6.0.0-0'
+      mandatory: true
