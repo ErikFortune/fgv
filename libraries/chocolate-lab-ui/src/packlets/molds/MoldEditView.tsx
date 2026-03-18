@@ -439,7 +439,7 @@ export function MoldEditView(props: IMoldEditViewProps): React.ReactElement {
               type="button"
               onClick={(): void => setShowReroll(!showReroll)}
               title="Re-generate with AI"
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-accent-ai-text hover:text-accent-ai-text hover:bg-accent-ai-bg rounded transition-colors"
             >
               <SparklesIcon className="h-3.5 w-3.5" />
               <span>AI</span>

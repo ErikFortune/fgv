@@ -381,7 +381,7 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
                     </span>
                   ) : (
                     <span className="w-3 shrink-0 text-center text-xs">
-                      {isPref ? <span className="text-amber-500">★</span> : ''}
+                      {isPref ? <span className="text-star">★</span> : ''}
                     </span>
                   )}
                   <span className="flex-1 min-w-0 truncate">
@@ -448,7 +448,7 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
         </span>
         <span className="text-sm text-primary flex-1 truncate">
           {displayedItem?.label ?? ''}
-          {hasAlternates && isPreferred && <span className="ml-1 text-xs text-amber-500">★</span>}
+          {hasAlternates && isPreferred && <span className="ml-1 text-xs text-star">★</span>}
           {displayedItem?.sublabel && (
             <span className="ml-1.5 text-xs text-muted">{displayedItem.sublabel}</span>
           )}

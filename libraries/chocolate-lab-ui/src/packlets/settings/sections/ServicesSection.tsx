@@ -22,8 +22,8 @@ const HEALTH_CHECK_INTERVAL_MS: number = 15_000;
 function StatusDot({ status }: { readonly status: HealthStatus }): React.ReactElement {
   const colors: Record<HealthStatus, string> = {
     unknown: 'bg-border',
-    connected: 'bg-green-500',
-    unreachable: 'bg-red-500'
+    connected: 'bg-status-success-icon',
+    unreachable: 'bg-status-error-accent'
   };
   return <span className={`inline-block w-2.5 h-2.5 rounded-full ${colors[status]}`} />;
 }

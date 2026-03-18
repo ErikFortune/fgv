@@ -58,7 +58,7 @@ function GanacheValidationMessages({
 }): React.ReactElement | null {
   if (validation.isValid && validation.warnings.length === 0) {
     return (
-      <div className="mt-2 px-2 py-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded">
+      <div className="mt-2 px-2 py-1 text-xs text-status-success-text bg-status-success-bg border border-status-success-border rounded">
         Ratios within guidelines
       </div>
     );
@@ -67,18 +67,18 @@ function GanacheValidationMessages({
   return (
     <div className="mt-2 space-y-1.5">
       {validation.errors.length > 0 && (
-        <div className="px-2 py-1.5 bg-red-50 border border-red-200 rounded">
+        <div className="px-2 py-1.5 bg-status-error-bg border border-status-error-border rounded">
           {validation.errors.map((error, i) => (
-            <div key={i} className="text-xs text-red-700">
+            <div key={i} className="text-xs text-status-error-strong">
               {error}
             </div>
           ))}
         </div>
       )}
       {validation.warnings.length > 0 && (
-        <div className="px-2 py-1.5 bg-amber-50 border border-amber-200 rounded">
+        <div className="px-2 py-1.5 bg-status-warning-bg border border-status-warning-border rounded">
           {validation.warnings.map((warning, i) => (
-            <div key={i} className="text-xs text-amber-700">
+            <div key={i} className="text-xs text-status-warning-strong">
               {warning}
             </div>
           ))}

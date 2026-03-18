@@ -332,7 +332,7 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
               <button
                 type="button"
                 onClick={handleBaseIdSave}
-                className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                className="p-1 text-status-success-accent hover:text-status-success-text hover:bg-status-success-bg rounded"
                 title="Save base ID"
               >
                 <CheckIcon className="h-4 w-4" />

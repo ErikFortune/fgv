@@ -164,7 +164,7 @@ function SaveAnalysisSection({
             )}
 
             {analysis.mustCreateNew && (
-              <p className="text-xs text-amber-600 ml-6">
+              <p className="text-xs text-status-warning-strong ml-6">
                 More extensive changes would require creating a new recipe (not yet supported from commit).
               </p>
             )}

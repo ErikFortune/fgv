@@ -88,7 +88,7 @@ export function ProducedFillingDetail({
     <div className="flex flex-col p-4 overflow-y-auto">
       <EntityDetailHeader
         title={fillingName}
-        badge={{ label: 'Filling Session', colorClass: 'bg-green-100 text-green-800' }}
+        badge={{ label: 'Filling Session', colorClass: 'bg-status-success-surface text-status-success-text' }}
         onCopyJson={handleCopyJson}
         onClose={onClose}
       />

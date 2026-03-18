@@ -169,11 +169,11 @@ function CollapsedStrip({
       data-testid="production-collapsed-strip"
       title="Open production panel"
     >
-      <BeakerIcon className="w-5 h-5 text-green-600" />
+      <BeakerIcon className="w-5 h-5 text-status-success-accent" />
       <span className="text-xs font-medium text-secondary [writing-mode:vertical-lr] rotate-180">
         Production
       </span>
-      <span className="mt-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-green-600 rounded-full">
+      <span className="mt-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-status-success-accent rounded-full">
         {sessions.length}
       </span>
     </button>
@@ -310,7 +310,7 @@ function DetailPanel({
                 onClick={(): void => onSelectSession(entry.sessionId)}
                 className={`px-2 py-1 text-xs rounded-t whitespace-nowrap transition-colors ${
                   isActive
-                    ? 'bg-surface text-primary font-medium border-b-2 border-green-500'
+                    ? 'bg-surface text-primary font-medium border-b-2 border-status-success-icon'
                     : 'text-muted hover:text-secondary hover:bg-hover'
                 }`}
               >

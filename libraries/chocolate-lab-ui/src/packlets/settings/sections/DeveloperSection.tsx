@@ -256,7 +256,7 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
         </div>
 
         {/* Reset & Clear */}
-        <div className="rounded-lg border border-red-200 p-4">
+        <div className="rounded-lg border border-status-error-border p-4">
           <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-1">Reset &amp; Clear</p>
           <p className="text-xs text-muted mb-4">
             These actions are destructive and cannot be undone. Each will reload the page.
@@ -273,7 +273,7 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
               <button
                 type="button"
                 onClick={(): void => setConfirmTarget('settings')}
-                className="shrink-0 px-3 py-1.5 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors"
+                className="shrink-0 px-3 py-1.5 text-sm border border-status-error-border-strong rounded-md text-status-error-strong hover:bg-status-error-bg transition-colors"
               >
                 Reset Settings
               </button>
@@ -291,7 +291,7 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
               <button
                 type="button"
                 onClick={(): void => setConfirmTarget('local')}
-                className="shrink-0 px-3 py-1.5 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors"
+                className="shrink-0 px-3 py-1.5 text-sm border border-status-error-border-strong rounded-md text-status-error-strong hover:bg-status-error-bg transition-colors"
               >
                 Clear Local Data
               </button>
@@ -309,7 +309,7 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
               <button
                 type="button"
                 onClick={(): void => setConfirmTarget('cloud')}
-                className="shrink-0 px-3 py-1.5 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors"
+                className="shrink-0 px-3 py-1.5 text-sm border border-status-error-border-strong rounded-md text-status-error-strong hover:bg-status-error-bg transition-colors"
               >
                 Clear Cloud Data
               </button>

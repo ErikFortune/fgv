@@ -153,11 +153,11 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
           <h2 className="text-2xl font-bold text-primary">{entity.name}</h2>
           <div className="flex items-center gap-2 mt-1">
             <p className="text-xs text-muted uppercase tracking-wide">Filling Recipe</p>
-            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-cat-ganache-bg text-cat-ganache-text">
               {entity.category}
             </span>
             {variationLabel && (
-              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-cat-dairy-bg text-cat-dairy-text">
                 {variationLabel}
               </span>
             )}
@@ -188,7 +188,7 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
       </div>
 
       {entity.description && (
-        <div className="mb-6 p-3 bg-amber-50 border-l-4 border-amber-400 rounded-r">
+        <div className="mb-6 p-3 bg-status-warning-bg border-l-4 border-status-warning-btn rounded-r">
           <p className="text-sm text-secondary italic">{entity.description}</p>
         </div>
       )}
@@ -211,8 +211,8 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
           {scaleFactor !== undefined && targetYield !== undefined && (
             <div className="ml-auto">
               <span className="text-xs text-muted uppercase tracking-wide block">Scaled To</span>
-              <span className="text-lg font-semibold text-amber-700">{targetYield}g</span>
-              <span className="text-xs text-amber-600 ml-1">×{scaleFactor.toFixed(2)}</span>
+              <span className="text-lg font-semibold text-status-warning-strong">{targetYield}g</span>
+              <span className="text-xs text-status-warning-strong ml-1">×{scaleFactor.toFixed(2)}</span>
             </div>
           )}
         </div>
@@ -271,7 +271,7 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
                             )}
                           </span>
                           {ing.alternates.length > 0 && (
-                            <span className="ml-2 text-xs text-amber-600">
+                            <span className="ml-2 text-xs text-status-warning-strong">
                               or {ing.alternates.map((alt) => alt.name).join(', ')}
                             </span>
                           )}
@@ -281,7 +281,7 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
                         </div>
                         <span
                           className={`text-sm font-mono ml-4 shrink-0 ${
-                            isScaled ? 'text-amber-700 font-semibold' : 'text-secondary'
+                            isScaled ? 'text-status-warning-strong font-semibold' : 'text-secondary'
                           }`}
                         >
                           {displayAmount}
@@ -334,7 +334,7 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
               return (
                 <div key={step.order} className="bg-surface rounded-lg border border-border p-4 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-amber-100 text-amber-700 font-bold text-sm flex items-center justify-center">
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-cat-ganache-bg text-cat-ganache-text font-bold text-sm flex items-center justify-center">
                       {step.order}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -375,7 +375,7 @@ export function FillingPreviewPanel(props: IFillingPreviewPanelProps): React.Rea
               {ratings.map((rating, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <span className="text-xs text-secondary capitalize">{rating.category}</span>
-                  <span className="text-sm text-amber-500">
+                  <span className="text-sm text-star">
                     {'★'.repeat(rating.score)}
                     <span className="text-faint">{'★'.repeat(5 - rating.score)}</span>
                   </span>

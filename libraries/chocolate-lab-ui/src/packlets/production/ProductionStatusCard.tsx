@@ -57,7 +57,9 @@ export function ProductionStatusCard({
     <button
       onClick={onClick}
       className={`w-full text-left px-2 py-2 rounded-md transition-colors ${
-        isSelected ? 'bg-green-100 border border-green-300' : 'bg-surface border border-border hover:bg-hover'
+        isSelected
+          ? 'bg-status-success-surface border border-status-success-border'
+          : 'bg-surface border border-border hover:bg-hover'
       }`}
       data-testid="production-status-card"
     >
@@ -66,7 +68,7 @@ export function ProductionStatusCard({
         <span className="text-xs text-muted">{progressLabel}</span>
         <span
           className={`inline-block w-2 h-2 rounded-full ${
-            session.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+            session.status === 'active' ? 'bg-status-success-icon' : 'bg-status-warning-btn'
           }`}
         />
       </div>

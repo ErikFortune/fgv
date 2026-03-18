@@ -534,7 +534,7 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
           ))}
         </datalist>
         {selectedRecipe && (
-          <p className="mt-1 text-xs text-green-700">
+          <p className="mt-1 text-xs text-status-success-text">
             Selected: <span className="font-medium">{selectedRecipe.name}</span>{' '}
             <span className="text-muted">({selectedRecipe.recipeType})</span>
           </p>
@@ -545,9 +545,9 @@ export function CreateSessionPanel(props: ICreateSessionPanelProps): React.React
       {pendingUnresolved && (
         <div
           data-testid="sessions-create-unresolved-panel"
-          className="rounded border border-amber-200 bg-amber-50 p-2 space-y-1.5"
+          className="rounded border border-status-warning-border bg-status-warning-bg p-2 space-y-1.5"
         >
-          <div className="text-xs text-amber-800">
+          <div className="text-xs text-status-warning-text">
             <span className="font-medium">&quot;{pendingUnresolved}&quot;</span> not found. Create as:
           </div>
           <div className="flex gap-1.5">

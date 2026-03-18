@@ -54,9 +54,9 @@ function rootAccessLabel(root: IStorageRootSummary): string {
 }
 
 function rootBadgeClass(root: IStorageRootSummary): string {
-  if (root.isBuiltIn) return 'bg-blue-50 text-blue-600 border-blue-200';
-  if (root.isLocal) return 'bg-green-50 text-green-600 border-green-200';
-  return 'bg-purple-50 text-purple-600 border-purple-200';
+  if (root.isBuiltIn) return 'bg-status-info-bg text-status-info-icon border-status-info-border';
+  if (root.isLocal) return 'bg-status-success-bg text-status-success-accent border-status-success-border';
+  return 'bg-accent-ai-bg text-accent-ai-text border-accent-ai-border';
 }
 
 function rootBadgeLabel(root: IStorageRootSummary): string {
@@ -72,8 +72,8 @@ const CATEGORY_LABELS: Record<StorageCategory, string> = {
 };
 
 const CATEGORY_BADGE_CLASS: Record<StorageCategory, string> = {
-  library: 'bg-blue-50 text-blue-600 border-blue-200',
-  'user-data': 'bg-amber-50 text-amber-600 border-amber-200',
+  library: 'bg-status-info-bg text-status-info-icon border-status-info-border',
+  'user-data': 'bg-status-warning-bg text-status-warning-strong border-status-warning-border',
   settings: 'bg-surface-alt text-muted border-border'
 };
 
@@ -125,7 +125,7 @@ function CategoryBadges({
                   e.stopPropagation();
                   onToggleDefault(field);
                 }}
-                className={`leading-none ${isDefault ? 'text-amber-500' : 'text-faint hover:text-amber-400'}`}
+                className={`leading-none ${isDefault ? 'text-star' : 'text-faint hover:text-star'}`}
                 title={
                   isDefault
                     ? `${CATEGORY_LABELS[cat]}: default write destination`
@@ -195,7 +195,7 @@ export function StorageCollectionsDetail(props: IStorageCollectionsDetailProps):
                   <span
                     className={`text-xs border rounded px-1.5 py-0.5 ${
                       col.isMutable
-                        ? 'bg-green-50 text-green-600 border-green-200'
+                        ? 'bg-status-success-bg text-status-success-accent border-status-success-border'
                         : 'bg-surface-alt text-muted border-border'
                     }`}
                   >
@@ -307,7 +307,7 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
               <button
                 type="button"
                 onClick={(): void => setConfirmRemove(true)}
-                className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                className="text-xs text-status-error-icon hover:text-status-error-strong hover:underline"
               >
                 Remove
               </button>
@@ -360,10 +360,10 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
                           }}
                           className={`mr-1 text-sm leading-none ${
                             starState === 'explicit'
-                              ? 'text-amber-500'
+                              ? 'text-star'
                               : starState === 'inherited'
-                              ? 'text-amber-300/50'
-                              : 'text-faint hover:text-amber-400'
+                              ? 'text-star/50'
+                              : 'text-faint hover:text-star'
                           }`}
                           title={
                             starState === 'explicit'

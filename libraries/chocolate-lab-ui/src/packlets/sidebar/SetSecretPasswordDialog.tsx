@@ -166,14 +166,14 @@ export function SetSecretPasswordDialog(props: ISetSecretPasswordDialogProps): R
               value={confirm}
               onChange={(e): void => setConfirm(e.target.value)}
               className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent ${
-                mismatch ? 'border-red-300 bg-red-50' : 'border-border'
+                mismatch ? 'border-status-error-border-strong bg-status-error-bg' : 'border-border'
               }`}
               placeholder="Confirm password"
               autoComplete="new-password"
               disabled={isSubmitting}
             />
-            {mismatch && <p className="mt-1 text-xs text-red-600">Passwords do not match</p>}
-            {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+            {mismatch && <p className="mt-1 text-xs text-status-error-accent">Passwords do not match</p>}
+            {error && <p className="mt-1 text-xs text-status-error-accent">{error}</p>}
           </div>
 
           <div className="flex gap-2 justify-end pt-1">

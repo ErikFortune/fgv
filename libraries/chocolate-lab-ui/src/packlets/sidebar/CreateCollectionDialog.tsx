@@ -194,7 +194,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
         {/* Name field */}
         <div className="flex flex-col gap-1">
           <label htmlFor="cc-name" className="text-sm font-medium text-secondary">
-            Name <span className="text-red-500">*</span>
+            Name <span className="text-status-error-accent">*</span>
           </label>
           <input
             id="cc-name"
@@ -224,10 +224,10 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
             onChange={handleIdChange}
             placeholder="auto-generated from name"
             className={`px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent ${
-              idError ? 'border-red-300 bg-red-50' : 'border-border'
+              idError ? 'border-status-error-border-strong bg-status-error-bg' : 'border-border'
             }`}
           />
-          {idError && <p className="text-xs text-red-500">{idError}</p>}
+          {idError && <p className="text-xs text-status-error-accent">{idError}</p>}
         </div>
 
         {/* Description field */}

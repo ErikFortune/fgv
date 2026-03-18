@@ -90,7 +90,7 @@ export function DecorationPreviewPanel(props: IDecorationPreviewPanelProps): Rea
       </div>
 
       {entity.description && (
-        <div className="mb-6 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r">
+        <div className="mb-6 p-3 bg-status-info-bg border-l-4 border-status-info-icon rounded-r">
           <p className="text-sm text-secondary italic">{entity.description}</p>
         </div>
       )}
@@ -109,7 +109,7 @@ export function DecorationPreviewPanel(props: IDecorationPreviewPanelProps): Rea
                   <div className="flex-1">
                     <span className="text-sm font-medium text-primary">{ing.ingredient.name}</span>
                     {ing.alternates.length > 0 && (
-                      <span className="ml-2 text-xs text-amber-600">
+                      <span className="ml-2 text-xs text-status-warning-strong">
                         or {ing.alternates.map((alt) => alt.name).join(', ')}
                       </span>
                     )}
@@ -151,7 +151,7 @@ export function DecorationPreviewPanel(props: IDecorationPreviewPanelProps): Rea
               return (
                 <div key={step.order} className="bg-surface rounded-lg border border-border p-4 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold text-sm flex items-center justify-center">
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-cat-dairy-bg text-cat-dairy-text font-bold text-sm flex items-center justify-center">
                       {step.order}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -192,7 +192,7 @@ export function DecorationPreviewPanel(props: IDecorationPreviewPanelProps): Rea
               {entity.ratings.map((rating, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <span className="text-xs text-secondary capitalize">{rating.category}</span>
-                  <span className="text-sm text-amber-500">
+                  <span className="text-sm text-star">
                     {'★'.repeat(rating.score)}
                     <span className="text-faint">{'★'.repeat(5 - rating.score)}</span>
                   </span>

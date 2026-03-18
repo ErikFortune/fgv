@@ -82,6 +82,39 @@ module.exports = {
         'status-error-border-strong': 'var(--color-status-error-border-strong)',
         'status-error-surface': 'var(--color-status-error-surface)',
 
+        // Accent: AI
+        'accent-ai-bg': 'var(--color-accent-ai-bg)',
+        'accent-ai-text': 'var(--color-accent-ai-text)',
+        'accent-ai-text-strong': 'var(--color-accent-ai-text-strong)',
+        'accent-ai-icon': 'var(--color-accent-ai-icon)',
+        'accent-ai-border': 'var(--color-accent-ai-border)',
+        'accent-ai-btn': 'var(--color-accent-ai-btn-bg)',
+        'accent-ai-btn-hover': 'var(--color-accent-ai-btn-hover)',
+        'accent-ai-surface': 'var(--color-accent-ai-surface)',
+        'accent-ai-focus': 'var(--color-accent-ai-focus)',
+
+        // Category badges
+        'cat-chocolate-bg': 'var(--color-cat-chocolate-bg)',
+        'cat-chocolate-text': 'var(--color-cat-chocolate-text)',
+        'cat-dairy-bg': 'var(--color-cat-dairy-bg)',
+        'cat-dairy-text': 'var(--color-cat-dairy-text)',
+        'cat-sugar-bg': 'var(--color-cat-sugar-bg)',
+        'cat-sugar-text': 'var(--color-cat-sugar-text)',
+        'cat-fat-bg': 'var(--color-cat-fat-bg)',
+        'cat-fat-text': 'var(--color-cat-fat-text)',
+        'cat-alcohol-bg': 'var(--color-cat-alcohol-bg)',
+        'cat-alcohol-text': 'var(--color-cat-alcohol-text)',
+        'cat-liquid-bg': 'var(--color-cat-liquid-bg)',
+        'cat-liquid-text': 'var(--color-cat-liquid-text)',
+        'cat-flavor-bg': 'var(--color-cat-flavor-bg)',
+        'cat-flavor-text': 'var(--color-cat-flavor-text)',
+        'cat-ganache-bg': 'var(--color-cat-ganache-bg)',
+        'cat-ganache-text': 'var(--color-cat-ganache-text)',
+        'cat-caramel-bg': 'var(--color-cat-caramel-bg)',
+        'cat-caramel-text': 'var(--color-cat-caramel-text)',
+        'cat-gianduja-bg': 'var(--color-cat-gianduja-bg)',
+        'cat-gianduja-text': 'var(--color-cat-gianduja-text)',
+
         // Misc
         star: 'var(--color-star)'
       },

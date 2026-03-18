@@ -1096,9 +1096,9 @@ function AppShell(props: IAppShellProps): React.ReactElement {
 
       {/* Data format error banner — shown when local library data could not be loaded */}
       {dataError && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border-b border-red-200 text-red-800 text-xs">
+        <div className="flex items-center gap-2 px-4 py-2 bg-status-error-bg border-b border-status-error-border text-status-error-text text-xs">
           <svg
-            className="w-4 h-4 text-red-500 flex-shrink-0"
+            className="w-4 h-4 text-status-error-icon flex-shrink-0"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
@@ -1120,9 +1120,9 @@ function AppShell(props: IAppShellProps): React.ReactElement {
 
       {/* Mitigated state banner — shown when some storage roots are unavailable */}
       {reactiveWorkspace.isMitigated && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-800 text-xs">
+        <div className="flex items-center gap-2 px-4 py-2 bg-status-warning-bg border-b border-status-warning-border text-status-warning-text text-xs">
           <svg
-            className="w-4 h-4 text-amber-500 flex-shrink-0"
+            className="w-4 h-4 text-status-warning-icon flex-shrink-0"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
@@ -1139,7 +1139,7 @@ function AppShell(props: IAppShellProps): React.ReactElement {
             roots are blocked. Go to{' '}
             <button
               onClick={(): void => guardedSetTab('settings' as AppTab)}
-              className="underline hover:text-amber-900"
+              className="underline hover:text-status-warning-text"
             >
               Settings
             </button>{' '}
@@ -1274,7 +1274,7 @@ function WorkspaceBootstrap(): React.ReactElement {
   );
 
   if (error) {
-    return <div className="p-8 text-red-600">Failed to initialize workspace: {error}</div>;
+    return <div className="p-8 text-status-error-accent">Failed to initialize workspace: {error}</div>;
   }
 
   if (pendingWarnings.length > 0) {

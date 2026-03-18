@@ -33,7 +33,7 @@ export function ExternalLibrariesSection(props: IExternalLibrariesSectionProps):
                   <button
                     type="button"
                     onClick={(): void => handleRemove(index)}
-                    className="flex-shrink-0 text-xs text-red-500 hover:text-red-700 transition-colors"
+                    className="flex-shrink-0 text-xs text-status-error-icon hover:text-status-error-strong transition-colors"
                     aria-label={`Remove ${lib.ref}`}
                   >
                     Remove

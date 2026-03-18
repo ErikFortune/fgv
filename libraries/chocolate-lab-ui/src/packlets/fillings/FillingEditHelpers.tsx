@@ -150,7 +150,7 @@ export function IngredientRoleInput({
       <input
         type="text"
         className={`w-28 text-xs border rounded px-1.5 py-0.5 text-secondary placeholder-muted focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring ${
-          error ? 'border-red-300' : 'border-border'
+          error ? 'border-status-error-border-strong' : 'border-border'
         }`}
         value={draft}
         placeholder="e.g. heated"
@@ -163,7 +163,7 @@ export function IngredientRoleInput({
           }
         }}
       />
-      {error && <span className="text-[10px] text-red-500 mt-0.5">{error}</span>}
+      {error && <span className="text-[10px] text-status-error-accent mt-0.5">{error}</span>}
     </span>
   );
 }
@@ -276,8 +276,8 @@ export function DuplicateIngredientPrompt({
   };
 
   return (
-    <div className="rounded border border-amber-200 bg-amber-50 p-3 space-y-2">
-      <p className="text-xs text-amber-800 font-medium">
+    <div className="rounded border border-status-warning-border bg-status-warning-bg p-3 space-y-2">
+      <p className="text-xs text-status-warning-text font-medium">
         Duplicate ingredient: {pending.ingredientName} already exists
         {pending.existingAmount > 0 ? ` (${pending.existingAmount}g)` : ''}. Assign a role to each to
         distinguish them.
@@ -340,7 +340,7 @@ export function DuplicateIngredientPrompt({
           />
         </div>
       )}
-      {error && <p className="text-[10px] text-red-600">{error}</p>}
+      {error && <p className="text-[10px] text-status-error-accent">{error}</p>}
       <div className="flex justify-end gap-2">
         <button
           type="button"

@@ -132,11 +132,11 @@ export function VariationChips({
                   className={`pl-1.5 py-1 shrink-0 ${
                     isGolden
                       ? isSelected
-                        ? 'text-amber-300'
-                        : 'text-amber-500'
+                        ? 'text-star'
+                        : 'text-star'
                       : isSelected
-                      ? 'text-white/40 hover:text-amber-300'
-                      : 'text-faint hover:text-amber-400'
+                      ? 'text-white/40 hover:text-star'
+                      : 'text-faint hover:text-star'
                   }`}
                 >
                   ★
@@ -144,9 +144,7 @@ export function VariationChips({
               )}
               {/* Golden star display (read-only) */}
               {disabled && isGolden && (
-                <span className={`pl-1.5 py-1 shrink-0 ${isSelected ? 'text-amber-300' : 'text-amber-500'}`}>
-                  ★
-                </span>
+                <span className={`pl-1.5 py-1 shrink-0 ${isSelected ? 'text-star' : 'text-star'}`}>★</span>
               )}
 
               {/* Variation label — click to select, double-click to rename */}
@@ -190,7 +188,7 @@ export function VariationChips({
                   title="Remove variation"
                   onClick={(): void => onRemove(v.variationSpec)}
                   className={`pr-1 py-1 shrink-0 ${
-                    isSelected ? 'text-white/60 hover:text-white' : 'text-faint hover:text-red-400'
+                    isSelected ? 'text-white/60 hover:text-white' : 'text-faint hover:text-status-error-icon'
                   }`}
                 >
                   ✕

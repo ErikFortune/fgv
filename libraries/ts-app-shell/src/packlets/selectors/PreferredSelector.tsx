@@ -268,7 +268,7 @@ export function PreferredSelector<TId extends string = string>(
         <span className="flex-1 min-w-0 truncate text-primary">
           {selectedItem?.label ?? selectedId}
           {preferredId !== undefined && selectedId === preferredId && (
-            <span className="ml-1 text-xs text-amber-500">★</span>
+            <span className="ml-1 text-xs text-star">★</span>
           )}
         </span>
         {hasMultiple && (
@@ -404,7 +404,7 @@ export function PreferredSelector<TId extends string = string>(
                     </span>
                   ) : (
                     <span className="w-3 shrink-0 text-center text-xs">
-                      {isPreferred ? <span className="text-amber-500">★</span> : ''}
+                      {isPreferred ? <span className="text-star">★</span> : ''}
                     </span>
                   )}
 

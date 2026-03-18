@@ -162,7 +162,7 @@ function RatingStars({ score }: { readonly score: number | undefined }): React.R
   return (
     <span className="inline-flex gap-0.5">
       {[1, 2, 3, 4, 5].map((n) => (
-        <span key={n} className={n <= (score ?? 0) ? 'text-amber-400' : 'text-faint'}>
+        <span key={n} className={n <= (score ?? 0) ? 'text-star' : 'text-faint'}>
           ★
         </span>
       ))}
@@ -796,7 +796,7 @@ export function FillingSessionPanel({
 
               {/* Warning for non-scale changes */}
               {hasNonScaleChanges && isRecipeSwapChanged && (
-                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">
+                <div className="text-xs text-status-warning-strong bg-status-warning-bg border border-status-warning-border rounded p-2">
                   You have unsaved changes that will be lost.
                 </div>
               )}
@@ -851,7 +851,7 @@ export function FillingSessionPanel({
               <span className="text-sm text-secondary">
                 {Math.round(session.produced.targetWeight)} g
                 {scaleFactor !== undefined && (
-                  <span className="text-xs text-amber-600 font-medium ml-1">
+                  <span className="text-xs text-status-warning-strong font-medium ml-1">
                     {'\u00d7'}
                     {scaleFactor.toFixed(2)}
                   </span>
@@ -864,7 +864,7 @@ export function FillingSessionPanel({
                 type="button"
                 onClick={handleScaleApply}
                 title="Done editing"
-                className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
               >
                 <CheckIcon className="h-3.5 w-3.5" />
               </button>
@@ -962,7 +962,7 @@ export function FillingSessionPanel({
                           type="button"
                           onClick={(): void => toggleIngredientEdit(index)}
                           title="Done editing"
-                          className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                          className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
                         >
                           <CheckIcon className="h-3.5 w-3.5" />
                         </button>
@@ -1003,7 +1003,7 @@ export function FillingSessionPanel({
                         <button
                           type="button"
                           onClick={(): void => handleRemoveIngredient(index)}
-                          className="text-muted hover:text-red-500 p-1 shrink-0"
+                          className="text-muted hover:text-status-error-accent p-1 shrink-0"
                           aria-label="Remove ingredient"
                         >
                           ✕
@@ -1158,7 +1158,7 @@ export function FillingSessionPanel({
                     type="button"
                     onClick={(): void => setEditingProcedure(false)}
                     title="Done editing"
-                    className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                    className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
                   >
                     <CheckIcon className="h-3.5 w-3.5" />
                   </button>
@@ -1175,7 +1175,7 @@ export function FillingSessionPanel({
                   <button
                     type="button"
                     onClick={handleClearProcedure}
-                    className="text-muted hover:text-red-500 p-1 shrink-0"
+                    className="text-muted hover:text-status-error-accent p-1 shrink-0"
                     aria-label="Remove procedure"
                   >
                     ✕

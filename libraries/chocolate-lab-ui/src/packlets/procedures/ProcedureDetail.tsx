@@ -276,7 +276,9 @@ export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElemen
             )}
           </>
         ) : (
-          <p className="text-sm text-red-500">Failed to resolve steps: {procedure.getSteps().message}</p>
+          <p className="text-sm text-status-error-icon">
+            Failed to resolve steps: {procedure.getSteps().message}
+          </p>
         )}
       </DetailSection>
 

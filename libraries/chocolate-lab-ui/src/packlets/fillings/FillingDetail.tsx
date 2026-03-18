@@ -85,9 +85,9 @@ export interface IFillingDetailProps {
 // ============================================================================
 
 const CATEGORY_COLORS: Record<string, string> = {
-  ganache: 'bg-amber-100 text-amber-800',
-  caramel: 'bg-orange-100 text-orange-800',
-  gianduja: 'bg-emerald-100 text-emerald-800'
+  ganache: 'bg-cat-ganache-bg text-cat-ganache-text',
+  caramel: 'bg-cat-caramel-bg text-cat-caramel-text',
+  gianduja: 'bg-cat-gianduja-bg text-cat-gianduja-text'
 };
 
 // ============================================================================
@@ -444,12 +444,16 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
 
       {/* Current target weight from confection scaling */}
       {targetYield !== undefined && (
-        <div className="mb-4 px-1 py-1.5 rounded bg-amber-50 border border-amber-200">
+        <div className="mb-4 px-1 py-1.5 rounded bg-status-warning-bg border border-status-warning-border">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-amber-800">Target weight:</span>
-            <span className="text-sm font-semibold text-amber-700">{Math.round(targetYield)}g</span>
+            <span className="text-xs font-medium text-status-warning-text">Target weight:</span>
+            <span className="text-sm font-semibold text-status-warning-strong">
+              {Math.round(targetYield)}g
+            </span>
             {scaleFactor !== undefined && (
-              <span className="text-xs text-amber-600">×{scaleFactor.toFixed(2)} from default</span>
+              <span className="text-xs text-status-warning-strong">
+                ×{scaleFactor.toFixed(2)} from default
+              </span>
             )}
           </div>
         </div>
@@ -487,7 +491,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
           />
           <span className="text-xs text-muted">g</span>
           {scaleFactor !== undefined && (
-            <span className="text-xs text-amber-600 font-medium">×{scaleFactor.toFixed(2)}</span>
+            <span className="text-xs text-status-warning-strong font-medium">×{scaleFactor.toFixed(2)}</span>
           )}
           {yieldInputValue && (
             <button

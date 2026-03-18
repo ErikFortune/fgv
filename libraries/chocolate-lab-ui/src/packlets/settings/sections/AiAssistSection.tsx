@@ -254,7 +254,7 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                           {infoChips.map((chip) => {
                             const variantClass =
                               chip.variant === 'warning'
-                                ? 'text-amber-700 bg-amber-50'
+                                ? 'text-status-warning-strong bg-status-warning-bg'
                                 : chip.variant === 'accent'
                                 ? 'text-brand-accent bg-brand-accent/10'
                                 : 'text-muted bg-surface-raised';

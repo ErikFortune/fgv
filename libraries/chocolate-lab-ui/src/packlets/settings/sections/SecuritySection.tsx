@@ -81,7 +81,7 @@ function PasswordInput({ value, onChange, placeholder, autoFocus }: IPasswordInp
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent pr-16"
+        className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-status-warning-btn focus:border-transparent pr-16"
       />
       <button
         type="button"
@@ -297,9 +297,9 @@ export function SecuritySection(): React.ReactElement {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center ${
                   workspaceState === 'unlocked'
-                    ? 'bg-green-100 text-green-600'
+                    ? 'bg-status-success-surface text-status-success-accent'
                     : workspaceState === 'locked'
-                    ? 'bg-amber-100 text-amber-600'
+                    ? 'bg-status-warning-surface text-status-warning-strong'
                     : 'bg-surface-raised text-muted'
                 }`}
               >
@@ -322,7 +322,7 @@ export function SecuritySection(): React.ReactElement {
                   <button
                     type="button"
                     onClick={() => setMode('set-password')}
-                    className="px-3 py-1.5 text-sm border border-amber-500 rounded-md text-amber-700 hover:bg-amber-50"
+                    className="px-3 py-1.5 text-sm border border-status-warning-btn rounded-md text-status-warning-strong hover:bg-status-warning-bg"
                   >
                     Set Password
                   </button>
@@ -332,7 +332,7 @@ export function SecuritySection(): React.ReactElement {
                     <button
                       type="button"
                       onClick={() => setMode('unlock')}
-                      className="px-3 py-1.5 text-sm bg-amber-500 rounded-md text-white hover:bg-amber-600"
+                      className="px-3 py-1.5 text-sm bg-status-warning-btn rounded-md text-white hover:bg-status-warning-btn-hover"
                     >
                       Unlock
                     </button>
@@ -380,13 +380,13 @@ export function SecuritySection(): React.ReactElement {
                   onChange={setConfirmPassword}
                   placeholder="Confirm password"
                 />
-                {error && <p className="text-xs text-red-600">{error}</p>}
+                {error && <p className="text-xs text-status-error-accent">{error}</p>}
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleSetPassword}
                     disabled={busy}
-                    className="px-3 py-1.5 text-sm bg-amber-500 rounded-md text-white hover:bg-amber-600 disabled:opacity-50"
+                    className="px-3 py-1.5 text-sm bg-status-warning-btn rounded-md text-white hover:bg-status-warning-btn-hover disabled:opacity-50"
                   >
                     {busy ? 'Setting...' : 'Set Password'}
                   </button>
@@ -410,13 +410,13 @@ export function SecuritySection(): React.ReactElement {
                   placeholder="Enter password"
                   autoFocus
                 />
-                {error && <p className="text-xs text-red-600">{error}</p>}
+                {error && <p className="text-xs text-status-error-accent">{error}</p>}
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleUnlock}
                     disabled={busy}
-                    className="px-3 py-1.5 text-sm bg-amber-500 rounded-md text-white hover:bg-amber-600 disabled:opacity-50"
+                    className="px-3 py-1.5 text-sm bg-status-warning-btn rounded-md text-white hover:bg-status-warning-btn-hover disabled:opacity-50"
                   >
                     {busy ? 'Unlocking...' : 'Unlock'}
                   </button>
@@ -440,13 +440,13 @@ export function SecuritySection(): React.ReactElement {
                   onChange={setConfirmPassword}
                   placeholder="Confirm new password"
                 />
-                {error && <p className="text-xs text-red-600">{error}</p>}
+                {error && <p className="text-xs text-status-error-accent">{error}</p>}
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleChangePassword}
                     disabled={busy}
-                    className="px-3 py-1.5 text-sm bg-amber-500 rounded-md text-white hover:bg-amber-600 disabled:opacity-50"
+                    className="px-3 py-1.5 text-sm bg-status-warning-btn rounded-md text-white hover:bg-status-warning-btn-hover disabled:opacity-50"
                   >
                     {busy ? 'Saving...' : 'Change Password'}
                   </button>
@@ -469,7 +469,7 @@ export function SecuritySection(): React.ReactElement {
               <ul className="space-y-1">
                 {secretNames.map((name) => (
                   <li key={name} className="text-sm text-secondary flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-status-success-icon" />
                     <span className="flex-1">{name}</span>
                     <button
                       type="button"
@@ -478,7 +478,7 @@ export function SecuritySection(): React.ReactElement {
                         setApiKeyValue('');
                         setApiKeyError(undefined);
                       }}
-                      className="text-xs text-amber-600 hover:text-amber-800"
+                      className="text-xs text-status-warning-strong hover:text-status-warning-text"
                     >
                       Replace
                     </button>
@@ -501,7 +501,7 @@ export function SecuritySection(): React.ReactElement {
                   value={apiKeyName}
                   onChange={(e): void => setApiKeyName(e.target.value)}
                   placeholder="Secret name (e.g. xai-api-key)"
-                  className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-status-warning-btn focus:border-transparent"
                 />
                 <input
                   type="password"
@@ -510,17 +510,19 @@ export function SecuritySection(): React.ReactElement {
                   placeholder="API key"
                   className="w-full px-3 py-1.5 text-sm font-mono border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
-                {apiKeyError && <p className="text-xs text-red-600">{apiKeyError}</p>}
+                {apiKeyError && <p className="text-xs text-status-error-accent">{apiKeyError}</p>}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handleImportApiKey}
                     disabled={!apiKeyName.trim() || !apiKeyValue.trim()}
-                    className="px-3 py-1.5 text-sm bg-amber-500 rounded-md text-white hover:bg-amber-600 disabled:opacity-50"
+                    className="px-3 py-1.5 text-sm bg-status-warning-btn rounded-md text-white hover:bg-status-warning-btn-hover disabled:opacity-50"
                   >
                     Import
                   </button>
-                  {apiKeySuccess && <span className="text-xs text-green-600">{apiKeySuccessMessage}</span>}
+                  {apiKeySuccess && (
+                    <span className="text-xs text-status-success-accent">{apiKeySuccessMessage}</span>
+                  )}
                 </div>
               </div>
             </div>

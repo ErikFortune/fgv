@@ -77,7 +77,7 @@ function WarningList({
         if (w.kind === 'missing-root') {
           return (
             <li key={i} className="flex items-start gap-1.5">
-              <span className="mt-0.5 text-amber-500 flex-shrink-0">⚠</span>
+              <span className="mt-0.5 text-status-warning-btn flex-shrink-0">⚠</span>
               <span>
                 Storage root <strong>{w.rootId}</strong> is unavailable
                 <span className="text-muted text-xs ml-1">({w.context})</span>
@@ -88,7 +88,7 @@ function WarningList({
         if (w.kind === 'missing-collection') {
           return (
             <li key={i} className="flex items-start gap-1.5">
-              <span className="mt-0.5 text-amber-500 flex-shrink-0">⚠</span>
+              <span className="mt-0.5 text-status-warning-btn flex-shrink-0">⚠</span>
               <span>
                 Default collection <strong>{w.collectionId}</strong> not found in{' '}
                 <strong>{w.subLibraryId}</strong>
@@ -99,7 +99,7 @@ function WarningList({
         }
         return (
           <li key={i} className="flex items-start gap-1.5">
-            <span className="mt-0.5 text-amber-500 flex-shrink-0">⚠</span>
+            <span className="mt-0.5 text-status-warning-btn flex-shrink-0">⚠</span>
             <span>{w.context}</span>
           </li>
         );
@@ -130,9 +130,9 @@ export function RecoveryDialog(props: IRecoveryDialogProps): React.ReactElement 
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-status-warning-surface flex items-center justify-center">
             <svg
-              className="w-5 h-5 text-amber-600"
+              className="w-5 h-5 text-status-warning-strong"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
@@ -154,8 +154,8 @@ export function RecoveryDialog(props: IRecoveryDialogProps): React.ReactElement 
         </div>
 
         {/* Warning list */}
-        <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-md">
-          <p className="text-xs font-medium text-amber-800 mb-1">
+        <div className="mb-5 p-3 bg-status-warning-bg border border-status-warning-border rounded-md">
+          <p className="text-xs font-medium text-status-warning-text mb-1">
             {warnings.length === 1 ? '1 issue found:' : `${warnings.length} issues found:`}
           </p>
           <WarningList warnings={warnings} />
@@ -179,10 +179,10 @@ export function RecoveryDialog(props: IRecoveryDialogProps): React.ReactElement 
           {/* Option 2: Reset */}
           <button
             onClick={handleReset}
-            className="w-full text-left px-4 py-3 rounded-md border border-amber-200 hover:border-amber-300 hover:bg-amber-50 transition-colors"
+            className="w-full text-left px-4 py-3 rounded-md border border-status-warning-border hover:border-status-warning-border-strong hover:bg-status-warning-bg transition-colors"
           >
-            <div className="text-sm font-medium text-amber-900">Reset configuration</div>
-            <div className="text-xs text-amber-700 mt-0.5">
+            <div className="text-sm font-medium text-status-warning-text">Reset configuration</div>
+            <div className="text-xs text-status-warning-strong mt-0.5">
               Clear the references to missing resources and start with defaults. You can reconfigure later in
               Settings.
             </div>
@@ -191,10 +191,10 @@ export function RecoveryDialog(props: IRecoveryDialogProps): React.ReactElement 
           {/* Option 3: Mitigate */}
           <button
             onClick={handleMitigate}
-            className="w-full text-left px-4 py-3 rounded-md border border-blue-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            className="w-full text-left px-4 py-3 rounded-md border border-status-info-border hover:border-status-info-border hover:bg-status-info-bg transition-colors"
           >
-            <div className="text-sm font-medium text-blue-900">Proceed with caution</div>
-            <div className="text-xs text-blue-700 mt-0.5">
+            <div className="text-sm font-medium text-status-info-text">Proceed with caution</div>
+            <div className="text-xs text-status-info-text mt-0.5">
               Start with defaults for missing resources. Writes to unavailable storage will be blocked to
               prevent data loss. A warning banner will remain visible.
             </div>

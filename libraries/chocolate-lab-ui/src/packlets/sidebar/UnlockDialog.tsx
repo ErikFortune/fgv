@@ -140,7 +140,7 @@ export function UnlockDialog(props: IUnlockDialogProps): React.ReactElement | nu
               autoComplete="current-password"
               disabled={isSubmitting}
             />
-            {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
+            {error && <p className="mt-1.5 text-xs text-status-error-accent">{error}</p>}
           </div>
 
           <div className="flex gap-2 justify-end">

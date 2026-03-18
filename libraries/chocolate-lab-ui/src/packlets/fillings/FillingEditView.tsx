@@ -154,7 +154,7 @@ function RatingStars({
             key={n}
             type="button"
             onClick={(): void => onChange(n)}
-            className="p-0 text-amber-400 hover:text-amber-500 transition-colors"
+            className="p-0 text-star hover:text-star transition-colors"
             title={`${n} star${n > 1 ? 's' : ''}`}
           >
             {filled ? <StarIconSolid className="w-4 h-4" /> : <StarIcon className="w-4 h-4" />}
@@ -1078,11 +1078,11 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                       className={`pl-1.5 py-1 shrink-0 ${
                         isGolden
                           ? isSelected
-                            ? 'text-amber-300'
-                            : 'text-amber-500'
+                            ? 'text-star'
+                            : 'text-star'
                           : isSelected
-                          ? 'text-white/40 hover:text-amber-300'
-                          : 'text-faint hover:text-amber-400'
+                          ? 'text-white/40 hover:text-star'
+                          : 'text-faint hover:text-star'
                       }`}
                     >
                       ★
@@ -1090,9 +1090,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                   )}
                   {/* Golden star display (production/read-only) */}
                   {readOnly && isGolden && (
-                    <span
-                      className={`pl-1.5 py-1 shrink-0 ${isSelected ? 'text-amber-300' : 'text-amber-500'}`}
-                    >
+                    <span className={`pl-1.5 py-1 shrink-0 ${isSelected ? 'text-star' : 'text-star'}`}>
                       ★
                     </span>
                   )}
@@ -1141,7 +1139,9 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                       title="Remove variation"
                       onClick={(): void => handleRemoveVariation(v.variationSpec)}
                       className={`pr-1 py-1 shrink-0 ${
-                        isSelected ? 'text-white/60 hover:text-white' : 'text-faint hover:text-red-400'
+                        isSelected
+                          ? 'text-white/60 hover:text-white'
+                          : 'text-faint hover:text-status-error-accent'
                       }`}
                     >
                       ✕
@@ -1302,7 +1302,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                       <button
                         type="button"
                         onClick={(): void => handleRemoveIngredient(index)}
-                        className="text-muted hover:text-red-500 p-1 shrink-0"
+                        className="text-muted hover:text-status-error-accent p-1 shrink-0"
                         aria-label="Remove ingredient"
                       >
                         ✕
@@ -1426,20 +1426,20 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                                       title={isPreferred ? 'Preferred' : 'Set as preferred'}
                                       onClick={(): void => handleSetPreferredAlternate(effectiveId, altId)}
                                       className={`shrink-0 ${
-                                        isPreferred ? 'text-amber-500' : 'text-faint hover:text-amber-400'
+                                        isPreferred ? 'text-star' : 'text-faint hover:text-star'
                                       }`}
                                     >
                                       ★
                                     </button>
                                   )}
-                                  {isPreferred && !canEdit && <span className="text-amber-500">★</span>}
+                                  {isPreferred && !canEdit && <span className="text-star">★</span>}
                                   <span>{altName}</span>
                                   {canEdit && (
                                     <button
                                       type="button"
                                       title="Remove alternate"
                                       onClick={(): void => handleRemoveAlternate(effectiveId, altId)}
-                                      className="text-faint hover:text-red-400 shrink-0 ml-0.5"
+                                      className="text-faint hover:text-status-error-accent shrink-0 ml-0.5"
                                     >
                                       ✕
                                     </button>
@@ -1459,7 +1459,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                             )}
                             {unresolvedAlternates[effectiveId] && (
                               <>
-                                <span className="text-xs text-amber-700">
+                                <span className="text-xs text-status-warning-strong">
                                   No match for &quot;{unresolvedAlternates[effectiveId]}&quot;.
                                 </span>
                                 {onCreateIngredient && (
@@ -1528,7 +1528,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     )}
                     {unresolvedIngredients[index] && (
                       <div className="mt-1.5 flex items-center gap-2">
-                        <span className="text-xs text-amber-700">
+                        <span className="text-xs text-status-warning-strong">
                           No match for &quot;{unresolvedIngredients[index]}&quot;.
                         </span>
                         {onCreateIngredient && (
@@ -1574,7 +1574,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
 
           {unresolvedNewIngredient && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-amber-700">
+              <span className="text-xs text-status-warning-strong">
                 No match for &quot;{unresolvedNewIngredient}&quot;.
               </span>
               {onCreateIngredient && (
@@ -1621,7 +1621,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
               <button
                 type="button"
                 onClick={handleClearProcedure}
-                className="px-2 py-1 text-xs text-muted hover:text-red-600 hover:bg-red-50 rounded"
+                className="px-2 py-1 text-xs text-muted hover:text-status-error-accent hover:bg-status-error-bg rounded"
               >
                 Remove
               </button>
@@ -1649,7 +1649,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
 
           {unresolvedNewProcedure && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-amber-700">
+              <span className="text-xs text-status-warning-strong">
                 No match for &quot;{unresolvedNewProcedure}&quot;.
               </span>
               {onCreateProcedure && (
@@ -1695,21 +1695,19 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                           type="button"
                           title={isPreferred ? 'Preferred' : 'Set as preferred'}
                           onClick={(): void => handleSetPreferredProcedure(opt.id)}
-                          className={`shrink-0 ${
-                            isPreferred ? 'text-amber-500' : 'text-faint hover:text-amber-400'
-                          }`}
+                          className={`shrink-0 ${isPreferred ? 'text-star' : 'text-faint hover:text-star'}`}
                         >
                           ★
                         </button>
                       )}
-                      {isPreferred && !canEdit && <span className="text-amber-500">★</span>}
+                      {isPreferred && !canEdit && <span className="text-star">★</span>}
                       <span>{name}</span>
                       {canEdit && (
                         <button
                           type="button"
                           title="Remove procedure alternate"
                           onClick={(): void => handleRemoveProcedureAlternate(opt.id)}
-                          className="text-faint hover:text-red-400 shrink-0 ml-0.5"
+                          className="text-faint hover:text-status-error-accent shrink-0 ml-0.5"
                         >
                           ✕
                         </button>
@@ -1726,7 +1724,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                 {!hasProcAlternates && readOnly && <span className="text-xs text-faint italic">none</span>}
                 {unresolvedProcedureAlternate && (
                   <>
-                    <span className="text-xs text-amber-700">
+                    <span className="text-xs text-status-warning-strong">
                       No match for &quot;{unresolvedProcedureAlternate}&quot;.
                     </span>
                     {onCreateProcedure && (

@@ -203,7 +203,7 @@ function FillingSlotRow({
     <div className="mb-1">
       <div className="text-xs text-muted mb-0.5 pl-[22px]">
         {slot.name ?? slot.slotId}
-        {weightLabel && <span className="ml-1 text-amber-600 font-medium">({weightLabel})</span>}
+        {weightLabel && <span className="ml-1 text-status-warning-strong font-medium">({weightLabel})</span>}
       </div>
       <EntityRow
         items={items}

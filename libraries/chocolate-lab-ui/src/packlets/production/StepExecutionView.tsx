@@ -98,7 +98,7 @@ export function StepExecutionView({
         <div className="px-3 py-3 border-b border-border shrink-0">
           <button
             onClick={onStartExecution}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 active:bg-green-800 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-status-success-accent text-white rounded-lg text-sm font-medium hover:bg-status-success-accent active:bg-status-success-accent transition-colors"
             data-testid="start-execution-button"
           >
             <PlayIcon className="w-5 h-5" />
@@ -120,7 +120,9 @@ export function StepExecutionView({
         ))}
 
         {hasExecutionState && completedCount === totalSteps && (
-          <div className="text-center py-4 text-sm text-green-600 font-medium">All steps complete</div>
+          <div className="text-center py-4 text-sm text-status-success-accent font-medium">
+            All steps complete
+          </div>
         )}
       </div>
     </div>
@@ -161,11 +163,11 @@ function ActiveStepRow({
 }): React.ReactElement {
   return (
     <div
-      className="border border-green-300 bg-green-50 rounded-lg p-3"
+      className="border border-status-success-border bg-status-success-bg rounded-lg p-3"
       data-testid={`step-row-active-${step.stepIndex}`}
     >
       <div className="flex items-start gap-2">
-        <span className="text-green-600 font-bold text-sm mt-0.5">{step.stepIndex + 1}.</span>
+        <span className="text-status-success-accent font-bold text-sm mt-0.5">{step.stepIndex + 1}.</span>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-primary">{step.label}</div>
 
@@ -181,7 +183,7 @@ function ActiveStepRow({
       <div className="flex gap-2 mt-3">
         <button
           onClick={onAdvance}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 active:bg-green-800 transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-status-success-accent text-white rounded-lg text-sm font-medium hover:bg-status-success-accent active:bg-status-success-accent transition-colors"
           data-testid="step-advance-button"
         >
           <CheckIcon className="w-4 h-4" />
@@ -215,7 +217,9 @@ function CompletedStepRow({
       data-testid={`step-row-completed-${step.stepIndex}`}
       title="Click to repeat this step"
     >
-      <CheckIcon className={`w-3.5 h-3.5 shrink-0 ${isSkipped ? 'text-muted' : 'text-green-500'}`} />
+      <CheckIcon
+        className={`w-3.5 h-3.5 shrink-0 ${isSkipped ? 'text-muted' : 'text-status-success-icon'}`}
+      />
       <span className={`text-xs truncate ${isSkipped ? 'text-muted line-through' : 'text-muted'}`}>
         {step.stepIndex + 1}. {step.label}
       </span>

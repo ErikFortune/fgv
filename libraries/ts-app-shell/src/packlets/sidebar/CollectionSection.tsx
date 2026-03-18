@@ -131,9 +131,7 @@ function CollectionRow(props: {
         <button
           onClick={(): void => onSetDefault(collection.id)}
           className={`shrink-0 w-5 h-5 flex items-center justify-center transition-colors ${
-            collection.isDefault
-              ? 'text-yellow-400 hover:text-yellow-500'
-              : 'text-faint hover:text-yellow-400'
+            collection.isDefault ? 'text-star hover:text-star' : 'text-faint hover:text-star'
           }`}
           title={
             collection.isDefault
@@ -160,7 +158,9 @@ function CollectionRow(props: {
       {collection.isProtected &&
         (collection.isUnlocked || !onUnlock ? (
           <span
-            className={`shrink-0 text-xs ${collection.isUnlocked ? 'text-green-500' : 'text-muted'}`}
+            className={`shrink-0 text-xs ${
+              collection.isUnlocked ? 'text-status-success-icon' : 'text-muted'
+            }`}
             title={collection.isUnlocked ? 'Protected (unlocked)' : 'Protected (locked)'}
           >
             {'\uD83D\uDEE1'}
@@ -168,7 +168,7 @@ function CollectionRow(props: {
         ) : (
           <button
             onClick={(): void => onUnlock(collection.id)}
-            className="shrink-0 text-xs text-muted hover:text-amber-500 transition-colors"
+            className="shrink-0 text-xs text-muted hover:text-star transition-colors"
             title="Click to unlock"
             aria-label={`Unlock ${collection.name ?? collection.id}`}
           >
@@ -198,7 +198,7 @@ function CollectionRow(props: {
       {collection.isMutable && onDelete && (
         <button
           onClick={(): void => onDelete(collection.id)}
-          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-red-500 transition-colors"
+          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-status-error-icon transition-colors"
           title={`Remove ${displayName}`}
           aria-label={`Remove ${displayName}`}
         >

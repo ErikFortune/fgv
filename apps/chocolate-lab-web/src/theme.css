@@ -90,6 +90,39 @@
   --color-status-error-border-strong: #fca5a5; /* border-red-300 */
   --color-status-error-surface: #fee2e2; /* bg-red-100 */
 
+  /* Accent: AI (purple) */
+  --color-accent-ai-bg: #faf5ff; /* purple-50 */
+  --color-accent-ai-text: #6b21a8; /* purple-700 */
+  --color-accent-ai-text-strong: #581c87; /* purple-900 */
+  --color-accent-ai-icon: #a855f7; /* purple-500 */
+  --color-accent-ai-border: #e9d5ff; /* purple-200 */
+  --color-accent-ai-btn-bg: #9333ea; /* purple-600 */
+  --color-accent-ai-btn-hover: #7e22ce; /* purple-700 */
+  --color-accent-ai-surface: #f3e8ff; /* purple-100 */
+  --color-accent-ai-focus: #a855f7; /* purple-500 */
+
+  /* Category badges */
+  --color-cat-chocolate-bg: #fef3c7; /* amber-100 */
+  --color-cat-chocolate-text: #92400e; /* amber-800 */
+  --color-cat-dairy-bg: #dbeafe; /* blue-100 */
+  --color-cat-dairy-text: #1e40af; /* blue-800 */
+  --color-cat-sugar-bg: #fce7f3; /* pink-100 */
+  --color-cat-sugar-text: #9d174d; /* pink-800 */
+  --color-cat-fat-bg: #fef9c3; /* yellow-100 */
+  --color-cat-fat-text: #854d0e; /* yellow-800 */
+  --color-cat-alcohol-bg: #f3e8ff; /* purple-100 */
+  --color-cat-alcohol-text: #6b21a8; /* purple-800 */
+  --color-cat-liquid-bg: #cffafe; /* cyan-100 */
+  --color-cat-liquid-text: #155e75; /* cyan-800 */
+  --color-cat-flavor-bg: #dcfce7; /* green-100 */
+  --color-cat-flavor-text: #166534; /* green-800 */
+  --color-cat-ganache-bg: #fef3c7; /* amber-100 */
+  --color-cat-ganache-text: #92400e; /* amber-800 */
+  --color-cat-caramel-bg: #ffedd5; /* orange-100 */
+  --color-cat-caramel-text: #9a3412; /* orange-800 */
+  --color-cat-gianduja-bg: #d1fae5; /* emerald-100 */
+  --color-cat-gianduja-text: #065f46; /* emerald-800 */
+
   /* Misc */
   --color-star: #f59e0b; /* text-amber-500 (favorite stars) */
   --color-shadow: 0 0 0 / 0.1; /* shadow color base */
@@ -174,6 +207,39 @@
   --color-status-error-strong: #fca5a5;
   --color-status-error-border-strong: #b91c1c;
   --color-status-error-surface: #3b1111;
+
+  /* Accent: AI (purple) */
+  --color-accent-ai-bg: #2e1065; /* purple-950 */
+  --color-accent-ai-text: #d8b4fe; /* purple-300 */
+  --color-accent-ai-text-strong: #f3e8ff; /* purple-100 */
+  --color-accent-ai-icon: #c084fc; /* purple-400 */
+  --color-accent-ai-border: #581c87; /* purple-800 */
+  --color-accent-ai-btn-bg: #9333ea; /* purple-600 */
+  --color-accent-ai-btn-hover: #a855f7; /* purple-500 */
+  --color-accent-ai-surface: #3b0764; /* purple-900 */
+  --color-accent-ai-focus: #c084fc; /* purple-400 */
+
+  /* Category badges */
+  --color-cat-chocolate-bg: #451a03; /* amber-950 */
+  --color-cat-chocolate-text: #fde68a; /* amber-200 */
+  --color-cat-dairy-bg: #1e3a5f; /* blue deep */
+  --color-cat-dairy-text: #93c5fd; /* blue-300 */
+  --color-cat-sugar-bg: #500724; /* pink-950 */
+  --color-cat-sugar-text: #fbcfe8; /* pink-200 */
+  --color-cat-fat-bg: #422006; /* yellow-950 */
+  --color-cat-fat-text: #fef08a; /* yellow-200 */
+  --color-cat-alcohol-bg: #3b0764; /* purple-900 */
+  --color-cat-alcohol-text: #e9d5ff; /* purple-200 */
+  --color-cat-liquid-bg: #164e63; /* cyan-800 */
+  --color-cat-liquid-text: #a5f3fc; /* cyan-200 */
+  --color-cat-flavor-bg: #14352a; /* green deep */
+  --color-cat-flavor-text: #bbf7d0; /* green-200 */
+  --color-cat-ganache-bg: #451a03; /* amber-950 */
+  --color-cat-ganache-text: #fde68a; /* amber-200 */
+  --color-cat-caramel-bg: #431407; /* orange-950 */
+  --color-cat-caramel-text: #fed7aa; /* orange-200 */
+  --color-cat-gianduja-bg: #064e3b; /* emerald-900 */
+  --color-cat-gianduja-text: #a7f3d0; /* emerald-200 */
 
   /* Misc */
   --color-star: #fbbf24;
@@ -261,6 +327,39 @@
     --color-status-error-strong: #fca5a5;
     --color-status-error-border-strong: #b91c1c;
     --color-status-error-surface: #3b1111;
+
+    /* Accent: AI (purple) */
+    --color-accent-ai-bg: #2e1065;
+    --color-accent-ai-text: #d8b4fe;
+    --color-accent-ai-text-strong: #f3e8ff;
+    --color-accent-ai-icon: #c084fc;
+    --color-accent-ai-border: #581c87;
+    --color-accent-ai-btn-bg: #9333ea;
+    --color-accent-ai-btn-hover: #a855f7;
+    --color-accent-ai-surface: #3b0764;
+    --color-accent-ai-focus: #c084fc;
+
+    /* Category badges */
+    --color-cat-chocolate-bg: #451a03;
+    --color-cat-chocolate-text: #fde68a;
+    --color-cat-dairy-bg: #1e3a5f;
+    --color-cat-dairy-text: #93c5fd;
+    --color-cat-sugar-bg: #500724;
+    --color-cat-sugar-text: #fbcfe8;
+    --color-cat-fat-bg: #422006;
+    --color-cat-fat-text: #fef08a;
+    --color-cat-alcohol-bg: #3b0764;
+    --color-cat-alcohol-text: #e9d5ff;
+    --color-cat-liquid-bg: #164e63;
+    --color-cat-liquid-text: #a5f3fc;
+    --color-cat-flavor-bg: #14352a;
+    --color-cat-flavor-text: #bbf7d0;
+    --color-cat-ganache-bg: #451a03;
+    --color-cat-ganache-text: #fde68a;
+    --color-cat-caramel-bg: #431407;
+    --color-cat-caramel-text: #fed7aa;
+    --color-cat-gianduja-bg: #064e3b;
+    --color-cat-gianduja-text: #a7f3d0;
 
     /* Misc */
     --color-star: #fbbf24;

@@ -369,7 +369,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
         <button
           onClick={handleCopyPrompt}
           disabled={!hasValidId}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 hover:text-purple-900 hover:bg-purple-50 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-accent-ai-text hover:text-accent-ai-text-strong hover:bg-accent-ai-bg rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           title={hasValidId ? 'Copy AI prompt to clipboard' : 'Enter a name to generate an AI prompt'}
         >
           {promptCopied ? (
@@ -403,7 +403,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
               aiAssist.isWorking ||
               (defaultIsDirect && defaultAction !== undefined && !defaultAction.isAvailable)
             }
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 hover:text-purple-900 hover:bg-purple-50 rounded-l transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-accent-ai-text hover:text-accent-ai-text-strong hover:bg-accent-ai-bg rounded-l transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title={
               hasValidId
                 ? defaultIsDirect
@@ -433,7 +433,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
           <button
             onClick={(): void => setAiDropdownOpen(!aiDropdownOpen)}
             disabled={!hasValidId || aiAssist.isWorking}
-            className="flex items-center px-1.5 py-1.5 text-xs font-medium text-purple-700 hover:text-purple-900 hover:bg-purple-50 rounded-r border-l border-purple-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center px-1.5 py-1.5 text-xs font-medium text-accent-ai-text hover:text-accent-ai-text-strong hover:bg-accent-ai-bg rounded-r border-l border-accent-ai-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title="More AI options"
           >
             <ChevronDownIcon className="w-3.5 h-3.5" />
@@ -446,9 +446,9 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
             {/* Copy prompt — always first */}
             <button
               onClick={handleCopyPrompt}
-              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-secondary hover:bg-purple-50 hover:text-purple-900"
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-secondary hover:bg-accent-ai-bg hover:text-accent-ai-text-strong"
             >
-              <ClipboardDocumentIcon className="w-4 h-4 text-purple-500" />
+              <ClipboardDocumentIcon className="w-4 h-4 text-accent-ai-icon" />
               <span>Copy AI Prompt</span>
             </button>
             {/* Direct providers */}
@@ -457,10 +457,10 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
                 key={action.provider}
                 onClick={(): void => handleDirectGenerate(action)}
                 disabled={!action.isAvailable}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-secondary hover:bg-purple-50 hover:text-purple-900 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-secondary hover:bg-accent-ai-bg hover:text-accent-ai-text-strong disabled:opacity-40 disabled:cursor-not-allowed"
                 title={action.unavailableReason}
               >
-                <SparklesIcon className="w-4 h-4 text-purple-500" />
+                <SparklesIcon className="w-4 h-4 text-accent-ai-icon" />
                 <div className="flex flex-col">
                   <span>{action.label}</span>
                   {action.unavailableReason && (
@@ -557,7 +557,9 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
           onDragOver={handleDragOver}
           tabIndex={0}
           className={`flex flex-col items-center justify-center gap-2 px-4 py-6 border-2 border-dashed rounded-lg cursor-default transition-colors focus-within:border-focus-ring focus-within:bg-brand-primary/5 ${
-            pasteError ? 'border-red-300 bg-red-50' : 'border-border hover:border-border hover:bg-hover'
+            pasteError
+              ? 'border-status-error-border-strong bg-status-error-bg'
+              : 'border-border hover:border-border hover:bg-hover'
           }`}
         >
           <span className="text-sm text-muted">Paste or drop AI-generated JSON here</span>
@@ -574,13 +576,13 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
             onChange={(e): void => setAdditionalInstructions(e.target.value)}
             placeholder="e.g. This is a 275×135mm frame mold, use metric units..."
             rows={2}
-            className="mt-1 w-full px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 resize-none"
+            className="mt-1 w-full px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent-ai-focus focus:border-accent-ai-focus resize-none"
           />
         </div>
       )}
 
       {/* Paste error */}
-      {pasteError && <p className="text-xs text-red-600">{pasteError}</p>}
+      {pasteError && <p className="text-xs text-status-error-accent">{pasteError}</p>}
 
       {/* Action buttons */}
       <div className="flex items-center justify-between">

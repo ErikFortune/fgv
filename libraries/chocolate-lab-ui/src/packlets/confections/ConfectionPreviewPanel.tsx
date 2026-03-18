@@ -590,7 +590,7 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
       {fillings.length > 0 && (
         <PreviewSection title={`Fillings (${fillings.length} slot${fillings.length !== 1 ? 's' : ''})`}>
           {scalingResult && (
-            <div className="mb-2 px-1 py-1 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+            <div className="mb-2 px-1 py-1 bg-status-warning-bg border border-status-warning-border rounded text-xs text-status-warning-text">
               {scalingResult.effectiveFrames !== undefined
                 ? `${scalingResult.effectiveFrames} frames × ${Math.round(
                     scalingResult.effectiveCount / scalingResult.effectiveFrames
@@ -651,9 +651,7 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
             {decorations.options.map((d) => (
               <div key={d.id} className="px-4 py-2.5 flex items-center justify-between hover:bg-hover">
                 <span className="text-sm font-medium text-primary">{d.decoration.name}</span>
-                {d.id === decorations.preferredId && (
-                  <span className="text-xs text-amber-500">★ preferred</span>
-                )}
+                {d.id === decorations.preferredId && <span className="text-xs text-star">★ preferred</span>}
               </div>
             ))}
           </div>

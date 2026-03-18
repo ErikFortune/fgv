@@ -37,11 +37,11 @@ import { EntityDetailHeader, NotesSection } from '../common';
 // ============================================================================
 
 const STATUS_COLORS: Record<string, string> = {
-  planning: 'bg-blue-100 text-blue-800',
-  active: 'bg-green-100 text-green-800',
-  committing: 'bg-yellow-100 text-yellow-800',
-  committed: 'bg-gray-100 text-gray-800',
-  abandoned: 'bg-red-100 text-red-800'
+  planning: 'bg-status-info-surface text-status-info-text',
+  active: 'bg-status-success-surface text-status-success-text',
+  committing: 'bg-status-warning-surface text-status-warning-text',
+  committed: 'bg-surface-raised text-primary',
+  abandoned: 'bg-status-error-surface text-status-error-text'
 };
 
 // ============================================================================
@@ -72,7 +72,7 @@ export function GenericSessionDetailView({
   session,
   onClose
 }: IGenericSessionDetailViewProps): React.ReactElement {
-  const statusColor = STATUS_COLORS[session.status] ?? 'bg-gray-100 text-gray-800';
+  const statusColor = STATUS_COLORS[session.status] ?? 'bg-surface-raised text-primary';
 
   return (
     <div className="flex flex-col p-4 overflow-y-auto h-full">

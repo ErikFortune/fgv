@@ -361,7 +361,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
                       <button
                         type="button"
                         onClick={(): void => onEditStepTask?.(step.order, 'inline', taskInvocation.task.name)}
-                        className="p-1 text-muted hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        className="p-1 text-muted hover:text-status-info-icon hover:bg-status-info-bg rounded transition-colors"
                         title="Edit inline task"
                       >
                         <PencilIcon className="w-4 h-4" />
@@ -379,7 +379,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
                   <button
                     type="button"
                     onClick={(): void => handleRemoveStep(step.order)}
-                    className="px-2 py-1 text-xs text-muted hover:text-red-600 hover:bg-red-50 rounded"
+                    className="px-2 py-1 text-xs text-muted hover:text-status-error-accent hover:bg-status-error-bg rounded"
                   >
                     Remove
                   </button>
@@ -387,7 +387,9 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
 
                 {unresolved && (
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="text-xs text-amber-700">No library task match for "{unresolved}".</span>
+                    <span className="text-xs text-status-warning-strong">
+                      No library task match for "{unresolved}".
+                    </span>
                     <button
                       type="button"
                       onClick={(): void => onEditStepTask?.(step.order, 'inline', unresolved)}

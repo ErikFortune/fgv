@@ -284,7 +284,7 @@ export function FillingsEditor({
               <div className="text-xs text-muted font-medium">
                 {slot.name ?? slot.slotId}
                 {defaultSlotWeights?.[slot.slotId] !== undefined && (
-                  <span className="ml-1 text-amber-600 font-medium">
+                  <span className="ml-1 text-status-warning-strong font-medium">
                     ({Math.round(defaultSlotWeights[slot.slotId]!)}g)
                   </span>
                 )}
@@ -324,14 +324,12 @@ export function FillingsEditor({
                         type="button"
                         title={isPreferred ? 'Preferred' : 'Set as preferred'}
                         onClick={(): void => handleSetPreferredFillingOption(slot.slotId, opt.id)}
-                        className={`shrink-0 ${
-                          isPreferred ? 'text-amber-500' : 'text-faint hover:text-amber-400'
-                        }`}
+                        className={`shrink-0 ${isPreferred ? 'text-star' : 'text-faint hover:text-star'}`}
                       >
                         ★
                       </button>
                     )}
-                    {disabled && isPreferred && <span className="text-amber-500 shrink-0">★</span>}
+                    {disabled && isPreferred && <span className="text-star shrink-0">★</span>}
                     {onFillingClick && opt.type === 'recipe' ? (
                       <button
                         type="button"
@@ -355,7 +353,7 @@ export function FillingsEditor({
                         type="button"
                         title="Remove option"
                         onClick={(): void => handleRemoveFillingOption(slot.slotId, opt.id)}
-                        className="text-faint hover:text-red-400 shrink-0 ml-0.5"
+                        className="text-faint hover:text-status-error-accent shrink-0 ml-0.5"
                       >
                         ✕
                       </button>
@@ -365,7 +363,7 @@ export function FillingsEditor({
               })}
               {!disabled &&
                 (pendingNewFilling?.slotId === slot.slotId ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                  <span className="inline-flex items-center gap-1 text-xs text-status-warning-strong bg-status-warning-bg border border-status-warning-border rounded px-1.5 py-0.5">
                     <span>&quot;{pendingNewFilling.seed}&quot;:</span>
                     <button
                       type="button"
@@ -377,7 +375,7 @@ export function FillingsEditor({
                     >
                       recipe
                     </button>
-                    <span className="text-amber-400">|</span>
+                    <span className="text-star">|</span>
                     <button
                       type="button"
                       onClick={(): void => {
@@ -391,7 +389,7 @@ export function FillingsEditor({
                     <button
                       type="button"
                       onClick={(): void => setPendingNewFilling(null)}
-                      className="ml-0.5 text-amber-400 hover:text-amber-600"
+                      className="ml-0.5 text-status-warning-strong hover:text-status-warning-text"
                     >
                       ✕
                     </button>
@@ -432,8 +430,8 @@ export function FillingsEditor({
       </div>
       {!disabled &&
         (pendingNewFilling && !pendingNewFilling.slotId ? (
-          <div className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 space-y-1.5">
-            <div className="text-xs text-amber-800">
+          <div className="mt-2 rounded border border-status-warning-border bg-status-warning-bg p-2 space-y-1.5">
+            <div className="text-xs text-status-warning-text">
               <span className="font-medium">&quot;{pendingNewFilling.seed}&quot;</span> not found. Create as:
             </div>
             <div className="flex gap-1.5">

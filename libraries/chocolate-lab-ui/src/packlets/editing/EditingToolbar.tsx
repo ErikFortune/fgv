@@ -90,7 +90,7 @@ function ToolbarButton({
   const variantClasses: Record<string, string> = {
     default: 'text-secondary hover:text-primary hover:bg-hover',
     primary: 'text-inverted bg-brand-primary hover:bg-brand-primary/90',
-    danger: 'text-secondary hover:text-red-600 hover:bg-red-50'
+    danger: 'text-secondary hover:text-status-error-accent hover:bg-status-error-bg'
   };
 
   return (
@@ -130,7 +130,7 @@ export function EditingToolbar<TWrapper extends IEditable>(
     <div className={`flex flex-col border-b border-border bg-surface-alt ${className ?? ''}`}>
       {/* Read-only info banner */}
       {context.readOnly && !customSaveButton && (
-        <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 border-b border-amber-200 text-amber-700 text-xs">
+        <div className="flex items-center gap-1.5 px-3 py-1 bg-status-warning-bg border-b border-status-warning-border text-status-warning-strong text-xs">
           <span>
             {context.saveAs ? (
               <>Read-only source — use &ldquo;Save to&hellip;&rdquo; to save to a writable collection.</>

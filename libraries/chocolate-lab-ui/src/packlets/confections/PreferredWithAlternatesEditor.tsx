@@ -106,7 +106,11 @@ export function PreferredWithAlternatesEditor<TId extends string = string>({
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-primary">{getDisplayName(preferredId)}</span>
             {!disabled && showClear && onClear && (
-              <button type="button" onClick={onClear} className="text-xs text-muted hover:text-red-500">
+              <button
+                type="button"
+                onClick={onClear}
+                className="text-xs text-muted hover:text-status-error-icon"
+              >
                 ✕
               </button>
             )}
@@ -114,7 +118,7 @@ export function PreferredWithAlternatesEditor<TId extends string = string>({
               <button
                 type="button"
                 onClick={(): void => onRemove(preferredId)}
-                className="text-xs text-muted hover:text-red-500"
+                className="text-xs text-muted hover:text-status-error-icon"
               >
                 ✕
               </button>
@@ -143,7 +147,7 @@ export function PreferredWithAlternatesEditor<TId extends string = string>({
                       type="button"
                       title="Set as preferred"
                       onClick={(): void => onSetPreferred(id)}
-                      className="text-faint hover:text-amber-400 shrink-0"
+                      className="text-faint hover:text-star shrink-0"
                     >
                       ★
                     </button>
@@ -154,7 +158,7 @@ export function PreferredWithAlternatesEditor<TId extends string = string>({
                       type="button"
                       title="Remove"
                       onClick={(): void => onRemove(id)}
-                      className="text-faint hover:text-red-400 shrink-0 ml-0.5"
+                      className="text-faint hover:text-status-error-icon shrink-0 ml-0.5"
                     >
                       ✕
                     </button>

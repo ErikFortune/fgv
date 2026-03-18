@@ -53,13 +53,13 @@ export interface IIngredientDetailProps {
 // ============================================================================
 
 const INGREDIENT_CATEGORY_COLORS: Record<string, string> = {
-  chocolate: 'bg-amber-100 text-amber-800',
-  dairy: 'bg-blue-100 text-blue-800',
-  sugar: 'bg-pink-100 text-pink-800',
-  fat: 'bg-yellow-100 text-yellow-800',
-  alcohol: 'bg-purple-100 text-purple-800',
-  liquid: 'bg-cyan-100 text-cyan-800',
-  flavor: 'bg-green-100 text-green-800',
+  chocolate: 'bg-cat-chocolate-bg text-cat-chocolate-text',
+  dairy: 'bg-cat-dairy-bg text-cat-dairy-text',
+  sugar: 'bg-cat-sugar-bg text-cat-sugar-text',
+  fat: 'bg-cat-fat-bg text-cat-fat-text',
+  alcohol: 'bg-cat-alcohol-bg text-cat-alcohol-text',
+  liquid: 'bg-cat-liquid-bg text-cat-liquid-text',
+  flavor: 'bg-cat-flavor-bg text-cat-flavor-text',
   other: 'bg-surface-raised text-primary'
 };
 

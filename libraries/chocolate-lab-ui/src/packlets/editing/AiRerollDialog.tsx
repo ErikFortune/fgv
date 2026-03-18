@@ -144,11 +144,11 @@ export function AiRerollDialog<TEntity>(props: IAiRerollDialogProps<TEntity>): R
 
   return (
     <div
-      className="flex flex-col gap-3 p-4 border border-purple-200 rounded-lg bg-purple-50/50"
+      className="flex flex-col gap-3 p-4 border border-accent-ai-border rounded-lg bg-accent-ai-bg/50"
       onKeyDown={handleKeyDown}
     >
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-purple-700">Re-generate {entityLabel} with AI</label>
+        <label className="text-xs font-semibold text-accent-ai-text">Re-generate {entityLabel} with AI</label>
         <button
           type="button"
           onClick={onCancel}
@@ -169,7 +169,7 @@ export function AiRerollDialog<TEntity>(props: IAiRerollDialogProps<TEntity>): R
           onChange={(e): void => setName(e.target.value)}
           disabled={aiAssist.isWorking}
           placeholder={`${entityLabel} name...`}
-          className="mt-1 w-full px-2.5 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50"
+          className="mt-1 w-full px-2.5 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent-ai-focus focus:border-accent-ai-focus disabled:opacity-50"
           autoFocus
         />
       </div>
@@ -183,12 +183,12 @@ export function AiRerollDialog<TEntity>(props: IAiRerollDialogProps<TEntity>): R
           disabled={aiAssist.isWorking}
           placeholder="e.g. This is a 275x135mm frame mold, use metric units..."
           rows={2}
-          className="mt-1 w-full px-2.5 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 resize-none disabled:opacity-50"
+          className="mt-1 w-full px-2.5 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent-ai-focus focus:border-accent-ai-focus resize-none disabled:opacity-50"
         />
       </div>
 
       {/* Error */}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-status-error-accent">{error}</p>}
 
       {/* Action buttons */}
       <div className="flex items-center gap-2">
@@ -198,7 +198,7 @@ export function AiRerollDialog<TEntity>(props: IAiRerollDialogProps<TEntity>): R
             type="button"
             onClick={(): void => handleGenerate(primaryAction)}
             disabled={!trimmedName || aiAssist.isWorking || !primaryAction.isAvailable}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-inverted bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-inverted bg-accent-ai-btn hover:bg-accent-ai-btn-hover rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             title={primaryAction.unavailableReason}
           >
             <SparklesIcon className="w-3.5 h-3.5" />
@@ -215,7 +215,7 @@ export function AiRerollDialog<TEntity>(props: IAiRerollDialogProps<TEntity>): R
               type="button"
               onClick={(): void => handleGenerate(action)}
               disabled={!trimmedName || aiAssist.isWorking || !action.isAvailable}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-purple-700 hover:text-purple-900 hover:bg-purple-100 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-accent-ai-text hover:text-accent-ai-text-strong hover:bg-accent-ai-surface rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               title={action.unavailableReason}
             >
               <SparklesIcon className="w-3.5 h-3.5" />

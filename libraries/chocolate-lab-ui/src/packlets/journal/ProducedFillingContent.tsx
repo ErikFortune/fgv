@@ -160,7 +160,7 @@ export function ProducedFillingContent({
         <span className="text-sm text-secondary">
           {Math.round(Number(produced.targetWeight))}g
           {produced.scaleFactor !== 1.0 && (
-            <span className="text-xs text-amber-600 font-medium ml-1">
+            <span className="text-xs text-status-warning-strong font-medium ml-1">
               {'\u00d7'}
               {produced.scaleFactor.toFixed(2)}
             </span>

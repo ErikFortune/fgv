@@ -49,10 +49,10 @@ import { ProducedFillingContent } from './ProducedFillingContent';
 // ============================================================================
 
 const JOURNAL_TYPE_COLORS: Record<string, string> = {
-  'filling-edit': 'bg-blue-100 text-blue-800',
-  'filling-production': 'bg-green-100 text-green-800',
-  'confection-edit': 'bg-purple-100 text-purple-800',
-  'confection-production': 'bg-amber-100 text-amber-800'
+  'filling-edit': 'bg-cat-dairy-bg text-cat-dairy-text',
+  'filling-production': 'bg-cat-flavor-bg text-cat-flavor-text',
+  'confection-edit': 'bg-cat-alcohol-bg text-cat-alcohol-text',
+  'confection-production': 'bg-cat-chocolate-bg text-cat-chocolate-text'
 };
 
 const JOURNAL_TYPE_LABELS: Record<string, string> = {
@@ -349,7 +349,7 @@ function ChangesSummary({
   }
 
   return (
-    <div className="mt-1 text-xs text-amber-600">
+    <div className="mt-1 text-xs text-status-warning-strong">
       <span className="font-medium">Modified: </span>
       {changes.join(', ')}
     </div>

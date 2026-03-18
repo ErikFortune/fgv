@@ -190,7 +190,7 @@ function GroupedEntityRowInner<TEntity, TId extends string>(
             e.stopPropagation();
             onDelete(id);
           }}
-          className="shrink-0 mr-1 w-6 h-6 flex items-center justify-center text-faint hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded"
+          className="shrink-0 mr-1 w-6 h-6 flex items-center justify-center text-faint hover:text-status-error-icon opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded"
           title={`Delete ${label}`}
           aria-label={`Delete ${label}`}
         >

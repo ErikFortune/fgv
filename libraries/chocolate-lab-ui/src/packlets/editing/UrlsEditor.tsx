@@ -129,7 +129,7 @@ export function UrlsEditor({ value, onChange, title }: IUrlsEditorProps): React.
               type="button"
               onClick={(): void => setEditing(false)}
               title="Done editing"
-              className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+              className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
             >
               <CheckIcon className="h-3.5 w-3.5" />
             </button>
@@ -153,7 +153,7 @@ export function UrlsEditor({ value, onChange, title }: IUrlsEditorProps): React.
               <button
                 type="button"
                 onClick={(): void => handleRemove(index)}
-                className="text-muted hover:text-red-500 p-1"
+                className="text-muted hover:text-status-error-icon p-1"
                 aria-label="Remove URL"
               >
                 ✕

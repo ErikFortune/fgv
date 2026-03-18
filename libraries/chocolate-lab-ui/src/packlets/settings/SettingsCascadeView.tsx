@@ -317,7 +317,7 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
         {/* Toolbar: full-width, above sidebar+cascade */}
         <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 border-b border-border bg-surface-alt shrink-0">
           <div className="flex-1" />
-          {saveError && <span className="text-xs text-red-600">{saveError}</span>}
+          {saveError && <span className="text-xs text-status-error-accent">{saveError}</span>}
           {isDirty && (
             <button
               type="button"
@@ -332,7 +332,7 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
             type="button"
             onClick={handleClose}
             disabled={isSaving}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-secondary hover:text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-secondary hover:text-status-error-accent hover:bg-status-error-bg disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Cancel
           </button>

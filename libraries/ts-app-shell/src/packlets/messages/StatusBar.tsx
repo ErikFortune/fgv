@@ -267,7 +267,7 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                     onClick={(): void => copyToClipboard(msg.text, msg.id)}
                     className={`shrink-0 p-0.5 rounded transition-colors ${
                       copySuccessId === msg.id
-                        ? 'opacity-100 bg-green-100'
+                        ? 'opacity-100 bg-status-success-surface'
                         : 'opacity-0 group-hover:opacity-100 hover:bg-surface-raised'
                     }`}
                     title={copySuccessId === msg.id ? 'Copied!' : 'Copy message'}

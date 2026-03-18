@@ -91,7 +91,7 @@ function RatingStars({
             key={n}
             type="button"
             onClick={(): void => onChange(n)}
-            className="p-0 text-amber-400 hover:text-amber-500 transition-colors"
+            className="p-0 text-star hover:text-star transition-colors"
             title={`${n} star${n > 1 ? 's' : ''}`}
           >
             {filled ? <StarIconSolid className="w-4 h-4" /> : <StarIcon className="w-4 h-4" />}
@@ -511,14 +511,14 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                   <button
                     type="button"
                     onClick={(): void => handleRemoveIngredient(index)}
-                    className="px-2 py-1 text-xs text-muted hover:text-red-600 hover:bg-red-50 rounded"
+                    className="px-2 py-1 text-xs text-muted hover:text-status-error-accent hover:bg-status-error-bg rounded"
                   >
                     Remove
                   </button>
                 </div>
                 {unresolvedIngredients[index] && (
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="text-xs text-amber-700">
+                    <span className="text-xs text-status-warning-strong">
                       No match for &quot;{unresolvedIngredients[index]}&quot;.
                     </span>
                     <button
@@ -570,7 +570,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
 
           {unresolvedNewIngredient && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-amber-700">
+              <span className="text-xs text-status-warning-strong">
                 No match for &quot;{unresolvedNewIngredient}&quot;.
               </span>
               <button
@@ -610,7 +610,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                     type="button"
                     onClick={(): void => handleTogglePreferred(ref.id)}
                     className={`p-0.5 transition-colors ${
-                      isPreferred ? 'text-amber-500' : 'text-faint hover:text-amber-400'
+                      isPreferred ? 'text-star' : 'text-faint hover:text-star'
                     }`}
                     title={isPreferred ? 'Preferred procedure' : 'Set as preferred'}
                   >
@@ -635,14 +635,14 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                   <button
                     type="button"
                     onClick={(): void => handleRemoveProcedure(ref.id)}
-                    className="px-2 py-1 text-xs text-muted hover:text-red-600 hover:bg-red-50 rounded"
+                    className="px-2 py-1 text-xs text-muted hover:text-status-error-accent hover:bg-status-error-bg rounded"
                   >
                     Remove
                   </button>
                 </div>
                 {unresolvedProcedures[index] && (
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="text-xs text-amber-700">
+                    <span className="text-xs text-status-warning-strong">
                       No match for &quot;{unresolvedProcedures[index]}&quot;.
                     </span>
                     <button
@@ -684,7 +684,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
 
           {unresolvedNewProcedure && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-amber-700">
+              <span className="text-xs text-status-warning-strong">
                 No match for &quot;{unresolvedNewProcedure}&quot;.
               </span>
               <button

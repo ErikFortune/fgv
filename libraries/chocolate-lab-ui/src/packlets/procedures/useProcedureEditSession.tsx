@@ -431,7 +431,7 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
           return {
             key: entry.entityId,
             label: 'Step Parameters',
-            content: <div className="p-4 text-red-500">No step parameter session</div>
+            content: <div className="p-4 text-status-error-icon">No step parameter session</div>
           };
         }
 
@@ -440,7 +440,7 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
           return {
             key: entry.entityId,
             label: 'Step Parameters',
-            content: <div className="p-4 text-red-500">No procedure wrapper</div>
+            content: <div className="p-4 text-status-error-icon">No procedure wrapper</div>
           };
         }
 
@@ -449,7 +449,7 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
           return {
             key: entry.entityId,
             label: 'Step Parameters',
-            content: <div className="p-4 text-red-500">Step not found</div>
+            content: <div className="p-4 text-status-error-icon">Step not found</div>
           };
         }
 
@@ -465,7 +465,7 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
             return {
               key: entry.entityId,
               label: 'Step Parameters',
-              content: <div className="p-4 text-red-500">Task not found</div>
+              content: <div className="p-4 text-status-error-icon">Task not found</div>
             };
           }
           template = task.template;
@@ -559,7 +559,7 @@ export function useProcedureEditSession(options: IProcedureEditSessionOptions): 
           return {
             key: entry.entityId,
             label: entry.entityId,
-            content: <div className="p-4 text-red-500">Failed to load task: {entry.entityId}</div>
+            content: <div className="p-4 text-status-error-icon">Failed to load task: {entry.entityId}</div>
           };
         }
         return {

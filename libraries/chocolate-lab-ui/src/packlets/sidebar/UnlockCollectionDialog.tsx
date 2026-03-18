@@ -148,9 +148,9 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-status-warning-surface flex items-center justify-center">
             <svg
-              className="w-5 h-5 text-amber-600"
+              className="w-5 h-5 text-status-warning-strong"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
@@ -180,7 +180,9 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
                 type="button"
                 onClick={(): void => handleModeChange(m)}
                 className={`flex-1 py-1.5 px-2 text-center transition-colors ${
-                  mode === m ? 'bg-amber-500 text-inverted font-medium' : 'text-secondary hover:bg-hover'
+                  mode === m
+                    ? 'bg-status-warning-btn text-inverted font-medium'
+                    : 'text-secondary hover:bg-hover'
                 } ${m === availableModes[0] ? 'rounded-l-md' : ''} ${
                   m === availableModes[availableModes.length - 1] ? 'rounded-r-md' : ''
                 }`}
@@ -203,12 +205,12 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
               type="password"
               value={password}
               onChange={(e): void => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-status-warning-btn focus:border-transparent"
               placeholder={mode === 'keystore' ? 'Master password' : 'Collection password'}
               autoComplete="current-password"
               disabled={isSubmitting}
             />
-            {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
+            {error && <p className="mt-1.5 text-xs text-status-error-accent">{error}</p>}
           </div>
 
           {/* Save to keystore checkbox (collection mode only) */}
@@ -218,7 +220,7 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
                 type="checkbox"
                 checked={saveToKeystore}
                 onChange={(e): void => setSaveToKeystore(e.target.checked)}
-                className="rounded border-border text-amber-500 focus:ring-amber-500"
+                className="rounded border-border text-status-warning-btn focus:ring-status-warning-btn"
                 disabled={isSubmitting}
               />
               Save secret to keystore
@@ -245,7 +247,7 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
             <button
               type="submit"
               disabled={!password || isSubmitting}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-amber-500 rounded-md hover:bg-amber-600 disabled:opacity-50"
+              className="px-3 py-1.5 text-sm font-medium text-white bg-status-warning-btn rounded-md hover:bg-status-warning-btn-hover disabled:opacity-50"
             >
               {isSubmitting ? 'Unlocking\u2026' : 'Unlock'}
             </button>

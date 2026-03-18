@@ -135,7 +135,7 @@ export function ImportCollisionDialog({
         )}
 
         {tab === 'overwrite' && (
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          <p className="text-xs text-status-warning-strong bg-status-warning-bg border border-status-warning-border rounded px-3 py-2">
             The existing <strong>{collectionId}</strong> collection will be replaced with the imported data.
             This cannot be undone.
           </p>

@@ -1009,7 +1009,7 @@ export function ConfectionEditView({
                               <button
                                 type="button"
                                 onClick={(): void => handleRemoveAdditionalChocolate(purpose)}
-                                className="text-xs text-muted hover:text-red-500"
+                                className="text-xs text-muted hover:text-status-error-icon"
                               >
                                 ✕
                               </button>

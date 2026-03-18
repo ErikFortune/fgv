@@ -55,8 +55,8 @@ export function ReadOnlyEditGate({
 }: IReadOnlyEditGateProps): React.ReactElement {
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-50">
-        <LockClosedIcon className="w-6 h-6 text-amber-500" />
+      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-status-warning-bg">
+        <LockClosedIcon className="w-6 h-6 text-status-warning-btn" />
       </div>
       <div className="space-y-1">
         <h3 className="text-sm font-semibold text-primary">{entityName} is in a read-only collection</h3>

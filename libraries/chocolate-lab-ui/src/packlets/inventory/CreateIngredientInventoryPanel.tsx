@@ -225,7 +225,7 @@ export function CreateIngredientInventoryPanel(
           autoFocus
         />
         {selectedIngredientId && (
-          <p className="text-xs text-green-600 mt-1">
+          <p className="text-xs text-status-success-accent mt-1">
             Selected: {selectedIngredientName}
             <span className="ml-1 text-muted font-mono">{selectedIngredientId}</span>
           </p>
@@ -288,7 +288,7 @@ export function CreateIngredientInventoryPanel(
           placeholder="Type a location name..."
         />
         {selectedLocationId && (
-          <p className="text-xs text-green-600 mt-1">
+          <p className="text-xs text-status-success-accent mt-1">
             Selected: {selectedLocationName}
             <span className="ml-1 text-muted font-mono">{selectedLocationId}</span>
           </p>

@@ -588,7 +588,7 @@ export function ConfectionSessionPanel({
                   type="button"
                   onClick={(): void => setEditingFillings(false)}
                   title="Done editing"
-                  className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                  className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
                 >
                   <CheckIcon className="h-3.5 w-3.5" />
                 </button>
@@ -615,7 +615,7 @@ export function ConfectionSessionPanel({
                       <button
                         type="button"
                         onClick={(): void => handleRemoveSlot(slot.slotId)}
-                        className="text-muted hover:text-red-500 p-0.5 shrink-0"
+                        className="text-muted hover:text-status-error-icon p-0.5 shrink-0"
                         aria-label={`Remove ${slot.name}`}
                       >
                         ✕
@@ -666,7 +666,7 @@ export function ConfectionSessionPanel({
               <button
                 type="button"
                 onClick={handleClearDecoration}
-                className="text-muted hover:text-red-500 p-0.5 shrink-0"
+                className="text-muted hover:text-status-error-icon p-0.5 shrink-0"
                 aria-label="Remove decoration"
               >
                 ✕
@@ -680,7 +680,7 @@ export function ConfectionSessionPanel({
                 type="button"
                 onClick={(): void => setEditingDecoration(false)}
                 title="Done editing"
-                className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
               >
                 <CheckIcon className="h-3.5 w-3.5" />
               </button>
@@ -696,7 +696,7 @@ export function ConfectionSessionPanel({
               <button
                 type="button"
                 onClick={handleClearDecoration}
-                className="text-muted hover:text-red-500 p-1 shrink-0"
+                className="text-muted hover:text-status-error-icon p-1 shrink-0"
                 aria-label="Remove decoration"
               >
                 ✕
@@ -724,7 +724,7 @@ export function ConfectionSessionPanel({
                 type="button"
                 onClick={(): void => setEditingDecoration(false)}
                 title="Done editing"
-                className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
               >
                 <CheckIcon className="h-3.5 w-3.5" />
               </button>
@@ -769,7 +769,7 @@ export function ConfectionSessionPanel({
               <button
                 type="button"
                 onClick={handleClearProcedure}
-                className="text-muted hover:text-red-500 p-0.5 shrink-0"
+                className="text-muted hover:text-status-error-icon p-0.5 shrink-0"
                 aria-label="Remove procedure"
               >
                 ✕
@@ -783,7 +783,7 @@ export function ConfectionSessionPanel({
                 type="button"
                 onClick={(): void => setEditingProcedure(false)}
                 title="Done editing"
-                className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
               >
                 <CheckIcon className="h-3.5 w-3.5" />
               </button>
@@ -799,7 +799,7 @@ export function ConfectionSessionPanel({
               <button
                 type="button"
                 onClick={handleClearProcedure}
-                className="text-muted hover:text-red-500 p-1 shrink-0"
+                className="text-muted hover:text-status-error-icon p-1 shrink-0"
                 aria-label="Remove procedure"
               >
                 ✕
@@ -827,7 +827,7 @@ export function ConfectionSessionPanel({
                 type="button"
                 onClick={(): void => setEditingProcedure(false)}
                 title="Done editing"
-                className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+                className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
               >
                 <CheckIcon className="h-3.5 w-3.5" />
               </button>
@@ -973,7 +973,7 @@ function CountYieldEditor({
             type="button"
             onClick={handleDone}
             title="Done editing"
-            className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+            className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
           >
             <CheckIcon className="h-3.5 w-3.5" />
           </button>
@@ -998,7 +998,7 @@ function CountYieldEditor({
           <span className="text-xs text-muted">% buffer</span>
         </div>
       )}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-status-error-accent">{error}</p>}
     </div>
   );
 }
@@ -1083,7 +1083,7 @@ function MoldedBonBonYieldEditor({
             type="button"
             onClick={handleDone}
             title="Done editing"
-            className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+            className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
           >
             <CheckIcon className="h-3.5 w-3.5" />
           </button>
@@ -1108,7 +1108,7 @@ function MoldedBonBonYieldEditor({
           <span className="text-xs text-muted">% buffer</span>
         </div>
       )}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-status-error-accent">{error}</p>}
     </div>
   );
 }
@@ -1394,7 +1394,7 @@ function MoldEditRow({
           type="button"
           onClick={(): void => setEditing(false)}
           title="Done editing"
-          className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+          className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
         >
           <CheckIcon className="h-3.5 w-3.5" />
         </button>
@@ -1490,7 +1490,7 @@ function IngredientEditRow({
             <button
               type="button"
               onClick={handleClear}
-              className="text-muted hover:text-red-500 p-0.5 shrink-0"
+              className="text-muted hover:text-status-error-icon p-0.5 shrink-0"
               aria-label={`Remove ${label.toLowerCase()}`}
             >
               ✕
@@ -1530,7 +1530,7 @@ function IngredientEditRow({
           type="button"
           onClick={(): void => setEditing(false)}
           title="Done editing"
-          className="text-green-600 hover:text-green-700 p-0.5 shrink-0"
+          className="text-status-success-accent hover:text-status-success-text p-0.5 shrink-0"
         >
           <CheckIcon className="h-3.5 w-3.5" />
         </button>
@@ -1548,7 +1548,7 @@ function IngredientEditRow({
           <button
             type="button"
             onClick={handleClear}
-            className="text-muted hover:text-red-500 p-1 shrink-0"
+            className="text-muted hover:text-status-error-icon p-1 shrink-0"
             aria-label={`Remove ${label.toLowerCase()}`}
           >
             ✕
