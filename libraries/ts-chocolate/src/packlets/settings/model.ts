@@ -35,6 +35,26 @@ import { MeasurementUnit, CollectionId, WeightUnit } from '../common';
 import { SubLibraryId } from '../library-data';
 
 // ============================================================================
+// Appearance / Theme
+// ============================================================================
+
+/**
+ * Theme identifier. Built-in values: 'light', 'dark', 'system'.
+ * Custom themes use arbitrary strings (e.g., 'ocean', 'high-contrast').
+ * @public
+ */
+export type ThemeId = Brand<string, 'ThemeId'>;
+
+/**
+ * Appearance settings controlling visual presentation.
+ * @public
+ */
+export interface IAppearanceSettings {
+  /** Active theme. @defaultValue 'light' */
+  readonly theme?: ThemeId;
+}
+
+// ============================================================================
 // Schema Version
 // ============================================================================
 
@@ -386,6 +406,8 @@ export interface IPreferencesSettings {
   readonly defaultStorageTargets?: IDefaultStorageTargets;
   /** Tool configuration (scaling, workflow, etc.) */
   readonly tools?: IToolSettings;
+  /** Appearance / theme settings */
+  readonly appearance?: IAppearanceSettings;
 }
 
 // ============================================================================
@@ -422,6 +444,8 @@ export interface IResolvedSettings {
   readonly tools: IToolSettings;
   /** Default storage root targets for new collections */
   readonly defaultStorageTargets?: IDefaultStorageTargets;
+  /** Appearance / theme settings */
+  readonly appearance: IAppearanceSettings;
 }
 
 // ============================================================================
@@ -489,7 +513,8 @@ export function resolvePreferencesSettings(
       },
       aiAssist: preferences.tools?.aiAssist ?? AiAssist.DEFAULT_AI_ASSIST
     },
-    defaultStorageTargets: preferences.defaultStorageTargets
+    defaultStorageTargets: preferences.defaultStorageTargets,
+    appearance: preferences.appearance ?? {}
   };
 }
 

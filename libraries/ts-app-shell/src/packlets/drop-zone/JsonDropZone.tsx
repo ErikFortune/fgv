@@ -144,10 +144,10 @@ export function JsonDropZone<T>(props: IJsonDropZoneProps<T>): React.ReactElemen
   );
 
   const borderClass = displayError
-    ? 'border-red-400 bg-red-50'
+    ? 'border-status-error-border bg-status-error-bg'
     : isDragOver
-    ? 'border-blue-400 bg-blue-50'
-    : 'border-gray-300 bg-gray-50';
+    ? 'border-status-info-border bg-status-info-bg'
+    : 'border-border bg-surface-alt';
 
   return (
     <div
@@ -163,9 +163,9 @@ export function JsonDropZone<T>(props: IJsonDropZoneProps<T>): React.ReactElemen
       aria-label={hint ?? 'Drop or paste JSON here'}
     >
       {displayError ? (
-        <span className="text-red-600 text-xs">{displayError}</span>
+        <span className="text-status-error-text text-xs">{displayError}</span>
       ) : (
-        <span className="text-gray-500">{hint ?? 'Drop or paste JSON here'}</span>
+        <span className="text-muted">{hint ?? 'Drop or paste JSON here'}</span>
       )}
     </div>
   );

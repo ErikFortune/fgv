@@ -58,6 +58,7 @@ function makeResolved(overrides?: Partial<IResolvedSettings>): IResolvedSettings
       },
       workflow: {}
     },
+    appearance: {},
     ...overrides
   };
 }

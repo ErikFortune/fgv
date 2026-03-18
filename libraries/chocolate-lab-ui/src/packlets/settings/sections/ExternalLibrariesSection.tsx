@@ -18,18 +18,18 @@ export function ExternalLibrariesSection(props: IExternalLibrariesSectionProps):
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">External Libraries</h2>
+        <h2 className="text-lg font-semibold text-primary mb-4">External Libraries</h2>
         <div className="space-y-3">
           {externalLibraries.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">No external libraries configured.</p>
+            <p className="text-sm text-muted italic">No external libraries configured.</p>
           ) : (
             <ul className="space-y-2">
               {externalLibraries.map((lib, index) => (
                 <li
                   key={index}
-                  className="flex items-center justify-between gap-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md"
+                  className="flex items-center justify-between gap-3 px-3 py-2 bg-surface-alt border border-border rounded-md"
                 >
-                  <span className="text-sm text-gray-700 font-mono truncate flex-1">{lib.ref}</span>
+                  <span className="text-sm text-secondary font-mono truncate flex-1">{lib.ref}</span>
                   <button
                     type="button"
                     onClick={(): void => handleRemove(index)}
@@ -42,7 +42,7 @@ export function ExternalLibrariesSection(props: IExternalLibrariesSectionProps):
               ))}
             </ul>
           )}
-          <p className="mt-2 text-xs text-gray-400">External library management (add/edit) coming soon.</p>
+          <p className="mt-2 text-xs text-muted">External library management (add/edit) coming soon.</p>
         </div>
       </div>
     </div>

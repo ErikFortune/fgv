@@ -50,8 +50,8 @@ export function RoleGroupHeader({ label, className }: IRoleGroupHeaderProps): Re
 
   return (
     <div className={`flex items-center gap-2 py-1 ${className ?? ''}`}>
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</span>
-      <div className="flex-1 border-t border-gray-200" />
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">{label}</span>
+      <div className="flex-1 border-t border-border" />
     </div>
   );
 }

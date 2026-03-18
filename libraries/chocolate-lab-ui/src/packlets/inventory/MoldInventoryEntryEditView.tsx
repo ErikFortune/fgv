@@ -122,35 +122,35 @@ export function MoldInventoryEntryEditView(props: IMoldInventoryEntryEditViewPro
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">{mold.displayName}</h2>
-        <p className="text-xs text-gray-400 font-mono mt-0.5">{entry.id}</p>
+        <h2 className="text-lg font-semibold text-primary">{mold.displayName}</h2>
+        <p className="text-xs text-muted font-mono mt-0.5">{entry.id}</p>
       </div>
 
       {/* Mold (read-only) */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Mold</label>
-        <div className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-md text-gray-600">
+        <label className="block text-sm font-medium text-secondary mb-1">Mold</label>
+        <div className="px-3 py-2 text-sm bg-surface-alt border border-border-subtle rounded-md text-secondary">
           {mold.displayName}
-          <span className="ml-2 text-xs text-gray-400">{mold.format}</span>
+          <span className="ml-2 text-xs text-muted">{mold.format}</span>
         </div>
       </div>
 
       {/* Count */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Count</label>
+        <label className="block text-sm font-medium text-secondary mb-1">Count</label>
         <input
           type="text"
           inputMode="numeric"
           value={countInput}
           onChange={(e): void => setCountInput(e.target.value.replace(/[^0-9]/g, ''))}
           onFocus={(e): void => e.target.select()}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary"
+          className="w-full border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-focus-ring"
         />
       </div>
 
       {/* Location */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+        <label className="block text-sm font-medium text-secondary mb-1">Location</label>
         <TypeaheadInput<LocationId>
           value={locationInput}
           onChange={(value): void => {
@@ -168,7 +168,7 @@ export function MoldInventoryEntryEditView(props: IMoldInventoryEntryEditViewPro
         {selectedLocationId && (
           <p className="text-xs text-green-600 mt-1">
             Selected: {selectedLocationName}
-            <span className="ml-1 text-gray-400 font-mono">{selectedLocationId}</span>
+            <span className="ml-1 text-muted font-mono">{selectedLocationId}</span>
           </p>
         )}
       </div>
@@ -177,16 +177,16 @@ export function MoldInventoryEntryEditView(props: IMoldInventoryEntryEditViewPro
       <NotesEditor value={notes} onChange={setNotes} />
 
       {/* Actions */}
-      <div className="flex gap-2 mt-6 pt-4 border-t border-gray-200">
+      <div className="flex gap-2 mt-6 pt-4 border-t border-border">
         <button
           onClick={handleSave}
-          className="px-4 py-2 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded transition-colors"
+          className="px-4 py-2 text-sm font-medium text-inverted bg-brand-primary hover:bg-brand-primary/90 rounded transition-colors"
         >
           Save
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+          className="px-4 py-2 text-sm font-medium text-secondary bg-surface-raised hover:bg-hover rounded transition-colors"
         >
           Cancel
         </button>

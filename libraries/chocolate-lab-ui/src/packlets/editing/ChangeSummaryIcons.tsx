@@ -82,13 +82,13 @@ export function ChangeSummaryIcons({ indicators }: IChangeSummaryIconsProps): Re
   }
 
   return (
-    <div className="flex items-center gap-0.5 ml-2 pl-2 border-l border-gray-200">
+    <div className="flex items-center gap-0.5 ml-2 pl-2 border-l border-border">
       {indicators.map((indicator) => (
         <span
           key={indicator.key}
           title={indicator.changed ? `${indicator.label} (modified)` : indicator.label}
           className={`inline-flex items-center p-0.5 rounded ${
-            indicator.changed ? 'text-amber-600' : 'text-gray-300'
+            indicator.changed ? 'text-amber-600' : 'text-faint'
           }`}
         >
           {React.cloneElement(indicator.icon, { className: 'h-3 w-3' } as React.SVGProps<SVGSVGElement>)}

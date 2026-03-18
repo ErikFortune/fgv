@@ -201,12 +201,12 @@ function ConfectionPrintWindowContent(props: IConfectionPrintViewProps): React.R
   return (
     <div>
       {hasFillings && (
-        <label className="print-toolbar flex items-center gap-2 mb-4 text-sm text-gray-700 cursor-pointer select-none">
+        <label className="print-toolbar flex items-center gap-2 mb-4 text-sm text-secondary cursor-pointer select-none">
           <input
             type="checkbox"
             checked={includeFillings}
             onChange={(e): void => setIncludeFillings(e.target.checked)}
-            className="rounded border-gray-300 text-choco-primary focus:ring-choco-primary"
+            className="rounded border-border text-brand-primary focus:ring-focus-ring"
           />
           Include filling recipes ({fillingCount})
         </label>

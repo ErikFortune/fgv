@@ -79,7 +79,7 @@ export function IngredientInventoryEntryDetail(
         title={ingredient.name}
         badge={
           ingredient.category
-            ? { label: ingredient.category, colorClass: 'bg-choco-primary/10 text-choco-primary' }
+            ? { label: ingredient.category, colorClass: 'bg-brand-primary/10 text-brand-primary' }
             : undefined
         }
         subtitle={entry.id}
@@ -88,17 +88,17 @@ export function IngredientInventoryEntryDetail(
       />
 
       {/* Location (centered, title case) */}
-      {locationName && <p className="text-sm text-gray-500 text-center py-2">{locationName}</p>}
+      {locationName && <p className="text-sm text-muted text-center py-2">{locationName}</p>}
 
       {/* Quantity + unit and ingredient name */}
-      <div className="py-3 text-sm text-gray-700">
+      <div className="py-3 text-sm text-secondary">
         <span className="font-medium">
           {entry.quantity} {unit}
         </span>{' '}
         {onBrowseIngredient ? (
           <button
             onClick={(): void => onBrowseIngredient(ingredient.id as IngredientId)}
-            className="text-choco-primary hover:underline"
+            className="text-brand-primary hover:underline"
           >
             {ingredient.name}
           </button>

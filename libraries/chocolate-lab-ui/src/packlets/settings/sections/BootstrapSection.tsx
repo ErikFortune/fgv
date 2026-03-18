@@ -66,11 +66,11 @@ function LogLevelRow({
   return (
     <div className="flex items-start gap-3">
       <div className="flex-1">
-        <p className="text-sm font-medium text-gray-800">{label}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{description}</p>
+        <p className="text-sm font-medium text-primary">{label}</p>
+        <p className="text-xs text-muted mt-0.5">{description}</p>
       </div>
       <select
-        className="text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+        className="text-xs border border-border rounded px-2 py-1 bg-surface text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
         value={value ?? ''}
         onChange={(e): void => {
           const v = e.target.value;
@@ -114,18 +114,18 @@ function ToggleRow({
         />
         <div
           className={`w-9 h-5 rounded-full transition-colors ${
-            checked ? 'bg-choco-accent' : 'bg-gray-200 group-hover:bg-gray-300'
+            checked ? 'bg-brand-accent' : 'bg-surface-raised group-hover:bg-surface-raised'
           }`}
         />
         <div
-          className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+          className={`absolute top-0.5 left-0.5 w-4 h-4 bg-surface rounded-full shadow transition-transform ${
             checked ? 'translate-x-4' : 'translate-x-0'
           }`}
         />
       </div>
       <div>
-        <p className="text-sm font-medium text-gray-800">{label}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{description}</p>
+        <p className="text-sm font-medium text-primary">{label}</p>
+        <p className="text-xs text-muted mt-0.5">{description}</p>
       </div>
     </label>
   );
@@ -152,8 +152,8 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Startup Configuration</h2>
-        <p className="text-xs text-gray-400">
+        <h2 className="text-lg font-semibold text-primary mb-1">Startup Configuration</h2>
+        <p className="text-xs text-muted">
           These settings control what data is loaded at startup. Changes take effect after a page reload.
         </p>
       </div>
@@ -182,7 +182,7 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
 
       {/* Built-in library */}
       <div className="space-y-4">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Data Sources</p>
+        <p className="text-xs font-semibold text-muted uppercase tracking-wide">Data Sources</p>
         <ToggleRow
           label="Include built-in library"
           description="Load the embedded built-in chocolate library data (ingredients, fillings, procedures, etc.)."
@@ -192,8 +192,8 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
       </div>
 
       {/* Local storage */}
-      <div className="space-y-4 pt-2 border-t border-gray-100">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Browser Storage</p>
+      <div className="space-y-4 pt-2 border-t border-border-subtle">
+        <p className="text-xs font-semibold text-muted uppercase tracking-wide">Browser Storage</p>
         <ToggleRow
           label="Load library data from browser storage"
           description="Load entity collections (ingredients, fillings, etc.) stored in browser local storage."
@@ -209,8 +209,8 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
       </div>
 
       {/* Cloud storage */}
-      <div className="space-y-4 pt-2 border-t border-gray-100">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cloud Storage</p>
+      <div className="space-y-4 pt-2 border-t border-border-subtle">
+        <p className="text-xs font-semibold text-muted uppercase tracking-wide">Cloud Storage</p>
         <ToggleRow
           label="Enable cloud storage"
           description="Load collections from an HTTP-backed storage endpoint (namespace-scoped)."
@@ -220,17 +220,17 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
 
         <div className="space-y-3 pl-12">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Storage API base URL</label>
+            <label className="block text-xs font-medium text-secondary mb-1">Storage API base URL</label>
             <input
               type="text"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+              className="w-full px-3 py-2 text-sm border border-border rounded bg-surface text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
               value={bootstrap.cloudStorageBaseUrl}
               placeholder="http://localhost:3002/api/storage"
               onChange={(e): void => onChange({ cloudStorageBaseUrl: e.target.value })}
             />
             {!bootstrap.cloudStorageBaseUrl.trim() && proxyUrl?.trim() && (
-              <p className="text-xs text-gray-400 mt-1">
-                Will use <span className="font-mono text-gray-500">{proxyUrl}/api/storage</span> from Services
+              <p className="text-xs text-muted mt-1">
+                Will use <span className="font-mono text-muted">{proxyUrl}/api/storage</span> from Services
                 configuration
               </p>
             )}
@@ -238,20 +238,20 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Namespace (optional)</label>
+              <label className="block text-xs font-medium text-secondary mb-1">Namespace (optional)</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+                className="w-full px-3 py-2 text-sm border border-border rounded bg-surface text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
                 value={bootstrap.cloudStorageNamespace}
                 placeholder="default"
                 onChange={(e): void => onChange({ cloudStorageNamespace: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Source name (optional)</label>
+              <label className="block text-xs font-medium text-secondary mb-1">Source name (optional)</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+                className="w-full px-3 py-2 text-sm border border-border rounded bg-surface text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
                 value={bootstrap.cloudStorageSourceName}
                 placeholder="cloud:default"
                 onChange={(e): void => onChange({ cloudStorageSourceName: e.target.value })}
@@ -260,15 +260,15 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">User ID (temporary)</label>
+            <label className="block text-xs font-medium text-secondary mb-1">User ID (temporary)</label>
             <input
               type="text"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-accent"
+              className="w-full px-3 py-2 text-sm border border-border rounded bg-surface text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
               value={bootstrap.cloudStorageUserId}
               placeholder="default-user"
               onChange={(e): void => onChange({ cloudStorageUserId: e.target.value })}
             />
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-muted mt-1">
               Sent as X-User-Id header to isolate per-user data. Will be replaced by a real identity system.
             </p>
           </div>
@@ -289,8 +289,8 @@ export function BootstrapSection(props: IBootstrapSectionProps): React.ReactElem
       </div>
 
       {/* Logging */}
-      <div className="space-y-4 pt-2 border-t border-gray-100">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Logging</p>
+      <div className="space-y-4 pt-2 border-t border-border-subtle">
+        <p className="text-xs font-semibold text-muted uppercase tracking-wide">Logging</p>
         <LogLevelRow
           label="Store level"
           description="Minimum severity admitted into the message log."

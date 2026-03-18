@@ -69,21 +69,21 @@ export function Modal(props: IModalProps): React.ReactElement | null {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} role="presentation" />
+      <div className="absolute inset-0 bg-backdrop" onClick={onClose} role="presentation" />
 
       {/* Dialog */}
       <div
-        className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col"
+        className="relative bg-surface rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col"
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-primary">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted hover:text-secondary transition-colors"
             aria-label="Close"
           >
             &times;

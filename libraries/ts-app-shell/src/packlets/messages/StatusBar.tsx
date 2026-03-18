@@ -40,17 +40,17 @@ const SEVERITY_ICONS: Record<MessageSeverity, string> = {
 };
 
 const SEVERITY_COLORS: Record<MessageSeverity, string> = {
-  info: 'text-blue-500',
-  success: 'text-green-500',
-  warning: 'text-amber-500',
-  error: 'text-red-500'
+  info: 'text-status-info-icon',
+  success: 'text-status-success-icon',
+  warning: 'text-status-warning-icon',
+  error: 'text-status-error-icon'
 };
 
 const LOG_ROW_COLORS: Record<MessageSeverity, string> = {
   info: '',
-  success: 'bg-green-50',
-  warning: 'bg-amber-50',
-  error: 'bg-red-50'
+  success: 'bg-status-success-bg',
+  warning: 'bg-status-warning-bg',
+  error: 'bg-status-error-bg'
 };
 
 // ============================================================================
@@ -145,11 +145,11 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
   }, [filteredMessages, formatTime, copyToClipboard]);
 
   return (
-    <div className="border-t border-gray-200 bg-white">
+    <div className="border-t border-border bg-surface">
       {/* Collapsed bar */}
       <button
         onClick={(): void => setExpanded(!expanded)}
-        className="flex items-center justify-between w-full px-4 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+        className="flex items-center justify-between w-full px-4 py-1.5 text-xs text-secondary hover:bg-hover"
       >
         <div className="flex items-center gap-4">
           {(Object.keys(counts) as MessageSeverity[]).map((severity) =>
@@ -160,17 +160,17 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
               </span>
             ) : null
           )}
-          {messages.length === 0 && <span className="text-gray-400">No messages</span>}
+          {messages.length === 0 && <span className="text-muted">No messages</span>}
         </div>
-        <span className="text-gray-400">{expanded ? '\u25BC' : '\u25B2'}</span>
+        <span className="text-muted">{expanded ? '\u25BC' : '\u25B2'}</span>
       </button>
 
       {/* Expanded log */}
       {expanded && (
-        <div className="border-t border-gray-100">
+        <div className="border-t border-border-subtle">
           {/* Header toolbar */}
-          <div className="flex items-center justify-between px-4 py-1 bg-gray-50 border-b border-gray-100">
-            <span className="text-xs font-medium text-gray-500">
+          <div className="flex items-center justify-between px-4 py-1 bg-surface-alt border-b border-border-subtle">
+            <span className="text-xs font-medium text-muted">
               {isFiltered
                 ? `${filteredMessages.length} of ${messages.length} messages`
                 : `${messages.length} message${messages.length !== 1 ? 's' : ''}`}
@@ -178,25 +178,25 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
             <div className="flex items-center gap-1">
               <button
                 onClick={(): void => setShowFilters(!showFilters)}
-                className={`p-1 rounded hover:bg-gray-200 ${showFilters ? 'bg-gray-200' : ''}`}
+                className={`p-1 rounded hover:bg-surface-raised ${showFilters ? 'bg-surface-raised' : ''}`}
                 title="Filter messages"
               >
-                <FunnelIcon className="h-3.5 w-3.5 text-gray-500" />
+                <FunnelIcon className="h-3.5 w-3.5 text-muted" />
               </button>
               <button
                 onClick={copyAllFiltered}
                 className={`p-1 rounded transition-colors ${
-                  copySuccessId === '__all__' ? 'bg-green-100' : 'hover:bg-gray-200'
+                  copySuccessId === '__all__' ? 'bg-status-success-bg' : 'hover:bg-surface-raised'
                 }`}
                 title={copySuccessId === '__all__' ? 'Copied!' : 'Copy filtered messages'}
               >
                 {copySuccessId === '__all__' ? (
-                  <CheckIcon className="h-3.5 w-3.5 text-green-600" />
+                  <CheckIcon className="h-3.5 w-3.5 text-status-success-icon" />
                 ) : (
-                  <DocumentDuplicateIcon className="h-3.5 w-3.5 text-gray-500" />
+                  <DocumentDuplicateIcon className="h-3.5 w-3.5 text-muted" />
                 )}
               </button>
-              <button onClick={onClear} className="text-xs text-gray-400 hover:text-gray-600 ml-1">
+              <button onClick={onClear} className="text-xs text-muted hover:text-secondary ml-1">
                 Clear
               </button>
             </div>
@@ -204,7 +204,7 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
 
           {/* Filter toolbar */}
           {showFilters && (
-            <div className="px-4 py-1.5 bg-gray-100 border-b border-gray-100 flex items-center gap-3">
+            <div className="px-4 py-1.5 bg-surface-raised border-b border-border-subtle flex items-center gap-3">
               {/* Level filter buttons */}
               <div className="flex items-center gap-1">
                 {FILTER_LEVELS.map(({ label, level }) => (
@@ -213,8 +213,8 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                     onClick={(): void => setFilterLevel(level)}
                     className={`text-xs px-2 py-0.5 rounded border ${
                       filterLevel === level
-                        ? 'bg-blue-100 border-blue-300 text-blue-700'
-                        : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                        ? 'bg-status-info-bg border-status-info-border text-status-info-text'
+                        : 'bg-surface border-border text-secondary hover:bg-hover'
                     }`}
                   >
                     {label}
@@ -224,18 +224,18 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
 
               {/* Search input */}
               <div className="relative flex-1">
-                <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted" />
                 <input
                   type="text"
                   placeholder="Search messages..."
                   value={searchTerm}
                   onChange={(e): void => setSearchTerm(e.target.value)}
-                  className="w-full pl-7 pr-6 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-7 pr-6 py-0.5 text-xs border border-border rounded bg-surface text-primary focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
                 />
                 {searchTerm.length > 0 && (
                   <button
                     onClick={(): void => setSearchTerm('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary text-xs"
                     aria-label="Clear search"
                   >
                     &times;
@@ -248,37 +248,37 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
           {/* Message list */}
           <div className="max-h-48 overflow-y-auto">
             {filteredMessages.length === 0 ? (
-              <div className="px-4 py-3 text-xs text-gray-400 text-center">
+              <div className="px-4 py-3 text-xs text-muted text-center">
                 {isFiltered ? 'No messages match the current filter' : 'No messages'}
               </div>
             ) : (
               filteredMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`group flex items-start gap-2 px-4 py-1.5 text-xs border-b border-gray-50 ${
+                  className={`group flex items-start gap-2 px-4 py-1.5 text-xs border-b border-border-subtle ${
                     LOG_ROW_COLORS[msg.severity]
                   }`}
                 >
                   <span className={`shrink-0 ${SEVERITY_COLORS[msg.severity]}`}>
                     {SEVERITY_ICONS[msg.severity]}
                   </span>
-                  <span className="flex-1 text-gray-700">{msg.text}</span>
+                  <span className="flex-1 text-secondary">{msg.text}</span>
                   <button
                     onClick={(): void => copyToClipboard(msg.text, msg.id)}
                     className={`shrink-0 p-0.5 rounded transition-colors ${
                       copySuccessId === msg.id
                         ? 'opacity-100 bg-green-100'
-                        : 'opacity-0 group-hover:opacity-100 hover:bg-gray-200'
+                        : 'opacity-0 group-hover:opacity-100 hover:bg-surface-raised'
                     }`}
                     title={copySuccessId === msg.id ? 'Copied!' : 'Copy message'}
                   >
                     {copySuccessId === msg.id ? (
-                      <CheckIcon className="h-3 w-3 text-green-600" />
+                      <CheckIcon className="h-3 w-3 text-status-success-icon" />
                     ) : (
-                      <DocumentDuplicateIcon className="h-3 w-3 text-gray-400" />
+                      <DocumentDuplicateIcon className="h-3 w-3 text-muted" />
                     )}
                   </button>
-                  <span className="shrink-0 text-gray-400">{formatTime(msg.timestamp)}</span>
+                  <span className="shrink-0 text-muted">{formatTime(msg.timestamp)}</span>
                 </div>
               ))
             )}

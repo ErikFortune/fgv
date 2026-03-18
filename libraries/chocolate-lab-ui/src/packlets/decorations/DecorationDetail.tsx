@@ -77,7 +77,7 @@ function IngredientRow({
       items={items}
       preferredId={resolved.ingredient.id}
       onClick={onClick}
-      rightContent={<span className="text-xs text-gray-500 tabular-nums shrink-0">{resolved.amount}g</span>}
+      rightContent={<span className="text-xs text-muted tabular-nums shrink-0">{resolved.amount}g</span>}
     />
   );
 }
@@ -124,8 +124,8 @@ function RatingsSection({
       <div className="space-y-1">
         {ratings.map((rating, i) => (
           <div key={i} className="flex items-baseline justify-between text-sm">
-            <span className="text-gray-500 capitalize">{rating.category}</span>
-            <span className="text-gray-900">
+            <span className="text-muted capitalize">{rating.category}</span>
+            <span className="text-primary">
               {'★'.repeat(rating.score)}
               {'☆'.repeat(5 - rating.score)}
             </span>
@@ -174,7 +174,7 @@ export function DecorationDetail(props: IDecorationDetailProps): React.ReactElem
       {/* Ingredients */}
       {decoration.ingredients.length > 0 && (
         <DetailSection title={`Ingredients (${decoration.ingredients.length})`}>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border-subtle">
             {decoration.ingredients.map((ri) => (
               <IngredientRow key={ri.ingredient.id} resolved={ri} onClick={onIngredientClick} />
             ))}

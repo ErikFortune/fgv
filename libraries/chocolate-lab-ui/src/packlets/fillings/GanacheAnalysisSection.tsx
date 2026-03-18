@@ -129,58 +129,56 @@ function PreviewVariant({
 }): React.ReactElement {
   const { characteristics } = calculation.analysis;
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Composition</h3>
+    <div className="bg-surface rounded-lg border border-border p-4">
+      <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Composition</h3>
       <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 mb-3">
         <div className="flex justify-between text-xs">
-          <span className="text-gray-600">Cacao Fat</span>
-          <span className="text-gray-900 font-medium tabular-nums">
+          <span className="text-secondary">Cacao Fat</span>
+          <span className="text-primary font-medium tabular-nums">
             {characteristics.cacaoFat.toFixed(1)}%
           </span>
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-gray-600">Sugar</span>
-          <span className="text-gray-900 font-medium tabular-nums">{characteristics.sugar.toFixed(1)}%</span>
+          <span className="text-secondary">Sugar</span>
+          <span className="text-primary font-medium tabular-nums">{characteristics.sugar.toFixed(1)}%</span>
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-gray-600">Milk Fat</span>
-          <span className="text-gray-900 font-medium tabular-nums">
-            {characteristics.milkFat.toFixed(1)}%
-          </span>
+          <span className="text-secondary">Milk Fat</span>
+          <span className="text-primary font-medium tabular-nums">{characteristics.milkFat.toFixed(1)}%</span>
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-gray-600">Water</span>
-          <span className="text-gray-900 font-medium tabular-nums">{characteristics.water.toFixed(1)}%</span>
+          <span className="text-secondary">Water</span>
+          <span className="text-primary font-medium tabular-nums">{characteristics.water.toFixed(1)}%</span>
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-gray-600">Solids</span>
-          <span className="text-gray-900 font-medium tabular-nums">{characteristics.solids.toFixed(1)}%</span>
+          <span className="text-secondary">Solids</span>
+          <span className="text-primary font-medium tabular-nums">{characteristics.solids.toFixed(1)}%</span>
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-gray-600">Other Fats</span>
-          <span className="text-gray-900 font-medium tabular-nums">
+          <span className="text-secondary">Other Fats</span>
+          <span className="text-primary font-medium tabular-nums">
             {characteristics.otherFats.toFixed(1)}%
           </span>
         </div>
       </div>
-      <div className="border-t border-gray-100 pt-2">
-        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Ratios</h3>
+      <div className="border-t border-border-subtle pt-2">
+        <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-1.5">Ratios</h3>
         <div className="grid grid-cols-3 gap-x-4">
           <div className="flex justify-between text-xs">
-            <span className="text-gray-600">Total Fat</span>
-            <span className="text-gray-900 font-medium tabular-nums">
+            <span className="text-secondary">Total Fat</span>
+            <span className="text-primary font-medium tabular-nums">
               {calculation.analysis.totalFat.toFixed(1)}%
             </span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-gray-600">Fat:Water</span>
-            <span className="text-gray-900 font-medium tabular-nums">
+            <span className="text-secondary">Fat:Water</span>
+            <span className="text-primary font-medium tabular-nums">
               {calculation.analysis.fatToWaterRatio.toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-gray-600">Sugar:Water</span>
-            <span className="text-gray-900 font-medium tabular-nums">
+            <span className="text-secondary">Sugar:Water</span>
+            <span className="text-primary font-medium tabular-nums">
               {calculation.analysis.sugarToWaterRatio.toFixed(2)}
             </span>
           </div>
@@ -225,9 +223,7 @@ export function CollapsibleGanacheSection({
   if (alwaysExpanded) {
     return (
       <div className="mb-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
-          Ganache Analysis
-        </h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-2">Ganache Analysis</h3>
         {children}
       </div>
     );
@@ -238,7 +234,7 @@ export function CollapsibleGanacheSection({
       <button
         type="button"
         onClick={(): void => setCollapsed((prev) => !prev)}
-        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-700 mb-2"
+        className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted hover:text-secondary mb-2"
       >
         <span className={`transition-transform ${collapsed ? '' : 'rotate-90'}`}>{'\u203A'}</span>
         Ganache Analysis

@@ -279,7 +279,7 @@ export function TypeaheadInput<TId extends string = string>(
         autoFocus={autoFocus}
         className={
           className ??
-          'w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary'
+          'w-full px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring'
         }
         role="combobox"
         aria-expanded={isOpen}
@@ -290,7 +290,7 @@ export function TypeaheadInput<TId extends string = string>(
       {isOpen && hasItems && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+          className="absolute z-50 mt-1 w-full bg-surface border border-border rounded-lg shadow-lg overflow-hidden"
           style={{ maxHeight }}
           role="listbox"
           onMouseDown={handleDropdownMouseDown}
@@ -311,8 +311,8 @@ export function TypeaheadInput<TId extends string = string>(
                     onClick={(): void => handleSelect(item)}
                     className={`flex items-center w-full px-2.5 py-1.5 text-left text-sm transition-colors border-l-2 ${
                       isFocused
-                        ? 'bg-gray-50 text-gray-800 border-choco-primary/50'
-                        : 'text-gray-700 hover:bg-gray-50 border-choco-primary/20'
+                        ? 'bg-surface-alt text-primary border-brand-primary/50'
+                        : 'text-secondary hover:bg-hover border-brand-primary/20'
                     }`}
                   >
                     <span className="flex-1 min-w-0 truncate">{item.name}</span>
@@ -321,7 +321,7 @@ export function TypeaheadInput<TId extends string = string>(
               })}
 
             {/* Separator */}
-            {hasPriorityItems && hasCatalogItems && <div className="border-t border-gray-200 my-0.5" />}
+            {hasPriorityItems && hasCatalogItems && <div className="border-t border-border my-0.5" />}
 
             {/* Catalog items */}
             {hasCatalogItems &&
@@ -338,7 +338,7 @@ export function TypeaheadInput<TId extends string = string>(
                     aria-selected={isFocused}
                     onClick={(): void => handleSelect(item)}
                     className={`flex items-center w-full px-2.5 py-1.5 text-left text-sm transition-colors ${
-                      isFocused ? 'bg-gray-50 text-gray-800' : 'text-gray-700 hover:bg-gray-50'
+                      isFocused ? 'bg-surface-alt text-primary' : 'text-secondary hover:bg-hover'
                     }`}
                   >
                     <span className="flex-1 min-w-0 truncate">{item.name}</span>

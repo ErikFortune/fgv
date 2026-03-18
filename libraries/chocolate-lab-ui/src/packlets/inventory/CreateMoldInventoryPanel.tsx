@@ -162,11 +162,11 @@ export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps):
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">New Mold Inventory Entry</h2>
+      <h2 className="text-lg font-semibold text-primary">New Mold Inventory Entry</h2>
 
       {/* Mold Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Mold</label>
+        <label className="block text-sm font-medium text-secondary mb-1">Mold</label>
         <TypeaheadInput<MoldId>
           value={moldInput}
           onChange={(value): void => {
@@ -186,27 +186,27 @@ export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps):
         {selectedMoldId && (
           <p className="text-xs text-green-600 mt-1">
             Selected: {selectedMoldName}
-            <span className="ml-1 text-gray-400 font-mono">{selectedMoldId}</span>
+            <span className="ml-1 text-muted font-mono">{selectedMoldId}</span>
           </p>
         )}
       </div>
 
       {/* Count */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Count</label>
+        <label className="block text-sm font-medium text-secondary mb-1">Count</label>
         <NumericInput
           value={count}
           onChange={setCount}
           min={1}
           step={1}
           label="Count"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary"
+          className="w-full border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-focus-ring"
         />
       </div>
 
       {/* Location */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Location (optional)</label>
+        <label className="block text-sm font-medium text-secondary mb-1">Location (optional)</label>
         <TypeaheadInput<LocationId>
           value={locationInput}
           onChange={(value): void => {
@@ -224,7 +224,7 @@ export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps):
         {selectedLocationId && (
           <p className="text-xs text-green-600 mt-1">
             Selected: {selectedLocationName}
-            <span className="ml-1 text-gray-400 font-mono">{selectedLocationId}</span>
+            <span className="ml-1 text-muted font-mono">{selectedLocationId}</span>
           </p>
         )}
       </div>
@@ -234,13 +234,13 @@ export function CreateMoldInventoryPanel(props: ICreateMoldInventoryPanelProps):
         <button
           onClick={handleConfirm}
           disabled={!selectedMoldId || count === undefined}
-          className="px-4 py-2 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 text-sm font-medium text-inverted bg-brand-primary hover:bg-brand-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Add to Inventory
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+          className="px-4 py-2 text-sm font-medium text-secondary bg-surface-raised hover:bg-hover rounded transition-colors"
         >
           Cancel
         </button>

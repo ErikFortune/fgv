@@ -16,16 +16,16 @@ export function ScalingSection(props: IScalingSectionProps): React.ReactElement 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Scaling Defaults</h2>
+        <h2 className="text-lg font-semibold text-primary mb-4">Scaling Defaults</h2>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="weight-unit" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="weight-unit" className="block text-sm font-medium text-secondary mb-1">
                 Weight Unit
               </label>
               <select
                 id="weight-unit"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent"
+                className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent"
                 value={scaling.weightUnit}
                 onChange={(e): void => onChange({ scaling: { ...scaling, weightUnit: e.target.value } })}
               >
@@ -38,12 +38,12 @@ export function ScalingSection(props: IScalingSectionProps): React.ReactElement 
             </div>
 
             <div>
-              <label htmlFor="measurement-unit" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="measurement-unit" className="block text-sm font-medium text-secondary mb-1">
                 Measurement Unit
               </label>
               <select
                 id="measurement-unit"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent"
+                className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent"
                 value={scaling.measurementUnit}
                 onChange={(e): void => onChange({ scaling: { ...scaling, measurementUnit: e.target.value } })}
               >
@@ -58,7 +58,7 @@ export function ScalingSection(props: IScalingSectionProps): React.ReactElement 
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="batch-multiplier" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="batch-multiplier" className="block text-sm font-medium text-secondary mb-1">
                 Batch Multiplier
               </label>
               <input
@@ -66,19 +66,19 @@ export function ScalingSection(props: IScalingSectionProps): React.ReactElement 
                 type="number"
                 min="0.1"
                 step="0.1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent"
+                className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent"
                 defaultValue={scaling.batchMultiplier}
                 onBlur={(e): void =>
                   onChange({ scaling: { ...scaling, batchMultiplier: parseFloat(e.target.value) || 1.0 } })
                 }
               />
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-muted">
                 Default multiplier for batch scaling (e.g., 1.0 = single batch).
               </p>
             </div>
 
             <div>
-              <label htmlFor="buffer-percentage" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="buffer-percentage" className="block text-sm font-medium text-secondary mb-1">
                 Buffer Percentage
               </label>
               <div className="relative">
@@ -88,7 +88,7 @@ export function ScalingSection(props: IScalingSectionProps): React.ReactElement 
                   min="0"
                   max="100"
                   step="1"
-                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent"
+                  className="w-full px-3 py-2 pr-8 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent"
                   defaultValue={Math.round(scaling.bufferPercentage * 100)}
                   onBlur={(e): void =>
                     onChange({
@@ -96,9 +96,9 @@ export function ScalingSection(props: IScalingSectionProps): React.ReactElement 
                     })
                   }
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">%</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">%</span>
               </div>
-              <p className="mt-1 text-xs text-gray-400">Extra buffer added to molded confection batches.</p>
+              <p className="mt-1 text-xs text-muted">Extra buffer added to molded confection batches.</p>
             </div>
           </div>
         </div>

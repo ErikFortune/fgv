@@ -881,7 +881,7 @@ export function ConfectionEditView({
       {/* Identity Section */}
       <EditSection title="Identity">
         <EditField label="Base ID">
-          <span className="text-sm font-mono text-gray-500">{wrapper.current.baseId}</span>
+          <span className="text-sm font-mono text-muted">{wrapper.current.baseId}</span>
         </EditField>
         <EditField label="Name">
           <TextInput
@@ -932,7 +932,7 @@ export function ConfectionEditView({
               <input
                 type="number"
                 min={1}
-                className="text-sm border border-gray-300 rounded px-2 py-1 w-24 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                className="text-sm border border-border rounded px-2 py-1 w-24 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                 value={
                   EntitiesNS.Confections.isYieldInFrames(currentVariation.yield)
                     ? currentVariation.yield.numFrames
@@ -1001,15 +1001,15 @@ export function ConfectionEditView({
                     return (
                       <EditSection key={purpose} title={`${label} Chocolate`}>
                         {ac ? (
-                          <div className="rounded border border-gray-200 p-2 flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-800">
+                          <div className="rounded border border-border p-2 flex items-center justify-between">
+                            <span className="text-sm font-medium text-primary">
                               {getIngredientName(preferredId ?? '—')}
                             </span>
                             {!inputsDisabled && (
                               <button
                                 type="button"
                                 onClick={(): void => handleRemoveAdditionalChocolate(purpose)}
-                                className="text-xs text-gray-400 hover:text-red-500"
+                                className="text-xs text-muted hover:text-red-500"
                               >
                                 ✕
                               </button>
@@ -1020,7 +1020,7 @@ export function ConfectionEditView({
                             <input
                               type="text"
                               placeholder={`Set ${purpose} chocolate…`}
-                              className="text-xs border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                              className="text-xs border border-dashed border-border rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-focus-ring"
                               list="ingredient-suggestions"
                               onBlur={(e): void => {
                                 handleSetAdditionalChocolate(purpose, e.target.value);

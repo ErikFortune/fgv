@@ -201,7 +201,7 @@ function FillingSlotRow({
 
   return (
     <div className="mb-1">
-      <div className="text-xs text-gray-400 mb-0.5 pl-[22px]">
+      <div className="text-xs text-muted mb-0.5 pl-[22px]">
         {slot.name ?? slot.slotId}
         {weightLabel && <span className="ml-1 text-amber-600 font-medium">({weightLabel})</span>}
       </div>
@@ -484,7 +484,7 @@ function MoldedBonBonScaling({
   return (
     <DetailSection title="Scale to Yield">
       <div className="flex items-center gap-3 px-1 py-1">
-        <label className="text-xs text-gray-500 w-16 shrink-0">Frames</label>
+        <label className="text-xs text-muted w-16 shrink-0">Frames</label>
         <input
           type="text"
           inputMode="numeric"
@@ -495,9 +495,9 @@ function MoldedBonBonScaling({
           onKeyDown={(e): void => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
-          className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+          className="w-20 border border-border rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-focus-ring"
         />
-        <label className="text-xs text-gray-500 w-16 shrink-0">Buffer %</label>
+        <label className="text-xs text-muted w-16 shrink-0">Buffer %</label>
         <input
           type="text"
           inputMode="numeric"
@@ -508,7 +508,7 @@ function MoldedBonBonScaling({
           onKeyDown={(e): void => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
-          className="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+          className="w-16 border border-border rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-focus-ring"
         />
       </div>
       {effectiveCount !== undefined && <DetailRow label="Pieces" value={`${effectiveCount} pieces`} />}
@@ -541,7 +541,7 @@ function PieceCountScaling({
   return (
     <DetailSection title="Scale to Yield">
       <div className="flex items-center gap-3 px-1 py-1">
-        <label className="text-xs text-gray-500 w-16 shrink-0">Pieces</label>
+        <label className="text-xs text-muted w-16 shrink-0">Pieces</label>
         <input
           type="text"
           inputMode="numeric"
@@ -552,7 +552,7 @@ function PieceCountScaling({
           onKeyDown={(e): void => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
-          className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+          className="w-20 border border-border rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-focus-ring"
         />
       </div>
     </DetailSection>
@@ -822,7 +822,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
       <EntityDetailHeader
         title={confection.name}
         description={confection.description}
-        badge={{ label: confection.confectionType, colorClass: 'bg-choco-primary/10 text-choco-primary' }}
+        badge={{ label: confection.confectionType, colorClass: 'bg-brand-primary/10 text-brand-primary' }}
         subtitle={confection.id}
         derivedFrom={confection.entity.derivedFrom}
         onCopyJson={handleCopyJson}
@@ -833,7 +833,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
             <button
               type="button"
               onClick={onStartSession}
-              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-secondary hover:text-brand-primary hover:bg-hover rounded transition-colors"
               title="Start Session"
             >
               <PlayIcon className="w-4 h-4" />
@@ -858,7 +858,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
       )}
 
       {/* Variation spec subtitle */}
-      <p className="text-[10px] text-gray-400 font-mono -mt-3 mb-4">{selectedVariation.variationSpec}</p>
+      <p className="text-[10px] text-muted font-mono -mt-3 mb-4">{selectedVariation.variationSpec}</p>
 
       {/* Yield */}
       <YieldSection yieldSpec={selectedVariation.yield} />
@@ -944,7 +944,7 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
 
       {/* Variation count summary */}
       {confection.variations.length > 1 && (
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-muted mt-2">
           {confection.variations.length} variations · golden: {confection.goldenVariationSpec}
         </p>
       )}

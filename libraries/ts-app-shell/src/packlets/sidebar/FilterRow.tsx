@@ -220,8 +220,8 @@ export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactEl
       {/* Collapsed row */}
       <button
         onClick={handleToggle}
-        className={`flex items-center justify-between w-full px-3 py-1.5 text-sm hover:bg-gray-50 transition-colors ${
-          activeCount > 0 ? 'text-choco-primary font-medium' : 'text-gray-600'
+        className={`flex items-center justify-between w-full px-3 py-1.5 text-sm hover:bg-hover transition-colors ${
+          activeCount > 0 ? 'text-brand-primary font-medium' : 'text-secondary'
         }`}
       >
         <span className="truncate">{label}</span>
@@ -229,17 +229,17 @@ export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactEl
           {activeCount > 0 && (
             <span
               onClick={clearSelection}
-              className="text-gray-400 hover:text-gray-600 cursor-pointer text-xs"
+              className="text-muted hover:text-secondary cursor-pointer text-xs"
               role="button"
               aria-label={`Clear ${label} filter`}
             >
               {'\u00D7'}
             </span>
           )}
-          <span className={`text-xs ${activeCount > 0 ? 'text-choco-accent' : 'text-gray-400'}`}>
+          <span className={`text-xs ${activeCount > 0 ? 'text-brand-accent' : 'text-muted'}`}>
             {statusText}
           </span>
-          <span className="text-gray-400 text-xs">{'\u203A'}</span>
+          <span className="text-muted text-xs">{'\u203A'}</span>
         </span>
       </button>
 
@@ -247,16 +247,16 @@ export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactEl
       {open && (
         <div
           ref={flyoutRef}
-          className="bg-white border border-gray-200 rounded-r-lg shadow-xl overflow-hidden flex flex-col"
+          className="bg-surface border border-border rounded-r-lg shadow-xl overflow-hidden flex flex-col"
           style={flyoutStyle}
         >
           {/* Flyout header */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
-            <span className="text-xs font-medium text-gray-600">{label}</span>
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border-subtle bg-surface-alt">
+            <span className="text-xs font-medium text-secondary">{label}</span>
             {activeCount > 0 && (
               <button
                 onClick={(): void => onSelectionChange([])}
-                className="text-xs text-choco-accent hover:text-choco-primary"
+                className="text-xs text-brand-accent hover:text-brand-primary"
               >
                 Clear
               </button>
@@ -265,13 +265,13 @@ export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactEl
 
           {/* Search within filter (for long lists) */}
           {options.length >= SEARCH_THRESHOLD && (
-            <div className="px-3 py-1.5 border-b border-gray-100">
+            <div className="px-3 py-1.5 border-b border-border-subtle">
               <input
                 type="text"
                 value={flyoutSearch}
                 onChange={(e): void => setFlyoutSearch(e.target.value)}
                 placeholder={`Search ${label.toLowerCase()}...`}
-                className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:border-choco-accent"
+                className="w-full px-2 py-1 text-xs border border-border rounded bg-surface text-primary focus:outline-none focus:border-focus-ring"
                 autoFocus
               />
             </div>
@@ -280,7 +280,7 @@ export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactEl
           {/* Options list */}
           <div className="flex-1 overflow-y-auto">
             {filteredOptions.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-gray-400">
+              <div className="px-3 py-2 text-xs text-muted">
                 {options.length === 0 ? 'No options available' : 'No matches'}
               </div>
             ) : (
@@ -290,21 +290,19 @@ export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactEl
                   <button
                     key={idx}
                     onClick={(): void => toggleValue(option.value)}
-                    className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50 transition-colors ${
-                      checked ? 'text-choco-primary font-medium' : 'text-gray-700'
+                    className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-hover transition-colors ${
+                      checked ? 'text-brand-primary font-medium' : 'text-secondary'
                     }`}
                   >
                     <span
                       className={`inline-flex items-center justify-center w-4 h-4 border rounded ${
                         multiple ? 'rounded' : 'rounded-full'
-                      } ${checked ? 'bg-choco-accent border-choco-accent text-white' : 'border-gray-300'}`}
+                      } ${checked ? 'bg-brand-accent border-brand-accent text-white' : 'border-border'}`}
                     >
                       {checked && <span className="text-[10px]">{'\u2713'}</span>}
                     </span>
                     <span className="flex-1 truncate">{option.label}</span>
-                    {option.count !== undefined && (
-                      <span className="text-xs text-gray-400">{option.count}</span>
-                    )}
+                    {option.count !== undefined && <span className="text-xs text-muted">{option.count}</span>}
                   </button>
                 );
               })

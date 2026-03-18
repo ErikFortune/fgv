@@ -99,13 +99,13 @@ function BrowsableText({
       <button
         type="button"
         onClick={onBrowse}
-        className="text-sm text-gray-800 hover:text-choco-primary text-left truncate"
+        className="text-sm text-primary hover:text-brand-primary text-left truncate"
       >
         {text}
       </button>
     );
   }
-  return <span className="text-sm text-gray-700">{text}</span>;
+  return <span className="text-sm text-secondary">{text}</span>;
 }
 
 function LabeledValue({
@@ -117,7 +117,7 @@ function LabeledValue({
 }): React.ReactElement {
   return (
     <div>
-      <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">{label}</div>
+      <div className="text-xs font-medium text-muted uppercase mb-0.5">{label}</div>
       <div className="py-0.5">{children}</div>
     </div>
   );
@@ -157,7 +157,7 @@ export function ProducedFillingContent({
     <>
       {/* Target Weight */}
       <LabeledValue label="Target Weight">
-        <span className="text-sm text-gray-700">
+        <span className="text-sm text-secondary">
           {Math.round(Number(produced.targetWeight))}g
           {produced.scaleFactor !== 1.0 && (
             <span className="text-xs text-amber-600 font-medium ml-1">
@@ -185,22 +185,22 @@ export function ProducedFillingContent({
                     <button
                       type="button"
                       onClick={(): void => onBrowseIngredient(ing.ingredientId)}
-                      className="flex-1 min-w-0 text-sm text-gray-800 hover:text-choco-primary text-left truncate"
+                      className="flex-1 min-w-0 text-sm text-primary hover:text-brand-primary text-left truncate"
                     >
                       {getIngredientName(ing.ingredientId, workspace)}
                     </button>
                   ) : (
-                    <span className="flex-1 min-w-0 text-sm text-gray-800 truncate">
+                    <span className="flex-1 min-w-0 text-sm text-primary truncate">
                       {getIngredientName(ing.ingredientId, workspace)}
                     </span>
                   )}
                   <InlineRoleLabel role={ing.role} />
-                  <span className="text-sm text-gray-600 tabular-nums shrink-0">
+                  <span className="text-sm text-secondary tabular-nums shrink-0">
                     {formatIngredientAmount(Number(ing.amount), ing.unit)}
                   </span>
                 </div>
                 {hasModifiers && (
-                  <div className="flex flex-wrap items-center gap-x-3 pl-1 text-xs text-gray-400">
+                  <div className="flex flex-wrap items-center gap-x-3 pl-1 text-xs text-muted">
                     {ing.modifiers?.yieldFactor !== undefined && ing.modifiers.yieldFactor !== 1.0 && (
                       <span>
                         yield {'\u00d7'}
@@ -236,12 +236,12 @@ export function ProducedFillingContent({
           <button
             type="button"
             onClick={(): void => onOpenFillingRecipe(fillingId, variationSpec)}
-            className="text-sm text-choco-primary hover:underline text-left truncate w-full"
+            className="text-sm text-brand-primary hover:underline text-left truncate w-full"
           >
             {sourceDisplayName}
           </button>
         ) : (
-          <span className="text-sm text-gray-800">{sourceDisplayName}</span>
+          <span className="text-sm text-primary">{sourceDisplayName}</span>
         )}
       </LabeledValue>
     </>

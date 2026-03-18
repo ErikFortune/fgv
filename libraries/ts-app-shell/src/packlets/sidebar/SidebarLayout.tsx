@@ -47,7 +47,7 @@ export function SidebarLayout(props: ISidebarLayoutProps): React.ReactElement {
     <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
       <aside
-        className="flex flex-col border-r border-gray-200 bg-white overflow-y-auto shrink-0"
+        className="flex flex-col border-r border-border bg-surface overflow-y-auto shrink-0"
         style={{ width: sidebarWidth }}
       >
         {sidebar}

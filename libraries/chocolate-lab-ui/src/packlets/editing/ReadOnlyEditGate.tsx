@@ -59,8 +59,8 @@ export function ReadOnlyEditGate({
         <LockClosedIcon className="w-6 h-6 text-amber-500" />
       </div>
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold text-gray-800">{entityName} is in a read-only collection</h3>
-        <p className="text-xs text-gray-500 max-w-xs">
+        <h3 className="text-sm font-semibold text-primary">{entityName} is in a read-only collection</h3>
+        <p className="text-xs text-muted max-w-xs">
           {onSaveCopy
             ? 'Save a copy to a writable collection to edit it.'
             : 'No writable collection is available. Create a collection first.'}
@@ -70,7 +70,7 @@ export function ReadOnlyEditGate({
         <button
           type="button"
           onClick={onCancel}
-          className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+          className="px-3 py-1.5 text-xs font-medium text-secondary hover:text-primary hover:bg-hover rounded transition-colors"
         >
           Cancel
         </button>
@@ -78,7 +78,7 @@ export function ReadOnlyEditGate({
           <button
             type="button"
             onClick={onSaveCopy}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-inverted bg-brand-primary hover:bg-brand-primary/90 rounded transition-colors"
           >
             <DocumentDuplicateIcon className="w-3.5 h-3.5" />
             Save Copy

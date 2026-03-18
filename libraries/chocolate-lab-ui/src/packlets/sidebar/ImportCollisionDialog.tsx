@@ -95,13 +95,13 @@ export function ImportCollisionDialog({
 
   const tabClass = (t: typeof tab): string =>
     `px-3 py-1.5 text-sm font-medium rounded transition-colors ${
-      tab === t ? 'bg-choco-primary text-white' : 'text-gray-600 hover:text-choco-primary hover:bg-gray-100'
+      tab === t ? 'bg-brand-primary text-inverted' : 'text-secondary hover:text-brand-primary hover:bg-hover'
     }`;
 
   return (
     <Modal isOpen={isOpen} onClose={handleSkip} title="Collection ID Already Exists">
       <div className="space-y-4">
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-secondary">
           A collection named <strong>{collectionId}</strong> ({itemCount} item
           {itemCount !== 1 ? 's' : ''}) already exists. How would you like to handle the import?
         </p>
@@ -122,12 +122,12 @@ export function ImportCollisionDialog({
         {/* Option details */}
         {tab === 'rename' && (
           <div className="space-y-2">
-            <p className="text-xs text-gray-500">Import the collection under a different ID.</p>
+            <p className="text-xs text-muted">Import the collection under a different ID.</p>
             <input
               type="text"
               value={newId}
               onChange={(e): void => setNewId(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              className="w-full px-3 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring"
               placeholder="New collection ID"
               autoFocus
             />
@@ -141,16 +141,14 @@ export function ImportCollisionDialog({
           </p>
         )}
 
-        {tab === 'skip' && (
-          <p className="text-xs text-gray-500">The incoming collection will be discarded.</p>
-        )}
+        {tab === 'skip' && <p className="text-xs text-muted">The incoming collection will be discarded.</p>}
 
         {/* Actions */}
         <div className="flex justify-end gap-2 pt-2">
           <button
             type="button"
             onClick={handleSkip}
-            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+            className="px-3 py-1.5 text-sm text-secondary hover:text-primary hover:bg-hover rounded transition-colors"
           >
             Cancel
           </button>
@@ -158,7 +156,7 @@ export function ImportCollisionDialog({
             type="button"
             onClick={handleConfirm}
             disabled={tab === 'rename' && !newId.trim()}
-            className="px-4 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-1.5 text-sm font-medium text-inverted bg-brand-primary hover:bg-brand-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {tab === 'skip' ? 'Skip' : tab === 'overwrite' ? 'Overwrite' : 'Import as Renamed'}
           </button>

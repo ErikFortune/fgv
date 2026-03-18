@@ -70,7 +70,7 @@ export function ComparisonView(props: IComparisonViewProps): React.ReactElement 
 
   if (columns.length < 2) {
     return (
-      <div className="flex flex-1 items-center justify-center text-gray-400 text-sm">
+      <div className="flex flex-1 items-center justify-center text-muted text-sm">
         Select at least 2 items to compare.
       </div>
     );
@@ -81,11 +81,11 @@ export function ComparisonView(props: IComparisonViewProps): React.ReactElement 
       {columns.map((col) => (
         <div
           key={col.key}
-          className="flex flex-col flex-1 min-w-0 border-r border-gray-200 last:border-r-0 overflow-hidden"
+          className="flex flex-col flex-1 min-w-0 border-r border-border last:border-r-0 overflow-hidden"
         >
           {/* Column header */}
-          <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-200 shrink-0">
-            <span className="text-xs font-medium text-gray-700 truncate block">{col.label}</span>
+          <div className="px-3 py-1.5 bg-surface-alt border-b border-border shrink-0">
+            <span className="text-xs font-medium text-secondary truncate block">{col.label}</span>
           </div>
           {/* Column content */}
           <div className="flex-1 overflow-y-auto">{col.content}</div>

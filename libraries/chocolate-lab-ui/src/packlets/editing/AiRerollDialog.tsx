@@ -153,7 +153,7 @@ export function AiRerollDialog<TEntity>(props: IAiRerollDialogProps<TEntity>): R
           type="button"
           onClick={onCancel}
           disabled={aiAssist.isWorking}
-          className="p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+          className="p-1 text-muted hover:text-secondary transition-colors disabled:opacity-50"
           title="Cancel"
         >
           <XMarkIcon className="w-4 h-4" />
@@ -162,28 +162,28 @@ export function AiRerollDialog<TEntity>(props: IAiRerollDialogProps<TEntity>): R
 
       {/* Entity name */}
       <div>
-        <label className="text-xs font-medium text-gray-600">{entityLabel} Name</label>
+        <label className="text-xs font-medium text-secondary">{entityLabel} Name</label>
         <input
           type="text"
           value={name}
           onChange={(e): void => setName(e.target.value)}
           disabled={aiAssist.isWorking}
           placeholder={`${entityLabel} name...`}
-          className="mt-1 w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50"
+          className="mt-1 w-full px-2.5 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50"
           autoFocus
         />
       </div>
 
       {/* Additional instructions */}
       <div>
-        <label className="text-xs font-medium text-gray-600">Additional Instructions (optional)</label>
+        <label className="text-xs font-medium text-secondary">Additional Instructions (optional)</label>
         <textarea
           value={additionalInstructions}
           onChange={(e): void => setAdditionalInstructions(e.target.value)}
           disabled={aiAssist.isWorking}
           placeholder="e.g. This is a 275x135mm frame mold, use metric units..."
           rows={2}
-          className="mt-1 w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 resize-none disabled:opacity-50"
+          className="mt-1 w-full px-2.5 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 resize-none disabled:opacity-50"
         />
       </div>
 
@@ -198,7 +198,7 @@ export function AiRerollDialog<TEntity>(props: IAiRerollDialogProps<TEntity>): R
             type="button"
             onClick={(): void => handleGenerate(primaryAction)}
             disabled={!trimmedName || aiAssist.isWorking || !primaryAction.isAvailable}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-inverted bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             title={primaryAction.unavailableReason}
           >
             <SparklesIcon className="w-3.5 h-3.5" />
@@ -228,7 +228,7 @@ export function AiRerollDialog<TEntity>(props: IAiRerollDialogProps<TEntity>): R
           type="button"
           onClick={handleCopyPrompt}
           disabled={!trimmedName || aiAssist.isWorking}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-secondary hover:text-primary hover:bg-hover rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           title="Copy AI prompt to clipboard"
         >
           <ClipboardDocumentIcon className="w-3.5 h-3.5" />
@@ -242,7 +242,7 @@ export function AiRerollDialog<TEntity>(props: IAiRerollDialogProps<TEntity>): R
           type="button"
           onClick={onCancel}
           disabled={aiAssist.isWorking}
-          className="px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
+          className="px-2.5 py-1.5 text-xs font-medium text-muted hover:text-secondary hover:bg-hover rounded transition-colors disabled:opacity-50"
         >
           Cancel
         </button>

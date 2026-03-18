@@ -49,6 +49,9 @@ export {
   type StorageRootId,
   type ILocalDirectoryRef,
   type IDefaultStorageTargets,
+  // Appearance / theme
+  type ThemeId,
+  type IAppearanceSettings,
   // Bootstrap and preferences
   type ISettingsFileLocation,
   type ILocalStorageConfig,

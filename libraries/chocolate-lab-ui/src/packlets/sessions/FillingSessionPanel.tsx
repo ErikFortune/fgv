@@ -162,7 +162,7 @@ function RatingStars({ score }: { readonly score: number | undefined }): React.R
   return (
     <span className="inline-flex gap-0.5">
       {[1, 2, 3, 4, 5].map((n) => (
-        <span key={n} className={n <= (score ?? 0) ? 'text-amber-400' : 'text-gray-300'}>
+        <span key={n} className={n <= (score ?? 0) ? 'text-amber-400' : 'text-faint'}>
           ★
         </span>
       ))}
@@ -692,15 +692,15 @@ export function FillingSessionPanel({
           isExecutionComplete={isExecutionComplete}
         />
       ) : (
-        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3 py-1.5">
-          <div className="text-xs font-medium text-gray-600">Embedded filling session</div>
+        <div className="flex items-center justify-between border-b border-border bg-surface-alt px-3 py-1.5">
+          <div className="text-xs font-medium text-secondary">Embedded filling session</div>
           <button
             type="button"
             onClick={(): void => {
               handleSave().catch(() => undefined);
             }}
             disabled={!hasChanges}
-            className="rounded bg-choco-primary px-2 py-1 text-xs font-medium text-white hover:bg-choco-primary/90 disabled:opacity-40"
+            className="rounded bg-brand-primary px-2 py-1 text-xs font-medium text-inverted hover:bg-brand-primary/90 disabled:opacity-40"
           >
             Save
           </button>
@@ -711,13 +711,13 @@ export function FillingSessionPanel({
         {/* Recipe info */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1.5">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recipe</h3>
+            <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Recipe</h3>
             {onRecipeSwap && (
               <button
                 type="button"
                 onClick={handleToggleRecipeEdit}
                 title={recipeEditMode ? 'Cancel recipe change' : 'Change recipe or variation'}
-                className="inline-flex items-center p-0.5 text-gray-400 hover:text-choco-primary rounded transition-colors"
+                className="inline-flex items-center p-0.5 text-muted hover:text-brand-primary rounded transition-colors"
               >
                 <ArrowPathIcon className="h-3.5 w-3.5" />
               </button>
@@ -731,7 +731,7 @@ export function FillingSessionPanel({
                 <button
                   type="button"
                   onClick={handleOpenFillingRecipe}
-                  className="text-sm text-left text-choco-primary hover:text-choco-primary/80 hover:underline"
+                  className="text-sm text-left text-brand-primary hover:text-brand-primary/80 hover:underline"
                   title={`Open recipe ${String(session.baseRecipe.fillingRecipe.id)}`}
                 >
                   {`${session.baseRecipe.fillingRecipe.name} | ${
@@ -739,7 +739,7 @@ export function FillingSessionPanel({
                   }`}
                 </button>
               ) : (
-                <div className="text-sm text-gray-800" title={String(session.baseRecipe.fillingRecipe.id)}>
+                <div className="text-sm text-primary" title={String(session.baseRecipe.fillingRecipe.id)}>
                   {`${session.baseRecipe.fillingRecipe.name} | ${
                     session.baseRecipe.name ?? String(session.baseRecipe.variationSpec)
                   }`}
@@ -754,9 +754,9 @@ export function FillingSessionPanel({
             <div className="space-y-2 px-2">
               {/* Recipe selector */}
               <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-500 w-16 shrink-0">Recipe</label>
+                <label className="text-xs text-muted w-16 shrink-0">Recipe</label>
                 <select
-                  className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                  className="flex-1 min-w-0 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                   value={String(selectedRecipeId)}
                   onChange={(e): void => {
                     const newId = e.target.value as FillingId;
@@ -778,9 +778,9 @@ export function FillingSessionPanel({
 
               {/* Variation selector */}
               <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-500 w-16 shrink-0">Variation</label>
+                <label className="text-xs text-muted w-16 shrink-0">Variation</label>
                 <select
-                  className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                  className="flex-1 min-w-0 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                   value={String(selectedVariationSpec)}
                   onChange={(e): void =>
                     setSelectedVariationSpec(e.target.value as FillingRecipeVariationSpec)
@@ -803,7 +803,7 @@ export function FillingSessionPanel({
 
               {/* Info about what will happen */}
               {isRecipeSwapChanged && (
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted">
                   {isRecipeChanged
                     ? 'A new session will be created for the selected recipe.'
                     : 'Session will be updated in place with the selected variation.'}
@@ -816,14 +816,14 @@ export function FillingSessionPanel({
                   type="button"
                   onClick={handleApplyRecipeSwap}
                   disabled={!isRecipeSwapChanged}
-                  className="px-2.5 py-1 text-xs font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-2.5 py-1 text-xs font-medium text-inverted bg-brand-primary hover:bg-brand-primary/90 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Apply
                 </button>
                 <button
                   type="button"
                   onClick={handleToggleRecipeEdit}
-                  className="px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                  className="px-2.5 py-1 text-xs font-medium text-secondary hover:text-secondary hover:bg-hover rounded transition-colors"
                 >
                   Cancel
                 </button>
@@ -834,7 +834,7 @@ export function FillingSessionPanel({
 
         {/* Target Weight */}
         <div>
-          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Target Weight</div>
+          <div className="text-xs font-medium text-muted uppercase mb-0.5">Target Weight</div>
           {!targetWeightEditing ? (
             <div className="flex items-center gap-1 py-0.5">
               <button
@@ -844,11 +844,11 @@ export function FillingSessionPanel({
                   setTargetWeightEditing(true);
                 }}
                 title="Edit target weight"
-                className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+                className="text-muted hover:text-brand-primary p-0.5 shrink-0"
               >
                 <ArrowPathIcon className="h-3 w-3" />
               </button>
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-secondary">
                 {Math.round(session.produced.targetWeight)} g
                 {scaleFactor !== undefined && (
                   <span className="text-xs text-amber-600 font-medium ml-1">
@@ -876,9 +876,9 @@ export function FillingSessionPanel({
                 onChange={(e): void => setTargetWeightInput(e.target.value)}
                 onBlur={handleScaleApply}
                 autoFocus
-                className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+                className="w-20 rounded border border-border px-2 py-1 text-sm"
               />
-              <span className="text-xs text-gray-500">g</span>
+              <span className="text-xs text-muted">g</span>
             </div>
           )}
         </div>
@@ -901,30 +901,30 @@ export function FillingSessionPanel({
                       !!ing.modifiers?.spoonLevel ||
                       !!ing.modifiers?.toTaste;
                     return (
-                      <div key={ing.ingredientId} className="rounded border border-gray-200 p-2">
+                      <div key={ing.ingredientId} className="rounded border border-border p-2">
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={(): void => toggleIngredientEdit(index)}
                             title="Edit ingredient"
-                            className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+                            className="text-muted hover:text-brand-primary p-0.5 shrink-0"
                           >
                             <ArrowPathIcon className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={(): void => onBrowseIngredient?.(ing.ingredientId)}
-                            className="flex-1 min-w-0 text-sm text-gray-800 hover:text-choco-primary text-left truncate"
+                            className="flex-1 min-w-0 text-sm text-primary hover:text-brand-primary text-left truncate"
                             title="Browse ingredient"
                           >
                             {ingName}
                           </button>
-                          <span className="text-sm text-gray-600 tabular-nums shrink-0">
+                          <span className="text-sm text-secondary tabular-nums shrink-0">
                             {formatIngredientAmount(ing.amount, ing.unit, ing.modifiers)}
                           </span>
                         </div>
                         {hasModifiers && (
-                          <div className="flex flex-wrap items-center gap-x-3 mt-1 pl-1 text-xs text-gray-400">
+                          <div className="flex flex-wrap items-center gap-x-3 mt-1 pl-1 text-xs text-muted">
                             {ing.modifiers?.yieldFactor !== undefined &&
                               ing.modifiers.yieldFactor !== 1.0 && (
                                 <span>yield ×{ing.modifiers.yieldFactor}</span>
@@ -954,7 +954,7 @@ export function FillingSessionPanel({
                   return (
                     <div
                       key={ing.ingredientId}
-                      className="rounded border border-choco-primary/30 bg-choco-primary/5 p-2"
+                      className="rounded border border-brand-primary/30 bg-brand-primary/5 p-2"
                     >
                       {/* Main row: confirm, name, amount, unit toggle, remove */}
                       <div className="flex items-center gap-1.5">
@@ -974,11 +974,11 @@ export function FillingSessionPanel({
                           onSelect={(match): void => handleIngredientSelect(index, match)}
                           onUnresolved={onRequestCreateEntity ? handleIngredientUnresolved : undefined}
                           autoFocus
-                          className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                          className="flex-1 min-w-0 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                         />
                         <input
                           type="number"
-                          className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary disabled:bg-gray-50 disabled:text-gray-400"
+                          className="w-20 text-sm border border-border rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-focus-ring disabled:bg-surface-alt disabled:text-muted"
                           value={ing.amount}
                           min={0}
                           step={isSpoonUnit ? 0.25 : 0.1}
@@ -994,7 +994,7 @@ export function FillingSessionPanel({
                         <button
                           type="button"
                           onClick={(): void => toggleIngredientExpanded(index)}
-                          className="text-xs text-gray-500 hover:text-choco-primary cursor-pointer px-0.5 select-none shrink-0"
+                          className="text-xs text-muted hover:text-brand-primary cursor-pointer px-0.5 select-none shrink-0"
                           title="Click to show/hide details"
                         >
                           {ing.unit ?? 'g'}
@@ -1003,7 +1003,7 @@ export function FillingSessionPanel({
                         <button
                           type="button"
                           onClick={(): void => handleRemoveIngredient(index)}
-                          className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                          className="text-muted hover:text-red-500 p-1 shrink-0"
                           aria-label="Remove ingredient"
                         >
                           ✕
@@ -1014,7 +1014,7 @@ export function FillingSessionPanel({
                       {isExpanded && (
                         <div className="flex flex-wrap items-center gap-2 mt-1.5 pl-1">
                           <select
-                            className="text-xs bg-transparent border-none text-gray-600 cursor-pointer p-0 focus:outline-none focus:ring-0"
+                            className="text-xs bg-transparent border-none text-secondary cursor-pointer p-0 focus:outline-none focus:ring-0"
                             value={ing.unit ?? 'g'}
                             onChange={(e): void =>
                               handleIngredientUnitChange(index, e.target.value as MeasurementUnit)
@@ -1029,7 +1029,7 @@ export function FillingSessionPanel({
                           {isSpoonUnit && (
                             <>
                               <select
-                                className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                                className="text-xs border border-border rounded px-1 py-0.5 text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
                                 value={ing.modifiers?.spoonLevel ?? ''}
                                 onChange={(e): void => {
                                   const val = e.target.value;
@@ -1046,7 +1046,7 @@ export function FillingSessionPanel({
                                   </option>
                                 ))}
                               </select>
-                              <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                              <label className="flex items-center gap-1 text-xs text-secondary cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={ing.modifiers?.toTaste ?? false}
@@ -1063,12 +1063,12 @@ export function FillingSessionPanel({
                           )}
                           {isWeightUnit && (
                             <>
-                              <label className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
+                              <label className="flex items-center gap-1 text-xs text-muted shrink-0">
                                 yield
                               </label>
                               <input
                                 type="number"
-                                className="w-16 text-xs border border-gray-200 rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                                className="w-16 text-xs border border-border rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-focus-ring"
                                 value={ing.modifiers?.yieldFactor ?? 1}
                                 min={0}
                                 max={1}
@@ -1085,7 +1085,7 @@ export function FillingSessionPanel({
                               />
                               <input
                                 type="text"
-                                className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                                className="flex-1 min-w-0 text-xs border border-border rounded px-1 py-0.5 text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
                                 value={ing.modifiers?.processNote ?? ''}
                                 placeholder="process note (e.g. steeped and strained)"
                                 onChange={(e): void => {
@@ -1122,7 +1122,7 @@ export function FillingSessionPanel({
               onSelect={handleNewIngredientSelect}
               onUnresolved={onRequestCreateEntity ? handleNewIngredientUnresolved : undefined}
               placeholder="+ add ingredient"
-              className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              className="flex-1 min-w-0 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
             />
           </div>
         </EditSection>
@@ -1131,19 +1131,19 @@ export function FillingSessionPanel({
         <EditSection title="Procedure">
           <div className="space-y-2">
             {currentProcedureId && !editingProcedure && (
-              <div className="rounded border border-gray-200 p-2 flex items-center gap-1.5">
+              <div className="rounded border border-border p-2 flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={(): void => setEditingProcedure(true)}
                   title="Edit procedure"
-                  className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+                  className="text-muted hover:text-brand-primary p-0.5 shrink-0"
                 >
                   <ArrowPathIcon className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
                   onClick={(): void => onBrowseProcedure?.(currentProcedureId)}
-                  className="flex-1 text-sm text-gray-800 hover:text-choco-primary text-left truncate"
+                  className="flex-1 text-sm text-primary hover:text-brand-primary text-left truncate"
                   title="Browse procedure"
                 >
                   {getProcedureDisplayName(currentProcedureId, procedureSuggestions)}
@@ -1152,7 +1152,7 @@ export function FillingSessionPanel({
             )}
 
             {currentProcedureId && editingProcedure && (
-              <div className="rounded border border-choco-primary/30 bg-choco-primary/5 p-2">
+              <div className="rounded border border-brand-primary/30 bg-brand-primary/5 p-2">
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
@@ -1170,12 +1170,12 @@ export function FillingSessionPanel({
                     onSelect={handleProcedureSelect}
                     onUnresolved={onRequestCreateEntity ? handleProcedureUnresolved : undefined}
                     autoFocus
-                    className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                   />
                   <button
                     type="button"
                     onClick={handleClearProcedure}
-                    className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                    className="text-muted hover:text-red-500 p-1 shrink-0"
                     aria-label="Remove procedure"
                   >
                     ✕
@@ -1193,7 +1193,7 @@ export function FillingSessionPanel({
                 onSelect={handleProcedureSelect}
                 onUnresolved={onRequestCreateEntity ? handleProcedureUnresolved : undefined}
                 placeholder="Type procedure name to set"
-                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
               />
             )}
           </div>
@@ -1208,7 +1208,7 @@ export function FillingSessionPanel({
                 if (score === undefined) return null;
                 return (
                   <div key={cat} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 capitalize">{cat}</span>
+                    <span className="text-secondary capitalize">{cat}</span>
                     <RatingStars score={score} />
                   </div>
                 );

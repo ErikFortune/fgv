@@ -54,7 +54,7 @@ export function AlternateAddInput({
   return (
     <input
       type="text"
-      className="text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 w-32 text-gray-500 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+      className="text-xs border border-dashed border-border rounded px-1.5 py-0.5 w-32 text-muted placeholder-muted focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
       value={value}
       list={datalistId}
       placeholder="+ add alternate"
@@ -92,7 +92,7 @@ export function ProcedureAlternateAddInput({
   return (
     <input
       type="text"
-      className="text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 w-32 text-gray-500 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+      className="text-xs border border-dashed border-border rounded px-1.5 py-0.5 w-32 text-muted placeholder-muted focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
       value={value}
       list={datalistId}
       placeholder="+ add alternate"
@@ -149,8 +149,8 @@ export function IngredientRoleInput({
     <span className="inline-flex flex-col">
       <input
         type="text"
-        className={`w-28 text-xs border rounded px-1.5 py-0.5 text-gray-600 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary ${
-          error ? 'border-red-300' : 'border-gray-200'
+        className={`w-28 text-xs border rounded px-1.5 py-0.5 text-secondary placeholder-muted focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring ${
+          error ? 'border-red-300' : 'border-border'
         }`}
         value={draft}
         placeholder="e.g. heated"
@@ -283,20 +283,20 @@ export function DuplicateIngredientPrompt({
         distinguish them.
       </p>
       <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1.5 items-center">
-        <label className="text-xs text-gray-600">Existing role:</label>
+        <label className="text-xs text-secondary">Existing role:</label>
         <input
           type="text"
-          className="text-xs border border-gray-300 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+          className="text-xs border border-border rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
           value={existingRole}
           disabled={!!pending.existingSlotId}
           autoFocus={!pending.existingSlotId}
           onChange={(e): void => setExistingRole(e.target.value)}
           placeholder="e.g. heated"
         />
-        <label className="text-xs text-gray-600">New role:</label>
+        <label className="text-xs text-secondary">New role:</label>
         <input
           type="text"
-          className="text-xs border border-gray-300 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+          className="text-xs border border-border rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
           value={newRole}
           autoFocus={!!pending.existingSlotId}
           onChange={(e): void => setNewRole(e.target.value)}
@@ -308,12 +308,12 @@ export function DuplicateIngredientPrompt({
         />
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-gray-400">
+        <span className="text-[10px] text-muted">
           slot IDs: {effectiveExistingSlotId}, {effectiveNewSlotId}
         </span>
         <button
           type="button"
-          className="text-[10px] text-choco-primary hover:underline"
+          className="text-[10px] text-brand-primary hover:underline"
           onClick={(): void => setShowSlotIds(!showSlotIds)}
         >
           {showSlotIds ? 'hide' : 'override'}
@@ -321,19 +321,19 @@ export function DuplicateIngredientPrompt({
       </div>
       {showSlotIds && (
         <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1.5 items-center">
-          <label className="text-[10px] text-gray-500">Existing slot ID:</label>
+          <label className="text-[10px] text-muted">Existing slot ID:</label>
           <input
             type="text"
-            className="text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+            className="text-xs border border-border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-focus-ring"
             value={existingSlotIdOverride}
             disabled={!!pending.existingSlotId}
             placeholder={effectiveExistingSlotId}
             onChange={(e): void => setExistingSlotIdOverride(e.target.value)}
           />
-          <label className="text-[10px] text-gray-500">New slot ID:</label>
+          <label className="text-[10px] text-muted">New slot ID:</label>
           <input
             type="text"
-            className="text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+            className="text-xs border border-border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-focus-ring"
             value={newSlotIdOverride}
             placeholder={effectiveNewSlotId}
             onChange={(e): void => setNewSlotIdOverride(e.target.value)}
@@ -345,14 +345,14 @@ export function DuplicateIngredientPrompt({
         <button
           type="button"
           onClick={onCancel}
-          className="px-2 py-0.5 text-xs text-gray-600 border border-gray-300 rounded hover:bg-gray-100"
+          className="px-2 py-0.5 text-xs text-secondary border border-border rounded hover:bg-hover"
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={handleConfirm}
-          className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+          className="px-2 py-0.5 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
         >
           Add Duplicate
         </button>

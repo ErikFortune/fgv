@@ -52,6 +52,7 @@ export interface IPreferencesDraft {
     readonly adaptedRecipeNameSuffix: string;
   };
   readonly aiAssist: AiAssist.IAiAssistSettings;
+  readonly appearance: Settings.IAppearanceSettings;
 }
 
 /**
@@ -134,7 +135,8 @@ function buildPreferencesDraft(
       autoExpandIngredients: prefs.tools?.workflow?.autoExpandIngredients ?? false,
       adaptedRecipeNameSuffix: prefs.tools?.workflow?.adaptedRecipeNameSuffix ?? ' (adapted)'
     },
-    aiAssist: prefs.tools?.aiAssist ?? AiAssist.DEFAULT_AI_ASSIST
+    aiAssist: prefs.tools?.aiAssist ?? AiAssist.DEFAULT_AI_ASSIST,
+    appearance: prefs.appearance ?? {}
   };
 }
 
@@ -255,7 +257,8 @@ export function useSettingsDraft(): ISettingsDraft | undefined {
     // Update preferences settings
     const prefsResult = settingsManager.updatePreferencesSettings({
       defaultStorageTargets: preferencesDraft.defaultStorageTargets,
-      tools: { scaling: scalingUpdate, workflow: workflowUpdate, aiAssist: preferencesDraft.aiAssist }
+      tools: { scaling: scalingUpdate, workflow: workflowUpdate, aiAssist: preferencesDraft.aiAssist },
+      appearance: preferencesDraft.appearance
     });
     if (prefsResult.isFailure()) {
       setSaveError(`Failed to update preferences settings: ${prefsResult.message}`);

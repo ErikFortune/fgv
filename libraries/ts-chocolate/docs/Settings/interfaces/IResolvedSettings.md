@@ -93,4 +93,21 @@ Merged tool settings
 Default storage root targets for new collections
 
 </td></tr>
+<tr><td>
+
+[appearance](./IResolvedSettings.appearance.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAppearanceSettings](../../interfaces/IAppearanceSettings.md)
+
+</td><td>
+
+Appearance / theme settings
+
+</td></tr>
 </tbody></table>

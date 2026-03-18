@@ -84,9 +84,9 @@ export function StepExecutionView({
   return (
     <div className="flex flex-col h-full overflow-y-auto" data-testid="step-execution-view">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
-        <div className="text-sm font-medium text-gray-900 truncate">{label}</div>
-        <div className="text-xs text-gray-500 mt-0.5">
+      <div className="px-4 py-3 border-b border-border bg-surface-alt shrink-0">
+        <div className="text-sm font-medium text-primary truncate">{label}</div>
+        <div className="text-xs text-muted mt-0.5">
           {hasExecutionState
             ? `Step ${Math.min(completedCount + 1, totalSteps)} of ${totalSteps}`
             : `${totalSteps} steps`}
@@ -95,7 +95,7 @@ export function StepExecutionView({
 
       {/* Start button when no execution state */}
       {!hasExecutionState && totalSteps > 0 && (
-        <div className="px-3 py-3 border-b border-gray-200 shrink-0">
+        <div className="px-3 py-3 border-b border-border shrink-0">
           <button
             onClick={onStartExecution}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 active:bg-green-800 transition-colors"
@@ -167,10 +167,10 @@ function ActiveStepRow({
       <div className="flex items-start gap-2">
         <span className="text-green-600 font-bold text-sm mt-0.5">{step.stepIndex + 1}.</span>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-gray-900">{step.label}</div>
+          <div className="text-sm font-medium text-primary">{step.label}</div>
 
           {/* Timing and temperature details */}
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-600">
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-secondary">
             {step.timingLabel && <span>{step.timingLabel}</span>}
             {step.temperatureLabel && <span>{step.temperatureLabel}</span>}
           </div>
@@ -189,7 +189,7 @@ function ActiveStepRow({
         </button>
         <button
           onClick={onSkip}
-          className="flex items-center justify-center gap-1 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 active:bg-gray-300 transition-colors"
+          className="flex items-center justify-center gap-1 px-3 py-2.5 bg-surface-raised text-secondary rounded-lg text-sm hover:bg-hover active:bg-hover transition-colors"
           data-testid="step-skip-button"
         >
           <ForwardIcon className="w-4 h-4" />
@@ -211,15 +211,15 @@ function CompletedStepRow({
   return (
     <button
       onClick={onJumpTo}
-      className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-gray-50 transition-colors group"
+      className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-hover transition-colors group"
       data-testid={`step-row-completed-${step.stepIndex}`}
       title="Click to repeat this step"
     >
-      <CheckIcon className={`w-3.5 h-3.5 shrink-0 ${isSkipped ? 'text-gray-400' : 'text-green-500'}`} />
-      <span className={`text-xs truncate ${isSkipped ? 'text-gray-400 line-through' : 'text-gray-500'}`}>
+      <CheckIcon className={`w-3.5 h-3.5 shrink-0 ${isSkipped ? 'text-muted' : 'text-green-500'}`} />
+      <span className={`text-xs truncate ${isSkipped ? 'text-muted line-through' : 'text-muted'}`}>
         {step.stepIndex + 1}. {step.label}
       </span>
-      {step.timingLabel && <span className="text-xs text-gray-400 ml-auto shrink-0">{step.timingLabel}</span>}
+      {step.timingLabel && <span className="text-xs text-muted ml-auto shrink-0">{step.timingLabel}</span>}
     </button>
   );
 }
@@ -227,11 +227,11 @@ function CompletedStepRow({
 function PendingStepRow({ step }: { readonly step: IStepSummaryView }): React.ReactElement {
   return (
     <div className="flex items-center gap-2 px-2 py-1.5" data-testid={`step-row-pending-${step.stepIndex}`}>
-      <span className="w-3.5 h-3.5 shrink-0 rounded-full border border-gray-300" />
-      <span className="text-xs text-gray-500 truncate">
+      <span className="w-3.5 h-3.5 shrink-0 rounded-full border border-border" />
+      <span className="text-xs text-muted truncate">
         {step.stepIndex + 1}. {step.label}
       </span>
-      {step.timingLabel && <span className="text-xs text-gray-400 ml-auto shrink-0">{step.timingLabel}</span>}
+      {step.timingLabel && <span className="text-xs text-muted ml-auto shrink-0">{step.timingLabel}</span>}
     </div>
   );
 }

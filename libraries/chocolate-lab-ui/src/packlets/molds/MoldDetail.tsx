@@ -117,7 +117,7 @@ export function MoldDetail(props: IMoldDetailProps): React.ReactElement {
       <EntityDetailHeader
         title={mold.displayName}
         description={mold.description}
-        badge={{ label: mold.format, colorClass: 'bg-choco-primary/10 text-choco-primary' }}
+        badge={{ label: mold.format, colorClass: 'bg-brand-primary/10 text-brand-primary' }}
         subtitle={mold.id}
         onCopyJson={handleCopyJson}
         onEdit={onEdit}
@@ -152,7 +152,7 @@ export function MoldDetail(props: IMoldDetailProps): React.ReactElement {
             {mold.related.map((relatedId) => (
               <span
                 key={relatedId}
-                className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-mono"
+                className="px-2 py-0.5 text-xs rounded-full bg-surface-raised text-secondary font-mono"
               >
                 {relatedId}
               </span>

@@ -90,27 +90,27 @@ export function CreateLocationPanel(props: ICreateLocationPanelProps): React.Rea
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">New Location</h2>
+      <h2 className="text-lg font-semibold text-primary">New Location</h2>
 
       {/* Name */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        <label className="block text-sm font-medium text-secondary mb-1">Name</label>
         <input
           type="text"
           value={name}
           onChange={handleNameChange}
           placeholder="e.g. Kitchen Shelf"
           autoFocus
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary"
+          className="w-full border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-focus-ring"
         />
       </div>
 
       {/* ID (derived from name, editable) */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-secondary mb-1">
           ID
           {!idOverride && generatedId && (
-            <span className="text-gray-400 font-normal ml-1">(derived from name)</span>
+            <span className="text-muted font-normal ml-1">(derived from name)</span>
           )}
         </label>
         <input
@@ -118,19 +118,19 @@ export function CreateLocationPanel(props: ICreateLocationPanelProps): React.Rea
           value={effectiveId}
           onChange={handleIdChange}
           placeholder="e.g. kitchen-shelf"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary"
+          className="w-full border border-border rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-focus-ring"
         />
       </div>
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+        <label className="block text-sm font-medium text-secondary mb-1">Description (optional)</label>
         <textarea
           value={description}
           onChange={(e): void => setDescription(e.target.value)}
           placeholder="Optional description of this location"
           rows={3}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary resize-y"
+          className="w-full border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-focus-ring resize-y"
         />
       </div>
 
@@ -139,13 +139,13 @@ export function CreateLocationPanel(props: ICreateLocationPanelProps): React.Rea
         <button
           onClick={handleConfirm}
           disabled={!isValid}
-          className="px-4 py-2 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 text-sm font-medium text-inverted bg-brand-primary hover:bg-brand-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Create Location
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+          className="px-4 py-2 text-sm font-medium text-secondary bg-surface-raised hover:bg-hover rounded transition-colors"
         >
           Cancel
         </button>

@@ -76,14 +76,14 @@ export function ProcedurePreviewPanel(props: IProcedurePreviewPanelProps): React
     <div className="p-4 overflow-y-auto h-full">
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">{entity.name}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Procedure Preview</p>
+          <h2 className="text-lg font-semibold text-primary">{entity.name}</h2>
+          <p className="text-xs text-muted mt-0.5">Procedure Preview</p>
         </div>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 text-muted hover:text-secondary hover:bg-hover rounded transition-colors"
             title="Close preview"
           >
             <XMarkIcon className="w-5 h-5" />
@@ -91,10 +91,10 @@ export function ProcedurePreviewPanel(props: IProcedurePreviewPanelProps): React
         )}
       </div>
 
-      {entity.description && <p className="text-sm text-gray-600 mb-4">{entity.description}</p>}
+      {entity.description && <p className="text-sm text-secondary mb-4">{entity.description}</p>}
 
       <div className="mb-4">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+        <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">
           Steps ({entity.steps.length})
         </h3>
         <div className="space-y-2">
@@ -132,10 +132,10 @@ export function ProcedurePreviewPanel(props: IProcedurePreviewPanelProps): React
             }
 
             return (
-              <div key={step.order} className="rounded border border-gray-200 bg-white p-2.5">
-                <div className="text-xs text-gray-500 mb-1">Step {step.order}</div>
-                <div className="text-sm text-gray-700 whitespace-pre-wrap">{rendered}</div>
-                {timingText && <div className="text-xs text-gray-400 mt-1">{timingText}</div>}
+              <div key={step.order} className="rounded border border-border bg-surface p-2.5">
+                <div className="text-xs text-muted mb-1">Step {step.order}</div>
+                <div className="text-sm text-secondary whitespace-pre-wrap">{rendered}</div>
+                {timingText && <div className="text-xs text-muted mt-1">{timingText}</div>}
               </div>
             );
           })}

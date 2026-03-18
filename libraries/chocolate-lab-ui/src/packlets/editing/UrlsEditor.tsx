@@ -83,7 +83,7 @@ export function UrlsEditor({ value, onChange, title }: IUrlsEditorProps): React.
 
   return (
     <div>
-      <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">{title ?? 'URLs'}</div>
+      <div className="text-xs font-medium text-muted uppercase mb-0.5">{title ?? 'URLs'}</div>
       {!editing ? (
         <div className="py-0.5">
           <div className="flex items-center gap-1">
@@ -91,30 +91,30 @@ export function UrlsEditor({ value, onChange, title }: IUrlsEditorProps): React.
               type="button"
               onClick={(): void => setEditing(true)}
               title={`Edit ${(title ?? 'URLs').toLowerCase()}`}
-              className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+              className="text-muted hover:text-brand-primary p-0.5 shrink-0"
             >
               <ArrowPathIcon className="h-3 w-3" />
             </button>
             {urls.length === 0 ? (
-              <span className="text-sm text-gray-400 italic">None</span>
+              <span className="text-sm text-muted italic">None</span>
             ) : (
               <div className="space-y-0.5">
                 {urls.map((entry, index) => (
-                  <div key={index} className="text-sm text-gray-700">
+                  <div key={index} className="text-sm text-secondary">
                     {entry.category !== DefaultUrlCategory && (
-                      <span className="text-gray-500">{entry.category}: </span>
+                      <span className="text-muted">{entry.category}: </span>
                     )}
                     {entry.url ? (
                       <a
                         href={entry.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-choco-primary hover:underline"
+                        className="text-brand-primary hover:underline"
                       >
                         {entry.url}
                       </a>
                     ) : (
-                      <span className="text-gray-400 italic">empty</span>
+                      <span className="text-muted italic">empty</span>
                     )}
                   </div>
                 ))}
@@ -141,19 +141,19 @@ export function UrlsEditor({ value, onChange, title }: IUrlsEditorProps): React.
                 value={entry.category}
                 onChange={(e): void => handleCategoryChange(index, e.target.value)}
                 placeholder="category"
-                className="w-28 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+                className="w-28 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
               />
               <input
                 type="url"
                 value={entry.url}
                 onChange={(e): void => handleUrlChange(index, e.target.value)}
                 placeholder="https://..."
-                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+                className="flex-1 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
               />
               <button
                 type="button"
                 onClick={(): void => handleRemove(index)}
-                className="text-gray-400 hover:text-red-500 p-1"
+                className="text-muted hover:text-red-500 p-1"
                 aria-label="Remove URL"
               >
                 ✕
@@ -163,7 +163,7 @@ export function UrlsEditor({ value, onChange, title }: IUrlsEditorProps): React.
           <button
             type="button"
             onClick={handleAdd}
-            className="text-xs text-choco-primary hover:text-choco-primary/80 mt-1"
+            className="text-xs text-brand-primary hover:text-brand-primary/80 mt-1"
           >
             + Add URL
           </button>

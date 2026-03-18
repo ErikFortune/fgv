@@ -48,6 +48,6 @@ export function InlineRoleLabel({ role }: IInlineRoleLabelProps): React.ReactEle
   }
 
   return (
-    <span className="ml-1 text-[10px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">{String(role)}</span>
+    <span className="ml-1 text-[10px] text-muted bg-surface-raised rounded px-1 py-0.5">{String(role)}</span>
   );
 }

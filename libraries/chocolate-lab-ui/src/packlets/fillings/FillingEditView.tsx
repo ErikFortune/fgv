@@ -996,7 +996,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
             <button
               type="button"
               onClick={(): void => onPreview(selectedVariationSpec)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-choco-primary hover:bg-gray-100"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-secondary hover:text-brand-primary hover:bg-hover"
               title="Open filling preview pane"
             >
               <EyeIcon className="h-3.5 w-3.5" />
@@ -1019,7 +1019,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       {/* Identity Section */}
       <EditSection title="Identity">
         <EditField label="Base ID">
-          <span className="text-sm font-mono text-gray-500">{wrapper.current.baseId}</span>
+          <span className="text-sm font-mono text-muted">{wrapper.current.baseId}</span>
         </EditField>
         <EditField label="Name">
           <TextInput
@@ -1030,7 +1030,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         </EditField>
         <EditField label="Category">
           <select
-            className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+            className="text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
             value={wrapper.current.category}
             onChange={handleCategoryChange}
           >
@@ -1065,8 +1065,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                   key={v.variationSpec}
                   className={`inline-flex items-center gap-0.5 rounded border text-xs transition-colors ${
                     isSelected
-                      ? 'bg-choco-primary text-white border-choco-primary'
-                      : 'bg-white text-gray-600 border-gray-300'
+                      ? 'bg-brand-primary text-inverted border-brand-primary'
+                      : 'bg-surface text-secondary border-border'
                   }`}
                 >
                   {/* Golden star toggle (library mode) */}
@@ -1082,7 +1082,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                             : 'text-amber-500'
                           : isSelected
                           ? 'text-white/40 hover:text-amber-300'
-                          : 'text-gray-300 hover:text-amber-400'
+                          : 'text-faint hover:text-amber-400'
                       }`}
                     >
                       ★
@@ -1102,7 +1102,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     <input
                       autoFocus
                       type="text"
-                      className="text-xs px-1 py-0.5 w-28 bg-white text-gray-800 border-0 outline-none rounded"
+                      className="text-xs px-1 py-0.5 w-28 bg-surface text-primary border-0 outline-none rounded"
                       value={editingVariationNameValue}
                       onChange={(e): void => setEditingVariationNameValue(e.target.value)}
                       onBlur={(): void =>
@@ -1127,7 +1127,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                           setEditingVariationNameValue(v.name ?? '');
                         }
                       }}
-                      className={`px-1.5 py-1 ${isSelected ? '' : 'hover:border-choco-primary'}`}
+                      className={`px-1.5 py-1 ${isSelected ? '' : 'hover:border-brand-primary'}`}
                       title={!readOnly ? 'Click to select, double-click to rename' : undefined}
                     >
                       {v.name ?? v.variationSpec}
@@ -1141,7 +1141,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                       title="Remove variation"
                       onClick={(): void => handleRemoveVariation(v.variationSpec)}
                       className={`pr-1 py-1 shrink-0 ${
-                        isSelected ? 'text-white/60 hover:text-white' : 'text-gray-300 hover:text-red-400'
+                        isSelected ? 'text-white/60 hover:text-white' : 'text-faint hover:text-red-400'
                       }`}
                     >
                       ✕
@@ -1160,29 +1160,29 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                   <button
                     type="button"
                     onClick={(): void => setShowAddVariationForm(true)}
-                    className="px-2.5 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-400 hover:border-choco-primary hover:text-choco-primary transition-colors"
+                    className="px-2.5 py-1 text-xs rounded border border-dashed border-border text-muted hover:border-brand-primary hover:text-brand-primary transition-colors"
                   >
                     + New
                   </button>
                 ) : (
-                  <div className="w-full mt-1 p-2 rounded border border-gray-200 bg-gray-50 space-y-2">
+                  <div className="w-full mt-1 p-2 rounded border border-border bg-surface-alt space-y-2">
                     <div className="flex gap-2 items-center">
-                      <label className="text-xs text-gray-500 shrink-0 w-10">Date</label>
+                      <label className="text-xs text-muted shrink-0 w-10">Date</label>
                       <input
                         type="text"
                         placeholder={new Date().toISOString().split('T')[0]}
                         pattern="\d{4}-\d{2}-\d{2}"
-                        className="text-xs border border-gray-300 rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                        className="text-xs border border-border rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                         value={newVariationDate}
                         onChange={(e): void => setNewVariationDate(e.target.value)}
                       />
                     </div>
                     <div className="flex gap-2 items-center">
-                      <label className="text-xs text-gray-500 shrink-0 w-10">Name</label>
+                      <label className="text-xs text-muted shrink-0 w-10">Name</label>
                       <input
                         type="text"
                         placeholder="optional label"
-                        className="text-xs border border-gray-300 rounded px-1.5 py-0.5 flex-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                        className="text-xs border border-border rounded px-1.5 py-0.5 flex-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                         value={newVariationName}
                         onChange={(e): void => setNewVariationName(e.target.value)}
                       />
@@ -1195,21 +1195,21 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                           setNewVariationDate('');
                           setNewVariationName('');
                         }}
-                        className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700 rounded"
+                        className="px-2 py-0.5 text-xs text-muted hover:text-secondary rounded"
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
                         onClick={handleCreateBlankVariation}
-                        className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        className="px-2 py-0.5 text-xs rounded bg-surface-raised text-secondary hover:bg-surface-raised"
                       >
                         Create Blank
                       </button>
                       <button
                         type="button"
                         onClick={handleDuplicateVariation}
-                        className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                        className="px-2 py-0.5 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
                       >
                         Duplicate Current
                       </button>
@@ -1246,12 +1246,12 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                 return (
                   <div
                     key={ing.ingredient.slotId ? `${effectiveId}:${ing.ingredient.slotId}` : effectiveId}
-                    className="rounded border border-gray-200 p-2"
+                    className="rounded border border-border p-2"
                   >
                     <div className="flex items-center gap-1.5">
                       <input
                         type="text"
-                        className="flex-1 min-w-0 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                        className="flex-1 min-w-0 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                         value={ingValue}
                         list="filling-ingredient-suggestions"
                         onChange={(e): void => {
@@ -1279,7 +1279,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                         }}
                       >
                         <NumericInput
-                          className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary disabled:bg-gray-50 disabled:text-gray-400"
+                          className="w-20 text-sm border border-border rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-focus-ring disabled:bg-surface-alt disabled:text-muted"
                           value={ing.amount}
                           min={0}
                           step={isSpoonUnit ? 0.25 : 0.1}
@@ -1293,7 +1293,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                       <button
                         type="button"
                         onClick={(): void => toggleIngredientExpanded(index)}
-                        className="text-xs text-gray-500 hover:text-choco-primary cursor-pointer px-0.5 select-none shrink-0"
+                        className="text-xs text-muted hover:text-brand-primary cursor-pointer px-0.5 select-none shrink-0"
                         title="Click to show/hide details"
                       >
                         {ing.unit ?? 'g'}
@@ -1302,7 +1302,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                       <button
                         type="button"
                         onClick={(): void => handleRemoveIngredient(index)}
-                        className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                        className="text-muted hover:text-red-500 p-1 shrink-0"
                         aria-label="Remove ingredient"
                       >
                         ✕
@@ -1311,7 +1311,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     {isExpanded && (
                       <div className="flex flex-wrap items-center gap-2 mt-1.5 pl-1">
                         <select
-                          className="text-xs bg-transparent border-none text-gray-600 cursor-pointer p-0 focus:outline-none focus:ring-0"
+                          className="text-xs bg-transparent border-none text-secondary cursor-pointer p-0 focus:outline-none focus:ring-0"
                           value={ing.unit ?? 'g'}
                           onChange={(e): void =>
                             handleIngredientUnitChange(index, e.target.value as MeasurementUnit)
@@ -1326,7 +1326,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                         {isSpoonUnit && (
                           <>
                             <select
-                              className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                              className="text-xs border border-border rounded px-1 py-0.5 text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
                               value={ing.modifiers?.spoonLevel ?? ''}
                               onChange={(e): void => {
                                 const val = e.target.value;
@@ -1343,7 +1343,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                                 </option>
                               ))}
                             </select>
-                            <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                            <label className="flex items-center gap-1 text-xs text-secondary cursor-pointer">
                               <input
                                 type="checkbox"
                                 checked={ing.modifiers?.toTaste ?? false}
@@ -1360,12 +1360,12 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                         )}
                         {isWeightUnit && (
                           <>
-                            <label className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
+                            <label className="flex items-center gap-1 text-xs text-muted shrink-0">
                               yield
                             </label>
                             <input
                               type="number"
-                              className="w-16 text-xs border border-gray-200 rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                              className="w-16 text-xs border border-border rounded px-1 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-focus-ring"
                               value={ing.modifiers?.yieldFactor ?? 1}
                               min={0}
                               max={1}
@@ -1382,7 +1382,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                             />
                             <input
                               type="text"
-                              className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                              className="flex-1 min-w-0 text-xs border border-border rounded px-1 py-0.5 text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
                               value={ing.modifiers?.processNote ?? ''}
                               placeholder="process note (e.g. steeped and strained)"
                               onChange={(e): void => {
@@ -1405,8 +1405,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                         )}
                         {/* Alternates row */}
                         {(hasAlternates || true) && (
-                          <div className="w-full flex flex-wrap items-center gap-1 mt-1 pt-1 border-t border-gray-100">
-                            <span className="text-xs text-gray-400 shrink-0">also:</span>
+                          <div className="w-full flex flex-wrap items-center gap-1 mt-1 pt-1 border-t border-border-subtle">
+                            <span className="text-xs text-muted shrink-0">also:</span>
                             {sourceIds.map((altId) => {
                               const altName = getIngredientDisplayName(altId, ingredientSuggestions);
                               const isPreferred = altId === sourcePreferredId;
@@ -1416,8 +1416,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                                   key={altId}
                                   className={`inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 ${
                                     isPreferred
-                                      ? 'bg-choco-primary/10 text-choco-primary'
-                                      : 'bg-gray-100 text-gray-600'
+                                      ? 'bg-brand-primary/10 text-brand-primary'
+                                      : 'bg-surface-raised text-secondary'
                                   }`}
                                 >
                                   {canEdit && (
@@ -1426,7 +1426,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                                       title={isPreferred ? 'Preferred' : 'Set as preferred'}
                                       onClick={(): void => handleSetPreferredAlternate(effectiveId, altId)}
                                       className={`shrink-0 ${
-                                        isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
+                                        isPreferred ? 'text-amber-500' : 'text-faint hover:text-amber-400'
                                       }`}
                                     >
                                       ★
@@ -1439,7 +1439,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                                       type="button"
                                       title="Remove alternate"
                                       onClick={(): void => handleRemoveAlternate(effectiveId, altId)}
-                                      className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
+                                      className="text-faint hover:text-red-400 shrink-0 ml-0.5"
                                     >
                                       ✕
                                     </button>
@@ -1455,7 +1455,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                               />
                             )}
                             {!hasAlternates && readOnly && (
-                              <span className="text-xs text-gray-300 italic">none</span>
+                              <span className="text-xs text-faint italic">none</span>
                             )}
                             {unresolvedAlternates[effectiveId] && (
                               <>
@@ -1473,7 +1473,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                                         return next;
                                       });
                                     }}
-                                    className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90 shrink-0"
+                                    className="px-2 py-0.5 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90 shrink-0"
                                   >
                                     Create Ingredient
                                   </button>
@@ -1484,17 +1484,17 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                         )}
                         {/* Role & Slot ID for disambiguating duplicate ingredients */}
                         {!readOnly && (
-                          <div className="w-full flex items-center gap-2 mt-1 pt-1 border-t border-gray-100">
-                            <label className="text-xs text-gray-400 shrink-0">role:</label>
+                          <div className="w-full flex items-center gap-2 mt-1 pt-1 border-t border-border-subtle">
+                            <label className="text-xs text-muted shrink-0">role:</label>
                             <IngredientRoleInput
                               value={ing.role}
                               index={index}
                               onChange={handleIngredientRoleChange}
                             />
-                            <label className="text-xs text-gray-400 shrink-0">slot ID:</label>
+                            <label className="text-xs text-muted shrink-0">slot ID:</label>
                             <input
                               type="text"
-                              className="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                              className="flex-1 min-w-0 text-xs border border-border rounded px-1 py-0.5 text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
                               defaultValue={ing.ingredient.slotId ?? ''}
                               placeholder="e.g. ganache-base"
                               onBlur={(e): void => {
@@ -1509,17 +1509,17 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                           </div>
                         )}
                         {readOnly && (ing.ingredient.slotId || ing.role) && (
-                          <div className="w-full flex items-center gap-2 mt-1 pt-1 border-t border-gray-100">
+                          <div className="w-full flex items-center gap-2 mt-1 pt-1 border-t border-border-subtle">
                             {ing.role && (
                               <>
-                                <span className="text-xs text-gray-400">role:</span>
-                                <span className="text-xs text-gray-500">{ing.role}</span>
+                                <span className="text-xs text-muted">role:</span>
+                                <span className="text-xs text-muted">{ing.role}</span>
                               </>
                             )}
                             {ing.ingredient.slotId && (
                               <>
-                                <span className="text-xs text-gray-400">slot ID:</span>
-                                <span className="text-xs text-gray-500">{ing.ingredient.slotId}</span>
+                                <span className="text-xs text-muted">slot ID:</span>
+                                <span className="text-xs text-muted">{ing.ingredient.slotId}</span>
                               </>
                             )}
                           </div>
@@ -1535,7 +1535,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                           <button
                             type="button"
                             onClick={(): void => onCreateIngredient(unresolvedIngredients[index])}
-                            className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                            className="px-2 py-1 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
                           >
                             Create Ingredient
                           </button>
@@ -1551,7 +1551,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
           <div className="flex items-center gap-2 pt-1">
             <input
               type="text"
-              className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
               value={newIngredientText}
               list="filling-ingredient-suggestions"
               onChange={(e): void => setNewIngredientText(e.target.value)}
@@ -1566,7 +1566,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
             <button
               type="button"
               onClick={(): void => commitNewIngredient(newIngredientText)}
-              className="px-2.5 py-1 text-xs font-medium rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+              className="px-2.5 py-1 text-xs font-medium rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
             >
               Add
             </button>
@@ -1584,7 +1584,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     onCreateIngredient(unresolvedNewIngredient);
                     setUnresolvedNewIngredient(undefined);
                   }}
-                  className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                  className="px-2 py-1 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
                 >
                   Create Ingredient
                 </button>
@@ -1614,14 +1614,14 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
       <EditSection title="Procedure">
         <div className="space-y-2">
           {currentProcedureId && (
-            <div className="rounded border border-gray-200 p-2 flex items-center gap-2">
-              <span className="flex-1 text-sm text-gray-800">
+            <div className="rounded border border-border p-2 flex items-center gap-2">
+              <span className="flex-1 text-sm text-primary">
                 {getProcedureDisplayName(currentProcedureId, procedureSuggestions)}
               </span>
               <button
                 type="button"
                 onClick={handleClearProcedure}
-                className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                className="px-2 py-1 text-xs text-muted hover:text-red-600 hover:bg-red-50 rounded"
               >
                 Remove
               </button>
@@ -1632,7 +1632,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                 value={newProcedureText}
                 list="filling-procedure-suggestions"
                 onChange={(e): void => setNewProcedureText(e.target.value)}
@@ -1659,7 +1659,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     onCreateProcedure(unresolvedNewProcedure);
                     setUnresolvedNewProcedure(undefined);
                   }}
-                  className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                  className="px-2 py-1 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
                 >
                   Create Procedure
                 </button>
@@ -1675,8 +1675,8 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
             const hasProcAlternates = procOptions.length > 1;
             if (!hasProcAlternates && !true) return null;
             return (
-              <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
-                <span className="text-xs text-gray-400 shrink-0">also:</span>
+              <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-border-subtle">
+                <span className="text-xs text-muted shrink-0">also:</span>
                 {procOptions.map((opt) => {
                   const name = getProcedureDisplayName(opt.id, procedureSuggestions);
                   const isPreferred = opt.id === procPreferredId;
@@ -1685,7 +1685,9 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     <span
                       key={opt.id}
                       className={`inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 ${
-                        isPreferred ? 'bg-choco-primary/10 text-choco-primary' : 'bg-gray-100 text-gray-600'
+                        isPreferred
+                          ? 'bg-brand-primary/10 text-brand-primary'
+                          : 'bg-surface-raised text-secondary'
                       }`}
                     >
                       {canEdit && (
@@ -1694,7 +1696,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                           title={isPreferred ? 'Preferred' : 'Set as preferred'}
                           onClick={(): void => handleSetPreferredProcedure(opt.id)}
                           className={`shrink-0 ${
-                            isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
+                            isPreferred ? 'text-amber-500' : 'text-faint hover:text-amber-400'
                           }`}
                         >
                           ★
@@ -1707,7 +1709,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                           type="button"
                           title="Remove procedure alternate"
                           onClick={(): void => handleRemoveProcedureAlternate(opt.id)}
-                          className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
+                          className="text-faint hover:text-red-400 shrink-0 ml-0.5"
                         >
                           ✕
                         </button>
@@ -1721,7 +1723,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                     datalistId="filling-procedure-suggestions"
                   />
                 )}
-                {!hasProcAlternates && readOnly && <span className="text-xs text-gray-300 italic">none</span>}
+                {!hasProcAlternates && readOnly && <span className="text-xs text-faint italic">none</span>}
                 {unresolvedProcedureAlternate && (
                   <>
                     <span className="text-xs text-amber-700">
@@ -1734,7 +1736,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
                           onCreateProcedure(unresolvedProcedureAlternate);
                           setUnresolvedProcedureAlternate(undefined);
                         }}
-                        className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90 shrink-0"
+                        className="px-2 py-0.5 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90 shrink-0"
                       >
                         Create Procedure
                       </button>
@@ -1767,7 +1769,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
         <button
           type="button"
           onClick={(): void => setRatingsCollapsed((prev) => !prev)}
-          className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-700 mb-2"
+          className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted hover:text-secondary mb-2"
         >
           <span className={`transition-transform ${ratingsCollapsed ? '' : 'rotate-90'}`}>{'\u203A'}</span>
           Ratings
@@ -1778,7 +1780,7 @@ export function FillingEditView(props: IFillingEditViewProps): React.ReactElemen
               const existing = currentVariation?.ratings?.find((r) => r.category === category);
               return (
                 <div key={category} className="flex items-center justify-between py-0.5">
-                  <span className="text-sm text-gray-600 capitalize">{category}</span>
+                  <span className="text-sm text-secondary capitalize">{category}</span>
                   <RatingStars
                     score={existing?.score}
                     onChange={(score): void => handleRatingChange(category, score)}

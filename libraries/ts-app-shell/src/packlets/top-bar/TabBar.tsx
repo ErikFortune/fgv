@@ -56,7 +56,7 @@ export function TabBar<TTab extends string>(props: ITabBarProps<TTab>): React.Re
   const { tabs, activeTab, onTabChange, rightContent } = props;
 
   return (
-    <div className="flex items-center gap-1 px-4 py-1 bg-choco-secondary text-white border-t border-white/10">
+    <div className="flex items-center gap-1 px-4 py-1 bg-brand-secondary text-white border-t border-white/10">
       {tabs.map((tab) => (
         <button
           key={tab.id}

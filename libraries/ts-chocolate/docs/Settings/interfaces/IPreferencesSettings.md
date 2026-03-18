@@ -93,4 +93,21 @@ Default storage locations for new collections (global + per-sublibrary)
 Tool configuration (scaling, workflow, etc.)
 
 </td></tr>
+<tr><td>
+
+[appearance](./IPreferencesSettings.appearance.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAppearanceSettings](../../interfaces/IAppearanceSettings.md)
+
+</td><td>
+
+Appearance / theme settings
+
+</td></tr>
 </tbody></table>

@@ -39,7 +39,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 const NUMERIC_PATTERN: RegExp = /^-?\d*\.?\d*$/;
 
 const DEFAULT_CLASS: string =
-  'text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary';
+  'text-sm border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-focus-ring';
 
 // ============================================================================
 // Props

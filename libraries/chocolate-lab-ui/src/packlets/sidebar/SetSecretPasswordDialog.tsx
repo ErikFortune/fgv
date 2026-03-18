@@ -110,14 +110,14 @@ export function SetSecretPasswordDialog(props: ISetSecretPasswordDialogProps): R
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-backdrop"
       onKeyDown={handleKeyDown}
     >
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-choco-accent/10 flex items-center justify-center">
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-accent/10 flex items-center justify-center">
             <svg
-              className="w-5 h-5 text-choco-accent"
+              className="w-5 h-5 text-brand-accent"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
@@ -131,16 +131,16 @@ export function SetSecretPasswordDialog(props: ISetSecretPasswordDialogProps): R
             </svg>
           </div>
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Set Secret Password</h2>
-            <p className="text-xs text-gray-500">
-              Create a password for secret <span className="font-medium text-gray-700">{secretName}</span>
+            <h2 className="text-base font-semibold text-primary">Set Secret Password</h2>
+            <p className="text-xs text-muted">
+              Create a password for secret <span className="font-medium text-secondary">{secretName}</span>
             </p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label htmlFor="ssp-password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="ssp-password" className="block text-sm font-medium text-secondary mb-1">
               Password
             </label>
             <input
@@ -149,7 +149,7 @@ export function SetSecretPasswordDialog(props: ISetSecretPasswordDialogProps): R
               type="password"
               value={password}
               onChange={(e): void => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent"
+              className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent"
               placeholder="New password"
               autoComplete="new-password"
               disabled={isSubmitting}
@@ -157,7 +157,7 @@ export function SetSecretPasswordDialog(props: ISetSecretPasswordDialogProps): R
           </div>
 
           <div>
-            <label htmlFor="ssp-confirm" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="ssp-confirm" className="block text-sm font-medium text-secondary mb-1">
               Confirm password
             </label>
             <input
@@ -165,8 +165,8 @@ export function SetSecretPasswordDialog(props: ISetSecretPasswordDialogProps): R
               type="password"
               value={confirm}
               onChange={(e): void => setConfirm(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent ${
-                mismatch ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent ${
+                mismatch ? 'border-red-300 bg-red-50' : 'border-border'
               }`}
               placeholder="Confirm password"
               autoComplete="new-password"
@@ -181,14 +181,14 @@ export function SetSecretPasswordDialog(props: ISetSecretPasswordDialogProps): R
               type="button"
               onClick={onSkip}
               disabled={isSubmitting}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              className="px-3 py-1.5 text-sm font-medium text-secondary bg-surface border border-border rounded-md hover:bg-hover disabled:opacity-50"
             >
               Skip encryption
             </button>
             <button
               type="submit"
               disabled={!canSubmit}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-choco-accent rounded-md hover:bg-choco-accent/90 disabled:opacity-50"
+              className="px-3 py-1.5 text-sm font-medium text-inverted bg-brand-accent rounded-md hover:bg-brand-accent/90 disabled:opacity-50"
             >
               {isSubmitting ? 'Setting up…' : 'Set password'}
             </button>

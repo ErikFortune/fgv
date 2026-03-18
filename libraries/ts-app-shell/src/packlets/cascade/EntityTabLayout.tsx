@@ -99,13 +99,13 @@ export function EntityTabLayout(props: IEntityTabLayoutProps): React.ReactElemen
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Variation compare banner */}
       {isVariationCompare && onExitVariationCompare && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border-b border-amber-200 shrink-0">
-          <span className="text-xs text-amber-700">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-status-warning-bg border-b border-status-warning-border shrink-0">
+          <span className="text-xs text-status-warning-text">
             Comparing {variationCompareColumns.length} variations
           </span>
           <button
             onClick={onExitVariationCompare}
-            className="px-2 py-0.5 text-xs rounded border border-amber-300 text-amber-700 hover:bg-amber-100 transition-colors"
+            className="px-2 py-0.5 text-xs rounded border border-status-warning-border text-status-warning-text hover:bg-status-warning-surface transition-colors"
           >
             Exit
           </button>
@@ -122,8 +122,8 @@ export function EntityTabLayout(props: IEntityTabLayoutProps): React.ReactElemen
               : listCollapsed
               ? 'w-0 min-w-0'
               : hasCascadeOrCompare
-              ? 'w-1/4 max-w-xs shrink-0 border-r border-gray-200'
-              : 'w-full max-w-sm shrink-0 border-r border-gray-200'
+              ? 'w-1/4 max-w-xs shrink-0 border-r border-border'
+              : 'w-full max-w-sm shrink-0 border-r border-border'
           }`}
         >
           {list}
@@ -137,12 +137,14 @@ export function EntityTabLayout(props: IEntityTabLayoutProps): React.ReactElemen
         {/* Entity comparison view (compare mode — explicitly triggered) */}
         {showComparison && (
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border-b border-blue-200 shrink-0">
-              <span className="text-xs text-blue-700">Comparing {comparisonColumns.length} items</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-status-info-bg border-b border-status-info-border shrink-0">
+              <span className="text-xs text-status-info-text">
+                Comparing {comparisonColumns.length} items
+              </span>
               {onExitComparison && (
                 <button
                   onClick={onExitComparison}
-                  className="px-2 py-0.5 text-xs rounded border border-blue-300 text-blue-700 hover:bg-blue-100 transition-colors"
+                  className="px-2 py-0.5 text-xs rounded border border-status-info-border text-status-info-text hover:bg-status-info-surface transition-colors"
                 >
                   ← Back to list
                 </button>

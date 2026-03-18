@@ -98,14 +98,14 @@ export function UnlockDialog(props: IUnlockDialogProps): React.ReactElement | nu
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-backdrop"
       onKeyDown={handleKeyDown}
     >
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-choco-primary/10 flex items-center justify-center">
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center">
             <svg
-              className="w-5 h-5 text-choco-primary"
+              className="w-5 h-5 text-brand-primary"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
@@ -119,16 +119,14 @@ export function UnlockDialog(props: IUnlockDialogProps): React.ReactElement | nu
             </svg>
           </div>
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Unlock Workspace</h2>
-            <p className="text-xs text-gray-500">
-              Enter your master password to access protected collections
-            </p>
+            <h2 className="text-base font-semibold text-primary">Unlock Workspace</h2>
+            <p className="text-xs text-muted">Enter your master password to access protected collections</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="unlock-password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="unlock-password" className="block text-sm font-medium text-secondary mb-1">
               Password
             </label>
             <input
@@ -137,7 +135,7 @@ export function UnlockDialog(props: IUnlockDialogProps): React.ReactElement | nu
               type="password"
               value={password}
               onChange={(e): void => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-transparent"
+              className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent"
               placeholder="Master password"
               autoComplete="current-password"
               disabled={isSubmitting}
@@ -150,14 +148,14 @@ export function UnlockDialog(props: IUnlockDialogProps): React.ReactElement | nu
               type="button"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              className="px-3 py-1.5 text-sm font-medium text-secondary bg-surface border border-border rounded-md hover:bg-hover disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!password || isSubmitting}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-choco-primary rounded-md hover:bg-choco-primary/90 disabled:opacity-50"
+              className="px-3 py-1.5 text-sm font-medium text-inverted bg-brand-primary rounded-md hover:bg-brand-primary/90 disabled:opacity-50"
             >
               {isSubmitting ? 'Unlocking…' : 'Unlock'}
             </button>

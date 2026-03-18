@@ -122,7 +122,7 @@ export function ProductionOverlayPanel({
 
   return (
     <div
-      className="flex shrink-0 border-l border-gray-300 bg-white transition-all duration-200 overflow-hidden"
+      className="flex shrink-0 border-l border-border bg-surface transition-all duration-200 overflow-hidden"
       style={{ width }}
       data-testid="production-overlay-panel"
     >
@@ -165,12 +165,12 @@ function CollapsedStrip({
   return (
     <button
       onClick={onExpand}
-      className="flex flex-col items-center justify-start w-full h-full py-3 gap-2 hover:bg-gray-50 transition-colors"
+      className="flex flex-col items-center justify-start w-full h-full py-3 gap-2 hover:bg-hover transition-colors"
       data-testid="production-collapsed-strip"
       title="Open production panel"
     >
       <BeakerIcon className="w-5 h-5 text-green-600" />
-      <span className="text-xs font-medium text-gray-700 [writing-mode:vertical-lr] rotate-180">
+      <span className="text-xs font-medium text-secondary [writing-mode:vertical-lr] rotate-180">
         Production
       </span>
       <span className="mt-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-green-600 rounded-full">
@@ -200,14 +200,14 @@ function StatusPanel({
   return (
     <div className="flex flex-col w-full h-full" data-testid="production-status-panel">
       {/* Header */}
-      <div className="flex items-center justify-between px-2 py-2 border-b border-gray-200 shrink-0">
-        <span className="text-xs font-semibold text-gray-700">Production</span>
+      <div className="flex items-center justify-between px-2 py-2 border-b border-border shrink-0">
+        <span className="text-xs font-semibold text-secondary">Production</span>
         <button
           onClick={onCollapse}
-          className="p-0.5 rounded hover:bg-gray-100 transition-colors"
+          className="p-0.5 rounded hover:bg-hover transition-colors"
           title="Collapse panel"
         >
-          <ChevronRightIcon className="w-4 h-4 text-gray-400" />
+          <ChevronRightIcon className="w-4 h-4 text-muted" />
         </button>
       </div>
 
@@ -290,13 +290,13 @@ function DetailPanel({
   return (
     <div className="flex flex-col w-full h-full" data-testid="production-detail-panel">
       {/* Header with collapse and tabs */}
-      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-gray-200 shrink-0">
+      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border shrink-0">
         <button
           onClick={onCollapse}
-          className="p-0.5 rounded hover:bg-gray-100 transition-colors shrink-0"
+          className="p-0.5 rounded hover:bg-hover transition-colors shrink-0"
           title="Show status panel"
         >
-          <ChevronLeftIcon className="w-4 h-4 text-gray-400" />
+          <ChevronLeftIcon className="w-4 h-4 text-muted" />
         </button>
 
         {/* Session tabs */}
@@ -310,8 +310,8 @@ function DetailPanel({
                 onClick={(): void => onSelectSession(entry.sessionId)}
                 className={`px-2 py-1 text-xs rounded-t whitespace-nowrap transition-colors ${
                   isActive
-                    ? 'bg-white text-gray-900 font-medium border-b-2 border-green-500'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    ? 'bg-surface text-primary font-medium border-b-2 border-green-500'
+                    : 'text-muted hover:text-secondary hover:bg-hover'
                 }`}
               >
                 {tabLabel}

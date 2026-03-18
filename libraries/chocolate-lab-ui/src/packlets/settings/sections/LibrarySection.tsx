@@ -50,15 +50,15 @@ export function LibrarySection(__props: ILibrarySectionProps): React.ReactElemen
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Libraries</h2>
-        <p className="text-xs text-gray-400 mb-4">
+        <h2 className="text-lg font-semibold text-primary mb-1">Libraries</h2>
+        <p className="text-xs text-muted mb-4">
           Sub-libraries loaded in this session — {totalCollections} collection
           {totalCollections !== 1 ? 's' : ''}, {totalItems} item{totalItems !== 1 ? 's' : ''} total.
         </p>
 
-        <table className="w-full text-sm text-gray-700">
+        <table className="w-full text-sm text-secondary">
           <thead>
-            <tr className="text-xs text-gray-400 border-b border-gray-200">
+            <tr className="text-xs text-muted border-b border-border">
               <th className="text-left font-medium pb-2">Sub-library</th>
               <th className="text-right font-medium pb-2">Collections</th>
               <th className="text-right font-medium pb-2">Items</th>
@@ -66,19 +66,19 @@ export function LibrarySection(__props: ILibrarySectionProps): React.ReactElemen
           </thead>
           <tbody>
             {subLibraries.map((row) => (
-              <tr key={row.label} className="border-b border-gray-50 last:border-0">
+              <tr key={row.label} className="border-b border-border-subtle last:border-0">
                 <td className="py-2 font-medium">{row.label}</td>
                 <td className="py-2 text-right tabular-nums">
-                  {row.collectionCount === 0 ? <span className="text-gray-300">—</span> : row.collectionCount}
+                  {row.collectionCount === 0 ? <span className="text-faint">—</span> : row.collectionCount}
                 </td>
                 <td className="py-2 text-right tabular-nums">
-                  {row.itemCount === 0 ? <span className="text-gray-300">—</span> : row.itemCount}
+                  {row.itemCount === 0 ? <span className="text-faint">—</span> : row.itemCount}
                 </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t border-gray-200 text-xs text-gray-500 font-medium">
+            <tr className="border-t border-border text-xs text-muted font-medium">
               <td className="pt-2">Total</td>
               <td className="pt-2 text-right tabular-nums">{totalCollections}</td>
               <td className="pt-2 text-right tabular-nums">{totalItems}</td>

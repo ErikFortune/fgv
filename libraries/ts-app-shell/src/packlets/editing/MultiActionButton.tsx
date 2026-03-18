@@ -104,9 +104,9 @@ export function MultiActionButton(props: IMultiActionButtonProps): React.ReactEl
   }, [isOpen]);
 
   const variantClasses: Record<string, string> = {
-    primary: 'bg-choco-primary hover:bg-choco-primary/90 text-white',
-    default: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
-    danger: 'bg-red-600 hover:bg-red-700 text-white'
+    primary: 'bg-brand-primary hover:bg-brand-primary/90 text-white',
+    default: 'bg-surface-raised hover:bg-surface-raised text-secondary',
+    danger: 'bg-status-error-btn hover:bg-status-error-btn-hover text-white'
   };
 
   const baseClasses =
@@ -141,7 +141,7 @@ export function MultiActionButton(props: IMultiActionButtonProps): React.ReactEl
 
       {/* Dropdown menu */}
       {isOpen && alternativeActions.length > 0 && (
-        <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
+        <div className="absolute top-full right-0 mt-1 w-48 bg-surface rounded-md shadow-lg border border-border py-1 z-50">
           {alternativeActions.map((action) => (
             <button
               key={action.id}
@@ -150,7 +150,7 @@ export function MultiActionButton(props: IMultiActionButtonProps): React.ReactEl
                 action.onSelect();
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-xs text-secondary hover:bg-surface-raised flex items-center gap-2"
             >
               {action.icon}
               <span>{action.label}</span>

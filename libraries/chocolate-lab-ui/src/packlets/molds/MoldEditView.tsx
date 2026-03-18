@@ -469,7 +469,7 @@ export function MoldEditView(props: IMoldEditViewProps): React.ReactElement {
       {/* Identity Section */}
       <EditSection title="Identity">
         <EditField label="Base ID">
-          <span className="text-sm font-mono text-gray-500">{entity.baseId}</span>
+          <span className="text-sm font-mono text-muted">{entity.baseId}</span>
         </EditField>
         <EditField label="Manufacturer">
           <TextInput

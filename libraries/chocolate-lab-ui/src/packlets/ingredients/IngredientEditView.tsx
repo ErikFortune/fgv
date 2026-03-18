@@ -141,10 +141,10 @@ function PercentageInput({
         min={0}
         max={100}
         step={0.1}
-        className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary text-right"
+        className="w-20 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring text-right"
         aria-label={label}
       />
-      <span className="text-xs text-gray-500">%</span>
+      <span className="text-xs text-muted">%</span>
     </div>
   );
 }
@@ -235,7 +235,7 @@ function ChocolateFieldsEditor({
             const val = e.target.value;
             onUpdate({ fluidityStars: val ? (parseInt(val, 10) as FluidityStars) : undefined });
           }}
-          className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+          className="px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
         >
           <option value="">—</option>
           {ALL_FLUIDITY_STARS.map((s) => (
@@ -256,7 +256,7 @@ function ChocolateFieldsEditor({
       </EditField>
       <EditField label="Tempering">
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-xs text-gray-500">Melt</span>
+          <span className="text-xs text-muted">Melt</span>
           <NumberInput
             value={entity.temperatureCurve?.melt}
             onChange={(v) => {
@@ -270,7 +270,7 @@ function ChocolateFieldsEditor({
             label="Melt °C"
             step={0.5}
           />
-          <span className="text-xs text-gray-500">Cool</span>
+          <span className="text-xs text-muted">Cool</span>
           <NumberInput
             value={entity.temperatureCurve?.cool}
             onChange={(v) => {
@@ -284,7 +284,7 @@ function ChocolateFieldsEditor({
             label="Cool °C"
             step={0.5}
           />
-          <span className="text-xs text-gray-500">Work</span>
+          <span className="text-xs text-muted">Work</span>
           <NumberInput
             value={entity.temperatureCurve?.working}
             onChange={(v) => {
@@ -400,7 +400,7 @@ function FatFieldsEditor({
             label="Melting point °C"
             step={0.5}
           />
-          <span className="text-xs text-gray-500">°C</span>
+          <span className="text-xs text-muted">°C</span>
         </div>
       </EditField>
     </EditSection>
@@ -483,19 +483,19 @@ function NotesEditor({
             type="text"
             value={note.category}
             onChange={(e) => handleNoteCategoryChange(i, e.target.value)}
-            className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+            className="w-24 px-2 py-1 text-xs border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
             placeholder="category"
           />
           <textarea
             value={note.note}
             onChange={(e) => handleNoteTextChange(i, e.target.value)}
             rows={2}
-            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary resize-y"
+            className="flex-1 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring resize-y"
             placeholder="Note text"
           />
           <button
             onClick={() => handleRemoveNote(i)}
-            className="px-1.5 py-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+            className="px-1.5 py-1 text-xs text-muted hover:text-red-500 transition-colors"
             title="Remove note"
           >
             ✕
@@ -504,7 +504,7 @@ function NotesEditor({
       ))}
       <button
         onClick={handleAddNote}
-        className="text-xs text-choco-primary hover:text-choco-primary/80 transition-colors"
+        className="text-xs text-brand-primary hover:text-brand-primary/80 transition-colors"
       >
         + Add note
       </button>
@@ -770,7 +770,7 @@ export function IngredientEditView(props: IIngredientEditViewProps): React.React
               placeholder="Description"
             />
           </EditField>
-          <p className="text-xs text-gray-400 mt-1 font-mono">{current.baseId}</p>
+          <p className="text-xs text-muted mt-1 font-mono">{current.baseId}</p>
         </EditSection>
 
         {/* Category-Specific Fields */}

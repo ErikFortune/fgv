@@ -95,11 +95,11 @@ function SaveAnalysisSection({
     <div className="mt-4 space-y-3">
       {/* Change summary */}
       <div>
-        <h4 className="text-xs font-medium text-gray-700 uppercase tracking-wider mb-1.5">
+        <h4 className="text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">
           Changes detected
         </h4>
         {hasChanges ? (
-          <ul className="text-sm text-gray-600 space-y-0.5">
+          <ul className="text-sm text-secondary space-y-0.5">
             {changes.ingredientsAdded && <li className="flex items-center gap-1.5">+ Ingredients added</li>}
             {changes.ingredientsRemoved && (
               <li className="flex items-center gap-1.5">- Ingredients removed</li>
@@ -112,52 +112,52 @@ function SaveAnalysisSection({
             {changes.notesChanged && <li className="flex items-center gap-1.5">~ Notes changed</li>}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500 italic">No changes from original recipe</p>
+          <p className="text-sm text-muted italic">No changes from original recipe</p>
         )}
       </div>
 
       {/* Save options — selectable when changes exist */}
       {hasChanges && (
         <div>
-          <h4 className="text-xs font-medium text-gray-700 uppercase tracking-wider mb-1.5">
+          <h4 className="text-xs font-medium text-secondary uppercase tracking-wider mb-1.5">
             Recipe save option
           </h4>
           <div className="space-y-1.5">
-            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-secondary cursor-pointer">
               <input
                 type="radio"
                 name="save-option"
                 value="journal-only"
                 checked={saveOption === 'journal-only'}
                 onChange={(): void => onSaveOptionChange('journal-only')}
-                className="text-choco-primary focus:ring-choco-primary"
+                className="text-brand-primary focus:ring-focus-ring"
               />
               Journal only (no recipe changes)
             </label>
 
             {analysis.canCreateVariation && (
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-secondary cursor-pointer">
                 <input
                   type="radio"
                   name="save-option"
                   value="new-variation"
                   checked={saveOption === 'new-variation'}
                   onChange={(): void => onSaveOptionChange('new-variation')}
-                  className="text-choco-primary focus:ring-choco-primary"
+                  className="text-brand-primary focus:ring-focus-ring"
                 />
                 Save as new variation
               </label>
             )}
 
             {analysis.canAddAlternatives && (
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-secondary cursor-pointer">
                 <input
                   type="radio"
                   name="save-option"
                   value="alternatives"
                   checked={saveOption === 'alternatives'}
                   onChange={(): void => onSaveOptionChange('alternatives')}
-                  className="text-choco-primary focus:ring-choco-primary"
+                  className="text-brand-primary focus:ring-focus-ring"
                 />
                 Add ingredients as alternatives
               </label>
@@ -246,23 +246,23 @@ export function CommitSessionDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-backdrop"
         onClick={isCommitting ? undefined : onCancel}
         role="presentation"
       />
 
       {/* Dialog */}
       <div
-        className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4"
+        className="relative bg-surface rounded-lg shadow-xl max-w-lg w-full mx-4"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="commit-dialog-title"
       >
         <div className="p-6">
-          <h3 id="commit-dialog-title" className="text-base font-semibold text-gray-900 leading-6">
+          <h3 id="commit-dialog-title" className="text-base font-semibold text-primary leading-6">
             Commit {session.sessionType === 'confection' ? 'Confection' : 'Filling'} Session to Journal
           </h3>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-secondary">
             This will create a journal entry with a full recipe snapshot and mark the session as committed.
           </p>
 
@@ -278,7 +278,7 @@ export function CommitSessionDialog({
               type="button"
               onClick={onCancel}
               disabled={isCommitting}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-secondary bg-surface border border-border rounded-md hover:bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-border transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
@@ -286,7 +286,7 @@ export function CommitSessionDialog({
               type="button"
               onClick={handleCommit}
               disabled={isCommitting}
-              className="px-4 py-2 text-sm font-medium text-white bg-choco-primary rounded-md hover:bg-choco-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-choco-primary transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-inverted bg-brand-primary rounded-md hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-focus-ring transition-colors disabled:opacity-50"
             >
               {isCommitting ? 'Committing...' : commitLabel}
             </button>

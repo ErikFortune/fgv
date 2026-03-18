@@ -50,12 +50,12 @@ export function SearchBar(props: ISearchBarProps): React.ReactElement {
           value={value}
           onChange={(e): void => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full pl-3 pr-8 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-choco-accent"
+          className="w-full pl-3 pr-8 py-1.5 text-sm border border-border rounded-md bg-surface text-primary focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
         />
         {value.length > 0 && (
           <button
             onClick={(): void => onChange('')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary text-xs"
             aria-label="Clear search"
           >
             &times;

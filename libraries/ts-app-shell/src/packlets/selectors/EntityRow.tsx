@@ -262,10 +262,10 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
         <div
           ref={pickerRef}
           style={{ position: 'fixed', top: pickerPos.top, left: pickerPos.left }}
-          className="z-50 min-w-[180px] max-h-[200px] bg-white border border-gray-200 rounded-lg shadow-lg flex flex-col overflow-hidden"
+          className="z-50 min-w-[180px] max-h-[200px] bg-surface border border-border rounded-lg shadow-lg flex flex-col overflow-hidden"
           onKeyDown={handlePickerKeyDown}
         >
-          <div className="flex items-center justify-between px-2.5 py-1 border-b border-gray-100 shrink-0">
+          <div className="flex items-center justify-between px-2.5 py-1 border-b border-border-subtle shrink-0">
             {onCompare && items.length >= 2 ? (
               compareMode ? (
                 <>
@@ -276,7 +276,7 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
                           e.stopPropagation();
                           handleCompareSelected();
                         }}
-                        className="text-[10px] text-white bg-choco-primary rounded px-1.5 py-0.5 hover:bg-choco-primary/90 transition-colors font-medium"
+                        className="text-[10px] text-white bg-brand-primary rounded px-1.5 py-0.5 hover:bg-brand-primary/90 transition-colors font-medium"
                       >
                         Compare {checkedIds.size}
                       </button>
@@ -286,7 +286,7 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
                         e.stopPropagation();
                         handleCompareAll();
                       }}
-                      className="text-[10px] text-choco-accent hover:text-choco-primary transition-colors font-medium"
+                      className="text-[10px] text-brand-accent hover:text-brand-primary transition-colors font-medium"
                     >
                       All
                     </button>
@@ -297,7 +297,7 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
                       setCompareMode(false);
                       setCheckedIds(new Set());
                     }}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    className="text-muted hover:text-secondary transition-colors"
                     aria-label="Exit compare"
                   >
                     <svg
@@ -313,24 +313,20 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
                 </>
               ) : (
                 <>
-                  <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-                    Options
-                  </span>
+                  <span className="text-[10px] font-medium text-muted uppercase tracking-wider">Options</span>
                   <button
                     onClick={(e): void => {
                       e.stopPropagation();
                       setCompareMode(true);
                     }}
-                    className="text-[10px] text-choco-accent hover:text-choco-primary transition-colors font-medium"
+                    className="text-[10px] text-brand-accent hover:text-brand-primary transition-colors font-medium"
                   >
                     Compare…
                   </button>
                 </>
               )
             ) : (
-              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-                Alternates
-              </span>
+              <span className="text-[10px] font-medium text-muted uppercase tracking-wider">Alternates</span>
             )}
           </div>
           <div className="overflow-y-auto flex-1">
@@ -355,20 +351,20 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
                   }}
                   className={`flex items-center gap-2 w-full px-2.5 py-1.5 text-left text-sm transition-colors ${
                     isChecked
-                      ? 'bg-choco-accent/10 text-choco-primary'
+                      ? 'bg-selected text-brand-primary'
                       : isCurrent && !compareMode
-                      ? 'bg-choco-accent/10 text-choco-primary font-medium'
+                      ? 'bg-selected text-brand-primary font-medium'
                       : isFocused
-                      ? 'bg-gray-50 text-gray-800'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-surface-alt text-primary'
+                      : 'text-secondary hover:bg-hover'
                   }`}
                 >
                   {compareMode ? (
                     <span
                       className={`flex items-center justify-center w-3.5 h-3.5 rounded border shrink-0 transition-colors ${
                         isChecked
-                          ? 'bg-choco-accent border-choco-accent text-white'
-                          : 'border-gray-300 bg-white'
+                          ? 'bg-brand-accent border-brand-accent text-white'
+                          : 'border-border bg-surface'
                       }`}
                     >
                       {isChecked && (
@@ -390,11 +386,11 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
                   )}
                   <span className="flex-1 min-w-0 truncate">
                     {item.label}
-                    {item.sublabel && <span className="ml-1.5 text-xs text-gray-400">{item.sublabel}</span>}
+                    {item.sublabel && <span className="ml-1.5 text-xs text-muted">{item.sublabel}</span>}
                   </span>
                   {!compareMode && isCurrent && (
                     <svg
-                      className="w-3.5 h-3.5 text-choco-accent shrink-0"
+                      className="w-3.5 h-3.5 text-brand-accent shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -414,12 +410,10 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
 
   return (
     <div>
-      {label && (
-        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</div>
-      )}
+      {label && <div className="text-xs font-semibold text-muted uppercase tracking-wider mb-1">{label}</div>}
       <div
         className={`flex items-center gap-1.5 py-1.5 pl-0 pr-2 rounded-md ${
-          onClick ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''
+          onClick ? 'cursor-pointer hover:bg-hover transition-colors' : ''
         }`}
         onClick={handleRowClick}
         role={onClick ? 'button' : undefined}
@@ -432,7 +426,7 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
             <button
               ref={pickerBtnRef}
               onClick={handlePickerToggle}
-              className="text-gray-400 hover:text-choco-accent p-0 transition-colors"
+              className="text-muted hover:text-brand-accent p-0 transition-colors"
               aria-label="Switch alternate"
               tabIndex={-1}
             >
@@ -452,15 +446,15 @@ export function EntityRow<TId extends string = string>(props: IEntityRowProps<TI
             </button>
           ) : null}
         </span>
-        <span className="text-sm text-gray-800 flex-1 truncate">
+        <span className="text-sm text-primary flex-1 truncate">
           {displayedItem?.label ?? ''}
           {hasAlternates && isPreferred && <span className="ml-1 text-xs text-amber-500">★</span>}
           {displayedItem?.sublabel && (
-            <span className="ml-1.5 text-xs text-gray-400">{displayedItem.sublabel}</span>
+            <span className="ml-1.5 text-xs text-muted">{displayedItem.sublabel}</span>
           )}
         </span>
         {rightContent}
-        {onClick && <span className="text-gray-300 text-xs shrink-0">›</span>}
+        {onClick && <span className="text-faint text-xs shrink-0">›</span>}
       </div>
       {pickerPopover}
     </div>

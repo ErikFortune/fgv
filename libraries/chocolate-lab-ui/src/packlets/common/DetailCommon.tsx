@@ -54,11 +54,11 @@ export function NotesSection({ notes }: INotesSectionProps): React.ReactElement 
   return (
     <DetailSection title="Notes">
       {notes.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">(none)</p>
+        <p className="text-sm text-muted italic">(none)</p>
       ) : (
         notes.map((note, i) => (
-          <div key={i} className="text-sm text-gray-700 mb-1">
-            <span className="text-xs text-gray-400 mr-1">[{note.category}]</span>
+          <div key={i} className="text-sm text-secondary mb-1">
+            <span className="text-xs text-muted mr-1">[{note.category}]</span>
             {note.note}
           </div>
         ))
@@ -84,16 +84,16 @@ export function UrlsSection({ urls }: IUrlsSectionProps): React.ReactElement {
   return (
     <DetailSection title="Links">
       {urls.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">(none)</p>
+        <p className="text-sm text-muted italic">(none)</p>
       ) : (
         urls.map((u, i) => (
           <div key={i} className="text-sm mb-1">
-            <span className="text-xs text-gray-400 mr-1">[{u.category}]</span>
+            <span className="text-xs text-muted mr-1">[{u.category}]</span>
             <a
               href={u.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-choco-primary hover:underline"
+              className="text-brand-primary hover:underline"
             >
               {u.url}
             </a>
@@ -201,7 +201,7 @@ export function EntityDetailHeader({
         <button
           type="button"
           onClick={handleCopyJson}
-          className="p-1 text-gray-400 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+          className="p-1 text-muted hover:text-brand-primary hover:bg-hover rounded transition-colors"
           title={copied ? 'Copied!' : 'Copy JSON to clipboard'}
         >
           <ClipboardDocumentIcon className="w-4 h-4" />
@@ -211,7 +211,7 @@ export function EntityDetailHeader({
         <button
           type="button"
           onClick={onPreview}
-          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-secondary hover:text-brand-primary hover:bg-hover rounded transition-colors"
           title="Preview"
         >
           <EyeIcon className="w-4 h-4" />
@@ -222,7 +222,7 @@ export function EntityDetailHeader({
         <button
           type="button"
           onClick={onEdit}
-          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-secondary hover:text-brand-primary hover:bg-hover rounded transition-colors"
           title="Edit"
         >
           <PencilSquareIcon className="w-4 h-4" />
@@ -244,12 +244,12 @@ export function EntityDetailHeader({
         onClose={onClose}
       />
       {derivedFrom && (
-        <div className="px-4 py-2 border-b border-gray-200 space-y-1">
+        <div className="px-4 py-2 border-b border-border space-y-1">
           <DerivedFromIndicator
             sourceVariationId={derivedFrom.sourceVariationId}
             derivedDate={derivedFrom.derivedDate}
           />
-          {description && <p className="text-sm text-gray-600">{description}</p>}
+          {description && <p className="text-sm text-secondary">{description}</p>}
         </div>
       )}
     </>
@@ -283,10 +283,10 @@ export function DerivedFromIndicator({
   const formattedDate = derivedDate.slice(0, 10);
   return (
     <span
-      className="inline-flex items-center gap-1 text-xs text-gray-500 italic"
+      className="inline-flex items-center gap-1 text-xs text-muted italic"
       title={`Derived on ${formattedDate}`}
     >
-      <ArrowUturnLeftIcon className="h-3 w-3 text-gray-400" />
+      <ArrowUturnLeftIcon className="h-3 w-3 text-muted" />
       Adapted from {sourceVariationId}
     </span>
   );

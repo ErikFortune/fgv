@@ -16,7 +16,10 @@ import {
   KeyboardShortcutProvider,
   useKeyboardShortcuts,
   type IShortcut,
-  SidebarLayout
+  SidebarLayout,
+  ThemeProvider,
+  useTheme,
+  type ThemeId
 } from '@fgv/ts-app-shell';
 import { Logging, type MessageLogLevel, succeed, fail } from '@fgv/ts-utils';
 import {
@@ -138,6 +141,67 @@ function LockButton({
           d="M13.5 10.5V6.75a4.5 4.5 0 00-9 0v3.75M3.75 21.75h16.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
         />
       </svg>
+    </button>
+  );
+}
+
+// ============================================================================
+// Theme Toggle
+// ============================================================================
+
+const THEME_CYCLE: ReadonlyArray<ThemeId> = [
+  'light' as unknown as ThemeId,
+  'dark' as unknown as ThemeId,
+  'system' as unknown as ThemeId
+];
+
+function ThemeToggle(): React.ReactElement {
+  const { theme, setTheme, isDark } = useTheme();
+
+  const cycleTheme = useCallback((): void => {
+    const currentIndex = THEME_CYCLE.findIndex((t) => (t as string) === (theme as string));
+    const nextIndex = (currentIndex + 1) % THEME_CYCLE.length;
+    setTheme(THEME_CYCLE[nextIndex]);
+  }, [theme, setTheme]);
+
+  // Sun icon for light, moon for dark, auto for system
+  const label = (theme as string) === 'system' ? 'Theme: System' : isDark ? 'Theme: Dark' : 'Theme: Light';
+
+  return (
+    <button
+      onClick={cycleTheme}
+      className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+      aria-label={label}
+      title={label}
+    >
+      {(theme as string) === 'system' ? (
+        // Computer/monitor icon for system
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z"
+          />
+        </svg>
+      ) : isDark ? (
+        // Moon icon
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
+          />
+        </svg>
+      ) : (
+        // Sun icon
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
+          />
+        </svg>
+      )}
     </button>
   );
 }
@@ -651,9 +715,9 @@ const TAB_DESCRIPTIONS: Record<string, string> = {
 function TabPlaceholder({ tab }: { readonly tab: AppTab }): React.ReactElement {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center p-8">
-      <h2 className="text-2xl font-semibold text-choco-primary mb-3">{TAB_LABELS[tab]}</h2>
-      <p className="text-gray-500 max-w-md">{TAB_DESCRIPTIONS[tab]}</p>
-      <p className="text-gray-400 text-sm mt-6">Coming in a future phase.</p>
+      <h2 className="text-2xl font-semibold text-brand-primary mb-3">{TAB_LABELS[tab]}</h2>
+      <p className="text-muted max-w-md">{TAB_DESCRIPTIONS[tab]}</p>
+      <p className="text-muted text-sm mt-6">Coming in a future phase.</p>
     </div>
   );
 }
@@ -847,7 +911,7 @@ function AppShell(props: IAppShellProps): React.ReactElement {
     return (
       <div>
         <p>You have unsaved changes. Discard them and navigate away?</p>
-        <ul className="mt-2 text-xs text-gray-500 list-disc list-inside">
+        <ul className="mt-2 text-xs text-muted list-disc list-inside">
           {parts.map((p, i) => (
             <li key={i}>{p}</li>
           ))}
@@ -965,7 +1029,7 @@ function AppShell(props: IAppShellProps): React.ReactElement {
   useKeyboardShortcuts(shortcuts);
 
   return (
-    <div className="flex flex-col h-screen bg-choco-surface">
+    <div className="flex flex-col h-screen bg-surface-alt">
       <ConfirmDialog
         isOpen={pendingNavigation !== null}
         title="Unsaved Changes"
@@ -997,16 +1061,19 @@ function AppShell(props: IAppShellProps): React.ReactElement {
         activeMode={mode}
         onModeChange={guardedSetMode}
         rightContent={
-          workspaceState !== 'no-keystore' ? (
-            <LockButton
-              isLocked={workspaceState === 'locked'}
-              onLock={(): void => {
-                lock();
-                reactiveWorkspace.masterPassword = undefined;
-              }}
-              onUnlock={(): void => setUnlockOpen(true)}
-            />
-          ) : undefined
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            {workspaceState !== 'no-keystore' && (
+              <LockButton
+                isLocked={workspaceState === 'locked'}
+                onLock={(): void => {
+                  lock();
+                  reactiveWorkspace.masterPassword = undefined;
+                }}
+                onUnlock={(): void => setUnlockOpen(true)}
+              />
+            )}
+          </div>
         }
       />
 
@@ -1215,7 +1282,7 @@ function WorkspaceBootstrap(): React.ReactElement {
   }
 
   if (!reactiveWorkspace) {
-    return <div className="p-8 text-gray-500">Loading workspace…</div>;
+    return <div className="p-8 text-muted">Loading workspace…</div>;
   }
 
   return (
@@ -1236,8 +1303,10 @@ function WorkspaceBootstrap(): React.ReactElement {
 
 export default function App(): React.ReactElement {
   return (
-    <MessagesProvider>
-      <WorkspaceBootstrap />
-    </MessagesProvider>
+    <ThemeProvider initialTheme={'light' as unknown as ThemeId}>
+      <MessagesProvider>
+        <WorkspaceBootstrap />
+      </MessagesProvider>
+    </ThemeProvider>
   );
 }

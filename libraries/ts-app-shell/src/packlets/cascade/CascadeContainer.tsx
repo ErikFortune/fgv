@@ -122,25 +122,25 @@ export function CascadeContainer(props: ICascadeContainerProps): React.ReactElem
       onKeyDown={handleKeyDown}
     >
       {/* Breadcrumb trail */}
-      <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 border-b border-gray-200 text-xs shrink-0 overflow-x-auto">
+      <div className="flex items-center gap-1 px-3 py-1.5 bg-surface-alt border-b border-border text-xs shrink-0 overflow-x-auto">
         <button
           onClick={(): void => onPopTo(0)}
-          className="text-choco-accent hover:text-choco-primary hover:underline shrink-0"
+          className="text-brand-accent hover:text-brand-primary hover:underline shrink-0"
         >
           {rootLabel}
         </button>
         {columns.map((col, idx) => (
           <React.Fragment key={col.key}>
-            <span className="text-gray-400 shrink-0">/</span>
+            <span className="text-muted shrink-0">/</span>
             {idx < columns.length - 1 ? (
               <button
                 onClick={(): void => onPopTo(idx + 1)}
-                className="text-choco-accent hover:text-choco-primary hover:underline truncate max-w-[200px] shrink-0"
+                className="text-brand-accent hover:text-brand-primary hover:underline truncate max-w-[200px] shrink-0"
               >
                 {col.label}
               </button>
             ) : (
-              <span className="text-gray-700 font-medium truncate max-w-[200px] shrink-0">{col.label}</span>
+              <span className="text-secondary font-medium truncate max-w-[200px] shrink-0">{col.label}</span>
             )}
           </React.Fragment>
         ))}
@@ -155,7 +155,7 @@ export function CascadeContainer(props: ICascadeContainerProps): React.ReactElem
         {columns.map((col) => (
           <div
             key={col.key}
-            className="flex flex-col shrink-0 border-r border-gray-200 overflow-y-auto"
+            className="flex flex-col shrink-0 border-r border-border overflow-y-auto"
             style={{ minWidth: minColumnWidth, width: minColumnWidth }}
           >
             {col.content}

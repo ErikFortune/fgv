@@ -104,9 +104,9 @@ export function StepParameterEditor(props: IStepParameterEditorProps): React.Rea
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 flex-shrink-0">
-        <h2 className="text-lg font-semibold text-gray-900">Step {stepOrder} Parameters</h2>
-        <p className="text-sm text-gray-500 mt-0.5">{taskName}</p>
+      <div className="p-4 border-b border-border flex-shrink-0">
+        <h2 className="text-lg font-semibold text-primary">Step {stepOrder} Parameters</h2>
+        <p className="text-sm text-muted mt-0.5">{taskName}</p>
       </div>
 
       {/* Content */}
@@ -114,16 +114,16 @@ export function StepParameterEditor(props: IStepParameterEditorProps): React.Rea
         {/* Variable inputs */}
         {variables.length > 0 ? (
           <div className="mb-4">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Parameters</h4>
+            <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Parameters</h4>
             <div className="space-y-2">
               {variables.map((v) => {
                 const defaultValue = defaults?.[v];
                 return (
                   <div key={v}>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">{v}</label>
+                    <label className="block text-xs font-medium text-secondary mb-1">{v}</label>
                     <input
                       type="text"
-                      className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                      className="w-full text-sm border border-border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                       value={params[v] ?? ''}
                       onChange={(e): void => handleParamChange(v, e.target.value)}
                       placeholder={
@@ -137,39 +137,39 @@ export function StepParameterEditor(props: IStepParameterEditorProps): React.Rea
           </div>
         ) : (
           <div className="mb-4">
-            <p className="text-sm text-gray-500 italic">This task has no parameters.</p>
+            <p className="text-sm text-muted italic">This task has no parameters.</p>
           </div>
         )}
 
         {/* Template source */}
         <div className="mb-4">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Template</h4>
-          <div className="bg-gray-50 rounded-md p-2.5 text-xs text-gray-600 font-mono whitespace-pre-wrap border border-gray-200">
-            {template || <span className="text-gray-400 italic">Empty template</span>}
+          <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Template</h4>
+          <div className="bg-surface-alt rounded-md p-2.5 text-xs text-secondary font-mono whitespace-pre-wrap border border-border">
+            {template || <span className="text-muted italic">Empty template</span>}
           </div>
         </div>
 
         {/* Rendered preview */}
         <div className="mb-4">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Preview</h4>
-          <div className="bg-white rounded-md p-2.5 text-sm text-gray-800 whitespace-pre-wrap border-2 border-choco-primary/20">
-            {rendered || <span className="text-gray-400 italic">Empty template</span>}
+          <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Preview</h4>
+          <div className="bg-surface rounded-md p-2.5 text-sm text-primary whitespace-pre-wrap border-2 border-brand-primary/20">
+            {rendered || <span className="text-muted italic">Empty template</span>}
           </div>
         </div>
       </div>
 
       {/* Footer with actions */}
-      <div className="p-4 border-t border-gray-200 flex gap-2 flex-shrink-0">
+      <div className="p-4 border-t border-border flex gap-2 flex-shrink-0">
         <button
           onClick={handleSave}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded transition-colors"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-inverted bg-brand-primary hover:bg-brand-primary/90 rounded transition-colors"
         >
           <CheckIcon className="w-4 h-4" />
           Save Parameters
         </button>
         <button
           onClick={onCancel}
-          className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+          className="px-3 py-2 text-sm font-medium text-secondary bg-surface-raised hover:bg-hover rounded transition-colors"
         >
           Cancel
         </button>

@@ -142,10 +142,10 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-backdrop"
       onKeyDown={handleKeyDown}
     >
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
@@ -164,23 +164,23 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
             </svg>
           </div>
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Unlock Collection</h2>
-            <p className="text-xs text-gray-500">
-              <span className="font-medium text-gray-700">{collectionName}</span> (secret: {secretName})
+            <h2 className="text-base font-semibold text-primary">Unlock Collection</h2>
+            <p className="text-xs text-muted">
+              <span className="font-medium text-secondary">{collectionName}</span> (secret: {secretName})
             </p>
           </div>
         </div>
 
         {/* Mode Toggle */}
         {hasMultipleModes && (
-          <div className="flex rounded-md border border-gray-300 mb-4 text-sm">
+          <div className="flex rounded-md border border-border mb-4 text-sm">
             {availableModes.map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={(): void => handleModeChange(m)}
                 className={`flex-1 py-1.5 px-2 text-center transition-colors ${
-                  mode === m ? 'bg-amber-500 text-white font-medium' : 'text-gray-600 hover:bg-gray-50'
+                  mode === m ? 'bg-amber-500 text-inverted font-medium' : 'text-secondary hover:bg-hover'
                 } ${m === availableModes[0] ? 'rounded-l-md' : ''} ${
                   m === availableModes[availableModes.length - 1] ? 'rounded-r-md' : ''
                 }`}
@@ -194,7 +194,7 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label htmlFor="unlock-col-password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="unlock-col-password" className="block text-sm font-medium text-secondary mb-1">
               {mode === 'keystore' ? 'Keystore master password' : 'Collection password'}
             </label>
             <input
@@ -203,7 +203,7 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
               type="password"
               value={password}
               onChange={(e): void => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               placeholder={mode === 'keystore' ? 'Master password' : 'Collection password'}
               autoComplete="current-password"
               disabled={isSubmitting}
@@ -213,12 +213,12 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
 
           {/* Save to keystore checkbox (collection mode only) */}
           {mode === 'collection' && (
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-secondary cursor-pointer">
               <input
                 type="checkbox"
                 checked={saveToKeystore}
                 onChange={(e): void => setSaveToKeystore(e.target.checked)}
-                className="rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                className="rounded border-border text-amber-500 focus:ring-amber-500"
                 disabled={isSubmitting}
               />
               Save secret to keystore
@@ -226,7 +226,7 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
           )}
 
           {/* Hint text */}
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-muted">
             {mode === 'keystore'
               ? 'Unlock the keystore to access the stored secret for this collection.'
               : 'Derive the decryption key directly from a per-collection password.'}
@@ -238,7 +238,7 @@ export function UnlockCollectionDialog(props: IUnlockCollectionDialogProps): Rea
               type="button"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              className="px-3 py-1.5 text-sm font-medium text-secondary bg-surface border border-border rounded-md hover:bg-hover disabled:opacity-50"
             >
               Cancel
             </button>

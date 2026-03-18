@@ -49,3 +49,6 @@ export * from './packlets/ai-assist';
 
 // Print popup window enclosure
 export * from './packlets/print';
+
+// Theme provider and hook
+export * from './packlets/theme';

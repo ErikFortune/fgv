@@ -441,7 +441,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
             <button
               type="button"
               onClick={onPreview}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-choco-primary hover:bg-gray-100"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-secondary hover:text-brand-primary hover:bg-hover"
               title="Open decoration preview pane"
             >
               <EyeIcon className="h-3.5 w-3.5" />
@@ -454,7 +454,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
       {/* Identity Section */}
       <EditSection title="Identity">
         <EditField label="Base ID">
-          <span className="text-sm font-mono text-gray-500">{entity.baseId}</span>
+          <span className="text-sm font-mono text-muted">{entity.baseId}</span>
         </EditField>
         <EditField label="Name">
           <TextInput value={entity.name} onChange={handleNameChange} placeholder="e.g. Gold Leaf Accent" />
@@ -475,11 +475,11 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
             const ingValue =
               ingredientInputDraft[index] ?? getIngredientDisplayName(ing, ingredientSuggestions);
             return (
-              <div key={index} className="rounded border border-gray-200 p-2">
+              <div key={index} className="rounded border border-border p-2">
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
-                    className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                     value={ingValue}
                     list="decoration-ingredient-suggestions"
                     onChange={(e): void => {
@@ -495,7 +495,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                   />
                   <input
                     type="number"
-                    className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="w-20 text-sm border border-border rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-focus-ring"
                     value={ing.amount}
                     min={0}
                     step={0.1}
@@ -507,11 +507,11 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                     }}
                     aria-label="Amount (grams)"
                   />
-                  <span className="text-xs text-gray-500">g</span>
+                  <span className="text-xs text-muted">g</span>
                   <button
                     type="button"
                     onClick={(): void => handleRemoveIngredient(index)}
-                    className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                    className="px-2 py-1 text-xs text-muted hover:text-red-600 hover:bg-red-50 rounded"
                   >
                     Remove
                   </button>
@@ -524,7 +524,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                     <button
                       type="button"
                       onClick={(): void => onCreateIngredient?.(unresolvedIngredients[index])}
-                      className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                      className="px-2 py-1 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
                     >
                       Create Ingredient
                     </button>
@@ -537,7 +537,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
           <div className="flex items-center gap-2 pt-1">
             <input
               type="text"
-              className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
               value={newIngredientText}
               list="decoration-ingredient-suggestions"
               onChange={(e): void => setNewIngredientText(e.target.value)}
@@ -552,7 +552,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
             <button
               type="button"
               onClick={(): void => commitNewIngredient(newIngredientText)}
-              className="px-2.5 py-1 text-xs font-medium rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+              className="px-2.5 py-1 text-xs font-medium rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
             >
               Add
             </button>
@@ -560,7 +560,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
               <button
                 type="button"
                 onClick={onPasteIngredient}
-                className="p-1.5 text-gray-500 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                className="p-1.5 text-muted hover:text-brand-primary hover:bg-hover rounded transition-colors"
                 title="Paste ingredient from clipboard (AI-generated JSON)"
               >
                 <ClipboardDocumentIcon className="w-4 h-4" />
@@ -579,7 +579,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                   onCreateIngredient?.(unresolvedNewIngredient);
                   setUnresolvedNewIngredient(undefined);
                 }}
-                className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                className="px-2 py-1 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
               >
                 Create Ingredient
               </button>
@@ -604,13 +604,13 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
               procedureInputDraft[index] ?? getProcedureDisplayName(ref.id, procedureSuggestions);
             const isPreferred = entity.procedures?.preferredId === ref.id;
             return (
-              <div key={ref.id} className="rounded border border-gray-200 p-2">
+              <div key={ref.id} className="rounded border border-border p-2">
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={(): void => handleTogglePreferred(ref.id)}
                     className={`p-0.5 transition-colors ${
-                      isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
+                      isPreferred ? 'text-amber-500' : 'text-faint hover:text-amber-400'
                     }`}
                     title={isPreferred ? 'Preferred procedure' : 'Set as preferred'}
                   >
@@ -618,7 +618,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                   </button>
                   <input
                     type="text"
-                    className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                     value={procValue}
                     list="decoration-procedure-suggestions"
                     onChange={(e): void => {
@@ -635,7 +635,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                   <button
                     type="button"
                     onClick={(): void => handleRemoveProcedure(ref.id)}
-                    className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                    className="px-2 py-1 text-xs text-muted hover:text-red-600 hover:bg-red-50 rounded"
                   >
                     Remove
                   </button>
@@ -648,7 +648,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                     <button
                       type="button"
                       onClick={(): void => onCreateProcedure?.(unresolvedProcedures[index])}
-                      className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                      className="px-2 py-1 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
                     >
                       Create Procedure
                     </button>
@@ -661,7 +661,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
           <div className="flex items-center gap-2 pt-1">
             <input
               type="text"
-              className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
               value={newProcedureText}
               list="decoration-procedure-suggestions"
               onChange={(e): void => setNewProcedureText(e.target.value)}
@@ -676,7 +676,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
             <button
               type="button"
               onClick={(): void => commitNewProcedure(newProcedureText)}
-              className="px-2.5 py-1 text-xs font-medium rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+              className="px-2.5 py-1 text-xs font-medium rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
             >
               Add
             </button>
@@ -693,7 +693,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
                   onCreateProcedure?.(unresolvedNewProcedure);
                   setUnresolvedNewProcedure(undefined);
                 }}
-                className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                className="px-2 py-1 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
               >
                 Create Procedure
               </button>
@@ -717,7 +717,7 @@ export function DecorationEditView(props: IDecorationEditViewProps): React.React
             const existing = entity.ratings?.find((r) => r.category === category);
             return (
               <div key={category} className="flex items-center justify-between py-0.5">
-                <span className="text-sm text-gray-600 capitalize">{category}</span>
+                <span className="text-sm text-secondary capitalize">{category}</span>
                 <RatingStars
                   score={existing?.score}
                   onChange={(score): void => handleRatingChange(category, score)}

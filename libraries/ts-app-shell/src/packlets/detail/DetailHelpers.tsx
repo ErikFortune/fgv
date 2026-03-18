@@ -52,7 +52,7 @@ export interface IDetailSectionProps {
 export function DetailSection({ title, children }: IDetailSectionProps): React.ReactElement {
   return (
     <div className="mb-4">
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{title}</h3>
+      <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">{title}</h3>
       {children}
     </div>
   );
@@ -85,15 +85,15 @@ export function DetailRow({ label, value, layout = 'spread' }: IDetailRowProps):
   if (layout === 'inline') {
     return (
       <div className="flex items-baseline gap-2 py-0.5">
-        <span className="text-xs text-gray-500 w-32 shrink-0">{label}</span>
-        <span className="text-sm text-gray-800">{value}</span>
+        <span className="text-xs text-muted w-32 shrink-0">{label}</span>
+        <span className="text-sm text-primary">{value}</span>
       </div>
     );
   }
   return (
     <div className="flex items-baseline justify-between py-0.5 text-sm">
-      <span className="text-gray-500 shrink-0 mr-2">{label}</span>
-      <span className="text-gray-900 text-right">{value}</span>
+      <span className="text-muted shrink-0 mr-2">{label}</span>
+      <span className="text-primary text-right">{value}</span>
     </div>
   );
 }
@@ -117,7 +117,7 @@ export function TagList({ tags }: ITagListProps): React.ReactElement | null {
   return (
     <div className="flex flex-wrap gap-1">
       {tags.map((tag) => (
-        <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+        <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-surface-raised text-secondary">
           {tag}
         </span>
       ))}
@@ -188,26 +188,26 @@ export function DetailHeader({
   return (
     <div className="mb-4 relative">
       <div className="flex items-start">
-        <h2 className="text-lg font-semibold text-gray-900 flex-1 min-w-0">{title}</h2>
+        <h2 className="text-lg font-semibold text-primary flex-1 min-w-0">{title}</h2>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
             title="Close"
-            className="shrink-0 ml-2 mt-0.5 p-0.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="shrink-0 ml-2 mt-0.5 p-0.5 text-muted hover:text-secondary hover:bg-surface-raised rounded transition-colors"
           >
             <XMarkIcon className="w-4 h-4" />
           </button>
         )}
       </div>
-      {subtitle && <p className="text-xs text-gray-400 font-mono mt-0.5 mb-1">{subtitle}</p>}
+      {subtitle && <p className="text-xs text-muted font-mono mt-0.5 mb-1">{subtitle}</p>}
       {(indicators !== undefined || actions !== undefined) && (
         <div className="flex items-center justify-between gap-2 mt-1">
           <div className="flex items-center gap-2">{indicators}</div>
           {actions !== undefined && <div className="flex items-center gap-1 shrink-0">{actions}</div>}
         </div>
       )}
-      {description && <p className="text-sm text-gray-600 mt-1">{description}</p>}
+      {description && <p className="text-sm text-secondary mt-1">{description}</p>}
     </div>
   );
 }

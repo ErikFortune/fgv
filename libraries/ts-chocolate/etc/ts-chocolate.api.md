@@ -295,6 +295,11 @@ type AnySessionEntity = IFillingSessionEntity | IConfectionSessionEntity;
 // @public
 const anySessionEntity: Converter<AnySessionEntity>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "IAppearanceSettings"
+//
+// @public
+const appearanceSettings: Converter<IAppearanceSettings>;
+
 // @public
 function atLeast<T>(min: number, getter: (item: T) => number | undefined): FilterPredicate<T>;
 
@@ -1441,6 +1446,8 @@ declare namespace Converters_12 {
         reporterLogLevel,
         logSettings,
         bootstrapSettings,
+        themeId,
+        appearanceSettings,
         preferencesSettings
     }
 }
@@ -3043,6 +3050,11 @@ interface IAlcoholIngredientEntity extends IIngredientEntity {
     readonly alcoholByVolume?: Percentage;
     readonly category: 'alcohol';
     readonly flavorProfile?: string;
+}
+
+// @public
+interface IAppearanceSettings {
+    readonly theme?: ThemeId;
 }
 
 // @public
@@ -5342,6 +5354,7 @@ export interface IPlatformInitResult {
 
 // @public
 interface IPreferencesSettings {
+    readonly appearance?: IAppearanceSettings;
     readonly defaultStorageTargets?: IDefaultStorageTargets;
     readonly defaultTargets?: IDefaultCollectionTargets;
     readonly schemaVersion: SettingsSchemaVersion;
@@ -5757,6 +5770,7 @@ interface IResolvedRecipeFillingOption {
 
 // @public
 interface IResolvedSettings {
+    readonly appearance: IAppearanceSettings;
     readonly defaultStorageTargets?: IDefaultStorageTargets;
     readonly defaultTargets: IDefaultCollectionTargets;
     readonly deviceId: DeviceId;
@@ -8382,6 +8396,8 @@ declare namespace Settings {
         StorageRootId,
         ILocalDirectoryRef,
         IDefaultStorageTargets,
+        ThemeId,
+        IAppearanceSettings,
         ISettingsFileLocation,
         ILocalStorageConfig,
         ICloudStorageConfig,
@@ -8733,6 +8749,14 @@ type TasksMergeSource = SubLibraryMergeSource<TasksLibrary>;
 
 // @public
 const temperatureCurve: Converter<ITemperatureCurve>;
+
+// @public
+type ThemeId = Brand<string, 'ThemeId'>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ThemeId"
+//
+// @public
+const themeId: Converter<ThemeId>;
 
 // @public
 function toBaseConfectionId(from: unknown): Result<BaseConfectionId>;

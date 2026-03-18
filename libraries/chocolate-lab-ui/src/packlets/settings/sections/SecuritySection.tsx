@@ -81,12 +81,12 @@ function PasswordInput({ value, onChange, placeholder, autoFocus }: IPasswordInp
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent pr-16"
+        className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent pr-16"
       />
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-700"
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted hover:text-secondary"
       >
         {visible ? 'Hide' : 'Show'}
       </button>
@@ -289,10 +289,10 @@ export function SecuritySection(): React.ReactElement {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Security</h2>
+        <h2 className="text-lg font-semibold text-primary mb-4">Security</h2>
         <div className="space-y-4">
           {/* Keystore Status Card */}
-          <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+          <div className="rounded-lg border border-border p-4 bg-surface-alt">
             <div className="flex items-center gap-3 mb-3">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -300,14 +300,14 @@ export function SecuritySection(): React.ReactElement {
                     ? 'bg-green-100 text-green-600'
                     : workspaceState === 'locked'
                     ? 'bg-amber-100 text-amber-600'
-                    : 'bg-gray-200 text-gray-500'
+                    : 'bg-surface-raised text-muted'
                 }`}
               >
                 {workspaceState === 'unlocked' ? <LockOpenIcon /> : <LockClosedIcon />}
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-700">Keystore</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-sm font-medium text-secondary">Keystore</p>
+                <p className="text-xs text-muted">
                   {workspaceState === 'no-keystore' && 'No keystore configured'}
                   {workspaceState === 'locked' && 'Locked'}
                   {workspaceState === 'unlocked' && `Unlocked - ${secretNames.length} secret(s)`}
@@ -339,7 +339,7 @@ export function SecuritySection(): React.ReactElement {
                     <button
                       type="button"
                       onClick={() => setMode('set-password')}
-                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100"
+                      className="px-3 py-1.5 text-sm border border-border rounded-md text-secondary hover:bg-hover"
                     >
                       Reset Password
                     </button>
@@ -350,14 +350,14 @@ export function SecuritySection(): React.ReactElement {
                     <button
                       type="button"
                       onClick={handleLock}
-                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100"
+                      className="px-3 py-1.5 text-sm border border-border rounded-md text-secondary hover:bg-hover"
                     >
                       Lock
                     </button>
                     <button
                       type="button"
                       onClick={() => setMode('change-password')}
-                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100"
+                      className="px-3 py-1.5 text-sm border border-border rounded-md text-secondary hover:bg-hover"
                     >
                       Change Password
                     </button>
@@ -393,7 +393,7 @@ export function SecuritySection(): React.ReactElement {
                   <button
                     type="button"
                     onClick={clearForm}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100"
+                    className="px-3 py-1.5 text-sm border border-border rounded-md text-secondary hover:bg-hover"
                   >
                     Cancel
                   </button>
@@ -423,7 +423,7 @@ export function SecuritySection(): React.ReactElement {
                   <button
                     type="button"
                     onClick={clearForm}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100"
+                    className="px-3 py-1.5 text-sm border border-border rounded-md text-secondary hover:bg-hover"
                   >
                     Cancel
                   </button>
@@ -453,7 +453,7 @@ export function SecuritySection(): React.ReactElement {
                   <button
                     type="button"
                     onClick={clearForm}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100"
+                    className="px-3 py-1.5 text-sm border border-border rounded-md text-secondary hover:bg-hover"
                   >
                     Cancel
                   </button>
@@ -464,11 +464,11 @@ export function SecuritySection(): React.ReactElement {
 
           {/* Secrets List (only when unlocked) */}
           {workspaceState === 'unlocked' && secretNames.length > 0 && (
-            <div className="rounded-lg border border-gray-200 p-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Secrets</p>
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-sm font-medium text-secondary mb-2">Secrets</p>
               <ul className="space-y-1">
                 {secretNames.map((name) => (
-                  <li key={name} className="text-sm text-gray-600 flex items-center gap-2">
+                  <li key={name} className="text-sm text-secondary flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
                     <span className="flex-1">{name}</span>
                     <button
@@ -490,9 +490,9 @@ export function SecuritySection(): React.ReactElement {
 
           {/* Import API Key (only when unlocked) */}
           {workspaceState === 'unlocked' && (
-            <div className="rounded-lg border border-gray-200 p-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Import API Key</p>
-              <p className="text-xs text-gray-500 mb-3">
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-sm font-medium text-secondary mb-2">Import API Key</p>
+              <p className="text-xs text-muted mb-3">
                 Store or replace an API key secret for use with AI assist providers.
               </p>
               <div className="space-y-2">
@@ -501,14 +501,14 @@ export function SecuritySection(): React.ReactElement {
                   value={apiKeyName}
                   onChange={(e): void => setApiKeyName(e.target.value)}
                   placeholder="Secret name (e.g. xai-api-key)"
-                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
                 <input
                   type="password"
                   value={apiKeyValue}
                   onChange={(e): void => setApiKeyValue(e.target.value)}
                   placeholder="API key"
-                  className="w-full px-3 py-1.5 text-sm font-mono border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-3 py-1.5 text-sm font-mono border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
                 {apiKeyError && <p className="text-xs text-red-600">{apiKeyError}</p>}
                 <div className="flex items-center gap-2">

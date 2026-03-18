@@ -15,6 +15,7 @@ import { SecuritySection } from './sections/SecuritySection';
 import { AiAssistSection } from './sections/AiAssistSection';
 import { ServicesSection } from './sections/ServicesSection';
 import { DeveloperSection } from './sections/DeveloperSection';
+import { AppearanceSection } from './sections/AppearanceSection';
 
 // ============================================================================
 // Shared draft context
@@ -39,6 +40,7 @@ function useSharedDraft(): ISettingsDraft {
 // ============================================================================
 
 type SettingsSection =
+  | 'appearance'
   | 'startup'
   | 'workspace'
   | 'scaling'
@@ -56,6 +58,7 @@ interface ISectionDef {
 }
 
 const SECTIONS: ReadonlyArray<ISectionDef> = [
+  { id: 'appearance', label: 'Appearance' },
   { id: 'startup', label: 'Startup' },
   { id: 'workspace', label: 'Workspace' },
   { id: 'scaling', label: 'Scaling' },
@@ -99,13 +102,13 @@ function SectionListColumn({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-2 py-1.5 border-b border-gray-200 shrink-0">
+      <div className="px-2 py-1.5 border-b border-border shrink-0">
         <input
           type="search"
           value={sectionFilter}
           onChange={(e): void => setSectionFilter(e.target.value)}
           placeholder="Filter…"
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-choco-accent"
+          className="w-full px-2 py-1 text-xs border border-border rounded bg-surface placeholder-muted focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
         />
       </div>
       <nav className="flex-1 py-2 overflow-y-auto">
@@ -117,8 +120,8 @@ function SectionListColumn({
             className={[
               'w-full text-left px-4 py-2 text-sm transition-colors',
               activeSection === section.id
-                ? 'bg-choco-accent/10 text-choco-accent font-medium border-r-2 border-choco-accent'
-                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-brand-accent/10 text-brand-accent font-medium border-r-2 border-brand-accent'
+                : 'text-secondary hover:bg-hover hover:text-primary'
             ].join(' ')}
           >
             {section.label}
@@ -180,6 +183,8 @@ function SectionContent({
   }
 
   switch (section) {
+    case 'appearance':
+      return <AppearanceSection appearance={preferences.appearance} onChange={updatePreferences} />;
     case 'startup':
       return (
         <BootstrapSection
@@ -201,7 +206,7 @@ function SectionContent({
           onSetDefaultConfigNamespace={onSetDefaultConfigNamespace}
         />
       ) : (
-        <div className="p-6 text-sm text-gray-400">No workspace device settings available.</div>
+        <div className="p-6 text-sm text-muted">No workspace device settings available.</div>
       );
     case 'scaling':
       return <ScalingSection scaling={preferences.scaling} onChange={updatePreferences} />;
@@ -226,7 +231,7 @@ function SectionContent({
     case 'developer':
       return <DeveloperSection currentConfigNamespace={currentConfigNamespace} />;
     default:
-      return <div className="p-6 text-sm text-gray-400">Unknown section.</div>;
+      return <div className="p-6 text-sm text-muted">Unknown section.</div>;
   }
 }
 
@@ -263,9 +268,7 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
   }, []);
 
   if (!draft) {
-    return (
-      <div className="flex items-center justify-center h-48 text-sm text-gray-400">Loading settings…</div>
-    );
+    return <div className="flex items-center justify-center h-48 text-sm text-muted">Loading settings…</div>;
   }
 
   const resolvedDraft = draft;
@@ -312,7 +315,7 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
     <SettingsDraftContext.Provider value={resolvedDraft}>
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Toolbar: full-width, above sidebar+cascade */}
-        <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 border-b border-gray-200 bg-gray-50 shrink-0">
+        <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 border-b border-border bg-surface-alt shrink-0">
           <div className="flex-1" />
           {saveError && <span className="text-xs text-red-600">{saveError}</span>}
           {isDirty && (
@@ -320,7 +323,7 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
               type="button"
               onClick={revert}
               disabled={isSaving}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-secondary hover:text-primary hover:bg-hover disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Revert
             </button>
@@ -329,7 +332,7 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
             type="button"
             onClick={handleClose}
             disabled={isSaving}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-secondary hover:text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
@@ -337,7 +340,7 @@ export function SettingsCascadeView(props: ISettingsCascadeViewProps): React.Rea
             type="button"
             onClick={handleSave}
             disabled={isSaving || !isDirty}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-white bg-choco-primary hover:bg-choco-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-inverted bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isSaving ? 'Saving…' : 'Save'}
           </button>

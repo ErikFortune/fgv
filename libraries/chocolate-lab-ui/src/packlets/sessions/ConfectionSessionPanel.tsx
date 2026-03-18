@@ -509,16 +509,16 @@ export function ConfectionSessionPanel({
       <div className="flex flex-col gap-4 p-4">
         {/* Recipe name with variation */}
         <div className="text-center">
-          <div className="text-base font-semibold text-gray-900">
+          <div className="text-base font-semibold text-primary">
             {session.baseConfection.name}
-            <span className="ml-1 font-normal text-gray-500">
+            <span className="ml-1 font-normal text-muted">
               (
               {session.baseConfection.goldenVariation.name ??
                 session.baseConfection.goldenVariation.variationSpec}
               )
             </span>
           </div>
-          <div className="text-xs text-gray-400">{formatConfectionType(session.confectionType)}</div>
+          <div className="text-xs text-muted">{formatConfectionType(session.confectionType)}</div>
         </div>
 
         {/* Yield — compact inline */}
@@ -543,7 +543,7 @@ export function ConfectionSessionPanel({
 
         {/* Fillings */}
         <div data-testid="fillings-section">
-          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Fillings</div>
+          <div className="text-xs font-medium text-muted uppercase mb-0.5">Fillings</div>
           {!editingFillings ? (
             <div className="py-0.5">
               <div className="flex items-center gap-1">
@@ -552,12 +552,12 @@ export function ConfectionSessionPanel({
                   data-testid="edit-fillings-toggle"
                   onClick={(): void => setEditingFillings(true)}
                   title="Edit fillings"
-                  className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+                  className="text-muted hover:text-brand-primary p-0.5 shrink-0"
                 >
                   <ArrowPathIcon className="h-3 w-3" />
                 </button>
                 {fillingSlots.length === 0 ? (
-                  <span data-testid="fillings-empty" className="text-sm text-gray-400 italic">
+                  <span data-testid="fillings-empty" className="text-sm text-muted italic">
                     None
                   </span>
                 ) : (
@@ -567,11 +567,11 @@ export function ConfectionSessionPanel({
                         key={slot.slotId as string}
                         type="button"
                         onClick={(): void => handleSlotClick(slot.slotId, slot.name)}
-                        className="flex items-center gap-1 text-sm text-choco-primary hover:underline"
+                        className="flex items-center gap-1 text-sm text-brand-primary hover:underline"
                       >
                         <span>{slot.name}</span>
                         {slot.targetWeight !== undefined && (
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-muted">
                             ({formatIngredientAmount(slot.targetWeight, 'g')})
                           </span>
                         )}
@@ -602,20 +602,20 @@ export function ConfectionSessionPanel({
                         onClick={(): void => handleSlotClick(slot.slotId, slot.name)}
                         className="flex-1 min-w-0 text-left"
                       >
-                        <span className="text-sm text-choco-primary hover:underline">{slot.name}</span>
+                        <span className="text-sm text-brand-primary hover:underline">{slot.name}</span>
                         {slot.slotType === 'ingredient' && (
-                          <span className="text-xs text-gray-400 ml-1">(ingredient)</span>
+                          <span className="text-xs text-muted ml-1">(ingredient)</span>
                         )}
                       </button>
                       {slot.targetWeight !== undefined && (
-                        <span className="shrink-0 text-xs text-gray-500 mr-1">
+                        <span className="shrink-0 text-xs text-muted mr-1">
                           {formatIngredientAmount(slot.targetWeight, 'g')}
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={(): void => handleRemoveSlot(slot.slotId)}
-                        className="text-gray-400 hover:text-red-500 p-0.5 shrink-0"
+                        className="text-muted hover:text-red-500 p-0.5 shrink-0"
                         aria-label={`Remove ${slot.name}`}
                       >
                         ✕
@@ -632,7 +632,7 @@ export function ConfectionSessionPanel({
                   prioritySuggestions={fillingAlternates}
                   onSelect={handleAddFilling}
                   placeholder="Add filling…"
-                  className="text-sm border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                  className="text-sm border border-dashed border-border rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-focus-ring"
                 />
               </div>
             </div>
@@ -641,7 +641,7 @@ export function ConfectionSessionPanel({
 
         {/* Decorations */}
         <div>
-          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Decoration</div>
+          <div className="text-xs font-medium text-muted uppercase mb-0.5">Decoration</div>
           {currentDecorationId && !editingDecoration && (
             <div className="flex items-center gap-1 py-0.5">
               <button
@@ -651,14 +651,14 @@ export function ConfectionSessionPanel({
                   setEditingDecoration(true);
                 }}
                 title="Edit decoration"
-                className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+                className="text-muted hover:text-brand-primary p-0.5 shrink-0"
               >
                 <ArrowPathIcon className="h-3 w-3" />
               </button>
               <button
                 type="button"
                 onClick={(): void => onBrowseDecoration?.(currentDecorationId)}
-                className="text-sm text-choco-primary hover:underline truncate"
+                className="text-sm text-brand-primary hover:underline truncate"
                 title="Browse decoration"
               >
                 {getDecorationName(currentDecorationId, workspace)}
@@ -666,7 +666,7 @@ export function ConfectionSessionPanel({
               <button
                 type="button"
                 onClick={handleClearDecoration}
-                className="text-gray-400 hover:text-red-500 p-0.5 shrink-0"
+                className="text-muted hover:text-red-500 p-0.5 shrink-0"
                 aria-label="Remove decoration"
               >
                 ✕
@@ -691,12 +691,12 @@ export function ConfectionSessionPanel({
                 prioritySuggestions={decorationAlternates}
                 onSelect={handleDecorationSelect}
                 autoFocus
-                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
               />
               <button
                 type="button"
                 onClick={handleClearDecoration}
-                className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                className="text-muted hover:text-red-500 p-1 shrink-0"
                 aria-label="Remove decoration"
               >
                 ✕
@@ -710,11 +710,11 @@ export function ConfectionSessionPanel({
                 type="button"
                 onClick={(): void => setEditingDecoration(true)}
                 title="Set decoration"
-                className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+                className="text-muted hover:text-brand-primary p-0.5 shrink-0"
               >
                 <ArrowPathIcon className="h-3 w-3" />
               </button>
-              <span className="text-sm text-gray-400 italic">None</span>
+              <span className="text-sm text-muted italic">None</span>
             </div>
           )}
 
@@ -736,7 +736,7 @@ export function ConfectionSessionPanel({
                 onSelect={handleDecorationSelect}
                 placeholder="Type decoration name…"
                 autoFocus
-                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
               />
             </div>
           )}
@@ -744,7 +744,7 @@ export function ConfectionSessionPanel({
 
         {/* Procedure */}
         <div>
-          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Procedure</div>
+          <div className="text-xs font-medium text-muted uppercase mb-0.5">Procedure</div>
           {currentProcedureId && !editingProcedure && (
             <div className="flex items-center gap-1 py-0.5">
               <button
@@ -754,14 +754,14 @@ export function ConfectionSessionPanel({
                   setEditingProcedure(true);
                 }}
                 title="Edit procedure"
-                className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+                className="text-muted hover:text-brand-primary p-0.5 shrink-0"
               >
                 <ArrowPathIcon className="h-3 w-3" />
               </button>
               <button
                 type="button"
                 onClick={(): void => onBrowseProcedure?.(currentProcedureId)}
-                className="text-sm text-choco-primary hover:underline truncate"
+                className="text-sm text-brand-primary hover:underline truncate"
                 title="Browse procedure"
               >
                 {getProcedureName(currentProcedureId, workspace)}
@@ -769,7 +769,7 @@ export function ConfectionSessionPanel({
               <button
                 type="button"
                 onClick={handleClearProcedure}
-                className="text-gray-400 hover:text-red-500 p-0.5 shrink-0"
+                className="text-muted hover:text-red-500 p-0.5 shrink-0"
                 aria-label="Remove procedure"
               >
                 ✕
@@ -794,12 +794,12 @@ export function ConfectionSessionPanel({
                 prioritySuggestions={procedureAlternates}
                 onSelect={handleProcedureSelect}
                 autoFocus
-                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
               />
               <button
                 type="button"
                 onClick={handleClearProcedure}
-                className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                className="text-muted hover:text-red-500 p-1 shrink-0"
                 aria-label="Remove procedure"
               >
                 ✕
@@ -813,11 +813,11 @@ export function ConfectionSessionPanel({
                 type="button"
                 onClick={(): void => setEditingProcedure(true)}
                 title="Set procedure"
-                className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+                className="text-muted hover:text-brand-primary p-0.5 shrink-0"
               >
                 <ArrowPathIcon className="h-3 w-3" />
               </button>
-              <span className="text-sm text-gray-400 italic">None</span>
+              <span className="text-sm text-muted italic">None</span>
             </div>
           )}
 
@@ -839,7 +839,7 @@ export function ConfectionSessionPanel({
                 onSelect={handleProcedureSelect}
                 placeholder="Type procedure name…"
                 autoFocus
-                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
               />
             </div>
           )}
@@ -948,7 +948,7 @@ function CountYieldEditor({
 
   return (
     <div>
-      <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Yield</div>
+      <div className="text-xs font-medium text-muted uppercase mb-0.5">Yield</div>
       {!editing ? (
         <div className="flex items-center gap-1 py-0.5">
           <button
@@ -959,11 +959,11 @@ function CountYieldEditor({
               setEditing(true);
             }}
             title="Edit yield"
-            className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+            className="text-muted hover:text-brand-primary p-0.5 shrink-0"
           >
             <ArrowPathIcon className="h-3 w-3" />
           </button>
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-secondary">
             {currentYield.count} pieces · {Math.round(currentYield.bufferPercentage)}% buffer
           </span>
         </div>
@@ -984,18 +984,18 @@ function CountYieldEditor({
             value={countInput}
             onChange={(e): void => setCountInput(e.target.value)}
             autoFocus
-            className="w-16 rounded border border-gray-300 px-2 py-1 text-sm"
+            className="w-16 rounded border border-border px-2 py-1 text-sm"
           />
-          <span className="text-xs text-gray-500">pieces</span>
+          <span className="text-xs text-muted">pieces</span>
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
             value={bufferInput}
             onChange={(e): void => setBufferInput(e.target.value)}
-            className="w-14 rounded border border-gray-300 px-2 py-1 text-sm"
+            className="w-14 rounded border border-border px-2 py-1 text-sm"
           />
-          <span className="text-xs text-gray-500">% buffer</span>
+          <span className="text-xs text-muted">% buffer</span>
         </div>
       )}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
@@ -1058,7 +1058,7 @@ function MoldedBonBonYieldEditor({
 
   return (
     <div>
-      <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Yield</div>
+      <div className="text-xs font-medium text-muted uppercase mb-0.5">Yield</div>
       {!editing ? (
         <div className="flex items-center gap-1 py-0.5">
           <button
@@ -1069,11 +1069,11 @@ function MoldedBonBonYieldEditor({
               setEditing(true);
             }}
             title="Edit yield"
-            className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+            className="text-muted hover:text-brand-primary p-0.5 shrink-0"
           >
             <ArrowPathIcon className="h-3 w-3" />
           </button>
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-secondary">
             {currentYield.numFrames} frames · {Math.round(currentYield.bufferPercentage)}% buffer
           </span>
         </div>
@@ -1094,18 +1094,18 @@ function MoldedBonBonYieldEditor({
             value={framesInput}
             onChange={(e): void => setFramesInput(e.target.value)}
             autoFocus
-            className="w-16 rounded border border-gray-300 px-2 py-1 text-sm"
+            className="w-16 rounded border border-border px-2 py-1 text-sm"
           />
-          <span className="text-xs text-gray-500">frames</span>
+          <span className="text-xs text-muted">frames</span>
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
             value={bufferInput}
             onChange={(e): void => setBufferInput(e.target.value)}
-            className="w-14 rounded border border-gray-300 px-2 py-1 text-sm"
+            className="w-14 rounded border border-border px-2 py-1 text-sm"
           />
-          <span className="text-xs text-gray-500">% buffer</span>
+          <span className="text-xs text-muted">% buffer</span>
         </div>
       )}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
@@ -1148,7 +1148,7 @@ function TypeSpecificSection({
     return (
       <div className="space-y-2">
         <div>
-          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Mold</div>
+          <div className="text-xs font-medium text-muted uppercase mb-0.5">Mold</div>
           <MoldEditRow
             moldId={produced.moldId}
             workspace={workspace}
@@ -1164,7 +1164,7 @@ function TypeSpecificSection({
           />
         </div>
         <div>
-          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Shell Chocolate</div>
+          <div className="text-xs font-medium text-muted uppercase mb-0.5">Shell Chocolate</div>
           <IngredientEditRow
             label="Shell Chocolate"
             ingredientId={produced.shellChocolateId}
@@ -1183,7 +1183,7 @@ function TypeSpecificSection({
           />
         </div>
         <div>
-          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Seal Chocolate</div>
+          <div className="text-xs font-medium text-muted uppercase mb-0.5">Seal Chocolate</div>
           <IngredientEditRow
             label="Seal Chocolate"
             ingredientId={produced.sealChocolateId}
@@ -1208,7 +1208,7 @@ function TypeSpecificSection({
           />
         </div>
         <div>
-          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Decoration Chocolate</div>
+          <div className="text-xs font-medium text-muted uppercase mb-0.5">Decoration Chocolate</div>
           <IngredientEditRow
             label="Decoration Chocolate"
             ingredientId={produced.decorationChocolateId}
@@ -1239,7 +1239,7 @@ function TypeSpecificSection({
   if (produced instanceof LibraryRuntime.ProducedBarTruffle) {
     return (
       <div>
-        <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Enrobing Chocolate</div>
+        <div className="text-xs font-medium text-muted uppercase mb-0.5">Enrobing Chocolate</div>
         <IngredientEditRow
           label="Enrobing Chocolate"
           ingredientId={produced.enrobingChocolateId}
@@ -1270,7 +1270,7 @@ function TypeSpecificSection({
     return (
       <div className="space-y-2">
         <div>
-          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Enrobing Chocolate</div>
+          <div className="text-xs font-medium text-muted uppercase mb-0.5">Enrobing Chocolate</div>
           <IngredientEditRow
             label="Enrobing Chocolate"
             ingredientId={produced.enrobingChocolateId}
@@ -1295,7 +1295,7 @@ function TypeSpecificSection({
           />
         </div>
         <div>
-          <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">Coating</div>
+          <div className="text-xs font-medium text-muted uppercase mb-0.5">Coating</div>
           <IngredientEditRow
             label="Coating"
             ingredientId={produced.coatingId}
@@ -1370,14 +1370,14 @@ function MoldEditRow({
               setEditing(true);
             }}
             title="Edit mold"
-            className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+            className="text-muted hover:text-brand-primary p-0.5 shrink-0"
           >
             <ArrowPathIcon className="h-3 w-3" />
           </button>
           <button
             type="button"
             onClick={(): void => onBrowse?.(moldId)}
-            className="text-sm text-choco-primary hover:underline"
+            className="text-sm text-brand-primary hover:underline"
             title="Browse mold"
           >
             {name}
@@ -1405,7 +1405,7 @@ function MoldEditRow({
           onSelect={handleSelect}
           placeholder="Type mold name"
           autoFocus={editing}
-          className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+          className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
         />
       </div>
     </div>
@@ -1466,7 +1466,7 @@ function IngredientEditRow({
   if (ingredientId && name && !editing) {
     return (
       <div className="flex items-center justify-between py-0.5">
-        {!hideLabel && <span className="text-xs text-gray-500">{label}</span>}
+        {!hideLabel && <span className="text-xs text-muted">{label}</span>}
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -1475,14 +1475,14 @@ function IngredientEditRow({
               setEditing(true);
             }}
             title={`Edit ${label.toLowerCase()}`}
-            className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+            className="text-muted hover:text-brand-primary p-0.5 shrink-0"
           >
             <ArrowPathIcon className="h-3 w-3" />
           </button>
           <button
             type="button"
             onClick={(): void => onBrowse?.(ingredientId)}
-            className="text-sm text-choco-primary hover:underline"
+            className="text-sm text-brand-primary hover:underline"
           >
             {name}
           </button>
@@ -1490,7 +1490,7 @@ function IngredientEditRow({
             <button
               type="button"
               onClick={handleClear}
-              className="text-gray-400 hover:text-red-500 p-0.5 shrink-0"
+              className="text-muted hover:text-red-500 p-0.5 shrink-0"
               aria-label={`Remove ${label.toLowerCase()}`}
             >
               ✕
@@ -1505,17 +1505,17 @@ function IngredientEditRow({
   if (!ingredientId && !editing) {
     return (
       <div className="flex items-center justify-between py-0.5">
-        {!hideLabel && <span className="text-xs text-gray-500">{label}</span>}
+        {!hideLabel && <span className="text-xs text-muted">{label}</span>}
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={(): void => setEditing(true)}
             title={`Set ${label.toLowerCase()}`}
-            className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+            className="text-muted hover:text-brand-primary p-0.5 shrink-0"
           >
             <ArrowPathIcon className="h-3 w-3" />
           </button>
-          <span className="text-sm text-gray-400 italic">None</span>
+          <span className="text-sm text-muted italic">None</span>
         </div>
       </div>
     );
@@ -1524,7 +1524,7 @@ function IngredientEditRow({
   // Editing mode — show typeahead (full width)
   return (
     <div className="py-0.5">
-      {!hideLabel && <div className="text-xs text-gray-500 mb-0.5">{label}</div>}
+      {!hideLabel && <div className="text-xs text-muted mb-0.5">{label}</div>}
       <div className="flex items-center gap-1.5">
         <button
           type="button"
@@ -1542,13 +1542,13 @@ function IngredientEditRow({
           onSelect={handleSelect}
           placeholder={`Type ${label.toLowerCase()} name`}
           autoFocus={editing}
-          className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+          className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
         />
         {onClear && (
           <button
             type="button"
             onClick={handleClear}
-            className="text-gray-400 hover:text-red-500 p-1 shrink-0"
+            className="text-muted hover:text-red-500 p-1 shrink-0"
             aria-label={`Remove ${label.toLowerCase()}`}
           >
             ✕

@@ -203,7 +203,7 @@ export function SessionStatusBar({
   const isSaveDisabled = saveMode === 'manual' ? !hasChanges : true;
 
   return (
-    <div className="flex flex-col border-b border-gray-200 bg-gray-50">
+    <div className="flex flex-col border-b border-border bg-surface-alt">
       {/* Button row — never wraps */}
       <div className="flex flex-nowrap items-center gap-1 px-3 py-1.5">
         {/* Undo / Redo group */}
@@ -213,7 +213,7 @@ export function SessionStatusBar({
             onClick={onUndo}
             disabled={!canUndo}
             title="Undo"
-            className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+            className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-secondary hover:text-secondary hover:bg-hover"
           >
             <ArrowUturnLeftIcon className="h-3.5 w-3.5" />
           </button>
@@ -222,7 +222,7 @@ export function SessionStatusBar({
             onClick={onRedo}
             disabled={!canRedo}
             title="Redo"
-            className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+            className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-secondary hover:text-secondary hover:bg-hover"
           >
             <ArrowUturnRightIcon className="h-3.5 w-3.5" />
           </button>
@@ -254,10 +254,10 @@ export function SessionStatusBar({
 
       {/* Metadata row — centered, only shown when there's metadata */}
       {hasMetadata && (
-        <div className="flex flex-wrap items-center justify-center gap-x-3 px-3 pb-1.5 text-[11px] text-gray-400">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 px-3 pb-1.5 text-[11px] text-muted">
           {session.group && (
             <span>
-              Group: <span className="text-gray-600">{session.group}</span>
+              Group: <span className="text-secondary">{session.group}</span>
             </span>
           )}
           {session.updatedAt && <span>Updated: {formatTimestamp(session.updatedAt)}</span>}

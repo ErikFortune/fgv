@@ -193,7 +193,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Name field */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="cc-name" className="text-sm font-medium text-gray-700">
+          <label htmlFor="cc-name" className="text-sm font-medium text-secondary">
             Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -203,17 +203,17 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
             value={name}
             onChange={handleNameChange}
             placeholder="e.g. My Truffles"
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent"
+            className="px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent"
             autoFocus
           />
         </div>
 
         {/* ID field (auto-generated, overridable) */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="cc-id" className="text-sm font-medium text-gray-700">
+          <label htmlFor="cc-id" className="text-sm font-medium text-secondary">
             Collection ID
             {!idManuallyEdited && effectiveId.length > 0 && (
-              <span className="ml-1 text-xs text-gray-400 font-normal">(auto-generated)</span>
+              <span className="ml-1 text-xs text-muted font-normal">(auto-generated)</span>
             )}
           </label>
           <input
@@ -223,8 +223,8 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
             value={effectiveId}
             onChange={handleIdChange}
             placeholder="auto-generated from name"
-            className={`px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent ${
-              idError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+            className={`px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent ${
+              idError ? 'border-red-300 bg-red-50' : 'border-border'
             }`}
           />
           {idError && <p className="text-xs text-red-500">{idError}</p>}
@@ -232,7 +232,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
 
         {/* Description field */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="cc-description" className="text-sm font-medium text-gray-700">
+          <label htmlFor="cc-description" className="text-sm font-medium text-secondary">
             Description
           </label>
           <textarea
@@ -241,13 +241,13 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
             onChange={handleDescriptionChange}
             placeholder="Optional description"
             rows={2}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent resize-y"
+            className="px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent resize-y"
           />
         </div>
 
         {/* Tags field */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="cc-tags" className="text-sm font-medium text-gray-700">
+          <label htmlFor="cc-tags" className="text-sm font-medium text-secondary">
             Tags
           </label>
           <input
@@ -256,15 +256,15 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
             value={tagsInput}
             onChange={handleTagsChange}
             placeholder="comma-separated, e.g. seasonal, premium"
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent"
+            className="px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent"
           />
         </div>
 
         {/* Secret name field (protection) */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="cc-secret" className="text-sm font-medium text-gray-700">
+          <label htmlFor="cc-secret" className="text-sm font-medium text-secondary">
             Protect with secret
-            <span className="ml-1 text-xs text-gray-400 font-normal">(optional)</span>
+            <span className="ml-1 text-xs text-muted font-normal">(optional)</span>
           </label>
           <input
             ref={secretInputRef}
@@ -279,7 +279,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
             }}
             list="cc-secret-suggestions"
             placeholder={existingSecretNames?.length ? 'Secret name or type a new one…' : 'Secret name…'}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-choco-accent focus:border-transparent"
+            className="px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-transparent"
           />
           {secretSuggestions.length > 0 && (
             <datalist id="cc-secret-suggestions">
@@ -295,7 +295,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            className="px-4 py-2 text-sm text-secondary hover:text-primary transition-colors"
           >
             Cancel
           </button>
@@ -303,7 +303,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
             type="submit"
             data-testid="collections-create-submit-button"
             disabled={!canSubmit}
-            className="px-4 py-2 text-sm font-medium text-white bg-choco-accent rounded-md hover:bg-choco-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm font-medium text-inverted bg-brand-accent rounded-md hover:bg-brand-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Create
           </button>

@@ -1,0 +1,288 @@
+/*
+ * Semantic color tokens for theming.
+ *
+ * Each theme is a CSS class that overrides these custom properties.
+ * Components reference tokens via Tailwind (e.g., `bg-surface`, `text-primary`)
+ * so they adapt automatically when the active theme class changes.
+ *
+ * To add a new theme: define a new class (e.g., `.theme-ocean`) with overrides
+ * for the `--color-*` variables, and register its ID in ThemeProvider's
+ * `availableThemes`.
+ */
+
+/* =========================================================================
+ * Light theme (default)
+ * ========================================================================= */
+:root {
+  /* Surfaces */
+  --color-surface: #ffffff; /* bg-white */
+  --color-surface-alt: #f9fafb; /* bg-gray-50 */
+  --color-surface-raised: #f3f4f6; /* bg-gray-100 */
+  --color-surface-sunken: #e5e7eb; /* bg-gray-200 */
+
+  /* Text */
+  --color-text-primary: #111827; /* text-gray-900 */
+  --color-text-secondary: #374151; /* text-gray-700 */
+  --color-text-tertiary: #4b5563; /* text-gray-600 */
+  --color-text-muted: #6b7280; /* text-gray-500 */
+  --color-text-faint: #9ca3af; /* text-gray-400 */
+  --color-text-inverted: #ffffff; /* text-white */
+
+  /* Borders */
+  --color-border: #e5e7eb; /* border-gray-200 */
+  --color-border-subtle: #f3f4f6; /* border-gray-100 */
+  --color-border-strong: #d1d5db; /* border-gray-300 */
+
+  /* Brand */
+  --color-brand-primary: #78350f; /* choco-primary */
+  --color-brand-secondary: #92400e; /* choco-secondary */
+  --color-brand-accent: #b45309; /* choco-accent */
+  --color-brand-warm: #fef3c7; /* choco-warm */
+  --color-brand-surface: #fffbeb; /* choco-surface */
+
+  /* Interactive */
+  --color-hover: #f9fafb; /* hover:bg-gray-50 */
+  --color-active: #f3f4f6; /* bg-gray-100 pressed state */
+  --color-focus-ring: #b45309; /* focus:ring-choco-accent */
+  --color-selected: rgba(180, 83, 9, 0.1); /* bg-choco-accent/10 */
+  --color-selected-border: #b45309; /* border-choco-accent */
+
+  /* Overlay */
+  --color-backdrop: rgba(0, 0, 0, 0.4); /* bg-black/40 */
+
+  /* Status: Info */
+  --color-status-info-bg: #eff6ff; /* bg-blue-50 */
+  --color-status-info-text: #1e40af; /* text-blue-800 */
+  --color-status-info-icon: #3b82f6; /* text-blue-500 */
+  --color-status-info-border: #bfdbfe; /* border-blue-200 */
+  --color-status-info-btn-bg: #2563eb; /* bg-blue-600 */
+  --color-status-info-btn-hover: #1d4ed8; /* bg-blue-700 */
+  --color-status-info-surface: #dbeafe; /* bg-blue-100 */
+
+  /* Status: Success */
+  --color-status-success-bg: #f0fdf4; /* bg-green-50 */
+  --color-status-success-text: #166534; /* text-green-800 */
+  --color-status-success-icon: #22c55e; /* text-green-500 */
+  --color-status-success-border: #bbf7d0; /* border-green-200 */
+  --color-status-success-surface: #dcfce7; /* bg-green-100 */
+  --color-status-success-accent: #16a34a; /* text-green-600 */
+
+  /* Status: Warning */
+  --color-status-warning-bg: #fffbeb; /* bg-amber-50 */
+  --color-status-warning-text: #92400e; /* text-amber-800 */
+  --color-status-warning-icon: #f59e0b; /* text-amber-500 */
+  --color-status-warning-border: #fde68a; /* border-amber-200 */
+  --color-status-warning-btn-bg: #f59e0b; /* bg-amber-500 */
+  --color-status-warning-btn-hover: #d97706; /* bg-amber-600 */
+  --color-status-warning-surface: #fef3c7; /* bg-amber-100 */
+  --color-status-warning-strong: #b45309; /* text-amber-700 */
+  --color-status-warning-border-strong: #fcd34d; /* border-amber-300 */
+
+  /* Status: Error/Danger */
+  --color-status-error-bg: #fef2f2; /* bg-red-50 */
+  --color-status-error-text: #991b1b; /* text-red-800 */
+  --color-status-error-icon: #ef4444; /* text-red-500 */
+  --color-status-error-border: #fecaca; /* border-red-200 */
+  --color-status-error-btn-bg: #dc2626; /* bg-red-600 */
+  --color-status-error-btn-hover: #b91c1c; /* bg-red-700 */
+  --color-status-error-accent: #dc2626; /* text-red-600 */
+  --color-status-error-strong: #b91c1c; /* text-red-700 */
+  --color-status-error-border-strong: #fca5a5; /* border-red-300 */
+  --color-status-error-surface: #fee2e2; /* bg-red-100 */
+
+  /* Misc */
+  --color-star: #f59e0b; /* text-amber-500 (favorite stars) */
+  --color-shadow: 0 0 0 / 0.1; /* shadow color base */
+}
+
+/* =========================================================================
+ * Dark theme
+ * ========================================================================= */
+.dark {
+  /* Surfaces */
+  --color-surface: #1f2937; /* gray-800 */
+  --color-surface-alt: #111827; /* gray-900 */
+  --color-surface-raised: #374151; /* gray-700 */
+  --color-surface-sunken: #0f172a; /* slate-900 */
+
+  /* Text */
+  --color-text-primary: #f9fafb; /* gray-50 */
+  --color-text-secondary: #e5e7eb; /* gray-200 */
+  --color-text-tertiary: #d1d5db; /* gray-300 */
+  --color-text-muted: #9ca3af; /* gray-400 */
+  --color-text-faint: #6b7280; /* gray-500 */
+  --color-text-inverted: #111827; /* gray-900 */
+
+  /* Borders */
+  --color-border: #374151; /* gray-700 */
+  --color-border-subtle: #1f2937; /* gray-800 */
+  --color-border-strong: #4b5563; /* gray-600 */
+
+  /* Brand (slightly lighter for contrast on dark backgrounds) */
+  --color-brand-primary: #a16207; /* amber-700 */
+  --color-brand-secondary: #b45309; /* amber-600 */
+  --color-brand-accent: #d97706; /* amber-500 */
+  --color-brand-warm: #451a03; /* amber-950 */
+  --color-brand-surface: #1c1917; /* stone-900 */
+
+  /* Interactive */
+  --color-hover: #374151; /* gray-700 */
+  --color-active: #4b5563; /* gray-600 */
+  --color-focus-ring: #d97706; /* amber-500 */
+  --color-selected: rgba(217, 119, 6, 0.15); /* amber-500/15 */
+  --color-selected-border: #d97706;
+
+  /* Overlay */
+  --color-backdrop: rgba(0, 0, 0, 0.6);
+
+  /* Status: Info */
+  --color-status-info-bg: #1e3a5f;
+  --color-status-info-text: #93c5fd;
+  --color-status-info-icon: #60a5fa;
+  --color-status-info-border: #1e40af;
+  --color-status-info-btn-bg: #2563eb;
+  --color-status-info-btn-hover: #3b82f6;
+  --color-status-info-surface: #1e3a5f;
+
+  /* Status: Success */
+  --color-status-success-bg: #14352a;
+  --color-status-success-text: #86efac;
+  --color-status-success-icon: #4ade80;
+  --color-status-success-border: #166534;
+  --color-status-success-surface: #14352a;
+  --color-status-success-accent: #4ade80;
+
+  /* Status: Warning */
+  --color-status-warning-bg: #3d2608;
+  --color-status-warning-text: #fde68a;
+  --color-status-warning-icon: #fbbf24;
+  --color-status-warning-border: #92400e;
+  --color-status-warning-btn-bg: #d97706;
+  --color-status-warning-btn-hover: #f59e0b;
+  --color-status-warning-surface: #3d2608;
+  --color-status-warning-strong: #fde68a;
+  --color-status-warning-border-strong: #b45309;
+
+  /* Status: Error/Danger */
+  --color-status-error-bg: #3b1111;
+  --color-status-error-text: #fca5a5;
+  --color-status-error-icon: #f87171;
+  --color-status-error-border: #991b1b;
+  --color-status-error-btn-bg: #dc2626;
+  --color-status-error-btn-hover: #ef4444;
+  --color-status-error-accent: #f87171;
+  --color-status-error-strong: #fca5a5;
+  --color-status-error-border-strong: #b91c1c;
+  --color-status-error-surface: #3b1111;
+
+  /* Misc */
+  --color-star: #fbbf24;
+  --color-shadow: 0 0 0 / 0.3;
+}
+
+/* =========================================================================
+ * System theme: follows OS preference
+ * Applied by ThemeProvider when theme === 'system'
+ * ========================================================================= */
+@media (prefers-color-scheme: dark) {
+  .system-theme {
+    /* Surfaces */
+    --color-surface: #1f2937;
+    --color-surface-alt: #111827;
+    --color-surface-raised: #374151;
+    --color-surface-sunken: #0f172a;
+
+    /* Text */
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #e5e7eb;
+    --color-text-tertiary: #d1d5db;
+    --color-text-muted: #9ca3af;
+    --color-text-faint: #6b7280;
+    --color-text-inverted: #111827;
+
+    /* Borders */
+    --color-border: #374151;
+    --color-border-subtle: #1f2937;
+    --color-border-strong: #4b5563;
+
+    /* Brand */
+    --color-brand-primary: #a16207;
+    --color-brand-secondary: #b45309;
+    --color-brand-accent: #d97706;
+    --color-brand-warm: #451a03;
+    --color-brand-surface: #1c1917;
+
+    /* Interactive */
+    --color-hover: #374151;
+    --color-active: #4b5563;
+    --color-focus-ring: #d97706;
+    --color-selected: rgba(217, 119, 6, 0.15);
+    --color-selected-border: #d97706;
+
+    /* Overlay */
+    --color-backdrop: rgba(0, 0, 0, 0.6);
+
+    /* Status: Info */
+    --color-status-info-bg: #1e3a5f;
+    --color-status-info-text: #93c5fd;
+    --color-status-info-icon: #60a5fa;
+    --color-status-info-border: #1e40af;
+    --color-status-info-btn-bg: #2563eb;
+    --color-status-info-btn-hover: #3b82f6;
+    --color-status-info-surface: #1e3a5f;
+
+    /* Status: Success */
+    --color-status-success-bg: #14352a;
+    --color-status-success-text: #86efac;
+    --color-status-success-icon: #4ade80;
+    --color-status-success-border: #166534;
+    --color-status-success-surface: #14352a;
+    --color-status-success-accent: #4ade80;
+
+    /* Status: Warning */
+    --color-status-warning-bg: #3d2608;
+    --color-status-warning-text: #fde68a;
+    --color-status-warning-icon: #fbbf24;
+    --color-status-warning-border: #92400e;
+    --color-status-warning-btn-bg: #d97706;
+    --color-status-warning-btn-hover: #f59e0b;
+    --color-status-warning-surface: #3d2608;
+    --color-status-warning-strong: #fde68a;
+    --color-status-warning-border-strong: #b45309;
+
+    /* Status: Error/Danger */
+    --color-status-error-bg: #3b1111;
+    --color-status-error-text: #fca5a5;
+    --color-status-error-icon: #f87171;
+    --color-status-error-border: #991b1b;
+    --color-status-error-btn-bg: #dc2626;
+    --color-status-error-btn-hover: #ef4444;
+    --color-status-error-accent: #f87171;
+    --color-status-error-strong: #fca5a5;
+    --color-status-error-border-strong: #b91c1c;
+    --color-status-error-surface: #3b1111;
+
+    /* Misc */
+    --color-star: #fbbf24;
+    --color-shadow: 0 0 0 / 0.3;
+  }
+}
+
+/* =========================================================================
+ * Print: always use light theme
+ * ========================================================================= */
+@media print {
+  :root,
+  .dark,
+  .system-theme {
+    --color-surface: #ffffff;
+    --color-surface-alt: #f9fafb;
+    --color-surface-raised: #f3f4f6;
+    --color-text-primary: #111827;
+    --color-text-secondary: #374151;
+    --color-text-muted: #6b7280;
+    --color-border: #e5e7eb;
+    --color-brand-primary: #78350f;
+    --color-brand-accent: #b45309;
+  }
+}

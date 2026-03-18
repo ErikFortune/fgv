@@ -53,15 +53,15 @@ export interface IConfirmDialogProps {
 }
 
 const severityClasses: Record<ConfirmDialogSeverity, string> = {
-  danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
-  warning: 'bg-amber-500 hover:bg-amber-600 focus:ring-amber-400',
-  info: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+  danger: 'bg-status-error-btn hover:bg-status-error-btn-hover focus:ring-status-error-accent',
+  warning: 'bg-status-warning-btn hover:bg-status-warning-btn-hover focus:ring-status-warning-strong',
+  info: 'bg-status-info-btn hover:bg-status-info-btn-hover focus:ring-status-info-icon'
 };
 
 const severityIconClasses: Record<ConfirmDialogSeverity, string> = {
-  danger: 'text-red-600',
-  warning: 'text-amber-500',
-  info: 'text-blue-600'
+  danger: 'text-status-error-icon',
+  warning: 'text-status-warning-icon',
+  info: 'text-status-info-icon'
 };
 
 /**
@@ -108,11 +108,11 @@ export function ConfirmDialog(props: IConfirmDialogProps): React.ReactElement | 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onCancel} role="presentation" />
+      <div className="absolute inset-0 bg-backdrop" onClick={onCancel} role="presentation" />
 
       {/* Dialog */}
       <div
-        className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+        className="relative bg-surface rounded-lg shadow-xl max-w-md w-full mx-4"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
@@ -123,7 +123,11 @@ export function ConfirmDialog(props: IConfirmDialogProps): React.ReactElement | 
             {/* Icon */}
             <div
               className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full ${
-                severity === 'danger' ? 'bg-red-100' : severity === 'warning' ? 'bg-amber-100' : 'bg-blue-100'
+                severity === 'danger'
+                  ? 'bg-status-error-bg'
+                  : severity === 'warning'
+                  ? 'bg-status-warning-bg'
+                  : 'bg-status-info-bg'
               }`}
             >
               <svg
@@ -151,10 +155,10 @@ export function ConfirmDialog(props: IConfirmDialogProps): React.ReactElement | 
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <h3 id="confirm-dialog-title" className="text-base font-semibold text-gray-900 leading-6">
+              <h3 id="confirm-dialog-title" className="text-base font-semibold text-primary leading-6">
                 {title}
               </h3>
-              <div id="confirm-dialog-message" className="mt-2 text-sm text-gray-600">
+              <div id="confirm-dialog-message" className="mt-2 text-sm text-secondary">
                 {typeof message === 'string' ? <p>{message}</p> : message}
               </div>
             </div>
@@ -165,7 +169,7 @@ export function ConfirmDialog(props: IConfirmDialogProps): React.ReactElement | 
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-secondary bg-surface border border-border rounded-md hover:bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-focus-ring transition-colors"
             >
               {cancelLabel}
             </button>

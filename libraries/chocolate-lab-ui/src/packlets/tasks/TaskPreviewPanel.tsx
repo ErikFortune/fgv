@@ -134,13 +134,13 @@ export function TaskPreviewPanel(props: ITaskPreviewPanelProps): React.ReactElem
       {/* Header */}
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">{taskName ?? 'Template Preview'}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Live preview of the rendered template</p>
+          <h2 className="text-lg font-semibold text-primary">{taskName ?? 'Template Preview'}</h2>
+          <p className="text-xs text-muted mt-0.5">Live preview of the rendered template</p>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 text-muted hover:text-secondary hover:bg-hover rounded transition-colors"
             title="Close preview"
           >
             <XMarkIcon className="w-5 h-5" />
@@ -151,18 +151,18 @@ export function TaskPreviewPanel(props: ITaskPreviewPanelProps): React.ReactElem
       {/* Variable inputs */}
       {variables.length > 0 && (
         <div className="mb-4">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Variables</h3>
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Variables</h3>
           <div className="space-y-1.5">
             {variables.map((v) => {
               const defaultValue = defaults?.[v];
               return (
                 <div key={v} className="flex items-center gap-2">
-                  <span className="text-sm font-mono text-gray-600 shrink-0 w-32 truncate" title={v}>
+                  <span className="text-sm font-mono text-secondary shrink-0 w-32 truncate" title={v}>
                     {v}
                   </span>
                   <input
                     type="text"
-                    className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     value={params[v] ?? ''}
                     onChange={(e): void => handleParamChange(v, e.target.value)}
                     placeholder={defaultValue !== undefined ? `default: ${String(defaultValue)}` : `{{${v}}}`}
@@ -176,17 +176,17 @@ export function TaskPreviewPanel(props: ITaskPreviewPanelProps): React.ReactElem
 
       {/* Template source */}
       <div className="mb-4">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Template</h3>
-        <div className="bg-gray-50 rounded-md p-2.5 text-sm text-gray-600 font-mono whitespace-pre-wrap border border-gray-200">
-          {template || <span className="text-gray-400 italic">Empty template</span>}
+        <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Template</h3>
+        <div className="bg-surface-alt rounded-md p-2.5 text-sm text-secondary font-mono whitespace-pre-wrap border border-border">
+          {template || <span className="text-muted italic">Empty template</span>}
         </div>
       </div>
 
       {/* Rendered preview */}
       <div className="mb-4">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Preview</h3>
-        <div className="bg-white rounded-md p-2.5 text-sm text-gray-800 whitespace-pre-wrap border-2 border-choco-primary/20">
-          {rendered || <span className="text-gray-400 italic">Empty template</span>}
+        <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-1.5">Preview</h3>
+        <div className="bg-surface rounded-md p-2.5 text-sm text-primary whitespace-pre-wrap border-2 border-brand-primary/20">
+          {rendered || <span className="text-muted italic">Empty template</span>}
         </div>
       </div>
     </div>

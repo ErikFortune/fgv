@@ -59,7 +59,7 @@ export function ModeSelector<TMode extends string>(props: IModeSelectorProps<TMo
   const { modes, activeMode, onModeChange, rightContent, title } = props;
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-choco-primary text-white">
+    <div className="flex items-center justify-between px-4 py-2 bg-brand-primary text-white">
       <div className="flex items-center gap-6">
         <h1 className="text-lg font-semibold whitespace-nowrap">{title}</h1>
         <div className="flex gap-1">

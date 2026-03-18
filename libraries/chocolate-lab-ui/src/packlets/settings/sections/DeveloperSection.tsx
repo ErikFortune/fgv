@@ -224,51 +224,49 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
       <div className="p-6 space-y-6">
         {/* Header */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">Developer</h2>
-          <p className="text-xs text-gray-400">Diagnostic tools for development and testing.</p>
+          <h2 className="text-lg font-semibold text-primary mb-1">Developer</h2>
+          <p className="text-xs text-muted">Diagnostic tools for development and testing.</p>
         </div>
 
         {/* Diagnostic Info */}
-        <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Diagnostics</p>
+        <div className="rounded-lg border border-border p-4 bg-surface-alt">
+          <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Diagnostics</p>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-            <dt className="text-gray-400">Config namespace</dt>
-            <dd className="text-gray-700 font-mono break-all">
-              {currentConfigNamespace ?? <span className="italic text-gray-400">default</span>}
+            <dt className="text-muted">Config namespace</dt>
+            <dd className="text-secondary font-mono break-all">
+              {currentConfigNamespace ?? <span className="italic text-muted">default</span>}
             </dd>
 
-            <dt className="text-gray-400">Settings location</dt>
-            <dd className="text-gray-700">{settingsLocation}</dd>
+            <dt className="text-muted">Settings location</dt>
+            <dd className="text-secondary">{settingsLocation}</dd>
 
-            <dt className="text-gray-400">Keystore location</dt>
-            <dd className="text-gray-700">{keystoreLocation}</dd>
+            <dt className="text-muted">Keystore location</dt>
+            <dd className="text-secondary">{keystoreLocation}</dd>
 
-            <dt className="text-gray-400">Device ID</dt>
-            <dd className="text-gray-700 font-mono break-all">
-              {deviceId ?? <span className="italic text-gray-400">not set</span>}
+            <dt className="text-muted">Device ID</dt>
+            <dd className="text-secondary font-mono break-all">
+              {deviceId ?? <span className="italic text-muted">not set</span>}
             </dd>
 
-            <dt className="text-gray-400">Effective user ID</dt>
-            <dd className="text-gray-700 font-mono break-all">
-              {effectiveUserId ?? <span className="italic text-gray-400">unknown</span>}
+            <dt className="text-muted">Effective user ID</dt>
+            <dd className="text-secondary font-mono break-all">
+              {effectiveUserId ?? <span className="italic text-muted">unknown</span>}
             </dd>
           </dl>
         </div>
 
         {/* Reset & Clear */}
         <div className="rounded-lg border border-red-200 p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-            Reset &amp; Clear
-          </p>
-          <p className="text-xs text-gray-400 mb-4">
+          <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-1">Reset &amp; Clear</p>
+          <p className="text-xs text-muted mb-4">
             These actions are destructive and cannot be undone. Each will reload the page.
           </p>
 
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-700">Reset Settings</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-sm font-medium text-secondary">Reset Settings</p>
+                <p className="text-xs text-muted mt-0.5">
                   Deletes bootstrap and preferences files from local storage. The app starts with defaults.
                 </p>
               </div>
@@ -281,12 +279,12 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
               </button>
             </div>
 
-            <div className="border-t border-gray-100" />
+            <div className="border-t border-border-subtle" />
 
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-700">Clear Local Data</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-sm font-medium text-secondary">Clear Local Data</p>
+                <p className="text-xs text-muted mt-0.5">
                   Removes all Chocolate Lab keys from browser localStorage and reloads.
                 </p>
               </div>
@@ -299,12 +297,12 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
               </button>
             </div>
 
-            <div className="border-t border-gray-100" />
+            <div className="border-t border-border-subtle" />
 
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-700">Clear Cloud Data</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-sm font-medium text-secondary">Clear Cloud Data</p>
+                <p className="text-xs text-muted mt-0.5">
                   Deletes all files from cloud storage roots. This is irreversible.
                 </p>
               </div>

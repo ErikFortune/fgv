@@ -189,6 +189,24 @@ Converter for IBootstrapSettings.
 </td></tr>
 <tr><td>
 
+[themeId](./variables/themeId.md)
+
+</td><td>
+
+Converter for ThemeId.
+
+</td></tr>
+<tr><td>
+
+[appearanceSettings](./variables/appearanceSettings.md)
+
+</td><td>
+
+Converter for IAppearanceSettings.
+
+</td></tr>
+<tr><td>
+
 [preferencesSettings](./variables/preferencesSettings.md)
 
 </td><td>

@@ -92,31 +92,31 @@ export function LocationEditView(props: ILocationEditViewProps): React.ReactElem
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">{entity.name}</h2>
-        <p className="text-xs text-gray-400 font-mono mt-0.5">{locationId}</p>
+        <h2 className="text-lg font-semibold text-primary">{entity.name}</h2>
+        <p className="text-xs text-muted font-mono mt-0.5">{locationId}</p>
       </div>
 
       {/* Name */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        <label className="block text-sm font-medium text-secondary mb-1">Name</label>
         <input
           type="text"
           value={name}
           onChange={(e): void => setName(e.target.value)}
           placeholder="e.g. Kitchen Shelf"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary"
+          className="w-full border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-focus-ring"
         />
       </div>
 
       {/* Description */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label className="block text-sm font-medium text-secondary mb-1">Description</label>
         <textarea
           value={description}
           onChange={(e): void => setDescription(e.target.value)}
           placeholder="Optional description of this location"
           rows={3}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-choco-primary focus:border-choco-primary resize-y"
+          className="w-full border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring focus:border-focus-ring resize-y"
         />
       </div>
 
@@ -127,17 +127,17 @@ export function LocationEditView(props: ILocationEditViewProps): React.ReactElem
       <UrlsEditor value={urls} onChange={setUrls} />
 
       {/* Actions */}
-      <div className="flex gap-2 mt-6 pt-4 border-t border-gray-200">
+      <div className="flex gap-2 mt-6 pt-4 border-t border-border">
         <button
           onClick={handleSave}
           disabled={!isValid}
-          className="px-4 py-2 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 text-sm font-medium text-inverted bg-brand-primary hover:bg-brand-primary/90 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Save
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+          className="px-4 py-2 text-sm font-medium text-secondary bg-surface-raised hover:bg-hover rounded transition-colors"
         >
           Cancel
         </button>

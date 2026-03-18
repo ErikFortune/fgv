@@ -59,9 +59,9 @@ export function FilterBar(props: IFilterBarProps): React.ReactElement {
 
       {/* Filter header with clear-all */}
       <div className="flex items-center justify-between px-3 py-1">
-        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Filters</span>
+        <span className="text-xs font-medium text-muted uppercase tracking-wider">Filters</span>
         {hasActiveFilters && (
-          <button onClick={onClearAll} className="text-xs text-choco-accent hover:text-choco-primary">
+          <button onClick={onClearAll} className="text-xs text-brand-accent hover:text-brand-primary">
             Clear all
           </button>
         )}

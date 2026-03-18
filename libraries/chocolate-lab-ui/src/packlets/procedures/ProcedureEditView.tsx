@@ -289,7 +289,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
             <button
               type="button"
               onClick={onPreview}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-choco-primary hover:bg-gray-100"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-secondary hover:text-brand-primary hover:bg-hover"
               title="Open procedure preview pane"
             >
               <EyeIcon className="h-3.5 w-3.5" />
@@ -301,7 +301,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
 
       <EditSection title="Identity">
         <EditField label="Base ID">
-          <span className="text-sm font-mono text-gray-500">{entity.baseId}</span>
+          <span className="text-sm font-mono text-muted">{entity.baseId}</span>
         </EditField>
         <EditField label="Name">
           <TextInput value={entity.name} onChange={handleNameChange} placeholder="e.g. Tempering Curve" />
@@ -321,12 +321,12 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
             const value = stepInputDraft[step.order] ?? getTaskDisplayValue(step.task, availableTasks);
             const unresolved = unresolvedByStep[step.order];
             return (
-              <div key={step.order} className="rounded border border-gray-200 p-2">
+              <div key={step.order} className="rounded border border-border p-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 font-mono w-6 text-right">{step.order}</span>
+                  <span className="text-xs text-muted font-mono w-6 text-right">{step.order}</span>
                   <input
                     type="text"
-                    className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                     value={value}
                     list="procedure-task-suggestions"
                     onChange={(e): void => {
@@ -350,7 +350,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
                         <button
                           type="button"
                           onClick={(): void => onEditStepTask?.(step.order, 'library', taskInvocation.taskId)}
-                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                          className="p-1 text-muted hover:text-secondary hover:bg-hover rounded transition-colors"
                           title="View library task"
                         >
                           <PencilIcon className="w-4 h-4" />
@@ -361,7 +361,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
                       <button
                         type="button"
                         onClick={(): void => onEditStepTask?.(step.order, 'inline', taskInvocation.task.name)}
-                        className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        className="p-1 text-muted hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                         title="Edit inline task"
                       >
                         <PencilIcon className="w-4 h-4" />
@@ -371,7 +371,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
                   <button
                     type="button"
                     onClick={(): void => onEditStepParams?.(step.order)}
-                    className="p-1 text-gray-400 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                    className="p-1 text-muted hover:text-brand-primary hover:bg-hover rounded transition-colors"
                     title="Edit parameters"
                   >
                     <ChevronRightIcon className="w-4 h-4" />
@@ -379,7 +379,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
                   <button
                     type="button"
                     onClick={(): void => handleRemoveStep(step.order)}
-                    className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                    className="px-2 py-1 text-xs text-muted hover:text-red-600 hover:bg-red-50 rounded"
                   >
                     Remove
                   </button>
@@ -391,14 +391,14 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
                     <button
                       type="button"
                       onClick={(): void => onEditStepTask?.(step.order, 'inline', unresolved)}
-                      className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      className="px-2 py-1 text-xs rounded bg-surface-raised text-secondary hover:bg-hover"
                     >
                       Add Inline Task
                     </button>
                     <button
                       type="button"
                       onClick={(): void => onEditStepTask?.(step.order, 'library', unresolved)}
-                      className="px-2 py-1 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                      className="px-2 py-1 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
                     >
                       Add Library Task
                     </button>
@@ -411,7 +411,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
           <div className="flex items-center gap-2 pt-1">
             <input
               type="text"
-              className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              className="flex-1 text-sm border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
               value={newStepText}
               list="procedure-task-suggestions"
               onChange={(e): void => setNewStepText(e.target.value)}
@@ -429,7 +429,7 @@ export function ProcedureEditView(props: IProcedureEditViewProps): React.ReactEl
             <button
               type="button"
               onClick={handleAddStep}
-              className="px-2.5 py-1 text-xs font-medium rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+              className="px-2.5 py-1 text-xs font-medium rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
             >
               Add Step
             </button>

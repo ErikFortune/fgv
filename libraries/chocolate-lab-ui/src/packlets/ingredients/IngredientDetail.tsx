@@ -60,7 +60,7 @@ const INGREDIENT_CATEGORY_COLORS: Record<string, string> = {
   alcohol: 'bg-purple-100 text-purple-800',
   liquid: 'bg-cyan-100 text-cyan-800',
   flavor: 'bg-green-100 text-green-800',
-  other: 'bg-gray-100 text-gray-800'
+  other: 'bg-surface-raised text-primary'
 };
 
 // ============================================================================
@@ -242,7 +242,7 @@ export function IngredientDetail(props: IIngredientDetailProps): React.ReactElem
         subtitle={ingredient.id}
         extraIndicators={
           ingredient.manufacturer ? (
-            <span className="text-xs text-gray-500">{ingredient.manufacturer}</span>
+            <span className="text-xs text-muted">{ingredient.manufacturer}</span>
           ) : undefined
         }
         onCopyJson={handleCopyJson}

@@ -137,8 +137,8 @@ function StepRow({
     const clickable = onTaskClick !== undefined;
     return (
       <div
-        className={`flex items-start gap-2 py-1.5 border-b border-gray-100 last:border-0${
-          clickable ? ' cursor-pointer hover:bg-gray-50 rounded -mx-1 px-1' : ''
+        className={`flex items-start gap-2 py-1.5 border-b border-border-subtle last:border-0${
+          clickable ? ' cursor-pointer hover:bg-hover rounded -mx-1 px-1' : ''
         }`}
         onClick={clickable ? (): void => onTaskClick(resolvedTask.id) : undefined}
         role={clickable ? 'button' : undefined}
@@ -153,22 +153,22 @@ function StepRow({
             : undefined
         }
       >
-        <span className="text-xs text-gray-400 font-mono w-5 shrink-0 text-right mt-0.5">{step.order}</span>
+        <span className="text-xs text-muted font-mono w-5 shrink-0 text-right mt-0.5">{step.order}</span>
         <div className="flex-1 min-w-0">
-          <div className="text-sm text-gray-800 flex items-center gap-1">
+          <div className="text-sm text-primary flex items-center gap-1">
             <span>{resolvedTask.name}</span>
-            {clickable && <span className="text-gray-400 text-xs">→</span>}
+            {clickable && <span className="text-muted text-xs">→</span>}
           </div>
-          <div className="text-[10px] text-gray-400 font-mono">{resolvedTask.id}</div>
+          <div className="text-[10px] text-muted font-mono">{resolvedTask.id}</div>
           {hasParams && (
-            <div className="text-xs text-gray-400 mt-0.5">
+            <div className="text-xs text-muted mt-0.5">
               {Object.entries(params)
                 .map(([k, v]) => `${k}=${String(v)}`)
                 .join(', ')}
             </div>
           )}
           {timingParts.length > 0 && (
-            <div className="text-xs text-gray-400 mt-0.5">{timingParts.join(' · ')}</div>
+            <div className="text-xs text-muted mt-0.5">{timingParts.join(' · ')}</div>
           )}
         </div>
       </div>
@@ -179,8 +179,8 @@ function StepRow({
   const clickable = onTaskClick !== undefined;
   return (
     <div
-      className={`flex items-start gap-2 py-1.5 border-b border-gray-100 last:border-0${
-        clickable ? ' cursor-pointer hover:bg-gray-50 rounded -mx-1 px-1' : ''
+      className={`flex items-start gap-2 py-1.5 border-b border-border-subtle last:border-0${
+        clickable ? ' cursor-pointer hover:bg-hover rounded -mx-1 px-1' : ''
       }`}
       onClick={clickable ? (): void => onTaskClick(resolvedTask.id) : undefined}
       role={clickable ? 'button' : undefined}
@@ -195,26 +195,22 @@ function StepRow({
           : undefined
       }
     >
-      <span className="text-xs text-gray-400 font-mono w-5 shrink-0 text-right mt-0.5">{step.order}</span>
+      <span className="text-xs text-muted font-mono w-5 shrink-0 text-right mt-0.5">{step.order}</span>
       <div className="flex-1 min-w-0">
-        <div className="text-sm text-gray-800 flex items-center gap-1">
+        <div className="text-sm text-primary flex items-center gap-1">
           <span>{resolvedTask.name}</span>
-          <span className="text-[10px] text-gray-400 bg-gray-100 px-1 rounded">inline</span>
-          {clickable && <span className="text-gray-400 text-xs">→</span>}
+          <span className="text-[10px] text-muted bg-surface-raised px-1 rounded">inline</span>
+          {clickable && <span className="text-muted text-xs">→</span>}
         </div>
-        <div className="text-xs text-gray-500 mt-0.5 font-mono whitespace-pre-wrap">
-          {resolvedTask.template}
-        </div>
+        <div className="text-xs text-muted mt-0.5 font-mono whitespace-pre-wrap">{resolvedTask.template}</div>
         {hasParams && (
-          <div className="text-xs text-gray-400 mt-0.5">
+          <div className="text-xs text-muted mt-0.5">
             {Object.entries(params)
               .map(([k, v]) => `${k}=${String(v)}`)
               .join(', ')}
           </div>
         )}
-        {timingParts.length > 0 && (
-          <div className="text-xs text-gray-400 mt-0.5">{timingParts.join(' · ')}</div>
-        )}
+        {timingParts.length > 0 && <div className="text-xs text-muted mt-0.5">{timingParts.join(' · ')}</div>}
       </div>
     </div>
   );
@@ -250,7 +246,7 @@ export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElemen
         description={procedure.description}
         badge={
           procedure.category
-            ? { label: procedure.category, colorClass: 'bg-choco-primary/10 text-choco-primary' }
+            ? { label: procedure.category, colorClass: 'bg-brand-primary/10 text-brand-primary' }
             : undefined
         }
         subtitle={procedure.id}
@@ -276,7 +272,7 @@ export function ProcedureDetail(props: IProcedureDetailProps): React.ReactElemen
                 ))}
             </div>
             {procedure.getSteps().orThrow().length === 0 && (
-              <p className="text-xs text-gray-400 italic">No steps defined.</p>
+              <p className="text-xs text-muted italic">No steps defined.</p>
             )}
           </>
         ) : (

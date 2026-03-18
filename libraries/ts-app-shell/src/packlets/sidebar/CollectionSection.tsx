@@ -112,14 +112,14 @@ function CollectionRow(props: {
 
   return (
     <div
-      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors hover:bg-gray-50 ${
-        collection.isVisible ? 'text-gray-700' : 'text-gray-400'
+      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors hover:bg-hover ${
+        collection.isVisible ? 'text-secondary' : 'text-muted'
       }`}
     >
       {/* Visibility toggle */}
       <button
         onClick={(): void => onToggleVisibility(collection.id)}
-        className="shrink-0 w-5 h-5 flex items-center justify-center text-xs hover:text-choco-accent transition-colors"
+        className="shrink-0 w-5 h-5 flex items-center justify-center text-xs hover:text-brand-accent transition-colors"
         title={collection.isVisible ? 'Hide collection' : 'Show collection'}
         aria-label={`${collection.isVisible ? 'Hide' : 'Show'} ${displayName}`}
       >
@@ -133,7 +133,7 @@ function CollectionRow(props: {
           className={`shrink-0 w-5 h-5 flex items-center justify-center transition-colors ${
             collection.isDefault
               ? 'text-yellow-400 hover:text-yellow-500'
-              : 'text-gray-300 hover:text-yellow-400'
+              : 'text-faint hover:text-yellow-400'
           }`}
           title={
             collection.isDefault
@@ -153,14 +153,14 @@ function CollectionRow(props: {
 
       {/* Status indicators */}
       {!collection.isMutable && (
-        <span className="shrink-0 text-xs text-gray-400" title="Built-in collection (read-only)">
+        <span className="shrink-0 text-xs text-muted" title="Built-in collection (read-only)">
           {'\uD83D\uDD12'}
         </span>
       )}
       {collection.isProtected &&
         (collection.isUnlocked || !onUnlock ? (
           <span
-            className={`shrink-0 text-xs ${collection.isUnlocked ? 'text-green-500' : 'text-gray-400'}`}
+            className={`shrink-0 text-xs ${collection.isUnlocked ? 'text-green-500' : 'text-muted'}`}
             title={collection.isUnlocked ? 'Protected (unlocked)' : 'Protected (locked)'}
           >
             {'\uD83D\uDEE1'}
@@ -168,7 +168,7 @@ function CollectionRow(props: {
         ) : (
           <button
             onClick={(): void => onUnlock(collection.id)}
-            className="shrink-0 text-xs text-gray-400 hover:text-amber-500 transition-colors"
+            className="shrink-0 text-xs text-muted hover:text-amber-500 transition-colors"
             title="Click to unlock"
             aria-label={`Unlock ${collection.name ?? collection.id}`}
           >
@@ -180,13 +180,13 @@ function CollectionRow(props: {
       <span className="flex-1 truncate" title={displayName}>
         {displayName}
       </span>
-      <span className="shrink-0 text-xs text-gray-400">{collection.itemCount}</span>
+      <span className="shrink-0 text-xs text-muted">{collection.itemCount}</span>
 
       {/* Export button (mutable only) */}
       {collection.isMutable && onExport && (
         <button
           onClick={(): void => onExport(collection.id)}
-          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-gray-300 hover:text-choco-accent transition-colors"
+          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
           title={`Export ${displayName}`}
           aria-label={`Export ${displayName}`}
         >
@@ -198,7 +198,7 @@ function CollectionRow(props: {
       {collection.isMutable && onDelete && (
         <button
           onClick={(): void => onDelete(collection.id)}
-          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-gray-300 hover:text-red-500 transition-colors"
+          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-red-500 transition-colors"
           title={`Remove ${displayName}`}
           aria-label={`Remove ${displayName}`}
         >
@@ -258,23 +258,23 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
   }, []);
 
   return (
-    <div className="flex flex-col border-t border-gray-200 mt-1">
+    <div className="flex flex-col border-t border-border mt-1">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-1.5">
         <button
           onClick={handleToggleCollapse}
-          className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700 transition-colors"
+          className="flex items-center gap-1 text-xs font-medium text-muted uppercase tracking-wider hover:text-secondary transition-colors"
         >
           <span className={`text-[10px] transition-transform ${collapsed ? '' : 'rotate-90'}`}>
             {'\u203A'}
           </span>
           Collections
-          <span className="text-gray-400 normal-case font-normal">({collections.length})</span>
+          <span className="text-muted normal-case font-normal">({collections.length})</span>
         </button>
         {collections.length > 1 && (
           <button
             onClick={handleToggleAllVisibility}
-            className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
+            className="text-xs text-muted hover:text-brand-accent transition-colors px-1"
             title={allVisible ? 'Hide all collections' : 'Show all collections'}
             aria-label={allVisible ? 'Hide all collections' : 'Show all collections'}
           >
@@ -287,7 +287,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
           {onAddDirectory && (
             <button
               onClick={onAddDirectory}
-              className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
+              className="text-xs text-muted hover:text-brand-accent transition-colors px-1"
               title="Add directory"
               aria-label="Add directory"
             >
@@ -297,7 +297,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
           {onExportAllAsZip && (
             <button
               onClick={onExportAllAsZip}
-              className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
+              className="text-xs text-muted hover:text-brand-accent transition-colors px-1"
               title="Export all mutable collections as zip"
               aria-label="Export all as zip"
             >
@@ -307,7 +307,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
           {onOpenCollectionFromFile && (
             <button
               onClick={onOpenCollectionFromFile}
-              className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
+              className="text-xs text-muted hover:text-brand-accent transition-colors px-1"
               title="Open collection file for in-place editing"
               aria-label="Open collection from file"
             >
@@ -317,7 +317,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
           {onImportCollection && (
             <button
               onClick={onImportCollection}
-              className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
+              className="text-xs text-muted hover:text-brand-accent transition-colors px-1"
               title="Import collection from file (in-memory)"
               aria-label="Import collection from file"
             >
@@ -328,7 +328,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
             <button
               onClick={onCreateCollection}
               data-testid="sidebar-new-collection-button"
-              className="text-xs text-gray-400 hover:text-choco-accent transition-colors px-1"
+              className="text-xs text-muted hover:text-brand-accent transition-colors px-1"
               title="New collection"
               aria-label="New collection"
             >
@@ -342,7 +342,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
       {!collapsed && (
         <div className="flex flex-col">
           {collections.length === 0 ? (
-            <div className="px-3 py-2 text-xs text-gray-400">No collections</div>
+            <div className="px-3 py-2 text-xs text-muted">No collections</div>
           ) : (
             collections.map((collection) => (
               <CollectionRow

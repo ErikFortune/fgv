@@ -119,8 +119,8 @@ export function VariationChips({
               key={v.variationSpec}
               className={`inline-flex items-center gap-0.5 rounded border text-xs transition-colors ${
                 isSelected
-                  ? 'bg-choco-primary text-white border-choco-primary'
-                  : 'bg-white text-gray-600 border-gray-300'
+                  ? 'bg-brand-primary text-inverted border-brand-primary'
+                  : 'bg-surface text-secondary border-border'
               }`}
             >
               {/* Golden star toggle */}
@@ -136,7 +136,7 @@ export function VariationChips({
                         : 'text-amber-500'
                       : isSelected
                       ? 'text-white/40 hover:text-amber-300'
-                      : 'text-gray-300 hover:text-amber-400'
+                      : 'text-faint hover:text-amber-400'
                   }`}
                 >
                   ★
@@ -154,7 +154,7 @@ export function VariationChips({
                 <input
                   autoFocus
                   type="text"
-                  className="text-xs px-1 py-0.5 w-28 bg-white text-gray-800 border-0 outline-none rounded"
+                  className="text-xs px-1 py-0.5 w-28 bg-surface text-primary border-0 outline-none rounded"
                   value={editingNameValue}
                   onChange={(e): void => setEditingNameValue(e.target.value)}
                   onBlur={(): void => handleCommitName(v.variationSpec, editingNameValue)}
@@ -176,7 +176,7 @@ export function VariationChips({
                       setEditingNameValue(v.name ?? '');
                     }
                   }}
-                  className={`px-1.5 py-1 ${isSelected ? '' : 'hover:border-choco-primary'}`}
+                  className={`px-1.5 py-1 ${isSelected ? '' : 'hover:border-brand-primary'}`}
                   title={!disabled ? 'Click to select, double-click to rename' : undefined}
                 >
                   {v.name ?? v.variationSpec}
@@ -190,7 +190,7 @@ export function VariationChips({
                   title="Remove variation"
                   onClick={(): void => onRemove(v.variationSpec)}
                   className={`pr-1 py-1 shrink-0 ${
-                    isSelected ? 'text-white/60 hover:text-white' : 'text-gray-300 hover:text-red-400'
+                    isSelected ? 'text-white/60 hover:text-white' : 'text-faint hover:text-red-400'
                   }`}
                 >
                   ✕
@@ -208,29 +208,29 @@ export function VariationChips({
               <button
                 type="button"
                 onClick={(): void => setShowAddForm(true)}
-                className="px-2.5 py-1 text-xs rounded border border-dashed border-gray-300 text-gray-400 hover:border-choco-primary hover:text-choco-primary transition-colors"
+                className="px-2.5 py-1 text-xs rounded border border-dashed border-border text-muted hover:border-brand-primary hover:text-brand-primary transition-colors"
               >
                 + New
               </button>
             ) : (
-              <div className="w-full mt-1 p-2 rounded border border-gray-200 bg-gray-50 space-y-2">
+              <div className="w-full mt-1 p-2 rounded border border-border bg-surface-alt space-y-2">
                 <div className="flex gap-2 items-center">
-                  <label className="text-xs text-gray-500 shrink-0 w-10">Date</label>
+                  <label className="text-xs text-muted shrink-0 w-10">Date</label>
                   <input
                     type="text"
                     placeholder={new Date().toISOString().split('T')[0]}
                     pattern="\d{4}-\d{2}-\d{2}"
-                    className="text-xs border border-gray-300 rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="text-xs border border-border rounded px-1.5 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                     value={newVariationDate}
                     onChange={(e): void => setNewVariationDate(e.target.value)}
                   />
                 </div>
                 <div className="flex gap-2 items-center">
-                  <label className="text-xs text-gray-500 shrink-0 w-10">Name</label>
+                  <label className="text-xs text-muted shrink-0 w-10">Name</label>
                   <input
                     type="text"
                     placeholder="optional label"
-                    className="text-xs border border-gray-300 rounded px-1.5 py-0.5 flex-1 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="text-xs border border-border rounded px-1.5 py-0.5 flex-1 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                     value={newVariationName}
                     onChange={(e): void => setNewVariationName(e.target.value)}
                   />
@@ -243,21 +243,21 @@ export function VariationChips({
                       setNewVariationDate('');
                       setNewVariationName('');
                     }}
-                    className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700 rounded"
+                    className="px-2 py-0.5 text-xs text-muted hover:text-secondary rounded"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleCreateBlank}
-                    className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    className="px-2 py-0.5 text-xs rounded bg-surface-raised text-secondary hover:bg-surface-raised"
                   >
                     Create Blank
                   </button>
                   <button
                     type="button"
                     onClick={handleDuplicate}
-                    className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                    className="px-2 py-0.5 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
                   >
                     Duplicate Current
                   </button>

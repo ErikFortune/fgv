@@ -74,22 +74,22 @@ export function MoldInventoryEntryDetail(props: IMoldInventoryEntryDetailProps):
       {/* Header */}
       <EntityDetailHeader
         title={mold.displayName}
-        badge={{ label: mold.format, colorClass: 'bg-choco-primary/10 text-choco-primary' }}
+        badge={{ label: mold.format, colorClass: 'bg-brand-primary/10 text-brand-primary' }}
         subtitle={entry.id}
         onEdit={onEdit}
         onClose={onClose}
       />
 
       {/* Location (centered, title case) */}
-      {locationName && <p className="text-sm text-gray-500 text-center py-2">{locationName}</p>}
+      {locationName && <p className="text-sm text-muted text-center py-2">{locationName}</p>}
 
       {/* Count × Mold name */}
-      <div className="py-3 text-sm text-gray-700">
+      <div className="py-3 text-sm text-secondary">
         <span className="font-medium">{entry.quantity}×</span>{' '}
         {onBrowseMold ? (
           <button
             onClick={(): void => onBrowseMold(mold.id as MoldId)}
-            className="text-choco-primary hover:underline"
+            className="text-brand-primary hover:underline"
           >
             {mold.displayName}
           </button>

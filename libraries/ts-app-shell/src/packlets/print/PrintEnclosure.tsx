@@ -72,14 +72,14 @@ export function PrintEnclosure({
   return (
     <div>
       {/* Toolbar - hidden when printing */}
-      <div className="print-toolbar sticky top-0 z-10 flex items-center justify-between gap-4 bg-white border-b border-gray-200 px-6 py-3 mb-6 shadow-sm">
-        <h1 className="text-lg font-semibold text-gray-900 truncate">{title}</h1>
+      <div className="print-toolbar sticky top-0 z-10 flex items-center justify-between gap-4 bg-surface border-b border-border px-6 py-3 mb-6 shadow-sm">
+        <h1 className="text-lg font-semibold text-primary truncate">{title}</h1>
         <div className="flex items-center gap-3 shrink-0">
           {toolbarExtras}
           <button
             type="button"
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded-md transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-brand-primary hover:bg-brand-primary/90 rounded-md transition-colors"
           >
             <PrinterIcon className="w-4 h-4" />
             Print
@@ -87,7 +87,7 @@ export function PrintEnclosure({
           <button
             type="button"
             onClick={handleClose}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-secondary bg-surface-raised hover:bg-surface-raised rounded-md transition-colors"
           >
             <XMarkIcon className="w-4 h-4" />
             Close

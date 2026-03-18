@@ -80,7 +80,7 @@ function PreviewSection({
 }): React.ReactElement {
   return (
     <div className="mb-6">
-      <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">{title}</h3>
+      <h3 className="text-sm font-bold text-secondary uppercase tracking-wider mb-3">{title}</h3>
       {children}
     </div>
   );
@@ -94,9 +94,9 @@ function MetaRow({
   readonly value: React.ReactNode;
 }): React.ReactElement {
   return (
-    <div className="flex items-baseline justify-between py-1 border-b border-gray-100 last:border-0">
-      <span className="text-xs text-gray-500 shrink-0 mr-4">{label}</span>
-      <span className="text-sm text-gray-900 text-right">{value}</span>
+    <div className="flex items-baseline justify-between py-1 border-b border-border-subtle last:border-0">
+      <span className="text-xs text-muted shrink-0 mr-4">{label}</span>
+      <span className="text-sm text-primary text-right">{value}</span>
     </div>
   );
 }
@@ -132,24 +132,24 @@ function FillingSlotSection({
 
   return (
     <div
-      className={`px-4 py-2.5 flex items-start hover:bg-gray-50${isClickable ? ' cursor-pointer' : ''}`}
+      className={`px-4 py-2.5 flex items-start hover:bg-hover${isClickable ? ' cursor-pointer' : ''}`}
       onClick={isClickable ? handleClick : undefined}
     >
       <div className="flex-1">
-        <span className="text-xs text-gray-400 block mb-0.5">
+        <span className="text-xs text-muted block mb-0.5">
           {slot.name ?? slot.slotId}
           {!isPreferred ? ' (alternate)' : ''}
         </span>
         <span
           className={`text-sm font-medium ${
-            isClickable ? 'text-choco-primary hover:underline' : 'text-gray-900'
+            isClickable ? 'text-brand-primary hover:underline' : 'text-primary'
           }`}
         >
           {displayedName ?? '—'}
         </span>
       </div>
       {targetWeight !== undefined && (
-        <span className="text-sm font-semibold text-choco-primary ml-4 shrink-0">
+        <span className="text-sm font-semibold text-brand-primary ml-4 shrink-0">
           {formatIngredientAmount(targetWeight, 'g')}
         </span>
       )}
@@ -174,19 +174,19 @@ function ScaledFillingSlotSection({
     const isClickable = onIngredientClick !== undefined;
     return (
       <div
-        className={`px-4 py-3${isClickable ? ' cursor-pointer hover:bg-gray-50' : ''}`}
+        className={`px-4 py-3${isClickable ? ' cursor-pointer hover:bg-hover' : ''}`}
         onClick={isClickable ? (): void => onIngredientClick(scaledSlot.ingredient.id) : undefined}
       >
-        <span className="text-xs text-gray-400 block mb-1">{slotLabel}</span>
+        <span className="text-xs text-muted block mb-1">{slotLabel}</span>
         <div className="flex items-baseline justify-between">
           <span
             className={`text-sm font-medium ${
-              isClickable ? 'text-choco-primary hover:underline' : 'text-gray-900'
+              isClickable ? 'text-brand-primary hover:underline' : 'text-primary'
             }`}
           >
             {scaledSlot.ingredient.name}
           </span>
-          <span className="text-sm font-semibold text-choco-primary">
+          <span className="text-sm font-semibold text-brand-primary">
             {formatIngredientAmount(scaledSlot.targetWeight, 'g')}
           </span>
         </div>
@@ -199,12 +199,12 @@ function ScaledFillingSlotSection({
   const isClickable = fillingOptionId !== undefined && onFillingClick !== undefined;
   return (
     <div
-      className={`px-4 py-3${isClickable ? ' cursor-pointer hover:bg-gray-50' : ''}`}
+      className={`px-4 py-3${isClickable ? ' cursor-pointer hover:bg-hover' : ''}`}
       onClick={isClickable ? (): void => onFillingClick(fillingOptionId, scaledSlot.targetWeight) : undefined}
     >
       <div className="flex items-baseline justify-between mb-2">
-        <span className={`text-xs ${isClickable ? 'text-choco-primary' : 'text-gray-400'}`}>{slotLabel}</span>
-        <span className="text-xs text-gray-400">
+        <span className={`text-xs ${isClickable ? 'text-brand-primary' : 'text-muted'}`}>{slotLabel}</span>
+        <span className="text-xs text-muted">
           {formatIngredientAmount(scaledSlot.targetWeight, 'g')} total
         </span>
       </div>
@@ -214,8 +214,8 @@ function ScaledFillingSlotSection({
           const name = resolved?.ingredient.name ?? ing.ingredientId;
           return (
             <div key={i} className="flex items-baseline justify-between">
-              <span className="text-sm text-gray-800">{name}</span>
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm text-primary">{name}</span>
+              <span className="text-sm font-medium text-primary">
                 {formatScaledIngredientAmount(ing.amount, ing.unit, undefined, ing.modifiers)}
               </span>
             </div>
@@ -242,9 +242,7 @@ function StepsSection({
 
   return (
     <PreviewSection title="Instructions">
-      {procedures.options.length > 1 && (
-        <p className="text-xs text-gray-500 mb-2">{preferred.procedure.name}</p>
-      )}
+      {procedures.options.length > 1 && <p className="text-xs text-muted mb-2">{preferred.procedure.name}</p>}
       <div className="space-y-3">
         {steps.map((step) => {
           const timingText = formatResolvedStepTiming(step);
@@ -260,24 +258,24 @@ function StepsSection({
           const rendered = renderPreview(step.resolvedTask.template, mergedParams);
 
           return (
-            <div key={step.order} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+            <div key={step.order} className="bg-surface rounded-lg border border-border p-4 shadow-sm">
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-choco-primary/10 text-choco-primary font-bold text-sm flex items-center justify-center">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-brand-primary/10 text-brand-primary font-bold text-sm flex items-center justify-center">
                   {step.order}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{rendered}</div>
+                  <div className="text-sm text-primary whitespace-pre-wrap leading-relaxed">{rendered}</div>
                   {timingText && (
-                    <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                      <span className="inline-block w-1 h-1 rounded-full bg-gray-400"></span>
+                    <div className="text-xs text-muted mt-2 flex items-center gap-1">
+                      <span className="inline-block w-1 h-1 rounded-full bg-surface-raised"></span>
                       {timingText}
                     </div>
                   )}
                   {step.notes && step.notes.length > 0 && (
                     <div className="mt-2 space-y-1">
                       {step.notes.map((note, noteIndex) => (
-                        <div key={noteIndex} className="text-xs text-gray-600">
-                          <span className="font-semibold text-gray-500">[{note.category}]</span> {note.note}
+                        <div key={noteIndex} className="text-xs text-secondary">
+                          <span className="font-semibold text-muted">[{note.category}]</span> {note.note}
                         </div>
                       ))}
                     </div>
@@ -294,10 +292,10 @@ function StepsSection({
 
 function OptionSlot({ role, name }: { readonly role: string; readonly name: string }): React.ReactElement {
   return (
-    <div className="px-4 py-2.5 flex items-start hover:bg-gray-50">
+    <div className="px-4 py-2.5 flex items-start hover:bg-hover">
       <div className="flex-1">
-        <span className="text-xs text-gray-400 block mb-0.5">{role}</span>
-        <span className="text-sm font-medium text-gray-900">{name}</span>
+        <span className="text-xs text-muted block mb-0.5">{role}</span>
+        <span className="text-sm font-medium text-primary">{name}</span>
       </div>
     </div>
   );
@@ -316,7 +314,7 @@ function ChocolateSlotDisplay({
   const isPreferred = displayed.id === spec.chocolate.id;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+    <div className="bg-surface rounded-lg border border-border divide-y divide-border-subtle">
       <OptionSlot role={isPreferred ? 'Preferred' : 'Alternate'} name={displayed.name} />
     </div>
   );
@@ -341,7 +339,7 @@ function MoldedBonBonSection({
     <>
       {displayedMold && (
         <PreviewSection title="Mold">
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
+          <div className="bg-surface rounded-lg border border-border p-3">
             <MetaRow label="Model" value={displayedMold.displayName} />
             {displayedMold.format && <MetaRow label="Format" value={displayedMold.format} />}
           </div>
@@ -377,7 +375,7 @@ function BarTruffleSection({
   return (
     <>
       <PreviewSection title="Dimensions">
-        <div className="bg-white rounded-lg border border-gray-200 p-3">
+        <div className="bg-surface rounded-lg border border-border p-3">
           <MetaRow label="Frame" value={`${fd.width} × ${fd.height} × ${fd.depth}mm`} />
           <MetaRow label="BonBon" value={`${bd.width} × ${bd.height}mm`} />
         </div>
@@ -421,7 +419,7 @@ function RolledTruffleSection({
       )}
       {displayedCoating && (
         <PreviewSection title="Coating">
-          <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+          <div className="bg-surface rounded-lg border border-border divide-y divide-border-subtle">
             <OptionSlot
               role={isPreferredCoating ? 'Preferred' : 'Alternate'}
               name={displayedCoating.ingredient.name}
@@ -516,14 +514,14 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
   const effectiveUrls = confection.effectiveUrls;
 
   return (
-    <div className={printMode ? 'p-4 bg-gray-50' : 'p-4 overflow-y-auto h-full bg-gray-50'}>
+    <div className={printMode ? 'p-4 bg-surface-alt' : 'p-4 overflow-y-auto h-full bg-surface-alt'}>
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{entity.name}</h2>
+          <h2 className="text-2xl font-bold text-primary">{entity.name}</h2>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Confection Recipe</p>
-            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-choco-primary/10 text-choco-primary">
+            <p className="text-xs text-muted uppercase tracking-wide">Confection Recipe</p>
+            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-brand-primary/10 text-brand-primary">
               {entity.confectionType}
             </span>
           </div>
@@ -533,7 +531,7 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
             <button
               type="button"
               onClick={handlePrint}
-              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              className="p-1 text-muted hover:text-secondary hover:bg-hover rounded transition-colors"
               title="Print recipe"
             >
               <PrinterIcon className="w-5 h-5" />
@@ -542,7 +540,7 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                className="p-1 text-muted hover:text-secondary hover:bg-hover rounded transition-colors"
                 title="Close preview"
               >
                 <XMarkIcon className="w-5 h-5" />
@@ -553,33 +551,33 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
       </div>
 
       {entity.description && (
-        <div className="mb-6 p-3 bg-choco-primary/5 border-l-4 border-choco-primary/40 rounded-r">
-          <p className="text-sm text-gray-700 italic">{entity.description}</p>
+        <div className="mb-6 p-3 bg-brand-primary/5 border-l-4 border-brand-primary/40 rounded-r">
+          <p className="text-sm text-secondary italic">{entity.description}</p>
         </div>
       )}
 
       {/* Yield */}
       {goldenVariationEntity && (
-        <div className="mb-6 flex items-center gap-6 bg-white rounded-lg border border-gray-200 px-4 py-3">
+        <div className="mb-6 flex items-center gap-6 bg-surface rounded-lg border border-border px-4 py-3">
           {EntitiesNS.Confections.isYieldInFrames(goldenVariationEntity.yield) ? (
             <div>
-              <span className="text-xs text-gray-500 uppercase tracking-wide block">Frames</span>
-              <span className="text-lg font-semibold text-gray-900">
+              <span className="text-xs text-muted uppercase tracking-wide block">Frames</span>
+              <span className="text-lg font-semibold text-primary">
                 {goldenVariationEntity.yield.numFrames}
               </span>
             </div>
           ) : (
             <>
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wide block">Count</span>
-                <span className="text-lg font-semibold text-gray-900">
+                <span className="text-xs text-muted uppercase tracking-wide block">Count</span>
+                <span className="text-lg font-semibold text-primary">
                   {goldenVariationEntity.yield.numPieces}{' '}
-                  <span className="text-sm font-normal text-gray-500">pieces</span>
+                  <span className="text-sm font-normal text-muted">pieces</span>
                 </span>
               </div>
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wide block">Weight/piece</span>
-                <span className="text-lg font-semibold text-gray-900">
+                <span className="text-xs text-muted uppercase tracking-wide block">Weight/piece</span>
+                <span className="text-lg font-semibold text-primary">
                   {goldenVariationEntity.yield.weightPerPiece}g
                 </span>
               </div>
@@ -600,7 +598,7 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
                 : `Target: ${scalingResult.effectiveCount} pieces (×${scalingResult.scaleFactor.toFixed(2)})`}
             </div>
           )}
-          <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+          <div className="bg-surface rounded-lg border border-border divide-y divide-border-subtle">
             {scalingResult
               ? scalingResult.slots.map((scaledSlot) => {
                   const originalSlot = fillings.find((f) => f.slotId === scaledSlot.slotId);
@@ -649,10 +647,10 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
       {/* Decorations */}
       {decorations && decorations.options.length > 0 && (
         <PreviewSection title="Decorations">
-          <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+          <div className="bg-surface rounded-lg border border-border divide-y divide-border-subtle">
             {decorations.options.map((d) => (
-              <div key={d.id} className="px-4 py-2.5 flex items-center justify-between hover:bg-gray-50">
-                <span className="text-sm font-medium text-gray-900">{d.decoration.name}</span>
+              <div key={d.id} className="px-4 py-2.5 flex items-center justify-between hover:bg-hover">
+                <span className="text-sm font-medium text-primary">{d.decoration.name}</span>
                 {d.id === decorations.preferredId && (
                   <span className="text-xs text-amber-500">★ preferred</span>
                 )}
@@ -668,13 +666,13 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
       {/* Metadata */}
       <div className="space-y-4">
         {effectiveTags.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Tags</h3>
+          <div className="bg-surface rounded-lg border border-border p-4">
+            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Tags</h3>
             <div className="flex flex-wrap gap-1.5">
               {effectiveTags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-2.5 py-1 text-xs rounded-full bg-gray-100 text-gray-700 border border-gray-200"
+                  className="px-2.5 py-1 text-xs rounded-full bg-surface-raised text-secondary border border-border"
                 >
                   {tag}
                 </span>
@@ -684,12 +682,12 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
         )}
 
         {notes.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Notes</h3>
+          <div className="bg-surface rounded-lg border border-border p-4">
+            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Notes</h3>
             <div className="space-y-2">
               {notes.map((note, i) => (
-                <div key={i} className="text-sm text-gray-700">
-                  <span className="inline-block px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600 mr-2">
+                <div key={i} className="text-sm text-secondary">
+                  <span className="inline-block px-2 py-0.5 text-xs rounded bg-surface-raised text-secondary mr-2">
                     {note.category}
                   </span>
                   {note.note}
@@ -700,17 +698,17 @@ export function ConfectionPreviewPanel(props: IConfectionPreviewPanelProps): Rea
         )}
 
         {effectiveUrls.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Links</h3>
+          <div className="bg-surface rounded-lg border border-border p-4">
+            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Links</h3>
             <div className="space-y-1">
               {effectiveUrls.map((u, i) => (
                 <div key={i} className="text-sm">
-                  <span className="text-xs text-gray-400 mr-1">[{u.category}]</span>
+                  <span className="text-xs text-muted mr-1">[{u.category}]</span>
                   <a
                     href={u.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-choco-primary hover:underline"
+                    className="text-brand-primary hover:underline"
                   >
                     {u.url}
                   </a>

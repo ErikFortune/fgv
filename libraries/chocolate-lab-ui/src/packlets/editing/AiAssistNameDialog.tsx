@@ -87,14 +87,14 @@ export function AiAssistNameDialog(props: IAiAssistNameDialogProps): React.React
           }}
           placeholder={`${entityLabel} name...`}
           disabled={isWorking}
-          className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50"
+          className="flex-1 px-2 py-1.5 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50"
           autoFocus
         />
         <button
           type="button"
           onClick={handleSubmit}
           disabled={!trimmedName || isWorking}
-          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-inverted bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <SparklesIcon className="w-3.5 h-3.5" />
           {isWorking ? 'Generating...' : 'Generate'}
@@ -103,7 +103,7 @@ export function AiAssistNameDialog(props: IAiAssistNameDialogProps): React.React
           type="button"
           onClick={onCancel}
           disabled={isWorking}
-          className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+          className="p-1.5 text-muted hover:text-secondary transition-colors disabled:opacity-50"
           title="Cancel"
         >
           <XMarkIcon className="w-4 h-4" />

@@ -211,13 +211,13 @@ export function EntityList<TEntity, TId extends string = string>(
     <div className="flex flex-col flex-1 overflow-hidden" onKeyDown={handleKeyDown}>
       {/* Header with item count and optional compare toggle */}
       {header !== undefined ? (
-        <div className="px-3 py-1.5 text-xs text-gray-500 border-b border-gray-100">{header}</div>
+        <div className="px-3 py-1.5 text-xs text-muted border-b border-border-subtle">{header}</div>
       ) : entities.length > 0 ? (
-        <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-100">
-          <span className="text-xs text-gray-400">
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-border-subtle">
+          <span className="text-xs text-muted">
             {entities.length} item{entities.length !== 1 ? 's' : ''}
             {compareMode && props.compareCount !== undefined && props.compareCount > 0 && (
-              <span className="ml-1.5 text-choco-accent">· {props.compareCount} selected</span>
+              <span className="ml-1.5 text-brand-accent">· {props.compareCount} selected</span>
             )}
           </span>
           <div className="flex items-center gap-1">
@@ -230,7 +230,7 @@ export function EntityList<TEntity, TId extends string = string>(
                     e.stopPropagation();
                     props.onStartComparison?.();
                   }}
-                  className="px-2 py-0.5 text-[11px] rounded border transition-colors bg-choco-primary text-white border-choco-primary hover:bg-choco-primary/90"
+                  className="px-2 py-0.5 text-[11px] rounded border transition-colors bg-brand-primary text-white border-brand-primary hover:bg-brand-primary/90"
                 >
                   Compare Now
                 </button>
@@ -243,8 +243,8 @@ export function EntityList<TEntity, TId extends string = string>(
                 }}
                 className={`px-2 py-0.5 text-[11px] rounded border transition-colors ${
                   compareMode
-                    ? 'bg-choco-accent text-white border-choco-accent'
-                    : 'bg-white text-gray-500 border-gray-300 hover:border-choco-accent hover:text-choco-accent'
+                    ? 'bg-brand-accent text-white border-brand-accent'
+                    : 'bg-surface text-muted border-border hover:border-brand-accent hover:text-brand-accent'
                 }`}
               >
                 {compareMode ? 'Cancel' : 'Compare'}
@@ -267,12 +267,12 @@ export function EntityList<TEntity, TId extends string = string>(
           return (
             <div
               key={id}
-              className={`group flex items-center gap-2 w-full border-b border-gray-50 transition-colors ${
+              className={`group flex items-center gap-2 w-full border-b border-border-subtle transition-colors ${
                 isChecked
-                  ? 'bg-choco-accent/10 border-l-2 border-l-choco-accent'
+                  ? 'bg-selected border-l-2 border-l-selected-border'
                   : isSelected && !compareMode
-                  ? 'bg-choco-accent/10 border-l-2 border-l-choco-accent'
-                  : 'hover:bg-gray-50 border-l-2 border-l-transparent'
+                  ? 'bg-selected border-l-2 border-l-selected-border'
+                  : 'hover:bg-hover border-l-2 border-l-transparent'
               }`}
             >
               <button
@@ -292,8 +292,8 @@ export function EntityList<TEntity, TId extends string = string>(
                   <span
                     className={`flex items-center justify-center w-4 h-4 rounded border shrink-0 transition-colors ${
                       isChecked
-                        ? 'bg-choco-accent border-choco-accent text-white'
-                        : 'border-gray-300 bg-white'
+                        ? 'bg-brand-accent border-brand-accent text-white'
+                        : 'border-border bg-surface'
                     }`}
                   >
                     {isChecked && (
@@ -313,18 +313,18 @@ export function EntityList<TEntity, TId extends string = string>(
                   <div
                     className={`text-sm truncate ${
                       (isSelected && !compareMode) || isChecked
-                        ? 'font-medium text-choco-primary'
-                        : 'text-gray-800'
+                        ? 'font-medium text-brand-primary'
+                        : 'text-primary'
                     }`}
                   >
                     {label}
                   </div>
-                  {sublabel && <div className="text-xs text-gray-500 truncate mt-0.5">{sublabel}</div>}
+                  {sublabel && <div className="text-xs text-muted truncate mt-0.5">{sublabel}</div>}
                 </div>
                 {status && (
                   <span className="flex items-center gap-1 shrink-0 mt-0.5">
                     <span className={`w-2 h-2 rounded-full ${status.colorClass}`} />
-                    <span className="text-xs text-gray-500">{status.label}</span>
+                    <span className="text-xs text-muted">{status.label}</span>
                   </span>
                 )}
               </button>
@@ -335,7 +335,7 @@ export function EntityList<TEntity, TId extends string = string>(
                     e.stopPropagation();
                     onDelete(id);
                   }}
-                  className="shrink-0 mr-1 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded"
+                  className="shrink-0 mr-1 w-6 h-6 flex items-center justify-center text-muted hover:text-status-error-text opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded"
                   title={`Delete ${label}`}
                   aria-label={`Delete ${label}`}
                 >
@@ -369,12 +369,12 @@ export function EntityList<TEntity, TId extends string = string>(
 function EmptyState({ config }: { readonly config: IEmptyStateConfig }): React.ReactElement {
   return (
     <div className="flex flex-col items-center justify-center flex-1 p-6 text-center">
-      <h3 className="text-sm font-medium text-gray-700 mb-1">{config.title}</h3>
-      <p className="text-xs text-gray-500 mb-4">{config.description}</p>
+      <h3 className="text-sm font-medium text-secondary mb-1">{config.title}</h3>
+      <p className="text-xs text-muted mb-4">{config.description}</p>
       {config.action && (
         <button
           onClick={config.action.onClick}
-          className="px-3 py-1.5 text-xs font-medium text-white bg-choco-accent rounded-md hover:bg-choco-primary transition-colors"
+          className="px-3 py-1.5 text-xs font-medium text-white bg-brand-accent rounded-md hover:bg-brand-primary transition-colors"
         >
           {config.action.label}
         </button>

@@ -132,6 +132,15 @@ Configures where new collections are created.
 </td></tr>
 <tr><td>
 
+[IAppearanceSettings](./interfaces/IAppearanceSettings.md)
+
+</td><td>
+
+Appearance settings controlling visual presentation.
+
+</td></tr>
+<tr><td>
+
 [ILocalStorageConfig](./interfaces/ILocalStorageConfig.md)
 
 </td><td>
@@ -259,6 +268,15 @@ Reference to an external library (path or URI).
 </td><td>
 
 Branded string identifying a storage root.
+
+</td></tr>
+<tr><td>
+
+[ThemeId](./type-aliases/ThemeId.md)
+
+</td><td>
+
+Theme identifier.
 
 </td></tr>
 <tr><td>

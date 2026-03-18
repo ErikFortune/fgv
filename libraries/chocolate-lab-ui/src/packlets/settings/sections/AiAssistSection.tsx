@@ -122,14 +122,14 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">AI Assist</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <h2 className="text-lg font-semibold text-primary mb-1">AI Assist</h2>
+        <p className="text-sm text-muted mb-4">
           Enable AI providers for entity generation. Copy/Paste is always available.
         </p>
 
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <tr className="border-b border-border text-left text-xs font-medium text-muted uppercase tracking-wider">
               <th className="py-2 pr-3 w-8">On</th>
               <th className="py-2 pr-2 w-10">Def</th>
               <th className="py-2 pr-3">Provider</th>
@@ -181,14 +181,14 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
 
               return (
                 <React.Fragment key={descriptor.id}>
-                  <tr className={infoChips.length > 0 ? '' : 'border-b border-gray-100'}>
+                  <tr className={infoChips.length > 0 ? '' : 'border-b border-border-subtle'}>
                     <td className="py-2.5 pr-3">
                       <input
                         type="checkbox"
                         checked={isEnabled}
                         disabled={isCopyPaste}
                         onChange={(e): void => handleToggle(descriptor, e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-50"
+                        className="w-4 h-4 rounded border-border text-brand-accent focus:ring-focus-ring disabled:opacity-50"
                       />
                     </td>
                     <td className="py-2.5 pr-2">
@@ -198,26 +198,24 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                         checked={isDefault}
                         disabled={!isEnabled}
                         onChange={(): void => handleDefaultChange(descriptor.id)}
-                        className="w-4 h-4 border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-30"
+                        className="w-4 h-4 border-border text-brand-accent focus:ring-focus-ring disabled:opacity-30"
                       />
                     </td>
                     <td className="py-2.5 pr-3">
-                      <span className={isEnabled ? 'text-gray-900' : 'text-gray-400'}>
-                        {descriptor.label}
-                      </span>
+                      <span className={isEnabled ? 'text-primary' : 'text-muted'}>{descriptor.label}</span>
                     </td>
                     <td className="py-2.5 pr-3">
                       {descriptor.needsSecret ? (
                         <input
                           type="text"
                           disabled={!isEnabled}
-                          className="w-full max-w-[200px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent disabled:opacity-40 disabled:bg-gray-50"
+                          className="w-full max-w-[200px] px-2 py-1 text-xs border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-transparent disabled:opacity-40 disabled:bg-surface-alt"
                           placeholder="secret name"
                           defaultValue={config?.secretName ?? ''}
                           onBlur={(e): void => handleSecretNameChange(descriptor.id, e.target.value)}
                         />
                       ) : (
-                        <span className="text-xs text-gray-400">&mdash;</span>
+                        <span className="text-xs text-muted">&mdash;</span>
                       )}
                     </td>
                     <td className="py-2.5 pr-3">
@@ -225,13 +223,13 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                         <input
                           type="text"
                           disabled={!isEnabled}
-                          className="w-full max-w-[180px] px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-accent focus:border-transparent disabled:opacity-40 disabled:bg-gray-50"
+                          className="w-full max-w-[180px] px-2 py-1 text-xs border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-transparent disabled:opacity-40 disabled:bg-surface-alt"
                           placeholder={effectiveModel || 'model'}
                           defaultValue={config?.model ? AiAssist.resolveModel(config.model) : ''}
                           onBlur={(e): void => handleModelChange(descriptor.id, e.target.value)}
                         />
                       ) : (
-                        <span className="text-xs text-gray-400">&mdash;</span>
+                        <span className="text-xs text-muted">&mdash;</span>
                       )}
                     </td>
                     <td className="py-2.5">
@@ -242,15 +240,15 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                           disabled={!isEnabled}
                           onChange={(e): void => handleWebSearchToggle(descriptor.id, e.target.checked)}
                           title="Enable web search"
-                          className="w-4 h-4 rounded border-gray-300 text-choco-accent focus:ring-choco-accent disabled:opacity-30"
+                          className="w-4 h-4 rounded border-border text-brand-accent focus:ring-focus-ring disabled:opacity-30"
                         />
                       ) : (
-                        <span className="text-xs text-gray-400">&mdash;</span>
+                        <span className="text-xs text-muted">&mdash;</span>
                       )}
                     </td>
                   </tr>
                   {infoChips.length > 0 && (
-                    <tr className="border-b border-gray-100">
+                    <tr className="border-b border-border-subtle">
                       <td colSpan={6} className="pb-2 pt-0 pl-8">
                         <div className="flex gap-2 flex-wrap">
                           {infoChips.map((chip) => {
@@ -258,8 +256,8 @@ export function AiAssistSection(props: IAiAssistSectionProps): React.ReactElemen
                               chip.variant === 'warning'
                                 ? 'text-amber-700 bg-amber-50'
                                 : chip.variant === 'accent'
-                                ? 'text-choco-accent bg-choco-accent/10'
-                                : 'text-gray-500 bg-gray-100';
+                                ? 'text-brand-accent bg-brand-accent/10'
+                                : 'text-muted bg-surface-raised';
                             return (
                               <span
                                 key={chip.label}

@@ -135,19 +135,19 @@ function IngredientRow({
         items={items}
         preferredId={resolved.ingredient.id}
         onClick={onClick}
-        rightContent={<span className="text-xs text-gray-500 tabular-nums shrink-0">{displayAmount}</span>}
+        rightContent={<span className="text-xs text-muted tabular-nums shrink-0">{displayAmount}</span>}
       />
       {hasYield && (
         <div className="flex items-baseline justify-between pl-[22px] pr-2 -mt-1 mb-1">
-          <span className="text-xs text-gray-400 italic">
+          <span className="text-xs text-muted italic">
             {processNote ? `${processNote} (×${yieldFactor!.toFixed(2)})` : `×${yieldFactor!.toFixed(2)}`}
           </span>
-          <span className="text-xs text-gray-400 tabular-nums">{contributedAmount}</span>
+          <span className="text-xs text-muted tabular-nums">{contributedAmount}</span>
         </div>
       )}
       {!hasYield && processNote && (
         <div className="pl-[22px] pr-2 -mt-1 mb-1">
-          <span className="text-xs text-gray-400 italic">{processNote}</span>
+          <span className="text-xs text-muted italic">{processNote}</span>
         </div>
       )}
     </div>
@@ -338,7 +338,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
           <>
             <StatusBadge
               label={filling.entity.category}
-              colorClass={CATEGORY_COLORS[filling.entity.category] ?? 'bg-gray-100 text-gray-800'}
+              colorClass={CATEGORY_COLORS[filling.entity.category] ?? 'bg-surface-raised text-primary'}
             />
             {filling.entity.derivedFrom && (
               <DerivedFromIndicator
@@ -353,7 +353,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
             <button
               type="button"
               onClick={handleCopyJson}
-              className="p-1 text-gray-400 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+              className="p-1 text-muted hover:text-brand-primary hover:bg-hover rounded transition-colors"
               title={copied ? 'Copied!' : 'Copy JSON to clipboard'}
             >
               <ClipboardDocumentIcon className="w-4 h-4" />
@@ -362,7 +362,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
               <button
                 type="button"
                 onClick={(): void => onPreview(selectedSpec)}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-secondary hover:text-brand-primary hover:bg-hover rounded transition-colors"
                 title="Preview filling"
               >
                 <EyeIcon className="w-4 h-4" />
@@ -373,7 +373,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
               <button
                 type="button"
                 onClick={(): void => onEdit(selectedSpec)}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-secondary hover:text-brand-primary hover:bg-hover rounded transition-colors"
                 title="Edit filling"
               >
                 <PencilSquareIcon className="w-4 h-4" />
@@ -384,7 +384,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
               <button
                 type="button"
                 onClick={(): void => onStartSession(selectedSpec)}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-choco-primary hover:bg-gray-100 rounded transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-secondary hover:text-brand-primary hover:bg-hover rounded transition-colors"
                 title="Start production session"
               >
                 <PlayIcon className="w-4 h-4" />
@@ -395,7 +395,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                className="p-1 text-muted hover:text-secondary hover:bg-hover rounded transition-colors"
                 title="Close"
               >
                 <XMarkIcon className="w-4 h-4" />
@@ -416,9 +416,9 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
             onCompare={onCompareVariations}
             label="Variations"
           />
-          <div className="pl-[22px] mt-1 text-sm text-gray-600">
+          <div className="pl-[22px] mt-1 text-sm text-secondary">
             Default target weight: {formatIngredientAmount(selectedVariation.baseWeight, 'g')}
-            {selectedVariation.yield && <span className="text-gray-400"> ({selectedVariation.yield})</span>}
+            {selectedVariation.yield && <span className="text-muted"> ({selectedVariation.yield})</span>}
           </div>
         </div>
       )}
@@ -458,12 +458,12 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
       {/* Target Yield Scaler */}
       {onTargetYieldChange && (
         <div className="mb-4 flex items-center gap-2">
-          <span className="text-xs text-gray-500 shrink-0">Scale to</span>
+          <span className="text-xs text-muted shrink-0">Scale to</span>
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
-            className="w-24 text-sm border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-choco-primary tabular-nums"
+            className="w-24 text-sm border border-border rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-focus-ring tabular-nums"
             value={yieldInputValue}
             placeholder={String(Math.round(selectedVariation.baseWeight))}
             onChange={(e): void => setYieldInputValue(e.target.value)}
@@ -485,7 +485,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
               }
             }}
           />
-          <span className="text-xs text-gray-500">g</span>
+          <span className="text-xs text-muted">g</span>
           {scaleFactor !== undefined && (
             <span className="text-xs text-amber-600 font-medium">×{scaleFactor.toFixed(2)}</span>
           )}
@@ -496,7 +496,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
                 setYieldInputValue('');
                 onTargetYieldChange(undefined);
               }}
-              className="text-xs text-gray-400 hover:text-gray-600"
+              className="text-xs text-muted hover:text-secondary"
               title="Reset to base weight"
             >
               ✕
@@ -507,7 +507,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
 
       {/* Ingredients */}
       <DetailSection title={`Ingredients (${ingredients.length + unresolvedIngredients.length})`}>
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-border-subtle">
           {groupByRole(ingredients, (ri) => ri.role).map((group) => (
             <React.Fragment key={group.role ?? '__default__'}>
               <RoleGroupHeader label={group.label} className="px-2" />
@@ -526,7 +526,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
             return (
               <div
                 key={primaryId}
-                className="flex items-center justify-between py-1.5 px-2 text-sm text-gray-400 italic"
+                className="flex items-center justify-between py-1.5 px-2 text-sm text-muted italic"
               >
                 <span>{primaryId}</span>
                 <span className="text-xs tabular-nums shrink-0">
@@ -537,7 +537,7 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
           })}
         </div>
         {ingredients.length === 0 && unresolvedIngredients.length === 0 && (
-          <p className="text-xs text-gray-400 italic">No ingredients.</p>
+          <p className="text-xs text-muted italic">No ingredients.</p>
         )}
       </DetailSection>
 
@@ -560,8 +560,8 @@ export function FillingDetail(props: IFillingDetailProps): React.ReactElement {
       {selectedVariation.notes && selectedVariation.notes.length > 0 && (
         <DetailSection title="Notes">
           {selectedVariation.notes.map((note, i) => (
-            <div key={i} className="text-sm text-gray-700 mb-1">
-              <span className="text-xs text-gray-400 mr-1">[{note.category}]</span>
+            <div key={i} className="text-sm text-secondary mb-1">
+              <span className="text-xs text-muted mr-1">[{note.category}]</span>
               {note.note}
             </div>
           ))}

@@ -88,9 +88,9 @@ function ToolbarButton({
     'inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
 
   const variantClasses: Record<string, string> = {
-    default: 'text-gray-600 hover:text-gray-800 hover:bg-gray-100',
-    primary: 'text-white bg-choco-primary hover:bg-choco-primary/90',
-    danger: 'text-gray-600 hover:text-red-600 hover:bg-red-50'
+    default: 'text-secondary hover:text-primary hover:bg-hover',
+    primary: 'text-inverted bg-brand-primary hover:bg-brand-primary/90',
+    danger: 'text-secondary hover:text-red-600 hover:bg-red-50'
   };
 
   return (
@@ -127,7 +127,7 @@ export function EditingToolbar<TWrapper extends IEditable>(
   const { context, className, extraButtons, customSaveButton, changeIndicators } = props;
 
   return (
-    <div className={`flex flex-col border-b border-gray-200 bg-gray-50 ${className ?? ''}`}>
+    <div className={`flex flex-col border-b border-border bg-surface-alt ${className ?? ''}`}>
       {/* Read-only info banner */}
       {context.readOnly && !customSaveButton && (
         <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 border-b border-amber-200 text-amber-700 text-xs">

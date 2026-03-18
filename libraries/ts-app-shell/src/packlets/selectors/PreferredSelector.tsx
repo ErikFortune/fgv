@@ -250,7 +250,7 @@ export function PreferredSelector<TId extends string = string>(
   return (
     <div className="relative">
       {/* Section label */}
-      {label && <div className="text-xs font-medium text-gray-500 mb-1">{label}</div>}
+      {label && <div className="text-xs font-medium text-muted mb-1">{label}</div>}
 
       {/* Trigger */}
       <button
@@ -259,13 +259,13 @@ export function PreferredSelector<TId extends string = string>(
         onKeyDown={handleKeyDown}
         className={`flex items-center gap-1.5 px-2 py-1 text-sm rounded-md border transition-colors w-full text-left ${
           hasMultiple
-            ? 'border-gray-300 hover:border-choco-primary cursor-pointer bg-white'
+            ? 'border-border hover:border-brand-primary cursor-pointer bg-surface'
             : 'border-transparent cursor-default bg-transparent'
-        } ${open ? 'border-choco-primary ring-1 ring-choco-primary/20' : ''}`}
+        } ${open ? 'border-brand-primary ring-1 ring-focus-ring/20' : ''}`}
         aria-expanded={open}
         aria-haspopup="listbox"
       >
-        <span className="flex-1 min-w-0 truncate text-gray-800">
+        <span className="flex-1 min-w-0 truncate text-primary">
           {selectedItem?.label ?? selectedId}
           {preferredId !== undefined && selectedId === preferredId && (
             <span className="ml-1 text-xs text-amber-500">★</span>
@@ -273,9 +273,9 @@ export function PreferredSelector<TId extends string = string>(
         </span>
         {hasMultiple && (
           <>
-            <span className="text-[10px] text-gray-400 shrink-0 tabular-nums">{items.length}</span>
+            <span className="text-[10px] text-muted shrink-0 tabular-nums">{items.length}</span>
             <svg
-              className={`w-3 h-3 text-gray-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+              className={`w-3 h-3 text-muted shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -291,26 +291,26 @@ export function PreferredSelector<TId extends string = string>(
       {open && (
         <div
           ref={popoverRef}
-          className="absolute z-50 mt-1 w-full min-w-[200px] max-h-[280px] bg-white border border-gray-200 rounded-lg shadow-lg flex flex-col overflow-hidden"
+          className="absolute z-50 mt-1 w-full min-w-[200px] max-h-[280px] bg-surface border border-border rounded-lg shadow-lg flex flex-col overflow-hidden"
           role="listbox"
           onKeyDown={handleKeyDown}
         >
           {/* Popover header */}
           {canCompare && (
-            <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-gray-100 shrink-0">
+            <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-border-subtle shrink-0">
               {compareMode ? (
                 <div className="flex items-center gap-1.5">
                   {checkedIds.size >= 2 && (
                     <button
                       onClick={handleCompareSelected}
-                      className="text-xs text-white bg-choco-primary rounded px-1.5 py-0.5 hover:bg-choco-primary/90 transition-colors font-medium"
+                      className="text-xs text-white bg-brand-primary rounded px-1.5 py-0.5 hover:bg-brand-primary/90 transition-colors font-medium"
                     >
                       Compare {checkedIds.size}
                     </button>
                   )}
                   <button
                     onClick={handleCompareAll}
-                    className="text-xs text-choco-accent hover:text-choco-primary transition-colors font-medium"
+                    className="text-xs text-brand-accent hover:text-brand-primary transition-colors font-medium"
                   >
                     All
                   </button>
@@ -318,7 +318,7 @@ export function PreferredSelector<TId extends string = string>(
               ) : (
                 <button
                   onClick={(): void => setCompareMode(true)}
-                  className="text-xs text-choco-accent hover:text-choco-primary transition-colors font-medium"
+                  className="text-xs text-brand-accent hover:text-brand-primary transition-colors font-medium"
                 >
                   Compare…
                 </button>
@@ -332,7 +332,7 @@ export function PreferredSelector<TId extends string = string>(
                     setOpen(false);
                   }
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-muted hover:text-secondary transition-colors"
                 aria-label={compareMode ? 'Exit compare' : 'Close'}
               >
                 <svg
@@ -373,12 +373,12 @@ export function PreferredSelector<TId extends string = string>(
                   }}
                   className={`flex items-center gap-2 w-full px-2.5 py-1.5 text-left text-sm transition-colors ${
                     isChecked
-                      ? 'bg-choco-accent/10 text-choco-primary'
+                      ? 'bg-selected text-brand-primary'
                       : isSelected && !compareMode
-                      ? 'bg-choco-accent/10 text-choco-primary font-medium'
+                      ? 'bg-selected text-brand-primary font-medium'
                       : isFocused
-                      ? 'bg-gray-50 text-gray-800'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-surface-alt text-primary'
+                      : 'text-secondary hover:bg-hover'
                   }`}
                 >
                   {/* Checkbox (compare mode) or preferred star */}
@@ -386,8 +386,8 @@ export function PreferredSelector<TId extends string = string>(
                     <span
                       className={`flex items-center justify-center w-3.5 h-3.5 rounded border shrink-0 transition-colors ${
                         isChecked
-                          ? 'bg-choco-accent border-choco-accent text-white'
-                          : 'border-gray-300 bg-white'
+                          ? 'bg-brand-accent border-brand-accent text-white'
+                          : 'border-border bg-surface'
                       }`}
                     >
                       {isChecked && (
@@ -412,14 +412,14 @@ export function PreferredSelector<TId extends string = string>(
                   <span className="flex-1 min-w-0">
                     <span className="truncate block">{item.label}</span>
                     {item.sublabel && (
-                      <span className="text-xs text-gray-400 truncate block">{item.sublabel}</span>
+                      <span className="text-xs text-muted truncate block">{item.sublabel}</span>
                     )}
                   </span>
 
                   {/* Selection check (normal mode only) */}
                   {!compareMode && isSelected && (
                     <svg
-                      className="w-3.5 h-3.5 text-choco-accent shrink-0"
+                      className="w-3.5 h-3.5 text-brand-accent shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -433,7 +433,7 @@ export function PreferredSelector<TId extends string = string>(
                   {!compareMode && onDrillDown && (
                     <button
                       onClick={(e): void => handleDrillDown(item.id, e)}
-                      className="text-gray-300 hover:text-choco-accent shrink-0 p-0.5 -mr-1"
+                      className="text-faint hover:text-brand-accent shrink-0 p-0.5 -mr-1"
                       aria-label={`Open ${item.label}`}
                     >
                       <svg

@@ -72,7 +72,7 @@ function WarningList({
   readonly warnings: ReadonlyArray<ISettingsValidationWarning>;
 }): React.ReactElement {
   return (
-    <ul className="mt-2 space-y-1 text-sm text-gray-600 max-h-40 overflow-y-auto">
+    <ul className="mt-2 space-y-1 text-sm text-secondary max-h-40 overflow-y-auto">
       {warnings.map((w, i) => {
         if (w.kind === 'missing-root') {
           return (
@@ -80,7 +80,7 @@ function WarningList({
               <span className="mt-0.5 text-amber-500 flex-shrink-0">⚠</span>
               <span>
                 Storage root <strong>{w.rootId}</strong> is unavailable
-                <span className="text-gray-400 text-xs ml-1">({w.context})</span>
+                <span className="text-muted text-xs ml-1">({w.context})</span>
               </span>
             </li>
           );
@@ -92,7 +92,7 @@ function WarningList({
               <span>
                 Default collection <strong>{w.collectionId}</strong> not found in{' '}
                 <strong>{w.subLibraryId}</strong>
-                <span className="text-gray-400 text-xs ml-1">({w.context})</span>
+                <span className="text-muted text-xs ml-1">({w.context})</span>
               </span>
             </li>
           );
@@ -126,8 +126,8 @@ export function RecoveryDialog(props: IRecoveryDialogProps): React.ReactElement 
   if (!isOpen || warnings.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-backdrop">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
@@ -146,8 +146,8 @@ export function RecoveryDialog(props: IRecoveryDialogProps): React.ReactElement 
             </svg>
           </div>
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Configuration Problem Detected</h2>
-            <p className="text-xs text-gray-500">
+            <h2 className="text-base font-semibold text-primary">Configuration Problem Detected</h2>
+            <p className="text-xs text-muted">
               Some settings reference resources that are not currently available.
             </p>
           </div>
@@ -162,16 +162,16 @@ export function RecoveryDialog(props: IRecoveryDialogProps): React.ReactElement 
         </div>
 
         {/* Recovery options */}
-        <p className="text-sm font-medium text-gray-700 mb-3">How would you like to proceed?</p>
+        <p className="text-sm font-medium text-secondary mb-3">How would you like to proceed?</p>
 
         <div className="space-y-2">
           {/* Option 1: Quit */}
           <button
             onClick={handleQuit}
-            className="w-full text-left px-4 py-3 rounded-md border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+            className="w-full text-left px-4 py-3 rounded-md border border-border hover:border-border hover:bg-hover transition-colors"
           >
-            <div className="text-sm font-medium text-gray-900">Quit and fix</div>
-            <div className="text-xs text-gray-500 mt-0.5">
+            <div className="text-sm font-medium text-primary">Quit and fix</div>
+            <div className="text-xs text-muted mt-0.5">
               Close the app so you can reconnect the missing storage or fix the configuration.
             </div>
           </button>

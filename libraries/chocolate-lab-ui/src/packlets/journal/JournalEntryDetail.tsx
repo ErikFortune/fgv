@@ -164,13 +164,13 @@ function BrowsableText({
       <button
         type="button"
         onClick={onBrowse}
-        className="text-sm text-gray-800 hover:text-choco-primary text-left truncate"
+        className="text-sm text-primary hover:text-brand-primary text-left truncate"
       >
         {text}
       </button>
     );
   }
-  return <span className="text-sm text-gray-700">{text}</span>;
+  return <span className="text-sm text-secondary">{text}</span>;
 }
 
 // ============================================================================
@@ -186,7 +186,7 @@ function LabeledValue({
 }): React.ReactElement {
   return (
     <div>
-      <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">{label}</div>
+      <div className="text-xs font-medium text-muted uppercase mb-0.5">{label}</div>
       <div className="py-0.5">{children}</div>
     </div>
   );
@@ -204,13 +204,13 @@ function JournalNotesSection({
   return (
     <LabeledValue label="Notes">
       {!notes || notes.length === 0 ? (
-        <span className="text-sm text-gray-400 italic">None</span>
+        <span className="text-sm text-muted italic">None</span>
       ) : (
         <div className="space-y-0.5">
           {notes.map((note, i) => (
-            <div key={i} className="text-sm text-gray-700">
-              {note.category !== 'general' && <span className="text-gray-500">{note.category}: </span>}
-              {note.note || <span className="text-gray-400 italic">empty</span>}
+            <div key={i} className="text-sm text-secondary">
+              {note.category !== 'general' && <span className="text-muted">{note.category}: </span>}
+              {note.note || <span className="text-muted italic">empty</span>}
             </div>
           ))}
         </div>
@@ -243,12 +243,12 @@ function SourceRecipeSection({
         <button
           type="button"
           onClick={(): void => onOpenFillingRecipe(fillingId, variationSpec)}
-          className="text-sm text-choco-primary hover:underline text-left truncate w-full"
+          className="text-sm text-brand-primary hover:underline text-left truncate w-full"
         >
           {displayName}
         </button>
       ) : (
-        <span className="text-sm text-gray-800">{displayName}</span>
+        <span className="text-sm text-primary">{displayName}</span>
       )}
       {hasChanges && <ChangesSummary entity={entry.entity} />}
     </LabeledValue>
@@ -280,12 +280,12 @@ function SourceConfectionRecipeSection({
         <button
           type="button"
           onClick={(): void => onBrowseConfectionRecipe(confectionId)}
-          className="text-sm text-choco-primary hover:underline text-left truncate w-full"
+          className="text-sm text-brand-primary hover:underline text-left truncate w-full"
         >
           {displayName}
         </button>
       ) : (
-        <span className="text-sm text-gray-800">{displayName}</span>
+        <span className="text-sm text-primary">{displayName}</span>
       )}
     </LabeledValue>
   );
@@ -386,7 +386,7 @@ function ConfectionFillingSlotsSection({
                     onBrowseIngredient ? (): void => onBrowseIngredient(slot.ingredientId) : undefined
                   }
                 />
-                <span className="text-xs text-gray-400 ml-1">(ingredient)</span>
+                <span className="text-xs text-muted ml-1">(ingredient)</span>
               </div>
             );
           }
@@ -568,7 +568,7 @@ export function JournalEntryDetail({
 
   const typeBadge = {
     label: JOURNAL_TYPE_LABELS[entry.entity.type] ?? entry.entity.type,
-    colorClass: JOURNAL_TYPE_COLORS[entry.entity.type] ?? 'bg-gray-100 text-gray-800'
+    colorClass: JOURNAL_TYPE_COLORS[entry.entity.type] ?? 'bg-surface-raised text-primary'
   };
 
   // Narrow entry to specific types so TypeScript can see .entity.produced etc.
@@ -623,7 +623,7 @@ export function JournalEntryDetail({
         {confectionProd && (
           <>
             <LabeledValue label="Yield">
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-secondary">
                 {formatConfectionYield(confectionProd.entity.yield, moldCavityCount)}
               </span>
             </LabeledValue>

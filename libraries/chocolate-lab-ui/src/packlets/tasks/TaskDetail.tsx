@@ -101,7 +101,7 @@ function TimingSection({ task }: { readonly task: LibraryRuntime.ITask }): React
 function TemplateSection({ template }: { readonly template: string }): React.ReactElement {
   return (
     <DetailSection title="Template">
-      <div className="bg-gray-50 rounded-md p-2.5 text-sm text-gray-800 font-mono whitespace-pre-wrap border border-gray-200">
+      <div className="bg-surface-alt rounded-md p-2.5 text-sm text-primary font-mono whitespace-pre-wrap border border-border">
         {template}
       </div>
     </DetailSection>
@@ -129,9 +129,9 @@ function VariablesSection({
           const defaultValue = defaults?.[v];
           return (
             <div key={v} className="flex items-baseline justify-between text-sm">
-              <span className="font-mono text-gray-700">{v}</span>
+              <span className="font-mono text-secondary">{v}</span>
               {defaultValue !== undefined && (
-                <span className="text-xs text-gray-400">default: {String(defaultValue)}</span>
+                <span className="text-xs text-muted">default: {String(defaultValue)}</span>
               )}
             </div>
           );

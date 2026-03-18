@@ -102,11 +102,11 @@ export function PreferredWithAlternatesEditor<TId extends string = string>({
   return (
     <EditSection title={title}>
       {preferredId ? (
-        <div className="rounded border border-gray-200 p-2 space-y-1.5">
+        <div className="rounded border border-border p-2 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-800">{getDisplayName(preferredId)}</span>
+            <span className="text-sm font-medium text-primary">{getDisplayName(preferredId)}</span>
             {!disabled && showClear && onClear && (
-              <button type="button" onClick={onClear} className="text-xs text-gray-400 hover:text-red-500">
+              <button type="button" onClick={onClear} className="text-xs text-muted hover:text-red-500">
                 ✕
               </button>
             )}
@@ -114,7 +114,7 @@ export function PreferredWithAlternatesEditor<TId extends string = string>({
               <button
                 type="button"
                 onClick={(): void => onRemove(preferredId)}
-                className="text-xs text-gray-400 hover:text-red-500"
+                className="text-xs text-muted hover:text-red-500"
               >
                 ✕
               </button>
@@ -124,26 +124,26 @@ export function PreferredWithAlternatesEditor<TId extends string = string>({
             <input
               type="text"
               placeholder={changePlaceholder}
-              className="text-xs border border-dashed border-gray-300 rounded px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              className="text-xs border border-dashed border-border rounded px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-focus-ring"
               list={datalistId}
               onBlur={(e): void => handleBlurOrEnter(onChangePreferred, e)}
               onKeyDown={(e): void => handleBlurOrEnter(onChangePreferred, e)}
             />
           )}
           {(alternateIds.length > 0 || !disabled) && (
-            <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
-              <span className="text-xs text-gray-400 shrink-0">also:</span>
+            <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-border-subtle">
+              <span className="text-xs text-muted shrink-0">also:</span>
               {alternateIds.map((id) => (
                 <span
                   key={id}
-                  className="inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 bg-gray-100 text-gray-600"
+                  className="inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 bg-surface-raised text-secondary"
                 >
                   {!disabled && onSetPreferred && (
                     <button
                       type="button"
                       title="Set as preferred"
                       onClick={(): void => onSetPreferred(id)}
-                      className="text-gray-300 hover:text-amber-400 shrink-0"
+                      className="text-faint hover:text-amber-400 shrink-0"
                     >
                       ★
                     </button>
@@ -154,7 +154,7 @@ export function PreferredWithAlternatesEditor<TId extends string = string>({
                       type="button"
                       title="Remove"
                       onClick={(): void => onRemove(id)}
-                      className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
+                      className="text-faint hover:text-red-400 shrink-0 ml-0.5"
                     >
                       ✕
                     </button>
@@ -165,7 +165,7 @@ export function PreferredWithAlternatesEditor<TId extends string = string>({
                 <input
                   type="text"
                   placeholder={addPlaceholder}
-                  className="text-xs border border-dashed border-gray-200 rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                  className="text-xs border border-dashed border-border rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                   list={datalistId}
                   onBlur={(e): void => handleBlurOrEnter(onAddAlternate, e)}
                   onKeyDown={(e): void => handleBlurOrEnter(onAddAlternate, e)}
@@ -180,7 +180,7 @@ export function PreferredWithAlternatesEditor<TId extends string = string>({
           <input
             type="text"
             placeholder={changePlaceholder}
-            className="text-xs border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
+            className="text-xs border border-dashed border-border rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-focus-ring"
             list={datalistId}
             onBlur={(e): void => handleBlurOrEnter(onChangePreferred, e)}
             onKeyDown={(e): void => handleBlurOrEnter(onChangePreferred, e)}

@@ -279,9 +279,9 @@ export function FillingsEditor({
     <EditSection title="Fillings">
       <div className="space-y-2">
         {slots.map((slot) => (
-          <div key={slot.slotId} className="rounded border border-gray-200 p-2 space-y-1.5">
+          <div key={slot.slotId} className="rounded border border-border p-2 space-y-1.5">
             <div className="flex items-center justify-between">
-              <div className="text-xs text-gray-400 font-medium">
+              <div className="text-xs text-muted font-medium">
                 {slot.name ?? slot.slotId}
                 {defaultSlotWeights?.[slot.slotId] !== undefined && (
                   <span className="ml-1 text-amber-600 font-medium">
@@ -290,7 +290,7 @@ export function FillingsEditor({
                 )}
               </div>
               {!disabled && (
-                <label className="flex items-center gap-1 text-xs text-gray-400">
+                <label className="flex items-center gap-1 text-xs text-muted">
                   <span>Ratio</span>
                   <input
                     type="number"
@@ -298,12 +298,12 @@ export function FillingsEditor({
                     step="0.5"
                     value={slot.ratio ?? 1}
                     onChange={(e): void => handleRatioChange(slot.slotId, e.target.value)}
-                    className="w-14 border border-gray-200 rounded px-1 py-0.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="w-14 border border-border rounded px-1 py-0.5 text-xs text-secondary focus:outline-none focus:ring-1 focus:ring-focus-ring"
                   />
                 </label>
               )}
               {disabled && slot.ratio !== undefined && slot.ratio !== 1 && (
-                <span className="text-xs text-gray-400">Ratio: {slot.ratio}</span>
+                <span className="text-xs text-muted">Ratio: {slot.ratio}</span>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-1">
@@ -314,7 +314,9 @@ export function FillingsEditor({
                   <span
                     key={opt.id}
                     className={`inline-flex items-center gap-0.5 text-xs rounded px-1.5 py-0.5 ${
-                      isPreferred ? 'bg-choco-primary/10 text-choco-primary' : 'bg-gray-100 text-gray-600'
+                      isPreferred
+                        ? 'bg-brand-primary/10 text-brand-primary'
+                        : 'bg-surface-raised text-secondary'
                     }`}
                   >
                     {!disabled && (
@@ -323,7 +325,7 @@ export function FillingsEditor({
                         title={isPreferred ? 'Preferred' : 'Set as preferred'}
                         onClick={(): void => handleSetPreferredFillingOption(slot.slotId, opt.id)}
                         className={`shrink-0 ${
-                          isPreferred ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'
+                          isPreferred ? 'text-amber-500' : 'text-faint hover:text-amber-400'
                         }`}
                       >
                         ★
@@ -353,7 +355,7 @@ export function FillingsEditor({
                         type="button"
                         title="Remove option"
                         onClick={(): void => handleRemoveFillingOption(slot.slotId, opt.id)}
-                        className="text-gray-300 hover:text-red-400 shrink-0 ml-0.5"
+                        className="text-faint hover:text-red-400 shrink-0 ml-0.5"
                       >
                         ✕
                       </button>
@@ -371,7 +373,7 @@ export function FillingsEditor({
                         onAddFilling?.(pendingNewFilling.seed);
                         setPendingNewFilling(null);
                       }}
-                      className="underline hover:text-choco-primary"
+                      className="underline hover:text-brand-primary"
                     >
                       recipe
                     </button>
@@ -382,7 +384,7 @@ export function FillingsEditor({
                         onAddIngredient?.(pendingNewFilling.seed);
                         setPendingNewFilling(null);
                       }}
-                      className="underline hover:text-choco-primary"
+                      className="underline hover:text-brand-primary"
                     >
                       ingredient
                     </button>
@@ -398,7 +400,7 @@ export function FillingsEditor({
                   <input
                     type="text"
                     placeholder="+ alternate"
-                    className="text-xs border border-dashed border-gray-200 rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-choco-primary"
+                    className="text-xs border border-dashed border-border rounded px-1.5 py-0.5 w-28 focus:outline-none focus:ring-1 focus:ring-focus-ring"
                     list="filling-option-suggestions"
                     onBlur={(e): void => {
                       handleAddFillingAlternate(slot.slotId, e.target.value);
@@ -416,11 +418,11 @@ export function FillingsEditor({
           </div>
         ))}
         {slotPercentages.length > 0 && (
-          <div className="text-xs text-gray-400 pt-1">
+          <div className="text-xs text-muted pt-1">
             {slotPercentages.map((sp, i) => (
               <span key={sp.slotId}>
                 {i > 0 && <span className="mx-1">·</span>}
-                <span className="font-medium text-gray-500">{sp.name}</span>
+                <span className="font-medium text-muted">{sp.name}</span>
                 {': '}
                 <span>{sp.pct}%</span>
               </span>
@@ -441,7 +443,7 @@ export function FillingsEditor({
                   onAddFilling?.(pendingNewFilling.seed);
                   setPendingNewFilling(null);
                 }}
-                className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                className="px-2 py-0.5 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
               >
                 Filling Recipe
               </button>
@@ -451,22 +453,22 @@ export function FillingsEditor({
                   onAddIngredient?.(pendingNewFilling.seed);
                   setPendingNewFilling(null);
                 }}
-                className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className="px-2 py-0.5 text-xs rounded bg-surface-raised text-secondary hover:bg-surface-raised"
               >
                 Ingredient
               </button>
               <button
                 type="button"
                 onClick={(): void => setPendingNewFilling(null)}
-                className="px-2 py-0.5 text-xs text-gray-400 hover:text-gray-600"
+                className="px-2 py-0.5 text-xs text-muted hover:text-secondary"
               >
                 Cancel
               </button>
             </div>
           </div>
         ) : pendingNewSlot ? (
-          <div className="mt-2 rounded border border-choco-primary/30 bg-choco-primary/5 p-2 space-y-1.5">
-            <div className="text-xs text-gray-500">Slot name:</div>
+          <div className="mt-2 rounded border border-brand-primary/30 bg-brand-primary/5 p-2 space-y-1.5">
+            <div className="text-xs text-muted">Slot name:</div>
             <input
               type="text"
               value={pendingNewSlotName}
@@ -478,14 +480,14 @@ export function FillingsEditor({
                   setPendingNewSlotName('');
                 }
               }}
-              className="text-xs border border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
+              className="text-xs border border-border rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-focus-ring"
               autoFocus
             />
             <div className="flex gap-1.5">
               <button
                 type="button"
                 onClick={handleCommitNewSlot}
-                className="px-2 py-0.5 text-xs rounded bg-choco-primary text-white hover:bg-choco-primary/90"
+                className="px-2 py-0.5 text-xs rounded bg-brand-primary text-inverted hover:bg-brand-primary/90"
               >
                 Add
               </button>
@@ -495,7 +497,7 @@ export function FillingsEditor({
                   setPendingNewSlot(null);
                   setPendingNewSlotName('');
                 }}
-                className="px-2 py-0.5 text-xs text-gray-400 hover:text-gray-600"
+                className="px-2 py-0.5 text-xs text-muted hover:text-secondary"
               >
                 Cancel
               </button>
@@ -505,7 +507,7 @@ export function FillingsEditor({
           <input
             type="text"
             placeholder="Add filling slot…"
-            className="mt-2 text-xs border border-dashed border-gray-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-choco-primary"
+            className="mt-2 text-xs border border-dashed border-border rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-focus-ring"
             list="filling-option-suggestions"
             onBlur={(e): void => {
               handleAddFilling(e.target.value);

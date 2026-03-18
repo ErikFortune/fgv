@@ -83,7 +83,7 @@ export function NotesEditor({ value, onChange, title }: INotesEditorProps): Reac
 
   return (
     <div>
-      <div className="text-xs font-medium text-gray-500 uppercase mb-0.5">{title ?? 'Notes'}</div>
+      <div className="text-xs font-medium text-muted uppercase mb-0.5">{title ?? 'Notes'}</div>
       {!editing ? (
         <div className="py-0.5">
           <div className="flex items-center gap-1">
@@ -91,20 +91,20 @@ export function NotesEditor({ value, onChange, title }: INotesEditorProps): Reac
               type="button"
               onClick={(): void => setEditing(true)}
               title={`Edit ${(title ?? 'notes').toLowerCase()}`}
-              className="text-gray-400 hover:text-choco-primary p-0.5 shrink-0"
+              className="text-muted hover:text-brand-primary p-0.5 shrink-0"
             >
               <ArrowPathIcon className="h-3 w-3" />
             </button>
             {notes.length === 0 ? (
-              <span className="text-sm text-gray-400 italic">None</span>
+              <span className="text-sm text-muted italic">None</span>
             ) : (
               <div className="space-y-0.5">
                 {notes.map((note, index) => (
-                  <div key={index} className="text-sm text-gray-700">
+                  <div key={index} className="text-sm text-secondary">
                     {note.category !== DefaultNoteCategory && (
-                      <span className="text-gray-500">{note.category}: </span>
+                      <span className="text-muted">{note.category}: </span>
                     )}
-                    {note.note || <span className="text-gray-400 italic">empty</span>}
+                    {note.note || <span className="text-muted italic">empty</span>}
                   </div>
                 ))}
               </div>
@@ -130,19 +130,19 @@ export function NotesEditor({ value, onChange, title }: INotesEditorProps): Reac
                 value={note.category}
                 onChange={(e): void => handleCategoryChange(index, e.target.value)}
                 placeholder="category"
-                className="w-28 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+                className="w-28 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
               />
               <textarea
                 value={note.note}
                 onChange={(e): void => handleNoteChange(index, e.target.value)}
                 placeholder="note text"
                 rows={2}
-                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary resize-y"
+                className="flex-1 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring resize-y"
               />
               <button
                 type="button"
                 onClick={(): void => handleRemove(index)}
-                className="text-gray-400 hover:text-red-500 p-1"
+                className="text-muted hover:text-red-500 p-1"
                 aria-label="Remove note"
               >
                 ✕
@@ -152,7 +152,7 @@ export function NotesEditor({ value, onChange, title }: INotesEditorProps): Reac
           <button
             type="button"
             onClick={handleAdd}
-            className="text-xs text-choco-primary hover:text-choco-primary/80 mt-1"
+            className="text-xs text-brand-primary hover:text-brand-primary/80 mt-1"
           >
             + Add note
           </button>

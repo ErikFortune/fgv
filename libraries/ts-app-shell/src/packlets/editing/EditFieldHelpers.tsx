@@ -54,7 +54,7 @@ export interface IEditFieldProps {
 export function EditField({ label, children }: IEditFieldProps): React.ReactElement {
   return (
     <div className="flex items-baseline gap-2 py-1">
-      <label className="text-xs text-gray-500 w-32 shrink-0">{label}</label>
+      <label className="text-xs text-muted w-32 shrink-0">{label}</label>
       <div className="flex-1">{children}</div>
     </div>
   );
@@ -78,7 +78,7 @@ export interface IEditSectionProps {
 export function EditSection({ title, children }: IEditSectionProps): React.ReactElement {
   return (
     <div className="mb-4">
-      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">{title}</h4>
+      <h4 className="text-xs font-medium text-muted uppercase tracking-wider mb-1.5">{title}</h4>
       {children}
     </div>
   );
@@ -112,7 +112,7 @@ export function TextInput({ value, onChange, placeholder }: ITextInputProps): Re
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+      className="w-full px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
     />
   );
 }
@@ -146,7 +146,7 @@ export function OptionalTextInput({
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value || undefined)}
       placeholder={placeholder}
-      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+      className="w-full px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
     />
   );
 }
@@ -176,7 +176,7 @@ export function TextAreaInput({ value, onChange, placeholder }: ITextAreaInputPr
       onChange={(e) => onChange(e.target.value || undefined)}
       placeholder={placeholder}
       rows={3}
-      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary resize-y"
+      className="w-full px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring resize-y"
     />
   );
 }
@@ -235,7 +235,7 @@ export function NumberInput({
       min={min}
       max={max}
       step={step ?? 0.1}
-      className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary text-right"
+      className="w-24 px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring text-right"
       aria-label={label}
     />
   );
@@ -271,7 +271,7 @@ export function SelectInput<T extends string>({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as T)}
-      className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+      className="px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
     >
       {options.map((opt) => (
         <option key={opt} value={opt}>
@@ -324,7 +324,7 @@ export function TagsInput({ value, onChange, placeholder }: ITagsInputProps): Re
         }
       }}
       placeholder={placeholder ?? 'comma-separated values'}
-      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+      className="w-full px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
     />
   );
 }
@@ -353,12 +353,12 @@ export interface ICheckboxInputProps {
  */
 export function CheckboxInput({ value, onChange, label }: ICheckboxInputProps): React.ReactElement {
   return (
-    <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+    <label className="flex items-center gap-2 text-sm text-secondary cursor-pointer">
       <input
         type="checkbox"
         checked={value ?? false}
         onChange={(e) => onChange(e.target.checked || undefined)}
-        className="rounded border-gray-300 text-choco-primary focus:ring-choco-primary"
+        className="rounded border-border text-brand-primary focus:ring-focus-ring"
       />
       {label}
     </label>

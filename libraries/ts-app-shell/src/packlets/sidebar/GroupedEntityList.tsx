@@ -132,12 +132,12 @@ function GroupedEntityRowInner<TEntity, TId extends string>(
 
   return (
     <div
-      className={`group flex items-center gap-2 w-full border-b border-gray-50 transition-colors ${
+      className={`group flex items-center gap-2 w-full border-b border-border-subtle transition-colors ${
         isChecked
-          ? 'bg-choco-accent/10 border-l-2 border-l-choco-accent'
+          ? 'bg-selected border-l-2 border-l-selected-border'
           : isSelected && !compareMode
-          ? 'bg-choco-accent/10 border-l-2 border-l-choco-accent'
-          : 'hover:bg-gray-50 border-l-2 border-l-transparent'
+          ? 'bg-selected border-l-2 border-l-selected-border'
+          : 'hover:bg-hover border-l-2 border-l-transparent'
       }`}
     >
       <button
@@ -156,7 +156,7 @@ function GroupedEntityRowInner<TEntity, TId extends string>(
         {compareMode && (
           <span
             className={`flex items-center justify-center w-4 h-4 rounded border shrink-0 transition-colors ${
-              isChecked ? 'bg-choco-accent border-choco-accent text-white' : 'border-gray-300 bg-white'
+              isChecked ? 'bg-brand-accent border-brand-accent text-white' : 'border-border bg-surface'
             }`}
           >
             {isChecked && (
@@ -169,17 +169,17 @@ function GroupedEntityRowInner<TEntity, TId extends string>(
         <div className="flex-1 min-w-0">
           <div
             className={`text-sm truncate ${
-              (isSelected && !compareMode) || isChecked ? 'font-medium text-choco-primary' : 'text-gray-800'
+              (isSelected && !compareMode) || isChecked ? 'font-medium text-brand-primary' : 'text-primary'
             }`}
           >
             {label}
           </div>
-          {sublabel && <div className="text-xs text-gray-500 truncate mt-0.5">{sublabel}</div>}
+          {sublabel && <div className="text-xs text-muted truncate mt-0.5">{sublabel}</div>}
         </div>
         {status && (
           <span className="flex items-center gap-1 shrink-0 mt-0.5">
             <span className={`w-2 h-2 rounded-full ${status.colorClass}`} />
-            <span className="text-xs text-gray-500">{status.label}</span>
+            <span className="text-xs text-muted">{status.label}</span>
           </span>
         )}
       </button>
@@ -190,7 +190,7 @@ function GroupedEntityRowInner<TEntity, TId extends string>(
             e.stopPropagation();
             onDelete(id);
           }}
-          className="shrink-0 mr-1 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded"
+          className="shrink-0 mr-1 w-6 h-6 flex items-center justify-center text-faint hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded"
           title={`Delete ${label}`}
           aria-label={`Delete ${label}`}
         >
@@ -320,12 +320,12 @@ export function GroupedEntityList<TEntity, TId extends string = string>(
   if (entities.length === 0 && emptyState) {
     return (
       <div className="flex flex-col items-center justify-center flex-1 p-6 text-center">
-        <h3 className="text-sm font-medium text-gray-700 mb-1">{emptyState.title}</h3>
-        <p className="text-xs text-gray-500 mb-4">{emptyState.description}</p>
+        <h3 className="text-sm font-medium text-secondary mb-1">{emptyState.title}</h3>
+        <p className="text-xs text-muted mb-4">{emptyState.description}</p>
         {emptyState.action && (
           <button
             onClick={emptyState.action.onClick}
-            className="px-3 py-1.5 text-xs font-medium text-white bg-choco-accent rounded-md hover:bg-choco-primary transition-colors"
+            className="px-3 py-1.5 text-xs font-medium text-white bg-brand-accent rounded-md hover:bg-brand-primary transition-colors"
           >
             {emptyState.action.label}
           </button>
@@ -338,11 +338,11 @@ export function GroupedEntityList<TEntity, TId extends string = string>(
     <div className="flex flex-col flex-1 overflow-hidden" onKeyDown={handleKeyDown}>
       {/* Header with total count */}
       {flatEntities.length > 0 && (
-        <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-100">
-          <span className="text-xs text-gray-400">
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-border-subtle">
+          <span className="text-xs text-muted">
             {flatEntities.length} item{flatEntities.length !== 1 ? 's' : ''}
             {compareMode && props.compareCount !== undefined && props.compareCount > 0 && (
-              <span className="ml-1.5 text-choco-accent">&middot; {props.compareCount} selected</span>
+              <span className="ml-1.5 text-brand-accent">&middot; {props.compareCount} selected</span>
             )}
           </span>
           <div className="flex items-center gap-1">
@@ -355,7 +355,7 @@ export function GroupedEntityList<TEntity, TId extends string = string>(
                     e.stopPropagation();
                     props.onStartComparison?.();
                   }}
-                  className="px-2 py-0.5 text-[11px] rounded border transition-colors bg-choco-primary text-white border-choco-primary hover:bg-choco-primary/90"
+                  className="px-2 py-0.5 text-[11px] rounded border transition-colors bg-brand-primary text-white border-brand-primary hover:bg-brand-primary/90"
                 >
                   Compare Now
                 </button>
@@ -368,8 +368,8 @@ export function GroupedEntityList<TEntity, TId extends string = string>(
                 }}
                 className={`px-2 py-0.5 text-[11px] rounded border transition-colors ${
                   compareMode
-                    ? 'bg-choco-accent text-white border-choco-accent'
-                    : 'bg-white text-gray-500 border-gray-300 hover:border-choco-accent hover:text-choco-accent'
+                    ? 'bg-brand-accent text-white border-brand-accent'
+                    : 'bg-surface text-muted border-border hover:border-brand-accent hover:text-brand-accent'
                 }`}
               >
                 {compareMode ? 'Cancel' : 'Compare'}
@@ -384,9 +384,9 @@ export function GroupedEntityList<TEntity, TId extends string = string>(
         {groups.map((group) => (
           <div key={group.key}>
             {/* Sticky group header */}
-            <div className="px-3 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+            <div className="px-3 py-1.5 text-xs font-medium text-muted uppercase tracking-wider bg-surface-alt border-b border-border-subtle sticky top-0 z-10">
               {group.label}
-              <span className="text-gray-400 normal-case font-normal ml-1">({group.items.length})</span>
+              <span className="text-muted normal-case font-normal ml-1">({group.items.length})</span>
             </div>
 
             {/* Items in group */}

@@ -29,10 +29,10 @@ import { DEFAULT_TOAST_CONFIG, IMessage, MessageSeverity } from './model';
 // ============================================================================
 
 const SEVERITY_STYLES: Record<MessageSeverity, string> = {
-  info: 'bg-blue-50 border-blue-200 text-blue-800',
-  success: 'bg-green-50 border-green-200 text-green-800',
-  warning: 'bg-amber-50 border-amber-200 text-amber-800',
-  error: 'bg-red-50 border-red-200 text-red-800'
+  info: 'bg-status-info-bg border-status-info-border text-status-info-text',
+  success: 'bg-status-success-bg border-status-success-border text-status-success-text',
+  warning: 'bg-status-warning-bg border-status-warning-border text-status-warning-text',
+  error: 'bg-status-error-bg border-status-error-border text-status-error-text'
 };
 
 // ============================================================================

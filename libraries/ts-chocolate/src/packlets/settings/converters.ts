@@ -30,6 +30,7 @@ import { AiAssist } from '@fgv/ts-extras';
 import { Converters as CommonConverters } from '../common';
 import { SubLibraryId, allSubLibraryIds } from '../library-data';
 import {
+  IAppearanceSettings,
   ICloudStorageConfig,
   DeviceId,
   ExternalLibraryRef,
@@ -47,7 +48,8 @@ import {
   IToolSettings,
   IWorkflowPreferences,
   SETTINGS_SCHEMA_VERSION,
-  StorageRootId
+  StorageRootId,
+  ThemeId
 } from './model';
 
 // ============================================================================
@@ -422,6 +424,31 @@ export const bootstrapSettings: Converter<IBootstrapSettings> = Converters.stric
 });
 
 // ============================================================================
+// Appearance Settings Converter
+// ============================================================================
+
+/**
+ * Converter for {@link ThemeId}.
+ * Accepts any non-empty string.
+ * @public
+ */
+export const themeId: Converter<ThemeId> = Converters.string.map((s) => {
+  if (s.length === 0) {
+    return fail('Theme ID cannot be empty');
+  }
+  return succeed(s as unknown as ThemeId);
+});
+
+/**
+ * Converter for {@link IAppearanceSettings}.
+ * @public
+ */
+export const appearanceSettings: Converter<IAppearanceSettings> =
+  Converters.strictObject<IAppearanceSettings>({
+    theme: themeId.optional()
+  });
+
+// ============================================================================
 // Preferences Settings Converter
 // ============================================================================
 
@@ -434,5 +461,6 @@ export const preferencesSettings: Converter<IPreferencesSettings> =
     schemaVersion: schemaVersion,
     defaultTargets: defaultCollectionTargets.optional(),
     defaultStorageTargets: defaultStorageTargets.optional(),
-    tools: toolSettings.optional()
+    tools: toolSettings.optional(),
+    appearance: appearanceSettings.optional()
   });

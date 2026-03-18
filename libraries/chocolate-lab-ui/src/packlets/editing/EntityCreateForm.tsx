@@ -442,11 +442,11 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
 
         {/* Dropdown menu */}
         {aiDropdownOpen && (
-          <div className="absolute left-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1">
+          <div className="absolute left-0 top-full mt-1 w-56 bg-surface border border-border rounded-lg shadow-lg z-10 py-1">
             {/* Copy prompt — always first */}
             <button
               onClick={handleCopyPrompt}
-              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-gray-700 hover:bg-purple-50 hover:text-purple-900"
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-secondary hover:bg-purple-50 hover:text-purple-900"
             >
               <ClipboardDocumentIcon className="w-4 h-4 text-purple-500" />
               <span>Copy AI Prompt</span>
@@ -457,14 +457,14 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
                 key={action.provider}
                 onClick={(): void => handleDirectGenerate(action)}
                 disabled={!action.isAvailable}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-gray-700 hover:bg-purple-50 hover:text-purple-900 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-secondary hover:bg-purple-50 hover:text-purple-900 disabled:opacity-40 disabled:cursor-not-allowed"
                 title={action.unavailableReason}
               >
                 <SparklesIcon className="w-4 h-4 text-purple-500" />
                 <div className="flex flex-col">
                   <span>{action.label}</span>
                   {action.unavailableReason && (
-                    <span className="text-[10px] text-gray-400">{action.unavailableReason}</span>
+                    <span className="text-[10px] text-muted">{action.unavailableReason}</span>
                   )}
                 </div>
               </button>
@@ -482,13 +482,13 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
       {/* Source picker */}
       {hasSourceSelection && (
         <div>
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-secondary">
             {sourceCreateMode === 'copy' ? 'Copy from' : 'Derive from'}
           </label>
           <select
             value={selectedSourceId}
             onChange={(e): void => setSelectedSourceId(e.target.value)}
-            className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+            className="mt-1 w-full px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
           >
             <option value="">(none)</option>
             {(sourceOptions ?? []).map((source) => (
@@ -502,7 +502,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
 
       {/* Name field */}
       <div>
-        <label className="text-sm font-medium text-gray-700">{entityLabel} Name</label>
+        <label className="text-sm font-medium text-secondary">{entityLabel} Name</label>
         <input
           type="text"
           value={name}
@@ -511,14 +511,14 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
             if (e.key === 'Enter' && trimmedName && !aiAssist.isWorking) handleCreate();
           }}
           placeholder={namePlaceholder}
-          className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+          className="mt-1 w-full px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
           autoFocus
         />
       </div>
 
       {/* ID field */}
       <div>
-        <label className="text-sm font-medium text-gray-700">ID</label>
+        <label className="text-sm font-medium text-secondary">ID</label>
         <input
           type="text"
           value={idOverride}
@@ -527,18 +527,18 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
             if (e.key === 'Enter' && trimmedName && !aiAssist.isWorking) handleCreate();
           }}
           placeholder={derivedId || 'auto-derived from name'}
-          className="mt-1 w-full px-3 py-2 text-sm font-mono border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+          className="mt-1 w-full px-3 py-2 text-sm font-mono border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
         />
       </div>
 
       {/* Target collection */}
       {(writableCollections?.length ?? 0) > 0 && (
         <div>
-          <label className="text-sm font-medium text-gray-700">Target Collection</label>
+          <label className="text-sm font-medium text-secondary">Target Collection</label>
           <select
             value={targetCollectionId}
             onChange={(e): void => setTargetCollectionId(e.target.value)}
-            className="mt-1 w-full px-3 py-2 text-sm font-mono border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-choco-primary focus:border-choco-primary"
+            className="mt-1 w-full px-3 py-2 text-sm font-mono border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
           >
             {writableCollections?.map((option) => (
               <option key={option.id} value={option.id}>
@@ -556,25 +556,25 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           tabIndex={0}
-          className={`flex flex-col items-center justify-center gap-2 px-4 py-6 border-2 border-dashed rounded-lg cursor-default transition-colors focus-within:border-choco-primary focus-within:bg-choco-primary/5 ${
-            pasteError ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+          className={`flex flex-col items-center justify-center gap-2 px-4 py-6 border-2 border-dashed rounded-lg cursor-default transition-colors focus-within:border-focus-ring focus-within:bg-brand-primary/5 ${
+            pasteError ? 'border-red-300 bg-red-50' : 'border-border hover:border-border hover:bg-hover'
           }`}
         >
-          <span className="text-sm text-gray-500">Paste or drop AI-generated JSON here</span>
-          <span className="text-xs text-gray-400">Ctrl+V to paste, or drag a text file</span>
+          <span className="text-sm text-muted">Paste or drop AI-generated JSON here</span>
+          <span className="text-xs text-muted">Ctrl+V to paste, or drag a text file</span>
         </div>
       )}
 
       {/* Additional Instructions */}
       {selectedSourceId.trim().length === 0 && (
         <div>
-          <label className="text-xs font-medium text-gray-500">Additional Instructions (optional)</label>
+          <label className="text-xs font-medium text-muted">Additional Instructions (optional)</label>
           <textarea
             value={additionalInstructions}
             onChange={(e): void => setAdditionalInstructions(e.target.value)}
             placeholder="e.g. This is a 275×135mm frame mold, use metric units..."
             rows={2}
-            className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 resize-none"
+            className="mt-1 w-full px-3 py-2 text-sm border border-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 resize-none"
           />
         </div>
       )}
@@ -589,7 +589,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
         <div className="flex items-center gap-2">
           <button
             onClick={onCancel}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-secondary hover:text-primary hover:bg-hover rounded transition-colors"
           >
             <XMarkIcon className="w-3.5 h-3.5" />
             Cancel
@@ -597,7 +597,7 @@ export function EntityCreateForm<TEntity>(props: IEntityCreateFormProps<TEntity>
           <button
             onClick={handleCreate}
             disabled={!trimmedName || aiAssist.isWorking}
-            className="px-3 py-1.5 text-xs font-medium text-white bg-choco-primary hover:bg-choco-primary/90 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs font-medium text-inverted bg-brand-primary hover:bg-brand-primary/90 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Create
           </button>

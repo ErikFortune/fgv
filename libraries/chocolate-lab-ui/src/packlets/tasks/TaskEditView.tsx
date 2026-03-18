@@ -308,7 +308,7 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
               <button
                 type="button"
                 onClick={onPreview}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-gray-600 hover:text-choco-primary hover:bg-gray-100"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors text-secondary hover:text-brand-primary hover:bg-hover"
                 title="Open preview pane"
               >
                 <EyeIcon className="h-3.5 w-3.5" />
@@ -340,7 +340,7 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
               <button
                 type="button"
                 onClick={handleBaseIdCancel}
-                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                className="p-1 text-muted hover:text-secondary hover:bg-hover rounded"
                 title="Cancel"
               >
                 <XMarkIcon className="h-4 w-4" />
@@ -348,11 +348,11 @@ export function TaskEditView(props: ITaskEditViewProps): React.ReactElement {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <span className="text-sm font-mono text-gray-500">{entity.baseId}</span>
+              <span className="text-sm font-mono text-muted">{entity.baseId}</span>
               <button
                 type="button"
                 onClick={handleBaseIdEdit}
-                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                className="p-1 text-muted hover:text-secondary hover:bg-hover rounded"
                 title="Edit base ID"
               >
                 <PencilIcon className="h-3.5 w-3.5" />

@@ -83,9 +83,9 @@ export function LocationDetail(props: ILocationDetailProps): React.ReactElement 
       {/* Description */}
       <DetailSection title="Description">
         {entity.description ? (
-          <p className="text-sm text-gray-700">{entity.description}</p>
+          <p className="text-sm text-secondary">{entity.description}</p>
         ) : (
-          <p className="text-sm text-gray-400 italic">(none)</p>
+          <p className="text-sm text-muted italic">(none)</p>
         )}
       </DetailSection>
 
