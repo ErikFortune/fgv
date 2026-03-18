@@ -14,6 +14,7 @@ import { LibrarySection } from './sections/LibrarySection';
 import { SecuritySection } from './sections/SecuritySection';
 import { AiAssistSection } from './sections/AiAssistSection';
 import { ServicesSection } from './sections/ServicesSection';
+import { DeveloperSection } from './sections/DeveloperSection';
 
 // ============================================================================
 // Shared draft context
@@ -46,7 +47,8 @@ type SettingsSection =
   | 'libraries'
   | 'ai-assist'
   | 'services'
-  | 'security';
+  | 'security'
+  | 'developer';
 
 interface ISectionDef {
   readonly id: SettingsSection;
@@ -62,7 +64,8 @@ const SECTIONS: ReadonlyArray<ISectionDef> = [
   { id: 'libraries', label: 'Libraries' },
   { id: 'ai-assist', label: 'AI Assist' },
   { id: 'services', label: 'Services' },
-  { id: 'security', label: 'Security' }
+  { id: 'security', label: 'Security' },
+  { id: 'developer', label: 'Developer' }
 ];
 
 // ============================================================================
@@ -220,6 +223,8 @@ function SectionContent({
       return <ServicesSection aiAssist={preferences.aiAssist} onChange={updatePreferences} />;
     case 'security':
       return <SecuritySection />;
+    case 'developer':
+      return <DeveloperSection currentConfigNamespace={currentConfigNamespace} />;
     default:
       return <div className="p-6 text-sm text-gray-400">Unknown section.</div>;
   }

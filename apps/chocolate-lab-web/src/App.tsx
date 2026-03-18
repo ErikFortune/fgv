@@ -236,6 +236,7 @@ interface IServerConfig {
   readonly cloudStorage?: {
     readonly enabled: boolean;
     readonly baseUrl: string;
+    readonly userId?: string;
   };
   readonly proxyAvailable?: boolean;
   readonly keystoreInCloud?: boolean;

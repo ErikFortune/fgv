@@ -1,0 +1,85 @@
+entrances:
+  - authLevel: internal
+    host: chocolatelab
+    icon: https://app.cdn.olares.com/appstore/default/defaulticon.webp
+    name: chocolatelab
+    openMethod: default
+    port: 3002
+    skip: false
+    title: chocolatelab
+metadata:
+  appid: chocolatelab
+  categories:
+    - Lifestyle
+  description: Chocolate-making recipe manager and production tracker.
+  icon: https://app.cdn.olares.com/appstore/default/defaulticon.webp
+  name: chocolatelab
+  target: ''
+  title: Chocolate Lab
+  version: 0.0.12
+middleware:
+  Argo: null
+  Elasticsearch: null
+  MariaDB: null
+  Minio: null
+  MySQL: null
+  Nats: null
+  RabbitMQ: null
+  mongodb:
+    username: chocolatelab
+    databases:
+      - name: chocolatelab
+olaresManifest.type: app
+olaresManifest.version: 0.8.0
+options:
+  AllowedOutboundPorts:
+    - 443
+  analytics: null
+  apiTimeout: null
+  appScope: null
+  dependencies:
+    - name: olares
+      type: system
+      version: '>=1.12.1-0'
+  images: null
+  mobileSupported: false
+  oidc:
+    enabled: false
+    entranceName: ''
+    redirectUri: ''
+  policies: null
+  resetCookie: null
+  syncProvider: null
+  upload: null
+  wsConfig: null
+permission:
+  appCache: false
+  provider: null
+  userData: []
+ports: null
+spec:
+  developer: Erik Fortune
+  fullDescription: |
+    Chocolate Lab is a recipe manager and production tracker for artisan
+    chocolate making. Manage ingredients, fillings, confections, molds,
+    and production sessions with full version tracking and cloud sync.
+  limitedCpu: 0.25m
+  limitedMemory: 256Mi
+  podGpuConsumePolicy: ''
+  promoteImage: null
+  promoteVideo: ''
+  requiredCpu: 0.25m
+  requiredDisk: 50Mi
+  requiredGpu: ''
+  requiredMemory: 256Mi
+  runAsInternal: false
+  runAsUser: false
+  subCategory: ''
+  subCharts: null
+  supportArch:
+    - amd64
+    - arm64
+  supportClient: null
+  upgradeDescription: ''
+  versionName: 0.0.1
+tailScale: {}

@@ -69,9 +69,10 @@ export async function createApp(): Promise<Hono> {
 
   app.use('*', cors());
 
-  // Extract X-User-Id from request headers and store in AsyncLocalStorage
+  // Extract user identity from request headers and store in AsyncLocalStorage.
+  // Prefer X-User-Id (explicit), fall back to Remote-User (Authelia/reverse proxy).
   app.use('/api/storage/*', async (c, next) => {
-    const userId = c.req.header('X-User-Id') ?? defaultUserId;
+    const userId = c.req.header('X-User-Id') ?? c.req.header('Remote-User') ?? defaultUserId;
     return _requestUserId.run(userId, () => next());
   });
 
@@ -88,10 +89,12 @@ export async function createApp(): Promise<Hono> {
     if (!staticPath) {
       return c.json({});
     }
+    const effectiveUserId = c.req.header('X-User-Id') ?? c.req.header('Remote-User') ?? defaultUserId;
     return c.json({
       cloudStorage: {
         enabled: !startupError,
-        baseUrl: '/api/storage'
+        baseUrl: '/api/storage',
+        userId: effectiveUserId
       },
       proxyAvailable: true,
       keystoreInCloud: true,
