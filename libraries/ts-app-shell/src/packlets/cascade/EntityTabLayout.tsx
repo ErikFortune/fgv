@@ -28,6 +28,7 @@
 import React from 'react';
 
 import { CascadeContainer, type ICascadeColumn } from './CascadeContainer';
+import { useResponsive } from '../responsive';
 import { ComparisonView, type IComparisonColumn } from './ComparisonView';
 
 // ============================================================================
@@ -85,6 +86,7 @@ export function EntityTabLayout(props: IEntityTabLayoutProps): React.ReactElemen
   const onExitVariationCompare = props.onExitVariationCompare;
   const showingComparison = props.showingComparison ?? false;
   const onExitComparison = props.onExitComparison;
+  const { layoutMode } = useResponsive();
 
   const isVariationCompare = variationCompareColumns !== undefined && variationCompareColumns.length >= 2;
   const showComparison =
@@ -95,22 +97,62 @@ export function EntityTabLayout(props: IEntityTabLayoutProps): React.ReactElemen
   const showCascade = !compareMode && !isVariationCompare && !showComparison && cascadeColumns.length > 0;
   const hasCascadeOrCompare = cascadeColumns.length > 0 || showComparison;
 
+  // Variation compare banner — shared between mobile and desktop
+  const variationCompareBanner = isVariationCompare && onExitVariationCompare && (
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-status-warning-bg border-b border-status-warning-border shrink-0">
+      <span className="text-xs text-status-warning-text">
+        Comparing {variationCompareColumns.length} variations
+      </span>
+      <button
+        onClick={onExitVariationCompare}
+        className="px-2 py-0.5 text-xs rounded border border-status-warning-border text-status-warning-text hover:bg-status-warning-surface transition-colors"
+      >
+        Exit
+      </button>
+    </div>
+  );
+
+  // Mobile: show one pane at a time — list or cascade/comparison full-screen
+  if (layoutMode === 'mobile') {
+    const hasCascadeContent = showCascade || showComparison || isVariationCompare;
+
+    return (
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {variationCompareBanner}
+        {hasCascadeContent ? (
+          <>
+            {showCascade && <CascadeContainer columns={cascadeColumns} onPopTo={onPopTo} />}
+            {showComparison && (
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-status-info-bg border-b border-status-info-border shrink-0">
+                  <span className="text-xs text-status-info-text">
+                    Comparing {comparisonColumns.length} items
+                  </span>
+                  {onExitComparison && (
+                    <button
+                      onClick={onExitComparison}
+                      className="px-2 py-0.5 text-xs rounded border border-status-info-border text-status-info-text hover:bg-status-info-surface transition-colors"
+                    >
+                      ← Back to list
+                    </button>
+                  )}
+                </div>
+                <ComparisonView columns={comparisonColumns} />
+              </div>
+            )}
+            {isVariationCompare && <ComparisonView columns={variationCompareColumns} />}
+          </>
+        ) : (
+          <div className="flex flex-col flex-1 overflow-hidden">{list}</div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop/compact: side-by-side list and cascade
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Variation compare banner */}
-      {isVariationCompare && onExitVariationCompare && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-status-warning-bg border-b border-status-warning-border shrink-0">
-          <span className="text-xs text-status-warning-text">
-            Comparing {variationCompareColumns.length} variations
-          </span>
-          <button
-            onClick={onExitVariationCompare}
-            className="px-2 py-0.5 text-xs rounded border border-status-warning-border text-status-warning-text hover:bg-status-warning-surface transition-colors"
-          >
-            Exit
-          </button>
-        </div>
-      )}
+      {variationCompareBanner}
 
       {/* Main content area */}
       <div className="flex flex-1 overflow-hidden">

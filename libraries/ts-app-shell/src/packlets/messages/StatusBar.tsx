@@ -27,6 +27,7 @@ import { FunnelIcon, DocumentDuplicateIcon, MagnifyingGlassIcon } from '@heroico
 import { CheckIcon } from '@heroicons/react/24/solid';
 
 import { IMessage, MessageSeverity } from './model';
+import { useResponsive } from '../responsive';
 
 // ============================================================================
 // Severity display config
@@ -99,6 +100,8 @@ export interface IStatusBarProps {
  */
 export function StatusBar(props: IStatusBarProps): React.ReactElement {
   const { messages, onClear, initialFilterLevel } = props;
+  const { layoutMode } = useResponsive();
+  const isMobile = layoutMode === 'mobile';
   const [expanded, setExpanded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filterLevel, setFilterLevel] = useState<Logging.ReporterLogLevel>(initialFilterLevel ?? 'all');
@@ -165,125 +168,136 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
         <span className="text-muted">{expanded ? '\u25BC' : '\u25B2'}</span>
       </button>
 
-      {/* Expanded log */}
+      {/* Expanded log — fixed slide-up sheet on mobile, inline on desktop */}
       {expanded && (
-        <div className="border-t border-border-subtle">
-          {/* Header toolbar */}
-          <div className="flex items-center justify-between px-4 py-1 bg-surface-alt border-b border-border-subtle">
-            <span className="text-xs font-medium text-muted">
-              {isFiltered
-                ? `${filteredMessages.length} of ${messages.length} messages`
-                : `${messages.length} message${messages.length !== 1 ? 's' : ''}`}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={(): void => setShowFilters(!showFilters)}
-                className={`p-1 rounded hover:bg-surface-raised ${showFilters ? 'bg-surface-raised' : ''}`}
-                title="Filter messages"
-              >
-                <FunnelIcon className="h-3.5 w-3.5 text-muted" />
-              </button>
-              <button
-                onClick={copyAllFiltered}
-                className={`p-1 rounded transition-colors ${
-                  copySuccessId === '__all__' ? 'bg-status-success-bg' : 'hover:bg-surface-raised'
-                }`}
-                title={copySuccessId === '__all__' ? 'Copied!' : 'Copy filtered messages'}
-              >
-                {copySuccessId === '__all__' ? (
-                  <CheckIcon className="h-3.5 w-3.5 text-status-success-icon" />
-                ) : (
-                  <DocumentDuplicateIcon className="h-3.5 w-3.5 text-muted" />
-                )}
-              </button>
-              <button onClick={onClear} className="text-xs text-muted hover:text-secondary ml-1">
-                Clear
-              </button>
-            </div>
-          </div>
-
-          {/* Filter toolbar */}
-          {showFilters && (
-            <div className="px-4 py-1.5 bg-surface-raised border-b border-border-subtle flex items-center gap-3">
-              {/* Level filter buttons */}
-              <div className="flex items-center gap-1">
-                {FILTER_LEVELS.map(({ label, level }) => (
-                  <button
-                    key={level}
-                    onClick={(): void => setFilterLevel(level)}
-                    className={`text-xs px-2 py-0.5 rounded border ${
-                      filterLevel === level
-                        ? 'bg-status-info-bg border-status-info-border text-status-info-text'
-                        : 'bg-surface border-border text-secondary hover:bg-hover'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Search input */}
-              <div className="relative flex-1">
-                <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted" />
-                <input
-                  type="text"
-                  placeholder="Search messages..."
-                  value={searchTerm}
-                  onChange={(e): void => setSearchTerm(e.target.value)}
-                  className="w-full pl-7 pr-6 py-0.5 text-xs border border-border rounded bg-surface text-primary focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
-                />
-                {searchTerm.length > 0 && (
-                  <button
-                    onClick={(): void => setSearchTerm('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary text-xs"
-                    aria-label="Clear search"
-                  >
-                    &times;
-                  </button>
-                )}
-              </div>
-            </div>
+        <>
+          {isMobile && (
+            <div className="fixed inset-0 z-40 bg-backdrop" onClick={(): void => setExpanded(false)} />
           )}
-
-          {/* Message list */}
-          <div className="max-h-48 overflow-y-auto">
-            {filteredMessages.length === 0 ? (
-              <div className="px-4 py-3 text-xs text-muted text-center">
-                {isFiltered ? 'No messages match the current filter' : 'No messages'}
-              </div>
-            ) : (
-              filteredMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`group flex items-start gap-2 px-4 py-1.5 text-xs border-b border-border-subtle ${
-                    LOG_ROW_COLORS[msg.severity]
-                  }`}
+          <div
+            className={
+              isMobile
+                ? 'fixed inset-x-0 bottom-8 z-50 flex flex-col bg-surface border-t border-border shadow-xl rounded-t-lg max-h-[70vh]'
+                : 'border-t border-border-subtle'
+            }
+          >
+            {/* Header toolbar */}
+            <div className="flex items-center justify-between px-4 py-1 bg-surface-alt border-b border-border-subtle shrink-0">
+              <span className="text-xs font-medium text-muted">
+                {isFiltered
+                  ? `${filteredMessages.length} of ${messages.length} messages`
+                  : `${messages.length} message${messages.length !== 1 ? 's' : ''}`}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={(): void => setShowFilters(!showFilters)}
+                  className={`p-1 rounded hover:bg-surface-raised ${showFilters ? 'bg-surface-raised' : ''}`}
+                  title="Filter messages"
                 >
-                  <span className={`shrink-0 ${SEVERITY_COLORS[msg.severity]}`}>
-                    {SEVERITY_ICONS[msg.severity]}
-                  </span>
-                  <span className="flex-1 text-secondary">{msg.text}</span>
-                  <button
-                    onClick={(): void => copyToClipboard(msg.text, msg.id)}
-                    className={`shrink-0 p-0.5 rounded transition-colors ${
-                      copySuccessId === msg.id
-                        ? 'opacity-100 bg-status-success-surface'
-                        : 'opacity-0 group-hover:opacity-100 hover:bg-surface-raised'
-                    }`}
-                    title={copySuccessId === msg.id ? 'Copied!' : 'Copy message'}
-                  >
-                    {copySuccessId === msg.id ? (
-                      <CheckIcon className="h-3 w-3 text-status-success-icon" />
-                    ) : (
-                      <DocumentDuplicateIcon className="h-3 w-3 text-muted" />
-                    )}
-                  </button>
-                  <span className="shrink-0 text-muted">{formatTime(msg.timestamp)}</span>
+                  <FunnelIcon className="h-3.5 w-3.5 text-muted" />
+                </button>
+                <button
+                  onClick={copyAllFiltered}
+                  className={`p-1 rounded transition-colors ${
+                    copySuccessId === '__all__' ? 'bg-status-success-bg' : 'hover:bg-surface-raised'
+                  }`}
+                  title={copySuccessId === '__all__' ? 'Copied!' : 'Copy filtered messages'}
+                >
+                  {copySuccessId === '__all__' ? (
+                    <CheckIcon className="h-3.5 w-3.5 text-status-success-icon" />
+                  ) : (
+                    <DocumentDuplicateIcon className="h-3.5 w-3.5 text-muted" />
+                  )}
+                </button>
+                <button onClick={onClear} className="text-xs text-muted hover:text-secondary ml-1">
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            {/* Filter toolbar */}
+            {showFilters && (
+              <div className="px-4 py-1.5 bg-surface-raised border-b border-border-subtle flex items-center gap-3 shrink-0">
+                {/* Level filter buttons */}
+                <div className="flex items-center gap-1">
+                  {FILTER_LEVELS.map(({ label, level }) => (
+                    <button
+                      key={level}
+                      onClick={(): void => setFilterLevel(level)}
+                      className={`text-xs px-2 py-0.5 rounded border ${
+                        filterLevel === level
+                          ? 'bg-status-info-bg border-status-info-border text-status-info-text'
+                          : 'bg-surface border-border text-secondary hover:bg-hover'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
-              ))
+
+                {/* Search input */}
+                <div className="relative flex-1">
+                  <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted" />
+                  <input
+                    type="text"
+                    placeholder="Search messages..."
+                    value={searchTerm}
+                    onChange={(e): void => setSearchTerm(e.target.value)}
+                    className="w-full pl-7 pr-6 py-0.5 text-xs border border-border rounded bg-surface text-primary focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
+                  />
+                  {searchTerm.length > 0 && (
+                    <button
+                      onClick={(): void => setSearchTerm('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary text-xs"
+                      aria-label="Clear search"
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
+
+            {/* Message list */}
+            <div className={`overflow-y-auto ${isMobile ? 'flex-1' : 'max-h-48'}`}>
+              {filteredMessages.length === 0 ? (
+                <div className="px-4 py-3 text-xs text-muted text-center">
+                  {isFiltered ? 'No messages match the current filter' : 'No messages'}
+                </div>
+              ) : (
+                filteredMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`group flex items-start gap-2 px-4 py-1.5 text-xs border-b border-border-subtle ${
+                      LOG_ROW_COLORS[msg.severity]
+                    }`}
+                  >
+                    <span className={`shrink-0 ${SEVERITY_COLORS[msg.severity]}`}>
+                      {SEVERITY_ICONS[msg.severity]}
+                    </span>
+                    <span className="flex-1 text-secondary">{msg.text}</span>
+                    <button
+                      onClick={(): void => copyToClipboard(msg.text, msg.id)}
+                      className={`shrink-0 p-0.5 rounded transition-colors ${
+                        copySuccessId === msg.id
+                          ? 'opacity-100 bg-status-success-surface'
+                          : 'opacity-0 group-hover:opacity-100 hover:bg-surface-raised'
+                      }`}
+                      title={copySuccessId === msg.id ? 'Copied!' : 'Copy message'}
+                    >
+                      {copySuccessId === msg.id ? (
+                        <CheckIcon className="h-3 w-3 text-status-success-icon" />
+                      ) : (
+                        <DocumentDuplicateIcon className="h-3 w-3 text-muted" />
+                      )}
+                    </button>
+                    <span className="shrink-0 text-muted">{formatTime(msg.timestamp)}</span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

@@ -21,6 +21,7 @@
  */
 
 import React, { useCallback, useEffect } from 'react';
+import { useResponsive } from '../responsive';
 
 /**
  * Severity level for the confirm dialog.
@@ -83,6 +84,7 @@ export function ConfirmDialog(props: IConfirmDialogProps): React.ReactElement | 
     onConfirm,
     onCancel
   } = props;
+  const { layoutMode } = useResponsive();
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent): void => {
@@ -112,7 +114,9 @@ export function ConfirmDialog(props: IConfirmDialogProps): React.ReactElement | 
 
       {/* Dialog */}
       <div
-        className="relative bg-surface rounded-lg shadow-xl max-w-md w-full mx-4"
+        className={`relative bg-surface rounded-lg shadow-xl ${
+          layoutMode === 'mobile' ? 'w-[95vw]' : 'max-w-md w-full mx-4'
+        }`}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"

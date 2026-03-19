@@ -26,6 +26,8 @@
  */
 
 import React, { useCallback, useEffect, useRef } from 'react';
+import { useResponsive } from '../responsive';
+import { MobileCascadeStack } from './MobileCascadeStack';
 
 // ============================================================================
 // Cascade Column
@@ -80,6 +82,7 @@ export interface ICascadeContainerProps {
  */
 export function CascadeContainer(props: ICascadeContainerProps): React.ReactElement | null {
   const { columns, onPopTo, minColumnWidth = '400px', onFocus, rootLabel = 'List' } = props;
+  const { layoutMode } = useResponsive();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = useCallback((): void => {
@@ -110,6 +113,10 @@ export function CascadeContainer(props: ICascadeContainerProps): React.ReactElem
       });
     }
   }, [columns.length]);
+
+  if (layoutMode === 'mobile') {
+    return <MobileCascadeStack {...props} />;
+  }
 
   if (columns.length === 0) {
     return null;

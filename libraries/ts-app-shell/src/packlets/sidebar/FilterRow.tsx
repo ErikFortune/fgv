@@ -21,6 +21,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useResponsive } from '../responsive';
 
 // ============================================================================
 // Filter Option
@@ -80,6 +81,8 @@ const SEARCH_THRESHOLD: number = 8;
  */
 export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactElement {
   const { label, options, selected, onSelectionChange, multiple = true, isEqual = defaultIsEqual } = props;
+  const { layoutMode } = useResponsive();
+  const isMobile = layoutMode === 'mobile';
 
   const [open, setOpen] = useState(false);
   const [flyoutSearch, setFlyoutSearch] = useState('');
@@ -220,9 +223,9 @@ export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactEl
       {/* Collapsed row */}
       <button
         onClick={handleToggle}
-        className={`flex items-center justify-between w-full px-3 py-1.5 text-sm hover:bg-hover transition-colors ${
-          activeCount > 0 ? 'text-brand-primary font-medium' : 'text-secondary'
-        }`}
+        className={`flex items-center justify-between w-full px-3 text-sm hover:bg-hover transition-colors ${
+          isMobile ? 'py-3' : 'py-1.5'
+        } ${activeCount > 0 ? 'text-brand-primary font-medium' : 'text-secondary'}`}
       >
         <span className="truncate">{label}</span>
         <span className="flex items-center gap-1.5 shrink-0 ml-2">
@@ -290,9 +293,9 @@ export function FilterRow<TValue>(props: IFilterRowProps<TValue>): React.ReactEl
                   <button
                     key={idx}
                     onClick={(): void => toggleValue(option.value)}
-                    className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-hover transition-colors ${
-                      checked ? 'text-brand-primary font-medium' : 'text-secondary'
-                    }`}
+                    className={`flex items-center gap-2 w-full px-3 text-sm text-left hover:bg-hover transition-colors ${
+                      isMobile ? 'py-2.5' : 'py-1.5'
+                    } ${checked ? 'text-brand-primary font-medium' : 'text-secondary'}`}
                   >
                     <span
                       className={`inline-flex items-center justify-center w-4 h-4 border rounded ${

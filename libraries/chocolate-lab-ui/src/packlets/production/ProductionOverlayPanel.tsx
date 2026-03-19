@@ -39,6 +39,7 @@ import { ProductionStatusCard } from './ProductionStatusCard';
 import { StepExecutionView } from './StepExecutionView';
 import { useExecutionActions } from './useExecutionActions';
 import { useWorkspace } from '../workspace';
+import { useResponsive } from '@fgv/ts-app-shell';
 
 /**
  * Panel expansion state.
@@ -85,6 +86,8 @@ export function ProductionOverlayPanel({
   onStateChange
 }: IProductionOverlayPanelProps): React.ReactElement {
   const [selectedSessionId, setSelectedSessionId] = useState<SessionId | undefined>(sessions[0]?.sessionId);
+  const { layoutMode } = useResponsive();
+  const isMobile = layoutMode === 'mobile';
 
   const selectedEntry = useMemo(
     () => sessions.find((e) => e.sessionId === selectedSessionId) ?? sessions[0],
@@ -119,6 +122,53 @@ export function ProductionOverlayPanel({
 
   const width =
     panelState === 'collapsed' ? COLLAPSED_WIDTH : panelState === 'status' ? STATUS_WIDTH : DETAIL_WIDTH;
+
+  // Mobile: collapsed = fixed side handle, expanded = full-screen overlay (no layout footprint)
+  if (isMobile) {
+    return (
+      <div style={{ width: 0, overflow: 'visible' }} data-testid="production-overlay-panel">
+        {panelState === 'collapsed' && (
+          <button
+            onClick={handleExpand}
+            className="fixed right-0 top-1/2 -translate-y-1/2 z-40 w-8 h-16 bg-surface border border-r-0 border-border rounded-l-lg shadow-lg flex flex-col items-center justify-center gap-1"
+            title="Open production panel"
+            data-testid="production-collapsed-strip"
+          >
+            <BeakerIcon className="w-4 h-4 text-status-success-accent" />
+            <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-status-success-accent rounded-full">
+              {sessions.length}
+            </span>
+          </button>
+        )}
+
+        {panelState !== 'collapsed' && (
+          <div
+            className="fixed inset-0 z-50 flex flex-col bg-surface"
+            data-testid="production-overlay-mobile"
+          >
+            {panelState === 'status' && (
+              <StatusPanel
+                sessions={sessions}
+                selectedSessionId={selectedSessionId}
+                onSelectSession={handleStatusCardClick}
+                onCollapse={handleCollapse}
+                executionActions={executionActions}
+              />
+            )}
+            {panelState === 'detail' && selectedEntry && (
+              <DetailPanel
+                sessions={sessions}
+                selectedEntry={selectedEntry}
+                onSelectSession={setSelectedSessionId}
+                onCollapse={handleCollapse}
+                executionActions={executionActions}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div

@@ -56,12 +56,12 @@ export function TabBar<TTab extends string>(props: ITabBarProps<TTab>): React.Re
   const { tabs, activeTab, onTabChange, rightContent } = props;
 
   return (
-    <div className="flex items-center gap-1 px-4 py-1 bg-brand-secondary text-white border-t border-white/10">
+    <div className="flex items-center gap-1 px-4 py-1 bg-brand-secondary text-white border-t border-white/10 overflow-x-auto">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={(): void => onTabChange(tab.id)}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors shrink-0 ${
             activeTab === tab.id
               ? 'bg-white/20 text-white'
               : 'text-white/60 hover:text-white hover:bg-white/10'

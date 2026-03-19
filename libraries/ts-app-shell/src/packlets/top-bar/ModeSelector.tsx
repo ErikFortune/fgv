@@ -21,6 +21,7 @@
  */
 
 import React from 'react';
+import { useResponsive } from '../responsive';
 
 /**
  * Configuration for a single mode in the mode selector.
@@ -48,26 +49,50 @@ export interface IModeSelectorProps<TMode extends string> {
   readonly rightContent?: React.ReactNode;
   /** Application title */
   readonly title: string;
+  /** Optional callback to toggle sidebar drawer (shows hamburger icon when provided). */
+  readonly onMenuToggle?: () => void;
 }
 
 /**
  * Top-level mode selector bar.
  * Renders the application title, mode toggle buttons, and optional right-side content.
+ * When {@link IModeSelectorProps.onMenuToggle | onMenuToggle} is provided, a hamburger
+ * menu button is shown at the left edge (for compact/mobile layouts).
  * @public
  */
 export function ModeSelector<TMode extends string>(props: IModeSelectorProps<TMode>): React.ReactElement {
-  const { modes, activeMode, onModeChange, rightContent, title } = props;
+  const { modes, activeMode, onModeChange, rightContent, title, onMenuToggle } = props;
+  const { layoutMode } = useResponsive();
+  const isMobile = layoutMode === 'mobile';
 
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-brand-primary text-white">
-      <div className="flex items-center gap-6">
-        <h1 className="text-lg font-semibold whitespace-nowrap">{title}</h1>
+      <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-6'}`}>
+        {/* Hamburger menu button (compact/mobile only) */}
+        {onMenuToggle && (
+          <button
+            onClick={onMenuToggle}
+            className="p-1.5 -ml-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="Open menu"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+              />
+            </svg>
+          </button>
+        )}
+        {!isMobile && <h1 className="text-lg font-semibold whitespace-nowrap">{title}</h1>}
         <div className="flex gap-1">
           {modes.map((mode) => (
             <button
               key={mode.id}
               onClick={(): void => onModeChange(mode.id)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`rounded-md font-medium transition-colors ${
+                isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-1.5 text-sm'
+              } ${
                 activeMode === mode.id
                   ? 'bg-white/20 text-white'
                   : 'text-white/70 hover:text-white hover:bg-white/10'

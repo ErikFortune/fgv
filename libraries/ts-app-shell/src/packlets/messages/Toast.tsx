@@ -23,6 +23,7 @@
 import React, { useEffect } from 'react';
 
 import { DEFAULT_TOAST_CONFIG, IMessage, MessageSeverity } from './model';
+import { useResponsive } from '../responsive';
 
 // ============================================================================
 // Severity Styles
@@ -55,6 +56,7 @@ export interface IToastItemProps {
 export function ToastItem(props: IToastItemProps): React.ReactElement {
   const { message, onDismiss } = props;
   const config = DEFAULT_TOAST_CONFIG[message.severity];
+  const { layoutMode } = useResponsive();
 
   useEffect(() => {
     if (config.autoDismissMs > 0) {
@@ -66,9 +68,9 @@ export function ToastItem(props: IToastItemProps): React.ReactElement {
 
   return (
     <div
-      className={`flex items-start gap-3 px-4 py-3 rounded-lg border shadow-lg max-w-sm ${
-        SEVERITY_STYLES[message.severity]
-      }`}
+      className={`flex items-start gap-3 px-4 py-3 rounded-lg border shadow-lg ${
+        layoutMode === 'mobile' ? 'w-full' : 'max-w-sm'
+      } ${SEVERITY_STYLES[message.severity]}`}
       role="alert"
     >
       <div className="flex-1 text-sm line-clamp-4" title={message.text}>
@@ -116,6 +118,7 @@ export interface IToastContainerProps {
  */
 export function ToastContainer(props: IToastContainerProps): React.ReactElement | null {
   const { toasts, onDismiss, maxVisible = 5 } = props;
+  const { layoutMode } = useResponsive();
   const visible = toasts.slice(-maxVisible);
 
   if (visible.length === 0) {
@@ -123,7 +126,11 @@ export function ToastContainer(props: IToastContainerProps): React.ReactElement 
   }
 
   return (
-    <div className="fixed bottom-16 right-4 z-50 flex flex-col gap-2">
+    <div
+      className={`fixed bottom-16 z-50 flex flex-col gap-2 ${
+        layoutMode === 'mobile' ? 'left-4 right-4' : 'right-4'
+      }`}
+    >
       {visible.map((toast) => (
         <ToastItem key={toast.id} message={toast} onDismiss={onDismiss} />
       ))}

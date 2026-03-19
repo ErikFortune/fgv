@@ -19,7 +19,9 @@ import {
   SidebarLayout,
   ThemeProvider,
   useTheme,
-  type ThemeId
+  type ThemeId,
+  ResponsiveProvider,
+  useResponsive
 } from '@fgv/ts-app-shell';
 import { Logging, type MessageLogLevel, succeed, fail } from '@fgv/ts-utils';
 import {
@@ -850,6 +852,12 @@ function AppShell(props: IAppShellProps): React.ReactElement {
   // Production overlay panel state
   const [productionPanelState, setProductionPanelState] = useState<ProductionPanelState>('collapsed');
 
+  // Sidebar drawer state (compact/mobile only)
+  const { layoutMode } = useResponsive();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const toggleSidebar = useCallback((): void => setSidebarOpen((prev) => !prev), []);
+  const closeSidebar = useCallback((): void => setSidebarOpen(false), []);
+
   const activeSessions = useMemo((): ReadonlyArray<IActiveSessionEntry> => {
     const entries: IActiveSessionEntry[] = [];
     for (const [id, session] of workspace.userData.sessions.entries()) {
@@ -952,8 +960,9 @@ function AppShell(props: IAppShellProps): React.ReactElement {
       } else {
         setTab(tab);
       }
+      closeSidebar();
     },
-    [hasUnsavedChanges, logUnsavedChanges, setTab]
+    [hasUnsavedChanges, logUnsavedChanges, setTab, closeSidebar]
   );
 
   const guardedSetMode = useCallback(
@@ -966,8 +975,9 @@ function AppShell(props: IAppShellProps): React.ReactElement {
       } else {
         setMode(newMode);
       }
+      closeSidebar();
     },
-    [hasUnsavedChanges, logUnsavedChanges, setMode]
+    [hasUnsavedChanges, logUnsavedChanges, setMode, closeSidebar]
   );
 
   const handleNavConfirm = useCallback((): void => {
@@ -1060,6 +1070,7 @@ function AppShell(props: IAppShellProps): React.ReactElement {
         modes={MODES}
         activeMode={mode}
         onModeChange={guardedSetMode}
+        onMenuToggle={layoutMode !== 'full' ? toggleSidebar : undefined}
         rightContent={
           <div className="flex items-center gap-1">
             <ThemeToggle />
@@ -1164,6 +1175,8 @@ function AppShell(props: IAppShellProps): React.ReactElement {
             sidebar={
               <TabSidebarWithActions optionProvider={filterOptionProvider} actions={collectionActions} />
             }
+            isSidebarOpen={sidebarOpen}
+            onSidebarClose={closeSidebar}
           >
             <TabContent tab={activeTab} />
           </SidebarLayout>
@@ -1304,9 +1317,11 @@ function WorkspaceBootstrap(): React.ReactElement {
 export default function App(): React.ReactElement {
   return (
     <ThemeProvider initialTheme={'light' as unknown as ThemeId}>
-      <MessagesProvider>
-        <WorkspaceBootstrap />
-      </MessagesProvider>
+      <ResponsiveProvider>
+        <MessagesProvider>
+          <WorkspaceBootstrap />
+        </MessagesProvider>
+      </ResponsiveProvider>
     </ThemeProvider>
   );
 }

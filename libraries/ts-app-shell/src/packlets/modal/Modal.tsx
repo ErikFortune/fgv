@@ -21,6 +21,7 @@
  */
 
 import React, { useCallback, useEffect } from 'react';
+import { useResponsive } from '../responsive';
 
 /**
  * Props for the Modal component.
@@ -44,6 +45,7 @@ export interface IModalProps {
  */
 export function Modal(props: IModalProps): React.ReactElement | null {
   const { isOpen, onClose, title, children } = props;
+  const { layoutMode } = useResponsive();
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent): void => {
@@ -73,7 +75,9 @@ export function Modal(props: IModalProps): React.ReactElement | null {
 
       {/* Dialog */}
       <div
-        className="relative bg-surface rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col"
+        className={`relative bg-surface rounded-lg shadow-xl flex flex-col ${
+          layoutMode === 'mobile' ? 'w-[95vw] max-h-[95vh]' : 'max-w-lg w-full mx-4 max-h-[80vh]'
+        }`}
         role="dialog"
         aria-modal="true"
         aria-label={title}

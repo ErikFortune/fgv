@@ -21,6 +21,7 @@
  */
 
 import React, { useCallback, useEffect, useRef } from 'react';
+import { useResponsive } from '../responsive';
 
 // ============================================================================
 // Entity Item Descriptor
@@ -159,6 +160,8 @@ export function EntityList<TEntity, TId extends string = string>(
     canDelete
   } = props;
   const listRef = useRef<HTMLDivElement>(null);
+  const { layoutMode } = useResponsive();
+  const isMobile = layoutMode === 'mobile';
 
   // Scroll the selected item into view when selection changes
   useEffect(() => {
@@ -286,7 +289,9 @@ export function EntityList<TEntity, TId extends string = string>(
                     onSelect(id);
                   }
                 }}
-                className="flex items-center gap-2 flex-1 min-w-0 px-3 py-2 text-left"
+                className={`flex items-center gap-2 flex-1 min-w-0 px-3 text-left ${
+                  isMobile ? 'py-3' : 'py-2'
+                }`}
               >
                 {compareMode && (
                   <span
@@ -335,7 +340,11 @@ export function EntityList<TEntity, TId extends string = string>(
                     e.stopPropagation();
                     onDelete(id);
                   }}
-                  className="shrink-0 mr-1 w-6 h-6 flex items-center justify-center text-muted hover:text-status-error-text opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded"
+                  className={`shrink-0 mr-1 flex items-center justify-center text-muted hover:text-status-error-text transition-opacity rounded ${
+                    isMobile
+                      ? 'w-11 h-11 opacity-100'
+                      : 'w-6 h-6 opacity-0 group-hover:opacity-100 focus:opacity-100'
+                  }`}
                   title={`Delete ${label}`}
                   aria-label={`Delete ${label}`}
                 >
