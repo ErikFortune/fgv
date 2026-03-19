@@ -56,6 +56,11 @@ export interface ICollectionRowItem {
   readonly isVisible: boolean;
   /** Whether this collection is the default target for new entities */
   readonly isDefault: boolean;
+  /**
+   * Whether this loaded collection has an orphaned encrypted shadow with the same ID
+   * in another storage root. When true, a repair action should be offered.
+   */
+  readonly hasConflict?: boolean;
 }
 
 // ============================================================================
@@ -147,6 +152,17 @@ function CollectionRow(props: {
         >
           {collection.isDefault ? '★' : '☆'}
         </button>
+      )}
+
+      {/* Conflict indicator — encrypted shadow from another root */}
+      {collection.hasConflict && (
+        <span
+          className="shrink-0 text-xs text-status-warning-strong cursor-default"
+          title="An encrypted copy of this collection from another storage root has the same ID. Go to Settings → Storage to resolve the conflict."
+          aria-label={`Conflict: encrypted shadow for ${displayName}`}
+        >
+          {'⚠'}
+        </span>
       )}
 
       {/* Status indicators */}

@@ -189,6 +189,24 @@ during loading but not decrypted due to missing keys.
 </td></tr>
 <tr><td>
 
+[IConflictingCollectionCopy](./interfaces/IConflictingCollectionCopy.md)
+
+</td><td>
+
+Describes one copy of a collection involved in an ID collision.
+
+</td></tr>
+<tr><td>
+
+[ICollectionIdConflict](./interfaces/ICollectionIdConflict.md)
+
+</td><td>
+
+Represents a collection ID collision across multiple sources.
+
+</td></tr>
+<tr><td>
+
 [ICollectionLoadResult](./interfaces/ICollectionLoadResult.md)
 
 </td><td>

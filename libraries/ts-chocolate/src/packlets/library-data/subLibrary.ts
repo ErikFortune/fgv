@@ -48,7 +48,9 @@ import { CryptoUtils } from '@fgv/ts-extras';
 import { CollectionLoader, EncryptedFileHandling } from './collectionLoader';
 import { createFilterFromSpec } from './collectionFilter';
 import {
+  ICollectionIdConflict,
   ICollectionRuntimeMetadata,
+  IConflictingCollectionCopy,
   IEncryptionConfig,
   IFileTreeSource,
   IMergeLibrarySource,
@@ -57,13 +59,26 @@ import {
   LibraryLoadSpec
 } from './model';
 import {
-  checkForCollisionIds,
   ICollectionSet,
   normalizeFileSources,
   normalizeMergeSource,
   specToLoadParams
 } from './libraryLoader';
 import { navigateToDirectory } from './navigation';
+
+// ============================================================================
+// Internal Conflict Tracking Type
+// ============================================================================
+
+/**
+ * Internal storage for a conflicting copy of a collection.
+ * Extends the public IConflictingCollectionCopy with the FileTree source item
+ * needed for file deletion during repair.
+ * @internal
+ */
+interface IConflictCopyInternal extends IConflictingCollectionCopy {
+  readonly sourceItem?: FileTree.FileTreeItem;
+}
 
 // ============================================================================
 // Type Aliases
@@ -392,6 +407,13 @@ export abstract class SubLibraryBase<
   private readonly _protectedCollections: Map<CollectionId, IProtectedCollectionInternal<CollectionId>>;
 
   /**
+   * Tracks collection ID collisions. Each entry maps a collection ID to an array
+   * of copies that lost the first-seen deduplication pass. The winning copy is
+   * accessible via `collections` (if loaded) or `_protectedCollections` (if encrypted).
+   */
+  private _conflicts: Map<CollectionId, IConflictCopyInternal[]>;
+
+  /**
    * FileTree source items for collections loaded from FileTree.
    * Maps collection ID to its backing file item for persistence and deletion.
    */
@@ -480,24 +502,51 @@ export abstract class SubLibraryBase<
       libraryParams?.mergeLibraries
     );
 
-    // Check for collisions between all sources
-    const allSets: ReadonlyArray<ICollectionSet<CollectionId>> = [
-      { source: 'builtin', collections: builtInResult.collections },
-      ...fileSourceData.map((d) => ({ source: d.source, collections: d.collections })),
-      { source: 'mergeLibraries', collections: mergedLibraryCollections }
-    ];
-    checkForCollisionIds(allSets).report(logger).orThrow();
+    // Soft dedup: first-seen wins per collection ID; losers are tracked.
+    // Never hard-fails — the app always loads so the user can repair via Settings → Storage.
+    const seenIds = new Map<CollectionId, string>();
+    const preInitConflicts = new Map<CollectionId, IConflictCopyInternal[]>();
 
-    // Merge all collections
-    const fileCollections = fileSourceData.flatMap(
-      (d) => d.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>
-    );
-    const allCollections: SubLibraryEntryInit<TBaseId, TItem>[] = [
-      ...builtInResult.collections,
-      ...fileCollections,
-      ...mergedLibraryCollections,
-      ...additionalCollections
-    ];
+    const recordOrSkip = (
+      coll: SubLibraryEntryInit<TBaseId, TItem>,
+      sourceLabel: string,
+      sourceItems: ReadonlyMap<CollectionId, FileTree.FileTreeItem>
+    ): boolean => {
+      const existingSource = seenIds.get(coll.id);
+      if (existingSource !== undefined) {
+        const metadata = coll.metadata as ICollectionRuntimeMetadata | undefined;
+        const loser: IConflictCopyInternal = {
+          sourceName: metadata?.sourceName ?? sourceLabel,
+          isEncrypted: metadata?.secretName !== undefined,
+          itemCount: undefined,
+          secretName: metadata?.secretName,
+          isMutable: (coll as { isMutable?: boolean }).isMutable ?? false,
+          sourceItem: sourceItems.get(coll.id)
+        };
+        preInitConflicts.set(coll.id, [...(preInitConflicts.get(coll.id) ?? []), loser]);
+        logger.warn(
+          `[SubLibrary] Collection ID collision: '${coll.id}' from '${sourceLabel}' conflicts with existing from '${existingSource}'. Skipping duplicate.`
+        );
+        return false;
+      }
+      seenIds.set(coll.id, sourceLabel);
+      return true;
+    };
+
+    const allCollections: SubLibraryEntryInit<TBaseId, TItem>[] = [];
+    for (const coll of builtInResult.collections) {
+      if (recordOrSkip(coll, 'builtin', builtInResult.sourceItems)) allCollections.push(coll);
+    }
+    for (const fileSource of fileSourceData) {
+      for (const coll of fileSource.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>) {
+        if (recordOrSkip(coll, fileSource.source, fileSource.sourceItems)) allCollections.push(coll);
+      }
+    }
+    for (const coll of mergedLibraryCollections) {
+      if (recordOrSkip(coll, 'mergeLibraries', new Map())) allCollections.push(coll);
+    }
+    // additionalCollections are trusted direct inserts — no dedup
+    for (const coll of additionalCollections) allCollections.push(coll);
 
     super({
       collectionIdConverter: CommonConverters.collectionId,
@@ -528,28 +577,81 @@ export abstract class SubLibraryBase<
       }
     }
 
-    // Initialize protected collections from all sources
+    // Initialize protected collections and conflicts from all sources.
+    // First-seen wins per collection ID; later copies become conflict losers.
     this._protectedCollections = new Map();
+    this._conflicts = new Map();
+
+    const addProtectedOrConflict = (pc: IProtectedCollectionInternal<CollectionId>): void => {
+      const existing = this._protectedCollections.get(pc.ref.collectionId);
+      if (existing !== undefined) {
+        // Protected+protected collision — later copy is a loser
+        const loser: IConflictCopyInternal = {
+          sourceName: pc.sourceName,
+          isEncrypted: true,
+          itemCount: pc.ref.itemCount,
+          secretName: pc.ref.secretName,
+          isMutable: pc.ref.isMutable,
+          sourceItem: pc.sourceItem
+        };
+        this._conflicts.set(pc.ref.collectionId, [
+          ...(this._conflicts.get(pc.ref.collectionId) ?? []),
+          loser
+        ]);
+        logger.warn(
+          `[SubLibrary] Protected collection ID collision: '${pc.ref.collectionId}' from '${
+            pc.sourceName ?? 'unknown'
+          }' conflicts with existing. Skipping duplicate.`
+        );
+      } else {
+        this._protectedCollections.set(pc.ref.collectionId, pc);
+      }
+    };
 
     // Add protected collections from built-in loading
     /* c8 ignore next 3 - built-in protected collections tested but coverage intermittently missed */
     for (const pc of builtInResult.protectedCollections) {
-      this._protectedCollections.set(pc.ref.collectionId, pc);
+      addProtectedOrConflict(pc);
     }
 
     // Add protected collections from file sources
-    /* c8 ignore next 4 - protected collection paths tested but coverage intermittently missed */
+    /* c8 ignore next 3 - protected collection paths tested but coverage intermittently missed */
     for (const fileSource of fileSourceData) {
       for (const pc of fileSource.protectedCollections) {
-        this._protectedCollections.set(pc.ref.collectionId, pc);
+        addProtectedOrConflict(pc);
       }
     }
 
     // Add protected collections from params (e.g., from async loading)
     if (libraryParams?.protectedCollections) {
       for (const pc of libraryParams.protectedCollections) {
-        this._protectedCollections.set(pc.ref.collectionId, pc);
+        addProtectedOrConflict(pc);
       }
+    }
+
+    // Cross-check: protected copies whose IDs are already in loaded collections are losers.
+    // We do NOT hard-fail — the loaded copy is usable; user can repair via Settings → Storage.
+    for (const [id, pc] of this._protectedCollections) {
+      if (this.collections.has(id)) {
+        const loser: IConflictCopyInternal = {
+          sourceName: pc.sourceName,
+          isEncrypted: true,
+          itemCount: pc.ref.itemCount,
+          secretName: pc.ref.secretName,
+          isMutable: pc.ref.isMutable,
+          sourceItem: pc.sourceItem
+        };
+        this._conflicts.set(id, [...(this._conflicts.get(id) ?? []), loser]);
+        logger.warn(
+          `[SubLibrary] Collection ID conflict: '${id}' is loaded from one root and also exists as an ` +
+            `encrypted collection (secret: '${pc.ref.secretName}'). Use Settings → Storage to resolve.`
+        );
+      }
+    }
+
+    // Merge loaded-collection losers from the dedup pass into _conflicts
+    for (const [id, losers] of preInitConflicts) {
+      this._conflicts.set(id, [...(this._conflicts.get(id) ?? []), ...losers]);
     }
 
     // Find the first mutable file source and store its data directory.
@@ -924,6 +1026,7 @@ export abstract class SubLibraryBase<
     interface IFileSourceLoadResult {
       readonly source: string;
       readonly collections: ReadonlyArray<SubLibraryEntryInit<string, unknown>>;
+      readonly sourceItems: ReadonlyMap<CollectionId, FileTree.FileTreeItem>;
     }
     const fileSourceResults: Result<IFileSourceLoadResult>[] = [];
     for (let i = 0; i < fileSources.length; i++) {
@@ -943,7 +1046,8 @@ export abstract class SubLibraryBase<
       fileSourceResults.push(
         succeed({
           source: `fileSource[${i}]`,
-          collections: result.value.collections as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
+          collections: result.value.collections as ReadonlyArray<SubLibraryEntryInit<string, unknown>>,
+          sourceItems: result.value.sourceItems
         })
       );
     }
@@ -962,33 +1066,40 @@ export abstract class SubLibraryBase<
         | undefined
     );
 
-    // Check for collisions
-    const allSets: ReadonlyArray<ICollectionSet<CollectionId>> = [
-      {
-        source: 'builtin',
-        collections: builtInResult.value.collections as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
-      },
-      ...fileSourceData.value,
-      {
-        source: 'mergeLibraries',
-        collections: mergedCollections as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
-      }
-    ];
-    const collisionCheck = checkForCollisionIds(allSets);
-    /* c8 ignore next 3 - defensive: collision check tested in sync path and libraryLoader tests */
-    if (collisionCheck.isFailure()) {
-      return fail(collisionCheck.message);
-    }
+    // Soft dedup — first-seen wins; log collisions but never hard-fail.
+    // Losers are dropped here; the constructor will detect loaded+protected conflicts.
+    const seenAsyncIds = new Map<CollectionId, string>();
 
-    // Merge all collections
-    const fileCollections = fileSourceData.value.flatMap(
-      (d) => d.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>
+    const asyncRecordOrSkip = (coll: SubLibraryEntryInit<string, unknown>, sourceLabel: string): boolean => {
+      const existingSource = seenAsyncIds.get(coll.id as CollectionId);
+      if (existingSource !== undefined) {
+        /* c8 ignore next 4 - same guard as sync path; tested in libraryLoader tests */
+        logger?.warn(
+          `[SubLibrary] Collection ID collision (async): '${coll.id}' from '${sourceLabel}' conflicts with '${existingSource}'. Skipping duplicate.`
+        );
+        return false;
+      }
+      seenAsyncIds.set(coll.id as CollectionId, sourceLabel);
+      return true;
+    };
+
+    const deduplicatedBuiltin = builtInResult.value.collections.filter((c) =>
+      asyncRecordOrSkip(c as SubLibraryEntryInit<string, unknown>, 'builtin')
     );
+    const deduplicatedFileCollections = fileSourceData.value.flatMap((d) =>
+      (d.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>).filter((c) =>
+        asyncRecordOrSkip(c as SubLibraryEntryInit<string, unknown>, d.source)
+      )
+    );
+    const deduplicatedMerged = mergedCollections.filter((c) =>
+      asyncRecordOrSkip(c as SubLibraryEntryInit<string, unknown>, 'mergeLibraries')
+    );
+
     return succeed({
       collections: [
-        ...builtInResult.value.collections,
-        ...fileCollections,
-        ...mergedCollections,
+        ...deduplicatedBuiltin,
+        ...deduplicatedFileCollections,
+        ...deduplicatedMerged,
         ...additionalCollections
       ],
       protectedCollections: allProtectedCollections
@@ -1067,6 +1178,67 @@ export abstract class SubLibraryBase<
       ...internal.ref,
       keyDerivation: internal.encryptedFile.keyDerivation
     }));
+  }
+
+  /**
+   * All collection ID collisions detected across all sources.
+   *
+   * Each entry describes one duplicated collection ID: the active (winning) copy
+   * and all conflicting copies that were discarded. Covers all collision types:
+   * loaded+loaded, loaded+encrypted, and encrypted+encrypted.
+   *
+   * Use `removeConflictingCopy` to delete a conflicting copy, or
+   * `removeCollection` / `removeProtectedCollection` to remove the active copy.
+   *
+   * @public
+   */
+  public get collectionConflicts(): ReadonlyArray<ICollectionIdConflict> {
+    const result: ICollectionIdConflict[] = [];
+    for (const [id, losers] of this._conflicts) {
+      const entryResult = this.collections.get(id);
+      let activeCopy: IConflictingCollectionCopy;
+      if (entryResult.isSuccess()) {
+        const entry = entryResult.value;
+        activeCopy = {
+          sourceName: entry.metadata?.sourceName,
+          isEncrypted: entry.metadata?.secretName !== undefined,
+          itemCount: entry.items.size,
+          secretName: entry.metadata?.secretName,
+          isMutable: entry.isMutable
+        };
+      } else {
+        const pc = this._protectedCollections.get(id);
+        activeCopy = {
+          sourceName: pc?.sourceName,
+          isEncrypted: true,
+          itemCount: pc?.ref.itemCount,
+          secretName: pc?.ref.secretName,
+          isMutable: pc?.ref.isMutable ?? false
+        };
+      }
+      result.push({
+        collectionId: id,
+        activeCopy,
+        conflictingCopies: losers.map(({ sourceItem: _si, ...rest }) => rest)
+      });
+    }
+    return result;
+  }
+
+  /**
+   * Protected collections whose IDs also appear in the loaded collections map.
+   *
+   * @deprecated Use `collectionConflicts` instead, which covers all collision types.
+   * @public
+   */
+  public get conflictingProtectedCollections(): ReadonlyArray<IProtectedCollectionInfo<CollectionId>> {
+    const loadedIds = new Set(this.collections.keys());
+    return Array.from(this._protectedCollections.values())
+      .filter((internal) => loadedIds.has(internal.ref.collectionId))
+      .map((internal) => ({
+        ...internal.ref,
+        keyDerivation: internal.encryptedFile.keyDerivation
+      }));
   }
 
   /**
@@ -1514,6 +1686,69 @@ export abstract class SubLibraryBase<
         // Use the protected method from AggregatedResultMapBase
         return this._deleteCollection(collectionId).asResult;
       });
+  }
+
+  /**
+   * Removes a protected (encrypted) collection and deletes its backing file.
+   *
+   * Use this to clean up an encrypted collection whose ID conflicts with a loaded
+   * collection from another storage root (e.g., an orphaned encrypted local copy
+   * when an unencrypted cloud copy of the same collection is already loaded).
+   *
+   * @param collectionId - The protected collection ID to remove.
+   * @returns Result<true> on success, or Failure if the collection is not found.
+   * @public
+   */
+  public removeProtectedCollection(collectionId: string): Result<true> {
+    const internal = this._protectedCollections.get(collectionId as CollectionId);
+    if (!internal) {
+      return fail(`Protected collection "${collectionId}" not found`);
+    }
+
+    if (internal.sourceItem && FileTree.isMutableFileItem(internal.sourceItem)) {
+      internal.sourceItem.delete();
+    }
+
+    this._protectedCollections.delete(collectionId as CollectionId);
+    return succeed(true);
+  }
+
+  /**
+   * Removes one conflicting (losing) copy of a collection and deletes its backing file.
+   *
+   * Use this to repair a collection ID collision after inspecting the conflict via
+   * `collectionConflicts`. Identifies the copy by its `sourceName`.
+   *
+   * To remove the active (winning) copy instead, use `removeCollection` (loaded)
+   * or `removeProtectedCollection` (encrypted).
+   *
+   * @param collectionId - The collection ID with a conflict.
+   * @param sourceName - The `sourceName` of the conflicting copy to remove.
+   * @returns Result<true> on success, or Failure if the conflict or copy is not found.
+   * @public
+   */
+  public removeConflictingCopy(collectionId: string, sourceName: string | undefined): Result<true> {
+    const list = this._conflicts.get(collectionId as CollectionId);
+    if (!list?.length) {
+      return fail(`No conflicts found for collection '${collectionId}'`);
+    }
+    const idx = list.findIndex((c) => c.sourceName === sourceName);
+    if (idx < 0) {
+      return fail(
+        `No conflicting copy from source '${sourceName ?? 'unknown'}' found for collection '${collectionId}'`
+      );
+    }
+    const copy = list[idx];
+    if (copy.sourceItem && FileTree.isMutableFileItem(copy.sourceItem)) {
+      copy.sourceItem.delete();
+    }
+    const newList = list.filter((_, i) => i !== idx);
+    if (newList.length === 0) {
+      this._conflicts.delete(collectionId as CollectionId);
+    } else {
+      this._conflicts.set(collectionId as CollectionId, newList);
+    }
+    return succeed(true);
   }
 
   // ==========================================================================

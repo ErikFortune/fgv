@@ -66,6 +66,11 @@ export interface ICollectionInfo {
   readonly isProtected: boolean;
   /** Whether the protected collection has been unlocked */
   readonly isUnlocked: boolean;
+  /**
+   * Whether this loaded collection has an orphaned encrypted shadow with the same ID
+   * in another storage root. Indicates a data integrity issue that should be resolved.
+   */
+  readonly hasConflict: boolean;
   /** Whether this collection is currently visible (not hidden by user) */
   readonly isVisible: boolean;
   /** Whether this collection is the default target for new entities in this sub-library */
@@ -120,7 +125,7 @@ function buildCollectionInfos(
   visibility: ICollectionVisibility,
   defaultCollectionId: string | undefined
 ): ReadonlyArray<ICollectionInfo> {
-  const protectedIds = new Set(subLibrary.protectedCollections.map((pc) => pc.collectionId));
+  const conflictIds = new Set(subLibrary.collectionConflicts.map((c) => c.collectionId));
   const loadedCollectionIds = new Set<string>();
 
   const infos: ICollectionInfo[] = [];
@@ -128,7 +133,10 @@ function buildCollectionInfos(
   for (const entry of subLibrary.collections.values()) {
     loadedCollectionIds.add(entry.id);
     const metadata = entry.metadata as LibraryData.ICollectionRuntimeMetadata | undefined;
-    const isProtected = protectedIds.has(entry.id) || metadata?.secretName !== undefined;
+    // isProtected reflects THIS collection's own encryption status.
+    // hasConflict is true when any other copy (encrypted or loaded) has the same ID.
+    const isProtected = metadata?.secretName !== undefined;
+    const hasConflict = conflictIds.has(entry.id);
 
     infos.push({
       id: entry.id,
@@ -138,7 +146,8 @@ function buildCollectionInfos(
       isProtected,
       isUnlocked: isProtected ? entry.items.size > 0 : true,
       isVisible: isCollectionVisible(visibility, entry.id),
-      isDefault: entry.id === defaultCollectionId
+      isDefault: entry.id === defaultCollectionId,
+      hasConflict
     });
   }
 
@@ -153,7 +162,8 @@ function buildCollectionInfos(
         isProtected: true,
         isUnlocked: false,
         isVisible: isCollectionVisible(visibility, pc.collectionId),
-        isDefault: pc.collectionId === defaultCollectionId
+        isDefault: pc.collectionId === defaultCollectionId,
+        hasConflict: false
       });
     }
   }

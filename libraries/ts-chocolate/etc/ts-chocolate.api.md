@@ -3339,6 +3339,13 @@ interface ICollectionFilterInitParams<T extends string> {
     readonly nameConverter: Converter<T> | Validator<T>;
 }
 
+// @public
+interface ICollectionIdConflict {
+    readonly activeCopy: IConflictingCollectionCopy;
+    readonly collectionId: string;
+    readonly conflictingCopies: ReadonlyArray<IConflictingCollectionCopy>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -3661,6 +3668,15 @@ type IConfectionsLibraryAsyncParams = ISubLibraryAsyncParams<ConfectionsLibrary,
 
 // @public
 type IConfectionsLibraryParams = ISubLibraryParams<ConfectionsLibrary, ConfectionCollectionEntryInit>;
+
+// @public
+interface IConflictingCollectionCopy {
+    readonly isEncrypted: boolean;
+    readonly isMutable: boolean;
+    readonly itemCount: number | undefined;
+    readonly secretName?: string;
+    readonly sourceName: string | undefined;
+}
 
 // @public
 interface ICreateConfectionSessionOptions {
@@ -6918,6 +6934,8 @@ declare namespace LibraryData {
         IEncryptionConfig,
         IProtectedCollectionInfo,
         IProtectedCollectionInternal,
+        IConflictingCollectionCopy,
+        ICollectionIdConflict,
         ICollectionLoadResult,
         ImportRootKind,
         IImportRootCandidate,
@@ -8631,6 +8649,9 @@ const storageRootId: Converter<StorageRootId>;
 // @public
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata> {
     protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
+    get collectionConflicts(): ReadonlyArray<ICollectionIdConflict>;
+    // @deprecated
+    get conflictingProtectedCollections(): ReadonlyArray<IProtectedCollectionInfo<CollectionId>>;
     createCollectionFile(collectionId: CollectionId, content: string, extension?: 'yaml' | 'json'): Result<FileTree.FileTreeItem>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getCollectionOperations(collectionId: CollectionId): {
@@ -8651,6 +8672,8 @@ abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends strin
     //
     // @internal
     removeCollection(collectionId: CollectionId): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>;
+    removeConflictingCopy(collectionId: string, sourceName: string | undefined): Result<true>;
+    removeProtectedCollection(collectionId: string): Result<true>;
     removeSource(sourceName: string): number;
     setActiveMutableSource(sourceName: string, dataDirectory: FileTree.IMutableFileTreeDirectoryItem | undefined, sourceRoot?: FileTree.IMutableFileTreeDirectoryItem): void;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

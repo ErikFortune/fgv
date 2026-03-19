@@ -580,6 +580,48 @@ export interface IProtectedCollectionInternal<TCollectionId extends string = str
   readonly sourceName?: string;
 }
 
+// ============================================================================
+// Collection ID Conflict Types
+// ============================================================================
+
+/**
+ * Describes one copy of a collection involved in an ID collision.
+ *
+ * Used to surface all copies — loaded and encrypted — so the user can
+ * choose which one(s) to keep or remove via Settings → Storage.
+ *
+ * @public
+ */
+export interface IConflictingCollectionCopy {
+  /** Which storage root loaded this copy. Undefined if unknown. */
+  readonly sourceName: string | undefined;
+  /** True if this copy is an encrypted/protected collection. */
+  readonly isEncrypted: boolean;
+  /** Item count, if known. May be undefined for loaded losers. */
+  readonly itemCount: number | undefined;
+  /** Secret name used for encryption. Only set for encrypted copies. */
+  readonly secretName?: string;
+  /** Whether the backing file can be deleted (i.e., from a mutable root). */
+  readonly isMutable: boolean;
+}
+
+/**
+ * Represents a collection ID collision across multiple sources.
+ *
+ * The `activeCopy` is the copy currently in use (first-seen winner).
+ * All other copies with the same ID are in `conflictingCopies`.
+ *
+ * @public
+ */
+export interface ICollectionIdConflict {
+  /** The collection ID that is duplicated. */
+  readonly collectionId: string;
+  /** The copy currently accessible at runtime. */
+  readonly activeCopy: IConflictingCollectionCopy;
+  /** All other copies with the same ID that were discarded on load. */
+  readonly conflictingCopies: ReadonlyArray<IConflictingCollectionCopy>;
+}
+
 /**
  * Result of loading collections from a file tree.
  * @typeParam T - The item type

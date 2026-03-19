@@ -54,6 +54,40 @@ Gets the list of protected collections that were captured but not decrypted.
 </td></tr>
 <tr><td>
 
+[collectionConflicts](./SubLibraryBase.collectionConflicts.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [ICollectionIdConflict](../../interfaces/ICollectionIdConflict.md)[]
+
+</td><td>
+
+All collection ID collisions detected across all sources.
+
+</td></tr>
+<tr><td>
+
+[conflictingProtectedCollections](./SubLibraryBase.conflictingProtectedCollections.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IProtectedCollectionInfo](../../interfaces/IProtectedCollectionInfo.md)&lt;[CollectionId](../../type-aliases/CollectionId.md)&gt;[]
+
+</td><td>
+
+Protected collections whose IDs also appear in the loaded collections map.
+
+</td></tr>
+<tr><td>
+
 [validating](./SubLibraryBase.validating.md)
 
 </td><td>
@@ -240,6 +274,32 @@ Sets the active mutable source for new collection creation.
 </td><td>
 
 Remove all mutable collections whose metadata `sourceName` matches the given source.
+
+</td></tr>
+<tr><td>
+
+[removeProtectedCollection(collectionId)](./SubLibraryBase.removeProtectedCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes a protected (encrypted) collection and deletes its backing file.
+
+</td></tr>
+<tr><td>
+
+[removeConflictingCopy(collectionId, sourceName)](./SubLibraryBase.removeConflictingCopy.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes one conflicting (losing) copy of a collection and deletes its backing file.
 
 </td></tr>
 <tr><td>

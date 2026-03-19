@@ -531,6 +531,189 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
 }
 
 // ============================================================================
+// CollectionConflictsSection — shows all collection ID conflicts with repair
+// ============================================================================
+
+interface IConflictSubLibDef {
+  readonly label: string;
+  readonly subLib: LibraryData.SubLibraryBase<string, string, unknown>;
+}
+
+interface IConflictEntry {
+  readonly subLibLabel: string;
+  readonly subLib: LibraryData.SubLibraryBase<string, string, unknown>;
+  readonly conflict: LibraryData.ICollectionIdConflict;
+}
+
+function buildConflictEntries(defs: ReadonlyArray<IConflictSubLibDef>): ReadonlyArray<IConflictEntry> {
+  const entries: IConflictEntry[] = [];
+  for (const { label, subLib } of defs) {
+    for (const conflict of subLib.collectionConflicts) {
+      entries.push({ subLibLabel: label, subLib, conflict });
+    }
+  }
+  return entries;
+}
+
+function formatItemCount(count: number | undefined): string {
+  if (count === undefined) return 'unknown items';
+  return `${count} item${count !== 1 ? 's' : ''}`;
+}
+
+function CopyRow({
+  copy,
+  label,
+  onRemove
+}: {
+  readonly copy: LibraryData.IConflictingCollectionCopy;
+  readonly label: string;
+  readonly onRemove?: () => void;
+}): React.ReactElement {
+  return (
+    <div className="space-y-0.5">
+      <p className="font-medium text-muted uppercase tracking-wide text-[10px]">{label}</p>
+      <p>{copy.sourceName ?? 'unknown source'}</p>
+      <p>{formatItemCount(copy.itemCount)}</p>
+      <p className="text-muted">
+        {copy.isEncrypted ? 'encrypted' : 'loaded'} · {copy.isMutable ? 'read/write' : 'read-only'}
+      </p>
+      {copy.secretName && (
+        <p className="text-muted font-mono truncate text-[10px]" title={copy.secretName}>
+          key: {copy.secretName}
+        </p>
+      )}
+      {onRemove && copy.isMutable && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="mt-1 text-xs px-2 py-0.5 rounded border border-status-error-border text-status-error-icon hover:bg-status-error-bg transition-colors"
+        >
+          Remove
+        </button>
+      )}
+    </div>
+  );
+}
+
+interface IPendingRemove {
+  readonly entry: IConflictEntry;
+  /** 'active' to remove the active copy; sourceName string to remove a conflicting copy */
+  readonly target: 'active' | string | undefined;
+}
+
+function CollectionConflictsSection({
+  defs,
+  onRepaired
+}: {
+  readonly defs: ReadonlyArray<IConflictSubLibDef>;
+  readonly onRepaired: () => void;
+}): React.ReactElement | null {
+  const conflicts = buildConflictEntries(defs);
+  const [pendingRemove, setPendingRemove] = useState<IPendingRemove | null>(null);
+
+  if (conflicts.length === 0) return null;
+
+  function handleRemoveConflicting(entry: IConflictEntry, sourceName: string | undefined): void {
+    entry.subLib.removeConflictingCopy(entry.conflict.collectionId, sourceName);
+    onRepaired();
+  }
+
+  function handleConfirmRemoveActive(): void {
+    if (!pendingRemove) return;
+    const { entry } = pendingRemove;
+    const { collectionId, activeCopy } = entry.conflict;
+    if (activeCopy.isEncrypted) {
+      entry.subLib.removeProtectedCollection(collectionId);
+    } else {
+      type CollId = Parameters<typeof entry.subLib.removeCollection>[0];
+      entry.subLib.removeCollection(collectionId as unknown as CollId);
+    }
+    setPendingRemove(null);
+    onRepaired();
+  }
+
+  const pendingEntry = pendingRemove?.entry;
+  const pendingActive = pendingEntry?.conflict.activeCopy;
+  const confirmMessage = pendingEntry
+    ? `Remove the ${pendingActive?.isEncrypted ? 'encrypted' : 'loaded'} copy of "${
+        pendingEntry.conflict.collectionId
+      }"` +
+      (pendingActive?.itemCount !== undefined ? ` (${formatItemCount(pendingActive.itemCount)})` : '') +
+      ` from ${pendingActive?.sourceName ?? 'unknown source'}? This cannot be undone.`
+    : '';
+
+  return (
+    <>
+      <ConfirmDialog
+        isOpen={pendingRemove !== null}
+        title="Remove Active Collection Copy"
+        message={confirmMessage}
+        confirmLabel="Remove"
+        severity="danger"
+        onConfirm={handleConfirmRemoveActive}
+        onCancel={(): void => setPendingRemove(null)}
+      />
+      <div className="border border-status-warning-border bg-status-warning-bg rounded-md p-4 space-y-3">
+        <div className="flex items-start gap-2">
+          <span className="text-status-warning-strong text-sm shrink-0">⚠</span>
+          <div>
+            <p className="text-sm font-semibold text-status-warning-strong">Collection ID Conflicts</p>
+            <p className="text-xs text-status-warning-text mt-0.5">
+              The following collection IDs appear in multiple storage roots. The active copy is in use; other
+              copies were skipped on load. Resolve each conflict to keep your data consistent.
+            </p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {conflicts.map((entry) => (
+            <div
+              key={`${entry.subLibLabel}-${entry.conflict.collectionId}`}
+              className="bg-surface rounded border border-status-warning-border p-3 space-y-2"
+            >
+              <p className="text-xs font-semibold text-primary">
+                {entry.subLibLabel} — <span className="font-mono">{entry.conflict.collectionId}</span>
+              </p>
+              <div
+                className="grid gap-2 text-xs text-secondary"
+                style={{
+                  gridTemplateColumns: `repeat(${
+                    1 + entry.conflict.conflictingCopies.length
+                  }, minmax(0, 1fr))`
+                }}
+              >
+                <CopyRow
+                  copy={entry.conflict.activeCopy}
+                  label="Active copy"
+                  onRemove={
+                    entry.conflict.activeCopy.isMutable
+                      ? (): void => setPendingRemove({ entry, target: 'active' })
+                      : undefined
+                  }
+                />
+                {entry.conflict.conflictingCopies.map(
+                  (copy: LibraryData.IConflictingCollectionCopy, i: number) => (
+                    <CopyRow
+                      key={i}
+                      copy={copy}
+                      label={`Conflicting copy ${entry.conflict.conflictingCopies.length > 1 ? i + 1 : ''}`}
+                      onRemove={
+                        copy.isMutable
+                          ? (): void => handleRemoveConflicting(entry, copy.sourceName)
+                          : undefined
+                      }
+                    />
+                  )
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ============================================================================
 // StorageSection — level 1: list of storage roots
 // ============================================================================
 
@@ -540,6 +723,7 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
   const workspace = useWorkspace();
   const summary = reactiveWorkspace.storageSummary;
   const entities = workspace.data.entities;
+  const userEntities = workspace.userData.entities;
   const [selectedRootId, setSelectedRootId] = useState<string | undefined>(undefined);
   const [isBackingUpAll, setIsBackingUpAll] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -631,6 +815,21 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
       return result;
     }, 'fillings.zip').catch(() => undefined);
   }
+
+  const CONFLICT_SUB_LIB_DEFS: ReadonlyArray<IConflictSubLibDef> = [
+    { label: 'Ingredients', subLib: entities.ingredients },
+    { label: 'Fillings', subLib: entities.fillings },
+    { label: 'Confections', subLib: entities.confections },
+    { label: 'Decorations', subLib: entities.decorations },
+    { label: 'Molds', subLib: entities.molds },
+    { label: 'Procedures', subLib: entities.procedures },
+    { label: 'Tasks', subLib: entities.tasks },
+    { label: 'Sessions', subLib: userEntities.sessions },
+    { label: 'Journals', subLib: userEntities.journals },
+    { label: 'Mold Inventory', subLib: userEntities.moldInventory },
+    { label: 'Ingredient Inventory', subLib: userEntities.ingredientInventory },
+    { label: 'Locations', subLib: userEntities.locations }
+  ];
 
   const SUB_LIB_DEFS: ReadonlyArray<{ key: string; label: string; lib: ISubLibWithCollections }> = [
     { key: 'ingredients', label: 'Ingredients', lib: entities.ingredients },
@@ -778,6 +977,11 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
         </div>
         {exportError !== undefined && <p className="mt-2 text-xs text-red-500">{exportError}</p>}
       </div>
+
+      <CollectionConflictsSection
+        defs={CONFLICT_SUB_LIB_DEFS}
+        onRepaired={(): void => reactiveWorkspace.notifyChange()}
+      />
 
       {summary.roots.length === 0 ? (
         <p className="text-sm text-muted italic">No storage roots active.</p>
