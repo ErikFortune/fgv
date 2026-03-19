@@ -4,6 +4,7 @@
 
 The file tree containing settings files.
 Must be the user library root (settings are in data/settings/).
+Bootstrap settings are always read from and written to this tree.
 
 **Signature:**
 

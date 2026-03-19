@@ -89,3 +89,13 @@ export {
   writeBootstrapSettings,
   writePreferencesSettings
 } from './workspaceInit';
+
+// Backup and restore
+export {
+  backupRoots,
+  restoreRoot,
+  type IBackupManifest,
+  type IBackupRootEntry,
+  type IBackupRootInput,
+  type IRestoreResult
+} from './backupRestore';

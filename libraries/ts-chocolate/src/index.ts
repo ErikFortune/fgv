@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Erik Fortune
+// Copyright (c) 2026 Erik Fortune
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -60,7 +60,13 @@ export {
   type IMissingCollectionWarning,
   type IMissingPreferencesLocationWarning,
   type ISettingsValidationContext,
-  validateResolvedSettings
+  validateResolvedSettings,
+  backupRoots,
+  restoreRoot,
+  type IBackupManifest,
+  type IBackupRootEntry,
+  type IBackupRootInput,
+  type IRestoreResult
 } from './packlets/workspace';
 
 // All branded types and common utilities
@@ -72,6 +78,7 @@ import * as Editing from './packlets/editing';
 import * as Entities from './packlets/entities';
 import * as LibraryData from './packlets/library-data';
 import * as LibraryRuntime from './packlets/library-runtime';
+import * as Presentation from './packlets/presentation';
 import * as Settings from './packlets/settings';
 import * as UserEntities from './packlets/user-entities';
 import * as UserLibrary from './packlets/user-library';
@@ -83,6 +90,7 @@ export {
   Entities,
   LibraryData,
   LibraryRuntime,
+  Presentation,
   Settings,
   UserEntities,
   UserLibrary

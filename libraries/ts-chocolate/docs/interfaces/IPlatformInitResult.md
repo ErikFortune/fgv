@@ -144,4 +144,21 @@ The merged resolved settings.
 The device identifier for this instance.
 
 </td></tr>
+<tr><td>
+
+[preferencesTree](./IPlatformInitResult.preferencesTree.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+IFileTreeDirectoryItem&lt;string&gt;
+
+</td><td>
+
+Cloud tree to use for preferences read/write, when preferencesLocation is external.
+
+</td></tr>
 </tbody></table>

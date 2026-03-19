@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import type { ICascadeColumn } from '@fgv/ts-app-shell';
-import { ConfirmDialog } from '@fgv/ts-app-shell';
-import { type Settings, type LibraryData } from '@fgv/ts-chocolate';
+import { ConfirmDialog, MultiActionButton } from '@fgv/ts-app-shell';
+import { type Settings, type LibraryData, backupRoots, restoreRoot, Presentation } from '@fgv/ts-chocolate';
+import { FileTree } from '@fgv/ts-json-base';
 
 import {
   useReactiveWorkspace,
@@ -12,6 +13,20 @@ import {
   type IStorageRootSummary,
   type StorageCategory
 } from '../../workspace';
+
+// ============================================================================
+// Download helper
+// ============================================================================
+
+function _downloadFile(data: Uint8Array, filename: string, mimeType: string): void {
+  const blob = new Blob([data.buffer as ArrayBuffer], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // ============================================================================
 // Types
@@ -222,6 +237,7 @@ interface IStorageRootDetailProps {
   readonly root: IStorageRootSummary;
   readonly subLibraries: ReadonlyArray<ISubLibraryDef>;
   readonly targets: Settings.IDefaultStorageTargets | undefined;
+  readonly rootDir?: FileTree.IFileTreeDirectoryItem;
   readonly onToggleDefault: (field: 'libraryDefault' | 'userDataDefault') => void;
   readonly onToggleSublibraryOverride: (subLibKey: string) => void;
   readonly onPushColumn: (col: ICascadeColumn) => void;
@@ -229,11 +245,63 @@ interface IStorageRootDetailProps {
 }
 
 export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactElement {
-  const { root, subLibraries, targets, onToggleDefault, onToggleSublibraryOverride, onPushColumn, onClose } =
-    props;
+  const {
+    root,
+    subLibraries,
+    targets,
+    rootDir,
+    onToggleDefault,
+    onToggleSublibraryOverride,
+    onPushColumn,
+    onClose
+  } = props;
   const [selectedSubLibKey, setSelectedSubLibKey] = useState<string | undefined>(undefined);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreMessage, setRestoreMessage] = useState<string | undefined>(undefined);
+  const restoreInputRef = useRef<HTMLInputElement>(null);
+  const reactiveWorkspace = useReactiveWorkspace();
   const { removeStorageRoot } = useRemoveStorageRoot();
+
+  async function handleBackup(): Promise<void> {
+    if (!rootDir) return;
+    setIsBackingUp(true);
+    try {
+      const result = await backupRoots([{ id: root.id, label: root.label, dir: rootDir }]);
+      if (result.isSuccess()) {
+        _downloadFile(result.value, `${root.label}-backup.zip`, 'application/zip');
+      } else {
+        setRestoreMessage(`Backup failed: ${result.message}`);
+      }
+    } finally {
+      setIsBackingUp(false);
+    }
+  }
+
+  async function handleRestoreFile(e: React.ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = e.target.files?.[0];
+    if (!file || !rootDir) return;
+    setIsRestoring(true);
+    setRestoreMessage(undefined);
+    try {
+      const buffer = await file.arrayBuffer();
+      const result = await restoreRoot(buffer, root.id, rootDir);
+      if (result.isSuccess()) {
+        reactiveWorkspace.notifyChange();
+        setRestoreMessage(
+          `Restored ${result.value.filesWritten} file${result.value.filesWritten !== 1 ? 's' : ''}.`
+        );
+      } else {
+        setRestoreMessage(`Restore failed: ${result.message}`);
+      }
+    } finally {
+      setIsRestoring(false);
+      if (restoreInputRef.current) {
+        restoreInputRef.current.value = '';
+      }
+    }
+  }
 
   function handleSelectSubLib(sub: ISubLibraryDef): void {
     if (selectedSubLibKey === sub.key) {
@@ -299,6 +367,16 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
         }}
         onCancel={(): void => setConfirmRemove(false)}
       />
+      {/* Hidden file input for restore */}
+      <input
+        ref={restoreInputRef}
+        type="file"
+        accept=".zip"
+        className="hidden"
+        onChange={(e): void => {
+          handleRestoreFile(e).catch(() => undefined);
+        }}
+      />
       <div className="p-6 space-y-5">
         <div className="flex items-start justify-between">
           <div>
@@ -306,6 +384,28 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
             <p className="text-xs text-muted mt-0.5">{rootTypeLabel(root)}</p>
           </div>
           <div className="flex items-center gap-2 ml-2">
+            {root.isMutable && rootDir && (
+              <>
+                <button
+                  type="button"
+                  onClick={(): void => {
+                    handleBackup().catch(() => undefined);
+                  }}
+                  disabled={isBackingUp}
+                  className="text-xs text-brand-accent hover:underline disabled:opacity-40"
+                >
+                  {isBackingUp ? 'Backing up…' : 'Backup'}
+                </button>
+                <button
+                  type="button"
+                  onClick={(): void => restoreInputRef.current?.click()}
+                  disabled={isRestoring}
+                  className="text-xs text-brand-accent hover:underline disabled:opacity-40"
+                >
+                  {isRestoring ? 'Restoring…' : 'Restore'}
+                </button>
+              </>
+            )}
             {root.isLocal && (
               <button
                 type="button"
@@ -325,6 +425,17 @@ export function StorageRootDetail(props: IStorageRootDetailProps): React.ReactEl
             </button>
           </div>
         </div>
+        {restoreMessage && (
+          <p
+            className={`text-xs ${
+              restoreMessage.startsWith('Restore failed') || restoreMessage.startsWith('Backup failed')
+                ? 'text-status-error-accent'
+                : 'text-status-success-accent'
+            }`}
+          >
+            {restoreMessage}
+          </p>
+        )}
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
           <dt className="text-muted">Access</dt>
@@ -430,6 +541,96 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
   const summary = reactiveWorkspace.storageSummary;
   const entities = workspace.data.entities;
   const [selectedRootId, setSelectedRootId] = useState<string | undefined>(undefined);
+  const [isBackingUpAll, setIsBackingUpAll] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | undefined>(undefined);
+
+  function getRootDir(rootId: string): FileTree.IFileTreeDirectoryItem | undefined {
+    if (rootId === 'localStorage') {
+      return reactiveWorkspace.localStorageRootDir;
+    }
+    const additional = reactiveWorkspace.additionalRootDirs.get(rootId);
+    if (additional) return additional;
+    const persistent = reactiveWorkspace.persistentTrees.get(rootId);
+    if (persistent) {
+      const result = persistent.tree.getDirectory('/');
+      return result.isSuccess() ? result.value : undefined;
+    }
+    return undefined;
+  }
+
+  async function handleBackupAll(): Promise<void> {
+    setIsBackingUpAll(true);
+    try {
+      const inputs = summary.roots
+        .filter((r) => r.isMutable)
+        .flatMap((r) => {
+          const dir = getRootDir(r.id);
+          return dir ? [{ id: r.id, label: r.label, dir }] : [];
+        });
+      if (inputs.length === 0) return;
+      const result = await backupRoots(inputs);
+      if (result.isSuccess()) {
+        _downloadFile(result.value, 'chocolate-lab-backup.zip', 'application/zip');
+      }
+    } finally {
+      setIsBackingUpAll(false);
+    }
+  }
+
+  async function handleExport(
+    fn: () => Promise<{ value: Uint8Array } | null>,
+    filename: string
+  ): Promise<void> {
+    setIsExporting(true);
+    setExportError(undefined);
+    try {
+      const result = await fn();
+      if (result) {
+        _downloadFile(result.value, filename, 'application/zip');
+      }
+    } catch (e: unknown) {
+      setExportError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  function handleExportAll(): void {
+    handleExport(async () => {
+      const result = await Presentation.exportAllAsMarkdown(
+        workspace.data.confections.values(),
+        workspace.data.fillings.values()
+      );
+      if (result.isFailure()) {
+        setExportError(result.message);
+        return null;
+      }
+      return result;
+    }, 'recipes.zip').catch(() => undefined);
+  }
+
+  function handleExportConfections(): void {
+    handleExport(async () => {
+      const result = await Presentation.exportConfectionsAsMarkdown(workspace.data.confections.values());
+      if (result.isFailure()) {
+        setExportError(result.message);
+        return null;
+      }
+      return result;
+    }, 'confections.zip').catch(() => undefined);
+  }
+
+  function handleExportFillings(): void {
+    handleExport(async () => {
+      const result = await Presentation.exportFillingsAsMarkdown(workspace.data.fillings.values());
+      if (result.isFailure()) {
+        setExportError(result.message);
+        return null;
+      }
+      return result;
+    }, 'fillings.zip').catch(() => undefined);
+  }
 
   const SUB_LIB_DEFS: ReadonlyArray<{ key: string; label: string; lib: ISubLibWithCollections }> = [
     { key: 'ingredients', label: 'Ingredients', lib: entities.ingredients },
@@ -514,6 +715,7 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
           root={root}
           subLibraries={subLibraries}
           targets={currentStorageTargets}
+          rootDir={getRootDir(root.id)}
           onToggleDefault={(field): void => handleToggleCategoryDefault(root.id, field)}
           onToggleSublibraryOverride={(subLibKey): void => handleToggleSublibraryOverride(root.id, subLibKey)}
           onClose={(): void => {
@@ -549,6 +751,32 @@ export function StorageSection(props: IStorageSectionProps): React.ReactElement 
       <div>
         <h2 className="text-lg font-semibold text-primary mb-1">Storage</h2>
         <p className="text-xs text-muted mb-4">Active storage roots for this session.</p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={(): void => {
+              handleBackupAll().catch(() => undefined);
+            }}
+            disabled={isBackingUpAll}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-accent border border-brand-accent/30 rounded-md hover:bg-brand-accent/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isBackingUpAll ? 'Backing up…' : 'Backup All'}
+          </button>
+          <MultiActionButton
+            variant="default"
+            disabled={isExporting}
+            primaryAction={{
+              id: 'export-all',
+              label: isExporting ? 'Exporting…' : 'Export All',
+              onSelect: handleExportAll
+            }}
+            alternativeActions={[
+              { id: 'export-confections', label: 'Export Confections', onSelect: handleExportConfections },
+              { id: 'export-fillings', label: 'Export Fillings', onSelect: handleExportFillings }
+            ]}
+          />
+        </div>
+        {exportError !== undefined && <p className="mt-2 text-xs text-red-500">{exportError}</p>}
       </div>
 
       {summary.roots.length === 0 ? (

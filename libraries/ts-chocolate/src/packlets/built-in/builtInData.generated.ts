@@ -3974,6 +3974,76 @@ export const ingredientCollections: Record<string, JsonObject> = {
         origins: ['Various'],
         beanVarieties: ['Blend'],
         applications: ['baking', 'confectionary', 'ganache', 'molding', 'cremeux']
+      },
+      'guittard-mystic-white': {
+        baseId: 'guittard-mystic-white',
+        name: 'Guittard Mystic White',
+        ganacheCharacteristics: {
+          cacaoFat: 30,
+          sugar: 53,
+          milkFat: 5,
+          water: 1,
+          solids: 10,
+          otherFats: 1
+        },
+        description:
+          'Wafers of creamy cocoa butter white chocolate with a classic creamy flavor and strong vanilla note. Features low viscosity (100 MacMichael degrees) making it ideal for enrobing, molding, and detailed confectionery work. 30% minimum cacao butter content, total fat 36%.',
+        manufacturer: 'Guittard Chocolate Company',
+        allergens: ['milk'],
+        traceAllergens: [],
+        certifications: [
+          'gluten-free',
+          'kosher-dairy',
+          'non-gmo',
+          'peanut-free',
+          'soy-free',
+          'tree-nut-free'
+        ],
+        vegan: false,
+        tags: ['couverture', 'wafers', 'low-viscosity'],
+        density: 1,
+        phase: 'solid',
+        measurementUnits: {
+          options: [
+            {
+              id: 'g'
+            }
+          ],
+          preferredId: 'g'
+        },
+        urls: [
+          {
+            category: 'spec-sheet',
+            url: 'https://www.webstaurantstore.com/documents/nutrition/9270x_mystic_white_spec.pdf'
+          },
+          {
+            category: 'product-page',
+            url: 'https://www.bakerscandc.com/products/guittard-mystic-white-chocolate-9270-wafers'
+          },
+          {
+            category: 'guittard-product-list',
+            url: 'https://www.guittard.com/assets/uploads/Guittard-Product-List_10_2_24(1).pdf'
+          }
+        ],
+        notes: [
+          {
+            category: 'ai',
+            note: "ganacheCharacteristics derived from official spec sheet nutrition per 100g: cacaoFat set to stated 30% min cocoa butter; sugar to 53g total sugars; water rounded from 0.7g moisture; total fat 35.8g so milkFat ~5%, otherFats (lecithin etc.) 1%; solids remainder ~10% (includes 7.7g protein + minerals). TemperatureCurve: melt from Guittard white chocolate guideline 46-47C, standard cool/working for white chocolate. fluidityStars=5 based on 'low viscosity' description and 100 McM value indicating high fluidity. All data confident from spec sheet and product descriptions."
+          }
+        ],
+        category: 'chocolate',
+        chocolateType: 'white',
+        cacaoPercentage: 30,
+        fluidityStars: 5,
+        viscosityMcM: 100,
+        temperatureCurve: {
+          melt: 46,
+          cool: 27,
+          working: 29
+        },
+        origins: ['USA'],
+        beanVarieties: ['Blend'],
+        applications: ['confectionary', 'enrobing', 'molding', 'pralines', 'ganache']
       }
     }
   }

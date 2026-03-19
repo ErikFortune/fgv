@@ -307,6 +307,9 @@ function atLeast<T>(min: number, getter: (item: T) => number | undefined): Filte
 function atMost<T>(max: number, getter: (item: T) => number | undefined): FilterPredicate<T>;
 
 // @public
+export function backupRoots(roots: ReadonlyArray<IBackupRootInput>): Promise<Result<Uint8Array>>;
+
+// @public
 class BarTruffleEditingSession<TRecipe extends IBarTruffleRecipe = IBarTruffleRecipe> extends ConfectionEditingSessionBase<IProducedBarTruffleEntity, TRecipe> {
     // @internal
     protected _computeSlotTargetWeight(slotId: SlotId): Result<Measurement>;
@@ -1275,6 +1278,9 @@ class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfectionId, 
 
 // @public
 type ConfectionsMergeSource = SubLibraryMergeSource<ConfectionsLibrary>;
+
+// @public
+function confectionToMarkdown(confection: AnyConfectionRecipe, options?: IConfectionMarkdownOptions): Result<string>;
 
 // @public
 export type ConfectionType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
@@ -2403,6 +2409,19 @@ class ExecutionRuntime {
 // @public
 const executionState: Converter<IExecutionState>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "confectionToMarkdown"
+//
+// @public
+function exportAllAsMarkdown(confections: Iterable<AnyConfectionRecipe>, fillings: Iterable<FillingRecipe>, options?: IConfectionMarkdownOptions): Promise<Result<Uint8Array>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "confectionToMarkdown"
+//
+// @public
+function exportConfectionsAsMarkdown(confections: Iterable<AnyConfectionRecipe>, options?: IConfectionMarkdownOptions): Promise<Result<Uint8Array>>;
+
+// @public
+function exportFillingsAsMarkdown(fillings: Iterable<FillingRecipe>): Promise<Result<Uint8Array>>;
+
 // @public
 type ExternalLibraryRef = Brand<string, 'ExternalLibraryRef'>;
 
@@ -2821,6 +2840,9 @@ const fillingSlotEntity: Converter<IFillingSlotEntity>;
 type FillingsMergeSource = SubLibraryMergeSource<FillingsLibrary>;
 
 // @public
+function fillingToMarkdown(filling: FillingRecipe): Result<string>;
+
+// @public
 type FilterPattern = string | RegExp;
 
 // @public
@@ -3055,6 +3077,26 @@ interface IAlcoholIngredientEntity extends IIngredientEntity {
 // @public
 interface IAppearanceSettings {
     readonly theme?: ThemeId;
+}
+
+// @public
+export interface IBackupManifest {
+    readonly createdAt: string;
+    readonly roots: ReadonlyArray<IBackupRootEntry>;
+    readonly version: string;
+}
+
+// @public
+export interface IBackupRootEntry {
+    readonly id: string;
+    readonly label: string;
+}
+
+// @public
+export interface IBackupRootInput {
+    readonly dir: FileTree.IFileTreeDirectoryItem;
+    readonly id: string;
+    readonly label: string;
 }
 
 // @public
@@ -3474,6 +3516,12 @@ interface IConfectionEditJournalEntryEntity extends IJournalEntryEntityBase<AnyJ
 
 // @public
 type IConfectionFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+interface IConfectionMarkdownOptions {
+    readonly includeScaledFillings?: boolean;
+    readonly variations?: 'golden' | 'all' | ConfectionRecipeVariationSpec[];
+}
 
 // @public
 type IConfectionMoldRef = Model.IRefWithNotes<MoldId>;
@@ -5800,6 +5848,11 @@ interface IResolveImportRootOptions {
 }
 
 // @public
+export interface IRestoreResult {
+    readonly filesWritten: number;
+}
+
+// @public
 interface IRolledTruffleJournalVariation extends IRolledTruffleRecipeVariationEntity {
     // (undocumented)
     readonly variationType: 'rolled-truffle';
@@ -7800,6 +7853,19 @@ const PREFERENCES_SETTINGS_FILENAME: string;
 // @public
 const preferencesSettings: Converter<IPreferencesSettings>;
 
+declare namespace Presentation {
+    export {
+        renderTemplate,
+        confectionToMarkdown,
+        exportConfectionsAsMarkdown,
+        exportAllAsMarkdown,
+        IConfectionMarkdownOptions,
+        fillingToMarkdown,
+        exportFillingsAsMarkdown
+    }
+}
+export { Presentation }
+
 // @public
 class Procedure implements IProcedure {
     get baseId(): BaseProcedureId;
@@ -8096,6 +8162,9 @@ const removeJsonExtension: Converter<string>;
 const renderOptions: Converter<IRenderOptions>;
 
 // @public
+function renderTemplate(template: string, params: Record<string, string>): string;
+
+// @public
 const reporterLogLevel: Converter<Logging.ReporterLogLevel>;
 
 // @public
@@ -8139,6 +8208,9 @@ function resolvePreferencesSettings(preferences: IPreferencesSettings, deviceId:
 
 // @public
 function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;
+
+// @public
+export function restoreRoot(zipData: ArrayBuffer, rootId: string, targetDir: FileTree.IFileTreeDirectoryItem): Promise<Result<IRestoreResult>>;
 
 // @public
 class RolledTruffleEditingSession<TRecipe extends IRolledTruffleRecipe = IRolledTruffleRecipe> extends ConfectionEditingSessionBase<IProducedRolledTruffleEntity, TRecipe> {

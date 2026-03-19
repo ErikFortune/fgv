@@ -58,4 +58,21 @@ The file tree containing settings files.
 The device identifier for this instance.
 
 </td></tr>
+<tr><td>
+
+[preferencesTree](./ISettingsManagerBootstrapParams.preferencesTree.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+IFileTreeDirectoryItem&lt;string&gt;
+
+</td><td>
+
+Optional alternate file tree for preferences (e.g.
+
+</td></tr>
 </tbody></table>

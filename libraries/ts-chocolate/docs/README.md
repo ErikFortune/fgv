@@ -74,6 +74,15 @@ and rich query capabilities.
 </td></tr>
 <tr><td>
 
+[Presentation](./Presentation/README.md)
+
+</td><td>
+
+Presentation packlet - rendering confections and other entities for output.
+
+</td></tr>
+<tr><td>
+
 [Settings](./Settings/README.md)
 
 </td><td>
@@ -356,6 +365,42 @@ The preferences file location references an unavailable root.
 </td><td>
 
 Context provided to the validator describing what is actually available
+
+</td></tr>
+<tr><td>
+
+[IBackupManifest](./interfaces/IBackupManifest.md)
+
+</td><td>
+
+Metadata written to `_backup-manifest.json` at the root of a backup ZIP.
+
+</td></tr>
+<tr><td>
+
+[IBackupRootEntry](./interfaces/IBackupRootEntry.md)
+
+</td><td>
+
+Per-root entry in the backup manifest.
+
+</td></tr>
+<tr><td>
+
+[IBackupRootInput](./interfaces/IBackupRootInput.md)
+
+</td><td>
+
+Input to backupRoots: a single storage root to include in the backup.
+
+</td></tr>
+<tr><td>
+
+[IRestoreResult](./interfaces/IRestoreResult.md)
+
+</td><td>
+
+Result of a successful restoreRoot call.
 
 </td></tr>
 </tbody></table>
@@ -1068,6 +1113,24 @@ Ensures the standard workspace directory structure exists in a FileTree.
 </td><td>
 
 Validates resolved settings against the actual workspace state.
+
+</td></tr>
+<tr><td>
+
+[backupRoots](./functions/backupRoots.md)
+
+</td><td>
+
+Backs up one or more storage roots into a single ZIP archive.
+
+</td></tr>
+<tr><td>
+
+[restoreRoot](./functions/restoreRoot.md)
+
+</td><td>
+
+Restores files from a backup ZIP into a mutable storage root.
 
 </td></tr>
 </tbody></table>
