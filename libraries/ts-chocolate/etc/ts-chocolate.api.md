@@ -3074,6 +3074,7 @@ interface IBarTruffleRecipe extends IConfectionBase<IBarTruffleRecipeVariation, 
 interface IBarTruffleRecipeVariation extends IConfectionRecipeVariationBase<IBarTruffleRecipe, Confections.IBarTruffleRecipeVariationEntity> {
     readonly enrobingChocolate?: IResolvedChocolateSpec;
     readonly frameDimensions: Confections.IPieceDimensions;
+    getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined>;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
     readonly yield: Confections.IBarTruffleYield;
 }
@@ -3523,6 +3524,9 @@ interface IConfectionRecipeVariationBase<TConfection extends IConfectionBase = I
     readonly effectiveUrls: ReadonlyArray<Model.ICategorizedUrl>;
     readonly entity: TEntity;
     readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
+    getDecorations(): Result<Model.IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId> | undefined>;
+    getFillings(): Result<ReadonlyArray<IResolvedFillingSlot>>;
+    getProcedures(): Result<Model.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined>;
     isBarTruffleVariation(): this is IBarTruffleRecipeVariation;
     isMoldedBonBonVariation(): this is IMoldedBonBonRecipeVariation;
     isRolledTruffleVariation(): this is IRolledTruffleRecipeVariation;
@@ -4735,7 +4739,9 @@ interface IMoldedBonBonRecipe extends IConfectionBase<IMoldedBonBonRecipeVariati
 // @public
 interface IMoldedBonBonRecipeVariation extends IConfectionRecipeVariationBase<IMoldedBonBonRecipe, Confections.IMoldedBonBonRecipeVariationEntity> {
     readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
+    getAdditionalChocolates(): Result<ReadonlyArray<IResolvedAdditionalChocolate>>;
     getMolds(): Result<Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>>;
+    getShellChocolate(): Result<IResolvedChocolateSpec | undefined>;
     readonly molds: Model.IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     readonly preferredMold: IResolvedConfectionMoldRef | undefined;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
@@ -5809,6 +5815,8 @@ interface IRolledTruffleRecipe extends IConfectionBase<IRolledTruffleRecipeVaria
 interface IRolledTruffleRecipeVariation extends IConfectionRecipeVariationBase<IRolledTruffleRecipe, Confections.IRolledTruffleRecipeVariationEntity> {
     readonly coatings?: IResolvedCoatings;
     readonly enrobingChocolate?: IResolvedChocolateSpec;
+    getCoatings(): Result<IResolvedCoatings | undefined>;
+    getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined>;
     readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
     readonly yield: Confections.IYieldInPieces;
 }

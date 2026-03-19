@@ -237,8 +237,7 @@ function _scaleMoldedBonBonWithMold(
     cavityWeight *
     (1 + bufferPercentage / 100)) as Measurement;
 
-  /* c8 ignore next 1 - defensive: fillings always defined for molded bonbon */
-  const fillings = variation.fillings ?? [];
+  const fillings = variation.getFillings().orDefault([]);
   const ratioSum = fillings.reduce((sum, s) => sum + (s.ratio ?? 1), 0) || 1;
 
   const recipeScaleFactor = effectiveCount / (variation.yield.numFrames * mold.cavityCount);
@@ -292,8 +291,7 @@ function _scaleLinear(
   const scaleFactor = targetCount / recipeCount;
   const weightPerPiece = yld.weightPerPiece;
 
-  /* c8 ignore next 1 - defensive: fillings always defined */
-  const fillings = variation.fillings ?? [];
+  const fillings = variation.getFillings().orDefault([]);
   const ratioSum = fillings.reduce((sum, s) => sum + (s.ratio ?? 1), 0) || 1;
 
   const errors = new MessageAggregator();

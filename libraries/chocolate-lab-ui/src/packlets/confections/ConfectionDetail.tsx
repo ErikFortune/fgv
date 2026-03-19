@@ -337,6 +337,24 @@ function ChocolateSpecSection({
 // Molded BonBon Sections
 // ============================================================================
 
+function UnavailableSpec({
+  title,
+  ids
+}: {
+  readonly title: string;
+  readonly ids: ReadonlyArray<string>;
+}): React.ReactElement {
+  return (
+    <DetailSection title={title}>
+      {ids.map((id) => (
+        <div key={id} className="py-1.5 px-2 text-sm text-muted italic">
+          {id}
+        </div>
+      ))}
+    </DetailSection>
+  );
+}
+
 function MoldsSection({
   molds,
   onMoldClick,
@@ -613,29 +631,46 @@ function MoldedBonBonContent({
   readonly viewSettings?: IConfectionViewSettings;
   readonly onSettingChange?: (patch: Partial<IConfectionViewSettings>) => void;
 }): React.ReactElement {
+  const moldsResult = variation.getMolds();
+  const shellChocolateResult = variation.getShellChocolate();
+  const additionalChocolatesResult = variation.getAdditionalChocolates();
+  const molds = moldsResult.orDefault({ options: [], preferredId: undefined });
+  const shellChocolate = shellChocolateResult.orDefault(undefined);
+  const additionalChocolates = additionalChocolatesResult.orDefault([]);
   return (
     <>
-      <MoldsSection
-        molds={variation.molds}
-        onMoldClick={onMoldClick}
-        selectedId={viewSettings?.moldId}
-        onSelect={onSettingChange ? (id): void => onSettingChange({ moldId: id }) : undefined}
-      />
-      {variation.shellChocolate && (
+      {moldsResult.isFailure() ? (
+        <UnavailableSpec title="Molds" ids={variation.entity.molds.options.map((m) => m.id)} />
+      ) : (
+        <MoldsSection
+          molds={molds}
+          onMoldClick={onMoldClick}
+          selectedId={viewSettings?.moldId}
+          onSelect={onSettingChange ? (id): void => onSettingChange({ moldId: id }) : undefined}
+        />
+      )}
+      {shellChocolate ? (
         <ChocolateSpecSection
           title="Shell Chocolate"
-          spec={variation.shellChocolate}
+          spec={shellChocolate}
           onIngredientClick={onIngredientClick}
           selectedId={viewSettings?.shellChocolateId}
           onSelect={onSettingChange ? (id): void => onSettingChange({ shellChocolateId: id }) : undefined}
         />
-      )}
-      {variation.additionalChocolates && (
+      ) : shellChocolateResult.isFailure() ? (
+        <UnavailableSpec title="Shell Chocolate" ids={variation.entity.shellChocolate.ids} />
+      ) : null}
+      {additionalChocolates.length > 0 ? (
         <AdditionalChocolatesSection
-          chocolates={variation.additionalChocolates}
+          chocolates={additionalChocolates}
           onIngredientClick={onIngredientClick}
         />
-      )}
+      ) : additionalChocolatesResult.isFailure() ? (
+        <UnavailableSpec
+          title="Additional Chocolates"
+          ids={variation.entity.additionalChocolates?.flatMap((ac) => ac.chocolate.ids) ?? []}
+        />
+      ) : null}
     </>
   );
 }
@@ -651,21 +686,25 @@ function BarTruffleContent({
   readonly viewSettings?: IConfectionViewSettings;
   readonly onSettingChange?: (patch: Partial<IConfectionViewSettings>) => void;
 }): React.ReactElement {
+  const enrobingChocolateResult = variation.getEnrobingChocolate();
+  const enrobingChocolate = enrobingChocolateResult.orDefault(undefined);
   return (
     <>
       <DimensionsSection
         frameDimensions={variation.frameDimensions}
         pieceDimensions={variation.yield.dimensions}
       />
-      {variation.enrobingChocolate && (
+      {enrobingChocolate ? (
         <ChocolateSpecSection
           title="Enrobing Chocolate"
-          spec={variation.enrobingChocolate}
+          spec={enrobingChocolate}
           onIngredientClick={onIngredientClick}
           selectedId={viewSettings?.enrobingChocolateId}
           onSelect={onSettingChange ? (id): void => onSettingChange({ enrobingChocolateId: id }) : undefined}
         />
-      )}
+      ) : enrobingChocolateResult.isFailure() ? (
+        <UnavailableSpec title="Enrobing Chocolate" ids={variation.entity.enrobingChocolate?.ids ?? []} />
+      ) : null}
     </>
   );
 }
@@ -681,25 +720,33 @@ function RolledTruffleContent({
   readonly viewSettings?: IConfectionViewSettings;
   readonly onSettingChange?: (patch: Partial<IConfectionViewSettings>) => void;
 }): React.ReactElement {
+  const enrobingChocolateResult = variation.getEnrobingChocolate();
+  const coatingsResult = variation.getCoatings();
+  const enrobingChocolate = enrobingChocolateResult.orDefault(undefined);
+  const coatings = coatingsResult.orDefault(undefined);
   return (
     <>
-      {variation.enrobingChocolate && (
+      {enrobingChocolate ? (
         <ChocolateSpecSection
           title="Enrobing Chocolate"
-          spec={variation.enrobingChocolate}
+          spec={enrobingChocolate}
           onIngredientClick={onIngredientClick}
           selectedId={viewSettings?.enrobingChocolateId}
           onSelect={onSettingChange ? (id): void => onSettingChange({ enrobingChocolateId: id }) : undefined}
         />
-      )}
-      {variation.coatings && (
+      ) : enrobingChocolateResult.isFailure() ? (
+        <UnavailableSpec title="Enrobing Chocolate" ids={variation.entity.enrobingChocolate?.ids ?? []} />
+      ) : null}
+      {coatings ? (
         <CoatingsSection
-          coatings={variation.coatings}
+          coatings={coatings}
           onIngredientClick={onIngredientClick}
           selectedId={viewSettings?.coatingId}
           onSelect={onSettingChange ? (id): void => onSettingChange({ coatingId: id }) : undefined}
         />
-      )}
+      ) : coatingsResult.isFailure() ? (
+        <UnavailableSpec title="Coatings" ids={variation.entity.coatings?.ids ?? []} />
+      ) : null}
     </>
   );
 }
@@ -816,6 +863,13 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
     return weights;
   }, [selectedVariation, viewSettings]);
 
+  const fillingsResult = selectedVariation.getFillings();
+  const decorationsResult = selectedVariation.getDecorations();
+  const proceduresResult = selectedVariation.getProcedures();
+  const fillings = fillingsResult.orDefault([]);
+  const decorations = decorationsResult.orDefault(undefined);
+  const procedures = proceduresResult.orDefault(undefined);
+
   return (
     <div className="p-4 overflow-y-auto h-full">
       {/* Header */}
@@ -871,9 +925,9 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
       />
 
       {/* Filling slots */}
-      {selectedVariation.fillings && selectedVariation.fillings.length > 0 && (
+      {fillings.length > 0 ? (
         <FillingSlotsSection
-          fillings={selectedVariation.fillings}
+          fillings={fillings}
           onFillingClick={onFillingClick}
           onIngredientClick={onIngredientClick}
           fillingSelections={viewSettings?.fillingSelections}
@@ -881,7 +935,12 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
           scaledSlotWeights={scaledSlotWeights}
           confectionId={confection.id}
         />
-      )}
+      ) : fillingsResult.isFailure() ? (
+        <UnavailableSpec
+          title="Fillings"
+          ids={selectedVariation.entity.fillings?.map((s) => s.name ?? s.slotId) ?? []}
+        />
+      ) : null}
 
       {/* Subtype-specific content */}
       {selectedVariation.isMoldedBonBonVariation() && (
@@ -912,26 +971,36 @@ export function ConfectionDetail(props: IConfectionDetailProps): React.ReactElem
       )}
 
       {/* Decorations */}
-      {selectedVariation.decorations && (
+      {decorations ? (
         <DecorationsSection
-          decorations={selectedVariation.decorations}
+          decorations={decorations}
           onDecorationClick={onDecorationClick}
           selectedId={viewSettings?.decorationId}
           onSelect={
             onViewSettingsChange ? (id): void => handleSettingChange({ decorationId: id }) : undefined
           }
         />
-      )}
+      ) : decorationsResult.isFailure() ? (
+        <UnavailableSpec
+          title="Decorations"
+          ids={selectedVariation.entity.decorations?.options.map((d) => d.id) ?? []}
+        />
+      ) : null}
 
       {/* Procedures */}
-      {selectedVariation.procedures && (
+      {procedures ? (
         <ProceduresSection
-          procedures={selectedVariation.procedures}
+          procedures={procedures}
           onProcedureClick={onProcedureClick}
           selectedId={viewSettings?.procedureId}
           onSelect={onViewSettingsChange ? (id): void => handleSettingChange({ procedureId: id }) : undefined}
         />
-      )}
+      ) : proceduresResult.isFailure() ? (
+        <UnavailableSpec
+          title="Procedures"
+          ids={selectedVariation.entity.procedures?.options.map((p) => p.id) ?? []}
+        />
+      ) : null}
 
       {/* Notes */}
       <NotesSection notes={selectedVariation.notes ?? []} />

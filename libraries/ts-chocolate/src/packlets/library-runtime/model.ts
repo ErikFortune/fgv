@@ -1480,6 +1480,11 @@ export interface IConfectionRecipeVariationBase<
    */
   readonly decorations?: CommonModel.IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId>;
 
+  /** Gets resolved decorations (Result-returning). */
+  getDecorations(): Result<
+    CommonModel.IOptionsWithPreferred<IResolvedConfectionDecorationRef, DecorationId> | undefined
+  >;
+
   /**
    * Optional notes about this variation.
    */
@@ -1493,11 +1498,19 @@ export interface IConfectionRecipeVariationBase<
    */
   readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
 
+  /** Gets resolved fillings (Result-returning). */
+  getFillings(): Result<ReadonlyArray<IResolvedFillingSlot>>;
+
   /**
    * Resolved procedures for this variation.
    * Undefined if the variation has no procedures.
    */
   readonly procedures?: CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
+
+  /** Gets resolved procedures (Result-returning). */
+  getProcedures(): Result<
+    CommonModel.IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined
+  >;
 
   // ---- Effective Tags/URLs ----
 
@@ -1555,8 +1568,14 @@ export interface IMoldedBonBonRecipeVariation
   /** Resolved shell chocolate specification (undefined if not configured) */
   readonly shellChocolate: IResolvedChocolateSpec | undefined;
 
+  /** Gets resolved shell chocolate (Result-returning). */
+  getShellChocolate(): Result<IResolvedChocolateSpec | undefined>;
+
   /** Resolved additional chocolates (optional) */
   readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
+
+  /** Gets resolved additional chocolates (Result-returning). */
+  getAdditionalChocolates(): Result<ReadonlyArray<IResolvedAdditionalChocolate>>;
 
   /** Gets the preferred mold, falling back to first available */
   readonly preferredMold: IResolvedConfectionMoldRef | undefined;
@@ -1580,6 +1599,9 @@ export interface IBarTruffleRecipeVariation
   /** Resolved enrobing chocolate specification (optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 
+  /** Gets resolved enrobing chocolate (Result-returning). */
+  getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined>;
+
   /** Gets the preferred procedure, falling back to first available */
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;
 }
@@ -1599,8 +1621,14 @@ export interface IRolledTruffleRecipeVariation
   /** Resolved enrobing chocolate specification (optional) */
   readonly enrobingChocolate?: IResolvedChocolateSpec;
 
+  /** Gets resolved enrobing chocolate (Result-returning). */
+  getEnrobingChocolate(): Result<IResolvedChocolateSpec | undefined>;
+
   /** Resolved coatings (optional) */
   readonly coatings?: IResolvedCoatings;
+
+  /** Gets resolved coatings (Result-returning). */
+  getCoatings(): Result<IResolvedCoatings | undefined>;
 
   /** Gets the preferred procedure, falling back to first available */
   readonly preferredProcedure: IResolvedConfectionProcedure | undefined;

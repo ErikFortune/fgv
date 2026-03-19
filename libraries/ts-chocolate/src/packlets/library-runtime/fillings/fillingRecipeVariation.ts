@@ -454,7 +454,7 @@ export class FillingRecipeVariation implements IFillingRecipeVariation {
       if (primaryResult.isFailure()) {
         primaryResult
           .withErrorFormat((msg) => `filling ${this._fillingId}: ingredient ${primaryId}: ${msg}`)
-          .report(logger);
+          .report(logger, { failure: 'detail', success: 'quiet' });
         continue;
       }
       const ingredient = primaryResult.value;

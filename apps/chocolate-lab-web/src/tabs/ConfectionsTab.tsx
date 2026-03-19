@@ -1503,7 +1503,7 @@ export function ConfectionsTabContent(): React.ReactElement {
         cascade.drillDown(index, {
           entityType: 'task',
           entityId: id,
-          entity: workspace.data.tasks.get(id).report(workspace.data.logger).orDefault()
+          entity: workspace.data.tasks.get(id).orDefault()
         });
       };
 
@@ -2023,9 +2023,27 @@ export function ConfectionsTabContent(): React.ReactElement {
           )
         };
       }
-      if (entry.entityType === 'task') {
-        const result = workspace.data.tasks.get(entry.entityId as TaskId);
-        if (result.isFailure()) {
+      if (isTaskCascadeEntry(entry)) {
+        const task = entry.entity;
+        if (!task) {
+          // Check for inline task from parent procedure
+          const parentProcEntry = cascade.stack.slice(0, index).reverse().find(isProcedureCascadeEntry);
+          if (parentProcEntry) {
+            const proc =
+              parentProcEntry.entity ??
+              workspace.data.procedures.get(parentProcEntry.entityId as ProcedureId).orDefault();
+            const steps = proc ? proc.getSteps() : undefined;
+            const inlineStep = steps?.isSuccess()
+              ? steps.value.find((s) => s.isInline && s.resolvedTask.id === entry.entityId)
+              : undefined;
+            if (inlineStep) {
+              return {
+                key: entry.entityId,
+                label: `${inlineStep.resolvedTask.name} (inline)`,
+                content: <TaskDetail task={inlineStep.resolvedTask} />
+              };
+            }
+          }
           return {
             key: entry.entityId,
             label: entry.entityId,
@@ -2034,8 +2052,8 @@ export function ConfectionsTabContent(): React.ReactElement {
         }
         return {
           key: entry.entityId,
-          label: result.value.name,
-          content: <TaskDetail task={result.value} />
+          label: task.name,
+          content: <TaskDetail task={task} />
         };
       }
       return {

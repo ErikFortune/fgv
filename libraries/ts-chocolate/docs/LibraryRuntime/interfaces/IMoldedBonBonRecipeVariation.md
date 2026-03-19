@@ -365,6 +365,71 @@ Gets resolved molds with preferred selection (Result-returning).
 </td></tr>
 <tr><td>
 
+[getShellChocolate()](./IMoldedBonBonRecipeVariation.getShellChocolate.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets resolved shell chocolate (Result-returning).
+
+</td></tr>
+<tr><td>
+
+[getAdditionalChocolates()](./IMoldedBonBonRecipeVariation.getAdditionalChocolates.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets resolved additional chocolates (Result-returning).
+
+</td></tr>
+<tr><td>
+
+[getDecorations()](./IConfectionRecipeVariationBase.getDecorations.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets resolved decorations (Result-returning).
+
+</td></tr>
+<tr><td>
+
+[getFillings()](./IConfectionRecipeVariationBase.getFillings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets resolved fillings (Result-returning).
+
+</td></tr>
+<tr><td>
+
+[getProcedures()](./IConfectionRecipeVariationBase.getProcedures.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets resolved procedures (Result-returning).
+
+</td></tr>
+<tr><td>
+
 [isMoldedBonBonVariation()](./IConfectionRecipeVariationBase.isMoldedBonBonVariation.md)
 
 </td><td>

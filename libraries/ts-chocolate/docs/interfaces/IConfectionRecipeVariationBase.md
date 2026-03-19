@@ -271,6 +271,45 @@ Description
 <tbody>
 <tr><td>
 
+[getDecorations()](./IConfectionRecipeVariationBase.getDecorations.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets resolved decorations (Result-returning).
+
+</td></tr>
+<tr><td>
+
+[getFillings()](./IConfectionRecipeVariationBase.getFillings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets resolved fillings (Result-returning).
+
+</td></tr>
+<tr><td>
+
+[getProcedures()](./IConfectionRecipeVariationBase.getProcedures.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets resolved procedures (Result-returning).
+
+</td></tr>
+<tr><td>
+
 [isMoldedBonBonVariation()](./IConfectionRecipeVariationBase.isMoldedBonBonVariation.md)
 
 </td><td>
