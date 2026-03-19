@@ -5354,6 +5354,7 @@ export interface IPlatformInitResult {
     readonly deviceId: DeviceId;
     readonly externalLibraries: ReadonlyArray<IResolvedExternalLibrary>;
     readonly keyStoreFile?: CryptoUtils.KeyStore.IKeyStoreFile;
+    readonly preferencesTree?: FileTree.IFileTreeDirectoryItem;
     readonly resolvedSettings: IResolvedSettings;
     readonly userLibraryTree: FileTree.IFileTreeDirectoryItem;
 }
@@ -6131,6 +6132,7 @@ interface ISettingsManager {
 interface ISettingsManagerBootstrapParams {
     readonly deviceId: DeviceId;
     readonly fileTree: FileTree.IFileTreeDirectoryItem;
+    readonly preferencesTree?: FileTree.IFileTreeDirectoryItem;
 }
 
 // @public

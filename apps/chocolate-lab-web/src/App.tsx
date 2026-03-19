@@ -374,11 +374,15 @@ function inferStorageCategories(
 function isCloudBackendUnavailableError(message: string): boolean {
   const normalized = message.toLowerCase();
   const isCloudInitError = normalized.includes("cloud storage '");
+  // Network-level failure (offline, CORS, etc.)
   const hasFetchFailure =
     normalized.includes('failed to fetch') ||
     normalized.includes('fetch failed') ||
     normalized.includes('networkerror');
-  return isCloudInitError && hasFetchFailure;
+  // HTTP-level failure: server is up but isn't a cloud storage backend (e.g. local dev server
+  // returning an HTML 404 page instead of JSON when the /api/storage routes don't exist)
+  const hasHttpErrorPage = normalized.includes('<!doctype html') || normalized.includes('cannot get ');
+  return isCloudInitError && (hasFetchFailure || hasHttpErrorPage);
 }
 
 async function _buildReactiveWorkspace(): Promise<IBuildResult> {
@@ -423,7 +427,10 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   const includeBuiltIn = bootstrap?.includeBuiltIn ?? true;
   const loadLocalLibrary = bootstrap?.localStorage?.library ?? true;
   const loadLocalUserData = bootstrap?.localStorage?.userData ?? true;
-  const useLocalStorage = loadLocalLibrary || loadLocalUserData;
+  // If server provided cloud defaults and no bootstrap exists yet, disable localStorage
+  // for this session. The saved bootstrap will make it permanent from session 2 onward.
+  const serverProvidedCloudDefaults = !!defaultCloudStorage && !bootstrap;
+  const useLocalStorage = serverProvidedCloudDefaults ? false : loadLocalLibrary || loadLocalUserData;
 
   _bootReporter?.detail(
     `_buildReactiveWorkspace: includeBuiltIn=${includeBuiltIn}, loadLocalLibrary=${loadLocalLibrary}, loadLocalUserData=${loadLocalUserData}, useLocalStorage=${useLocalStorage}`
@@ -560,6 +567,19 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   const cloudSources = cloudStripped ? [] : platformInit.value?.externalLibraries ?? [];
   for (const cloudSource of cloudSources) {
     const sourceName = cloudSource.name;
+    // Include 'settings' category if keystore or preferences are stored in this cloud root
+    const hasSettings =
+      (bootstrap?.keystoreLocation?.type === 'external' &&
+        bootstrap.keystoreLocation.rootName === sourceName) ||
+      (bootstrap?.preferencesLocation?.type === 'external' &&
+        bootstrap.preferencesLocation.rootName === sourceName) ||
+      // Cold start: server said keystoreInCloud and this is the first (only) cloud root
+      (serverConfig?.keystoreInCloud && !bootstrap && cloudSources[0]?.name === sourceName);
+    const dataCategories = inferStorageCategories(cloudSource.load);
+    const categories: Array<'library' | 'user-data' | 'settings'> = [
+      ...dataCategories,
+      ...(hasSettings ? (['settings'] as const) : [])
+    ];
     reactiveWorkspace.registerAdditionalRoot(
       {
         id: sourceName,
@@ -568,7 +588,8 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
         isBuiltIn: false,
         isMutable: cloudSource.mutable ?? true,
         isLocal: false,
-        categories: inferStorageCategories(cloudSource.load)
+        isCloud: true,
+        categories
       },
       cloudSource.fileTree
     );
@@ -643,12 +664,16 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   if (serverConfig && !bootstrap) {
     const settings = workspace.settings;
     if (settings) {
-      // Bootstrap: cloud storage + keystore location
+      // Bootstrap: cloud storage + keystore location + localStorage disabled + preferences location
       const cloudRootName = cloudSources.length > 0 ? cloudSources[0].name : undefined;
       settings.updateBootstrapSettings({
         ...(defaultCloudStorage ? { cloudStorage: defaultCloudStorage } : {}),
-        ...(serverConfig.keystoreInCloud && cloudRootName
-          ? { keystoreLocation: { type: 'external' as const, rootName: cloudRootName } }
+        localStorage: { library: false, userData: false },
+        ...(cloudRootName
+          ? {
+              keystoreLocation: { type: 'external' as const, rootName: cloudRootName },
+              preferencesLocation: { type: 'external' as const, rootName: cloudRootName }
+            }
           : {})
       });
       // Also wire up the keystore tree for this session
@@ -1237,12 +1262,20 @@ function WorkspaceBootstrap(): React.ReactElement {
   const [dataError, setDataError] = useState<string | undefined>(undefined);
   const [pendingWarnings, setPendingWarnings] = useState<ReadonlyArray<ISettingsValidationWarning>>([]);
   const [pendingWorkspace, setPendingWorkspace] = useState<ReactiveWorkspace | undefined>(undefined);
+  const { setTheme } = useTheme();
 
   useEffect(() => {
     // Connect the boot logger to the real logger so buffered messages
     // are replayed as toasts and all future log calls go through it.
     _bootLogger.ready(reporter.logger);
   }, [reporter]);
+
+  useEffect(() => {
+    const savedTheme = reactiveWorkspace?.workspace.settings?.getPreferencesSettings()?.appearance?.theme;
+    if (savedTheme) {
+      setTheme(savedTheme as unknown as ThemeId);
+    }
+  }, [reactiveWorkspace, setTheme]);
 
   useEffect(() => {
     _getOrBuildWorkspace()

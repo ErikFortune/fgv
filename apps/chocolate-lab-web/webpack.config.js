@@ -48,7 +48,8 @@ module.exports = (env, argv) => {
     },
     plugins: [
       new HtmlWebpackPlugin({
-        template: './public/index.html'
+        template: './public/index.html',
+        favicon: './public/lab-face-icon-256.png'
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',

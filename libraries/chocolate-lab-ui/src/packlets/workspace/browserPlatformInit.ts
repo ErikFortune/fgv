@@ -183,18 +183,21 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
       return fail(`workspace directories: ${dirsResult.message}`);
     }
 
-    const settingsResult = this._loadSettings(tree, deviceId).withErrorFormat((msg) => `settings: ${msg}`);
-    if (settingsResult.isFailure()) {
-      return fail(settingsResult.message);
+    // Stage 1a: Load bootstrap settings (needed to know where preferences and keystore live)
+    const bootstrapResult = this._loadBootstrapSettings(tree).withErrorFormat((msg) => `settings: ${msg}`);
+    if (bootstrapResult.isFailure()) {
+      return fail(bootstrapResult.message);
     }
+    const bootstrapSettings = bootstrapResult.value;
 
+    // Stage 1b: Resolve cloud libraries (using bootstrap config or server-provided defaults)
     let cloudConfig =
-      browserOptions.cloudStorage ??
-      settingsResult.value.bootstrap?.cloudStorage ??
-      browserOptions.defaultCloudStorage;
-    // If cloud storage is enabled but no explicit base URL, derive from proxy URL
+      browserOptions.cloudStorage ?? bootstrapSettings?.cloudStorage ?? browserOptions.defaultCloudStorage;
+    // If cloud storage is enabled but no explicit base URL, derive from proxy URL by loading
+    // a minimal preferences pass from local storage first
     if (cloudConfig?.enabled && !cloudConfig.baseUrl?.trim()) {
-      const proxyUrl = settingsResult.value.resolvedSettings.tools?.aiAssist?.proxyUrl;
+      const localPrefs = this._loadPreferencesSettings(userLibraryTree).orDefault(undefined);
+      const proxyUrl = localPrefs?.tools?.aiAssist?.proxyUrl;
       if (proxyUrl) {
         cloudConfig = { ...cloudConfig, baseUrl: `${proxyUrl}/api/storage` };
       }
@@ -203,13 +206,38 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
     if (cloudLibrariesResult.isFailure()) {
       return fail(cloudLibrariesResult.message);
     }
+    const cloudLibraries = cloudLibrariesResult.value;
+
+    // Stage 1c: Determine preferences tree from bootstrap.preferencesLocation or cold-start defaults.
+    // On cold start (no bootstrap), if server provided cloud defaults, infer preferences from
+    // the first resolved cloud library — preferences will be created there on first save.
+    let preferencesTree: FileTree.IFileTreeDirectoryItem | undefined;
+    const preferencesLocation = bootstrapSettings?.preferencesLocation;
+    if (preferencesLocation?.type === 'external') {
+      const match = cloudLibraries.find((lib) => lib.name === preferencesLocation.rootName);
+      preferencesTree = match?.fileTree;
+    } else if (!bootstrapSettings && browserOptions.defaultCloudStorage && cloudLibraries.length > 0) {
+      preferencesTree = cloudLibraries[0].fileTree;
+    }
+
+    // Stage 1d: Load preferences from the resolved tree (cloud or local)
+    const preferencesResult = this._loadPreferencesSettings(
+      preferencesTree ?? userLibraryTree
+    ).withErrorFormat((msg) => `settings: ${msg}`);
+    if (preferencesResult.isFailure()) {
+      return fail(preferencesResult.message);
+    }
+    const resolvedSettings = Settings.resolvePreferencesSettings(
+      preferencesResult.value ?? { schemaVersion: 1 as Settings.SettingsSchemaVersion },
+      deviceId
+    );
 
     // Determine which tree to load the keystore from based on keystoreLocation.
     // If the bootstrap says 'external', look for a matching cloud tree by name.
-    const keystoreLocation = settingsResult.value.bootstrap?.keystoreLocation;
+    const keystoreLocation = bootstrapSettings?.keystoreLocation;
     let keystoreTree: FileTree.IFileTreeDirectoryItem = userLibraryTree;
     if (keystoreLocation?.type === 'external') {
-      const match = cloudLibrariesResult.value.find(
+      const match = cloudLibraries.find(
         (lib: IResolvedExternalLibrary) => lib.name === keystoreLocation.rootName
       );
       if (match) {
@@ -225,11 +253,12 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
     return succeed({
       cryptoProvider: cryptoProviderResult.value,
       userLibraryTree,
-      externalLibraries: cloudLibrariesResult.value,
+      externalLibraries: cloudLibraries,
       keyStoreFile: keystoreResult.value,
-      bootstrapSettings: settingsResult.value.bootstrap,
-      resolvedSettings: settingsResult.value.resolvedSettings,
-      deviceId
+      bootstrapSettings,
+      resolvedSettings,
+      deviceId,
+      preferencesTree
     });
   }
 
@@ -278,41 +307,6 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
   }
 
   /**
-   * Loads settings from the FileTree.
-   * Loads bootstrap and preferences settings, then resolves final settings.
-   * @param tree - The FileTree instance (for path-based file lookup)
-   * @param deviceId - Device ID for resolved settings
-   * @internal
-   */
-  private _loadSettings(
-    tree: FileTree.FileTree,
-    deviceId: Settings.DeviceId
-  ): Result<{
-    bootstrap: Settings.IBootstrapSettings | undefined;
-    resolvedSettings: Settings.IResolvedSettings;
-  }> {
-    // Load bootstrap settings (optional)
-    const bootstrap = this._loadBootstrapSettings(tree);
-    if (bootstrap.isFailure()) {
-      return fail(bootstrap.message);
-    }
-
-    // Load preferences settings (optional)
-    const preferences = this._loadPreferencesSettings(tree);
-    if (preferences.isFailure()) {
-      return fail(preferences.message);
-    }
-
-    const prefs = preferences.value ?? { schemaVersion: 1 as Settings.SettingsSchemaVersion };
-    const resolvedSettings = Settings.resolvePreferencesSettings(prefs, deviceId);
-
-    return succeed({
-      bootstrap: bootstrap.value,
-      resolvedSettings
-    });
-  }
-
-  /**
    * Loads bootstrap settings from the FileTree.
    * Returns undefined (not failure) if the file doesn't exist.
    * @internal
@@ -333,21 +327,35 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
   }
 
   /**
-   * Loads preferences settings from the FileTree.
-   * Returns undefined (not failure) if the file doesn't exist.
+   * Loads preferences settings from a directory tree root.
+   * Navigates data/settings/preferences.json using directory children.
+   * Returns undefined (not failure) if the file or any parent directory doesn't exist.
+   * Accepts either a local or cloud root directory.
    * @internal
    */
   private _loadPreferencesSettings(
-    tree: FileTree.FileTree
+    rootDir: FileTree.IFileTreeDirectoryItem
   ): Result<Settings.IPreferencesSettings | undefined> {
-    const settingsPath = `/${LibraryData.LibraryPaths.settings}/${LibraryData.LibraryPaths.settingsPreferences}`;
+    const pathParts = [LibraryData.LibraryPaths.settings];
+    const fileName = LibraryData.LibraryPaths.settingsPreferences;
 
-    const fileResult = tree.getFile(settingsPath);
-    if (fileResult.isFailure()) {
-      return succeed(undefined);
+    let dir: FileTree.IFileTreeDirectoryItem = rootDir;
+    for (const part of pathParts) {
+      const childrenResult = dir.getChildren();
+      if (childrenResult.isFailure()) return succeed(undefined);
+      const child = childrenResult.value.find((c) => c.name === part && c.type === 'directory');
+      if (!child) return succeed(undefined);
+      dir = child as FileTree.IFileTreeDirectoryItem;
     }
 
-    return fileResult.value
+    const childrenResult = dir.getChildren();
+    if (childrenResult.isFailure()) return succeed(undefined);
+    const file = childrenResult.value.find((c) => c.name === fileName && c.type === 'file') as
+      | FileTree.IFileTreeFileItem
+      | undefined;
+    if (!file) return succeed(undefined);
+
+    return file
       .getContents()
       .onSuccess((json) =>
         Settings.Converters.preferencesSettings.convert(json).withErrorFormat((e) => `preferences.json: ${e}`)

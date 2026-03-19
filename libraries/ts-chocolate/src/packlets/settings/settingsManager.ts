@@ -151,6 +151,7 @@ export interface ISettingsManagerBootstrapParams {
   /**
    * The file tree containing settings files.
    * Must be the user library root (settings are in data/settings/).
+   * Bootstrap settings are always read from and written to this tree.
    */
   readonly fileTree: FileTree.IFileTreeDirectoryItem;
 
@@ -158,6 +159,13 @@ export interface ISettingsManagerBootstrapParams {
    * The device identifier for this instance.
    */
   readonly deviceId: DeviceId;
+
+  /**
+   * Optional alternate file tree for preferences (e.g. a cloud root).
+   * When provided, preferences are read from and written to this tree
+   * instead of `fileTree`. Bootstrap settings always stay in `fileTree`.
+   */
+  readonly preferencesTree?: FileTree.IFileTreeDirectoryItem;
 }
 
 // ============================================================================
@@ -175,6 +183,7 @@ export class SettingsManager implements ISettingsManager {
   private _preferencesDirty: boolean = false;
   private readonly _deviceId: DeviceId;
   private readonly _fileTree: FileTree.IFileTreeDirectoryItem;
+  private readonly _preferencesTree: FileTree.IFileTreeDirectoryItem | undefined;
 
   /**
    * Creates a SettingsManager. Use SettingsManager.createFromBootstrap() instead.
@@ -184,12 +193,14 @@ export class SettingsManager implements ISettingsManager {
     fileTree: FileTree.IFileTreeDirectoryItem,
     deviceId: DeviceId,
     bootstrap: IBootstrapSettings,
-    preferences: IPreferencesSettings
+    preferences: IPreferencesSettings,
+    preferencesTree?: FileTree.IFileTreeDirectoryItem
   ) {
     this._fileTree = fileTree;
     this._deviceId = deviceId;
     this._bootstrap = bootstrap;
     this._preferences = preferences;
+    this._preferencesTree = preferencesTree;
   }
 
   /**
@@ -200,9 +211,9 @@ export class SettingsManager implements ISettingsManager {
    * @public
    */
   public static createFromBootstrap(params: ISettingsManagerBootstrapParams): Result<SettingsManager> {
-    const { fileTree, deviceId } = params;
+    const { fileTree, deviceId, preferencesTree } = params;
 
-    // Load or create bootstrap settings
+    // Load or create bootstrap settings (always from local fileTree)
     const bootstrapResult = SettingsManager._loadOrCreate(
       fileTree,
       `${SETTINGS_DIR_PATH}/${BOOTSTRAP_SETTINGS_FILENAME}`,
@@ -214,9 +225,12 @@ export class SettingsManager implements ISettingsManager {
     }
     const { settings: bootstrap, isNew: bootstrapIsNew } = bootstrapResult.value;
 
-    // Load or create preferences settings
+    // Load preferences from preferencesTree (cloud) if provided, otherwise from local fileTree.
+    // When loading from cloud, a missing file yields defaults without marking dirty — the file
+    // will be created on first save, which only happens after preferences are explicitly updated.
+    const preferencesSource = preferencesTree ?? fileTree;
     const preferencesResult = SettingsManager._loadOrCreate(
-      fileTree,
+      preferencesSource,
       `${SETTINGS_DIR_PATH}/${PREFERENCES_SETTINGS_FILENAME}`,
       Converters.preferencesSettings,
       createDefaultPreferencesSettings
@@ -226,9 +240,11 @@ export class SettingsManager implements ISettingsManager {
     }
     const { settings: preferences, isNew: preferencesIsNew } = preferencesResult.value;
 
-    const manager = new SettingsManager(fileTree, deviceId, bootstrap, preferences);
+    const manager = new SettingsManager(fileTree, deviceId, bootstrap, preferences, preferencesTree);
     manager._bootstrapDirty = bootstrapIsNew;
-    manager._preferencesDirty = preferencesIsNew;
+    // Only mark preferences dirty if they were newly created AND we're saving to local tree.
+    // Cloud preferences are not auto-created on load — they're created on first explicit save.
+    manager._preferencesDirty = preferencesIsNew && !preferencesTree;
 
     return succeed(manager);
   }
@@ -458,10 +474,14 @@ export class SettingsManager implements ISettingsManager {
       this._bootstrapDirty = false;
     }
 
-    // Save preferences settings if dirty
+    // Save preferences settings if dirty (to cloud tree if available, else local)
     if (this._preferencesDirty) {
       const preferencesPath = `${SETTINGS_DIR_PATH}/${PREFERENCES_SETTINGS_FILENAME}`;
-      const saveResult = await this._saveSettingsFile(preferencesPath, this._preferences);
+      const saveResult = await this._saveSettingsFile(
+        preferencesPath,
+        this._preferences,
+        this._preferencesTree ?? this._fileTree
+      );
       if (saveResult.isFailure()) {
         return fail(saveResult.message);
       }
@@ -477,13 +497,14 @@ export class SettingsManager implements ISettingsManager {
    */
   private async _saveSettingsFile(
     path: string,
-    settings: IBootstrapSettings | IPreferencesSettings
+    settings: IBootstrapSettings | IPreferencesSettings,
+    tree: FileTree.IFileTreeDirectoryItem = this._fileTree
   ): Promise<Result<boolean>> {
     // Navigate to or create the settings directory
     const dirPath = path.substring(0, path.lastIndexOf('/'));
     const fileName = path.substring(path.lastIndexOf('/') + 1);
 
-    const dirResult = this._ensureDirectory(dirPath);
+    const dirResult = this._ensureDirectory(dirPath, tree);
     if (dirResult.isFailure()) {
       return fail(dirResult.message);
     }
@@ -517,18 +538,43 @@ export class SettingsManager implements ISettingsManager {
    * Ensures a directory exists, creating it if necessary.
    * @internal
    */
-  private _ensureDirectory(path: string): Result<FileTree.IFileTreeDirectoryItem> {
-    // Try to navigate to the directory
-    const navResult = SettingsManager._navigateToDirectory(this._fileTree, path);
-    if (navResult.isSuccess()) {
-      return navResult;
+  private _ensureDirectory(
+    path: string,
+    tree: FileTree.IFileTreeDirectoryItem = this._fileTree
+  ): Result<FileTree.IFileTreeDirectoryItem> {
+    const parts = path.split('/').filter((p) => p.length > 0);
+    /* c8 ignore next 2 - edge case: empty path returns root */
+    if (parts.length === 0) {
+      return succeed(tree);
     }
 
-    // Directory doesn't exist - we can't create directories through the FileTree API
-    // The platform initializer should ensure the settings directory exists
-    return fail(
-      `Settings directory does not exist: ${path}. Platform initializer should create this directory.`
-    );
+    let current: FileTree.IFileTreeDirectoryItem = tree;
+
+    for (const part of parts) {
+      const childrenResult = current.getChildren();
+      /* c8 ignore next 3 - defensive: getChildren failure during navigation */
+      if (childrenResult.isFailure()) {
+        return fail(childrenResult.message);
+      }
+
+      const existing = childrenResult.value.find((c) => c.name === part && c.type === 'directory');
+      if (existing) {
+        current = existing as FileTree.IFileTreeDirectoryItem;
+        continue;
+      }
+
+      // Child directory not found — create it if the tree is mutable
+      if (!FileTree.isMutableDirectoryItem(current)) {
+        return fail(`${path}: cannot create directory '${part}' — parent is not mutable`);
+      }
+      const createResult = current.createChildDirectory(part);
+      if (createResult.isFailure()) {
+        return fail(`${path}: failed to create directory '${part}': ${createResult.message}`);
+      }
+      current = createResult.value;
+    }
+
+    return succeed(current);
   }
 
   /**

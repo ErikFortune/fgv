@@ -45,6 +45,7 @@ interface ISubLibraryDef {
 
 function rootTypeLabel(root: IStorageRootSummary): string {
   if (root.isBuiltIn) return 'Built-in library';
+  if (root.isCloud) return root.isMutable ? 'Cloud storage' : 'Cloud storage (read-only)';
   if (root.isLocal) return root.isMutable ? 'Local directory' : 'Local directory (read-only)';
   return 'Browser storage';
 }
@@ -55,12 +56,14 @@ function rootAccessLabel(root: IStorageRootSummary): string {
 
 function rootBadgeClass(root: IStorageRootSummary): string {
   if (root.isBuiltIn) return 'bg-status-info-bg text-status-info-icon border-status-info-border';
+  if (root.isCloud) return 'bg-status-success-bg text-status-success-accent border-status-success-border';
   if (root.isLocal) return 'bg-status-success-bg text-status-success-accent border-status-success-border';
   return 'bg-accent-ai-bg text-accent-ai-text border-accent-ai-border';
 }
 
 function rootBadgeLabel(root: IStorageRootSummary): string {
   if (root.isBuiltIn) return 'built-in';
+  if (root.isCloud) return 'cloud';
   if (root.isLocal) return 'local';
   return 'browser';
 }

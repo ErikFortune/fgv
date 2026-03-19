@@ -144,6 +144,13 @@ export interface IPlatformInitResult {
    * The device identifier for this instance.
    */
   readonly deviceId: DeviceId;
+
+  /**
+   * Cloud tree to use for preferences read/write, when preferencesLocation is external.
+   * When set, SettingsManager loads and saves preferences from/to this tree instead of
+   * the local userLibraryTree.
+   */
+  readonly preferencesTree?: FileTree.IFileTreeDirectoryItem;
 }
 
 // ============================================================================
@@ -451,7 +458,8 @@ export function createWorkspaceFromPlatform(params: ICommonWorkspaceInitParams):
   return (
     SettingsManager.createFromBootstrap({
       fileTree: platformInit.userLibraryTree,
-      deviceId: platformInit.deviceId
+      deviceId: platformInit.deviceId,
+      preferencesTree: platformInit.preferencesTree
     })
       // TODO: rarely is not never.  surely we can create a test that fails.
       /* c8 ignore next 1 - defensive: SettingsManager.create rarely fails with valid platform init */

@@ -80,6 +80,8 @@ export interface IStorageRootSummary {
   readonly isMutable: boolean;
   /** Whether this is a local directory opened via the File System Access API */
   readonly isLocal: boolean;
+  /** Whether this is a remote cloud/network storage root */
+  readonly isCloud?: boolean;
   /** Categories of data held or manageable in this root */
   readonly categories: ReadonlyArray<StorageCategory>;
 }
