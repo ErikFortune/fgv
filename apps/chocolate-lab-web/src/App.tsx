@@ -157,6 +157,14 @@ const THEME_CYCLE: ReadonlyArray<ThemeId> = [
   'system' as unknown as ThemeId
 ];
 
+const CHOCOLATE_CUSTOM_THEMES = [
+  { id: 'dark-chocolate', label: 'Dark Chocolate' },
+  { id: 'milk-chocolate', label: 'Milk Chocolate' },
+  { id: 'white-chocolate', label: 'White Chocolate' },
+  { id: 'caramelized-white', label: 'Caramelized White' },
+  { id: 'ruby-chocolate', label: 'Ruby Chocolate' }
+] as const;
+
 function ThemeToggle(): React.ReactElement {
   const { theme, setTheme, isDark } = useTheme();
 
@@ -1316,7 +1324,7 @@ function WorkspaceBootstrap(): React.ReactElement {
 
 export default function App(): React.ReactElement {
   return (
-    <ThemeProvider initialTheme={'light' as unknown as ThemeId}>
+    <ThemeProvider initialTheme={'light' as unknown as ThemeId} customThemes={CHOCOLATE_CUSTOM_THEMES}>
       <ResponsiveProvider>
         <MessagesProvider>
           <WorkspaceBootstrap />

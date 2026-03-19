@@ -27,6 +27,21 @@ import type { Settings } from '@fgv/ts-chocolate';
 
 import type { IPreferencesDraft } from '../useSettingsDraft';
 
+const THEME_SWATCHES: Readonly<Record<string, ReadonlyArray<string>>> = {
+  light: ['#ffffff', '#f3f4f6', '#d1d5db'],
+  dark: ['#111827', '#374151', '#b8866f'],
+  system: ['#ffffff', '#d1d5db', '#1f2937'],
+  'dark-chocolate': ['#1b120f', '#3a2a26', '#bc845b'],
+  'milk-chocolate': ['#704838', '#5f3d30', '#e1c3b1'],
+  'white-chocolate': ['#fffefb', '#fdf5e8', '#b45309'],
+  'caramelized-white': ['#fffaf1', '#dfc39f', '#bc845b'],
+  'ruby-chocolate': ['#fff6f7', '#e6c1cc', '#b86d87']
+};
+
+function getThemeSwatches(themeId: string): ReadonlyArray<string> {
+  return THEME_SWATCHES[themeId] ?? ['#e5e7eb', '#9ca3af', '#6b7280'];
+}
+
 // ============================================================================
 // Props
 // ============================================================================
@@ -77,27 +92,13 @@ export function AppearanceSection({ appearance, onChange }: IAppearanceSectionPr
               >
                 {/* Theme preview swatch */}
                 <div className="flex gap-1">
-                  {option.id === 'light' && (
-                    <>
-                      <div className="w-4 h-4 rounded-full bg-white border border-gray-200" />
-                      <div className="w-4 h-4 rounded-full bg-gray-100" />
-                    </>
-                  )}
-                  {option.id === 'dark' && (
-                    <>
-                      <div className="w-4 h-4 rounded-full bg-gray-800" />
-                      <div className="w-4 h-4 rounded-full bg-gray-700" />
-                    </>
-                  )}
-                  {option.id === 'system' && (
-                    <>
-                      <div className="w-4 h-4 rounded-full bg-white border border-gray-200" />
-                      <div className="w-4 h-4 rounded-full bg-gray-800" />
-                    </>
-                  )}
-                  {option.id !== 'light' && option.id !== 'dark' && option.id !== 'system' && (
-                    <div className="w-4 h-4 rounded-full bg-brand-accent" />
-                  )}
+                  {getThemeSwatches(option.id).map((swatch) => (
+                    <div
+                      key={`${option.id}-${swatch}`}
+                      className="w-4 h-4 rounded-full border border-black/10"
+                      style={{ backgroundColor: swatch }}
+                    />
+                  ))}
                 </div>
                 <span className="text-xs font-medium">{option.label}</span>
               </button>

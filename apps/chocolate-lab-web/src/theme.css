@@ -151,19 +151,19 @@
   --color-border-subtle: #1f2937; /* gray-800 */
   --color-border-strong: #4b5563; /* gray-600 */
 
-  /* Brand (slightly lighter for contrast on dark backgrounds) */
-  --color-brand-primary: #a16207; /* amber-700 */
-  --color-brand-secondary: #b45309; /* amber-600 */
-  --color-brand-accent: #d97706; /* amber-500 */
-  --color-brand-warm: #451a03; /* amber-950 */
-  --color-brand-surface: #1c1917; /* stone-900 */
+  /* Brand (cocoa-forward, reduced orange cast) */
+  --color-brand-primary: #8b5e4a;
+  --color-brand-secondary: #a1725c;
+  --color-brand-accent: #b8866f;
+  --color-brand-warm: #3a2720;
+  --color-brand-surface: #221813;
 
   /* Interactive */
   --color-hover: #374151; /* gray-700 */
   --color-active: #4b5563; /* gray-600 */
-  --color-focus-ring: #d97706; /* amber-500 */
-  --color-selected: rgba(217, 119, 6, 0.15); /* amber-500/15 */
-  --color-selected-border: #d97706;
+  --color-focus-ring: #b8866f;
+  --color-selected: rgba(184, 134, 111, 0.16);
+  --color-selected-border: #b8866f;
 
   /* Overlay */
   --color-backdrop: rgba(0, 0, 0, 0.6);
@@ -247,6 +247,176 @@
 }
 
 /* =========================================================================
+ * Chocolate custom themes
+ * ========================================================================= */
+
+/* Dark Chocolate: deep cocoa with caramel-toned highlights */
+.theme-dark-chocolate {
+  --color-surface: #2a1d1a;
+  --color-surface-alt: #1b120f;
+  --color-surface-raised: #3a2a26;
+  --color-surface-sunken: #130d0b;
+
+  --color-text-primary: #f8f2ed;
+  --color-text-secondary: #e6d7cb;
+  --color-text-tertiary: #d4c0b0;
+  --color-text-muted: #b89f8d;
+  --color-text-faint: #8f7767;
+  --color-text-inverted: #201613;
+
+  --color-border: #4b3933;
+  --color-border-subtle: #3a2a26;
+  --color-border-strong: #5f4a43;
+
+  --color-brand-primary: #82573a;
+  --color-brand-secondary: #9b6a47;
+  --color-brand-accent: #bc845b;
+  --color-brand-warm: #4a2f28;
+  --color-brand-surface: #281b17;
+
+  --color-hover: #3a2a26;
+  --color-active: #4b3933;
+  --color-focus-ring: #bc845b;
+  --color-selected: rgba(188, 132, 91, 0.18);
+  --color-selected-border: #bc845b;
+
+  --color-backdrop: rgba(10, 6, 5, 0.7);
+  --color-shadow: 0 0 0 / 0.35;
+}
+
+/* Milk Chocolate: medium cocoa body with deep chocolate header */
+.theme-milk-chocolate {
+  --color-surface: #704838;
+  --color-surface-alt: #5f3d30;
+  --color-surface-raised: #885847;
+  --color-surface-sunken: #4f3127;
+
+  --color-text-primary: #fff4eb;
+  --color-text-secondary: #f1ddcf;
+  --color-text-tertiary: #e1c3b1;
+  --color-text-muted: #cda790;
+  --color-text-faint: #b38971;
+  --color-text-inverted: #2a1d1a;
+
+  --color-border: #9e715e;
+  --color-border-subtle: #885847;
+  --color-border-strong: #b0836f;
+
+  --color-brand-primary: #fff4eb;
+  --color-brand-secondary: #f1ddcf;
+  --color-brand-accent: #e1c3b1;
+  --color-brand-warm: #8d604c;
+  --color-brand-surface: #623f31;
+
+  --color-hover: #7a5040;
+  --color-active: #8a5b48;
+  --color-focus-ring: #e1c3b1;
+  --color-selected: rgba(241, 221, 207, 0.2);
+  --color-selected-border: #e1c3b1;
+}
+
+.theme-milk-chocolate .bg-brand-primary.text-white {
+  background-color: #3a2a26;
+}
+
+.theme-milk-chocolate .bg-brand-secondary.text-white {
+  background-color: #4b3933;
+}
+
+/* White Chocolate: creamy, warm ivory */
+.theme-white-chocolate {
+  --color-surface: #fffefb;
+  --color-surface-alt: #fffcf6;
+  --color-surface-raised: #fdf5e8;
+  --color-surface-sunken: #f7ead5;
+
+  --color-text-primary: #4a3a2a;
+  --color-text-secondary: #66513d;
+  --color-text-tertiary: #7d6650;
+  --color-text-muted: #95806a;
+  --color-text-faint: #b09a84;
+  --color-text-inverted: #fffdfa;
+
+  --color-border: #eadcc3;
+  --color-border-subtle: #f3e8d4;
+  --color-border-strong: #dac7a6;
+
+  --color-brand-primary: #78350f;
+  --color-brand-secondary: #92400e;
+  --color-brand-accent: #b45309;
+  --color-brand-warm: #fef3c7;
+  --color-brand-surface: #fffbeb;
+
+  --color-hover: #fbf4e9;
+  --color-active: #f5e9d7;
+  --color-focus-ring: #b45309;
+  --color-selected: rgba(180, 83, 9, 0.1);
+  --color-selected-border: #b45309;
+}
+
+/* Caramelized White: toasted caramel cream */
+.theme-caramelized-white {
+  --color-surface: #fffaf1;
+  --color-surface-alt: #f6ead8;
+  --color-surface-raised: #eddabf;
+  --color-surface-sunken: #dfc39f;
+
+  --color-text-primary: #4d3624;
+  --color-text-secondary: #694a33;
+  --color-text-tertiary: #836046;
+  --color-text-muted: #9a775b;
+  --color-text-faint: #b18f72;
+  --color-text-inverted: #fff9f0;
+
+  --color-border: #dfc29f;
+  --color-border-subtle: #edd8bc;
+  --color-border-strong: #ccab84;
+
+  --color-brand-primary: #82573a;
+  --color-brand-secondary: #9b6a47;
+  --color-brand-accent: #bc845b;
+  --color-brand-warm: #f2dfc6;
+  --color-brand-surface: #faeddc;
+
+  --color-hover: #f4e6d3;
+  --color-active: #e8d2b7;
+  --color-focus-ring: #bc845b;
+  --color-selected: rgba(188, 132, 91, 0.15);
+  --color-selected-border: #bc845b;
+}
+
+/* Ruby Chocolate: muted berry pink, still confection-adjacent */
+.theme-ruby-chocolate {
+  --color-surface: #fff6f7;
+  --color-surface-alt: #f8e8eb;
+  --color-surface-raised: #f1d5dc;
+  --color-surface-sunken: #e6c1cc;
+
+  --color-text-primary: #4b2b34;
+  --color-text-secondary: #653946;
+  --color-text-tertiary: #7d4c5d;
+  --color-text-muted: #966375;
+  --color-text-faint: #b07c8e;
+  --color-text-inverted: #fff5f8;
+
+  --color-border: #e0bcc7;
+  --color-border-subtle: #eed3db;
+  --color-border-strong: #cca0ad;
+
+  --color-brand-primary: #7d3f52;
+  --color-brand-secondary: #965168;
+  --color-brand-accent: #b86d87;
+  --color-brand-warm: #f6dce4;
+  --color-brand-surface: #fdebf0;
+
+  --color-hover: #f7e6ea;
+  --color-active: #efd4dc;
+  --color-focus-ring: #b86d87;
+  --color-selected: rgba(184, 109, 135, 0.15);
+  --color-selected-border: #b86d87;
+}
+
+/* =========================================================================
  * System theme: follows OS preference
  * Applied by ThemeProvider when theme === 'system'
  * ========================================================================= */
@@ -272,18 +442,18 @@
     --color-border-strong: #4b5563;
 
     /* Brand */
-    --color-brand-primary: #a16207;
-    --color-brand-secondary: #b45309;
-    --color-brand-accent: #d97706;
-    --color-brand-warm: #451a03;
-    --color-brand-surface: #1c1917;
+    --color-brand-primary: #8b5e4a;
+    --color-brand-secondary: #a1725c;
+    --color-brand-accent: #b8866f;
+    --color-brand-warm: #3a2720;
+    --color-brand-surface: #221813;
 
     /* Interactive */
     --color-hover: #374151;
     --color-active: #4b5563;
-    --color-focus-ring: #d97706;
-    --color-selected: rgba(217, 119, 6, 0.15);
-    --color-selected-border: #d97706;
+    --color-focus-ring: #b8866f;
+    --color-selected: rgba(184, 134, 111, 0.16);
+    --color-selected-border: #b8866f;
 
     /* Overlay */
     --color-backdrop: rgba(0, 0, 0, 0.6);
