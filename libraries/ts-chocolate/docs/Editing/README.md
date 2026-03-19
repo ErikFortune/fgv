@@ -238,6 +238,15 @@ Editable collection wrapper.
 </td></tr>
 <tr><td>
 
+[IMergeResult](./interfaces/IMergeResult.md)
+
+</td><td>
+
+Result of a collection merge operation.
+
+</td></tr>
+<tr><td>
+
 [ICollectionManager](./interfaces/ICollectionManager.md)
 
 </td><td>
@@ -333,6 +342,29 @@ Parameters for creating an editor context validator.
 </td><td>
 
 Parameters for creating a validating editor context.
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[MergeConflictStrategy](./type-aliases/MergeConflictStrategy.md)
+
+</td><td>
+
+Conflict resolution strategy for merging collections with duplicate base IDs.
 
 </td></tr>
 </tbody></table>

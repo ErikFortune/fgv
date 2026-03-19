@@ -34,7 +34,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Converters as JsonConverters, type FileTree } from '@fgv/ts-json-base';
 
 import { CryptoUtils, ZipFileTree } from '@fgv/ts-extras';
-import { type CollectionId, Helpers, LibraryData, Settings } from '@fgv/ts-chocolate';
+import { type CollectionId, Editing, Helpers, LibraryData, Settings } from '@fgv/ts-chocolate';
 import {
   FileApiTreeAccessors,
   safeShowDirectoryPicker,
@@ -48,6 +48,7 @@ import { type AppTab, selectActiveTab, useNavigationStore } from '../navigation'
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
 import { type ICreateCollectionData } from './CreateCollectionDialog';
 import { type ImportCollisionResolution } from './ImportCollisionDialog';
+import { EntityReferenceScanner, EntityReferenceUpdater } from '../editing';
 import { getSubLibraryForTab, getSubLibraryPathForTab } from './subLibraryLookup';
 
 // ============================================================================
@@ -72,6 +73,32 @@ export interface IPendingImport {
   readonly collectionId: string;
   /** Number of items in the incoming collection */
   readonly itemCount: number;
+}
+
+/**
+ * Pending rename state when the user initiates a collection rename.
+ * @public
+ */
+export interface IPendingRename {
+  /** The collection ID being renamed */
+  readonly collectionId: string;
+  /** Number of cross-entity references that will be updated */
+  readonly referenceCount: number;
+  /** Existing collection IDs (for validation) */
+  readonly existingIds: ReadonlyArray<string>;
+}
+
+/**
+ * Pending merge state when the user initiates a collection merge.
+ * @public
+ */
+export interface IPendingMerge {
+  /** The source collection ID to merge from */
+  readonly sourceCollectionId: string;
+  /** Number of items in the source collection */
+  readonly sourceItemCount: number;
+  /** Number of cross-entity references to source collection items */
+  readonly referenceCount: number;
 }
 
 /**
@@ -113,6 +140,30 @@ export interface ICollectionActions {
   readonly resolveSecretSetup: (password: string) => Promise<string | undefined>;
   /** Called when the user skips encryption during collection creation */
   readonly skipSecretSetup: () => void;
+
+  // ---- Rename ----
+
+  /** Initiate a rename for a collection (opens the rename dialog) */
+  readonly renameCollection: (collectionId: string) => void;
+  /** Non-null when a collection rename dialog should be shown */
+  readonly pendingRename: IPendingRename | null;
+  /** Confirm a pending rename with the new collection ID */
+  readonly confirmRename: (newCollectionId: string) => void;
+  /** Cancel a pending rename */
+  readonly cancelRename: () => void;
+
+  // ---- Merge ----
+
+  /** Initiate a merge for a collection (opens the merge dialog) */
+  readonly mergeCollection: (sourceCollectionId: string) => void;
+  /** Non-null when a collection merge dialog should be shown */
+  readonly pendingMerge: IPendingMerge | null;
+  /** Get the number of conflicting item IDs between source and a candidate target */
+  readonly getMergeConflictCount: (targetCollectionId: string) => number;
+  /** Confirm a pending merge with the chosen target and strategy */
+  readonly confirmMerge: (targetCollectionId: string, strategy: Editing.MergeConflictStrategy) => void;
+  /** Cancel a pending merge */
+  readonly cancelMerge: () => void;
 }
 
 // ============================================================================
@@ -792,6 +843,202 @@ export function useCollectionActions(): ICollectionActions {
     reactiveWorkspace.notifyChange();
   }, [workspace, reactiveWorkspace]);
 
+  // ==========================================================================
+  // Rename
+  // ==========================================================================
+
+  const [pendingRename, setPendingRename] = useState<IPendingRename | null>(null);
+
+  const renameCollection = useCallback(
+    (collectionId: string): void => {
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
+      if (!subLibrary) return;
+
+      // Scan for references to compute the warning count
+      const scanner = new EntityReferenceScanner(workspace.data.entities);
+      const scanResult = scanner.scanCollection(collectionId);
+
+      const existingIds = Array.from(subLibrary.collections.keys());
+
+      setPendingRename({
+        collectionId,
+        referenceCount: scanResult.totalHitCount,
+        existingIds
+      });
+    },
+    [workspace, activeTab]
+  );
+
+  const confirmRename = useCallback(
+    (newCollectionId: string): void => {
+      if (!pendingRename) return;
+
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
+      if (!subLibrary) return;
+
+      const manager = new Editing.CollectionManager(subLibrary);
+      const renameResult = manager.rename(
+        pendingRename.collectionId as CollectionId,
+        newCollectionId as CollectionId
+      );
+
+      if (renameResult.isFailure()) {
+        workspace.data.logger.error(
+          `Failed to rename collection '${pendingRename.collectionId}': ${renameResult.message}`
+        );
+        setPendingRename(null);
+        return;
+      }
+
+      // Update cross-entity references
+      if (pendingRename.referenceCount > 0) {
+        const updater = new EntityReferenceUpdater(workspace.data.entities);
+        const updateResult = updater.updateCollectionReferences(pendingRename.collectionId, newCollectionId);
+        if (updateResult.isFailure()) {
+          workspace.data.logger.warn(`References partially updated: ${updateResult.message}`);
+        } else {
+          workspace.data.logger.info(
+            `Updated ${updateResult.value.updatedReferenceCount} reference(s) in ${updateResult.value.updatedEntityCount} entity/entities`
+          );
+        }
+      }
+
+      // Update default collection target if it pointed to the old ID
+      updateDefaultTargetIfNeeded(workspace, pendingRename.collectionId, newCollectionId);
+
+      workspace.data.logger.info(
+        `Renamed collection '${pendingRename.collectionId}' to '${newCollectionId}'`
+      );
+      setPendingRename(null);
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+    },
+    [pendingRename, workspace, reactiveWorkspace, activeTab]
+  );
+
+  const cancelRename = useCallback((): void => {
+    setPendingRename(null);
+  }, []);
+
+  // ==========================================================================
+  // Merge
+  // ==========================================================================
+
+  const [pendingMerge, setPendingMerge] = useState<IPendingMerge | null>(null);
+
+  const mergeCollection = useCallback(
+    (sourceCollectionId: string): void => {
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
+      if (!subLibrary) return;
+
+      const collectionResult = subLibrary.collections.get(sourceCollectionId as CollectionId).asResult;
+      if (collectionResult.isFailure()) return;
+
+      const scanner = new EntityReferenceScanner(workspace.data.entities);
+      const scanResult = scanner.scanCollection(sourceCollectionId);
+
+      setPendingMerge({
+        sourceCollectionId,
+        sourceItemCount: collectionResult.value.items.size,
+        referenceCount: scanResult.totalHitCount
+      });
+    },
+    [workspace, activeTab]
+  );
+
+  const getMergeConflictCount = useCallback(
+    (targetCollectionId: string): number => {
+      if (!pendingMerge) return 0;
+
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
+      if (!subLibrary) return 0;
+
+      const sourceResult = subLibrary.collections.get(
+        pendingMerge.sourceCollectionId as CollectionId
+      ).asResult;
+      const targetResult = subLibrary.collections.get(targetCollectionId as CollectionId).asResult;
+      if (sourceResult.isFailure() || targetResult.isFailure()) return 0;
+
+      let count = 0;
+      for (const [baseId] of sourceResult.value.items.entries()) {
+        if (targetResult.value.items.has(baseId)) {
+          count++;
+        }
+      }
+      return count;
+    },
+    [pendingMerge, workspace, activeTab]
+  );
+
+  const confirmMerge = useCallback(
+    (targetCollectionId: string, strategy: Editing.MergeConflictStrategy): void => {
+      if (!pendingMerge) return;
+
+      const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
+      if (!subLibrary) return;
+
+      const manager = new Editing.CollectionManager(subLibrary);
+      const mergeResult = manager.merge(
+        pendingMerge.sourceCollectionId as CollectionId,
+        targetCollectionId as CollectionId,
+        strategy
+      );
+
+      if (mergeResult.isFailure()) {
+        workspace.data.logger.error(
+          `Failed to merge '${pendingMerge.sourceCollectionId}' into '${targetCollectionId}': ${mergeResult.message}`
+        );
+        setPendingMerge(null);
+        return;
+      }
+
+      const { mergedCount, skippedCount, renamedItems } = mergeResult.value;
+
+      // Update cross-entity references
+      if (pendingMerge.referenceCount > 0) {
+        const updater = new EntityReferenceUpdater(workspace.data.entities);
+
+        // For non-renamed items, update collection prefix
+        const prefixResult = updater.updateCollectionReferences(
+          pendingMerge.sourceCollectionId,
+          targetCollectionId
+        );
+        if (prefixResult.isFailure()) {
+          workspace.data.logger.warn(`References partially updated: ${prefixResult.message}`);
+        }
+
+        // For renamed items, update specific IDs
+        if (renamedItems.length > 0) {
+          const idMapping = new Map<string, string>();
+          for (const { oldBaseId, newBaseId } of renamedItems) {
+            idMapping.set(`${targetCollectionId}.${oldBaseId}`, `${targetCollectionId}.${newBaseId}`);
+          }
+          const mappingResult = updater.updateEntityReferences(idMapping);
+          if (mappingResult.isFailure()) {
+            workspace.data.logger.warn(`Renamed item references partially updated: ${mappingResult.message}`);
+          }
+        }
+      }
+
+      // Update default collection target if it pointed to the source
+      updateDefaultTargetIfNeeded(workspace, pendingMerge.sourceCollectionId, targetCollectionId);
+
+      workspace.data.logger.info(
+        `Merged ${mergedCount} item(s) from '${pendingMerge.sourceCollectionId}' into '${targetCollectionId}'` +
+          (skippedCount > 0 ? ` (${skippedCount} skipped)` : '') +
+          (renamedItems.length > 0 ? ` (${renamedItems.length} renamed)` : '')
+      );
+      setPendingMerge(null);
+      workspace.data.clearCache();
+      reactiveWorkspace.notifyChange();
+    },
+    [pendingMerge, workspace, reactiveWorkspace, activeTab]
+  );
+
+  const cancelMerge = useCallback((): void => {
+    setPendingMerge(null);
+  }, []);
+
   return {
     canAddDirectory,
     addDirectory,
@@ -809,13 +1056,53 @@ export function useCollectionActions(): ICollectionActions {
     existingSecretNames,
     pendingSecretSetup,
     resolveSecretSetup,
-    skipSecretSetup
+    skipSecretSetup,
+    renameCollection,
+    pendingRename,
+    confirmRename,
+    cancelRename,
+    mergeCollection,
+    pendingMerge,
+    getMergeConflictCount,
+    confirmMerge,
+    cancelMerge
   };
 }
 
 // ============================================================================
 // Helpers
 // ============================================================================
+
+/**
+ * If any default collection target points to `oldId`, update it to `newId`.
+ * @internal
+ */
+function updateDefaultTargetIfNeeded(
+  workspace: {
+    settings: Settings.ISettingsManager | undefined;
+    data: { logger: { warn(msg: string): void } };
+  },
+  oldId: string,
+  newId: string
+): void {
+  const settingsManager = workspace.settings;
+  if (!settingsManager) return;
+
+  const resolved = settingsManager.getResolvedSettings();
+  const targets = resolved.defaultTargets;
+  const updates: Partial<Settings.IDefaultCollectionTargets> = {};
+  for (const [key, value] of Object.entries(targets)) {
+    if (value === oldId) {
+      (updates as Record<string, string>)[key] = newId;
+    }
+  }
+  if (Object.keys(updates).length > 0) {
+    settingsManager.updateDefaultTargets(updates);
+    settingsManager.save().catch((err: unknown) => {
+      workspace.data.logger.warn(`Settings save failed: ${String(err)}`);
+    });
+  }
+}
 
 /**
  * Builds YAML content for a new collection file with metadata.

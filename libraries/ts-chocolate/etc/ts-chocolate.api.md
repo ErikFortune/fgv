@@ -907,7 +907,9 @@ class CollectionManager<TCompositeId extends string, TBaseId extends string, TIt
     get(collectionId: CollectionId): Result<ICollectionRuntimeMetadata>;
     getAll(): ReadonlyArray<CollectionId>;
     isMutable(collectionId: CollectionId): Result<boolean>;
+    merge(sourceCollectionId: CollectionId, targetCollectionId: CollectionId, onConflict: MergeConflictStrategy): Result<IMergeResult>;
     moveEntity(compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): Result<string>;
+    rename(oldCollectionId: CollectionId, newCollectionId: CollectionId): Result<CollectionId>;
     updateMetadata(collectionId: CollectionId, metadata: Partial<ICollectionRuntimeMetadata>): Result<ICollectionRuntimeMetadata>;
 }
 
@@ -2116,6 +2118,8 @@ declare namespace Editing {
         IValidatingEditorContext,
         IValidationReport,
         IEditableCollection,
+        MergeConflictStrategy,
+        IMergeResult,
         ICollectionManager,
         ICollectionOperations,
         IExportOptions,
@@ -3380,7 +3384,9 @@ interface ICollectionManager<TBaseId extends string = string, TItem = unknown> {
     readonly get: (collectionId: CollectionId) => Result<ICollectionRuntimeMetadata>;
     readonly getAll: () => ReadonlyArray<CollectionId>;
     readonly isMutable: (collectionId: CollectionId) => Result<boolean>;
+    readonly merge: (sourceCollectionId: CollectionId, targetCollectionId: CollectionId, onConflict: MergeConflictStrategy) => Result<IMergeResult>;
     readonly moveEntity: (compositeId: string, targetCollectionId: CollectionId, newBaseId?: string) => Result<string>;
+    readonly rename: (oldCollectionId: CollectionId, newCollectionId: CollectionId) => Result<CollectionId>;
     readonly updateMetadata: (collectionId: CollectionId, metadata: Partial<ICollectionRuntimeMetadata>) => Result<ICollectionRuntimeMetadata>;
 }
 
@@ -4705,6 +4711,16 @@ interface IMeasurementUnitOption {
 interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
     readonly filter?: LibraryLoadSpec<TCollectionId>;
     readonly library: TLibrary;
+}
+
+// @public
+interface IMergeResult {
+    readonly mergedCount: number;
+    readonly renamedItems: ReadonlyArray<{
+        readonly oldBaseId: string;
+        readonly newBaseId: string;
+    }>;
+    readonly skippedCount: number;
 }
 
 // @public
@@ -7334,6 +7350,9 @@ const measurementUnit: Converter<MeasurementUnit>;
 //
 // @public
 const measurementUnitOption: Converter<IMeasurementUnitOption>;
+
+// @public
+type MergeConflictStrategy = 'skip' | 'overwrite' | 'rename';
 
 // @public
 export type Millimeters = Brand<number, 'Millimeters'>;

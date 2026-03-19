@@ -3,7 +3,7 @@
 # Interface: ICollectionManager
 
 Manager for collection-level CRUD operations.
-Provides operations to create, delete, and rename collections within a sub-library.
+Provides operations to create, delete, rename, and merge collections within a sub-library.
 
 ## Properties
 
@@ -193,6 +193,40 @@ Copy an entity to another collection.
 </td><td>
 
 Move an entity to another collection (copy + delete).
+
+</td></tr>
+<tr><td>
+
+[rename](./ICollectionManager.rename.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+(oldCollectionId: [CollectionId](../type-aliases/CollectionId.md), newCollectionId: [CollectionId](../type-aliases/CollectionId.md)) =&gt; Result&lt;[CollectionId](../type-aliases/CollectionId.md)&gt;
+
+</td><td>
+
+Rename a mutable collection to a new ID.
+
+</td></tr>
+<tr><td>
+
+[merge](./ICollectionManager.merge.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+(sourceCollectionId: [CollectionId](../type-aliases/CollectionId.md), targetCollectionId: [CollectionId](../type-aliases/CollectionId.md), onConflict: [MergeConflictStrategy](../type-aliases/MergeConflictStrategy.md)) =&gt; Result&lt;[IMergeResult](IMergeResult.md)&gt;
+
+</td><td>
+
+Merge all items from a source collection into a target collection.
 
 </td></tr>
 </tbody></table>

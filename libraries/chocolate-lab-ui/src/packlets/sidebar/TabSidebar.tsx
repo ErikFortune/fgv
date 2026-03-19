@@ -38,7 +38,7 @@ import {
   type IFilterOption
 } from '@fgv/ts-app-shell';
 
-import type { LibraryData } from '@fgv/ts-chocolate';
+import type { Editing, LibraryData } from '@fgv/ts-chocolate';
 import { CryptoUtils } from '@fgv/ts-extras';
 
 import {
@@ -57,6 +57,9 @@ import { CreateCollectionDialog, type ICreateCollectionData } from './CreateColl
 import { ImportCollisionDialog, type ImportCollisionResolution } from './ImportCollisionDialog';
 import { SetSecretPasswordDialog } from './SetSecretPasswordDialog';
 import { UnlockCollectionDialog, type UnlockCollectionMode } from './UnlockCollectionDialog';
+import { type IPendingRename, type IPendingMerge } from './useCollectionActions';
+import { CollectionRenameDialog } from './CollectionRenameDialog';
+import { CollectionMergeDialog, type IMergeTargetOption } from './CollectionMergeDialog';
 import { type IPendingSecretSetup } from './useCollectionActions';
 import { getSubLibraryForTab } from './subLibraryLookup';
 
@@ -128,6 +131,24 @@ export interface ITabSidebarProps {
   readonly onResolveSecretSetup?: (password: string) => Promise<string | undefined>;
   /** Called when the user skips encryption during collection creation */
   readonly onSkipSecretSetup?: () => void;
+  /** Callback when rename is clicked for a mutable collection */
+  readonly onRenameCollection?: (collectionId: string) => void;
+  /** Callback when merge is clicked for a mutable collection */
+  readonly onMergeCollection?: (collectionId: string) => void;
+  /** Non-null when a rename dialog should be shown */
+  readonly pendingRename?: IPendingRename | null;
+  /** Confirm a pending rename */
+  readonly onConfirmRename?: (newCollectionId: string) => void;
+  /** Cancel a pending rename */
+  readonly onCancelRename?: () => void;
+  /** Non-null when a merge dialog should be shown */
+  readonly pendingMerge?: IPendingMerge | null;
+  /** Get item conflict count for a merge target */
+  readonly onGetMergeConflictCount?: (targetCollectionId: string) => number;
+  /** Confirm a pending merge */
+  readonly onConfirmMerge?: (targetCollectionId: string, strategy: Editing.MergeConflictStrategy) => void;
+  /** Cancel a pending merge */
+  readonly onCancelMerge?: () => void;
 }
 
 // ============================================================================
@@ -160,7 +181,16 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
     existingSecretNames,
     pendingSecretSetup,
     onResolveSecretSetup,
-    onSkipSecretSetup
+    onSkipSecretSetup,
+    onRenameCollection,
+    onMergeCollection,
+    pendingRename,
+    onConfirmRename,
+    onCancelRename,
+    pendingMerge,
+    onGetMergeConflictCount,
+    onConfirmMerge,
+    onCancelMerge
   } = props;
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -421,6 +451,8 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
         onImportCollection={onImportCollection}
         onOpenCollectionFromFile={onOpenCollectionFromFile}
         onUnlockCollection={handleRequestUnlockCollection}
+        onRenameCollection={onRenameCollection}
+        onMergeCollection={onMergeCollection}
       />
 
       {onCreateCollection && (
@@ -475,6 +507,30 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
           onCancel={handleCancelUnlockCollection}
         />
       )}
+
+      {onConfirmRename && onCancelRename && pendingRename && (
+        <CollectionRenameDialog
+          isOpen={true}
+          collectionId={pendingRename.collectionId}
+          referenceCount={pendingRename.referenceCount}
+          existingIds={pendingRename.existingIds}
+          onConfirm={onConfirmRename}
+          onCancel={onCancelRename}
+        />
+      )}
+
+      {onConfirmMerge && onCancelMerge && onGetMergeConflictCount && pendingMerge && (
+        <CollectionMergeDialog
+          isOpen={true}
+          sourceCollectionId={pendingMerge.sourceCollectionId}
+          sourceItemCount={pendingMerge.sourceItemCount}
+          targetOptions={getMergeTargetOptions(collectionInfos, pendingMerge.sourceCollectionId)}
+          referenceCount={pendingMerge.referenceCount}
+          getConflictCount={onGetMergeConflictCount}
+          onConfirm={onConfirmMerge}
+          onCancel={onCancelMerge}
+        />
+      )}
     </div>
   );
 }
@@ -485,4 +541,13 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
 
 function getSelections(state: IFilterState, key: string): ReadonlyArray<string> {
   return state.selections[key] ?? [];
+}
+
+function getMergeTargetOptions(
+  collections: ReadonlyArray<{ id: string; name: string | undefined; itemCount: number; isMutable: boolean }>,
+  sourceCollectionId: string
+): IMergeTargetOption[] {
+  return collections
+    .filter((c) => c.isMutable && c.id !== sourceCollectionId)
+    .map((c) => ({ id: c.id, displayName: c.name ?? c.id, itemCount: c.itemCount }));
 }

@@ -271,12 +271,35 @@ export interface IEditableCollection<T, TBaseId extends string = string, TId ext
 }
 
 // ============================================================================
+// Collection Merge Result
+// ============================================================================
+
+/**
+ * Conflict resolution strategy for merging collections with duplicate base IDs.
+ * @public
+ */
+export type MergeConflictStrategy = 'skip' | 'overwrite' | 'rename';
+
+/**
+ * Result of a collection merge operation.
+ * @public
+ */
+export interface IMergeResult {
+  /** Number of items successfully merged into the target collection */
+  readonly mergedCount: number;
+  /** Number of items skipped due to conflict (only when strategy is 'skip') */
+  readonly skippedCount: number;
+  /** Items that were auto-renamed to avoid conflicts (only when strategy is 'rename') */
+  readonly renamedItems: ReadonlyArray<{ readonly oldBaseId: string; readonly newBaseId: string }>;
+}
+
+// ============================================================================
 // Collection Manager Interface
 // ============================================================================
 
 /**
  * Manager for collection-level CRUD operations.
- * Provides operations to create, delete, and rename collections within a sub-library.
+ * Provides operations to create, delete, rename, and merge collections within a sub-library.
  * @public
  */
 export interface ICollectionManager<TBaseId extends string = string, TItem = unknown> {
@@ -371,6 +394,40 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
     targetCollectionId: CollectionId,
     newBaseId?: string
   ) => Result<string>;
+
+  /**
+   * Rename a mutable collection to a new ID.
+   *
+   * Creates a new collection with the new ID containing all items and metadata
+   * from the old collection, then deletes the old collection and its backing file.
+   *
+   * Does NOT update cross-entity references — callers must handle that separately.
+   *
+   * @param oldCollectionId - Existing collection to rename
+   * @param newCollectionId - New collection ID (must not already exist)
+   * @returns Result containing the new collection ID or failure
+   */
+  readonly rename: (oldCollectionId: CollectionId, newCollectionId: CollectionId) => Result<CollectionId>;
+
+  /**
+   * Merge all items from a source collection into a target collection.
+   *
+   * Moves items from source to target, applying the specified conflict strategy
+   * when both collections contain an item with the same base ID. After merging,
+   * the source collection is deleted.
+   *
+   * Does NOT update cross-entity references — callers must handle that separately.
+   *
+   * @param sourceCollectionId - Collection to merge from (will be deleted)
+   * @param targetCollectionId - Collection to merge into (must be mutable)
+   * @param onConflict - Strategy for handling duplicate base IDs
+   * @returns Result containing merge statistics or failure
+   */
+  readonly merge: (
+    sourceCollectionId: CollectionId,
+    targetCollectionId: CollectionId,
+    onConflict: MergeConflictStrategy
+  ) => Result<IMergeResult>;
 }
 
 // ============================================================================

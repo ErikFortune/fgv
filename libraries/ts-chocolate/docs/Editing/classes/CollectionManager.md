@@ -197,4 +197,30 @@ Copy an entity to another collection.
 Move an entity to another collection (copy + delete).
 
 </td></tr>
+<tr><td>
+
+[rename(oldCollectionId, newCollectionId)](./CollectionManager.rename.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Rename a mutable collection to a new ID.
+
+</td></tr>
+<tr><td>
+
+[merge(sourceCollectionId, targetCollectionId, onConflict)](./CollectionManager.merge.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Merge all items from a source collection into a target collection.
+
+</td></tr>
 </tbody></table>

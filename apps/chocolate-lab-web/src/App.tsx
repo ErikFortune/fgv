@@ -814,7 +814,16 @@ function TabSidebarWithActions(props: {
     existingSecretNames,
     pendingSecretSetup,
     resolveSecretSetup,
-    skipSecretSetup
+    skipSecretSetup,
+    renameCollection,
+    pendingRename,
+    confirmRename,
+    cancelRename,
+    mergeCollection,
+    pendingMerge,
+    getMergeConflictCount,
+    confirmMerge,
+    cancelMerge
   } = props.actions;
 
   return (
@@ -834,6 +843,15 @@ function TabSidebarWithActions(props: {
       pendingSecretSetup={pendingSecretSetup}
       onResolveSecretSetup={resolveSecretSetup}
       onSkipSecretSetup={skipSecretSetup}
+      onRenameCollection={renameCollection}
+      onMergeCollection={mergeCollection}
+      pendingRename={pendingRename}
+      onConfirmRename={confirmRename}
+      onCancelRename={cancelRename}
+      pendingMerge={pendingMerge}
+      onGetMergeConflictCount={getMergeConflictCount}
+      onConfirmMerge={confirmMerge}
+      onCancelMerge={cancelMerge}
     />
   );
 }

@@ -31,7 +31,7 @@ import {
   ICollectionRuntimeMetadata,
   SubLibraryBase
 } from '../library-data';
-import { ICollectionManager } from './model';
+import { ICollectionManager, IMergeResult, MergeConflictStrategy } from './model';
 
 /**
  * Validates that a string is non-empty after trimming and has no leading/trailing whitespace.
@@ -315,6 +315,178 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
     return this.copyEntity(compositeId, targetCollectionId, newBaseId).onSuccess((newCompositeId) =>
       this.deleteEntity(compositeId).onSuccess(() => succeed(newCompositeId))
     );
+  }
+
+  /**
+   * Rename a mutable collection to a new ID.
+   *
+   * Creates a new collection with the new ID containing all items and metadata
+   * from the old collection, creates a new backing file, then deletes the old
+   * collection and its backing file.
+   *
+   * Does NOT update cross-entity references — callers must handle that separately.
+   */
+  public rename(oldCollectionId: CollectionId, newCollectionId: CollectionId): Result<CollectionId> {
+    // Validate: new ID must not exist
+    if (this._library.collections.has(newCollectionId)) {
+      return fail(`Collection "${newCollectionId}" already exists`);
+    }
+
+    // Get old collection, validate it exists and is mutable
+    return this._library.collections
+      .get(oldCollectionId)
+      .asResult.withErrorFormat((msg) => `Collection "${oldCollectionId}" not found: ${msg}`)
+      .onSuccess((oldCollection) => {
+        if (!oldCollection.isMutable) {
+          return fail(`Cannot rename immutable collection "${oldCollectionId}"`);
+        }
+
+        // Extract items as a plain record for addCollectionEntry
+        const items: Record<string, TItem> = {};
+        for (const [key, value] of oldCollection.items.entries()) {
+          items[key] = value;
+        }
+
+        // Build metadata for the new collection (preserve existing, update sourceName)
+        const oldMetadata = oldCollection.metadata;
+        const newMetadata: ICollectionRuntimeMetadata = {
+          ...oldMetadata,
+          /* c8 ignore next 1 - both branches tested independently; c8 tracks ?? branches per-line */
+          sourceName: oldMetadata?.sourceName ?? this._library.mutableSourceName ?? 'unknown'
+        };
+
+        // Create new collection entry with all items
+        return this._library
+          .addCollectionEntry({
+            id: newCollectionId,
+            isMutable: true,
+            items,
+            metadata: newMetadata
+          })
+          .asResult.withErrorFormat((msg) => `Failed to create renamed collection: ${msg}`)
+          .onSuccess(() => {
+            // Build file content (metadata without sourceName + items)
+            const fileMetadata: ICollectionFileMetadata = {
+              ...(oldMetadata?.name ? { name: oldMetadata.name } : {}),
+              ...(oldMetadata?.description ? { description: oldMetadata.description } : {}),
+              ...(oldMetadata?.secretName ? { secretName: oldMetadata.secretName } : {}),
+              ...(oldMetadata?.variation ? { variation: oldMetadata.variation } : {}),
+              ...(oldMetadata?.tags ? { tags: oldMetadata.tags } : {})
+            };
+            const sourceFile = {
+              metadata: fileMetadata,
+              items
+            };
+
+            return CommonHelpers.serializeToYaml(sourceFile)
+              .withErrorFormat((msg) => `Failed to serialize renamed collection: ${msg}`)
+              .onSuccess((yamlContent) =>
+                this._library.createCollectionFile(newCollectionId, yamlContent).onSuccess(() => {
+                  // Delete the old collection and its backing file
+                  this._library.removeCollection(oldCollectionId);
+                  return succeed(newCollectionId);
+                })
+              )
+              .onFailure((msg) => {
+                // Roll back: remove the new collection if file creation failed
+                this._library.removeCollection(newCollectionId);
+                return fail(msg);
+              });
+          });
+      });
+  }
+
+  /**
+   * Merge all items from a source collection into a target collection.
+   *
+   * Moves items from source to target, applying the specified conflict strategy
+   * when both collections contain an item with the same base ID. After merging,
+   * the source collection is deleted.
+   *
+   * Does NOT update cross-entity references — callers must handle that separately.
+   */
+  public merge(
+    sourceCollectionId: CollectionId,
+    targetCollectionId: CollectionId,
+    onConflict: MergeConflictStrategy
+  ): Result<IMergeResult> {
+    if (sourceCollectionId === targetCollectionId) {
+      return fail('Cannot merge a collection into itself');
+    }
+
+    // Get both collections
+    return this._library.collections
+      .get(sourceCollectionId)
+      .asResult.withErrorFormat((msg) => `Source collection "${sourceCollectionId}" not found: ${msg}`)
+      .onSuccess((sourceCollection) =>
+        this._library.collections
+          .get(targetCollectionId)
+          .asResult.withErrorFormat((msg) => `Target collection "${targetCollectionId}" not found: ${msg}`)
+          .onSuccess((targetCollection) => {
+            if (!targetCollection.isMutable) {
+              return fail(`Cannot merge into immutable collection "${targetCollectionId}"`);
+            }
+
+            let mergedCount = 0;
+            let skippedCount = 0;
+            const renamedItems: Array<{ readonly oldBaseId: string; readonly newBaseId: string }> = [];
+
+            // Process each item in the source collection
+            for (const [baseId, item] of sourceCollection.items.entries()) {
+              const hasConflict = targetCollection.items.has(baseId);
+
+              if (hasConflict) {
+                switch (onConflict) {
+                  case 'skip':
+                    skippedCount++;
+                    continue;
+
+                  case 'overwrite':
+                    this._library.setInCollection(targetCollectionId, baseId, item);
+                    mergedCount++;
+                    continue;
+
+                  case 'rename': {
+                    const newBaseId = this._generateUniqueBaseId(baseId, targetCollection);
+                    this._library.addToCollection(targetCollectionId, newBaseId as TBaseId, item);
+                    renamedItems.push({ oldBaseId: baseId, newBaseId });
+                    mergedCount++;
+                    continue;
+                  }
+                }
+              } else {
+                this._library.addToCollection(targetCollectionId, baseId, item);
+                mergedCount++;
+              }
+            }
+
+            // Delete the source collection
+            this._library.removeCollection(sourceCollectionId);
+
+            return succeed({ mergedCount, skippedCount, renamedItems });
+          })
+      );
+  }
+
+  /**
+   * Generate a unique base ID by appending a suffix to avoid conflicts.
+   */
+  private _generateUniqueBaseId(
+    baseId: string,
+    targetCollection: Collections.AggregatedResultMapEntry<
+      CollectionId,
+      TBaseId,
+      TItem,
+      ICollectionRuntimeMetadata
+    >
+  ): string {
+    let counter = 1;
+    let candidate = `${baseId}-merged-${counter}`;
+    while (targetCollection.items.has(candidate as TBaseId)) {
+      counter++;
+      candidate = `${baseId}-merged-${counter}`;
+    }
+    return candidate;
   }
 
   /**

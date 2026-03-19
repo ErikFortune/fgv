@@ -33,8 +33,11 @@ export { UrlsEditor, type IUrlsEditorProps } from './UrlsEditor';
 export {
   EntityReferenceScanner,
   type IEntityReferenceHit,
-  type IReferenceScanResult
+  type IReferenceScanResult,
+  type ICollectionReferenceScanResult
 } from './referenceScanner';
+
+export { EntityReferenceUpdater, type IReferenceUpdateResult } from './referenceUpdater';
 
 export {
   useAiAssist,

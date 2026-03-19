@@ -96,6 +96,10 @@ export interface ICollectionSectionProps {
   readonly onOpenCollectionFromFile?: () => void;
   /** Callback when the unlock button is clicked for a locked protected collection */
   readonly onUnlockCollection?: (collectionId: string) => void;
+  /** Callback when rename is clicked for a mutable collection */
+  readonly onRenameCollection?: (collectionId: string) => void;
+  /** Callback when merge is clicked for a mutable collection */
+  readonly onMergeCollection?: (collectionId: string) => void;
   /** Whether the section starts collapsed */
   readonly defaultCollapsed?: boolean;
 }
@@ -111,8 +115,11 @@ function CollectionRow(props: {
   readonly onDelete?: (id: string) => void;
   readonly onExport?: (id: string) => void;
   readonly onUnlock?: (id: string) => void;
+  readonly onRename?: (id: string) => void;
+  readonly onMerge?: (id: string) => void;
 }): React.ReactElement {
-  const { collection, onToggleVisibility, onSetDefault, onDelete, onExport, onUnlock } = props;
+  const { collection, onToggleVisibility, onSetDefault, onDelete, onExport, onUnlock, onRename, onMerge } =
+    props;
   const displayName = collection.name ?? collection.id;
 
   return (
@@ -210,6 +217,30 @@ function CollectionRow(props: {
         </button>
       )}
 
+      {/* Rename button (mutable only) */}
+      {collection.isMutable && onRename && (
+        <button
+          onClick={(): void => onRename(collection.id)}
+          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
+          title={`Rename ${displayName}`}
+          aria-label={`Rename ${displayName}`}
+        >
+          {'✎'}
+        </button>
+      )}
+
+      {/* Merge button (mutable only) */}
+      {collection.isMutable && onMerge && (
+        <button
+          onClick={(): void => onMerge(collection.id)}
+          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
+          title={`Merge ${displayName} into another collection`}
+          aria-label={`Merge ${displayName}`}
+        >
+          {'⤵'}
+        </button>
+      )}
+
       {/* Delete button (mutable only) */}
       {collection.isMutable && onDelete && (
         <button
@@ -251,6 +282,8 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
     onImportCollection,
     onOpenCollectionFromFile,
     onUnlockCollection,
+    onRenameCollection,
+    onMergeCollection,
     defaultCollapsed = false
   } = props;
 
@@ -369,6 +402,8 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
                 onDelete={onDeleteCollection}
                 onExport={onExportCollection}
                 onUnlock={onUnlockCollection}
+                onRename={onRenameCollection}
+                onMerge={onMergeCollection}
               />
             ))
           )}

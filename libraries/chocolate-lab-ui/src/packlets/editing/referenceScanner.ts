@@ -82,6 +82,34 @@ export interface IReferenceScanResult {
 }
 
 // ============================================================================
+// Collection Reference Scan Result
+// ============================================================================
+
+/**
+ * Result of scanning for all references to entities in a given collection.
+ * Used before collection rename/merge to determine how many references need updating.
+ * @public
+ */
+export interface ICollectionReferenceScanResult {
+  /**
+   * The collection ID that was searched for.
+   */
+  readonly collectionId: string;
+
+  /**
+   * References grouped by target composite ID.
+   * Key is the referenced composite ID (e.g., "myCollection.dark-chocolate"),
+   * value is the list of entities that reference it.
+   */
+  readonly referencesByTargetId: ReadonlyMap<string, ReadonlyArray<IEntityReferenceHit>>;
+
+  /**
+   * Total number of reference hits across all target IDs.
+   */
+  readonly totalHitCount: number;
+}
+
+// ============================================================================
 // Reference Scanner
 // ============================================================================
 
@@ -122,6 +150,52 @@ export class EntityReferenceScanner {
       hits,
       hasReferences: hits.length > 0
     };
+  }
+
+  /**
+   * Scan all entity libraries for references to any entity in the given collection.
+   *
+   * This is used before collection rename/merge operations to determine how many
+   * cross-entity references will need updating.
+   *
+   * @param collectionId - Collection ID to search for (e.g., "myCollection")
+   * @returns Scan result with all referencing entities grouped by target composite ID
+   */
+  public scanCollection(collectionId: string): ICollectionReferenceScanResult {
+    const referencesByTargetId = new Map<string, IEntityReferenceHit[]>();
+    let totalHitCount = 0;
+
+    const prefix = `${collectionId}.`;
+
+    // Scan fillings for any reference starting with the collection prefix
+    for (const [fCollectionId, fCollection] of this._entities.fillings.collections.entries()) {
+      for (const [fBaseId, filling] of fCollection.items.entries()) {
+        const compositeId = `${fCollectionId}.${fBaseId}`;
+        const referencedIds = this._fillingCollectionReferences(filling, prefix);
+        for (const targetId of referencedIds) {
+          const hits = referencesByTargetId.get(targetId) ?? [];
+          hits.push({ compositeId, entityType: 'filling', displayName: filling.name });
+          referencesByTargetId.set(targetId, hits);
+          totalHitCount++;
+        }
+      }
+    }
+
+    // Scan confections for any reference starting with the collection prefix
+    for (const [cCollectionId, cCollection] of this._entities.confections.collections.entries()) {
+      for (const [cBaseId, confection] of cCollection.items.entries()) {
+        const compositeId = `${cCollectionId}.${cBaseId}`;
+        const referencedIds = this._confectionCollectionReferences(confection, prefix);
+        for (const targetId of referencedIds) {
+          const hits = referencesByTargetId.get(targetId) ?? [];
+          hits.push({ compositeId, entityType: 'confection', displayName: confection.name });
+          referencesByTargetId.set(targetId, hits);
+          totalHitCount++;
+        }
+      }
+    }
+
+    return { collectionId, referencesByTargetId, totalHitCount };
   }
 
   // ============================================================================
@@ -250,6 +324,115 @@ export class EntityReferenceScanner {
     }
 
     return false;
+  }
+
+  // ============================================================================
+  // Collection-level reference helpers
+  // ============================================================================
+
+  /**
+   * Collect all composite IDs in a filling that start with the given prefix.
+   */
+  private _fillingCollectionReferences(
+    filling: Entities.Fillings.IFillingRecipeEntity,
+    prefix: string
+  ): string[] {
+    const found: string[] = [];
+    for (const variation of filling.variations) {
+      for (const ingredient of variation.ingredients) {
+        for (const id of ingredient.ingredient.ids) {
+          if (id.startsWith(prefix) && !found.includes(id)) {
+            found.push(id);
+          }
+        }
+      }
+    }
+    return found;
+  }
+
+  /**
+   * Collect all composite IDs in a confection that start with the given prefix.
+   */
+  private _confectionCollectionReferences(
+    confection: Entities.Confections.AnyConfectionRecipeEntity,
+    prefix: string
+  ): string[] {
+    const found: string[] = [];
+    for (const variation of confection.variations) {
+      this._variationCollectionReferences(variation, prefix, found);
+    }
+    return found;
+  }
+
+  private _variationCollectionReferences(
+    variation: Entities.Confections.AnyConfectionRecipeVariationEntity,
+    prefix: string,
+    found: string[]
+  ): void {
+    // Check filling slots
+    for (const slot of variation.fillings ?? []) {
+      for (const option of slot.filling.options) {
+        if (option.id.startsWith(prefix) && !found.includes(option.id)) {
+          found.push(option.id);
+        }
+      }
+    }
+
+    // Check decoration refs
+    for (const decorationRef of variation.decorations?.options ?? []) {
+      if (decorationRef.id.startsWith(prefix) && !found.includes(decorationRef.id)) {
+        found.push(decorationRef.id);
+      }
+    }
+
+    // Check procedure refs
+    for (const procedureRef of variation.procedures?.options ?? []) {
+      if (procedureRef.id.startsWith(prefix) && !found.includes(procedureRef.id)) {
+        found.push(procedureRef.id);
+      }
+    }
+
+    // Check molded-bonbon-specific fields
+    const moldedVariation = variation as Entities.Confections.IMoldedBonBonRecipeVariationEntity;
+    if (moldedVariation.molds) {
+      for (const moldRef of moldedVariation.molds.options) {
+        if (moldRef.id.startsWith(prefix) && !found.includes(moldRef.id)) {
+          found.push(moldRef.id);
+        }
+      }
+      this._idsWithPreferredCollect(moldedVariation.shellChocolate, prefix, found);
+      for (const additionalChoc of moldedVariation.additionalChocolates ?? []) {
+        this._idsWithPreferredCollect(additionalChoc.chocolate, prefix, found);
+      }
+    }
+
+    // Check bar-truffle enrobing chocolate
+    const barVariation = variation as Entities.Confections.IBarTruffleRecipeVariationEntity;
+    if (barVariation.enrobingChocolate) {
+      this._idsWithPreferredCollect(barVariation.enrobingChocolate, prefix, found);
+    }
+
+    // Check rolled-truffle enrobing chocolate + coatings
+    const rolledVariation = variation as Entities.Confections.IRolledTruffleRecipeVariationEntity;
+    if (rolledVariation.coatings) {
+      this._idsWithPreferredCollect(rolledVariation.enrobingChocolate, prefix, found);
+      this._idsWithPreferredCollect(rolledVariation.coatings, prefix, found);
+    }
+  }
+
+  private _idsWithPreferredCollect(
+    spec: Model.IIdsWithPreferred<string> | undefined,
+    prefix: string,
+    found: string[]
+  ): void {
+    if (!spec) {
+      return;
+    }
+    for (const id of spec.ids) {
+      if (id.startsWith(prefix) && !found.includes(id)) {
+        found.push(id);
+      }
+    }
   }
 
   // ============================================================================
