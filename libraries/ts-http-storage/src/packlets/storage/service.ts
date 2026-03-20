@@ -84,6 +84,14 @@ export class HttpStorageService {
     return providerResult.value.saveFile(request.path, request.contents, request.contentType);
   }
 
+  public async deleteFile(request: IStoragePathRequest): Promise<Result<boolean>> {
+    const providerResult = this._getProvider(request.namespace);
+    if (providerResult.isFailure()) {
+      return fail(providerResult.message);
+    }
+    return providerResult.value.deleteFile(request.path);
+  }
+
   public async createDirectory(request: IStoragePathRequest): Promise<Result<IStorageTreeItem>> {
     const providerResult = this._getProvider(request.namespace);
     if (providerResult.isFailure()) {

@@ -351,7 +351,7 @@ describe('SettingsManager', () => {
       expect(result).toSucceedWith(false);
     });
 
-    test('fails when settings directory does not exist in tree', async () => {
+    test('creates missing settings directory and saves defaults', async () => {
       // Create a file tree with NO settings directory - just a plain file at root
       const files: FileTree.IInMemoryFile[] = [{ path: '/library/readme.txt', contents: 'no settings dir' }];
       const tree = FileTree.inMemory(files, { mutable: true }).orThrow();
@@ -361,9 +361,12 @@ describe('SettingsManager', () => {
       const manager = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
       expect(manager.isDirty).toBe(true);
 
-      // Save should fail because the settings directory doesn't exist
+      // Save should create the missing settings directory and files
       const result = await manager.save();
-      expect(result).toFailWith(/settings directory does not exist/i);
+      expect(result).toSucceedWith(true);
+
+      const manager2 = SettingsManager.createFromBootstrap({ fileTree, deviceId: testDeviceId }).orThrow();
+      expect(manager2.isDirty).toBe(false);
     });
 
     test('creates new bootstrap and preferences files on mutable tree', async () => {

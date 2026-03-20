@@ -30,6 +30,10 @@ class StubProvider implements IHttpStorageProvider {
     return succeed({ path, contents, contentType });
   }
 
+  public async deleteFile(_path: string): Promise<Result<boolean>> {
+    return succeed(true);
+  }
+
   public async createDirectory(path: string): Promise<Result<IStorageTreeItem>> {
     return succeed({ path, name: 'created', type: 'directory' });
   }
@@ -79,5 +83,13 @@ describe('HttpStorageService', () => {
     const syncResult = await service.sync({ namespace: 'default' });
     expect(syncResult.isFailure()).toBe(true);
     expect(syncResult.message).toBe('provider: missing provider');
+  });
+
+  test('forwards deleteFile to provider', async () => {
+    const service = new HttpStorageService(new StubProviderFactory(new StubProvider()));
+
+    const result = await service.deleteFile({ path: '/data/remove.txt', namespace: 'default' });
+    expect(result.isSuccess()).toBe(true);
+    expect(result.orThrow()).toBe(true);
   });
 });

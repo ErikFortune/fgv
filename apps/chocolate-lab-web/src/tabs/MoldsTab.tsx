@@ -10,7 +10,7 @@ import {
 } from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseMoldId, CollectionId, MoldId } from '@fgv/ts-chocolate';
-import type { ResultMapValueType } from '@fgv/ts-utils';
+import { fail, succeed, type Result } from '@fgv/ts-utils';
 import {
   isMoldCascadeEntry,
   type IReferenceScanResult,
@@ -20,8 +20,6 @@ import {
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
-  createSetInMutableCollection,
-  type MutableCollectionEntryWithSet,
   useEntityMutation,
   useClipboardJsonImport,
   MoldDetail,
@@ -51,13 +49,6 @@ export function MoldsTabContent(): React.ReactElement {
     exitComparison
   } = useTabNavigation();
   const cascade = useCascadeOps();
-
-  type MoldCollectionEntry = ResultMapValueType<typeof workspace.data.entities.molds.collections>;
-  type MoldMutableCollectionEntry = MutableCollectionEntryWithSet<
-    MoldCollectionEntry,
-    BaseMoldId,
-    Entities.Molds.IMoldEntity
-  >;
 
   const editingRef = useRef<{ id: MoldId; wrapper: LibraryRuntime.EditedMold } | undefined>(undefined);
   const [moldToDelete, setMoldToDelete] = useState<{
@@ -89,26 +80,26 @@ export function MoldsTabContent(): React.ReactElement {
   ]);
 
   const moldMutation = useEntityMutation<Entities.Molds.IMoldEntity, BaseMoldId, MoldId>({
-    setInMutableCollection: createSetInMutableCollection<
-      Entities.Molds.IMoldEntity,
-      BaseMoldId,
-      MoldCollectionEntry,
-      MoldMutableCollectionEntry
-    >({
-      getCollection: (collectionId: CollectionId) =>
-        workspace.data.entities.molds.collections.get(collectionId),
-      isMutable: (entry: MoldCollectionEntry): entry is MoldMutableCollectionEntry =>
-        entry.isMutable && 'set' in entry.items,
-      setEntity: (
-        entry: MoldMutableCollectionEntry,
-        baseId: BaseMoldId,
-        entity: Entities.Molds.IMoldEntity
-      ) => entry.items.set(baseId, entity),
-      entityLabel: 'mold'
-    }),
-    entityLabel: 'mold',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedMoldsCollection(collectionId)
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveMold(collectionId, baseId, entity),
+    setInMutableCollection: (
+      collectionId: CollectionId,
+      baseId: BaseMoldId,
+      entity: Entities.Molds.IMoldEntity
+    ): Result<unknown> =>
+      workspace.data.entities.molds.collections
+        .get(collectionId)
+        .asResult.withErrorFormat((msg) => `Collection '${collectionId}' not found: ${msg}`)
+        .onSuccess((entry): Result<unknown> => {
+          if (!entry.isMutable || !('set' in entry.items)) {
+            return fail(`Collection '${collectionId}' is not mutable`);
+          }
+          return entry.items
+            .set(baseId, entity)
+            .asResult.withErrorFormat((msg) => `Failed to set mold: ${msg}`)
+            .onSuccess(() => succeed(true));
+        }),
+    entityLabel: 'mold'
   });
 
   const handleCreateMold = useCallback(
@@ -352,7 +343,7 @@ export function MoldsTabContent(): React.ReactElement {
               buildPrompt={AiAssist.buildMoldAiPrompt}
               convert={(from: unknown) => Entities.Molds.Converters.moldEntity.convert(from)}
               makeBlank={(name: string, id: string): Entities.Molds.IMoldEntity =>
-                createBlankMoldEntity(id as BaseMoldId, name)
+                createBlankMoldEntity(id as BaseMoldId, name, name)
               }
               onCreate={handleCreateMold}
               sourceCreateMode="copy"

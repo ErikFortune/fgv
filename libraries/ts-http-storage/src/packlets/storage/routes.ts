@@ -152,6 +152,21 @@ export function createStorageRoutes(options: ICreateStorageRoutesOptions): Hono 
     return c.json(converted.value);
   });
 
+  routes.delete('/file', async (c) => {
+    const parsed = storagePathRequest.convert(parsePathQuery(c.req.query('path'), c.req.query('namespace')));
+    if (parsed.isFailure()) {
+      return c.json({ error: `invalid request: ${parsed.message}` }, 400);
+    }
+
+    const result = await service.deleteFile(parsed.value);
+    if (result.isFailure()) {
+      return c.json({ error: result.message }, 404);
+    }
+
+    options.logger?.detail(`storage delete: ${parsed.value.namespace ?? 'default'}:${parsed.value.path}`);
+    return c.json({ deleted: result.value });
+  });
+
   routes.post('/directories', async (c) => {
     const raw = await c.req.json().catch(() => undefined);
     if (raw === undefined) {

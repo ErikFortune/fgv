@@ -104,6 +104,8 @@ export function ProceduresTabContent(): React.ReactElement {
     BaseProcedureId,
     ProcedureId
   >({
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveProcedure(collectionId, baseId, entity),
     setInMutableCollection: createSetInMutableCollection<
       Entities.Procedures.IProcedureEntity,
       BaseProcedureId,
@@ -121,9 +123,7 @@ export function ProceduresTabContent(): React.ReactElement {
       ) => entry.items.set(baseId, entity),
       entityLabel: 'procedure'
     }),
-    entityLabel: 'procedure',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedProceduresCollection(collectionId)
+    entityLabel: 'procedure'
   });
 
   const { entities: procedures, selectedId } = useEntityList<LibraryRuntime.IProcedure, ProcedureId>({

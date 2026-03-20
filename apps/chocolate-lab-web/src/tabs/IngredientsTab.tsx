@@ -10,7 +10,7 @@ import {
 } from '@fgv/ts-app-shell';
 import { AiAssist, Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseIngredientId, CollectionId, IngredientId } from '@fgv/ts-chocolate';
-import type { ResultMapValueType } from '@fgv/ts-utils';
+import { fail, succeed, type Result } from '@fgv/ts-utils';
 import {
   type IReferenceScanResult,
   isIngredientCascadeEntry,
@@ -20,8 +20,6 @@ import {
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
-  createSetInMutableCollection,
-  type MutableCollectionEntryWithSet,
   useEntityMutation,
   useClipboardJsonImport,
   IngredientDetail,
@@ -58,13 +56,6 @@ export function IngredientsTabContent(): React.ReactElement {
   const cascade = useCascadeOps();
   const updateCascadeEntryChanges = useNavigationStore((s) => s.updateCascadeEntryChanges);
 
-  type IngredientCollectionEntry = ResultMapValueType<typeof workspace.data.entities.ingredients.collections>;
-  type IngredientMutableCollectionEntry = MutableCollectionEntryWithSet<
-    IngredientCollectionEntry,
-    BaseIngredientId,
-    Entities.Ingredients.IngredientEntity
-  >;
-
   const editingRef = useRef<{ id: IngredientId; wrapper: LibraryRuntime.EditedIngredient } | undefined>(
     undefined
   );
@@ -100,26 +91,26 @@ export function IngredientsTabContent(): React.ReactElement {
     BaseIngredientId,
     IngredientId
   >({
-    setInMutableCollection: createSetInMutableCollection<
-      Entities.Ingredients.IngredientEntity,
-      BaseIngredientId,
-      IngredientCollectionEntry,
-      IngredientMutableCollectionEntry
-    >({
-      getCollection: (collectionId: CollectionId) =>
-        workspace.data.entities.ingredients.collections.get(collectionId),
-      isMutable: (entry: IngredientCollectionEntry): entry is IngredientMutableCollectionEntry =>
-        entry.isMutable && 'set' in entry.items,
-      setEntity: (
-        entry: IngredientMutableCollectionEntry,
-        baseId: BaseIngredientId,
-        entity: Entities.Ingredients.IngredientEntity
-      ) => entry.items.set(baseId, entity),
-      entityLabel: 'ingredient'
-    }),
-    entityLabel: 'ingredient',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedIngredientsCollection(collectionId)
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveIngredient(collectionId, baseId, entity),
+    setInMutableCollection: (
+      collectionId: CollectionId,
+      baseId: BaseIngredientId,
+      entity: Entities.Ingredients.IngredientEntity
+    ): Result<unknown> =>
+      workspace.data.entities.ingredients.collections
+        .get(collectionId)
+        .asResult.withErrorFormat((msg) => `Collection '${collectionId}' not found: ${msg}`)
+        .onSuccess((entry): Result<unknown> => {
+          if (!entry.isMutable || !('set' in entry.items)) {
+            return fail(`Collection '${collectionId}' is not mutable`);
+          }
+          return entry.items
+            .set(baseId, entity)
+            .asResult.withErrorFormat((msg) => `Failed to set ingredient: ${msg}`)
+            .onSuccess(() => succeed(true));
+        }),
+    entityLabel: 'ingredient'
   });
 
   const { entities: ingredients, selectedId } = useEntityList<LibraryRuntime.AnyIngredient, IngredientId>({

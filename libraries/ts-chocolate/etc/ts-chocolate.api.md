@@ -8682,6 +8682,14 @@ abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends strin
     protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>>;
     loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number>;
     loadProtectedCollectionAsync(encryption: IEncryptionConfig, filter?: ReadonlyArray<string | RegExp>): Promise<Result<ReadonlyArray<CollectionId>>>;
+    mergeConflictingCopyIntoActiveAsync(collectionId: string, sourceName: string | undefined, onConflict: 'skip' | 'overwrite' | 'rename', encryption?: IEncryptionConfig): Promise<Result<{
+        mergedCount: number;
+        skippedCount: number;
+        renamedItems: ReadonlyArray<{
+            oldBaseId: string;
+            newBaseId: string;
+        }>;
+    }>>;
     // @internal
     get mutableSourceName(): string | undefined;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -8694,6 +8702,8 @@ abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends strin
     removeConflictingCopy(collectionId: string, sourceName: string | undefined): Result<true>;
     removeProtectedCollection(collectionId: string): Result<true>;
     removeSource(sourceName: string): number;
+    renameConflictingCopyAsync(collectionId: string, sourceName: string | undefined, newCollectionId: CollectionId, encryption?: IEncryptionConfig): Promise<Result<true>>;
+    rereadConflictingCopyAsync(collectionId: string, sourceName: string | undefined, encryption?: IEncryptionConfig): Promise<Result<ICollectionSourceFile<TItem>>>;
     setActiveMutableSource(sourceName: string, dataDirectory: FileTree.IMutableFileTreeDirectoryItem | undefined, sourceRoot?: FileTree.IMutableFileTreeDirectoryItem): void;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

@@ -563,11 +563,18 @@ function formatItemCount(count: number | undefined): string {
 function CopyRow({
   copy,
   label,
-  onRemove
+  onRemove,
+  onRename,
+  onMerge,
+  missingKeyName
 }: {
   readonly copy: LibraryData.IConflictingCollectionCopy;
   readonly label: string;
   readonly onRemove?: () => void;
+  readonly onRename?: () => void;
+  readonly onMerge?: () => void;
+  /** When set, the copy is encrypted and the named key is not available */
+  readonly missingKeyName?: string;
 }): React.ReactElement {
   return (
     <div className="space-y-0.5">
@@ -582,15 +589,40 @@ function CopyRow({
           key: {copy.secretName}
         </p>
       )}
-      {onRemove && copy.isMutable && (
-        <button
-          type="button"
-          onClick={onRemove}
-          className="mt-1 text-xs px-2 py-0.5 rounded border border-status-error-border text-status-error-icon hover:bg-status-error-bg transition-colors"
-        >
-          Remove
-        </button>
+      {missingKeyName && (
+        <p className="text-xs text-status-warning-strong">
+          Add key <span className="font-mono">{missingKeyName}</span> to rename or merge
+        </p>
       )}
+      <div className="flex flex-wrap gap-1 mt-1">
+        {onRename && !missingKeyName && (
+          <button
+            type="button"
+            onClick={onRename}
+            className="text-xs px-2 py-0.5 rounded border border-border text-secondary hover:bg-hover transition-colors"
+          >
+            Rename
+          </button>
+        )}
+        {onMerge && !missingKeyName && (
+          <button
+            type="button"
+            onClick={onMerge}
+            className="text-xs px-2 py-0.5 rounded border border-border text-secondary hover:bg-hover transition-colors"
+          >
+            Merge into active
+          </button>
+        )}
+        {onRemove && copy.isMutable && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-xs px-2 py-0.5 rounded border border-status-error-border text-status-error-icon hover:bg-status-error-bg transition-colors"
+          >
+            Remove
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -601,6 +633,17 @@ interface IPendingRemove {
   readonly target: 'active' | string | undefined;
 }
 
+interface IPendingConflictRename {
+  readonly entry: IConflictEntry;
+  readonly sourceName: string | undefined;
+  readonly newId: string;
+}
+
+interface IPendingConflictMerge {
+  readonly entry: IConflictEntry;
+  readonly sourceName: string | undefined;
+}
+
 function CollectionConflictsSection({
   defs,
   onRepaired
@@ -608,13 +651,20 @@ function CollectionConflictsSection({
   readonly defs: ReadonlyArray<IConflictSubLibDef>;
   readonly onRepaired: () => void;
 }): React.ReactElement | null {
+  const workspace = useWorkspace();
   const conflicts = buildConflictEntries(defs);
   const [pendingRemove, setPendingRemove] = useState<IPendingRemove | null>(null);
+  const [pendingRename, setPendingRename] = useState<IPendingConflictRename | null>(null);
+  const [pendingMerge, setPendingMerge] = useState<IPendingConflictMerge | null>(null);
 
   if (conflicts.length === 0) return null;
 
   function handleRemoveConflicting(entry: IConflictEntry, sourceName: string | undefined): void {
-    entry.subLib.removeConflictingCopy(entry.conflict.collectionId, sourceName);
+    const result = entry.subLib.removeConflictingCopy(entry.conflict.collectionId, sourceName);
+    if (result.isFailure()) {
+      workspace.data.logger.error(`Failed to remove conflicting copy: ${result.message}`);
+      return;
+    }
     onRepaired();
   }
 
@@ -623,13 +673,148 @@ function CollectionConflictsSection({
     const { entry } = pendingRemove;
     const { collectionId, activeCopy } = entry.conflict;
     if (activeCopy.isEncrypted) {
-      entry.subLib.removeProtectedCollection(collectionId);
+      const removeResult = entry.subLib.removeProtectedCollection(collectionId);
+      if (removeResult.isFailure()) {
+        workspace.data.logger.error(`Failed to remove protected collection: ${removeResult.message}`);
+        return;
+      }
     } else {
+      // Check for a protected loser that will become visible after removing the loaded winner
+      const protectedCopy = entry.subLib.protectedCollections.find((pc) => pc.collectionId === collectionId);
+
       type CollId = Parameters<typeof entry.subLib.removeCollection>[0];
-      entry.subLib.removeCollection(collectionId as unknown as CollId);
+      const removeResult = entry.subLib.removeCollection(collectionId as unknown as CollId);
+      if (removeResult.isFailure()) {
+        workspace.data.logger.error(`Failed to remove loaded collection: ${removeResult.message}`);
+        return;
+      }
+
+      // Auto-unlock the now-visible protected collection if the keystore has the key
+      if (protectedCopy) {
+        const ks = workspace.keyStore;
+        const encConfig = ks?.getEncryptionConfig();
+        if (ks && encConfig?.isSuccess() && ks.hasSecret(protectedCopy.secretName)) {
+          const encryption: LibraryData.IEncryptionConfig = {
+            ...encConfig.value,
+            onMissingKey: 'warn'
+          };
+          entry.subLib
+            .loadProtectedCollectionAsync(encryption, [collectionId])
+            .then((loadResult) => {
+              if (loadResult.isFailure()) {
+                workspace.data.logger.warn(
+                  `Removed active copy of '${collectionId}', but failed to auto-load protected copy: ${loadResult.message}`
+                );
+                return;
+              }
+              onRepaired();
+            })
+            .catch((err: unknown) => {
+              workspace.data.logger.error(
+                `Removed active copy of '${collectionId}', but protected auto-load threw: ${String(err)}`
+              );
+            });
+        }
+      }
     }
     setPendingRemove(null);
     onRepaired();
+  }
+
+  // Build encryption config from the workspace keystore (if unlocked)
+  const encryptionConfig = (() => {
+    const ks = workspace.keyStore;
+    if (!ks) return undefined;
+    const result = ks.getEncryptionConfig();
+    return result.isSuccess() ? result.value : undefined;
+  })();
+
+  function hasKeyForSecret(secretName: string | undefined): boolean {
+    if (!secretName) return false;
+    const ks = workspace.keyStore;
+    if (!ks) return false;
+    const result = ks.hasSecret(secretName);
+    return result.isSuccess() && result.value;
+  }
+
+  /**
+   * Returns the missing key name if the copy is encrypted and we don't have the key,
+   * or undefined if the copy can be read (either unencrypted or key available).
+   */
+  function getMissingKeyName(copy: LibraryData.IConflictingCollectionCopy): string | undefined {
+    if (!copy.isEncrypted) return undefined;
+    if (hasKeyForSecret(copy.secretName)) return undefined;
+    return copy.secretName ?? 'unknown';
+  }
+
+  function handleStartRename(entry: IConflictEntry, sourceName: string | undefined): void {
+    setPendingRename({
+      entry,
+      sourceName,
+      newId: `${entry.conflict.collectionId}-2`
+    });
+  }
+
+  function handleConfirmRename(): void {
+    if (!pendingRename) return;
+    const { entry, sourceName, newId } = pendingRename;
+    const trimmed = newId.trim();
+    if (!trimmed) return;
+
+    type CollId = Parameters<typeof entry.subLib.renameConflictingCopyAsync>[2];
+    entry.subLib
+      .renameConflictingCopyAsync(
+        entry.conflict.collectionId,
+        sourceName,
+        trimmed as unknown as CollId,
+        encryptionConfig
+      )
+      .then((result) => {
+        if (result.isFailure()) {
+          workspace.data.logger.error(`Failed to rename conflicting copy: ${result.message}`);
+        } else {
+          workspace.data.logger.info(
+            `Renamed conflicting copy of "${entry.conflict.collectionId}" to "${trimmed}"`
+          );
+        }
+        setPendingRename(null);
+        workspace.data.clearCache();
+        onRepaired();
+      })
+      .catch((err: unknown) => {
+        workspace.data.logger.error(`Rename failed: ${String(err)}`);
+        setPendingRename(null);
+      });
+  }
+
+  function handleStartMerge(entry: IConflictEntry, sourceName: string | undefined): void {
+    setPendingMerge({ entry, sourceName });
+  }
+
+  function handleConfirmMerge(): void {
+    if (!pendingMerge) return;
+    const { entry, sourceName } = pendingMerge;
+
+    entry.subLib
+      .mergeConflictingCopyIntoActiveAsync(entry.conflict.collectionId, sourceName, 'skip', encryptionConfig)
+      .then((result) => {
+        if (result.isFailure()) {
+          workspace.data.logger.error(`Failed to merge conflicting copy: ${result.message}`);
+        } else {
+          const { mergedCount, skippedCount } = result.value;
+          workspace.data.logger.info(
+            `Merged ${mergedCount} item(s) into active copy of "${entry.conflict.collectionId}"` +
+              (skippedCount > 0 ? ` (${skippedCount} duplicate(s) skipped)` : '')
+          );
+        }
+        setPendingMerge(null);
+        workspace.data.clearCache();
+        onRepaired();
+      })
+      .catch((err: unknown) => {
+        workspace.data.logger.error(`Merge failed: ${String(err)}`);
+        setPendingMerge(null);
+      });
   }
 
   const pendingEntry = pendingRemove?.entry;
@@ -653,6 +838,54 @@ function CollectionConflictsSection({
         onConfirm={handleConfirmRemoveActive}
         onCancel={(): void => setPendingRemove(null)}
       />
+
+      {/* Rename dialog */}
+      <ConfirmDialog
+        isOpen={pendingRename !== null}
+        title="Rename Conflicting Copy"
+        message={
+          pendingRename ? (
+            <div className="space-y-2">
+              <p>
+                Rename the conflicting copy of <strong>{pendingRename.entry.conflict.collectionId}</strong> to
+                a new ID. The items will be loaded into a new collection.
+              </p>
+              <input
+                type="text"
+                value={pendingRename.newId}
+                onChange={(e): void =>
+                  setPendingRename((prev) => (prev ? { ...prev, newId: e.target.value } : null))
+                }
+                className="w-full px-3 py-1.5 text-sm font-mono border border-border rounded focus:outline-none focus:ring-1 focus:ring-focus-ring"
+                placeholder="new-collection-id"
+                autoFocus
+              />
+            </div>
+          ) : (
+            ''
+          )
+        }
+        confirmLabel="Rename"
+        severity="warning"
+        onConfirm={handleConfirmRename}
+        onCancel={(): void => setPendingRename(null)}
+      />
+
+      {/* Merge dialog */}
+      <ConfirmDialog
+        isOpen={pendingMerge !== null}
+        title="Merge Into Active Copy"
+        message={
+          pendingMerge
+            ? `Merge items from the conflicting copy into the active copy of "${pendingMerge.entry.conflict.collectionId}"? Duplicate items will be skipped (active copy's version kept). The conflicting copy will be deleted.`
+            : ''
+        }
+        confirmLabel="Merge"
+        severity="warning"
+        onConfirm={handleConfirmMerge}
+        onCancel={(): void => setPendingMerge(null)}
+      />
+
       <div className="border border-status-warning-border bg-status-warning-bg rounded-md p-4 space-y-3">
         <div className="flex items-start gap-2">
           <span className="text-status-warning-strong text-sm shrink-0">⚠</span>
@@ -696,9 +929,18 @@ function CollectionConflictsSection({
                       key={i}
                       copy={copy}
                       label={`Conflicting copy ${entry.conflict.conflictingCopies.length > 1 ? i + 1 : ''}`}
+                      missingKeyName={getMissingKeyName(copy)}
                       onRemove={
                         copy.isMutable
                           ? (): void => handleRemoveConflicting(entry, copy.sourceName)
+                          : undefined
+                      }
+                      onRename={
+                        copy.isMutable ? (): void => handleStartRename(entry, copy.sourceName) : undefined
+                      }
+                      onMerge={
+                        copy.isMutable && entry.conflict.activeCopy.isMutable
+                          ? (): void => handleStartMerge(entry, copy.sourceName)
                           : undefined
                       }
                     />

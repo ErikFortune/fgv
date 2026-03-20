@@ -30,7 +30,6 @@ import type {
   DecorationId
 } from '@fgv/ts-chocolate';
 import { fail } from '@fgv/ts-utils';
-import type { ResultMapValueType } from '@fgv/ts-utils';
 import {
   type CascadeEntityType,
   type IReferenceScanResult,
@@ -287,28 +286,32 @@ export function ConfectionsTabContent(): React.ReactElement {
     reactiveWorkspace.version
   ]);
 
-  type ConfectionCollectionEntry = ResultMapValueType<typeof workspace.data.entities.confections.collections>;
+  type ConfectionCollectionResult = ReturnType<typeof workspace.data.entities.confections.collections.get>;
+  type ConfectionCollectionEntry = Exclude<ConfectionCollectionResult['value'], undefined>;
   type ConfectionMutableCollectionEntry = MutableCollectionEntryWithSet<
     ConfectionCollectionEntry,
     BaseConfectionId,
     Entities.Confections.AnyConfectionRecipeEntity
   >;
 
-  type IngredientCollectionEntry = ResultMapValueType<typeof workspace.data.entities.ingredients.collections>;
+  type IngredientCollectionResult = ReturnType<typeof workspace.data.entities.ingredients.collections.get>;
+  type IngredientCollectionEntry = Exclude<IngredientCollectionResult['value'], undefined>;
   type IngredientMutableCollectionEntry = MutableCollectionEntryWithSet<
     IngredientCollectionEntry,
     BaseIngredientId,
     Entities.Ingredients.IngredientEntity
   >;
 
-  type FillingCollectionEntry = ResultMapValueType<typeof workspace.data.entities.fillings.collections>;
+  type FillingCollectionResult = ReturnType<typeof workspace.data.entities.fillings.collections.get>;
+  type FillingCollectionEntry = Exclude<FillingCollectionResult['value'], undefined>;
   type FillingMutableCollectionEntry = MutableCollectionEntryWithSet<
     FillingCollectionEntry,
     BaseFillingId,
     Entities.Fillings.IFillingRecipeEntity
   >;
 
-  type ProcedureCollectionEntry = ResultMapValueType<typeof workspace.data.entities.procedures.collections>;
+  type ProcedureCollectionResult = ReturnType<typeof workspace.data.entities.procedures.collections.get>;
+  type ProcedureCollectionEntry = Exclude<ProcedureCollectionResult['value'], undefined>;
   type ProcedureMutableCollectionEntry = MutableCollectionEntryWithSet<
     ProcedureCollectionEntry,
     BaseProcedureId,
@@ -326,6 +329,8 @@ export function ConfectionsTabContent(): React.ReactElement {
     BaseConfectionId,
     ConfectionId
   >({
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveConfectionRecipe(collectionId, baseId, entity),
     setInMutableCollection: createSetInMutableCollection<
       Entities.Confections.AnyConfectionRecipeEntity,
       BaseConfectionId,
@@ -343,9 +348,7 @@ export function ConfectionsTabContent(): React.ReactElement {
       ) => entry.items.set(baseId, entity),
       entityLabel: 'confection'
     }),
-    entityLabel: 'confection',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedConfectionsCollection(collectionId)
+    entityLabel: 'confection'
   });
 
   const ingredientMutation = useEntityMutation<
@@ -353,6 +356,8 @@ export function ConfectionsTabContent(): React.ReactElement {
     BaseIngredientId,
     IngredientId
   >({
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveIngredient(collectionId, baseId, entity),
     setInMutableCollection: createSetInMutableCollection<
       Entities.Ingredients.IngredientEntity,
       BaseIngredientId,
@@ -370,13 +375,13 @@ export function ConfectionsTabContent(): React.ReactElement {
       ) => entry.items.set(baseId, entity),
       entityLabel: 'ingredient'
     }),
-    entityLabel: 'ingredient',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedIngredientsCollection(collectionId)
+    entityLabel: 'ingredient'
   });
 
   const fillingMutation = useEntityMutation<Entities.Fillings.IFillingRecipeEntity, BaseFillingId, FillingId>(
     {
+      saveToCollection: (collectionId, baseId, entity) =>
+        workspace.data.entities.saveFillingRecipe(collectionId, baseId, entity),
       setInMutableCollection: createSetInMutableCollection<
         Entities.Fillings.IFillingRecipeEntity,
         BaseFillingId,
@@ -394,9 +399,7 @@ export function ConfectionsTabContent(): React.ReactElement {
         ) => entry.items.set(baseId, entity),
         entityLabel: 'filling'
       }),
-      entityLabel: 'filling',
-      getPersistedCollection: (collectionId: CollectionId) =>
-        workspace.data.entities.getPersistedFillingsCollection(collectionId)
+      entityLabel: 'filling'
     }
   );
 
@@ -405,6 +408,8 @@ export function ConfectionsTabContent(): React.ReactElement {
     BaseProcedureId,
     ProcedureId
   >({
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveProcedure(collectionId, baseId, entity),
     setInMutableCollection: createSetInMutableCollection<
       Entities.Procedures.IProcedureEntity,
       BaseProcedureId,
@@ -422,12 +427,12 @@ export function ConfectionsTabContent(): React.ReactElement {
       ) => entry.items.set(baseId, entity),
       entityLabel: 'procedure'
     }),
-    entityLabel: 'procedure',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedProceduresCollection(collectionId)
+    entityLabel: 'procedure'
   });
 
   const moldMutation = useEntityMutation<Entities.Molds.IMoldEntity, BaseMoldId, MoldId>({
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveMold(collectionId, baseId, entity),
     setInMutableCollection: createSetInMutableCollection({
       getCollection: (collectionId: CollectionId) =>
         workspace.data.entities.molds.collections.get(collectionId),
@@ -436,9 +441,7 @@ export function ConfectionsTabContent(): React.ReactElement {
         'set' in entry.items ? entry.items.set(baseId, entity) : fail('Collection items are read-only'),
       entityLabel: 'mold'
     }),
-    entityLabel: 'mold',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedMoldsCollection(collectionId)
+    entityLabel: 'mold'
   });
 
   const decorationMutation = useEntityMutation<
@@ -446,6 +449,8 @@ export function ConfectionsTabContent(): React.ReactElement {
     BaseDecorationId,
     DecorationId
   >({
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveDecoration(collectionId, baseId, entity),
     setInMutableCollection: createSetInMutableCollection({
       getCollection: (collectionId: CollectionId) =>
         workspace.data.entities.decorations.collections.get(collectionId),
@@ -457,9 +462,7 @@ export function ConfectionsTabContent(): React.ReactElement {
       ) => ('set' in entry.items ? entry.items.set(baseId, entity) : fail('Collection items are read-only')),
       entityLabel: 'decoration'
     }),
-    entityLabel: 'decoration',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedDecorationsCollection(collectionId)
+    entityLabel: 'decoration'
   });
 
   const editingRef = useRef<IConfectionEditingState | undefined>(undefined);

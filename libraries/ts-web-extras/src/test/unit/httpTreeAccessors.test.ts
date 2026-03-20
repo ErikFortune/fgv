@@ -21,6 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { fail, Logging } from '@fgv/ts-utils';
 import { HttpTreeAccessors } from '../../packlets/file-tree';
 
 // ---- Mock fetch helpers ----
@@ -411,6 +412,26 @@ describe('HttpTreeAccessors', () => {
       expect(accessors.getDirtyPaths()).toContain('/a.json');
       expect(accessors.getDirtyPaths()).toContain('/b.json');
     });
+
+    test('tracks deleted files as pending dirty paths', async () => {
+      const { fetchImpl } = makeMockFetch([
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') }
+      ]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl,
+          mutable: true
+        })
+      ).orThrow();
+
+      accessors.deleteFile('/data.json').orThrow();
+
+      expect(accessors.isDirty()).toBe(true);
+      expect(accessors.getDirtyPaths()).toContain('/data.json');
+    });
   });
 
   describe('saveFileContents()', () => {
@@ -476,6 +497,71 @@ describe('HttpTreeAccessors', () => {
       const methodCalls = calls.slice(2).map((c) => c.init?.method);
       expect(methodCalls).toContain('PUT');
       expect(methodCalls).toContain('POST');
+    });
+
+    test('logs when autoSync returns a failure Result', async () => {
+      const logger = {
+        detail: jest.fn(),
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn()
+      } as unknown as Logging.LogReporter<unknown>;
+
+      const { fetchImpl } = makeMockFetch([
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') }
+      ]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl,
+          mutable: true,
+          autoSync: true,
+          logger
+        })
+      ).orThrow();
+
+      (accessors as unknown as { syncToDisk: () => Promise<ReturnType<typeof fail<void>>> }).syncToDisk =
+        async () => fail<void>('simulated sync failure');
+
+      accessors.saveFileContents('/data.json', '{"auto":true}').orThrow();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('simulated sync failure'));
+    });
+
+    test('logs when autoSync throws unexpectedly', async () => {
+      const logger = {
+        detail: jest.fn(),
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn()
+      } as unknown as Logging.LogReporter<unknown>;
+
+      const { fetchImpl } = makeMockFetch([
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') }
+      ]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl,
+          mutable: true,
+          autoSync: true,
+          logger
+        })
+      ).orThrow();
+
+      (accessors as unknown as { syncToDisk: () => Promise<unknown> }).syncToDisk = async () => {
+        throw new Error('simulated throw');
+      };
+
+      accessors.saveFileContents('/data.json', '{"auto":true}').orThrow();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('simulated throw'));
     });
   });
 
@@ -802,6 +888,54 @@ describe('HttpTreeAccessors', () => {
       const methods = syncCalls.map((c) => c.init?.method);
       expect(methods.filter((m) => m === 'PUT')).toHaveLength(2);
       expect(methods.filter((m) => m === 'POST')).toHaveLength(1);
+    });
+
+    test('DELETEs pending deletions before POST /sync', async () => {
+      const { fetchImpl, calls } = makeMockFetch([
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') },
+        { ok: true, jsonValue: { deleted: true } },
+        { ok: true, jsonValue: { synced: 0 } }
+      ]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl,
+          mutable: true
+        })
+      ).orThrow();
+
+      accessors.deleteFile('/data.json').orThrow();
+      const result = await accessors.syncToDisk();
+
+      expect(result).toSucceed();
+      const syncCalls = calls.slice(2);
+      expect(syncCalls[0].init?.method).toBe('DELETE');
+      expect(syncCalls[0].url).toContain('/file?');
+      expect(syncCalls[1].init?.method).toBe('POST');
+      expect(accessors.isDirty()).toBe(false);
+    });
+
+    test('fails when DELETE for pending deletion returns non-ok response', async () => {
+      const { fetchImpl } = makeMockFetch([
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') },
+        { ok: false, status: 500, textValue: 'Delete failed' }
+      ]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl,
+          mutable: true
+        })
+      ).orThrow();
+
+      accessors.deleteFile('/data.json').orThrow();
+      const result = await accessors.syncToDisk();
+
+      expect(result).toFailWith(/delete.*data\.json.*delete failed/i);
     });
   });
 

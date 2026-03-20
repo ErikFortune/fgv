@@ -50,6 +50,14 @@ class InMemoryProvider implements IHttpStorageProvider {
     return succeed({ path, contents });
   }
 
+  public async deleteFile(path: string): Promise<Result<boolean>> {
+    if (!this._files.has(path)) {
+      return fail(`${path}: not found`);
+    }
+    this._files.delete(path);
+    return succeed(true);
+  }
+
   public async createDirectory(path: string): Promise<Result<IStorageTreeItem>> {
     return succeed({ path, name: this._basename(path), type: 'directory' });
   }
@@ -129,5 +137,29 @@ describe('createStorageRoutes', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ synced: 1 });
+  });
+
+  test('deletes a file through DELETE /file', async () => {
+    const provider = new InMemoryProvider();
+    const app = createStorageRoutes({ providers: new TestProviderFactory(provider) });
+
+    await app.request(
+      new Request('http://localhost/file', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: '/data/remove-me.txt', contents: 'gone soon' })
+      })
+    );
+
+    const deleteResponse = await app.request(
+      new Request('http://localhost/file?path=/data/remove-me.txt', {
+        method: 'DELETE'
+      })
+    );
+    expect(deleteResponse.status).toBe(200);
+    await expect(deleteResponse.json()).resolves.toEqual({ deleted: true });
+
+    const getResponse = await app.request(new Request('http://localhost/file?path=/data/remove-me.txt'));
+    expect(getResponse.status).toBe(404);
   });
 });

@@ -150,6 +150,8 @@ export function DecorationsTabContent(): React.ReactElement {
     BaseDecorationId,
     DecorationId
   >({
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveDecoration(collectionId, baseId, entity),
     setInMutableCollection: createSetInMutableCollection({
       getCollection: (collectionId: CollectionId) =>
         workspace.data.entities.decorations.collections.get(collectionId),
@@ -161,9 +163,7 @@ export function DecorationsTabContent(): React.ReactElement {
       ) => ('set' in entry.items ? entry.items.set(baseId, entity) : fail('Collection items are read-only')),
       entityLabel: 'decoration'
     }),
-    entityLabel: 'decoration',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedDecorationsCollection(collectionId)
+    entityLabel: 'decoration'
   });
 
   const ingredientMutation = useEntityMutation<
@@ -171,6 +171,8 @@ export function DecorationsTabContent(): React.ReactElement {
     BaseIngredientId,
     IngredientId
   >({
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveIngredient(collectionId, baseId, entity),
     setInMutableCollection: createSetInMutableCollection<
       Entities.Ingredients.IngredientEntity,
       BaseIngredientId,
@@ -188,9 +190,7 @@ export function DecorationsTabContent(): React.ReactElement {
       ) => entry.items.set(baseId, entity),
       entityLabel: 'ingredient'
     }),
-    entityLabel: 'ingredient',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedIngredientsCollection(collectionId)
+    entityLabel: 'ingredient'
   });
 
   const procedureMutation = useEntityMutation<
@@ -198,6 +198,8 @@ export function DecorationsTabContent(): React.ReactElement {
     BaseProcedureId,
     ProcedureId
   >({
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveProcedure(collectionId, baseId, entity),
     setInMutableCollection: createSetInMutableCollection<
       Entities.Procedures.IProcedureEntity,
       BaseProcedureId,
@@ -215,9 +217,7 @@ export function DecorationsTabContent(): React.ReactElement {
       ) => entry.items.set(baseId, entity),
       entityLabel: 'procedure'
     }),
-    entityLabel: 'procedure',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedProceduresCollection(collectionId)
+    entityLabel: 'procedure'
   });
 
   const { entities: decorations, selectedId } = useEntityList<LibraryRuntime.IDecoration, DecorationId>({

@@ -327,9 +327,12 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
    * Does NOT update cross-entity references — callers must handle that separately.
    */
   public rename(oldCollectionId: CollectionId, newCollectionId: CollectionId): Result<CollectionId> {
-    // Validate: new ID must not exist
+    // Validate: new ID must not exist in loaded or protected collections
     if (this._library.collections.has(newCollectionId)) {
       return fail(`Collection "${newCollectionId}" already exists`);
+    }
+    if (this._library.protectedCollections.some((pc) => pc.collectionId === newCollectionId)) {
+      return fail(`Collection "${newCollectionId}" already exists (encrypted)`);
     }
 
     // Get old collection, validate it exists and is mutable

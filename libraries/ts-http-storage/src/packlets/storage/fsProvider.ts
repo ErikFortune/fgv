@@ -127,6 +127,23 @@ export class FsStorageProvider implements IHttpStorageProvider {
     }
   }
 
+  public async deleteFile(itemPath: string): Promise<Result<boolean>> {
+    const resolved = this._resolveAbsolutePath(itemPath);
+    if (resolved.isFailure()) {
+      return fail(resolved.message);
+    }
+    try {
+      const stats = await fsp.stat(resolved.value);
+      if (!stats.isFile()) {
+        return fail(`${itemPath}: not a file`);
+      }
+      await fsp.unlink(resolved.value);
+      return succeed(true);
+    } catch (err: unknown) {
+      return fail(`${itemPath}: ${_toMessage(err)}`);
+    }
+  }
+
   public async createDirectory(itemPath: string): Promise<Result<IStorageTreeItem>> {
     const resolved = this._resolveAbsolutePath(itemPath);
     if (resolved.isFailure()) {

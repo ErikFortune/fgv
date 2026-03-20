@@ -501,23 +501,75 @@ export function useCollectionActions(): ICollectionActions {
         return;
       }
 
-      // Use CollectionManager pattern: check mutability, then delete
-      const isMutableResult = subLibrary.collections.get(collectionId as CollectionId).asResult;
+      // Check loaded collections first, then fall back to protected (encrypted) collections
+      const loadedResult = subLibrary.collections.get(collectionId as CollectionId).asResult;
 
-      if (isMutableResult.isFailure()) {
-        workspace.data.logger.error(`Collection '${collectionId}' not found`);
-        return;
-      }
+      if (loadedResult.isSuccess()) {
+        // Collection is loaded (decrypted or never encrypted)
+        if (!loadedResult.value.isMutable) {
+          workspace.data.logger.warn(`Collection '${collectionId}' is immutable and cannot be deleted`);
+          return;
+        }
 
-      if (!isMutableResult.value.isMutable) {
-        workspace.data.logger.warn(`Collection '${collectionId}' is immutable and cannot be deleted`);
-        return;
-      }
+        // Check if there's a protected collection with this ID that will become visible after deletion
+        const protectedCopy = subLibrary.protectedCollections.find((pc) => pc.collectionId === collectionId);
 
-      const deleteResult = subLibrary.removeCollection(collectionId as CollectionId);
-      if (deleteResult.isFailure()) {
-        workspace.data.logger.error(`Failed to delete collection '${collectionId}': ${deleteResult.message}`);
-        return;
+        const deleteResult = subLibrary.removeCollection(collectionId as CollectionId);
+        if (deleteResult.isFailure()) {
+          workspace.data.logger.error(
+            `Failed to delete collection '${collectionId}': ${deleteResult.message}`
+          );
+          return;
+        }
+
+        // Auto-unlock the now-visible protected collection if the keystore has the key
+        if (protectedCopy && workspace.keyStore) {
+          const secretResult = workspace.keyStore.getSecret(protectedCopy.secretName);
+          const encConfigResult = workspace.keyStore.getEncryptionConfig();
+          if (secretResult.isSuccess() && encConfigResult.isSuccess()) {
+            const encryption: LibraryData.IEncryptionConfig = {
+              ...encConfigResult.value,
+              onMissingKey: 'warn'
+            };
+            subLibrary
+              .loadProtectedCollectionAsync(encryption, [collectionId])
+              .then((loadResult) => {
+                if (loadResult.isFailure()) {
+                  workspace.data.logger.warn(
+                    `Deleted collection '${collectionId}', but failed to auto-load protected copy: ${loadResult.message}`
+                  );
+                  return;
+                }
+                workspace.data.clearCache();
+                reactiveWorkspace.notifyChange();
+              })
+              .catch((err: unknown) => {
+                workspace.data.logger.error(
+                  `Deleted collection '${collectionId}', but protected auto-load threw: ${String(err)}`
+                );
+              });
+          }
+        }
+      } else {
+        // Check if it's a protected (encrypted, still locked) collection
+        const protectedInfo = subLibrary.protectedCollections.find((pc) => pc.collectionId === collectionId);
+        if (!protectedInfo) {
+          workspace.data.logger.error(`Collection '${collectionId}' not found`);
+          return;
+        }
+
+        if (!protectedInfo.isMutable) {
+          workspace.data.logger.warn(`Collection '${collectionId}' is immutable and cannot be deleted`);
+          return;
+        }
+
+        const deleteResult = subLibrary.removeProtectedCollection(collectionId);
+        if (deleteResult.isFailure()) {
+          workspace.data.logger.error(
+            `Failed to delete protected collection '${collectionId}': ${deleteResult.message}`
+          );
+          return;
+        }
       }
 
       workspace.data.logger.info(`Deleted collection '${collectionId}'`);
@@ -858,7 +910,11 @@ export function useCollectionActions(): ICollectionActions {
       const scanner = new EntityReferenceScanner(workspace.data.entities);
       const scanResult = scanner.scanCollection(collectionId);
 
-      const existingIds = Array.from(subLibrary.collections.keys());
+      // Include both loaded and protected collection IDs so the dialog rejects duplicates
+      const existingIds = [
+        ...Array.from(subLibrary.collections.keys()),
+        ...subLibrary.protectedCollections.map((pc) => pc.collectionId)
+      ];
 
       setPendingRename({
         collectionId,
@@ -875,6 +931,21 @@ export function useCollectionActions(): ICollectionActions {
 
       const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) return;
+
+      // Block rename for locked protected collections — they must be unlocked first
+      const isLoaded = subLibrary.collections.has(pendingRename.collectionId as CollectionId);
+      if (!isLoaded) {
+        const isProtected = subLibrary.protectedCollections.some(
+          (pc) => pc.collectionId === pendingRename.collectionId
+        );
+        if (isProtected) {
+          workspace.data.logger.error(
+            `Cannot rename locked collection '${pendingRename.collectionId}' — unlock it first`
+          );
+          setPendingRename(null);
+          return;
+        }
+      }
 
       const manager = new Editing.CollectionManager(subLibrary);
       const renameResult = manager.rename(
@@ -932,7 +1003,18 @@ export function useCollectionActions(): ICollectionActions {
       if (!subLibrary) return;
 
       const collectionResult = subLibrary.collections.get(sourceCollectionId as CollectionId).asResult;
-      if (collectionResult.isFailure()) return;
+      if (collectionResult.isFailure()) {
+        // Locked encrypted collections cannot be merged — items are not accessible
+        const isProtected = subLibrary.protectedCollections.some(
+          (pc) => pc.collectionId === sourceCollectionId
+        );
+        if (isProtected) {
+          workspace.data.logger.error(
+            `Cannot merge locked collection '${sourceCollectionId}' — unlock it first`
+          );
+        }
+        return;
+      }
 
       const scanner = new EntityReferenceScanner(workspace.data.entities);
       const scanResult = scanner.scanCollection(sourceCollectionId);

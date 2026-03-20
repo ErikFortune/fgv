@@ -26,14 +26,12 @@
 import {
   Collections,
   Converter,
-  ensureArray,
   fail,
   Failure,
   Logging,
   mapResults,
   MessageAggregator,
   omit,
-  recordFromEntries,
   Result,
   succeed,
   Success,
@@ -41,15 +39,14 @@ import {
 } from '@fgv/ts-utils';
 import { Converters as JsonConverters, FileTree } from '@fgv/ts-json-base';
 
-import { CollectionId } from '../common';
+import { CollectionId, Helpers } from '../common';
 import { Converters as CommonConverters } from '../common';
 import { collectionRuntimeMetadata as collectionRuntimeMetadataConverter } from './converters';
 import { CryptoUtils } from '@fgv/ts-extras';
-import { CollectionLoader, EncryptedFileHandling } from './collectionLoader';
-import { createFilterFromSpec } from './collectionFilter';
 import {
   ICollectionIdConflict,
   ICollectionRuntimeMetadata,
+  ICollectionSourceFile,
   IConflictingCollectionCopy,
   IEncryptionConfig,
   IFileTreeSource,
@@ -58,27 +55,33 @@ import {
   IProtectedCollectionInfo,
   LibraryLoadSpec
 } from './model';
+import { ICollectionSet, normalizeFileSources } from './libraryLoader';
 import {
-  ICollectionSet,
-  normalizeFileSources,
-  normalizeMergeSource,
-  specToLoadParams
-} from './libraryLoader';
-import { navigateToDirectory } from './navigation';
-
-// ============================================================================
-// Internal Conflict Tracking Type
-// ============================================================================
-
-/**
- * Internal storage for a conflicting copy of a collection.
- * Extends the public IConflictingCollectionCopy with the FileTree source item
- * needed for file deletion during repair.
- * @internal
- */
-interface IConflictCopyInternal extends IConflictingCollectionCopy {
-  readonly sourceItem?: FileTree.FileTreeItem;
-}
+  extractCollections,
+  loadBuiltInCollections,
+  loadBuiltInCollectionsAsync,
+  loadFromFileTreeSource,
+  loadFromFileTreeSourceAsync
+} from './subLibrary.loader';
+import {
+  deleteSourceFile,
+  ensureMutableDataDirectory,
+  findActiveMutableSource
+} from './subLibrary.persistence';
+import {
+  findConflictCopy,
+  getKeyForSecret,
+  readEncryptedSourceFile,
+  readPlainSourceFile
+} from './subLibrary.conflicts';
+import {
+  addProtectedOrConflict,
+  appendConflictCopy,
+  createConflictCopyFromProtected,
+  dedupeCollectionsByFirstSeen,
+  dedupeCollectionsWithConflicts,
+  type IConflictCopyInternal
+} from './subLibrary.collisions';
 
 // ============================================================================
 // Type Aliases
@@ -292,16 +295,6 @@ export interface ISubLibraryAsyncLoadResult<TBaseId extends string, TItem> {
   readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<CollectionId>>;
 }
 
-/**
- * Internal result type for file tree source loading.
- * @internal
- */
-interface IFileTreeSourceLoadResult<TBaseId extends string, TItem> {
-  readonly collections: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
-  readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<CollectionId>>;
-  readonly sourceItems: ReadonlyMap<CollectionId, FileTree.FileTreeItem>;
-}
-
 // ============================================================================
 // Constructor Parameters
 // ============================================================================
@@ -460,7 +453,7 @@ export abstract class SubLibraryBase<
     const logger = params.logger ?? libraryParams?.logger ?? new Logging.LogReporter<unknown>();
 
     // Load built-in collections (includes protected collection metadata)
-    const builtInResult = SubLibraryBase._loadBuiltInCollections(
+    const builtInResult = loadBuiltInCollections(
       builtin,
       params.itemIdConverter,
       params.itemConverter,
@@ -471,7 +464,7 @@ export abstract class SubLibraryBase<
 
     // Load file source collections
     const fileSourceResults = fileSources.map((source, i) =>
-      SubLibraryBase._loadFromFileTreeSource(
+      loadFromFileTreeSource(
         source,
         params.itemIdConverter,
         params.itemConverter,
@@ -498,55 +491,33 @@ export abstract class SubLibraryBase<
     const fileSourceData = mapResults(fileSourceResults).orThrow();
 
     // Extract collections from merge libraries
-    const mergedLibraryCollections = SubLibraryBase._extractCollections<TBaseId, TItem>(
-      libraryParams?.mergeLibraries
+    const mergedLibraryCollections = extractCollections<TBaseId, TItem>(libraryParams?.mergeLibraries);
+
+    const deduped = dedupeCollectionsWithConflicts(
+      [
+        {
+          sourceLabel: 'builtin',
+          collections: builtInResult.collections,
+          sourceItems: builtInResult.sourceItems
+        },
+        ...fileSourceData.map((fileSource) => ({
+          sourceLabel: fileSource.source,
+          collections: fileSource.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>,
+          sourceItems: fileSource.sourceItems
+        })),
+        {
+          sourceLabel: 'mergeLibraries',
+          collections: mergedLibraryCollections,
+          sourceItems: new Map<CollectionId, FileTree.FileTreeItem>()
+        }
+      ],
+      additionalCollections,
+      logger
     );
 
-    // Soft dedup: first-seen wins per collection ID; losers are tracked.
-    // Never hard-fails — the app always loads so the user can repair via Settings → Storage.
-    const seenIds = new Map<CollectionId, string>();
-    const preInitConflicts = new Map<CollectionId, IConflictCopyInternal[]>();
-
-    const recordOrSkip = (
-      coll: SubLibraryEntryInit<TBaseId, TItem>,
-      sourceLabel: string,
-      sourceItems: ReadonlyMap<CollectionId, FileTree.FileTreeItem>
-    ): boolean => {
-      const existingSource = seenIds.get(coll.id);
-      if (existingSource !== undefined) {
-        const metadata = coll.metadata as ICollectionRuntimeMetadata | undefined;
-        const loser: IConflictCopyInternal = {
-          sourceName: metadata?.sourceName ?? sourceLabel,
-          isEncrypted: metadata?.secretName !== undefined,
-          itemCount: undefined,
-          secretName: metadata?.secretName,
-          isMutable: (coll as { isMutable?: boolean }).isMutable ?? false,
-          sourceItem: sourceItems.get(coll.id)
-        };
-        preInitConflicts.set(coll.id, [...(preInitConflicts.get(coll.id) ?? []), loser]);
-        logger.warn(
-          `[SubLibrary] Collection ID collision: '${coll.id}' from '${sourceLabel}' conflicts with existing from '${existingSource}'. Skipping duplicate.`
-        );
-        return false;
-      }
-      seenIds.set(coll.id, sourceLabel);
-      return true;
-    };
-
-    const allCollections: SubLibraryEntryInit<TBaseId, TItem>[] = [];
-    for (const coll of builtInResult.collections) {
-      if (recordOrSkip(coll, 'builtin', builtInResult.sourceItems)) allCollections.push(coll);
-    }
-    for (const fileSource of fileSourceData) {
-      for (const coll of fileSource.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>) {
-        if (recordOrSkip(coll, fileSource.source, fileSource.sourceItems)) allCollections.push(coll);
-      }
-    }
-    for (const coll of mergedLibraryCollections) {
-      if (recordOrSkip(coll, 'mergeLibraries', new Map())) allCollections.push(coll);
-    }
-    // additionalCollections are trusted direct inserts — no dedup
-    for (const coll of additionalCollections) allCollections.push(coll);
+    const allCollections: SubLibraryEntryInit<TBaseId, TItem>[] = [...deduped.collections];
+    const activeSourceItems = new Map(deduped.activeSourceItems);
+    const preInitConflicts = deduped.preInitConflicts;
 
     super({
       collectionIdConverter: CommonConverters.collectionId,
@@ -562,70 +533,34 @@ export abstract class SubLibraryBase<
     this._directoryNavigator = params.directoryNavigator;
     this._logger = logger;
 
-    // Initialize source items map for persistence
-    this._sourceItems = new Map();
-
-    // Populate source items from built-in collections
-    for (const [id, item] of builtInResult.sourceItems) {
-      this._sourceItems.set(id, item);
-    }
-
-    // Populate source items from file sources
-    for (const fileSource of fileSourceData) {
-      for (const [id, item] of fileSource.sourceItems) {
-        this._sourceItems.set(id, item);
-      }
-    }
+    // Track source items only for active (winning) loaded collections.
+    // This prevents conflicting loser copies from overwriting the winner's backing file
+    // reference, which can otherwise cause delete/rename operations to target the wrong file.
+    this._sourceItems = new Map(activeSourceItems);
 
     // Initialize protected collections and conflicts from all sources.
     // First-seen wins per collection ID; later copies become conflict losers.
     this._protectedCollections = new Map();
     this._conflicts = new Map();
 
-    const addProtectedOrConflict = (pc: IProtectedCollectionInternal<CollectionId>): void => {
-      const existing = this._protectedCollections.get(pc.ref.collectionId);
-      if (existing !== undefined) {
-        // Protected+protected collision — later copy is a loser
-        const loser: IConflictCopyInternal = {
-          sourceName: pc.sourceName,
-          isEncrypted: true,
-          itemCount: pc.ref.itemCount,
-          secretName: pc.ref.secretName,
-          isMutable: pc.ref.isMutable,
-          sourceItem: pc.sourceItem
-        };
-        this._conflicts.set(pc.ref.collectionId, [
-          ...(this._conflicts.get(pc.ref.collectionId) ?? []),
-          loser
-        ]);
-        logger.warn(
-          `[SubLibrary] Protected collection ID collision: '${pc.ref.collectionId}' from '${
-            pc.sourceName ?? 'unknown'
-          }' conflicts with existing. Skipping duplicate.`
-        );
-      } else {
-        this._protectedCollections.set(pc.ref.collectionId, pc);
-      }
-    };
-
     // Add protected collections from built-in loading
     /* c8 ignore next 3 - built-in protected collections tested but coverage intermittently missed */
     for (const pc of builtInResult.protectedCollections) {
-      addProtectedOrConflict(pc);
+      addProtectedOrConflict(this._protectedCollections, this._conflicts, pc, logger);
     }
 
     // Add protected collections from file sources
     /* c8 ignore next 3 - protected collection paths tested but coverage intermittently missed */
     for (const fileSource of fileSourceData) {
       for (const pc of fileSource.protectedCollections) {
-        addProtectedOrConflict(pc);
+        addProtectedOrConflict(this._protectedCollections, this._conflicts, pc, logger);
       }
     }
 
     // Add protected collections from params (e.g., from async loading)
     if (libraryParams?.protectedCollections) {
       for (const pc of libraryParams.protectedCollections) {
-        addProtectedOrConflict(pc);
+        addProtectedOrConflict(this._protectedCollections, this._conflicts, pc, logger);
       }
     }
 
@@ -633,15 +568,7 @@ export abstract class SubLibraryBase<
     // We do NOT hard-fail — the loaded copy is usable; user can repair via Settings → Storage.
     for (const [id, pc] of this._protectedCollections) {
       if (this.collections.has(id)) {
-        const loser: IConflictCopyInternal = {
-          sourceName: pc.sourceName,
-          isEncrypted: true,
-          itemCount: pc.ref.itemCount,
-          secretName: pc.ref.secretName,
-          isMutable: pc.ref.isMutable,
-          sourceItem: pc.sourceItem
-        };
-        this._conflicts.set(id, [...(this._conflicts.get(id) ?? []), loser]);
+        appendConflictCopy(this._conflicts, id, createConflictCopyFromProtected(pc));
         logger.warn(
           `[SubLibrary] Collection ID conflict: '${id}' is loaded from one root and also exists as an ` +
             `encrypted collection (secret: '${pc.ref.secretName}'). Use Settings → Storage to resolve.`
@@ -651,328 +578,15 @@ export abstract class SubLibraryBase<
 
     // Merge loaded-collection losers from the dedup pass into _conflicts
     for (const [id, losers] of preInitConflicts) {
-      this._conflicts.set(id, [...(this._conflicts.get(id) ?? []), ...losers]);
-    }
-
-    // Find the first mutable file source and store its data directory.
-    // A source is mutable if mutable is true, an array, or an object (anything except false/undefined).
-    this._mutableDataDirectory = undefined;
-    this._mutableSourceName = undefined;
-    for (const source of fileSources) {
-      if (source.mutable === false || source.mutable === undefined) {
-        continue;
-      }
-      const dataDirResult = params.directoryNavigator(source.directory);
-      if (dataDirResult.isSuccess() && FileTree.isMutableDirectoryItem(dataDirResult.value)) {
-        this._mutableSourceName = source.sourceName;
-        this._mutableDataDirectory = dataDirResult.value;
-        break;
-      }
-      // Data directory doesn't exist yet - try to create it on demand
-      // Store the source root and navigator for lazy creation in createCollectionFile
-      if (FileTree.isMutableDirectoryItem(source.directory)) {
-        this._mutableSourceName = source.sourceName;
-        this._mutableSourceRoot = source.directory;
-        break;
+      for (const loser of losers) {
+        appendConflictCopy(this._conflicts, id, loser);
       }
     }
-  }
 
-  // ============================================================================
-  // Private Static Loading Methods
-  // ============================================================================
-
-  /**
-   * Loads built-in collections based on the LibraryLoadSpec.
-   *
-   * @param spec - The LibraryLoadSpec controlling which built-ins to load.
-   * @param itemIdConverter - Converter for item IDs.
-   * @param itemConverter - Converter for items.
-   * @param directoryNavigator - Function to navigate to the data directory.
-   * @param builtInTreeProvider - Function to get the built-in library tree.
-   * @param logger - Optional logger for reporting loading progress and issues.
-   * @returns Success with collections or Failure with error.
-   */
-  private static _loadBuiltInCollections<TBaseId extends string, TItem>(
-    spec: LibraryLoadSpec<CollectionId>,
-    itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
-    itemConverter: Converter<TItem> | Validator<TItem>,
-    directoryNavigator: SubLibraryDirectoryNavigator,
-    builtInTreeProvider: SubLibraryBuiltInTreeProvider,
-    logger?: Logging.LogReporter<unknown>
-  ): Result<IFileTreeSourceLoadResult<TBaseId, TItem>> {
-    if (spec === false) {
-      return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
-    }
-
-    return builtInTreeProvider().onSuccess((libraryRoot) => {
-      const source: SubLibraryFileTreeSource = {
-        sourceName: 'builtin',
-        directory: libraryRoot,
-        load: spec,
-        mutable: false // Built-ins are always immutable
-      };
-      // Capture encrypted files for later decryption
-      return SubLibraryBase._loadFromFileTreeSource(
-        source,
-        itemIdConverter,
-        itemConverter,
-        directoryNavigator,
-        'capture',
-        logger,
-        true // isBuiltIn
-      );
-    });
-  }
-
-  /**
-   * Loads collections from a single file tree source.
-   *
-   * @param source - The file tree source to load from.
-   * @param itemIdConverter - Converter for item IDs.
-   * @param itemConverter - Converter for items.
-   * @param directoryNavigator - Function to navigate to the data directory.
-   * @param onEncryptedFile - How to handle encrypted files (defaults to 'capture').
-   * @param logger - Optional logger for reporting loading progress and issues.
-   * @param isBuiltIn - Whether this source is built-in library data (for protected collection refs).
-   * @returns Success with collections and protected collections, or Failure with error.
-   */
-  private static _loadFromFileTreeSource<TBaseId extends string, TItem>(
-    source: SubLibraryFileTreeSource,
-    itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
-    itemConverter: Converter<TItem> | Validator<TItem>,
-    directoryNavigator: SubLibraryDirectoryNavigator,
-    onEncryptedFile?: EncryptedFileHandling,
-    logger?: Logging.LogReporter<unknown>,
-    isBuiltIn?: boolean
-  ): Result<IFileTreeSourceLoadResult<TBaseId, TItem>> {
-    const mutable = source.mutable ?? false;
-    const loadParams = specToLoadParams(source.load ?? true, mutable);
-    if (loadParams === undefined) {
-      return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
-    }
-
-    /* c8 ignore next 7 - defensive fallback: loadParams.mutable always set by specToLoadParams */
-    const loader = new CollectionLoader({
-      itemConverter,
-      collectionIdConverter: CommonConverters.collectionId,
-      itemIdConverter,
-      mutable: loadParams.mutable ?? mutable,
-      logger
-    });
-
-    const dataDirResult = directoryNavigator(source.directory);
-    if (dataDirResult.isFailure()) {
-      if (source.skipMissingDirectories) {
-        return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
-      }
-      return fail(dataDirResult.message);
-    }
-
-    return loader
-      .loadFromFileTree(dataDirResult.value, {
-        ...loadParams,
-        onEncryptedFile,
-        sourceName: source.sourceName ?? 'unknown'
-      })
-      .onSuccess((result) => {
-        // Mark protected collections with isBuiltIn flag
-        /* c8 ignore next 4 - protected collection paths tested but coverage intermittently missed */
-        const protectedCollections = result.protectedCollections.map((pc) => ({
-          ...pc,
-          ref: { ...pc.ref, isBuiltIn: isBuiltIn ?? false }
-        }));
-
-        // Extract sourceItems from IRuntimeCollection
-        const sourceItems = new Map<CollectionId, FileTree.FileTreeItem>();
-        for (const coll of result.collections) {
-          sourceItems.set(coll.id, coll.sourceItem);
-        }
-
-        return succeed({
-          collections: result.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>,
-          protectedCollections,
-          sourceItems
-        });
-      });
-  }
-
-  /**
-   * Extracts collections from merge sources with optional filtering.
-   *
-   * @param sources - The merge sources to extract from.
-   * @returns Array of collection entries from the merged libraries.
-   */
-  private static _extractCollections<TBaseId extends string, TItem>(
-    sources:
-      | SubLibraryMergeSource<SubLibraryBase<string, TBaseId, TItem>>
-      | ReadonlyArray<SubLibraryMergeSource<SubLibraryBase<string, TBaseId, TItem>>>
-      | undefined
-  ): ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>> {
-    if (sources === undefined) {
-      return [];
-    }
-
-    const sourceArray = ensureArray(sources);
-    const result: SubLibraryEntryInit<TBaseId, TItem>[] = [];
-
-    for (const source of sourceArray) {
-      const { library, filter: filterSpec } = normalizeMergeSource(source);
-
-      // Create filter from spec using shared helper
-      const filter = createFilterFromSpec(filterSpec, CommonConverters.collectionId);
-
-      // Build array of collection IDs for filtering
-      const collectionIds = Array.from(library.collections.keys());
-
-      // Filter the IDs
-      const filterResult = filter.filterItems(collectionIds, (id: CollectionId) => Success.with(id));
-      if (filterResult.isSuccess()) {
-        for (const filtered of filterResult.value) {
-          const id = filtered.name;
-          library.collections.get(id).asResult.onSuccess((collection) =>
-            Success.with(
-              result.push({
-                id,
-                isMutable: collection.isMutable,
-                items: recordFromEntries(collection.items.entries())
-              })
-            )
-          );
-        }
-      }
-    }
-    return result;
-  }
-
-  // ============================================================================
-  // Async Loading Methods (for encryption support)
-  // ============================================================================
-
-  /**
-   * Loads built-in collections asynchronously with encryption support.
-   *
-   * @param spec - The LibraryLoadSpec controlling which built-ins to load.
-   * @param itemIdConverter - Converter for item IDs.
-   * @param itemConverter - Converter for items.
-   * @param directoryNavigator - Function to navigate to the data directory.
-   * @param builtInTreeProvider - Function to get the built-in library tree.
-   * @param encryption - Optional encryption configuration for decrypting files.
-   * @param logger - Optional logger for reporting loading progress and issues.
-   * @returns Promise resolving to Success with collections or Failure with error.
-   */
-  private static async _loadBuiltInCollectionsAsync<TBaseId extends string, TItem>(
-    spec: LibraryLoadSpec<CollectionId>,
-    itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
-    itemConverter: Converter<TItem> | Validator<TItem>,
-    directoryNavigator: SubLibraryDirectoryNavigator,
-    builtInTreeProvider: SubLibraryBuiltInTreeProvider,
-    encryption?: IEncryptionConfig,
-    logger?: Logging.LogReporter<unknown>
-  ): Promise<Result<IFileTreeSourceLoadResult<TBaseId, TItem>>> {
-    if (spec === false) {
-      return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
-    }
-
-    const libraryRootResult = builtInTreeProvider();
-    /* c8 ignore next 3 - defensive: builtInTreeProvider only fails if built-in data is malformed */
-    if (libraryRootResult.isFailure()) {
-      return fail(libraryRootResult.message);
-    }
-
-    const source: SubLibraryFileTreeSource = {
-      sourceName: 'builtin',
-      directory: libraryRootResult.value,
-      load: spec,
-      mutable: false // Built-ins are always immutable
-    };
-
-    return SubLibraryBase._loadFromFileTreeSourceAsync(
-      source,
-      itemIdConverter,
-      itemConverter,
-      directoryNavigator,
-      encryption,
-      logger,
-      true // isBuiltIn
-    );
-  }
-
-  /**
-   * Loads collections from a single file tree source asynchronously with encryption support.
-   *
-   * @param source - The file tree source to load from.
-   * @param itemIdConverter - Converter for item IDs.
-   * @param itemConverter - Converter for items.
-   * @param directoryNavigator - Function to navigate to the data directory.
-   * @param encryption - Optional encryption configuration for decrypting files.
-   * @param logger - Optional logger for reporting loading progress and issues.
-   * @param isBuiltIn - Whether this source is built-in library data (for protected collection refs).
-   * @returns Promise resolving to Success with collections and protected collections, or Failure with error.
-   */
-  private static async _loadFromFileTreeSourceAsync<TBaseId extends string, TItem>(
-    source: SubLibraryFileTreeSource,
-    itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
-    itemConverter: Converter<TItem> | Validator<TItem>,
-    directoryNavigator: SubLibraryDirectoryNavigator,
-    encryption?: IEncryptionConfig,
-    logger?: Logging.LogReporter<unknown>,
-    isBuiltIn?: boolean
-  ): Promise<Result<IFileTreeSourceLoadResult<TBaseId, TItem>>> {
-    /* c8 ignore next 1 - both branches tested but coverage intermittently missed */
-    const mutable = source.mutable ?? false;
-    const loadParams = specToLoadParams(source.load ?? true, mutable);
-    /* c8 ignore next 3 - defensive: only undefined when spec is explicitly false, handled by caller */
-    if (loadParams === undefined) {
-      return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
-    }
-
-    /* c8 ignore next 7 - defensive fallback: loadParams.mutable always set by specToLoadParams */
-    const loader = new CollectionLoader({
-      itemConverter,
-      collectionIdConverter: CommonConverters.collectionId,
-      itemIdConverter,
-      mutable: loadParams.mutable ?? mutable,
-      logger
-    });
-
-    const dataDirResult = directoryNavigator(source.directory);
-    if (dataDirResult.isFailure()) {
-      if (source.skipMissingDirectories) {
-        return Success.with({ collections: [], protectedCollections: [], sourceItems: new Map() });
-      }
-      return fail(dataDirResult.message);
-    }
-
-    return loader
-      .loadFromFileTreeAsync(dataDirResult.value, {
-        ...loadParams,
-        encryption,
-        isBuiltIn
-      })
-      .then((result) =>
-        result.onSuccess((loadResult) => {
-          // Convert IRuntimeCollection to SubLibraryEntryInit
-          const collections: SubLibraryEntryInit<TBaseId, TItem>[] = loadResult.collections.map((coll) => ({
-            id: coll.id,
-            isMutable: coll.isMutable,
-            items: coll.items,
-            metadata: coll.metadata
-          }));
-
-          // Extract sourceItems from IRuntimeCollection
-          const sourceItems = new Map<CollectionId, FileTree.FileTreeItem>();
-          for (const coll of loadResult.collections) {
-            sourceItems.set(coll.id, coll.sourceItem);
-          }
-
-          return succeed({
-            collections,
-            protectedCollections: loadResult.protectedCollections,
-            sourceItems
-          });
-        })
-      );
+    const mutableSourceInfo = findActiveMutableSource(fileSources, params.directoryNavigator);
+    this._mutableSourceName = mutableSourceInfo.sourceName;
+    this._mutableDataDirectory = mutableSourceInfo.mutableDataDirectory;
+    this._mutableSourceRoot = mutableSourceInfo.mutableSourceRoot;
   }
 
   /**
@@ -1007,7 +621,7 @@ export abstract class SubLibraryBase<
     const allProtectedCollections: IProtectedCollectionInternal<CollectionId>[] = [];
 
     // Load built-in collections async
-    const builtInResult = await SubLibraryBase._loadBuiltInCollectionsAsync(
+    const builtInResult = await loadBuiltInCollectionsAsync(
       builtin,
       params.itemIdConverter,
       params.itemConverter,
@@ -1030,7 +644,7 @@ export abstract class SubLibraryBase<
     }
     const fileSourceResults: Result<IFileSourceLoadResult>[] = [];
     for (let i = 0; i < fileSources.length; i++) {
-      const result = await SubLibraryBase._loadFromFileTreeSourceAsync(
+      const result = await loadFromFileTreeSourceAsync(
         fileSources[i],
         params.itemIdConverter,
         params.itemConverter,
@@ -1059,49 +673,33 @@ export abstract class SubLibraryBase<
     }
 
     // Extract from merge libraries (sync - these are already loaded)
-    const mergedCollections = SubLibraryBase._extractCollections<TBaseId, TItem>(
+    const mergedCollections = extractCollections<TBaseId, TItem>(
       libraryParams?.mergeLibraries as
         | SubLibraryMergeSource<SubLibraryBase<string, TBaseId, TItem>>
         | ReadonlyArray<SubLibraryMergeSource<SubLibraryBase<string, TBaseId, TItem>>>
         | undefined
     );
 
-    // Soft dedup — first-seen wins; log collisions but never hard-fail.
-    // Losers are dropped here; the constructor will detect loaded+protected conflicts.
-    const seenAsyncIds = new Map<CollectionId, string>();
-
-    const asyncRecordOrSkip = (coll: SubLibraryEntryInit<string, unknown>, sourceLabel: string): boolean => {
-      const existingSource = seenAsyncIds.get(coll.id as CollectionId);
-      if (existingSource !== undefined) {
-        /* c8 ignore next 4 - same guard as sync path; tested in libraryLoader tests */
-        logger?.warn(
-          `[SubLibrary] Collection ID collision (async): '${coll.id}' from '${sourceLabel}' conflicts with '${existingSource}'. Skipping duplicate.`
-        );
-        return false;
-      }
-      seenAsyncIds.set(coll.id as CollectionId, sourceLabel);
-      return true;
-    };
-
-    const deduplicatedBuiltin = builtInResult.value.collections.filter((c) =>
-      asyncRecordOrSkip(c as SubLibraryEntryInit<string, unknown>, 'builtin')
-    );
-    const deduplicatedFileCollections = fileSourceData.value.flatMap((d) =>
-      (d.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>).filter((c) =>
-        asyncRecordOrSkip(c as SubLibraryEntryInit<string, unknown>, d.source)
-      )
-    );
-    const deduplicatedMerged = mergedCollections.filter((c) =>
-      asyncRecordOrSkip(c as SubLibraryEntryInit<string, unknown>, 'mergeLibraries')
+    const deduplicatedCollections = dedupeCollectionsByFirstSeen<SubLibraryEntryInit<TBaseId, TItem>>(
+      [
+        {
+          sourceLabel: 'builtin',
+          collections: builtInResult.value.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>
+        },
+        ...fileSourceData.value.map((d) => ({
+          sourceLabel: d.source,
+          collections: d.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>
+        })),
+        {
+          sourceLabel: 'mergeLibraries',
+          collections: mergedCollections
+        }
+      ],
+      logger
     );
 
     return succeed({
-      collections: [
-        ...deduplicatedBuiltin,
-        ...deduplicatedFileCollections,
-        ...deduplicatedMerged,
-        ...additionalCollections
-      ],
+      collections: [...deduplicatedCollections, ...additionalCollections],
       protectedCollections: allProtectedCollections
     });
   }
@@ -1118,7 +716,7 @@ export abstract class SubLibraryBase<
    * @public
    */
   public loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number> {
-    return SubLibraryBase._loadFromFileTreeSource(
+    return loadFromFileTreeSource(
       source,
       this._loaderItemIdConverter,
       this._loaderItemConverter,
@@ -1330,7 +928,7 @@ export abstract class SubLibraryBase<
     encryption: IEncryptionConfig
   ): Promise<Result<true>> {
     // Try to get the key for this secret
-    const keyResult = await this._getKeyForSecret(internal.ref.secretName, encryption);
+    const keyResult = await getKeyForSecret(internal.ref.secretName, encryption);
     if (keyResult.isFailure()) {
       return fail(keyResult.message);
     }
@@ -1482,20 +1080,8 @@ export abstract class SubLibraryBase<
    * Called during removeCollection to ensure the file doesn't reappear on restart.
    * @internal
    */
-  private _deleteSourceFile(collectionId: CollectionId): void {
-    const sourceItem = this._sourceItems.get(collectionId);
-    if (!sourceItem) {
-      return;
-    }
-
-    // Delete the backing file if the file item supports deletion.
-    // FileItem.delete() delegates to the accessors layer, which handles
-    // both in-memory removal and storage cleanup (e.g., localStorage).
-    if (FileTree.isMutableFileItem(sourceItem)) {
-      sourceItem.delete();
-    }
-
-    this._sourceItems.delete(collectionId);
+  private _deleteSourceFile(collectionId: CollectionId): Result<void> {
+    return deleteSourceFile(collectionId, this._sourceItems);
   }
 
   /**
@@ -1503,100 +1089,11 @@ export abstract class SubLibraryBase<
    * @returns Success with the mutable data directory, or Failure if not available
    */
   private _ensureMutableDataDirectory(): Result<FileTree.IMutableFileTreeDirectoryItem> {
-    /* c8 ignore next 3 - caching logic tested but coverage intermittently missed */
-    if (this._mutableDataDirectory !== undefined) {
-      return succeed(this._mutableDataDirectory);
-    }
-
-    if (this._mutableSourceRoot === undefined) {
-      return fail('No writable data directory available');
-    }
-    /* c8 ignore next 17 - lazy directory creation only when data dir absent at construction */
-    // Try to create the data directory structure by navigating from the source root.
-    // The navigator knows the path (e.g., "data/ingredients").
-    // First try navigating (in case it was created since construction).
-    const navResult = this._directoryNavigator(this._mutableSourceRoot);
-    if (navResult.isSuccess()) {
-      const dir = navResult.value;
-      if (!FileTree.isMutableDirectoryItem(dir)) {
-        return fail(`${dir.absolutePath}: directory is not mutable`);
-      }
-      this._mutableDataDirectory = dir;
-      return succeed(this._mutableDataDirectory);
-    }
-
-    // Navigation failed — create directories from the source root.
-    // Use the navigator's expected path to determine what needs to be created.
-    return this._createDataDirectoryPath(this._mutableSourceRoot);
-  }
-
-  /**
-   * Creates the data directory path from a source root by creating
-   * each missing segment and re-navigating until the path resolves.
-   *
-   * The navigator error message format from `navigateToDirectory` is:
-   *   "full/path: Directory not found at 'segment'."
-   * The full path prefix (before the colon) tells us which segments exist.
-   */
-  /* c8 ignore next 56 - directory creation fallback: tested via integration tests with real filesystem */
-  private _createDataDirectoryPath(
-    sourceRoot: FileTree.IMutableFileTreeDirectoryItem
-  ): Result<FileTree.IMutableFileTreeDirectoryItem> {
-    // Create missing directories one at a time (max depth 5).
-    for (let attempts = 0; attempts < 5; attempts++) {
-      const navResult = this._directoryNavigator(sourceRoot);
-      if (navResult.isSuccess()) {
-        const dir = navResult.value;
-        if (!FileTree.isMutableDirectoryItem(dir)) {
-          return fail(`${dir.absolutePath}: directory is not mutable`);
-        }
-        this._mutableDataDirectory = dir;
-        return succeed(this._mutableDataDirectory);
-      }
-
-      // navigateToDirectory reports: "full/path: Directory not found at 'segment'."
-      const match = /^(.+): Directory not found at '([^']+)'/.exec(navResult.message);
-      if (match?.[2] === undefined) {
-        return fail(`Cannot create data directory: ${navResult.message}`);
-      }
-
-      const fullPath = match[1];
-      const missingSegment = match[2];
-
-      // The parent of the missing segment is at the path before the missing segment.
-      // E.g., for "data/ingredients" missing at "ingredients", parent path is "data".
-      // For "data/ingredients" missing at "data", parent is the root.
-      const pathParts = fullPath.split('/');
-      const missingIndex = pathParts.indexOf(missingSegment);
-      const parentPath = missingIndex > 0 ? pathParts.slice(0, missingIndex).join('/') : '';
-
-      // Navigate to the parent directory and narrow to mutable
-      let parent: FileTree.AnyFileTreeDirectoryItem;
-      if (parentPath === '') {
-        parent = sourceRoot;
-      } else {
-        const parentResult = navigateToDirectory(sourceRoot, parentPath);
-        if (parentResult.isFailure()) {
-          return fail(`Cannot find parent directory '${parentPath}': ${parentResult.message}`);
-        }
-        parent = parentResult.value;
-      }
-
-      if (!FileTree.isMutableDirectoryItem(parent)) {
-        return fail(`${parent.absolutePath}: directory creation not supported`);
-      }
-
-      const createResult = parent.createChildDirectory(missingSegment);
-      if (createResult.isFailure()) {
-        return fail(`Failed to create directory '${missingSegment}': ${createResult.message}`);
-      }
-    }
-
-    // Final attempt
-    return this._directoryNavigator(sourceRoot).onSuccess((dir) => {
-      if (!FileTree.isMutableDirectoryItem(dir)) {
-        return fail(`${dir.absolutePath}: directory is not mutable`);
-      }
+    return ensureMutableDataDirectory({
+      mutableDataDirectory: this._mutableDataDirectory,
+      mutableSourceRoot: this._mutableSourceRoot,
+      directoryNavigator: this._directoryNavigator
+    }).onSuccess((dir) => {
       this._mutableDataDirectory = dir;
       return succeed(dir);
     });
@@ -1680,11 +1177,15 @@ export abstract class SubLibraryBase<
           return Failure.with(`Cannot delete immutable collection "${collectionId}"`);
         }
 
-        // Delete the backing file from the FileTree (if one exists).
-        this._deleteSourceFile(collectionId);
+        return this._deleteSourceFile(collectionId).onSuccess(() => {
+          // Clean up any conflict entries for this collection ID.
+          // Losers (e.g. encrypted copies) remain in _protectedCollections
+          // and will appear as regular protected collections once the winner is gone.
+          this._conflicts.delete(collectionId);
 
-        // Use the protected method from AggregatedResultMapBase
-        return this._deleteCollection(collectionId).asResult;
+          // Use the protected method from AggregatedResultMapBase
+          return this._deleteCollection(collectionId).asResult;
+        });
       });
   }
 
@@ -1705,12 +1206,20 @@ export abstract class SubLibraryBase<
       return fail(`Protected collection "${collectionId}" not found`);
     }
 
-    if (internal.sourceItem && FileTree.isMutableFileItem(internal.sourceItem)) {
-      internal.sourceItem.delete();
-    }
+    const deleteSourceResult =
+      internal.sourceItem && FileTree.isMutableFileItem(internal.sourceItem)
+        ? internal.sourceItem
+            .delete()
+            .withErrorFormat(
+              (msg) => `Failed to delete backing file for protected collection "${collectionId}": ${msg}`
+            )
+            .onSuccess(() => succeed(undefined))
+        : succeed(undefined);
 
-    this._protectedCollections.delete(collectionId as CollectionId);
-    return succeed(true);
+    return deleteSourceResult.onSuccess(() => {
+      this._protectedCollections.delete(collectionId as CollectionId);
+      return succeed(true);
+    });
   }
 
   /**
@@ -1739,16 +1248,224 @@ export abstract class SubLibraryBase<
       );
     }
     const copy = list[idx];
-    if (copy.sourceItem && FileTree.isMutableFileItem(copy.sourceItem)) {
-      copy.sourceItem.delete();
+    const deleteSourceResult =
+      copy.sourceItem && FileTree.isMutableFileItem(copy.sourceItem)
+        ? copy.sourceItem
+            .delete()
+            .withErrorFormat(
+              (msg) =>
+                `Failed to delete backing file for conflicting copy '${collectionId}' from '${
+                  sourceName ?? 'unknown'
+                }': ${msg}`
+            )
+            .onSuccess(() => succeed(undefined))
+        : succeed(undefined);
+
+    return deleteSourceResult.onSuccess(() => {
+      const newList = list.filter((_, i) => i !== idx);
+      if (newList.length === 0) {
+        this._conflicts.delete(collectionId as CollectionId);
+      } else {
+        this._conflicts.set(collectionId as CollectionId, newList);
+      }
+      return succeed(true);
+    });
+  }
+
+  /**
+   * Re-reads items from a conflicting (loser) copy's backing file.
+   *
+   * For unencrypted copies, reads and parses the YAML/JSON file directly.
+   * For encrypted copies, reads the file, decrypts using the provided
+   * encryption config, and converts items. If no encryption config is
+   * provided for an encrypted copy, fails with the secret name needed.
+   *
+   * @param collectionId - The collection ID with a conflict.
+   * @param sourceName - The `sourceName` of the conflicting copy to read.
+   * @param encryption - Optional encryption config for decrypting encrypted copies.
+   * @returns Result with the parsed items and metadata, or Failure.
+   * @public
+   */
+  public async rereadConflictingCopyAsync(
+    collectionId: string,
+    sourceName: string | undefined,
+    encryption?: IEncryptionConfig
+  ): Promise<Result<ICollectionSourceFile<TItem>>> {
+    const copy = findConflictCopy(this._conflicts, collectionId, sourceName);
+    if (!copy) {
+      return fail(
+        `No conflicting copy from source '${sourceName ?? 'unknown'}' found for collection '${collectionId}'`
+      );
     }
-    const newList = list.filter((_, i) => i !== idx);
-    if (newList.length === 0) {
-      this._conflicts.delete(collectionId as CollectionId);
-    } else {
-      this._conflicts.set(collectionId as CollectionId, newList);
+
+    if (copy.isEncrypted) {
+      return readEncryptedSourceFile({
+        sourceItem: copy.sourceItem,
+        collectionId,
+        secretName: copy.secretName,
+        encryption,
+        itemConverter: this._loaderItemConverter
+      });
     }
-    return succeed(true);
+
+    return readPlainSourceFile(copy.sourceItem, collectionId, this._loaderItemConverter);
+  }
+
+  /**
+   * Renames a conflicting (loser) copy to a new collection ID.
+   *
+   * Re-reads the loser's backing file (decrypting if necessary), adds the items
+   * as a new mutable collection under `newCollectionId`, creates a backing file,
+   * and deletes the loser's old file.
+   *
+   * @param collectionId - The collection ID with a conflict.
+   * @param sourceName - The `sourceName` of the conflicting copy to rename.
+   * @param newCollectionId - The new collection ID (must not already exist).
+   * @param encryption - Optional encryption config for encrypted copies.
+   * @returns Result<true> on success, or Failure.
+   * @public
+   */
+  public async renameConflictingCopyAsync(
+    collectionId: string,
+    sourceName: string | undefined,
+    newCollectionId: CollectionId,
+    encryption?: IEncryptionConfig
+  ): Promise<Result<true>> {
+    if (this.collections.has(newCollectionId)) {
+      return fail(`Collection "${newCollectionId}" already exists`);
+    }
+
+    const readResult = await this.rereadConflictingCopyAsync(collectionId, sourceName, encryption);
+    if (readResult.isFailure()) {
+      return fail(readResult.message);
+    }
+    const sourceFile = readResult.value;
+
+    // Build metadata for the new collection
+    const metadata: ICollectionRuntimeMetadata = {
+      ...sourceFile.metadata,
+      /* c8 ignore next 1 - both branches tested independently */
+      sourceName: this.mutableSourceName ?? 'unknown'
+    };
+
+    // Add as new collection
+    const addResult = this.addCollectionWithItems(
+      newCollectionId,
+      Array.from(Object.entries(sourceFile.items)),
+      { metadata }
+    );
+
+    if (addResult.isFailure()) {
+      return fail(`Failed to add renamed collection: ${addResult.message}`);
+    }
+
+    const persistenceResult = Helpers.serializeToYaml({
+      metadata: sourceFile.metadata,
+      items: sourceFile.items
+    }).onSuccess((yaml) =>
+      this.createCollectionFile(newCollectionId, yaml).onSuccess(() =>
+        this.removeConflictingCopy(collectionId, sourceName).onSuccess(() => succeed(true as const))
+      )
+    );
+
+    if (persistenceResult.isSuccess()) {
+      return persistenceResult;
+    }
+
+    return this.removeCollection(newCollectionId)
+      .onFailure((rollbackMsg) =>
+        fail(
+          `Failed to rename conflicting copy: ${persistenceResult.message}. Rollback failed for "${newCollectionId}": ${rollbackMsg}`
+        )
+      )
+      .onSuccess(() => fail(`Failed to rename conflicting copy: ${persistenceResult.message}`));
+  }
+
+  /**
+   * Merges a conflicting (loser) copy's items into the active (winning) collection.
+   *
+   * Re-reads the loser's backing file (decrypting if necessary), merges its items
+   * into the active collection, then deletes the loser's file.
+   *
+   * @param collectionId - The collection ID with a conflict.
+   * @param sourceName - The `sourceName` of the conflicting copy to merge.
+   * @param onConflict - Strategy for handling duplicate base IDs.
+   * @param encryption - Optional encryption config for encrypted copies.
+   * @returns Result with merge statistics, or Failure.
+   * @public
+   */
+  public async mergeConflictingCopyIntoActiveAsync(
+    collectionId: string,
+    sourceName: string | undefined,
+    onConflict: 'skip' | 'overwrite' | 'rename',
+    encryption?: IEncryptionConfig
+  ): Promise<
+    Result<{
+      mergedCount: number;
+      skippedCount: number;
+      renamedItems: ReadonlyArray<{ oldBaseId: string; newBaseId: string }>;
+    }>
+  > {
+    const typedId = collectionId as CollectionId;
+
+    // Verify the active collection exists and is mutable
+    const collectionResult = this.collections.get(typedId).asResult;
+    if (collectionResult.isFailure()) {
+      return fail(`Active collection "${collectionId}" not found: ${collectionResult.message}`);
+    }
+    const activeCollection = collectionResult.value;
+    if (!activeCollection.isMutable) {
+      return fail(`Cannot merge into immutable collection "${collectionId}"`);
+    }
+
+    // Re-read the loser copy
+    const readResult = await this.rereadConflictingCopyAsync(collectionId, sourceName, encryption);
+    if (readResult.isFailure()) {
+      return fail(readResult.message);
+    }
+    const sourceFile = readResult.value;
+
+    let mergedCount = 0;
+    let skippedCount = 0;
+    const renamedItems: Array<{ oldBaseId: string; newBaseId: string }> = [];
+
+    for (const [baseId, item] of Object.entries(sourceFile.items)) {
+      const typedBaseId = baseId as TBaseId;
+      const hasConflict = activeCollection.items.has(typedBaseId);
+
+      if (hasConflict) {
+        switch (onConflict) {
+          case 'skip':
+            skippedCount++;
+            continue;
+
+          case 'overwrite':
+            this.setInCollection(typedId, typedBaseId, item as TItem);
+            mergedCount++;
+            continue;
+
+          case 'rename': {
+            let counter = 1;
+            let candidate = `${baseId}-merged-${counter}`;
+            while (activeCollection.items.has(candidate as TBaseId)) {
+              counter++;
+              candidate = `${baseId}-merged-${counter}`;
+            }
+            this.addToCollection(typedId, candidate as TBaseId, item as TItem);
+            renamedItems.push({ oldBaseId: baseId, newBaseId: candidate });
+            mergedCount++;
+            continue;
+          }
+        }
+      } else {
+        this.addToCollection(typedId, typedBaseId, item as TItem);
+        mergedCount++;
+      }
+    }
+
+    return this.removeConflictingCopy(collectionId, sourceName).onSuccess(() =>
+      succeed({ mergedCount, skippedCount, renamedItems })
+    );
   }
 
   // ==========================================================================
@@ -1901,28 +1618,5 @@ export abstract class SubLibraryBase<
     }
 
     return succeed(undefined);
-  }
-
-  /**
-   * Gets the encryption key for a given secret name.
-   */
-  private async _getKeyForSecret(
-    secretName: string,
-    encryption: IEncryptionConfig
-  ): Promise<Result<Uint8Array>> {
-    // Check static secrets first
-    if (encryption.secrets) {
-      const secret = encryption.secrets.find((s) => s.name === secretName);
-      if (secret) {
-        return succeed(secret.key);
-      }
-    }
-
-    // Try the secret provider
-    if (encryption.secretProvider) {
-      return encryption.secretProvider(secretName);
-    }
-
-    return fail(`No key available for secret "${secretName}"`);
   }
 }

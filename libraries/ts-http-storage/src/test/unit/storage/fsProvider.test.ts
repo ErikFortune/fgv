@@ -72,6 +72,18 @@ describe('FsStorageProvider', () => {
     expect(result.message).toContain('ENOENT');
     expect(result.message).toContain(path.join(rootPath, 'etc/passwd'));
   });
+
+  test('deletes an existing file', async () => {
+    const provider = new FsStorageProvider(rootPath);
+    await provider.saveFile('/data/delete-me.txt', 'temporary');
+
+    const deleteResult = await provider.deleteFile('/data/delete-me.txt');
+    expect(deleteResult.isSuccess()).toBe(true);
+    expect(deleteResult.orThrow()).toBe(true);
+
+    const readResult = await provider.getFile('/data/delete-me.txt');
+    expect(readResult.isFailure()).toBe(true);
+  });
 });
 
 describe('FsStorageProviderFactory', () => {

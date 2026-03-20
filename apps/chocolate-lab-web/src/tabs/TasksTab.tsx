@@ -9,7 +9,7 @@ import {
 } from '@fgv/ts-app-shell';
 import { Editing, Entities, LibraryRuntime } from '@fgv/ts-chocolate';
 import type { BaseTaskId, CollectionId, TaskId } from '@fgv/ts-chocolate';
-import type { Result } from '@fgv/ts-utils';
+import { fail, succeed, type Result } from '@fgv/ts-utils';
 import {
   type IReferenceScanResult,
   useTabNavigation,
@@ -18,7 +18,6 @@ import {
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
-  createSetInMutableCollection,
   useEntityMutation,
   useClipboardJsonImport,
   TaskDetail,
@@ -31,13 +30,6 @@ import {
 } from '@fgv/chocolate-lab-ui';
 
 import { TASK_DESCRIPTOR, TASK_FILTER_SPEC, slugify, createBlankRawTaskEntity } from '../shared';
-
-type TaskMutableCollectionEntry = {
-  readonly isMutable: boolean;
-  readonly items: {
-    set: (id: BaseTaskId, entity: Entities.Tasks.IRawTaskEntity) => Result<unknown>;
-  };
-};
 
 export function TasksTabContent(): React.ReactElement {
   const {
@@ -89,24 +81,26 @@ export function TasksTabContent(): React.ReactElement {
   ]);
 
   const taskMutation = useEntityMutation<Entities.Tasks.IRawTaskEntity, BaseTaskId, TaskId>({
-    setInMutableCollection: createSetInMutableCollection<
-      Entities.Tasks.IRawTaskEntity,
-      BaseTaskId,
-      TaskMutableCollectionEntry
-    >({
-      getCollection: (collectionId: CollectionId) =>
-        workspace.data.entities.tasks.collections.get(collectionId),
-      isMutable: (entry: TaskMutableCollectionEntry) => entry.isMutable,
-      setEntity: (
-        entry: TaskMutableCollectionEntry,
-        baseId: BaseTaskId,
-        entity: Entities.Tasks.IRawTaskEntity
-      ) => entry.items.set(baseId, entity),
-      entityLabel: 'task'
-    }),
-    entityLabel: 'task',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedTasksCollection(collectionId)
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveTask(collectionId, baseId, entity),
+    setInMutableCollection: (
+      collectionId: CollectionId,
+      baseId: BaseTaskId,
+      entity: Entities.Tasks.IRawTaskEntity
+    ): Result<unknown> =>
+      workspace.data.entities.tasks.collections
+        .get(collectionId)
+        .asResult.withErrorFormat((msg) => `Collection '${collectionId}' not found: ${msg}`)
+        .onSuccess((entry): Result<unknown> => {
+          if (!entry.isMutable || !('set' in entry.items)) {
+            return fail(`Collection '${collectionId}' is not mutable`);
+          }
+          return entry.items
+            .set(baseId, entity)
+            .asResult.withErrorFormat((msg) => `Failed to set task: ${msg}`)
+            .onSuccess(() => succeed(true));
+        }),
+    entityLabel: 'task'
   });
 
   const handleCreateTask = useCallback(

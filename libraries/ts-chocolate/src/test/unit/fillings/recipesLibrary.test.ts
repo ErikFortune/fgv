@@ -429,7 +429,7 @@ describe('FillingsLibrary', () => {
       });
     });
 
-    test('fails on collection ID collision', () => {
+    test('records collection ID collision in collectionConflicts', () => {
       // Create two file sources with the same collection ID
       const files1: FileTree.IInMemoryFile[] = [
         { path: '/library/data/fillings/duplicate.json', contents: validRecipeData }
@@ -445,7 +445,11 @@ describe('FillingsLibrary', () => {
           builtin: false,
           fileSources: [{ directory: root1 }, { directory: root2 }]
         })
-      ).toFailWith(/duplicate.*conflict/i);
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        expect(lib.collectionConflicts).toHaveLength(1);
+        expect(lib.collectionConflicts[0].collectionId).toBe('duplicate');
+      });
     });
 
     test('respects mutable setting from file source', () => {
@@ -856,7 +860,7 @@ describe('FillingsLibrary', () => {
       });
     });
 
-    test('fails on collection ID collision between merged library and builtins', () => {
+    test('records collection ID collision between merged library and builtins', () => {
       // Create a library that has the same collection ID as a builtin
       const existingLibrary = FillingsLibrary.create({
         builtin: false,
@@ -874,10 +878,14 @@ describe('FillingsLibrary', () => {
           builtin: true,
           mergeLibraries: existingLibrary
         })
-      ).toFailWith(/common.*conflict/i);
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collections.has('common' as CollectionId)).toBe(true);
+        expect(lib.collectionConflicts).toHaveLength(1);
+        expect(lib.collectionConflicts[0].collectionId).toBe('common');
+      });
     });
 
-    test('fails on collection ID collision between merged libraries', () => {
+    test('records collection ID collision between merged libraries', () => {
       // Create two libraries with the same collection ID
       const lib1 = FillingsLibrary.create({
         builtin: false,
@@ -906,7 +914,11 @@ describe('FillingsLibrary', () => {
           builtin: false,
           mergeLibraries: [lib1, lib2]
         })
-      ).toFailWith(/duplicate.*conflict/i);
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        expect(lib.collectionConflicts).toHaveLength(1);
+        expect(lib.collectionConflicts[0].collectionId).toBe('duplicate');
+      });
     });
 
     test('preserves mutability from merged collections', () => {

@@ -304,6 +304,45 @@ Removes one conflicting (losing) copy of a collection and deletes its backing fi
 </td></tr>
 <tr><td>
 
+[rereadConflictingCopyAsync(collectionId, sourceName, encryption)](./SubLibraryBase.rereadConflictingCopyAsync.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Re-reads items from a conflicting (loser) copy's backing file.
+
+</td></tr>
+<tr><td>
+
+[renameConflictingCopyAsync(collectionId, sourceName, newCollectionId, encryption)](./SubLibraryBase.renameConflictingCopyAsync.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Renames a conflicting (loser) copy to a new collection ID.
+
+</td></tr>
+<tr><td>
+
+[mergeConflictingCopyIntoActiveAsync(collectionId, sourceName, onConflict, encryption)](./SubLibraryBase.mergeConflictingCopyIntoActiveAsync.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Merges a conflicting (loser) copy's items into the active (winning) collection.
+
+</td></tr>
+<tr><td>
+
 [getCollectionOperations(collectionId)](./SubLibraryBase.getCollectionOperations.md)
 
 </td><td>

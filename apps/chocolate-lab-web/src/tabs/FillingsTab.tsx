@@ -20,8 +20,7 @@ import type {
   TaskId,
   ProcedureId
 } from '@fgv/ts-chocolate';
-import { Success, fail } from '@fgv/ts-utils';
-import type { ResultMapValueType } from '@fgv/ts-utils';
+import { Success, fail, succeed, type Result } from '@fgv/ts-utils';
 import {
   type IFillingCascadeEntry,
   isFillingCascadeEntry,
@@ -35,8 +34,6 @@ import {
   useMutableCollection,
   useCanDeleteFromCollections,
   useEntityActions,
-  createSetInMutableCollection,
-  type MutableCollectionEntryWithSet,
   useEntityMutation,
   IngredientDetail,
   IngredientEditView,
@@ -175,20 +172,6 @@ export function FillingsTabContent(): React.ReactElement {
     [workspace, reactiveWorkspace.version]
   );
 
-  type IngredientCollectionEntry = ResultMapValueType<typeof workspace.data.entities.ingredients.collections>;
-  type IngredientMutableCollectionEntry = MutableCollectionEntryWithSet<
-    IngredientCollectionEntry,
-    BaseIngredientId,
-    Entities.Ingredients.IngredientEntity
-  >;
-
-  type ProcedureCollectionEntry = ResultMapValueType<typeof workspace.data.entities.procedures.collections>;
-  type ProcedureMutableCollectionEntry = MutableCollectionEntryWithSet<
-    ProcedureCollectionEntry,
-    BaseProcedureId,
-    Entities.Procedures.IProcedureEntity
-  >;
-
   const fillingMutation = useEntityMutation<Entities.Fillings.IFillingRecipeEntity, BaseFillingId, FillingId>(
     {
       saveToCollection: (collectionId, baseId, entity) =>
@@ -202,26 +185,26 @@ export function FillingsTabContent(): React.ReactElement {
     BaseIngredientId,
     IngredientId
   >({
-    setInMutableCollection: createSetInMutableCollection<
-      Entities.Ingredients.IngredientEntity,
-      BaseIngredientId,
-      IngredientCollectionEntry,
-      IngredientMutableCollectionEntry
-    >({
-      getCollection: (collectionId: CollectionId) =>
-        workspace.data.entities.ingredients.collections.get(collectionId),
-      isMutable: (entry: IngredientCollectionEntry): entry is IngredientMutableCollectionEntry =>
-        entry.isMutable && 'set' in entry.items,
-      setEntity: (
-        entry: IngredientMutableCollectionEntry,
-        baseId: BaseIngredientId,
-        entity: Entities.Ingredients.IngredientEntity
-      ) => entry.items.set(baseId, entity),
-      entityLabel: 'ingredient'
-    }),
-    entityLabel: 'ingredient',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedIngredientsCollection(collectionId)
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveIngredient(collectionId, baseId, entity),
+    setInMutableCollection: (
+      collectionId: CollectionId,
+      baseId: BaseIngredientId,
+      entity: Entities.Ingredients.IngredientEntity
+    ): Result<unknown> =>
+      workspace.data.entities.ingredients.collections
+        .get(collectionId)
+        .asResult.withErrorFormat((msg) => `Collection '${collectionId}' not found: ${msg}`)
+        .onSuccess((entry): Result<unknown> => {
+          if (!entry.isMutable || !('set' in entry.items)) {
+            return fail(`Collection '${collectionId}' is not mutable`);
+          }
+          return entry.items
+            .set(baseId, entity)
+            .asResult.withErrorFormat((msg) => `Failed to set ingredient: ${msg}`)
+            .onSuccess(() => succeed(true));
+        }),
+    entityLabel: 'ingredient'
   });
 
   const procedureMutation = useEntityMutation<
@@ -229,26 +212,26 @@ export function FillingsTabContent(): React.ReactElement {
     BaseProcedureId,
     ProcedureId
   >({
-    setInMutableCollection: createSetInMutableCollection<
-      Entities.Procedures.IProcedureEntity,
-      BaseProcedureId,
-      ProcedureCollectionEntry,
-      ProcedureMutableCollectionEntry
-    >({
-      getCollection: (collectionId: CollectionId) =>
-        workspace.data.entities.procedures.collections.get(collectionId),
-      isMutable: (entry: ProcedureCollectionEntry): entry is ProcedureMutableCollectionEntry =>
-        entry.isMutable && 'set' in entry.items,
-      setEntity: (
-        entry: ProcedureMutableCollectionEntry,
-        baseId: BaseProcedureId,
-        entity: Entities.Procedures.IProcedureEntity
-      ) => entry.items.set(baseId, entity),
-      entityLabel: 'procedure'
-    }),
-    entityLabel: 'procedure',
-    getPersistedCollection: (collectionId: CollectionId) =>
-      workspace.data.entities.getPersistedProceduresCollection(collectionId)
+    saveToCollection: (collectionId, baseId, entity) =>
+      workspace.data.entities.saveProcedure(collectionId, baseId, entity),
+    setInMutableCollection: (
+      collectionId: CollectionId,
+      baseId: BaseProcedureId,
+      entity: Entities.Procedures.IProcedureEntity
+    ): Result<unknown> =>
+      workspace.data.entities.procedures.collections
+        .get(collectionId)
+        .asResult.withErrorFormat((msg) => `Collection '${collectionId}' not found: ${msg}`)
+        .onSuccess((entry): Result<unknown> => {
+          if (!entry.isMutable || !('set' in entry.items)) {
+            return fail(`Collection '${collectionId}' is not mutable`);
+          }
+          return entry.items
+            .set(baseId, entity)
+            .asResult.withErrorFormat((msg) => `Failed to set procedure: ${msg}`)
+            .onSuccess(() => succeed(true));
+        }),
+    entityLabel: 'procedure'
   });
 
   // --------------------------------------------------------------------------

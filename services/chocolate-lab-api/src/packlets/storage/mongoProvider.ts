@@ -204,6 +204,36 @@ export class MongoStorageProvider implements IHttpStorageProvider {
     }
   }
 
+  public async deleteFile(itemPath: string): Promise<Result<boolean>> {
+    const normalized = _normalizeRequestPath(itemPath);
+    try {
+      const existing = await this._collection.findOne({
+        userId: this._userId,
+        namespace: this._namespace,
+        path: normalized
+      });
+      if (!existing) {
+        return fail(`${normalized}: not found`);
+      }
+      if (existing.type !== 'file') {
+        return fail(`${normalized}: not a file`);
+      }
+
+      const deleteResult = await this._collection.deleteOne({
+        userId: this._userId,
+        namespace: this._namespace,
+        path: normalized
+      });
+
+      if (deleteResult.deletedCount !== 1) {
+        return fail(`${normalized}: delete failed`);
+      }
+      return succeed(true);
+    } catch (err: unknown) {
+      return fail(`${normalized}: ${_toMessage(err)}`);
+    }
+  }
+
   public async createDirectory(itemPath: string): Promise<Result<IStorageTreeItem>> {
     const normalized = _normalizeRequestPath(itemPath);
     const name = normalized === '/' ? '/' : path.posix.basename(normalized);

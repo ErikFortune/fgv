@@ -20,6 +20,8 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
+import { fail, type Result } from '@fgv/ts-utils';
+import { CryptoUtils } from '@fgv/ts-extras';
 import { IngredientsLibrary, IngredientEntity } from '../../../packlets/entities';
 import { BaseIngredientId, CollectionId, Percentage } from '../../../packlets/common';
 import { ICollectionRuntimeMetadata } from '../../../packlets/library-data';
@@ -140,6 +142,150 @@ describe('SubLibraryBase Collection Management', () => {
       // Remove it — this triggers _deleteSourceFile which cleans up the backing file
       expect(treeLibrary.removeCollection('tree-collection' as CollectionId)).toSucceed();
       expect(treeLibrary.collections.has('tree-collection' as CollectionId)).toBe(false);
+    });
+
+    test('fails removal when source file delete fails', () => {
+      const ganacheChars = {
+        cacaoFat: 36 as Percentage,
+        sugar: 34 as Percentage,
+        milkFat: 0 as Percentage,
+        water: 1 as Percentage,
+        solids: 29 as Percentage,
+        otherFats: 0 as Percentage
+      };
+      const fileContents = {
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'dark-chocolate': {
+            baseId: 'dark-chocolate' as BaseIngredientId,
+            name: 'Dark Chocolate',
+            category: 'other',
+            ganacheCharacteristics: ganacheChars
+          }
+        }
+      };
+      const accessors = FileTree.InMemoryTreeAccessors.create(
+        [{ path: '/data/ingredients/tree-collection.yaml', contents: fileContents }],
+        { mutable: true }
+      ).orThrow();
+      const fileTree = FileTree.FileTree.create(accessors).orThrow();
+
+      const treeLibrary = IngredientsLibrary.create({ builtin: false }).orThrow();
+      treeLibrary
+        .loadFromFileTreeSource({
+          sourceName: 'test-source',
+          directory: fileTree.getDirectory('/').orThrow(),
+          mutable: true,
+          skipMissingDirectories: true
+        })
+        .orThrow();
+
+      const sourceItems = (
+        treeLibrary as unknown as {
+          _sourceItems: Map<CollectionId, FileTree.FileTreeItem>;
+        }
+      )._sourceItems;
+      const sourceItem = sourceItems.get('tree-collection' as CollectionId);
+
+      const mutableItem = sourceItem && FileTree.isMutableFileItem(sourceItem) ? sourceItem : undefined;
+      expect(mutableItem).toBeDefined();
+      if (mutableItem) {
+        (
+          mutableItem as unknown as {
+            delete: () => Result<boolean>;
+          }
+        ).delete = () => fail('simulated delete failure');
+      }
+
+      const removeResult = treeLibrary.removeCollection('tree-collection' as CollectionId);
+      expect(removeResult).toFailWith(/failed to delete backing file/i);
+      expect(treeLibrary.collections.has('tree-collection' as CollectionId)).toBe(true);
+    });
+
+    test('deleting active unencrypted copy in encrypted collision persists across reload', async () => {
+      const ganacheChars = {
+        cacaoFat: 36 as Percentage,
+        sugar: 34 as Percentage,
+        milkFat: 0 as Percentage,
+        water: 1 as Percentage,
+        solids: 29 as Percentage,
+        otherFats: 0 as Percentage
+      };
+
+      const plainContents = {
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'plain-item': {
+            baseId: 'plain-item' as BaseIngredientId,
+            name: 'Plain Item',
+            category: 'other',
+            ganacheCharacteristics: ganacheChars
+          }
+        }
+      };
+
+      const encryptedContents = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'secret-item': {
+          baseId: 'secret-item' as BaseIngredientId,
+          name: 'Secret Item',
+          category: 'other',
+          ganacheCharacteristics: ganacheChars
+        }
+      };
+
+      const key = (await CryptoUtils.nodeCryptoProvider.generateKey()).orThrow();
+      const encryptedFile = (
+        await CryptoUtils.createEncryptedFile({
+          content: encryptedContents,
+          secretName: 'test-secret',
+          key,
+          cryptoProvider: CryptoUtils.nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const plainAccessors = FileTree.InMemoryTreeAccessors.create(
+        [{ path: '/data/ingredients/duplicate.yaml', contents: plainContents }],
+        { mutable: true }
+      ).orThrow();
+      const plainTree = FileTree.FileTree.create(plainAccessors).orThrow();
+
+      const encryptedAccessors = FileTree.InMemoryTreeAccessors.create(
+        [{ path: '/data/ingredients/duplicate.json', contents: encryptedFile }],
+        { mutable: true }
+      ).orThrow();
+      const encryptedTree = FileTree.FileTree.create(encryptedAccessors).orThrow();
+
+      const createParams = {
+        builtin: false,
+        fileSources: [
+          {
+            sourceName: 'plain-source',
+            directory: plainTree.getDirectory('/').orThrow(),
+            mutable: true,
+            skipMissingDirectories: true
+          },
+          {
+            sourceName: 'encrypted-source',
+            directory: encryptedTree.getDirectory('/').orThrow(),
+            mutable: true,
+            skipMissingDirectories: true
+          }
+        ]
+      };
+
+      const withCollision = (await IngredientsLibrary.createAsync(createParams)).orThrow();
+      expect(withCollision.collections.has('duplicate' as CollectionId)).toBe(true);
+      expect(withCollision.collectionConflicts).toHaveLength(1);
+
+      expect(withCollision.removeCollection('duplicate' as CollectionId)).toSucceed();
+      expect(withCollision.collections.has('duplicate' as CollectionId)).toBe(false);
+
+      const reloaded = (await IngredientsLibrary.createAsync(createParams)).orThrow();
+      expect(reloaded.collections.has('duplicate' as CollectionId)).toBe(false);
+      expect(
+        reloaded.protectedCollections.some((pc) => pc.collectionId === ('duplicate' as CollectionId))
+      ).toBe(true);
     });
 
     test('can add collection after removing it', () => {

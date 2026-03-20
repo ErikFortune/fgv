@@ -275,7 +275,85 @@ export function SecuritySection(): React.ReactElement {
     setTimeout(() => setApiKeySuccess(false), 2000);
   }, [keyStore, apiKeyName, apiKeyValue, masterPassword, persistKeyStore, reactiveWorkspace]);
 
-  // ---- Secret List ----
+  // ---- Add/Edit Encryption Key ----
+  const [encKeyName, setEncKeyName] = useState('');
+  const [encKeyPassword, setEncKeyPassword] = useState('');
+  const [encKeyConfirm, setEncKeyConfirm] = useState('');
+  const [encKeyError, setEncKeyError] = useState<string | undefined>();
+  const [encKeyBusy, setEncKeyBusy] = useState(false);
+  const [encKeySuccess, setEncKeySuccess] = useState(false);
+  const [encKeySuccessMessage, setEncKeySuccessMessage] = useState('Saved!');
+
+  const handleAddEncryptionKey = useCallback(async (): Promise<void> => {
+    if (!keyStore) {
+      setEncKeyError('No keystore available');
+      return;
+    }
+    const trimmedName = encKeyName.trim();
+    if (!trimmedName) {
+      setEncKeyError('Key name is required');
+      return;
+    }
+    if (!encKeyPassword) {
+      setEncKeyError('Password is required');
+      return;
+    }
+    if (encKeyPassword !== encKeyConfirm) {
+      setEncKeyError('Passwords do not match');
+      return;
+    }
+
+    setEncKeyBusy(true);
+    setEncKeyError(undefined);
+    try {
+      const result = await keyStore.addSecretFromPassword(trimmedName, encKeyPassword, { replace: true });
+      if (result.isFailure()) {
+        setEncKeyError(result.message);
+        return;
+      }
+
+      // Persist keystore after adding key
+      if (masterPassword) {
+        await persistKeyStore(keyStore, masterPassword);
+      } else {
+        workspace.data.logger.warn('Keystore: master password not available, key added to memory only');
+        setEncKeyError('Key added but could not persist — please lock and unlock to re-enter password');
+      }
+      reactiveWorkspace.notifyChange();
+
+      setEncKeyName('');
+      setEncKeyPassword('');
+      setEncKeyConfirm('');
+      setEncKeySuccess(true);
+      setEncKeySuccessMessage(result.value.replaced ? 'Replaced!' : 'Saved!');
+      setTimeout(() => setEncKeySuccess(false), 2000);
+    } finally {
+      setEncKeyBusy(false);
+    }
+  }, [
+    keyStore,
+    encKeyName,
+    encKeyPassword,
+    encKeyConfirm,
+    masterPassword,
+    persistKeyStore,
+    reactiveWorkspace,
+    workspace
+  ]);
+
+  // ---- Secret Lists (split by type) ----
+  const encryptionKeyNames: ReadonlyArray<string> = (() => {
+    if (!keyStore) return [];
+    const result = keyStore.listSecretsByType('encryption-key');
+    return result.isSuccess() ? result.value : [];
+  })();
+
+  const apiKeyNames: ReadonlyArray<string> = (() => {
+    if (!keyStore) return [];
+    const result = keyStore.listSecretsByType('api-key');
+    return result.isSuccess() ? result.value : [];
+  })();
+
   const secretNames: ReadonlyArray<string> = (() => {
     if (!keyStore) return [];
     const result = keyStore.listSecrets();
@@ -462,12 +540,84 @@ export function SecuritySection(): React.ReactElement {
             )}
           </div>
 
-          {/* Secrets List (only when unlocked) */}
-          {workspaceState === 'unlocked' && secretNames.length > 0 && (
+          {/* Encryption Keys List (only when unlocked) */}
+          {workspaceState === 'unlocked' && encryptionKeyNames.length > 0 && (
             <div className="rounded-lg border border-border p-4">
-              <p className="text-sm font-medium text-secondary mb-2">Secrets</p>
+              <p className="text-sm font-medium text-secondary mb-2">Encryption Keys</p>
+              <p className="text-xs text-muted mb-2">
+                Password-derived keys used to encrypt and decrypt collections.
+              </p>
               <ul className="space-y-1">
-                {secretNames.map((name) => (
+                {encryptionKeyNames.map((name) => (
+                  <li key={name} className="text-sm text-secondary flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-status-warning-icon" />
+                    <span className="flex-1 font-mono text-xs">{name}</span>
+                    <button
+                      type="button"
+                      onClick={(): void => {
+                        setEncKeyName(name);
+                        setEncKeyPassword('');
+                        setEncKeyConfirm('');
+                        setEncKeyError(undefined);
+                      }}
+                      className="text-xs text-status-warning-strong hover:text-status-warning-text"
+                    >
+                      Replace
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Add/Edit Encryption Key (only when unlocked) */}
+          {workspaceState === 'unlocked' && (
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-sm font-medium text-secondary mb-2">Add Encryption Key</p>
+              <p className="text-xs text-muted mb-3">
+                Create or replace a named encryption key derived from a password. Use to encrypt collections.
+              </p>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={encKeyName}
+                  onChange={(e): void => setEncKeyName(e.target.value)}
+                  placeholder="Key name (e.g. my-secret)"
+                  className="w-full px-3 py-1.5 text-sm font-mono border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-status-warning-btn focus:border-transparent"
+                />
+                <PasswordInput value={encKeyPassword} onChange={setEncKeyPassword} placeholder="Password" />
+                <PasswordInput
+                  value={encKeyConfirm}
+                  onChange={setEncKeyConfirm}
+                  placeholder="Confirm password"
+                />
+                {encKeyError && <p className="text-xs text-status-error-accent">{encKeyError}</p>}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(): void => {
+                      handleAddEncryptionKey().catch(() => undefined);
+                    }}
+                    disabled={encKeyBusy || !encKeyName.trim() || !encKeyPassword || !encKeyConfirm}
+                    className="px-3 py-1.5 text-sm bg-status-warning-btn rounded-md text-white hover:bg-status-warning-btn-hover disabled:opacity-50"
+                  >
+                    {encKeyBusy ? 'Saving…' : 'Save'}
+                  </button>
+                  {encKeySuccess && (
+                    <span className="text-xs text-status-success-accent">{encKeySuccessMessage}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* API Keys List (only when unlocked) */}
+          {workspaceState === 'unlocked' && apiKeyNames.length > 0 && (
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-sm font-medium text-secondary mb-2">API Keys</p>
+              <p className="text-xs text-muted mb-2">Stored API keys for AI assist providers.</p>
+              <ul className="space-y-1">
+                {apiKeyNames.map((name) => (
                   <li key={name} className="text-sm text-secondary flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-status-success-icon" />
                     <span className="flex-1">{name}</span>

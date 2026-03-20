@@ -107,6 +107,7 @@ export interface IHttpStorageProvider {
   getChildren(path: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>>;
   getFile(path: string): Promise<Result<IStorageFileResponse>>;
   saveFile(path: string, contents: string, contentType?: string): Promise<Result<IStorageFileResponse>>;
+  deleteFile(path: string): Promise<Result<boolean>>;
   createDirectory(path: string): Promise<Result<IStorageTreeItem>>;
   sync(): Promise<Result<IStorageSyncResponse>>;
 }

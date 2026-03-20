@@ -7,6 +7,7 @@
 import { CryptoUtils as CryptoUtils_2 } from '@fgv/ts-extras';
 import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
 // Warning: (ae-forgotten-export) The symbol "ICryptoProvider" needs to be exported by the entry point index.d.ts
@@ -106,6 +107,7 @@ export interface FilePickerAcceptType {
 // @public
 export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
     protected constructor(files: FileTree.IInMemoryFile<TCT>[], rootDir: FileSystemDirectoryHandle_2, handles: Map<string, FileSystemFileHandle_2>, params: IFileSystemAccessTreeParams<TCT> | undefined, hasWritePermission: boolean);
+    deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
     static fromDirectoryHandle<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileSystemAccessTreeAccessors<TCT>>>;
     static fromFileHandle<TCT extends string = string>(fileHandle: FileSystemFileHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileSystemAccessTreeAccessors<TCT>>>;
@@ -231,6 +233,8 @@ function getOriginalFile(fileList: FileList, path: string): Result<File>;
 
 // @public
 export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+    // (undocumented)
+    deleteFile(path: string): Result<boolean>;
     fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
     static fromHttp<TCT extends string = string>(params: IHttpTreeParams<TCT>): Promise<Result<HttpTreeAccessors<TCT>>>;
     getDirtyPaths(): string[];
@@ -281,6 +285,7 @@ export interface IFileMetadata {
 export interface IFileSystemAccessTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {
     autoSync?: boolean;
     filePath?: string;
+    logger?: Logging.LogReporter<unknown>;
     requireWritePermission?: boolean;
 }
 
@@ -302,6 +307,8 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
     readonly baseUrl: string;
     // (undocumented)
     readonly fetchImpl?: typeof fetch;
+    // (undocumented)
+    readonly logger?: Logging.LogReporter<unknown>;
     // (undocumented)
     readonly namespace?: string;
     // (undocumented)

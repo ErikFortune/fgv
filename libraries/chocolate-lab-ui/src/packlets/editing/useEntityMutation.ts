@@ -262,11 +262,21 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
       entity: TEntity,
       persistToDisk: boolean
     ): Promise<Result<true>> => {
-      if (saveToCollection) {
+      if (saveToCollection && (persistToDisk || !setInMutableCollection)) {
         // Library helper path: handles set + persist in one call
         const result = await saveToCollection(collectionId, baseId, entity);
         if (result.isFailure()) {
           return fail(result.message);
+        }
+        return succeed(true);
+      }
+
+      // Draft-only path: when persistence is not requested, allow callers to
+      // mutate in-memory state without invoking full persistence orchestration.
+      if (saveToCollection && !persistToDisk && setInMutableCollection) {
+        const setResult = setInMutableCollection(collectionId, baseId, entity);
+        if (setResult.isFailure()) {
+          return fail(setResult.message);
         }
         return succeed(true);
       }

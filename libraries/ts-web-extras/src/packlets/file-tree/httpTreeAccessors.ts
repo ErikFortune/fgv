@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { DetailedResult, fail, type Result, succeed, succeedWithDetail } from '@fgv/ts-utils';
+import { DetailedResult, fail, type Result, succeed, succeedWithDetail, Logging } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 interface IHttpStorageTreeItem {
@@ -59,6 +59,7 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
   readonly autoSync?: boolean;
   readonly fetchImpl?: typeof fetch;
   readonly userId?: string;
+  readonly logger?: Logging.LogReporter<unknown>;
 }
 
 /**
@@ -73,8 +74,10 @@ export class HttpTreeAccessors<TCT extends string = string>
   private readonly _namespace: string | undefined;
   private readonly _fetchImpl: typeof fetch;
   private readonly _dirtyFiles: Set<string> = new Set();
+  private readonly _pendingDeletions: Set<string> = new Set();
   private readonly _autoSync: boolean;
   private readonly _userId: string | undefined;
+  private readonly _logger: Logging.LogReporter<unknown>;
 
   private constructor(files: FileTree.IInMemoryFile<TCT>[], params: IHttpTreeParams<TCT>) {
     super(files, params);
@@ -83,6 +86,18 @@ export class HttpTreeAccessors<TCT extends string = string>
     this._fetchImpl = normalizeFetch(params.fetchImpl);
     this._autoSync = params.autoSync ?? false;
     this._userId = params.userId;
+    this._logger = params.logger ?? new Logging.LogReporter<unknown>();
+  }
+
+  private async _runAutoSyncTask(path: string): Promise<void> {
+    try {
+      const result = await this.syncToDisk();
+      if (result.isFailure()) {
+        this._logger.error(`Auto-sync failed for ${path}: ${result.message}`);
+      }
+    } catch (err) {
+      this._logger.error(`Auto-sync threw for ${path}: ${String(err)}`);
+    }
   }
 
   /**
@@ -105,8 +120,23 @@ export class HttpTreeAccessors<TCT extends string = string>
    * @returns A promise that resolves to a result indicating success or failure.
    */
   public async syncToDisk(): Promise<Result<void>> {
-    if (this._dirtyFiles.size === 0) {
+    if (this._dirtyFiles.size === 0 && this._pendingDeletions.size === 0) {
       return succeed(undefined);
+    }
+
+    for (const path of this._pendingDeletions) {
+      const query = new URLSearchParams();
+      query.set('path', path);
+      if (this._namespace) {
+        query.set('namespace', this._namespace);
+      }
+
+      const deleteResult = await this._request<{ deleted: boolean }>(`/file?${query.toString()}`, {
+        method: 'DELETE'
+      });
+      if (deleteResult.isFailure()) {
+        return fail(`delete ${path}: ${deleteResult.message}`);
+      }
     }
 
     for (const path of this._dirtyFiles) {
@@ -132,6 +162,7 @@ export class HttpTreeAccessors<TCT extends string = string>
       }
     }
 
+    this._pendingDeletions.clear();
     this._dirtyFiles.clear();
 
     const syncBody: Record<string, unknown> = {};
@@ -152,7 +183,7 @@ export class HttpTreeAccessors<TCT extends string = string>
    * @returns True if there are dirty files, false otherwise.
    */
   public isDirty(): boolean {
-    return this._dirtyFiles.size > 0;
+    return this._dirtyFiles.size > 0 || this._pendingDeletions.size > 0;
   }
 
   /**
@@ -160,7 +191,24 @@ export class HttpTreeAccessors<TCT extends string = string>
    * @returns An array of file paths that have been modified but not yet synchronized.
    */
   public getDirtyPaths(): string[] {
-    return Array.from(this._dirtyFiles);
+    return [...Array.from(this._dirtyFiles), ...Array.from(this._pendingDeletions)];
+  }
+
+  public deleteFile(path: string): Result<boolean> {
+    const result = super.deleteFile(path);
+    if (result.isFailure()) {
+      return result;
+    }
+
+    this._dirtyFiles.delete(path);
+    this._pendingDeletions.add(path);
+
+    if (!this._autoSync) {
+      return result;
+    }
+
+    void this._runAutoSyncTask(path);
+    return result;
   }
 
   /**
@@ -180,8 +228,8 @@ export class HttpTreeAccessors<TCT extends string = string>
       return result;
     }
 
-    // fire-and-forget automatic sync for immediate persistence workflow
-    void this.syncToDisk();
+    // fire-and-log-on-failure automatic sync for immediate persistence workflow
+    void this._runAutoSyncTask(path);
     return result;
   }
 

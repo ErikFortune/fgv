@@ -18,6 +18,8 @@ export class FsStorageProvider implements IHttpStorageProvider {
     // (undocumented)
     createDirectory(itemPath: string): Promise<Result<IStorageTreeItem>>;
     // (undocumented)
+    deleteFile(itemPath: string): Promise<Result<boolean>>;
+    // (undocumented)
     getChildren(itemPath: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>>;
     // (undocumented)
     getFile(itemPath: string): Promise<Result<IStorageFileResponse>>;
@@ -41,6 +43,8 @@ export class HttpStorageService {
     constructor(providers: IHttpStorageProviderFactory);
     // (undocumented)
     createDirectory(request: IStoragePathRequest): Promise<Result<IStorageTreeItem>>;
+    // (undocumented)
+    deleteFile(request: IStoragePathRequest): Promise<Result<boolean>>;
     // (undocumented)
     getChildren(request: IStoragePathRequest): Promise<Result<IStorageTreeChildrenResponse>>;
     // (undocumented)
@@ -71,6 +75,8 @@ export interface IFsStorageProviderFactoryOptions {
 export interface IHttpStorageProvider {
     // (undocumented)
     createDirectory(path: string): Promise<Result<IStorageTreeItem>>;
+    // (undocumented)
+    deleteFile(path: string): Promise<Result<boolean>>;
     // (undocumented)
     getChildren(path: string): Promise<Result<ReadonlyArray<IStorageTreeItem>>>;
     // (undocumented)
