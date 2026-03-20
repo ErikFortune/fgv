@@ -145,6 +145,7 @@ export const defaultCollectionTargets: Converter<IDefaultCollectionTargets> =
     molds: CommonConverters.collectionId.optional(),
     procedures: CommonConverters.collectionId.optional(),
     tasks: CommonConverters.collectionId.optional(),
+    decorations: CommonConverters.collectionId.optional(),
     locations: CommonConverters.collectionId.optional(),
     moldInventory: CommonConverters.collectionId.optional(),
     ingredientInventory: CommonConverters.collectionId.optional()

@@ -90,6 +90,56 @@ export function getSubLibraryForTab(
 }
 
 // ============================================================================
+// Sub-Library Lookup by ID
+// ============================================================================
+
+/**
+ * Returns the entity-layer sub-library for a given {@link LibraryData.SubLibraryId}.
+ *
+ * Unlike {@link getSubLibraryForTab}, this is keyed by the canonical sub-library ID
+ * rather than by application tab (which has different names for some tabs, e.g.,
+ * 'journal' tab maps to 'journals' sub-library).
+ *
+ * @param entities - The shared chocolate entity library
+ * @param userEntities - The user entity library
+ * @param id - The sub-library identifier
+ * @returns The sub-library for the given ID
+ * @public
+ */
+export function getSubLibraryById(
+  entities: LibraryRuntime.ChocolateEntityLibrary,
+  userEntities: UserEntities.IUserEntityLibrary,
+  id: LibraryData.SubLibraryId
+): LibraryData.SubLibraryBase<string, string, unknown> | undefined {
+  switch (id) {
+    case 'ingredients':
+      return entities.ingredients;
+    case 'fillings':
+      return entities.fillings;
+    case 'confections':
+      return entities.confections;
+    case 'decorations':
+      return entities.decorations;
+    case 'molds':
+      return entities.molds;
+    case 'procedures':
+      return entities.procedures;
+    case 'tasks':
+      return entities.tasks;
+    case 'sessions':
+      return userEntities.sessions;
+    case 'journals':
+      return userEntities.journals;
+    case 'moldInventory':
+      return userEntities.moldInventory;
+    case 'ingredientInventory':
+      return userEntities.ingredientInventory;
+    case 'locations':
+      return userEntities.locations;
+  }
+}
+
+// ============================================================================
 // Sub-Library Path Lookup
 // ============================================================================
 

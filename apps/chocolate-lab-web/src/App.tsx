@@ -58,7 +58,8 @@ import {
   type RecoveryAction,
   ProductionOverlayPanel,
   type ProductionPanelState,
-  type IActiveSessionEntry
+  type IActiveSessionEntry,
+  WelcomeScreen
 } from '@fgv/chocolate-lab-ui';
 
 import { IngredientsTabContent } from './tabs/IngredientsTab';
@@ -327,6 +328,13 @@ async function _fetchServerConfig(): Promise<IServerConfig | undefined> {
   }
 }
 
+interface IColdStartContext {
+  readonly serverConfig: IServerConfig;
+  readonly defaultCloudStorage:
+    | { readonly enabled: boolean; readonly baseUrl: string; readonly userId?: string }
+    | undefined;
+}
+
 interface IBuildResult {
   reactiveWorkspace: ReactiveWorkspace;
   warnings: ReadonlyArray<ISettingsValidationWarning>;
@@ -334,6 +342,8 @@ interface IBuildResult {
   configNamespace: string | undefined;
   /** Set when local library data failed to load (e.g. old format). App runs with built-in data only. */
   dataError?: string;
+  /** Set when this is a cold start in container mode — welcome screen should be shown. */
+  coldStart?: IColdStartContext;
 }
 
 function inferStorageCategories(
@@ -659,61 +669,24 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
       })
     : [];
 
-  // Persist server-provided defaults as initial bootstrap/preferences settings so the
-  // Settings UI shows them pre-populated and they survive across sessions.
-  if (serverConfig && !bootstrap) {
-    const settings = workspace.settings;
-    if (settings) {
-      // Bootstrap: cloud storage + keystore location + localStorage disabled + preferences location
-      const cloudRootName = cloudSources.length > 0 ? cloudSources[0].name : undefined;
-      settings.updateBootstrapSettings({
-        ...(defaultCloudStorage ? { cloudStorage: defaultCloudStorage } : {}),
-        localStorage: { library: false, userData: false },
-        ...(cloudRootName
-          ? {
-              keystoreLocation: { type: 'external' as const, rootName: cloudRootName },
-              preferencesLocation: { type: 'external' as const, rootName: cloudRootName }
-            }
-          : {})
-      });
-      // Also wire up the keystore tree for this session
-      if (serverConfig.keystoreInCloud && cloudSources.length > 0) {
-        reactiveWorkspace.keystoreRootDir = cloudSources[0].fileTree;
-      }
-
-      // Preferences: default storage targets + AI assist proxy
-      const currentPrefs = settings.getPreferencesSettings();
-      settings.updatePreferencesSettings({
-        ...(cloudRootName
-          ? {
-              defaultStorageTargets: {
-                libraryDefault: cloudRootName as unknown as Settings.StorageRootId,
-                userDataDefault: cloudRootName as unknown as Settings.StorageRootId
-              }
-            }
-          : {}),
-        ...(serverConfig.proxyAvailable
-          ? {
-              tools: {
-                ...currentPrefs.tools,
-                aiAssist: {
-                  ...currentPrefs.tools?.aiAssist,
-                  providers: currentPrefs.tools?.aiAssist?.providers ?? [{ provider: 'copy-paste' }],
-                  proxyUrl: window.location.origin,
-                  proxyAllProviders: true
-                }
-              }
-            }
-          : {})
-      });
-
-      await settings.save();
-    }
+  // Detect cold start: server config exists (container mode) but no bootstrap settings saved yet.
+  // Defer writing settings — the WelcomeScreen will handle setup and call applyColdStartDefaults.
+  const isColdStart = !!serverConfig && !bootstrap;
+  if (isColdStart && serverConfig?.keystoreInCloud && cloudSources.length > 0) {
+    // Wire up keystore tree for this session even before welcome screen writes settings
+    reactiveWorkspace.keystoreRootDir = cloudSources[0].fileTree;
   }
 
   const logSettings = workspace.settings?.getBootstrapSettings()?.logging;
 
-  return { reactiveWorkspace, warnings, logSettings, configNamespace: _configNamespace, dataError };
+  return {
+    reactiveWorkspace,
+    warnings,
+    logSettings,
+    configNamespace: _configNamespace,
+    dataError,
+    coldStart: isColdStart ? { serverConfig: serverConfig!, defaultCloudStorage } : undefined
+  };
 }
 
 // Cache the build result so React 18 StrictMode double-invocation
@@ -1280,6 +1253,7 @@ function WorkspaceBootstrap(): React.ReactElement {
   const [dataError, setDataError] = useState<string | undefined>(undefined);
   const [pendingWarnings, setPendingWarnings] = useState<ReadonlyArray<ISettingsValidationWarning>>([]);
   const [pendingWorkspace, setPendingWorkspace] = useState<ReactiveWorkspace | undefined>(undefined);
+  const [coldStart, setColdStart] = useState<IColdStartContext | undefined>(undefined);
   const { setTheme } = useTheme();
 
   useEffect(() => {
@@ -1297,10 +1271,13 @@ function WorkspaceBootstrap(): React.ReactElement {
 
   useEffect(() => {
     _getOrBuildWorkspace()
-      .then(({ reactiveWorkspace: rw, warnings, logSettings: ls, dataError: de }) => {
+      .then(({ reactiveWorkspace: rw, warnings, logSettings: ls, dataError: de, coldStart: cs }) => {
         setLogSettings(ls);
         if (de) {
           setDataError(de);
+        }
+        if (cs) {
+          setColdStart(cs);
         }
         if (warnings.length > 0) {
           // Hold the workspace and show the recovery dialog
@@ -1355,6 +1332,14 @@ function WorkspaceBootstrap(): React.ReactElement {
 
   if (!reactiveWorkspace) {
     return <div className="p-8 text-muted">Loading workspace…</div>;
+  }
+
+  if (coldStart) {
+    return (
+      <WorkspaceProvider reactiveWorkspace={reactiveWorkspace}>
+        <WelcomeScreen coldStartContext={coldStart} onComplete={(): void => setColdStart(undefined)} />
+      </WorkspaceProvider>
+    );
   }
 
   return (

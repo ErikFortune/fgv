@@ -64,3 +64,6 @@ export * from './packlets/locations';
 
 // Journal entry display
 export * from './packlets/journal';
+
+// Welcome & setup screen
+export * from './packlets/welcome';

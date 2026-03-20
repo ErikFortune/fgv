@@ -39,7 +39,7 @@ export interface IDeveloperSectionProps {
 // Helpers
 // ============================================================================
 
-type ConfirmTarget = 'settings' | 'local' | 'cloud' | undefined;
+type ConfirmTarget = 'settings' | 'local' | 'cloud' | 'full-reset' | undefined;
 
 const CONFIRM_CONFIG: Record<
   NonNullable<ConfirmTarget>,
@@ -62,6 +62,13 @@ const CONFIRM_CONFIG: Record<
     message:
       'Delete ALL files from cloud storage roots and reload the page? This is irreversible and will permanently destroy your cloud data.',
     confirmLabel: 'Clear Cloud Data'
+  },
+  'full-reset': {
+    title: 'Full Reset',
+    message:
+      'This will clear ALL cloud data, remove ALL local storage entries, and reload the page. ' +
+      'The app will return to the cold-start welcome screen. This cannot be undone.',
+    confirmLabel: 'Full Reset'
   }
 };
 
@@ -163,6 +170,9 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
       case 'cloud':
         handleClearCloudData();
         break;
+      case 'full-reset':
+        handleFullReset();
+        break;
       default:
         break;
     }
@@ -200,6 +210,27 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
     for (const rootDir of reactiveWorkspace.additionalRootDirs.values()) {
       deleteAllChildren(rootDir);
     }
+    window.location.reload();
+  }
+
+  function handleFullReset(): void {
+    // 1. Clear all cloud storage roots
+    for (const rootDir of reactiveWorkspace.additionalRootDirs.values()) {
+      deleteAllChildren(rootDir);
+    }
+
+    // 2. Clear all local storage entries
+    const prefix = 'chocolate-lab';
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(prefix)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+
+    // 3. Reload — with everything cleared, the app returns to cold-start
     window.location.reload();
   }
 
@@ -263,6 +294,24 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
           </p>
 
           <div className="space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-secondary">Full Reset</p>
+                <p className="text-xs text-muted mt-0.5">
+                  Clears all cloud data and local storage, then reloads. Returns to cold-start welcome screen.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={(): void => setConfirmTarget('full-reset')}
+                className="shrink-0 px-3 py-1.5 text-sm border border-status-error-border-strong rounded-md text-inverted bg-status-error-strong hover:bg-status-error-strong/90 transition-colors"
+              >
+                Full Reset
+              </button>
+            </div>
+
+            <div className="border-t border-border-subtle" />
+
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-secondary">Reset Settings</p>

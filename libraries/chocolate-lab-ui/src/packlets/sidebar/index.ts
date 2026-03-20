@@ -21,7 +21,7 @@ export {
 
 export { useEntityActions, type IEntityActions } from './useEntityActions';
 
-export { getSubLibraryForTab, getSubLibraryPathForTab } from './subLibraryLookup';
+export { getSubLibraryById, getSubLibraryForTab, getSubLibraryPathForTab } from './subLibraryLookup';
 
 export {
   CreateCollectionDialog,
