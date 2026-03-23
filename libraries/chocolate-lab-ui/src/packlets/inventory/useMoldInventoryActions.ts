@@ -33,7 +33,13 @@ import { useCallback } from 'react';
 
 import { fail, succeed, type Result } from '@fgv/ts-utils';
 
-import { type CollectionId, type LocationId, type MoldId, Entities } from '@fgv/ts-chocolate';
+import {
+  type CollectionId,
+  Converters as ChocolateConverters,
+  type LocationId,
+  type MoldId,
+  Entities
+} from '@fgv/ts-chocolate';
 type IMoldInventoryEntryEntity = Entities.Inventory.IMoldInventoryEntryEntity;
 
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -120,39 +126,29 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
   /**
    * Ensures a mutable mold inventory collection exists, creating one if necessary.
    *
-   * Follows the same pattern as `useCollectionActions.createCollection`:
-   * 1. `addCollectionWithItems` creates the in-memory collection with metadata
-   * 2. `createCollectionFile` creates the backing file so persistence works
+   * Follows the same pattern as `useCollectionActions.createCollection`.
    */
-  const ensureCollectionId = useCallback((): Result<CollectionId> => {
+  const ensureCollectionId = useCallback(async (): Promise<Result<CollectionId>> => {
     if (defaultCollectionId) {
       return succeed(defaultCollectionId);
     }
 
     const moldInventory = workspace.userData.entities.moldInventory;
-    const collectionId = 'mold-inventory';
-    const sourceName = moldInventory.mutableSourceName ?? 'localStorage';
+    const collectionId = ChocolateConverters.collectionId.convert('mold-inventory').orThrow();
 
-    // Create in-memory collection (same as useCollectionActions.createCollection)
-    const createResult = moldInventory.addCollectionWithItems(collectionId, undefined, {
-      metadata: { sourceName, name: 'Mold Inventory' }
+    const manager = workspace.userData.entities.getCollectionManager(moldInventory);
+    const createResult = await manager.createWithFile(collectionId, {
+      name: 'Mold Inventory'
     });
+
     if (createResult.isFailure()) {
       return fail(`Failed to create mold inventory collection: ${createResult.message}`);
-    }
-
-    // Create backing file for persistence (same as useCollectionActions.createCollection)
-    const fileResult = moldInventory.createCollectionFile(createResult.value, '{}\n', 'yaml');
-    if (fileResult.isFailure()) {
-      workspace.data.logger.info(
-        `Collection '${collectionId}' created in-memory (persistence failed: ${fileResult.message})`
-      );
     }
 
     workspace.data.clearCache();
     reactiveWorkspace.notifyChange();
     workspace.data.logger.info(`Created mold inventory collection '${collectionId}'`);
-    return succeed(createResult.value);
+    return succeed(collectionId);
   }, [workspace, reactiveWorkspace, defaultCollectionId]);
 
   /**
@@ -168,7 +164,7 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
 
   const addEntry = useCallback(
     async (moldId: MoldId, count: number, locationId?: LocationId): Promise<Result<MoldInventoryEntryId>> => {
-      const collectionResult = ensureCollectionId();
+      const collectionResult = await ensureCollectionId();
       if (collectionResult.isFailure()) {
         return fail(collectionResult.message);
       }

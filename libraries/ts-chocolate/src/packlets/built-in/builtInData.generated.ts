@@ -11,6 +11,7 @@
 //   - data/published/ingredients/flavors.yaml
 //   - data/published/ingredients/guittard.yaml
 //   - data/published/fillings/common.yaml
+//   - data/published/molds/cabrellon.yaml
 //   - data/published/molds/common.yaml
 //   - data/published/molds/cw.yaml
 //   - data/published/molds/greyas.yaml
@@ -4560,6 +4561,56 @@ export const fillingCollections: Record<string, JsonObject> = {
  * @public
  */
 export const moldCollections: Record<string, JsonObject> = {
+  cabrellon: {
+    metadata: {
+      name: 'Cabrellon'
+    },
+    items: {
+      'egg-with-rabbit': {
+        baseId: 'egg-with-rabbit',
+        manufacturer: 'Cabrellon',
+        productNumber: '19034',
+        name: 'Egg with Rabbit',
+        description:
+          'Professional polycarbonate mold for Easter-themed half-egg chocolates with assorted rabbit (bunny) designs embossed on the exterior. Ideal for small chocolates.',
+        cavities: {
+          kind: 'grid',
+          columns: 5,
+          rows: 3,
+          info: {
+            weight: 7,
+            dimensions: {
+              width: 27,
+              length: 40,
+              depth: 13
+            }
+          }
+        },
+        format: 'series-2000',
+        tags: ['easter', 'egg', 'rabbit', 'bunny', 'polycarbonate'],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Cavity dimensions from multiple retailers (27x40x13mm) and catalog (40x27mm); depth from Amazon listing; mold size 275x175x24mm confirmed by retailers, series-2000; weight consistently 7g across sources except one outlier.'
+          }
+        ],
+        urls: [
+          {
+            category: 'purchase',
+            url: 'https://www.bakedeco.com/detail.asp?id=67804'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.chocolat-chocolat.com/product/art19034-chocolate-mold-eggs-with-rabbits'
+          },
+          {
+            category: 'manufacturer-catalog',
+            url: 'https://www.cabrellon.it/wp-content/uploads/2025/01/Cabrellon-Cat.2025-BASSA.pdf'
+          }
+        ]
+      }
+    }
+  },
   common: {
     metadata: {
       name: 'Common Molds',
@@ -4939,6 +4990,49 @@ export const moldCollections: Record<string, JsonObject> = {
           {
             category: 'catalog-reference',
             url: 'https://cocoaoutlet.com/media/pdf/CWmoulds13.pdf'
+          }
+        ]
+      },
+      'abstract-bunny-large': {
+        baseId: 'abstract-bunny-large',
+        manufacturer: 'Chocolate World',
+        productNumber: 'CW1875',
+        name: 'Abstract Bunny (Large)',
+        description:
+          'Polycarbonate chocolate mold featuring 12 abstract egg-shaped bunny cavities, designed by Nora Chokladskola. Overall mold size: 275 x 135 x 24 mm.',
+        cavities: {
+          kind: 'grid',
+          columns: 4,
+          rows: 3,
+          info: {
+            weight: 20,
+            dimensions: {
+              width: 35.5,
+              length: 52,
+              depth: 19.5
+            }
+          }
+        },
+        format: 'series-1000',
+        tags: ['bunny', 'rabbit', 'abstract', 'easter', 'polycarbonate'],
+        notes: [
+          {
+            category: 'ai',
+            note: 'Grid layout specified as 4 columns x 3 rows based on standard series-1000 mold dimensions (275x135mm) and cavity sizes fitting within; confirmed via multiple retailer specs. Not found in official 2026 Chocolate World catalog PDF.'
+          }
+        ],
+        urls: [
+          {
+            category: 'purchase',
+            url: 'https://www.bakedeco.com/detail.asp?id=63087'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.amazon.com/Chocolate-World-Polycarbonate-Rabbit-Abstract-Cavities/dp/B0CB713JWL'
+          },
+          {
+            category: 'purchase',
+            url: 'https://www.pastrychefsboutique.com/CHOCOLATE/Chocolate-Molds/polycarbonate-chocolate-molds/easter-molds/chocolate-world-cw1875-polycarbonate-abstract-egg-shaped-rabbit-chocolate-mold-by-nora-chokladskola-52mm-x-35mm-x-19mm-20gr-12-c'
           }
         ]
       }

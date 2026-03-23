@@ -27,16 +27,22 @@
 import { Converter, Logging, Result, Success, fail, succeed } from '@fgv/ts-utils';
 
 import {
-  Converters as CommonConverters,
   CollectionId,
-  BaseIngredientId,
+  Converters as CommonConverters,
+  BaseConfectionId,
+  BaseDecorationId,
   BaseFillingId,
+  BaseIngredientId,
   BaseMoldId,
   BaseProcedureId,
-  BaseTaskId,
-  BaseConfectionId,
-  BaseDecorationId
+  BaseTaskId
 } from '../common';
+import {
+  EditableCollection,
+  ISyncProvider,
+  PersistedCollectionManager,
+  PersistedEditableCollection
+} from '../editing';
 import * as Entities from '../entities';
 import { IngredientEntity, IngredientsLibrary } from '../entities';
 import { IFillingRecipeEntity, FillingsLibrary } from '../entities';
@@ -46,15 +52,14 @@ import { IProcedureEntity, ProceduresLibrary } from '../entities';
 import { IRawTaskEntity, TasksLibrary } from '../entities';
 import { IDecorationEntity, DecorationsLibrary } from '../entities';
 import { CryptoUtils } from '@fgv/ts-extras';
-import { EditableCollection, ISyncProvider, PersistedEditableCollection } from '../editing';
 import {
   FullLibraryLoadSpec,
   IFileTreeSource,
   ILibraryFileTreeSource,
   SubLibraryBase,
+  SubLibraryId,
   normalizeFileSources,
-  resolveBuiltInSpec,
-  SubLibraryId
+  resolveBuiltInSpec
 } from '../library-data';
 
 // ============================================================================
@@ -225,6 +230,12 @@ export class ChocolateEntityLibrary {
   private readonly _persistedDecorations: Map<
     CollectionId,
     PersistedEditableCollection<IDecorationEntity, BaseDecorationId>
+  > = new Map();
+
+  // Singleton cache for collection managers (one per sub-library)
+  private readonly _collectionManagers: Map<
+    SubLibraryBase<string, string, unknown>,
+    PersistedCollectionManager<string, string, unknown>
   > = new Map();
 
   /**
@@ -429,6 +440,32 @@ export class ChocolateEntityLibrary {
   public configurePersistence(config: IPersistenceConfig): void {
     this._syncProvider = config.syncProvider;
     this._encryptionProvider = config.encryptionProvider;
+  }
+
+  // ==========================================================================
+  // Collection Management
+  // ==========================================================================
+
+  /**
+   * Get a persistence-aware collection manager for a given sub-library.
+   *
+   * Returns a cached instance per sub-library — the manager is reused across
+   * calls for the same sub-library reference.
+   *
+   * @param subLibrary - The sub-library to manage
+   * @returns A PersistedCollectionManager that automatically syncs changes to disk
+   * @public
+   */
+  public getCollectionManager<TCompositeId extends string, TBaseId extends string, TItem>(
+    subLibrary: SubLibraryBase<TCompositeId, TBaseId, TItem>
+  ): PersistedCollectionManager<TCompositeId, TBaseId, TItem> {
+    const key = subLibrary as SubLibraryBase<string, string, unknown>;
+    let manager = this._collectionManagers.get(key);
+    if (!manager) {
+      manager = new PersistedCollectionManager({ subLibrary, syncProvider: this._syncProvider });
+      this._collectionManagers.set(key, manager);
+    }
+    return manager as PersistedCollectionManager<TCompositeId, TBaseId, TItem>;
   }
 
   // ==========================================================================

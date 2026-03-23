@@ -201,6 +201,7 @@ Object {
 exports[`BuiltInData getMoldsDirectory molds directory matches snapshot 1`] = `
 Object {
   "files": Array [
+    "cabrellon.json",
     "common.json",
     "cw.json",
     "greyas.json",
@@ -209,6 +210,9 @@ Object {
     "other.json",
   ],
   "items": Object {
+    "cabrellon.json": Array [
+      "egg-with-rabbit",
+    ],
     "common.json": Array [
       "bullet-28mm",
       "dome-25mm",
@@ -216,6 +220,7 @@ Object {
       "square-25mm",
     ],
     "cw.json": Array [
+      "abstract-bunny-large",
       "chocolate-world-cw-2227",
       "chocolate-world-cw12027",
       "chocolate-world-cw12060",

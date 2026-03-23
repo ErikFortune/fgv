@@ -54,7 +54,7 @@ import {
   Session as SessionEntities,
   SessionLibrary
 } from '../entities';
-import { ISyncProvider, PersistedEditableCollection } from '../editing';
+import { ISyncProvider, PersistedCollectionManager, PersistedEditableCollection } from '../editing';
 import {
   IFileTreeSource,
   ILibraryFileTreeSource,
@@ -110,6 +110,12 @@ export class UserEntityLibrary implements IUserEntityLibrary {
   private readonly _persistedLocations: Map<
     CollectionId,
     PersistedEditableCollection<ILocationEntity, BaseLocationId>
+  > = new Map();
+
+  // Singleton cache for collection managers (one per sub-library)
+  private readonly _collectionManagers: Map<
+    SubLibraryBase<string, string, unknown>,
+    PersistedCollectionManager<string, string, unknown>
   > = new Map();
 
   /**
@@ -283,6 +289,25 @@ export class UserEntityLibrary implements IUserEntityLibrary {
     this._syncProvider = config.syncProvider;
     this._encryptionProvider = config.encryptionProvider;
     this._onMutation = config.onMutation;
+  }
+
+  // ==========================================================================
+  // Collection Management
+  // ==========================================================================
+
+  /**
+   * {@inheritDoc UserEntities.IUserEntityLibrary.getCollectionManager}
+   */
+  public getCollectionManager<TCompositeId extends string, TBaseId extends string, TItem>(
+    subLibrary: SubLibraryBase<TCompositeId, TBaseId, TItem>
+  ): PersistedCollectionManager<TCompositeId, TBaseId, TItem> {
+    const key = subLibrary as SubLibraryBase<string, string, unknown>;
+    let manager = this._collectionManagers.get(key);
+    if (!manager) {
+      manager = new PersistedCollectionManager({ subLibrary, syncProvider: this._syncProvider });
+      this._collectionManagers.set(key, manager);
+    }
+    return manager as PersistedCollectionManager<TCompositeId, TBaseId, TItem>;
   }
 
   // ==========================================================================

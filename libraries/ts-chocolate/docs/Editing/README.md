@@ -143,6 +143,16 @@ Implementation of collection management operations.
 </td></tr>
 <tr><td>
 
+[PersistedCollectionManager](./classes/PersistedCollectionManager.md)
+
+</td><td>
+
+Persistent wrapper around CollectionManager that triggers disk syncs
+after structural mutations (create, delete, rename, merge, metadata update).
+
+</td></tr>
+<tr><td>
+
 [EditorContext](./classes/EditorContext.md)
 
 </td><td>
@@ -315,6 +325,15 @@ Provider for flushing in-memory FileTree changes to the filesystem.
 </td><td>
 
 Parameters for creating a PersistedEditableCollection.
+
+</td></tr>
+<tr><td>
+
+[IPersistedCollectionManagerParams](./interfaces/IPersistedCollectionManagerParams.md)
+
+</td><td>
+
+Parameters for creating a PersistedCollectionManager.
 
 </td></tr>
 <tr><td>

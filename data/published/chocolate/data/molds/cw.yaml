@@ -238,3 +238,42 @@ items:
         url: https://secure.auifinefoods.com/polycarbonate-mold-wiro-27-5x13-5x2-4cm-8613011301
       - category: catalog-reference
         url: https://cocoaoutlet.com/media/pdf/CWmoulds13.pdf
+  abstract-bunny-large:
+    baseId: abstract-bunny-large
+    manufacturer: Chocolate World
+    productNumber: CW1875
+    name: Abstract Bunny (Large)
+    description: >-
+      Polycarbonate chocolate mold featuring 12 abstract egg-shaped bunny cavities, designed by Nora Chokladskola.
+      Overall mold size: 275 x 135 x 24 mm.
+    cavities:
+      kind: grid
+      columns: 4
+      rows: 3
+      info:
+        weight: 20
+        dimensions:
+          width: 35.5
+          length: 52
+          depth: 19.5
+    format: series-1000
+    tags:
+      - bunny
+      - rabbit
+      - abstract
+      - easter
+      - polycarbonate
+    notes:
+      - category: ai
+        note: >-
+          Grid layout specified as 4 columns x 3 rows based on standard series-1000 mold dimensions (275x135mm) and
+          cavity sizes fitting within; confirmed via multiple retailer specs. Not found in official 2026 Chocolate World
+          catalog PDF.
+    urls:
+      - category: purchase
+        url: https://www.bakedeco.com/detail.asp?id=63087
+      - category: purchase
+        url: https://www.amazon.com/Chocolate-World-Polycarbonate-Rabbit-Abstract-Cavities/dp/B0CB713JWL
+      - category: purchase
+        url: >-
+          https://www.pastrychefsboutique.com/CHOCOLATE/Chocolate-Molds/polycarbonate-chocolate-molds/easter-molds/chocolate-world-cw1875-polycarbonate-abstract-egg-shaped-rabbit-chocolate-mold-by-nora-chokladskola-52mm-x-35mm-x-19mm-20gr-12-c

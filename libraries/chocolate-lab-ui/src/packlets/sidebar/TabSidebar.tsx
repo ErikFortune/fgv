@@ -106,7 +106,7 @@ export interface ITabSidebarProps {
   /** Callback when "Add Directory" is clicked in the collection section */
   readonly onAddDirectory?: () => void;
   /** Callback when the user confirms creation of a new collection */
-  readonly onCreateCollection?: (data: ICreateCollectionData) => void;
+  readonly onCreateCollection?: (data: ICreateCollectionData) => Promise<void>;
   /** Callback when delete is clicked for a mutable collection */
   readonly onDeleteCollection?: (collectionId: string) => void;
   /** Callback when the star/default is clicked for a collection */
@@ -262,8 +262,8 @@ export function TabSidebar(props: ITabSidebarProps): React.ReactElement {
   }, []);
 
   const handleCreateCollection = useCallback(
-    (data: ICreateCollectionData): void => {
-      onCreateCollection?.(data);
+    (data: ICreateCollectionData): Promise<void> => {
+      return Promise.resolve(onCreateCollection?.(data));
     },
     [onCreateCollection]
   );

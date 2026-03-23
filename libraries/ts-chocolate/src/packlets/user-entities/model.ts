@@ -25,25 +25,23 @@
 
 import { Logging, Result } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
-
 import { BaseJournalId, BaseLocationId, BaseSessionId, CollectionId } from '../common';
-import { SubLibraryId } from '../library-data';
+import { ISyncProvider, PersistedCollectionManager, PersistedEditableCollection } from '../editing';
 import {
   AnyJournalEntryEntity,
   AnySessionEntity,
   IIngredientInventoryEntryEntity,
   IngredientInventoryEntryBaseId,
-  IngredientInventoryLibrary,
   ILocationEntity,
   IMoldInventoryEntryEntity,
   MoldInventoryEntryBaseId,
+  IngredientInventoryLibrary,
   JournalLibrary,
   LocationsLibrary,
   MoldInventoryLibrary,
   SessionLibrary
 } from '../entities';
-import { ISyncProvider, PersistedEditableCollection } from '../editing';
-import { ILibraryFileTreeSource } from '../library-data';
+import { SubLibraryBase, ILibraryFileTreeSource, SubLibraryId } from '../library-data';
 
 // ============================================================================
 // User Library Interface
@@ -90,6 +88,19 @@ export interface IUserEntityLibrary {
    * @param config - Persistence configuration with sync and encryption providers
    */
   configurePersistence(config: IUserEntityPersistenceConfig): void;
+
+  /**
+   * Get a persistence-aware collection manager for a given sub-library.
+   *
+   * Returns a cached instance per sub-library — the manager is reused across
+   * calls for the same sub-library reference.
+   *
+   * @param subLibrary - The sub-library to manage
+   * @returns A PersistedCollectionManager that automatically syncs changes to disk
+   */
+  getCollectionManager<TCompositeId extends string, TBaseId extends string, TItem>(
+    subLibrary: SubLibraryBase<TCompositeId, TBaseId, TItem>
+  ): PersistedCollectionManager<TCompositeId, TBaseId, TItem>;
 
   /**
    * Get or create a singleton persisted sessions collection.

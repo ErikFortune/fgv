@@ -143,6 +143,19 @@ Configures persistence providers for all sub-libraries.
 </td></tr>
 <tr><td>
 
+[getCollectionManager(subLibrary)](./IUserEntityLibrary.getCollectionManager.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get a persistence-aware collection manager for a given sub-library.
+
+</td></tr>
+<tr><td>
+
 [getPersistedSessionsCollection(collectionId)](./IUserEntityLibrary.getPersistedSessionsCollection.md)
 
 </td><td>

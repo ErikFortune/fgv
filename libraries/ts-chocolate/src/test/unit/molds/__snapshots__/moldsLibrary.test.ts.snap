@@ -1,0 +1,306 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`MoldsLibrary create combines built-ins with additional collections 1`] = `
+Object {
+  "collectionCount": 8,
+  "collections": Array [
+    Object {
+      "id": "cabrellon",
+      "isMutable": false,
+      "itemCount": 1,
+      "itemIds": Array [
+        "egg-with-rabbit",
+      ],
+    },
+    Object {
+      "id": "common",
+      "isMutable": false,
+      "itemCount": 4,
+      "itemIds": Array [
+        "bullet-28mm",
+        "dome-25mm",
+        "dome-30mm",
+        "square-25mm",
+      ],
+    },
+    Object {
+      "id": "cw",
+      "isMutable": false,
+      "itemCount": 7,
+      "itemIds": Array [
+        "abstract-bunny-large",
+        "chocolate-world-cw-2227",
+        "chocolate-world-cw12027",
+        "chocolate-world-cw12060",
+        "chocolate-world-cw1301",
+        "chocolate-world-cw1840",
+        "chocolate-world-cw1988",
+      ],
+    },
+    Object {
+      "id": "greyas",
+      "isMutable": false,
+      "itemCount": 3,
+      "itemIds": Array [
+        "cm-3898",
+        "cm1207",
+        "greyas-cm-3843",
+      ],
+    },
+    Object {
+      "id": "implast",
+      "isMutable": false,
+      "itemCount": 1,
+      "itemIds": Array [
+        "chef-jungstedt-sm-1",
+      ],
+    },
+    Object {
+      "id": "martellato",
+      "isMutable": false,
+      "itemCount": 0,
+      "itemIds": Array [],
+    },
+    Object {
+      "id": "other",
+      "isMutable": false,
+      "itemCount": 1,
+      "itemIds": Array [
+        "cabrellon-10176-coffee-cup",
+      ],
+    },
+    Object {
+      "id": "test",
+      "isMutable": true,
+      "itemCount": 1,
+      "itemIds": Array [
+        "testMold",
+      ],
+    },
+  ],
+  "size": 18,
+}
+`;
+
+exports[`MoldsLibrary create creates empty library with builtin: false 1`] = `
+Object {
+  "collectionCount": 0,
+  "collections": Array [],
+  "size": 0,
+}
+`;
+
+exports[`MoldsLibrary create creates library with additional collections 1`] = `
+Object {
+  "collectionCount": 1,
+  "collections": Array [
+    Object {
+      "id": "test",
+      "isMutable": true,
+      "itemCount": 1,
+      "itemIds": Array [
+        "testMold",
+      ],
+    },
+  ],
+  "size": 1,
+}
+`;
+
+exports[`MoldsLibrary create creates library with built-ins by default 1`] = `
+Object {
+  "collectionCount": 7,
+  "collections": Array [
+    Object {
+      "id": "cabrellon",
+      "isMutable": false,
+      "itemCount": 1,
+      "itemIds": Array [
+        "egg-with-rabbit",
+      ],
+    },
+    Object {
+      "id": "common",
+      "isMutable": false,
+      "itemCount": 4,
+      "itemIds": Array [
+        "bullet-28mm",
+        "dome-25mm",
+        "dome-30mm",
+        "square-25mm",
+      ],
+    },
+    Object {
+      "id": "cw",
+      "isMutable": false,
+      "itemCount": 7,
+      "itemIds": Array [
+        "abstract-bunny-large",
+        "chocolate-world-cw-2227",
+        "chocolate-world-cw12027",
+        "chocolate-world-cw12060",
+        "chocolate-world-cw1301",
+        "chocolate-world-cw1840",
+        "chocolate-world-cw1988",
+      ],
+    },
+    Object {
+      "id": "greyas",
+      "isMutable": false,
+      "itemCount": 3,
+      "itemIds": Array [
+        "cm-3898",
+        "cm1207",
+        "greyas-cm-3843",
+      ],
+    },
+    Object {
+      "id": "implast",
+      "isMutable": false,
+      "itemCount": 1,
+      "itemIds": Array [
+        "chef-jungstedt-sm-1",
+      ],
+    },
+    Object {
+      "id": "martellato",
+      "isMutable": false,
+      "itemCount": 0,
+      "itemIds": Array [],
+    },
+    Object {
+      "id": "other",
+      "isMutable": false,
+      "itemCount": 1,
+      "itemIds": Array [
+        "cabrellon-10176-coffee-cup",
+      ],
+    },
+  ],
+  "size": 17,
+}
+`;
+
+exports[`createAsync captures encrypted files when no encryption config provided 1`] = `
+Object {
+  "collectionCount": 0,
+  "collections": Array [],
+  "size": 0,
+}
+`;
+
+exports[`createAsync creates library with built-ins by default 1`] = `
+Object {
+  "collectionCount": 7,
+  "collections": Array [
+    Object {
+      "id": "cabrellon",
+      "isMutable": false,
+      "itemCount": 1,
+      "itemIds": Array [
+        "egg-with-rabbit",
+      ],
+    },
+    Object {
+      "id": "common",
+      "isMutable": false,
+      "itemCount": 4,
+      "itemIds": Array [
+        "bullet-28mm",
+        "dome-25mm",
+        "dome-30mm",
+        "square-25mm",
+      ],
+    },
+    Object {
+      "id": "cw",
+      "isMutable": false,
+      "itemCount": 7,
+      "itemIds": Array [
+        "abstract-bunny-large",
+        "chocolate-world-cw-2227",
+        "chocolate-world-cw12027",
+        "chocolate-world-cw12060",
+        "chocolate-world-cw1301",
+        "chocolate-world-cw1840",
+        "chocolate-world-cw1988",
+      ],
+    },
+    Object {
+      "id": "greyas",
+      "isMutable": false,
+      "itemCount": 3,
+      "itemIds": Array [
+        "cm-3898",
+        "cm1207",
+        "greyas-cm-3843",
+      ],
+    },
+    Object {
+      "id": "implast",
+      "isMutable": false,
+      "itemCount": 1,
+      "itemIds": Array [
+        "chef-jungstedt-sm-1",
+      ],
+    },
+    Object {
+      "id": "martellato",
+      "isMutable": false,
+      "itemCount": 0,
+      "itemIds": Array [],
+    },
+    Object {
+      "id": "other",
+      "isMutable": false,
+      "itemCount": 1,
+      "itemIds": Array [
+        "cabrellon-10176-coffee-cup",
+      ],
+    },
+  ],
+  "size": 17,
+}
+`;
+
+exports[`createAsync creates library with file sources 1`] = `
+Object {
+  "collectionCount": 1,
+  "collections": Array [
+    Object {
+      "id": "external",
+      "isMutable": true,
+      "itemCount": 1,
+      "itemIds": Array [
+        "external-mold",
+      ],
+    },
+  ],
+  "size": 1,
+}
+`;
+
+exports[`createAsync creates library without built-ins when builtin: false 1`] = `
+Object {
+  "collectionCount": 0,
+  "collections": Array [],
+  "size": 0,
+}
+`;
+
+exports[`createAsync decrypts encrypted file sources with encryption config 1`] = `
+Object {
+  "collectionCount": 1,
+  "collections": Array [
+    Object {
+      "id": "secret",
+      "isMutable": false,
+      "itemCount": 1,
+      "itemIds": Array [
+        "secret-mold",
+      ],
+    },
+  ],
+  "size": 1,
+}
+`;

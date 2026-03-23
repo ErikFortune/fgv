@@ -31,12 +31,12 @@
 
 import { useCallback } from 'react';
 
-import { type CollectionId, Helpers, Editing } from '@fgv/ts-chocolate';
+import { type CollectionId, Helpers } from '@fgv/ts-chocolate';
 
 import { selectActiveTab, useNavigationStore } from '../navigation';
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
 import { type IReferenceScanResult, EntityReferenceScanner } from '../editing';
-import { getSubLibraryForTab } from './subLibraryLookup';
+import { getSubLibraryForTab, isUserTab } from './subLibraryLookup';
 
 // ============================================================================
 // Entity Actions Result
@@ -177,7 +177,9 @@ export function useEntityActions(): IEntityActions {
         return false;
       }
 
-      const manager = new Editing.CollectionManager(subLibrary);
+      const manager = isUserTab(activeTab)
+        ? workspace.userData.entities.getCollectionManager(subLibrary)
+        : workspace.data.entities.getCollectionManager(subLibrary);
       const result = manager.deleteEntity(compositeId);
       if (result.isFailure()) {
         workspace.data.logger.error(`Failed to delete '${compositeId}': ${result.message}`);
@@ -206,7 +208,9 @@ export function useEntityActions(): IEntityActions {
         return undefined;
       }
 
-      const manager = new Editing.CollectionManager(subLibrary);
+      const manager = isUserTab(activeTab)
+        ? workspace.userData.entities.getCollectionManager(subLibrary)
+        : workspace.data.entities.getCollectionManager(subLibrary);
       const result = manager.copyEntity(compositeId, targetCollectionId, newBaseId);
       if (result.isFailure()) {
         workspace.data.logger.error(`Failed to copy '${compositeId}': ${result.message}`);
@@ -242,7 +246,9 @@ export function useEntityActions(): IEntityActions {
         return undefined;
       }
 
-      const manager = new Editing.CollectionManager(subLibrary);
+      const manager = isUserTab(activeTab)
+        ? workspace.userData.entities.getCollectionManager(subLibrary)
+        : workspace.data.entities.getCollectionManager(subLibrary);
       const result = manager.moveEntity(compositeId, targetCollectionId, newBaseId);
       if (result.isFailure()) {
         workspace.data.logger.error(`Failed to move '${compositeId}': ${result.message}`);

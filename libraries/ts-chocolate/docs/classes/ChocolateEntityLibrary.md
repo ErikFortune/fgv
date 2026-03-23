@@ -211,6 +211,19 @@ Configure the persistence pipeline for this library.
 </td></tr>
 <tr><td>
 
+[getCollectionManager(subLibrary)](./ChocolateEntityLibrary.getCollectionManager.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Get a persistence-aware collection manager for a given sub-library.
+
+</td></tr>
+<tr><td>
+
 [getPersistedIngredientsCollection(collectionId)](./ChocolateEntityLibrary.getPersistedIngredientsCollection.md)
 
 </td><td>

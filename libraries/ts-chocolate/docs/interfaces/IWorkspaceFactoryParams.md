@@ -80,23 +80,6 @@ Additional encryption configuration options.
 </td></tr>
 <tr><td>
 
-[fileSources](./IWorkspaceCreateParams.fileSources.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[ILibraryFileTreeSource](ILibraryFileTreeSource.md) | readonly [ILibraryFileTreeSource](ILibraryFileTreeSource.md)[]
-
-</td><td>
-
-File tree sources to load data from.
-
-</td></tr>
-<tr><td>
-
 [builtin](./IWorkspaceCreateParams.builtin.md)
 
 </td><td>
@@ -110,6 +93,23 @@ File tree sources to load data from.
 </td><td>
 
 Specifies built-in data loading for each sub-library.
+
+</td></tr>
+<tr><td>
+
+[fileSources](./IWorkspaceCreateParams.fileSources.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ILibraryFileTreeSource](ILibraryFileTreeSource.md) | readonly [ILibraryFileTreeSource](ILibraryFileTreeSource.md)[]
+
+</td><td>
+
+File tree sources to load data from.
 
 </td></tr>
 <tr><td>

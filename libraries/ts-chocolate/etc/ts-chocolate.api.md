@@ -695,6 +695,7 @@ class ChocolateEntityLibrary {
     get decorations(): DecorationsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get fillings(): FillingsLibrary;
+    getCollectionManager<TCompositeId extends string, TBaseId extends string, TItem>(subLibrary: SubLibraryBase<TCompositeId, TBaseId, TItem>): PersistedCollectionManager<TCompositeId, TBaseId, TItem>;
     getEditableConfectionsEntityCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<Entities.Confections.AnyConfectionRecipeEntity, BaseConfectionId>>;
     getEditableDecorationsEntityCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<IDecorationEntity, BaseDecorationId>>;
     getEditableFillingsRecipeEntityCollection(collectionId: CollectionId, encryptionProvider?: CryptoUtils.IEncryptionProvider): Result<EditableCollection<IFillingRecipeEntity, BaseFillingId>>;
@@ -2134,6 +2135,8 @@ declare namespace Editing {
         IPersistedEditableCollectionParams,
         PersistedEditableCollection,
         CollectionManager,
+        IPersistedCollectionManagerParams,
+        PersistedCollectionManager,
         IEditorContextParams,
         EditorContext,
         IEditorContextValidatorParams,
@@ -5374,6 +5377,14 @@ interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string>
     readonly preferredId?: TId;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedCollectionManager"
+//
+// @public
+interface IPersistedCollectionManagerParams<TCompositeId extends string, TBaseId extends string, TItem> {
+    readonly subLibrary: SubLibraryBase<TCompositeId, TBaseId, TItem>;
+    readonly syncProvider?: ISyncProvider;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "PersistedEditableCollection"
 //
 // @public
@@ -6404,6 +6415,9 @@ interface ISugarIngredientEntity extends IIngredientEntity {
 }
 
 // @public
+function isUserSubLibrary(id: SubLibraryId): boolean;
+
+// @public
 function isValidationSuccess(report: IValidationReport): boolean;
 
 // @public
@@ -6610,6 +6624,7 @@ interface IUnitScaler {
 // @public
 interface IUserEntityLibrary {
     configurePersistence(config: IUserEntityPersistenceConfig): void;
+    getCollectionManager<TCompositeId extends string, TBaseId extends string, TItem>(subLibrary: SubLibraryBase<TCompositeId, TBaseId, TItem>): PersistedCollectionManager<TCompositeId, TBaseId, TItem>;
     getPersistedIngredientInventoryCollection(collectionId: CollectionId): Result<PersistedEditableCollection<IIngredientInventoryEntryEntity, IngredientInventoryEntryBaseId>>;
     getPersistedJournalsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<AnyJournalEntryEntity, BaseJournalId>>;
     getPersistedLocationsCollection(collectionId: CollectionId): Result<PersistedEditableCollection<ILocationEntity, BaseLocationId>>;
@@ -6928,6 +6943,7 @@ declare namespace LibraryData {
     export {
         Converters_11 as Converters,
         isEncryptedCollectionFile,
+        isUserSubLibrary,
         resolveSubLibraryLoadSpec,
         IEncryptedCollectionMetadata,
         EncryptedCollectionFile,
@@ -6942,6 +6958,7 @@ declare namespace LibraryData {
         IRuntimeCollection,
         SubLibraryId,
         allSubLibraryIds,
+        userSubLibraryIds,
         FullLibraryLoadSpec,
         IFileTreeSource,
         ILibraryFileTreeSource,
@@ -7813,6 +7830,29 @@ const percentage: Converter<Percentage>;
 
 // @public
 const PERSISTED_SESSION_SCHEMA_VERSION: 1;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "CollectionManager"
+//
+// @public
+class PersistedCollectionManager<TCompositeId extends string, TBaseId extends string, TItem> {
+    constructor(params: IPersistedCollectionManagerParams<TCompositeId, TBaseId, TItem>);
+    copyEntity(compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): Result<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "createWithFile"
+    create(collectionId: CollectionId, metadata: ICollectionFileMetadata): Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem>>;
+    createWithFile(collectionId: CollectionId, metadata: ICollectionFileMetadata): Promise<Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>>;
+    delete(collectionId: CollectionId): Promise<Result<Collections.AggregatedResultMapEntry<CollectionId, TBaseId, TItem, ICollectionRuntimeMetadata>>>;
+    deleteEntity(compositeId: string): Result<unknown>;
+    exists(collectionId: CollectionId): boolean;
+    get(collectionId: CollectionId): Result<ICollectionRuntimeMetadata>;
+    getAll(): ReadonlyArray<CollectionId>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "createWithFile"
+    importCollection(collectionId: CollectionId, items: ReadonlyArray<[string, TItem]> | undefined, metadata?: ICollectionRuntimeMetadata): Promise<Result<CollectionId>>;
+    isMutable(collectionId: CollectionId): Result<boolean>;
+    merge(sourceCollectionId: CollectionId, targetCollectionId: CollectionId, onConflict: MergeConflictStrategy): Promise<Result<IMergeResult>>;
+    moveEntity(compositeId: string, targetCollectionId: CollectionId, newBaseId?: string): Result<string>;
+    rename(oldCollectionId: CollectionId, newCollectionId: CollectionId): Promise<Result<CollectionId>>;
+    updateMetadata(collectionId: CollectionId, metadata: Partial<ICollectionRuntimeMetadata>): Promise<Result<ICollectionRuntimeMetadata>>;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "EditableCollection"
 //
@@ -9037,6 +9077,10 @@ class UserEntityLibrary implements IUserEntityLibrary {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
+    getCollectionManager<TCompositeId extends string, TBaseId extends string, TItem>(subLibrary: SubLibraryBase<TCompositeId, TBaseId, TItem>): PersistedCollectionManager<TCompositeId, TBaseId, TItem>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
     getPersistedIngredientInventoryCollection(collectionId: CollectionId): Result<PersistedEditableCollection<IIngredientInventoryEntryEntity, IngredientInventoryEntryBaseId>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -9223,6 +9267,9 @@ class UserLibrary_2 implements IUserLibrary, ISessionContext {
     // (undocumented)
     updateSessionStatusAndPersist(sessionId: SessionId, status: PersistedSessionStatus): Promise<Result<SessionId>>;
 }
+
+// @public
+const userSubLibraryIds: ReadonlySet<SubLibraryId>;
 
 // @public
 function validateAlcoholFields(entity: IngredientEntity): Result<true>;

@@ -273,6 +273,28 @@ export const allSubLibraryIds: ReadonlyArray<SubLibraryId> = [
 ] as const;
 
 /**
+ * Sub-library IDs for user-specific data (per-user, not shared).
+ * @public
+ */
+export const userSubLibraryIds: ReadonlySet<SubLibraryId> = new Set<SubLibraryId>([
+  'sessions',
+  'journals',
+  'moldInventory',
+  'ingredientInventory',
+  'locations'
+]);
+
+/**
+ * Returns true if the given sub-library ID is a user sub-library
+ * (per-user data, not shared library data).
+ * @param id - The sub-library identifier to check
+ * @public
+ */
+export function isUserSubLibrary(id: SubLibraryId): boolean {
+  return userSubLibraryIds.has(id);
+}
+
+/**
  * Controls loading for each sub-library within a library source.
  *
  * - `true`: Load all sub-libraries with default settings (all collections)

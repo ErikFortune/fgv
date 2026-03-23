@@ -65,7 +65,7 @@ export interface ICreateCollectionDialogProps {
   /** Callback to close the dialog without creating */
   readonly onClose: () => void;
   /** Callback when the user confirms creation */
-  readonly onCreate: (data: ICreateCollectionData) => void;
+  readonly onCreate: (data: ICreateCollectionData) => Promise<void>;
   /** Set of existing collection IDs (for duplicate detection) */
   readonly existingIds?: ReadonlySet<string>;
   /** Existing secret names for typeahead (only available when workspace is unlocked) */
@@ -157,7 +157,7 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
   }, []);
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent): void => {
+    async (e: React.FormEvent): Promise<void> => {
       e.preventDefault();
       if (!canSubmit) {
         return;
@@ -182,8 +182,12 @@ export function CreateCollectionDialog(props: ICreateCollectionDialogProps): Rea
         ...(effectiveSecret ? { secretName: effectiveSecret } : {})
       };
 
-      onCreate(data);
-      onClose();
+      // TODO: report errors don't just swallow them
+      try {
+        await onCreate(data);
+      } finally {
+        onClose();
+      }
     },
     [canSubmit, name, effectiveId, description, tagsInput, secretInput, secretMatcher, onCreate, onClose]
   );

@@ -35,6 +35,7 @@ import { fail, succeed, type Result } from '@fgv/ts-utils';
 
 import {
   type CollectionId,
+  Converters as ChocolateConverters,
   type IngredientId,
   type LocationId,
   type Measurement,
@@ -131,33 +132,27 @@ export function useIngredientInventoryActions(): IIngredientInventoryActions {
   /**
    * Ensures a mutable ingredient inventory collection exists, creating one if necessary.
    */
-  const ensureCollectionId = useCallback((): Result<CollectionId> => {
+  const ensureCollectionId = useCallback(async (): Promise<Result<CollectionId>> => {
     if (defaultCollectionId) {
       return succeed(defaultCollectionId);
     }
 
     const ingredientInventory = workspace.userData.entities.ingredientInventory;
-    const collectionId = 'ingredient-inventory';
-    const sourceName = ingredientInventory.mutableSourceName ?? 'localStorage';
+    const collectionId = ChocolateConverters.collectionId.convert('ingredient-inventory').orThrow();
 
-    const createResult = ingredientInventory.addCollectionWithItems(collectionId, undefined, {
-      metadata: { sourceName, name: 'Ingredient Inventory' }
+    const manager = workspace.userData.entities.getCollectionManager(ingredientInventory);
+    const createResult = await manager.createWithFile(collectionId, {
+      name: 'Ingredient Inventory'
     });
+
     if (createResult.isFailure()) {
       return fail(`Failed to create ingredient inventory collection: ${createResult.message}`);
-    }
-
-    const fileResult = ingredientInventory.createCollectionFile(createResult.value, '{}\n', 'yaml');
-    if (fileResult.isFailure()) {
-      workspace.data.logger.info(
-        `Collection '${collectionId}' created in-memory (persistence failed: ${fileResult.message})`
-      );
     }
 
     workspace.data.clearCache();
     reactiveWorkspace.notifyChange();
     workspace.data.logger.info(`Created ingredient inventory collection '${collectionId}'`);
-    return succeed(createResult.value);
+    return succeed(collectionId);
   }, [workspace, reactiveWorkspace, defaultCollectionId]);
 
   /**
@@ -177,7 +172,7 @@ export function useIngredientInventoryActions(): IIngredientInventoryActions {
       unit?: MeasurementUnit,
       locationId?: LocationId
     ): Promise<Result<IngredientInventoryEntryId>> => {
-      const collectionResult = ensureCollectionId();
+      const collectionResult = await ensureCollectionId();
       if (collectionResult.isFailure()) {
         return fail(collectionResult.message);
       }

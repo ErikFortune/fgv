@@ -541,6 +541,15 @@ Checks if a JSON object appears to be an encrypted collection file.
 </td></tr>
 <tr><td>
 
+[isUserSubLibrary](./functions/isUserSubLibrary.md)
+
+</td><td>
+
+Returns true if the given sub-library ID is a user sub-library
+
+</td></tr>
+<tr><td>
+
 [resolveSubLibraryLoadSpec](./functions/resolveSubLibraryLoadSpec.md)
 
 </td><td>
@@ -812,6 +821,15 @@ Description
 </td><td>
 
 All valid sub-library identifiers.
+
+</td></tr>
+<tr><td>
+
+[userSubLibraryIds](./variables/userSubLibraryIds.md)
+
+</td><td>
+
+Sub-library IDs for user-specific data (per-user, not shared).
 
 </td></tr>
 <tr><td>

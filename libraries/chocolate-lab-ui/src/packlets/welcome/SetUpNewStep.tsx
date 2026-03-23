@@ -27,7 +27,13 @@
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
-import { type CollectionId, Editing, Helpers, LibraryData, type Settings } from '@fgv/ts-chocolate';
+import {
+  type CollectionId,
+  Converters as ChocolateConverters,
+  Helpers,
+  LibraryData,
+  type Settings
+} from '@fgv/ts-chocolate';
 
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
 import { getOrCreateKeystoreFileItem, saveKeystoreToFile } from '../workspace';
@@ -159,9 +165,16 @@ export function SetUpNewStep(props: ISetUpNewStepProps): React.ReactElement {
           const idResult = Helpers.nameToBaseId(config.name.trim());
           if (idResult.isFailure()) continue;
 
-          const collectionId = idResult.value as unknown as CollectionId;
-          const manager = new Editing.CollectionManager(subLibrary);
-          const createResult = manager.createWithFile(collectionId, { name: config.name.trim() });
+          const collectionIdResult = ChocolateConverters.collectionId.convert(idResult.value);
+          if (collectionIdResult.isFailure()) continue;
+          const collectionId = collectionIdResult.value;
+          const createResult = LibraryData.isUserSubLibrary(config.subLibraryId)
+            ? await workspace.userData.entities
+                .getCollectionManager(subLibrary)
+                .createWithFile(collectionId, { name: config.name.trim() })
+            : await workspace.data.entities
+                .getCollectionManager(subLibrary)
+                .createWithFile(collectionId, { name: config.name.trim() });
           if (createResult.isSuccess()) {
             const targetKey = SUB_LIBRARY_TO_TARGET_KEY[config.subLibraryId];
             targetEntries.push([targetKey, collectionId]);

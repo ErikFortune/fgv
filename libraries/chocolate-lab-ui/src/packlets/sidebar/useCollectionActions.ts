@@ -31,10 +31,17 @@
 
 import { useCallback, useRef, useState } from 'react';
 
-import { Converters as JsonConverters, type FileTree } from '@fgv/ts-json-base';
+import { Converters as JsonConverters, FileTree } from '@fgv/ts-json-base';
 
 import { CryptoUtils, ZipFileTree } from '@fgv/ts-extras';
-import { type CollectionId, Editing, Helpers, LibraryData, Settings } from '@fgv/ts-chocolate';
+import {
+  type CollectionId,
+  Converters as ChocolateConverters,
+  Editing,
+  Helpers,
+  LibraryData,
+  Settings
+} from '@fgv/ts-chocolate';
 import {
   FileApiTreeAccessors,
   safeShowDirectoryPicker,
@@ -49,7 +56,7 @@ import { useReactiveWorkspace, useWorkspace } from '../workspace';
 import { type ICreateCollectionData } from './CreateCollectionDialog';
 import { type ImportCollisionResolution } from './ImportCollisionDialog';
 import { EntityReferenceScanner, EntityReferenceUpdater } from '../editing';
-import { getSubLibraryForTab, getSubLibraryPathForTab } from './subLibraryLookup';
+import { getSubLibraryForTab, getSubLibraryPathForTab, isUserTab } from './subLibraryLookup';
 
 // ============================================================================
 // Collection Actions Result
@@ -113,7 +120,7 @@ export interface ICollectionActions {
   /** Create a new empty mutable collection from dialog data */
   readonly createCollection: (data: ICreateCollectionData) => Promise<void>;
   /** Delete a mutable collection by ID */
-  readonly deleteCollection: (collectionId: string) => void;
+  readonly deleteCollection: (collectionId: string) => Promise<void>;
   /** Set the default collection for new entities in the active tab's sub-library */
   readonly setDefaultCollection: (collectionId: string) => void;
   /** Export a mutable collection to a YAML file download (encrypted if the collection has a secretName and the key is available) */
@@ -148,7 +155,7 @@ export interface ICollectionActions {
   /** Non-null when a collection rename dialog should be shown */
   readonly pendingRename: IPendingRename | null;
   /** Confirm a pending rename with the new collection ID */
-  readonly confirmRename: (newCollectionId: string) => void;
+  readonly confirmRename: (newCollectionId: string) => Promise<void>;
   /** Cancel a pending rename */
   readonly cancelRename: () => void;
 
@@ -161,7 +168,10 @@ export interface ICollectionActions {
   /** Get the number of conflicting item IDs between source and a candidate target */
   readonly getMergeConflictCount: (targetCollectionId: string) => number;
   /** Confirm a pending merge with the chosen target and strategy */
-  readonly confirmMerge: (targetCollectionId: string, strategy: Editing.MergeConflictStrategy) => void;
+  readonly confirmMerge: (
+    targetCollectionId: string,
+    strategy: Editing.MergeConflictStrategy
+  ) => Promise<void>;
   /** Cancel a pending merge */
   readonly cancelMerge: () => void;
 }
@@ -320,23 +330,32 @@ export function useCollectionActions(): ICollectionActions {
         return;
       }
 
-      const metadata: LibraryData.ICollectionRuntimeMetadata = {
-        sourceName: subLibrary.mutableSourceName ?? 'unknown',
+      const collectionIdResult = ChocolateConverters.collectionId.convert(data.id);
+      if (collectionIdResult.isFailure()) {
+        workspace.data.logger.error(`Invalid collection ID '${data.id}': ${collectionIdResult.message}`);
+        return;
+      }
+      const collectionId = collectionIdResult.value;
+
+      const metadata: LibraryData.ICollectionFileMetadata = {
         name: data.name,
         ...(data.description ? { description: data.description } : {}),
         ...(data.tags && data.tags.length > 0 ? { tags: data.tags } : {}),
         ...(data.secretName ? { secretName: data.secretName } : {})
       };
 
-      const result = subLibrary.addCollectionWithItems(data.id, undefined, { metadata });
+      const isUserLib = isUserTab(activeTab);
+      const manager = isUserLib
+        ? workspace.userData.entities.getCollectionManager(subLibrary)
+        : workspace.data.entities.getCollectionManager(subLibrary);
+
+      const result = await manager.createWithFile(collectionId, metadata);
       if (result.isFailure()) {
         workspace.data.logger.error(`Failed to create collection '${data.id}': ${result.message}`);
         return;
       }
 
-      const collectionId = result.value as CollectionId;
-
-      // Try to encrypt the file if a secretName is provided
+      // Try to encrypt the existing backing file if a secretName is provided.
       const keyStore = workspace.keyStore;
       let keyDerivation: CryptoUtils.IKeyDerivationParams | undefined;
 
@@ -411,13 +430,27 @@ export function useCollectionActions(): ICollectionActions {
             });
             if (encryptedResult.isSuccess()) {
               const jsonContent = JSON.stringify(encryptedResult.value, null, 2);
-              const fileResult = subLibrary.createCollectionFile(collectionId, jsonContent, 'json');
-              if (fileResult.isFailure()) {
-                workspace.data.logger.info(
-                  `Collection '${data.id}' created in-memory (persistence failed: ${fileResult.message})`
+              const sourceItem = subLibrary.getCollectionSourceItem(collectionId);
+              if (!sourceItem || !FileTree.isMutableFileItem(sourceItem)) {
+                workspace.data.logger.warn(
+                  `Collection '${data.id}' created but encrypted backing file could not be updated`
                 );
               } else {
-                workspace.data.logger.info(`Collection '${data.id}' created with encrypted backing file`);
+                const writeResult = await sourceItem.setRawContents(jsonContent);
+                if (writeResult.isFailure()) {
+                  workspace.data.logger.info(
+                    `Collection '${data.id}' created in-memory (encryption write failed: ${writeResult.message})`
+                  );
+                } else {
+                  const syncResult = await reactiveWorkspace.syncAllToDisk();
+                  if (syncResult.isFailure()) {
+                    workspace.data.logger.info(
+                      `Collection '${data.id}' created in-memory (sync failed: ${syncResult.message})`
+                    );
+                  } else {
+                    workspace.data.logger.info(`Collection '${data.id}' created with encrypted backing file`);
+                  }
+                }
               }
               workspace.data.clearCache();
               reactiveWorkspace.notifyChange();
@@ -427,17 +460,7 @@ export function useCollectionActions(): ICollectionActions {
         }
       }
 
-      // Fallback: write plain YAML
-      const yamlContent = buildCollectionYaml(data);
-      const fileResult = subLibrary.createCollectionFile(collectionId, yamlContent, 'yaml');
-      if (fileResult.isFailure()) {
-        workspace.data.logger.info(
-          `Collection '${data.id}' created in-memory (persistence failed: ${fileResult.message})`
-        );
-      } else {
-        workspace.data.logger.info(`Collection '${data.id}' created with backing file`);
-      }
-
+      workspace.data.logger.info(`Collection '${data.id}' created with backing file`);
       workspace.data.clearCache();
       reactiveWorkspace.notifyChange();
     },
@@ -495,14 +518,19 @@ export function useCollectionActions(): ICollectionActions {
   );
 
   const deleteCollection = useCallback(
-    (collectionId: string): void => {
+    async (collectionId: string): Promise<void> => {
       const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) {
         return;
       }
 
       // Check loaded collections first, then fall back to protected (encrypted) collections
-      const loadedResult = subLibrary.collections.get(collectionId as CollectionId).asResult;
+      const validId = ChocolateConverters.collectionId.convert(collectionId);
+      if (validId.isFailure()) {
+        workspace.data.logger.error(`Invalid collection ID '${collectionId}': ${validId.message}`);
+        return;
+      }
+      const loadedResult = subLibrary.collections.validating.get(validId.value).asResult;
 
       if (loadedResult.isSuccess()) {
         // Collection is loaded (decrypted or never encrypted)
@@ -514,7 +542,12 @@ export function useCollectionActions(): ICollectionActions {
         // Check if there's a protected collection with this ID that will become visible after deletion
         const protectedCopy = subLibrary.protectedCollections.find((pc) => pc.collectionId === collectionId);
 
-        const deleteResult = subLibrary.removeCollection(collectionId as CollectionId);
+        const isUserLib = isUserTab(activeTab);
+        const manager = isUserLib
+          ? workspace.userData.entities.getCollectionManager(subLibrary)
+          : workspace.data.entities.getCollectionManager(subLibrary);
+
+        const deleteResult = await manager.delete(validId.value);
         if (deleteResult.isFailure()) {
           workspace.data.logger.error(
             `Failed to delete collection '${collectionId}': ${deleteResult.message}`
@@ -563,6 +596,7 @@ export function useCollectionActions(): ICollectionActions {
           return;
         }
 
+        // Protected collections are not persisted through the normal sync path
         const deleteResult = subLibrary.removeProtectedCollection(collectionId);
         if (deleteResult.isFailure()) {
           workspace.data.logger.error(
@@ -758,7 +792,16 @@ export function useCollectionActions(): ICollectionActions {
     if (!file) return;
 
     const text = await file.text();
-    const collectionId = file.name.replace(/\.(yaml|yml|json)$/i, '') as CollectionId;
+    const collectionIdResult = ChocolateConverters.collectionId.convert(
+      file.name.replace(/\.(yaml|yml|json)$/i, '')
+    );
+    if (collectionIdResult.isFailure()) {
+      workspace.data.logger.error(
+        `Invalid collection ID from filename '${file.name}': ${collectionIdResult.message}`
+      );
+      return;
+    }
+    const collectionId = collectionIdResult.value;
 
     const parseResult = LibraryData.Converters.collectionYamlConverter(JsonConverters.jsonObject).convert(
       text
@@ -773,6 +816,11 @@ export function useCollectionActions(): ICollectionActions {
 
     let targetId = collectionId;
 
+    const isUserLib = isUserTab(activeTab);
+    const manager = isUserLib
+      ? workspace.userData.entities.getCollectionManager(subLibrary)
+      : workspace.data.entities.getCollectionManager(subLibrary);
+
     if (subLibrary.collections.has(collectionId)) {
       const resolution = await new Promise<ImportCollisionResolution>((resolve) => {
         collisionResolverRef.current = resolve;
@@ -783,13 +831,18 @@ export function useCollectionActions(): ICollectionActions {
         workspace.data.logger.info(`Skipped import of '${collectionId}' (already exists)`);
         return;
       } else if (resolution === 'overwrite') {
-        const deleteResult = subLibrary.removeCollection(collectionId);
+        const deleteResult = await manager.delete(collectionId);
         if (deleteResult.isFailure()) {
           workspace.data.logger.error(`Cannot overwrite '${collectionId}': ${deleteResult.message}`);
           return;
         }
       } else {
-        targetId = resolution.rename as CollectionId;
+        const renameIdResult = ChocolateConverters.collectionId.convert(resolution.rename);
+        if (renameIdResult.isFailure()) {
+          workspace.data.logger.error(`Invalid renamed collection ID: ${renameIdResult.message}`);
+          return;
+        }
+        targetId = renameIdResult.value;
       }
     }
 
@@ -797,10 +850,10 @@ export function useCollectionActions(): ICollectionActions {
       ? { ...sourceFile.metadata, sourceName: subLibrary.mutableSourceName ?? 'unknown' }
       : undefined;
 
-    const addResult = subLibrary.addCollectionWithItems(
+    const addResult = await manager.importCollection(
       targetId,
       Array.from(Object.entries(sourceFile.items)),
-      { metadata }
+      metadata
     );
 
     if (addResult.isFailure()) {
@@ -926,14 +979,22 @@ export function useCollectionActions(): ICollectionActions {
   );
 
   const confirmRename = useCallback(
-    (newCollectionId: string): void => {
+    async (newCollectionId: string): Promise<void> => {
       if (!pendingRename) return;
 
       const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) return;
 
+      const oldIdResult = ChocolateConverters.collectionId.convert(pendingRename.collectionId);
+      const newIdResult = ChocolateConverters.collectionId.convert(newCollectionId);
+      if (oldIdResult.isFailure() || newIdResult.isFailure()) {
+        workspace.data.logger.error(`Invalid collection ID for rename`);
+        setPendingRename(null);
+        return;
+      }
+
       // Block rename for locked protected collections — they must be unlocked first
-      const isLoaded = subLibrary.collections.has(pendingRename.collectionId as CollectionId);
+      const isLoaded = subLibrary.collections.has(oldIdResult.value);
       if (!isLoaded) {
         const isProtected = subLibrary.protectedCollections.some(
           (pc) => pc.collectionId === pendingRename.collectionId
@@ -947,11 +1008,12 @@ export function useCollectionActions(): ICollectionActions {
         }
       }
 
-      const manager = new Editing.CollectionManager(subLibrary);
-      const renameResult = manager.rename(
-        pendingRename.collectionId as CollectionId,
-        newCollectionId as CollectionId
-      );
+      const isUserLib = isUserTab(activeTab);
+      const manager = isUserLib
+        ? workspace.userData.entities.getCollectionManager(subLibrary)
+        : workspace.data.entities.getCollectionManager(subLibrary);
+
+      const renameResult = await manager.rename(oldIdResult.value, newIdResult.value);
 
       if (renameResult.isFailure()) {
         workspace.data.logger.error(
@@ -1053,18 +1115,26 @@ export function useCollectionActions(): ICollectionActions {
   );
 
   const confirmMerge = useCallback(
-    (targetCollectionId: string, strategy: Editing.MergeConflictStrategy): void => {
+    async (targetCollectionId: string, strategy: Editing.MergeConflictStrategy): Promise<void> => {
       if (!pendingMerge) return;
 
       const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) return;
 
-      const manager = new Editing.CollectionManager(subLibrary);
-      const mergeResult = manager.merge(
-        pendingMerge.sourceCollectionId as CollectionId,
-        targetCollectionId as CollectionId,
-        strategy
-      );
+      const sourceIdResult = ChocolateConverters.collectionId.convert(pendingMerge.sourceCollectionId);
+      const targetIdResult = ChocolateConverters.collectionId.convert(targetCollectionId);
+      if (sourceIdResult.isFailure() || targetIdResult.isFailure()) {
+        workspace.data.logger.error(`Invalid collection ID for merge`);
+        setPendingMerge(null);
+        return;
+      }
+
+      const isUserLib = isUserTab(activeTab);
+      const manager = isUserLib
+        ? workspace.userData.entities.getCollectionManager(subLibrary)
+        : workspace.data.entities.getCollectionManager(subLibrary);
+
+      const mergeResult = await manager.merge(sourceIdResult.value, targetIdResult.value, strategy);
 
       if (mergeResult.isFailure()) {
         workspace.data.logger.error(
@@ -1184,51 +1254,4 @@ function updateDefaultTargetIfNeeded(
       workspace.data.logger.warn(`Settings save failed: ${String(err)}`);
     });
   }
-}
-
-/**
- * Builds YAML content for a new collection file with metadata.
- * @internal
- */
-function buildCollectionYaml(data: ICreateCollectionData): string {
-  const lines: string[] = [];
-
-  // Metadata block
-  const hasMetadata = data.name || data.description || (data.tags && data.tags.length > 0) || data.secretName;
-  if (hasMetadata) {
-    lines.push('metadata:');
-    if (data.name) {
-      lines.push(`  name: ${yamlQuote(data.name)}`);
-    }
-    if (data.description) {
-      lines.push(`  description: ${yamlQuote(data.description)}`);
-    }
-    if (data.tags && data.tags.length > 0) {
-      lines.push('  tags:');
-      for (const tag of data.tags) {
-        lines.push(`    - ${yamlQuote(tag)}`);
-      }
-    }
-    if (data.secretName) {
-      lines.push(`  secretName: ${yamlQuote(data.secretName)}`);
-    }
-    lines.push('');
-  }
-
-  // Empty items block
-  lines.push('items: {}');
-  lines.push('');
-
-  return lines.join('\n');
-}
-
-/**
- * Wraps a string in quotes if it contains characters that need YAML escaping.
- * @internal
- */
-function yamlQuote(value: string): string {
-  if (/[:#{}[\],&*?|>!%@`'"]/.test(value) || value !== value.trim()) {
-    return JSON.stringify(value);
-  }
-  return value;
 }

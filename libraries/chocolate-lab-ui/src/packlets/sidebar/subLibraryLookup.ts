@@ -90,6 +90,31 @@ export function getSubLibraryForTab(
 }
 
 // ============================================================================
+// User Tab Detection
+// ============================================================================
+
+/**
+ * Set of application tabs that correspond to user sub-libraries
+ * (per-user data, not shared library data).
+ */
+const userTabs: ReadonlySet<AppTab> = new Set<AppTab>([
+  'sessions',
+  'journal',
+  'mold-inventory',
+  'ingredient-inventory',
+  'locations'
+]);
+
+/**
+ * Returns true if the given tab corresponds to a user sub-library.
+ * @param tab - The application tab to check
+ * @public
+ */
+export function isUserTab(tab: AppTab): boolean {
+  return userTabs.has(tab);
+}
+
+// ============================================================================
 // Sub-Library Lookup by ID
 // ============================================================================
 

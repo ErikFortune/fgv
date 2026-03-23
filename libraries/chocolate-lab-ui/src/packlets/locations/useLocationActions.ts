@@ -32,7 +32,13 @@ import { useCallback } from 'react';
 
 import { fail, succeed, type Result } from '@fgv/ts-utils';
 
-import { type BaseLocationId, type CollectionId, type LocationId, Entities } from '@fgv/ts-chocolate';
+import {
+  type BaseLocationId,
+  type CollectionId,
+  Converters as ChocolateConverters,
+  type LocationId,
+  Entities
+} from '@fgv/ts-chocolate';
 type ILocationEntity = Entities.Locations.ILocationEntity;
 
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -101,7 +107,7 @@ export function useLocationActions(): ILocationActions {
   /**
    * Ensures a mutable locations collection exists, creating one if necessary.
    */
-  const ensureCollectionId = useCallback((): Result<CollectionId> => {
+  const ensureCollectionId = useCallback(async (): Promise<Result<CollectionId>> => {
     if (defaultCollectionId) {
       // Ensure the collection has a backing file for persistence.
       // The sidebar may have created it in-memory without a file.
@@ -118,28 +124,21 @@ export function useLocationActions(): ILocationActions {
     }
 
     const locations = workspace.userData.entities.locations;
-    const collectionId = 'locations';
-    const sourceName = locations.mutableSourceName ?? 'localStorage';
+    const collectionId = ChocolateConverters.collectionId.convert('locations').orThrow();
 
-    const createResult = locations.addCollectionWithItems(collectionId, undefined, {
-      metadata: { sourceName, name: 'Locations' }
+    const manager = workspace.userData.entities.getCollectionManager(locations);
+    const createResult = await manager.createWithFile(collectionId, {
+      name: 'Locations'
     });
+
     if (createResult.isFailure()) {
       return fail(`Failed to create locations collection: ${createResult.message}`);
-    }
-
-    const fileResult = locations.createCollectionFile(createResult.value, '{}\n', 'yaml');
-    if (fileResult.isFailure()) {
-      workspace.data.logger.info(
-        `Collection '${collectionId}' created in-memory (persistence failed: ${fileResult.message})`
-      );
-      return fail(`Failed to create backing file: ${fileResult.message}`);
     }
 
     workspace.data.clearCache();
     reactiveWorkspace.notifyChange();
     workspace.data.logger.info(`Created locations collection '${collectionId}'`);
-    return succeed(createResult.value);
+    return succeed(collectionId);
   }, [workspace, reactiveWorkspace, defaultCollectionId]);
 
   /**
@@ -154,7 +153,7 @@ export function useLocationActions(): ILocationActions {
 
   const addLocation = useCallback(
     async (baseId: BaseLocationId, entity: ILocationEntity): Promise<Result<LocationId>> => {
-      const collectionResult = ensureCollectionId();
+      const collectionResult = await ensureCollectionId();
       if (collectionResult.isFailure()) {
         return fail(collectionResult.message);
       }

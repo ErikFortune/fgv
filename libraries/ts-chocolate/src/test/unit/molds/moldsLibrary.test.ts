@@ -34,6 +34,38 @@ import { MoldsLibrary, IMoldEntity, Molds } from '../../../packlets/entities';
 
 import { CryptoUtils } from '@fgv/ts-extras';
 
+interface IMoldCollectionSummary {
+  id: string;
+  isMutable: boolean;
+  itemCount: number;
+  itemIds: string[];
+}
+
+interface IMoldsLibrarySummary {
+  collectionCount: number;
+  collections: IMoldCollectionSummary[];
+  size: number;
+}
+
+function summarizeCollection(entry: Molds.MoldCollectionEntry): IMoldCollectionSummary {
+  return {
+    id: entry.id,
+    isMutable: entry.isMutable,
+    itemCount: entry.items.size,
+    itemIds: Array.from(entry.items.keys()).sort()
+  };
+}
+
+function summarizeLibrary(library: MoldsLibrary): IMoldsLibrarySummary {
+  return {
+    collectionCount: library.collectionCount,
+    collections: Array.from(library.collections.entries())
+      .map(([, entry]) => summarizeCollection(entry))
+      .sort((a, b) => a.id.localeCompare(b.id)),
+    size: library.size
+  };
+}
+
 describe('MoldsLibrary', () => {
   // ============================================================================
   // Test Data
@@ -71,15 +103,13 @@ describe('MoldsLibrary', () => {
   describe('create', () => {
     test('creates empty library with builtin: false', () => {
       expect(MoldsLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
-        expect(lib.size).toBe(0);
-        expect(lib.collectionCount).toBe(0);
+        expect(summarizeLibrary(lib)).toMatchSnapshot();
       });
     });
 
     test('creates library with built-ins by default', () => {
       expect(MoldsLibrary.create()).toSucceedAndSatisfy((lib) => {
-        expect(lib.size).toBeGreaterThan(0);
-        expect(lib.collectionCount).toBe(6);
+        expect(summarizeLibrary(lib)).toMatchSnapshot();
       });
     });
 
@@ -98,8 +128,7 @@ describe('MoldsLibrary', () => {
       });
 
       expect(result).toSucceedAndSatisfy((lib) => {
-        expect(lib.size).toBe(1);
-        expect(lib.collectionCount).toBe(1);
+        expect(summarizeLibrary(lib)).toMatchSnapshot();
       });
     });
 
@@ -117,9 +146,7 @@ describe('MoldsLibrary', () => {
       });
 
       expect(result).toSucceedAndSatisfy((lib) => {
-        expect(lib.collectionCount).toBe(7);
-        expect(lib.validating.has('test.testMold')).toBe(true);
-        expect(lib.validating.has('cw.chocolate-world-cw-2227')).toBe(true);
+        expect(summarizeLibrary(lib)).toMatchSnapshot();
       });
     });
   });
@@ -244,7 +271,7 @@ describe('MoldsLibrary', () => {
 // createAsync Tests (with encryption support)
 // ============================================================================
 
-describe('MoldsLibrary.createAsync', () => {
+describe('createAsync', () => {
   const TEST_SECRET_NAME = 'test-secret';
   let testKey: Uint8Array;
 
@@ -255,14 +282,14 @@ describe('MoldsLibrary.createAsync', () => {
   test('creates library with built-ins by default', async () => {
     const result = await MoldsLibrary.createAsync();
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('common' as CollectionId)).toBe(true);
+      expect(summarizeLibrary(lib)).toMatchSnapshot();
     });
   });
 
   test('creates library without built-ins when builtin: false', async () => {
     const result = await MoldsLibrary.createAsync({ builtin: false });
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.size).toBe(0);
+      expect(summarizeLibrary(lib)).toMatchSnapshot();
     });
   });
 
@@ -299,8 +326,7 @@ describe('MoldsLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('external' as CollectionId)).toBe(true);
-      expect(lib.get('external.external-mold' as MoldId)).toSucceed();
+      expect(summarizeLibrary(lib)).toMatchSnapshot();
     });
   });
 
@@ -350,10 +376,7 @@ describe('MoldsLibrary.createAsync', () => {
     });
 
     expect(result).toSucceedAndSatisfy((lib) => {
-      expect(lib.collections.has('secret' as CollectionId)).toBe(true);
-      expect(lib.get('secret.secret-mold' as MoldId)).toSucceedAndSatisfy((mold) => {
-        expect(mold.manufacturer).toBe('Secret Manufacturer');
-      });
+      expect(summarizeLibrary(lib)).toMatchSnapshot();
     });
   });
 
@@ -400,8 +423,7 @@ describe('MoldsLibrary.createAsync', () => {
 
     // Without encryption config, encrypted files are captured (not decrypted)
     expect(result).toSucceedAndSatisfy((lib) => {
-      // No decrypted collections since no encryption config
-      expect(lib.collections.size).toBe(0);
+      expect(summarizeLibrary(lib)).toMatchSnapshot();
     });
   });
 });

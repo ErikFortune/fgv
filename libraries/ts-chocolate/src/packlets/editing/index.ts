@@ -39,6 +39,9 @@ export * from './persistedEditableCollection';
 // Collection manager (collection-level CRUD operations)
 export * from './collectionManager';
 
+// Persisted collection manager (collection-level CRUD operations with save pipeline)
+export * from './persistedCollectionManager';
+
 // Editor context (base, accepts pre-validated types)
 export * from './editorContext';
 
