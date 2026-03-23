@@ -39,6 +39,9 @@ import {
   type LocationId,
   Entities
 } from '@fgv/ts-chocolate';
+
+/** Pre-validated well-known collection ID for locations. */
+const LOCATIONS_COLLECTION_ID: CollectionId = ChocolateConverters.collectionId.convert('locations').orThrow();
 type ILocationEntity = Entities.Locations.ILocationEntity;
 
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -124,7 +127,7 @@ export function useLocationActions(): ILocationActions {
     }
 
     const locations = workspace.userData.entities.locations;
-    const collectionId = ChocolateConverters.collectionId.convert('locations').orThrow();
+    const collectionId = LOCATIONS_COLLECTION_ID;
 
     const manager = workspace.userData.entities.getCollectionManager(locations);
     const createResult = await manager.createWithFile(collectionId, {

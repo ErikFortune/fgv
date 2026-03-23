@@ -42,6 +42,11 @@ import {
   type MeasurementUnit,
   Entities
 } from '@fgv/ts-chocolate';
+
+/** Pre-validated well-known collection ID for ingredient inventory. */
+const INGREDIENT_INVENTORY_COLLECTION_ID: CollectionId = ChocolateConverters.collectionId
+  .convert('ingredient-inventory')
+  .orThrow();
 type IIngredientInventoryEntryEntity = Entities.Inventory.IIngredientInventoryEntryEntity;
 
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -138,7 +143,7 @@ export function useIngredientInventoryActions(): IIngredientInventoryActions {
     }
 
     const ingredientInventory = workspace.userData.entities.ingredientInventory;
-    const collectionId = ChocolateConverters.collectionId.convert('ingredient-inventory').orThrow();
+    const collectionId = INGREDIENT_INVENTORY_COLLECTION_ID;
 
     const manager = workspace.userData.entities.getCollectionManager(ingredientInventory);
     const createResult = await manager.createWithFile(collectionId, {

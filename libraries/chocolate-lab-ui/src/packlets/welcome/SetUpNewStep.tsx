@@ -162,10 +162,9 @@ export function SetUpNewStep(props: ISetUpNewStepProps): React.ReactElement {
           );
           if (!subLibrary) continue;
 
-          const idResult = Helpers.nameToBaseId(config.name.trim());
-          if (idResult.isFailure()) continue;
-
-          const collectionIdResult = ChocolateConverters.collectionId.convert(idResult.value);
+          const collectionIdResult = Helpers.nameToBaseId(config.name.trim()).onSuccess((baseId) =>
+            ChocolateConverters.collectionId.convert(baseId)
+          );
           if (collectionIdResult.isFailure()) continue;
           const collectionId = collectionIdResult.value;
           const createResult = LibraryData.isUserSubLibrary(config.subLibraryId)

@@ -35,7 +35,6 @@ import { Converters as JsonConverters, FileTree } from '@fgv/ts-json-base';
 
 import { CryptoUtils, ZipFileTree } from '@fgv/ts-extras';
 import {
-  type CollectionId,
   Converters as ChocolateConverters,
   Editing,
   Helpers,
@@ -530,7 +529,7 @@ export function useCollectionActions(): ICollectionActions {
         workspace.data.logger.error(`Invalid collection ID '${collectionId}': ${validId.message}`);
         return;
       }
-      const loadedResult = subLibrary.collections.validating.get(validId.value).asResult;
+      const loadedResult = subLibrary.collections.get(validId.value).asResult;
 
       if (loadedResult.isSuccess()) {
         // Collection is loaded (decrypted or never encrypted)
@@ -621,7 +620,7 @@ export function useCollectionActions(): ICollectionActions {
         return;
       }
 
-      const collectionResult = subLibrary.collections.get(collectionId as CollectionId).asResult;
+      const collectionResult = subLibrary.collections.validating.get(collectionId).asResult;
       if (collectionResult.isFailure()) {
         workspace.data.logger.error(`Collection '${collectionId}' not found`);
         return;
@@ -1064,7 +1063,7 @@ export function useCollectionActions(): ICollectionActions {
       const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) return;
 
-      const collectionResult = subLibrary.collections.get(sourceCollectionId as CollectionId).asResult;
+      const collectionResult = subLibrary.collections.validating.get(sourceCollectionId).asResult;
       if (collectionResult.isFailure()) {
         // Locked encrypted collections cannot be merged — items are not accessible
         const isProtected = subLibrary.protectedCollections.some(
@@ -1097,10 +1096,8 @@ export function useCollectionActions(): ICollectionActions {
       const subLibrary = getSubLibraryForTab(workspace.data.entities, workspace.userData.entities, activeTab);
       if (!subLibrary) return 0;
 
-      const sourceResult = subLibrary.collections.get(
-        pendingMerge.sourceCollectionId as CollectionId
-      ).asResult;
-      const targetResult = subLibrary.collections.get(targetCollectionId as CollectionId).asResult;
+      const sourceResult = subLibrary.collections.validating.get(pendingMerge.sourceCollectionId).asResult;
+      const targetResult = subLibrary.collections.validating.get(targetCollectionId).asResult;
       if (sourceResult.isFailure() || targetResult.isFailure()) return 0;
 
       let count = 0;

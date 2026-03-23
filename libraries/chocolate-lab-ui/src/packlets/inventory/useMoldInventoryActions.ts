@@ -40,6 +40,11 @@ import {
   type MoldId,
   Entities
 } from '@fgv/ts-chocolate';
+
+/** Pre-validated well-known collection ID for mold inventory. */
+const MOLD_INVENTORY_COLLECTION_ID: CollectionId = ChocolateConverters.collectionId
+  .convert('mold-inventory')
+  .orThrow();
 type IMoldInventoryEntryEntity = Entities.Inventory.IMoldInventoryEntryEntity;
 
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -134,7 +139,7 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
     }
 
     const moldInventory = workspace.userData.entities.moldInventory;
-    const collectionId = ChocolateConverters.collectionId.convert('mold-inventory').orThrow();
+    const collectionId = MOLD_INVENTORY_COLLECTION_ID;
 
     const manager = workspace.userData.entities.getCollectionManager(moldInventory);
     const createResult = await manager.createWithFile(collectionId, {
