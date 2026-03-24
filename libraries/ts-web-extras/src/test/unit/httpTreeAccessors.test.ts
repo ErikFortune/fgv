@@ -40,6 +40,7 @@ function makeMockResponse(options: IMockResponse): Response {
   return {
     ok,
     status,
+    statusText: ok ? 'OK' : `Error ${status}`,
     json: throwOnJson
       ? () => Promise.reject(new Error('JSON parse error'))
       : () => Promise.resolve(jsonValue),
@@ -770,84 +771,128 @@ describe('HttpTreeAccessors', () => {
     });
 
     test('fails when PUT for a dirty file encounters a network error', async () => {
-      let callCount = 0;
-      const fetchImpl: typeof fetch = (_url, _init) => {
-        callCount++;
-        if (callCount === 1) {
-          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
-        }
-        if (callCount === 2) {
-          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') }));
-        }
-        return Promise.reject(new Error('PUT network error'));
-      };
+      jest.useFakeTimers();
+      try {
+        let callCount = 0;
+        const fetchImpl: typeof fetch = (_url, _init) => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
+          }
+          if (callCount === 2) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') })
+            );
+          }
+          return Promise.reject(new Error('PUT network error'));
+        };
 
-      const accessors = (
-        await HttpTreeAccessors.fromHttp({
-          baseUrl: 'http://localhost:3000',
-          fetchImpl,
-          mutable: true
-        })
-      ).orThrow();
+        const accessors = (
+          await HttpTreeAccessors.fromHttp({
+            baseUrl: 'http://localhost:3000',
+            fetchImpl,
+            mutable: true
+          })
+        ).orThrow();
 
-      accessors.saveFileContents('/data.json', '"updated"').orThrow();
-      const result = await accessors.syncToDisk();
+        accessors.saveFileContents('/data.json', '"updated"').orThrow();
 
-      expect(result).toFailWith(/put network error/i);
+        const syncPromise = accessors.syncToDisk();
+        await jest.advanceTimersByTimeAsync(1500);
+
+        const result = await syncPromise;
+        expect(result).toFailWith(/put network error/i);
+      } finally {
+        jest.useRealTimers();
+      }
     });
 
     test('fails when POST /sync returns a non-ok response', async () => {
-      const { fetchImpl } = makeMockFetch([
-        { ok: true, jsonValue: rootWithOneFile('data.json') },
-        { ok: true, jsonValue: fileResponse('/data.json', '{}') },
-        { ok: true, jsonValue: fileResponse('/data.json', '"v2"') },
-        { ok: false, status: 503, textValue: 'Service Unavailable' }
-      ]);
+      jest.useFakeTimers();
+      try {
+        let callCount = 0;
+        const fetchImpl: typeof fetch = (_url, _init) => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
+          }
+          if (callCount === 2) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') })
+            );
+          }
+          if (callCount === 3) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '"v2"') })
+            );
+          }
+          // All /sync attempts: persistent 503
+          return Promise.resolve(
+            makeMockResponse({ ok: false, status: 503, textValue: 'Service Unavailable' })
+          );
+        };
 
-      const accessors = (
-        await HttpTreeAccessors.fromHttp({
-          baseUrl: 'http://localhost:3000',
-          fetchImpl,
-          mutable: true
-        })
-      ).orThrow();
+        const accessors = (
+          await HttpTreeAccessors.fromHttp({
+            baseUrl: 'http://localhost:3000',
+            fetchImpl,
+            mutable: true
+          })
+        ).orThrow();
 
-      accessors.saveFileContents('/data.json', '"v2"').orThrow();
-      const result = await accessors.syncToDisk();
+        accessors.saveFileContents('/data.json', '"v2"').orThrow();
 
-      expect(result).toFailWith(/service unavailable/i);
+        const syncPromise = accessors.syncToDisk();
+        // Advance past both backoff delays: 500ms + 1000ms
+        await jest.advanceTimersByTimeAsync(1500);
+
+        const result = await syncPromise;
+        expect(result).toFailWith(/service unavailable/i);
+      } finally {
+        jest.useRealTimers();
+      }
     });
 
     test('fails when POST /sync encounters a network error', async () => {
-      let callCount = 0;
-      const fetchImpl: typeof fetch = (_url, _init) => {
-        callCount++;
-        if (callCount === 1) {
-          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
-        }
-        if (callCount === 2) {
-          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') }));
-        }
-        if (callCount === 3) {
-          return Promise.resolve(
-            makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '"v2"') })
-          );
-        }
-        return Promise.reject(new Error('POST network error'));
-      };
+      jest.useFakeTimers();
+      try {
+        let callCount = 0;
+        const fetchImpl: typeof fetch = (_url, _init) => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
+          }
+          if (callCount === 2) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') })
+            );
+          }
+          if (callCount === 3) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '"v2"') })
+            );
+          }
+          return Promise.reject(new Error('POST network error'));
+        };
 
-      const accessors = (
-        await HttpTreeAccessors.fromHttp({
-          baseUrl: 'http://localhost:3000',
-          fetchImpl,
-          mutable: true
-        })
-      ).orThrow();
+        const accessors = (
+          await HttpTreeAccessors.fromHttp({
+            baseUrl: 'http://localhost:3000',
+            fetchImpl,
+            mutable: true
+          })
+        ).orThrow();
 
-      accessors.saveFileContents('/data.json', '"v2"').orThrow();
-      const result = await accessors.syncToDisk();
+        accessors.saveFileContents('/data.json', '"v2"').orThrow();
 
-      expect(result).toFailWith(/post network error/i);
+        const syncPromise = accessors.syncToDisk();
+        await jest.advanceTimersByTimeAsync(1500);
+
+        const result = await syncPromise;
+        expect(result).toFailWith(/post network error/i);
+      } finally {
+        jest.useRealTimers();
+      }
     });
 
     test('syncs multiple dirty files in order', async () => {
@@ -1087,30 +1132,41 @@ describe('HttpTreeAccessors', () => {
 
     test('returns failure with HTTP status fallback when response.text() throws during sync', async () => {
       // Covers the text() catch branch in _request(): uses `HTTP ${status}` fallback
-      let callCount = 0;
-      const fetchImpl: typeof fetch = (_url, _init) => {
-        callCount++;
-        if (callCount === 1) {
-          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
-        }
-        if (callCount === 2) {
-          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') }));
-        }
-        return Promise.resolve(makeMockResponse({ ok: false, status: 502, throwOnText: true }));
-      };
+      // 502 is transient so retries will be attempted; use fake timers to avoid real delays
+      jest.useFakeTimers();
+      try {
+        let callCount = 0;
+        const fetchImpl: typeof fetch = (_url, _init) => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
+          }
+          if (callCount === 2) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') })
+            );
+          }
+          return Promise.resolve(makeMockResponse({ ok: false, status: 502, throwOnText: true }));
+        };
 
-      const accessors = (
-        await HttpTreeAccessors.fromHttp({
-          baseUrl: 'http://localhost:3000',
-          fetchImpl,
-          mutable: true
-        })
-      ).orThrow();
+        const accessors = (
+          await HttpTreeAccessors.fromHttp({
+            baseUrl: 'http://localhost:3000',
+            fetchImpl,
+            mutable: true
+          })
+        ).orThrow();
 
-      accessors.saveFileContents('/data.json', '"updated"').orThrow();
-      const result = await accessors.syncToDisk();
+        accessors.saveFileContents('/data.json', '"updated"').orThrow();
 
-      expect(result).toFailWith(/http 502/i);
+        const syncPromise = accessors.syncToDisk();
+        await jest.advanceTimersByTimeAsync(1500);
+
+        const result = await syncPromise;
+        expect(result).toFailWith(/http 502/i);
+      } finally {
+        jest.useRealTimers();
+      }
     });
   });
 
@@ -1273,6 +1329,243 @@ describe('HttpTreeAccessors', () => {
       const methodCalls = calls.slice(2).map((c) => c.init?.method);
       expect(methodCalls).toContain('DELETE');
       expect(methodCalls).toContain('POST');
+    });
+  });
+
+  describe('_requestWithRetry()', () => {
+    test('succeeds on second attempt after a transient 503 error', async () => {
+      jest.useFakeTimers();
+      try {
+        // Responses: init (GET tree/children), then PUT fails with 503, then PUT succeeds, then POST /sync succeeds
+        let callCount = 0;
+        const fetchImpl: typeof fetch = (_url, _init) => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
+          }
+          if (callCount === 2) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') })
+            );
+          }
+          // First PUT attempt: transient 503
+          if (callCount === 3) {
+            return Promise.resolve(
+              makeMockResponse({ ok: false, status: 503, textValue: '503 Service Unavailable' })
+            );
+          }
+          // Second PUT attempt: success
+          if (callCount === 4) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '"updated"') })
+            );
+          }
+          // POST /sync
+          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: { synced: 1 } }));
+        };
+
+        const accessors = (
+          await HttpTreeAccessors.fromHttp({
+            baseUrl: 'http://localhost:3000',
+            fetchImpl,
+            mutable: true
+          })
+        ).orThrow();
+
+        accessors.saveFileContents('/data.json', '"updated"').orThrow();
+
+        const syncPromise = accessors.syncToDisk();
+
+        // Advance past the 500ms backoff for the first retry
+        await jest.advanceTimersByTimeAsync(500);
+
+        const result = await syncPromise;
+        expect(result).toSucceed();
+        // Three PUT-related calls: init (2) + first PUT attempt (1) + retry PUT (1) + POST sync (1)
+        expect(callCount).toBe(5);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    test('does not retry on a non-transient error (e.g. 404)', async () => {
+      jest.useFakeTimers();
+      try {
+        let callCount = 0;
+        const fetchImpl: typeof fetch = (_url, _init) => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
+          }
+          if (callCount === 2) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') })
+            );
+          }
+          // PUT attempt: non-transient 404
+          return Promise.resolve(makeMockResponse({ ok: false, status: 404, textValue: 'Not Found' }));
+        };
+
+        const accessors = (
+          await HttpTreeAccessors.fromHttp({
+            baseUrl: 'http://localhost:3000',
+            fetchImpl,
+            mutable: true
+          })
+        ).orThrow();
+
+        accessors.saveFileContents('/data.json', '"updated"').orThrow();
+
+        const result = await accessors.syncToDisk();
+
+        // No timers should need advancing - non-transient errors return immediately
+        expect(result).toFailWith(/not found/i);
+        // Only 3 calls: 2 init + 1 PUT (no retries)
+        expect(callCount).toBe(3);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    test('returns the last error after exhausting all retries on persistent transient errors', async () => {
+      jest.useFakeTimers();
+      try {
+        let callCount = 0;
+        const fetchImpl: typeof fetch = (_url, _init) => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
+          }
+          if (callCount === 2) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') })
+            );
+          }
+          // All PUT attempts: transient 502 every time
+          return Promise.resolve(makeMockResponse({ ok: false, status: 502, textValue: '502 Bad Gateway' }));
+        };
+
+        const accessors = (
+          await HttpTreeAccessors.fromHttp({
+            baseUrl: 'http://localhost:3000',
+            fetchImpl,
+            mutable: true
+          })
+        ).orThrow();
+
+        accessors.saveFileContents('/data.json', '"updated"').orThrow();
+
+        const syncPromise = accessors.syncToDisk();
+
+        // Advance past both backoff delays: 500ms (attempt 1) + 1000ms (attempt 2)
+        await jest.advanceTimersByTimeAsync(1500);
+
+        const result = await syncPromise;
+        expect(result).toFailWith(/502 bad gateway/i);
+        // 2 init + 3 PUT attempts (maxAttempts = 3)
+        expect(callCount).toBe(5);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    test('logs retry message with method name from init when retrying', async () => {
+      jest.useFakeTimers();
+      try {
+        const logger = {
+          detail: jest.fn(),
+          info: jest.fn(),
+          warn: jest.fn(),
+          error: jest.fn()
+        } as unknown as Logging.LogReporter<unknown>;
+
+        let callCount = 0;
+        const fetchImpl: typeof fetch = (_url, _init) => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
+          }
+          if (callCount === 2) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') })
+            );
+          }
+          // First PUT attempt: transient 503
+          if (callCount === 3) {
+            return Promise.resolve(
+              makeMockResponse({ ok: false, status: 503, textValue: '503 Service Unavailable' })
+            );
+          }
+          // Second PUT attempt: success
+          if (callCount === 4) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '"updated"') })
+            );
+          }
+          // POST /sync
+          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: { synced: 1 } }));
+        };
+
+        const accessors = (
+          await HttpTreeAccessors.fromHttp({
+            baseUrl: 'http://localhost:3000',
+            fetchImpl,
+            mutable: true,
+            logger
+          })
+        ).orThrow();
+
+        accessors.saveFileContents('/data.json', '"updated"').orThrow();
+
+        const syncPromise = accessors.syncToDisk();
+        await jest.advanceTimersByTimeAsync(500);
+        await syncPromise;
+
+        // The retry log message should include the method name (PUT) from init
+        expect(logger.detail).toHaveBeenCalledWith(expect.stringContaining('PUT'));
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+  });
+
+  describe('syncToDisk() concurrency guard', () => {
+    test('concurrent syncToDisk calls share the same promise and only make one set of network calls', async () => {
+      const { fetchImpl, calls } = makeMockFetch([
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') },
+        // PUT /file for the single sync
+        { ok: true, jsonValue: fileResponse('/data.json', '"updated"') },
+        // POST /sync
+        { ok: true, jsonValue: { synced: 1 } }
+      ]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl,
+          mutable: true
+        })
+      ).orThrow();
+
+      accessors.saveFileContents('/data.json', '"updated"').orThrow();
+
+      // Start two concurrent syncToDisk calls without awaiting the first
+      const promise1 = accessors.syncToDisk();
+      const promise2 = accessors.syncToDisk();
+
+      const [result1, result2] = await Promise.all([promise1, promise2]);
+
+      expect(result1).toSucceed();
+      expect(result2).toSucceed();
+
+      // Both promises should have resolved to the same underlying promise result.
+      // Only one PUT and one POST /sync should have been issued (not doubled).
+      const syncCalls = calls.slice(2);
+      const putCalls = syncCalls.filter((c) => c.init?.method === 'PUT');
+      const postCalls = syncCalls.filter((c) => c.init?.method === 'POST');
+      expect(putCalls).toHaveLength(1);
+      expect(postCalls).toHaveLength(1);
     });
   });
 });

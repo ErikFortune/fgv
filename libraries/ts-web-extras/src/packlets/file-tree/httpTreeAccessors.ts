@@ -79,6 +79,9 @@ export class HttpTreeAccessors<TCT extends string = string>
   private readonly _userId: string | undefined;
   private readonly _logger: Logging.LogReporter<unknown>;
 
+  /** Guards against concurrent syncToDisk calls (thundering herd from autoSync). */
+  private _syncPromise: Promise<Result<void>> | undefined;
+
   private constructor(files: FileTree.IInMemoryFile<TCT>[], params: IHttpTreeParams<TCT>) {
     super(files, params);
     this._baseUrl = params.baseUrl.replace(/\/$/, '');
@@ -117,21 +120,45 @@ export class HttpTreeAccessors<TCT extends string = string>
 
   /**
    * Synchronizes all dirty files to the HTTP backend.
+   *
+   * Uses a concurrency guard: if a sync is already in progress, callers
+   * await the existing operation rather than starting a parallel one.
+   * This prevents the thundering herd that occurs when autoSync fires
+   * for every file written during a bulk operation (e.g. restore).
+   *
    * @returns A promise that resolves to a result indicating success or failure.
    */
   public async syncToDisk(): Promise<Result<void>> {
+    if (this._syncPromise) {
+      return this._syncPromise;
+    }
+
+    this._syncPromise = this._doSync().finally(() => {
+      this._syncPromise = undefined;
+    });
+    return this._syncPromise;
+  }
+
+  private async _doSync(): Promise<Result<void>> {
     if (this._dirtyFiles.size === 0 && this._pendingDeletions.size === 0) {
       return succeed(undefined);
     }
 
-    for (const path of this._pendingDeletions) {
+    // Snapshot and clear dirty sets so that changes arriving during
+    // the async sync are not dropped when we finish.
+    const deletions = new Set(this._pendingDeletions);
+    const dirty = new Set(this._dirtyFiles);
+    this._pendingDeletions.clear();
+    this._dirtyFiles.clear();
+
+    for (const path of deletions) {
       const query = new URLSearchParams();
       query.set('path', path);
       if (this._namespace) {
         query.set('namespace', this._namespace);
       }
 
-      const deleteResult = await this._request<{ deleted: boolean }>(`/file?${query.toString()}`, {
+      const deleteResult = await this._requestWithRetry<{ deleted: boolean }>(`/file?${query.toString()}`, {
         method: 'DELETE'
       });
       if (deleteResult.isFailure()) {
@@ -139,7 +166,7 @@ export class HttpTreeAccessors<TCT extends string = string>
       }
     }
 
-    for (const path of this._dirtyFiles) {
+    for (const path of dirty) {
       const contentsResult = this.getFileContents(path);
       if (contentsResult.isFailure()) {
         return fail(`${path}: ${contentsResult.message}`);
@@ -153,7 +180,7 @@ export class HttpTreeAccessors<TCT extends string = string>
         body.namespace = this._namespace;
       }
 
-      const saveResult = await this._request<IHttpStorageFileResponse>('/file', {
+      const saveResult = await this._requestWithRetry<IHttpStorageFileResponse>('/file', {
         method: 'PUT',
         body: JSON.stringify(body)
       });
@@ -162,15 +189,12 @@ export class HttpTreeAccessors<TCT extends string = string>
       }
     }
 
-    this._pendingDeletions.clear();
-    this._dirtyFiles.clear();
-
     const syncBody: Record<string, unknown> = {};
     if (this._namespace) {
       syncBody.namespace = this._namespace;
     }
 
-    const syncResult = await this._request<IHttpStorageSyncResponse>('/sync', {
+    const syncResult = await this._requestWithRetry<IHttpStorageSyncResponse>('/sync', {
       method: 'POST',
       body: JSON.stringify(syncBody)
     });
@@ -269,7 +293,10 @@ export class HttpTreeAccessors<TCT extends string = string>
     }
 
     if (!response.ok) {
-      const message = await response.text().catch(() => `HTTP ${response.status}`);
+      const body = await response.text().catch(() => '');
+      const message = body
+        ? `HTTP ${response.status}: ${body}`
+        : `HTTP ${response.status} ${response.statusText}`;
       return fail(message);
     }
 
@@ -278,6 +305,44 @@ export class HttpTreeAccessors<TCT extends string = string>
       return fail('invalid JSON response');
     }
     return succeed(json as T);
+  }
+
+  /**
+   * Wraps `_request` with retry logic for transient failures
+   * (network errors, 503 service unavailable, etc.).
+   */
+  private async _requestWithRetry<T>(resourcePath: string, init?: RequestInit): Promise<Result<T>> {
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const result = await this._request<T>(resourcePath, init);
+      if (result.isSuccess() || attempt === maxAttempts) {
+        return result;
+      }
+      // Retry on transient-looking errors
+      const msg = result.message;
+      const lowerMsg = msg.toLowerCase();
+      const isTransient =
+        msg.includes('503') ||
+        msg.includes('502') ||
+        msg.includes('429') ||
+        lowerMsg.includes('disconnect') ||
+        lowerMsg.includes('econnreset') ||
+        lowerMsg.includes('failed to fetch') ||
+        lowerMsg.includes('network');
+      if (!isTransient) {
+        return result;
+      }
+      // Exponential backoff: 500ms, 1000ms
+      const delayMs = 500 * Math.pow(2, attempt - 1);
+      this._logger.detail(
+        `Retrying ${
+          init?.method ?? 'GET'
+        } ${resourcePath} after ${delayMs}ms (attempt ${attempt}/${maxAttempts})`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    /* c8 ignore next 1 - defensive coding: loop always returns */
+    return fail('retry loop exited unexpectedly');
   }
 
   /**
@@ -352,8 +417,7 @@ export class HttpTreeAccessors<TCT extends string = string>
     }
 
     const fetchImpl = normalizeFetch(params.fetchImpl);
-    /* c8 ignore next 3 - userId header in static _requestWithParams; covered by userId tests via fromHttp */
-    const userIdHeaders: RequestInit | undefined = params.userId
+    const userIdHeaders: RequestInit | undefined = /* c8 ignore next */ params.userId
       ? { headers: { 'X-User-Id': params.userId } }
       : undefined;
     const response = await fetchImpl(
@@ -367,7 +431,10 @@ export class HttpTreeAccessors<TCT extends string = string>
     }
 
     if (!response.ok) {
-      const message = await response.text().catch(() => `HTTP ${response.status}`);
+      const body = await response.text().catch(() => '');
+      const message = body
+        ? `HTTP ${response.status}: ${body}`
+        : `HTTP ${response.status} ${response.statusText}`;
       return fail(message);
     }
 
