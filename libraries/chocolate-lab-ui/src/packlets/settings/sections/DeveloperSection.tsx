@@ -156,7 +156,7 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
 
   // ---- Reset handlers ----
 
-  function handleConfirm(): void {
+  async function handleConfirm(): Promise<void> {
     const target = confirmTarget;
     setConfirmTarget(undefined);
 
@@ -168,10 +168,10 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
         handleClearLocalData();
         break;
       case 'cloud':
-        handleClearCloudData();
+        await handleClearCloudData();
         break;
       case 'full-reset':
-        handleFullReset();
+        await handleFullReset();
         break;
       default:
         break;
@@ -206,20 +206,24 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
     window.location.reload();
   }
 
-  function handleClearCloudData(): void {
+  async function handleClearCloudData(): Promise<void> {
     for (const rootDir of reactiveWorkspace.additionalRootDirs.values()) {
       deleteAllChildren(rootDir);
     }
+    await reactiveWorkspace.syncAllToDisk();
     window.location.reload();
   }
 
-  function handleFullReset(): void {
+  async function handleFullReset(): Promise<void> {
     // 1. Clear all cloud storage roots
     for (const rootDir of reactiveWorkspace.additionalRootDirs.values()) {
       deleteAllChildren(rootDir);
     }
 
-    // 2. Clear all local storage entries
+    // 2. Flush cloud deletions to the backend before reloading
+    await reactiveWorkspace.syncAllToDisk();
+
+    // 3. Clear all local storage entries
     const prefix = 'chocolate-lab';
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -230,7 +234,7 @@ export function DeveloperSection({ currentConfigNamespace }: IDeveloperSectionPr
     }
     keysToRemove.forEach((k) => localStorage.removeItem(k));
 
-    // 3. Reload — with everything cleared, the app returns to cold-start
+    // 4. Reload — with everything cleared, the app returns to cold-start
     window.location.reload();
   }
 

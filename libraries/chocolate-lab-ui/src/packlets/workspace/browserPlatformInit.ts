@@ -26,7 +26,7 @@
  * @packageDocumentation
  */
 
-import { fail, Result, succeed } from '@fgv/ts-utils';
+import { fail, Logging, Result, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 import {
@@ -85,6 +85,11 @@ export interface IBrowserPlatformInitOptions extends Omit<IPlatformInitOptions, 
    * auto-enable cloud storage for first-time users without affecting local dev.
    */
   readonly defaultCloudStorage?: Settings.ICloudStorageConfig;
+
+  /**
+   * Optional logger for cloud storage accessors.
+   */
+  readonly logger?: Logging.LogReporter<unknown>;
 }
 
 // ============================================================================
@@ -202,7 +207,11 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
         cloudConfig = { ...cloudConfig, baseUrl: `${proxyUrl}/api/storage` };
       }
     }
-    const cloudLibrariesResult = await this._resolveCloudLibraries(cloudConfig, autoSync);
+    const cloudLibrariesResult = await this._resolveCloudLibraries(
+      cloudConfig,
+      autoSync,
+      browserOptions.logger
+    );
     if (cloudLibrariesResult.isFailure()) {
       return fail(cloudLibrariesResult.message);
     }
@@ -364,7 +373,8 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
 
   private async _resolveCloudLibraries(
     config: Settings.ICloudStorageConfig | undefined,
-    autoSync: boolean
+    autoSync: boolean,
+    logger?: Logging.LogReporter<unknown>
   ): Promise<Result<ReadonlyArray<IResolvedExternalLibrary>>> {
     if (!config || config.enabled !== true) {
       return succeed([]);
@@ -376,7 +386,8 @@ export class BrowserPlatformInitializer implements IPlatformInitializer {
       namespace: config.namespace,
       userId: config.userId,
       autoSync,
-      mutable: true
+      mutable: true,
+      logger
     });
     if (treeResult.isFailure()) {
       return fail(`cloud storage '${sourceName}': ${treeResult.message}`);

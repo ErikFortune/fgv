@@ -97,5 +97,6 @@ export {
   type IBackupManifest,
   type IBackupRootEntry,
   type IBackupRootInput,
+  type IRestoreOptions,
   type IRestoreResult
 } from './backupRestore';

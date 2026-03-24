@@ -24,6 +24,7 @@ import {
   useResponsive
 } from '@fgv/ts-app-shell';
 import { Logging, type MessageLogLevel, succeed, fail } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import {
   createWorkspaceFromPlatform,
   LibraryData,
@@ -414,7 +415,8 @@ async function _buildReactiveWorkspace(): Promise<IBuildResult> {
   let platformInit = await initializeBrowserPlatform({
     userLibraryPath: 'localStorage',
     storageKeyPrefix,
-    defaultCloudStorage
+    defaultCloudStorage,
+    logger: _bootReporter
   });
 
   if (platformInit.isFailure() && isCloudBackendUnavailableError(platformInit.message)) {
@@ -969,10 +971,17 @@ function AppShell(props: IAppShellProps): React.ReactElement {
       parts.push(`${e.entityType}:${e.entityId} (${e.mode})`);
     }
     if (collectionActions.hasDirtyTrees) {
-      parts.push('dirty collection trees');
+      for (const [id, entry] of reactiveWorkspace.persistentTrees) {
+        if (entry.accessors.isDirty()) {
+          const paths = FileTree.isPersistentAccessors(entry.accessors)
+            ? entry.accessors.getDirtyPaths()
+            : [];
+          parts.push(`dirty tree "${id}"${paths.length > 0 ? `: ${paths.join(', ')}` : ''}`);
+        }
+      }
     }
     workspace.data.logger.warn(`Navigation blocked — unsaved: [${parts.join(', ')}]`);
-  }, [dirtyEntries, collectionActions.hasDirtyTrees, workspace]);
+  }, [dirtyEntries, collectionActions.hasDirtyTrees, reactiveWorkspace, workspace]);
 
   const guardedSetTab = useCallback(
     (tab: AppTab): void => {
@@ -1334,26 +1343,22 @@ function WorkspaceBootstrap(): React.ReactElement {
     return <div className="p-8 text-muted">Loading workspace…</div>;
   }
 
-  if (coldStart) {
-    return (
-      <WorkspaceProvider reactiveWorkspace={reactiveWorkspace}>
-        <WelcomeScreen coldStartContext={coldStart} onComplete={(): void => setColdStart(undefined)} />
-      </WorkspaceProvider>
-    );
-  }
-
   return (
     <WorkspaceProvider reactiveWorkspace={reactiveWorkspace}>
-      <KeyboardShortcutProvider>
-        <AppShell
-          displayLevel={logSettings?.displayLevel}
-          toastLevel={logSettings?.toastLevel ?? 'warning'}
-          configNamespace={_configNamespace}
-          configNamespaceSource={_resolvedConfigNamespace.source}
-          initialDefaultConfigNamespace={_resolvedConfigNamespace.defaultConfigNamespace}
-          dataError={dataError}
-        />
-      </KeyboardShortcutProvider>
+      {coldStart ? (
+        <WelcomeScreen coldStartContext={coldStart} onComplete={(): void => setColdStart(undefined)} />
+      ) : (
+        <KeyboardShortcutProvider>
+          <AppShell
+            displayLevel={logSettings?.displayLevel}
+            toastLevel={logSettings?.toastLevel ?? 'warning'}
+            configNamespace={_configNamespace}
+            configNamespaceSource={_resolvedConfigNamespace.source}
+            initialDefaultConfigNamespace={_resolvedConfigNamespace.defaultConfigNamespace}
+            dataError={dataError}
+          />
+        </KeyboardShortcutProvider>
+      )}
     </WorkspaceProvider>
   );
 }

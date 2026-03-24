@@ -94,6 +94,22 @@ export interface IRestoreResult {
   readonly filesWritten: number;
 }
 
+/**
+ * Options for {@link restoreRoot}.
+ * @public
+ */
+export interface IRestoreOptions {
+  /**
+   * Optional set of path prefixes. When provided, only files whose relative
+   * path starts with at least one prefix are restored. Supports both exact
+   * file paths (e.g. `data/ingredients/my-collection.yaml`) and directory
+   * prefixes (e.g. `data/settings/`).
+   *
+   * If omitted or empty, all files are restored.
+   */
+  readonly pathPrefixes?: ReadonlySet<string>;
+}
+
 // ============================================================================
 // Internal helpers
 // ============================================================================
@@ -217,13 +233,15 @@ export async function backupRoots(roots: ReadonlyArray<IBackupRootInput>): Promi
  * @param zipData - The backup ZIP as an `ArrayBuffer`.
  * @param rootId - Which root within the ZIP to restore (must match an entry in the manifest).
  * @param targetDir - The mutable destination root directory.
+ * @param options - Optional restore options (e.g. path prefix filter).
  * @returns Success with `{ filesWritten }`, or Failure if the ZIP is invalid or writing fails.
  * @public
  */
 export async function restoreRoot(
   zipData: ArrayBuffer,
   rootId: string,
-  targetDir: FileTree.IFileTreeDirectoryItem
+  targetDir: FileTree.IFileTreeDirectoryItem,
+  options?: IRestoreOptions
 ): Promise<Result<IRestoreResult>> {
   // Open the ZIP as a read-only file tree
   const accessorsResult = await ZipFileTree.ZipFileTreeAccessors.fromBufferAsync(zipData);
@@ -269,7 +287,20 @@ export async function restoreRoot(
     return fail(`Failed to read backup for root '${rootId}': ${collectResult.message}`);
   }
 
-  const zipFiles = collectResult.value;
+  // Apply path prefix filter when provided
+  const allFiles = collectResult.value;
+  const prefixes = options?.pathPrefixes;
+  const zipFiles = prefixes?.size
+    ? allFiles.filter((f) => {
+        for (const prefix of prefixes) {
+          if (f.path.startsWith(prefix)) {
+            return true;
+          }
+        }
+        return false;
+      })
+    : allFiles;
+
   if (zipFiles.length === 0) {
     return succeed({ filesWritten: 0 });
   }

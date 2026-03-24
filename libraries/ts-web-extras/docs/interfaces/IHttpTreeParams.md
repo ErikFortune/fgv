@@ -26,6 +26,7 @@ Configuration for creating HTTP-backed tree accessors.
 | <a id="baseurl"></a> `baseUrl` | `readonly` | `string` | - |
 | <a id="fetchimpl"></a> `fetchImpl?` | `readonly` | \{(`input`, `init?`): `Promise`\<`Response`\>; (`input`, `init?`): `Promise`\<`Response`\>; \} | - |
 | <a id="infercontenttype"></a> `inferContentType?` | `public` | [`ContentTypeFactory`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\> | - |
+| <a id="logger"></a> `logger?` | `readonly` | [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`, `unknown`\> | - |
 | <a id="mutable"></a> `mutable?` | `public` | `boolean` \| [`IFilterSpec`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | Controls mutability of the file tree. - `undefined` or `false`: No files are mutable. - `true`: All files are mutable. - `IFilterSpec`: Only files matching the filter are mutable. |
 | <a id="namespace"></a> `namespace?` | `readonly` | `string` | - |
 | <a id="prefix"></a> `prefix?` | `public` | `string` | - |

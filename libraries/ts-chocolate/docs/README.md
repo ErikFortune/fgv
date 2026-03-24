@@ -396,6 +396,15 @@ Input to backupRoots: a single storage root to include in the backup.
 </td></tr>
 <tr><td>
 
+[IRestoreOptions](./interfaces/IRestoreOptions.md)
+
+</td><td>
+
+Options for restoreRoot.
+
+</td></tr>
+<tr><td>
+
 [IRestoreResult](./interfaces/IRestoreResult.md)
 
 </td><td>

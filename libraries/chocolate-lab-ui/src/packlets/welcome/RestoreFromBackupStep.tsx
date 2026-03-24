@@ -31,7 +31,7 @@ import { LibraryData, restoreRoot, type IBackupManifest } from '@fgv/ts-chocolat
 import { ZipFileTree } from '@fgv/ts-extras';
 import { FileTree } from '@fgv/ts-json-base';
 
-import { useReactiveWorkspace } from '../workspace';
+import { useReactiveWorkspace, useWorkspace } from '../workspace';
 import { SUB_LIBRARY_LABELS } from './model';
 
 // ============================================================================
@@ -66,7 +66,10 @@ interface IParsedBackup {
  * @public
  */
 export interface IRestoreFromBackupStepProps {
-  readonly onComplete: () => Promise<void>;
+  /** Write cold-start default settings (but don't transition yet). */
+  readonly onWriteSettings: () => Promise<void>;
+  /** Transition away from the welcome screen (call AFTER sync). */
+  readonly onTransition: () => void;
   readonly onBack: () => void;
 }
 
@@ -175,7 +178,8 @@ async function parseBackupZip(zipData: ArrayBuffer): Promise<IParsedBackup> {
  * @public
  */
 export function RestoreFromBackupStep(props: IRestoreFromBackupStepProps): React.ReactElement {
-  const { onComplete, onBack } = props;
+  const { onWriteSettings, onTransition, onBack } = props;
+  const workspace = useWorkspace();
   const reactiveWorkspace = useReactiveWorkspace();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -291,17 +295,15 @@ export function RestoreFromBackupStep(props: IRestoreFromBackupStepProps): React
         for (const col of rootInfo.collections) {
           const key = `${rootInfo.rootId}/${col.subLibraryId}/${col.collectionFile}`;
           if (collectionSelections[key]) {
-            // Add the exact file path prefix
             selectedPrefixes.add(`data/${col.subLibraryId}/${col.collectionFile}`);
           }
         }
 
         if (selectedPrefixes.size === 0) continue;
 
-        // For now, do a full restore and rely on the merge semantics.
-        // A selective restore would require modifying the backup module;
-        // since the backup uses merge semantics, restoring extra files is safe.
-        const result = await restoreRoot(parsedBackup.zipData, rootInfo.rootId, targetDir);
+        const result = await restoreRoot(parsedBackup.zipData, rootInfo.rootId, targetDir, {
+          pathPrefixes: selectedPrefixes
+        });
         if (result.isFailure()) {
           setError(`Restore failed for root '${rootInfo.label}': ${result.message}`);
           setBusy(false);
@@ -309,18 +311,68 @@ export function RestoreFromBackupStep(props: IRestoreFromBackupStepProps): React
         }
       }
 
-      // Write bootstrap/preferences settings so the welcome screen doesn't reappear
-      await onComplete();
+      // Hot-load restored collections into the running workspace (same pattern
+      // as useAddStorageRoot / restoreSavedDirectories) so we don't need a
+      // page reload, which would lose in-memory data and trigger beforeunload.
+      const entities = workspace.data.entities;
+      const userEntities = workspace.userData.entities;
+      const sourceName = targetRootName ?? 'restored';
 
-      // Reload the page so the workspace rebuilds with the restored data.
-      // The sub-libraries load from file trees at construction time, so newly
-      // restored files aren't visible until the workspace is reconstructed.
-      window.location.reload();
+      const subLibraries: ReadonlyArray<LibraryData.SubLibraryBase<string, string, unknown>> = [
+        entities.ingredients,
+        entities.fillings,
+        entities.confections,
+        entities.decorations,
+        entities.molds,
+        entities.procedures,
+        entities.tasks,
+        userEntities.sessions,
+        userEntities.journals,
+        userEntities.moldInventory,
+        userEntities.ingredientInventory
+      ];
+
+      for (const lib of subLibraries) {
+        lib.loadFromFileTreeSource({
+          sourceName,
+          directory: targetDir,
+          load: true,
+          mutable: true,
+          skipMissingDirectories: true
+        });
+      }
+
+      workspace.data.clearCache();
+
+      // Write bootstrap/preferences settings (but don't transition yet).
+      await onWriteSettings();
+
+      // Flush all in-memory writes (restored data + settings) to persistent storage.
+      // This must complete BEFORE the transition — otherwise React renders the main
+      // app while the autoSync is still in-flight and sees dirty trees.
+      const syncResult = await reactiveWorkspace.syncAllToDisk();
+      if (syncResult.isFailure()) {
+        setError(`Restore succeeded but failed to persist: ${syncResult.message}`);
+        setBusy(false);
+        return;
+      }
+
+      // Now transition — trees are clean, so the main app renders without dirty state.
+      reactiveWorkspace.notifyChange();
+      onTransition();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
       setBusy(false);
     }
-  }, [parsedBackup, importSettings, collectionSelections, reactiveWorkspace, onComplete]);
+  }, [
+    parsedBackup,
+    importSettings,
+    collectionSelections,
+    workspace,
+    reactiveWorkspace,
+    onWriteSettings,
+    onTransition
+  ]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-surface overflow-y-auto">

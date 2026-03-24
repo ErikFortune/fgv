@@ -10,5 +10,5 @@ directory, but existing files NOT present in the backup are left untouched.
 ## Signature
 
 ```typescript
-function restoreRoot(zipData: ArrayBuffer, rootId: string, targetDir: IFileTreeDirectoryItem): Promise<Result<IRestoreResult>>
+function restoreRoot(zipData: ArrayBuffer, rootId: string, targetDir: IFileTreeDirectoryItem, options: IRestoreOptions): Promise<Result<IRestoreResult>>
 ```

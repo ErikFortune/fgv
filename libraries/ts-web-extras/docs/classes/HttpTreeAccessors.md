@@ -96,7 +96,7 @@ FileTree.IMutableFileTreeAccessors.deleteFile
 
 `FileTree.IPersistentFileTreeAccessors.deleteFile`
 
-#### Inherited from
+#### Overrides
 
 `FileTree.InMemoryTreeAccessors.deleteFile`
 
@@ -410,6 +410,11 @@ A result indicating success or failure.
 > **syncToDisk**(): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>\>
 
 Synchronizes all dirty files to the HTTP backend.
+
+Uses a concurrency guard: if a sync is already in progress, callers
+await the existing operation rather than starting a parallel one.
+This prevents the thundering herd that occurs when autoSync fires
+for every file written during a bulk operation (e.g. restore).
 
 #### Returns
 

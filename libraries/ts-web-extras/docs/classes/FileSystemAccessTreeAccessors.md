@@ -107,7 +107,7 @@ FileTree.IMutableFileTreeAccessors.deleteDirectory
 
 > **deleteFile**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
 
-FileTree.IMutableFileTreeAccessors.deleteFile
+Override deleteFile to track pending deletions for syncToDisk.
 
 #### Parameters
 
@@ -123,7 +123,7 @@ FileTree.IMutableFileTreeAccessors.deleteFile
 
 `FileTree.IPersistentFileTreeAccessors.deleteFile`
 
-#### Inherited from
+#### Overrides
 
 `FileTree.InMemoryTreeAccessors.deleteFile`
 

@@ -5894,6 +5894,11 @@ interface IResolveImportRootOptions {
 }
 
 // @public
+export interface IRestoreOptions {
+    readonly pathPrefixes?: ReadonlySet<string>;
+}
+
+// @public
 export interface IRestoreResult {
     readonly filesWritten: number;
 }
@@ -8293,7 +8298,7 @@ function resolvePreferencesSettings(preferences: IPreferencesSettings, deviceId:
 function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;
 
 // @public
-export function restoreRoot(zipData: ArrayBuffer, rootId: string, targetDir: FileTree.IFileTreeDirectoryItem): Promise<Result<IRestoreResult>>;
+export function restoreRoot(zipData: ArrayBuffer, rootId: string, targetDir: FileTree.IFileTreeDirectoryItem, options?: IRestoreOptions): Promise<Result<IRestoreResult>>;
 
 // @public
 class RolledTruffleEditingSession<TRecipe extends IRolledTruffleRecipe = IRolledTruffleRecipe> extends ConfectionEditingSessionBase<IProducedRolledTruffleEntity, TRecipe> {

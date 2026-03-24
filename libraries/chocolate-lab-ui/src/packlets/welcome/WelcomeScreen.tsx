@@ -127,13 +127,17 @@ export function WelcomeScreen(props: IWelcomeScreenProps): React.ReactElement {
     return cloudRoot?.sourceName;
   })();
 
-  const finishSetup = useCallback(async (): Promise<void> => {
+  const writeSettings = useCallback(async (): Promise<void> => {
     const settings = reactiveWorkspace.workspace.settings;
     if (settings) {
       await applyColdStartDefaults(settings, coldStartContext, cloudRootName);
     }
+  }, [reactiveWorkspace, coldStartContext, cloudRootName]);
+
+  const finishSetup = useCallback(async (): Promise<void> => {
+    await writeSettings();
     onComplete();
-  }, [reactiveWorkspace, coldStartContext, cloudRootName, onComplete]);
+  }, [writeSettings, onComplete]);
 
   const handleSkip = useCallback(async (): Promise<void> => {
     setBusy(true);
@@ -150,7 +154,11 @@ export function WelcomeScreen(props: IWelcomeScreenProps): React.ReactElement {
 
   if (choice === 'restore') {
     return (
-      <RestoreFromBackupStep onComplete={handleSetupComplete} onBack={(): void => setChoice(undefined)} />
+      <RestoreFromBackupStep
+        onWriteSettings={writeSettings}
+        onTransition={onComplete}
+        onBack={(): void => setChoice(undefined)}
+      />
     );
   }
 
