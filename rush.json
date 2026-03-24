@@ -517,6 +517,7 @@
       "packageName": "@fgv/heft-dual-rig",
       "projectFolder": "rigs/heft-dual-rig",
       "shouldPublish": true,
+      "versionPolicyName": "base-utils",
       "tags": ["tools", "rig"]
     },
     {
@@ -535,6 +536,7 @@
       "packageName": "@fgv/typedoc-compact-theme",
       "projectFolder": "plugins/typedoc-compact-theme",
       "shouldPublish": true,
+      "versionPolicyName": "base-utils",
       "tags": ["plugins", "typedoc"]
     },
     {
