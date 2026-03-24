@@ -2,6 +2,24 @@
   "name": "@fgv/ts-web-extras",
   "entries": [
     {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-web-extras_v5.1.0",
+      "date": "Tue, 24 Mar 2026 23:52:46 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "Add retry with exponential backoff for transient HTTP failures and sync concurrency guard to prevent thundering herd during bulk operations"
+          },
+          {
+            "comment": "Initial alpha release"
+          },
+          {
+            "comment": "fix package.json error"
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.2",
       "tag": "@fgv/ts-web-extras_v5.0.2",
       "date": "Wed, 17 Dec 2025 18:08:09 GMT",

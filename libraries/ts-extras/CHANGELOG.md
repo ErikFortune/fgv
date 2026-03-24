@@ -1,6 +1,14 @@
 # Change Log - @fgv/ts-extras
 
-This log was last generated on Wed, 17 Dec 2025 18:08:09 GMT and should not be manually modified.
+This log was last generated on Tue, 24 Mar 2026 23:52:46 GMT and should not be manually modified.
+
+## 5.1.0
+Tue, 24 Mar 2026 23:52:46 GMT
+
+### Updates
+
+- Initial alpha release
+- Add ai-assist, keystore, mustache, yaml helpers
 
 ## 5.0.2
 Wed, 17 Dec 2025 18:08:09 GMT

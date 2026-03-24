@@ -1,0 +1,17 @@
+{
+  "name": "@fgv/ts-http-storage",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-http-storage_v5.1.0",
+      "date": "Tue, 24 Mar 2026 23:52:46 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "Initial alpha release"
+          }
+        ]
+      }
+    }
+  ]
+}

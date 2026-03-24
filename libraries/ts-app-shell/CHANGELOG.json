@@ -1,0 +1,17 @@
+{
+  "name": "@fgv/ts-app-shell",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-app-shell_v5.1.0",
+      "date": "Tue, 24 Mar 2026 23:52:46 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "Initial alpha release"
+          }
+        ]
+      }
+    }
+  ]
+}
