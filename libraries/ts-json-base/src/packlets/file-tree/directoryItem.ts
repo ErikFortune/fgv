@@ -172,7 +172,7 @@ export class DirectoryItem<TCT extends string = string> implements IMutableFileT
    */
   private _deleteRecursive(dirPath: string): Result<boolean> {
     const hal = this._hal;
-    /* c8 ignore next 2 - defensive: caller already verified mutable */
+    /* c8 ignore next 3 - defensive: caller already verified mutable */
     if (!isMutableAccessors(hal)) {
       return fail(`${dirPath}: mutation not supported`);
     }
@@ -180,13 +180,13 @@ export class DirectoryItem<TCT extends string = string> implements IMutableFileT
       for (const child of children) {
         if (child.type === 'file') {
           const result = hal.deleteFile(child.absolutePath);
-          /* c8 ignore next 2 - defensive: error propagation during recursive delete */
+          /* c8 ignore next 3 - defensive: error propagation during recursive delete */
           if (result.isFailure()) {
             return result;
           }
         } else {
           const result = this._deleteRecursive(child.absolutePath);
-          /* c8 ignore next 2 - defensive: error propagation during recursive delete */
+          /* c8 ignore next 3 - defensive: error propagation during recursive delete */
           if (result.isFailure()) {
             return result;
           }

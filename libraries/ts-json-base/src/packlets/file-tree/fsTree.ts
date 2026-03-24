@@ -189,6 +189,7 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
         }
       }
       return succeedWithDetail(true, 'persistent');
+      /* c8 ignore next 3 - unreachable when running as root (CI), tested in mutableFsTree.test.ts */
     } catch {
       return failWithDetail(`${absolutePath}: permission denied`, 'permission-denied');
     }
