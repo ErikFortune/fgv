@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Initial alpha release",
+      "type": "none",
+      "packageName": "@fgv/ts-res"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}

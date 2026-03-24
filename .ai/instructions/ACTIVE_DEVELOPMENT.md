@@ -4,18 +4,11 @@ This document covers guidelines specific to the libraries and applications curre
 
 ## Active Development Scope
 
-### The Chocolate Lab Application
-- **App**: `apps/chocolate-lab-web` - React web application
-- **Plans**: Technical and UX plans are in `.md` files in the app directory
-- **Playwright tests**: `apps/chocolate-lab-web/e2e/`
-
-### Supporting Libraries (all new, all actively developed)
+### Actively Developed Libraries
 | Library | Path | Purpose |
 |---------|------|---------|
-| `ts-chocolate` | `libraries/ts-chocolate` | Core data model and runtime entities |
+| `ts-http-storage` | `libraries/ts-http-storage` | HTTP storage provider abstraction |
 | `ts-app-shell` | `libraries/ts-app-shell` | Shared React app shell primitives |
-| `chocolate-lab-ui` | `libraries/chocolate-lab-ui` | Chocolate Lab-specific React components |
-| `chocolate-lab-web` | `apps/chocolate-lab-web` | The web application |
 
 ### Other Libraries (production, handle with care)
 Everything else under `libraries/` is in production. See [Compatibility Rules](#compatibility-rules).
@@ -26,7 +19,7 @@ Everything else under `libraries/` is in production. See [Compatibility Rules](#
 
 ### New Libraries: No Compatibility Burden
 
-The four active-development packages (`ts-chocolate`, `ts-app-shell`, `chocolate-lab-ui`, `chocolate-lab-web`) are **all new code**. Compatibility is **not** a consideration:
+The active-development packages (`ts-http-storage`, `ts-app-shell`) are **all new code**. Compatibility is **not** a consideration:
 
 - **Do not** preserve deprecated values, types, or re-exports
 - **Do not** add backwards-compatibility shims or renamed aliases
@@ -55,19 +48,9 @@ The repo requires 100% coverage to merge to `main`, but during active developmen
 2. **Coverage metrics come later** - Once code settles down, fill coverage gaps systematically
 3. **Don't skip tests** - Still write tests, just prioritize breadth of behavior over coverage percentage
 
-### Playwright E2E Tests
-
-The app has a growing set of Playwright tests in `apps/chocolate-lab-web/e2e/`. Key considerations:
-
-- **Recent addition** - Most existing UI code was not written with Playwright in mind
-- **Test IDs needed** - Adding tests often requires updating UI components with `data-testid` attributes
-- **Growing investment** - Each test we add and each helper we write makes the next test easier
-- **Helpers and fixtures** - Build reusable test helpers rather than duplicating setup code
-
 ### Balance Effort vs Value
 
 - Don't spend an hour writing tests for a 5-minute fix
-- Use judgment about when a Playwright test adds enough value to justify the markup and helper work
 - When in doubt, ask
 
 ---

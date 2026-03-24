@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Initial alpha release",
+      "type": "none",
+      "packageName": "@fgv/ts-http-storage"
+    }
+  ],
+  "packageName": "@fgv/ts-http-storage",
+  "email": "noreply@anthropic.com"
+}
