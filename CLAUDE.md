@@ -43,6 +43,8 @@ These rules are **absolute and non-negotiable**:
 | `@fgv/ts-bcp47` | BCP47 language tag processing |
 | `@fgv/ts-json` | JSON schema validation |
 | `@fgv/ts-json-base` | Base JSON validation |
+| `@fgv/ts-http-storage` | HTTP storage provider abstraction |
+| `@fgv/ts-app-shell` | Shared React app shell primitives |
 | `@fgv/ts-sudoku-lib` | Sudoku puzzle library |
 | `@fgv/ts-extras` | Additional utilities |
 | `@fgv/ts-utils-jest` | Jest testing utilities |
@@ -119,7 +121,6 @@ Always use `rush add -p package-name` or `rush remove -p package-name`. Never us
 
 .claude/                      # Claude-specific configuration
 ├── agents/                   # Orchestration agents (task-master, etc.)
-├── skills/                   # On-demand skills (e.g. /resolve-regression)
 ├── settings.local.json       # Permissions
 └── project/                  # Project-specific design docs
 
@@ -127,12 +128,6 @@ CLAUDE.md                     # This file (Claude entry point)
 .windsurfrules                # Windsurf adapter → .ai/
 .cursorrules                  # Cursor adapter → .ai/
 ```
-
-## Skills
-
-On-demand skills in `.claude/skills/` for common workflows:
-
-- `/resolve-regression` - Structured workflow for fixing regressions in chocolate-lab-web using lite TDD with Playwright
 
 ## Additional Resources
 

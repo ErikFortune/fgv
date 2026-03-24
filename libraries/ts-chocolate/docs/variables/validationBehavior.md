@@ -1,9 +1,0 @@
-[Home](../README.md) > validationBehavior
-
-# Variable: validationBehavior
-
-Converter for ValidationBehavior
-
-## Type
-
-`Converter<ValidationBehavior>`

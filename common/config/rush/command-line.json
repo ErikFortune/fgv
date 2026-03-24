@@ -55,66 +55,6 @@
       "allowWarningsInSuccessfulBuild": false,
       "incremental": false
     },
-    {
-      "name": "data:sync",
-      "commandKind": "bulk",
-      "summary": "Sync published chocolate data to packages",
-      "description": "Runs the 'data:sync' npm script for each project. Projects without this script will be skipped.",
-      "safeForSimultaneousRushProcesses": true,
-      "enableParallelism": true,
-      "ignoreDependencyOrder": true,
-      "ignoreMissingScript": true
-    },
-    {
-      "name": "data:clean",
-      "commandKind": "bulk",
-      "summary": "Clean synced chocolate data from packages",
-      "description": "Runs the 'data:clean' npm script for each project. Projects without this script will be skipped.",
-      "safeForSimultaneousRushProcesses": true,
-      "enableParallelism": true,
-      "ignoreDependencyOrder": true,
-      "ignoreMissingScript": true
-    },
-    {
-      "name": "start-lab:backend",
-      "commandKind": "global",
-      "summary": "Start the Chocolate Lab API backend server",
-      "description": "Starts the chocolate-lab-api server on port 3002 (or PORT env var). Safe to run alongside other Rush processes.",
-      "safeForSimultaneousRushProcesses": true,
-      "shellCommand": "node services/chocolate-lab-api/lib/index.js"
-    },
-    {
-      "name": "start-lab:stack",
-      "commandKind": "global",
-      "summary": "Start the Chocolate Lab Docker stack (app + MongoDB)",
-      "description": "Builds the monorepo, runs rush deploy, builds the frontend, then starts the Docker Compose stack.",
-      "safeForSimultaneousRushProcesses": true,
-      "shellCommand": "node common/scripts/install-run-rush.js build; node common/scripts/install-run-rush.js deploy --scenario chocolate-lab --target-folder deploy --overwrite && docker compose up -d --build"
-    },
-    {
-      "name": "build-lab:image",
-      "commandKind": "global",
-      "summary": "Build the Chocolate Lab Docker image (without starting services)",
-      "description": "Builds the monorepo, runs rush deploy, and builds the Docker image. Does not start any containers.",
-      "safeForSimultaneousRushProcesses": true,
-      "shellCommand": "node common/scripts/install-run-rush.js build; node common/scripts/install-run-rush.js deploy --scenario chocolate-lab --target-folder deploy --overwrite && docker compose build"
-    },
-    {
-      "name": "push-lab:image",
-      "commandKind": "global",
-      "summary": "Build and push a multi-platform Chocolate Lab Docker image",
-      "description": "Builds the monorepo, runs rush deploy, and builds+pushes a multi-platform (amd64+arm64) Docker image. Requires DOCKER_REGISTRY to be set (e.g. ghcr.io/erikfortune or efortune for Docker Hub).",
-      "safeForSimultaneousRushProcesses": true,
-      "shellCommand": "test -n \"$DOCKER_REGISTRY\" && node common/scripts/install-run-rush.js build; node common/scripts/install-run-rush.js deploy --scenario chocolate-lab --target-folder deploy --overwrite && docker buildx build --platform linux/amd64,linux/arm64 -t ${DOCKER_REGISTRY}/chocolate-lab:latest --push -f services/chocolate-lab-api/Dockerfile . && echo \"Pushed ${DOCKER_REGISTRY}/chocolate-lab:latest (amd64+arm64)\" || test -z \"$DOCKER_REGISTRY\" && echo 'ERROR: Set DOCKER_REGISTRY first (e.g. export DOCKER_REGISTRY=ghcr.io/erikfortune)'"
-    },
-    {
-      "name": "stop-lab:stack",
-      "commandKind": "global",
-      "summary": "Stop the Chocolate Lab Docker stack",
-      "description": "Stops the Docker Compose stack without removing volumes.",
-      "safeForSimultaneousRushProcesses": true,
-      "shellCommand": "docker compose down"
-    }
     // {
     //   /**
     //    * (Required) Determines the type of custom command.

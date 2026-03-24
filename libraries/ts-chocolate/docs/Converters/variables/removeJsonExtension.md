@@ -1,9 +1,0 @@
-[Home](../../README.md) > [Converters](../README.md) > removeJsonExtension
-
-# Variable: removeJsonExtension
-
-A converter that removes the `.json` extension from the end of a string.
-
-## Type
-
-`Converter<string>`

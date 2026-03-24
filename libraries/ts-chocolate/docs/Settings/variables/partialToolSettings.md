@@ -1,9 +1,0 @@
-[Home](../../README.md) > [Settings](../README.md) > partialToolSettings
-
-# Variable: partialToolSettings
-
-Converter for partial tool settings (for device overrides).
-
-## Type
-
-`Converter<Partial<IToolSettings>>`
