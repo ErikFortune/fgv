@@ -282,6 +282,87 @@ describe('InMemoryTreeAccessors', () => {
     });
   });
 
+  describe('deleteFile method', () => {
+    let accessors: InMemoryTreeAccessors;
+
+    beforeEach(() => {
+      const files: IInMemoryFile[] = [
+        { path: '/file1.json', contents: '{"a": 1}' },
+        { path: '/dir/file2.json', contents: '{"b": 2}' },
+        { path: '/dir/file3.json', contents: '{"c": 3}' },
+        { path: '/dir/subdir/file4.json', contents: '{"d": 4}' }
+      ];
+      accessors = InMemoryTreeAccessors.create(files, { mutable: true }).orThrow();
+    });
+
+    test('successfully deletes an existing file at root level', () => {
+      expect(accessors.deleteFile('/file1.json')).toSucceedWith(true);
+      expect(accessors.getFileContents('/file1.json')).toFailWith(/not found/i);
+    });
+
+    test('successfully deletes an existing file in a subdirectory', () => {
+      expect(accessors.deleteFile('/dir/file2.json')).toSucceedWith(true);
+      expect(accessors.getFileContents('/dir/file2.json')).toFailWith(/not found/i);
+    });
+
+    test('deleted file no longer appears in getChildren', () => {
+      expect(accessors.deleteFile('/dir/file2.json')).toSucceedWith(true);
+      expect(accessors.getChildren('/dir')).toSucceedAndSatisfy((children) => {
+        const names = children.map((c) => c.name);
+        expect(names).not.toContain('file2.json');
+        expect(names).toContain('file3.json');
+        expect(names).toContain('subdir');
+      });
+    });
+
+    test('deleted file no longer appears in getItem', () => {
+      expect(accessors.deleteFile('/dir/file2.json')).toSucceedWith(true);
+      expect(accessors.getItem('/dir/file2.json')).toFailWith(/not found/i);
+    });
+
+    test('fails when path resolves to root (parts.length === 0)', () => {
+      expect(accessors.deleteFile('/')).toFailWith(/invalid file path/i);
+    });
+
+    test('fails when parent directory does not exist', () => {
+      expect(accessors.deleteFile('/nonexistent/file.json')).toFailWith(/parent directory not found/i);
+    });
+
+    test('fails when file does not exist in the directory', () => {
+      expect(accessors.deleteFile('/dir/missing.json')).toFailWith(/file not found/i);
+    });
+
+    test('fails when path points to a file in a non-existent nested directory', () => {
+      expect(accessors.deleteFile('/dir/missing/file.json')).toFailWith(/parent directory not found/i);
+    });
+
+    test('can delete a deeply nested file', () => {
+      expect(accessors.deleteFile('/dir/subdir/file4.json')).toSucceedWith(true);
+      expect(accessors.getFileContents('/dir/subdir/file4.json')).toFailWith(/not found/i);
+    });
+
+    test('sibling files remain intact after deletion', () => {
+      expect(accessors.deleteFile('/dir/file2.json')).toSucceedWith(true);
+      expect(accessors.getFileContents('/dir/file3.json')).toSucceedWith('{"c": 3}');
+    });
+
+    test('can delete multiple files sequentially', () => {
+      expect(accessors.deleteFile('/dir/file2.json')).toSucceedWith(true);
+      expect(accessors.deleteFile('/dir/file3.json')).toSucceedWith(true);
+      expect(accessors.getChildren('/dir')).toSucceedAndSatisfy((children) => {
+        const names = children.map((c) => c.name);
+        expect(names).not.toContain('file2.json');
+        expect(names).not.toContain('file3.json');
+        expect(names).toContain('subdir');
+      });
+    });
+
+    test('fails to delete the same file twice', () => {
+      expect(accessors.deleteFile('/dir/file2.json')).toSucceedWith(true);
+      expect(accessors.deleteFile('/dir/file2.json')).toFailWith(/file not found/i);
+    });
+  });
+
   describe('edge cases and error handling', () => {
     test('handles files with empty contents', () => {
       const files: IInMemoryFile[] = [{ path: '/empty.json', contents: '' }];

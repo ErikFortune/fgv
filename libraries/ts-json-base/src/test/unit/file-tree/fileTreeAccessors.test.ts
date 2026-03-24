@@ -24,6 +24,8 @@ import {
   FsFileTreeAccessors,
   InMemoryTreeAccessors,
   isMutableAccessors,
+  isMutableDirectoryItem,
+  isMutableFileItem,
   isPersistentAccessors
 } from '../../../packlets/file-tree';
 
@@ -58,5 +60,49 @@ describe('isPersistentAccessors', () => {
   it('returns false for InMemoryTreeAccessors (does not implement IPersistentFileTreeAccessors)', () => {
     const accessors = InMemoryTreeAccessors.create([]).orThrow();
     expect(isPersistentAccessors(accessors)).toBe(false);
+  });
+});
+
+describe('isMutableFileItem', () => {
+  it('returns true for FileItem from mutable accessors', () => {
+    const accessors = InMemoryTreeAccessors.create([{ path: '/test.json', contents: { key: 'value' } }], {
+      mutable: true
+    }).orThrow();
+    const item = accessors.getItem('/test.json').orThrow();
+    expect(isMutableFileItem(item)).toBe(true);
+  });
+
+  it('returns false for a plain object that lacks mutation methods', () => {
+    const item = {
+      type: 'file' as const,
+      absolutePath: '/test',
+      name: 'test',
+      baseName: 'test',
+      extension: '',
+      contentType: undefined,
+      getContents: () => ({} as never),
+      getRawContents: () => ({} as never)
+    };
+    expect(isMutableFileItem(item)).toBe(false);
+  });
+});
+
+describe('isMutableDirectoryItem', () => {
+  it('returns true for DirectoryItem from mutable accessors', () => {
+    const accessors = InMemoryTreeAccessors.create([{ path: '/data/test.json', contents: {} }], {
+      mutable: true
+    }).orThrow();
+    const item = accessors.getItem('/data').orThrow();
+    expect(isMutableDirectoryItem(item)).toBe(true);
+  });
+
+  it('returns false for a plain object that lacks mutation methods', () => {
+    const item = {
+      type: 'directory' as const,
+      absolutePath: '/test',
+      name: 'test',
+      getChildren: () => ({} as never)
+    };
+    expect(isMutableDirectoryItem(item)).toBe(false);
   });
 });

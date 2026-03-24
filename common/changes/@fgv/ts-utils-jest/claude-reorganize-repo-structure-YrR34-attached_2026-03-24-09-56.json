@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Initial alpha release",
+      "type": "none",
+      "packageName": "@fgv/ts-utils-jest"
+    }
+  ],
+  "packageName": "@fgv/ts-utils-jest",
+  "email": "noreply@anthropic.com"
+}
