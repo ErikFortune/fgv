@@ -144,7 +144,14 @@ export class HttpTreeAccessors<TCT extends string = string>
       return succeed(undefined);
     }
 
-    for (const path of this._pendingDeletions) {
+    // Snapshot and clear dirty sets so that changes arriving during
+    // the async sync are not dropped when we finish.
+    const deletions = new Set(this._pendingDeletions);
+    const dirty = new Set(this._dirtyFiles);
+    this._pendingDeletions.clear();
+    this._dirtyFiles.clear();
+
+    for (const path of deletions) {
       const query = new URLSearchParams();
       query.set('path', path);
       if (this._namespace) {
@@ -159,7 +166,7 @@ export class HttpTreeAccessors<TCT extends string = string>
       }
     }
 
-    for (const path of this._dirtyFiles) {
+    for (const path of dirty) {
       const contentsResult = this.getFileContents(path);
       if (contentsResult.isFailure()) {
         return fail(`${path}: ${contentsResult.message}`);
@@ -181,9 +188,6 @@ export class HttpTreeAccessors<TCT extends string = string>
         return fail(`sync ${path}: ${saveResult.message}`);
       }
     }
-
-    this._pendingDeletions.clear();
-    this._dirtyFiles.clear();
 
     const syncBody: Record<string, unknown> = {};
     if (this._namespace) {
@@ -289,7 +293,10 @@ export class HttpTreeAccessors<TCT extends string = string>
     }
 
     if (!response.ok) {
-      const message = await response.text().catch(() => `HTTP ${response.status}`);
+      const body = await response.text().catch(() => '');
+      const message = body
+        ? `HTTP ${response.status}: ${body}`
+        : `HTTP ${response.status} ${response.statusText}`;
       return fail(message);
     }
 
@@ -313,18 +320,19 @@ export class HttpTreeAccessors<TCT extends string = string>
       }
       // Retry on transient-looking errors
       const msg = result.message;
+      const lowerMsg = msg.toLowerCase();
       const isTransient =
         msg.includes('503') ||
         msg.includes('502') ||
         msg.includes('429') ||
-        msg.includes('disconnect') ||
-        msg.includes('ECONNRESET') ||
-        msg.includes('Failed to fetch') ||
-        msg.includes('network');
+        lowerMsg.includes('disconnect') ||
+        lowerMsg.includes('econnreset') ||
+        lowerMsg.includes('failed to fetch') ||
+        lowerMsg.includes('network');
       if (!isTransient) {
         return result;
       }
-      // Exponential backoff: 500ms, 1500ms
+      // Exponential backoff: 500ms, 1000ms
       const delayMs = 500 * Math.pow(2, attempt - 1);
       this._logger.detail(
         `Retrying ${
@@ -409,7 +417,7 @@ export class HttpTreeAccessors<TCT extends string = string>
     }
 
     const fetchImpl = normalizeFetch(params.fetchImpl);
-    const userIdHeaders: RequestInit | undefined = /* istanbul ignore next */ params.userId
+    const userIdHeaders: RequestInit | undefined = /* c8 ignore next */ params.userId
       ? { headers: { 'X-User-Id': params.userId } }
       : undefined;
     const response = await fetchImpl(
@@ -423,7 +431,10 @@ export class HttpTreeAccessors<TCT extends string = string>
     }
 
     if (!response.ok) {
-      const message = await response.text().catch(() => `HTTP ${response.status}`);
+      const body = await response.text().catch(() => '');
+      const message = body
+        ? `HTTP ${response.status}: ${body}`
+        : `HTTP ${response.status} ${response.statusText}`;
       return fail(message);
     }
 
