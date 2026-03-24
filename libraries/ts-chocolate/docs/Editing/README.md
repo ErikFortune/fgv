@@ -386,6 +386,15 @@ Description
 Conflict resolution strategy for merging collections with duplicate base IDs.
 
 </td></tr>
+<tr><td>
+
+[ISplitCompositeId](./type-aliases/ISplitCompositeId.md)
+
+</td><td>
+
+Result of splitting a generic composite entity ID.
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -407,6 +416,38 @@ Description
 </td><td>
 
 Check if validation report indicates success.
+
+</td></tr>
+<tr><td>
+
+[splitCompositeId](./functions/splitCompositeId.md)
+
+</td><td>
+
+Split a composite entity ID string into its validated collection and item ID parts.
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[splitCompositeIdConverter](./variables/splitCompositeIdConverter.md)
+
+</td><td>
+
+Pre-built converter that splits a composite entity ID (e.g.
 
 </td></tr>
 </tbody></table>

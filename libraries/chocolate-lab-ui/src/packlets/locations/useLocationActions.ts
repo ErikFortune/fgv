@@ -182,12 +182,11 @@ export function useLocationActions(): ILocationActions {
 
   const updateLocation = useCallback(
     async (locationId: LocationId, entity: ILocationEntity): Promise<Result<LocationId>> => {
-      const dotIndex = locationId.indexOf('.');
-      if (dotIndex < 0) {
-        return fail(`Invalid composite location ID: ${locationId}`);
+      const parsed = ChocolateConverters.parsedLocationId.convert(locationId);
+      if (parsed.isFailure()) {
+        return fail(parsed.message);
       }
-      const collectionId = locationId.substring(0, dotIndex) as CollectionId;
-      const baseId = locationId.substring(dotIndex + 1) as BaseLocationId;
+      const { collectionId, itemId: baseId } = parsed.value;
 
       const persistedResult = getPersistedCollection(collectionId);
       if (persistedResult.isFailure()) {
@@ -209,12 +208,11 @@ export function useLocationActions(): ILocationActions {
 
   const deleteLocation = useCallback(
     async (locationId: LocationId): Promise<Result<ILocationEntity>> => {
-      const dotIndex = locationId.indexOf('.');
-      if (dotIndex < 0) {
-        return fail(`Invalid composite location ID: ${locationId}`);
+      const parsed = ChocolateConverters.parsedLocationId.convert(locationId);
+      if (parsed.isFailure()) {
+        return fail(parsed.message);
       }
-      const collectionId = locationId.substring(0, dotIndex) as CollectionId;
-      const baseId = locationId.substring(dotIndex + 1) as BaseLocationId;
+      const { collectionId, itemId: baseId } = parsed.value;
 
       const persistedResult = getPersistedCollection(collectionId);
       if (persistedResult.isFailure()) {

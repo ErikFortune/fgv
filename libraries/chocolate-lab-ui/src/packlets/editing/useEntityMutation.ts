@@ -36,7 +36,7 @@ import { useCallback } from 'react';
 
 import { fail, succeed, type IResult, type Result } from '@fgv/ts-utils';
 
-import type { CollectionId, Editing } from '@fgv/ts-chocolate';
+import { type CollectionId, Editing } from '@fgv/ts-chocolate';
 type PersistedEditableCollection<TEntity, TBaseId extends string> = Editing.PersistedEditableCollection<
   TEntity,
   TBaseId
@@ -347,13 +347,13 @@ export function useEntityMutation<TEntity, TBaseId extends string, TCompositeId 
     ): Promise<Result<TCompositeId>> => {
       const { compositeId, baseId, entity, persistToDisk = true } = params;
 
-      const collectionPart = compositeId.split('.')[0];
-      if (!collectionPart) {
-        const message = `Save failed: invalid composite ID '${compositeId}'`;
+      const splitResult = Editing.splitCompositeId(compositeId);
+      if (splitResult.isFailure()) {
+        const message = `Save failed: ${splitResult.message}`;
         workspace.data.logger.error(message);
         return fail(message);
       }
-      const collectionId = collectionPart as CollectionId;
+      const { collectionId } = splitResult.value;
 
       const saveResult = await saveToCollectionOrLegacy(collectionId, baseId, entity, persistToDisk);
       if (saveResult.isFailure()) {

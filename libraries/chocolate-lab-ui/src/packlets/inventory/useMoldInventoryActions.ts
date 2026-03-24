@@ -224,19 +224,18 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
       entryId: MoldInventoryEntryId,
       entity: IMoldInventoryEntryEntity
     ): Promise<Result<MoldInventoryEntryId>> => {
-      const dotIndex = entryId.indexOf('.');
-      if (dotIndex < 0) {
-        return fail(`Invalid composite inventory entry ID: ${entryId}`);
+      const parsed = Entities.Inventory.Converters.parsedMoldInventoryEntryId.convert(entryId);
+      if (parsed.isFailure()) {
+        return fail(parsed.message);
       }
-      const collectionId = entryId.substring(0, dotIndex) as CollectionId;
-      const baseId = entryId.substring(dotIndex + 1) as MoldInventoryEntryBaseId;
+      const { collectionId, itemId } = parsed.value;
 
       const persistedResult = getPersistedCollection(collectionId);
       if (persistedResult.isFailure()) {
         return fail(persistedResult.message);
       }
 
-      const result = await persistedResult.value.upsertItem(baseId, entity);
+      const result = await persistedResult.value.upsertItem(itemId, entity);
       if (result.isFailure()) {
         workspace.data.logger.error(`Failed to update mold inventory entry: ${result.message}`);
         return fail(result.message);
@@ -251,12 +250,11 @@ export function useMoldInventoryActions(): IMoldInventoryActions {
 
   const deleteEntry = useCallback(
     async (entryId: MoldInventoryEntryId): Promise<Result<IMoldInventoryEntryEntity>> => {
-      const dotIndex = entryId.indexOf('.');
-      if (dotIndex < 0) {
-        return fail(`Invalid composite inventory entry ID: ${entryId}`);
+      const parsed = Entities.Inventory.Converters.parsedMoldInventoryEntryId.convert(entryId);
+      if (parsed.isFailure()) {
+        return fail(parsed.message);
       }
-      const collectionId = entryId.substring(0, dotIndex) as CollectionId;
-      const baseId = entryId.substring(dotIndex + 1) as MoldInventoryEntryBaseId;
+      const { collectionId, itemId: baseId } = parsed.value;
 
       const persistedResult = getPersistedCollection(collectionId);
       if (persistedResult.isFailure()) {

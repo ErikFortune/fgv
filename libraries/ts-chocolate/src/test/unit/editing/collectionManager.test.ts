@@ -656,11 +656,11 @@ describe('CollectionManager', () => {
     });
 
     test('fails for invalid composite ID format (dot at start)', () => {
-      expect(manager.deleteEntity('.item1')).toFailWith(/invalid composite id/i);
+      expect(manager.deleteEntity('.item1')).toFailWith(/invalid collectionid/i);
     });
 
     test('fails for invalid composite ID format (dot at end)', () => {
-      expect(manager.deleteEntity('src.')).toFailWith(/invalid composite id/i);
+      expect(manager.deleteEntity('src.')).toFailWith(/non-empty/i);
     });
 
     test('fails when collection does not exist', () => {

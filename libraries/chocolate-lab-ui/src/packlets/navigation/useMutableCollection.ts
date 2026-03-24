@@ -39,7 +39,7 @@ import type { CollectionId } from '@fgv/ts-chocolate';
  * @public
  */
 export interface ICollectionMap {
-  entries(): IterableIterator<[string, { readonly isMutable: boolean }]>;
+  entries(): IterableIterator<[CollectionId, { readonly isMutable: boolean }]>;
 }
 
 /**
@@ -75,10 +75,10 @@ export function useMutableCollection(
       for (const [id, col] of collections.entries()) {
         if (col.isMutable) {
           if (preferredId !== undefined && id === preferredId) {
-            return id as CollectionId;
+            return id;
           }
           if (firstMutable === undefined) {
-            firstMutable = id as CollectionId;
+            firstMutable = id;
           }
         }
       }
@@ -113,7 +113,7 @@ export function useWritableCollections(
         continue;
       }
 
-      const option: IWritableCollectionOption = { id: id as CollectionId };
+      const option: IWritableCollectionOption = { id: id };
       if (preferredId !== undefined && id === preferredId) {
         preferred = option;
       } else {

@@ -2134,6 +2134,9 @@ declare namespace Editing {
         ISyncProvider,
         IPersistedEditableCollectionParams,
         PersistedEditableCollection,
+        splitCompositeId,
+        ISplitCompositeId,
+        splitCompositeIdConverter,
         CollectionManager,
         IPersistedCollectionManagerParams,
         PersistedCollectionManager,
@@ -6302,6 +6305,9 @@ interface ISnapshotProvider<T> {
 }
 
 // @public
+type ISplitCompositeId = Converters_9.ICompositeId<CollectionId, string>;
+
+// @public
 interface ISpoonScalerOptions {
     readonly maxTeaspoons?: number;
     readonly preferTablespoons?: boolean;
@@ -8657,6 +8663,12 @@ const slotId: Converter<SlotId>;
 
 // @public
 function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TCollectionId>, mutable?: MutabilitySpec): ILoadCollectionFromFileTreeParams<TCollectionId> | undefined;
+
+// @public
+function splitCompositeId(compositeId: string): Result<ISplitCompositeId>;
+
+// @public
+const splitCompositeIdConverter: Converter<ISplitCompositeId>;
 
 // @public
 export type SpoonLevel = 'level' | 'heaping';

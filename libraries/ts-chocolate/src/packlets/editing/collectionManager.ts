@@ -24,7 +24,12 @@
  */
 
 import { Collections, Converter, Converters, fail, Result, succeed } from '@fgv/ts-utils';
-import { CollectionId, Helpers as CommonHelpers } from '../common';
+import {
+  CollectionId,
+  Converters as ChocolateConverters,
+  Helpers as CommonHelpers,
+  Model as CommonModel
+} from '../common';
 import {
   ICollectionFileMetadata,
   ICollectionSourceFile,
@@ -90,6 +95,46 @@ const validatedMetadataConverter: Converter<ICollectionFileMetadata> =
     variation: Converters.string.optional(),
     tags: Converters.arrayOf(Converters.string).optional()
   });
+
+// ============================================================================
+// Composite ID utilities
+// ============================================================================
+
+/**
+ * Result of splitting a generic composite entity ID.
+ * @public
+ */
+export type ISplitCompositeId = Converters.ICompositeId<CollectionId, string>;
+
+/**
+ * Pre-built converter that splits a composite entity ID (e.g. `"my-collection.my-entity"`)
+ * into its validated collection and item ID parts.
+ *
+ * For domain-specific composite IDs (e.g. IngredientId, LocationId), prefer the
+ * corresponding parsed converter (e.g. `parsedIngredientId`, `parsedLocationId`)
+ * which validates both parts.
+ * @public
+ */
+export const splitCompositeIdConverter: Converter<ISplitCompositeId> = Converters.compositeId(
+  ChocolateConverters.collectionId,
+  CommonModel.ID_SEPARATOR,
+  Converters.string
+);
+
+/**
+ * Split a composite entity ID string into its validated collection and item ID parts.
+ *
+ * @param compositeId - The composite ID to split
+ * @returns A Result containing the validated collectionId and itemId
+ * @public
+ */
+export function splitCompositeId(compositeId: string): Result<ISplitCompositeId> {
+  return splitCompositeIdConverter.convert(compositeId);
+}
+
+// ============================================================================
+// Collection Manager
+// ============================================================================
 
 /**
  * Implementation of collection management operations.
@@ -244,7 +289,7 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
    * @returns Result containing the deleted entity or failure
    */
   public deleteEntity(compositeId: string): Result<unknown> {
-    return this._splitCompositeId(compositeId).onSuccess(({ collectionId, baseId }) =>
+    return splitCompositeId(compositeId).onSuccess(({ collectionId, itemId }) =>
       this._library.collections
         .get(collectionId)
         .asResult.withErrorFormat((msg) => `Collection "${collectionId}" not found: ${msg}`)
@@ -252,8 +297,8 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
           if (!collection.isMutable) {
             return fail(`Cannot delete from immutable collection "${collectionId}"`);
           }
-          return collection.items
-            .delete(baseId as TBaseId)
+          return collection.items.validating
+            .delete(itemId)
             .asResult.withErrorFormat((msg: string) => `Failed to delete "${compositeId}": ${msg}`);
         })
     );
@@ -271,12 +316,12 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
     targetCollectionId: CollectionId,
     newBaseId?: string
   ): Result<string> {
-    return this._splitCompositeId(compositeId).onSuccess(({ collectionId, baseId }) =>
+    return splitCompositeId(compositeId).onSuccess(({ collectionId, itemId }) =>
       this._library.collections
         .get(collectionId)
         .asResult.withErrorFormat((msg) => `Source collection "${collectionId}" not found: ${msg}`)
         .onSuccess((sourceCollection) =>
-          sourceCollection.items.get(baseId as TBaseId).asResult.onSuccess((entity: TItem) =>
+          sourceCollection.items.get(itemId as TBaseId).asResult.onSuccess((entity: TItem) =>
             this._library.collections
               .get(targetCollectionId)
               .asResult.withErrorFormat(
@@ -286,7 +331,7 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
                 if (!targetCollection.isMutable) {
                   return fail(`Cannot copy to immutable collection "${targetCollectionId}"`);
                 }
-                const destBaseId = (newBaseId ?? baseId) as TBaseId;
+                const destBaseId = (newBaseId ?? itemId) as TBaseId;
                 if (targetCollection.items.has(destBaseId)) {
                   return fail(`Entity "${destBaseId}" already exists in collection "${targetCollectionId}"`);
                 }
@@ -497,18 +542,5 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
    */
   private _validateMetadata(metadata: ICollectionFileMetadata): Result<ICollectionFileMetadata> {
     return validatedMetadataConverter.convert(metadata).onFailure((msg) => fail(`Invalid metadata: ${msg}`));
-  }
-
-  /**
-   * Split a composite ID into collectionId and baseId parts.
-   */
-  private _splitCompositeId(compositeId: string): Result<{ collectionId: CollectionId; baseId: string }> {
-    const dotIndex = compositeId.indexOf('.');
-    if (dotIndex < 1 || dotIndex === compositeId.length - 1) {
-      return fail(`Invalid composite ID "${compositeId}": expected "collectionId.baseId" format`);
-    }
-    const collectionId = compositeId.slice(0, dotIndex) as CollectionId;
-    const baseId = compositeId.slice(dotIndex + 1);
-    return succeed({ collectionId, baseId });
   }
 }

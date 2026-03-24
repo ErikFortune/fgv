@@ -235,19 +235,18 @@ export function useIngredientInventoryActions(): IIngredientInventoryActions {
       entryId: IngredientInventoryEntryId,
       entity: IIngredientInventoryEntryEntity
     ): Promise<Result<IngredientInventoryEntryId>> => {
-      const dotIndex = entryId.indexOf('.');
-      if (dotIndex < 0) {
-        return fail(`Invalid composite inventory entry ID: ${entryId}`);
+      const parsed = Entities.Inventory.Converters.parsedIngredientInventoryEntryId.convert(entryId);
+      if (parsed.isFailure()) {
+        return fail(parsed.message);
       }
-      const collectionId = entryId.substring(0, dotIndex) as CollectionId;
-      const baseId = entryId.substring(dotIndex + 1) as IngredientInventoryEntryBaseId;
+      const { collectionId, itemId } = parsed.value;
 
       const persistedResult = getPersistedCollection(collectionId);
       if (persistedResult.isFailure()) {
         return fail(persistedResult.message);
       }
 
-      const result = await persistedResult.value.upsertItem(baseId, entity);
+      const result = await persistedResult.value.upsertItem(itemId, entity);
       if (result.isFailure()) {
         workspace.data.logger.error(`Failed to update ingredient inventory entry: ${result.message}`);
         return fail(result.message);
@@ -262,19 +261,18 @@ export function useIngredientInventoryActions(): IIngredientInventoryActions {
 
   const deleteEntry = useCallback(
     async (entryId: IngredientInventoryEntryId): Promise<Result<IIngredientInventoryEntryEntity>> => {
-      const dotIndex = entryId.indexOf('.');
-      if (dotIndex < 0) {
-        return fail(`Invalid composite inventory entry ID: ${entryId}`);
+      const parsed = Entities.Inventory.Converters.parsedIngredientInventoryEntryId.convert(entryId);
+      if (parsed.isFailure()) {
+        return fail(parsed.message);
       }
-      const collectionId = entryId.substring(0, dotIndex) as CollectionId;
-      const baseId = entryId.substring(dotIndex + 1) as IngredientInventoryEntryBaseId;
+      const { collectionId, itemId } = parsed.value;
 
       const persistedResult = getPersistedCollection(collectionId);
       if (persistedResult.isFailure()) {
         return fail(persistedResult.message);
       }
 
-      const result = await persistedResult.value.removeItem(baseId);
+      const result = await persistedResult.value.removeItem(itemId);
       if (result.isFailure()) {
         workspace.data.logger.error(`Failed to delete ingredient inventory entry: ${result.message}`);
         return result;

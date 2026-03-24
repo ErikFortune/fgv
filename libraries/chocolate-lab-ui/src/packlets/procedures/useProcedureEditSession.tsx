@@ -106,7 +106,7 @@ export interface IProcedureEditSessionResult {
 function findMutableTaskCollectionId(workspace: IWorkspace): CollectionId | undefined {
   for (const [id, col] of workspace.data.entities.tasks.collections.entries()) {
     if (col.isMutable) {
-      return id as CollectionId;
+      return id;
     }
   }
   return undefined;

@@ -31,7 +31,7 @@
 
 import { useCallback } from 'react';
 
-import { type CollectionId, Helpers } from '@fgv/ts-chocolate';
+import { type CollectionId, Editing, Helpers } from '@fgv/ts-chocolate';
 
 import { selectActiveTab, useNavigationStore } from '../navigation';
 import { useReactiveWorkspace, useWorkspace } from '../workspace';
@@ -100,19 +100,6 @@ export interface IEntityActions {
 // Helpers
 // ============================================================================
 
-/**
- * Extract the collection ID prefix from a composite entity ID.
- * @param compositeId - e.g. "my-collection.my-entity"
- * @returns The collection ID portion, or undefined if the format is invalid
- */
-function extractCollectionId(compositeId: string): CollectionId | undefined {
-  const dotIndex = compositeId.indexOf('.');
-  if (dotIndex < 1) {
-    return undefined;
-  }
-  return compositeId.slice(0, dotIndex) as CollectionId;
-}
-
 // ============================================================================
 // Hook
 // ============================================================================
@@ -171,11 +158,12 @@ export function useEntityActions(): IEntityActions {
         return false;
       }
 
-      const collectionId = extractCollectionId(compositeId);
-      if (!collectionId) {
-        workspace.data.logger.error(`Invalid composite ID '${compositeId}'`);
+      const splitResult = Editing.splitCompositeId(compositeId);
+      if (splitResult.isFailure()) {
+        workspace.data.logger.error(splitResult.message);
         return false;
       }
+      const { collectionId } = splitResult.value;
 
       const manager = isUserTab(activeTab)
         ? workspace.userData.entities.getCollectionManager(subLibrary)
@@ -240,11 +228,12 @@ export function useEntityActions(): IEntityActions {
         return undefined;
       }
 
-      const sourceCollectionId = extractCollectionId(compositeId);
-      if (!sourceCollectionId) {
-        workspace.data.logger.error(`Invalid composite ID '${compositeId}'`);
+      const splitResult = Editing.splitCompositeId(compositeId);
+      if (splitResult.isFailure()) {
+        workspace.data.logger.error(splitResult.message);
         return undefined;
       }
+      const { collectionId: sourceCollectionId } = splitResult.value;
 
       const manager = isUserTab(activeTab)
         ? workspace.userData.entities.getCollectionManager(subLibrary)
@@ -286,7 +275,13 @@ export function useEntityActions(): IEntityActions {
         return;
       }
 
-      const [collectionId, baseId] = compositeId.split('.') as [CollectionId, string];
+      const splitResult = Editing.splitCompositeId(compositeId);
+      if (splitResult.isFailure()) {
+        workspace.data.logger.error(splitResult.message);
+        return;
+      }
+      const { collectionId, itemId: baseId } = splitResult.value;
+
       const collectionResult = subLibrary.collections.get(collectionId).asResult;
       if (collectionResult.isFailure()) {
         workspace.data.logger.error(`Collection '${collectionId}' not found`);
