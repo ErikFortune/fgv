@@ -797,6 +797,89 @@ describe('FileSystemAccessTreeAccessors', () => {
         const syncResult = await accessors.syncToDisk();
         expect(syncResult).toFailWith(/Failed to create file.*Permission denied/i);
       });
+
+      test('successfully deletes a root-level file from disk via syncToDisk pending deletions', async () => {
+        // Covers lines 329-333: the pending deletions loop in syncToDisk
+        const dirHandle = createMockDirectoryHandle('/', {
+          'toDelete.txt': { content: 'will be deleted', type: 'text/plain' },
+          'keep.txt': { content: 'stays', type: 'text/plain' }
+        });
+
+        const accessors = (
+          await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle, { mutable: true })
+        ).orThrow();
+
+        // Delete the file from in-memory tree
+        accessors.deleteFile('/toDelete.txt').orThrow();
+        expect(accessors.isDirty()).toBe(true);
+        expect(accessors.getDirtyPaths()).toContain('/toDelete.txt');
+
+        // syncToDisk should process the pending deletion
+        const syncResult = await accessors.syncToDisk();
+        expect(syncResult).toSucceed();
+        expect(accessors.isDirty()).toBe(false);
+      });
+
+      test('successfully deletes a nested file from disk via syncToDisk (navigates parent dirs)', async () => {
+        // Covers lines 468-469: getDirectoryHandle navigation loop in _deleteFileFromDisk
+        const dirHandle = createMockDirectoryHandle('/', {
+          'src/utils/helper.txt': { content: 'to be deleted', type: 'text/plain' },
+          'src/index.txt': { content: 'stays', type: 'text/plain' }
+        });
+
+        const accessors = (
+          await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle, { mutable: true })
+        ).orThrow();
+
+        // Delete the nested file
+        accessors.deleteFile('/src/utils/helper.txt').orThrow();
+        expect(accessors.isDirty()).toBe(true);
+
+        const syncResult = await accessors.syncToDisk();
+        expect(syncResult).toSucceed();
+        expect(accessors.isDirty()).toBe(false);
+      });
+
+      test('aggregates deletion errors when _deleteFileFromDisk fails during syncToDisk', async () => {
+        // Covers lines 330-332: the error aggregation when _deleteFileFromDisk returns failure
+        const dirHandle = createMockDirectoryHandle('/', {
+          'toDelete.txt': { content: 'content', type: 'text/plain' }
+        });
+
+        const accessors = (
+          await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle, { mutable: true })
+        ).orThrow();
+
+        accessors.deleteFile('/toDelete.txt').orThrow();
+
+        // Make removeEntry fail to trigger the error path in _deleteFileFromDisk
+        const rootDir = (accessors as any)._rootDir;
+        rootDir.removeEntry = jest.fn().mockRejectedValue(new Error('Cannot delete: file locked'));
+
+        const syncResult = await accessors.syncToDisk();
+        expect(syncResult).toFailWith(/Failed to sync 1 file/i);
+        expect(syncResult).toFailWith(/delete.*toDelete\.txt/i);
+      });
+
+      test('catch block in _deleteFileFromDisk when removeEntry throws', async () => {
+        // Covers lines 473-476: the catch block in _deleteFileFromDisk
+        const dirHandle = createMockDirectoryHandle('/', {
+          'target.txt': { content: 'content', type: 'text/plain' }
+        });
+
+        const accessors = (
+          await FileSystemAccessTreeAccessors.fromDirectoryHandle(dirHandle, { mutable: true })
+        ).orThrow();
+
+        accessors.deleteFile('/target.txt').orThrow();
+
+        // Directly make _rootDir.removeEntry throw a non-Error value to test the catch branch
+        const rootDir = (accessors as any)._rootDir;
+        rootDir.removeEntry = jest.fn().mockRejectedValue('non-error string');
+
+        const syncResult = await accessors.syncToDisk();
+        expect(syncResult).toFailWith(/Failed to delete file.*non-error string/i);
+      });
     });
   });
 });

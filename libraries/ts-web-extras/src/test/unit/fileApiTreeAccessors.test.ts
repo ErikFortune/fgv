@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { FileApiTreeAccessors } from '../../packlets/file-tree';
+import { FileTree } from '@fgv/ts-json-base';
 import { FileTreeHelpers } from '../../packlets/helpers';
 import {
   createMockFile,
@@ -29,6 +30,39 @@ import {
   createMockDirectoryFileList,
   verifyFileAPI
 } from '../utils/testHelpers';
+
+// ---- Minimal mock fetch helpers for createFromHttp tests ----
+
+interface IHttpMockResponse {
+  ok: boolean;
+  status?: number;
+  jsonValue?: unknown;
+  textValue?: string;
+  throwOnJson?: boolean;
+}
+
+function makeMockHttpResponse(options: IHttpMockResponse): Response {
+  const { ok, status = ok ? 200 : 400, jsonValue, textValue, throwOnJson } = options;
+  return {
+    ok,
+    status,
+    json: throwOnJson
+      ? () => Promise.reject(new Error('JSON parse error'))
+      : () => Promise.resolve(jsonValue),
+    text: () => Promise.resolve(textValue ?? `HTTP ${status}`)
+  } as unknown as Response;
+}
+
+function makeMockHttpFetch(responses: IHttpMockResponse[]): typeof fetch {
+  let callIndex = 0;
+  return (url: string | URL | Request, _init?: RequestInit): Promise<Response> => {
+    const response = responses[callIndex++];
+    if (response === undefined) {
+      return Promise.reject(new Error(`Unexpected fetch call to ${url.toString()}`));
+    }
+    return Promise.resolve(makeMockHttpResponse(response));
+  };
+}
 
 describe('FileApiTreeAccessors', () => {
   describe('Static factory methods', () => {
@@ -1313,6 +1347,41 @@ describe('FileApiTreeAccessors', () => {
         expect(result).toSucceed();
         expect(inferContentType).toHaveBeenCalledWith('/dist/bundle.js', 'application/javascript');
       });
+    });
+  });
+
+  describe('createFromHttp', () => {
+    test('succeeds and returns a FileTree when HTTP backend loads successfully', async () => {
+      const fetchImpl = makeMockHttpFetch([
+        {
+          ok: true,
+          jsonValue: { path: '/', children: [{ path: '/data.json', name: 'data.json', type: 'file' }] }
+        },
+        { ok: true, jsonValue: { path: '/data.json', contents: '{"items":{}}' } }
+      ]);
+
+      const result = await FileApiTreeAccessors.createFromHttp({
+        baseUrl: 'http://localhost:3000',
+        fetchImpl,
+        mutable: true
+      });
+
+      expect(result).toSucceedAndSatisfy((tree) => {
+        expect(tree).toBeInstanceOf(FileTree.FileTree);
+        expect(tree.getFile('/data.json')).toSucceed();
+        expect(FileTree.isPersistentAccessors(tree.hal)).toBe(true);
+      });
+    });
+
+    test('fails when the HTTP backend returns an error during initial load', async () => {
+      const fetchImpl = makeMockHttpFetch([{ ok: false, status: 503, textValue: 'Service Unavailable' }]);
+
+      const result = await FileApiTreeAccessors.createFromHttp({
+        baseUrl: 'http://localhost:3000',
+        fetchImpl
+      });
+
+      expect(result).toFailWith(/service unavailable/i);
     });
   });
 });

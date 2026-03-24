@@ -956,4 +956,59 @@ describe('LocalStorageTreeAccessors', () => {
       expect(mockStorage.getItem('test:ingredients:v1')).toBeNull();
     });
   });
+
+  describe('inferContentType callback in _loadFromStorage', () => {
+    test('calls inferContentType when loading files from storage', () => {
+      // Covers lines 163-164: the params.inferContentType branch in _loadFromStorage
+      mockStorage.setItem(
+        'test:ingredients:v1',
+        JSON.stringify({
+          myCollection: '{"items":{}}'
+        })
+      );
+
+      const inferContentType = jest.fn((filePath: string, _provided: string | undefined) => {
+        const { succeed: s } = require('@fgv/ts-utils') as typeof import('@fgv/ts-utils');
+        return s('application/json' as string);
+      });
+
+      const result = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        inferContentType
+      });
+
+      expect(result).toSucceed();
+      expect(inferContentType).toHaveBeenCalledWith('/data/ingredients/myCollection.json', undefined);
+    });
+  });
+
+  describe('extension-less file path handling', () => {
+    test('syncs a file whose path has no extension (collection ID has no dot)', async () => {
+      // Covers line 249: dotIndex <= 0 case in _getCollectionIdFromPath, returning cleanPath as-is
+      // We save a file at a path with no file extension; the collection ID extracted
+      // will be the entire basename (no dot to strip).
+      const accessors = LocalStorageTreeAccessors.fromStorage({
+        pathToKeyMap: {
+          '/data/ingredients': 'test:ingredients:v1'
+        },
+        storage: mockStorage,
+        mutable: true
+      }).orThrow();
+
+      // Save a file at a path with no extension
+      accessors.saveFileContents('/data/ingredients/nodot', '{"items":{}}').orThrow();
+
+      const syncResult = await accessors.syncToDisk();
+      expect(syncResult).toSucceed();
+
+      // The collection ID stored in localStorage should be 'nodot' (no extension stripped)
+      const stored = mockStorage.getItem('test:ingredients:v1');
+      expect(stored).toBeTruthy();
+      const parsed = JSON.parse(stored!) as Record<string, unknown>;
+      expect(parsed.nodot).toBe('{"items":{}}');
+    });
+  });
 });

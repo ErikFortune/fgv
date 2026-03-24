@@ -1166,4 +1166,113 @@ describe('HttpTreeAccessors', () => {
       }
     });
   });
+
+  describe('userId header in _request()', () => {
+    test('includes X-User-Id header in PUT /file and POST /sync requests when userId is set', async () => {
+      // Covers line 259: the this._userId branch in _request()
+      const { fetchImpl, calls } = makeMockFetch([
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') },
+        { ok: true, jsonValue: fileResponse('/data.json', '"updated"') },
+        { ok: true, jsonValue: { synced: 1 } }
+      ]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl,
+          mutable: true,
+          userId: 'test-user-123'
+        })
+      ).orThrow();
+
+      accessors.saveFileContents('/data.json', '"updated"').orThrow();
+      const result = await accessors.syncToDisk();
+      expect(result).toSucceed();
+
+      // The PUT and POST requests should include the X-User-Id header
+      const syncCalls = calls.slice(2);
+      for (const call of syncCalls) {
+        const headers = call.init?.headers as Record<string, string> | undefined;
+        expect(headers?.['X-User-Id']).toBe('test-user-123');
+      }
+    });
+  });
+
+  describe('deleteFile()', () => {
+    test('fails when the underlying InMemoryTreeAccessors deleteFile fails (file not found)', async () => {
+      // Covers lines 200-201: result.isFailure() branch in deleteFile
+      const { fetchImpl } = makeMockFetch([{ ok: true, jsonValue: { path: '/', children: [] } }]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({ baseUrl: 'http://localhost:3000', fetchImpl, mutable: true })
+      ).orThrow();
+
+      // Delete a file that does not exist — super.deleteFile should fail
+      const result = accessors.deleteFile('/nonexistent.json');
+      expect(result).toFail();
+    });
+
+    test('includes namespace in DELETE query params when namespace is configured', async () => {
+      // Covers lines 131-132: the namespace branch in syncToDisk's pending-deletion loop
+      const { fetchImpl, calls } = makeMockFetch([
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') },
+        { ok: true, jsonValue: { deleted: true } },
+        { ok: true, jsonValue: { synced: 0 } }
+      ]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          namespace: 'my-namespace',
+          fetchImpl,
+          mutable: true
+        })
+      ).orThrow();
+
+      accessors.deleteFile('/data.json').orThrow();
+      const result = await accessors.syncToDisk();
+
+      expect(result).toSucceed();
+
+      // The DELETE request URL should include namespace as a query parameter
+      const deleteCalls = calls.filter((c) => c.init?.method === 'DELETE');
+      expect(deleteCalls).toHaveLength(1);
+      expect(deleteCalls[0].url).toContain('namespace=my-namespace');
+    });
+
+    test('triggers fire-and-forget autoSync after successful delete when autoSync is enabled', async () => {
+      // Covers lines 209-212: the autoSync branch in deleteFile
+      const syncResponses: IMockResponse[] = [
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') },
+        // DELETE /file response for pending deletion
+        { ok: true, jsonValue: { deleted: true } },
+        // POST /sync response
+        { ok: true, jsonValue: { synced: 0 } }
+      ];
+      const { fetchImpl, calls } = makeMockFetch(syncResponses);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl,
+          mutable: true,
+          autoSync: true
+        })
+      ).orThrow();
+
+      const result = accessors.deleteFile('/data.json');
+      expect(result).toSucceedWith(true);
+
+      // autoSync fires-and-forgets; wait for microtasks to drain
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      // Verify that DELETE + POST /sync were called
+      const methodCalls = calls.slice(2).map((c) => c.init?.method);
+      expect(methodCalls).toContain('DELETE');
+      expect(methodCalls).toContain('POST');
+    });
+  });
 });

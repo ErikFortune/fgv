@@ -352,7 +352,8 @@ export class HttpTreeAccessors<TCT extends string = string>
     }
 
     const fetchImpl = normalizeFetch(params.fetchImpl);
-    const userIdHeaders: RequestInit | undefined = /* istanbul ignore next */ params.userId
+    /* c8 ignore next 3 - userId header in static _requestWithParams; covered by userId tests via fromHttp */
+    const userIdHeaders: RequestInit | undefined = params.userId
       ? { headers: { 'X-User-Id': params.userId } }
       : undefined;
     const response = await fetchImpl(
