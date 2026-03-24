@@ -2,7 +2,7 @@
   "changes": [
     {
       "comment": "Initial alpha release",
-      "type": "none",
+      "type": "patch",
       "packageName": "@fgv/ts-json-base"
     }
   ],

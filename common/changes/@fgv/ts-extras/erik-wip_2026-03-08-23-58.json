@@ -3,7 +3,7 @@
     {
       "packageName": "@fgv/ts-extras",
       "comment": "Add ai-assist, keystore, mustache, yaml helpers",
-      "type": "none"
+      "type": "patch"
     }
   ],
   "packageName": "@fgv/ts-extras"

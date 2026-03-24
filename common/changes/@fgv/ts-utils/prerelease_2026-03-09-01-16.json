@@ -3,7 +3,7 @@
     {
       "packageName": "@fgv/ts-utils",
       "comment": "",
-      "type": "none"
+      "type": "patch"
     }
   ],
   "packageName": "@fgv/ts-utils"

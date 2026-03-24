@@ -3,7 +3,7 @@
     {
       "packageName": "@fgv/typedoc-compact-theme",
       "comment": "",
-      "type": "none"
+      "type": "patch"
     }
   ],
   "packageName": "@fgv/typedoc-compact-theme"

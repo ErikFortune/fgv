@@ -3,7 +3,7 @@
     {
       "packageName": "@fgv/ts-web-extras",
       "comment": "fix package.json error",
-      "type": "none"
+      "type": "patch"
     }
   ],
   "packageName": "@fgv/ts-web-extras"

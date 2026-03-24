@@ -3,7 +3,7 @@
     {
       "packageName": "@fgv/ts-bcp47",
       "comment": "",
-      "type": "none"
+      "type": "patch"
     }
   ],
   "packageName": "@fgv/ts-bcp47"

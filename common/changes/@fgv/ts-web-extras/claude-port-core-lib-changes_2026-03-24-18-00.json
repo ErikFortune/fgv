@@ -2,7 +2,7 @@
   "changes": [
     {
       "comment": "Add retry with exponential backoff for transient HTTP failures and sync concurrency guard to prevent thundering herd during bulk operations",
-      "type": "none",
+      "type": "patch",
       "packageName": "@fgv/ts-web-extras"
     }
   ],

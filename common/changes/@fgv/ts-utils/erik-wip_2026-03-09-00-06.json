@@ -3,7 +3,7 @@
     {
       "packageName": "@fgv/ts-utils",
       "comment": "add aggregated result map, converting result map",
-      "type": "none"
+      "type": "patch"
     }
   ],
   "packageName": "@fgv/ts-utils"

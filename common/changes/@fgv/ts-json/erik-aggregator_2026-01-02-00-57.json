@@ -3,7 +3,7 @@
     {
       "packageName": "@fgv/ts-json",
       "comment": "",
-      "type": "none"
+      "type": "patch"
     }
   ],
   "packageName": "@fgv/ts-json"

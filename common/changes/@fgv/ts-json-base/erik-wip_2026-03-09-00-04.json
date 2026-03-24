@@ -3,7 +3,7 @@
     {
       "packageName": "@fgv/ts-json-base",
       "comment": "Add writable file tree ",
-      "type": "none"
+      "type": "patch"
     }
   ],
   "packageName": "@fgv/ts-json-base"
