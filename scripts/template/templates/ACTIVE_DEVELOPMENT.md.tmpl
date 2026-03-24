@@ -1,0 +1,58 @@
+# Active Development Guidelines
+
+This document covers guidelines specific to the libraries and applications currently under active development. These rules supplement the general coding standards.
+
+## Active Development Scope
+
+<!-- Update this section with your domain-specific projects -->
+
+### Libraries (all actively developed)
+| Library | Path | Purpose |
+|---------|------|---------|
+{{ACTIVE_LIBRARIES}}
+
+### Other Libraries (from @fgv/*, handle with care)
+The @fgv/* utility packages are consumed as published npm dependencies. Do not modify them in this repo.
+
+---
+
+## Compatibility Rules
+
+### New Libraries: No Compatibility Burden
+
+All libraries in this repo are new code. Compatibility is **not** a consideration:
+
+- **Do not** preserve deprecated values, types, or re-exports
+- **Do not** add backwards-compatibility shims or renamed aliases
+- **Do not** leave dead code "just in case"
+- If a change is necessary or appropriate, **break compatibility and fix consumers** rather than accumulating cruft
+
+---
+
+## Testing Philosophy During Active Development
+
+### Prioritize Functional Breadth Over Measured Coverage
+
+The repo requires 100% coverage to merge to `main`, but during active development:
+
+1. **Focus on functional correctness** - Write tests that verify behavior, not just hit lines
+2. **Coverage metrics come later** - Once code settles down, fill coverage gaps systematically
+3. **Don't skip tests** - Still write tests, just prioritize breadth of behavior over coverage percentage
+
+### Balance Effort vs Value
+
+- Don't spend an hour writing tests for a 5-minute fix
+- Use judgment about when tests add enough value to justify the work
+- When in doubt, ask
+
+---
+
+## General Principles
+
+### Correctness Over Convenience
+
+Prioritize correctness over ease, convenience, or brevity:
+
+- Follow all repo guidelines including Result pattern with chaining
+- Don't take shortcuts that sacrifice type safety or error handling
+- A correct, slightly verbose solution is better than a clever but fragile one

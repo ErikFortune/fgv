@@ -30,6 +30,7 @@ import {
   FileSystemDirectoryHandle
 } from '../file-api-types';
 import { FileSystemAccessTreeAccessors, IFileSystemAccessTreeParams } from './fileSystemAccessTreeAccessors';
+import { HttpTreeAccessors, IHttpTreeParams } from './httpTreeAccessors';
 import { LocalStorageTreeAccessors, ILocalStorageTreeParams } from './localStorageTreeAccessors';
 
 /**
@@ -127,6 +128,23 @@ export class FileApiTreeAccessors<TCT extends string = string> {
       return fail(accessorsResult.message);
     }
 
+    return FileTree.FileTree.create<TCT>(accessorsResult.value);
+  }
+
+  /**
+   * Create a persistent FileTree from an HTTP storage service.
+   *
+   * @param params - Configuration including API base URL, namespace, and optional autoSync
+   * @returns Promise resolving to a FileTree with persistence capability
+   * @public
+   */
+  public static async createFromHttp<TCT extends string = string>(
+    params: IHttpTreeParams<TCT>
+  ): Promise<Result<FileTree.FileTree<TCT>>> {
+    const accessorsResult = await HttpTreeAccessors.fromHttp<TCT>(params);
+    if (accessorsResult.isFailure()) {
+      return fail(accessorsResult.message);
+    }
     return FileTree.FileTree.create<TCT>(accessorsResult.value);
   }
 

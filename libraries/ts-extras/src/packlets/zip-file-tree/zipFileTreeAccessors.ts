@@ -21,21 +21,13 @@
  */
 
 import { unzipSync, unzip, Unzipped } from 'fflate';
-import {
-  Result,
-  succeed,
-  fail,
-  captureResult,
-  Converter,
-  Validator,
-  DetailedResult,
-  failWithDetail,
-  Success
-} from '@fgv/ts-utils';
+import { Result, succeed, fail, captureResult, Converter, Validator } from '@fgv/ts-utils';
 import { FileTree, JsonValue } from '@fgv/ts-json-base';
 
 /**
  * Implementation of `FileTree.IFileTreeFileItem` for files in a ZIP archive.
+ * ZIP files are read-only, so this item does not support mutation.
+ * Use {@link FileTree.isMutableFileItem | isMutableFileItem} to check before attempting mutations.
  * @public
  */
 export class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFileItem<TCT> {
@@ -108,36 +100,6 @@ export class ZipFileItem<TCT extends string = string> implements FileTree.IFileT
     this.name = accessors.getBaseName(zipFilePath);
     this.extension = accessors.getExtension(zipFilePath);
     this.baseName = accessors.getBaseName(zipFilePath, this.extension);
-  }
-
-  /**
-   * Returns a boolean indicating whether this file can be saved.
-   */
-  public getIsMutable(): DetailedResult<boolean, FileTree.SaveDetail> {
-    return this._accessors.fileIsMutable(this.absolutePath);
-  }
-
-  /**
-   * Sets the contents of the file as parsed JSON.
-   * @param json - The JSON to set as the contents of the file.
-   * @returns A Result indicating success or failure.
-   */
-  public setContents(json: JsonValue): Result<JsonValue> {
-    return captureResult(() => JSON.stringify(json, null, 2)).onSuccess((contents) =>
-      this.setRawContents(contents).onSuccess(() => Success.with(json))
-    );
-  }
-
-  /**
-   * Sets the contents of the file as a string.
-   * @param contents - The string to set as the contents of the file.
-   * @returns A Result indicating success or failure.
-   */
-  public setRawContents(contents: string): Result<string> {
-    return this.getIsMutable().asResult.onSuccess(() =>
-      /* c8 ignore next - unreachable: ZIP files are always read-only */
-      this._accessors.saveFileContents(this.absolutePath, contents)
-    );
   }
 
   /**
@@ -226,12 +188,12 @@ export class ZipDirectoryItem<TCT extends string = string> implements FileTree.I
 }
 
 /**
- * File tree accessors for ZIP archives.
+ * Read-only file tree accessors for ZIP archives.
+ * ZIP archives are read-only by design — use {@link FileTree.isMutableAccessors | isMutableAccessors}
+ * to check before attempting mutations.
  * @public
  */
-export class ZipFileTreeAccessors<TCT extends string = string>
-  implements FileTree.IMutableFileTreeAccessors<TCT>
-{
+export class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> {
   /**
    * The unzipped file data.
    */
@@ -424,25 +386,6 @@ export class ZipFileTreeAccessors<TCT extends string = string>
       const item = new ZipDirectoryItem<TCT>(dirPath, this);
       this._itemCache.set(absolutePath, item);
     });
-  }
-
-  /**
-   * Returns a boolean indicating whether this file can be saved.
-   * @param path - The path of the file.
-   * @returns A `DetailedResult` indicating success or failure.
-   */
-  public fileIsMutable(__path: string): DetailedResult<boolean, FileTree.SaveDetail> {
-    return failWithDetail('ZIP files are read-only', 'not-supported');
-  }
-
-  /**
-   * Saves the contents of a file.
-   * @param path - The path of the file.
-   * @param contents - The contents of the file.
-   * @returns A `Result` indicating success or failure.
-   */
-  public saveFileContents(__path: string, __contents: string): Result<string> {
-    return failWithDetail('ZIP files are read-only', 'not-supported');
   }
 
   /**

@@ -208,6 +208,23 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
   }
 
   /**
+   * {@inheritDoc FileTree.IMutableFileTreeAccessors.deleteFile}
+   */
+  public deleteFile(path: string): Result<boolean> {
+    return this.fileIsMutable(path).asResult.onSuccess(() => {
+      const absolutePath = this.resolveAbsolutePath(path);
+      return captureResult(() => {
+        const stat = fs.statSync(absolutePath);
+        if (!stat.isFile()) {
+          throw new Error(`${absolutePath}: not a file`);
+        }
+        fs.unlinkSync(absolutePath);
+        return true;
+      });
+    });
+  }
+
+  /**
    * {@inheritDoc FileTree.IMutableFileTreeAccessors.createDirectory}
    */
   public createDirectory(dirPath: string): Result<string> {
@@ -221,6 +238,24 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IMutabl
     return captureResult(() => {
       fs.mkdirSync(absolutePath, { recursive: true });
       return absolutePath;
+    });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableFileTreeAccessors.deleteDirectory}
+   */
+  public deleteDirectory(dirPath: string): Result<boolean> {
+    return this.fileIsMutable(dirPath).asResult.onSuccess(() => {
+      const absolutePath = this.resolveAbsolutePath(dirPath);
+      return captureResult(() => {
+        const stat = fs.statSync(absolutePath);
+        if (!stat.isDirectory()) {
+          throw new Error(`${absolutePath}: not a directory`);
+        }
+        // fs.rmdirSync fails if directory is non-empty (desired behavior)
+        fs.rmdirSync(absolutePath);
+        return true;
+      });
     });
   }
 }

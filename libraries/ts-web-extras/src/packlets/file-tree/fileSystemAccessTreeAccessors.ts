@@ -20,7 +20,15 @@
  * SOFTWARE.
  */
 
-import { Result, succeed, fail, captureResult, DetailedResult, succeedWithDetail } from '@fgv/ts-utils';
+import {
+  Result,
+  succeed,
+  fail,
+  captureResult,
+  DetailedResult,
+  succeedWithDetail,
+  Logging
+} from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { FileSystemDirectoryHandle, FileSystemFileHandle } from '../file-api-types';
 
@@ -51,6 +59,9 @@ export interface IFileSystemAccessTreeParams<TCT extends string = string>
    * If omitted, defaults to `/<filename>`.
    */
   filePath?: string;
+
+  /** Optional logger for auto-sync and persistence failures. */
+  logger?: Logging.LogReporter<unknown>;
 }
 
 /**
@@ -65,8 +76,10 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
   private readonly _handles: Map<string, FileSystemFileHandle>;
   private readonly _rootDir: FileSystemDirectoryHandle;
   private readonly _dirtyFiles: Set<string>;
+  private readonly _pendingDeletions: Set<string>;
   private readonly _autoSync: boolean;
   private readonly _hasWritePermission: boolean;
+  private readonly _logger: Logging.LogReporter<unknown>;
 
   /**
    * Protected constructor for FileSystemAccessTreeAccessors.
@@ -87,8 +100,25 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
     this._rootDir = rootDir;
     this._handles = handles;
     this._dirtyFiles = new Set();
+    this._pendingDeletions = new Set();
     this._autoSync = params?.autoSync ?? false;
     this._hasWritePermission = hasWritePermission;
+    this._logger = params?.logger ?? new Logging.LogReporter<unknown>();
+  }
+
+  private async _runAutoSyncTask(
+    path: string,
+    operation: 'save' | 'delete',
+    action: () => Promise<Result<void>>
+  ): Promise<void> {
+    try {
+      const result = await action();
+      if (result.isFailure()) {
+        this._logger.error(`Auto-${operation} failed for ${path}: ${result.message}`);
+      }
+    } catch (err) {
+      this._logger.error(`Auto-${operation} threw for ${path}: ${String(err)}`);
+    }
   }
 
   /**
@@ -294,6 +324,14 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
 
     const errors: string[] = [];
 
+    // Process pending deletions from disk
+    for (const path of this._pendingDeletions) {
+      const deleteResult = await this._deleteFileFromDisk(path);
+      if (deleteResult.isFailure()) {
+        errors.push(`delete ${path}: ${deleteResult.message}`);
+      }
+    }
+
     for (const path of this._dirtyFiles) {
       const syncResult = await this._syncFile(path);
       if (syncResult.isFailure()) {
@@ -305,6 +343,7 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
       return fail(`Failed to sync ${errors.length} file(s):\n${errors.join('\n')}`);
     }
 
+    this._pendingDeletions.clear();
     this._dirtyFiles.clear();
     return succeed(undefined);
   }
@@ -313,14 +352,34 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
    * Implements `FileTree.IPersistentFileTreeAccessors.isDirty`
    */
   public isDirty(): boolean {
-    return this._dirtyFiles.size > 0;
+    return this._dirtyFiles.size > 0 || this._pendingDeletions.size > 0;
   }
 
   /**
    * Implements `FileTree.IPersistentFileTreeAccessors.getDirtyPaths`
    */
   public getDirtyPaths(): string[] {
-    return Array.from(this._dirtyFiles);
+    return [...Array.from(this._dirtyFiles), ...Array.from(this._pendingDeletions)];
+  }
+
+  /**
+   * Override deleteFile to track pending deletions for syncToDisk.
+   */
+  public deleteFile(path: string): Result<boolean> {
+    const result = super.deleteFile(path);
+    if (result.isSuccess()) {
+      this._dirtyFiles.delete(path);
+      this._handles.delete(path);
+
+      if (this._hasWritePermission) {
+        this._pendingDeletions.add(path);
+
+        if (this._autoSync) {
+          void this._runAutoSyncTask(path, 'delete', () => this._deleteFileFromDisk(path));
+        }
+      }
+    }
+    return result;
   }
 
   /**
@@ -335,11 +394,8 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
 
       // Auto-sync if enabled
       if (this._autoSync) {
-        // Fire and forget - errors logged but don't block
-        this._syncFile(path).catch((err) => {
-          /* c8 ignore next 1 - defensive: async auto-sync error logging */
-          console.error(`Auto-sync failed for ${path}:`, err);
-        });
+        // Fire and log-on-failure; don't block the save path.
+        void this._runAutoSyncTask(path, 'save', () => this._syncFile(path));
       }
     }
 
@@ -386,6 +442,37 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return fail(`Failed to write file: ${message}`);
+    }
+  }
+
+  /**
+   * Delete a file from disk using the File System Access API.
+   * @param path - The path of the file to delete.
+   * @returns Promise resolving to success or failure.
+   * @internal
+   */
+  private async _deleteFileFromDisk(path: string): Promise<Result<void>> {
+    try {
+      const absolutePath = this.resolveAbsolutePath(path);
+      const parts = absolutePath.split('/').filter((p) => p.length > 0);
+      const filename = parts.pop();
+
+      /* c8 ignore next 3 - defensive: invalid path */
+      if (!filename) {
+        return fail(`Invalid file path: ${path}`);
+      }
+
+      // Navigate to the parent directory
+      let currentDir = this._rootDir;
+      for (const part of parts) {
+        currentDir = await currentDir.getDirectoryHandle(part);
+      }
+
+      await currentDir.removeEntry(filename);
+      return succeed(undefined);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return fail(`Failed to delete file ${path}: ${message}`);
     }
   }
 

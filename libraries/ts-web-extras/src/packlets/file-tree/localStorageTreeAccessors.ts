@@ -250,6 +250,38 @@ export class LocalStorageTreeAccessors<TCT extends string = string>
   }
 
   /**
+   * Remove a file's entry from its localStorage key.
+   * @internal
+   */
+  private _deleteFileFromStorage(path: string): void {
+    const storageKey = this._getStorageKeyForPath(path);
+    if (!storageKey) {
+      return;
+    }
+
+    const collectionId = this._getCollectionIdFromPath(path);
+    const existingJson = this._storage.getItem(storageKey);
+    if (!existingJson) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(existingJson);
+      if (isJsonObject(parsed)) {
+        const existing = parsed as Record<string, unknown>;
+        delete existing[collectionId];
+        if (Object.keys(existing).length > 0) {
+          this._storage.setItem(storageKey, JSON.stringify(existing));
+        } else {
+          this._storage.removeItem(storageKey);
+        }
+      }
+    } catch {
+      // Storage is corrupted — nothing to clean up
+    }
+  }
+
+  /**
    * Sync a single dirty file to localStorage.
    * @internal
    */
@@ -336,6 +368,21 @@ export class LocalStorageTreeAccessors<TCT extends string = string>
    */
   public getDirtyPaths(): string[] {
     return Array.from(this._dirtyFiles);
+  }
+
+  /**
+   * Delete a file and remove it from localStorage.
+   * @param path - File path to delete
+   * @returns Result with true if deleted, or error
+   * @public
+   */
+  public deleteFile(path: string): Result<boolean> {
+    const result = super.deleteFile(path);
+    if (result.isSuccess()) {
+      this._dirtyFiles.delete(path);
+      this._deleteFileFromStorage(path);
+    }
+    return result;
   }
 
   /**

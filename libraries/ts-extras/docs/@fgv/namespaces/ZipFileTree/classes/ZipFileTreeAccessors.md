@@ -6,7 +6,9 @@
 
 # Class: ZipFileTreeAccessors\<TCT\>
 
-File tree accessors for ZIP archives.
+Read-only file tree accessors for ZIP archives.
+ZIP archives are read-only by design — use [isMutableAccessors](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)
+to check before attempting mutations.
 
 ## Type Parameters
 
@@ -16,33 +18,9 @@ File tree accessors for ZIP archives.
 
 ## Implements
 
-- [`IMutableFileTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
+- [`IFileTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
 
 ## Methods
-
-### fileIsMutable()
-
-> **fileIsMutable**(`__path`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
-
-Returns a boolean indicating whether this file can be saved.
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `__path` | `string` |
-
-#### Returns
-
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
-
-A `DetailedResult` indicating success or failure.
-
-#### Implementation of
-
-`FileTree.IMutableFileTreeAccessors.fileIsMutable`
-
-***
 
 ### getBaseName()
 
@@ -63,7 +41,7 @@ Gets the base name of a path.
 
 #### Implementation of
 
-`FileTree.IMutableFileTreeAccessors.getBaseName`
+`FileTree.IFileTreeAccessors.getBaseName`
 
 ***
 
@@ -85,7 +63,7 @@ Gets the children of a directory in the file tree.
 
 #### Implementation of
 
-`FileTree.IMutableFileTreeAccessors.getChildren`
+`FileTree.IFileTreeAccessors.getChildren`
 
 ***
 
@@ -107,7 +85,7 @@ Gets the extension of a path.
 
 #### Implementation of
 
-`FileTree.IMutableFileTreeAccessors.getExtension`
+`FileTree.IFileTreeAccessors.getExtension`
 
 ***
 
@@ -129,7 +107,7 @@ Gets the contents of a file in the file tree.
 
 #### Implementation of
 
-`FileTree.IMutableFileTreeAccessors.getFileContents`
+`FileTree.IFileTreeAccessors.getFileContents`
 
 ***
 
@@ -152,7 +130,7 @@ Gets the content type of a file in the file tree.
 
 #### Implementation of
 
-`FileTree.IMutableFileTreeAccessors.getFileContentType`
+`FileTree.IFileTreeAccessors.getFileContentType`
 
 ***
 
@@ -174,7 +152,7 @@ Gets an item from the file tree.
 
 #### Implementation of
 
-`FileTree.IMutableFileTreeAccessors.getItem`
+`FileTree.IFileTreeAccessors.getItem`
 
 ***
 
@@ -196,7 +174,7 @@ Joins paths together.
 
 #### Implementation of
 
-`FileTree.IMutableFileTreeAccessors.joinPaths`
+`FileTree.IFileTreeAccessors.joinPaths`
 
 ***
 
@@ -218,32 +196,7 @@ Resolves paths to an absolute path.
 
 #### Implementation of
 
-`FileTree.IMutableFileTreeAccessors.resolveAbsolutePath`
-
-***
-
-### saveFileContents()
-
-> **saveFileContents**(`__path`, `__contents`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-Saves the contents of a file.
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `__path` | `string` |
-| `__contents` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-A `Result` indicating success or failure.
-
-#### Implementation of
-
-`FileTree.IMutableFileTreeAccessors.saveFileContents`
+`FileTree.IFileTreeAccessors.resolveAbsolutePath`
 
 ***
 

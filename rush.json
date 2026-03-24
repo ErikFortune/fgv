@@ -424,6 +424,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-http-storage",
+      "projectFolder": "libraries/ts-http-storage",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-json",
       "projectFolder": "libraries/ts-json",
       "shouldPublish": true,
@@ -529,6 +536,13 @@
       "projectFolder": "plugins/typedoc-compact-theme",
       "shouldPublish": false,
       "tags": ["plugins", "typedoc"]
+    },
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "projectFolder": "libraries/ts-app-shell",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "ui", "react"]
     }
   ]
 }
