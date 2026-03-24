@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/heft-dual-rig",
+      "comment": "publish",
+      "type": "major"
+    }
+  ],
+  "packageName": "@fgv/heft-dual-rig"
+}
