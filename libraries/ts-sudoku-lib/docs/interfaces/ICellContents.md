@@ -1,20 +1,61 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / ICellContents
+[Home](../README.md) > ICellContents
 
 # Interface: ICellContents
 
-The contents of a single ICell \| cell in a [puzzle](../classes/PuzzleSession.md).
-
-## Extended by
-
-- [`ICellState`](ICellState.md)
+The contents of a single ICell | cell in a PuzzleSession | puzzle.
 
 ## Properties
 
-| Property | Modifier | Type | Description |
-| ------ | ------ | ------ | ------ |
-| <a id="notes"></a> `notes` | `readonly` | `number`[] | Any notes associated with the [cell](ICell.md). |
-| <a id="value"></a> `value?` | `readonly` | `number` | The value of the [cell](ICell.md), or `undefined` if no value has been assigned. |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[value](./ICellContents.value.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+The value of the ICell | cell, or `undefined` if no value has been assigned.
+
+</td></tr>
+<tr><td>
+
+[notes](./ICellContents.notes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number[]
+
+</td><td>
+
+Any notes associated with the ICell | cell.
+
+</td></tr>
+</tbody></table>

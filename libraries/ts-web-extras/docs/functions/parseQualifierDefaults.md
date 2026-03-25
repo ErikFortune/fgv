@@ -1,22 +1,12 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > parseQualifierDefaults
 
-***
-
-[@fgv/ts-web-extras](../README.md) / parseQualifierDefaults
-
-# Function: parseQualifierDefaults()
-
-> **parseQualifierDefaults**(`qualifierDefaults`): `Record`\<`string`, `string`[]\>
+# Function: parseQualifierDefaults
 
 Converts qualifier defaults token to structured format
 Example: "language=en-US,en-CA|territory=US" -\> { language: ["en-US", "en-CA"], territory: ["US"] }
 
-## Parameters
+## Signature
 
-| Parameter | Type |
-| ------ | ------ |
-| `qualifierDefaults` | `string` |
-
-## Returns
-
-`Record`\<`string`, `string`[]\>
+```typescript
+function parseQualifierDefaults(qualifierDefaults: string): Record<string, string[]>
+```

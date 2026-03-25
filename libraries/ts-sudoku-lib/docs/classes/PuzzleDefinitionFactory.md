@@ -1,8 +1,4 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / PuzzleDefinitionFactory
+[Home](../README.md) > PuzzleDefinitionFactory
 
 # Class: PuzzleDefinitionFactory
 
@@ -10,133 +6,140 @@ Factory for creating and validating puzzle definitions
 
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new PuzzleDefinitionFactory**(): `PuzzleDefinitionFactory`
+Constructor
 
-#### Returns
+</th><th>
 
-`PuzzleDefinitionFactory`
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor()`
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### create()
+<table><thead><tr><th>
 
-> `static` **create**(`dimensions`, `options`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleDefinition`](../interfaces/IPuzzleDefinition.md)\>
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[create(dimensions, options)](./PuzzleDefinitionFactory.create.md)
+
+</td><td>
+
+`static`
+
+</td><td>
 
 Create a puzzle definition from dimensions and options
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `dimensions` | [`IPuzzleDimensions`](../interfaces/IPuzzleDimensions.md) |
-| `options` | `Partial`\<[`IPuzzleDefinition`](../interfaces/IPuzzleDefinition.md)\> |
+[createKiller(dimensions, description)](./PuzzleDefinitionFactory.createKiller.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleDefinition`](../interfaces/IPuzzleDefinition.md)\>
+`static`
 
-***
-
-### createKiller()
-
-> `static` **createKiller**(`dimensions`, `description`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleDefinition`](../interfaces/IPuzzleDefinition.md)\>
+</td><td>
 
 Create killer sudoku puzzle definition with cage constraints
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `dimensions` | [`IPuzzleDimensions`](../interfaces/IPuzzleDimensions.md) |
-| `description` | `Omit`\<[`IPuzzleDefinition`](../interfaces/IPuzzleDefinition.md), `"totalRows"` \| `"totalColumns"` \| `"maxValue"` \| `"totalCages"` \| `"basicCageTotal"` \| `"cages"` \| `"cageWidthInCells"` \| `"cageHeightInCells"` \| `"boardWidthInCages"` \| `"boardHeightInCages"`\> & `object` |
+[validate(dimensions)](./PuzzleDefinitionFactory.validate.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleDefinition`](../interfaces/IPuzzleDefinition.md)\>
+`static`
 
-***
-
-### getStandardConfig()
-
-> `static` **getStandardConfig**(`name`): [`IPuzzleDimensions`](../interfaces/IPuzzleDimensions.md)
-
-Get a standard configuration by name
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `name` | `"puzzle4x4"` \| `"puzzle6x6"` \| `"puzzle9x9"` \| `"puzzle12x12"` |
-
-#### Returns
-
-[`IPuzzleDimensions`](../interfaces/IPuzzleDimensions.md)
-
-***
-
-### getStandardConfigs()
-
-> `static` **getStandardConfigs**(): `Record`\<[`StandardConfigName`](../type-aliases/StandardConfigName.md), [`IPuzzleDimensions`](../interfaces/IPuzzleDimensions.md)\>
-
-Get all available standard configurations
-
-#### Returns
-
-`Record`\<[`StandardConfigName`](../type-aliases/StandardConfigName.md), [`IPuzzleDimensions`](../interfaces/IPuzzleDimensions.md)\>
-
-***
-
-### getValidator()
-
-> `static` **getValidator**(`puzzleType`): [`IPuzzleTypeValidator`](../interfaces/IPuzzleTypeValidator.md) \| `undefined`
-
-Get validator for a specific puzzle type
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `puzzleType` | [`PuzzleType`](../type-aliases/PuzzleType.md) |
-
-#### Returns
-
-[`IPuzzleTypeValidator`](../interfaces/IPuzzleTypeValidator.md) \| `undefined`
-
-***
-
-### registerValidator()
-
-> `static` **registerValidator**(`puzzleType`, `validator`): `void`
-
-Register a custom validator for a puzzle type
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `puzzleType` | [`PuzzleType`](../type-aliases/PuzzleType.md) |
-| `validator` | [`IPuzzleTypeValidator`](../interfaces/IPuzzleTypeValidator.md) |
-
-#### Returns
-
-`void`
-
-***
-
-### validate()
-
-> `static` **validate**(`dimensions`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`true`\>
+</td><td>
 
 Validate puzzle dimensions
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `dimensions` | [`IPuzzleDimensions`](../interfaces/IPuzzleDimensions.md) |
+[getStandardConfig(name)](./PuzzleDefinitionFactory.getStandardConfig.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`true`\>
+`static`
+
+</td><td>
+
+Get a standard configuration by name
+
+</td></tr>
+<tr><td>
+
+[getStandardConfigs()](./PuzzleDefinitionFactory.getStandardConfigs.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Get all available standard configurations
+
+</td></tr>
+<tr><td>
+
+[getValidator(puzzleType)](./PuzzleDefinitionFactory.getValidator.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Get validator for a specific puzzle type
+
+</td></tr>
+<tr><td>
+
+[registerValidator(puzzleType, validator)](./PuzzleDefinitionFactory.registerValidator.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Register a custom validator for a puzzle type
+
+</td></tr>
+</tbody></table>

@@ -1,29 +1,12 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > SuccessContinuation
 
-***
-
-[@fgv/ts-utils](../README.md) / SuccessContinuation
-
-# Type Alias: SuccessContinuation()\<T, TN\>
-
-> **SuccessContinuation**\<`T`, `TN`\> = (`value`) => [`Result`](Result.md)\<`TN`\>
+# Type Alias: SuccessContinuation
 
 Continuation callback to be called in the event that an
-[Result](Result.md) is successful.
+Result is successful.
 
-## Type Parameters
+## Type
 
-| Type Parameter |
-| ------ |
-| `T` |
-| `TN` |
-
-## Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `value` | `T` |
-
-## Returns
-
-[`Result`](Result.md)\<`TN`\>
+```typescript
+type SuccessContinuation = (value: T) => Result<TN>
+```

@@ -1,172 +1,161 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / JsonEditor
+[Home](../README.md) > JsonEditor
 
 # Class: JsonEditor
 
-A JsonEditor can be used to edit JSON objects in place or to
+A JsonEditor | JsonEditor can be used to edit JSON objects in place or to
 clone any JSON value, applying a default context and optional set of editor rules that
 were supplied at initialization.
 
-## Implements
-
-- [`IJsonCloneEditor`](../interfaces/IJsonCloneEditor.md)
+**Implements:** [`IJsonCloneEditor`](../interfaces/IJsonCloneEditor.md)
 
 ## Properties
 
-| Property | Modifier | Type | Description |
-| ------ | ------ | ------ | ------ |
-| <a id="options"></a> `options` | `public` | [`IJsonEditorOptions`](../interfaces/IJsonEditorOptions.md) | Full set of [editor options](../interfaces/IJsonEditorOptions.md) in effect for this editor. |
+<table><thead><tr><th>
 
-## Accessors
+Property
 
-### default
+</th><th>
 
-#### Get Signature
+Modifiers
 
-> **get** `static` **default**(): `JsonEditor`
+</th><th>
 
-Default singleton JsonEditor for simple use. Applies all rules
-but with no default context.
+Type
 
-##### Returns
+</th><th>
 
-`JsonEditor`
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[options](./JsonEditor.options.md)
+
+</td><td>
+
+
+
+</td><td>
+
+[IJsonEditorOptions](../interfaces/IJsonEditorOptions.md)
+
+</td><td>
+
+Full set of IJsonEditorOptions | editor options in effect for this editor.
+
+</td></tr>
+<tr><td>
+
+[default](./JsonEditor.default.md)
+
+</td><td>
+
+`readonly` `static`
+
+</td><td>
+
+[JsonEditor](JsonEditor.md)
+
+</td><td>
+
+Default singleton JsonEditor | JsonEditor for simple use.
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### clone()
+<table><thead><tr><th>
 
-> **clone**(`src`, `context?`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonEditFailureReason`](../type-aliases/JsonEditFailureReason.md)\>
+Method
 
-Deep clones a supplied `JsonValue`, applying all editor rules and a default
-or optionally supplied context
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `src` | [`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The `JsonValue` to be cloned. |
-| `context?` | [`IJsonContext`](../interfaces/IJsonContext.md) | An optional [JSON context](../interfaces/IJsonContext.md) supplying variables and references. |
+</th><th>
 
-#### Returns
+Description
 
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonEditFailureReason`](../type-aliases/JsonEditFailureReason.md)\>
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-#### Implementation of
+[create(options, rules)](./JsonEditor.create.md)
 
-[`IJsonCloneEditor`](../interfaces/IJsonCloneEditor.md).[`clone`](../interfaces/IJsonCloneEditor.md#clone)
+</td><td>
 
-***
+`static`
 
-### mergeObjectInPlace()
+</td><td>
 
-> **mergeObjectInPlace**(`target`, `src`, `runtimeContext?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+Constructs a new JsonEditor | JsonEditor.
+
+</td></tr>
+<tr><td>
+
+[getDefaultRules(options)](./JsonEditor.getDefaultRules.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Gets the default set of rules to be applied for a given set of options.
+
+</td></tr>
+<tr><td>
+
+[mergeObjectInPlace(target, src, runtimeContext)](./JsonEditor.mergeObjectInPlace.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Merges a supplied source object into a supplied target, updating the target object.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `target` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The target `JsonObject` to be updated |
-| `src` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The source `JsonObject` to be merged |
-| `runtimeContext?` | [`IJsonContext`](../interfaces/IJsonContext.md) | An optional [IJsonContext](../interfaces/IJsonContext.md) supplying variables and references. |
+[mergeObjectsInPlace(target, srcObjects)](./JsonEditor.mergeObjectsInPlace.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
 
-`Success` with the original source `JsonObject` if merge was successful.
-Returns `Failure` with details if an error occurs.
 
-***
-
-### mergeObjectsInPlace()
-
-> **mergeObjectsInPlace**(`target`, `srcObjects`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+</td><td>
 
 Merges multiple supplied source objects into a supplied target, updating the target
-object and using the default context supplied at creation time.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `target` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The target `JsonObject` to be updated |
-| `srcObjects` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)[] | `JsonObject`s to be merged into the target object, in the order supplied. |
+[mergeObjectsInPlaceWithContext(context, base, srcObjects)](./JsonEditor.mergeObjectsInPlaceWithContext.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
 
-`Success` with the original source `JsonObject` if merge was successful.
-Returns `Failure` with details if an error occurs.
 
-***
-
-### mergeObjectsInPlaceWithContext()
-
-> **mergeObjectsInPlaceWithContext**(`context`, `base`, `srcObjects`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+</td><td>
 
 Merges multiple supplied source objects into a supplied target, updating the target
-object and using an optional [context](../interfaces/IJsonContext.md) supplied in the call.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `context` | [`IJsonContext`](../interfaces/IJsonContext.md) \| `undefined` | An optional [IJsonContext](../interfaces/IJsonContext.md) supplying variables and references. |
-| `base` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The base `JsonObject` to be updated |
-| `srcObjects` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)[] | Objects to be merged into the target object, in the order supplied. |
+[clone(src, context)](./JsonEditor.clone.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
 
-`Success` with the original source `JsonObject` if merge was successful.
-Returns `Failure` with details if an error occurs.
 
-***
+</td><td>
 
-### create()
+Deep clones a supplied `JsonValue`, applying all editor rules and a default
 
-> `static` **create**(`options?`, `rules?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`JsonEditor`\>
-
-Constructs a new JsonEditor.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `options?` | `Partial`\<[`IJsonEditorOptions`](../interfaces/IJsonEditorOptions.md)\> | Optional partial [editor options](../interfaces/IJsonEditorOptions.md) for the constructed editor. |
-| `rules?` | [`IJsonEditorRule`](../interfaces/IJsonEditorRule.md)[] | Optional set of [editor rules](../interfaces/IJsonEditorRule.md) to be applied by the editor. A new JsonEditor. |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`JsonEditor`\>
-
-***
-
-### getDefaultRules()
-
-> `static` **getDefaultRules**(`options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IJsonEditorRule`](../interfaces/IJsonEditorRule.md)[]\>
-
-Gets the default set of rules to be applied for a given set of options.
-By default, all available rules (templates, conditionals, multi-value and references)
-are applied.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `options?` | [`IJsonEditorOptions`](../interfaces/IJsonEditorOptions.md) | Optional partial [editor options](../interfaces/IJsonEditorOptions.md) for all rules. |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IJsonEditorRule`](../interfaces/IJsonEditorRule.md)[]\>
-
-Default [editor rules](../interfaces/IJsonEditorRule.md) with any supplied options
-applied.
+</td></tr>
+</tbody></table>

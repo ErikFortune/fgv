@@ -1,13 +1,13 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / JsonReferenceMapFailureReason
+[Home](../README.md) > JsonReferenceMapFailureReason
 
 # Type Alias: JsonReferenceMapFailureReason
 
-> **JsonReferenceMapFailureReason** = `"unknown"` \| `"error"`
-
-Failure reason for [IJsonReferenceMap](../interfaces/IJsonReferenceMap.md) lookup, where `'unknown'`
+Failure reason for IJsonReferenceMap | IJsonReferenceMap lookup, where `'unknown'`
 means that the object is not present in the map and `'error'` means
 that an error occurred while retrieving or converting it.
+
+## Type
+
+```typescript
+type JsonReferenceMapFailureReason = "unknown" | "error"
+```

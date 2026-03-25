@@ -1,15 +1,44 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / IReferenceMapKeyPolicyValidateOptions
+[Home](../README.md) > IReferenceMapKeyPolicyValidateOptions
 
 # Interface: IReferenceMapKeyPolicyValidateOptions
 
-Options for creating a [ReferenceMapKeyPolicy](../classes/ReferenceMapKeyPolicy.md) object.
+Options for creating a ReferenceMapKeyPolicy | ReferenceMapKeyPolicy object.
 
 ## Properties
 
-| Property | Type | Description |
-| ------ | ------ | ------ |
-| <a id="makevalid"></a> `makeValid?` | `boolean` | If `true`, the validator coerces keys to some valid value. If `false`, invalid keys cause an error. |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[makeValid](./IReferenceMapKeyPolicyValidateOptions.makeValid.md)
+
+</td><td>
+
+
+
+</td><td>
+
+boolean
+
+</td><td>
+
+If `true`, the validator coerces keys to some valid value.
+
+</td></tr>
+</tbody></table>

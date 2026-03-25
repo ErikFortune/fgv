@@ -1,144 +1,120 @@
-[**@fgv/ts-json**](../README.md)
+[Home](../README.md) > ReferenceMapKeyPolicy
 
-***
-
-[@fgv/ts-json](../README.md) / ReferenceMapKeyPolicy
-
-# Class: ReferenceMapKeyPolicy\<T\>
+# Class: ReferenceMapKeyPolicy
 
 Policy object responsible for validating or correcting
-keys in a [reference map](../interfaces/IJsonReferenceMap.md).
-
-## Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
+keys in a IJsonReferenceMap | reference map.
 
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new ReferenceMapKeyPolicy**\<`T`\>(`options?`, `isValid?`): `ReferenceMapKeyPolicy`\<`T`\>
+Constructor
 
-Constructs a new ReferenceMapKeyPolicy.
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `options?` | [`IReferenceMapKeyPolicyValidateOptions`](../interfaces/IReferenceMapKeyPolicyValidateOptions.md) | Optional [options](../interfaces/IReferenceMapKeyPolicyValidateOptions.md) used to construct the ReferenceMapKeyPolicy. |
-| `isValid?` | (`key`, `item?`) => `boolean` | An optional predicate to test a supplied key for validity. |
+</th><th>
 
-#### Returns
+Description
 
-`ReferenceMapKeyPolicy`\<`T`\>
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor(options, isValid)`
+
+</td><td>
+
+
+
+</td><td>
+
+Constructs a new ReferenceMapKeyPolicy | ReferenceMapKeyPolicy.
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### isValid()
+<table><thead><tr><th>
 
-> **isValid**(`key`, `item?`): `boolean`
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[defaultKeyPredicate(key)](./ReferenceMapKeyPolicy.defaultKeyPredicate.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+The static default key name validation predicate rejects keys that contain
+
+</td></tr>
+<tr><td>
+
+[isValid(key, item)](./ReferenceMapKeyPolicy.isValid.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Determines if a supplied key and item are valid according to the current policy.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key to be tested. |
-| `item?` | `T` | The item to be tested. |
+[validate(key, item, __options)](./ReferenceMapKeyPolicy.validate.md)
 
-#### Returns
+</td><td>
 
-`boolean`
 
-`true` if the key and value are valid, `false` otherwise.
 
-***
-
-### validate()
-
-> **validate**(`key`, `item?`, `__options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
+</td><td>
 
 Determines if a supplied key and item are valid according to the current policy.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key to be tested. |
-| `item?` | `T` | The item to be tested. |
-| `__options?` | [`IReferenceMapKeyPolicyValidateOptions`](../interfaces/IReferenceMapKeyPolicyValidateOptions.md) | - |
+[validateItems(items, options)](./ReferenceMapKeyPolicy.validateItems.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
 
-`Success` with the key if valid, `Failure` with an error message if invalid.
 
-***
-
-### validateItems()
-
-> **validateItems**(`items`, `options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<\[`string`, `T`\][]\>
+</td><td>
 
 Validates an array of entries using the validation rules for this policy.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `items` | \[`string`, `T`\][] | The array of entries to be validated. |
-| `options?` | [`IReferenceMapKeyPolicyValidateOptions`](../interfaces/IReferenceMapKeyPolicyValidateOptions.md) | Optional [options](../interfaces/IReferenceMapKeyPolicyValidateOptions.md) to control validation. |
+[validateMap(map, options)](./ReferenceMapKeyPolicy.validateMap.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<\[`string`, `T`\][]\>
 
-`Success` with an array of validated entries, or `Failure` with an error message
-if validation fails.
 
-***
-
-### validateMap()
-
-> **validateMap**(`map`, `options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Map`\<`string`, `T`\>\>
+</td><td>
 
 Validates a `Map\<string, T\>` using the validation rules for this policy.
 
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `map` | `Map`\<`string`, `T`\> | - |
-| `options?` | [`IReferenceMapKeyPolicyValidateOptions`](../interfaces/IReferenceMapKeyPolicyValidateOptions.md) | Optional [options](../interfaces/IReferenceMapKeyPolicyValidateOptions.md) to control validation. |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Map`\<`string`, `T`\>\>
-
-`Success` with a new `Map\<string, T\>`, or `Failure` with an error message
-if validation fails.
-
-***
-
-### defaultKeyPredicate()
-
-> `static` **defaultKeyPredicate**(`key`): `boolean`
-
-The static default key name validation predicate rejects keys that contain
-mustache templates or which start with the default conditional prefix
-`'?'`.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key to test. |
-
-#### Returns
-
-`boolean`
-
-`true` if the key is valid, `false` otherwise.
+</td></tr>
+</tbody></table>

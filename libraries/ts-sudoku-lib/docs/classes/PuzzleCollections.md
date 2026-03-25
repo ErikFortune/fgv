@@ -1,33 +1,75 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / PuzzleCollections
+[Home](../README.md) > PuzzleCollections
 
 # Class: PuzzleCollections
 
-Get well-known [puzzle collections](PuzzleCollection.md).
+Get well-known PuzzleCollection | puzzle collections.
 
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new PuzzleCollections**(): `PuzzleCollections`
+Constructor
 
-#### Returns
+</th><th>
 
-`PuzzleCollections`
+Modifiers
 
-## Accessors
+</th><th>
 
-### default
+Description
 
-#### Get Signature
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-> **get** `static` **default**(): [`PuzzleCollection`](PuzzleCollection.md)
+`constructor()`
 
-The default [puzzle collection](PuzzleCollection.md).
+</td><td>
 
-##### Returns
 
-[`PuzzleCollection`](PuzzleCollection.md)
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[default](./PuzzleCollections.default.md)
+
+</td><td>
+
+`readonly` `static`
+
+</td><td>
+
+[PuzzleCollection](PuzzleCollection.md)
+
+</td><td>
+
+The default PuzzleCollection | puzzle collection.
+
+</td></tr>
+</tbody></table>

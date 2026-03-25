@@ -1,121 +1,93 @@
-[**@fgv/ts-utils**](../README.md)
-
-***
-
-[@fgv/ts-utils](../README.md) / Normalizer
+[Home](../README.md) > Normalizer
 
 # Class: Normalizer
 
 Normalizes an arbitrary JSON object
 
-## Extended by
-
-- [`HashingNormalizer`](../@fgv/namespaces/Hash/classes/HashingNormalizer.md)
-
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new Normalizer**(): `Normalizer`
+Constructor
 
-#### Returns
+</th><th>
 
-`Normalizer`
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor()`
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### \_normalizeArray()
+<table><thead><tr><th>
 
-> `protected` **\_normalizeArray**(`from`): [`Result`](../type-aliases/Result.md)\<`unknown`[]\>
+Method
 
-#### Parameters
+</th><th>
 
-| Parameter | Type |
-| ------ | ------ |
-| `from` | `unknown`[] |
+Modifiers
 
-#### Returns
+</th><th>
 
-[`Result`](../type-aliases/Result.md)\<`unknown`[]\>
+Description
 
-***
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-### normalize()
+[normalize(from)](./Normalizer.normalize.md)
 
-> **normalize**\<`T`\>(`from`): [`Result`](../type-aliases/Result.md)\<`T`\>
+</td><td>
+
+
+
+</td><td>
 
 Normalizes the supplied value
 
-#### Type Parameters
+</td></tr>
+<tr><td>
 
-| Type Parameter |
-| ------ |
-| `T` |
+[normalizeEntries(entries)](./Normalizer.normalizeEntries.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `from` | `T` | The value to be normalized |
 
-#### Returns
 
-[`Result`](../type-aliases/Result.md)\<`T`\>
+</td><td>
 
-A normalized version of the value
+Normalizes an array of object property entries (e.g.
 
-***
+</td></tr>
+<tr><td>
 
-### normalizeEntries()
+[normalizeLiteral(from)](./Normalizer.normalizeLiteral.md)
 
-> **normalizeEntries**\<`T`\>(`entries`): [`Entry`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\>[]
+</td><td>
 
-Normalizes an array of object property entries (e.g. as returned by `Object.entries()`).
 
-#### Type Parameters
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `T` | `unknown` |
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `entries` | `Iterable`\<[`Entry`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\>\> | The entries to be normalized. |
-
-#### Returns
-
-[`Entry`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\>[]
-
-A normalized sorted array of entries.
-
-#### Remarks
-
-Converts property names (entry key) to string and then sorts as string.
-
-***
-
-### normalizeLiteral()
-
-> **normalizeLiteral**\<`T`\>(`from`): [`Result`](../type-aliases/Result.md)\<`T`\>
+</td><td>
 
 Normalizes the supplied literal value
 
-#### Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `from` | `T` | The literal value to be normalized. |
-
-#### Returns
-
-[`Result`](../type-aliases/Result.md)\<`T`\>
-
-A normalized value for the literal.
+</td></tr>
+</tbody></table>

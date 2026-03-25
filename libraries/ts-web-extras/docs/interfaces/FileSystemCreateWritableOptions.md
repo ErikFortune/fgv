@@ -1,8 +1,4 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / FileSystemCreateWritableOptions
+[Home](../README.md) > FileSystemCreateWritableOptions
 
 # Interface: FileSystemCreateWritableOptions
 
@@ -10,6 +6,39 @@ Options for creating writable file streams
 
 ## Properties
 
-| Property | Type |
-| ------ | ------ |
-| <a id="keepexistingdata"></a> `keepExistingData?` | `boolean` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[keepExistingData](./FileSystemCreateWritableOptions.keepExistingData.md)
+
+</td><td>
+
+
+
+</td><td>
+
+boolean
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

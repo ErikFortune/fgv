@@ -1,22 +1,81 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / ICellState
+[Home](../README.md) > ICellState
 
 # Interface: ICellState
 
-Describes the state of or a state update for a single [cell](ICell.md) in a
-[puzzle](../classes/PuzzleSession.md).
+Describes the state of or a state update for a single ICell |cell in a
+PuzzleSession | puzzle.
 
-## Extends
-
-- [`ICellContents`](ICellContents.md)
+**Extends:** [`ICellContents`](ICellContents.md)
 
 ## Properties
 
-| Property | Modifier | Type | Description |
-| ------ | ------ | ------ | ------ |
-| <a id="id"></a> `id` | `readonly` | [`CellId`](../type-aliases/CellId.md) | - |
-| <a id="notes"></a> `notes` | `readonly` | `number`[] | Any notes associated with the [cell](ICell.md). |
-| <a id="value"></a> `value?` | `readonly` | `number` | The value of the [cell](ICell.md), or `undefined` if no value has been assigned. |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[id](./ICellState.id.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[CellId](../type-aliases/CellId.md)
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[value](./ICellContents.value.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+The value of the ICell | cell, or `undefined` if no value has been assigned.
+
+</td></tr>
+<tr><td>
+
+[notes](./ICellContents.notes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number[]
+
+</td><td>
+
+Any notes associated with the ICell | cell.
+
+</td></tr>
+</tbody></table>

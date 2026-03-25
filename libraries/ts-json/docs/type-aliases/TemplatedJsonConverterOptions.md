@@ -1,11 +1,11 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / TemplatedJsonConverterOptions
+[Home](../README.md) > TemplatedJsonConverterOptions
 
 # Type Alias: TemplatedJsonConverterOptions
 
-> **TemplatedJsonConverterOptions** = `Omit`\<[`IJsonConverterOptions`](../interfaces/IJsonConverterOptions.md), `"useNameTemplates"` \| `"useValueTemplates"` \| `"useMultiValueTemplateNames"`\>
+Initialization options for a TemplatedJsonConverter | TemplatedJsonConverter.
 
-Initialization options for a [TemplatedJsonConverter](../classes/TemplatedJsonConverter.md).
+## Type
+
+```typescript
+type TemplatedJsonConverterOptions = Omit<IJsonConverterOptions, "useNameTemplates" | "useValueTemplates" | "useMultiValueTemplateNames">
+```

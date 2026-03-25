@@ -1,16 +1,61 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / ISimpleJsonMapOptions
+[Home](../README.md) > ISimpleJsonMapOptions
 
 # Interface: ISimpleJsonMapOptions
 
-Initialization options for a [SimpleJsonMap](../classes/SimpleJsonMap.md).
+Initialization options for a SimpleJsonMap | SimpleJsonMap.
 
 ## Properties
 
-| Property | Type |
-| ------ | ------ |
-| <a id="editor"></a> `editor?` | [`JsonEditor`](../classes/JsonEditor.md) |
-| <a id="keypolicy"></a> `keyPolicy?` | [`ReferenceMapKeyPolicy`](../classes/ReferenceMapKeyPolicy.md)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\> |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[keyPolicy](./ISimpleJsonMapOptions.keyPolicy.md)
+
+</td><td>
+
+
+
+</td><td>
+
+[ReferenceMapKeyPolicy](../classes/ReferenceMapKeyPolicy.md)&lt;JsonValue&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[editor](./ISimpleJsonMapOptions.editor.md)
+
+</td><td>
+
+
+
+</td><td>
+
+[JsonEditor](../classes/JsonEditor.md)
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

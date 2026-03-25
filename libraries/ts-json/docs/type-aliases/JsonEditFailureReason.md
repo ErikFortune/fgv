@@ -1,11 +1,11 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / JsonEditFailureReason
+[Home](../README.md) > JsonEditFailureReason
 
 # Type Alias: JsonEditFailureReason
 
-> **JsonEditFailureReason** = `"ignore"` \| `"inapplicable"` \| `"edited"` \| `"error"`
-
 Possible `DetailedResult` details for various editor operations.
+
+## Type
+
+```typescript
+type JsonEditFailureReason = "ignore" | "inapplicable" | "edited" | "error"
+```

@@ -1,431 +1,568 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / Puzzle
+[Home](../README.md) > Puzzle
 
 # Class: Puzzle
 
 Abstract base class for all puzzles.
 
-## Extended by
-
-- [`Killer`](../@fgv/namespaces/Puzzles/classes/Killer.md)
-- [`Sudoku`](../@fgv/namespaces/Puzzles/classes/Sudoku.md)
-- [`SudokuX`](../@fgv/namespaces/Puzzles/classes/SudokuX.md)
-
-## Constructors
-
-### Constructor
-
-> `protected` **new Puzzle**(`puzzle`, `extraCages?`): `Puzzle`
-
-Constructs a new puzzle state.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `puzzle` | [`IPuzzleDefinition`](../interfaces/IPuzzleDefinition.md) | IPuzzleDefinition \| Puzzle definition from which this puzzle state is to be initialized. |
-| `extraCages?` | \[[`CageId`](../type-aliases/CageId.md), `Cage`\][] | - |
-
-#### Returns
-
-`Puzzle`
-
 ## Properties
 
-| Property | Modifier | Type |
-| ------ | ------ | ------ |
-| <a id="_cages"></a> `_cages` | `readonly` | `Map`\<[`CageId`](../type-aliases/CageId.md), `Cage`\> |
-| <a id="_cells"></a> `_cells` | `readonly` | `Map`\<[`CellId`](../type-aliases/CellId.md), `Cell`\> |
-| <a id="_columns"></a> `_columns` | `readonly` | `Map`\<[`CageId`](../type-aliases/CageId.md), `Cage`\> |
-| <a id="_rows"></a> `_rows` | `readonly` | `Map`\<[`CageId`](../type-aliases/CageId.md), `Cage`\> |
-| <a id="_sections"></a> `_sections` | `readonly` | `Map`\<[`CageId`](../type-aliases/CageId.md), `Cage`\> |
-| <a id="description"></a> `description` | `readonly` | `string` |
-| <a id="dimensions"></a> `dimensions` | `readonly` | [`IPuzzleDefinition`](../interfaces/IPuzzleDefinition.md) |
-| <a id="id"></a> `id?` | `readonly` | `string` |
-| <a id="initialstate"></a> `initialState` | `readonly` | [`PuzzleState`](PuzzleState.md) |
-| <a id="type"></a> `type` | `readonly` | `string` |
+<table><thead><tr><th>
 
-## Accessors
+Property
 
-### cages
+</th><th>
 
-#### Get Signature
+Modifiers
 
-> **get** **cages**(): `Cage`[]
+</th><th>
 
-##### Returns
+Type
 
-`Cage`[]
+</th><th>
 
-***
+Description
 
-### cells
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-#### Get Signature
+[id](./Puzzle.id.md)
 
-> **get** **cells**(): `Cell`[]
+</td><td>
 
-##### Returns
+`readonly`
 
-`Cell`[]
+</td><td>
 
-***
+string
 
-### cols
+</td><td>
 
-#### Get Signature
 
-> **get** **cols**(): `Cage`[]
 
-##### Returns
+</td></tr>
+<tr><td>
 
-`Cage`[]
+[description](./Puzzle.description.md)
 
-***
+</td><td>
 
-### numColumns
+`readonly`
 
-#### Get Signature
+</td><td>
 
-> **get** **numColumns**(): `number`
+string
 
-##### Returns
+</td><td>
 
-`number`
 
-***
 
-### numRows
+</td></tr>
+<tr><td>
 
-#### Get Signature
+[type](./Puzzle.type.md)
 
-> **get** **numRows**(): `number`
+</td><td>
 
-##### Returns
+`readonly`
 
-`number`
+</td><td>
 
-***
+string
 
-### rows
+</td><td>
 
-#### Get Signature
 
-> **get** **rows**(): `Cage`[]
 
-##### Returns
+</td></tr>
+<tr><td>
 
-`Cage`[]
+[initialState](./Puzzle.initialState.md)
 
-***
+</td><td>
 
-### sections
+`readonly`
 
-#### Get Signature
+</td><td>
 
-> **get** **sections**(): `Cage`[]
+[PuzzleState](PuzzleState.md)
 
-##### Returns
+</td><td>
 
-`Cage`[]
+
+
+</td></tr>
+<tr><td>
+
+[dimensions](./Puzzle.dimensions.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IPuzzleDefinition](../interfaces/IPuzzleDefinition.md)
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[_rows](./Puzzle._rows.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Map&lt;[CageId](../type-aliases/CageId.md), Cage&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[_columns](./Puzzle._columns.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Map&lt;[CageId](../type-aliases/CageId.md), Cage&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[_sections](./Puzzle._sections.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Map&lt;[CageId](../type-aliases/CageId.md), Cage&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[_cages](./Puzzle._cages.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Map&lt;[CageId](../type-aliases/CageId.md), Cage&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[_cells](./Puzzle._cells.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Map&lt;[CellId](../type-aliases/CellId.md), Cell&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[numRows](./Puzzle.numRows.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[numColumns](./Puzzle.numColumns.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[rows](./Puzzle.rows.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Cage[]
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[cols](./Puzzle.cols.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Cage[]
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[sections](./Puzzle.sections.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Cage[]
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[cages](./Puzzle.cages.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Cage[]
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[cells](./Puzzle.cells.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Cell[]
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### checkIsSolved()
+<table><thead><tr><th>
 
-> **checkIsSolved**(`state`): `boolean`
+Method
 
-#### Parameters
+</th><th>
 
-| Parameter | Type |
-| ------ | ------ |
-| `state` | [`PuzzleState`](PuzzleState.md) |
+Modifiers
 
-#### Returns
+</th><th>
 
-`boolean`
+Description
 
-***
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-### checkIsValid()
+[checkIsSolved(state)](./Puzzle.checkIsSolved.md)
 
-> **checkIsValid**(`state`): `boolean`
+</td><td>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `state` | [`PuzzleState`](PuzzleState.md) |
 
-#### Returns
+</td><td>
 
-`boolean`
 
-***
 
-### getCage()
+</td></tr>
+<tr><td>
 
-> **getCage**(`id`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Cage`\>
+[checkIsValid(state)](./Puzzle.checkIsValid.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `id` | [`CageId`](../type-aliases/CageId.md) |
 
-#### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Cage`\>
+</td><td>
 
-***
 
-### getCell()
 
-> **getCell**(`spec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Cell`\>
+</td></tr>
+<tr><td>
 
-#### Parameters
+[getEmptyCells(state)](./Puzzle.getEmptyCells.md)
 
-| Parameter | Type |
-| ------ | ------ |
-| `spec` | `string` \| [`IRowColumn`](../interfaces/IRowColumn.md) \| [`ICell`](../interfaces/ICell.md) |
+</td><td>
 
-#### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Cell`\>
 
-***
+</td><td>
 
-### getCellContents()
 
-> **getCellContents**(`spec`, `state`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<\{ `cell`: `Cell`; `contents`: [`ICellContents`](../interfaces/ICellContents.md); \}\>
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `spec` | `string` \| [`IRowColumn`](../interfaces/IRowColumn.md) |
-| `state` | [`PuzzleState`](PuzzleState.md) |
+[getInvalidCells(state)](./Puzzle.getInvalidCells.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<\{ `cell`: `Cell`; `contents`: [`ICellContents`](../interfaces/ICellContents.md); \}\>
 
-***
 
-### getCellNeighbor()
+</td><td>
 
-> **getCellNeighbor**(`spec`, `direction`, `wrap`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ICell`](../interfaces/ICell.md)\>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `spec` | `string` \| [`IRowColumn`](../interfaces/IRowColumn.md) \| [`ICell`](../interfaces/ICell.md) |
-| `direction` | [`NavigationDirection`](../type-aliases/NavigationDirection.md) |
-| `wrap` | [`NavigationWrap`](../type-aliases/NavigationWrap.md) |
+</td></tr>
+<tr><td>
 
-#### Returns
+[getCellContents(spec, state)](./Puzzle.getCellContents.md)
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ICell`](../interfaces/ICell.md)\>
+</td><td>
 
-***
 
-### getColumn()
 
-> **getColumn**(`col`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Cage`\>
+</td><td>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `col` | `number` \| [`CageId`](../type-aliases/CageId.md) |
 
-#### Returns
+</td></tr>
+<tr><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Cage`\>
+[getCell(spec)](./Puzzle.getCell.md)
 
-***
+</td><td>
 
-### getEmptyCells()
 
-> **getEmptyCells**(`state`): `Cell`[]
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `state` | [`PuzzleState`](PuzzleState.md) |
 
-#### Returns
 
-`Cell`[]
+</td></tr>
+<tr><td>
 
-***
+[getCellNeighbor(spec, direction, wrap)](./Puzzle.getCellNeighbor.md)
 
-### getInvalidCells()
+</td><td>
 
-> **getInvalidCells**(`state`): `Cell`[]
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `state` | [`PuzzleState`](PuzzleState.md) |
+</td><td>
 
-#### Returns
 
-`Cell`[]
 
-***
+</td></tr>
+<tr><td>
 
-### getRow()
+[updateContents(wantUpdates, state)](./Puzzle.updateContents.md)
 
-> **getRow**(`row`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Cage`\>
+</td><td>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `row` | `number` \| [`CageId`](../type-aliases/CageId.md) |
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Cage`\>
 
-***
 
-### getSection()
+</td></tr>
+<tr><td>
 
-> **getSection**(`spec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Cage`\>
+[updateValues(wantUpdates, state)](./Puzzle.updateValues.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `spec` | [`CageId`](../type-aliases/CageId.md) \| [`IRowColumn`](../interfaces/IRowColumn.md) |
 
-#### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`Cage`\>
+</td><td>
 
-***
 
-### toString()
 
-> **toString**(`state`): `string`
+</td></tr>
+<tr><td>
 
-#### Parameters
+[updateNotes(wantUpdates, state)](./Puzzle.updateNotes.md)
 
-| Parameter | Type |
-| ------ | ------ |
-| `state` | [`PuzzleState`](PuzzleState.md) |
+</td><td>
 
-#### Returns
 
-`string`
 
-***
+</td><td>
 
-### toStrings()
 
-> **toStrings**(`state`): `string`[]
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `state` | [`PuzzleState`](PuzzleState.md) |
+[updateCellValue(want, value, state)](./Puzzle.updateCellValue.md)
 
-#### Returns
+</td><td>
 
-`string`[]
 
-***
 
-### updateCellNotes()
+</td><td>
 
-> **updateCellNotes**(`want`, `notes`, `state`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleUpdate`](../interfaces/IPuzzleUpdate.md)\>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `want` | `string` \| [`IRowColumn`](../interfaces/IRowColumn.md) |
-| `notes` | `number`[] |
-| `state` | [`PuzzleState`](PuzzleState.md) |
+</td></tr>
+<tr><td>
 
-#### Returns
+[updateCellNotes(want, notes, state)](./Puzzle.updateCellNotes.md)
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleUpdate`](../interfaces/IPuzzleUpdate.md)\>
+</td><td>
 
-***
 
-### updateCellValue()
 
-> **updateCellValue**(`want`, `value`, `state`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleUpdate`](../interfaces/IPuzzleUpdate.md)\>
+</td><td>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `want` | `string` \| [`IRowColumn`](../interfaces/IRowColumn.md) |
-| `value` | `number` \| `undefined` |
-| `state` | [`PuzzleState`](PuzzleState.md) |
 
-#### Returns
+</td></tr>
+<tr><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleUpdate`](../interfaces/IPuzzleUpdate.md)\>
+[getRow(row)](./Puzzle.getRow.md)
 
-***
+</td><td>
 
-### updateContents()
 
-> **updateContents**(`wantUpdates`, `state`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleUpdate`](../interfaces/IPuzzleUpdate.md)\>
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `wantUpdates` | [`ICellState`](../interfaces/ICellState.md) \| [`ICellState`](../interfaces/ICellState.md)[] |
-| `state` | [`PuzzleState`](PuzzleState.md) |
 
-#### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleUpdate`](../interfaces/IPuzzleUpdate.md)\>
+</td></tr>
+<tr><td>
 
-***
+[getColumn(col)](./Puzzle.getColumn.md)
 
-### updateNotes()
+</td><td>
 
-> **updateNotes**(`wantUpdates`, `state`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleUpdate`](../interfaces/IPuzzleUpdate.md)\>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `wantUpdates` | [`ICellState`](../interfaces/ICellState.md) \| [`ICellState`](../interfaces/ICellState.md)[] |
-| `state` | [`PuzzleState`](PuzzleState.md) |
+</td><td>
 
-#### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleUpdate`](../interfaces/IPuzzleUpdate.md)\>
 
-***
+</td></tr>
+<tr><td>
 
-### updateValues()
+[getSection(spec)](./Puzzle.getSection.md)
 
-> **updateValues**(`wantUpdates`, `state`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleUpdate`](../interfaces/IPuzzleUpdate.md)\>
+</td><td>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `wantUpdates` | [`ICellState`](../interfaces/ICellState.md) \| [`ICellState`](../interfaces/ICellState.md)[] |
-| `state` | [`PuzzleState`](PuzzleState.md) |
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IPuzzleUpdate`](../interfaces/IPuzzleUpdate.md)\>
+
+
+</td></tr>
+<tr><td>
+
+[getCage(id)](./Puzzle.getCage.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[toStrings(state)](./Puzzle.toStrings.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[toString(state)](./Puzzle.toString.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

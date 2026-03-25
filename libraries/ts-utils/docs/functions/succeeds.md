@@ -1,33 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > succeeds
 
-***
+# Function: succeeds
 
-[@fgv/ts-utils](../README.md) / succeeds
+Returns Success | Success<T> with the supplied result value.
 
-# Function: succeeds()
+## Signature
 
-> **succeeds**\<`T`\>(`value`): [`Success`](../classes/Success.md)\<`T`\>
-
-Returns [Success\<T\>](../classes/Success.md) with the supplied result value.
-
-## Type Parameters
-
-| Type Parameter | Description |
-| ------ | ------ |
-| `T` |  |
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `value` | `T` | The successful result value to be returned |
-
-## Returns
-
-[`Success`](../classes/Success.md)\<`T`\>
-
-## Remarks
-
-A `succeeds` alias was added in release 5.0 for
-naming consistency with [fails](fails.md), which was added
-to avoid conflicts with test frameworks and libraries.
+```typescript
+function succeeds(value: T): Success<T>
+```

@@ -1,28 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > ErrorFormatter
 
-***
-
-[@fgv/ts-utils](../README.md) / ErrorFormatter
-
-# Type Alias: ErrorFormatter()\<TD\>
-
-> **ErrorFormatter**\<`TD`\> = (`message`, `detail?`) => `string`
+# Type Alias: ErrorFormatter
 
 Formats an error message.
 
-## Type Parameters
+## Type
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TD` | `unknown` |
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `message` | `string` | The error message to be formatted. |
-| `detail?` | `TD` | An optional detail to be included in the formatted message. |
-
-## Returns
-
-`string`
+```typescript
+type ErrorFormatter = (message: string, detail?: TD) => string
+```

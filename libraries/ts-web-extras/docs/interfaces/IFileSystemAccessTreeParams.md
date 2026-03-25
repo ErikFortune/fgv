@@ -1,31 +1,148 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > IFileSystemAccessTreeParams
 
-***
-
-[@fgv/ts-web-extras](../README.md) / IFileSystemAccessTreeParams
-
-# Interface: IFileSystemAccessTreeParams\<TCT\>
+# Interface: IFileSystemAccessTreeParams
 
 Options for creating persistent file trees.
 
-## Extends
-
-- [`IFileTreeInitParams`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
-
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+**Extends:** `IFileTreeInitParams<TCT>`
 
 ## Properties
 
-| Property | Type | Default value | Description |
-| ------ | ------ | ------ | ------ |
-| <a id="autosync"></a> `autoSync?` | `boolean` | `false` | Automatically sync changes to disk immediately after each save. If false, changes are batched and written on explicit syncToDisk() call. |
-| <a id="filepath"></a> `filePath?` | `string` | `undefined` | Override the path at which the file is stored in the tree (for fromFileHandle). Must be an absolute path (e.g., '/data/confections/common.yaml'). If omitted, defaults to `/<filename>`. |
-| <a id="infercontenttype"></a> `inferContentType?` | [`ContentTypeFactory`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\> | `undefined` | - |
-| <a id="logger"></a> `logger?` | [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`, `unknown`\> | `undefined` | Optional logger for auto-sync and persistence failures. |
-| <a id="mutable"></a> `mutable?` | `boolean` \| [`IFilterSpec`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | `undefined` | Controls mutability of the file tree. - `undefined` or `false`: No files are mutable. - `true`: All files are mutable. - `IFilterSpec`: Only files matching the filter are mutable. |
-| <a id="prefix"></a> `prefix?` | `string` | `undefined` | - |
-| <a id="requirewritepermission"></a> `requireWritePermission?` | `boolean` | `true` | Require write permission on the directory handle. If true, fails if write permission cannot be obtained. If false, falls back to read-only mode. |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[autoSync](./IFileSystemAccessTreeParams.autoSync.md)
+
+</td><td>
+
+
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Automatically sync changes to disk immediately after each save.
+
+</td></tr>
+<tr><td>
+
+[requireWritePermission](./IFileSystemAccessTreeParams.requireWritePermission.md)
+
+</td><td>
+
+
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Require write permission on the directory handle.
+
+</td></tr>
+<tr><td>
+
+[filePath](./IFileSystemAccessTreeParams.filePath.md)
+
+</td><td>
+
+
+
+</td><td>
+
+string
+
+</td><td>
+
+Override the path at which the file is stored in the tree (for fromFileHandle).
+
+</td></tr>
+<tr><td>
+
+[logger](./IFileSystemAccessTreeParams.logger.md)
+
+</td><td>
+
+
+
+</td><td>
+
+LogReporter&lt;unknown, unknown&gt;
+
+</td><td>
+
+Optional logger for auto-sync and persistence failures.
+
+</td></tr>
+<tr><td>
+
+[prefix](./IFileSystemAccessTreeParams.prefix.md)
+
+</td><td>
+
+
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[inferContentType](./IFileSystemAccessTreeParams.inferContentType.md)
+
+</td><td>
+
+
+
+</td><td>
+
+ContentTypeFactory&lt;TCT&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[mutable](./IFileSystemAccessTreeParams.mutable.md)
+
+</td><td>
+
+
+
+</td><td>
+
+boolean | IFilterSpec
+
+</td><td>
+
+Controls mutability of the file tree.
+
+</td></tr>
+</tbody></table>

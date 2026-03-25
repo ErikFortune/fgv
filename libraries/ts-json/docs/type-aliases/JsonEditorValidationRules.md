@@ -1,11 +1,11 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / JsonEditorValidationRules
+[Home](../README.md) > JsonEditorValidationRules
 
 # Type Alias: JsonEditorValidationRules
 
-> **JsonEditorValidationRules** = `"invalidPropertyName"` \| `"invalidPropertyValue"` \| `"undefinedPropertyValue"`
+Possible validation rules for a JsonEditor | JsonEditor.
 
-Possible validation rules for a [JsonEditor](../classes/JsonEditor.md).
+## Type
+
+```typescript
+type JsonEditorValidationRules = "invalidPropertyName" | "invalidPropertyValue" | "undefinedPropertyValue"
+```

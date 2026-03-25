@@ -1,38 +1,144 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / ICage
+[Home](../README.md) > ICage
 
 # Interface: ICage
 
-Describes the structure of a single cage in a [puzzle](../classes/PuzzleSession.md).
+Describes the structure of a single cage in a PuzzleSession | puzzle.
 Does not describe state.
 
 ## Properties
 
-| Property | Modifier | Type | Description |
-| ------ | ------ | ------ | ------ |
-| <a id="cagetype"></a> `cageType` | `readonly` | [`CageType`](../type-aliases/CageType.md) | The [type](../type-aliases/CageType.md) of the cage. |
-| <a id="cellids"></a> `cellIds` | `readonly` | [`CellId`](../type-aliases/CellId.md)[] | The identity of each cell in the cage. |
-| <a id="id"></a> `id` | `readonly` | [`CageId`](../type-aliases/CageId.md) | Unique identifier for the cage. |
-| <a id="numcells"></a> `numCells` | `readonly` | `number` | The number of cells in the cage. |
-| <a id="total"></a> `total` | `readonly` | `number` | The expected sum of all cells in the cage. |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[id](./ICage.id.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[CageId](../type-aliases/CageId.md)
+
+</td><td>
+
+Unique identifier for the cage.
+
+</td></tr>
+<tr><td>
+
+[cageType](./ICage.cageType.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[CageType](../type-aliases/CageType.md)
+
+</td><td>
+
+The CageType | type of the cage.
+
+</td></tr>
+<tr><td>
+
+[total](./ICage.total.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+The expected sum of all cells in the cage.
+
+</td></tr>
+<tr><td>
+
+[numCells](./ICage.numCells.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+The number of cells in the cage.
+
+</td></tr>
+<tr><td>
+
+[cellIds](./ICage.cellIds.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[CellId](../type-aliases/CellId.md)[]
+
+</td><td>
+
+The identity of each cell in the cage.
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### containsCell()
+<table><thead><tr><th>
 
-> **containsCell**(`id`): `boolean`
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[containsCell(id)](./ICage.containsCell.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Determines if a supplied cell is present in the cage.
 
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `id` | [`CellId`](../type-aliases/CellId.md) | the identifier to be searched. |
-
-#### Returns
-
-`boolean`
+</td></tr>
+</tbody></table>

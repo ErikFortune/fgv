@@ -1,8 +1,4 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / FileSystemHandlePermissionDescriptor
+[Home](../README.md) > FileSystemHandlePermissionDescriptor
 
 # Interface: FileSystemHandlePermissionDescriptor
 
@@ -10,6 +6,39 @@ Permission descriptor for file system handles
 
 ## Properties
 
-| Property | Type |
-| ------ | ------ |
-| <a id="mode"></a> `mode?` | `"readwrite"` \| `"read"` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[mode](./FileSystemHandlePermissionDescriptor.mode.md)
+
+</td><td>
+
+
+
+</td><td>
+
+"readwrite" | "read"
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

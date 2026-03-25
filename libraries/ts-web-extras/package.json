@@ -36,6 +36,7 @@
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
+    "@fgv/typedoc-compact-theme": "workspace:*",
     "@microsoft/api-documenter": "^7.28.2",
     "@microsoft/api-extractor": "^7.55.2",
     "@types/jest": "^29.5.14",

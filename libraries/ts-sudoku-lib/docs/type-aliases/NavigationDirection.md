@@ -1,11 +1,11 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / NavigationDirection
+[Home](../README.md) > NavigationDirection
 
 # Type Alias: NavigationDirection
 
-> **NavigationDirection** = `"down"` \| `"left"` \| `"right"` \| `"up"`
-
 Navigation direction within a puzzle.
+
+## Type
+
+```typescript
+type NavigationDirection = "down" | "left" | "right" | "up"
+```

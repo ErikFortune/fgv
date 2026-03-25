@@ -1,33 +1,182 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > IHttpTreeParams
 
-***
-
-[@fgv/ts-web-extras](../README.md) / IHttpTreeParams
-
-# Interface: IHttpTreeParams\<TCT\>
+# Interface: IHttpTreeParams
 
 Configuration for creating HTTP-backed tree accessors.
 
-## Extends
-
-- [`IFileTreeInitParams`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
-
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+**Extends:** `IFileTreeInitParams<TCT>`
 
 ## Properties
 
-| Property | Modifier | Type | Description |
-| ------ | ------ | ------ | ------ |
-| <a id="autosync"></a> `autoSync?` | `readonly` | `boolean` | - |
-| <a id="baseurl"></a> `baseUrl` | `readonly` | `string` | - |
-| <a id="fetchimpl"></a> `fetchImpl?` | `readonly` | \{(`input`, `init?`): `Promise`\<`Response`\>; (`input`, `init?`): `Promise`\<`Response`\>; \} | - |
-| <a id="infercontenttype"></a> `inferContentType?` | `public` | [`ContentTypeFactory`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\> | - |
-| <a id="logger"></a> `logger?` | `readonly` | [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`, `unknown`\> | - |
-| <a id="mutable"></a> `mutable?` | `public` | `boolean` \| [`IFilterSpec`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | Controls mutability of the file tree. - `undefined` or `false`: No files are mutable. - `true`: All files are mutable. - `IFilterSpec`: Only files matching the filter are mutable. |
-| <a id="namespace"></a> `namespace?` | `readonly` | `string` | - |
-| <a id="prefix"></a> `prefix?` | `public` | `string` | - |
-| <a id="userid"></a> `userId?` | `readonly` | `string` | - |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[baseUrl](./IHttpTreeParams.baseUrl.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[namespace](./IHttpTreeParams.namespace.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[autoSync](./IHttpTreeParams.autoSync.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[fetchImpl](./IHttpTreeParams.fetchImpl.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+{ (input: RequestInfo | URL, init?: RequestInit): Promise&lt;Response&gt;; (input: string | Request | URL, init?: RequestInit): Promise&lt;Response&gt; }
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[userId](./IHttpTreeParams.userId.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[logger](./IHttpTreeParams.logger.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+LogReporter&lt;unknown, unknown&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[prefix](./IHttpTreeParams.prefix.md)
+
+</td><td>
+
+
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[inferContentType](./IHttpTreeParams.inferContentType.md)
+
+</td><td>
+
+
+
+</td><td>
+
+ContentTypeFactory&lt;TCT&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[mutable](./IHttpTreeParams.mutable.md)
+
+</td><td>
+
+
+
+</td><td>
+
+boolean | IFilterSpec
+
+</td><td>
+
+Controls mutability of the file tree.
+
+</td></tr>
+</tbody></table>

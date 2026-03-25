@@ -1,12 +1,6 @@
-[**@fgv/ts-json-base**](../README.md)
+[Home](../README.md) > JsonCompatibleType
 
-***
-
-[@fgv/ts-json-base](../README.md) / JsonCompatibleType
-
-# Type Alias: JsonCompatibleType\<T\>
-
-> **JsonCompatibleType**\<`T`\> = [`IsUnknown`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> *extends* `true` ? [`JsonValue`](JsonValue.md) : `T` *extends* [`JsonPrimitive`](JsonPrimitive.md) \| `undefined` ? `T` : `T` *extends* `unknown`[] ? [`JsonCompatibleArray`](JsonCompatibleArray.md)\<`T`\[`number`\]\> : `T` *extends* `Function` ? \[`"Error: Function is not JSON-compatible"`\] : `T` *extends* `object` ? `{ [K in keyof T]: JsonCompatibleType<T[K]> }` : \[`"Error: Non-JSON type"`\]
+# Type Alias: JsonCompatibleType
 
 A constrained type that is compatible with JSON serialization.
 
@@ -22,32 +16,8 @@ Note: While `undefined` is technically not JSON-serializable, it's allowed here
 to support TypeScript's optional property patterns. Use `sanitizeJsonObject`
 to remove undefined properties before actual JSON serialization.
 
-## Type Parameters
-
-| Type Parameter | Description |
-| ------ | ------ |
-| `T` | The type to be constrained |
-
-## Returns
-
-A constrained type that is compatible with JSON serialization.
-
-## Example
+## Type
 
 ```typescript
-interface IUser {
-  name: string;
-  email?: string; // Optional property can be undefined
-}
-
-type UserCompatible = JsonCompatibleType<IUser>; // Allows undefined for email
-
-const user: UserCompatible = {
-  name: "John",
-  email: undefined // This works
-};
-
-// Before JSON serialization, sanitize to remove undefined:
-const sanitized = sanitizeJsonObject(user); // Removes undefined properties
-JSON.stringify(sanitized.value); // Safe to serialize
+type JsonCompatibleType = IsUnknown<T> extends true ? JsonValue : T extends JsonPrimitive | undefined ? T : T extends unknown[] ? JsonCompatibleArray<T[number]> : T extends Function ? ["Error: Function is not JSON-compatible"] : T extends object ? { [K in keyof T]: JsonCompatibleType<T[K]> } : ["Error: Non-JSON type"]
 ```

@@ -1,19 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > ResultValueType
 
-***
+# Type Alias: ResultValueType
 
-[@fgv/ts-utils](../README.md) / ResultValueType
+Type inference to determine the result type of an Result.
 
-# Type Alias: ResultValueType\<T\>
+## Type
 
-> **ResultValueType**\<`T`\> = `T` *extends* [`Result`](Result.md)\<infer TV\> ? [`TV`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) : `never`
-
-**`Beta`**
-
-Type inference to determine the result type of an [Result](Result.md).
-
-## Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
+```typescript
+type ResultValueType = T extends Result<infer TV> ? TV : never
+```

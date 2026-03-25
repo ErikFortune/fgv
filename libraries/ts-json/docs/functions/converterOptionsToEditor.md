@@ -1,24 +1,14 @@
-[**@fgv/ts-json**](../README.md)
+[Home](../README.md) > converterOptionsToEditor
 
-***
+# Function: converterOptionsToEditor
 
-[@fgv/ts-json](../README.md) / converterOptionsToEditor
-
-# Function: converterOptionsToEditor()
-
-> **converterOptionsToEditor**(`partial?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonEditor`](../classes/JsonEditor.md)\>
-
-Creates a new [JsonEditor](../classes/JsonEditor.md) from an optionally supplied partial
-[JSON converter options](../interfaces/IJsonConverterOptions.md).
+Creates a new JsonEditor | JsonEditor from an optionally supplied partial
+IJsonConverterOptions | JSON converter options.
 Expands supplied options with default values and constructs an editor with
 matching configuration and defined rules.
 
-## Parameters
+## Signature
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `partial?` | `Partial`\<[`IJsonConverterOptions`](../interfaces/IJsonConverterOptions.md)\> | Optional partial [IJsonConverterOptions](../interfaces/IJsonConverterOptions.md) used to create the editor. |
-
-## Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonEditor`](../classes/JsonEditor.md)\>
+```typescript
+function converterOptionsToEditor(partial: Partial<IJsonConverterOptions>): Result<JsonEditor>
+```

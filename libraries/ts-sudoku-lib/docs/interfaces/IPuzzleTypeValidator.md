@@ -1,8 +1,4 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / IPuzzleTypeValidator
+[Home](../README.md) > IPuzzleTypeValidator
 
 # Interface: IPuzzleTypeValidator
 
@@ -10,19 +6,31 @@ Interface for puzzle type-specific validation
 
 ## Methods
 
-### validateCells()
+<table><thead><tr><th>
 
-> **validateCells**(`cells`, `dimensions`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`true`\>
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[validateCells(cells, dimensions)](./IPuzzleTypeValidator.validateCells.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Validate the cells string for this puzzle type
 
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `cells` | `string` |
-| `dimensions` | [`IPuzzleDimensions`](IPuzzleDimensions.md) |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`true`\>
+</td></tr>
+</tbody></table>

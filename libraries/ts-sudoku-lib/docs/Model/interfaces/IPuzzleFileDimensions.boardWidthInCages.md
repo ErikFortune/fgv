@@ -1,0 +1,9 @@
+[Home](../../README.md) > [Model](../README.md) > [IPuzzleFileDimensions](./IPuzzleFileDimensions.md) > boardWidthInCages
+
+## IPuzzleFileDimensions.boardWidthInCages property
+
+**Signature:**
+
+```typescript
+boardWidthInCages: number;
+```

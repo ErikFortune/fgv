@@ -508,6 +508,9 @@ importers:
         specifier: ^3.7.2
         version: 3.7.2
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../rigs/heft-dual-rig
       '@fgv/ts-extras':
         specifier: workspace:*
         version: link:../ts-extras
@@ -520,6 +523,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@microsoft/api-documenter':
         specifier: ^7.28.2
         version: 7.29.6(@types/node@20.19.37)
@@ -732,6 +738,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@jest/expect-utils':
         specifier: ^29.7.0
         version: 29.7.0
@@ -916,6 +925,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@microsoft/api-documenter':
         specifier: ^7.28.2
         version: 7.29.6(@types/node@20.19.37)
@@ -1013,6 +1025,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@microsoft/api-documenter':
         specifier: ^7.28.2
         version: 7.29.6(@types/node@20.19.37)
@@ -1122,6 +1137,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@microsoft/api-documenter':
         specifier: ^7.28.2
         version: 7.29.6(@types/node@20.19.37)
@@ -1240,6 +1258,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@microsoft/api-documenter':
         specifier: ^7.28.2
         version: 7.29.6(@types/node@20.19.37)
@@ -1342,6 +1363,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@microsoft/api-documenter':
         specifier: ^7.28.2
         version: 7.29.6(@types/node@20.19.37)
@@ -1448,6 +1472,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@microsoft/api-documenter':
         specifier: ^7.28.2
         version: 7.29.6(@types/node@20.19.37)
@@ -1553,6 +1580,9 @@ importers:
       '@fgv/heft-dual-rig':
         specifier: workspace:*
         version: link:../../rigs/heft-dual-rig
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@jest/expect-utils':
         specifier: ^29.7.0
         version: 29.7.0
@@ -1662,6 +1692,9 @@ importers:
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@microsoft/api-extractor':
         specifier: ^7.55.2
         version: 7.57.6(@types/node@20.19.37)
@@ -1756,6 +1789,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@fgv/typedoc-compact-theme':
+        specifier: workspace:*
+        version: link:../../plugins/typedoc-compact-theme
       '@microsoft/api-documenter':
         specifier: ^7.28.2
         version: 7.29.6(@types/node@20.19.37)

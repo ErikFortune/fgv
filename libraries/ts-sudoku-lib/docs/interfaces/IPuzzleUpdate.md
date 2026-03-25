@@ -1,8 +1,4 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / IPuzzleUpdate
+[Home](../README.md) > IPuzzleUpdate
 
 # Interface: IPuzzleUpdate
 
@@ -10,8 +6,73 @@ Describes a single puzzle update.
 
 ## Properties
 
-| Property | Type |
-| ------ | ------ |
-| <a id="cells"></a> `cells` | [`ICellUpdate`](ICellUpdate.md)[] |
-| <a id="from"></a> `from` | [`PuzzleState`](../classes/PuzzleState.md) |
-| <a id="to"></a> `to` | [`PuzzleState`](../classes/PuzzleState.md) |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[from](./IPuzzleUpdate.from.md)
+
+</td><td>
+
+
+
+</td><td>
+
+[PuzzleState](../classes/PuzzleState.md)
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[to](./IPuzzleUpdate.to.md)
+
+</td><td>
+
+
+
+</td><td>
+
+[PuzzleState](../classes/PuzzleState.md)
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[cells](./IPuzzleUpdate.cells.md)
+
+</td><td>
+
+
+
+</td><td>
+
+[ICellUpdate](ICellUpdate.md)[]
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

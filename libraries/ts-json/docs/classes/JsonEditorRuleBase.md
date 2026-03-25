@@ -1,95 +1,96 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / JsonEditorRuleBase
+[Home](../README.md) > JsonEditorRuleBase
 
 # Class: JsonEditorRuleBase
 
-Default base implementation of [IJsonEditorRule](../interfaces/IJsonEditorRule.md) returns inapplicable for all operations so that
+Default base implementation of IJsonEditorRule | IJsonEditorRule returns inapplicable for all operations so that
 derived classes need only implement the operations they actually support.
 
-## Extended by
-
-- [`ConditionalJsonEditorRule`](../@fgv/namespaces/EditorRules/classes/ConditionalJsonEditorRule.md)
-- [`MultiValueJsonEditorRule`](../@fgv/namespaces/EditorRules/classes/MultiValueJsonEditorRule.md)
-- [`ReferenceJsonEditorRule`](../@fgv/namespaces/EditorRules/classes/ReferenceJsonEditorRule.md)
-- [`TemplatedJsonEditorRule`](../@fgv/namespaces/EditorRules/classes/TemplatedJsonEditorRule.md)
-
-## Implements
-
-- [`IJsonEditorRule`](../interfaces/IJsonEditorRule.md)
+**Implements:** [`IJsonEditorRule`](../interfaces/IJsonEditorRule.md)
 
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new JsonEditorRuleBase**(): `JsonEditorRuleBase`
+Constructor
 
-#### Returns
+</th><th>
 
-`JsonEditorRuleBase`
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor()`
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### editProperty()
+<table><thead><tr><th>
 
-> **editProperty**(`__key`, `__value`, `__state`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonPropertyEditFailureReason`](../type-aliases/JsonPropertyEditFailureReason.md)\>
+Method
 
-#### Parameters
+</th><th>
 
-| Parameter | Type |
-| ------ | ------ |
-| `__key` | `string` |
-| `__value` | [`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
-| `__state` | [`JsonEditorState`](JsonEditorState.md) |
+Modifiers
 
-#### Returns
+</th><th>
 
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonPropertyEditFailureReason`](../type-aliases/JsonPropertyEditFailureReason.md)\>
+Description
 
-#### Implementation of
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-[`IJsonEditorRule`](../interfaces/IJsonEditorRule.md).[`editProperty`](../interfaces/IJsonEditorRule.md#editproperty)
+[editProperty(__key, __value, __state)](./JsonEditorRuleBase.editProperty.md)
 
-***
+</td><td>
 
-### editValue()
 
-> **editValue**(`__value`, `__state`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonEditFailureReason`](../type-aliases/JsonEditFailureReason.md)\>
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `__value` | [`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
-| `__state` | [`JsonEditorState`](JsonEditorState.md) |
+IJsonEditorRule.editProperty
 
-#### Returns
+</td></tr>
+<tr><td>
 
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonEditFailureReason`](../type-aliases/JsonEditFailureReason.md)\>
+[editValue(__value, __state)](./JsonEditorRuleBase.editValue.md)
 
-#### Implementation of
+</td><td>
 
-[`IJsonEditorRule`](../interfaces/IJsonEditorRule.md).[`editValue`](../interfaces/IJsonEditorRule.md#editvalue)
 
-***
 
-### finalizeProperties()
+</td><td>
 
-> **finalizeProperties**(`__deferred`, `__state`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)[], [`JsonEditFailureReason`](../type-aliases/JsonEditFailureReason.md)\>
+IJsonEditorRule.editValue
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `__deferred` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)[] |
-| `__state` | [`JsonEditorState`](JsonEditorState.md) |
+[finalizeProperties(__deferred, __state)](./JsonEditorRuleBase.finalizeProperties.md)
 
-#### Returns
+</td><td>
 
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)[], [`JsonEditFailureReason`](../type-aliases/JsonEditFailureReason.md)\>
 
-#### Implementation of
 
-[`IJsonEditorRule`](../interfaces/IJsonEditorRule.md).[`finalizeProperties`](../interfaces/IJsonEditorRule.md#finalizeproperties)
+</td><td>
+
+IJsonEditorRule.finalizeProperties
+
+</td></tr>
+</tbody></table>

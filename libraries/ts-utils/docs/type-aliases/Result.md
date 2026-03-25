@@ -1,22 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > Result
 
-***
+# Type Alias: Result
 
-[@fgv/ts-utils](../README.md) / Result
+Represents the IResult | result of some operation or sequence of operations.
 
-# Type Alias: Result\<T\>
+## Type
 
-> **Result**\<`T`\> = [`Success`](../classes/Success.md)\<`T`\> \| [`Failure`](../classes/Failure.md)\<`T`\>
-
-Represents the [result](../interfaces/IResult.md) of some operation or sequence of operations.
-
-## Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
-
-## Remarks
-
-[Success\<T\>](../classes/Success.md) and [Failure\<T\>](../classes/Failure.md) share the common
-contract [IResult](../interfaces/IResult.md), enabling commingled discriminated usage.
+```typescript
+type Result = Success<T> | Failure<T>
+```

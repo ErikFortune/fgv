@@ -1,30 +1,131 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > ILocalStorageTreeParams
 
-***
-
-[@fgv/ts-web-extras](../README.md) / ILocalStorageTreeParams
-
-# Interface: ILocalStorageTreeParams\<TCT\>
+# Interface: ILocalStorageTreeParams
 
 Configuration for LocalStorageTreeAccessors.
 
-## Extends
-
-- [`IFileTreeInitParams`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
-
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+**Extends:** `IFileTreeInitParams<TCT>`
 
 ## Properties
 
-| Property | Type | Description |
-| ------ | ------ | ------ |
-| <a id="autosync"></a> `autoSync?` | `boolean` | If true, automatically sync changes to localStorage on every modification. If false (default), changes are only synced when syncToDisk() is called. |
-| <a id="infercontenttype"></a> `inferContentType?` | [`ContentTypeFactory`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\> | - |
-| <a id="mutable"></a> `mutable?` | `boolean` \| [`IFilterSpec`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | Controls mutability of the file tree. - `undefined` or `false`: No files are mutable. - `true`: All files are mutable. - `IFilterSpec`: Only files matching the filter are mutable. |
-| <a id="pathtokeymap"></a> `pathToKeyMap` | `Record`\<`string`, `string`\> | Map of directory path prefixes to localStorage keys. Files under each prefix are stored in the corresponding localStorage key. Example: { '/data/ingredients': 'myapp:ingredients:v1' } |
-| <a id="prefix"></a> `prefix?` | `string` | - |
-| <a id="storage"></a> `storage?` | `Storage` | Storage instance to use. Defaults to window.localStorage. Can be overridden for testing with mock storage. |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[pathToKeyMap](./ILocalStorageTreeParams.pathToKeyMap.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Record&lt;string, string&gt;
+
+</td><td>
+
+Map of directory path prefixes to localStorage keys.
+
+</td></tr>
+<tr><td>
+
+[storage](./ILocalStorageTreeParams.storage.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Storage
+
+</td><td>
+
+Storage instance to use.
+
+</td></tr>
+<tr><td>
+
+[autoSync](./ILocalStorageTreeParams.autoSync.md)
+
+</td><td>
+
+
+
+</td><td>
+
+boolean
+
+</td><td>
+
+If true, automatically sync changes to localStorage on every modification.
+
+</td></tr>
+<tr><td>
+
+[prefix](./ILocalStorageTreeParams.prefix.md)
+
+</td><td>
+
+
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[inferContentType](./ILocalStorageTreeParams.inferContentType.md)
+
+</td><td>
+
+
+
+</td><td>
+
+ContentTypeFactory&lt;TCT&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[mutable](./ILocalStorageTreeParams.mutable.md)
+
+</td><td>
+
+
+
+</td><td>
+
+boolean | IFilterSpec
+
+</td><td>
+
+Controls mutability of the file tree.
+
+</td></tr>
+</tbody></table>

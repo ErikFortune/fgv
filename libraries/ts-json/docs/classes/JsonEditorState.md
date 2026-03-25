@@ -1,203 +1,222 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / JsonEditorState
+[Home](../README.md) > JsonEditorState
 
 # Class: JsonEditorState
 
-Represents the internal state of a [JsonEditor](JsonEditor.md).
+Represents the internal state of a JsonEditor | JsonEditor.
 
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new JsonEditorState**(`editor`, `baseOptions`, `runtimeContext?`): `JsonEditorState`
+Constructor
 
-Constructs a new JsonEditorState.
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `editor` | [`IJsonCloneEditor`](../interfaces/IJsonCloneEditor.md) | The [editor](../interfaces/IJsonCloneEditor.md) to which this state applies. |
-| `baseOptions` | [`IJsonEditorOptions`](../interfaces/IJsonEditorOptions.md) | The [editor options](../interfaces/IJsonEditorOptions.md) that apply to this rule. |
-| `runtimeContext?` | [`IJsonContext`](../interfaces/IJsonContext.md) | An optional [JSON context](../interfaces/IJsonContext.md) to be used for json value conversion. |
+</th><th>
 
-#### Returns
+Description
 
-`JsonEditorState`
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor(editor, baseOptions, runtimeContext)`
+
+</td><td>
+
+
+
+</td><td>
+
+Constructs a new JsonEditorState | JsonEditorState.
+
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-| Property | Modifier | Type | Description |
-| ------ | ------ | ------ | ------ |
-| <a id="editor"></a> `editor` | `readonly` | [`IJsonCloneEditor`](../interfaces/IJsonCloneEditor.md) | The [editor](../interfaces/IJsonCloneEditor.md) for which this state applies. |
-| <a id="options"></a> `options` | `readonly` | [`IJsonEditorOptions`](../interfaces/IJsonEditorOptions.md) | Fully resolved [editor options](../interfaces/IJsonEditorOptions.md) that apply to the operation for which this state applies. |
+<table><thead><tr><th>
 
-## Accessors
+Property
 
-### context
+</th><th>
 
-#### Get Signature
+Modifiers
 
-> **get** **context**(): [`IJsonContext`](../interfaces/IJsonContext.md) \| `undefined`
+</th><th>
 
-The optional [JSON context](../interfaces/IJsonContext.md) for this state.
+Type
 
-##### Returns
+</th><th>
 
-[`IJsonContext`](../interfaces/IJsonContext.md) \| `undefined`
+Description
 
-***
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-### deferred
+[editor](./JsonEditorState.editor.md)
 
-#### Get Signature
+</td><td>
 
-> **get** **deferred**(): [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)[]
+`readonly`
+
+</td><td>
+
+[IJsonCloneEditor](../interfaces/IJsonCloneEditor.md)
+
+</td><td>
+
+The IJsonCloneEditor | editor for which this state applies.
+
+</td></tr>
+<tr><td>
+
+[options](./JsonEditorState.options.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IJsonEditorOptions](../interfaces/IJsonEditorOptions.md)
+
+</td><td>
+
+Fully resolved IJsonEditorOptions | editor options that apply
+
+</td></tr>
+<tr><td>
+
+[context](./JsonEditorState.context.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IJsonContext](../interfaces/IJsonContext.md) | undefined
+
+</td><td>
+
+The optional IJsonContext | JSON context for this state.
+
+</td></tr>
+<tr><td>
+
+[deferred](./JsonEditorState.deferred.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+JsonObject[]
+
+</td><td>
 
 An array of JSON objects that were deferred for merge during
-finalization.
 
-##### Returns
-
-[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)[]
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### defer()
+<table><thead><tr><th>
 
-> **defer**(`obj`): `void`
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[defer(obj)](./JsonEditorState.defer.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Adds a supplied `JsonObject` to the deferred list.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `obj` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The `JsonObject` to be deferred. |
+[getVars(defaultContext)](./JsonEditorState.getVars.md)
 
-#### Returns
+</td><td>
 
-`void`
 
-***
 
-### extendContext()
+</td><td>
 
-> **extendContext**(`baseContext`, `add`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IJsonContext`](../interfaces/IJsonContext.md) \| `undefined`\>
+Gets a TemplateVars | TemplateVars from the context of this JsonEditorState | JsonEditorState,
 
-Constructs a new [IJsonContext](../interfaces/IJsonContext.md) by merging supplied variables
-and references into a supplied existing context.
+</td></tr>
+<tr><td>
 
-#### Parameters
+[getRefs(defaultContext)](./JsonEditorState.getRefs.md)
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `baseContext` | [`IJsonContext`](../interfaces/IJsonContext.md) \| `undefined` | The [IJsonContext](../interfaces/IJsonContext.md) into which variables and references are to be merged, or `undefined` to start with a default empty context. |
-| `add` | \{ `refs?`: [`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md)[]; `vars?`: [`VariableValue`](../type-aliases/VariableValue.md)[]; \} | The [variable values](../type-aliases/VariableValue.md) and/or [JSON entity references](../interfaces/IJsonReferenceMap.md) to be merged into the base context. |
-| `add.refs?` | [`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md)[] | - |
-| `add.vars?` | [`VariableValue`](../type-aliases/VariableValue.md)[] | - |
+</td><td>
 
-#### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IJsonContext`](../interfaces/IJsonContext.md) \| `undefined`\>
 
-A new [IJsonContext](../interfaces/IJsonContext.md) created by merging the supplied values.
+</td><td>
 
-***
+Gets an IJsonReferenceMap | reference map containing any other values
 
-### failValidation()
+</td></tr>
+<tr><td>
 
-> **failValidation**\<`T`\>(`rule`, `message?`, `validation?`): [`DetailedFailure`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, [`JsonEditFailureReason`](../type-aliases/JsonEditFailureReason.md)\>
+[getContext(defaultContext)](./JsonEditorState.getContext.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the context of this JsonEditorState | JsonEditorState or an optionally
+
+</td></tr>
+<tr><td>
+
+[extendContext(baseContext, add)](./JsonEditorState.extendContext.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Constructs a new IJsonContext | IJsonContext by merging supplied variables
+
+</td></tr>
+<tr><td>
+
+[failValidation(rule, message, validation)](./JsonEditorState.failValidation.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Helper method to constructs  `DetailedFailure` with appropriate details and messaging
-for various validation failures.
 
-#### Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `T` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `rule` | [`JsonEditorValidationRules`](../type-aliases/JsonEditorValidationRules.md) | The [validation rule](../type-aliases/JsonEditorValidationRules.md) that failed. |
-| `message?` | `string` | A string message describing the failed validation. |
-| `validation?` | [`IJsonEditorValidationOptions`](../interfaces/IJsonEditorValidationOptions.md) | The [validation options](../interfaces/IJsonEditorValidationOptions.md) in effect. |
-
-#### Returns
-
-[`DetailedFailure`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, [`JsonEditFailureReason`](../type-aliases/JsonEditFailureReason.md)\>
-
-A `DetailedFailure` with appropriate detail and message.
-
-***
-
-### getContext()
-
-> **getContext**(`defaultContext?`): [`IJsonContext`](../interfaces/IJsonContext.md) \| `undefined`
-
-Gets the context of this JsonEditorState or an optionally
-supplied default context if this state has no context.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `defaultContext?` | [`IJsonContext`](../interfaces/IJsonContext.md) | The default [JSON context](../interfaces/IJsonContext.md) to use as default if this state has no context. |
-
-#### Returns
-
-[`IJsonContext`](../interfaces/IJsonContext.md) \| `undefined`
-
-The appropriate [IJsonContext](../interfaces/IJsonContext.md) or `undefined` if no context
-is available.
-
-***
-
-### getRefs()
-
-> **getRefs**(`defaultContext?`): [`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md) \| `undefined`
-
-Gets an [reference map](../interfaces/IJsonReferenceMap.md) containing any other values
-referenced during the operation.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `defaultContext?` | [`IJsonContext`](../interfaces/IJsonContext.md) | An optional default [IJsonContext](../interfaces/IJsonContext.md) to use as [TemplateVars](../type-aliases/TemplateVars.md) if the current state does not have context. |
-
-#### Returns
-
-[`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md) \| `undefined`
-
-An [IJsonReferenceMap](../interfaces/IJsonReferenceMap.md) containing any values referenced
-during this operation.
-
-***
-
-### getVars()
-
-> **getVars**(`defaultContext?`): [`TemplateVars`](../type-aliases/TemplateVars.md) \| `undefined`
-
-Gets a [TemplateVars](../type-aliases/TemplateVars.md) from the context of this JsonEditorState,
-or from an optional supplied [IJsonContext](../interfaces/IJsonContext.md) if the current state has no default
-context.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `defaultContext?` | [`IJsonContext`](../interfaces/IJsonContext.md) | An optional default [IJsonContext](../interfaces/IJsonContext.md) to use as `TemplateVars` if the current state does not have context. |
-
-#### Returns
-
-[`TemplateVars`](../type-aliases/TemplateVars.md) \| `undefined`
-
-A [TemplateVars](../type-aliases/TemplateVars.md) reflecting the appropriate [JSON context](../interfaces/IJsonContext.md), or
-`undefined` if no vars are found.
+</td></tr>
+</tbody></table>

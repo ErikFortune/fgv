@@ -1,22 +1,12 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > parseResourceTypes
 
-***
-
-[@fgv/ts-web-extras](../README.md) / parseResourceTypes
-
-# Function: parseResourceTypes()
-
-> **parseResourceTypes**(`resourceTypes`): `string`[]
+# Function: parseResourceTypes
 
 Converts resource types string to array
 Example: "json,string" -\> ["json", "string"]
 
-## Parameters
+## Signature
 
-| Parameter | Type |
-| ------ | ------ |
-| `resourceTypes` | `string` |
-
-## Returns
-
-`string`[]
+```typescript
+function parseResourceTypes(resourceTypes: string): string[]
+```

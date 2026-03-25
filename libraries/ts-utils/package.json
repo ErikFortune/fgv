@@ -38,6 +38,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils#readme",
   "devDependencies": {
     "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/typedoc-compact-theme": "workspace:*",
     "@jest/expect-utils": "^29.7.0",
     "@microsoft/api-documenter": "^7.28.2",
     "@microsoft/api-extractor": "^7.55.2",

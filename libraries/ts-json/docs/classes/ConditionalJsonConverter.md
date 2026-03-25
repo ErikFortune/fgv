@@ -1,8 +1,4 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / ConditionalJsonConverter
+[Home](../README.md) > ConditionalJsonConverter
 
 # Class: ConditionalJsonConverter
 
@@ -10,559 +6,391 @@ An @fgv/ts-utils `Converter` from `unknown` to type-safe JSON with mustache
 template rendering, multi-value property name and conditional property
 name rules enabled regardless of initial context.
 
-## Extends
-
-- [`JsonEditorConverter`](JsonEditorConverter.md)
+**Extends:** [`JsonEditorConverter`](JsonEditorConverter.md)
 
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new ConditionalJsonConverter**(`options?`): `ConditionalJsonConverter`
+Constructor
 
-Constructs a new ConditionalJsonConverter with supplied or
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor(options)`
+
+</td><td>
+
+
+
+</td><td>
+
+Constructs a new ConditionalJsonConverter | ConditionalJsonConverter with supplied or
 default options.
 
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `options?` | `Partial`\<[`ConditionalJsonConverterOptions`](../type-aliases/ConditionalJsonConverterOptions.md)\> | Optional partial [configuration or context](../type-aliases/ConditionalJsonConverterOptions.md) for the converter. |
-
-#### Returns
-
-`ConditionalJsonConverter`
-
-#### Overrides
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`constructor`](JsonEditorConverter.md#constructor)
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-| Property | Modifier | Type | Description |
-| ------ | ------ | ------ | ------ |
-| <a id="editor"></a> `editor` | `readonly` | [`JsonEditor`](JsonEditor.md) | - |
-| <a id="conditionaloptions"></a> `conditionalOptions` | `readonly` | `Partial`\<[`IJsonConverterOptions`](../interfaces/IJsonConverterOptions.md)\> | Default [JSON converter options](../interfaces/IJsonConverterOptions.md) to enable conditional conversion. |
+<table><thead><tr><th>
 
-## Accessors
+Property
 
-### brand
+</th><th>
 
-#### Get Signature
+Modifiers
 
-> **get** **brand**(): `string` \| `undefined`
+</th><th>
 
-Converter.brand
+Type
 
-##### Returns
+</th><th>
 
-`string` \| `undefined`
+Description
 
-#### Inherited from
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-[`JsonEditorConverter`](JsonEditorConverter.md).[`brand`](JsonEditorConverter.md#brand)
+[conditionalOptions](./ConditionalJsonConverter.conditionalOptions.md)
 
-***
+</td><td>
 
-### isOptional
+`readonly` `static`
 
-#### Get Signature
+</td><td>
 
-> **get** **isOptional**(): `boolean`
+Partial&lt;[IJsonConverterOptions](../interfaces/IJsonConverterOptions.md)&gt;
+
+</td><td>
+
+Default IJsonConverterOptions | JSON converter options
+
+</td></tr>
+<tr><td>
+
+[editor](./JsonEditorConverter.editor.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[JsonEditor](JsonEditor.md)
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[isOptional](./JsonEditorConverter.isOptional.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
 
 Converter.isOptional
 
-##### Returns
+</td></tr>
+<tr><td>
 
-`boolean`
+[brand](./JsonEditorConverter.brand.md)
 
-#### Inherited from
+</td><td>
 
-[`JsonEditorConverter`](JsonEditorConverter.md).[`isOptional`](JsonEditorConverter.md#isoptional)
+`readonly`
+
+</td><td>
+
+string | undefined
+
+</td><td>
+
+Converter.brand
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### \_convert()
+<table><thead><tr><th>
 
-> `protected` **\_convert**(`from`, `context?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+Method
 
-#### Parameters
+</th><th>
 
-| Parameter | Type |
-| ------ | ------ |
-| `from` | `unknown` |
-| `context?` | [`IJsonContext`](../interfaces/IJsonContext.md) |
+Modifiers
 
-#### Returns
+</th><th>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+Description
 
-#### Inherited from
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-[`JsonEditorConverter`](JsonEditorConverter.md).[`_convert`](JsonEditorConverter.md#_convert)
+[create(options)](./ConditionalJsonConverter.create.md)
 
-***
+</td><td>
 
-### array()
+`static`
 
-> **array**(): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonArray`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\>
+</td><td>
+
+Constructs a new ConditionalJsonConverter | ConditionalJsonConverter with supplied or
+
+</td></tr>
+<tr><td>
+
+[createWithEditor(editor)](./JsonEditorConverter.createWithEditor.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Constructs a new JsonEditor | JsonEditorConverter which uses the supplied editor
+
+</td></tr>
+<tr><td>
+
+[object()](./JsonEditorConverter.object.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Gets a derived converter which fails if the resulting converted
-`JsonValue` is not a `JsonArray`.
 
-#### Returns
+</td></tr>
+<tr><td>
 
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonArray`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\>
+[array()](./JsonEditorConverter.array.md)
 
-#### Inherited from
+</td><td>
 
-[`JsonEditorConverter`](JsonEditorConverter.md).[`array`](JsonEditorConverter.md#array)
 
-***
 
-### convert()
+</td><td>
 
-> **convert**(`from`, `context?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+Gets a derived converter which fails if the resulting converted
+
+</td></tr>
+<tr><td>
+
+[convert(from, context)](./JsonEditorConverter.convert.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Converter.convert
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `from` | `unknown` |
-| `context?` | [`IJsonContext`](../interfaces/IJsonContext.md) |
+[convertOptional(from, context, onError)](./JsonEditorConverter.convertOptional.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
 
-#### Inherited from
 
-[`JsonEditorConverter`](JsonEditorConverter.md).[`convert`](JsonEditorConverter.md#convert)
-
-***
-
-### convertOptional()
-
-> **convertOptional**(`from`, `context?`, `onError?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) \| `undefined`\>
+</td><td>
 
 Converter.convertOptional
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `from` | `unknown` |
-| `context?` | [`IJsonContext`](../interfaces/IJsonContext.md) |
-| `onError?` | [`OnError`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) |
+[optional(onError)](./JsonEditorConverter.optional.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) \| `undefined`\>
 
-#### Inherited from
 
-[`JsonEditorConverter`](JsonEditorConverter.md).[`convertOptional`](JsonEditorConverter.md#convertoptional)
-
-***
-
-### map()
-
-> **map**\<`T2`\>(`mapper`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T2`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-Converter.map
-
-#### Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T2` |
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `mapper` | (`from`, `context?`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T2`\> |
-
-#### Returns
-
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T2`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`map`](JsonEditorConverter.md#map)
-
-***
-
-### mapConvert()
-
-> **mapConvert**\<`T2`\>(`mapConverter`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T2`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-Converter.mapConvert
-
-#### Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T2` |
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `mapConverter` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T2`\> |
-
-#### Returns
-
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T2`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`mapConvert`](JsonEditorConverter.md#mapconvert)
-
-***
-
-### mapConvertItems()
-
-> **mapConvertItems**\<`TI`\>(`mapConverter`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`[], [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-Converter.mapConvertItems
-
-#### Type Parameters
-
-| Type Parameter |
-| ------ |
-| `TI` |
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `mapConverter` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`, `unknown`\> |
-
-#### Returns
-
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`[], [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`mapConvertItems`](JsonEditorConverter.md#mapconvertitems)
-
-***
-
-### mapItems()
-
-> **mapItems**\<`TI`\>(`mapper`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`[], [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-Converter.mapItems
-
-#### Type Parameters
-
-| Type Parameter |
-| ------ |
-| `TI` |
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `mapper` | (`from`, `context?`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`\> |
-
-#### Returns
-
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`[], [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`mapItems`](JsonEditorConverter.md#mapitems)
-
-***
-
-### object()
-
-> **object**(): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-Gets a derived converter which fails if the resulting converted
-`JsonValue` is not a `JsonObject`.
-
-#### Returns
-
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`object`](JsonEditorConverter.md#object)
-
-***
-
-### optional()
-
-> **optional**(`onError?`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) \| `undefined`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
+</td><td>
 
 Converter.optional
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `onError?` | [`OnError`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) |
+[map(mapper)](./JsonEditorConverter.map.md)
 
-#### Returns
+</td><td>
 
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) \| `undefined`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
 
-#### Inherited from
 
-[`JsonEditorConverter`](JsonEditorConverter.md).[`optional`](JsonEditorConverter.md#optional)
+</td><td>
 
-***
+Converter.map
 
-### or()
+</td></tr>
+<tr><td>
 
-> **or**(`other`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\>
+[mapConvert(mapConverter)](./JsonEditorConverter.mapConvert.md)
 
-Chains this converter with another of the same type, to be attempted if this
-converter fails.
+</td><td>
 
-#### Parameters
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `other` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\> |  |
 
-#### Returns
+</td><td>
 
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\>
+Converter.mapConvert
 
-#### Inherited from
+</td></tr>
+<tr><td>
 
-[`JsonEditorConverter`](JsonEditorConverter.md).[`or`](JsonEditorConverter.md#or)
+[mapItems(mapper)](./JsonEditorConverter.mapItems.md)
 
-***
+</td><td>
 
-### withAction()
 
-> **withAction**\<`TI`\>(`action`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
+
+</td><td>
+
+Converter.mapItems
+
+</td></tr>
+<tr><td>
+
+[mapConvertItems(mapConverter)](./JsonEditorConverter.mapConvertItems.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Converter.mapConvertItems
+
+</td></tr>
+<tr><td>
+
+[withAction(action)](./JsonEditorConverter.withAction.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Converter.withAction
 
-#### Type Parameters
+</td></tr>
+<tr><td>
 
-| Type Parameter |
-| ------ |
-| `TI` |
+[withTypeGuard(guard, message)](./JsonEditorConverter.withTypeGuard.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `action` | (`result`, `context?`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`\> |
 
-#### Returns
 
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`withAction`](JsonEditorConverter.md#withaction)
-
-***
-
-### withBrand()
-
-> **withBrand**\<`B`\>(`brand`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`Brand`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), `B`\>, [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-Converter.withBrand
-
-#### Type Parameters
-
-| Type Parameter |
-| ------ |
-| `B` *extends* `string` |
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `brand` | `B` |
-
-#### Returns
-
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`Brand`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), `B`\>, [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`withBrand`](JsonEditorConverter.md#withbrand)
-
-***
-
-### withConstraint()
-
-> **withConstraint**(`constraint`, `options?`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-Converter.withConstraint
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `constraint` | (`val`, `context?`) => `boolean` \| [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\> |
-| `options?` | [`ConstraintOptions`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) |
-
-#### Returns
-
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`withConstraint`](JsonEditorConverter.md#withconstraint)
-
-***
-
-### withDefault()
-
-> **withDefault**\<`TD`\>(`defaultValue`): [`DefaultingConverter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), `TD`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-Converter.withDefault
-
-#### Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TD` | [`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `defaultValue` | `TD` |
-
-#### Returns
-
-[`DefaultingConverter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), `TD`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`withDefault`](JsonEditorConverter.md#withdefault)
-
-***
-
-### withFormattedError()
-
-> **withFormattedError**(`formatter`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-Converter.withFormattedError
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `formatter` | [`ConversionErrorFormatter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IJsonContext`](../interfaces/IJsonContext.md)\> |
-
-#### Returns
-
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`withFormattedError`](JsonEditorConverter.md#withformattederror)
-
-***
-
-### withItemTypeGuard()
-
-> **withItemTypeGuard**\<`TI`\>(`guard`, `message?`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`[], [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-Converter.withItemTypeGuard
-
-#### Type Parameters
-
-| Type Parameter |
-| ------ |
-| `TI` |
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `guard` | (`from`, `context?`) => `from is TI` |
-| `message?` | `string` |
-
-#### Returns
-
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`[], [`IJsonContext`](../interfaces/IJsonContext.md)\>
-
-#### Inherited from
-
-[`JsonEditorConverter`](JsonEditorConverter.md).[`withItemTypeGuard`](JsonEditorConverter.md#withitemtypeguard)
-
-***
-
-### withTypeGuard()
-
-> **withTypeGuard**\<`TI`\>(`guard`, `message?`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
+</td><td>
 
 Converter.withTypeGuard
 
-#### Type Parameters
+</td></tr>
+<tr><td>
 
-| Type Parameter |
-| ------ |
-| `TI` |
+[withItemTypeGuard(guard, message)](./JsonEditorConverter.withItemTypeGuard.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `guard` | (`from`, `context?`) => `from is TI` |
-| `message?` | `string` |
 
-#### Returns
 
-[`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TI`, [`IJsonContext`](../interfaces/IJsonContext.md)\>
+</td><td>
 
-#### Inherited from
+Converter.withItemTypeGuard
 
-[`JsonEditorConverter`](JsonEditorConverter.md).[`withTypeGuard`](JsonEditorConverter.md#withtypeguard)
+</td></tr>
+<tr><td>
 
-***
+[withConstraint(constraint, options)](./JsonEditorConverter.withConstraint.md)
 
-### create()
+</td><td>
 
-> `static` **create**(`options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonConverter`](JsonConverter.md)\>
 
-Constructs a new ConditionalJsonConverter with supplied or
-default options.
 
-#### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `options?` | `Partial`\<[`ConditionalJsonConverterOptions`](../type-aliases/ConditionalJsonConverterOptions.md)\> | Optional partial [configuration or context](../type-aliases/ConditionalJsonConverterOptions.md) for the converter. |
+Converter.withConstraint
 
-#### Returns
+</td></tr>
+<tr><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonConverter`](JsonConverter.md)\>
+[withBrand(brand)](./JsonEditorConverter.withBrand.md)
 
-***
+</td><td>
 
-### createWithEditor()
 
-> `static` **createWithEditor**(`editor`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonEditorConverter`](JsonEditorConverter.md)\>
 
-Constructs a new [JsonEditor](JsonEditor.md)Converter which uses the supplied editor
+</td><td>
 
-#### Parameters
+Converter.withBrand
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `editor` | [`JsonEditor`](JsonEditor.md) |  |
+</td></tr>
+<tr><td>
 
-#### Returns
+[withDefault(defaultValue)](./JsonEditorConverter.withDefault.md)
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonEditorConverter`](JsonEditorConverter.md)\>
+</td><td>
 
-#### Inherited from
 
-[`JsonEditorConverter`](JsonEditorConverter.md).[`createWithEditor`](JsonEditorConverter.md#createwitheditor)
+
+</td><td>
+
+Converter.withDefault
+
+</td></tr>
+<tr><td>
+
+[or(other)](./JsonEditorConverter.or.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Chains this converter with another of the same type, to be attempted if this
+
+</td></tr>
+<tr><td>
+
+[withFormattedError(formatter)](./JsonEditorConverter.withFormattedError.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Converter.withFormattedError
+
+</td></tr>
+</tbody></table>

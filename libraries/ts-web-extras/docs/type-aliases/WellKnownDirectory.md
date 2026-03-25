@@ -1,11 +1,11 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / WellKnownDirectory
+[Home](../README.md) > WellKnownDirectory
 
 # Type Alias: WellKnownDirectory
 
-> **WellKnownDirectory** = `"desktop"` \| `"documents"` \| `"downloads"` \| `"music"` \| `"pictures"` \| `"videos"`
-
 Well-known directory type
+
+## Type
+
+```typescript
+type WellKnownDirectory = "desktop" | "documents" | "downloads" | "music" | "pictures" | "videos"
+```

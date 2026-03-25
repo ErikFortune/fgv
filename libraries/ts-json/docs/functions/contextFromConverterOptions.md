@@ -1,22 +1,12 @@
-[**@fgv/ts-json**](../README.md)
+[Home](../README.md) > contextFromConverterOptions
 
-***
+# Function: contextFromConverterOptions
 
-[@fgv/ts-json](../README.md) / contextFromConverterOptions
+Creates a new IJsonContext | JSON context using values supplied in an optional partial
+IJsonConverterOptions | converter options.
 
-# Function: contextFromConverterOptions()
+## Signature
 
-> **contextFromConverterOptions**(`partial?`): [`IJsonContext`](../interfaces/IJsonContext.md) \| `undefined`
-
-Creates a new [JSON context](../interfaces/IJsonContext.md) using values supplied in an optional partial
-[converter options](../interfaces/IJsonConverterOptions.md).
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `partial?` | `Partial`\<[`IJsonConverterOptions`](../interfaces/IJsonConverterOptions.md)\> | Optional partial [IJsonConverterOptions](../interfaces/IJsonConverterOptions.md) used to populate the context. |
-
-## Returns
-
-[`IJsonContext`](../interfaces/IJsonContext.md) \| `undefined`
+```typescript
+function contextFromConverterOptions(partial: Partial<IJsonConverterOptions>): IJsonContext | undefined
+```

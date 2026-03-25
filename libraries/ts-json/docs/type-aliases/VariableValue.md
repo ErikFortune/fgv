@@ -1,12 +1,12 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / VariableValue
+[Home](../README.md) > VariableValue
 
 # Type Alias: VariableValue
 
-> **VariableValue** = \[`string`, `unknown`\]
-
-Describes one value in a [TemplateVars](TemplateVars.md) collection of
+Describes one value in a TemplateVars | TemplateVars collection of
 variables.
+
+## Type
+
+```typescript
+type VariableValue = [string, unknown]
+```

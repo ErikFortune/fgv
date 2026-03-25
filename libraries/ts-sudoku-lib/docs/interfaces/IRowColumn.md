@@ -1,16 +1,61 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / IRowColumn
+[Home](../README.md) > IRowColumn
 
 # Interface: IRowColumn
 
-The row/column coordinate of a single ICell \| cell in a [puzzle](../classes/PuzzleSession.md).
+The row/column coordinate of a single ICell | cell in a PuzzleSession | puzzle.
 
 ## Properties
 
-| Property | Type |
-| ------ | ------ |
-| <a id="col"></a> `col` | `number` |
-| <a id="row"></a> `row` | `number` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[row](./IRowColumn.row.md)
+
+</td><td>
+
+
+
+</td><td>
+
+number
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[col](./IRowColumn.col.md)
+
+</td><td>
+
+
+
+</td><td>
+
+number
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

@@ -1,23 +1,12 @@
-[**@fgv/ts-json**](../README.md)
+[Home](../README.md) > TemplateVarsExtendFunction
 
-***
+# Type Alias: TemplateVarsExtendFunction
 
-[@fgv/ts-json](../README.md) / TemplateVarsExtendFunction
-
-# Type Alias: TemplateVarsExtendFunction()
-
-> **TemplateVarsExtendFunction** = (`base`, `values`) => [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`TemplateVars`](TemplateVars.md) \| `undefined`\>
-
-Function used to create a new collection of [TemplateVars](TemplateVars.md) with
+Function used to create a new collection of TemplateVars | TemplateVars with
 one or more new or changed values.
 
-## Parameters
+## Type
 
-| Parameter | Type |
-| ------ | ------ |
-| `base` | [`TemplateVars`](TemplateVars.md) \| `undefined` |
-| `values` | [`VariableValue`](VariableValue.md)[] |
-
-## Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`TemplateVars`](TemplateVars.md) \| `undefined`\>
+```typescript
+type TemplateVarsExtendFunction = (base: TemplateVars | undefined, values: VariableValue[]) => Result<TemplateVars | undefined>
+```

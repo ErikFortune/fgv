@@ -1,136 +1,92 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / CompositeJsonMap
+[Home](../README.md) > CompositeJsonMap
 
 # Class: CompositeJsonMap
 
-A CompositeJsonMap presents a composed view of one or more other
-[JSON reference maps](../interfaces/IJsonReferenceMap.md).
+A CompositeJsonMap | CompositeJsonMap presents a composed view of one or more other
+IJsonReferenceMap | JSON reference maps.
 
-## Implements
-
-- [`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md)
+**Implements:** [`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md)
 
 ## Methods
 
-### getJsonObject()
+<table><thead><tr><th>
 
-> **getJsonObject**(`key`, `context?`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonReferenceMapFailureReason`](../type-aliases/JsonReferenceMapFailureReason.md)\>
+Method
 
-Gets a JSON object specified by key.
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key of the object to be retrieved. |
-| `context?` | [`IJsonContext`](../interfaces/IJsonContext.md) | An optional [JSON Context](../interfaces/IJsonContext.md) used to format the object. |
+</th><th>
 
-#### Returns
+Description
 
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonReferenceMapFailureReason`](../type-aliases/JsonReferenceMapFailureReason.md)\>
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-`Success` with the formatted object if successful. `Failure` with detail `'unknown'`
-if no such object exists, or `Failure` with detail `'error'` if the object was found but
-could not be formatted.
+[create(maps)](./CompositeJsonMap.create.md)
 
-#### Implementation of
+</td><td>
 
-[`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md).[`getJsonObject`](../interfaces/IJsonReferenceMap.md#getjsonobject)
+`static`
 
-***
+</td><td>
 
-### getJsonValue()
+Creates a new CompositeJsonMap | CompositeJsonMap from supplied
 
-> **getJsonValue**(`key`, `context?`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonReferenceMapFailureReason`](../type-aliases/JsonReferenceMapFailureReason.md)\>
+</td></tr>
+<tr><td>
 
-Gets a JSON value specified by key.
+[keyIsInRange(key)](./CompositeJsonMap.keyIsInRange.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key of the object to be retrieved. |
-| `context?` | [`IJsonContext`](../interfaces/IJsonContext.md) | An optional [JSON Context](../interfaces/IJsonContext.md) used to format the value. |
 
-#### Returns
 
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonReferenceMapFailureReason`](../type-aliases/JsonReferenceMapFailureReason.md)\>
+</td><td>
 
-`Success` with the formatted object if successful. `Failure` with detail `'unknown'`
-if no such object exists, or failure with detail `'error'` if the object was found but
-could not be formatted.
+Determine if a key might be valid for this map but does not determine
+if key actually exists.
 
-#### Implementation of
+</td></tr>
+<tr><td>
 
-[`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md).[`getJsonValue`](../interfaces/IJsonReferenceMap.md#getjsonvalue)
+[has(key)](./CompositeJsonMap.has.md)
 
-***
+</td><td>
 
-### has()
 
-> **has**(`key`): `boolean`
+
+</td><td>
 
 Determines if an object with the specified key actually exists in the map.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key to be tested. |
+[getJsonObject(key, context)](./CompositeJsonMap.getJsonObject.md)
 
-#### Returns
+</td><td>
 
-`boolean`
 
-`true` if an object with the specified key exists, `false` otherwise.
 
-#### Implementation of
+</td><td>
 
-[`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md).[`has`](../interfaces/IJsonReferenceMap.md#has)
+Gets a JSON object specified by key.
 
-***
+</td></tr>
+<tr><td>
 
-### keyIsInRange()
+[getJsonValue(key, context)](./CompositeJsonMap.getJsonValue.md)
 
-> **keyIsInRange**(`key`): `boolean`
+</td><td>
 
-Determine if a key might be valid for this map but does not determine
-if key actually exists. Allows key range to be constrained.
 
-#### Parameters
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key to be tested. |
+</td><td>
 
-#### Returns
+Gets a JSON value specified by key.
 
-`boolean`
-
-`true` if the key is in the valid range, `false` otherwise.
-
-#### Implementation of
-
-[`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md).[`keyIsInRange`](../interfaces/IJsonReferenceMap.md#keyisinrange)
-
-***
-
-### create()
-
-> `static` **create**(`maps`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`CompositeJsonMap`\>
-
-Creates a new CompositeJsonMap from supplied
-[maps](../interfaces/IJsonReferenceMap.md).
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `maps` | [`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md)[] | one or more [object maps](../interfaces/IJsonReferenceMap.md) to be composed. |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`CompositeJsonMap`\>
+</td></tr>
+</tbody></table>

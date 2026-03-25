@@ -1,8 +1,4 @@
-[**@fgv/ts-json**](../README.md)
-
-***
-
-[@fgv/ts-json](../README.md) / IJsonReferenceMap
+[Home](../README.md) > IJsonReferenceMap
 
 # Interface: IJsonReferenceMap
 
@@ -11,87 +7,71 @@ conditional logic, and external reference lookups applied using an optionally su
 
 ## Methods
 
-### getJsonObject()
+<table><thead><tr><th>
 
-> **getJsonObject**(`key`, `context?`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonReferenceMapFailureReason`](../type-aliases/JsonReferenceMapFailureReason.md)\>
+Method
 
-Gets a `JsonObject` specified by key.
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key of the object to be retrieved. |
-| `context?` | [`IJsonContext`](IJsonContext.md) | Optional [IJsonContext](IJsonContext.md) used to construct the object. |
+</th><th>
 
-#### Returns
+Description
 
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonReferenceMapFailureReason`](../type-aliases/JsonReferenceMapFailureReason.md)\>
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-`Success` with the formatted JsonObject if successful. `Failure`
-with detail `'unknown'`  if no such object exists, or `Failure` with detail `'error'` if
-the object was found but could not be formatted.
+[keyIsInRange(key)](./IJsonReferenceMap.keyIsInRange.md)
 
-***
+</td><td>
 
-### getJsonValue()
 
-> **getJsonValue**(`key`, `context?`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonReferenceMapFailureReason`](../type-aliases/JsonReferenceMapFailureReason.md)\>
 
-Gets a `JsonValue` specified by key.
+</td><td>
 
-#### Parameters
+Determine if a key might be valid for this map but does not determine if key actually
+exists.
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key of the object to be retrieved. |
-| `context?` | [`IJsonContext`](IJsonContext.md) | Optional [JSON Context](IJsonContext.md) used to format the value |
+</td></tr>
+<tr><td>
 
-#### Returns
+[has(key)](./IJsonReferenceMap.has.md)
 
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`JsonReferenceMapFailureReason`](../type-aliases/JsonReferenceMapFailureReason.md)\>
+</td><td>
 
-`Success` with the formatted `JsonValue` if successful. `Failure`
-with detail `'unknown'` if no such object exists, or `Failure` with detail `'error'` if
-the object was found but could not be formatted.
 
-***
 
-### has()
-
-> **has**(`key`): `boolean`
+</td><td>
 
 Determines if an object with the specified key actually exists in the map.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key to be tested. |
+[getJsonObject(key, context)](./IJsonReferenceMap.getJsonObject.md)
 
-#### Returns
+</td><td>
 
-`boolean`
 
-`true` if an object with the specified key exists, `false` otherwise.
 
-***
+</td><td>
 
-### keyIsInRange()
+Gets a `JsonObject` specified by key.
 
-> **keyIsInRange**(`key`): `boolean`
+</td></tr>
+<tr><td>
 
-Determine if a key might be valid for this map but does not determine if key actually
-exists. Allows key range to be constrained.
+[getJsonValue(key, context)](./IJsonReferenceMap.getJsonValue.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` | The key to be tested. |
 
-#### Returns
 
-`boolean`
+</td><td>
 
-`true` if the key is in the valid range, `false` otherwise.
+Gets a `JsonValue` specified by key.
+
+</td></tr>
+</tbody></table>

@@ -1,0 +1,15 @@
+[Home](../../README.md) > [Collections](../README.md) > [ConvertingCollectorValidator](./ConvertingCollectorValidator.md) > toReadOnly
+
+## ConvertingCollectorValidator.toReadOnly() method
+
+Gets a read-only version of this collector.
+
+**Signature:**
+
+```typescript
+toReadOnly(): IReadOnlyCollectorValidator<TITEM>;
+```
+
+**Returns:**
+
+[IReadOnlyCollectorValidator](../../interfaces/IReadOnlyCollectorValidator.md)&lt;TITEM&gt;

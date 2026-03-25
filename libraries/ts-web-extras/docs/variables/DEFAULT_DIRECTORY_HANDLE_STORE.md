@@ -1,11 +1,9 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > DEFAULT_DIRECTORY_HANDLE_STORE
 
-***
-
-[@fgv/ts-web-extras](../README.md) / DEFAULT\_DIRECTORY\_HANDLE\_STORE
-
-# Variable: DEFAULT\_DIRECTORY\_HANDLE\_STORE
-
-> `const` **DEFAULT\_DIRECTORY\_HANDLE\_STORE**: `"directory-handles"` = `'directory-handles'`
+# Variable: DEFAULT_DIRECTORY_HANDLE_STORE
 
 Default IndexedDB store name for directory handles.
+
+## Type
+
+`"directory-handles"`

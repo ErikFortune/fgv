@@ -1,537 +1,348 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > DetailedSuccess
 
-***
+# Class: DetailedSuccess
 
-[@fgv/ts-utils](../README.md) / DetailedSuccess
-
-# Class: DetailedSuccess\<T, TD\>
-
-A DetailedSuccess extends [Success](Success.md) to report optional success
+A DetailedSuccess | DetailedSuccess extends Success | Success to report optional success
 details in addition to the error message.
 
-## Extends
-
-- [`Success`](Success.md)\<`T`\>
-
-## Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
-| `TD` |
+**Extends:** [`Success<T>`](Success.md)
 
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new DetailedSuccess**\<`T`, `TD`\>(`value`, `detail?`): `DetailedSuccess`\<`T`, `TD`\>
+Constructor
 
-Constructs a new DetailedSuccess\<T, TD\> with the supplied
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor(value, detail)`
+
+</td><td>
+
+
+
+</td><td>
+
+Constructs a new DetailedSuccess | DetailedSuccess<T, TD> with the supplied
 value and detail.
 
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `value` | `T` | The value to be returned. |
-| `detail?` | `TD` | An optional successful detail to be returned. If omitted, detail will be `undefined`. |
-
-#### Returns
-
-`DetailedSuccess`\<`T`, `TD`\>
-
-#### Overrides
-
-[`Success`](Success.md).[`constructor`](Success.md#constructor)
+</td></tr>
+</tbody></table>
 
 ## Properties
 
-| Property | Modifier | Type | Default value | Description |
-| ------ | ------ | ------ | ------ | ------ |
-| <a id="message"></a> `message` | `readonly` | `undefined` | `undefined` | For a successful operation, the error message is always `undefined`. |
-| <a id="success"></a> `success` | `readonly` | `true` | `true` | Indicates whether the operation was successful. |
+<table><thead><tr><th>
 
-## Accessors
+Property
 
-### asResult
+</th><th>
 
-#### Get Signature
+Modifiers
 
-> **get** **asResult**(): [`Result`](../type-aliases/Result.md)\<`T`\>
+</th><th>
 
-Returns this DetailedSuccess as a [Result](../type-aliases/Result.md).
+Type
 
-##### Returns
+</th><th>
 
-[`Result`](../type-aliases/Result.md)\<`T`\>
+Description
 
-***
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-### detail
+[success](./Success.success.md)
 
-#### Get Signature
+</td><td>
 
-> **get** **detail**(): `TD` \| `undefined`
+`readonly`
+
+</td><td>
+
+true
+
+</td><td>
+
+Indicates whether the operation was successful.
+
+</td></tr>
+<tr><td>
+
+[message](./Success.message.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+undefined
+
+</td><td>
+
+For a successful operation, the error message is always `undefined`.
+
+</td></tr>
+<tr><td>
+
+[detail](./DetailedSuccess.detail.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+TD | undefined
+
+</td><td>
 
 The success detail associated with this DetailedSuccess, or `undefined` if
-no detail was supplied.
 
-##### Returns
+</td></tr>
+<tr><td>
 
-`TD` \| `undefined`
+[asResult](./DetailedSuccess.asResult.md)
 
-***
+</td><td>
 
-### value
+`readonly`
 
-#### Get Signature
+</td><td>
 
-> **get** **value**(): `T`
+[Result](../type-aliases/Result.md)&lt;T&gt;
+
+</td><td>
+
+Returns this DetailedSuccess as a Result.
+
+</td></tr>
+<tr><td>
+
+[value](./Success.value.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+T
+
+</td><td>
 
 The result value returned by the successful operation.
 
-##### Returns
-
-`T`
-
-Value returned by a successful operation, undefined
-for a failed operation.
-
-#### Inherited from
-
-[`Success`](Success.md).[`value`](Success.md#value)
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### aggregateError()
+<table><thead><tr><th>
 
-> **aggregateError**(`__errors`, `__formatter?`): `this`
+Method
 
-Propagates interior result, appending any error message to the
-supplied errors array.
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `__errors` | [`IMessageAggregator`](../interfaces/IMessageAggregator.md) | [Error aggregator](../interfaces/IMessageAggregator.md) in which errors will be aggregated. |
-| `__formatter?` | [`ErrorFormatter`](../type-aliases/ErrorFormatter.md)\<`unknown`\> | An optional [error formatter](../type-aliases/ErrorFormatter.md) to be used to format the error message. |
+</th><th>
 
-#### Returns
+Description
 
-`this`
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-#### Inherited from
+[with(value, detail)](./DetailedSuccess.with.md)
 
-[`Success`](Success.md).[`aggregateError`](Success.md#aggregateerror)
+</td><td>
 
-***
+`static`
 
-### ~~getValueOrDefault()~~
+</td><td>
 
-> **getValueOrDefault**(`dflt?`): `T` \| `undefined`
+Creates a DetailedSuccess | DetailedSuccess<T, TD> with the supplied value and
 
-Gets the value associated with a successful [result](../interfaces/IResult.md),
-or a default value if the corresponding operation failed.
+</td></tr>
+<tr><td>
 
-#### Parameters
+[isSuccess()](./DetailedSuccess.isSuccess.md)
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `dflt?` | `T` | The value to be returned if the operation failed (default is `undefined`). Note that `getValueOrDefault` is being superseded by `orDefault` and will eventually be deprecated. Please use orDefault instead. |
+</td><td>
 
-#### Returns
 
-`T` \| `undefined`
 
-The return value, if the operation was successful.  Returns
-the supplied default value or `undefined` if no default is supplied.
-
-#### Deprecated
-
-Use [orDefault(T)](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) or [orDefault()](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) instead.
-
-#### Inherited from
-
-[`Success`](Success.md).[`getValueOrDefault`](Success.md#getvalueordefault)
-
-***
-
-### ~~getValueOrThrow()~~
-
-> **getValueOrThrow**(`__logger?`): `T`
-
-Gets the value associated with a successful [result](../interfaces/IResult.md),
-or throws the error message if the corresponding operation failed.
-
-Note that `getValueOrThrow` is being superseded by `orThrow` and
-will eventually be deprecated.  Please use orDefault instead.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `__logger?` | [`IResultLogger`](../interfaces/IResultLogger.md)\<`unknown`\> | An optional [logger](../interfaces/IResultLogger.md) to which the error will also be reported. |
-
-#### Returns
-
-`T`
-
-The return value, if the operation was successful.
-
-#### Deprecated
-
-Use [orThrow(logger)](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) or [orThrow(formatter)](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) instead.
-
-#### Inherited from
-
-[`Success`](Success.md).[`getValueOrThrow`](Success.md#getvalueorthrow)
-
-***
-
-### isFailure()
-
-> **isFailure**(): `this is Failure<T>`
-
-Indicates whether this operation failed.  Functions
-as a type guard for [Failure\<T\>](Failure.md).
-
-#### Returns
-
-`this is Failure<T>`
-
-#### Inherited from
-
-[`Success`](Success.md).[`isFailure`](Success.md#isfailure)
-
-***
-
-### isSuccess()
-
-> **isSuccess**(): `this is DetailedSuccess<T, TD>`
+</td><td>
 
 Reports that this DetailedSuccess is a success.
 
-#### Returns
+</td></tr>
+<tr><td>
 
-`this is DetailedSuccess<T, TD>`
+[onSuccess(cb)](./DetailedSuccess.onSuccess.md)
 
-`true`
+</td><td>
 
-#### Remarks
 
-Always true for DetailedSuccess but can be used as type guard
-to discriminate DetailedSuccess from [DetailedFailure](DetailedFailure.md) in
-a [DetailedResult](../type-aliases/DetailedResult.md).
 
-#### Overrides
+</td><td>
 
-[`Success`](Success.md).[`isSuccess`](Success.md#issuccess)
+Invokes the supplied DetailedSuccessContinuation | success callback and propagates
 
-***
+</td></tr>
+<tr><td>
 
-### onFailure()
+[onFailure(__cb)](./DetailedSuccess.onFailure.md)
 
-> **onFailure**(`__cb`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`T`, `TD`\>
+</td><td>
+
+
+
+</td><td>
 
 Propagates this DetailedSuccess.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `__cb` | [`DetailedFailureContinuation`](../type-aliases/DetailedFailureContinuation.md)\<`T`, `TD`\> | [Failure callback](../type-aliases/DetailedFailureContinuation.md) to be called on a [DetailedResult](../type-aliases/DetailedResult.md) in case of failure (ignored). |
+[withErrorFormat(cb)](./DetailedSuccess.withErrorFormat.md)
 
-#### Returns
+</td><td>
 
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`T`, `TD`\>
 
-`this`
 
-#### Remarks
+</td><td>
 
-Failure does not mutate return type so we can return this event directly.
+Calls a supplied ErrorFormatter | error formatter if
 
-#### Overrides
+</td></tr>
+<tr><td>
 
-[`Success`](Success.md).[`onFailure`](Success.md#onfailure)
+[report(reporter, options)](./DetailedSuccess.report.md)
 
-***
+</td><td>
 
-### onSuccess()
 
-> **onSuccess**\<`TN`\>(`cb`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TN`, `TD`\>
 
-Invokes the supplied [success callback](../type-aliases/DetailedSuccessContinuation.md) and propagates
-its returned [DetailedResult\<TN, TD\>](../type-aliases/DetailedResult.md).
-
-#### Type Parameters
-
-| Type Parameter |
-| ------ |
-| `TN` |
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `cb` | [`DetailedSuccessContinuation`](../type-aliases/DetailedSuccessContinuation.md)\<`T`, `TD`, `TN`\> | The [success callback](../type-aliases/DetailedSuccessContinuation.md) to be invoked. |
-
-#### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TN`, `TD`\>
-
-The [DetailedResult\<T, TD\>](../type-aliases/DetailedResult.md) returned by the success callback.
-
-#### Remarks
-
-The success callback mutates the return type from `<T>` to `<TN>`.
-
-#### Overrides
-
-[`Success`](Success.md).[`onSuccess`](Success.md#onsuccess)
-
-***
-
-### orDefault()
-
-#### Call Signature
-
-> **orDefault**(`dflt`): `T`
-
-Gets the value associated with a successful [result](../interfaces/IResult.md),
-or a default value if the corresponding operation failed.
-
-##### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `dflt` | `T` | The value to be returned if the operation failed. |
-
-##### Returns
-
-`T`
-
-The return value, if the operation was successful.  Returns
-the supplied default if an error occurred.
-
-##### Inherited from
-
-[`Success`](Success.md).[`orDefault`](Success.md#ordefault)
-
-#### Call Signature
-
-> **orDefault**(): `T` \| `undefined`
-
-Gets the value associated with a successful [result](../interfaces/IResult.md),
-or a default value if the corresponding operation failed.
-
-##### Returns
-
-`T` \| `undefined`
-
-The return value, if the operation was successful, or
-`undefined` if an error occurs.
-
-##### Inherited from
-
-[`Success`](Success.md).[`orDefault`](Success.md#ordefault)
-
-***
-
-### orThrow()
-
-#### Call Signature
-
-> **orThrow**(`logger?`): `T`
-
-Gets the value associated with a successful [result](../interfaces/IResult.md),
-or throws the error message if the corresponding operation failed.
-
-##### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `logger?` | [`IResultLogger`](../interfaces/IResultLogger.md)\<`unknown`\> | An optional [logger](../interfaces/IResultLogger.md) to which the error will also be reported. |
-
-##### Returns
-
-`T`
-
-The return value, if the operation was successful.
-
-##### Inherited from
-
-[`Success`](Success.md).[`orThrow`](Success.md#orthrow)
-
-#### Call Signature
-
-> **orThrow**(`cb`): `T`
-
-Gets the value associated with a successful [result](../interfaces/IResult.md),
-or throws the error message if the corresponding operation failed.
-
-##### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `cb` | [`ErrorFormatter`](../type-aliases/ErrorFormatter.md) | The [error formatter](../type-aliases/ErrorFormatter.md) to be called in the event of failure. |
-
-##### Returns
-
-`T`
-
-The return value, if the operation was successful.
-
-##### Inherited from
-
-[`Success`](Success.md).[`orThrow`](Success.md#orthrow)
-
-***
-
-### report()
-
-> **report**(`reporter?`, `options?`): `DetailedSuccess`\<`T`, `TD`\>
+</td><td>
 
 Reports the result to the supplied reporter
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `reporter?` | [`IResultReporter`](../interfaces/IResultReporter.md)\<`T`, `unknown`\> | The [reporter](../interfaces/IResultReporter.md) to which the result will be reported. |
-| `options?` | [`IResultReportOptions`](../interfaces/IResultReportOptions.md)\<`unknown`\> | The [options](../interfaces/IResultReportOptions.md) for reporting the result. |
+[isFailure()](./Success.isFailure.md)
 
-#### Returns
+</td><td>
 
-`DetailedSuccess`\<`T`, `TD`\>
 
-#### Overrides
 
-[`Success`](Success.md).[`report`](Success.md#report)
+</td><td>
 
-***
+Indicates whether this operation failed.
 
-### withDetail()
+</td></tr>
+<tr><td>
 
-> **withDetail**\<`TD`\>(`detail`, `successDetail?`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`T`, `TD`\>
+[orThrow(logger)](./Success.orThrow.md)
 
-Converts a [IResult\<T\>](../interfaces/IResult.md) to a [DetailedResult\<T, TD\>](../type-aliases/DetailedResult.md),
-adding supplied details.
+</td><td>
 
-#### Type Parameters
 
-| Type Parameter | Description |
-| ------ | ------ |
-| `TD` |  |
 
-#### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `detail` | `TD` | The default detail to be added to the new [DetailedResult](../type-aliases/DetailedResult.md). |
-| `successDetail?` | `TD` | An optional detail to be added if this result was successful. |
+Gets the value associated with a successful IResult | result,
 
-#### Returns
+</td></tr>
+<tr><td>
 
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`T`, `TD`\>
+[orDefault(dflt)](./Success.orDefault.md)
 
-A new [DetailedResult\<T, TD\>](../type-aliases/DetailedResult.md) with either
-the success result or the error message from this [IResult](../interfaces/IResult.md) and the
-appropriate added detail.
+</td><td>
 
-#### Inherited from
 
-[`Success`](Success.md).[`withDetail`](Success.md#withdetail)
 
-***
+</td><td>
 
-### withErrorFormat()
+Gets the value associated with a successful IResult | result,
 
-> **withErrorFormat**(`cb`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`T`, `TD`\>
+</td></tr>
+<tr><td>
 
-Calls a supplied [error formatter](../type-aliases/ErrorFormatter.md) if
-the operation failed.
+[getValueOrThrow(__logger)](./Success.getValueOrThrow.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `cb` | [`ErrorFormatter`](../type-aliases/ErrorFormatter.md) | The [error formatter](../type-aliases/ErrorFormatter.md) to be called in the event of failure. |
 
-#### Returns
 
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`T`, `TD`\>
+</td><td>
 
-If this operation failed, returns the returns [Failure](Failure.md)
-with the message returned by the formatter.  If this result
-was successful, propagates the result value from the successful event.
+Gets the value associated with a successful IResult | result,
+or throws the error message if the corresponding operation failed.
 
-#### Overrides
+</td></tr>
+<tr><td>
 
-[`Success`](Success.md).[`withErrorFormat`](Success.md#witherrorformat)
+[getValueOrDefault(dflt)](./Success.getValueOrDefault.md)
 
-***
+</td><td>
 
-### withFailureDetail()
 
-> **withFailureDetail**\<`TD`\>(`__detail`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`T`, `TD`\>
 
-Converts a [IResult\<T\>](../interfaces/IResult.md) to a [DetailedResult\<T, TD\>](../type-aliases/DetailedResult.md),
-adding a supplied detail if the operation failed.
+</td><td>
 
-#### Type Parameters
+Gets the value associated with a successful IResult | result,
 
-| Type Parameter | Description |
-| ------ | ------ |
-| `TD` |  |
+</td></tr>
+<tr><td>
 
-#### Parameters
+[withFailureDetail(__detail)](./Success.withFailureDetail.md)
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `__detail` | `TD` | The detail to be added if this operation failed. |
+</td><td>
 
-#### Returns
 
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`T`, `TD`\>
 
-A new [DetailedResult\<T, TD\>](../type-aliases/DetailedResult.md) with either
-the success result or the error message from this [IResult](../interfaces/IResult.md), with
-the supplied detail (if this event failed) or detail `undefined` (if
-this result succeeded).
+</td><td>
 
-#### Inherited from
+Converts a IResult | IResult<T> to a DetailedResult | DetailedResult<T, TD>,
 
-[`Success`](Success.md).[`withFailureDetail`](Success.md#withfailuredetail)
+</td></tr>
+<tr><td>
 
-***
+[withDetail(detail, successDetail)](./Success.withDetail.md)
 
-### with()
+</td><td>
 
-> `static` **with**\<`T`, `TD`\>(`value`, `detail?`): `DetailedSuccess`\<`T`, `TD`\>
 
-Creates a DetailedSuccess\<T, TD\> with the supplied value and
-optional detail.
 
-#### Type Parameters
+</td><td>
 
-| Type Parameter |
-| ------ |
-| `T` |
-| `TD` |
+Converts a IResult | IResult<T> to a DetailedResult | DetailedResult<T, TD>,
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `value` | `T` |
-| `detail?` | `TD` |
+[aggregateError(__errors, __formatter)](./Success.aggregateError.md)
 
-#### Returns
+</td><td>
 
-`DetailedSuccess`\<`T`, `TD`\>
 
-#### Overrides
 
-[`Success`](Success.md).[`with`](Success.md#with)
+</td><td>
+
+Propagates interior result, appending any error message to the
+
+</td></tr>
+</tbody></table>

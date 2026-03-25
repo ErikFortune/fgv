@@ -1,119 +1,132 @@
-[**@fgv/ts-sudoku-lib**](../README.md)
-
-***
-
-[@fgv/ts-sudoku-lib](../README.md) / Ids
+[Home](../README.md) > Ids
 
 # Class: Ids
 
+
+
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new Ids**(): `Ids`
+Constructor
 
-#### Returns
+</th><th>
 
-`Ids`
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor()`
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### cageId()
+<table><thead><tr><th>
 
-> `static` **cageId**(`from`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`CageId`](../type-aliases/CageId.md)\>
+Method
 
-#### Parameters
+</th><th>
 
-| Parameter | Type |
-| ------ | ------ |
-| `from` | `string` \| [`ICage`](../interfaces/ICage.md) |
+Modifiers
 
-#### Returns
+</th><th>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`CageId`](../type-aliases/CageId.md)\>
+Description
 
-***
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-### cellId()
+[cageId(from)](./Ids.cageId.md)
 
-> `static` **cellId**(`spec`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`CellId`](../type-aliases/CellId.md)\>
+</td><td>
 
-#### Parameters
+`static`
 
-| Parameter | Type |
-| ------ | ------ |
-| `spec` | `string` \| [`IRowColumn`](../interfaces/IRowColumn.md) \| [`ICell`](../interfaces/ICell.md) |
+</td><td>
 
-#### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`CellId`](../type-aliases/CellId.md)\>
 
-***
+</td></tr>
+<tr><td>
 
-### cellIds()
+[cellId(spec)](./Ids.cellId.md)
 
-> `static` **cellIds**(`firstRow`, `numRows`, `firstCol`, `numCols`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`CellId`](../type-aliases/CellId.md)[]\>
+</td><td>
 
-#### Parameters
+`static`
 
-| Parameter | Type |
-| ------ | ------ |
-| `firstRow` | `number` |
-| `numRows` | `number` |
-| `firstCol` | `number` |
-| `numCols` | `number` |
+</td><td>
 
-#### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`CellId`](../type-aliases/CellId.md)[]\>
 
-***
+</td></tr>
+<tr><td>
 
-### columnCageId()
+[rowCageId(row)](./Ids.rowCageId.md)
 
-> `static` **columnCageId**(`col`): [`CageId`](../type-aliases/CageId.md)
+</td><td>
 
-#### Parameters
+`static`
 
-| Parameter | Type |
-| ------ | ------ |
-| `col` | `number` |
+</td><td>
 
-#### Returns
 
-[`CageId`](../type-aliases/CageId.md)
 
-***
+</td></tr>
+<tr><td>
 
-### rowCageId()
+[columnCageId(col)](./Ids.columnCageId.md)
 
-> `static` **rowCageId**(`row`): [`CageId`](../type-aliases/CageId.md)
+</td><td>
 
-#### Parameters
+`static`
 
-| Parameter | Type |
-| ------ | ------ |
-| `row` | `number` |
+</td><td>
 
-#### Returns
 
-[`CageId`](../type-aliases/CageId.md)
 
-***
+</td></tr>
+<tr><td>
 
-### sectionCageId()
+[sectionCageId(row, col, cageHeight, cageWidth)](./Ids.sectionCageId.md)
 
-> `static` **sectionCageId**(`row`, `col`, `cageHeight`, `cageWidth`): [`CageId`](../type-aliases/CageId.md)
+</td><td>
 
-#### Parameters
+`static`
 
-| Parameter | Type | Default value |
-| ------ | ------ | ------ |
-| `row` | `number` | `undefined` |
-| `col` | `number` | `undefined` |
-| `cageHeight` | `number` | `3` |
-| `cageWidth` | `number` | `3` |
+</td><td>
 
-#### Returns
 
-[`CageId`](../type-aliases/CageId.md)
+
+</td></tr>
+<tr><td>
+
+[cellIds(firstRow, numRows, firstCol, numCols)](./Ids.cellIds.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

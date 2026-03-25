@@ -1,35 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > DetailedSuccessContinuation
 
-***
+# Type Alias: DetailedSuccessContinuation
 
-[@fgv/ts-utils](../README.md) / DetailedSuccessContinuation
+Callback to be called when a DetailedResult | DetailedResult encounters success.
 
-# Type Alias: DetailedSuccessContinuation()\<T, TD, TN\>
+## Type
 
-> **DetailedSuccessContinuation**\<`T`, `TD`, `TN`\> = (`value`, `detail?`) => [`DetailedResult`](DetailedResult.md)\<`TN`, `TD`\>
-
-Callback to be called when a [DetailedResult](DetailedResult.md) encounters success.
-
-## Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
-| `TD` |
-| `TN` |
-
-## Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `value` | `T` |
-| `detail?` | `TD` |
-
-## Returns
-
-[`DetailedResult`](DetailedResult.md)\<`TN`, `TD`\>
-
-## Remarks
-
-A success callback can return a different result type than it receives, allowing
-success results to chain through intermediate result types.
+```typescript
+type DetailedSuccessContinuation = (value: T, detail?: TD) => DetailedResult<TN, TD>
+```

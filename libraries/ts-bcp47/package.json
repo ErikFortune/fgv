@@ -3,18 +3,20 @@
   "version": "5.1.0-3",
   "description": "BCP-47 Tag Utilities",
   "main": "lib/index.js",
+  "module": "dist/index.js",
   "types": "dist/ts-bcp47.d.ts",
   "exports": {
     ".": {
       "node": {
-        "import": "./lib/index.js",
+        "types": "./dist/ts-bcp47.d.ts",
+        "import": "./dist/index.js",
         "require": "./lib/index.js"
       },
       "default": {
-        "import": "./lib/index.browser.js",
+        "types": "./dist/ts-bcp47.d.ts",
+        "import": "./dist/index.browser.js",
         "require": "./lib/index.browser.js"
-      },
-      "types": "./dist/ts-bcp47.d.ts"
+      }
     }
   },
   "scripts": {
@@ -50,6 +52,7 @@
     "@fgv/ts-utils-jest": "workspace:*",
     "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
+    "@fgv/typedoc-compact-theme": "workspace:*",
     "@microsoft/api-documenter": "^7.28.2",
     "@microsoft/api-extractor": "^7.55.2",
     "@types/jest": "^29.5.14",
@@ -76,6 +79,7 @@
     "@rushstack/heft": "1.2.6",
     "@rushstack/heft-jest-plugin": "1.2.6",
     "@rushstack/heft-node-rig": "2.11.26",
+    "@fgv/heft-dual-rig": "workspace:*",
     "@types/heft-jest": "1.0.6",
     "eslint-plugin-tsdoc": "~0.5.2"
   },
