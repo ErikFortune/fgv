@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "version bump",
+      "type": "none",
+      "packageName": "@fgv/ts-res-browser"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser",
+  "email": "noreply@anthropic.com"
+}
