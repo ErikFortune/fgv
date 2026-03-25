@@ -66,8 +66,10 @@
     "eslint-plugin-tsdoc": "~0.5.2",
     "@types/luxon": "^3.7.1",
     "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/typedoc-compact-theme": "workspace:*",
     "@rushstack/heft-node-rig": "2.11.26",
-    "@microsoft/api-extractor": "^7.55.2"
+    "@microsoft/api-extractor": "^7.55.2",
+    "typedoc": "~0.28.16"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

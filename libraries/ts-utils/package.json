@@ -38,6 +38,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils#readme",
   "devDependencies": {
     "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/typedoc-compact-theme": "workspace:*",
     "@jest/expect-utils": "^29.7.0",
     "@microsoft/api-documenter": "^7.28.2",
     "@microsoft/api-extractor": "^7.55.2",
@@ -65,7 +66,8 @@
     "@rushstack/eslint-config": "4.6.4",
     "@types/heft-jest": "1.0.6",
     "@rushstack/heft-jest-plugin": "1.2.6",
-    "eslint-plugin-tsdoc": "~0.5.2"
+    "eslint-plugin-tsdoc": "~0.5.2",
+    "typedoc": "~0.28.16"
   },
   "repository": {
     "type": "git",

@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/typedoc-compact-theme": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@types/react": "~19.2.8",
     "@types/react-dom": "~19.2.3",
@@ -74,7 +75,8 @@
     "@rushstack/heft-jest-plugin": "1.2.6",
     "@microsoft/api-documenter": "^7.28.2",
     "@microsoft/api-extractor": "^7.55.2",
-    "@testing-library/dom": "^10.4.0"
+    "@testing-library/dom": "^10.4.0",
+    "typedoc": "~0.28.16"
   },
   "exports": {
     ".": {
