@@ -7,6 +7,8 @@
 # Interface: IMutableFileTreeAccessors\<TCT\>
 
 Extended accessors interface that supports mutation operations.
+All mutation methods are required — use [isMutableAccessors](../functions/isMutableAccessors.md)
+type guard to check if an accessor supports mutation.
 
 ## Extends
 
@@ -24,9 +26,9 @@ Extended accessors interface that supports mutation operations.
 
 ## Methods
 
-### createDirectory()?
+### createDirectory()
 
-> `optional` **createDirectory**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
+> **createDirectory**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
 
 Creates a directory at the given path, including any missing parent directories.
 
@@ -41,6 +43,47 @@ Creates a directory at the given path, including any missing parent directories.
 [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
 
 `Success` with the absolute path if created, or `Failure` with an error message.
+
+***
+
+### deleteDirectory()
+
+> **deleteDirectory**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+Deletes a directory at the given path.
+The directory must be empty or the operation will fail.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | The path of the directory to delete. |
+
+#### Returns
+
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+`Success` with `true` if the directory was deleted, or `Failure` with an error message.
+
+***
+
+### deleteFile()
+
+> **deleteFile**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+Deletes a file at the given path.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | The path of the file to delete. |
+
+#### Returns
+
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+`Success` with `true` if the file was deleted, or `Failure` with an error message.
 
 ***
 

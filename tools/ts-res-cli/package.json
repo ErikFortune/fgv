@@ -51,6 +51,7 @@
     "eslint": "^9.39.2",
     "jest": "^29.7.0",
     "ts-jest": "^29.4.6",
+    "typedoc": "~0.28.16",
     "typescript": "5.9.3",
     "@rushstack/heft-jest-plugin": "1.2.6"
   },

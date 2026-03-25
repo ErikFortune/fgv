@@ -16,7 +16,7 @@ Class representing a file in a file tree.
 
 ## Implements
 
-- [`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md)\<`TCT`\>
+- [`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md)\<`TCT`\>
 
 ## Constructors
 
@@ -64,7 +64,7 @@ The base name of the file (without extension)
 
 #### Implementation of
 
-[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md).[`baseName`](../interfaces/IFileTreeFileItem.md#basename)
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`baseName`](../interfaces/IMutableFileTreeFileItem.md#basename)
 
 ***
 
@@ -84,7 +84,7 @@ An optional content type (e.g. mime type) for the file.
 
 #### Implementation of
 
-[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md).[`contentType`](../interfaces/IFileTreeFileItem.md#contenttype)
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`contentType`](../interfaces/IMutableFileTreeFileItem.md#contenttype)
 
 ***
 
@@ -104,7 +104,7 @@ The extension of the file
 
 #### Implementation of
 
-[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md).[`extension`](../interfaces/IFileTreeFileItem.md#extension)
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`extension`](../interfaces/IMutableFileTreeFileItem.md#extension)
 
 ***
 
@@ -124,9 +124,25 @@ The name of the file
 
 #### Implementation of
 
-[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md).[`name`](../interfaces/IFileTreeFileItem.md#name)
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`name`](../interfaces/IMutableFileTreeFileItem.md#name)
 
 ## Methods
+
+### delete()
+
+> **delete**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+FileTree.IFileTreeFileItem.delete
+
+#### Returns
+
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+#### Implementation of
+
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`delete`](../interfaces/IMutableFileTreeFileItem.md#delete)
+
+***
 
 ### getContents()
 
@@ -145,7 +161,7 @@ Gets the contents of the file as parsed JSON.
 
 ##### Implementation of
 
-[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md).[`getContents`](../interfaces/IFileTreeFileItem.md#getcontents)
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`getContents`](../interfaces/IMutableFileTreeFileItem.md#getcontents)
 
 #### Call Signature
 
@@ -174,7 +190,7 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 
 ##### Implementation of
 
-[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md).[`getContents`](../interfaces/IFileTreeFileItem.md#getcontents)
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`getContents`](../interfaces/IMutableFileTreeFileItem.md#getcontents)
 
 ***
 
@@ -182,22 +198,15 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 
 > **getIsMutable**(): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](../type-aliases/SaveDetail.md)\>
 
-Indicates whether this file can be saved.
+FileTree.IFileTreeFileItem.getIsMutable
 
 #### Returns
 
 [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](../type-aliases/SaveDetail.md)\>
 
-`DetailedSuccess` with [FileTree.SaveCapability](../type-aliases/SaveCapability.md) if the file can be saved,
-or `DetailedFailure` with [FileTree.SaveFailureReason](../type-aliases/SaveFailureReason.md) if it cannot.
-
-#### Remarks
-
-This property is optional. If not present, the file is not mutable.
-
 #### Implementation of
 
-[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md).[`getIsMutable`](../interfaces/IFileTreeFileItem.md#getismutable)
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`getIsMutable`](../interfaces/IMutableFileTreeFileItem.md#getismutable)
 
 ***
 
@@ -216,7 +225,7 @@ Gets the raw contents of the file as a string.
 
 #### Implementation of
 
-[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md).[`getRawContents`](../interfaces/IFileTreeFileItem.md#getrawcontents)
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`getRawContents`](../interfaces/IMutableFileTreeFileItem.md#getrawcontents)
 
 ***
 
@@ -224,27 +233,21 @@ Gets the raw contents of the file as a string.
 
 > **setContents**(`json`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../../../type-aliases/JsonValue.md)\>
 
-Sets the contents of the file from a JSON value.
+FileTree.IFileTreeFileItem.setContents
 
 #### Parameters
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `json` | [`JsonValue`](../../../../type-aliases/JsonValue.md) | The JSON value to serialize and save. |
+| Parameter | Type |
+| ------ | ------ |
+| `json` | [`JsonValue`](../../../../type-aliases/JsonValue.md) |
 
 #### Returns
 
 [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../../../type-aliases/JsonValue.md)\>
 
-`Success` if the file was saved, or `Failure` with an error message.
-
-#### Remarks
-
-This method is optional. If not present, the file is not mutable.
-
 #### Implementation of
 
-[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md).[`setContents`](../interfaces/IFileTreeFileItem.md#setcontents)
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`setContents`](../interfaces/IMutableFileTreeFileItem.md#setcontents)
 
 ***
 
@@ -270,27 +273,21 @@ Sets the content type of the file.
 
 > **setRawContents**(`contents`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
 
-Sets the raw contents of the file.
+FileTree.IFileTreeFileItem.setRawContents
 
 #### Parameters
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `contents` | `string` | The string contents to save. |
+| Parameter | Type |
+| ------ | ------ |
+| `contents` | `string` |
 
 #### Returns
 
 [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
 
-`Success` if the file was saved, or `Failure` with an error message.
-
-#### Remarks
-
-This method is optional. If not present, the file is not mutable.
-
 #### Implementation of
 
-[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md).[`setRawContents`](../interfaces/IFileTreeFileItem.md#setrawcontents)
+[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`setRawContents`](../interfaces/IMutableFileTreeFileItem.md#setrawcontents)
 
 ***
 

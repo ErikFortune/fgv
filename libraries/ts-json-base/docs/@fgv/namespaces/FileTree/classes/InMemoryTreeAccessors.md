@@ -64,6 +64,55 @@ Creates a directory at the given path, including any missing parent directories.
 
 ***
 
+### deleteDirectory()
+
+> **deleteDirectory**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+Deletes a directory at the given path.
+The directory must be empty or the operation will fail.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | The path of the directory to delete. |
+
+#### Returns
+
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+`Success` with `true` if the directory was deleted, or `Failure` with an error message.
+
+#### Implementation of
+
+[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`deleteDirectory`](../interfaces/IMutableFileTreeAccessors.md#deletedirectory)
+
+***
+
+### deleteFile()
+
+> **deleteFile**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+Deletes a file at the given path.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | The path of the file to delete. |
+
+#### Returns
+
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+`Success` with `true` if the file was deleted, or `Failure` with an error message.
+
+#### Implementation of
+
+[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`deleteFile`](../interfaces/IMutableFileTreeAccessors.md#deletefile)
+
+***
+
 ### fileIsMutable()
 
 > **fileIsMutable**(`path`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](../type-aliases/SaveDetail.md)\>

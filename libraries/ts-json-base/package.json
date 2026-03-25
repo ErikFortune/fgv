@@ -55,6 +55,7 @@
     "rimraf": "^6.1.2",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
+    "typedoc": "~0.28.16",
     "typescript": "5.9.3",
     "eslint-plugin-n": "^17.23.1",
     "@rushstack/heft": "1.2.6",

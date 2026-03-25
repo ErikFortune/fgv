@@ -6,7 +6,11 @@
 
 # Interface: IFileTreeFileItem\<TCT\>
 
-Interface for a file in a file tree.
+Interface for a read-only file in a file tree.
+
+## Extended by
+
+- [`IMutableFileTreeFileItem`](IMutableFileTreeFileItem.md)
 
 ## Type Parameters
 
@@ -69,25 +73,6 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 
 ***
 
-### getIsMutable()
-
-> **getIsMutable**(): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](../type-aliases/SaveDetail.md)\>
-
-Indicates whether this file can be saved.
-
-#### Returns
-
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](../type-aliases/SaveDetail.md)\>
-
-`DetailedSuccess` with [FileTree.SaveCapability](../type-aliases/SaveCapability.md) if the file can be saved,
-or `DetailedFailure` with [FileTree.SaveFailureReason](../type-aliases/SaveFailureReason.md) if it cannot.
-
-#### Remarks
-
-This property is optional. If not present, the file is not mutable.
-
-***
-
 ### getRawContents()
 
 > **getRawContents**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
@@ -100,51 +85,3 @@ Gets the raw contents of the file as a string.
 
 `Success` with the raw contents if successful, or
 `Failure` with an error message otherwise.
-
-***
-
-### setContents()
-
-> **setContents**(`json`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../../../type-aliases/JsonValue.md)\>
-
-Sets the contents of the file from a JSON value.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `json` | [`JsonValue`](../../../../type-aliases/JsonValue.md) | The JSON value to serialize and save. |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../../../type-aliases/JsonValue.md)\>
-
-`Success` if the file was saved, or `Failure` with an error message.
-
-#### Remarks
-
-This method is optional. If not present, the file is not mutable.
-
-***
-
-### setRawContents()
-
-> **setRawContents**(`contents`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-Sets the raw contents of the file.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `contents` | `string` | The string contents to save. |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-`Success` if the file was saved, or `Failure` with an error message.
-
-#### Remarks
-
-This method is optional. If not present, the file is not mutable.

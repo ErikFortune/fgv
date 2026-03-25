@@ -107,6 +107,19 @@ Description
 </td></tr>
 <tr><td>
 
+[deleteFile(itemPath)](./FsStorageProvider.deleteFile.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [createDirectory(itemPath)](./FsStorageProvider.createDirectory.md)
 
 </td><td>

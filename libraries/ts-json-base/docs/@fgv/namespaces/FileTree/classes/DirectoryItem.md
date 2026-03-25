@@ -16,7 +16,7 @@ Class representing a directory in a file tree.
 
 ## Implements
 
-- [`IFileTreeDirectoryItem`](../interfaces/IFileTreeDirectoryItem.md)\<`TCT`\>
+- [`IMutableFileTreeDirectoryItem`](../interfaces/IMutableFileTreeDirectoryItem.md)\<`TCT`\>
 
 ## Constructors
 
@@ -63,13 +63,13 @@ The name of the directory
 
 #### Implementation of
 
-[`IFileTreeDirectoryItem`](../interfaces/IFileTreeDirectoryItem.md).[`name`](../interfaces/IFileTreeDirectoryItem.md#name)
+[`IMutableFileTreeDirectoryItem`](../interfaces/IMutableFileTreeDirectoryItem.md).[`name`](../interfaces/IMutableFileTreeDirectoryItem.md#name)
 
 ## Methods
 
 ### createChildDirectory()
 
-> **createChildDirectory**(`name`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeDirectoryItem`](../interfaces/IFileTreeDirectoryItem.md)\<`TCT`\>\>
+> **createChildDirectory**(`name`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IMutableFileTreeDirectoryItem`](../interfaces/IMutableFileTreeDirectoryItem.md)\<`TCT`\>\>
 
 Creates a new subdirectory as a child of this directory.
 
@@ -81,23 +81,19 @@ Creates a new subdirectory as a child of this directory.
 
 #### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeDirectoryItem`](../interfaces/IFileTreeDirectoryItem.md)\<`TCT`\>\>
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IMutableFileTreeDirectoryItem`](../interfaces/IMutableFileTreeDirectoryItem.md)\<`TCT`\>\>
 
 `Success` with the new directory item, or `Failure` with an error message.
 
-#### Remarks
-
-This method is optional. Only available on mutable directory items.
-
 #### Implementation of
 
-[`IFileTreeDirectoryItem`](../interfaces/IFileTreeDirectoryItem.md).[`createChildDirectory`](../interfaces/IFileTreeDirectoryItem.md#createchilddirectory)
+[`IMutableFileTreeDirectoryItem`](../interfaces/IMutableFileTreeDirectoryItem.md).[`createChildDirectory`](../interfaces/IMutableFileTreeDirectoryItem.md#createchilddirectory)
 
 ***
 
 ### createChildFile()
 
-> **createChildFile**(`name`, `contents`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md)\<`TCT`\>\>
+> **createChildFile**(`name`, `contents`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md)\<`TCT`\>\>
 
 Creates a new file as a child of this directory.
 
@@ -110,17 +106,57 @@ Creates a new file as a child of this directory.
 
 #### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IFileTreeFileItem`](../interfaces/IFileTreeFileItem.md)\<`TCT`\>\>
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md)\<`TCT`\>\>
 
 `Success` with the new file item, or `Failure` with an error message.
 
-#### Remarks
+#### Implementation of
 
-This method is optional. Only available on mutable directory items.
+[`IMutableFileTreeDirectoryItem`](../interfaces/IMutableFileTreeDirectoryItem.md).[`createChildFile`](../interfaces/IMutableFileTreeDirectoryItem.md#createchildfile)
+
+***
+
+### delete()
+
+> **delete**(): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+Deletes this directory from its backing store.
+The directory must be empty or the operation will fail.
+
+#### Returns
+
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+`Success` with `true` if the directory was deleted, or `Failure` with an error message.
 
 #### Implementation of
 
-[`IFileTreeDirectoryItem`](../interfaces/IFileTreeDirectoryItem.md).[`createChildFile`](../interfaces/IFileTreeDirectoryItem.md#createchildfile)
+[`IMutableFileTreeDirectoryItem`](../interfaces/IMutableFileTreeDirectoryItem.md).[`delete`](../interfaces/IMutableFileTreeDirectoryItem.md#delete)
+
+***
+
+### deleteChild()
+
+> **deleteChild**(`name`, `options?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+Deletes a child item from this directory.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | The name of the child to delete. |
+| `options?` | [`IDeleteChildOptions`](../interfaces/IDeleteChildOptions.md) | Optional [options](../interfaces/IDeleteChildOptions.md) controlling deletion behavior. |
+
+#### Returns
+
+[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+
+`Success` with `true` if the child was deleted, or `Failure` with an error message.
+
+#### Implementation of
+
+[`IMutableFileTreeDirectoryItem`](../interfaces/IMutableFileTreeDirectoryItem.md).[`deleteChild`](../interfaces/IMutableFileTreeDirectoryItem.md#deletechild)
 
 ***
 
@@ -139,7 +175,7 @@ or `Failure` with an error message otherwise.
 
 #### Implementation of
 
-[`IFileTreeDirectoryItem`](../interfaces/IFileTreeDirectoryItem.md).[`getChildren`](../interfaces/IFileTreeDirectoryItem.md#getchildren)
+[`IMutableFileTreeDirectoryItem`](../interfaces/IMutableFileTreeDirectoryItem.md).[`getChildren`](../interfaces/IMutableFileTreeDirectoryItem.md#getchildren)
 
 ***
 
