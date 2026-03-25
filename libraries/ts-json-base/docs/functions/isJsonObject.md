@@ -1,24 +1,11 @@
-[**@fgv/ts-json-base**](../README.md)
+[Home](../README.md) > isJsonObject
 
-***
+# Function: isJsonObject
 
-[@fgv/ts-json-base](../README.md) / isJsonObject
+Test if an `unknown` is potentially a JsonObject | JsonObject.
 
-# Function: isJsonObject()
+## Signature
 
-> **isJsonObject**(`from`): `from is JsonObject`
-
-Test if an `unknown` is potentially a [JsonObject](../interfaces/JsonObject.md).
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `from` | `unknown` | The `unknown` to be tested. |
-
-## Returns
-
-`from is JsonObject`
-
-`true` if the supplied parameter is a non-array, non-special object
-with no symbol keys, `false` otherwise.
+```typescript
+function isJsonObject(from: unknown): from is JsonObject
+```

@@ -1,0 +1,26 @@
+[Home](../../README.md) > [CryptoUtils](../README.md) > [ICryptoProvider](./ICryptoProvider.md) > deriveKey
+
+## ICryptoProvider.deriveKey() method
+
+Derives a key from a password using PBKDF2.
+
+**Signature:**
+
+```typescript
+deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array<ArrayBufferLike>>>;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>password</td><td>string</td><td>Password string</td></tr>
+<tr><td>salt</td><td>Uint8Array</td><td>Salt bytes (should be at least 16 bytes)</td></tr>
+<tr><td>iterations</td><td>number</td><td>Number of iterations (recommend 100000+)</td></tr>
+</tbody></table>
+
+**Returns:**
+
+Promise&lt;Result&lt;Uint8Array&lt;ArrayBufferLike&gt;&gt;&gt;
+
+Success with derived 32-byte key, or Failure with error

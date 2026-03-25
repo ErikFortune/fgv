@@ -1,69 +1,118 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / FileSystemHandle
+[Home](../README.md) > FileSystemHandle
 
 # Interface: FileSystemHandle
 
 Base interface for file system handles
 
-## Extended by
-
-- [`FileSystemFileHandle`](FileSystemFileHandle.md)
-- [`FileSystemDirectoryHandle`](FileSystemDirectoryHandle.md)
-
 ## Properties
 
-| Property | Modifier | Type |
-| ------ | ------ | ------ |
-| <a id="kind"></a> `kind` | `readonly` | `"file"` \| `"directory"` |
-| <a id="name"></a> `name` | `readonly` | `string` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[kind](./FileSystemHandle.kind.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+"file" | "directory"
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[name](./FileSystemHandle.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### isSameEntry()
+<table><thead><tr><th>
 
-> **isSameEntry**(`other`): `Promise`\<`boolean`\>
+Method
 
-#### Parameters
+</th><th>
 
-| Parameter | Type |
-| ------ | ------ |
-| `other` | `FileSystemHandle` |
+Modifiers
 
-#### Returns
+</th><th>
 
-`Promise`\<`boolean`\>
+Description
 
-***
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-### queryPermission()
+[isSameEntry(other)](./FileSystemHandle.isSameEntry.md)
 
-> **queryPermission**(`descriptor?`): `Promise`\<`PermissionState`\>
+</td><td>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `descriptor?` | [`FileSystemHandlePermissionDescriptor`](FileSystemHandlePermissionDescriptor.md) |
 
-#### Returns
+</td><td>
 
-`Promise`\<`PermissionState`\>
 
-***
 
-### requestPermission()
+</td></tr>
+<tr><td>
 
-> **requestPermission**(`descriptor?`): `Promise`\<`PermissionState`\>
+[queryPermission(descriptor)](./FileSystemHandle.queryPermission.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `descriptor?` | [`FileSystemHandlePermissionDescriptor`](FileSystemHandlePermissionDescriptor.md) |
 
-#### Returns
 
-`Promise`\<`PermissionState`\>
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[requestPermission(descriptor)](./FileSystemHandle.requestPermission.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

@@ -1,127 +1,142 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / FileSystemWritableFileStream
+[Home](../README.md) > FileSystemWritableFileStream
 
 # Interface: FileSystemWritableFileStream
 
 Writable file stream interface
 
-## Extends
-
-- `WritableStream`
+**Extends:** `WritableStream`
 
 ## Properties
 
-| Property | Modifier | Type | Description |
-| ------ | ------ | ------ | ------ |
-| <a id="locked"></a> `locked` | `readonly` | `boolean` | The **`locked`** read-only property of the WritableStream interface returns a boolean indicating whether the `WritableStream` is locked to a writer. [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream/locked) |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[locked](./FileSystemWritableFileStream.locked.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+The **`locked`** read-only property of the WritableStream interface returns a boolean indicating whether the `WritableStream` is locked to a writer.
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### abort()
+<table><thead><tr><th>
 
-> **abort**(`reason?`): `Promise`\<`void`\>
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[write(data)](./FileSystemWritableFileStream.write.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[seek(position)](./FileSystemWritableFileStream.seek.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[truncate(size)](./FileSystemWritableFileStream.truncate.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[abort(reason)](./FileSystemWritableFileStream.abort.md)
+
+</td><td>
+
+
+
+</td><td>
 
 The **`abort()`** method of the WritableStream interface aborts the stream, signaling that the producer can no longer successfully write to the stream and it is to be immediately moved to an error state, with any queued writes discarded.
 
-[MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream/abort)
+</td></tr>
+<tr><td>
 
-#### Parameters
+[close()](./FileSystemWritableFileStream.close.md)
 
-| Parameter | Type |
-| ------ | ------ |
-| `reason?` | `any` |
+</td><td>
 
-#### Returns
 
-`Promise`\<`void`\>
 
-#### Inherited from
-
-`WritableStream.abort`
-
-***
-
-### close()
-
-> **close**(): `Promise`\<`void`\>
+</td><td>
 
 The **`close()`** method of the WritableStream interface closes the associated stream.
 
-[MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream/close)
+</td></tr>
+<tr><td>
 
-#### Returns
+[getWriter()](./FileSystemWritableFileStream.getWriter.md)
 
-`Promise`\<`void`\>
+</td><td>
 
-#### Inherited from
 
-`WritableStream.close`
 
-***
-
-### getWriter()
-
-> **getWriter**(): `WritableStreamDefaultWriter`\<`any`\>
+</td><td>
 
 The **`getWriter()`** method of the WritableStream interface returns a new instance of WritableStreamDefaultWriter and locks the stream to that instance.
 
-[MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream/getWriter)
-
-#### Returns
-
-`WritableStreamDefaultWriter`\<`any`\>
-
-#### Inherited from
-
-`WritableStream.getWriter`
-
-***
-
-### seek()
-
-> **seek**(`position`): `Promise`\<`void`\>
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `position` | `number` |
-
-#### Returns
-
-`Promise`\<`void`\>
-
-***
-
-### truncate()
-
-> **truncate**(`size`): `Promise`\<`void`\>
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `size` | `number` |
-
-#### Returns
-
-`Promise`\<`void`\>
-
-***
-
-### write()
-
-> **write**(`data`): `Promise`\<`void`\>
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `data` | `string` \| `BufferSource` \| `Blob` |
-
-#### Returns
-
-`Promise`\<`void`\>
+</td></tr>
+</tbody></table>

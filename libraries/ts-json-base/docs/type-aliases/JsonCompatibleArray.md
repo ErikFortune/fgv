@@ -1,21 +1,11 @@
-[**@fgv/ts-json-base**](../README.md)
+[Home](../README.md) > JsonCompatibleArray
 
-***
-
-[@fgv/ts-json-base](../README.md) / JsonCompatibleArray
-
-# Type Alias: JsonCompatibleArray\<T\>
-
-> **JsonCompatibleArray**\<`T`\> = [`JsonCompatibleType`](JsonCompatibleType.md)\<`T`\>[]
+# Type Alias: JsonCompatibleArray
 
 A type that represents an array of JSON-compatible values.
 
-## Type Parameters
+## Type
 
-| Type Parameter | Description |
-| ------ | ------ |
-| `T` | The type to be constrained |
-
-## Returns
-
-A constrained type that is compatible with JSON serialization.
+```typescript
+type JsonCompatibleArray = JsonCompatibleType<T>[]
+```

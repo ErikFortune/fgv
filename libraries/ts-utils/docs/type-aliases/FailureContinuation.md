@@ -1,28 +1,12 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > FailureContinuation
 
-***
-
-[@fgv/ts-utils](../README.md) / FailureContinuation
-
-# Type Alias: FailureContinuation()\<T\>
-
-> **FailureContinuation**\<`T`\> = (`message`) => [`Result`](Result.md)\<`T`\>
+# Type Alias: FailureContinuation
 
 Continuation callback to be called in the event that an
-[Result](Result.md) fails.
+Result fails.
 
-## Type Parameters
+## Type
 
-| Type Parameter |
-| ------ |
-| `T` |
-
-## Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `message` | `string` |
-
-## Returns
-
-[`Result`](Result.md)\<`T`\>
+```typescript
+type FailureContinuation = (message: string) => Result<T>
+```

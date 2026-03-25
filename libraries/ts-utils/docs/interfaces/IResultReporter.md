@@ -1,57 +1,49 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > IResultReporter
 
-***
-
-[@fgv/ts-utils](../README.md) / IResultReporter
-
-# Interface: IResultReporter\<T, TD\>
+# Interface: IResultReporter
 
 Interface for reporting a result.
 
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `T` | - |
-| `TD` | `unknown` |
-
 ## Methods
 
-### reportFailure()
+<table><thead><tr><th>
 
-> **reportFailure**(`level`, `message`, `detail?`): `void`
+Method
 
-Reports a failed result at the specified log level.
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type |
-| ------ | ------ |
-| `level` | [`MessageLogLevel`](../type-aliases/MessageLogLevel.md) |
-| `message` | `string` |
-| `detail?` | `TD` |
+</th><th>
 
-#### Returns
+Description
 
-`void`
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-***
+[reportSuccess(level, value, detail, message)](./IResultReporter.reportSuccess.md)
 
-### reportSuccess()
+</td><td>
 
-> **reportSuccess**(`level`, `value`, `detail?`, `message?`): `void`
+
+
+</td><td>
 
 Reports a successful result at the specified log level.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `level` | [`MessageLogLevel`](../type-aliases/MessageLogLevel.md) |
-| `value` | `T` |
-| `detail?` | `TD` |
-| `message?` | [`ErrorFormatter`](../type-aliases/ErrorFormatter.md)\<`TD`\> |
+[reportFailure(level, message, detail)](./IResultReporter.reportFailure.md)
 
-#### Returns
+</td><td>
 
-`void`
+
+
+</td><td>
+
+Reports a failed result at the specified log level.
+
+</td></tr>
+</tbody></table>

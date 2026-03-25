@@ -1,22 +1,12 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > parseContextFilter
 
-***
-
-[@fgv/ts-web-extras](../README.md) / parseContextFilter
-
-# Function: parseContextFilter()
-
-> **parseContextFilter**(`contextFilter`): `Record`\<`string`, `string`\>
+# Function: parseContextFilter
 
 Converts context filter token to context object
 Example: "language=en-US|territory=US" -\> { language: "en-US", territory: "US" }
 
-## Parameters
+## Signature
 
-| Parameter | Type |
-| ------ | ------ |
-| `contextFilter` | `string` |
-
-## Returns
-
-`Record`\<`string`, `string`\>
+```typescript
+function parseContextFilter(contextFilter: string): Record<string, string>
+```

@@ -1,8 +1,4 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / IFileHandleTreeInitializer
+[Home](../README.md) > IFileHandleTreeInitializer
 
 # Interface: IFileHandleTreeInitializer
 
@@ -10,7 +6,56 @@ Tree initializer for File System Access API file handles.
 
 ## Properties
 
-| Property | Modifier | Type |
-| ------ | ------ | ------ |
-| <a id="filehandles"></a> `fileHandles` | `readonly` | [`FileSystemFileHandle`](FileSystemFileHandle.md)[] |
-| <a id="prefix"></a> `prefix?` | `readonly` | `string` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[prefix](./IFileHandleTreeInitializer.prefix.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[fileHandles](./IFileHandleTreeInitializer.fileHandles.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[FileSystemFileHandle](FileSystemFileHandle.md)[]
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

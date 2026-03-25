@@ -1,31 +1,12 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > isKeyOf
 
-***
-
-[@fgv/ts-utils](../README.md) / isKeyOf
-
-# Function: isKeyOf()
-
-> **isKeyOf**\<`T`\>(`key`, `item`): `key is keyof T`
+# Function: isKeyOf
 
 Helper type-guard function to report whether a specified key is present in
 a supplied object.
 
-## Type Parameters
+## Signature
 
-| Type Parameter |
-| ------ |
-| `T` *extends* `object` |
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `string` \| `number` \| `symbol` | The key to be tested. |
-| `item` | `T` | The object to be tested. |
-
-## Returns
-
-`key is keyof T`
-
-Returns `true` if the key is present, `false` otherwise.
+```typescript
+function isKeyOf(key: string | number | symbol, item: T): key is keyof T
+```

@@ -1,17 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > EnsureArrayResult
 
-***
-
-[@fgv/ts-utils](../README.md) / EnsureArrayResult
-
-# Type Alias: EnsureArrayResult\<T\>
-
-> **EnsureArrayResult**\<`T`\> = `T` *extends* readonly infer \_U[] ? `T` : `T`[]
+# Type Alias: EnsureArrayResult
 
 Helper type to extract the element type and preserve readonly status.
 
-## Type Parameters
+## Type
 
-| Type Parameter |
-| ------ |
-| `T` |
+```typescript
+type EnsureArrayResult = T extends readonly (infer _U)[] ? T : T[]
+```

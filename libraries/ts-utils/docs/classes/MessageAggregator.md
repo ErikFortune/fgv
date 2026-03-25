@@ -1,198 +1,186 @@
-[**@fgv/ts-utils**](../README.md)
-
-***
-
-[@fgv/ts-utils](../README.md) / MessageAggregator
+[Home](../README.md) > MessageAggregator
 
 # Class: MessageAggregator
 
 A simple error aggregator to simplify collecting and reporting all errors in
 a flow.
 
-## Implements
-
-- [`IMessageAggregator`](../interfaces/IMessageAggregator.md)
+**Implements:** [`IMessageAggregator`](../interfaces/IMessageAggregator.md)
 
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new MessageAggregator**(`errors?`): `MessageAggregator`
+Constructor
 
-Constructs a new ErrorAggregator with an
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor(errors)`
+
+</td><td>
+
+
+
+</td><td>
+
+Constructs a new MessageAggregator | ErrorAggregator with an
 optionally specified initial set of error messages.
 
-#### Parameters
+</td></tr>
+</tbody></table>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `errors?` | `string`[] | optional array of errors to be included in the aggregation. |
+## Properties
 
-#### Returns
+<table><thead><tr><th>
 
-`MessageAggregator`
+Property
 
-## Accessors
+</th><th>
 
-### hasMessages
+Modifiers
 
-#### Get Signature
+</th><th>
 
-> **get** **hasMessages**(): `boolean`
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[hasMessages](./MessageAggregator.hasMessages.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
 
 Indicates whether any messages have been aggregated.
 
-##### Returns
+</td></tr>
+<tr><td>
 
-`boolean`
+[numMessages](./MessageAggregator.numMessages.md)
 
-Indicates whether any messages have been aggregated.
+</td><td>
 
-#### Implementation of
+`readonly`
 
-[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`hasMessages`](../interfaces/IMessageAggregator.md#hasmessages)
+</td><td>
 
-***
+number
 
-### messages
-
-#### Get Signature
-
-> **get** **messages**(): `string`[]
-
-The aggregated messages.
-
-##### Returns
-
-`string`[]
-
-The aggregated messages.
-
-#### Implementation of
-
-[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`messages`](../interfaces/IMessageAggregator.md#messages)
-
-***
-
-### numMessages
-
-#### Get Signature
-
-> **get** **numMessages**(): `number`
+</td><td>
 
 The number of messages aggregated.
 
-##### Returns
+</td></tr>
+<tr><td>
 
-`number`
+[messages](./MessageAggregator.messages.md)
 
-The number of messages aggregated.
+</td><td>
 
-#### Implementation of
+`readonly`
 
-[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`numMessages`](../interfaces/IMessageAggregator.md#nummessages)
+</td><td>
+
+string[]
+
+</td><td>
+
+The aggregated messages.
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### addMessage()
+<table><thead><tr><th>
 
-> **addMessage**(`message`): `this`
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[addMessage(message)](./MessageAggregator.addMessage.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Adds a message to the aggregator, if defined.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `message` | `string` \| `undefined` | The message to add - pass `undefined` or the empty string to continue without adding a message. |
+[addMessages(messages)](./MessageAggregator.addMessages.md)
 
-#### Returns
+</td><td>
 
-`this`
 
-#### Implementation of
 
-[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`addMessage`](../interfaces/IMessageAggregator.md#addmessage)
-
-***
-
-### addMessages()
-
-> **addMessages**(`messages`): `this`
+</td><td>
 
 Adds multiple messages to the aggregator.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `messages` | `string`[] \| `undefined` | the messages to add. |
+[toString(separator)](./MessageAggregator.toString.md)
 
-#### Returns
+</td><td>
 
-`this`
 
-#### Implementation of
 
-[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`addMessages`](../interfaces/IMessageAggregator.md#addmessages)
-
-***
-
-### returnOrReport()
-
-> **returnOrReport**\<`T`\>(`result`, `separator?`): [`Result`](../type-aliases/Result.md)\<`T`\>
-
-If any error messages have been aggregated, returns
-[Failure\<T\>](Failure.md) with the aggregated
-messages concatenated using the optionally-supplied
-separator, or newline.   If the supplied [Result\<T\>](../type-aliases/Result.md)
-contains an error message that has not already been aggregated,
-it will be included in the aggregated messages.
-
-If no error messages have been aggregated, returns
-the supplied [Result\<T\>](../type-aliases/Result.md).
-
-#### Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `result` | [`Result`](../type-aliases/Result.md)\<`T`\> | The [Result\<T\>](../type-aliases/Result.md) to be returned if no messages have been aggregated. |
-| `separator?` | `string` | Optional string separator used to construct the error message. |
-
-#### Returns
-
-[`Result`](../type-aliases/Result.md)\<`T`\>
-
-[Failure\<T\>](Failure.md) with an aggregated message
-if any error messages were collected, the supplied
-[Result\<T\>](../type-aliases/Result.md) otherwise.
-
-***
-
-### toString()
-
-> **toString**(`separator?`): `string`
+</td><td>
 
 Returns all messages as a single string joined
-using the optionally-supplied `separator`, or
-newline if no separator is specified.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `separator?` | `string` | The optional separator used to join strings. |
+[returnOrReport(result, separator)](./MessageAggregator.returnOrReport.md)
 
-#### Returns
+</td><td>
 
-`string`
 
-#### Implementation of
 
-[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`toString`](../interfaces/IMessageAggregator.md#tostring)
+</td><td>
+
+If any error messages have been aggregated, returns
+Failure | Failure<T> with the aggregated
+messages concatenated using the optionally-supplied
+separator, or newline.
+
+</td></tr>
+</tbody></table>

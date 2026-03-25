@@ -1,29 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > keysForRecord
 
-***
-
-[@fgv/ts-utils](../README.md) / keysForRecord
-
-# Function: keysForRecord()
-
-> **keysForRecord**\<`TK`\>(`obj`): `TK`[]
+# Function: keysForRecord
 
 Type-safe(ish) key extractor for typed records.
 
-## Type Parameters
+## Signature
 
-| Type Parameter |
-| ------ |
-| `TK` *extends* `string` |
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `obj` | `Record`\<`TK`, `unknown`\> | The record from which keys are to be extracted. |
-
-## Returns
-
-`TK`[]
-
-The keys of the record as an array.
+```typescript
+function keysForRecord(obj: Record<TK, unknown>): TK[]
+```

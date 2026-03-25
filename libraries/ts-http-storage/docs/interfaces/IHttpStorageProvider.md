@@ -75,6 +75,19 @@ Description
 </td></tr>
 <tr><td>
 
+[deleteFile(path)](./IHttpStorageProvider.deleteFile.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [createDirectory(path)](./IHttpStorageProvider.createDirectory.md)
 
 </td><td>

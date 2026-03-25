@@ -1,29 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > isDeferredResult
 
-***
-
-[@fgv/ts-utils](../README.md) / isDeferredResult
-
-# Function: isDeferredResult()
-
-> **isDeferredResult**\<`T`\>(`result`): `result is DeferredResult<T>`
+# Function: isDeferredResult
 
 Checks if a result is a deferred result.
 
-## Type Parameters
+## Signature
 
-| Type Parameter |
-| ------ |
-| `T` |
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `result` | [`Result`](../type-aliases/Result.md)\<`T`\> \| [`DeferredResult`](../type-aliases/DeferredResult.md)\<`T`\> | The result to check. |
-
-## Returns
-
-`result is DeferredResult<T>`
-
-`true` if the result is a deferred result, `false` otherwise.
+```typescript
+function isDeferredResult(result: Result<T> | DeferredResult<T>): result is DeferredResult<T>
+```

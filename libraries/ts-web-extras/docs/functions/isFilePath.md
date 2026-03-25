@@ -1,21 +1,11 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > isFilePath
 
-***
-
-[@fgv/ts-web-extras](../README.md) / isFilePath
-
-# Function: isFilePath()
-
-> **isFilePath**(`path`): `boolean`
+# Function: isFilePath
 
 Determines if a path appears to be a file (has extension) or directory
 
-## Parameters
+## Signature
 
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-
-## Returns
-
-`boolean`
+```typescript
+function isFilePath(path: string): boolean
+```

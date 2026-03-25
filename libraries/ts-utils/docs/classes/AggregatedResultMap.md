@@ -1,730 +1,460 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > AggregatedResultMap
 
-***
+# Class: AggregatedResultMap
 
-[@fgv/ts-utils](../README.md) / AggregatedResultMap
-
-# Class: AggregatedResultMap\<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA\>
-
-An aggregated result map that wraps a collection of [ValidatingResultMap](../@fgv/namespaces/Collections/classes/ValidatingResultMap.md) instances,
+An aggregated result map that wraps a collection of ValidatingResultMap | ValidatingResultMap instances,
 keyed by collection ID. Items are accessed via composite IDs that combine the collection ID
 and item ID with a delimiter.
 
-## Extends
-
-- [`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md)\<`TCOMPOSITEID`, `TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>
-
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCOMPOSITEID` *extends* `string` | - |
-| `TCOLLECTIONID` *extends* `string` | - |
-| `TITEMID` *extends* `string` | - |
-| `TITEM` | - |
-| `TMETADATA` | `unknown` |
+**Extends:** [`AggregatedResultMapBase<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>`](AggregatedResultMapBase.md)
 
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new AggregatedResultMap**\<`TCOMPOSITEID`, `TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>(`params`): `AggregatedResultMap`\<`TCOMPOSITEID`, `TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>
+Constructor
 
-Constructs a new AggregatedResultMap.
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `params` | [`IAggregatedResultMapConstructorParams`](../@fgv/namespaces/Collections/interfaces/IAggregatedResultMapConstructorParams.md)\<`TCOMPOSITEID`, `TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\> |  |
+</th><th>
 
-#### Returns
+Description
 
-`AggregatedResultMap`\<`TCOMPOSITEID`, `TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-#### Overrides
+`constructor(params)`
 
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`constructor`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#constructor)
+</td><td>
 
-## Accessors
 
-### collectionCount
 
-#### Get Signature
+</td><td>
 
-> **get** **collectionCount**(): `number`
+Constructs a new AggregatedResultMap | AggregatedResultMap.
 
-The number of collections.
+</td></tr>
+</tbody></table>
 
-##### Returns
+## Properties
 
-`number`
+<table><thead><tr><th>
 
-#### Inherited from
+Property
 
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`collectionCount`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#collectioncount)
+</th><th>
 
-***
+Modifiers
 
-### collections
+</th><th>
 
-#### Get Signature
+Type
 
-> **get** **collections**(): [`IReadOnlyValidatingResultMap`](../@fgv/namespaces/Collections/interfaces/IReadOnlyValidatingResultMap.md)\<`TCOLLECTIONID`, [`AggregatedResultMapEntry`](../@fgv/namespaces/Collections/type-aliases/AggregatedResultMapEntry.md)\<`TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>\>
+</th><th>
 
-Provides read-only access to the underlying collections map.
-Use `collections.has(id)` and `collections.get(id)` to check existence and retrieve collections.
+Description
 
-##### Returns
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-[`IReadOnlyValidatingResultMap`](../@fgv/namespaces/Collections/interfaces/IReadOnlyValidatingResultMap.md)\<`TCOLLECTIONID`, [`AggregatedResultMapEntry`](../@fgv/namespaces/Collections/type-aliases/AggregatedResultMapEntry.md)\<`TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>\>
+[validating](./AggregatedResultMapBase.validating.md)
 
-#### Inherited from
+</td><td>
 
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`collections`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#collections)
+`readonly`
 
-***
+</td><td>
 
-### size
+[IReadOnlyResultMapValidator](../interfaces/IReadOnlyResultMapValidator.md)&lt;TCOMPOSITEID, TITEM&gt;
 
-#### Get Signature
-
-> **get** **size**(): `number`
-
-The total number of items across all collections.
-
-##### Returns
-
-`number`
-
-Returns the number of entries in the map.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`size`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#size)
-
-***
-
-### validating
-
-#### Get Signature
-
-> **get** **validating**(): [`IReadOnlyResultMapValidator`](../@fgv/namespaces/Collections/interfaces/IReadOnlyResultMapValidator.md)\<`TCOMPOSITEID`, `TITEM`\>
+</td><td>
 
 A validator for weakly-typed access to the map.
 
-##### Returns
+</td></tr>
+<tr><td>
 
-[`IReadOnlyResultMapValidator`](../@fgv/namespaces/Collections/interfaces/IReadOnlyResultMapValidator.md)\<`TCOMPOSITEID`, `TITEM`\>
+[size](./AggregatedResultMapBase.size.md)
 
-A [ResultMapValidator](../@fgv/namespaces/Collections/classes/ResultMapValidator.md) which validates keys and values
-before inserting them into this collection.
+</td><td>
 
-#### Inherited from
+`readonly`
 
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`validating`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#validating)
+</td><td>
+
+number
+
+</td><td>
+
+The total number of items across all collections.
+
+</td></tr>
+<tr><td>
+
+[collections](./AggregatedResultMapBase.collections.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IReadOnlyValidatingResultMap](../interfaces/IReadOnlyValidatingResultMap.md)&lt;TCOLLECTIONID, [AggregatedResultMapEntry](../type-aliases/AggregatedResultMapEntry.md)&lt;TCOLLECTIONID, TITEMID, TITEM, TMETADATA&gt;&gt;
+
+</td><td>
+
+Provides read-only access to the underlying collections map.
+
+</td></tr>
+<tr><td>
+
+[collectionCount](./AggregatedResultMapBase.collectionCount.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+The number of collections.
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### \_deleteCollection()
+<table><thead><tr><th>
 
-> `protected` **\_deleteCollection**(`collectionId`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<[`AggregatedResultMapEntry`](../@fgv/namespaces/Collections/type-aliases/AggregatedResultMapEntry.md)\<`TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
+Method
 
-Deletes a collection from the internal collections map.
-This is a protected method for use by derived classes that need to implement
-collection deletion functionality.
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `collectionId` | `TCOLLECTIONID` | The collection ID to delete. |
+</th><th>
 
-#### Returns
+Description
 
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<[`AggregatedResultMapEntry`](../@fgv/namespaces/Collections/type-aliases/AggregatedResultMapEntry.md)\<`TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-`Success` with the deleted entry if found, `Failure` otherwise.
+[create(params)](./AggregatedResultMap.create.md)
 
-#### Remarks
+</td><td>
 
-- Does NOT check if the collection is mutable - callers should validate this first.
-- Use `collections.get(id)` to check if a collection exists and its mutability before calling.
+`static`
 
-#### Inherited from
+</td><td>
 
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`_deleteCollection`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#_deletecollection)
+Creates a new AggregatedResultMap | AggregatedResultMap.
 
-***
+</td></tr>
+<tr><td>
 
-### \[iterator\]()
+[get(key)](./AggregatedResultMapBase.get.md)
 
-> **\[iterator\]**(): `IterableIterator`\<[`KeyValueEntry`](../@fgv/namespaces/Collections/type-aliases/KeyValueEntry.md)\<`TCOMPOSITEID`, `TITEM`\>\>
+</td><td>
 
-Gets an iterator over the map entries.
 
-#### Returns
 
-`IterableIterator`\<[`KeyValueEntry`](../@fgv/namespaces/Collections/type-aliases/KeyValueEntry.md)\<`TCOMPOSITEID`, `TITEM`\>\>
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`[iterator]`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#iterator)
-
-***
-
-### add()
-
-> **add**(`key`, `value`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Adds an item by its composite ID. Fails if the item already exists.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `TCOMPOSITEID` | The composite ID of the item. |
-| `value` | `TITEM` | The value to add. |
-
-#### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the value if added, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`add`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#add)
-
-***
-
-### addCollectionEntry()
-
-> **addCollectionEntry**(`entry`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<[`AggregatedResultMapEntry`](../@fgv/namespaces/Collections/type-aliases/AggregatedResultMapEntry.md)\<`TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Adds a new collection from a pre-built entry object.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `entry` | [`AggregatedResultMapEntryInit`](../@fgv/namespaces/Collections/type-aliases/AggregatedResultMapEntryInit.md)\<`TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\> | The collection entry to add (JSON with items/entries, or pre-instantiated). |
-
-#### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<[`AggregatedResultMapEntry`](../@fgv/namespaces/Collections/type-aliases/AggregatedResultMapEntry.md)\<`TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the entry if added, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`addCollectionEntry`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#addcollectionentry)
-
-***
-
-### addCollectionWithItems()
-
-> **addCollectionWithItems**(`collectionId`, `items?`, `options?`): [`Result`](../type-aliases/Result.md)\<`TCOLLECTIONID`\>
-
-Adds a new collection with the specified ID and optional initial entries.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `collectionId` | `string` | The collection ID as a string (will be validated). |
-| `items?` | `Iterable`\<[`KeyValueEntry`](../@fgv/namespaces/Collections/type-aliases/KeyValueEntry.md)\<`string`, `unknown`\>, `any`, `any`\> | Optional initial entries for the collection. |
-| `options?` | [`IAddCollectionWithItemsOptions`](../@fgv/namespaces/Collections/interfaces/IAddCollectionWithItemsOptions.md)\<`TMETADATA`\> | Optional settings (isImmutable defaults to false). |
-
-#### Returns
-
-[`Result`](../type-aliases/Result.md)\<`TCOLLECTIONID`\>
-
-`Success` with the validated collection ID if added, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`addCollectionWithItems`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#addcollectionwithitems)
-
-***
-
-### addToCollection()
-
-> **addToCollection**(`collectionId`, `itemId`, `value`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TCOMPOSITEID`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Adds an item using separate collection and item IDs.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `collectionId` | `TCOLLECTIONID` | The collection ID. |
-| `itemId` | `TITEMID` | The item ID. |
-| `value` | `TITEM` | The value to add. |
-
-#### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TCOMPOSITEID`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the composite ID if added, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`addToCollection`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#addtocollection)
-
-***
-
-### clear()
-
-> **clear**(): `void`
-
-Clears all items from all mutable collections.
-Immutable collections are not affected.
-
-#### Returns
-
-`void`
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`clear`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#clear)
-
-***
-
-### composeId()
-
-> **composeId**(`collectionId`, `itemId`): [`Result`](../type-aliases/Result.md)\<`TCOMPOSITEID`\>
-
-Composes a collection ID and item ID into a composite ID.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `collectionId` | `TCOLLECTIONID` | The collection ID. |
-| `itemId` | `TITEMID` | The item ID. |
-
-#### Returns
-
-[`Result`](../type-aliases/Result.md)\<`TCOMPOSITEID`\>
-
-`Success` with the composite ID if valid, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`composeId`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#composeid)
-
-***
-
-### delete()
-
-> **delete**(`key`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Deletes an item by its composite ID.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `TCOMPOSITEID` | The composite ID of the item. |
-
-#### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the deleted value, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`delete`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#delete)
-
-***
-
-### deleteFromCollection()
-
-> **deleteFromCollection**(`collectionId`, `itemId`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TCOMPOSITEID`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Deletes an item using separate collection and item IDs.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `collectionId` | `TCOLLECTIONID` | The collection ID. |
-| `itemId` | `TITEMID` | The item ID. |
-
-#### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TCOMPOSITEID`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the composite ID if deleted, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`deleteFromCollection`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#deletefromcollection)
-
-***
-
-### entries()
-
-> **entries**(): `IterableIterator`\<[`KeyValueEntry`](../@fgv/namespaces/Collections/type-aliases/KeyValueEntry.md)\<`TCOMPOSITEID`, `TITEM`\>\>
-
-Iterates over all entries in all collections.
-
-#### Returns
-
-`IterableIterator`\<[`KeyValueEntry`](../@fgv/namespaces/Collections/type-aliases/KeyValueEntry.md)\<`TCOMPOSITEID`, `TITEM`\>\>
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`entries`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#entries)
-
-***
-
-### forEach()
-
-> **forEach**(`cb`, `thisArg?`): `void`
-
-Calls a callback for each entry.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `cb` | [`ResultMapForEachCb`](../@fgv/namespaces/Collections/type-aliases/ResultMapForEachCb.md)\<`TCOMPOSITEID`, `TITEM`\> | The callback to call. |
-| `thisArg?` | `unknown` | Optional `this` argument for the callback. |
-
-#### Returns
-
-`void`
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`forEach`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#foreach)
-
-***
-
-### get()
-
-> **get**(`key`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
+</td><td>
 
 Gets an item by its composite ID.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `TCOMPOSITEID` | The composite ID of the item. |
+[has(key)](./AggregatedResultMapBase.has.md)
 
-#### Returns
+</td><td>
 
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
 
-`Success` with the item if found, `Failure` otherwise.
 
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`get`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#get)
-
-***
-
-### getCollectionMetadata()
-
-> **getCollectionMetadata**(`collectionId`): [`Result`](../type-aliases/Result.md)\<`TMETADATA` \| `undefined`\>
-
-Gets the metadata for a specific collection.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `collectionId` | `TCOLLECTIONID` | The collection ID. |
-
-#### Returns
-
-[`Result`](../type-aliases/Result.md)\<`TMETADATA` \| `undefined`\>
-
-`Success` with the metadata if found, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`getCollectionMetadata`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#getcollectionmetadata)
-
-***
-
-### getOrAdd()
-
-#### Call Signature
-
-> **getOrAdd**(`key`, `value`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Gets an existing item or adds a new one.
-
-##### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `TCOMPOSITEID` | The composite ID of the item. |
-| `value` | `TITEM` | The value to add if not found. |
-
-##### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the existing or new value.
-
-##### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`getOrAdd`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#getoradd)
-
-#### Call Signature
-
-> **getOrAdd**(`key`, `factory`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Gets an existing item or adds a new one using a factory.
-
-##### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `TCOMPOSITEID` | The composite ID of the item. |
-| `factory` | [`ResultMapValueFactory`](../@fgv/namespaces/Collections/type-aliases/ResultMapValueFactory.md)\<`TCOMPOSITEID`, `TITEM`\> | A factory function to create the value if not found. Receives the composite ID. |
-
-##### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the existing or new value.
-
-##### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`getOrAdd`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#getoradd)
-
-***
-
-### has()
-
-> **has**(`key`): `boolean`
+</td><td>
 
 Checks if an item exists by its composite ID.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `TCOMPOSITEID` | The composite ID of the item. |
+[entries()](./AggregatedResultMapBase.entries.md)
 
-#### Returns
+</td><td>
 
-`boolean`
 
-`true` if the item exists, `false` otherwise.
 
-#### Inherited from
+</td><td>
 
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`has`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#has)
+Iterates over all entries in all collections.
 
-***
+</td></tr>
+<tr><td>
 
-### keys()
+[keys()](./AggregatedResultMapBase.keys.md)
 
-> **keys**(): `IterableIterator`\<`TCOMPOSITEID`\>
+</td><td>
+
+
+
+</td><td>
 
 Iterates over all composite keys.
 
-#### Returns
+</td></tr>
+<tr><td>
 
-`IterableIterator`\<`TCOMPOSITEID`\>
+[values()](./AggregatedResultMapBase.values.md)
 
-#### Inherited from
+</td><td>
 
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`keys`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#keys)
 
-***
 
-### set()
-
-> **set**(`key`, `value`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Sets an item by its composite ID. Creates the collection if it doesn't exist and is mutable.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `TCOMPOSITEID` | The composite ID of the item. |
-| `value` | `TITEM` | The value to set. |
-
-#### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the value if set, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`set`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#set)
-
-***
-
-### setCollectionMetadata()
-
-> **setCollectionMetadata**(`collectionId`, `metadata`): [`Result`](../type-aliases/Result.md)\<`TMETADATA`\>
-
-Sets the metadata for a mutable collection.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `collectionId` | `TCOLLECTIONID` | The collection ID. |
-| `metadata` | `TMETADATA` | The metadata to set. |
-
-#### Returns
-
-[`Result`](../type-aliases/Result.md)\<`TMETADATA`\>
-
-`Success` if set, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`setCollectionMetadata`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#setcollectionmetadata)
-
-***
-
-### setInCollection()
-
-> **setInCollection**(`collectionId`, `itemId`, `value`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TCOMPOSITEID`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Sets an item using separate collection and item IDs.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `collectionId` | `TCOLLECTIONID` | The collection ID. |
-| `itemId` | `TITEMID` | The item ID. |
-| `value` | `TITEM` | The value to set. |
-
-#### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TCOMPOSITEID`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the composite ID if set, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`setInCollection`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#setincollection)
-
-***
-
-### toReadOnly()
-
-> **toReadOnly**(): [`IReadOnlyResultMap`](../@fgv/namespaces/Collections/interfaces/IReadOnlyResultMap.md)\<`TCOMPOSITEID`, `TITEM`\>
-
-Returns a read-only view of this map.
-
-#### Returns
-
-[`IReadOnlyResultMap`](../@fgv/namespaces/Collections/interfaces/IReadOnlyResultMap.md)\<`TCOMPOSITEID`, `TITEM`\>
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`toReadOnly`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#toreadonly)
-
-***
-
-### update()
-
-> **update**(`key`, `value`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Updates an existing item by its composite ID. Fails if the item doesn't exist.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `key` | `TCOMPOSITEID` | The composite ID of the item. |
-| `value` | `TITEM` | The new value. |
-
-#### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TITEM`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the value if updated, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`update`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#update)
-
-***
-
-### updateInCollection()
-
-> **updateInCollection**(`collectionId`, `itemId`, `value`): [`DetailedResult`](../type-aliases/DetailedResult.md)\<`TCOMPOSITEID`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-Updates an item using separate collection and item IDs.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `collectionId` | `TCOLLECTIONID` | The collection ID. |
-| `itemId` | `TITEMID` | The item ID. |
-| `value` | `TITEM` | The new value. |
-
-#### Returns
-
-[`DetailedResult`](../type-aliases/DetailedResult.md)\<`TCOMPOSITEID`, [`ResultMapResultDetail`](../@fgv/namespaces/Collections/type-aliases/ResultMapResultDetail.md)\>
-
-`Success` with the composite ID if updated, `Failure` otherwise.
-
-#### Inherited from
-
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`updateInCollection`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#updateincollection)
-
-***
-
-### values()
-
-> **values**(): `IterableIterator`\<`TITEM`\>
+</td><td>
 
 Iterates over all values.
 
-#### Returns
+</td></tr>
+<tr><td>
 
-`IterableIterator`\<`TITEM`\>
+[forEach(cb, thisArg)](./AggregatedResultMapBase.forEach.md)
 
-#### Inherited from
+</td><td>
 
-[`AggregatedResultMapBase`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md).[`values`](../@fgv/namespaces/Collections/classes/AggregatedResultMapBase.md#values)
 
-***
 
-### create()
+</td><td>
 
-> `static` **create**\<`TCOMPOSITEID`, `TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>(`params`): [`Result`](../type-aliases/Result.md)\<`AggregatedResultMap`\<`TCOMPOSITEID`, `TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>\>
+Calls a callback for each entry.
 
-Creates a new AggregatedResultMap.
+</td></tr>
+<tr><td>
 
-#### Type Parameters
+[set(key, value)](./AggregatedResultMapBase.set.md)
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCOMPOSITEID` *extends* `string` | - |
-| `TCOLLECTIONID` *extends* `string` | - |
-| `TITEMID` *extends* `string` | - |
-| `TITEM` | - |
-| `TMETADATA` | `unknown` |
+</td><td>
 
-#### Parameters
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `params` | [`IAggregatedResultMapConstructorParams`](../@fgv/namespaces/Collections/interfaces/IAggregatedResultMapConstructorParams.md)\<`TCOMPOSITEID`, `TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\> | Parameters for constructing the map. |
 
-#### Returns
+</td><td>
 
-[`Result`](../type-aliases/Result.md)\<`AggregatedResultMap`\<`TCOMPOSITEID`, `TCOLLECTIONID`, `TITEMID`, `TITEM`, `TMETADATA`\>\>
+Sets an item by its composite ID.
 
-`Success` with the new map if successful, `Failure` otherwise.
+</td></tr>
+<tr><td>
+
+[add(key, value)](./AggregatedResultMapBase.add.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Adds an item by its composite ID.
+
+</td></tr>
+<tr><td>
+
+[update(key, value)](./AggregatedResultMapBase.update.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates an existing item by its composite ID.
+
+</td></tr>
+<tr><td>
+
+[delete(key)](./AggregatedResultMapBase.delete.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Deletes an item by its composite ID.
+
+</td></tr>
+<tr><td>
+
+[getOrAdd(key, value)](./AggregatedResultMapBase.getOrAdd.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets an existing item or adds a new one.
+
+</td></tr>
+<tr><td>
+
+[clear()](./AggregatedResultMapBase.clear.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Clears all items from all mutable collections.
+
+</td></tr>
+<tr><td>
+
+[toReadOnly()](./AggregatedResultMapBase.toReadOnly.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Returns a read-only view of this map.
+
+</td></tr>
+<tr><td>
+
+[composeId(collectionId, itemId)](./AggregatedResultMapBase.composeId.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Composes a collection ID and item ID into a composite ID.
+
+</td></tr>
+<tr><td>
+
+[addToCollection(collectionId, itemId, value)](./AggregatedResultMapBase.addToCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Adds an item using separate collection and item IDs.
+
+</td></tr>
+<tr><td>
+
+[setInCollection(collectionId, itemId, value)](./AggregatedResultMapBase.setInCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets an item using separate collection and item IDs.
+
+</td></tr>
+<tr><td>
+
+[updateInCollection(collectionId, itemId, value)](./AggregatedResultMapBase.updateInCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Updates an item using separate collection and item IDs.
+
+</td></tr>
+<tr><td>
+
+[deleteFromCollection(collectionId, itemId)](./AggregatedResultMapBase.deleteFromCollection.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Deletes an item using separate collection and item IDs.
+
+</td></tr>
+<tr><td>
+
+[getCollectionMetadata(collectionId)](./AggregatedResultMapBase.getCollectionMetadata.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the metadata for a specific collection.
+
+</td></tr>
+<tr><td>
+
+[setCollectionMetadata(collectionId, metadata)](./AggregatedResultMapBase.setCollectionMetadata.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets the metadata for a mutable collection.
+
+</td></tr>
+<tr><td>
+
+[addCollectionEntry(entry)](./AggregatedResultMapBase.addCollectionEntry.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Adds a new collection from a pre-built entry object.
+
+</td></tr>
+<tr><td>
+
+[addCollectionWithItems(collectionId, items, options)](./AggregatedResultMapBase.addCollectionWithItems.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Adds a new collection with the specified ID and optional initial entries.
+
+</td></tr>
+<tr><td>
+
+[[iterator]()](./AggregatedResultMapBase._iterator_.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets an iterator over the map entries.
+
+</td></tr>
+</tbody></table>

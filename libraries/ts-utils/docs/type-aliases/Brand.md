@@ -1,24 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > Brand
 
-***
-
-[@fgv/ts-utils](../README.md) / Brand
-
-# Type Alias: Brand\<T, B\>
-
-> **Brand**\<`T`, `B`\> = `T` & `object`
+# Type Alias: Brand
 
 Helper type to brand a simple type to prevent inappropriate use
 
-## Type Declaration
+## Type
 
-| Name | Type |
-| ------ | ------ |
-| `__brand` | `B` |
-
-## Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
-| `B` |
+```typescript
+type Brand = T & { __brand: B }
+```

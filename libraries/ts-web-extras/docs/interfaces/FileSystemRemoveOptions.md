@@ -1,8 +1,4 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / FileSystemRemoveOptions
+[Home](../README.md) > FileSystemRemoveOptions
 
 # Interface: FileSystemRemoveOptions
 
@@ -10,6 +6,39 @@ Options for removing entries
 
 ## Properties
 
-| Property | Type |
-| ------ | ------ |
-| <a id="recursive"></a> `recursive?` | `boolean` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[recursive](./FileSystemRemoveOptions.recursive.md)
+
+</td><td>
+
+
+
+</td><td>
+
+boolean
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

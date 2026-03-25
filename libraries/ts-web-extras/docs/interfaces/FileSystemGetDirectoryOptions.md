@@ -1,8 +1,4 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / FileSystemGetDirectoryOptions
+[Home](../README.md) > FileSystemGetDirectoryOptions
 
 # Interface: FileSystemGetDirectoryOptions
 
@@ -10,6 +6,39 @@ Options for getting directory handles
 
 ## Properties
 
-| Property | Type |
-| ------ | ------ |
-| <a id="create"></a> `create?` | `boolean` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[create](./FileSystemGetDirectoryOptions.create.md)
+
+</td><td>
+
+
+
+</td><td>
+
+boolean
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

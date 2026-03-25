@@ -1,30 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > useOrInitialize
 
-***
-
-[@fgv/ts-utils](../README.md) / useOrInitialize
-
-# Function: useOrInitialize()
-
-> **useOrInitialize**\<`T`\>(`value`, `initializer`): [`Result`](../type-aliases/Result.md)\<`T`\>
+# Function: useOrInitialize
 
 Uses a value or calls a supplied initializer if the supplied value is undefined.
 
-## Type Parameters
+## Signature
 
-| Type Parameter |
-| ------ |
-| `T` |
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `value` | `T` \| `undefined` | the value |
-| `initializer` | () => [`Result`](../type-aliases/Result.md)\<`T`\> | a function that initializes the value if it is undefined |
-
-## Returns
-
-[`Result`](../type-aliases/Result.md)\<`T`\>
-
-`Success` with the value if it is defined, or the result of calling the initializer function.
+```typescript
+function useOrInitialize(value: T | undefined, initializer: () => Result<T>): Result<T>
+```

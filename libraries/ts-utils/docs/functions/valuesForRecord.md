@@ -1,30 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > valuesForRecord
 
-***
-
-[@fgv/ts-utils](../README.md) / valuesForRecord
-
-# Function: valuesForRecord()
-
-> **valuesForRecord**\<`TK`, `TV`\>(`obj`): `TV`[]
+# Function: valuesForRecord
 
 Type-safe(ish) value extractor for typed records.
 
-## Type Parameters
+## Signature
 
-| Type Parameter |
-| ------ |
-| `TK` *extends* `string` |
-| `TV` |
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `obj` | `Record`\<`TK`, `TV`\> | The record from which values are to be extracted. |
-
-## Returns
-
-`TV`[]
-
-The values of the record as an array.
+```typescript
+function valuesForRecord(obj: Record<TK, TV>): TV[]
+```

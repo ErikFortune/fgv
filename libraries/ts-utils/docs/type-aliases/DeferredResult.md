@@ -1,21 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > DeferredResult
 
-***
-
-[@fgv/ts-utils](../README.md) / DeferredResult
-
-# Type Alias: DeferredResult()\<T\>
-
-> **DeferredResult**\<`T`\> = () => [`Result`](Result.md)\<`T`\>
+# Type Alias: DeferredResult
 
 Represents a deferred result that will be evaluated if needed.
 
-## Type Parameters
+## Type
 
-| Type Parameter |
-| ------ |
-| `T` |
-
-## Returns
-
-[`Result`](Result.md)\<`T`\>
+```typescript
+type DeferredResult = () => Result<T>
+```

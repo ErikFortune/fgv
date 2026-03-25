@@ -1,23 +1,11 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > supportsFileSystemAccess
 
-***
-
-[@fgv/ts-web-extras](../README.md) / supportsFileSystemAccess
-
-# Function: supportsFileSystemAccess()
-
-> **supportsFileSystemAccess**(`window`): `window is WindowWithFsAccess`
+# Function: supportsFileSystemAccess
 
 Type guard to check if the browser supports the File System Access API
 
-## Parameters
+## Signature
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `window` | `Window` | The window object to check |
-
-## Returns
-
-`window is WindowWithFsAccess`
-
-True if the window supports File System Access API
+```typescript
+function supportsFileSystemAccess(window: Window): window is WindowWithFsAccess
+```

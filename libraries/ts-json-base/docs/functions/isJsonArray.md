@@ -1,24 +1,11 @@
-[**@fgv/ts-json-base**](../README.md)
+[Home](../README.md) > isJsonArray
 
-***
+# Function: isJsonArray
 
-[@fgv/ts-json-base](../README.md) / isJsonArray
+Test if an `unknown` is potentially a JsonArray | JsonArray.
 
-# Function: isJsonArray()
+## Signature
 
-> **isJsonArray**(`from`): `from is JsonArray`
-
-Test if an `unknown` is potentially a [JsonArray](../interfaces/JsonArray.md).
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `from` | `unknown` | The `unknown` to be tested. |
-
-## Returns
-
-`from is JsonArray`
-
-`true` if the supplied parameter is an array object,
-`false` otherwise.
+```typescript
+function isJsonArray(from: unknown): from is JsonArray
+```
