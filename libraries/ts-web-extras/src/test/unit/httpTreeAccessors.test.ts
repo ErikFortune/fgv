@@ -1567,5 +1567,184 @@ describe('HttpTreeAccessors', () => {
       expect(putCalls).toHaveLength(1);
       expect(postCalls).toHaveLength(1);
     });
+
+    test('drains items written during an in-flight sync within the same _doSync call', async () => {
+      // This tests the drain loop fix for the race where:
+      // 1. sync starts, snapshots dirty set {a.json}
+      // 2. during the PUT for a.json, a new write arrives adding a.json back
+      // 3. _doSync loops back, snapshots the new item, and syncs it too
+      // 4. Only one POST /sync is sent at the end, after all items are drained
+      let callCount = 0;
+      let saveHook: (() => void) | undefined;
+
+      const fetchImpl: typeof fetch = (url, init) => {
+        callCount++;
+        const urlStr = url.toString();
+
+        // Calls 1-2: fromHttp load
+        if (callCount <= 2) {
+          if (callCount === 1) {
+            return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('a.json') }));
+          }
+          return Promise.resolve(
+            makeMockResponse({ ok: true, jsonValue: fileResponse('/a.json', '"orig"') })
+          );
+        }
+
+        // Call 3: first PUT /file for a.json — trigger a write mid-sync
+        if (callCount === 3 && init?.method === 'PUT') {
+          saveHook?.();
+          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: fileResponse('/a.json', '"v1"') }));
+        }
+
+        // Call 4: second PUT /file for a.json (drain loop iteration)
+        if (callCount === 4 && init?.method === 'PUT') {
+          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: fileResponse('/a.json', '"v2"') }));
+        }
+
+        // Call 5: single POST /sync after drain loop exits
+        if (callCount === 5 && urlStr.includes('/sync')) {
+          return Promise.resolve(makeMockResponse({ ok: true, jsonValue: { synced: 1 } }));
+        }
+
+        return Promise.reject(new Error(`Unexpected call #${callCount} to ${urlStr}`));
+      };
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl: fetchImpl as typeof fetch,
+          mutable: true
+        })
+      ).orThrow();
+
+      // Write a.json
+      accessors.saveFileContents('/a.json', '"v1"').orThrow();
+
+      // Set up the hook BEFORE starting sync — the mock fetch for the PUT
+      // runs synchronously within syncToDisk(), so the hook must be in place.
+      saveHook = () => {
+        accessors.saveFileContents('/a.json', '"v2"').orThrow();
+      };
+
+      // Start sync — during the first PUT, saveHook fires and writes v2.
+      // The drain loop in _doSync picks this up and PUTs again before
+      // sending the final POST /sync.
+      const result = await accessors.syncToDisk();
+
+      expect(result).toSucceed();
+      expect(accessors.isDirty()).toBe(false);
+
+      // 5 calls: 2 load + 2 PUTs (v1, v2) + 1 POST /sync
+      expect(callCount).toBe(5);
+    });
+  });
+
+  describe('syncToDisk() error recovery', () => {
+    test('restores dirty files when PUT fails so they can be retried', async () => {
+      const { fetchImpl } = makeMockFetch([
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') },
+        // PUT /file fails with non-transient error
+        { ok: false, status: 500, textValue: 'Server Error' }
+      ]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl,
+          mutable: true
+        })
+      ).orThrow();
+
+      accessors.saveFileContents('/data.json', '"updated"').orThrow();
+      expect(accessors.isDirty()).toBe(true);
+
+      const result = await accessors.syncToDisk();
+      expect(result).toFailWith(/sync.*data\.json.*server error/i);
+
+      // The file should still be dirty so a retry is possible
+      expect(accessors.isDirty()).toBe(true);
+      expect(accessors.getDirtyPaths()).toContain('/data.json');
+    });
+
+    test('restores pending deletions when DELETE fails so they can be retried', async () => {
+      const { fetchImpl } = makeMockFetch([
+        { ok: true, jsonValue: rootWithOneFile('data.json') },
+        { ok: true, jsonValue: fileResponse('/data.json', '{}') },
+        // DELETE fails with non-transient error
+        { ok: false, status: 500, textValue: 'Server Error' }
+      ]);
+
+      const accessors = (
+        await HttpTreeAccessors.fromHttp({
+          baseUrl: 'http://localhost:3000',
+          fetchImpl,
+          mutable: true
+        })
+      ).orThrow();
+
+      accessors.deleteFile('/data.json').orThrow();
+      expect(accessors.isDirty()).toBe(true);
+
+      const result = await accessors.syncToDisk();
+      expect(result).toFailWith(/delete.*data\.json.*server error/i);
+
+      // The deletion should still be pending so a retry is possible
+      expect(accessors.isDirty()).toBe(true);
+      expect(accessors.getDirtyPaths()).toContain('/data.json');
+    });
+
+    test('restores dirty files when POST /sync fails so they can be retried', async () => {
+      jest.useFakeTimers();
+      try {
+        let callCount = 0;
+        const fetchImpl: typeof fetch = (_url, _init) => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
+          }
+          if (callCount === 2) {
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '{}') })
+            );
+          }
+          if (callCount === 3) {
+            // PUT succeeds
+            return Promise.resolve(
+              makeMockResponse({ ok: true, jsonValue: fileResponse('/data.json', '"v2"') })
+            );
+          }
+          // All /sync attempts: persistent 503
+          return Promise.resolve(
+            makeMockResponse({ ok: false, status: 503, textValue: 'Service Unavailable' })
+          );
+        };
+
+        const accessors = (
+          await HttpTreeAccessors.fromHttp({
+            baseUrl: 'http://localhost:3000',
+            fetchImpl,
+            mutable: true
+          })
+        ).orThrow();
+
+        accessors.saveFileContents('/data.json', '"v2"').orThrow();
+
+        const syncPromise = accessors.syncToDisk();
+        await jest.advanceTimersByTimeAsync(1500);
+
+        const result = await syncPromise;
+        expect(result).toFailWith(/service unavailable/i);
+
+        // The PUT succeeded — data is on the server — so the file is no
+        // longer dirty. Only the server-side /sync acknowledgement failed,
+        // which is not something the client can meaningfully retry via
+        // re-sending the file contents.
+        expect(accessors.isDirty()).toBe(false);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 });
