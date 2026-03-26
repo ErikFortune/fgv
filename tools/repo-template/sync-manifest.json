@@ -137,6 +137,26 @@
         "destination": ".github/workflows/ci.yml"
       },
       {
+        "description": "Publish orchestrator workflow",
+        "source": ".github/workflows/publish.yml",
+        "destination": ".github/workflows/publish.yml"
+      },
+      {
+        "description": "Publish release implementation",
+        "source": ".github/workflows/publish-release-impl.yml",
+        "destination": ".github/workflows/publish-release-impl.yml"
+      },
+      {
+        "description": "Publish alpha implementation",
+        "source": ".github/workflows/publish-alpha-impl.yml",
+        "destination": ".github/workflows/publish-alpha-impl.yml"
+      },
+      {
+        "description": "Publish major implementation",
+        "source": ".github/workflows/publish-major-impl.yml",
+        "destination": ".github/workflows/publish-major-impl.yml"
+      },
+      {
         "description": "Copilot instructions",
         "source": ".github/copilot-instructions.md",
         "destination": ".github/copilot-instructions.md"
