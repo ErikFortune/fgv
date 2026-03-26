@@ -174,7 +174,7 @@ done < <(extract_json_pairs "sharedPackages" "source" "destination")
 # ──────────────────────────────────────────────────────────
 if [[ "$DRY_RUN" == false ]]; then
     SOURCE_COMMIT=""
-    if [[ -d "$SOURCE_DIR/.git" ]]; then
+    if [[ -e "$SOURCE_DIR/.git" ]]; then
         SOURCE_COMMIT="$(cd "$SOURCE_DIR" && git rev-parse HEAD 2>/dev/null || echo "unknown")"
     fi
 
