@@ -137,6 +137,26 @@
         "destination": ".github/workflows/ci.yml"
       },
       {
+        "description": "Publish orchestrator workflow",
+        "source": ".github/workflows/publish.yml",
+        "destination": ".github/workflows/publish.yml"
+      },
+      {
+        "description": "Publish release implementation",
+        "source": ".github/workflows/publish-release-impl.yml",
+        "destination": ".github/workflows/publish-release-impl.yml"
+      },
+      {
+        "description": "Publish alpha implementation",
+        "source": ".github/workflows/publish-alpha-impl.yml",
+        "destination": ".github/workflows/publish-alpha-impl.yml"
+      },
+      {
+        "description": "Publish major implementation",
+        "source": ".github/workflows/publish-major-impl.yml",
+        "destination": ".github/workflows/publish-major-impl.yml"
+      },
+      {
         "description": "Copilot instructions",
         "source": ".github/copilot-instructions.md",
         "destination": ".github/copilot-instructions.md"
@@ -152,36 +172,6 @@
         "destination": ".cursorrules"
       },
       {
-        "description": "Rush config - common versions",
-        "source": "common/config/rush/common-versions.json",
-        "destination": "common/config/rush/common-versions.json"
-      },
-      {
-        "description": "Rush config - pnpm config",
-        "source": "common/config/rush/pnpm-config.json",
-        "destination": "common/config/rush/pnpm-config.json"
-      },
-      {
-        "description": "Rush config - pnpmfile hook",
-        "source": "common/config/rush/.pnpmfile.cjs",
-        "destination": "common/config/rush/.pnpmfile.cjs"
-      },
-      {
-        "description": "Rush config - build cache",
-        "source": "common/config/rush/build-cache.json",
-        "destination": "common/config/rush/build-cache.json"
-      },
-      {
-        "description": "Rush config - plugins",
-        "source": "common/config/rush/rush-plugins.json",
-        "destination": "common/config/rush/rush-plugins.json"
-      },
-      {
-        "description": "Rush config - experiments",
-        "source": "common/config/rush/experiments.json",
-        "destination": "common/config/rush/experiments.json"
-      },
-      {
         "description": "Prettier autoinstaller",
         "source": "common/autoinstallers/rush-prettier/package.json",
         "destination": "common/autoinstallers/rush-prettier/package.json"
@@ -190,19 +180,8 @@
   },
 
   "sharedPackages": {
-    "description": "Complete packages (directories) synced verbatim. These provide build tooling shared across all repos.",
-    "packages": [
-      {
-        "description": "Heft dual rig - CJS + ESM build configuration",
-        "source": "rigs/heft-dual-rig",
-        "destination": "rigs/heft-dual-rig"
-      },
-      {
-        "description": "TypeDoc compact theme plugin",
-        "source": "plugins/typedoc-compact-theme",
-        "destination": "plugins/typedoc-compact-theme"
-      }
-    ]
+    "description": "Complete packages (directories) synced verbatim.",
+    "packages": []
   },
 
   "templated": {
@@ -212,11 +191,6 @@
         "description": "Claude entry point - parameterized with project table and repo info",
         "template": "scripts/template/templates/CLAUDE.md.tmpl",
         "destination": "CLAUDE.md"
-      },
-      {
-        "description": "Rush project inventory - parameterized with projects and repo URL",
-        "template": "scripts/template/templates/rush.json.tmpl",
-        "destination": "rush.json"
       },
       {
         "description": "Rush custom commands - generic commands only, domain commands added by consumer",
