@@ -549,7 +549,8 @@
     {
       "packageName": "@fgv/repo-template",
       "projectFolder": "tools/repo-template",
-      "shouldPublish": false,
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
       "tags": ["tools", "template"]
     }
   ]
