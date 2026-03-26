@@ -180,19 +180,8 @@
   },
 
   "sharedPackages": {
-    "description": "Complete packages (directories) synced verbatim. These provide build tooling shared across all repos.",
-    "packages": [
-      {
-        "description": "Heft dual rig - CJS + ESM build configuration",
-        "source": "rigs/heft-dual-rig",
-        "destination": "rigs/heft-dual-rig"
-      },
-      {
-        "description": "TypeDoc compact theme plugin",
-        "source": "plugins/typedoc-compact-theme",
-        "destination": "plugins/typedoc-compact-theme"
-      }
-    ]
+    "description": "Complete packages (directories) synced verbatim.",
+    "packages": []
   },
 
   "templated": {

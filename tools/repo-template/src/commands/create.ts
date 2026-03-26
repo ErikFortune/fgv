@@ -82,27 +82,7 @@ export async function runCreate(options: ICreateOptions): Promise<void> {
     { type: 'uncomment', path: 'url' },
     { type: 'set', path: 'repository.url', value: repoUrl },
     { type: 'uncomment', path: 'defaultBranch' },
-    { type: 'uncomment', path: 'defaultRemote' },
-    {
-      type: 'add-to-array',
-      path: 'projects',
-      value: JSON.stringify({
-        packageName: '@fgv/heft-dual-rig',
-        projectFolder: 'rigs/heft-dual-rig',
-        shouldPublish: false,
-        tags: ['tools', 'rig']
-      })
-    },
-    {
-      type: 'add-to-array',
-      path: 'projects',
-      value: JSON.stringify({
-        packageName: '@fgv/typedoc-compact-theme',
-        projectFolder: 'plugins/typedoc-compact-theme',
-        shouldPublish: false,
-        tags: ['plugins', 'typedoc']
-      })
-    }
+    { type: 'uncomment', path: 'defaultRemote' }
   ];
 
   patchFile(path.join(targetDir, 'rush.json'), rushJsonOps);
