@@ -7,6 +7,7 @@ import { detectSourceDir } from './packlets/fs';
 import { runCreate } from './commands/create';
 import { runSync } from './commands/sync';
 import { runPatch, parsePatchArgs } from './commands/patch';
+import { runInitLibrary, RigType, CategoryType } from './commands/init-library';
 
 export class RepoTemplateCli {
   private readonly _program: Command;
@@ -63,6 +64,39 @@ export class RepoTemplateCli {
           targetDir: opts.targetDir,
           sourceDir,
           dryRun: opts.dryRun
+        });
+      });
+
+    // ── init-library ──
+    this._program
+      .command('init-library')
+      .description('Scaffold a new library package within an existing Rush monorepo')
+      .requiredOption('-n, --name <name>', 'Package name (e.g. "ts-my-lib" — auto-prefixed with @fgv/)')
+      .option('-d, --description <text>', 'Package description', '')
+      .option('-r, --rig <type>', 'Heft rig: dual (default), node, or browser', 'dual')
+      .option(
+        '-c, --category <type>',
+        'Category folder: libraries (default), tools, apps, services',
+        'libraries'
+      )
+      .option('--repo-dir <path>', 'Rush monorepo root (default: cwd)', process.cwd())
+      .option('-p, --version-policy <name>', 'Version policy name', 'default')
+      .option('--initial-version <ver>', 'Initial version', '0.1.0')
+      .option(
+        '--fgv-dep-version <ver>',
+        'Version spec for @fgv/* deps ("workspace:*" in fgv, version range in consumers)',
+        'workspace:*'
+      )
+      .action(async (opts) => {
+        await runInitLibrary({
+          name: opts.name,
+          description: opts.description,
+          rig: opts.rig as RigType,
+          category: opts.category as CategoryType,
+          repoDir: opts.repoDir,
+          versionPolicy: opts.versionPolicy,
+          version: opts.initialVersion,
+          fgvDepVersion: opts.fgvDepVersion
         });
       });
 
