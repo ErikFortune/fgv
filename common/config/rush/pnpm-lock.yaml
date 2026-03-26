@@ -1537,11 +1537,27 @@ importers:
         specifier: 2.11.27
         version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
 
-  ../../scripts/template:
+  ../../tools/repo-template:
     dependencies:
+      commander:
+        specifier: ^11.0.0
+        version: 11.1.0
       jsonc-parser:
         specifier: ~3.3.1
         version: 3.3.1
+    devDependencies:
+      '@rushstack/heft':
+        specifier: 1.2.7
+        version: 1.2.7(@types/node@20.19.37)
+      '@rushstack/heft-node-rig':
+        specifier: 2.11.27
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.37
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
   ../../tools/ts-res-browser:
     dependencies:

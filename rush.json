@@ -548,7 +548,7 @@
     },
     {
       "packageName": "@fgv/repo-template",
-      "projectFolder": "scripts/template",
+      "projectFolder": "tools/repo-template",
       "shouldPublish": false,
       "tags": ["tools", "template"]
     }
