@@ -545,6 +545,13 @@
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries", "ui", "react"]
+    },
+    {
+      "packageName": "@fgv/repo-template",
+      "projectFolder": "tools/repo-template",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["tools", "template"]
     }
   ]
 }
