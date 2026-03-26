@@ -30,8 +30,8 @@
     "react": "~19.2.3",
     "react-dom": "~19.2.3",
     "react-router-dom": "^7.1.3",
-    "@rushstack/heft-web-rig": "1.4.2",
-    "@rushstack/heft": "1.2.6"
+    "@rushstack/heft-web-rig": "1.4.3",
+    "@rushstack/heft": "1.2.7"
   },
   "devDependencies": {
     "@types/react": "~19.2.8",
