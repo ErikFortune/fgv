@@ -1,30 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > recordFromEntries
 
-***
-
-[@fgv/ts-utils](../README.md) / recordFromEntries
-
-# Function: recordFromEntries()
-
-> **recordFromEntries**\<`TK`, `TV`\>(`entries`): `Record`\<`TK`, `TV`\>
+# Function: recordFromEntries
 
 Type-safe(ish) record constructor from an iterable of `[key, value]` tuples.
 
-## Type Parameters
+## Signature
 
-| Type Parameter |
-| ------ |
-| `TK` *extends* `string` |
-| `TV` |
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `entries` | `Iterable`\<\[`TK`, `TV`\]\> | The iterable of `[key, value]` tuples from which to construct the record. |
-
-## Returns
-
-`Record`\<`TK`, `TV`\>
-
-A record constructed from the supplied entries.
+```typescript
+function recordFromEntries(entries: Iterable<[TK, TV]>): Record<TK, TV>
+```

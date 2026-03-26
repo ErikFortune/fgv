@@ -1,15 +1,11 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > parseUrlParameters
 
-***
-
-[@fgv/ts-web-extras](../README.md) / parseUrlParameters
-
-# Function: parseUrlParameters()
-
-> **parseUrlParameters**(): [`IUrlConfigOptions`](../interfaces/IUrlConfigOptions.md)
+# Function: parseUrlParameters
 
 Parses URL parameters and extracts configuration options
 
-## Returns
+## Signature
 
-[`IUrlConfigOptions`](../interfaces/IUrlConfigOptions.md)
+```typescript
+function parseUrlParameters(): IUrlConfigOptions
+```

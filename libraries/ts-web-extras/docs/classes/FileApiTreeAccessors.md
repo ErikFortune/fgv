@@ -1,286 +1,172 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > FileApiTreeAccessors
 
-***
-
-[@fgv/ts-web-extras](../README.md) / FileApiTreeAccessors
-
-# Class: FileApiTreeAccessors\<TCT\>
+# Class: FileApiTreeAccessors
 
 Helper class to create FileTree instances from various file sources.
 Supports File API (FileList) and File System Access API handles.
 
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
-
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new FileApiTreeAccessors**\<`TCT`\>(): `FileApiTreeAccessors`\<`TCT`\>
+Constructor
 
-#### Returns
+</th><th>
 
-`FileApiTreeAccessors`\<`TCT`\>
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor()`
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### create()
+<table><thead><tr><th>
 
-> `static` **create**\<`TCT`\>(`initializers`, `params?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
+Method
 
-Create FileTree from various file sources using TreeInitializer array.
+</th><th>
 
-#### Type Parameters
+Modifiers
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+</th><th>
 
-#### Parameters
+Description
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `initializers` | [`TreeInitializer`](../type-aliases/TreeInitializer.md)[] | Array of TreeInitializer objects specifying file sources |
-| `params?` | [`IFileTreeInitParams`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\> | Optional `IFileTreeInitParams` for the file tree. |
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-#### Returns
+[createPersistent(dirHandle, params)](./FileApiTreeAccessors.createPersistent.md)
 
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
+</td><td>
 
-Promise resolving to a FileTree with all content pre-loaded
+`static`
 
-***
+</td><td>
 
-### createFromHttp()
+Create a persistent FileTree from a File System Access API directory handle.
 
-> `static` **createFromHttp**\<`TCT`\>(`params`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
+</td></tr>
+<tr><td>
+
+[createFromHttp(params)](./FileApiTreeAccessors.createFromHttp.md)
+
+</td><td>
+
+`static`
+
+</td><td>
 
 Create a persistent FileTree from an HTTP storage service.
 
-#### Type Parameters
+</td></tr>
+<tr><td>
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+[createPersistentFromFile(fileHandle, params)](./FileApiTreeAccessors.createPersistentFromFile.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `params` | [`IHttpTreeParams`](../interfaces/IHttpTreeParams.md)\<`TCT`\> | Configuration including API base URL, namespace, and optional autoSync |
+`static`
 
-#### Returns
-
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
-
-Promise resolving to a FileTree with persistence capability
-
-***
-
-### createFromLocalStorage()
-
-> `static` **createFromLocalStorage**\<`TCT`\>(`params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
-
-Create a persistent FileTree from browser localStorage.
-Changes to files can be synced back to localStorage.
-
-#### Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `params` | [`ILocalStorageTreeParams`](../interfaces/ILocalStorageTreeParams.md)\<`TCT`\> | Configuration including path-to-key mappings and optional autoSync |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
-
-Result containing a FileTree with persistence capability
-
-#### Remarks
-
-- Works in all browsers with localStorage support
-- Maps directory paths to localStorage keys
-- Each key stores multiple collections as JSON
-- Files are automatically discovered from storage
-
-#### Example
-
-```typescript
-const tree = FileApiTreeAccessors.createFromLocalStorage({
-  pathToKeyMap: {
-    '/data/ingredients': 'myapp:ingredients:v1',
-    '/data/fillings': 'myapp:fillings:v1'
-  },
-  mutable: true,
-  autoSync: false
-});
-```
-
-***
-
-### createPersistent()
-
-> `static` **createPersistent**\<`TCT`\>(`dirHandle`, `params?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
-
-Create a persistent FileTree from a File System Access API directory handle.
-Changes to files can be synced back to disk.
-
-#### Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `dirHandle` | [`FileSystemDirectoryHandle`](../interfaces/FileSystemDirectoryHandle.md) | FileSystemDirectoryHandle to load files from |
-| `params?` | [`IFileSystemAccessTreeParams`](../interfaces/IFileSystemAccessTreeParams.md)\<`TCT`\> | Optional parameters including autoSync and permission settings |
-
-#### Returns
-
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
-
-Promise resolving to a FileTree with persistence capability
-
-#### Remarks
-
-- Only works in browsers supporting File System Access API (Chrome, Edge, Opera)
-- Requires 'readwrite' permission on the directory handle
-- Falls back to read-only mode if permissions unavailable (unless requireWritePermission is true)
-
-***
-
-### createPersistentFromFile()
-
-> `static` **createPersistentFromFile**\<`TCT`\>(`fileHandle`, `params?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
+</td><td>
 
 Create a persistent FileTree from a single File System Access API file handle.
-The tree contains exactly one file at `/<filename>`.
-Changes can be synced back to the original file via `syncToDisk()`.
 
-#### Type Parameters
+</td></tr>
+<tr><td>
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+[createFromLocalStorage(params)](./FileApiTreeAccessors.createFromLocalStorage.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `fileHandle` | [`FileSystemFileHandle`](../interfaces/FileSystemFileHandle.md) | FileSystemFileHandle to load |
-| `params?` | [`IFileSystemAccessTreeParams`](../interfaces/IFileSystemAccessTreeParams.md)\<`TCT`\> | Optional parameters including autoSync and permission settings |
+`static`
 
-#### Returns
+</td><td>
 
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
+Create a persistent FileTree from browser localStorage.
 
-Promise resolving to a FileTree with persistence capability
+</td></tr>
+<tr><td>
 
-***
+[create(initializers, params)](./FileApiTreeAccessors.create.md)
 
-### extractFileMetadata()
+</td><td>
 
-> `static` **extractFileMetadata**(`file`): [`IFileMetadata`](../interfaces/IFileMetadata.md)
+`static`
 
-Extract file metadata from a File.
+</td><td>
 
-#### Parameters
+Create FileTree from various file sources using TreeInitializer array.
 
-| Parameter | Type |
-| ------ | ------ |
-| `file` | `File` |
+</td></tr>
+<tr><td>
 
-#### Returns
+[fromFileList(fileList, params)](./FileApiTreeAccessors.fromFileList.md)
 
-[`IFileMetadata`](../interfaces/IFileMetadata.md)
+</td><td>
 
-The [file metadata](../interfaces/IFileMetadata.md)
+`static`
 
-***
-
-### fromDirectoryUpload()
-
-> `static` **fromDirectoryUpload**\<`TCT`\>(`fileList`, `params?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
-
-Create FileTree from directory upload with webkitRelativePath.
-
-#### Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `fileList` | `FileList` | FileList from a directory upload (input with webkitdirectory) |
-| `params?` | [`IFileTreeInitParams`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\> | Optional `IFileTreeInitParams` for the file tree. |
-
-#### Returns
-
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
-
-Promise resolving to a FileTree with all content pre-loaded
-
-***
-
-### fromFileList()
-
-> `static` **fromFileList**\<`TCT`\>(`fileList`, `params?`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
+</td><td>
 
 Create FileTree from FileList (e.g., from input[type="file"]).
 
-#### Type Parameters
+</td></tr>
+<tr><td>
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+[fromDirectoryUpload(fileList, params)](./FileApiTreeAccessors.fromDirectoryUpload.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `fileList` | `FileList` | FileList from a file input element |
-| `params?` | [`IFileTreeInitParams`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\> | Optional `IFileTreeInitParams` for the file tree. |
+`static`
 
-#### Returns
+</td><td>
 
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>\>
+Create FileTree from directory upload with webkitRelativePath.
 
-Promise resolving to a FileTree with all content pre-loaded
+</td></tr>
+<tr><td>
 
-***
+[getOriginalFile(fileList, targetPath)](./FileApiTreeAccessors.getOriginalFile.md)
 
-### getOriginalFile()
+</td><td>
 
-> `static` **getOriginalFile**(`fileList`, `targetPath`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`File`\>
+`static`
+
+</td><td>
 
 Get the File object for a specific path from the original FileList.
-This is useful for accessing the original File API object for operations
-like getting file metadata, MIME type, etc.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `fileList` | `FileList` | The original FileList |
-| `targetPath` | `string` | The path to find |
+[extractFileMetadata(file)](./FileApiTreeAccessors.extractFileMetadata.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`File`\>
+`static`
 
-Result containing the File object if found
+</td><td>
+
+Extract file metadata from a File.
+
+</td></tr>
+</tbody></table>

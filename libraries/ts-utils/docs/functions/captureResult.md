@@ -1,32 +1,12 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > captureResult
 
-***
-
-[@fgv/ts-utils](../README.md) / captureResult
-
-# Function: captureResult()
-
-> **captureResult**\<`T`\>(`func`): [`Result`](../type-aliases/Result.md)\<`T`\>
+# Function: captureResult
 
 Wraps a function which might throw to convert exception results
-to [Failure](../classes/Failure.md).
+to Failure.
 
-## Type Parameters
+## Signature
 
-| Type Parameter |
-| ------ |
-| `T` |
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `func` | () => `T` | The function to be captured. |
-
-## Returns
-
-[`Result`](../type-aliases/Result.md)\<`T`\>
-
-Returns [Success](../classes/Success.md) with a value of type `<T>` on
-success , or [Failure](../classes/Failure.md) with the thrown error message if
-`func` throws an `Error`.
+```typescript
+function captureResult(func: () => T): Result<T>
+```

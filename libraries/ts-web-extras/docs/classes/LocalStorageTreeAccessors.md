@@ -1,10 +1,6 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > LocalStorageTreeAccessors
 
-***
-
-[@fgv/ts-web-extras](../README.md) / LocalStorageTreeAccessors
-
-# Class: LocalStorageTreeAccessors\<TCT\>
+# Class: LocalStorageTreeAccessors
 
 Browser localStorage-backed file tree accessors with persistence support.
 
@@ -17,504 +13,258 @@ File paths map as: `/data/ingredients/collection-id.yaml` → stored in key for 
 
 Legacy format (v1): `{ "collection-id": { ...parsedJsonObject } }` is auto-migrated on load.
 
-## Extends
+**Extends:** `InMemoryTreeAccessors<TCT>`
 
-- [`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
-
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
-
-## Implements
-
-- [`IPersistentFileTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
+**Implements:** `IPersistentFileTreeAccessors<TCT>`
 
 ## Methods
 
-### createDirectory()
+<table><thead><tr><th>
 
-> **createDirectory**(`dirPath`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
+Method
 
-FileTree.IMutableFileTreeAccessors.createDirectory
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type |
-| ------ | ------ |
-| `dirPath` | `string` |
+</th><th>
 
-#### Returns
+Description
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-#### Implementation of
+[fromStorage(params)](./LocalStorageTreeAccessors.fromStorage.md)
 
-`FileTree.IPersistentFileTreeAccessors.createDirectory`
+</td><td>
 
-#### Inherited from
+`static`
 
-`FileTree.InMemoryTreeAccessors.createDirectory`
+</td><td>
 
-***
+Create LocalStorageTreeAccessors from browser localStorage.
 
-### deleteDirectory()
+</td></tr>
+<tr><td>
 
-> **deleteDirectory**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+[create(files, prefix)](./LocalStorageTreeAccessors.create.md)
 
-FileTree.IMutableFileTreeAccessors.deleteDirectory
+</td><td>
 
-#### Parameters
+`static`
 
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
+</td><td>
 
-#### Returns
+Creates a new FileTree.InMemoryTreeAccessors | InMemoryTreeAccessors instance with the supplied
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
+</td></tr>
+<tr><td>
 
-#### Implementation of
+[syncToDisk()](./LocalStorageTreeAccessors.syncToDisk.md)
 
-`FileTree.IPersistentFileTreeAccessors.deleteDirectory`
+</td><td>
 
-#### Inherited from
 
-`FileTree.InMemoryTreeAccessors.deleteDirectory`
 
-***
-
-### deleteFile()
-
-> **deleteFile**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
-
-Delete a file and remove it from localStorage.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `path` | `string` | File path to delete |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
-
-Result with true if deleted, or error
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.deleteFile`
-
-#### Overrides
-
-`FileTree.InMemoryTreeAccessors.deleteFile`
-
-***
-
-### fileIsMutable()
-
-> **fileIsMutable**(`path`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
-
-Check if a file is mutable and return persistence detail.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `path` | `string` | File path to check |
-
-#### Returns
-
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
-
-DetailedResult with mutability status and 'persistent' detail if mutable
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.fileIsMutable`
-
-#### Overrides
-
-`FileTree.InMemoryTreeAccessors.fileIsMutable`
-
-***
-
-### getBaseName()
-
-> **getBaseName**(`path`, `suffix?`): `string`
-
-FileTree.IFileTreeAccessors.getBaseName
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-| `suffix?` | `string` |
-
-#### Returns
-
-`string`
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getBaseName`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getBaseName`
-
-***
-
-### getChildren()
-
-> **getChildren**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>[]\>
-
-FileTree.IFileTreeAccessors.getChildren
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>[]\>
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getChildren`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getChildren`
-
-***
-
-### getDirtyPaths()
-
-> **getDirtyPaths**(): `string`[]
-
-Get list of file paths with unsaved changes.
-
-#### Returns
-
-`string`[]
-
-Array of dirty file paths
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getDirtyPaths`
-
-***
-
-### getExtension()
-
-> **getExtension**(`path`): `string`
-
-FileTree.IFileTreeAccessors.getExtension
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-
-#### Returns
-
-`string`
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getExtension`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getExtension`
-
-***
-
-### getFileContents()
-
-> **getFileContents**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-FileTree.IFileTreeAccessors.getFileContents
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getFileContents`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getFileContents`
-
-***
-
-### getFileContentType()
-
-> **getFileContentType**(`path`, `provided?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TCT` \| `undefined`\>
-
-FileTree.IFileTreeAccessors.getFileContentType
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-| `provided?` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TCT` \| `undefined`\>
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getFileContentType`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getFileContentType`
-
-***
-
-### getItem()
-
-> **getItem**(`itemPath`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
-
-FileTree.IFileTreeAccessors.getItem
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `itemPath` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getItem`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getItem`
-
-***
-
-### isDirty()
-
-> **isDirty**(): `boolean`
-
-Check if there are unsaved changes.
-
-#### Returns
-
-`boolean`
-
-True if there are dirty files
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.isDirty`
-
-***
-
-### joinPaths()
-
-> **joinPaths**(...`paths`): `string`
-
-FileTree.IFileTreeAccessors.joinPaths
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| ...`paths` | `string`[] |
-
-#### Returns
-
-`string`
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.joinPaths`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.joinPaths`
-
-***
-
-### resolveAbsolutePath()
-
-> **resolveAbsolutePath**(...`paths`): `string`
-
-FileTree.IFileTreeAccessors.resolveAbsolutePath
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| ...`paths` | `string`[] |
-
-#### Returns
-
-`string`
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.resolveAbsolutePath`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.resolveAbsolutePath`
-
-***
-
-### saveFileContents()
-
-> **saveFileContents**(`path`, `contents`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-Save file contents. Marks file as dirty and optionally auto-syncs.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `path` | `string` | File path |
-| `contents` | `string` | New file contents |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-Result with the saved contents or error
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.saveFileContents`
-
-#### Overrides
-
-`FileTree.InMemoryTreeAccessors.saveFileContents`
-
-***
-
-### syncToDisk()
-
-> **syncToDisk**(): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>\>
+</td><td>
 
 Sync all dirty files to localStorage.
 
-#### Returns
+</td></tr>
+<tr><td>
 
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>\>
+[isDirty()](./LocalStorageTreeAccessors.isDirty.md)
 
-Result indicating success or failure
+</td><td>
 
-#### Implementation of
 
-`FileTree.IPersistentFileTreeAccessors.syncToDisk`
 
-***
+</td><td>
 
-### create()
+Check if there are unsaved changes.
 
-#### Call Signature
+</td></tr>
+<tr><td>
 
-> `static` **create**\<`TCT`\>(`files`, `prefix?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
+[getDirtyPaths()](./LocalStorageTreeAccessors.getDirtyPaths.md)
 
-Creates a new [InMemoryTreeAccessors](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) instance with the supplied
-in-memory files.
+</td><td>
 
-##### Type Parameters
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
 
-##### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `files` | [`IInMemoryFile`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>[] | An array of [in-memory files](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) to include in the tree. |
-| `prefix?` | `string` | Optional prefix for the tree. |
+Get list of file paths with unsaved changes.
 
-##### Returns
+</td></tr>
+<tr><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
+[deleteFile(path)](./LocalStorageTreeAccessors.deleteFile.md)
 
-##### Inherited from
+</td><td>
 
-`FileTree.InMemoryTreeAccessors.create`
 
-#### Call Signature
 
-> `static` **create**\<`TCT`\>(`files`, `params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
+</td><td>
 
-Creates a new [InMemoryTreeAccessors](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) instance with the supplied
-in-memory files.
+Delete a file and remove it from localStorage.
 
-##### Type Parameters
+</td></tr>
+<tr><td>
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+[saveFileContents(path, contents)](./LocalStorageTreeAccessors.saveFileContents.md)
 
-##### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `files` | [`IInMemoryFile`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>[] | An array of [in-memory files](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) to include in the tree. |
-| `params?` | [`IFileTreeInitParams`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\> | Optional params for the tree. |
 
-##### Returns
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
+</td><td>
 
-##### Inherited from
+Save file contents.
 
-`FileTree.InMemoryTreeAccessors.create`
+</td></tr>
+<tr><td>
 
-***
+[fileIsMutable(path)](./LocalStorageTreeAccessors.fileIsMutable.md)
 
-### fromStorage()
+</td><td>
 
-> `static` **fromStorage**\<`TCT`\>(`params`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`LocalStorageTreeAccessors`\<`TCT`\>\>
 
-Create LocalStorageTreeAccessors from browser localStorage.
-Loads all collections from the configured storage keys.
 
-#### Type Parameters
+</td><td>
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+Check if a file is mutable and return persistence detail.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `params` | [`ILocalStorageTreeParams`](../interfaces/ILocalStorageTreeParams.md)\<`TCT`\> | Configuration including path-to-key mappings |
+[resolveAbsolutePath(paths)](./LocalStorageTreeAccessors.resolveAbsolutePath.md)
 
-#### Returns
+</td><td>
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`LocalStorageTreeAccessors`\<`TCT`\>\>
 
-Result containing the accessors or an error
+
+</td><td>
+
+FileTree.IFileTreeAccessors.resolveAbsolutePath
+
+</td></tr>
+<tr><td>
+
+[getExtension(path)](./LocalStorageTreeAccessors.getExtension.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getExtension
+
+</td></tr>
+<tr><td>
+
+[getBaseName(path, suffix)](./LocalStorageTreeAccessors.getBaseName.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getBaseName
+
+</td></tr>
+<tr><td>
+
+[joinPaths(paths)](./LocalStorageTreeAccessors.joinPaths.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.joinPaths
+
+</td></tr>
+<tr><td>
+
+[getItem(itemPath)](./LocalStorageTreeAccessors.getItem.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getItem
+
+</td></tr>
+<tr><td>
+
+[getFileContents(path)](./LocalStorageTreeAccessors.getFileContents.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getFileContents
+
+</td></tr>
+<tr><td>
+
+[getFileContentType(path, provided)](./LocalStorageTreeAccessors.getFileContentType.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getFileContentType
+
+</td></tr>
+<tr><td>
+
+[getChildren(path)](./LocalStorageTreeAccessors.getChildren.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getChildren
+
+</td></tr>
+<tr><td>
+
+[createDirectory(dirPath)](./LocalStorageTreeAccessors.createDirectory.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IMutableFileTreeAccessors.createDirectory
+
+</td></tr>
+<tr><td>
+
+[deleteDirectory(path)](./LocalStorageTreeAccessors.deleteDirectory.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IMutableFileTreeAccessors.deleteDirectory
+
+</td></tr>
+</tbody></table>

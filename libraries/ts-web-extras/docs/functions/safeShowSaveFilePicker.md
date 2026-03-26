@@ -1,24 +1,11 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > safeShowSaveFilePicker
 
-***
-
-[@fgv/ts-web-extras](../README.md) / safeShowSaveFilePicker
-
-# Function: safeShowSaveFilePicker()
-
-> **safeShowSaveFilePicker**(`window`, `options?`): `Promise`\<[`FileSystemFileHandle`](../interfaces/FileSystemFileHandle.md) \| `null`\>
+# Function: safeShowSaveFilePicker
 
 Safely access showSaveFilePicker with proper type checking
 
-## Parameters
+## Signature
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `window` | `Window` | The window object |
-| `options?` | [`ShowSaveFilePickerOptions`](../interfaces/ShowSaveFilePickerOptions.md) | Options for the file picker |
-
-## Returns
-
-`Promise`\<[`FileSystemFileHandle`](../interfaces/FileSystemFileHandle.md) \| `null`\>
-
-Promise with file handle or null if not supported
+```typescript
+function safeShowSaveFilePicker(window: Window, options: ShowSaveFilePickerOptions): Promise<FileSystemFileHandle | null>
+```

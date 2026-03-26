@@ -1,8 +1,4 @@
-[**@fgv/ts-utils**](../README.md)
-
-***
-
-[@fgv/ts-utils](../README.md) / IMessageAggregator
+[Home](../README.md) > IMessageAggregator
 
 # Interface: IMessageAggregator
 
@@ -11,64 +7,130 @@ a flow.
 
 ## Properties
 
-| Property | Modifier | Type | Description |
-| ------ | ------ | ------ | ------ |
-| <a id="hasmessages"></a> `hasMessages` | `readonly` | `boolean` | Indicates whether any messages have been aggregated. |
-| <a id="messages"></a> `messages` | `readonly` | readonly `string`[] | The aggregated messages. |
-| <a id="nummessages"></a> `numMessages` | `readonly` | `number` | The number of messages aggregated. |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[hasMessages](./IMessageAggregator.hasMessages.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Indicates whether any messages have been aggregated.
+
+</td></tr>
+<tr><td>
+
+[numMessages](./IMessageAggregator.numMessages.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+The number of messages aggregated.
+
+</td></tr>
+<tr><td>
+
+[messages](./IMessageAggregator.messages.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+The aggregated messages.
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### addMessage()
+<table><thead><tr><th>
 
-> **addMessage**(`message`): `this`
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[addMessage(message)](./IMessageAggregator.addMessage.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Adds a message to the aggregator, if defined.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `message` | `string` \| `undefined` | The message to add - pass `undefined` or the empty string to continue without adding a message. |
+[addMessages(messages)](./IMessageAggregator.addMessages.md)
 
-#### Returns
+</td><td>
 
-`this`
 
-***
 
-### addMessages()
-
-> **addMessages**(`messages`): `this`
+</td><td>
 
 Adds multiple messages to the aggregator.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `messages` | `string`[] \| `undefined` | the messages to add. |
+[toString(separator)](./IMessageAggregator.toString.md)
 
-#### Returns
+</td><td>
 
-`this`
 
-***
 
-### toString()
-
-> **toString**(`separator?`): `string`
+</td><td>
 
 Returns all messages as a single string joined
-using the optionally-supplied `separator`, or
-newline if no separator is specified.
 
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `separator?` | `string` | The optional separator used to join strings. |
-
-#### Returns
-
-`string`
+</td></tr>
+</tbody></table>

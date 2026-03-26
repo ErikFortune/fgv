@@ -1,8 +1,4 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / FilePickerAcceptType
+[Home](../README.md) > FilePickerAcceptType
 
 # Interface: FilePickerAcceptType
 
@@ -10,7 +6,56 @@ File picker accept type
 
 ## Properties
 
-| Property | Type |
-| ------ | ------ |
-| <a id="accept"></a> `accept` | `Record`\<`string`, `string` \| `string`[]\> |
-| <a id="description"></a> `description?` | `string` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[description](./FilePickerAcceptType.description.md)
+
+</td><td>
+
+
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[accept](./FilePickerAcceptType.accept.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Record&lt;string, string | string[]&gt;
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

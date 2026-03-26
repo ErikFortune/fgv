@@ -1,34 +1,36 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > IResultLogger
 
-***
+# Interface: IResultLogger
 
-[@fgv/ts-utils](../README.md) / IResultLogger
-
-# Interface: IResultLogger\<TD\>
-
-Simple logger interface used by [orThrow(logger)](IResult.md#orthrow) and [orThrow(formatter)](IResult.md#orthrow).
-
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TD` | `unknown` |
+Simple logger interface used by IResult.orThrow | orThrow(logger) and IResult.orThrow | orThrow(formatter).
 
 ## Methods
 
-### error()
+<table><thead><tr><th>
 
-> **error**(`message`, `detail?`): `void`
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[error(message, detail)](./IResultLogger.error.md)
+
+</td><td>
+
+
+
+</td><td>
 
 Log an error message.
 
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `message` | `string` | The message to be logged. |
-| `detail?` | `TD` | - |
-
-#### Returns
-
-`void`
+</td></tr>
+</tbody></table>

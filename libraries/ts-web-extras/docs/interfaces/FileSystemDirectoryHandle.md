@@ -1,187 +1,224 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / FileSystemDirectoryHandle
+[Home](../README.md) > FileSystemDirectoryHandle
 
 # Interface: FileSystemDirectoryHandle
 
 Directory handle interface
 
-## Extends
-
-- [`FileSystemHandle`](FileSystemHandle.md)
+**Extends:** [`FileSystemHandle`](FileSystemHandle.md)
 
 ## Properties
 
-| Property | Modifier | Type |
-| ------ | ------ | ------ |
-| <a id="kind"></a> `kind` | `readonly` | `"directory"` |
-| <a id="name"></a> `name` | `readonly` | `string` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[kind](./FileSystemDirectoryHandle.kind.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+"directory"
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[name](./FileSystemHandle.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### \[asyncIterator\]()
+<table><thead><tr><th>
 
-> **\[asyncIterator\]**(): `AsyncIterableIterator`\<\[`string`, [`FileSystemHandle`](FileSystemHandle.md)\]\>
+Method
 
-#### Returns
+</th><th>
 
-`AsyncIterableIterator`\<\[`string`, [`FileSystemHandle`](FileSystemHandle.md)\]\>
+Modifiers
 
-***
+</th><th>
 
-### entries()
+Description
 
-> **entries**(): `AsyncIterableIterator`\<\[`string`, [`FileSystemHandle`](FileSystemHandle.md)\]\>
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-#### Returns
+[getDirectoryHandle(name, options)](./FileSystemDirectoryHandle.getDirectoryHandle.md)
 
-`AsyncIterableIterator`\<\[`string`, [`FileSystemHandle`](FileSystemHandle.md)\]\>
+</td><td>
 
-***
 
-### getDirectoryHandle()
 
-> **getDirectoryHandle**(`name`, `options?`): `Promise`\<`FileSystemDirectoryHandle`\>
+</td><td>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `name` | `string` |
-| `options?` | [`FileSystemGetDirectoryOptions`](FileSystemGetDirectoryOptions.md) |
 
-#### Returns
+</td></tr>
+<tr><td>
 
-`Promise`\<`FileSystemDirectoryHandle`\>
+[getFileHandle(name, options)](./FileSystemDirectoryHandle.getFileHandle.md)
 
-***
+</td><td>
 
-### getFileHandle()
 
-> **getFileHandle**(`name`, `options?`): `Promise`\<[`FileSystemFileHandle`](FileSystemFileHandle.md)\>
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `name` | `string` |
-| `options?` | [`FileSystemGetFileOptions`](FileSystemGetFileOptions.md) |
 
-#### Returns
 
-`Promise`\<[`FileSystemFileHandle`](FileSystemFileHandle.md)\>
+</td></tr>
+<tr><td>
 
-***
+[removeEntry(name, options)](./FileSystemDirectoryHandle.removeEntry.md)
 
-### isSameEntry()
+</td><td>
 
-> **isSameEntry**(`other`): `Promise`\<`boolean`\>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `other` | [`FileSystemHandle`](FileSystemHandle.md) |
+</td><td>
 
-#### Returns
 
-`Promise`\<`boolean`\>
 
-#### Inherited from
+</td></tr>
+<tr><td>
 
-[`FileSystemHandle`](FileSystemHandle.md).[`isSameEntry`](FileSystemHandle.md#issameentry)
+[resolve(possibleDescendant)](./FileSystemDirectoryHandle.resolve.md)
 
-***
+</td><td>
 
-### keys()
 
-> **keys**(): `AsyncIterableIterator`\<`string`\>
 
-#### Returns
+</td><td>
 
-`AsyncIterableIterator`\<`string`\>
 
-***
 
-### queryPermission()
+</td></tr>
+<tr><td>
 
-> **queryPermission**(`descriptor?`): `Promise`\<`PermissionState`\>
+[keys()](./FileSystemDirectoryHandle.keys.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `descriptor?` | [`FileSystemHandlePermissionDescriptor`](FileSystemHandlePermissionDescriptor.md) |
 
-#### Returns
 
-`Promise`\<`PermissionState`\>
+</td><td>
 
-#### Inherited from
 
-[`FileSystemHandle`](FileSystemHandle.md).[`queryPermission`](FileSystemHandle.md#querypermission)
 
-***
+</td></tr>
+<tr><td>
 
-### removeEntry()
+[values()](./FileSystemDirectoryHandle.values.md)
 
-> **removeEntry**(`name`, `options?`): `Promise`\<`void`\>
+</td><td>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `name` | `string` |
-| `options?` | [`FileSystemRemoveOptions`](FileSystemRemoveOptions.md) |
 
-#### Returns
+</td><td>
 
-`Promise`\<`void`\>
 
-***
 
-### requestPermission()
+</td></tr>
+<tr><td>
 
-> **requestPermission**(`descriptor?`): `Promise`\<`PermissionState`\>
+[entries()](./FileSystemDirectoryHandle.entries.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `descriptor?` | [`FileSystemHandlePermissionDescriptor`](FileSystemHandlePermissionDescriptor.md) |
 
-#### Returns
 
-`Promise`\<`PermissionState`\>
+</td><td>
 
-#### Inherited from
 
-[`FileSystemHandle`](FileSystemHandle.md).[`requestPermission`](FileSystemHandle.md#requestpermission)
 
-***
+</td></tr>
+<tr><td>
 
-### resolve()
+[[asyncIterator]()](./FileSystemDirectoryHandle._asyncIterator_.md)
 
-> **resolve**(`possibleDescendant`): `Promise`\<`string`[] \| `null`\>
+</td><td>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `possibleDescendant` | [`FileSystemHandle`](FileSystemHandle.md) |
 
-#### Returns
+</td><td>
 
-`Promise`\<`string`[] \| `null`\>
 
-***
 
-### values()
+</td></tr>
+<tr><td>
 
-> **values**(): `AsyncIterableIterator`\<[`FileSystemHandle`](FileSystemHandle.md)\>
+[isSameEntry(other)](./FileSystemHandle.isSameEntry.md)
 
-#### Returns
+</td><td>
 
-`AsyncIterableIterator`\<[`FileSystemHandle`](FileSystemHandle.md)\>
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[queryPermission(descriptor)](./FileSystemHandle.queryPermission.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[requestPermission(descriptor)](./FileSystemHandle.requestPermission.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

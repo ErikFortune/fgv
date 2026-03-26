@@ -1,18 +1,12 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > FieldInitializers
 
-***
+# Type Alias: FieldInitializers
 
-[@fgv/ts-utils](../README.md) / FieldInitializers
+String-keyed record of initialization functions to be passed to populateObject
+or populateObject.
 
-# Type Alias: FieldInitializers\<T\>
+## Type
 
-> **FieldInitializers**\<`T`\> = `{ [key in keyof T]: (state: Partial<T>) => Result<T[key]> }`
-
-String-keyed record of initialization functions to be passed to [populateObject](../functions/populateObject.md)
-or [populateObject](../functions/populateObject.md).
-
-## Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
+```typescript
+type FieldInitializers = { [key in keyof T]: (state: Partial<T>) => Result<T[key]> }
+```

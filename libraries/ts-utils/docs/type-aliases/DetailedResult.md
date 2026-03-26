@@ -1,20 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > DetailedResult
 
-***
-
-[@fgv/ts-utils](../README.md) / DetailedResult
-
-# Type Alias: DetailedResult\<T, TD\>
-
-> **DetailedResult**\<`T`, `TD`\> = [`DetailedSuccess`](../classes/DetailedSuccess.md)\<`T`, `TD`\> \| [`DetailedFailure`](../classes/DetailedFailure.md)\<`T`, `TD`\>
-
-**`Beta`**
+# Type Alias: DetailedResult
 
 Represents a result with additional detail.
 
-## Type Parameters
+## Type
 
-| Type Parameter |
-| ------ |
-| `T` |
-| `TD` |
+```typescript
+type DetailedResult = DetailedSuccess<T, TD> | DetailedFailure<T, TD>
+```

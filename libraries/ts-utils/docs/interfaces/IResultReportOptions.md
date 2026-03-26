@@ -1,22 +1,61 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > IResultReportOptions
 
-***
-
-[@fgv/ts-utils](../README.md) / IResultReportOptions
-
-# Interface: IResultReportOptions\<TD\>
+# Interface: IResultReportOptions
 
 Options for reporting a result.
 
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TD` | `unknown` |
-
 ## Properties
 
-| Property | Type | Description |
-| ------ | ------ | ------ |
-| <a id="failure"></a> `failure?` | [`MessageLogLevel`](../type-aliases/MessageLogLevel.md) \| [`IMessageReportDetail`](IMessageReportDetail.md)\<`TD`\> | The level of reporting to be used for failure results. Default is 'error'. |
-| <a id="success"></a> `success?` | [`MessageLogLevel`](../type-aliases/MessageLogLevel.md) \| [`IMessageReportDetail`](IMessageReportDetail.md)\<`TD`\> | The level of reporting to be used for success results. Default is 'quiet'. |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[failure](./IResultReportOptions.failure.md)
+
+</td><td>
+
+
+
+</td><td>
+
+[MessageLogLevel](../type-aliases/MessageLogLevel.md) | [IMessageReportDetail](IMessageReportDetail.md)&lt;TD&gt;
+
+</td><td>
+
+The level of reporting to be used for failure results.
+
+</td></tr>
+<tr><td>
+
+[success](./IResultReportOptions.success.md)
+
+</td><td>
+
+
+
+</td><td>
+
+[MessageLogLevel](../type-aliases/MessageLogLevel.md) | [IMessageReportDetail](IMessageReportDetail.md)&lt;TD&gt;
+
+</td><td>
+
+The level of reporting to be used for success results.
+
+</td></tr>
+</tbody></table>

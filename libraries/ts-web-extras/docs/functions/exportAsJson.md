@@ -1,23 +1,12 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > exportAsJson
 
-***
-
-[@fgv/ts-web-extras](../README.md) / exportAsJson
-
-# Function: exportAsJson()
-
-> **exportAsJson**(`data`, `filename`): `void`
+# Function: exportAsJson
 
 Export data as JSON file using legacy blob download method.
 Creates a temporary download link and triggers file download.
 
-## Parameters
+## Signature
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `data` | `unknown` | Data to export as JSON |
-| `filename` | `string` | Name for the downloaded file |
-
-## Returns
-
-`void`
+```typescript
+function exportAsJson(data: unknown, filename: string): void
+```

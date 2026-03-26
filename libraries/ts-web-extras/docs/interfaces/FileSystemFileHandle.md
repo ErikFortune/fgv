@@ -1,106 +1,146 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / FileSystemFileHandle
+[Home](../README.md) > FileSystemFileHandle
 
 # Interface: FileSystemFileHandle
 
 File handle interface
 
-## Extends
-
-- [`FileSystemHandle`](FileSystemHandle.md)
+**Extends:** [`FileSystemHandle`](FileSystemHandle.md)
 
 ## Properties
 
-| Property | Modifier | Type |
-| ------ | ------ | ------ |
-| <a id="kind"></a> `kind` | `readonly` | `"file"` |
-| <a id="name"></a> `name` | `readonly` | `string` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[kind](./FileSystemFileHandle.kind.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+"file"
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[name](./FileSystemHandle.name.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### createWritable()
+<table><thead><tr><th>
 
-> **createWritable**(`options?`): `Promise`\<[`FileSystemWritableFileStream`](FileSystemWritableFileStream.md)\>
+Method
 
-#### Parameters
+</th><th>
 
-| Parameter | Type |
-| ------ | ------ |
-| `options?` | [`FileSystemCreateWritableOptions`](FileSystemCreateWritableOptions.md) |
+Modifiers
 
-#### Returns
+</th><th>
 
-`Promise`\<[`FileSystemWritableFileStream`](FileSystemWritableFileStream.md)\>
+Description
 
-***
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-### getFile()
+[getFile()](./FileSystemFileHandle.getFile.md)
 
-> **getFile**(): `Promise`\<`File`\>
+</td><td>
 
-#### Returns
 
-`Promise`\<`File`\>
 
-***
+</td><td>
 
-### isSameEntry()
 
-> **isSameEntry**(`other`): `Promise`\<`boolean`\>
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `other` | [`FileSystemHandle`](FileSystemHandle.md) |
+[createWritable(options)](./FileSystemFileHandle.createWritable.md)
 
-#### Returns
+</td><td>
 
-`Promise`\<`boolean`\>
 
-#### Inherited from
 
-[`FileSystemHandle`](FileSystemHandle.md).[`isSameEntry`](FileSystemHandle.md#issameentry)
+</td><td>
 
-***
 
-### queryPermission()
 
-> **queryPermission**(`descriptor?`): `Promise`\<`PermissionState`\>
+</td></tr>
+<tr><td>
 
-#### Parameters
+[isSameEntry(other)](./FileSystemHandle.isSameEntry.md)
 
-| Parameter | Type |
-| ------ | ------ |
-| `descriptor?` | [`FileSystemHandlePermissionDescriptor`](FileSystemHandlePermissionDescriptor.md) |
+</td><td>
 
-#### Returns
 
-`Promise`\<`PermissionState`\>
 
-#### Inherited from
+</td><td>
 
-[`FileSystemHandle`](FileSystemHandle.md).[`queryPermission`](FileSystemHandle.md#querypermission)
 
-***
 
-### requestPermission()
+</td></tr>
+<tr><td>
 
-> **requestPermission**(`descriptor?`): `Promise`\<`PermissionState`\>
+[queryPermission(descriptor)](./FileSystemHandle.queryPermission.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `descriptor?` | [`FileSystemHandlePermissionDescriptor`](FileSystemHandlePermissionDescriptor.md) |
 
-#### Returns
 
-`Promise`\<`PermissionState`\>
+</td><td>
 
-#### Inherited from
 
-[`FileSystemHandle`](FileSystemHandle.md).[`requestPermission`](FileSystemHandle.md#requestpermission)
+
+</td></tr>
+<tr><td>
+
+[requestPermission(descriptor)](./FileSystemHandle.requestPermission.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

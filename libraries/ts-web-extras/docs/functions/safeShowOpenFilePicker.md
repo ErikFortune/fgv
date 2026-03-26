@@ -1,24 +1,11 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > safeShowOpenFilePicker
 
-***
-
-[@fgv/ts-web-extras](../README.md) / safeShowOpenFilePicker
-
-# Function: safeShowOpenFilePicker()
-
-> **safeShowOpenFilePicker**(`window`, `options?`): `Promise`\<[`FileSystemFileHandle`](../interfaces/FileSystemFileHandle.md)[] \| `null`\>
+# Function: safeShowOpenFilePicker
 
 Safely access showOpenFilePicker with proper type checking
 
-## Parameters
+## Signature
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `window` | `Window` | The window object |
-| `options?` | [`ShowOpenFilePickerOptions`](../interfaces/ShowOpenFilePickerOptions.md) | Options for the file picker |
-
-## Returns
-
-`Promise`\<[`FileSystemFileHandle`](../interfaces/FileSystemFileHandle.md)[] \| `null`\>
-
-Promise with file handles or null if not supported
+```typescript
+function safeShowOpenFilePicker(window: Window, options: ShowOpenFilePickerOptions): Promise<FileSystemFileHandle[] | null>
+```

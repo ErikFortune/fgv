@@ -1,508 +1,261 @@
-[**@fgv/ts-web-extras**](../README.md)
+[Home](../README.md) > HttpTreeAccessors
 
-***
-
-[@fgv/ts-web-extras](../README.md) / HttpTreeAccessors
-
-# Class: HttpTreeAccessors\<TCT\>
+# Class: HttpTreeAccessors
 
 HTTP-backed file tree accessors that cache data in memory and persist via REST API.
 
-## Extends
+**Extends:** `InMemoryTreeAccessors<TCT>`
 
-- [`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
-
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
-
-## Implements
-
-- [`IPersistentFileTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
+**Implements:** `IPersistentFileTreeAccessors<TCT>`
 
 ## Methods
 
-### createDirectory()
+<table><thead><tr><th>
 
-> **createDirectory**(`dirPath`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
+Method
 
-FileTree.IMutableFileTreeAccessors.createDirectory
+</th><th>
 
-#### Parameters
+Modifiers
 
-| Parameter | Type |
-| ------ | ------ |
-| `dirPath` | `string` |
+</th><th>
 
-#### Returns
+Description
 
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-#### Implementation of
+[fromHttp(params)](./HttpTreeAccessors.fromHttp.md)
 
-`FileTree.IPersistentFileTreeAccessors.createDirectory`
+</td><td>
 
-#### Inherited from
+`static`
 
-`FileTree.InMemoryTreeAccessors.createDirectory`
-
-***
-
-### deleteDirectory()
-
-> **deleteDirectory**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
-
-FileTree.IMutableFileTreeAccessors.deleteDirectory
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.deleteDirectory`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.deleteDirectory`
-
-***
-
-### deleteFile()
-
-> **deleteFile**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
-
-FileTree.IMutableFileTreeAccessors.deleteFile
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`\>
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.deleteFile`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.deleteFile`
-
-***
-
-### fileIsMutable()
-
-> **fileIsMutable**(`path`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
-
-Checks if a file is mutable (can be modified).
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `path` | `string` | The path to the file. |
-
-#### Returns
-
-[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`boolean`, [`SaveDetail`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
-
-A detailed result indicating if the file is mutable and the reason.
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.fileIsMutable`
-
-#### Overrides
-
-`FileTree.InMemoryTreeAccessors.fileIsMutable`
-
-***
-
-### getBaseName()
-
-> **getBaseName**(`path`, `suffix?`): `string`
-
-FileTree.IFileTreeAccessors.getBaseName
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-| `suffix?` | `string` |
-
-#### Returns
-
-`string`
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getBaseName`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getBaseName`
-
-***
-
-### getChildren()
-
-> **getChildren**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>[]\>
-
-FileTree.IFileTreeAccessors.getChildren
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<readonly [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>[]\>
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getChildren`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getChildren`
-
-***
-
-### getDirtyPaths()
-
-> **getDirtyPaths**(): `string`[]
-
-Gets the list of paths for all dirty files.
-
-#### Returns
-
-`string`[]
-
-An array of file paths that have been modified but not yet synchronized.
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getDirtyPaths`
-
-***
-
-### getExtension()
-
-> **getExtension**(`path`): `string`
-
-FileTree.IFileTreeAccessors.getExtension
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-
-#### Returns
-
-`string`
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getExtension`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getExtension`
-
-***
-
-### getFileContents()
-
-> **getFileContents**(`path`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-FileTree.IFileTreeAccessors.getFileContents
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getFileContents`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getFileContents`
-
-***
-
-### getFileContentType()
-
-> **getFileContentType**(`path`, `provided?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TCT` \| `undefined`\>
-
-FileTree.IFileTreeAccessors.getFileContentType
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
-| `provided?` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`TCT` \| `undefined`\>
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getFileContentType`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getFileContentType`
-
-***
-
-### getItem()
-
-> **getItem**(`itemPath`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
-
-FileTree.IFileTreeAccessors.getItem
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `itemPath` | `string` |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.getItem`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.getItem`
-
-***
-
-### isDirty()
-
-> **isDirty**(): `boolean`
-
-Checks if there are any dirty files that need synchronization.
-
-#### Returns
-
-`boolean`
-
-True if there are dirty files, false otherwise.
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.isDirty`
-
-***
-
-### joinPaths()
-
-> **joinPaths**(...`paths`): `string`
-
-FileTree.IFileTreeAccessors.joinPaths
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| ...`paths` | `string`[] |
-
-#### Returns
-
-`string`
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.joinPaths`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.joinPaths`
-
-***
-
-### resolveAbsolutePath()
-
-> **resolveAbsolutePath**(...`paths`): `string`
-
-FileTree.IFileTreeAccessors.resolveAbsolutePath
-
-#### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| ...`paths` | `string`[] |
-
-#### Returns
-
-`string`
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.resolveAbsolutePath`
-
-#### Inherited from
-
-`FileTree.InMemoryTreeAccessors.resolveAbsolutePath`
-
-***
-
-### saveFileContents()
-
-> **saveFileContents**(`path`, `contents`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-Saves file contents and marks the file as dirty for synchronization.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `path` | `string` | The path to the file. |
-| `contents` | `string` | The new contents of the file. |
-
-#### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`\>
-
-A result indicating success or failure.
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.saveFileContents`
-
-#### Overrides
-
-`FileTree.InMemoryTreeAccessors.saveFileContents`
-
-***
-
-### syncToDisk()
-
-> **syncToDisk**(): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>\>
-
-Synchronizes all dirty files to the HTTP backend.
-
-#### Returns
-
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>\>
-
-A promise that resolves to a result indicating success or failure.
-
-#### Implementation of
-
-`FileTree.IPersistentFileTreeAccessors.syncToDisk`
-
-***
-
-### create()
-
-#### Call Signature
-
-> `static` **create**\<`TCT`\>(`files`, `prefix?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
-
-Creates a new [InMemoryTreeAccessors](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) instance with the supplied
-in-memory files.
-
-##### Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
-
-##### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `files` | [`IInMemoryFile`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>[] | An array of [in-memory files](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) to include in the tree. |
-| `prefix?` | `string` | Optional prefix for the tree. |
-
-##### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
-
-##### Inherited from
-
-`FileTree.InMemoryTreeAccessors.create`
-
-#### Call Signature
-
-> `static` **create**\<`TCT`\>(`files`, `params?`): [`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
-
-Creates a new [InMemoryTreeAccessors](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) instance with the supplied
-in-memory files.
-
-##### Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
-
-##### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `files` | [`IInMemoryFile`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>[] | An array of [in-memory files](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) to include in the tree. |
-| `params?` | [`IFileTreeInitParams`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\> | Optional params for the tree. |
-
-##### Returns
-
-[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>\>
-
-##### Inherited from
-
-`FileTree.InMemoryTreeAccessors.create`
-
-***
-
-### fromHttp()
-
-> `static` **fromHttp**\<`TCT`\>(`params`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`HttpTreeAccessors`\<`TCT`\>\>\>
+</td><td>
 
 Creates a new HttpTreeAccessors instance from an HTTP backend.
 
-#### Type Parameters
+</td></tr>
+<tr><td>
 
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+[create(files, prefix)](./HttpTreeAccessors.create.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `params` | [`IHttpTreeParams`](../interfaces/IHttpTreeParams.md)\<`TCT`\> | Configuration parameters for the HTTP tree accessors. |
+`static`
 
-#### Returns
+</td><td>
 
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`HttpTreeAccessors`\<`TCT`\>\>\>
+Creates a new FileTree.InMemoryTreeAccessors | InMemoryTreeAccessors instance with the supplied
 
-A promise that resolves to a result containing the new HttpTreeAccessors instance or an error message.
+</td></tr>
+<tr><td>
+
+[syncToDisk()](./HttpTreeAccessors.syncToDisk.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Synchronizes all dirty files to the HTTP backend.
+
+</td></tr>
+<tr><td>
+
+[isDirty()](./HttpTreeAccessors.isDirty.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if there are any dirty files that need synchronization.
+
+</td></tr>
+<tr><td>
+
+[getDirtyPaths()](./HttpTreeAccessors.getDirtyPaths.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the list of paths for all dirty files.
+
+</td></tr>
+<tr><td>
+
+[deleteFile(path)](./HttpTreeAccessors.deleteFile.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IMutableFileTreeAccessors.deleteFile
+
+</td></tr>
+<tr><td>
+
+[saveFileContents(path, contents)](./HttpTreeAccessors.saveFileContents.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Saves file contents and marks the file as dirty for synchronization.
+
+</td></tr>
+<tr><td>
+
+[fileIsMutable(path)](./HttpTreeAccessors.fileIsMutable.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Checks if a file is mutable (can be modified).
+
+</td></tr>
+<tr><td>
+
+[resolveAbsolutePath(paths)](./HttpTreeAccessors.resolveAbsolutePath.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.resolveAbsolutePath
+
+</td></tr>
+<tr><td>
+
+[getExtension(path)](./HttpTreeAccessors.getExtension.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getExtension
+
+</td></tr>
+<tr><td>
+
+[getBaseName(path, suffix)](./HttpTreeAccessors.getBaseName.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getBaseName
+
+</td></tr>
+<tr><td>
+
+[joinPaths(paths)](./HttpTreeAccessors.joinPaths.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.joinPaths
+
+</td></tr>
+<tr><td>
+
+[getItem(itemPath)](./HttpTreeAccessors.getItem.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getItem
+
+</td></tr>
+<tr><td>
+
+[getFileContents(path)](./HttpTreeAccessors.getFileContents.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getFileContents
+
+</td></tr>
+<tr><td>
+
+[getFileContentType(path, provided)](./HttpTreeAccessors.getFileContentType.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getFileContentType
+
+</td></tr>
+<tr><td>
+
+[getChildren(path)](./HttpTreeAccessors.getChildren.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IFileTreeAccessors.getChildren
+
+</td></tr>
+<tr><td>
+
+[createDirectory(dirPath)](./HttpTreeAccessors.createDirectory.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IMutableFileTreeAccessors.createDirectory
+
+</td></tr>
+<tr><td>
+
+[deleteDirectory(path)](./HttpTreeAccessors.deleteDirectory.md)
+
+</td><td>
+
+
+
+</td><td>
+
+FileTree.IMutableFileTreeAccessors.deleteDirectory
+
+</td></tr>
+</tbody></table>

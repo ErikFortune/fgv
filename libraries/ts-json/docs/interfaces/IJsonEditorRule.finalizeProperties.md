@@ -1,0 +1,29 @@
+[Home](../README.md) > [IJsonEditorRule](./IJsonEditorRule.md) > finalizeProperties
+
+## IJsonEditorRule.finalizeProperties() method
+
+Called for each rule after all properties have been merged.  Any properties that were deferred
+during the initial edit pass are supplied as input.
+
+**Signature:**
+
+```typescript
+finalizeProperties(deferred: JsonObject[], state: JsonEditorState): DetailedResult<JsonObject[], JsonEditFailureReason>;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>deferred</td><td>JsonObject[]</td><td>Any JSON objects that were deferred during the first edit pass.</td></tr>
+<tr><td>state</td><td>JsonEditorState</td><td>JsonEditorState | Editor state which applies to the edit.</td></tr>
+</tbody></table>
+
+**Returns:**
+
+DetailedResult&lt;JsonObject[], [JsonEditFailureReason](../type-aliases/JsonEditFailureReason.md)&gt;
+
+On `Success` return, any returned objects are merged in order and finalization
+is stopped. Finalization is also stopped on `Failure` with detail `'ignore'`. On `Failure`
+with detail `'inapplicable'`, finalization continues with the next rule. Fails with an
+error detail `'error'` and an informative message if an error occurs.

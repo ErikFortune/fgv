@@ -1,116 +1,120 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / DirectoryHandleStore
+[Home](../README.md) > DirectoryHandleStore
 
 # Class: DirectoryHandleStore
 
-Manages persistence of [FileSystemDirectoryHandle](../interfaces/FileSystemDirectoryHandle.md) objects in IndexedDB.
+Manages persistence of FileSystemDirectoryHandle objects in IndexedDB.
 Keyed by a label (typically the directory name).
 
 ## Constructors
 
-### Constructor
+<table><thead><tr><th>
 
-> **new DirectoryHandleStore**(`dbName`, `storeName`): `DirectoryHandleStore`
+Constructor
 
-#### Parameters
+</th><th>
 
-| Parameter | Type | Default value |
-| ------ | ------ | ------ |
-| `dbName` | `string` | `DEFAULT_DIRECTORY_HANDLE_DB` |
-| `storeName` | `string` | `DEFAULT_DIRECTORY_HANDLE_STORE` |
+Modifiers
 
-#### Returns
+</th><th>
 
-`DirectoryHandleStore`
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+`constructor(dbName, storeName)`
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>
 
 ## Methods
 
-### getAll()
+<table><thead><tr><th>
 
-> **getAll**(): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`object`[]\>\>
+Method
 
-Returns all stored handles as label/handle pairs.
+</th><th>
 
-#### Returns
+Modifiers
 
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`object`[]\>\>
+</th><th>
 
-Success with array of entries, or Failure
+Description
 
-***
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-### getAllLabels()
+[save(label, handle)](./DirectoryHandleStore.save.md)
 
-> **getAllLabels**(): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`[]\>\>
+</td><td>
 
-Returns all stored labels (keys).
 
-#### Returns
 
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`[]\>\>
-
-Success with array of labels, or Failure
-
-***
-
-### load()
-
-> **load**(`label`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileSystemDirectoryHandle`](../interfaces/FileSystemDirectoryHandle.md) \| `undefined`\>\>
-
-Retrieves a directory handle by label.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `label` | `string` | Key to look up |
-
-#### Returns
-
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`FileSystemDirectoryHandle`](../interfaces/FileSystemDirectoryHandle.md) \| `undefined`\>\>
-
-Success with handle (or undefined if not found), or Failure on error
-
-***
-
-### remove()
-
-> **remove**(`label`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>\>
-
-Removes a directory handle from IndexedDB.
-
-#### Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `label` | `string` | Key to remove |
-
-#### Returns
-
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>\>
-
-Success or Failure
-
-***
-
-### save()
-
-> **save**(`label`, `handle`): `Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>\>
+</td><td>
 
 Saves a directory handle to IndexedDB under the given label.
 
-#### Parameters
+</td></tr>
+<tr><td>
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `label` | `string` | Key to store the handle under (typically dirHandle.name) |
-| `handle` | [`FileSystemDirectoryHandle`](../interfaces/FileSystemDirectoryHandle.md) | The FileSystemDirectoryHandle to persist |
+[load(label)](./DirectoryHandleStore.load.md)
 
-#### Returns
+</td><td>
 
-`Promise`\<[`Result`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`void`\>\>
 
-Success or Failure
+
+</td><td>
+
+Retrieves a directory handle by label.
+
+</td></tr>
+<tr><td>
+
+[remove(label)](./DirectoryHandleStore.remove.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes a directory handle from IndexedDB.
+
+</td></tr>
+<tr><td>
+
+[getAllLabels()](./DirectoryHandleStore.getAllLabels.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Returns all stored labels (keys).
+
+</td></tr>
+<tr><td>
+
+[getAll()](./DirectoryHandleStore.getAll.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Returns all stored handles as label/handle pairs.
+
+</td></tr>
+</tbody></table>

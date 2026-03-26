@@ -1,8 +1,4 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / IFsAccessApis
+[Home](../README.md) > IFsAccessApis
 
 # Interface: IFsAccessApis
 
@@ -10,48 +6,57 @@ File System Access API methods available on Window
 
 ## Methods
 
-### showDirectoryPicker()
+<table><thead><tr><th>
 
-> **showDirectoryPicker**(`options?`): `Promise`\<[`FileSystemDirectoryHandle`](FileSystemDirectoryHandle.md)\>
+Method
 
-#### Parameters
+</th><th>
 
-| Parameter | Type |
-| ------ | ------ |
-| `options?` | [`ShowDirectoryPickerOptions`](ShowDirectoryPickerOptions.md) |
+Modifiers
 
-#### Returns
+</th><th>
 
-`Promise`\<[`FileSystemDirectoryHandle`](FileSystemDirectoryHandle.md)\>
+Description
 
-***
+</th></tr></thead>
+<tbody>
+<tr><td>
 
-### showOpenFilePicker()
+[showDirectoryPicker(options)](./IFsAccessApis.showDirectoryPicker.md)
 
-> **showOpenFilePicker**(`options?`): `Promise`\<[`FileSystemFileHandle`](FileSystemFileHandle.md)[]\>
+</td><td>
 
-#### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `options?` | [`ShowOpenFilePickerOptions`](ShowOpenFilePickerOptions.md) |
 
-#### Returns
+</td><td>
 
-`Promise`\<[`FileSystemFileHandle`](FileSystemFileHandle.md)[]\>
 
-***
 
-### showSaveFilePicker()
+</td></tr>
+<tr><td>
 
-> **showSaveFilePicker**(`options?`): `Promise`\<[`FileSystemFileHandle`](FileSystemFileHandle.md)\>
+[showOpenFilePicker(options)](./IFsAccessApis.showOpenFilePicker.md)
 
-#### Parameters
+</td><td>
 
-| Parameter | Type |
-| ------ | ------ |
-| `options?` | [`ShowSaveFilePickerOptions`](ShowSaveFilePickerOptions.md) |
 
-#### Returns
 
-`Promise`\<[`FileSystemFileHandle`](FileSystemFileHandle.md)\>
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[showSaveFilePicker(options)](./IFsAccessApis.showSaveFilePicker.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

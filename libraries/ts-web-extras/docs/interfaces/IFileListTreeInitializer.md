@@ -1,8 +1,4 @@
-[**@fgv/ts-web-extras**](../README.md)
-
-***
-
-[@fgv/ts-web-extras](../README.md) / IFileListTreeInitializer
+[Home](../README.md) > IFileListTreeInitializer
 
 # Interface: IFileListTreeInitializer
 
@@ -10,6 +6,39 @@ Tree initializer for FileList objects (from File API).
 
 ## Properties
 
-| Property | Modifier | Type |
-| ------ | ------ | ------ |
-| <a id="filelist"></a> `fileList` | `readonly` | `FileList` |
+<table><thead><tr><th>
+
+Property
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Type
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[fileList](./IFileListTreeInitializer.fileList.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+FileList
+
+</td><td>
+
+
+
+</td></tr>
+</tbody></table>

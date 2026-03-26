@@ -105,6 +105,19 @@ Description
 </td></tr>
 <tr><td>
 
+[deleteFile(request)](./HttpStorageService.deleteFile.md)
+
+</td><td>
+
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [createDirectory(request)](./HttpStorageService.createDirectory.md)
 
 </td><td>

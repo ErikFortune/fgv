@@ -1,29 +1,11 @@
-[**@fgv/ts-utils**](../README.md)
+[Home](../README.md) > firstSuccess
 
-***
+# Function: firstSuccess
 
-[@fgv/ts-utils](../README.md) / firstSuccess
+Returns the first successful result from a collection of Result | Result<T> or DeferredResult | DeferredResult<T>.
 
-# Function: firstSuccess()
+## Signature
 
-> **firstSuccess**\<`T`\>(`results`): [`Result`](../type-aliases/Result.md)\<`T`\>
-
-Returns the first successful result from a collection of [Result\<T\>](../type-aliases/Result.md) or [DeferredResult\<T\>](../type-aliases/DeferredResult.md).
-
-## Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
-
-## Parameters
-
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `results` | `Iterable`\<[`Result`](../type-aliases/Result.md)\<`T`\> \| [`DeferredResult`](../type-aliases/DeferredResult.md)\<`T`\>\> | The collection of [Result\<T\>](../type-aliases/Result.md) or [DeferredResult\<T\>](../type-aliases/DeferredResult.md) to be tested. |
-
-## Returns
-
-[`Result`](../type-aliases/Result.md)\<`T`\>
-
-The first successful result, or [Failure](../classes/Failure.md) with a concatenated summary of all error messages.
+```typescript
+function firstSuccess(results: Iterable<Result<T> | DeferredResult<T>>): Result<T>
+```
