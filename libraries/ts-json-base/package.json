@@ -57,7 +57,7 @@
     "ts-node": "^10.9.2",
     "typescript": "5.9.3",
     "eslint-plugin-n": "^17.23.1",
-    "@rushstack/heft": "1.2.6",
+    "@rushstack/heft": "1.2.7",
     "@rushstack/heft-jest-plugin": "1.2.6",
     "@types/heft-jest": "1.0.6",
     "@microsoft/api-documenter": "^7.28.2",
@@ -67,7 +67,7 @@
     "@types/luxon": "^3.7.1",
     "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/typedoc-compact-theme": "workspace:*",
-    "@rushstack/heft-node-rig": "2.11.26",
+    "@rushstack/heft-node-rig": "2.11.27",
     "@microsoft/api-extractor": "^7.55.2",
     "typedoc": "~0.28.16"
   },

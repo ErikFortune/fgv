@@ -41,8 +41,8 @@
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",
     "@fgv/typedoc-compact-theme": "workspace:*",
-    "@rushstack/heft": "1.2.6",
-    "@rushstack/heft-node-rig": "2.11.26",
+    "@rushstack/heft": "1.2.7",
+    "@rushstack/heft-node-rig": "2.11.27",
     "@rushstack/eslint-config": "4.6.4",
     "@types/heft-jest": "1.0.6",
     "@types/jest": "^29.5.14",

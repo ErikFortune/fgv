@@ -16,8 +16,8 @@
     "build-docs": "echo nothing to build"
   },
   "dependencies": {
-    "@rushstack/heft-node-rig": "2.11.26",
-    "@rushstack/heft": "1.2.6"
+    "@rushstack/heft-node-rig": "2.11.27",
+    "@rushstack/heft": "1.2.7"
   },
   "repository": {
     "type": "git",
