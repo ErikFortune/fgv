@@ -175,26 +175,12 @@ export async function runCreate(options: ICreateOptions): Promise<void> {
   console.log('');
   console.log('==> Creating directory structure...');
 
-  const dirs = [
-    'libraries',
-    'tools',
-    'apps',
-    'services',
-    '.ai/tasks/active',
-    '.ai/tasks/completed',
-    '.claude/project',
-    '.claude/skills'
-  ];
+  const dirs = ['libraries', 'tools', 'apps', 'services', '.claude/project', '.claude/skills'];
   for (const dir of dirs) {
     fs.mkdirSync(path.join(targetDir, dir), { recursive: true });
   }
 
-  const gitkeeps = [
-    '.ai/tasks/active/.gitkeep',
-    '.ai/tasks/completed/.gitkeep',
-    '.claude/project/.gitkeep',
-    '.claude/skills/.gitkeep'
-  ];
+  const gitkeeps = ['.claude/project/.gitkeep', '.claude/skills/.gitkeep'];
   for (const gk of gitkeeps) {
     fs.writeFileSync(path.join(targetDir, gk), '');
   }
