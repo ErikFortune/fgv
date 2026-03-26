@@ -130,6 +130,8 @@ export class HttpTreeAccessors<TCT extends string = string>
    */
   public async syncToDisk(): Promise<Result<void>> {
     if (this._syncPromise) {
+      // Wait for the in-flight sync — it drains the queue in a loop,
+      // so any items added before it finishes will be included.
       return this._syncPromise;
     }
 
@@ -140,66 +142,94 @@ export class HttpTreeAccessors<TCT extends string = string>
   }
 
   private async _doSync(): Promise<Result<void>> {
-    if (this._dirtyFiles.size === 0 && this._pendingDeletions.size === 0) {
-      return succeed(undefined);
+    // Drain loop: keep processing as long as new items arrive.
+    // This is critical for bulk operations (e.g. reset) where many
+    // deleteFile/saveFileContents calls happen synchronously — only
+    // the first may be in the set when we snapshot, but the rest
+    // arrive during the async gaps and must be picked up before
+    // we return.
+    let didWork = false;
+    while (this._dirtyFiles.size > 0 || this._pendingDeletions.size > 0) {
+      didWork = true;
+      // Snapshot and clear so that changes arriving during the async
+      // requests land in the live sets for the next iteration.
+      const deletions = new Set(this._pendingDeletions);
+      const dirty = new Set(this._dirtyFiles);
+      this._pendingDeletions.clear();
+      this._dirtyFiles.clear();
+
+      for (const path of deletions) {
+        const query = new URLSearchParams();
+        query.set('path', path);
+        if (this._namespace) {
+          query.set('namespace', this._namespace);
+        }
+
+        const deleteResult = await this._requestWithRetry<{ deleted: boolean }>(`/file?${query.toString()}`, {
+          method: 'DELETE'
+        });
+        if (deleteResult.isFailure()) {
+          this._restoreUnsynced(deletions, dirty);
+          return fail(`delete ${path}: ${deleteResult.message}`);
+        }
+      }
+
+      for (const path of dirty) {
+        const contentsResult = this.getFileContents(path);
+        if (contentsResult.isFailure()) {
+          this._restoreUnsynced(deletions, dirty);
+          return fail(`${path}: ${contentsResult.message}`);
+        }
+
+        const body: Record<string, unknown> = {
+          path,
+          contents: contentsResult.value
+        };
+        if (this._namespace) {
+          body.namespace = this._namespace;
+        }
+
+        const saveResult = await this._requestWithRetry<IHttpStorageFileResponse>('/file', {
+          method: 'PUT',
+          body: JSON.stringify(body)
+        });
+        if (saveResult.isFailure()) {
+          this._restoreUnsynced(deletions, dirty);
+          return fail(`sync ${path}: ${saveResult.message}`);
+        }
+      }
     }
 
-    // Snapshot and clear dirty sets so that changes arriving during
-    // the async sync are not dropped when we finish.
-    const deletions = new Set(this._pendingDeletions);
-    const dirty = new Set(this._dirtyFiles);
-    this._pendingDeletions.clear();
-    this._dirtyFiles.clear();
+    if (didWork) {
+      const syncBody: Record<string, unknown> = {};
+      if (this._namespace) {
+        syncBody.namespace = this._namespace;
+      }
 
+      const syncResult = await this._requestWithRetry<IHttpStorageSyncResponse>('/sync', {
+        method: 'POST',
+        body: JSON.stringify(syncBody)
+      });
+
+      if (syncResult.isFailure()) {
+        return fail(syncResult.message);
+      }
+    }
+    return succeed(undefined);
+  }
+
+  /**
+   * Restores snapshotted items back into the live dirty sets so they
+   * are retried on the next sync attempt. Items that were added to
+   * the live sets while the sync was in flight are preserved.
+   */
+  private _restoreUnsynced(deletions: Set<string>, dirty: Set<string>): void {
     for (const path of deletions) {
-      const query = new URLSearchParams();
-      query.set('path', path);
-      if (this._namespace) {
-        query.set('namespace', this._namespace);
-      }
-
-      const deleteResult = await this._requestWithRetry<{ deleted: boolean }>(`/file?${query.toString()}`, {
-        method: 'DELETE'
-      });
-      if (deleteResult.isFailure()) {
-        return fail(`delete ${path}: ${deleteResult.message}`);
-      }
+      this._pendingDeletions.add(path);
     }
-
     for (const path of dirty) {
-      const contentsResult = this.getFileContents(path);
-      if (contentsResult.isFailure()) {
-        return fail(`${path}: ${contentsResult.message}`);
-      }
-
-      const body: Record<string, unknown> = {
-        path,
-        contents: contentsResult.value
-      };
-      if (this._namespace) {
-        body.namespace = this._namespace;
-      }
-
-      const saveResult = await this._requestWithRetry<IHttpStorageFileResponse>('/file', {
-        method: 'PUT',
-        body: JSON.stringify(body)
-      });
-      if (saveResult.isFailure()) {
-        return fail(`sync ${path}: ${saveResult.message}`);
-      }
+      this._dirtyFiles.add(path);
     }
-
-    const syncBody: Record<string, unknown> = {};
-    if (this._namespace) {
-      syncBody.namespace = this._namespace;
-    }
-
-    const syncResult = await this._requestWithRetry<IHttpStorageSyncResponse>('/sync', {
-      method: 'POST',
-      body: JSON.stringify(syncBody)
-    });
-
-    return syncResult.isFailure() ? fail(syncResult.message) : succeed(undefined);
   }
 
   /**
