@@ -1,6 +1,6 @@
 {
   "name": "@fgv/heft-dual-rig",
-  "version": "0.1.0",
+  "version": "5.1.0",
   "description": "Heft rig configuration to dual-emit CJS (lib) and ESM (dist)",
   "license": "MIT",
   "keywords": [
@@ -18,5 +18,9 @@
   "dependencies": {
     "@rushstack/heft-node-rig": "2.11.26",
     "@rushstack/heft": "1.2.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add repository field for npm provenance",
+      "type": "none",
+      "packageName": "@fgv/typedoc-compact-theme"
+    }
+  ],
+  "packageName": "@fgv/typedoc-compact-theme",
+  "email": "noreply@anthropic.com"
+}

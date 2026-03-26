@@ -32,6 +32,7 @@
   "sideEffects": false,
   "devDependencies": {
     "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/typedoc-compact-theme": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@microsoft/api-documenter": "^7.28.2",
     "@microsoft/api-extractor": "^7.55.2",
@@ -59,7 +60,8 @@
     "@rushstack/heft-node-rig": "2.11.26",
     "@types/heft-jest": "1.0.6",
     "@fgv/ts-extras": "workspace:*",
-    "eslint-plugin-tsdoc": "~0.5.2"
+    "eslint-plugin-tsdoc": "~0.5.2",
+    "typedoc": "~0.28.16"
   },
   "dependencies": {
     "@fgv/ts-utils": "workspace:*",
