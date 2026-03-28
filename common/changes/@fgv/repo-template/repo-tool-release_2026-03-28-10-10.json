@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/repo-template",
+      "comment": "add development commands",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/repo-template"
+}
