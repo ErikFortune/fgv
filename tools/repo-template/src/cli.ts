@@ -119,11 +119,11 @@ export class RepoTemplateCli {
       .command('unlink')
       .description('Switch back from local fgv worktree to published npm packages')
       .option('--repo-dir <path>', 'Consumer Rush repo root (default: cwd)', process.cwd())
-      .option('--version <spec>', 'Also bump @fgv/* deps to this version spec')
+      .option('--fgv-version <spec>', 'Also bump @fgv/* deps to this version spec')
       .action(async (opts) => {
         await runUnlink({
           repoDir: opts.repoDir,
-          version: opts.version
+          version: opts.fgvVersion
         });
       });
 
@@ -132,11 +132,14 @@ export class RepoTemplateCli {
       .command('update-fgv-versions')
       .description('Bump @fgv/* dependency version specs across all projects')
       .option('--repo-dir <path>', 'Consumer Rush repo root (default: cwd)', process.cwd())
-      .option('--version <spec>', 'Version spec to set (e.g. "~5.2.0"). If omitted, queries npm for latest.')
+      .option(
+        '--fgv-version <spec>',
+        'Version spec to set (e.g. "~5.2.0"). If omitted, queries npm for latest.'
+      )
       .action(async (opts) => {
         await runUpdateFgvVersions({
           repoDir: opts.repoDir,
-          version: opts.version
+          version: opts.fgvVersion
         });
       });
 
