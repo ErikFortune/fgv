@@ -8,6 +8,7 @@ import { runCreate } from './commands/create';
 import { runSync } from './commands/sync';
 import { runPatch, parsePatchArgs } from './commands/patch';
 import { runInitLibrary, RigType, CategoryType } from './commands/init-library';
+import { runLink, runUnlink, runUpdateFgvVersions } from './commands/link';
 
 export class RepoTemplateCli {
   private readonly _program: Command;
@@ -97,6 +98,45 @@ export class RepoTemplateCli {
           versionPolicy: opts.versionPolicy,
           version: opts.initialVersion,
           fgvDepVersion: opts.fgvDepVersion
+        });
+      });
+
+    // ── link ──
+    this._program
+      .command('link')
+      .description('Link to a local fgv worktree for cross-repo development')
+      .requiredOption('--fgv-dir <path>', 'Path to the local fgv worktree')
+      .option('--repo-dir <path>', 'Consumer Rush repo root (default: cwd)', process.cwd())
+      .action(async (opts) => {
+        await runLink({
+          fgvDir: opts.fgvDir,
+          repoDir: opts.repoDir
+        });
+      });
+
+    // ── unlink ──
+    this._program
+      .command('unlink')
+      .description('Switch back from local fgv worktree to published npm packages')
+      .option('--repo-dir <path>', 'Consumer Rush repo root (default: cwd)', process.cwd())
+      .option('--version <spec>', 'Also bump @fgv/* deps to this version spec')
+      .action(async (opts) => {
+        await runUnlink({
+          repoDir: opts.repoDir,
+          version: opts.version
+        });
+      });
+
+    // ── update-fgv-versions ──
+    this._program
+      .command('update-fgv-versions')
+      .description('Bump @fgv/* dependency version specs across all projects')
+      .option('--repo-dir <path>', 'Consumer Rush repo root (default: cwd)', process.cwd())
+      .option('--version <spec>', 'Version spec to set (e.g. "~5.2.0"). If omitted, queries npm for latest.')
+      .action(async (opts) => {
+        await runUpdateFgvVersions({
+          repoDir: opts.repoDir,
+          version: opts.version
         });
       });
 
