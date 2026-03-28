@@ -31,6 +31,25 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import { StarIcon as StarIconOutline } from '@heroicons/react/24/outline';
+import {
+  StarIcon as StarIconSolid,
+  ExclamationTriangleIcon,
+  BuildingLibraryIcon,
+  ShieldCheckIcon,
+  ShieldExclamationIcon,
+  ArrowDownTrayIcon,
+  PencilSquareIcon,
+  ArrowsPointingInIcon,
+  TrashIcon,
+  FolderPlusIcon,
+  ArchiveBoxArrowDownIcon,
+  FolderOpenIcon,
+  ArrowUpTrayIcon,
+  PlusIcon,
+  ChevronRightIcon
+} from '@heroicons/react/20/solid';
+
 // ============================================================================
 // Collection Row Item
 // ============================================================================
@@ -300,25 +319,29 @@ function CollectionRow(props: {
             aria-label={collection.isDefault ? `${displayName} is default` : `Set ${displayName} as default`}
             aria-pressed={collection.isDefault}
           >
-            {collection.isDefault ? '★' : '☆'}
+            {collection.isDefault ? (
+              <StarIconSolid className="w-4 h-4" />
+            ) : (
+              <StarIconOutline className="w-4 h-4" />
+            )}
           </button>
         )}
 
         {/* Conflict indicator */}
         {collection.hasConflict && (
           <span
-            className="shrink-0 text-xs text-status-warning-strong cursor-default"
+            className="shrink-0 text-status-warning-strong cursor-default"
             title="An encrypted copy of this collection from another storage root has the same ID. Go to Settings → Storage to resolve the conflict."
             aria-label={`Conflict: encrypted shadow for ${displayName}`}
           >
-            {'⚠'}
+            <ExclamationTriangleIcon className="w-4 h-4" />
           </span>
         )}
 
-        {/* Lock indicator */}
+        {/* Built-in indicator */}
         {!collection.isMutable && (
-          <span className="shrink-0 text-xs text-muted" title="Built-in collection (read-only)">
-            {'\uD83D\uDD12'}
+          <span className="shrink-0 text-muted" title="Built-in collection (read-only)">
+            <BuildingLibraryIcon className="w-4 h-4" />
           </span>
         )}
 
@@ -326,12 +349,14 @@ function CollectionRow(props: {
         {collection.isProtected &&
           (collection.isUnlocked || !onUnlock ? (
             <span
-              className={`shrink-0 text-xs ${
-                collection.isUnlocked ? 'text-status-success-icon' : 'text-muted'
-              }`}
+              className={`shrink-0 ${collection.isUnlocked ? 'text-status-success-icon' : 'text-muted'}`}
               title={collection.isUnlocked ? 'Protected (unlocked)' : 'Protected (locked)'}
             >
-              {'\uD83D\uDEE1'}
+              {collection.isUnlocked ? (
+                <ShieldCheckIcon className="w-4 h-4" />
+              ) : (
+                <ShieldExclamationIcon className="w-4 h-4" />
+              )}
             </span>
           ) : (
             <button
@@ -339,11 +364,11 @@ function CollectionRow(props: {
                 e.stopPropagation();
                 onUnlock(collection.id);
               }}
-              className="shrink-0 text-xs text-muted hover:text-star transition-colors"
+              className="shrink-0 text-muted hover:text-star transition-colors"
               title="Click to unlock"
               aria-label={`Unlock ${displayName}`}
             >
-              {'\uD83D\uDEE1'}
+              <ShieldExclamationIcon className="w-4 h-4" />
             </button>
           ))}
 
@@ -363,11 +388,11 @@ function CollectionRow(props: {
               e.stopPropagation();
               onExport(collection.id);
             }}
-            className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
+            className="shrink-0 w-5 h-5 flex items-center justify-center text-faint hover:text-brand-accent transition-colors"
             title={`Export ${displayName}`}
             aria-label={`Export ${displayName}`}
           >
-            ↓
+            <ArrowDownTrayIcon className="w-4 h-4" />
           </button>
         )}
         {collection.isMutable && onRename && (
@@ -376,11 +401,11 @@ function CollectionRow(props: {
               e.stopPropagation();
               onRename(collection.id);
             }}
-            className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
+            className="shrink-0 w-5 h-5 flex items-center justify-center text-faint hover:text-brand-accent transition-colors"
             title={`Rename ${displayName}`}
             aria-label={`Rename ${displayName}`}
           >
-            {'✎'}
+            <PencilSquareIcon className="w-4 h-4" />
           </button>
         )}
         {collection.isMutable && onMerge && (
@@ -389,11 +414,11 @@ function CollectionRow(props: {
               e.stopPropagation();
               onMerge(collection.id);
             }}
-            className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
+            className="shrink-0 w-5 h-5 flex items-center justify-center text-faint hover:text-brand-accent transition-colors"
             title={`Merge ${displayName} into another collection`}
             aria-label={`Merge ${displayName}`}
           >
-            {'⤵'}
+            <ArrowsPointingInIcon className="w-4 h-4" />
           </button>
         )}
         {collection.isMutable && onDelete && (
@@ -402,11 +427,11 @@ function CollectionRow(props: {
               e.stopPropagation();
               onDelete(collection.id);
             }}
-            className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-status-error-icon transition-colors"
+            className="shrink-0 w-5 h-5 flex items-center justify-center text-faint hover:text-status-error-icon transition-colors"
             title={`Remove ${displayName}`}
             aria-label={`Remove ${displayName}`}
           >
-            {'×'}
+            <TrashIcon className="w-4 h-4" />
           </button>
         )}
 
@@ -497,9 +522,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
           onClick={handleToggleCollapse}
           className="flex items-center gap-1 text-xs font-medium text-muted uppercase tracking-wider hover:text-secondary transition-colors"
         >
-          <span className={`text-[10px] transition-transform ${collapsed ? '' : 'rotate-90'}`}>
-            {'\u203A'}
-          </span>
+          <ChevronRightIcon className={`w-3 h-3 transition-transform ${collapsed ? '' : 'rotate-90'}`} />
           Collections
           <span className="text-muted normal-case font-normal">({collections.length})</span>
         </button>
@@ -513,7 +536,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
               title="Add directory"
               aria-label="Add directory"
             >
-              +{'\uD83D\uDCC1'}
+              <FolderPlusIcon className="w-4 h-4" />
             </button>
           )}
           {onExportAllAsZip && (
@@ -523,7 +546,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
               title="Export all mutable collections as zip"
               aria-label="Export all as zip"
             >
-              ↓{'🗂'}
+              <ArchiveBoxArrowDownIcon className="w-4 h-4" />
             </button>
           )}
           {onOpenCollectionFromFile && (
@@ -533,7 +556,7 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
               title="Open collection file for in-place editing"
               aria-label="Open collection from file"
             >
-              {'📂'}
+              <FolderOpenIcon className="w-4 h-4" />
             </button>
           )}
           {onImportCollection && (
@@ -543,18 +566,18 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
               title="Import collection from file (in-memory)"
               aria-label="Import collection from file"
             >
-              ↑
+              <ArrowUpTrayIcon className="w-4 h-4" />
             </button>
           )}
           {onCreateCollection && (
             <button
               onClick={onCreateCollection}
               data-testid="sidebar-new-collection-button"
-              className="text-xs text-muted hover:text-brand-accent transition-colors px-1"
+              className="text-muted hover:text-brand-accent transition-colors px-1"
               title="New collection"
               aria-label="New collection"
             >
-              +
+              <PlusIcon className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -590,9 +613,9 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
                 onClick={handleToggleHiddenExpanded}
                 className="flex items-center gap-1 px-3 py-1 text-xs text-muted hover:text-secondary transition-colors"
               >
-                <span className={`text-[10px] transition-transform ${hiddenExpanded ? 'rotate-90' : ''}`}>
-                  {'\u203A'}
-                </span>
+                <ChevronRightIcon
+                  className={`w-3 h-3 transition-transform ${hiddenExpanded ? 'rotate-90' : ''}`}
+                />
                 {hiddenCollections.length} hidden
               </button>
               {hiddenExpanded &&
