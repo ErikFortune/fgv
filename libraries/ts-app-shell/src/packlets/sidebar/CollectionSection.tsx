@@ -379,8 +379,8 @@ function CollectionRow(props: {
         <span className="shrink-0 text-xs text-muted">{collection.itemCount}</span>
       </div>
 
-      {/* Bottom line: action buttons or built-in label */}
-      <div className="flex items-center gap-1 mt-1">
+      {/* Bottom line: action buttons or built-in label, indented to align under name */}
+      <div className="flex items-center gap-1 mt-1 ml-[24px]">
         {/* Action buttons (mutable only) */}
         {collection.isMutable && onExport && (
           <button
