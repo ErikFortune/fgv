@@ -29,7 +29,7 @@
  * @packageDocumentation
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 // ============================================================================
 // Collection Row Item
@@ -61,6 +61,10 @@ export interface ICollectionRowItem {
    * in another storage root. When true, a repair action should be offered.
    */
   readonly hasConflict?: boolean;
+  /** Whether this collection is explicitly hidden by the user */
+  readonly isHidden?: boolean;
+  /** The name of the storage source this collection was loaded from */
+  readonly sourceName?: string;
 }
 
 // ============================================================================
@@ -71,13 +75,17 @@ export interface ICollectionRowItem {
  * Props for the CollectionSection component.
  * @public
  */
+/**
+ * Maps source names to Tailwind border color classes for the left-border indicator.
+ * @public
+ */
+export type SourceColorMap = Readonly<Record<string, string>>;
+
 export interface ICollectionSectionProps {
   /** Collection items to display */
   readonly collections: ReadonlyArray<ICollectionRowItem>;
   /** Callback when visibility is toggled for a collection */
   readonly onToggleVisibility: (collectionId: string) => void;
-  /** Callback when all-visible toggle is clicked; receives true to show all, false to hide all */
-  readonly onToggleAllVisibility?: (showAll: boolean) => void;
   /** Callback when "Add Directory" is clicked */
   readonly onAddDirectory?: () => void;
   /** Callback when "New Collection" is clicked */
@@ -100,8 +108,105 @@ export interface ICollectionSectionProps {
   readonly onRenameCollection?: (collectionId: string) => void;
   /** Callback when merge is clicked for a mutable collection */
   readonly onMergeCollection?: (collectionId: string) => void;
+  /** Callback when hide is selected from the context menu */
+  readonly onHideCollection?: (collectionId: string) => void;
+  /** Callback when show (unhide) is selected from the context menu */
+  readonly onShowCollection?: (collectionId: string) => void;
   /** Whether the section starts collapsed */
   readonly defaultCollapsed?: boolean;
+  /** Maps sourceName values to Tailwind border-l color classes */
+  readonly sourceColorMap?: SourceColorMap;
+  /** Fallback border-l color class when sourceName is not in the map */
+  readonly sourceColorFallback?: string;
+}
+
+// ============================================================================
+// Context Menu (internal)
+// ============================================================================
+
+const LONG_PRESS_MS: number = 500;
+
+interface IContextMenuState {
+  readonly collectionId: string;
+  readonly x: number;
+  readonly y: number;
+}
+
+function CollectionContextMenu(props: {
+  readonly menu: IContextMenuState;
+  readonly isHidden: boolean;
+  readonly onHide?: (id: string) => void;
+  readonly onShow?: (id: string) => void;
+  readonly onClose: () => void;
+}): React.ReactElement {
+  const { menu, isHidden, onHide, onShow, onClose } = props;
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent): void {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return (): void => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
+
+  const action = isHidden ? onShow : onHide;
+  if (!action) {
+    return <></>;
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="fixed z-50 bg-surface-raised border border-border rounded shadow-lg py-1 min-w-[140px]"
+      style={{ left: menu.x, top: menu.y }}
+    >
+      <button
+        className="w-full text-left px-3 py-1.5 text-sm text-secondary hover:bg-hover transition-colors"
+        onClick={(): void => {
+          action(menu.collectionId);
+          onClose();
+        }}
+      >
+        {isHidden ? 'Show collection' : 'Hide collection'}
+      </button>
+    </div>
+  );
+}
+
+// ============================================================================
+// Long-press hook (internal)
+// ============================================================================
+
+function useLongPress(onLongPress: (e: React.TouchEvent) => void): {
+  onTouchStart: (e: React.TouchEvent) => void;
+  onTouchEnd: () => void;
+  onTouchMove: () => void;
+} {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const firedRef = useRef(false);
+
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent): void => {
+      firedRef.current = false;
+      timerRef.current = setTimeout(() => {
+        firedRef.current = true;
+        onLongPress(e);
+      }, LONG_PRESS_MS);
+    },
+    [onLongPress]
+  );
+
+  const cancel = useCallback((): void => {
+    if (timerRef.current !== undefined) {
+      clearTimeout(timerRef.current);
+      timerRef.current = undefined;
+    }
+  }, []);
+
+  return { onTouchStart, onTouchEnd: cancel, onTouchMove: cancel };
 }
 
 // ============================================================================
@@ -117,141 +222,197 @@ function CollectionRow(props: {
   readonly onUnlock?: (id: string) => void;
   readonly onRename?: (id: string) => void;
   readonly onMerge?: (id: string) => void;
+  readonly borderColorClass?: string;
+  readonly onContextMenu?: (collectionId: string, x: number, y: number) => void;
+  readonly isHiddenRow?: boolean;
 }): React.ReactElement {
-  const { collection, onToggleVisibility, onSetDefault, onDelete, onExport, onUnlock, onRename, onMerge } =
-    props;
+  const {
+    collection,
+    onToggleVisibility,
+    onSetDefault,
+    onDelete,
+    onExport,
+    onUnlock,
+    onRename,
+    onMerge,
+    borderColorClass,
+    onContextMenu,
+    isHiddenRow
+  } = props;
   const displayName = collection.name ?? collection.id;
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent): void => {
+      if (onContextMenu) {
+        e.preventDefault();
+        onContextMenu(collection.id, e.clientX, e.clientY);
+      }
+    },
+    [onContextMenu, collection.id]
+  );
+
+  const handleLongPress = useCallback(
+    (e: React.TouchEvent): void => {
+      if (onContextMenu && e.touches.length > 0) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        onContextMenu(collection.id, touch.clientX, touch.clientY);
+      }
+    },
+    [onContextMenu, collection.id]
+  );
+
+  const longPress = useLongPress(handleLongPress);
 
   return (
     <div
-      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors hover:bg-hover ${
-        collection.isVisible ? 'text-secondary' : 'text-muted'
-      }`}
+      onClick={(): void => onToggleVisibility(collection.id)}
+      onContextMenu={handleContextMenu}
+      {...longPress}
+      className={`flex flex-col px-3 py-2.5 text-sm transition-colors hover:bg-hover cursor-pointer ${
+        isHiddenRow
+          ? 'text-muted opacity-30 line-through'
+          : collection.isVisible
+          ? 'text-secondary'
+          : 'text-muted opacity-50'
+      } ${borderColorClass ? `border-l-4 ${borderColorClass}` : ''}`}
+      role="button"
+      aria-pressed={collection.isVisible}
+      title={collection.sourceName ? `Source: ${collection.sourceName}` : displayName}
     >
-      {/* Visibility toggle */}
-      <button
-        onClick={(): void => onToggleVisibility(collection.id)}
-        className="shrink-0 w-5 h-5 flex items-center justify-center text-xs hover:text-brand-accent transition-colors"
-        title={collection.isVisible ? 'Hide collection' : 'Show collection'}
-        aria-label={`${collection.isVisible ? 'Hide' : 'Show'} ${displayName}`}
-      >
-        {collection.isVisible ? '\u{1F441}' : '\u{1F441}\u{FE0F}\u{200D}\u{1F5E8}\u{FE0F}'}
-      </button>
-
-      {/* Default collection star */}
-      {onSetDefault && collection.isMutable && (
-        <button
-          onClick={(): void => onSetDefault(collection.id)}
-          className={`shrink-0 w-5 h-5 flex items-center justify-center transition-colors ${
-            collection.isDefault ? 'text-star hover:text-star' : 'text-faint hover:text-star'
-          }`}
-          title={
-            collection.isDefault
-              ? 'Default collection for new items'
-              : 'Set as default collection for new items'
-          }
-          aria-label={
-            collection.isDefault
-              ? `${collection.name ?? collection.id} is default`
-              : `Set ${collection.name ?? collection.id} as default`
-          }
-          aria-pressed={collection.isDefault}
-        >
-          {collection.isDefault ? '★' : '☆'}
-        </button>
-      )}
-
-      {/* Conflict indicator — encrypted shadow from another root */}
-      {collection.hasConflict && (
-        <span
-          className="shrink-0 text-xs text-status-warning-strong cursor-default"
-          title="An encrypted copy of this collection from another storage root has the same ID. Go to Settings → Storage to resolve the conflict."
-          aria-label={`Conflict: encrypted shadow for ${displayName}`}
-        >
-          {'⚠'}
-        </span>
-      )}
-
-      {/* Status indicators */}
-      {!collection.isMutable && (
-        <span className="shrink-0 text-xs text-muted" title="Built-in collection (read-only)">
-          {'\uD83D\uDD12'}
-        </span>
-      )}
-      {collection.isProtected &&
-        (collection.isUnlocked || !onUnlock ? (
-          <span
-            className={`shrink-0 text-xs ${
-              collection.isUnlocked ? 'text-status-success-icon' : 'text-muted'
-            }`}
-            title={collection.isUnlocked ? 'Protected (unlocked)' : 'Protected (locked)'}
-          >
-            {'\uD83D\uDEE1'}
-          </span>
-        ) : (
+      {/* Top line: status icons + name */}
+      <div className="flex items-center gap-1.5">
+        {/* Default collection star */}
+        {onSetDefault && collection.isMutable && (
           <button
-            onClick={(): void => onUnlock(collection.id)}
-            className="shrink-0 text-xs text-muted hover:text-star transition-colors"
-            title="Click to unlock"
-            aria-label={`Unlock ${collection.name ?? collection.id}`}
+            onClick={(e): void => {
+              e.stopPropagation();
+              onSetDefault(collection.id);
+            }}
+            className={`shrink-0 w-5 h-5 flex items-center justify-center transition-colors ${
+              collection.isDefault ? 'text-star hover:text-star' : 'text-faint hover:text-star'
+            }`}
+            title={
+              collection.isDefault
+                ? 'Default collection for new items'
+                : 'Set as default collection for new items'
+            }
+            aria-label={collection.isDefault ? `${displayName} is default` : `Set ${displayName} as default`}
+            aria-pressed={collection.isDefault}
           >
-            {'\uD83D\uDEE1'}
+            {collection.isDefault ? '★' : '☆'}
           </button>
-        ))}
+        )}
 
-      {/* Name + count */}
-      <span className="flex-1 truncate" title={displayName}>
-        {displayName}
-      </span>
-      <span className="shrink-0 text-xs text-muted">{collection.itemCount}</span>
+        {/* Conflict indicator */}
+        {collection.hasConflict && (
+          <span
+            className="shrink-0 text-xs text-status-warning-strong cursor-default"
+            title="An encrypted copy of this collection from another storage root has the same ID. Go to Settings → Storage to resolve the conflict."
+            aria-label={`Conflict: encrypted shadow for ${displayName}`}
+          >
+            {'⚠'}
+          </span>
+        )}
 
-      {/* Export button (mutable only) */}
-      {collection.isMutable && onExport && (
-        <button
-          onClick={(): void => onExport(collection.id)}
-          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
-          title={`Export ${displayName}`}
-          aria-label={`Export ${displayName}`}
-        >
-          ↓
-        </button>
-      )}
+        {/* Lock indicator */}
+        {!collection.isMutable && (
+          <span className="shrink-0 text-xs text-muted" title="Built-in collection (read-only)">
+            {'\uD83D\uDD12'}
+          </span>
+        )}
 
-      {/* Rename button (mutable only) */}
-      {collection.isMutable && onRename && (
-        <button
-          onClick={(): void => onRename(collection.id)}
-          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
-          title={`Rename ${displayName}`}
-          aria-label={`Rename ${displayName}`}
-        >
-          {'✎'}
-        </button>
-      )}
+        {/* Protected/shield indicator */}
+        {collection.isProtected &&
+          (collection.isUnlocked || !onUnlock ? (
+            <span
+              className={`shrink-0 text-xs ${
+                collection.isUnlocked ? 'text-status-success-icon' : 'text-muted'
+              }`}
+              title={collection.isUnlocked ? 'Protected (unlocked)' : 'Protected (locked)'}
+            >
+              {'\uD83D\uDEE1'}
+            </span>
+          ) : (
+            <button
+              onClick={(e): void => {
+                e.stopPropagation();
+                onUnlock(collection.id);
+              }}
+              className="shrink-0 text-xs text-muted hover:text-star transition-colors"
+              title="Click to unlock"
+              aria-label={`Unlock ${displayName}`}
+            >
+              {'\uD83D\uDEE1'}
+            </button>
+          ))}
 
-      {/* Merge button (mutable only) */}
-      {collection.isMutable && onMerge && (
-        <button
-          onClick={(): void => onMerge(collection.id)}
-          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
-          title={`Merge ${displayName} into another collection`}
-          aria-label={`Merge ${displayName}`}
-        >
-          {'⤵'}
-        </button>
-      )}
+        {/* Name */}
+        <span className="flex-1 truncate" title={displayName}>
+          {displayName}
+        </span>
+        <span className="shrink-0 text-xs text-muted">{collection.itemCount}</span>
+      </div>
 
-      {/* Delete button (mutable only) */}
-      {collection.isMutable && onDelete && (
-        <button
-          onClick={(): void => onDelete(collection.id)}
-          className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-status-error-icon transition-colors"
-          title={`Remove ${displayName}`}
-          aria-label={`Remove ${displayName}`}
-        >
-          {'×'}
-        </button>
-      )}
+      {/* Bottom line: action buttons or built-in label */}
+      <div className="flex items-center gap-1 mt-1">
+        {/* Action buttons (mutable only) */}
+        {collection.isMutable && onExport && (
+          <button
+            onClick={(e): void => {
+              e.stopPropagation();
+              onExport(collection.id);
+            }}
+            className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
+            title={`Export ${displayName}`}
+            aria-label={`Export ${displayName}`}
+          >
+            ↓
+          </button>
+        )}
+        {collection.isMutable && onRename && (
+          <button
+            onClick={(e): void => {
+              e.stopPropagation();
+              onRename(collection.id);
+            }}
+            className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
+            title={`Rename ${displayName}`}
+            aria-label={`Rename ${displayName}`}
+          >
+            {'✎'}
+          </button>
+        )}
+        {collection.isMutable && onMerge && (
+          <button
+            onClick={(e): void => {
+              e.stopPropagation();
+              onMerge(collection.id);
+            }}
+            className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-brand-accent transition-colors"
+            title={`Merge ${displayName} into another collection`}
+            aria-label={`Merge ${displayName}`}
+          >
+            {'⤵'}
+          </button>
+        )}
+        {collection.isMutable && onDelete && (
+          <button
+            onClick={(e): void => {
+              e.stopPropagation();
+              onDelete(collection.id);
+            }}
+            className="shrink-0 w-5 h-5 flex items-center justify-center text-xs text-faint hover:text-status-error-icon transition-colors"
+            title={`Remove ${displayName}`}
+            aria-label={`Remove ${displayName}`}
+          >
+            {'×'}
+          </button>
+        )}
+
+        {/* Built-in label for immutable collections */}
+        {!collection.isMutable && <span className="text-xs text-muted">(built-in)</span>}
+      </div>
     </div>
   );
 }
@@ -272,7 +433,6 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
   const {
     collections,
     onToggleVisibility,
-    onToggleAllVisibility,
     onAddDirectory,
     onCreateCollection,
     onDeleteCollection,
@@ -284,27 +444,50 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
     onUnlockCollection,
     onRenameCollection,
     onMergeCollection,
-    defaultCollapsed = false
+    onHideCollection,
+    onShowCollection,
+    defaultCollapsed = false,
+    sourceColorMap,
+    sourceColorFallback
   } = props;
 
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [hiddenExpanded, setHiddenExpanded] = useState(false);
+  const [contextMenu, setContextMenu] = useState<IContextMenuState | undefined>(undefined);
 
-  const allVisible = collections.length > 0 && collections.every((c) => c.isVisible);
-
-  const handleToggleAllVisibility = useCallback((): void => {
-    if (onToggleAllVisibility) {
-      onToggleAllVisibility(!allVisible);
-    } else {
-      const ids = allVisible
-        ? collections.map((c) => c.id)
-        : collections.filter((c) => !c.isVisible).map((c) => c.id);
-      ids.forEach((id) => onToggleVisibility(id));
-    }
-  }, [onToggleAllVisibility, onToggleVisibility, allVisible, collections]);
+  const visibleCollections = collections.filter((c) => !c.isHidden);
+  const hiddenCollections = collections.filter((c) => c.isHidden);
 
   const handleToggleCollapse = useCallback((): void => {
     setCollapsed((prev) => !prev);
   }, []);
+
+  const handleToggleHiddenExpanded = useCallback((): void => {
+    setHiddenExpanded((prev) => !prev);
+  }, []);
+
+  const handleOpenContextMenu = useCallback((collectionId: string, x: number, y: number): void => {
+    setContextMenu({ collectionId, x, y });
+  }, []);
+
+  const handleCloseContextMenu = useCallback((): void => {
+    setContextMenu(undefined);
+  }, []);
+
+  const getBorderColor = useCallback(
+    (sourceName: string | undefined): string | undefined => {
+      if (!sourceColorMap) return undefined;
+      if (sourceName && sourceName in sourceColorMap) {
+        return sourceColorMap[sourceName];
+      }
+      return sourceColorFallback;
+    },
+    [sourceColorMap, sourceColorFallback]
+  );
+
+  const contextMenuCollection = contextMenu
+    ? collections.find((c) => c.id === contextMenu.collectionId)
+    : undefined;
 
   return (
     <div className="flex flex-col border-t border-border mt-1">
@@ -320,16 +503,6 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
           Collections
           <span className="text-muted normal-case font-normal">({collections.length})</span>
         </button>
-        {collections.length > 1 && (
-          <button
-            onClick={handleToggleAllVisibility}
-            className="text-xs text-muted hover:text-brand-accent transition-colors px-1"
-            title={allVisible ? 'Hide all collections' : 'Show all collections'}
-            aria-label={allVisible ? 'Hide all collections' : 'Show all collections'}
-          >
-            {allVisible ? '\u{1F441}\u{FE0F}\u{200D}\u{1F5E8}\u{FE0F}' : '\u{1F441}'}
-          </button>
-        )}
 
         {/* Action buttons */}
         <div className="flex items-center gap-1">
@@ -390,10 +563,10 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
       {/* Collection list */}
       {!collapsed && (
         <div className="flex flex-col">
-          {collections.length === 0 ? (
+          {visibleCollections.length === 0 && hiddenCollections.length === 0 ? (
             <div className="px-3 py-2 text-xs text-muted">No collections</div>
           ) : (
-            collections.map((collection) => (
+            visibleCollections.map((collection) => (
               <CollectionRow
                 key={collection.id}
                 collection={collection}
@@ -404,10 +577,55 @@ export function CollectionSection(props: ICollectionSectionProps): React.ReactEl
                 onUnlock={onUnlockCollection}
                 onRename={onRenameCollection}
                 onMerge={onMergeCollection}
+                borderColorClass={getBorderColor(collection.sourceName)}
+                onContextMenu={onHideCollection ? handleOpenContextMenu : undefined}
               />
             ))
           )}
+
+          {/* Hidden collections expander */}
+          {hiddenCollections.length > 0 && (
+            <>
+              <button
+                onClick={handleToggleHiddenExpanded}
+                className="flex items-center gap-1 px-3 py-1 text-xs text-muted hover:text-secondary transition-colors"
+              >
+                <span className={`text-[10px] transition-transform ${hiddenExpanded ? 'rotate-90' : ''}`}>
+                  {'\u203A'}
+                </span>
+                {hiddenCollections.length} hidden
+              </button>
+              {hiddenExpanded &&
+                hiddenCollections.map((collection) => (
+                  <CollectionRow
+                    key={collection.id}
+                    collection={collection}
+                    onToggleVisibility={onToggleVisibility}
+                    onSetDefault={onSetDefaultCollection}
+                    onDelete={onDeleteCollection}
+                    onExport={onExportCollection}
+                    onUnlock={onUnlockCollection}
+                    onRename={onRenameCollection}
+                    onMerge={onMergeCollection}
+                    borderColorClass={getBorderColor(collection.sourceName)}
+                    onContextMenu={onShowCollection ? handleOpenContextMenu : undefined}
+                    isHiddenRow={true}
+                  />
+                ))}
+            </>
+          )}
         </div>
+      )}
+
+      {/* Context menu */}
+      {contextMenu && contextMenuCollection && (
+        <CollectionContextMenu
+          menu={contextMenu}
+          isHidden={contextMenuCollection.isHidden ?? false}
+          onHide={onHideCollection}
+          onShow={onShowCollection}
+          onClose={handleCloseContextMenu}
+        />
       )}
     </div>
   );
