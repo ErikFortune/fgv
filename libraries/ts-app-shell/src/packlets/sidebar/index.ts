@@ -29,5 +29,6 @@ export {
 export {
   CollectionSection,
   type ICollectionSectionProps,
-  type ICollectionRowItem
+  type ICollectionRowItem,
+  type SourceColorMap
 } from './CollectionSection';
