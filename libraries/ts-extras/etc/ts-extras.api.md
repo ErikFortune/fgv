@@ -6,6 +6,7 @@
 
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { DateTime } from 'luxon';
 import { FileTree } from '@fgv/ts-json-base';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
@@ -152,7 +153,8 @@ declare namespace Converters {
         extendedArrayOf,
         rangeTypeOf,
         rangeOf,
-        isoDate
+        isoDate,
+        isoDateTime
     }
 }
 export { Converters }
@@ -686,6 +688,9 @@ function isKeyStoreFile(json: unknown): boolean;
 
 // @public
 const isoDate: Converter<Date, unknown>;
+
+// @public
+const isoDateTime: Converter<DateTime, unknown>;
 
 // @public
 interface IVariableRef {

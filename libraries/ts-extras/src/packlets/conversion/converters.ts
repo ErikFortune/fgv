@@ -64,9 +64,41 @@ export const isoDate: Converter<Date, unknown> = new Conversion.BaseConverter<Da
     return succeed(new Date(from));
   } else if (from instanceof Date) {
     return succeed(from);
+  } else if (from instanceof DateTime) {
+    if (from.isValid) {
+      return succeed(from.toJSDate());
+    }
+    return fail(`Invalid date: ${from.invalidExplanation}`);
   }
   return fail(`Cannot convert ${JSON.stringify(from)} to Date`);
 });
+
+/**
+ * A `Converter` which converts an iso formatted string, a number or a `Date` object to
+ * a `DateTime` object.
+ * @public
+ */
+export const isoDateTime: Converter<DateTime, unknown> = new Conversion.BaseConverter<DateTime>(
+  (from: unknown) => {
+    if (typeof from === 'string') {
+      const dt = DateTime.fromISO(from);
+      if (dt.isValid) {
+        return succeed(dt);
+      }
+      return fail(`Invalid date: ${dt.invalidExplanation}`);
+    } else if (typeof from === 'number') {
+      return succeed(DateTime.fromMillis(from));
+    } else if (from instanceof Date) {
+      return succeed(DateTime.fromJSDate(from));
+    } else if (from instanceof DateTime) {
+      if (from.isValid) {
+        return succeed(from);
+      }
+      return fail(`Invalid date: ${from.invalidExplanation}`);
+    }
+    return fail(`Cannot convert ${JSON.stringify(from)} to DateTime`);
+  }
+);
 
 /**
  * A helper function to create a `Converter` which converts `unknown` to {@link Experimental.ExtendedArray | ExtendedArray<T>}.
