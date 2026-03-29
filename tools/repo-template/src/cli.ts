@@ -7,7 +7,13 @@ import { detectSourceDir } from './packlets/fs';
 import { runCreate } from './commands/create';
 import { runSync } from './commands/sync';
 import { runPatch, parsePatchArgs } from './commands/patch';
-import { runInitLibrary, RigType, CategoryType } from './commands/init-library';
+import {
+  runInitLibrary,
+  resolveFgvDepVersion,
+  RigType,
+  CategoryType,
+  DepChannelType
+} from './commands/init-library';
 import { runLink, runUnlink, runUpdateFgvVersions } from './commands/link';
 
 export class RepoTemplateCli {
@@ -85,19 +91,26 @@ export class RepoTemplateCli {
       .option('--initial-version <ver>', 'Initial version', '0.1.0')
       .option(
         '--fgv-dep-version <ver>',
-        'Version spec for @fgv/* deps ("workspace:*" in fgv, version range in consumers)',
-        'workspace:*'
+        'Explicit version spec for @fgv/* deps (auto-detected if omitted: "workspace:*" in fgv, derived from repo-template version in consumers)'
+      )
+      .option(
+        '--fgv-dep-channel <channel>',
+        'Channel for auto-detected @fgv/* dep version: alpha, release, or auto (default: auto — infers from repo-template build)',
+        'auto'
       )
       .action(async (opts) => {
+        const repoDir = opts.repoDir as string;
+        const fgvDepVersion =
+          opts.fgvDepVersion ?? resolveFgvDepVersion(repoDir, opts.fgvDepChannel as DepChannelType);
         await runInitLibrary({
           name: opts.name,
           description: opts.description,
           rig: opts.rig as RigType,
           category: opts.category as CategoryType,
-          repoDir: opts.repoDir,
+          repoDir,
           versionPolicy: opts.versionPolicy,
           version: opts.initialVersion,
-          fgvDepVersion: opts.fgvDepVersion
+          fgvDepVersion
         });
       });
 
