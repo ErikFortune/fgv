@@ -6,6 +6,50 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { patchFile, IPatchOperation } from '../packlets/jsonc';
 
+export type DepChannelType = 'alpha' | 'release' | 'auto';
+
+/**
+ * Check whether a given Rush repo root is the fgv source repo itself
+ * (as opposed to a consumer/sibling repo).
+ */
+function isFgvRepo(repoDir: string): boolean {
+  return fs.existsSync(path.join(repoDir, 'tools', 'repo-template', 'sync-manifest.json'));
+}
+
+/**
+ * Read the repo-template package's own version from its package.json.
+ */
+function getOwnPackageVersion(): string {
+  const pkgPath = path.resolve(__dirname, '..', '..', 'package.json');
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+  return pkg.version as string;
+}
+
+/**
+ * Resolve the @fgv/* dependency version spec for init-library.
+ *
+ * - In the fgv repo itself: returns "workspace:*"
+ * - In a sibling/consumer repo: derives a version range from the repo-template's own
+ *   package version, choosing alpha or release channel.
+ *
+ * @param repoDir - Rush monorepo root being targeted
+ * @param channel - "alpha" for prerelease, "release" for stable, "auto" to infer from
+ *   whether the repo-template is itself a prerelease build.
+ */
+export function resolveFgvDepVersion(repoDir: string, channel: DepChannelType): string {
+  if (isFgvRepo(repoDir)) {
+    return 'workspace:*';
+  }
+
+  const version = getOwnPackageVersion(); // e.g. "5.1.0-6" or "5.1.0"
+  const dashIdx = version.indexOf('-');
+  const baseVersion = dashIdx >= 0 ? version.substring(0, dashIdx) : version;
+  const isPrerelease = dashIdx >= 0;
+
+  const useAlpha = channel === 'alpha' || (channel === 'auto' && isPrerelease);
+  return useAlpha ? `~${baseVersion}-0` : `~${baseVersion}`;
+}
+
 export type RigType = 'dual' | 'node' | 'browser';
 export type CategoryType = 'libraries' | 'tools' | 'apps' | 'services';
 
