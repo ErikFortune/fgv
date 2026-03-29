@@ -25,6 +25,7 @@ import '@fgv/ts-utils-jest';
 
 import { Converters as ExtraConverters } from '../..';
 import { ExtendedArray, RangeOf } from '../../packlets/experimental';
+import { DateTime } from 'luxon';
 
 describe('Converters module', () => {
   describe('templateString converter', () => {
@@ -67,6 +68,41 @@ describe('Converters module', () => {
     test('converts a Date object to a Date', () => {
       const date = new Date();
       expect(ExtraConverters.isoDate.convert(date)).toSucceedWith(date);
+    });
+
+    test('converts a DateTime object to a Date', () => {
+      const date = DateTime.now();
+      expect(ExtraConverters.isoDate.convert(date)).toSucceedWith(date.toJSDate());
+    });
+
+    test('fails for a malformed date', () => {
+      expect(ExtraConverters.isoDate.convert('whatever')).toFailWith(/invalid date/i);
+    });
+
+    test('fails for an unexpected type', () => {
+      expect(ExtraConverters.isoDate.convert({ date: new Date() })).toFailWith(/cannot convert/i);
+    });
+  });
+
+  describe('isoDateTime converter', () => {
+    test('converts an ISO formatted string to a DateTime object', () => {
+      const date = DateTime.now();
+      expect(ExtraConverters.isoDateTime.convert(date.toISO())).toSucceedWith(date);
+    });
+
+    test('converts a number to a DateTime object', () => {
+      const date = DateTime.now();
+      expect(ExtraConverters.isoDateTime.convert(date.toMillis())).toSucceedWith(date);
+    });
+
+    test('converts a Date object to a DateTime', () => {
+      const date = DateTime.now();
+      expect(ExtraConverters.isoDateTime.convert(date)).toSucceedWith(date);
+    });
+
+    test('converts a DateTime object to a DateTime', () => {
+      const date = DateTime.now();
+      expect(ExtraConverters.isoDateTime.convert(date)).toSucceedWith(date);
     });
 
     test('fails for a malformed date', () => {
