@@ -19,3 +19,4 @@
 // SOFTWARE.
 
 export * from './randomSource';
+export * from './generators';

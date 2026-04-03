@@ -2,7 +2,7 @@
 
 # Interface: ISeededRandomSourceConstructorParams
 
-Interface for constructing a seeded random source.
+Constructor params for a Generator.SeededRandomSource | SeededRandomSource.
 
 ## Properties
 

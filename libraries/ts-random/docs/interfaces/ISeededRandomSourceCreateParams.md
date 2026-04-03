@@ -2,6 +2,8 @@
 
 # Interface: ISeededRandomSourceCreateParams
 
+Static create parameters for a Generator.SeededRandomSource | SeededRandomSource.
+
 ## Properties
 
 <table><thead><tr><th>

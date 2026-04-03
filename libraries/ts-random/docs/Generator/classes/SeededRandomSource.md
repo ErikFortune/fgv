@@ -4,8 +4,6 @@
 
 Seeded random number generator that can be cloned and used for deterministic generation.
 
-**Implements:** [`IRandomSource`](../../interfaces/IRandomSource.md)
-
 ## Properties
 
 <table><thead><tr><th>

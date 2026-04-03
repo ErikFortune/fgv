@@ -23,6 +23,15 @@ Description
 Seeded random number generator that can be cloned and used for deterministic generation.
 
 </td></tr>
+<tr><td>
+
+[PseudoRandomGenerator](./classes/PseudoRandomGenerator.md)
+
+</td><td>
+
+A pseudo-random number generator that can be used to generate random values
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -57,20 +66,11 @@ Result of an internal next() operation.
 </td></tr>
 <tr><td>
 
-[IRandomSource](./interfaces/IRandomSource.md)
-
-</td><td>
-
-Interface for a random number source that can be cloned.
-
-</td></tr>
-<tr><td>
-
 [ISeededRandomSourceConstructorParams](./interfaces/ISeededRandomSourceConstructorParams.md)
 
 </td><td>
 
-Interface for constructing a seeded random source.
+Constructor params for a Generator.SeededRandomSource | SeededRandomSource.
 
 </td></tr>
 <tr><td>
@@ -79,7 +79,34 @@ Interface for constructing a seeded random source.
 
 </td><td>
 
+Static create parameters for a Generator.SeededRandomSource | SeededRandomSource.
 
+</td></tr>
+<tr><td>
+
+[IPseudoRandomGeneratorCreateParams](./interfaces/IPseudoRandomGeneratorCreateParams.md)
+
+</td><td>
+
+Parameters for creating a generator.
+
+</td></tr>
+<tr><td>
+
+[ISequentialPickParams](./interfaces/ISequentialPickParams.md)
+
+</td><td>
+
+Parameters for generating a sequence of values
+
+</td></tr>
+<tr><td>
+
+[IRandomSequencePickParams](./interfaces/IRandomSequencePickParams.md)
+
+</td><td>
+
+Parameters for generating a sequence of values
 
 </td></tr>
 </tbody></table>
@@ -103,6 +130,24 @@ Description
 </td><td>
 
 Function that steps a random number generator state and returns the next value.
+
+</td></tr>
+<tr><td>
+
+[GeneratorGlobalThis](./type-aliases/GeneratorGlobalThis.md)
+
+</td><td>
+
+Global context (globalThis) into which the generator can install itself for sharing.
+
+</td></tr>
+<tr><td>
+
+[SequencePickParams](./type-aliases/SequencePickParams.md)
+
+</td><td>
+
+Type representing parameters for generating a sequence of values.
 
 </td></tr>
 </tbody></table>

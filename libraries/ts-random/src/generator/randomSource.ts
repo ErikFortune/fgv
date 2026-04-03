@@ -39,24 +39,13 @@ export interface INextResult {
 }
 
 /**
- * Interface for a random number source that can be cloned.
- * @public
- */
-export interface IRandomSource {
-  readonly seed: string;
-  readonly counter: number;
-  next(): number;
-  clone(): IRandomSource;
-}
-
-/**
  * Function that steps a random number generator state and returns the next value.
  * @public
  */
 export type RandomStepFunction = (state: number) => INextResult;
 
 /**
- * Interface for constructing a seeded random source.
+ * Constructor params for a {@link Generator.SeededRandomSource | SeededRandomSource}.
  * @public
  */
 export interface ISeededRandomSourceConstructorParams {
@@ -67,6 +56,10 @@ export interface ISeededRandomSourceConstructorParams {
   step: RandomStepFunction;
 }
 
+/**
+ * Static create parameters for a {@link Generator.SeededRandomSource | SeededRandomSource}.
+ * @public
+ */
 export interface ISeededRandomSourceCreateParams {
   seed?: number | string;
   step?: RandomStepFunction;
@@ -76,7 +69,7 @@ export interface ISeededRandomSourceCreateParams {
  * Seeded random number generator that can be cloned and used for deterministic generation.
  * @public
  */
-export class SeededRandomSource implements IRandomSource {
+export class SeededRandomSource {
   private currentState: number;
   public readonly seed: string;
   public readonly lineage: ReadonlyArray<string>;
