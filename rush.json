@@ -552,6 +552,13 @@
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["tools", "template"]
+    },
+    {
+      "packageName": "@fgv/ts-random",
+      "projectFolder": "libraries/ts-random",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
     }
   ]
 }

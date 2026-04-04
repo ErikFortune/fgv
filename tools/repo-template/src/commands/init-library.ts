@@ -160,6 +160,9 @@ export async function runInitLibrary(options: IInitLibraryOptions): Promise<void
   devDependencies['typescript'] = '5.9.3';
   devDependencies['@rushstack/eslint-config'] = '4.6.4';
   devDependencies['eslint'] = '^9.39.2';
+  // Typedoc dependencies
+  devDependencies['typedoc'] = '~0.28.16';
+  devDependencies['@fgv/typedoc-compact-theme'] = fgvDepVersion;
 
   const packageJson: Record<string, unknown> = {
     name: packageName,
@@ -172,6 +175,7 @@ export async function runInitLibrary(options: IInitLibraryOptions): Promise<void
       clean: 'heft clean',
       test: 'heft test --clean',
       coverage: 'jest --coverage',
+      'build-docs': 'typedoc --options ./config/typedoc.json',
       lint: 'eslint src --ext .ts',
       fixlint: 'eslint src --ext .ts --fix'
     },
@@ -249,6 +253,22 @@ export async function runInitLibrary(options: IInitLibraryOptions): Promise<void
   fs.writeFileSync(
     path.join(projectDir, 'config', 'jest.config.json'),
     JSON.stringify(jestConfig, null, 2) + '\n'
+  );
+
+  // ── config/typedoc.json ──
+  console.log('  Creating config/typedoc.json...');
+
+  const typedocConfig = {
+    $schema: 'https://typedoc.org/schema.json',
+    extends: ['@fgv/heft-dual-rig/profiles/default/config/typedoc.compact-base.json'],
+    plugin: ['../../../plugins/typedoc-compact-theme/lib/index.js'],
+    entryPoints: ['../src/index.ts'],
+    out: '../docs'
+  };
+
+  fs.writeFileSync(
+    path.join(projectDir, 'config', 'typedoc.json'),
+    JSON.stringify(typedocConfig, null, 2) + '\n'
   );
 
   // ── src/index.ts ──
