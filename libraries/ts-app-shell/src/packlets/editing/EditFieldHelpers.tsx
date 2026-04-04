@@ -43,6 +43,8 @@ import React from 'react';
 export interface IEditFieldProps {
   /** Label text displayed to the left of the field */
   readonly label: string;
+  /** Optional tooltip shown on hover over the label */
+  readonly tooltip?: string;
   /** The input control(s) to render */
   readonly children: React.ReactNode;
 }
@@ -51,10 +53,12 @@ export interface IEditFieldProps {
  * Horizontal label + field layout for a single edit field.
  * @public
  */
-export function EditField({ label, children }: IEditFieldProps): React.ReactElement {
+export function EditField({ label, tooltip, children }: IEditFieldProps): React.ReactElement {
   return (
     <div className="flex items-baseline gap-2 py-1">
-      <label className="text-xs text-muted w-32 shrink-0">{label}</label>
+      <label className="text-xs text-muted w-32 shrink-0" title={tooltip}>
+        {label}
+      </label>
       <div className="flex-1">{children}</div>
     </div>
   );
@@ -67,6 +71,8 @@ export function EditField({ label, children }: IEditFieldProps): React.ReactElem
 export interface IEditSectionProps {
   /** Section heading text */
   readonly title: string;
+  /** Optional tooltip shown on hover over the section heading */
+  readonly tooltip?: string;
   /** Section content (typically EditField components) */
   readonly children: React.ReactNode;
 }
@@ -75,10 +81,12 @@ export interface IEditSectionProps {
  * Titled section wrapper for grouping related edit fields.
  * @public
  */
-export function EditSection({ title, children }: IEditSectionProps): React.ReactElement {
+export function EditSection({ title, tooltip, children }: IEditSectionProps): React.ReactElement {
   return (
     <div className="mb-4">
-      <h4 className="text-xs font-medium text-muted uppercase tracking-wider mb-1.5">{title}</h4>
+      <h4 className="text-xs font-medium text-muted uppercase tracking-wider mb-1.5" title={tooltip}>
+        {title}
+      </h4>
       {children}
     </div>
   );
