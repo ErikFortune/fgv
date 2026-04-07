@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-random",
-  "version": "5.1.0-10",
+  "version": "5.1.0-11",
   "description": "psedo-random number generator and utilities for TypeScript",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
