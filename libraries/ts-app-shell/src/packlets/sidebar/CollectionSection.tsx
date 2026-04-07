@@ -58,6 +58,17 @@ import {
  * Describes a single collection for rendering in the sidebar.
  * @public
  */
+export interface ICollectionBadge {
+  readonly kind: 'dot' | 'count';
+  readonly tone?: 'info' | 'warning' | 'danger';
+  readonly count?: number;
+  readonly ariaLabel?: string;
+}
+
+/**
+ * Describes a single collection for rendering in the sidebar.
+ * @public
+ */
 export interface ICollectionRowItem {
   /** Collection identifier */
   readonly id: string;
@@ -84,6 +95,8 @@ export interface ICollectionRowItem {
   readonly isHidden?: boolean;
   /** The name of the storage source this collection was loaded from */
   readonly sourceName?: string;
+  /** Optional badge rendered alongside the collection name */
+  readonly badge?: ICollectionBadge;
 }
 
 // ============================================================================
@@ -99,6 +112,38 @@ export interface ICollectionRowItem {
  * @public
  */
 export type SourceColorMap = Readonly<Record<string, string>>;
+
+const BADGE_BASE_CLASSES: string =
+  'inline-flex shrink-0 items-center justify-center rounded-full font-medium leading-none';
+
+const BADGE_TONE_CLASSES: Record<NonNullable<ICollectionBadge['tone']>, string> = {
+  info: 'bg-status-info-bg text-status-info-text',
+  warning: 'bg-status-warning-bg text-status-warning-text',
+  danger: 'bg-status-error-bg text-status-error-text'
+};
+
+function renderBadge(badge: ICollectionBadge): React.ReactElement {
+  const tone = badge.tone ?? 'info';
+  const ariaLabel = badge.ariaLabel;
+
+  if (badge.kind === 'dot') {
+    return (
+      <span
+        className={`ml-1.5 h-2 w-2 ${BADGE_BASE_CLASSES} ${BADGE_TONE_CLASSES[tone]}`}
+        aria-label={ariaLabel}
+      />
+    );
+  }
+
+  return (
+    <span
+      className={`ml-1.5 min-w-4 px-1.5 py-0.5 text-[0.6875rem] ${BADGE_BASE_CLASSES} ${BADGE_TONE_CLASSES[tone]}`}
+      aria-label={ariaLabel}
+    >
+      {badge.count ?? 0}
+    </span>
+  );
+}
 
 export interface ICollectionSectionProps {
   /** Collection items to display */
@@ -376,6 +421,7 @@ function CollectionRow(props: {
         <span className="flex-1 truncate" title={displayName}>
           {displayName}
         </span>
+        {collection.badge && renderBadge(collection.badge)}
         <span className="shrink-0 text-xs text-muted">{collection.itemCount}</span>
       </div>
 
