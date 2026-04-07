@@ -1,0 +1,9 @@
+context:
+  baseId: catalog.cards
+resources:
+  hero:
+    resourceTypeName: json
+    candidates:
+      - json:
+          subtitle: A friendly experience for Canadian visitors
+          badge: Canada

@@ -1,0 +1,19 @@
+{
+  "context": {
+    "baseId": "catalog.cards"
+  },
+  "resources": {
+    "detail": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "id": "detail",
+            "title": "Details",
+            "description": "A card that expands on the selected product"
+          }
+        }
+      ]
+    }
+  }
+}

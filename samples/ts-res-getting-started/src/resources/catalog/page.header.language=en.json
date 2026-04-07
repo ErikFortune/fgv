@@ -1,0 +1,18 @@
+{
+  "context": {
+    "baseId": "catalog.page"
+  },
+  "resources": {
+    "header": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "title": "Product Library",
+            "subtitle": "Explore the catalog"
+          }
+        }
+      ]
+    }
+  }
+}

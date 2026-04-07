@@ -1,0 +1,9 @@
+context:
+  baseId: catalog.cards
+resources:
+  detail:
+    resourceTypeName: json
+    candidates:
+      - json:
+          subtitle: Canadian internal details
+          badge: Internal

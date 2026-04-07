@@ -514,6 +514,12 @@
       "tags": ["tools", "ui", "browser"]
     },
     {
+      "packageName": "@fgv/ts-res-getting-started",
+      "projectFolder": "samples/ts-res-getting-started",
+      "shouldPublish": false,
+      "tags": ["samples", "docs"]
+    },
+    {
       "packageName": "@fgv/heft-dual-rig",
       "projectFolder": "rigs/heft-dual-rig",
       "shouldPublish": true,

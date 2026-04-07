@@ -1,0 +1,19 @@
+{
+  "context": {
+    "baseId": "catalog.cards"
+  },
+  "resources": {
+    "hero": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "id": "hero",
+            "title": "Welcome",
+            "description": "Base hero card for all visitors"
+          }
+        }
+      ]
+    }
+  }
+}

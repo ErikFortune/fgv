@@ -1,0 +1,45 @@
+{
+  "name": "@fgv/ts-res-getting-started",
+  "version": "5.1.0",
+  "description": "Sample project demonstrating ts-res filesystem imports and resolution",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "ts-res-getting-started": "bin/ts-res-getting-started.js"
+  },
+  "scripts": {
+    "build": "heft build --clean",
+    "clean": "heft clean",
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
+  },
+  "files": [
+    "README.md",
+    "package.json",
+    "bin/**/*",
+    "src/**/*"
+  ],
+  "keywords": [
+    "ts-res",
+    "sample",
+    "resources",
+    "filesystem",
+    "yaml",
+    "json"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "dependencies": {
+    "@fgv/ts-json-base": "workspace:*",
+    "@fgv/ts-res": "workspace:*",
+    "@fgv/ts-extras": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@rushstack/heft-node-rig": "2.11.27",
+    "@rushstack/heft": "1.2.7",
+    "eslint": "^9.39.2",
+    "rimraf": "^6.1.2",
+    "typescript": "5.9.3"
+  }
+}
