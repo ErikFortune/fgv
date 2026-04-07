@@ -4,4 +4,4 @@
  */
 
 export { ModeSelector, type IModeConfig, type IModeSelectorProps } from './ModeSelector';
-export { TabBar, type ITabConfig, type ITabBarProps } from './TabBar';
+export { TabBar, type ITabBadge, type ITabConfig, type ITabBarProps } from './TabBar';
