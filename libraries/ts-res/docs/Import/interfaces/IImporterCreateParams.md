@@ -92,4 +92,21 @@ An optional `FileTree` for importing path items.
 An optional list of Import.Importers.IImporter | importers to use for the import.
 
 </td></tr>
+<tr><td>
+
+[fileContentConverter](./IImporterCreateParams.fileContentConverter.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Converter&lt;JsonValue, unknown&gt;
+
+</td><td>
+
+An optional converter used to pre-process file contents before JSON import validation.
+
+</td></tr>
 </tbody></table>

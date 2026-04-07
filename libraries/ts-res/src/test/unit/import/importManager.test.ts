@@ -23,6 +23,8 @@
 import '@fgv/ts-utils-jest';
 import {} from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { Converters as JsonConverters } from '@fgv/ts-json-base';
+import { Yaml } from '@fgv/ts-extras';
 import * as TsRes from '../../../index';
 import { ImportManager } from '../../../packlets/import';
 
@@ -102,6 +104,14 @@ const resourceFiles: FileTree.IInMemoryFile[] = [
     contents: {
       candidates: [{ id: 'resources', resourceTypeName: 'json', json: { helloMyNameIs: 'française, eh?' } }]
     }
+  },
+  {
+    path: '/yaml-resources.yaml',
+    contents: `candidates:
+  - id: yaml.resources
+    resourceTypeName: json
+    json:
+      helloMyNameIs: yaml resources`
   },
   {
     path: '/broken/resources.home=Antarctica/language=en-US.json',
@@ -201,6 +211,15 @@ describe('ImportManager', () => {
         defaultImporters.find((i) => i instanceof TsRes.Import.Importers.CollectionImporter)
       ).toBeDefined();
     });
+
+    test('passes a supplied file content converter to the fs item importer', () => {
+      const fileContentConverter = Yaml.yamlConverter(JsonConverters.jsonObject);
+      const defaultImporters = ImportManager.getDefaultImporters(qualifiers, tree, fileContentConverter);
+
+      const fsItemImporter = defaultImporters.find((i) => i instanceof TsRes.Import.Importers.FsItemImporter);
+      expect(fsItemImporter).toBeDefined();
+      expect(fsItemImporter?.fileContentConverter).toBe(fileContentConverter);
+    });
   });
 
   describe('create static method', () => {
@@ -212,6 +231,19 @@ describe('ImportManager', () => {
           expect(manager.importers.length).toEqual(importers.length);
         }
       );
+    });
+
+    test('creates an import manager with the supplied file content converter on default importers', () => {
+      const fileContentConverter = Yaml.yamlConverter(JsonConverters.jsonObject);
+      expect(
+        TsRes.Import.ImportManager.create({ resources: resourceManager, fileContentConverter })
+      ).toSucceedAndSatisfy((manager) => {
+        const fsItemImporter = manager.importers.find(
+          (i) => i instanceof TsRes.Import.Importers.FsItemImporter
+        );
+        expect(fsItemImporter).toBeDefined();
+        expect(fsItemImporter?.fileContentConverter).toBe(fileContentConverter);
+      });
     });
 
     test('creates an import manager with the supplied resource manager, importers and empty context', () => {
@@ -299,6 +331,30 @@ describe('ImportManager', () => {
       expect(importManager.importFromFileSystem('/broken/US/resources.json')).toFailWith(
         /unrecognized JSON format/i
       );
+    });
+
+    test('imports a yaml file when a file content converter is supplied', () => {
+      const fileContentConverter = Yaml.yamlConverter(JsonConverters.jsonObject);
+      importManager = TsRes.Import.ImportManager.create({
+        resources: resourceManager,
+        fileTree: tree,
+        fileContentConverter
+      }).orThrow();
+
+      expect(importManager.importFromFileSystem('/yaml-resources.yaml')).toSucceedAndSatisfy(() => {
+        expect(resourceManager.resources.validating.has('yaml-resources.yaml.resources')).toBe(true);
+        expect(resourceManager.resources.validating.get('yaml-resources.yaml.resources')).toSucceedAndSatisfy(
+          (resource) => {
+            expect(resource.id).toEqual('yaml-resources.yaml.resources');
+            expect(resource.candidates.length).toEqual(1);
+            expect(resource.candidates[0].json).toEqual({ helloMyNameIs: 'yaml resources' });
+          }
+        );
+      });
+    });
+
+    test('skips yaml files when no file content converter is supplied', () => {
+      expect(importManager.importFromFileSystem('/yaml-resources.yaml')).toFailWith(/no matching importer/i);
     });
   });
 });

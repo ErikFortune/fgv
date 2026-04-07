@@ -8,7 +8,7 @@ and optional `FileTree`.
 **Signature:**
 
 ```typescript
-static getDefaultImporters(qualifiers: IReadOnlyQualifierCollector, tree?: FileTree_2<string>): readonly IImporter[];
+static getDefaultImporters(qualifiers: IReadOnlyQualifierCollector, tree?: FileTree_2<string>, fileContentConverter?: Converter<JsonValue, unknown>): readonly IImporter[];
 ```
 
 **Parameters:**
@@ -17,6 +17,8 @@ static getDefaultImporters(qualifiers: IReadOnlyQualifierCollector, tree?: FileT
 <tbody>
 <tr><td>qualifiers</td><td>IReadOnlyQualifierCollector</td><td>The Qualifiers.IReadOnlyQualifierCollector | qualifiers to use for the import.</td></tr>
 <tr><td>tree</td><td>FileTree_2&lt;string&gt;</td><td>An optional `FileTree` for importing path items.</td></tr>
+<tr><td>fileContentConverter</td><td>Converter&lt;JsonValue, unknown&gt;</td><td>An optional converter used to pre-process raw file contents before JSON import
+validation.</td></tr>
 </tbody></table>
 
 **Returns:**

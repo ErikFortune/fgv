@@ -1348,6 +1348,7 @@ class FsItemImporter implements IImporter {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IFsItemImporterCreateParams): Result<FsItemImporter>;
+    readonly fileContentConverter?: Converter<JsonValue>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected _getFileTreeItemFromImportable(item: IImportable): DetailedResult<FsItem, FsItemResultDetail>;
@@ -1990,6 +1991,8 @@ const identifierList: RegExp;
 // @public
 interface IFsItemImporterCreateParams {
     // (undocumented)
+    fileContentConverter?: Converter<JsonValue>;
+    // (undocumented)
     qualifiers: IReadOnlyQualifierCollector;
 }
 
@@ -2103,6 +2106,7 @@ interface IImporter {
 //
 // @public
 interface IImporterCreateParams {
+    fileContentConverter?: Converter<JsonValue>;
     fileTree?: FileTree.FileTree;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     importers?: IImporter[];
@@ -2389,7 +2393,7 @@ class ImportManager {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static getDefaultImporters(qualifiers: IReadOnlyQualifierCollector, tree?: FileTree.FileTree): ReadonlyArray<IImporter>;
+    static getDefaultImporters(qualifiers: IReadOnlyQualifierCollector, tree?: FileTree.FileTree, fileContentConverter?: Converter<JsonValue>): ReadonlyArray<IImporter>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
