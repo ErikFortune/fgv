@@ -41,4 +41,38 @@ Description
 
 
 </td></tr>
+<tr><td>
+
+[fileContentConverter](./IFsItemImporterCreateParams.fileContentConverter.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Converter&lt;JsonValue, unknown&gt;
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[fileContentExtensions](./IFsItemImporterCreateParams.fileContentExtensions.md)
+
+</td><td>
+
+
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+
+
+</td></tr>
 </tbody></table>

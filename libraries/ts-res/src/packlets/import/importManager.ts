@@ -22,6 +22,8 @@
 
 import { captureResult, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { Converter } from '@fgv/ts-utils';
+import { JsonValue } from '@fgv/ts-json-base';
 import { ResourceManagerBuilder } from '../resources';
 import { ImportContext } from './importContext';
 import { IImportable, IImportablePath } from './importable';
@@ -54,6 +56,16 @@ export interface IImporterCreateParams {
    * An optional list of {@link Import.Importers.IImporter | importers} to use for the import.
    */
   importers?: IImporter[];
+
+  /**
+   * An optional converter used to pre-process file contents before JSON import validation.
+   */
+  fileContentConverter?: Converter<JsonValue>;
+
+  /**
+   * Optional file extensions which should be parsed using the supplied file content converter.
+   */
+  fileContentExtensions?: ReadonlyArray<string>;
 }
 
 /**
@@ -91,7 +103,13 @@ export class ImportManager {
     this.resources = params.resources;
     this.initialContext = params.initialContext ?? ImportContext.create().orThrow();
     this._importers = Array.from(
-      params.importers ?? ImportManager.getDefaultImporters(this.resources.qualifiers, params.fileTree)
+      params.importers ??
+        ImportManager.getDefaultImporters(
+          this.resources.qualifiers,
+          params.fileTree,
+          params.fileContentConverter,
+          params.fileContentExtensions
+        )
     );
   }
 
@@ -132,15 +150,21 @@ export class ImportManager {
    * and optional `FileTree`.
    * @param qualifiers - The {@link Qualifiers.IReadOnlyQualifierCollector | qualifiers} to use for the import.
    * @param tree - An optional `FileTree` for importing path items.
+   * @param fileContentConverter - An optional converter used to pre-process raw file contents before JSON import
+   * validation.
+   * @param fileContentExtensions - Optional file extensions which should be parsed using the supplied file
+   * content converter.
    * @returns A read-only array of {@link Import.Importers.IImporter | importers}.
    */
   public static getDefaultImporters(
     qualifiers: IReadOnlyQualifierCollector,
-    tree?: FileTree.FileTree
+    tree?: FileTree.FileTree,
+    fileContentConverter?: Converter<JsonValue>,
+    fileContentExtensions?: ReadonlyArray<string>
   ): ReadonlyArray<IImporter> {
     return [
       PathImporter.create({ qualifiers, tree }).orThrow(),
-      FsItemImporter.create({ qualifiers }).orThrow(),
+      FsItemImporter.create({ qualifiers, fileContentConverter, fileContentExtensions }).orThrow(),
       JsonImporter.create().orThrow(),
       CollectionImporter.create().orThrow()
     ];
