@@ -28,6 +28,7 @@ export {
 
 export {
   CollectionSection,
+  type ICollectionBadge,
   type ICollectionSectionProps,
   type ICollectionRowItem,
   type SourceColorMap
