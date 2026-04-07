@@ -79,7 +79,7 @@ describe('TabBar', () => {
 
     expect(button).toHaveTextContent('Overview');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('h-2', 'w-2', 'bg-status-warning-bg', 'text-status-warning-text');
+    expect(badge).toHaveClass('h-2', 'w-2', 'bg-status-warning-icon');
   });
 
   it('renders a count badge with a default info tone and count text', () => {

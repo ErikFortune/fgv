@@ -22,6 +22,8 @@
 
 import React from 'react';
 
+import { renderStatusBadge } from '../badge';
+
 /**
  * Optional badge shown alongside a tab label.
  * @public
@@ -44,38 +46,6 @@ export interface ITabConfig<TTab extends string> {
   readonly label: string;
   /** Optional badge rendered next to the tab label */
   readonly badge?: ITabBadge;
-}
-
-const BADGE_BASE_CLASSES: string =
-  'inline-flex shrink-0 items-center justify-center rounded-full font-medium leading-none';
-
-const BADGE_TONE_CLASSES: Record<NonNullable<ITabBadge['tone']>, string> = {
-  info: 'bg-status-info-bg text-status-info-text',
-  warning: 'bg-status-warning-bg text-status-warning-text',
-  danger: 'bg-status-error-bg text-status-error-text'
-};
-
-function renderBadge(badge: ITabBadge): React.ReactElement {
-  const tone = badge.tone ?? 'info';
-  const ariaLabel = badge.ariaLabel;
-
-  if (badge.kind === 'dot') {
-    return (
-      <span
-        className={`ml-1.5 h-2 w-2 ${BADGE_BASE_CLASSES} ${BADGE_TONE_CLASSES[tone]}`}
-        aria-label={ariaLabel}
-      />
-    );
-  }
-
-  return (
-    <span
-      className={`ml-1.5 min-w-4 px-1.5 py-0.5 text-[0.6875rem] ${BADGE_BASE_CLASSES} ${BADGE_TONE_CLASSES[tone]}`}
-      aria-label={ariaLabel}
-    >
-      {badge.count ?? 0}
-    </span>
-  );
 }
 
 /**
@@ -114,7 +84,7 @@ export function TabBar<TTab extends string>(props: ITabBarProps<TTab>): React.Re
           aria-current={activeTab === tab.id ? 'page' : undefined}
         >
           <span>{tab.label}</span>
-          {tab.badge && renderBadge(tab.badge)}
+          {tab.badge && renderStatusBadge(tab.badge)}
         </button>
       ))}
       {rightContent !== undefined && (
