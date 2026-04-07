@@ -108,7 +108,7 @@ Factory method to create a new Import.ImportManager | ImportManager.
 </td></tr>
 <tr><td>
 
-[getDefaultImporters(qualifiers, tree, fileContentConverter)](./ImportManager.getDefaultImporters.md)
+[getDefaultImporters(qualifiers, tree, fileContentConverter, fileContentExtensions)](./ImportManager.getDefaultImporters.md)
 
 </td><td>
 

@@ -62,6 +62,23 @@ Optional converter used to parse raw file contents before they are exposed as JS
 </td></tr>
 <tr><td>
 
+[fileContentExtensions](./FsItemImporter.fileContentExtensions.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Optional list of file extensions which should be parsed using the file content converter.
+
+</td></tr>
+<tr><td>
+
 [types](./FsItemImporter.types.md)
 
 </td><td>

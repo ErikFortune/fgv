@@ -70,7 +70,7 @@ const resourceFiles: FileTree.IInMemoryFile[] = [
     contents: { helloMyNameIs: 'resources for CA in fr' }
   },
   {
-    path: '/yaml-resources.yaml',
+    path: '/custom-resources.data',
     contents: `candidates:
   - id: yaml.resources
     resourceTypeName: json
@@ -155,10 +155,15 @@ describe('FsItemImporter', () => {
       const fileContentConverter = Yaml.yamlConverter(JsonConverters.jsonObject);
 
       expect(
-        TsRes.Import.Importers.FsItemImporter.create({ qualifiers, fileContentConverter })
+        TsRes.Import.Importers.FsItemImporter.create({
+          qualifiers,
+          fileContentConverter,
+          fileContentExtensions: ['.data']
+        })
       ).toSucceedAndSatisfy((newImporter) => {
         expect(newImporter.qualifiers).toBe(qualifiers);
         expect(newImporter.fileContentConverter).toBe(fileContentConverter);
+        expect(newImporter.fileContentExtensions).toEqual(['.data']);
       });
     });
   });
@@ -178,10 +183,26 @@ describe('FsItemImporter', () => {
       });
     });
 
-    test('imports a yaml file when a file content converter is supplied', () => {
+    test('skips a custom extension file when no file content extensions are supplied', () => {
       const fileContentConverter = Yaml.yamlConverter(JsonConverters.jsonObject);
       importer = TsRes.Import.Importers.FsItemImporter.create({ qualifiers, fileContentConverter }).orThrow();
-      const fsItem = TsRes.Import.FsItem.createForPath('/yaml-resources.yaml', qualifiers, tree).orThrow();
+      const fsItem = TsRes.Import.FsItem.createForPath('/custom-resources.data', qualifiers, tree).orThrow();
+      const importable: IImportableFsItem = { type: 'fsItem', item: fsItem };
+
+      expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
+        expect(results.length).toEqual(0);
+      });
+      expect(importer.import(importable, manager).detail).toEqual('skipped');
+    });
+
+    test('imports a custom extension file when a file content converter and extensions are supplied', () => {
+      const fileContentConverter = Yaml.yamlConverter(JsonConverters.jsonObject);
+      importer = TsRes.Import.Importers.FsItemImporter.create({
+        qualifiers,
+        fileContentConverter,
+        fileContentExtensions: ['.data']
+      }).orThrow();
+      const fsItem = TsRes.Import.FsItem.createForPath('/custom-resources.data', qualifiers, tree).orThrow();
       const importable: IImportableFsItem = { type: 'fsItem', item: fsItem };
 
       expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
@@ -300,8 +321,8 @@ describe('FsItemImporter', () => {
       expect(importResult.detail).toEqual('skipped');
     });
 
-    test('skips a yaml file when no file content converter is supplied', () => {
-      const fsItem = TsRes.Import.FsItem.createForPath('/yaml-resources.yaml', qualifiers, tree).orThrow();
+    test('skips a custom extension file when no file content extensions are supplied', () => {
+      const fsItem = TsRes.Import.FsItem.createForPath('/custom-resources.data', qualifiers, tree).orThrow();
       const importable: IImportableFsItem = { type: 'fsItem', item: fsItem };
 
       expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {

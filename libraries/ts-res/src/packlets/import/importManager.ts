@@ -61,6 +61,11 @@ export interface IImporterCreateParams {
    * An optional converter used to pre-process file contents before JSON import validation.
    */
   fileContentConverter?: Converter<JsonValue>;
+
+  /**
+   * Optional file extensions which should be parsed using the supplied file content converter.
+   */
+  fileContentExtensions?: ReadonlyArray<string>;
 }
 
 /**
@@ -102,7 +107,8 @@ export class ImportManager {
         ImportManager.getDefaultImporters(
           this.resources.qualifiers,
           params.fileTree,
-          params.fileContentConverter
+          params.fileContentConverter,
+          params.fileContentExtensions
         )
     );
   }
@@ -146,16 +152,19 @@ export class ImportManager {
    * @param tree - An optional `FileTree` for importing path items.
    * @param fileContentConverter - An optional converter used to pre-process raw file contents before JSON import
    * validation.
+   * @param fileContentExtensions - Optional file extensions which should be parsed using the supplied file
+   * content converter.
    * @returns A read-only array of {@link Import.Importers.IImporter | importers}.
    */
   public static getDefaultImporters(
     qualifiers: IReadOnlyQualifierCollector,
     tree?: FileTree.FileTree,
-    fileContentConverter?: Converter<JsonValue>
+    fileContentConverter?: Converter<JsonValue>,
+    fileContentExtensions?: ReadonlyArray<string>
   ): ReadonlyArray<IImporter> {
     return [
       PathImporter.create({ qualifiers, tree }).orThrow(),
-      FsItemImporter.create({ qualifiers, fileContentConverter }).orThrow(),
+      FsItemImporter.create({ qualifiers, fileContentConverter, fileContentExtensions }).orThrow(),
       JsonImporter.create().orThrow(),
       CollectionImporter.create().orThrow()
     ];

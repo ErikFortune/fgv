@@ -109,4 +109,21 @@ Converter&lt;JsonValue, unknown&gt;
 An optional converter used to pre-process file contents before JSON import validation.
 
 </td></tr>
+<tr><td>
+
+[fileContentExtensions](./IImporterCreateParams.fileContentExtensions.md)
+
+</td><td>
+
+
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Optional file extensions which should be parsed using the supplied file content converter.
+
+</td></tr>
 </tbody></table>

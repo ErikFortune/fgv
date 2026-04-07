@@ -44,6 +44,7 @@ import { FsItem, FsItemResultDetail } from '../fsItem';
 export interface IFsItemImporterCreateParams {
   qualifiers: IReadOnlyQualifierCollector;
   fileContentConverter?: Converter<JsonValue>;
+  fileContentExtensions?: ReadonlyArray<string>;
 }
 
 /**
@@ -62,6 +63,11 @@ export class FsItemImporter implements IImporter {
   public readonly fileContentConverter?: Converter<JsonValue>;
 
   /**
+   * Optional list of file extensions which should be parsed using the file content converter.
+   */
+  public readonly fileContentExtensions?: ReadonlyArray<string>;
+
+  /**
    * The types of {@link Import.IImportable | importables} that this importer can handle.
    */
   public readonly types: ReadonlyArray<string> = ['fsItem'];
@@ -73,6 +79,7 @@ export class FsItemImporter implements IImporter {
   protected constructor(params: IFsItemImporterCreateParams) {
     this.qualifiers = params.qualifiers;
     this.fileContentConverter = params.fileContentConverter;
+    this.fileContentExtensions = params.fileContentExtensions;
   }
 
   /**
@@ -147,10 +154,7 @@ export class FsItemImporter implements IImporter {
   }
 
   private _isSupportedFileExtension(extension: string): boolean {
-    return (
-      extension === '.json' ||
-      (this.fileContentConverter !== undefined && ['.yaml', '.yml'].includes(extension))
-    );
+    return extension === '.json' || this._canConvertFileExtension(extension);
   }
 
   private _getJsonContents(file: FileTree.IFileTreeFileItem): Result<JsonValue> {
@@ -160,6 +164,12 @@ export class FsItemImporter implements IImporter {
     }
 
     return file.getContents(JsonConverters.jsonValue);
+  }
+
+  private _canConvertFileExtension(extension: string): boolean {
+    return (
+      this.fileContentConverter !== undefined && this.fileContentExtensions?.includes(extension) === true
+    );
   }
 
   /**
