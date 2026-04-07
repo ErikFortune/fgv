@@ -45,6 +45,40 @@ The Qualifiers.IReadOnlyQualifierCollector | qualifier collector to use for this
 </td></tr>
 <tr><td>
 
+[fileContentConverter](./FsItemImporter.fileContentConverter.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+Converter&lt;JsonValue, unknown&gt;
+
+</td><td>
+
+Optional converter used to parse raw file contents before they are exposed as JSON importables.
+
+</td></tr>
+<tr><td>
+
+[fileContentExtensions](./FsItemImporter.fileContentExtensions.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Optional list of file extensions which should be parsed using the file content converter.
+
+</td></tr>
+<tr><td>
+
 [types](./FsItemImporter.types.md)
 
 </td><td>

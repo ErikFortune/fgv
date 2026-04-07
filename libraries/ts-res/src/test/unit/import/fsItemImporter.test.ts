@@ -23,6 +23,8 @@
 import '@fgv/ts-utils-jest';
 import {} from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { Converters as JsonConverters } from '@fgv/ts-json-base';
+import { Yaml } from '@fgv/ts-extras';
 import * as TsRes from '../../../index';
 import { IImportableFsItem } from '../../../packlets/import';
 
@@ -66,6 +68,14 @@ const resourceFiles: FileTree.IInMemoryFile[] = [
   {
     path: '/resources/home=CA,language=fr.json',
     contents: { helloMyNameIs: 'resources for CA in fr' }
+  },
+  {
+    path: '/custom-resources.data',
+    contents: `candidates:
+  - id: yaml.resources
+    resourceTypeName: json
+    json:
+      helloMyNameIs: yaml resources`
   },
   {
     path: '/broken/resources.home=Antarctica/language=en-US.json',
@@ -140,6 +150,22 @@ describe('FsItemImporter', () => {
         }
       );
     });
+
+    test('creates a new FsItemImporter with a supplied file content converter', () => {
+      const fileContentConverter = Yaml.yamlConverter(JsonConverters.jsonObject);
+
+      expect(
+        TsRes.Import.Importers.FsItemImporter.create({
+          qualifiers,
+          fileContentConverter,
+          fileContentExtensions: ['.data']
+        })
+      ).toSucceedAndSatisfy((newImporter) => {
+        expect(newImporter.qualifiers).toBe(qualifiers);
+        expect(newImporter.fileContentConverter).toBe(fileContentConverter);
+        expect(newImporter.fileContentExtensions).toEqual(['.data']);
+      });
+    });
   });
 
   describe('import', () => {
@@ -153,6 +179,45 @@ describe('FsItemImporter', () => {
         if (TsRes.Import.isImportable(results[0]) && results[0].type === 'json') {
           expect(results[0].json).toEqual({ helloMyNameIs: 'resources for US' });
           expect(results[0].context?.conditions.length).toEqual(0);
+        }
+      });
+    });
+
+    test('skips a custom extension file when no file content extensions are supplied', () => {
+      const fileContentConverter = Yaml.yamlConverter(JsonConverters.jsonObject);
+      importer = TsRes.Import.Importers.FsItemImporter.create({ qualifiers, fileContentConverter }).orThrow();
+      const fsItem = TsRes.Import.FsItem.createForPath('/custom-resources.data', qualifiers, tree).orThrow();
+      const importable: IImportableFsItem = { type: 'fsItem', item: fsItem };
+
+      expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
+        expect(results.length).toEqual(0);
+      });
+      expect(importer.import(importable, manager).detail).toEqual('skipped');
+    });
+
+    test('imports a custom extension file when a file content converter and extensions are supplied', () => {
+      const fileContentConverter = Yaml.yamlConverter(JsonConverters.jsonObject);
+      importer = TsRes.Import.Importers.FsItemImporter.create({
+        qualifiers,
+        fileContentConverter,
+        fileContentExtensions: ['.data']
+      }).orThrow();
+      const fsItem = TsRes.Import.FsItem.createForPath('/custom-resources.data', qualifiers, tree).orThrow();
+      const importable: IImportableFsItem = { type: 'fsItem', item: fsItem };
+
+      expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
+        expect(results.length).toEqual(1);
+        expect(results[0].type).toEqual('json');
+        if (TsRes.Import.isImportable(results[0]) && results[0].type === 'json') {
+          expect(results[0].json).toEqual({
+            candidates: [
+              {
+                id: 'yaml.resources',
+                resourceTypeName: 'json',
+                json: { helloMyNameIs: 'yaml resources' }
+              }
+            ]
+          });
         }
       });
     });
@@ -254,6 +319,16 @@ describe('FsItemImporter', () => {
         expect(results.length).toEqual(0);
       });
       expect(importResult.detail).toEqual('skipped');
+    });
+
+    test('skips a custom extension file when no file content extensions are supplied', () => {
+      const fsItem = TsRes.Import.FsItem.createForPath('/custom-resources.data', qualifiers, tree).orThrow();
+      const importable: IImportableFsItem = { type: 'fsItem', item: fsItem };
+
+      expect(importer.import(importable, manager)).toSucceedAndSatisfy((results) => {
+        expect(results.length).toEqual(0);
+      });
+      expect(importer.import(importable, manager).detail).toEqual('skipped');
     });
 
     test('fails to import a directory with invalid children', () => {
