@@ -21,14 +21,19 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { isJsonObject } from '@fgv/ts-json-base';
+import * as path from 'path';
+import { Converters as JsonConverters, FileTree, isJsonObject } from '@fgv/ts-json-base';
+import { Yaml } from '@fgv/ts-extras';
+import { Config, Import, Resources, Runtime } from '@fgv/ts-res';
 import {
   CapturingTutorialPrinter,
+  DATA_ROOT,
   runAllLessons,
   runLesson1,
   runLesson2,
   runLesson3,
-  runLesson4
+  runLesson4,
+  runLesson5
 } from '../../index';
 
 describe('Tutorial lessons', () => {
@@ -140,6 +145,75 @@ describe('Tutorial lessons', () => {
     });
   });
 
+  describe('Lesson 5 - path inference', () => {
+    test('imports the inferred/ tree and collapses every file to one resource id', () => {
+      const printer = new CapturingTutorialPrinter();
+      const systemConfig = runLesson1(printer).orThrow();
+      expect(runLesson5(printer, systemConfig)).toSucceed();
+
+      // Lesson 5 prints per-candidate sources that mention every
+      // inference pattern the tree exercises.
+      expect(printer.text).toMatch(/LANGUAGE: fr \(inferred from filename\)/);
+      expect(printer.text).toMatch(/TERRITORY: US \(inferred from filename\)/);
+      expect(printer.text).toMatch(/LANGUAGE: en \(inferred from folder\)/);
+      expect(printer.text).toMatch(/TERRITORY: CA \(inferred from "geo=CA" folder\)/);
+      expect(printer.text).toMatch(/stacked across nested folders/);
+      expect(printer.text).toMatch(/comma-separated filename tokens/);
+    });
+
+    test('every file in the inferred tree produces the same resource id with distinct conditions', () => {
+      // Build an isolated resource manager so we can introspect what
+      // the importer produced without mixing it with Lesson 2's data.
+      const printer = new CapturingTutorialPrinter();
+      const systemConfig = runLesson1(printer).orThrow();
+      runLesson5(printer, systemConfig).orThrow();
+
+      // Re-run the import here (we cannot reach into Lesson 5's
+      // internal manager) to verify candidate count matches file count.
+      const resourceManager = importInferredTree(systemConfig);
+      const resource = resourceManager.getBuiltResource('inferred.messages.text').orThrow();
+      expect(resource.candidates.length).toBe(7);
+
+      // Hit every distinct condition pattern via the resolver. Remember
+      // that the system configuration gives currentTerritory priority
+      // 850 and language priority 800, so territory beats language when
+      // both match - that's why {fr, US} picks the US candidate over
+      // the French candidate.
+      const probes: Array<[Record<string, string>, string]> = [
+        // Language-only contexts fall back to the LANGUAGE candidates
+        // because no territory-conditioned candidate matches.
+        [{ language: 'fr', currentTerritory: 'DE' }, 'LANGUAGE: fr (inferred from filename)'],
+        [{ language: 'en', currentTerritory: 'DE' }, 'LANGUAGE: en (inferred from folder)'],
+        // Territory-only matches pick the territory candidate.
+        [{ language: 'fr', currentTerritory: 'US' }, 'TERRITORY: US (inferred from filename)'],
+        [{ language: 'en', currentTerritory: 'US' }, 'TERRITORY: US (inferred from filename)'],
+        [{ language: 'en', currentTerritory: 'CA' }, 'TERRITORY: CA (inferred from "geo=CA" folder)'],
+        // Combined candidates win when both conditions match - their
+        // condition set is strictly more specific than either piece alone.
+        [{ language: 'fr', currentTerritory: 'CA' }, 'BOTH: CA + fr (stacked across nested folders)'],
+        [{ language: 'en', currentTerritory: 'GB' }, 'BOTH: GB + en (comma-separated filename tokens)']
+      ];
+
+      for (const [context, expectedSource] of probes) {
+        const resolver = Runtime.ResourceResolver.create({
+          resourceManager,
+          qualifierTypes: systemConfig.qualifierTypes,
+          contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider.create({
+            qualifiers: systemConfig.qualifiers,
+            qualifierValues: context
+          }).orThrow()
+        }).orThrow();
+
+        expect(resolver.resolveResource('inferred.messages.text')).toSucceedAndSatisfy((candidate) => {
+          expect(isJsonObject(candidate.json)).toBe(true);
+          if (isJsonObject(candidate.json)) {
+            expect(candidate.json.source).toBe(expectedSource);
+          }
+        });
+      }
+    });
+  });
+
   describe('runAllLessons', () => {
     test('runs the whole tutorial end-to-end without errors', () => {
       const printer = new CapturingTutorialPrinter();
@@ -148,6 +222,31 @@ describe('Tutorial lessons', () => {
       expect(printer.text).toMatch(/Lesson 2/);
       expect(printer.text).toMatch(/Lesson 3/);
       expect(printer.text).toMatch(/Lesson 4/);
+      expect(printer.text).toMatch(/Lesson 5/);
     });
   });
 });
+
+/**
+ * Minimal standalone importer for Lesson 5's data folder. Used by the
+ * test that wants to introspect the built manager directly (lesson 5
+ * itself keeps its manager private because the lesson only needs to
+ * print).
+ */
+function importInferredTree(systemConfig: Config.SystemConfiguration): Resources.ResourceManagerBuilder {
+  const resourceManager = Resources.ResourceManagerBuilder.create({
+    qualifiers: systemConfig.qualifiers,
+    resourceTypes: systemConfig.resourceTypes
+  }).orThrow();
+
+  const importManager = Import.ImportManager.create({
+    resources: resourceManager,
+    fileTree: FileTree.forFilesystem().orThrow(),
+    fileContentConverter: Yaml.yamlConverter(JsonConverters.jsonObject),
+    fileContentExtensions: ['.yaml', '.yml']
+  }).orThrow();
+
+  importManager.importFromFileSystem(path.join(DATA_ROOT, 'inferred')).orThrow();
+  resourceManager.build().orThrow();
+  return resourceManager;
+}

@@ -44,14 +44,21 @@ qualifierTypes:
 qualifiers:
   # Highest priority wins when it matches. Territory beats language beats
   # theme beats density in this tutorial - picked only for demonstration.
+  #
+  # tokenIsOptional: true on the territory and language qualifiers lets
+  # Lesson 5 demonstrate "tokenless" inference - a plain `CA` or `fr` in
+  # a folder or filename gets resolved to the right qualifier by trying
+  # each token-optional qualifier in turn.
   - name: currentTerritory
     typeName: territory
     token: geo
+    tokenIsOptional: true
     defaultPriority: 850
 
   - name: language
     typeName: language
     token: lang
+    tokenIsOptional: true
     defaultPriority: 800
 
   - name: theme

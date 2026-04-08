@@ -23,12 +23,12 @@
 import { Command } from 'commander';
 import { Result } from '@fgv/ts-utils';
 import { Runtime } from '@fgv/ts-res';
-import { runAllLessons, runLesson1, runLesson2, runLesson3, runLesson4 } from './lessons';
+import { runAllLessons, runLesson1, runLesson2, runLesson3, runLesson4, runLesson5 } from './lessons';
 import { ConsoleTutorialPrinter, ITutorialPrinter } from './utils';
 
 /**
  * Minimal CLI wrapper around the tutorial lessons. Each subcommand
- * invokes one lesson (or all four in order).
+ * invokes one lesson (or all five in order).
  *
  * @remarks
  * The CLI is intentionally thin - every lesson is a plain function that
@@ -89,6 +89,15 @@ export class TutorialApp {
       .action(() => {
         this._runThroughLesson3()
           .onSuccess((resolver) => runLesson4(this._printer, resolver))
+          .orThrow();
+      });
+
+    program
+      .command('lesson5-inference')
+      .description('Lesson 5 - infer qualifiers from folder and file names')
+      .action(() => {
+        runLesson1(this._printer)
+          .onSuccess((systemConfig) => runLesson5(this._printer, systemConfig))
           .orThrow();
       });
 

@@ -1,7 +1,7 @@
 # @fgv/ts-res-tutorial
 
 A hands-on, end-to-end tutorial for the [`@fgv/ts-res`](../../libraries/ts-res)
-multidimensional resource management library. It walks through the four
+multidimensional resource management library. It walks through the five
 concepts you actually need to build something with ts-res:
 
 1. Loading a qualifier configuration.
@@ -11,6 +11,8 @@ concepts you actually need to build something with ts-res:
    types, resource resolver.
 4. Resolving resources in all four supported ways - best match, all
    matches, composed, and manually composed.
+5. Letting the importer infer qualifiers from folder and file names,
+   and composing resource ids from the filesystem layout.
 
 Unlike [`@fgv/ts-res-cli`](../ts-res-cli), this package is not a tool.
 It is a small, commented application that you are meant to read as much
@@ -35,6 +37,7 @@ rushx lesson1   # just lesson 1
 rushx lesson2   # lessons 1 + 2
 rushx lesson3   # lessons 1 + 2 + 3
 rushx lesson4   # lessons 1 + 2 + 3 + 4
+rushx lesson5   # lesson 1 + 5 (lesson 5 is independent of 2-4)
 rushx all       # everything in one run
 ```
 
@@ -47,24 +50,34 @@ lesson directly.
 ```
 tools/ts-res-tutorial/
 ├── data/
-│   ├── config/system.yaml        # Qualifier types + qualifiers + resource types
-│   └── resources/
-│       ├── strings.yaml          # Language + territory priority demo
-│       ├── theme.yaml            # Composition with full + partial candidates
-│       └── icons.yaml            # Custom density qualifier type demo
+│   ├── config/system.yaml           # Qualifier types + qualifiers + resource types
+│   ├── resources/                   # Lessons 2-4 (explicit conditions)
+│   │   ├── strings.yaml             # Language + territory priority demo
+│   │   ├── theme.yaml               # Composition with full + partial candidates
+│   │   └── icons.yaml               # Custom density qualifier type demo
+│   └── inferred/                    # Lesson 5 (path-inferred conditions)
+│       ├── messages.yaml            # default
+│       ├── messages.fr.yaml         # language=fr (tokenless filename)
+│       ├── messages.US.yaml         # territory=US (tokenless filename)
+│       ├── messages.geo=GB,lang=en.yaml  # comma-separated tokens
+│       ├── en/messages.yaml         # language=en (tokenless folder)
+│       └── geo=CA/                  # territory=CA (explicit geo token)
+│           ├── messages.yaml
+│           └── lang=fr/messages.yaml  # stacked: CA + fr
 └── src/
-    ├── cli.ts                    # Commander wiring, kept intentionally thin
+    ├── cli.ts                       # Commander wiring, kept intentionally thin
     ├── lessons/
     │   ├── lesson01LoadConfig.ts
     │   ├── lesson02Import.ts
     │   ├── lesson03Runtime.ts
-    │   └── lesson04Resolve.ts
+    │   ├── lesson04Resolve.ts
+    │   └── lesson05Inference.ts
     ├── qualifierTypes/
     │   ├── densityQualifierType.ts         # Custom QualifierType subclass
     │   └── densityQualifierTypeFactory.ts  # Config factory that builds it
     └── utils/
-        ├── paths.ts              # Paths to the bundled sample data
-        └── printer.ts            # ITutorialPrinter abstraction
+        ├── paths.ts                 # Paths to the bundled sample data
+        └── printer.ts               # ITutorialPrinter abstraction
 ```
 
 ## Lesson 1 - Loading a qualifier configuration
@@ -206,6 +219,73 @@ The lesson exercises every strategy against the bundled resources:
   `JsonEditor.create({ merge: { arrayMergeBehavior: 'replace', nullAsDelete: true } })`.
   This is the escape hatch for anything the built-in composition can't
   express.
+
+## Lesson 5 - Path-driven qualifier inference
+
+`src/lessons/lesson05Inference.ts`
+
+Lessons 2-4 put the conditions for each candidate inside the YAML file.
+That's fine, but it means every file has to repeat the qualifier
+structure even for trivial cases. The importer supports a much more
+compact alternative: encode the conditions in **folder** and **file**
+names.
+
+### The inference rules
+
+When the `FsItemImporter` walks a file tree it inspects the basename of
+every folder and file and applies the following rules:
+
+1. **Split on `.`**. The importer only inspects the LAST dot-separated
+   segment for qualifier tokens. Everything else becomes the name
+   fragment.
+2. **Split the last segment on `,`**. Each piece is parsed as a
+   `[qualifier=]value` pair.
+3. **Explicit tokens** (`geo=CA`, `lang=fr`) are resolved by looking up
+   the left-hand side as a qualifier name first, then as a qualifier
+   token. Token names are declared in `data/config/system.yaml` via the
+   `token` field.
+4. **Tokenless values** (`CA`, `fr`) are only resolved when
+   `tokenIsOptional: true`. The importer tries each token-optional
+   qualifier's type validator in turn, and accepts the value only if
+   exactly one qualifier matches. Our `system.yaml` sets
+   `tokenIsOptional: true` on both `currentTerritory` and `language`;
+   `CA` validates as a territory but not as a BCP47 language tag, and
+   `fr` does the opposite, so the choice is unambiguous.
+5. **Folders whose entire name parses as a token** contribute the
+   condition but no name fragment, so you can add arbitrary
+   organisational nesting without polluting the resource id.
+6. **Path composition** joins every surviving name fragment, plus the
+   explicit candidate `id` inside the file, with `.` to produce the
+   final resource id.
+
+### What the sample tree exercises
+
+`data/inferred/` contains seven YAML files, all of which collapse to a
+single resource id `inferred.messages.text` with one candidate each:
+
+| File | Inferred conditions | Mechanism |
+|---|---|---|
+| `messages.yaml` | _(none)_ | default fallback |
+| `messages.fr.yaml` | `language=fr` | tokenless value in filename |
+| `messages.US.yaml` | `currentTerritory=US` | tokenless value in filename |
+| `en/messages.yaml` | `language=en` | tokenless value in folder |
+| `geo=CA/messages.yaml` | `currentTerritory=CA` | explicit token in folder |
+| `geo=CA/lang=fr/messages.yaml` | `currentTerritory=CA, language=fr` | stacked tokens across folders |
+| `messages.geo=GB,lang=en.yaml` | `currentTerritory=GB, language=en` | comma-separated tokens in one segment |
+
+Notice that the YAML files themselves contain **no** `conditions`
+blocks - the layout alone is enough.
+
+### What the lesson prints
+
+Lesson 5 imports the tree into its own resource manager, lists what the
+importer discovered, and then resolves the resource under several
+contexts so you can watch the priority rules you learned in Lessons 1
+and 4 pick different candidates on the fly. Remember that
+`currentTerritory` outranks `language` (850 vs 800), so a context like
+`{ fr, US }` still selects the US candidate - the lesson includes a
+`{ fr, DE }` case to show that language-only contexts do pick the
+language candidate when no territory matches.
 
 ## Testing
 

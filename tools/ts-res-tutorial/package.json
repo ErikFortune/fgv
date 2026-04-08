@@ -17,6 +17,7 @@
     "lesson2": "node bin/ts-res-tutorial.js lesson2-import",
     "lesson3": "node bin/ts-res-tutorial.js lesson3-runtime",
     "lesson4": "node bin/ts-res-tutorial.js lesson4-resolve",
+    "lesson5": "node bin/ts-res-tutorial.js lesson5-inference",
     "all": "node bin/ts-res-tutorial.js all"
   },
   "keywords": [

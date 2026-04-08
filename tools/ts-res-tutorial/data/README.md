@@ -11,17 +11,28 @@ the narrative.
 ```
 data/
 ├── config/
-│   └── system.yaml       # Qualifier types, qualifiers, resource types
-└── resources/
-    ├── strings.yaml      # Language + territory priority demo
-    ├── theme.yaml        # Composition with full + partial candidates
-    └── icons.yaml        # Custom density qualifier type demo
+│   └── system.yaml                # Qualifier types, qualifiers, resource types
+├── resources/                     # Used by Lessons 2-4
+│   ├── strings.yaml               # Language + territory priority demo
+│   ├── theme.yaml                 # Composition with full + partial candidates
+│   └── icons.yaml                 # Custom density qualifier type demo
+└── inferred/                      # Used by Lesson 5 (path inference)
+    ├── messages.yaml                       # default
+    ├── messages.fr.yaml                    # language=fr (tokenless filename)
+    ├── messages.US.yaml                    # territory=US (tokenless filename)
+    ├── messages.geo=GB,lang=en.yaml        # GB+en (comma-separated tokens)
+    ├── en/
+    │   └── messages.yaml                   # language=en (tokenless folder)
+    └── geo=CA/
+        ├── messages.yaml                   # territory=CA (explicit "geo" token)
+        └── lang=fr/
+            └── messages.yaml               # CA + fr (stacked across folders)
 ```
 
 ## Resource IDs
 
 The importer prefixes every resource id with the path it was imported
-from (parent directories + file basename), so after loading this tree
+from (parent directories + file basename). After loading `data/resources/`
 you get:
 
 ```
@@ -30,6 +41,17 @@ resources.strings.uiLabels
 resources.theme.theme
 resources.icons.icons
 ```
+
+Every file under `data/inferred/` collapses to the same resource id:
+
+```
+inferred.messages.text
+```
+
+with a different candidate per file. Folders whose name is just a
+qualifier token (`geo=CA`, `lang=fr`, or a tokenless value like `en`)
+contribute a condition but no name fragment, so the id stays clean
+regardless of how deeply nested the file is.
 
 ## Why YAML?
 
