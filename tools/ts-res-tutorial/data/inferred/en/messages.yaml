@@ -1,0 +1,16 @@
+# Tokenless language qualifier in a parent folder.
+#
+# File path:   data/inferred/en/messages.yaml
+# Resource id: inferred.messages.text (the "en" folder adds a condition
+#              but no path fragment)
+# Conditions:  language=en
+#
+# When a folder's entire name parses as a single tokenless value, the
+# folder contributes a condition but no path fragment. Here the "en"
+# folder adds language=en and does not appear in the resource id.
+candidates:
+  - id: text
+    resourceTypeName: json
+    json:
+      hello: Hello there
+      source: 'LANGUAGE: en (inferred from folder)'

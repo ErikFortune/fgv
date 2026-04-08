@@ -1881,6 +1881,70 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  ../../tools/ts-res-tutorial:
+    dependencies:
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-extras
+      '@fgv/ts-json':
+        specifier: workspace:*
+        version: link:../../libraries/ts-json
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../../libraries/ts-json-base
+      '@fgv/ts-res':
+        specifier: workspace:*
+        version: link:../../libraries/ts-res
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils
+      commander:
+        specifier: ^11.0.0
+        version: 11.1.0
+    devDependencies:
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils-jest
+      '@rushstack/eslint-config':
+        specifier: 4.6.4
+        version: 4.6.4(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
+      '@rushstack/heft':
+        specifier: 1.2.7
+        version: 1.2.7(@types/node@20.19.37)
+      '@rushstack/heft-jest-plugin':
+        specifier: 1.2.6
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+      '@rushstack/heft-node-rig':
+        specifier: 2.11.27
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+      '@types/heft-jest':
+        specifier: 1.0.6
+        version: 1.0.6
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.37
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.52.0
+        version: 8.57.2(@typescript-eslint/parser@8.57.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.52.0
+        version: 8.57.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.4(jiti@2.6.1)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+      ts-jest:
+        specifier: ^29.4.6
+        version: 29.4.6(@babel/core@7.29.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.0))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.37)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3)))(typescript@5.9.3)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   ../../tools/ts-res-ui-playground:
     dependencies:
       '@fgv/ts-extras':
@@ -9866,9 +9930,9 @@ snapshots:
   '@jest/core@29.5.0(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))':
     dependencies:
       '@jest/console': 29.7.0
-      '@jest/reporters': 29.5.0
+      '@jest/reporters': 29.7.0
       '@jest/test-result': 29.7.0
-      '@jest/transform': 29.5.0
+      '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@types/node': 20.19.37
       ansi-escapes: 4.3.2
@@ -9877,11 +9941,11 @@ snapshots:
       exit: 0.1.2
       graceful-fs: 4.2.11
       jest-changed-files: 29.7.0
-      jest-config: 29.5.0(@types/node@20.19.37)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+      jest-config: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       jest-haste-map: 29.7.0
       jest-message-util: 29.7.0
       jest-regex-util: 29.6.3
-      jest-resolve: 29.5.0
+      jest-resolve: 29.7.0
       jest-resolve-dependencies: 29.7.0
       jest-runner: 29.7.0
       jest-runtime: 29.7.0
@@ -9974,7 +10038,7 @@ snapshots:
       '@bcoe/v8-coverage': 0.2.3
       '@jest/console': 29.7.0
       '@jest/test-result': 29.7.0
-      '@jest/transform': 29.5.0
+      '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@jridgewell/trace-mapping': 0.3.31
       '@types/node': 20.19.37
@@ -11294,7 +11358,7 @@ snapshots:
   '@typescript-eslint/project-service@8.56.1(typescript@5.8.3)':
     dependencies:
       '@typescript-eslint/tsconfig-utils': 8.56.1(typescript@5.8.3)
-      '@typescript-eslint/types': 8.56.1
+      '@typescript-eslint/types': 8.57.2
       debug: 4.4.3
       typescript: 5.8.3
     transitivePeerDependencies:
@@ -11303,7 +11367,7 @@ snapshots:
   '@typescript-eslint/project-service@8.56.1(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/tsconfig-utils': 8.56.1(typescript@5.9.3)
-      '@typescript-eslint/types': 8.56.1
+      '@typescript-eslint/types': 8.57.2
       debug: 4.4.3
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -14019,7 +14083,7 @@ snapshots:
       jest-environment-node: 29.7.0
       jest-get-type: 29.6.3
       jest-regex-util: 29.6.3
-      jest-resolve: 29.5.0
+      jest-resolve: 29.7.0
       jest-runner: 29.7.0
       jest-util: 29.7.0
       jest-validate: 29.7.0
@@ -14276,7 +14340,7 @@ snapshots:
       '@babel/traverse': 7.29.0
       '@babel/types': 7.29.0
       '@jest/expect-utils': 29.7.0
-      '@jest/transform': 29.5.0
+      '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@types/babel__traverse': 7.28.0
       '@types/prettier': 2.7.3
