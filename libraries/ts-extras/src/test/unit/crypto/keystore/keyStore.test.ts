@@ -214,41 +214,47 @@ describe('KeyStore', () => {
         });
       });
 
-      test('uses specified type when provided', async () => {
+      test('stores specified type classification', async () => {
         const key = (await provider.generateKey()).orThrow();
-        const result = keystore.importSecret('imported-secret', key, { type: 'api-key' });
+        const result = keystore.importSecret('imported-secret', key, { type: 'encryption-key' });
 
         expect(result).toSucceedAndSatisfy((addResult) => {
-          expect(addResult.entry.type).toBe('api-key');
+          expect(addResult.entry.type).toBe('encryption-key');
         });
       });
 
-      test('imported secret with type appears in listSecretsByType', async () => {
-        const key = (await provider.generateKey()).orThrow();
-        keystore.importSecret('typed-secret', key, { type: 'api-key' });
-
-        expect(keystore.listSecretsByType('api-key')).toSucceedAndSatisfy((names) => {
-          expect(names).toContain('typed-secret');
-        });
+      test('type classification integrates with listSecretsByType', async () => {
+        const key1 = (await provider.generateKey()).orThrow();
+        const key2 = (await provider.generateKey()).orThrow();
+        keystore.importSecret('secret-a', key1); // defaults to 'encryption-key'
+        keystore.importSecret('secret-b', key2, { type: 'encryption-key' });
 
         expect(keystore.listSecretsByType('encryption-key')).toSucceedAndSatisfy((names) => {
-          expect(names).not.toContain('typed-secret');
+          expect(names).toContain('secret-a');
+          expect(names).toContain('secret-b');
         });
+      });
+
+      test('type does not affect 32-byte key validation', () => {
+        const shortKey = new Uint8Array(16);
+        const result = keystore.importSecret('my-secret', shortKey, { type: 'encryption-key' });
+
+        expect(result).toFailWith(/32 bytes/);
       });
 
       test('type works with description and replace options', async () => {
         const key1 = (await provider.generateKey()).orThrow();
         const key2 = (await provider.generateKey()).orThrow();
 
-        keystore.importSecret('my-secret', key1, { type: 'api-key', description: 'first' });
+        keystore.importSecret('my-secret', key1, { type: 'encryption-key', description: 'first' });
         const result = keystore.importSecret('my-secret', key2, {
-          type: 'api-key',
+          type: 'encryption-key',
           description: 'replaced',
           replace: true
         });
 
         expect(result).toSucceedAndSatisfy((addResult) => {
-          expect(addResult.entry.type).toBe('api-key');
+          expect(addResult.entry.type).toBe('encryption-key');
           expect(addResult.entry.description).toBe('replaced');
           expect(addResult.replaced).toBe(true);
         });

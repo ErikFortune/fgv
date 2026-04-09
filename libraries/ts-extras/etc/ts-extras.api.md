@@ -584,10 +584,17 @@ interface IEncryptionResult {
     readonly iv: Uint8Array;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IImportSecretOptions"
+//
+// @public
+interface IImportKeyOptions extends IImportSecretOptions {
+    readonly type?: KeyStoreSecretType;
+}
+
 // @public
 interface IImportSecretOptions extends IAddSecretOptions {
     readonly replace?: boolean;
-    readonly type?: KeyStoreSecretType;
 }
 
 // @public
@@ -757,6 +764,7 @@ declare namespace KeyStore {
         IAddSecretResult,
         IAddSecretOptions,
         IImportSecretOptions,
+        IImportKeyOptions,
         IAddSecretFromPasswordOptions,
         DEFAULT_SECRET_ITERATIONS,
         IAddSecretFromPasswordResult
@@ -780,7 +788,8 @@ class KeyStore_2 implements IEncryptionProvider {
     getSecretProvider(): Result<SecretProvider>;
     hasSecret(name: string): Result<boolean>;
     importApiKey(name: string, apiKey: string, options?: IImportSecretOptions): Result<IAddSecretResult>;
-    importSecret(name: string, key: Uint8Array, options?: IImportSecretOptions): Result<IAddSecretResult>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+    importSecret(name: string, key: Uint8Array, options?: IImportKeyOptions): Result<IAddSecretResult>;
     initialize(password: string): Promise<Result<KeyStore_2>>;
     get isDirty(): boolean;
     get isNew(): boolean;
