@@ -36,6 +36,7 @@ import {
   IAddSecretFromPasswordResult,
   IAddSecretOptions,
   IAddSecretResult,
+  IImportKeyOptions,
   IImportSecretOptions,
   IKeyStoreCreateParams,
   IKeyStoreFile,
@@ -448,18 +449,20 @@ export class KeyStore implements IEncryptionProvider {
   }
 
   /**
-   * Imports an existing secret key.
+   * Imports raw 32-byte key material into the vault.
+   *
+   * Always validates that the key is exactly 32 bytes (AES-256). The optional
+   * `type` field is a classification label stored with the entry; it does not
+   * change the validation rules.  For importing UTF-8 API key strings (variable
+   * length), use {@link KeyStore.importApiKey} instead.
+   *
    * @param name - Unique name for the secret
-   * @param key - The 32-byte AES-256 key
-   * @param options - Optional description, whether to replace existing
+   * @param key - The 32-byte AES-256 key material
+   * @param options - Optional type classification, description, whether to replace existing
    * @returns Success with entry, Failure if locked, key invalid, or exists and !replace
    * @public
    */
-  public importSecret(
-    name: string,
-    key: Uint8Array,
-    options?: IImportSecretOptions
-  ): Result<IAddSecretResult> {
+  public importSecret(name: string, key: Uint8Array, options?: IImportKeyOptions): Result<IAddSecretResult> {
     if (!this._secrets) {
       return fail('Key store is locked');
     }
@@ -477,7 +480,7 @@ export class KeyStore implements IEncryptionProvider {
 
     const entry: IKeyStoreSecretEntry = {
       name,
-      type: 'encryption-key',
+      type: options?.type ?? 'encryption-key',
       key: new Uint8Array(key), // Copy to prevent external modification
       description: options?.description,
       createdAt: getCurrentTimestamp()

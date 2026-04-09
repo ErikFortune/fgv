@@ -172,6 +172,26 @@ interface ArrayValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 // @public
 function asValidator<T, TC = unknown>(converterOrValidator: Converter<T, TC> | Validator<T, TC>): Validator<T, TC>;
 
+// @public
+export type AsyncFailureContinuation<T> = (message: string) => Promise<Result<T>>;
+
+// @public
+export class AsyncResult<T> implements PromiseLike<Result<T>> {
+    constructor(promise: Promise<Result<T>>);
+    aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): AsyncResult<T>;
+    static from<T>(result: Result<T>): AsyncResult<T>;
+    onFailure(cb: FailureContinuation<T>): AsyncResult<T>;
+    onSuccess<TN>(cb: SuccessContinuation<T, TN>): AsyncResult<TN>;
+    report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): AsyncResult<T>;
+    then<TResult1 = Result<T>, TResult2 = never>(onfulfilled?: ((value: Result<T>) => TResult1 | PromiseLike<TResult1>) | null, onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null): Promise<TResult1 | TResult2>;
+    thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+    thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
+    withErrorFormat(cb: ErrorFormatter): AsyncResult<T>;
+}
+
+// @public
+export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>>;
+
 declare namespace Base {
     export {
         GenericValidatorConstructorParams,
@@ -322,6 +342,9 @@ class CacheInvalidatingResultMapWrapper<TK extends string, TSRC, TTARGET, TSRCMA
     update(key: TK, value: TSRC): DetailedResult<TSRC, ResultMapResultDetail>;
     values(): IterableIterator<TSRC>;
 }
+
+// @public
+export function captureAsyncResult<T>(func: () => Promise<T>): Promise<Result<T>>;
 
 // @public
 export function captureResult<T>(func: () => T): Result<T>;
@@ -1042,6 +1065,9 @@ function enumeratedValue_2<T extends string>(values: ReadonlyArray<T>): Validato
 // @public
 export type ErrorFormatter<TD = unknown> = (message: string, detail?: TD) => string;
 
+// @internal
+export function _errorMessage(err: unknown): string;
+
 // @public
 function fail_2<T>(message: string): Failure<T>;
 export { fail_2 as fail }
@@ -1091,6 +1117,8 @@ export class Failure<out T> implements IResult<T> {
     orThrow(cb: ErrorFormatter): never;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Failure<T>;
     readonly success: false;
+    thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+    thenOnSuccess<TN>(__: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
     toString(): string;
     readonly value: undefined;
     static with<T>(message: string): Failure<T>;
@@ -1703,6 +1731,8 @@ export interface IResult<T> {
     orThrow(cb: ErrorFormatter): T;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Result<T>;
     readonly success: boolean;
+    thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+    thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
     readonly value: T | undefined;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD>;
@@ -2730,6 +2760,8 @@ export class Success<out T> implements IResult<T> {
     orThrow(cb: ErrorFormatter): T;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Success<T>;
     readonly success: true;
+    thenOnFailure(__: AsyncFailureContinuation<T>): AsyncResult<T>;
+    thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
     get value(): T;
     // @internal (undocumented)
     protected readonly _value: T;

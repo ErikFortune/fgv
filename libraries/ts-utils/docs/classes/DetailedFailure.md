@@ -321,6 +321,32 @@ Gets the value associated with a successful IResult | result,
 </td></tr>
 <tr><td>
 
+[thenOnSuccess(__)](./Failure.thenOnSuccess.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Calls a supplied AsyncSuccessContinuation | async success continuation if
+
+</td></tr>
+<tr><td>
+
+[thenOnFailure(cb)](./Failure.thenOnFailure.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Calls a supplied AsyncFailureContinuation | async failure continuation if
+
+</td></tr>
+<tr><td>
+
 [withFailureDetail(detail)](./Failure.withFailureDetail.md)
 
 </td><td>

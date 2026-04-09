@@ -324,6 +324,32 @@ export interface IResult<T> {
   onFailure(cb: FailureContinuation<T>): Result<T>;
 
   /**
+   * Calls a supplied {@link AsyncSuccessContinuation | async success continuation} if
+   * the operation was a success, bridging into an {@link AsyncResult} chain.
+   * @remarks
+   * If the async callback rejects, the rejection is caught and converted
+   * to a {@link Failure}.
+   * @param cb - The {@link AsyncSuccessContinuation | async success continuation} to
+   * be called in the event of success.
+   * @returns An {@link AsyncResult} wrapping the async continuation result, or
+   * propagating the error message from this failure.
+   */
+  thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
+
+  /**
+   * Calls a supplied {@link AsyncFailureContinuation | async failure continuation} if
+   * the operation failed, bridging into an {@link AsyncResult} chain.
+   * @remarks
+   * If the async callback rejects, the rejection is caught and converted
+   * to a {@link Failure}.
+   * @param cb - The {@link AsyncFailureContinuation | async failure continuation} to
+   * be called in the event of failure.
+   * @returns An {@link AsyncResult} wrapping the async continuation result, or
+   * propagating the success value from this result.
+   */
+  thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+
+  /**
    * Calls a supplied {@link ErrorFormatter | error formatter} if
    * the operation failed.
    * @param cb - The {@link ErrorFormatter | error formatter} to
@@ -476,6 +502,27 @@ export class Success<out T> implements IResult<T> {
    */
   public onFailure(__: FailureContinuation<T>): Result<T> {
     return this;
+  }
+
+  /**
+   * {@inheritDoc IResult.thenOnSuccess}
+   */
+  public thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return new AsyncResult(cb(this._value));
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return AsyncResult.from(fail<TN>(_errorMessage(err)));
+    }
+  }
+
+  /**
+   * {@inheritDoc IResult.thenOnFailure}
+   */
+  public thenOnFailure(__: AsyncFailureContinuation<T>): AsyncResult<T> {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    return AsyncResult.from(this);
   }
 
   /**
@@ -639,6 +686,27 @@ export class Failure<out T> implements IResult<T> {
    */
   public onFailure(cb: FailureContinuation<T>): Result<T> {
     return cb(this._message);
+  }
+
+  /**
+   * {@inheritDoc IResult.thenOnSuccess}
+   */
+  public thenOnSuccess<TN>(__: AsyncSuccessContinuation<T, TN>): AsyncResult<TN> {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    return AsyncResult.from(fail<TN>(this._message));
+  }
+
+  /**
+   * {@inheritDoc IResult.thenOnFailure}
+   */
+  public thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return new AsyncResult(cb(this._message));
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return AsyncResult.from(fail<T>(_errorMessage(err)));
+    }
   }
 
   /**
@@ -1102,18 +1170,239 @@ export function propagateWithDetail<T, TD>(
 }
 
 /**
+ * Extracts a message string from an unknown thrown/rejected value.
+ * @param err - The caught error value.
+ * @returns The error message string.
+ * @internal
+ */
+export function _errorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return String(err);
+}
+
+/**
  * Wraps a function which might throw to convert exception results
  * to {@link Failure}.
  * @param func - The function to be captured.
  * @returns Returns {@link Success} with a value of type `<T>` on
  * success , or {@link Failure} with the thrown error message if
- * `func` throws an `Error`.
+ * `func` throws an `Error` or string.
  * @public
  */
 export function captureResult<T>(func: () => T): Result<T> {
   try {
     return succeed(func());
   } catch (err) {
-    return fail((err as Error).message);
+    return fail(_errorMessage(err));
+  }
+}
+
+/**
+ * Async continuation callback to be called in the event that a
+ * {@link Result} is successful, returning a `Promise` of a new {@link Result}.
+ * @public
+ */
+export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>>;
+
+/**
+ * Async continuation callback to be called in the event that a
+ * {@link Result} fails, returning a `Promise` of a new {@link Result}.
+ * @public
+ */
+export type AsyncFailureContinuation<T> = (message: string) => Promise<Result<T>>;
+
+/**
+ * Wraps a `Promise` of a {@link Result} to enable fluent chaining of both
+ * synchronous and asynchronous operations.
+ *
+ * @remarks
+ * `AsyncResult<T>` implements `PromiseLike` so it can be directly `await`ed.
+ * Use the `thenOnSuccess` and `thenOnFailure` methods on {@link Result} to bridge
+ * from synchronous to asynchronous result chains.
+ *
+ * @example
+ * ```typescript
+ * const result: Result<Final> = await parseInput(input)
+ *   .thenOnSuccess(async (parsed) => fetchData(parsed))
+ *   .onSuccess((data) => transform(data))
+ *   .thenOnSuccess(async (transformed) => saveData(transformed))
+ *   .withErrorFormat((msg) => `pipeline failed: ${msg}`);
+ * ```
+ *
+ * @public
+ */
+export class AsyncResult<T> implements PromiseLike<Result<T>> {
+  private readonly _promise: Promise<Result<T>>;
+
+  /**
+   * Constructs an {@link AsyncResult} wrapping the supplied promise.
+   * @remarks
+   * If the supplied promise rejects, the rejection is caught and converted
+   * to a {@link Failure}, ensuring that awaiting an {@link AsyncResult} always
+   * yields a {@link Result}.
+   * @param promise - A `Promise` that resolves to a {@link Result}.
+   */
+  public constructor(promise: Promise<Result<T>>) {
+    this._promise = promise.catch((err: unknown) => fail<T>(_errorMessage(err)));
+  }
+
+  /**
+   * Calls a supplied {@link SuccessContinuation | success continuation} if
+   * the wrapped result is successful.
+   * @param cb - The synchronous {@link SuccessContinuation | success continuation}
+   * to be called in the event of success.
+   * @returns A new {@link AsyncResult} wrapping the continuation result.
+   */
+  public onSuccess<TN>(cb: SuccessContinuation<T, TN>): AsyncResult<TN> {
+    return new AsyncResult(this._promise.then((r) => r.onSuccess(cb)));
+  }
+
+  /**
+   * Calls a supplied {@link AsyncSuccessContinuation | async success continuation} if
+   * the wrapped result is successful.
+   * @remarks
+   * Both synchronous throws and async rejections from the callback are caught
+   * and converted to a {@link Failure}.
+   * @param cb - The {@link AsyncSuccessContinuation | async success continuation}
+   * to be called in the event of success.
+   * @returns A new {@link AsyncResult} wrapping the async continuation result.
+   */
+  public thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN> {
+    return new AsyncResult(
+      this._promise.then(async (r) => {
+        if (r.isFailure()) {
+          return fail<TN>(r.message);
+        }
+        try {
+          return await cb(r.value);
+        } catch (err: unknown) {
+          return fail<TN>(_errorMessage(err));
+        }
+      })
+    );
+  }
+
+  /**
+   * Calls a supplied {@link FailureContinuation | failure continuation} if
+   * the wrapped result is a failure.
+   * @param cb - The synchronous {@link FailureContinuation | failure continuation}
+   * to be called in the event of failure.
+   * @returns A new {@link AsyncResult} wrapping the continuation result.
+   */
+  public onFailure(cb: FailureContinuation<T>): AsyncResult<T> {
+    return new AsyncResult(this._promise.then((r) => r.onFailure(cb)));
+  }
+
+  /**
+   * Calls a supplied {@link AsyncFailureContinuation | async failure continuation} if
+   * the wrapped result is a failure.
+   * @remarks
+   * Both synchronous throws and async rejections from the callback are caught
+   * and converted to a {@link Failure}.
+   * @param cb - The {@link AsyncFailureContinuation | async failure continuation}
+   * to be called in the event of failure.
+   * @returns A new {@link AsyncResult} wrapping the async continuation result.
+   */
+  public thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T> {
+    return new AsyncResult(
+      this._promise.then(async (r) => {
+        if (r.isSuccess()) {
+          return r;
+        }
+        try {
+          return await cb(r.message);
+        } catch (err: unknown) {
+          return fail<T>(_errorMessage(err));
+        }
+      })
+    );
+  }
+
+  /**
+   * Calls a supplied {@link ErrorFormatter | error formatter} if
+   * the wrapped result is a failure.
+   * @param cb - The {@link ErrorFormatter | error formatter} to
+   * be called in the event of failure.
+   * @returns A new {@link AsyncResult} with the formatted error message,
+   * or the original success result.
+   */
+  public withErrorFormat(cb: ErrorFormatter): AsyncResult<T> {
+    return new AsyncResult(this._promise.then((r) => r.withErrorFormat(cb)));
+  }
+
+  /**
+   * Propagates the wrapped result, appending any error message to the
+   * supplied errors aggregator.
+   * @param errors - {@link IMessageAggregator | Error aggregator} in which
+   * errors will be aggregated.
+   * @param formatter - An optional {@link ErrorFormatter | error formatter}
+   * to be used to format the error message.
+   * @returns A new {@link AsyncResult} wrapping the result after aggregation.
+   */
+  public aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): AsyncResult<T> {
+    return new AsyncResult(
+      this._promise.then((r) => {
+        r.aggregateError(errors, formatter);
+        return r;
+      })
+    );
+  }
+
+  /**
+   * Reports the wrapped result to the supplied reporter.
+   * @param reporter - The {@link IResultReporter | reporter} to which the result
+   * will be reported.
+   * @param options - The {@link IResultReportOptions | options} for reporting the result.
+   * @returns A new {@link AsyncResult} wrapping the result after reporting.
+   */
+  public report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): AsyncResult<T> {
+    return new AsyncResult(
+      this._promise.then((r) => {
+        r.report(reporter, options);
+        return r;
+      })
+    );
+  }
+
+  /**
+   * Implementation of `PromiseLike.then` enabling `await` on {@link AsyncResult}.
+   * @param onfulfilled - Callback invoked when the promise resolves.
+   * @param onrejected - Callback invoked when the promise rejects.
+   * @returns A `Promise` resolving to the callback result.
+   */
+  /* eslint-disable @rushstack/no-new-null */
+  public then<TResult1 = Result<T>, TResult2 = never>(
+    onfulfilled?: ((value: Result<T>) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+  ): Promise<TResult1 | TResult2> {
+    /* eslint-enable @rushstack/no-new-null */
+    return this._promise.then(onfulfilled, onrejected);
+  }
+
+  /**
+   * Creates an {@link AsyncResult} from a {@link Result}.
+   * @param result - The {@link Result} to wrap.
+   * @returns A new {@link AsyncResult} wrapping the supplied result.
+   */
+  public static from<T>(result: Result<T>): AsyncResult<T> {
+    return new AsyncResult(Promise.resolve(result));
+  }
+}
+
+/**
+ * Wraps an async function which might throw to convert exception results
+ * to {@link Failure}.
+ * @param func - The async function to be captured.
+ * @returns Returns a `Promise` of {@link Success} with a value of type `<T>` on
+ * success, or {@link Failure} with the thrown error message if `func` throws or rejects.
+ * @public
+ */
+export async function captureAsyncResult<T>(func: () => Promise<T>): Promise<Result<T>> {
+  try {
+    return succeed(await func());
+  } catch (err: unknown) {
+    return fail(_errorMessage(err));
   }
 }
