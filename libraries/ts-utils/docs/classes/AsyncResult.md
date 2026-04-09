@@ -2,7 +2,7 @@
 
 # Class: AsyncResult
 
-Wraps a Promise of a Result to enable fluent chaining of both
+Wraps a `Promise` of a Result to enable fluent chaining of both
 synchronous and asynchronous operations.
 
 **Implements:** `PromiseLike<Result<T>>`
@@ -168,7 +168,7 @@ Reports the wrapped result to the supplied reporter.
 
 </td><td>
 
-Implementation of PromiseLike.then enabling `await` on AsyncResult.
+Implementation of `PromiseLike.then` enabling `await` on AsyncResult.
 
 </td></tr>
 </tbody></table>

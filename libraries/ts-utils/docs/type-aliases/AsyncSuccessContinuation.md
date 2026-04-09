@@ -3,7 +3,7 @@
 # Type Alias: AsyncSuccessContinuation
 
 Async continuation callback to be called in the event that a
-Result is successful, returning a Promise of a new Result.
+Result is successful, returning a `Promise` of a new Result.
 
 ## Type
 

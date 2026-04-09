@@ -2,7 +2,7 @@
 
 ## AsyncResult.then() method
 
-Implementation of PromiseLike.then enabling `await` on AsyncResult.
+Implementation of `PromiseLike.then` enabling `await` on AsyncResult.
 
 **Signature:**
 
@@ -22,4 +22,4 @@ then(onfulfilled?: ((value: Result<T>) => TResult1 | PromiseLike<TResult1>) | nu
 
 Promise&lt;TResult1 | TResult2&gt;
 
-A Promise resolving to the callback result.
+A `Promise` resolving to the callback result.

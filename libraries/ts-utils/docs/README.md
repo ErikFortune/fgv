@@ -95,7 +95,7 @@ Description
 
 </td><td>
 
-Wraps a Promise of a Result to enable fluent chaining of both
+Wraps a `Promise` of a Result to enable fluent chaining of both
 
 </td></tr>
 <tr><td>
