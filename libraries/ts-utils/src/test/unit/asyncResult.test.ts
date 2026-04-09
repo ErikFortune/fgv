@@ -26,13 +26,53 @@ import {
   AsyncResult,
   MessageAggregator,
   Result,
+  _errorMessage,
   captureAsyncResult,
   fail,
   succeed
 } from '../../packlets/base';
 
 describe('AsyncResult module', () => {
+  describe('_errorMessage helper', () => {
+    test('extracts message from Error instances', () => {
+      expect(_errorMessage(new Error('test error'))).toBe('test error');
+    });
+
+    test('converts string values to string', () => {
+      expect(_errorMessage('string error')).toBe('string error');
+    });
+
+    test('converts number values to string', () => {
+      expect(_errorMessage(42)).toBe('42');
+    });
+
+    test('converts undefined to string', () => {
+      expect(_errorMessage(undefined)).toBe('undefined');
+    });
+
+    test('converts null to string', () => {
+      expect(_errorMessage(null)).toBe('null');
+    });
+  });
+
   describe('AsyncResult class', () => {
+    describe('constructor rejection normalization', () => {
+      test('converts rejected promise with Error to Failure', async () => {
+        const result = await new AsyncResult<string>(Promise.reject(new Error('rejected')));
+        expect(result).toFailWith(/rejected/);
+      });
+
+      test('converts rejected promise with string to Failure', async () => {
+        const result = await new AsyncResult<string>(Promise.reject('string rejection'));
+        expect(result).toFailWith(/string rejection/);
+      });
+
+      test('converts rejected promise with non-Error to Failure', async () => {
+        const result = await new AsyncResult<string>(Promise.reject(42));
+        expect(result).toFailWith(/42/);
+      });
+    });
+
     describe('onSuccess', () => {
       test('calls the sync continuation on a wrapped success', async () => {
         const result = await AsyncResult.from(succeed('hello')).onSuccess((v) => succeed(v.length));
@@ -75,6 +115,20 @@ describe('AsyncResult module', () => {
           throw new Error('rejected!');
         });
         expect(result).toFailWith(/rejected!/);
+      });
+
+      test('catches non-Error rejections and converts to failure', async () => {
+        const result = await AsyncResult.from(succeed('hello')).thenOnSuccess(
+          () => Promise.reject('string rejection') as Promise<Result<number>>
+        );
+        expect(result).toFailWith(/string rejection/);
+      });
+
+      test('catches synchronous throws and converts to failure', async () => {
+        const result = await AsyncResult.from(succeed('hello')).thenOnSuccess((): Promise<Result<number>> => {
+          throw new Error('sync throw');
+        });
+        expect(result).toFailWith(/sync throw/);
       });
     });
 
@@ -119,6 +173,22 @@ describe('AsyncResult module', () => {
           throw new Error('recovery failed!');
         });
         expect(result).toFailWith(/recovery failed!/);
+      });
+
+      test('catches non-Error rejections and converts to failure', async () => {
+        const result = await AsyncResult.from(fail<string>('oops')).thenOnFailure(
+          () => Promise.reject('string rejection') as Promise<Result<string>>
+        );
+        expect(result).toFailWith(/string rejection/);
+      });
+
+      test('catches synchronous throws and converts to failure', async () => {
+        const result = await AsyncResult.from(fail<string>('oops')).thenOnFailure(
+          (): Promise<Result<string>> => {
+            throw new Error('sync throw');
+          }
+        );
+        expect(result).toFailWith(/sync throw/);
       });
     });
 
@@ -287,6 +357,20 @@ describe('AsyncResult module', () => {
         expect(result).toFailWith(/boom/);
       });
 
+      test('catches synchronous throws and converts to failure', async () => {
+        const result = await succeed('hello').thenOnSuccess((): Promise<Result<number>> => {
+          throw new Error('sync boom');
+        });
+        expect(result).toFailWith(/sync boom/);
+      });
+
+      test('catches non-Error rejections and converts to failure', async () => {
+        const result = await succeed('hello').thenOnSuccess(
+          () => Promise.reject('string rejection') as Promise<Result<number>>
+        );
+        expect(result).toFailWith(/string rejection/);
+      });
+
       test('returns an AsyncResult that supports further chaining', async () => {
         const result = await succeed('hello')
           .thenOnSuccess(async (v) => succeed(v.toUpperCase()))
@@ -331,6 +415,20 @@ describe('AsyncResult module', () => {
         expect(result).toFailWith(/recovery boom/);
       });
 
+      test('catches synchronous throws and converts to failure', async () => {
+        const result = await fail<string>('oops').thenOnFailure((): Promise<Result<string>> => {
+          throw new Error('sync recovery boom');
+        });
+        expect(result).toFailWith(/sync recovery boom/);
+      });
+
+      test('catches non-Error rejections and converts to failure', async () => {
+        const result = await fail<string>('oops').thenOnFailure(
+          () => Promise.reject('string rejection') as Promise<Result<string>>
+        );
+        expect(result).toFailWith(/string rejection/);
+      });
+
       test('returns an AsyncResult that supports further chaining', async () => {
         const result = await fail<string>('oops')
           .thenOnFailure(async () => succeed('recovered'))
@@ -371,18 +469,21 @@ describe('AsyncResult module', () => {
       expect(result).toSucceedWith(42);
     });
 
-    test('returns failure for a rejected promise', async () => {
+    test('returns failure for a rejected promise with Error', async () => {
       const result = await captureAsyncResult(async () => {
         throw new Error('async error');
       });
       expect(result).toFailWith(/async error/);
     });
 
-    test('returns failure for a function that rejects', async () => {
-      const result = await captureAsyncResult(async () => {
-        throw new Error('something went wrong');
-      });
-      expect(result).toFailWith(/something went wrong/);
+    test('returns failure with message for non-Error rejections', async () => {
+      const result = await captureAsyncResult(() => Promise.reject('string rejection'));
+      expect(result).toFailWith(/string rejection/);
+    });
+
+    test('returns failure with string representation for numeric rejections', async () => {
+      const result = await captureAsyncResult(() => Promise.reject(42));
+      expect(result).toFailWith(/42/);
     });
   });
 });

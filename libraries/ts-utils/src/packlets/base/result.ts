@@ -20,7 +20,12 @@
  * SOFTWARE.
  */
 
-import { AsyncResult, AsyncSuccessContinuation, AsyncFailureContinuation } from './asyncResult';
+import {
+  AsyncResult,
+  AsyncSuccessContinuation,
+  AsyncFailureContinuation,
+  _errorMessage
+} from './asyncResult';
 
 /**
  * Represents the {@link IResult | result} of some operation or sequence of operations.
@@ -510,7 +515,11 @@ export class Success<out T> implements IResult<T> {
    * {@inheritDoc IResult.thenOnSuccess}
    */
   public thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN> {
-    return new AsyncResult(cb(this._value).catch((err: unknown) => fail<TN>((err as Error).message)));
+    try {
+      return new AsyncResult(cb(this._value));
+    } catch (err: unknown) {
+      return AsyncResult.from(fail<TN>(_errorMessage(err)));
+    }
   }
 
   /**
@@ -694,7 +703,11 @@ export class Failure<out T> implements IResult<T> {
    * {@inheritDoc IResult.thenOnFailure}
    */
   public thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T> {
-    return new AsyncResult(cb(this._message).catch((err: unknown) => fail<T>((err as Error).message)));
+    try {
+      return new AsyncResult(cb(this._message));
+    } catch (err: unknown) {
+      return AsyncResult.from(fail<T>(_errorMessage(err)));
+    }
   }
 
   /**

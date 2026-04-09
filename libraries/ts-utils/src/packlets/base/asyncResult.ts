@@ -33,25 +33,38 @@ import {
 } from './result';
 
 /**
+ * Extracts a message string from an unknown thrown/rejected value.
+ * @param err - The caught error value.
+ * @returns The error message string.
+ * @internal
+ */
+export function _errorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return String(err);
+}
+
+/**
  * Async continuation callback to be called in the event that a
- * {@link Result} is successful, returning a {@link Promise} of a new {@link Result}.
+ * {@link Result} is successful, returning a `Promise` of a new {@link Result}.
  * @public
  */
 export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>>;
 
 /**
  * Async continuation callback to be called in the event that a
- * {@link Result} fails, returning a {@link Promise} of a new {@link Result}.
+ * {@link Result} fails, returning a `Promise` of a new {@link Result}.
  * @public
  */
 export type AsyncFailureContinuation<T> = (message: string) => Promise<Result<T>>;
 
 /**
- * Wraps a {@link Promise} of a {@link Result} to enable fluent chaining of both
+ * Wraps a `Promise` of a {@link Result} to enable fluent chaining of both
  * synchronous and asynchronous operations.
  *
  * @remarks
- * `AsyncResult<T>` implements {@link PromiseLike} so it can be directly `await`ed.
+ * `AsyncResult<T>` implements `PromiseLike` so it can be directly `await`ed.
  * Use the `thenOnSuccess` and `thenOnFailure` methods on {@link Result} to bridge
  * from synchronous to asynchronous result chains.
  *
@@ -71,10 +84,14 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
 
   /**
    * Constructs an {@link AsyncResult} wrapping the supplied promise.
-   * @param promise - A {@link Promise} that resolves to a {@link Result}.
+   * @remarks
+   * If the supplied promise rejects, the rejection is caught and converted
+   * to a {@link Failure}, ensuring that awaiting an {@link AsyncResult} always
+   * yields a {@link Result}.
+   * @param promise - A `Promise` that resolves to a {@link Result}.
    */
   public constructor(promise: Promise<Result<T>>) {
-    this._promise = promise;
+    this._promise = promise.catch((err: unknown) => fail<T>(_errorMessage(err)));
   }
 
   /**
@@ -92,19 +109,23 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
    * Calls a supplied {@link AsyncSuccessContinuation | async success continuation} if
    * the wrapped result is successful.
    * @remarks
-   * If the async callback rejects, the rejection is caught and converted
-   * to a {@link Failure}.
+   * Both synchronous throws and async rejections from the callback are caught
+   * and converted to a {@link Failure}.
    * @param cb - The {@link AsyncSuccessContinuation | async success continuation}
    * to be called in the event of success.
    * @returns A new {@link AsyncResult} wrapping the async continuation result.
    */
   public thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN> {
     return new AsyncResult(
-      this._promise.then((r) => {
+      this._promise.then(async (r) => {
         if (r.isFailure()) {
           return fail(r.message);
         }
-        return cb(r.value).catch((err: unknown) => fail<TN>((err as Error).message));
+        try {
+          return await cb(r.value);
+        } catch (err: unknown) {
+          return fail<TN>(_errorMessage(err));
+        }
       })
     );
   }
@@ -124,19 +145,23 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
    * Calls a supplied {@link AsyncFailureContinuation | async failure continuation} if
    * the wrapped result is a failure.
    * @remarks
-   * If the async callback rejects, the rejection is caught and converted
-   * to a {@link Failure}.
+   * Both synchronous throws and async rejections from the callback are caught
+   * and converted to a {@link Failure}.
    * @param cb - The {@link AsyncFailureContinuation | async failure continuation}
    * to be called in the event of failure.
    * @returns A new {@link AsyncResult} wrapping the async continuation result.
    */
   public thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T> {
     return new AsyncResult(
-      this._promise.then((r) => {
+      this._promise.then(async (r) => {
         if (r.isSuccess()) {
           return r;
         }
-        return cb(r.message).catch((err: unknown) => fail<T>((err as Error).message));
+        try {
+          return await cb(r.message);
+        } catch (err: unknown) {
+          return fail<T>(_errorMessage(err));
+        }
       })
     );
   }
@@ -188,10 +213,10 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
   }
 
   /**
-   * Implementation of {@link PromiseLike.then} enabling `await` on {@link AsyncResult}.
+   * Implementation of `PromiseLike.then` enabling `await` on {@link AsyncResult}.
    * @param onfulfilled - Callback invoked when the promise resolves.
    * @param onrejected - Callback invoked when the promise rejects.
-   * @returns A {@link Promise} resolving to the callback result.
+   * @returns A `Promise` resolving to the callback result.
    */
   /* eslint-disable @rushstack/no-new-null */
   public then<TResult1 = Result<T>, TResult2 = never>(
@@ -216,14 +241,14 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
  * Wraps an async function which might throw to convert exception results
  * to {@link Failure}.
  * @param func - The async function to be captured.
- * @returns Returns a {@link Promise} of {@link Success} with a value of type `<T>` on
+ * @returns Returns a `Promise` of {@link Success} with a value of type `<T>` on
  * success, or {@link Failure} with the thrown error message if `func` throws or rejects.
  * @public
  */
 export async function captureAsyncResult<T>(func: () => Promise<T>): Promise<Result<T>> {
   try {
     return succeed(await func());
-  } catch (err) {
-    return fail((err as Error).message);
+  } catch (err: unknown) {
+    return fail(_errorMessage(err));
   }
 }
