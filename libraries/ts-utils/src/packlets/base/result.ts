@@ -1170,23 +1170,6 @@ export function propagateWithDetail<T, TD>(
 }
 
 /**
- * Wraps a function which might throw to convert exception results
- * to {@link Failure}.
- * @param func - The function to be captured.
- * @returns Returns {@link Success} with a value of type `<T>` on
- * success , or {@link Failure} with the thrown error message if
- * `func` throws an `Error`.
- * @public
- */
-export function captureResult<T>(func: () => T): Result<T> {
-  try {
-    return succeed(func());
-  } catch (err) {
-    return fail((err as Error).message);
-  }
-}
-
-/**
  * Extracts a message string from an unknown thrown/rejected value.
  * @param err - The caught error value.
  * @returns The error message string.
@@ -1197,6 +1180,23 @@ export function _errorMessage(err: unknown): string {
     return err.message;
   }
   return String(err);
+}
+
+/**
+ * Wraps a function which might throw to convert exception results
+ * to {@link Failure}.
+ * @param func - The function to be captured.
+ * @returns Returns {@link Success} with a value of type `<T>` on
+ * success , or {@link Failure} with the thrown error message if
+ * `func` throws an `Error` or string.
+ * @public
+ */
+export function captureResult<T>(func: () => T): Result<T> {
+  try {
+    return succeed(func());
+  } catch (err) {
+    return fail(_errorMessage(err));
+  }
 }
 
 /**
