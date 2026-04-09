@@ -145,6 +145,15 @@ Options for importing a secret.
 </td></tr>
 <tr><td>
 
+[IImportKeyOptions](./interfaces/IImportKeyOptions.md)
+
+</td><td>
+
+Options for importing raw key material via KeyStore.importSecret.
+
+</td></tr>
+<tr><td>
+
 [IAddSecretFromPasswordOptions](./interfaces/IAddSecretFromPasswordOptions.md)
 
 </td><td>
