@@ -56,6 +56,27 @@ function processData(input: string): Result<ProcessedData> {
 }
 ```
 
+### Async Chaining
+
+Use `thenOnSuccess()` to chain async operations without breaking the fluent style:
+
+```typescript
+import { Result, succeed, captureAsyncResult } from '@fgv/ts-utils';
+
+async function processData(input: string): Promise<Result<SavedData>> {
+  return parseInput(input)
+    .onSuccess((parsed) => validate(parsed))
+    .thenOnSuccess(async (valid) => fetchRelatedData(valid.id))
+    .onSuccess((data) => transform(data))
+    .thenOnSuccess(async (transformed) => saveData(transformed))
+    .withErrorFormat((msg) => `pipeline failed: ${msg}`);
+}
+```
+
+`AsyncResult<T>` implements `PromiseLike`, so the entire chain can be directly `await`ed. Rejected promises are caught and converted to `Failure`.
+
+[Full async chaining documentation &rarr;](./src/packlets/base/README.md#async-result-chaining)
+
 ### Error Context
 
 ```typescript

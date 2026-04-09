@@ -20,6 +20,8 @@
  * SOFTWARE.
  */
 
+import { AsyncResult, AsyncSuccessContinuation, AsyncFailureContinuation } from './asyncResult';
+
 /**
  * Represents the {@link IResult | result} of some operation or sequence of operations.
  * @remarks
@@ -324,6 +326,32 @@ export interface IResult<T> {
   onFailure(cb: FailureContinuation<T>): Result<T>;
 
   /**
+   * Calls a supplied {@link AsyncSuccessContinuation | async success continuation} if
+   * the operation was a success, bridging into an {@link AsyncResult} chain.
+   * @remarks
+   * If the async callback rejects, the rejection is caught and converted
+   * to a {@link Failure}.
+   * @param cb - The {@link AsyncSuccessContinuation | async success continuation} to
+   * be called in the event of success.
+   * @returns An {@link AsyncResult} wrapping the async continuation result, or
+   * propagating the error message from this failure.
+   */
+  thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
+
+  /**
+   * Calls a supplied {@link AsyncFailureContinuation | async failure continuation} if
+   * the operation failed, bridging into an {@link AsyncResult} chain.
+   * @remarks
+   * If the async callback rejects, the rejection is caught and converted
+   * to a {@link Failure}.
+   * @param cb - The {@link AsyncFailureContinuation | async failure continuation} to
+   * be called in the event of failure.
+   * @returns An {@link AsyncResult} wrapping the async continuation result, or
+   * propagating the success value from this result.
+   */
+  thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+
+  /**
    * Calls a supplied {@link ErrorFormatter | error formatter} if
    * the operation failed.
    * @param cb - The {@link ErrorFormatter | error formatter} to
@@ -476,6 +504,20 @@ export class Success<out T> implements IResult<T> {
    */
   public onFailure(__: FailureContinuation<T>): Result<T> {
     return this;
+  }
+
+  /**
+   * {@inheritDoc IResult.thenOnSuccess}
+   */
+  public thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN> {
+    return new AsyncResult(cb(this._value).catch((err: unknown) => fail<TN>((err as Error).message)));
+  }
+
+  /**
+   * {@inheritDoc IResult.thenOnFailure}
+   */
+  public thenOnFailure(__: AsyncFailureContinuation<T>): AsyncResult<T> {
+    return AsyncResult.from(this);
   }
 
   /**
@@ -639,6 +681,20 @@ export class Failure<out T> implements IResult<T> {
    */
   public onFailure(cb: FailureContinuation<T>): Result<T> {
     return cb(this._message);
+  }
+
+  /**
+   * {@inheritDoc IResult.thenOnSuccess}
+   */
+  public thenOnSuccess<TN>(__: AsyncSuccessContinuation<T, TN>): AsyncResult<TN> {
+    return AsyncResult.from(fail<TN>(this._message));
+  }
+
+  /**
+   * {@inheritDoc IResult.thenOnFailure}
+   */
+  public thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T> {
+    return new AsyncResult(cb(this._message).catch((err: unknown) => fail<T>((err as Error).message)));
   }
 
   /**

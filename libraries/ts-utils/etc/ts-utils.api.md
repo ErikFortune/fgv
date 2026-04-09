@@ -172,6 +172,36 @@ interface ArrayValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 // @public
 function asValidator<T, TC = unknown>(converterOrValidator: Converter<T, TC> | Validator<T, TC>): Validator<T, TC>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Promise"
+//
+// @public
+export type AsyncFailureContinuation<T> = (message: string) => Promise<Result<T>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Promise"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "PromiseLike"
+//
+// @public
+export class AsyncResult<T> implements PromiseLike<Result<T>> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Promise"
+    constructor(promise: Promise<Result<T>>);
+    aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): AsyncResult<T>;
+    static from<T>(result: Result<T>): AsyncResult<T>;
+    onFailure(cb: FailureContinuation<T>): AsyncResult<T>;
+    onSuccess<TN>(cb: SuccessContinuation<T, TN>): AsyncResult<TN>;
+    report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): AsyncResult<T>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "PromiseLike"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Promise"
+    then<TResult1 = Result<T>, TResult2 = never>(onfulfilled?: ((value: Result<T>) => TResult1 | PromiseLike<TResult1>) | null, onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null): Promise<TResult1 | TResult2>;
+    thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+    thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
+    withErrorFormat(cb: ErrorFormatter): AsyncResult<T>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Promise"
+//
+// @public
+export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>>;
+
 declare namespace Base {
     export {
         GenericValidatorConstructorParams,
@@ -322,6 +352,11 @@ class CacheInvalidatingResultMapWrapper<TK extends string, TSRC, TTARGET, TSRCMA
     update(key: TK, value: TSRC): DetailedResult<TSRC, ResultMapResultDetail>;
     values(): IterableIterator<TSRC>;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "Promise"
+//
+// @public
+export function captureAsyncResult<T>(func: () => Promise<T>): Promise<Result<T>>;
 
 // @public
 export function captureResult<T>(func: () => T): Result<T>;
@@ -1091,6 +1126,8 @@ export class Failure<out T> implements IResult<T> {
     orThrow(cb: ErrorFormatter): never;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Failure<T>;
     readonly success: false;
+    thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+    thenOnSuccess<TN>(__: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
     toString(): string;
     readonly value: undefined;
     static with<T>(message: string): Failure<T>;
@@ -1703,6 +1740,8 @@ export interface IResult<T> {
     orThrow(cb: ErrorFormatter): T;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Result<T>;
     readonly success: boolean;
+    thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
+    thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
     readonly value: T | undefined;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD>;
@@ -2730,6 +2769,8 @@ export class Success<out T> implements IResult<T> {
     orThrow(cb: ErrorFormatter): T;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Success<T>;
     readonly success: true;
+    thenOnFailure(__: AsyncFailureContinuation<T>): AsyncResult<T>;
+    thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
     get value(): T;
     // @internal (undocumented)
     protected readonly _value: T;

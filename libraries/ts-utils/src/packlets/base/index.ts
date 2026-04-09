@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+export * from './asyncResult';
 export * from './brand';
 export * from './mapResults';
 export * from './messageAggregator';

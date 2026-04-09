@@ -11,6 +11,7 @@ The `base` packlet provides the foundational Result pattern and core utilities u
 - [Checking Results](#checking-results)
 - [Extracting Values](#extracting-values)
 - [Result Chaining](#result-chaining)
+- [Async Result Chaining](#async-result-chaining)
 - [Error Context](#error-context)
 - [DetailedResult](#detailedresult)
 - [Error Aggregation](#error-aggregation)
@@ -43,6 +44,8 @@ A `Result<T>` represents the success or failure of an operation. A successful re
 | `firstSuccess(results)` | Return the first successful result |
 | `populateObject(init)` | Build typed objects from field initializers |
 | `Brand<T, B>` | Branded type to prevent accidental type mixing |
+| `AsyncResult<T>` | Async result wrapper enabling fluent async chains |
+| `captureAsyncResult(fn)` | Wrap an async throwing function into `Promise<Result<T>>` |
 | `DeferredResult<T>` | Lazy `() => Result<T>` for deferred evaluation |
 
 ## Creating Results
@@ -122,6 +125,70 @@ function getUserName(id: UserId): Result<string> {
   return getUser(id)
     .onSuccess((user) => succeed(`${user.firstName} ${user.lastName}`));
 }
+```
+
+## Async Result Chaining
+
+Use `thenOnSuccess()` and `thenOnFailure()` to chain async operations without breaking the fluent style. These methods bridge from `Result<T>` into `AsyncResult<T>`, which wraps `Promise<Result<T>>` and supports continued chaining of both sync and async steps.
+
+```typescript
+import { Result, succeed, fail, captureAsyncResult } from '@fgv/ts-utils';
+
+// Chain sync and async operations fluently
+async function processData(input: string): Promise<Result<SavedData>> {
+  return parseInput(input)                                        // Result<Parsed>
+    .onSuccess((parsed) => validate(parsed))                      // sync step
+    .thenOnSuccess(async (valid) => fetchRelatedData(valid.id))   // async step -> AsyncResult
+    .onSuccess((data) => transform(data))                         // sync step in async chain
+    .thenOnSuccess(async (transformed) => saveData(transformed))  // async step
+    .withErrorFormat((msg) => `pipeline failed: ${msg}`);         // error formatting
+}
+```
+
+`AsyncResult<T>` implements `PromiseLike<Result<T>>`, so it can be directly `await`ed to get the final `Result<T>`.
+
+### Bridge Methods on Result
+
+| Method | Called on Success | Called on Failure |
+|--------|-------------------|-------------------|
+| `thenOnSuccess(async (value) => ...)` | Calls callback, returns `AsyncResult` | Skips callback, propagates error |
+| `thenOnFailure(async (message) => ...)` | Skips callback, propagates success | Calls callback, returns `AsyncResult` |
+
+### AsyncResult Methods
+
+Once in an async chain, `AsyncResult<T>` provides all the familiar chaining methods:
+
+| Method | Description |
+|--------|-------------|
+| `onSuccess(cb)` | Sync continuation in async chain |
+| `thenOnSuccess(cb)` | Async continuation in async chain |
+| `onFailure(cb)` | Sync failure handler in async chain |
+| `thenOnFailure(cb)` | Async failure handler in async chain |
+| `withErrorFormat(cb)` | Error formatting in async chain |
+| `aggregateError(errors, formatter?)` | Error aggregation in async chain |
+| `report(reporter?, options?)` | Result reporting in async chain |
+
+### Error Handling
+
+Async callbacks that throw or reject are automatically caught and converted to `Failure`, consistent with `captureResult` for sync code:
+
+```typescript
+const result = await succeed('input')
+  .thenOnSuccess(async () => {
+    throw new Error('something went wrong');
+  });
+// result is Failure with message 'something went wrong'
+```
+
+### captureAsyncResult
+
+Wrap async functions that might throw:
+
+```typescript
+const result = await captureAsyncResult(async () => {
+  const response = await fetch(url);
+  return response.json();
+});
 ```
 
 ## Error Context
