@@ -451,7 +451,7 @@ export class KeyStore implements IEncryptionProvider {
    * Imports an existing secret key.
    * @param name - Unique name for the secret
    * @param key - The 32-byte AES-256 key
-   * @param options - Optional description, whether to replace existing
+   * @param options - Optional type, description, whether to replace existing
    * @returns Success with entry, Failure if locked, key invalid, or exists and !replace
    * @public
    */
@@ -477,7 +477,7 @@ export class KeyStore implements IEncryptionProvider {
 
     const entry: IKeyStoreSecretEntry = {
       name,
-      type: 'encryption-key',
+      type: options?.type ?? 'encryption-key',
       key: new Uint8Array(key), // Copy to prevent external modification
       description: options?.description,
       createdAt: getCurrentTimestamp()

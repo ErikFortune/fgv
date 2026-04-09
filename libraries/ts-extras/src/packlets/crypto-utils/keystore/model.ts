@@ -267,6 +267,12 @@ export interface IImportSecretOptions extends IAddSecretOptions {
    * Whether to replace an existing secret with the same name.
    */
   readonly replace?: boolean;
+
+  /**
+   * Secret type classification.
+   * @defaultValue 'encryption-key'
+   */
+  readonly type?: KeyStoreSecretType;
 }
 
 /**

@@ -587,6 +587,7 @@ interface IEncryptionResult {
 // @public
 interface IImportSecretOptions extends IAddSecretOptions {
     readonly replace?: boolean;
+    readonly type?: KeyStoreSecretType;
 }
 
 // @public

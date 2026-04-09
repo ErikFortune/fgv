@@ -204,6 +204,55 @@ describe('KeyStore', () => {
         const result = keystore.importSecret('my-secret', key);
         expect(result).toFailWith(/locked/i);
       });
+
+      test('defaults to encryption-key type when type not specified', async () => {
+        const key = (await provider.generateKey()).orThrow();
+        const result = keystore.importSecret('imported-secret', key);
+
+        expect(result).toSucceedAndSatisfy((addResult) => {
+          expect(addResult.entry.type).toBe('encryption-key');
+        });
+      });
+
+      test('uses specified type when provided', async () => {
+        const key = (await provider.generateKey()).orThrow();
+        const result = keystore.importSecret('imported-secret', key, { type: 'api-key' });
+
+        expect(result).toSucceedAndSatisfy((addResult) => {
+          expect(addResult.entry.type).toBe('api-key');
+        });
+      });
+
+      test('imported secret with type appears in listSecretsByType', async () => {
+        const key = (await provider.generateKey()).orThrow();
+        keystore.importSecret('typed-secret', key, { type: 'api-key' });
+
+        expect(keystore.listSecretsByType('api-key')).toSucceedAndSatisfy((names) => {
+          expect(names).toContain('typed-secret');
+        });
+
+        expect(keystore.listSecretsByType('encryption-key')).toSucceedAndSatisfy((names) => {
+          expect(names).not.toContain('typed-secret');
+        });
+      });
+
+      test('type works with description and replace options', async () => {
+        const key1 = (await provider.generateKey()).orThrow();
+        const key2 = (await provider.generateKey()).orThrow();
+
+        keystore.importSecret('my-secret', key1, { type: 'api-key', description: 'first' });
+        const result = keystore.importSecret('my-secret', key2, {
+          type: 'api-key',
+          description: 'replaced',
+          replace: true
+        });
+
+        expect(result).toSucceedAndSatisfy((addResult) => {
+          expect(addResult.entry.type).toBe('api-key');
+          expect(addResult.entry.description).toBe('replaced');
+          expect(addResult.replaced).toBe(true);
+        });
+      });
     });
 
     describe('addSecretFromPassword', () => {
