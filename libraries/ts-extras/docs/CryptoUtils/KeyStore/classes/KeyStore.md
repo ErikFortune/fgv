@@ -259,7 +259,7 @@ Adds a new secret with a randomly generated key.
 
 </td><td>
 
-Imports an existing secret key.
+Imports raw 32-byte key material into the vault.
 
 </td></tr>
 <tr><td>

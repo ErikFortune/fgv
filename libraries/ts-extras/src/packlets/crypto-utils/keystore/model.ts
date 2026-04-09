@@ -270,6 +270,19 @@ export interface IImportSecretOptions extends IAddSecretOptions {
 }
 
 /**
+ * Options for importing raw key material via {@link KeyStore.importSecret}.
+ * Extends {@link IImportSecretOptions} with a type classification.
+ * @public
+ */
+export interface IImportKeyOptions extends IImportSecretOptions {
+  /**
+   * Secret type classification for the imported key material.
+   * @defaultValue 'encryption-key'
+   */
+  readonly type?: KeyStoreSecretType;
+}
+
+/**
  * Options for adding a secret derived from a password.
  * @public
  */
