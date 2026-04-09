@@ -246,6 +246,32 @@ Calls a supplied FailureContinuation | failed continuation if
 </td></tr>
 <tr><td>
 
+[thenOnSuccess(__)](./Failure.thenOnSuccess.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Calls a supplied AsyncSuccessContinuation | async success continuation if
+
+</td></tr>
+<tr><td>
+
+[thenOnFailure(cb)](./Failure.thenOnFailure.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Calls a supplied AsyncFailureContinuation | async failure continuation if
+
+</td></tr>
+<tr><td>
+
 [withErrorFormat(cb)](./Failure.withErrorFormat.md)
 
 </td><td>

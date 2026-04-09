@@ -136,6 +136,15 @@ A DetailedFailure | DetailedFailure<T, TD> extends Failure | Failure<T> to repor
 </td></tr>
 <tr><td>
 
+[AsyncResult](./classes/AsyncResult.md)
+
+</td><td>
+
+Wraps a `Promise` of a Result to enable fluent chaining of both
+
+</td></tr>
+<tr><td>
+
 [AggregatedResultMap](./classes/AggregatedResultMap.md)
 
 </td><td>
@@ -390,6 +399,24 @@ Type inference to determine the detail type `TD` of a DetailedResult | DetailedR
 </td></tr>
 <tr><td>
 
+[AsyncSuccessContinuation](./type-aliases/AsyncSuccessContinuation.md)
+
+</td><td>
+
+Async continuation callback to be called in the event that a
+
+</td></tr>
+<tr><td>
+
+[AsyncFailureContinuation](./type-aliases/AsyncFailureContinuation.md)
+
+</td><td>
+
+Async continuation callback to be called in the event that a
+
+</td></tr>
+<tr><td>
+
 [EnsureArrayResult](./type-aliases/EnsureArrayResult.md)
 
 </td><td>
@@ -580,6 +607,15 @@ Propagates a Success or Failure Result, adding supplied
 </td><td>
 
 Wraps a function which might throw to convert exception results
+
+</td></tr>
+<tr><td>
+
+[captureAsyncResult](./functions/captureAsyncResult.md)
+
+</td><td>
+
+Wraps an async function which might throw to convert exception results
 
 </td></tr>
 <tr><td>

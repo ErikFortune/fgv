@@ -118,6 +118,44 @@ function processData(input: string): Result<Output> {
 
 **Exception**: Complex conditional logic may be clearer with intermediate variables. Prioritize readability.
 
+### Async Result Chaining
+
+Use `thenOnSuccess()` and `thenOnFailure()` to chain async operations fluently. These bridge from `Result<T>` into `AsyncResult<T>`, which supports continued chaining of both sync and async steps and can be directly `await`ed.
+
+```typescript
+// ✅ GOOD - Fluent async chain
+async function processData(input: string): Promise<Result<SavedData>> {
+  return parseInput(input)
+    .onSuccess((parsed) => validate(parsed))
+    .thenOnSuccess(async (valid) => fetchRelatedData(valid.id))
+    .onSuccess((data) => transform(data))
+    .thenOnSuccess(async (transformed) => saveData(transformed))
+    .withErrorFormat((msg) => `pipeline failed: ${msg}`);
+}
+
+// ❌ AVOID - Breaking the chain for async calls
+async function processData(input: string): Promise<Result<SavedData>> {
+  const validated = parseInput(input).onSuccess((parsed) => validate(parsed));
+  if (validated.isFailure()) return validated;
+  const related = await fetchRelatedData(validated.value.id);
+  if (related.isFailure()) return related;
+  const transformed = transform(related.value);
+  if (transformed.isFailure()) return transformed;
+  return saveData(transformed.value);
+}
+```
+
+Use `captureAsyncResult()` to wrap async functions that might throw (analogous to `captureResult` for sync):
+
+```typescript
+const result = await captureAsyncResult(async () => {
+  const response = await fetch(url);
+  return response.json();
+});
+```
+
+Rejected promises in `thenOnSuccess`/`thenOnFailure` callbacks are automatically caught and converted to `Failure`.
+
 ### Converting DetailedResult to Result
 
 When chaining from `MaterializedLibrary.get()` (which returns `DetailedResult`), use `.asResult` to convert:
