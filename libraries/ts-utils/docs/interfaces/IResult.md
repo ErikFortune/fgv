@@ -200,6 +200,32 @@ Calls a supplied FailureContinuation | failed continuation if
 </td></tr>
 <tr><td>
 
+[thenOnSuccess(cb)](./IResult.thenOnSuccess.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Calls a supplied AsyncSuccessContinuation | async success continuation if
+
+</td></tr>
+<tr><td>
+
+[thenOnFailure(cb)](./IResult.thenOnFailure.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Calls a supplied AsyncFailureContinuation | async failure continuation if
+
+</td></tr>
+<tr><td>
+
 [withErrorFormat(cb)](./IResult.withErrorFormat.md)
 
 </td><td>

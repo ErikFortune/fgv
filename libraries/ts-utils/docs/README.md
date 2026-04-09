@@ -91,6 +91,15 @@ Description
 <tbody>
 <tr><td>
 
+[AsyncResult](./classes/AsyncResult.md)
+
+</td><td>
+
+Wraps a Promise of a Result to enable fluent chaining of both
+
+</td></tr>
+<tr><td>
+
 [MessageAggregator](./classes/MessageAggregator.md)
 
 </td><td>
@@ -244,6 +253,24 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[AsyncSuccessContinuation](./type-aliases/AsyncSuccessContinuation.md)
+
+</td><td>
+
+Async continuation callback to be called in the event that a
+
+</td></tr>
+<tr><td>
+
+[AsyncFailureContinuation](./type-aliases/AsyncFailureContinuation.md)
+
+</td><td>
+
+Async continuation callback to be called in the event that a
+
+</td></tr>
 <tr><td>
 
 [Brand](./type-aliases/Brand.md)
@@ -411,6 +438,15 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[captureAsyncResult](./functions/captureAsyncResult.md)
+
+</td><td>
+
+Wraps an async function which might throw to convert exception results
+
+</td></tr>
 <tr><td>
 
 [mapResults](./functions/mapResults.md)
