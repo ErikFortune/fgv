@@ -45,6 +45,23 @@ Whether to replace an existing secret with the same name.
 </td></tr>
 <tr><td>
 
+[type](./IImportSecretOptions.type.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[KeyStoreSecretType](../type-aliases/KeyStoreSecretType.md)
+
+</td><td>
+
+Secret type classification.
+
+</td></tr>
+<tr><td>
+
 [description](./IAddSecretOptions.description.md)
 
 </td><td>

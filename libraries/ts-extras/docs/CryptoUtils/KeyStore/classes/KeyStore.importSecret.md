@@ -16,7 +16,7 @@ importSecret(name: string, key: Uint8Array, options?: IImportSecretOptions): Res
 <tbody>
 <tr><td>name</td><td>string</td><td>Unique name for the secret</td></tr>
 <tr><td>key</td><td>Uint8Array</td><td>The 32-byte AES-256 key</td></tr>
-<tr><td>options</td><td>IImportSecretOptions</td><td>Optional description, whether to replace existing</td></tr>
+<tr><td>options</td><td>IImportSecretOptions</td><td>Optional type, description, whether to replace existing</td></tr>
 </tbody></table>
 
 **Returns:**
