@@ -36,6 +36,7 @@ import {
   StarIcon as StarIconSolid,
   ExclamationTriangleIcon,
   BuildingLibraryIcon,
+  BuildingStorefrontIcon,
   ShieldCheckIcon,
   ShieldExclamationIcon,
   ArrowDownTrayIcon,
@@ -370,7 +371,11 @@ function CollectionRow(props: {
             className="shrink-0 text-muted"
             title={collection.readOnlyLabel ?? 'Built-in collection (read-only)'}
           >
-            <BuildingLibraryIcon className="w-4 h-4" />
+            {collection.isDeletable ? (
+              <BuildingStorefrontIcon className="w-4 h-4" />
+            ) : (
+              <BuildingLibraryIcon className="w-4 h-4" />
+            )}
           </span>
         )}
 
