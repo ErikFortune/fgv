@@ -148,6 +148,19 @@ export class NodeCryptoProvider implements ICryptoProvider {
     });
   }
 
+  /**
+   * Computes a SHA-256 hash of the given data.
+   * @param data - UTF-8 string to hash
+   * @returns `Success` with hex-encoded hash string, or `Failure` with an error.
+   */
+  public async sha256(data: string): Promise<Result<string>> {
+    return captureResult(() => {
+      const hash = crypto.createHash('sha256');
+      hash.update(data, 'utf8');
+      return hash.digest('hex');
+    });
+  }
+
   // ============================================================================
   // Platform Utility Methods
   // ============================================================================

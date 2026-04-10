@@ -99,6 +99,17 @@ export interface ICollectionRowItem {
   readonly sourceName?: string;
   /** Optional badge rendered alongside the collection name */
   readonly badge?: ICollectionBadge;
+  /**
+   * Label shown for immutable collections. Defaults to `"(built-in)"` when
+   * omitted. Set to e.g. `"(trading post)"` for imported read-only content.
+   */
+  readonly readOnlyLabel?: string;
+  /**
+   * When true, the collection can be deleted even though it is not mutable.
+   * Use for user-imported read-only content (e.g., Trading Post collections)
+   * that the user should be able to remove but not edit.
+   */
+  readonly isDeletable?: boolean;
 }
 
 // ============================================================================
@@ -353,9 +364,12 @@ function CollectionRow(props: {
           </span>
         )}
 
-        {/* Built-in indicator */}
+        {/* Read-only indicator */}
         {!collection.isMutable && (
-          <span className="shrink-0 text-muted" title="Built-in collection (read-only)">
+          <span
+            className="shrink-0 text-muted"
+            title={collection.readOnlyLabel ?? 'Built-in collection (read-only)'}
+          >
             <BuildingLibraryIcon className="w-4 h-4" />
           </span>
         )}
@@ -437,7 +451,7 @@ function CollectionRow(props: {
             <ArrowsPointingInIcon className="w-4 h-4" />
           </button>
         )}
-        {collection.isMutable && onDelete && (
+        {(collection.isMutable || collection.isDeletable) && onDelete && (
           <button
             onClick={(e): void => {
               e.stopPropagation();
@@ -451,8 +465,10 @@ function CollectionRow(props: {
           </button>
         )}
 
-        {/* Built-in label for immutable collections */}
-        {!collection.isMutable && <span className="text-xs text-muted">(built-in)</span>}
+        {/* Read-only label for immutable collections */}
+        {!collection.isMutable && (
+          <span className="text-xs text-muted">{collection.readOnlyLabel ?? '(built-in)'}</span>
+        )}
       </div>
     </div>
   );

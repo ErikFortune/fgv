@@ -21,3 +21,4 @@
  */
 
 export * from './converters';
+export * from './serializers';
