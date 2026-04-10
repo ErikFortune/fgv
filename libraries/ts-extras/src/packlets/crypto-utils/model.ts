@@ -203,6 +203,13 @@ export interface ICryptoProvider {
    */
   deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
 
+  /**
+   * Computes a SHA-256 hash of the given data.
+   * @param data - UTF-8 string to hash
+   * @returns Success with hex-encoded hash string, or Failure with error
+   */
+  sha256(data: string): Promise<Result<string>>;
+
   // ============================================================================
   // Platform Utility Methods
   // ============================================================================

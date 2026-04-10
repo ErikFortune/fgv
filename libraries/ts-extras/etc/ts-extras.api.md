@@ -539,6 +539,7 @@ interface ICryptoProvider {
     fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
+    sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
 }
 
@@ -706,6 +707,17 @@ interface IVariableRef {
     readonly name: string;
     readonly path: readonly string[];
     readonly tokenType: MustacheTokenType;
+}
+
+// @public
+interface IYamlSerializeOptions {
+    readonly flowLevel?: number;
+    readonly forceQuotes?: boolean;
+    readonly indent?: number;
+    readonly lineWidth?: number;
+    readonly noArrayIndent?: boolean;
+    readonly noRefs?: boolean;
+    readonly sortKeys?: boolean;
 }
 
 // @public
@@ -919,6 +931,7 @@ class NodeCryptoProvider implements ICryptoProvider {
     fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
+    sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
 }
 
@@ -1045,13 +1058,18 @@ const uint8ArrayFromBase64: Converter<Uint8Array>;
 
 declare namespace Yaml {
     export {
-        yamlConverter
+        yamlConverter,
+        yamlStringify,
+        IYamlSerializeOptions
     }
 }
 export { Yaml }
 
 // @public
 function yamlConverter<T>(converter: Converter<T>): Converter<T>;
+
+// @public
+function yamlStringify(value: unknown, options?: IYamlSerializeOptions): Result<string>;
 
 // @public
 type ZipCompressionLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;

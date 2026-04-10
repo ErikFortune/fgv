@@ -267,6 +267,44 @@ describe('Crypto.NodeCryptoProvider', () => {
     });
   });
 
+  describe('sha256', () => {
+    test('hashes a simple string', async () => {
+      const result = await provider.sha256('hello');
+      expect(result).toSucceedAndSatisfy((hash) => {
+        expect(hash).toMatch(/^[0-9a-f]{64}$/);
+        // Known SHA-256 of "hello"
+        expect(hash).toBe('2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824');
+      });
+    });
+
+    test('hashes an empty string', async () => {
+      const result = await provider.sha256('');
+      expect(result).toSucceedAndSatisfy((hash) => {
+        // Known SHA-256 of ""
+        expect(hash).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+      });
+    });
+
+    test('hashes UTF-8 content', async () => {
+      const result = await provider.sha256('Hello, 世界!');
+      expect(result).toSucceedAndSatisfy((hash) => {
+        expect(hash).toMatch(/^[0-9a-f]{64}$/);
+      });
+    });
+
+    test('produces deterministic output', async () => {
+      const hash1 = (await provider.sha256('test-input')).orThrow();
+      const hash2 = (await provider.sha256('test-input')).orThrow();
+      expect(hash1).toBe(hash2);
+    });
+
+    test('produces different output for different inputs', async () => {
+      const hash1 = (await provider.sha256('input-1')).orThrow();
+      const hash2 = (await provider.sha256('input-2')).orThrow();
+      expect(hash1).not.toBe(hash2);
+    });
+  });
+
   describe('singleton instance', () => {
     test('Crypto.nodeCryptoProvider is a Crypto.NodeCryptoProvider instance', () => {
       expect(CryptoUtils.nodeCryptoProvider).toBeInstanceOf(CryptoUtils.NodeCryptoProvider);
