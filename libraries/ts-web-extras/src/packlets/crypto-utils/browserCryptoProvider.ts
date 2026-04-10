@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /* c8 ignore start - Browser-only implementation cannot be tested in Node.js environment */
-import { captureResult, Failure, Result, Success } from '@fgv/ts-utils';
+import { captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 
 type ICryptoProvider = CryptoUtils.ICryptoProvider;
@@ -242,6 +242,27 @@ export class BrowserCryptoProvider implements ICryptoProvider {
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       return Failure.with(`Key derivation failed: ${message}`);
+    }
+  }
+
+  /**
+   * Computes a SHA-256 hash of the given data.
+   * @param data - UTF-8 string to hash
+   * @returns `Success` with hex-encoded hash string, or `Failure` with an error.
+   */
+  public async sha256(data: string): Promise<Result<string>> {
+    try {
+      const encoder = new TextEncoder();
+      const dataBuffer = encoder.encode(data);
+      const hashBuffer = await this._crypto.subtle.digest('SHA-256', dataBuffer);
+      const hashArray = new Uint8Array(hashBuffer);
+      const hashHex = Array.from(hashArray)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+      return succeed(hashHex);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      return fail(`SHA-256 hash failed: ${message}`);
     }
   }
 

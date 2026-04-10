@@ -23,6 +23,7 @@ class BrowserCryptoProvider implements ICryptoProvider {
     fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
+    sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
 }
 
