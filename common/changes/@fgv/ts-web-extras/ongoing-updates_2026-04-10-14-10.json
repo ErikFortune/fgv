@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Add sha256 for web crypto provider",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}
