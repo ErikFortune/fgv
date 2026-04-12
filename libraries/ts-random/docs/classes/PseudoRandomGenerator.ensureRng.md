@@ -8,7 +8,7 @@ or creating a new one if not.
 **Signature:**
 
 ```typescript
-static ensureRng(rng?: PseudoRandomGenerator): PseudoRandomGenerator;
+static ensureRng(rng?: PseudoRandomGenerator): Result<PseudoRandomGenerator>;
 ```
 
 **Parameters:**
@@ -20,6 +20,6 @@ static ensureRng(rng?: PseudoRandomGenerator): PseudoRandomGenerator;
 
 **Returns:**
 
-[PseudoRandomGenerator](PseudoRandomGenerator.md)
+Result&lt;[PseudoRandomGenerator](PseudoRandomGenerator.md)&gt;
 
 A random number generator.

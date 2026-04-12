@@ -2,7 +2,8 @@
 
 ## PseudoRandomGenerator.pickRandom() method
 
-Generates a sequence of values by randomly selecting from the given candidates.
+Generates a sequence of values by randomly selecting from the supplied
+dictionaries in random order.
 
 **Signature:**
 

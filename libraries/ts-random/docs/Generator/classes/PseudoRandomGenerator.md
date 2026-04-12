@@ -153,7 +153,7 @@ Generates a random float between 0 and 1.
 </td></tr>
 <tr><td>
 
-[nextInt(max)](./PseudoRandomGenerator.nextInt.md)
+[nextInt(extent)](./PseudoRandomGenerator.nextInt.md)
 
 </td><td>
 
@@ -161,7 +161,7 @@ Generates a random float between 0 and 1.
 
 </td><td>
 
-Generates a random integer between 0 and the specified maximum value.
+Generates a random integer between 0 and the specified extent (positive or negative).
 
 </td></tr>
 <tr><td>
@@ -226,7 +226,7 @@ Generates a random item from the given array.
 
 </td><td>
 
-Generates a sequence of values by randomly selecting from the given candidates.
+Generates a sequence of values by randomly selecting from the given candidate
 
 </td></tr>
 <tr><td>
@@ -239,7 +239,7 @@ Generates a sequence of values by randomly selecting from the given candidates.
 
 </td><td>
 
-Generates a sequence of values by randomly selecting from the given candidates.
+Generates a sequence of values by randomly selecting from the supplied
 
 </td></tr>
 <tr><td>
