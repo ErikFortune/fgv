@@ -815,6 +815,7 @@ class KeyStore_2 implements IEncryptionProvider {
     save(password: string): Promise<Result<IKeyStoreFile>>;
     get state(): KeyStoreLockState;
     unlock(password: string): Promise<Result<KeyStore_2>>;
+    unlockWithKey(derivedKey: Uint8Array): Promise<Result<KeyStore_2>>;
 }
 
 // @public
