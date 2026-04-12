@@ -1135,11 +1135,6 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
     resolveAbsolutePath(...paths: string[]): string;
 }
 
-// Warnings were encountered during analysis:
-//
-// src/packlets/crypto-utils/keystore/keyStore.ts:909:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
-// src/packlets/crypto-utils/keystore/keyStore.ts:909:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
-
 // (No @packageDocumentation comment for this package)
 
 ```

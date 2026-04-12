@@ -250,6 +250,10 @@ export class KeyStore implements IEncryptionProvider {
     if (this._state === 'unlocked') {
       return fail('Key store is already unlocked');
     }
+    if (derivedKey.length !== Constants.AES_256_KEY_SIZE) {
+      return fail(`Key must be ${Constants.AES_256_KEY_SIZE} bytes, got ${derivedKey.length}`);
+    }
+    /* c8 ignore next 3 - defensive coding: unreachable via public API (open sets file, create sets isNew) */
     if (!this._keystoreFile) {
       return fail('No key store file to unlock');
     }
@@ -903,8 +907,7 @@ export class KeyStore implements IEncryptionProvider {
 
   /**
    * Decrypts the vault with a derived key and loads secrets into memory.
-   * Shared by {@link KeyStore.unlock | unlock} and
-   * {@link KeyStore.unlockWithKey | unlockWithKey}.
+   * Shared by `unlock()` and `unlockWithKey()`.
    */
   private async _decryptVault(derivedKey: Uint8Array): Promise<Result<KeyStore>> {
     const keystoreFile = this._keystoreFile!;
@@ -949,7 +952,7 @@ export class KeyStore implements IEncryptionProvider {
 
     // Load secrets into memory
     const saltResult = this._cryptoProvider.fromBase64(keystoreFile.keyDerivation.salt);
-    /* c8 ignore next 3 - salt was already validated during open/unlock guard */
+    /* c8 ignore next 3 - defensive coding: salt base64 validated by successful decrypt above */
     if (saltResult.isFailure()) {
       return fail(`Invalid salt in key store file: ${saltResult.message}`);
     }
