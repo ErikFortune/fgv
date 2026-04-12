@@ -186,6 +186,20 @@ Unlocks an existing key store with the master password.
 </td></tr>
 <tr><td>
 
+[unlockWithKey(derivedKey)](./KeyStore.unlockWithKey.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Unlocks an existing key store with a pre-derived key, bypassing
+PBKDF2 key derivation.
+
+</td></tr>
+<tr><td>
+
 [lock(force)](./KeyStore.lock.md)
 
 </td><td>

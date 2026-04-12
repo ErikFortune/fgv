@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-candidates: readonly T[];
+candidates: readonly (readonly T[])[];
 ```

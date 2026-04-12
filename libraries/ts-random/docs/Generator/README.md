@@ -134,15 +134,6 @@ Function that steps a random number generator state and returns the next value.
 </td></tr>
 <tr><td>
 
-[GeneratorGlobalThis](./type-aliases/GeneratorGlobalThis.md)
-
-</td><td>
-
-Global context (globalThis) into which the generator can install itself for sharing.
-
-</td></tr>
-<tr><td>
-
 [SequencePickParams](./type-aliases/SequencePickParams.md)
 
 </td><td>
