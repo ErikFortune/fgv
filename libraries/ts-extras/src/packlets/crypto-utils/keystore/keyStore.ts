@@ -226,69 +226,35 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Key derivation failed: ${keyResult.message}`);
     }
 
-    // Decrypt the vault
-    const ivResult = this._cryptoProvider.fromBase64(this._keystoreFile.iv);
-    const authTagResult = this._cryptoProvider.fromBase64(this._keystoreFile.authTag);
-    const encryptedDataResult = this._cryptoProvider.fromBase64(this._keystoreFile.encryptedData);
+    return this._decryptVault(keyResult.value);
+  }
 
-    /* c8 ignore next 9 - base64 decode errors tested but coverage intermittently missed */
-    if (ivResult.isFailure()) {
-      return fail(`Invalid IV in key store file: ${ivResult.message}`);
+  /**
+   * Unlocks an existing key store with a pre-derived key, bypassing
+   * PBKDF2 key derivation. Use this when the derived key has been
+   * stored externally (e.g., in another key store) and the original
+   * password is no longer available.
+   *
+   * The supplied key must have been derived from the correct password
+   * using the key store file's own PBKDF2 parameters (salt and
+   * iteration count).
+   *
+   * @param derivedKey - The pre-derived master key (32 bytes for AES-256)
+   * @returns Success with this instance when unlocked, Failure if key is incorrect
+   * @public
+   */
+  public async unlockWithKey(derivedKey: Uint8Array): Promise<Result<KeyStore>> {
+    if (this._isNew) {
+      return fail('Cannot unlock a new key store - use initialize() instead');
     }
-    if (authTagResult.isFailure()) {
-      return fail(`Invalid auth tag in key store file: ${authTagResult.message}`);
+    if (this._state === 'unlocked') {
+      return fail('Key store is already unlocked');
     }
-    if (encryptedDataResult.isFailure()) {
-      return fail(`Invalid encrypted data in key store file: ${encryptedDataResult.message}`);
-    }
-
-    const decryptResult = await this._cryptoProvider.decrypt(
-      encryptedDataResult.value,
-      keyResult.value,
-      ivResult.value,
-      authTagResult.value
-    );
-    if (decryptResult.isFailure()) {
-      return fail('Incorrect password or corrupted key store');
-    }
-
-    // Parse the vault contents
-    const parseResult = captureResult(() => JSON.parse(decryptResult.value) as unknown);
-    /* c8 ignore next 3 - error path tested but coverage intermittently missed */
-    if (parseResult.isFailure()) {
-      return fail(`Failed to parse vault contents: ${parseResult.message}`);
+    if (!this._keystoreFile) {
+      return fail('No key store file to unlock');
     }
 
-    const vaultResult = keystoreVaultContents.convert(parseResult.value);
-    /* c8 ignore next 3 - error path tested but coverage intermittently missed */
-    if (vaultResult.isFailure()) {
-      return fail(`Invalid vault format: ${vaultResult.message}`);
-    }
-
-    // Load secrets into memory
-    this._salt = salt;
-    this._secrets = new Map();
-    for (const [name, jsonEntry] of Object.entries(vaultResult.value.secrets)) {
-      const keyBytesResult = this._cryptoProvider.fromBase64(jsonEntry.key);
-      /* c8 ignore next 3 - error path tested but coverage intermittently missed */
-      if (keyBytesResult.isFailure()) {
-        return fail(`Invalid key for secret '${name}': ${keyBytesResult.message}`);
-      }
-      const entry: IKeyStoreSecretEntry = {
-        name,
-        /* c8 ignore next 1 - backwards compatibility: old vaults may lack type field */
-        type: jsonEntry.type ?? 'encryption-key',
-        key: keyBytesResult.value,
-        description: jsonEntry.description,
-        createdAt: jsonEntry.createdAt
-      };
-      this._secrets.set(name, entry);
-    }
-
-    this._state = 'unlocked';
-    this._dirty = false;
-
-    return succeed(this);
+    return this._decryptVault(derivedKey);
   }
 
   /**
@@ -929,5 +895,86 @@ export class KeyStore implements IEncryptionProvider {
       secretProvider: providerResult.value,
       cryptoProvider: this._cryptoProvider
     });
+  }
+
+  // ============================================================================
+  // Private: Vault Decryption
+  // ============================================================================
+
+  /**
+   * Decrypts the vault with a derived key and loads secrets into memory.
+   * Shared by {@link KeyStore.unlock | unlock} and
+   * {@link KeyStore.unlockWithKey | unlockWithKey}.
+   */
+  private async _decryptVault(derivedKey: Uint8Array): Promise<Result<KeyStore>> {
+    const keystoreFile = this._keystoreFile!;
+
+    const ivResult = this._cryptoProvider.fromBase64(keystoreFile.iv);
+    const authTagResult = this._cryptoProvider.fromBase64(keystoreFile.authTag);
+    const encryptedDataResult = this._cryptoProvider.fromBase64(keystoreFile.encryptedData);
+
+    /* c8 ignore next 9 - base64 decode errors tested but coverage intermittently missed */
+    if (ivResult.isFailure()) {
+      return fail(`Invalid IV in key store file: ${ivResult.message}`);
+    }
+    if (authTagResult.isFailure()) {
+      return fail(`Invalid auth tag in key store file: ${authTagResult.message}`);
+    }
+    if (encryptedDataResult.isFailure()) {
+      return fail(`Invalid encrypted data in key store file: ${encryptedDataResult.message}`);
+    }
+
+    const decryptResult = await this._cryptoProvider.decrypt(
+      encryptedDataResult.value,
+      derivedKey,
+      ivResult.value,
+      authTagResult.value
+    );
+    if (decryptResult.isFailure()) {
+      return fail('Incorrect password or corrupted key store');
+    }
+
+    // Parse the vault contents
+    const parseResult = captureResult(() => JSON.parse(decryptResult.value) as unknown);
+    /* c8 ignore next 3 - error path tested but coverage intermittently missed */
+    if (parseResult.isFailure()) {
+      return fail(`Failed to parse vault contents: ${parseResult.message}`);
+    }
+
+    const vaultResult = keystoreVaultContents.convert(parseResult.value);
+    /* c8 ignore next 3 - error path tested but coverage intermittently missed */
+    if (vaultResult.isFailure()) {
+      return fail(`Invalid vault format: ${vaultResult.message}`);
+    }
+
+    // Load secrets into memory
+    const saltResult = this._cryptoProvider.fromBase64(keystoreFile.keyDerivation.salt);
+    /* c8 ignore next 3 - salt was already validated during open/unlock guard */
+    if (saltResult.isFailure()) {
+      return fail(`Invalid salt in key store file: ${saltResult.message}`);
+    }
+    this._salt = saltResult.value;
+    this._secrets = new Map();
+    for (const [name, jsonEntry] of Object.entries(vaultResult.value.secrets)) {
+      const keyBytesResult = this._cryptoProvider.fromBase64(jsonEntry.key);
+      /* c8 ignore next 3 - error path tested but coverage intermittently missed */
+      if (keyBytesResult.isFailure()) {
+        return fail(`Invalid key for secret '${name}': ${keyBytesResult.message}`);
+      }
+      const entry: IKeyStoreSecretEntry = {
+        name,
+        /* c8 ignore next 1 - backwards compatibility: old vaults may lack type field */
+        type: jsonEntry.type ?? 'encryption-key',
+        key: keyBytesResult.value,
+        description: jsonEntry.description,
+        createdAt: jsonEntry.createdAt
+      };
+      this._secrets.set(name, entry);
+    }
+
+    this._state = 'unlocked';
+    this._dirty = false;
+
+    return succeed(this);
   }
 }

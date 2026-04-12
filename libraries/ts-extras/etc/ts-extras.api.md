@@ -815,6 +815,7 @@ class KeyStore_2 implements IEncryptionProvider {
     save(password: string): Promise<Result<IKeyStoreFile>>;
     get state(): KeyStoreLockState;
     unlock(password: string): Promise<Result<KeyStore_2>>;
+    unlockWithKey(derivedKey: Uint8Array): Promise<Result<KeyStore_2>>;
 }
 
 // @public
@@ -1133,6 +1134,11 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
 }
+
+// Warnings were encountered during analysis:
+//
+// src/packlets/crypto-utils/keystore/keyStore.ts:909:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
+// src/packlets/crypto-utils/keystore/keyStore.ts:909:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
 
 // (No @packageDocumentation comment for this package)
 
