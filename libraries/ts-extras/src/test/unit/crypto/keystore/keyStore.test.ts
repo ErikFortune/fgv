@@ -1035,6 +1035,27 @@ describe('KeyStore', () => {
       expect(secretViaKey.name).toBe(secretViaPassword.name);
       expect(secretViaKey.description).toBe(secretViaPassword.description);
     });
+
+    test('fails when salt has invalid base64', async () => {
+      // Corrupt the salt after saving but before opening — decryption will
+      // succeed (key was derived from original salt) but the post-decrypt
+      // salt decode in _decryptVault will fail.
+      const corruptedFile: CryptoUtils.KeyStore.IKeyStoreFile = {
+        ...savedFile,
+        keyDerivation: {
+          ...savedFile.keyDerivation,
+          salt: '!!!not-valid-base64!!!'
+        }
+      };
+
+      const keystore = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: corruptedFile
+      }).orThrow();
+
+      const result = await keystore.unlockWithKey(derivedKey);
+      expect(result).toFailWith(/invalid salt/i);
+    });
   });
 
   // ==========================================================================

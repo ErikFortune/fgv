@@ -952,7 +952,6 @@ export class KeyStore implements IEncryptionProvider {
 
     // Load secrets into memory
     const saltResult = this._cryptoProvider.fromBase64(keystoreFile.keyDerivation.salt);
-    /* c8 ignore next 3 - defensive coding: salt base64 validated by successful decrypt above */
     if (saltResult.isFailure()) {
       return fail(`Invalid salt in key store file: ${saltResult.message}`);
     }
