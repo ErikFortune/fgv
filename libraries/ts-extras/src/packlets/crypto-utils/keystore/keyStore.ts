@@ -910,7 +910,10 @@ export class KeyStore implements IEncryptionProvider {
    * Shared by `unlock()` and `unlockWithKey()`.
    */
   private async _decryptVault(derivedKey: Uint8Array): Promise<Result<KeyStore>> {
-    const keystoreFile = this._keystoreFile!;
+    const keystoreFile = this._keystoreFile;
+    if (keystoreFile === undefined) {
+      return fail('No key store file loaded');
+    }
 
     const ivResult = this._cryptoProvider.fromBase64(keystoreFile.iv);
     const authTagResult = this._cryptoProvider.fromBase64(keystoreFile.authTag);
