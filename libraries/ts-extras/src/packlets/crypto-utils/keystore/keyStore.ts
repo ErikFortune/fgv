@@ -950,13 +950,12 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Invalid vault format: ${vaultResult.message}`);
     }
 
-    // Load secrets into memory
+    // Build secrets into local variables to avoid partial state on failure
     const saltResult = this._cryptoProvider.fromBase64(keystoreFile.keyDerivation.salt);
     if (saltResult.isFailure()) {
       return fail(`Invalid salt in key store file: ${saltResult.message}`);
     }
-    this._salt = saltResult.value;
-    this._secrets = new Map();
+    const secrets = new Map<string, IKeyStoreSecretEntry>();
     for (const [name, jsonEntry] of Object.entries(vaultResult.value.secrets)) {
       const keyBytesResult = this._cryptoProvider.fromBase64(jsonEntry.key);
       /* c8 ignore next 3 - error path tested but coverage intermittently missed */
@@ -971,9 +970,12 @@ export class KeyStore implements IEncryptionProvider {
         description: jsonEntry.description,
         createdAt: jsonEntry.createdAt
       };
-      this._secrets.set(name, entry);
+      secrets.set(name, entry);
     }
 
+    // All validation passed — commit state atomically
+    this._salt = saltResult.value;
+    this._secrets = secrets;
     this._state = 'unlocked';
     this._dirty = false;
 
