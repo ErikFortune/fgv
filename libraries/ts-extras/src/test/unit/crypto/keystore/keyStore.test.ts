@@ -926,6 +926,138 @@ describe('KeyStore', () => {
     });
   });
 
+  describe('unlockWithKey', () => {
+    let savedFile: CryptoUtils.KeyStore.IKeyStoreFile;
+    let derivedKey: Uint8Array;
+
+    beforeEach(async () => {
+      // Create, populate, and save a key store
+      const keystore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
+      await keystore.initialize(testPassword);
+      await keystore.addSecret('my-secret', { description: 'Test secret' });
+      savedFile = (await keystore.save(testPassword)).orThrow();
+
+      // Derive the key externally using the file's PBKDF2 params
+      const salt = CryptoUtils.fromBase64(savedFile.keyDerivation.salt);
+      derivedKey = (
+        await provider.deriveKey(testPassword, salt, savedFile.keyDerivation.iterations)
+      ).orThrow();
+    });
+
+    test('unlocks with a pre-derived key', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
+
+      const result = await keystore.unlockWithKey(derivedKey);
+
+      expect(result).toSucceedAndSatisfy((ks) => {
+        expect(ks.isUnlocked).toBe(true);
+        expect(ks.state).toBe('unlocked');
+      });
+    });
+
+    test('secrets are accessible after unlockWithKey', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
+      await keystore.unlockWithKey(derivedKey);
+
+      expect(keystore.getSecret('my-secret')).toSucceedAndSatisfy((entry) => {
+        expect(entry.name).toBe('my-secret');
+        expect(entry.description).toBe('Test secret');
+        expect(entry.key.length).toBe(CryptoUtils.Constants.AES_256_KEY_SIZE);
+      });
+    });
+
+    test('fails with wrong-length key', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
+
+      const shortKey = new Uint8Array(16);
+      const result = await keystore.unlockWithKey(shortKey);
+      expect(result).toFailWith(/key must be 32 bytes/i);
+    });
+
+    test('fails with wrong key', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
+
+      const wrongKey = new Uint8Array(32);
+      wrongKey.fill(0xff);
+
+      const result = await keystore.unlockWithKey(wrongKey);
+      expect(result).toFailWith(/incorrect password/i);
+    });
+
+    test('fails on a new key store', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
+
+      const result = await keystore.unlockWithKey(derivedKey);
+      expect(result).toFailWith(/use initialize/i);
+    });
+
+    test('fails when already unlocked', async () => {
+      const keystore = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
+      await keystore.unlockWithKey(derivedKey);
+
+      const result = await keystore.unlockWithKey(derivedKey);
+      expect(result).toFailWith(/already unlocked/i);
+    });
+
+    test('key derived from same password produces identical secrets as unlock', async () => {
+      // Unlock via password
+      const ks1 = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
+      await ks1.unlock(testPassword);
+      const secretViaPassword = ks1.getSecret('my-secret').orThrow();
+
+      // Unlock via derived key
+      const ks2 = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
+      await ks2.unlockWithKey(derivedKey);
+      const secretViaKey = ks2.getSecret('my-secret').orThrow();
+
+      expect(secretViaKey.key).toEqual(secretViaPassword.key);
+      expect(secretViaKey.name).toBe(secretViaPassword.name);
+      expect(secretViaKey.description).toBe(secretViaPassword.description);
+    });
+
+    test('fails when salt has invalid base64', async () => {
+      // Corrupt the salt after saving but before opening — decryption will
+      // succeed (key was derived from original salt) but the post-decrypt
+      // salt decode in _decryptVault will fail.
+      const corruptedFile: CryptoUtils.KeyStore.IKeyStoreFile = {
+        ...savedFile,
+        keyDerivation: {
+          ...savedFile.keyDerivation,
+          salt: '!!!not-valid-base64!!!'
+        }
+      };
+
+      const keystore = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: corruptedFile
+      }).orThrow();
+
+      const result = await keystore.unlockWithKey(derivedKey);
+      expect(result).toFailWith(/invalid salt/i);
+    });
+  });
+
   // ==========================================================================
   // encryptByName (IEncryptionProvider)
   // ==========================================================================
