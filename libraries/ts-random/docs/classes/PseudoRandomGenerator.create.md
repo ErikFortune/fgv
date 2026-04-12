@@ -7,7 +7,7 @@ Creates a new pseudo-random number generator.
 **Signature:**
 
 ```typescript
-static create(params?: IPseudoRandomGeneratorCreateParams): Result<PseudoRandomGenerator>;
+static create(params: IPseudoRandomGeneratorCreateParams): Result<PseudoRandomGenerator>;
 ```
 
 **Parameters:**

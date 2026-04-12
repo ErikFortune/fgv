@@ -69,7 +69,7 @@ number
 
 </td><td>
 
-readonly T[]
+readonly (readonly T[])[]
 
 </td><td>
 

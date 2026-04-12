@@ -108,6 +108,19 @@ Derives a key from a password using PBKDF2.
 </td></tr>
 <tr><td>
 
+[sha256(data)](./NodeCryptoProvider.sha256.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Computes a SHA-256 hash of the given data.
+
+</td></tr>
+<tr><td>
+
 [generateRandomBytes(length)](./NodeCryptoProvider.generateRandomBytes.md)
 
 </td><td>
