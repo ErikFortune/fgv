@@ -369,6 +369,20 @@ Saves the key store, returning the encrypted file content.
 </td></tr>
 <tr><td>
 
+[saveWithKey(derivedKey)](./KeyStore.saveWithKey.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Saves the key store using a pre-derived key, bypassing PBKDF2 key
+derivation.
+
+</td></tr>
+<tr><td>
+
 [changePassword(currentPassword, newPassword)](./KeyStore.changePassword.md)
 
 </td><td>

@@ -1059,6 +1059,122 @@ describe('KeyStore', () => {
   });
 
   // ==========================================================================
+  // saveWithKey
+  // ==========================================================================
+
+  describe('saveWithKey', () => {
+    let keystore: CryptoUtils.KeyStore.KeyStore;
+    let derivedKey: Uint8Array;
+
+    beforeEach(async () => {
+      // Create and populate a key store, then save with password to get a baseline
+      keystore = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
+      await keystore.initialize(testPassword);
+      await keystore.addSecret('my-secret', { description: 'Test secret' });
+      const savedFile = (await keystore.save(testPassword)).orThrow();
+
+      // Derive the key externally using the file's PBKDF2 params
+      const salt = CryptoUtils.fromBase64(savedFile.keyDerivation.salt);
+      derivedKey = (
+        await provider.deriveKey(testPassword, salt, savedFile.keyDerivation.iterations)
+      ).orThrow();
+    });
+
+    test('saves with a pre-derived key', async () => {
+      const result = await keystore.saveWithKey(derivedKey);
+
+      expect(result).toSucceedAndSatisfy((file) => {
+        expect(file.format).toBe(CryptoUtils.KeyStore.KEYSTORE_FORMAT);
+        expect(file.algorithm).toBe('AES-256-GCM');
+        expect(file.iv).toBeDefined();
+        expect(file.authTag).toBeDefined();
+        expect(file.encryptedData).toBeDefined();
+        expect(file.keyDerivation.kdf).toBe('pbkdf2');
+        expect(file.keyDerivation.iterations).toBe(CryptoUtils.KeyStore.DEFAULT_KEYSTORE_ITERATIONS);
+      });
+    });
+
+    test('clears dirty flag', async () => {
+      // Add another secret to make it dirty again
+      await keystore.addSecret('another-secret');
+      expect(keystore.isDirty).toBe(true);
+
+      await keystore.saveWithKey(derivedKey);
+
+      expect(keystore.isDirty).toBe(false);
+    });
+
+    test('saved file can be opened and unlocked with same key', async () => {
+      // Add a second secret before saving with key
+      await keystore.addSecret('second-secret', { description: 'Second' });
+      const savedFile = (await keystore.saveWithKey(derivedKey)).orThrow();
+
+      // Reopen and unlock with the same derived key
+      const keystore2 = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
+      const unlockResult = await keystore2.unlockWithKey(derivedKey);
+
+      expect(unlockResult).toSucceed();
+      expect(keystore2.listSecrets()).toSucceedAndSatisfy((names) => {
+        expect(names).toHaveLength(2);
+        expect(names).toContain('my-secret');
+        expect(names).toContain('second-secret');
+      });
+    });
+
+    test('saved file can be opened and unlocked with password', async () => {
+      const savedFile = (await keystore.saveWithKey(derivedKey)).orThrow();
+
+      // Reopen and unlock with the original password
+      const keystore2 = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedFile
+      }).orThrow();
+      const unlockResult = await keystore2.unlock(testPassword);
+
+      expect(unlockResult).toSucceed();
+      expect(keystore2.getSecret('my-secret')).toSucceedAndSatisfy((entry) => {
+        expect(entry.name).toBe('my-secret');
+        expect(entry.description).toBe('Test secret');
+      });
+    });
+
+    test('key derived from password produces identical file that round-trips', async () => {
+      // Save with key
+      const savedWithKey = (await keystore.saveWithKey(derivedKey)).orThrow();
+
+      // Open the key-saved file with password and verify secrets match
+      const keystore2 = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: savedWithKey
+      }).orThrow();
+      await keystore2.unlock(testPassword);
+
+      const originalSecret = keystore.getSecret('my-secret').orThrow();
+      const roundTrippedSecret = keystore2.getSecret('my-secret').orThrow();
+
+      expect(roundTrippedSecret.key).toEqual(originalSecret.key);
+      expect(roundTrippedSecret.name).toBe(originalSecret.name);
+      expect(roundTrippedSecret.description).toBe(originalSecret.description);
+    });
+
+    test('fails with wrong-length key', async () => {
+      const shortKey = new Uint8Array(16);
+      const result = await keystore.saveWithKey(shortKey);
+      expect(result).toFailWith(/key must be 32 bytes/i);
+    });
+
+    test('fails when locked', async () => {
+      keystore.lock(true);
+
+      const result = await keystore.saveWithKey(derivedKey);
+      expect(result).toFailWith(/locked/i);
+    });
+  });
+
+  // ==========================================================================
   // encryptByName (IEncryptionProvider)
   // ==========================================================================
 
