@@ -813,6 +813,7 @@ class KeyStore_2 implements IEncryptionProvider {
     removeSecret(name: string): Result<IKeyStoreSecretEntry>;
     renameSecret(oldName: string, newName: string): Result<IKeyStoreSecretEntry>;
     save(password: string): Promise<Result<IKeyStoreFile>>;
+    saveWithKey(derivedKey: Uint8Array): Promise<Result<IKeyStoreFile>>;
     get state(): KeyStoreLockState;
     unlock(password: string): Promise<Result<KeyStore_2>>;
     unlockWithKey(derivedKey: Uint8Array): Promise<Result<KeyStore_2>>;

@@ -706,56 +706,31 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Key derivation failed: ${keyResult.message}`);
     }
 
-    // Build vault contents
-    const secrets: Record<string, IKeyStoreSecretEntryJson> = {};
-    for (const [name, entry] of this._secrets) {
-      secrets[name] = {
-        name: entry.name,
-        type: entry.type,
-        key: this._cryptoProvider.toBase64(entry.key),
-        description: entry.description,
-        createdAt: entry.createdAt
-      };
+    return this._encryptVault(keyResult.value);
+  }
+
+  /**
+   * Saves the key store using a pre-derived key, bypassing PBKDF2 key
+   * derivation. Use this when the derived key has been stored externally
+   * (e.g., in another key store) and the original password is no longer
+   * available.
+   *
+   * The supplied key must be the same key that was (or would be) derived
+   * from the master password using the key store's PBKDF2 parameters.
+   *
+   * @param derivedKey - The pre-derived master key (32 bytes for AES-256)
+   * @returns Success with IKeyStoreFile, Failure if locked or key invalid
+   * @public
+   */
+  public async saveWithKey(derivedKey: Uint8Array): Promise<Result<IKeyStoreFile>> {
+    if (!this._secrets || !this._salt) {
+      return fail('Key store is locked');
+    }
+    if (derivedKey.length !== Constants.AES_256_KEY_SIZE) {
+      return fail(`Key must be ${Constants.AES_256_KEY_SIZE} bytes, got ${derivedKey.length}`);
     }
 
-    const vaultContents: IKeyStoreVaultContents = {
-      version: KEYSTORE_FORMAT,
-      secrets
-    };
-
-    // Serialize and encrypt
-    const jsonResult = captureResult(() => JSON.stringify(vaultContents));
-    /* c8 ignore next 3 - error path tested but coverage intermittently missed */
-    if (jsonResult.isFailure()) {
-      return fail(`Failed to serialize vault: ${jsonResult.message}`);
-    }
-
-    const encryptResult = await this._cryptoProvider.encrypt(jsonResult.value, keyResult.value);
-    /* c8 ignore next 3 - crypto provider errors tested but coverage intermittently missed */
-    if (encryptResult.isFailure()) {
-      return fail(`Encryption failed: ${encryptResult.message}`);
-    }
-
-    const { iv, authTag, encryptedData } = encryptResult.value;
-
-    const keystoreFileData: IKeyStoreFile = {
-      format: KEYSTORE_FORMAT,
-      algorithm: Constants.DEFAULT_ALGORITHM,
-      iv: this._cryptoProvider.toBase64(iv),
-      authTag: this._cryptoProvider.toBase64(authTag),
-      encryptedData: this._cryptoProvider.toBase64(encryptedData),
-      keyDerivation: {
-        kdf: 'pbkdf2',
-        salt: this._cryptoProvider.toBase64(this._salt),
-        iterations: this._iterations
-      }
-    };
-
-    this._keystoreFile = keystoreFileData;
-    this._dirty = false;
-    this._isNew = false;
-
-    return succeed(keystoreFileData);
+    return this._encryptVault(derivedKey);
   }
 
   /**
@@ -902,8 +877,69 @@ export class KeyStore implements IEncryptionProvider {
   }
 
   // ============================================================================
-  // Private: Vault Decryption
+  // Private: Vault Encryption / Decryption
   // ============================================================================
+
+  /**
+   * Encrypts the vault with a derived key and returns the key store file.
+   * Shared by `save()` and `saveWithKey()`.
+   */
+  private async _encryptVault(derivedKey: Uint8Array): Promise<Result<IKeyStoreFile>> {
+    // _secrets and _salt are guaranteed non-undefined by callers
+    const secrets = this._secrets!;
+    const salt = this._salt!;
+
+    // Build vault contents
+    const secretEntries: Record<string, IKeyStoreSecretEntryJson> = {};
+    for (const [name, entry] of secrets) {
+      secretEntries[name] = {
+        name: entry.name,
+        type: entry.type,
+        key: this._cryptoProvider.toBase64(entry.key),
+        description: entry.description,
+        createdAt: entry.createdAt
+      };
+    }
+
+    const vaultContents: IKeyStoreVaultContents = {
+      version: KEYSTORE_FORMAT,
+      secrets: secretEntries
+    };
+
+    // Serialize and encrypt
+    const jsonResult = captureResult(() => JSON.stringify(vaultContents));
+    /* c8 ignore next 3 - error path tested but coverage intermittently missed */
+    if (jsonResult.isFailure()) {
+      return fail(`Failed to serialize vault: ${jsonResult.message}`);
+    }
+
+    const encryptResult = await this._cryptoProvider.encrypt(jsonResult.value, derivedKey);
+    /* c8 ignore next 3 - crypto provider errors tested but coverage intermittently missed */
+    if (encryptResult.isFailure()) {
+      return fail(`Encryption failed: ${encryptResult.message}`);
+    }
+
+    const { iv, authTag, encryptedData } = encryptResult.value;
+
+    const keystoreFileData: IKeyStoreFile = {
+      format: KEYSTORE_FORMAT,
+      algorithm: Constants.DEFAULT_ALGORITHM,
+      iv: this._cryptoProvider.toBase64(iv),
+      authTag: this._cryptoProvider.toBase64(authTag),
+      encryptedData: this._cryptoProvider.toBase64(encryptedData),
+      keyDerivation: {
+        kdf: 'pbkdf2',
+        salt: this._cryptoProvider.toBase64(salt),
+        iterations: this._iterations
+      }
+    };
+
+    this._keystoreFile = keystoreFileData;
+    this._dirty = false;
+    this._isNew = false;
+
+    return succeed(keystoreFileData);
+  }
 
   /**
    * Decrypts the vault with a derived key and loads secrets into memory.
