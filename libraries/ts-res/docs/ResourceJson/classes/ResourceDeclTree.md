@@ -58,7 +58,7 @@ The ResourceJson.Normalized.IResourceTreeRootDecl | resource tree root declarati
 
 </td><td>
 
-ResourceJson.IResourceDeclContainer.context
+Optional initial ResourceJson.Normalized.IContainerContextDecl | resource context
 
 </td></tr>
 </tbody></table>

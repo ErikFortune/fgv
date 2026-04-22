@@ -58,7 +58,7 @@ The ResourceJson.Normalized.IResourceCollectionDecl | resource collection declar
 
 </td><td>
 
-ResourceJson.IResourceDeclContainer.context
+Optional initial ResourceJson.Normalized.IContainerContextDecl | resource context
 
 </td></tr>
 </tbody></table>

@@ -2,7 +2,7 @@
 
 ## QualifierType.key property
 
-QualifierTypes.IQualifierType.key
+Unique key for this qualifier.
 
 **Signature:**
 

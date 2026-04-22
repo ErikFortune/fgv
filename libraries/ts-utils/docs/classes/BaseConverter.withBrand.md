@@ -2,7 +2,7 @@
 
 ## BaseConverter.withBrand() method
 
-returns a converter which adds a brand to the type to prevent mismatched usage
+Returns a converter which adds a brand to the type to prevent mismatched usage
 of simple types.
 
 **Signature:**

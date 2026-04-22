@@ -161,7 +161,7 @@ Determines if a given property key is conditional.
 
 </td><td>
 
-IJsonEditorRule.editValue
+Called by a JsonEditor | JsonEditor to possibly edit a property value or array element.
 
 </td></tr>
 </tbody></table>

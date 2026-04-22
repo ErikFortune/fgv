@@ -74,7 +74,12 @@ export class ConvertingCollectorValidator<
   }
 
   /**
-   * {@inheritDoc Collections.ConvertingCollector.add}
+   * Adds an item to the collector using the default factory at a specified key,
+   * failing if an item with that key already exists.
+   * @param key - The weakly-typed key of the item to add.
+   * @param value - The source representation of the item to be added.
+   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with
+   * an error if the item cannot be created and indexed.
    */
   public add(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
 
@@ -106,12 +111,26 @@ export class ConvertingCollectorValidator<
   }
 
   /**
-   * {@inheritDoc Collections.ConvertingCollector.getOrAdd}
+   * Gets an existing item with a key matching the supplied key, or adds a new item to the collector
+   * by converting the supplied weakly-typed value if no item with that key exists.
+   * @param key - The weakly-typed key of the item to get or add.
+   * @param value - The weakly-typed source value to convert and add if the key does not exist.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item was returned and detail `added` indicates
+   * that the item was added. Returns {@link DetailedFailure | Failure} with an error and
+   * appropriate detail if the item could not be added.
    */
   public getOrAdd(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritDoc Collections.Collector.getOrAdd}
+   * Gets an existing item with a key matching the supplied key, or adds a new item to the collector
+   * using a factory callback if no item with that key exists.
+   * @param key - The weakly-typed key of the item to get or add.
+   * @param factory - The factory callback to create the item.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item was returned and detail `added` indicates
+   * that the item was added. Returns {@link DetailedFailure | Failure} with an error and
+   * appropriate detail if the item could not be added.
    */
   public getOrAdd(
     key: string,

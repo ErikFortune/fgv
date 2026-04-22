@@ -2,7 +2,7 @@
 
 ## CompiledResourceCollection.validateContext() method
 
-Runtime.IResourceManager.validateContext
+Validates a context declaration against the qualifiers managed by this resource manager.
 
 **Signature:**
 
@@ -14,9 +14,11 @@ validateContext(context: IContextDecl): Result<IValidatedContextDecl>;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>context</td><td>IContextDecl</td><td></td></tr>
+<tr><td>context</td><td>IContextDecl</td><td>The context declaration to validate</td></tr>
 </tbody></table>
 
 **Returns:**
 
 Result&lt;[IValidatedContextDecl](../type-aliases/IValidatedContextDecl.md)&gt;
+
+Success with the validated context if successful, Failure otherwise

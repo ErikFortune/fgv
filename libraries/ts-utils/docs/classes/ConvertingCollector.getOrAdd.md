@@ -2,7 +2,7 @@
 
 ## ConvertingCollector.getOrAdd() method
 
-Gets an existing item with a key matching that of a supplied item, or adds the supplied
+Gets an existing item with a key matching that of the supplied item, or adds the supplied
 item to the collector if no item with that key exists.
 
 **Signature:**
@@ -23,6 +23,6 @@ getOrAdd(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 [DetailedResult](../type-aliases/DetailedResult.md)&lt;TITEM, [CollectorResultDetail](../type-aliases/CollectorResultDetail.md)&gt;
 
 Returns DetailedSuccess | Success with the item stored in the collector -
-detail `exists` indicates that an existing item return and detail `added` indicates that the
-item was added. Returns DetailedFailure | Failure with an error and appropriate
-detail if the item could not be added.
+detail `exists` indicates that an existing item was returned and detail `added` indicates
+that the item was added. Returns DetailedFailure | Failure with an error and
+appropriate detail if the item could not be added.

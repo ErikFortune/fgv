@@ -178,7 +178,7 @@ export function isDetailLogger(logger: ILogger): logger is IDetailLogger {
  */
 export abstract class LoggerBase implements IDetailLogger {
   /**
-   * {@inheritDoc Logging.ILogger.logLevel}
+   * The level of logging to be used.
    */
   public logLevel: ReporterLogLevel = 'info';
 
@@ -187,35 +187,53 @@ export abstract class LoggerBase implements IDetailLogger {
   }
 
   /**
-   * {@inheritDoc Logging.ILogger.detail}
+   * Logs a detail message.
+   * @param message - The message to log.
+   * @param parameters - The parameters to log.
+   * @returns `Success` with the logged message if the level is enabled, or
+   * `Success` with `undefined` if the message is suppressed.
    */
   public detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
     return this.log('detail', message, ...parameters);
   }
 
   /**
-   * {@inheritDoc Logging.ILogger.info}
+   * Logs an info message.
+   * @param message - The message to log.
+   * @param parameters - The parameters to log.
+   * @returns `Success` with the logged message if the level is enabled, or
+   * `Success` with `undefined` if the message is suppressed.
    */
   public info(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
     return this.log('info', message, ...parameters);
   }
 
   /**
-   * {@inheritDoc Logging.ILogger.warn}
+   * Logs a warning message.
+   * @param message - The message to log.
+   * @param parameters - The parameters to log.
+   * @returns `Success` with the logged message if the level is enabled, or
+   * `Success` with `undefined` if the message is suppressed.
    */
   public warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
     return this.log('warning', message, ...parameters);
   }
 
   /**
-   * {@inheritDoc Logging.ILogger.error}
+   * Logs an error message.
+   * @param message - The message to log.
+   * @param parameters - The parameters to log.
+   * @returns `Success` with the logged message if the level is enabled, or
+   * `Success` with `undefined` if the message is suppressed.
    */
   public error(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
     return this.log('error', message, ...parameters);
   }
 
   /**
-   * {@inheritDoc Logging.IDetailLogger.errorWithDetail}
+   * Logs a short error summary at `error` level, then emits `detail` at `detail` level.
+   * @param message - Short human-readable summary.
+   * @param detail - Full detail (e.g. raw converter error) logged at `detail` level.
    */
   public errorWithDetail(message: string, detail: unknown): Success<string | undefined> {
     this.detail(detail);
@@ -223,7 +241,9 @@ export abstract class LoggerBase implements IDetailLogger {
   }
 
   /**
-   * {@inheritDoc Logging.IDetailLogger.warnWithDetail}
+   * Logs a short warning summary at `warning` level, then emits `detail` at `detail` level.
+   * @param message - Short human-readable summary.
+   * @param detail - Full detail logged at `detail` level.
    */
   public warnWithDetail(message: string, detail: unknown): Success<string | undefined> {
     this.detail(detail);
@@ -231,7 +251,12 @@ export abstract class LoggerBase implements IDetailLogger {
   }
 
   /**
-   * {@inheritDoc Logging.ILogger.log}
+   * Logs a message at the given level.
+   * @param level - The level of the message.
+   * @param message - The message to log.
+   * @param parameters - The parameters to log.
+   * @returns `Success` with the logged message if the level is enabled, or
+   * `Success` with `undefined` if the message is suppressed.
    */
   public log(
     level: MessageLogLevel,

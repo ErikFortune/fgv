@@ -2,7 +2,7 @@
 
 ## IReadOnlyQualifierCollector.qualifierTypes property
 
-Qualifiers.QualifierCollector.qualifierTypes
+The QualifierTypes.QualifierTypeCollector | qualifier types that this collector uses.
 
 **Signature:**
 

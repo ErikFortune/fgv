@@ -89,7 +89,7 @@ boolean
 
 </td><td>
 
-Converter.isOptional
+Indicates whether this element is explicitly optional.
 
 </td></tr>
 <tr><td>
@@ -106,7 +106,7 @@ string | undefined
 
 </td><td>
 
-Converter.brand
+Returns the brand for a branded type.
 
 </td></tr>
 </tbody></table>
@@ -176,7 +176,7 @@ Gets a derived converter which fails if the resulting converted
 
 </td><td>
 
-Converter.convert
+Converts from `unknown` to `<T>`.
 
 </td></tr>
 <tr><td>
@@ -189,7 +189,7 @@ Converter.convert
 
 </td><td>
 
-Converter.convertOptional
+Converts from `unknown` to `<T>` or `undefined`, as appropriate.
 
 </td></tr>
 <tr><td>
@@ -202,7 +202,7 @@ Converter.convertOptional
 
 </td><td>
 
-Converter.optional
+Creates a Converter for an optional value.
 
 </td></tr>
 <tr><td>
@@ -215,7 +215,7 @@ Converter.optional
 
 </td><td>
 
-Converter.map
+Creates a Converter which applies a (possibly) mapping conversion to
 
 </td></tr>
 <tr><td>
@@ -228,7 +228,7 @@ Converter.map
 
 </td><td>
 
-Converter.mapConvert
+Creates a Converter which applies an additional supplied
 
 </td></tr>
 <tr><td>
@@ -241,7 +241,7 @@ Converter.mapConvert
 
 </td><td>
 
-Converter.mapItems
+Creates a Converter which maps the individual items of a collection
 
 </td></tr>
 <tr><td>
@@ -254,7 +254,7 @@ Converter.mapItems
 
 </td><td>
 
-Converter.mapConvertItems
+Creates a Converter which maps the individual items of a collection
 
 </td></tr>
 <tr><td>
@@ -267,7 +267,8 @@ Converter.mapConvertItems
 
 </td><td>
 
-Converter.withAction
+Creates a Converter | Converter which applies a supplied action after
+conversion.
 
 </td></tr>
 <tr><td>
@@ -280,7 +281,7 @@ Converter.withAction
 
 </td><td>
 
-Converter.withTypeGuard
+Creates a Converter which applies a supplied type guard to the conversion
 
 </td></tr>
 <tr><td>
@@ -293,7 +294,7 @@ Converter.withTypeGuard
 
 </td><td>
 
-Converter.withItemTypeGuard
+Creates a Converter which applies a supplied type guard to each member of
 
 </td></tr>
 <tr><td>
@@ -306,7 +307,8 @@ Converter.withItemTypeGuard
 
 </td><td>
 
-Converter.withConstraint
+Creates a Converter which applies an optional constraint to the result
+of this conversion.
 
 </td></tr>
 <tr><td>
@@ -319,7 +321,7 @@ Converter.withConstraint
 
 </td><td>
 
-Converter.withBrand
+Returns a converter which adds a brand to the type to prevent mismatched usage
 
 </td></tr>
 <tr><td>
@@ -332,7 +334,7 @@ Converter.withBrand
 
 </td><td>
 
-Converter.withDefault
+Returns a Converter which always succeeds with a default value rather than failing.
 
 </td></tr>
 <tr><td>
@@ -358,7 +360,7 @@ Chains this converter with another of the same type, to be attempted if this
 
 </td><td>
 
-Converter.withFormattedError
+Creates a new Converter which is derived from this one but which returns an
 
 </td></tr>
 </tbody></table>

@@ -2,7 +2,7 @@
 
 ## ITerritoryQualifierTypeCreateParams.index property
 
-QualifierTypes.IQualifierTypeCreateParams.index
+Global index for this qualifier type.
 
 **Signature:**
 

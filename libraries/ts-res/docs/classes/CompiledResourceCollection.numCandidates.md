@@ -2,7 +2,7 @@
 
 ## CompiledResourceCollection.numCandidates property
 
-Runtime.IResourceManager.numCandidates
+The number of candidates in this resource manager.
 
 **Signature:**
 

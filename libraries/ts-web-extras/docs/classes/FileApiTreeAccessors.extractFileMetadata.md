@@ -14,7 +14,7 @@ static extractFileMetadata(file: File): IFileMetadata;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>file</td><td>File</td><td></td></tr>
+<tr><td>file</td><td>File</td><td>The File to extract metadata from</td></tr>
 </tbody></table>
 
 **Returns:**

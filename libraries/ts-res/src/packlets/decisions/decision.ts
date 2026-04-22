@@ -154,7 +154,7 @@ export class Decision<TVALUE extends JsonValue = JsonValue> implements IDecision
 
   /**
    * Helper function to return a stable key for a set of condition sets.
-   * @param conditionSets - The condition sets to use to create the key.
+   * @param candidates - The candidates whose condition sets are used to create the key.
    * @returns A key derived from the condition set hashes.
    * @public
    */

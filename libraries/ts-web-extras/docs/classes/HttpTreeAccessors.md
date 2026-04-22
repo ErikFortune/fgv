@@ -99,7 +99,7 @@ Gets the list of paths for all dirty files.
 
 </td><td>
 
-FileTree.IMutableFileTreeAccessors.deleteFile
+Deletes a file at the given path.
 
 </td></tr>
 <tr><td>
@@ -138,7 +138,7 @@ Checks if a file is mutable (can be modified).
 
 </td><td>
 
-FileTree.IFileTreeAccessors.resolveAbsolutePath
+Resolves paths to an absolute path.
 
 </td></tr>
 <tr><td>
@@ -151,7 +151,7 @@ FileTree.IFileTreeAccessors.resolveAbsolutePath
 
 </td><td>
 
-FileTree.IFileTreeAccessors.getExtension
+Gets the extension of a path.
 
 </td></tr>
 <tr><td>
@@ -164,7 +164,7 @@ FileTree.IFileTreeAccessors.getExtension
 
 </td><td>
 
-FileTree.IFileTreeAccessors.getBaseName
+Gets the base name of a path.
 
 </td></tr>
 <tr><td>
@@ -177,7 +177,7 @@ FileTree.IFileTreeAccessors.getBaseName
 
 </td><td>
 
-FileTree.IFileTreeAccessors.joinPaths
+Joins paths together.
 
 </td></tr>
 <tr><td>
@@ -190,7 +190,7 @@ FileTree.IFileTreeAccessors.joinPaths
 
 </td><td>
 
-FileTree.IFileTreeAccessors.getItem
+Gets an item from the file tree.
 
 </td></tr>
 <tr><td>
@@ -203,7 +203,7 @@ FileTree.IFileTreeAccessors.getItem
 
 </td><td>
 
-FileTree.IFileTreeAccessors.getFileContents
+Gets the contents of a file in the file tree.
 
 </td></tr>
 <tr><td>
@@ -216,7 +216,7 @@ FileTree.IFileTreeAccessors.getFileContents
 
 </td><td>
 
-FileTree.IFileTreeAccessors.getFileContentType
+Gets the content type of a file in the file tree.
 
 </td></tr>
 <tr><td>
@@ -229,7 +229,7 @@ FileTree.IFileTreeAccessors.getFileContentType
 
 </td><td>
 
-FileTree.IFileTreeAccessors.getChildren
+Gets the children of a directory in the file tree.
 
 </td></tr>
 <tr><td>
@@ -242,7 +242,7 @@ FileTree.IFileTreeAccessors.getChildren
 
 </td><td>
 
-FileTree.IMutableFileTreeAccessors.createDirectory
+Creates a directory at the given path, including any missing parent directories.
 
 </td></tr>
 <tr><td>
@@ -255,7 +255,7 @@ FileTree.IMutableFileTreeAccessors.createDirectory
 
 </td><td>
 
-FileTree.IMutableFileTreeAccessors.deleteDirectory
+Deletes a directory at the given path.
 
 </td></tr>
 </tbody></table>

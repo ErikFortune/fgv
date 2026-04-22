@@ -15,7 +15,7 @@ _tryParse(token: string, state: JsonEditorState): DetailedResult<IMultiValueProp
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>token</td><td>string</td><td></td></tr>
+<tr><td>token</td><td>string</td><td>The property key token to be considered.</td></tr>
 <tr><td>state</td><td>JsonEditorState</td><td>The JsonEditorState | editor state for the object being edited.</td></tr>
 </tbody></table>
 

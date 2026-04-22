@@ -2,7 +2,7 @@
 
 ## TerritoryQualifierType.validateConfigurationJson() method
 
-QualifierTypes.IQualifierType.validateConfigurationJson
+Validates configuration JSON data for this qualifier type.
 
 **Signature:**
 
@@ -14,9 +14,11 @@ validateConfigurationJson(from: unknown): Result<{ systemType: "territory"; name
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>from</td><td>unknown</td><td></td></tr>
+<tr><td>from</td><td>unknown</td><td>The unknown data to validate as configuration JSON.</td></tr>
 </tbody></table>
 
 **Returns:**
 
 Result&lt;{ systemType: "territory"; name: string; configuration?: { allowContextList?: boolean; acceptLowercase?: boolean; allowedTerritories?: JsonCompatibleArray&lt;string&gt;; hierarchy?: { [key: string]: string } } }&gt;
+
+`Success` with validated JSON configuration if valid, `Failure` with an error message otherwise.

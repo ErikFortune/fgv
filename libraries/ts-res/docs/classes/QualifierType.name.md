@@ -2,7 +2,7 @@
 
 ## QualifierType.name property
 
-QualifierTypes.IQualifierType.name
+The name of the qualifier type.
 
 **Signature:**
 

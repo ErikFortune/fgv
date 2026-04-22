@@ -14,7 +14,7 @@ static load(file: IFileTreeFileItem): Result<PuzzleCollection>;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>file</td><td>IFileTreeFileItem</td><td></td></tr>
+<tr><td>file</td><td>IFileTreeFileItem</td><td>file item to be loaded.</td></tr>
 </tbody></table>
 
 **Returns:**

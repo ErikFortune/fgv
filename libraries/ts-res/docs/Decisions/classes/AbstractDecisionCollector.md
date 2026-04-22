@@ -142,7 +142,7 @@ number
 
 </td><td>
 
-Collections.ResultMap.size
+Returns the number of entries in the map.
 
 </td></tr>
 </tbody></table>
@@ -238,7 +238,7 @@ Adds an item to the collection, failing if a different item with the same key al
 
 </td><td>
 
-Collections.ResultMap.entries
+Returns an iterator over the map entries.
 
 </td></tr>
 <tr><td>
@@ -251,7 +251,7 @@ Collections.ResultMap.entries
 
 </td><td>
 
-Collections.ResultMap.forEach
+Calls a function for each entry in the map.
 
 </td></tr>
 <tr><td>
@@ -264,7 +264,7 @@ Collections.ResultMap.forEach
 
 </td><td>
 
-Collections.ResultMap.get
+Gets a value by key.
 
 </td></tr>
 <tr><td>
@@ -277,7 +277,7 @@ Collections.ResultMap.get
 
 </td><td>
 
-Collections.IReadOnlyCollector.getAt
+Gets the item at a specified index.
 
 </td></tr>
 <tr><td>
@@ -303,7 +303,7 @@ Gets an existing item with a key matching that of a supplied item, or adds the s
 
 </td><td>
 
-Collections.ResultMap.has
+Returns true if the map contains an entry with the given key.
 
 </td></tr>
 <tr><td>
@@ -316,7 +316,7 @@ Collections.ResultMap.has
 
 </td><td>
 
-Collections.ResultMap.keys
+Returns an iterator over the map keys.
 
 </td></tr>
 <tr><td>
@@ -329,7 +329,7 @@ Collections.ResultMap.keys
 
 </td><td>
 
-Collections.ResultMap.values
+Returns an iterator over the map values.
 
 </td></tr>
 <tr><td>
@@ -342,7 +342,7 @@ Collections.ResultMap.values
 
 </td><td>
 
-Collections.IReadOnlyCollector.valuesByIndex
+Gets all items in the collection, ordered by index.
 
 </td></tr>
 <tr><td>

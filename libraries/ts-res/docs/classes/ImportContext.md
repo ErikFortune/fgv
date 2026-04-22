@@ -40,7 +40,7 @@ Description
 
 </td><td>
 
-Import.IImportContext.baseId
+Base ID for the import context for resources imported
 
 </td></tr>
 <tr><td>
@@ -57,7 +57,7 @@ readonly [ILooseConditionDecl](../interfaces/ILooseConditionDecl.md)[]
 
 </td><td>
 
-Import.IImportContext.conditions
+Conditions to be applied to resources imported in this context.
 
 </td></tr>
 </tbody></table>

@@ -17,7 +17,7 @@ static createForPath(importPath: string, qualifiers: IReadOnlyQualifierCollector
 <tr><td>importPath</td><td>string</td><td>The path to the file system item to import.</td></tr>
 <tr><td>qualifiers</td><td>IReadOnlyQualifierCollector</td><td>The Qualifiers.IReadOnlyQualifierCollector | qualifiers used to parse
 embedded condition set tokens.</td></tr>
-<tr><td>tree</td><td>FileTree_2&lt;string&gt;</td><td></td></tr>
+<tr><td>tree</td><td>FileTree_2&lt;string&gt;</td><td>An optional FileTree.FileTree | file tree to use for this item.</td></tr>
 </tbody></table>
 
 **Returns:**

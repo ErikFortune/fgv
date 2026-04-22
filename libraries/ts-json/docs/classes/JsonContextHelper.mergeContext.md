@@ -15,7 +15,8 @@ mergeContext(merge?: IJsonContext): Result<IJsonContext | undefined>;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>merge</td><td>IJsonContext</td><td></td></tr>
+<tr><td>merge</td><td>IJsonContext</td><td>Optional initializer containing VariableValue | variable values and/or
+IJsonReferenceMap | reference maps to be added to the IJsonContext | context.</td></tr>
 </tbody></table>
 
 **Returns:**

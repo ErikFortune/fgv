@@ -187,7 +187,7 @@ Adds an item to the collection, failing if a different item with the same key al
 
 </td><td>
 
-Gets an existing item with a key matching that of a supplied item, or adds the supplied
+Gets an existing item with a key matching that of the supplied item, or adds the supplied
 
 </td></tr>
 <tr><td>
@@ -265,7 +265,7 @@ Calls a function for each entry in the map.
 
 </td><td>
 
-Gets a value from the map.
+Gets a value by key.
 
 </td></tr>
 <tr><td>
@@ -291,7 +291,7 @@ Gets the item at a specified index.
 
 </td><td>
 
-Returns `true` if the map contains a key.
+Returns true if the map contains an entry with the given key.
 
 </td></tr>
 <tr><td>

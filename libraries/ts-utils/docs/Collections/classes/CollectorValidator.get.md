@@ -2,7 +2,7 @@
 
 ## CollectorValidator.get() method
 
-Gets a value from the map.
+Gets a value by key.
 
 **Signature:**
 
@@ -14,13 +14,12 @@ get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>key</td><td>string</td><td>The key to retrieve.</td></tr>
+<tr><td>key</td><td>string</td><td>The key to look up.</td></tr>
 </tbody></table>
 
 **Returns:**
 
 [DetailedResult](../../type-aliases/DetailedResult.md)&lt;TITEM, [ResultMapResultDetail](../../type-aliases/ResultMapResultDetail.md)&gt;
 
-`Success` with the value and detail `exists` if the key was found,
-`Failure` with detail `not-found` if the key was not found or with detail
-`invalid-key` if the key is invalid.
+Returns DetailedSuccess | Success with the value and detail `exists` if found,
+or DetailedFailure | Failure with detail `not-found` if the key does not exist.

@@ -2,7 +2,7 @@
 
 ## ITerritoryQualifierTypeCreateParams.name property
 
-QualifierTypes.IQualifierTypeCreateParams.name
+The name of the qualifier type. No default value.
 
 **Signature:**
 

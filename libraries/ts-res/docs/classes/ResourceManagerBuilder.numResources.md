@@ -2,7 +2,7 @@
 
 ## ResourceManagerBuilder.numResources property
 
-Runtime.IResourceManager.numResources
+The number of resources in this resource manager.
 
 **Signature:**
 

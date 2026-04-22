@@ -3,7 +3,7 @@
 ## BaseConverter.withAction() method
 
 Creates a Converter | Converter which applies a supplied action after
-conversion.  The supplied action is always called regardless of success or failure
+conversion. The supplied action is always called regardless of success or failure
 of the base conversion and is allowed to mutate the return type.
 
 **Signature:**

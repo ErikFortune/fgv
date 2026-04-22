@@ -2,7 +2,7 @@
 
 ## QualifierType.getConfigurationJson() method
 
-QualifierTypes.IQualifierType.getConfigurationJson
+Gets the configuration for this qualifier type.
 
 **Signature:**
 
@@ -13,3 +13,5 @@ getConfigurationJson(): Result<{ name: string; systemType: string; configuration
 **Returns:**
 
 Result&lt;{ name: string; systemType: string; configuration?: JsonCompatibleType&lt;TCFGJSON | undefined&gt; }&gt;
+
+`Success` with the configuration if successful, `Failure` with an error message otherwise.

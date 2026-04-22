@@ -2,7 +2,8 @@
 
 ## ResourceDeclCollection.context property
 
-ResourceJson.IResourceDeclContainer.context
+Optional initial ResourceJson.Normalized.IContainerContextDecl | resource context
+declaration for the container.
 
 **Signature:**
 

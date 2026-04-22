@@ -42,7 +42,7 @@ Description
 
 </td><td>
 
-QualifierTypes.IQualifierType.systemTypeName
+Name of the underlying system type.
 
 </td></tr>
 <tr><td>
@@ -59,7 +59,7 @@ QualifierTypes.IQualifierType.systemTypeName
 
 </td><td>
 
-QualifierTypes.IQualifierType.name
+The name of the qualifier type.
 
 </td></tr>
 <tr><td>
@@ -93,7 +93,7 @@ Flag indicating whether this qualifier type allows a list of values in a context
 
 </td><td>
 
-QualifierTypes.IQualifierType.key
+Unique key for this qualifier.
 
 </td></tr>
 <tr><td>
@@ -110,7 +110,7 @@ QualifierTypes.IQualifierType.key
 
 </td><td>
 
-QualifierTypes.IQualifierType.index
+Global index for this qualifier type.
 
 </td></tr>
 </tbody></table>
@@ -167,7 +167,7 @@ Creates a new QualifierTypes.LanguageQualifierType | LanguageQualifierType from 
 
 </td><td>
 
-Validate.isValidQualifierTypeName
+Determines whether a string is a valid qualifier type name.
 
 </td></tr>
 <tr><td>
@@ -180,7 +180,7 @@ Validate.isValidQualifierTypeName
 
 </td><td>
 
-Validate.isValidQualifierTypeIndex
+Determines whether a number is a valid qualifier type index.
 
 </td></tr>
 <tr><td>
@@ -219,7 +219,7 @@ Splits a comma-separated QualifierContextValue | context value into an
 
 </td><td>
 
-QualifierTypes.IQualifierType.isValidConditionValue
+Validates a condition value for this qualifier type.
 
 </td></tr>
 <tr><td>
@@ -245,7 +245,7 @@ Gets a QualifierTypes.Config.ISystemLanguageQualifierTypeConfig | strongly typed
 
 </td><td>
 
-QualifierTypes.IQualifierType.getConfigurationJson
+Gets the configuration for this qualifier type.
 
 </td></tr>
 <tr><td>
@@ -258,7 +258,7 @@ QualifierTypes.IQualifierType.getConfigurationJson
 
 </td><td>
 
-QualifierTypes.IQualifierType.validateConfigurationJson
+Validates configuration JSON data for this qualifier type.
 
 </td></tr>
 <tr><td>
@@ -284,7 +284,7 @@ Validates a QualifierTypes.Config.ISystemLanguageQualifierTypeConfig | strongly 
 
 </td><td>
 
-QualifierTypes.IQualifierType.isValidContextValue
+Validates a context value for this qualifier type.
 
 </td></tr>
 <tr><td>
@@ -297,7 +297,7 @@ QualifierTypes.IQualifierType.isValidContextValue
 
 </td><td>
 
-QualifierTypes.IQualifierType.isPotentialMatch
+Determines if a supplied condition value is a potential match for a possible context value.
 
 </td></tr>
 <tr><td>
@@ -310,7 +310,7 @@ QualifierTypes.IQualifierType.isPotentialMatch
 
 </td><td>
 
-QualifierTypes.IQualifierType.validateCondition
+Validates that a value and optional operator are valid for use in a condition
 
 </td></tr>
 <tr><td>
@@ -323,7 +323,7 @@ QualifierTypes.IQualifierType.validateCondition
 
 </td><td>
 
-QualifierTypes.IQualifierType.validateContextValue
+Validates that a value is valid for use in a runtime context for qualifiers
 
 </td></tr>
 <tr><td>
@@ -336,7 +336,7 @@ QualifierTypes.IQualifierType.validateContextValue
 
 </td><td>
 
-QualifierTypes.IQualifierType.matches
+Determines the extent to which a condition matches a context value for this
 
 </td></tr>
 <tr><td>
@@ -349,7 +349,7 @@ QualifierTypes.IQualifierType.matches
 
 </td><td>
 
-QualifierTypes.IQualifierType.setIndex
+Sets the index for this qualifier type.
 
 </td></tr>
 <tr><td>

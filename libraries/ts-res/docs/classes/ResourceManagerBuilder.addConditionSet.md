@@ -14,7 +14,7 @@ addConditionSet(conditions: ConditionSetDecl): Result<ConditionSet>;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>conditions</td><td>ConditionSetDecl</td><td></td></tr>
+<tr><td>conditions</td><td>ConditionSetDecl</td><td>The ResourceJson.Normalized.ConditionSetDecl | condition set declaration to add.</td></tr>
 </tbody></table>
 
 **Returns:**

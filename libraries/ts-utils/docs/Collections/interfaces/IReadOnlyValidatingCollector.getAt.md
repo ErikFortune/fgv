@@ -21,5 +21,4 @@ getAt(index: number): Result<TITEM>;
 
 [Result](../../type-aliases/Result.md)&lt;TITEM&gt;
 
-Returns Success | Success with the item if it exists, or Failure | Failure
-with an error if the index is out of range.
+`Success` with the item if it exists, or `Failure` with an error if the index is out of range.

@@ -229,7 +229,7 @@ Default function to accept the content type of a file.
 
 </td><td>
 
-FileTree.IFileTreeFileItem.getIsMutable
+Indicates whether this file can be saved.
 
 </td></tr>
 <tr><td>
@@ -281,7 +281,7 @@ Sets the content type of the file.
 
 </td><td>
 
-FileTree.IFileTreeFileItem.setContents
+Sets the contents of the file from a JSON value.
 
 </td></tr>
 <tr><td>
@@ -294,7 +294,7 @@ FileTree.IFileTreeFileItem.setContents
 
 </td><td>
 
-FileTree.IFileTreeFileItem.setRawContents
+Sets the raw contents of the file.
 
 </td></tr>
 <tr><td>
@@ -307,7 +307,7 @@ FileTree.IFileTreeFileItem.setRawContents
 
 </td><td>
 
-FileTree.IFileTreeFileItem.delete
+Deletes this file from its backing store.
 
 </td></tr>
 </tbody></table>

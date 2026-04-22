@@ -2,7 +2,7 @@
 
 ## IResourceCandidateValidationProperties.json property
 
-ResourceJson.Json.ILooseResourceCandidateDecl.json
+The JSON value of the resource.
 
 **Signature:**
 

@@ -40,7 +40,7 @@ import * as ResourceJson from '../resource-json';
  */
 export interface IResourceCandidateValidationProperties {
   /**
-   * {@inheritdoc ResourceJson.Json.ILooseResourceCandidateDecl.id}
+   * {@inheritDoc ResourceJson.Json.ILooseResourceCandidateDecl.id}
    * @public
    */
   id: ResourceId;
@@ -52,13 +52,13 @@ export interface IResourceCandidateValidationProperties {
   completeness: CandidateCompleteness;
 
   /**
-   * {@inheritdoc ResourceJson.Json.ILooseResourceCandidateDecl.json}
+   * {@inheritDoc ResourceJson.Json.ILooseResourceCandidateDecl.json}
    * @public
    */
   json: JsonValue;
 
   /**
-   * {@inheritdoc ResourceJson.Json.ILooseResourceCandidateDecl.mergeMethod}
+   * {@inheritDoc ResourceJson.Json.ILooseResourceCandidateDecl.mergeMethod}
    * @public
    */
   mergeMethod: ResourceValueMergeMethod;
@@ -154,7 +154,7 @@ export abstract class ResourceType<T = unknown> implements IResourceType<T> {
   private _collectible: Collections.Collectible<ResourceTypeName, ResourceTypeIndex>;
   private _template: JsonObject;
   /**
-   * {@inheritdoc ResourceTypes.IResourceType.key}
+   * {@inheritDoc ResourceTypes.IResourceType.key}
    */
   public get key(): ResourceTypeName {
     return this._collectible.key;
@@ -166,7 +166,7 @@ export abstract class ResourceType<T = unknown> implements IResourceType<T> {
   public abstract readonly systemTypeName: ResourceTypeName;
 
   /**
-   * {@inheritdoc ResourceTypes.IResourceType.index}
+   * {@inheritDoc ResourceTypes.IResourceType.index}
    */
   public get index(): ResourceTypeIndex | undefined {
     return this._collectible.index;
