@@ -85,7 +85,7 @@ export class SeededRandomSource {
 
   /**
    * Creates a new seeded random source.
-   * @param seed - The seed value.
+   * @param init - The constructor parameters.
    */
   protected constructor(init: ISeededRandomSourceConstructorParams) {
     this.currentState = init.state;

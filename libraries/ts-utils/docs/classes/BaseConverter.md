@@ -264,7 +264,7 @@ of this conversion.
 
 </td><td>
 
-returns a converter which adds a brand to the type to prevent mismatched usage
+Returns a converter which adds a brand to the type to prevent mismatched usage
 
 </td></tr>
 <tr><td>

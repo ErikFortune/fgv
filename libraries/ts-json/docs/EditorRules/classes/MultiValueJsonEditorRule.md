@@ -162,7 +162,7 @@ Determines if a given property key is multi-value.
 
 </td><td>
 
-IJsonEditorRule.editValue
+Called by a JsonEditor | JsonEditor to possibly edit a property value or array element.
 
 </td></tr>
 <tr><td>
@@ -175,7 +175,7 @@ IJsonEditorRule.editValue
 
 </td><td>
 
-IJsonEditorRule.finalizeProperties
+Called for each rule after all properties have been merged.
 
 </td></tr>
 </tbody></table>

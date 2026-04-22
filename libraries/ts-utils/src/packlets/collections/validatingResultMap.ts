@@ -34,7 +34,8 @@ import { IReadOnlyResultMapValidator, ResultMapValidator } from './resultMapVali
 export interface IReadOnlyValidatingResultMap<TK extends string = string, TV = unknown>
   extends IReadOnlyResultMap<TK, TV> {
   /**
-   * {@inheritDoc Collections.ValidatingResultMap.validating}
+   * A {@link Collections.ResultMapValidator | ResultMapValidator} which validates keys and values
+   * before inserting them into this collection.
    */
   readonly validating: IReadOnlyResultMapValidator<TK, TV>;
 }

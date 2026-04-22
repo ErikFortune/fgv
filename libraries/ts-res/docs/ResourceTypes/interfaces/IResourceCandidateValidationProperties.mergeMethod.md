@@ -2,7 +2,8 @@
 
 ## IResourceCandidateValidationProperties.mergeMethod property
 
-ResourceJson.Json.ILooseResourceCandidateDecl.mergeMethod
+The merge method to be used when merging the resource into the existing resource.
+default is 'augment'.
 
 **Signature:**
 

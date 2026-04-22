@@ -42,7 +42,7 @@ string[]
 
 </td><td>
 
-Import.Importers.IImporter.types
+The types of Import.Importable | importable items that this importer can process.
 
 </td></tr>
 </tbody></table>
@@ -86,7 +86,7 @@ Creates a new Import.Importers.CollectionImporter | CollectionImporter instance.
 
 </td><td>
 
-Import.Importers.IImporter.import
+Imports an item, extracting any resources or candidates from it and returns an optional
 
 </td></tr>
 </tbody></table>

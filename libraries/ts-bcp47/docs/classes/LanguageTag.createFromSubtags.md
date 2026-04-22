@@ -16,7 +16,8 @@ static createFromSubtags(subtags: ISubtags, options?: ILanguageTagInitOptions): 
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>subtags</td><td>ISubtags</td><td></td></tr>
+<tr><td>subtags</td><td>ISubtags</td><td>The Bcp47.Subtags | subtags from which the
+Bcp47.LanguageTag | language tag is te be constructed.</td></tr>
 <tr><td>options</td><td>ILanguageTagInitOptions</td><td>(optional) set of Bcp47.ILanguageTagInitOptions | init options
 to guide the validation and normalization of this tag.</td></tr>
 </tbody></table>

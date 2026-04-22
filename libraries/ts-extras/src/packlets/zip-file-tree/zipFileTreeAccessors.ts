@@ -228,8 +228,8 @@ export class ZipFileTreeAccessors<TCT extends string = string> implements FileTr
 
   /**
    * Default function to infer the content type of a file.
-   * @param filePath - The path of the file.
-   * @param provided - Optional supplied content type.
+   * @param __filePath - The path of the file.
+   * @param __provided - Optional supplied content type.
    * @returns `Success` with the content type of the file if successful, or
    * `Failure` with an error message otherwise.
    * @remarks This default implementation always returns `Success` with `undefined`.

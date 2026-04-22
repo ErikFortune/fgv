@@ -15,7 +15,8 @@ addChildCandidate(childDecl: IChildResourceCandidateDecl): DetailedResult<Resour
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>childDecl</td><td>IChildResourceCandidateDecl</td><td></td></tr>
+<tr><td>childDecl</td><td>IChildResourceCandidateDecl</td><td>The ResourceJson.Json.IChildResourceCandidateDecl | IChildResourceCandidateDecl to add to the
+resource being built.</td></tr>
 </tbody></table>
 
 **Returns:**

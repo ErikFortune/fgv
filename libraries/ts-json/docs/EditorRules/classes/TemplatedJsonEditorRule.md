@@ -142,7 +142,7 @@ Evaluates a property, array or literal value for template rendering.
 
 </td><td>
 
-IJsonEditorRule.finalizeProperties
+Called for each rule after all properties have been merged.
 
 </td></tr>
 </tbody></table>

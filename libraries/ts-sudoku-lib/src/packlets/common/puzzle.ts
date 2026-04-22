@@ -97,7 +97,7 @@ export class Puzzle {
 
   /**
    * Constructs a new puzzle state.
-   * @param puzzle - {@Link IPuzzleDefinition | Puzzle definition} from which this puzzle state
+   * @param puzzle - {@link IPuzzleDefinition | Puzzle definition} from which this puzzle state
    * is to be initialized.
    */
   protected constructor(puzzle: IPuzzleDefinition, extraCages?: [CageId, Cage][]) {

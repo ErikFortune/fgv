@@ -2,7 +2,7 @@
 
 # Function: toDecisionKey
 
-Converts a number to a DecisionIndex if it is a valid decision index.
+Converts a string to a DecisionKey if it is a valid decision key.
 
 ## Signature
 

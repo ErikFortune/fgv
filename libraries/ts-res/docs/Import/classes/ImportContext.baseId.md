@@ -2,7 +2,8 @@
 
 ## ImportContext.baseId property
 
-Import.IImportContext.baseId
+Base ID for the import context for resources imported
+in this context.
 
 **Signature:**
 

@@ -14,7 +14,7 @@ validateMap(map: Map<string, T>, options?: IReferenceMapKeyPolicyValidateOptions
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>map</td><td>Map&lt;string, T&gt;</td><td></td></tr>
+<tr><td>map</td><td>Map&lt;string, T&gt;</td><td>The `Map\<string, T\>` to be validated.</td></tr>
 <tr><td>options</td><td>IReferenceMapKeyPolicyValidateOptions</td><td>Optional IReferenceMapKeyPolicyValidateOptions | options to control
 validation.</td></tr>
 </tbody></table>

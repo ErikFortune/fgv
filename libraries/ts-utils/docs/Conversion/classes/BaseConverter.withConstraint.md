@@ -3,7 +3,7 @@
 ## BaseConverter.withConstraint() method
 
 Creates a Converter which applies an optional constraint to the result
-of this conversion.  If this Converter (the base converter) succeeds, the new
+of this conversion. If this Converter (the base converter) succeeds, the new
 converter calls a supplied constraint evaluation function with the conversion, which
 fails the entire conversion if the constraint function returns either `false` or
 Failure | Failure<T>.

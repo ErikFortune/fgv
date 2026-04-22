@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "update generated docs",
+      "type": "none",
+      "packageName": "@fgv/ts-app-shell"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell",
+  "email": "ErikFortune@outlook.com"
+}

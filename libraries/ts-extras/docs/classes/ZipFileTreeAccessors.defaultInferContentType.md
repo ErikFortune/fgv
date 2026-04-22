@@ -14,8 +14,8 @@ static defaultInferContentType(__filePath: string, __provided?: string): Result<
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>__filePath</td><td>string</td><td></td></tr>
-<tr><td>__provided</td><td>string</td><td></td></tr>
+<tr><td>__filePath</td><td>string</td><td>The path of the file.</td></tr>
+<tr><td>__provided</td><td>string</td><td>Optional supplied content type.</td></tr>
 </tbody></table>
 
 **Returns:**

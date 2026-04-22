@@ -2,7 +2,7 @@
 
 ## QualifierType.validateConfigurationJson() method
 
-QualifierTypes.IQualifierType.validateConfigurationJson
+Validates configuration JSON data for this qualifier type.
 
 **Signature:**
 
@@ -14,9 +14,11 @@ validateConfigurationJson(from: unknown): Result<{ name: string; systemType: str
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>from</td><td>unknown</td><td></td></tr>
+<tr><td>from</td><td>unknown</td><td>The unknown data to validate as configuration JSON.</td></tr>
 </tbody></table>
 
 **Returns:**
 
 Result&lt;{ name: string; systemType: string; configuration?: JsonCompatibleType&lt;TCFGJSON | undefined&gt; }&gt;
+
+`Success` with validated JSON configuration if valid, `Failure` with an error message otherwise.

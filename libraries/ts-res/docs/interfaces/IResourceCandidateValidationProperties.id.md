@@ -2,7 +2,7 @@
 
 ## IResourceCandidateValidationProperties.id property
 
-ResourceJson.Json.ILooseResourceCandidateDecl.id
+The ResourceId | id of the resource.
 
 **Signature:**
 

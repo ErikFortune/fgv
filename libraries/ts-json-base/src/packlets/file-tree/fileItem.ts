@@ -113,7 +113,9 @@ export class FileItem<TCT extends string = string> implements IMutableFileTreeFi
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeFileItem.getIsMutable}
+   * Indicates whether this file can be saved.
+   * @returns `DetailedSuccess` with {@link FileTree.SaveCapability} if the file can be saved,
+   * or `DetailedFailure` with {@link FileTree.SaveFailureReason} if it cannot.
    */
   public getIsMutable(): DetailedResult<boolean, SaveDetail> {
     if (isMutableAccessors(this._hal)) {
@@ -159,7 +161,9 @@ export class FileItem<TCT extends string = string> implements IMutableFileTreeFi
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeFileItem.setContents}
+   * Sets the contents of the file from a JSON value.
+   * @param json - The JSON value to serialize and save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
    */
   public setContents(json: JsonValue): Result<JsonValue> {
     return captureResult(() => JSON.stringify(json, null, 2)).onSuccess((contents) =>
@@ -168,7 +172,9 @@ export class FileItem<TCT extends string = string> implements IMutableFileTreeFi
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeFileItem.setRawContents}
+   * Sets the raw contents of the file.
+   * @param contents - The string contents to save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
    */
   public setRawContents(contents: string): Result<string> {
     if (isMutableAccessors(this._hal)) {
@@ -179,7 +185,8 @@ export class FileItem<TCT extends string = string> implements IMutableFileTreeFi
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeFileItem.delete}
+   * Deletes this file from its backing store.
+   * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
    */
   public delete(): Result<boolean> {
     if (!isMutableAccessors(this._hal)) {

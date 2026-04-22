@@ -59,7 +59,7 @@ Name of the underlying system type.
 
 </td><td>
 
-ResourceTypes.IResourceType.key
+The key for this resource type.
 
 </td></tr>
 <tr><td>
@@ -76,7 +76,7 @@ ResourceTypes.IResourceType.key
 
 </td><td>
 
-ResourceTypes.IResourceType.index
+The index for this resource type.
 
 </td></tr>
 </tbody></table>

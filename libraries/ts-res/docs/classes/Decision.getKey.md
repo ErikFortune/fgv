@@ -14,7 +14,7 @@ static getKey(candidates: readonly ICandidate<TVALUE>[]): DecisionKey;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>candidates</td><td>readonly ICandidate&lt;TVALUE&gt;[]</td><td></td></tr>
+<tr><td>candidates</td><td>readonly ICandidate&lt;TVALUE&gt;[]</td><td>The candidates whose condition sets are used to create the key.</td></tr>
 </tbody></table>
 
 **Returns:**

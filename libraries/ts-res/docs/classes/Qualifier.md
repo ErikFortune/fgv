@@ -217,7 +217,7 @@ Sets the index of this qualifier.
 
 </td><td>
 
-QualifierTypes.QualifierType.isValidContextValue
+Validates a context value for this qualifier type.
 
 </td></tr>
 <tr><td>
@@ -230,7 +230,7 @@ QualifierTypes.QualifierType.isValidContextValue
 
 </td><td>
 
-QualifierTypes.QualifierType.isValidConditionValue
+Validates a condition value for this qualifier type.
 
 </td></tr>
 <tr><td>
@@ -243,7 +243,7 @@ QualifierTypes.QualifierType.isValidConditionValue
 
 </td><td>
 
-QualifierTypes.QualifierType.validateCondition
+Validates that a value and optional operator are valid for use in a condition
 
 </td></tr>
 <tr><td>
@@ -256,7 +256,7 @@ QualifierTypes.QualifierType.validateCondition
 
 </td><td>
 
-QualifierTypes.QualifierType.validateContextValue
+Validates that a value is valid for use in a runtime context for qualifiers
 
 </td></tr>
 </tbody></table>

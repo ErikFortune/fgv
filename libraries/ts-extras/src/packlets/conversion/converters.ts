@@ -106,7 +106,7 @@ export const isoDateTime: Converter<DateTime, unknown> = new Conversion.BaseConv
  * If `onError` is `'failOnError'` (default), then the entire conversion fails if any element cannot
  * be converted.  If `onError` is `'ignoreErrors'`, then failing elements are silently ignored.
  * @param converter - `Converter` used to convert each item in the array
- * @param ignoreErrors - Specifies treatment of unconvertible elements
+ * @param onError - Specifies treatment of unconvertible elements
  * @beta
  */
 export function extendedArrayOf<T, TC = undefined>(

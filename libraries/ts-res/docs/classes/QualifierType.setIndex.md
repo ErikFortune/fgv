@@ -2,7 +2,7 @@
 
 ## QualifierType.setIndex() method
 
-QualifierTypes.IQualifierType.setIndex
+Sets the index for this qualifier type. Once set, index is immutable.
 
 **Signature:**
 

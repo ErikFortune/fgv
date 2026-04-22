@@ -2,7 +2,7 @@
 
 ## ImportContext.conditions property
 
-Import.IImportContext.conditions
+Conditions to be applied to resources imported in this context.
 
 **Signature:**
 
