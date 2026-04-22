@@ -2,7 +2,7 @@
 
 ## LanguageQualifierType.getConfigurationJson() method
 
-QualifierTypes.IQualifierType.getConfigurationJson
+Gets the configuration for this qualifier type.
 
 **Signature:**
 
@@ -13,3 +13,5 @@ getConfigurationJson(): Result<{ systemType: "language"; name: string; configura
 **Returns:**
 
 Result&lt;{ systemType: "language"; name: string; configuration?: { allowContextList?: boolean } }&gt;
+
+`Success` with the configuration if successful, `Failure` with an error message otherwise.

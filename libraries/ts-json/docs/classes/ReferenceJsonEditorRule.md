@@ -158,7 +158,7 @@ Evaluates a property, array or literal value for reference replacement.
 
 </td><td>
 
-IJsonEditorRule.finalizeProperties
+Called for each rule after all properties have been merged.
 
 </td></tr>
 </tbody></table>

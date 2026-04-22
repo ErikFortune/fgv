@@ -2,7 +2,7 @@
 
 ## JsonResourceType.systemTypeName property
 
-ResourceTypes.ResourceType.systemTypeName
+Name of the underlying system type.
 
 **Signature:**
 

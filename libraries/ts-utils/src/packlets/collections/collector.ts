@@ -92,7 +92,7 @@ export class Collector<
   private readonly _byIndex: TITEM[];
 
   /**
-   * {@inheritDoc Collections.ResultMap.size}
+   * Returns the number of entries in the map.
    */
   public get size(): number {
     return this._byIndex.length;
@@ -152,14 +152,17 @@ export class Collector<
   }
 
   /**
-   * {@inheritDoc Collections.ResultMap.entries}
+   * Returns an iterator over the map entries.
+   * @returns An iterator over the map entries.
    */
   public entries(): IterableIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>> {
     return this._byKey.entries();
   }
 
   /**
-   * {@inheritDoc Collections.ResultMap.forEach}
+   * Calls a function for each entry in the map.
+   * @param callback - The function to call for each entry.
+   * @param arg - An optional argument to pass to the callback.
    */
   public forEach(callback: ResultMapForEachCb<CollectibleKey<TITEM>, TITEM>, arg?: unknown): void {
     for (const [key, value] of this._byKey.entries()) {
@@ -168,7 +171,10 @@ export class Collector<
   }
 
   /**
-   * {@inheritDoc Collections.ResultMap.get}
+   * Gets a value by key.
+   * @param key - The key to look up.
+   * @returns Returns {@link DetailedSuccess | Success} with the value and detail `exists` if found,
+   * or {@link DetailedFailure | Failure} with detail `not-found` if the key does not exist.
    */
   public get(key: CollectibleKey<TITEM>): DetailedResult<TITEM, ResultMapResultDetail> {
     const item = this._byKey.get(key);
@@ -176,7 +182,10 @@ export class Collector<
   }
 
   /**
-   * {@inheritDoc Collections.IReadOnlyCollector.getAt}
+   * Gets the item at a specified index.
+   * @param index - The index of the item to retrieve.
+   * @returns Returns {@link Success | Success} with the item if it exists, or {@link Failure | Failure}
+   * with an error if the index is out of range.
    */
   public getAt(index: number): Result<TITEM> {
     if (typeof index !== 'number') {
@@ -251,28 +260,33 @@ export class Collector<
   }
 
   /**
-   * {@inheritDoc Collections.ResultMap.has}
+   * Returns true if the map contains an entry with the given key.
+   * @param key - The key to check for.
+   * @returns `true` if the key exists, `false` otherwise.
    */
   public has(key: CollectibleKey<TITEM>): boolean {
     return this._byKey.has(key);
   }
 
   /**
-   * {@inheritDoc Collections.ResultMap.keys}
+   * Returns an iterator over the map keys.
+   * @returns An iterator over the map keys.
    */
   public keys(): IterableIterator<CollectibleKey<TITEM>> {
     return this._byKey.keys();
   }
 
   /**
-   * {@inheritDoc Collections.ResultMap.values}
+   * Returns an iterator over the map values.
+   * @returns An iterator over the map values.
    */
   public values(): IterableIterator<TITEM> {
     return this._byKey.values();
   }
 
   /**
-   * {@inheritDoc Collections.IReadOnlyCollector.valuesByIndex}
+   * Gets all items in the collection, ordered by index.
+   * @returns An array of items in the collection, ordered by index.
    */
   public valuesByIndex(): ReadonlyArray<TITEM> {
     return this._byIndex;

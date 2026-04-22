@@ -64,7 +64,7 @@ Description
 
 </td><td>
 
-IJsonEditorRule.editProperty
+Called by a JsonEditor | JsonEditor to possibly edit one of the properties being
 
 </td></tr>
 <tr><td>
@@ -77,7 +77,7 @@ IJsonEditorRule.editProperty
 
 </td><td>
 
-IJsonEditorRule.editValue
+Called by a JsonEditor | JsonEditor to possibly edit a property value or array element.
 
 </td></tr>
 <tr><td>
@@ -90,7 +90,7 @@ IJsonEditorRule.editValue
 
 </td><td>
 
-IJsonEditorRule.finalizeProperties
+Called for each rule after all properties have been merged.
 
 </td></tr>
 </tbody></table>

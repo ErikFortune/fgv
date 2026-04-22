@@ -40,7 +40,7 @@ Description
 
 </td><td>
 
-ResourceTypes.ResourceType.systemTypeName
+Name of the underlying system type.
 
 </td></tr>
 <tr><td>
@@ -57,7 +57,7 @@ ResourceTypes.ResourceType.systemTypeName
 
 </td><td>
 
-ResourceTypes.IResourceType.key
+The key for this resource type.
 
 </td></tr>
 <tr><td>
@@ -74,7 +74,7 @@ ResourceTypes.IResourceType.key
 
 </td><td>
 
-ResourceTypes.IResourceType.index
+The index for this resource type.
 
 </td></tr>
 </tbody></table>
@@ -118,7 +118,7 @@ Factory method to create a new ResourceTypes.JsonResourceType | JsonResourceType
 
 </td><td>
 
-ResourceTypes.ResourceType.validateDeclaration
+Validates properties of a ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration for
 
 </td></tr>
 <tr><td>
@@ -131,7 +131,7 @@ ResourceTypes.ResourceType.validateDeclaration
 
 </td><td>
 
-ResourceTypes.ResourceType.(validate:1)
+Validates a JSON value for use as a resource instance value.
 
 </td></tr>
 <tr><td>

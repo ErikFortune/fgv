@@ -2,7 +2,7 @@
 
 ## QualifierCollector.hasNameOrToken() method
 
-Qualifiers.IReadOnlyQualifierCollector.hasNameOrToken
+Checks if a qualifier with a given name or token is in the collection.
 
 **Signature:**
 
@@ -14,9 +14,11 @@ hasNameOrToken(nameOrToken: string): boolean;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>nameOrToken</td><td>string</td><td></td></tr>
+<tr><td>nameOrToken</td><td>string</td><td>The name or token of the qualifier to check.</td></tr>
 </tbody></table>
 
 **Returns:**
 
 boolean
+
+`true` if the qualifier is in the collection, `false` if not.

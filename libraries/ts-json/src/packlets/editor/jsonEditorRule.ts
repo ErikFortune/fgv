@@ -83,7 +83,7 @@ export interface IJsonEditorRule {
  */
 export class JsonEditorRuleBase implements IJsonEditorRule {
   /**
-   * {@inheritdoc IJsonEditorRule.editProperty}
+   * {@inheritDoc IJsonEditorRule.editProperty}
    */
   /* c8 ignore start */
   public editProperty(
@@ -96,7 +96,7 @@ export class JsonEditorRuleBase implements IJsonEditorRule {
   /* c8 ignore stop */
 
   /**
-   * {@inheritdoc IJsonEditorRule.editValue}
+   * {@inheritDoc IJsonEditorRule.editValue}
    */
   public editValue(
     __value: JsonValue,
@@ -106,7 +106,7 @@ export class JsonEditorRuleBase implements IJsonEditorRule {
   }
 
   /**
-   * {@inheritdoc IJsonEditorRule.finalizeProperties}
+   * {@inheritDoc IJsonEditorRule.finalizeProperties}
    */
   public finalizeProperties(
     __deferred: JsonObject[],

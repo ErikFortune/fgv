@@ -2,7 +2,7 @@
 
 ## JsonImporter.types property
 
-Import.Importers.IImporter.types
+The types of Import.Importable | importable items that this importer can process.
 
 **Signature:**
 

@@ -331,7 +331,7 @@ Converts a string to a ConditionSetHash if it is a valid condition set hash.
 
 </td><td>
 
-Converts a number to a DecisionIndex if it is a valid decision index.
+Converts a string to a DecisionKey if it is a valid decision key.
 
 </td></tr>
 <tr><td>

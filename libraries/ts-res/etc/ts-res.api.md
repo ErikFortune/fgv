@@ -1307,7 +1307,6 @@ class FsItem implements IFsItemProps {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(props: IFsItemProps, qualifiers: IReadOnlyQualifierCollector);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1323,7 +1322,7 @@ class FsItem implements IFsItemProps {
     static createForItem(item: FileTree.FileTreeItem, qualifiers: IReadOnlyQualifierCollector): DetailedResult<FsItem, FsItemResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "FileTree"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createForPath(importPath: string, qualifiers: IReadOnlyQualifierCollector, tree?: FileTree.FileTree): DetailedResult<FsItem, FsItemResultDetail>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2323,6 +2322,7 @@ type Importable = IImportablePath | IImportableFsItem | IImportableJson | IImpor
 
 // @public
 class ImportContext implements IValidatedImportContext {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(input: IImportContext);
@@ -3414,17 +3414,8 @@ class JsonResourceType extends ResourceType<JsonObject> {
     //
     // (undocumented)
     readonly systemTypeName: ResourceTypeName;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     validate(json: JsonObject, completeness: CandidateCompleteness): Result<JsonObject>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     validate(json: JsonObject, completeness: 'full'): Result<JsonObject>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     validate(json: JsonObject, completeness: 'partial'): Result<JsonObject>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -3442,6 +3433,7 @@ const LanguagePrioritySystemConfiguration: ISystemConfiguration;
 //
 // @public
 class LanguageQualifierType extends QualifierType<JsonCompatibleType<Config_2.ILanguageQualifierTypeConfig>> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(input: ILanguageQualifierTypeCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3485,6 +3477,7 @@ const languageQualifierTypeConfig: ObjectConverter<Model_2.ILanguageQualifierTyp
 //
 // @public
 class LiteralQualifierType extends QualifierType<JsonCompatibleType<Config_2.ILiteralQualifierTypeConfig>> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(input: ILiteralQualifierTypeCreateParams);
     readonly caseSensitive: boolean;
@@ -3942,6 +3935,7 @@ export { Qualifiers }
 //
 // @public
 export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject> implements IQualifierType<TCFGJSON> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(input: IQualifierTypeCreateParams);
     readonly allowContextList: boolean;
     // (undocumented)
@@ -4442,6 +4436,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(params: IResourceManagerBuilderCreateParams);
     addCondition(decl: ResourceJson.Json.ILooseConditionDecl): Result<Condition>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     addConditionSet(conditions: ResourceJson.Normalized.ConditionSetDecl): Result<ConditionSet>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

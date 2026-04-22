@@ -196,7 +196,7 @@ number
 
 </td><td>
 
-Runtime.IResourceManager.numResources
+The number of resources in this resource manager.
 
 </td></tr>
 <tr><td>
@@ -213,7 +213,7 @@ number
 
 </td><td>
 
-Runtime.IResourceManager.numCandidates
+The number of candidates in this resource manager.
 
 </td></tr>
 <tr><td>
@@ -230,7 +230,7 @@ IReadOnlyValidatingResultMap&lt;[ResourceId](../type-aliases/ResourceId.md), [Re
 
 </td><td>
 
-Runtime.IResourceManager.builtResources
+A read-only result map of all built resources, keyed by resource ID.
 
 </td></tr>
 </tbody></table>

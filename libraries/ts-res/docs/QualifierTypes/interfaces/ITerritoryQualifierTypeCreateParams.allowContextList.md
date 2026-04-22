@@ -2,7 +2,8 @@
 
 ## ITerritoryQualifierTypeCreateParams.allowContextList property
 
-QualifierTypes.IQualifierTypeCreateParams.allowContextList
+Flag indicating whether this qualifier type allows a list of values in a context.
+Defaults to `false`.
 
 **Signature:**
 

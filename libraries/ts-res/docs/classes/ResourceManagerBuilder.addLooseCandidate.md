@@ -15,7 +15,7 @@ addLooseCandidate(decl: ILooseResourceCandidateDecl): DetailedResult<ResourceCan
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>decl</td><td>ILooseResourceCandidateDecl</td><td></td></tr>
+<tr><td>decl</td><td>ILooseResourceCandidateDecl</td><td>The ResourceJson.Json.ILooseResourceCandidateDecl | loose resource candidate declaration to add.</td></tr>
 </tbody></table>
 
 **Returns:**

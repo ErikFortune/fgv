@@ -2,7 +2,7 @@
 
 ## ResourceType.index property
 
-ResourceTypes.IResourceType.index
+The index for this resource type.
 
 **Signature:**
 

@@ -2,7 +2,8 @@
 
 ## JsonResourceType.validateDeclaration() method
 
-ResourceTypes.ResourceType.validateDeclaration
+Validates properties of a ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration for
+a resource instance value.
 
 **Signature:**
 
@@ -14,9 +15,12 @@ validateDeclaration(props: IResourceCandidateValidationProperties): Result<JsonO
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>props</td><td>IResourceCandidateValidationProperties</td><td></td></tr>
+<tr><td>props</td><td>IResourceCandidateValidationProperties</td><td>The ResourceTypes.IResourceCandidateValidationProperties | properties to validate.</td></tr>
 </tbody></table>
 
 **Returns:**
 
 Result&lt;JsonObject&gt;
+
+`Success` with the strongly-typed resource value if the JSON and merge method
+are valid, `Failure` with an error message otherwise.

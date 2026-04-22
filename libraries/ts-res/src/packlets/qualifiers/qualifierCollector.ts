@@ -43,7 +43,7 @@ import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
  */
 export interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValidatingCollector<Qualifier> {
   /**
-   * {@inheritdoc Qualifiers.QualifierCollector.qualifierTypes}
+   * {@inheritDoc Qualifiers.QualifierCollector.qualifierTypes}
    */
   readonly qualifierTypes: ReadOnlyQualifierTypeCollector;
 
@@ -123,7 +123,7 @@ export class QualifierCollector
   }
 
   /**
-   * {@inheritdoc Qualifiers.IReadOnlyQualifierCollector.getByNameOrToken}
+   * {@inheritDoc Qualifiers.IReadOnlyQualifierCollector.getByNameOrToken}
    */
   public getByNameOrToken(nameOrToken: string): Result<Qualifier> {
     return this.validating.get(nameOrToken).onFailure((message) => {
@@ -137,7 +137,7 @@ export class QualifierCollector
   }
 
   /**
-   * {@inheritdoc Qualifiers.IReadOnlyQualifierCollector.hasNameOrToken}
+   * {@inheritDoc Qualifiers.IReadOnlyQualifierCollector.hasNameOrToken}
    */
   public hasNameOrToken(nameOrToken: string): boolean {
     /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */

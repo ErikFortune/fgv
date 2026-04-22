@@ -2,7 +2,7 @@
 
 ## QualifierType.isValidName() method
 
-Validate.isValidQualifierTypeName
+Determines whether a string is a valid qualifier type name.
 
 **Signature:**
 
@@ -14,9 +14,11 @@ static isValidName(name: string): name is QualifierTypeName;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>name</td><td>string</td><td></td></tr>
+<tr><td>name</td><td>string</td><td>the string to validate</td></tr>
 </tbody></table>
 
 **Returns:**
 
 name is [QualifierTypeName](../type-aliases/QualifierTypeName.md)
+
+true if the string is a valid qualifier type name, false otherwise.

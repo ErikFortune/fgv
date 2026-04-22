@@ -83,7 +83,12 @@ export class ConvertingCollector<
   }
 
   /**
-   * {@inheritDoc Collections.Collector.add}
+   * Adds an item to the collection, failing if a different item with the same key already exists. Note
+   * that adding an object that is already in the collection again will succeed without updating the collection.
+   * @param item - The item to add.
+   * @returns Returns {@link DetailedSuccess | Success} with the item and detail `added` if it was added
+   * or detail `exists` if the item was already in the map.  Returns {@link DetailedFailure | Failure} with
+   * an error message and appropriate detail if the item could not be added.
    */
   public add(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 
@@ -126,12 +131,25 @@ export class ConvertingCollector<
   }
 
   /**
-   * {@inheritDoc Collections.Collector.getOrAdd}
+   * Gets an existing item with a key matching that of the supplied item, or adds the supplied
+   * item to the collector if no item with that key exists.
+   * @param item - The item to get or add.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item was returned and detail `added` indicates
+   * that the item was added. Returns {@link DetailedFailure | Failure} with an error and
+   * appropriate detail if the item could not be added.
    */
   public getOrAdd(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritDoc Collections.Collector.getOrAdd}
+   * Gets an existing item with a key matching the supplied key, or adds a new item to the collector
+   * using a factory callback if no item with that key exists.
+   * @param key - The key of the item to get or add.
+   * @param callback - The factory callback to create the item.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item was returned and detail `added` indicates
+   * that the item was added. Returns {@link DetailedFailure | Failure} with an error and
+   * appropriate detail if the item could not be added.
    */
   public getOrAdd(
     key: CollectibleKey<TITEM>,

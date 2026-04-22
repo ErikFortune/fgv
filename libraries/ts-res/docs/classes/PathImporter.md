@@ -136,7 +136,7 @@ Creates a new Import.Importers.PathImporter | PathImporter.
 
 </td><td>
 
-Import.Importers.IImporter.import
+Imports an item, extracting any resources or candidates from it and returns an optional
 
 </td></tr>
 </tbody></table>

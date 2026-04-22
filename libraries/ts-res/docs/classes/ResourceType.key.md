@@ -2,7 +2,7 @@
 
 ## ResourceType.key property
 
-ResourceTypes.IResourceType.key
+The key for this resource type.
 
 **Signature:**
 

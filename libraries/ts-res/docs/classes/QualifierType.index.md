@@ -2,7 +2,8 @@
 
 ## QualifierType.index property
 
-QualifierTypes.IQualifierType.index
+Global index for this qualifier type. Immutable once set, either at
+construction or using QualifierTypes.IQualifierType.setIndex | setIndex.
 
 **Signature:**
 

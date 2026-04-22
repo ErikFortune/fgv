@@ -21,6 +21,7 @@
  */
 
 import { GenericValidator, GenericValidatorConstructorParams } from './genericValidator';
+import { Validator } from './validator';
 
 import { Failure } from '../base';
 
@@ -58,9 +59,5 @@ export abstract class ValidatorBase<T, TC = unknown> extends GenericValidator<T,
    * with an error message if `from` is invalid.
    * @internal
    */
-  protected abstract _validate(
-    from: unknown,
-    context?: TC,
-    self?: import('./validator').Validator<T, TC>
-  ): boolean | Failure<T>;
+  protected abstract _validate(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T>;
 }

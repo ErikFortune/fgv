@@ -25,25 +25,25 @@
 import { Brand } from '@fgv/ts-utils';
 
 /**
- * Nominal identifier for a single {@Link ICell | cell} in a {@link PuzzleSession | puzzle}.
+ * Nominal identifier for a single {@link ICell | cell} in a {@link PuzzleSession | puzzle}.
  * @public
  */
 export type CellId = Brand<string, 'CellId'>;
 
 /**
- * Nominal identifier for a single {@Link ICage | cage} in a {@link PuzzleSession | puzzle}.
+ * Nominal identifier for a single {@link ICage | cage} in a {@link PuzzleSession | puzzle}.
  * @public
  */
 export type CageId = Brand<string, 'CageId'>;
 
 /**
- * Identifies the type of a {@Link ICage | cage}.
+ * Identifies the type of a {@link ICage | cage}.
  * @public
  */
 export type CageType = 'row' | 'column' | 'section' | 'x' | 'killer';
 
 /**
- * The row/column coordinate of a single {@Link ICell | cell} in a {@link PuzzleSession | puzzle}.
+ * The row/column coordinate of a single {@link ICell | cell} in a {@link PuzzleSession | puzzle}.
  * @public
  */
 export interface IRowColumn {
@@ -52,7 +52,7 @@ export interface IRowColumn {
 }
 
 /**
- * The contents of a single {@Link ICell | cell} in a {@link PuzzleSession | puzzle}.
+ * The contents of a single {@link ICell | cell} in a {@link PuzzleSession | puzzle}.
  * @public
  */
 export interface ICellContents {

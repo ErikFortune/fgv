@@ -2,8 +2,8 @@
 
 ## ConvertingCollectorValidator.add() method
 
-Adds an item to the collection, failing if a different item with the same key already exists. Note
-that adding an object that is already in the collection again will succeed without updating the collection.
+Adds an item to the collector using the default factory at a specified key,
+failing if an item with that key already exists.
 
 **Signature:**
 
@@ -15,14 +15,13 @@ add(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>key</td><td>string</td><td>The item to add.</td></tr>
-<tr><td>value</td><td>unknown</td><td></td></tr>
+<tr><td>key</td><td>string</td><td>The weakly-typed key of the item to add.</td></tr>
+<tr><td>value</td><td>unknown</td><td>The source representation of the item to be added.</td></tr>
 </tbody></table>
 
 **Returns:**
 
 [DetailedResult](../../type-aliases/DetailedResult.md)&lt;TITEM, [CollectorResultDetail](../../type-aliases/CollectorResultDetail.md)&gt;
 
-Returns DetailedSuccess | Success with the item and detail `added` if it was added
-or detail `exists` if the item was already in the map.  Returns DetailedFailure | Failure with
-an error message and appropriate detail if the item could not be added.
+Returns Success | Success with the item if it is added, or Failure | Failure with
+an error if the item cannot be created and indexed.

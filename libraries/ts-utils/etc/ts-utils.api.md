@@ -519,23 +519,11 @@ export class Collector<TITEM extends ICollectible<any, any>> implements IReadOnl
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static createCollector<TITEM extends ICollectible<any, any>>(params?: ICollectorConstructorParams<TITEM>): Result<Collector<TITEM>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     entries(): IterableIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     forEach(callback: ResultMapForEachCb<CollectibleKey<TITEM>, TITEM>, arg?: unknown): void;
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     get(key: CollectibleKey<TITEM>): DetailedResult<TITEM, ResultMapResultDetail>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     getAt(index: number): Result<TITEM>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -543,28 +531,13 @@ export class Collector<TITEM extends ICollectible<any, any>> implements IReadOnl
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     getOrAdd(key: CollectibleKey<TITEM>, factory: CollectibleFactoryCallback<TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     has(key: CollectibleKey<TITEM>): boolean;
     // (undocumented)
     protected _isItem(keyOrItem: CollectibleKey<TITEM> | TITEM): keyOrItem is TITEM;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     keys(): IterableIterator<CollectibleKey<TITEM>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     get size(): number;
     toReadOnly(): IReadOnlyCollector<TITEM>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     values(): IterableIterator<TITEM>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     valuesByIndex(): ReadonlyArray<TITEM>;
 }
 
@@ -579,9 +552,6 @@ class CollectorValidator<TITEM extends ICollectible<any, any>> implements IReadO
     constructor(params: ICollectorValidatorCreateParams<TITEM>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     add(item: unknown): DetailedResult<TITEM, CollectorResultDetail>;
     // (undocumented)
     protected _collector: Collector<TITEM>;
@@ -598,15 +568,9 @@ class CollectorValidator<TITEM extends ICollectible<any, any>> implements IReadO
     get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     getOrAdd(key: string, factory: ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     getOrAdd(item: unknown): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -840,9 +804,6 @@ export class ConvertingCollector<TITEM extends ICollectible<any, any>, TSRC = TI
     constructor(params: IConvertingCollectorConstructorParams<TITEM, TSRC>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     add(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -857,15 +818,9 @@ export class ConvertingCollector<TITEM extends ICollectible<any, any>, TSRC = TI
     static createConvertingCollector<TITEM extends ICollectible<any, any>, TSRC = TITEM>(params: IConvertingCollectorConstructorParams<TITEM, TSRC>): Result<ConvertingCollector<TITEM, TSRC>>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     getOrAdd(item: TITEM): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     getOrAdd(key: CollectibleKey<TITEM>, callback: CollectibleFactoryCallback<TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -886,9 +841,6 @@ class ConvertingCollectorValidator<TITEM extends ICollectible<any, any>, TSRC = 
     constructor(params: IConvertingCollectorValidatorCreateParams<TITEM, TSRC>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     add(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -905,15 +857,9 @@ class ConvertingCollectorValidator<TITEM extends ICollectible<any, any>, TSRC = 
     get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     getOrAdd(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     getOrAdd(key: string, factory: ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1592,9 +1538,6 @@ interface IReadOnlyCollectorValidator<TITEM extends ICollectible<any, any>> exte
     get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     getOrAdd(key: string, factory: ResultMapValueFactory<CollectibleKey<TITEM>, TITEM>): DetailedResult<TITEM, CollectorResultDetail>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1619,35 +1562,14 @@ interface IReadOnlyConvertingResultMapConstructorParams<TK extends string, TSRC,
 // @public
 export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
     [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TV>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     entries(): IterableIterator<KeyValueEntry<TK, TV>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     forEach(cb: ResultMapForEachCb, arg?: unknown): void;
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     has(key: TK): boolean;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     keys(): IterableIterator<TK>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     readonly size: number;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     values(): IterableIterator<TV>;
 }
 
@@ -1675,17 +1597,9 @@ interface IReadOnlyResultMapValidator<TK extends string = string, TV = unknown> 
 //
 // @public
 interface IReadOnlyValidatingCollector<TITEM extends ICollectible<any, any>> extends IReadOnlyValidatingResultMap<CollectibleKey<TITEM>, TITEM> {
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     getAt(index: number): Result<TITEM>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly validating: IReadOnlyCollectorValidator<TITEM>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     valuesByIndex(): ReadonlyArray<TITEM>;
 }
 
@@ -1693,9 +1607,7 @@ interface IReadOnlyValidatingCollector<TITEM extends ICollectible<any, any>> ext
 //
 // @public
 interface IReadOnlyValidatingResultMap<TK extends string = string, TV = unknown> extends IReadOnlyResultMap<TK, TV> {
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly validating: IReadOnlyResultMapValidator<TK, TV>;
 }
 
@@ -1958,40 +1870,16 @@ function literal_2<T extends string | number | boolean | symbol | null | undefin
 // @public
 abstract class LoggerBase implements IDetailLogger {
     protected constructor(logLevel?: ReporterLogLevel);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     error(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     errorWithDetail(message: string, detail: unknown): Success<string | undefined>;
     protected _format(message?: unknown, ...parameters: unknown[]): string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     info(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
     protected abstract _log(message: string, level: MessageLogLevel): Success<string | undefined>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     logLevel: ReporterLogLevel;
     protected _suppressLog(__level: MessageLogLevel, __message?: unknown, ...__parameters: unknown[]): Success<undefined>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
 }
 

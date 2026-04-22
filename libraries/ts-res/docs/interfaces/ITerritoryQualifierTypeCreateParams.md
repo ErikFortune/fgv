@@ -38,7 +38,7 @@ string
 
 </td><td>
 
-QualifierTypes.IQualifierTypeCreateParams.name
+The name of the qualifier type.
 
 </td></tr>
 <tr><td>
@@ -55,7 +55,7 @@ boolean
 
 </td><td>
 
-QualifierTypes.IQualifierTypeCreateParams.allowContextList
+Flag indicating whether this qualifier type allows a list of values in a context.
 
 </td></tr>
 <tr><td>
@@ -72,7 +72,7 @@ number
 
 </td><td>
 
-QualifierTypes.IQualifierTypeCreateParams.index
+Global index for this qualifier type.
 
 </td></tr>
 <tr><td>

@@ -78,7 +78,7 @@ number
 
 </td><td>
 
-Collections.ResultMap.size
+Returns the number of entries in the map.
 
 </td></tr>
 </tbody></table>
@@ -161,7 +161,7 @@ Creates a new Collections.Collector | Collector instance.
 
 </td><td>
 
-Qualifiers.IReadOnlyQualifierCollector.getByNameOrToken
+Gets a Qualifiers.Qualifier | qualifier by name or token.
 
 </td></tr>
 <tr><td>
@@ -174,7 +174,7 @@ Qualifiers.IReadOnlyQualifierCollector.getByNameOrToken
 
 </td><td>
 
-Qualifiers.IReadOnlyQualifierCollector.hasNameOrToken
+Checks if a qualifier with a given name or token is in the collection.
 
 </td></tr>
 <tr><td>
@@ -213,7 +213,7 @@ Factory method for creating a Qualifiers.Qualifier | Qualifier from a Qualifiers
 
 </td><td>
 
-Collections.Collector.add
+Adds an item to the collection, failing if a different item with the same key already exists.
 
 </td></tr>
 <tr><td>
@@ -226,7 +226,7 @@ Collections.Collector.add
 
 </td><td>
 
-Collections.Collector.getOrAdd
+Gets an existing item with a key matching that of the supplied item, or adds the supplied
 
 </td></tr>
 <tr><td>
@@ -278,7 +278,7 @@ Helper method for derived classes to build an item from a key and a source repre
 
 </td><td>
 
-Collections.ResultMap.entries
+Returns an iterator over the map entries.
 
 </td></tr>
 <tr><td>
@@ -291,7 +291,7 @@ Collections.ResultMap.entries
 
 </td><td>
 
-Collections.ResultMap.forEach
+Calls a function for each entry in the map.
 
 </td></tr>
 <tr><td>
@@ -304,7 +304,7 @@ Collections.ResultMap.forEach
 
 </td><td>
 
-Collections.ResultMap.get
+Gets a value by key.
 
 </td></tr>
 <tr><td>
@@ -317,7 +317,7 @@ Collections.ResultMap.get
 
 </td><td>
 
-Collections.IReadOnlyCollector.getAt
+Gets the item at a specified index.
 
 </td></tr>
 <tr><td>
@@ -330,7 +330,7 @@ Collections.IReadOnlyCollector.getAt
 
 </td><td>
 
-Collections.ResultMap.has
+Returns true if the map contains an entry with the given key.
 
 </td></tr>
 <tr><td>
@@ -343,7 +343,7 @@ Collections.ResultMap.has
 
 </td><td>
 
-Collections.ResultMap.keys
+Returns an iterator over the map keys.
 
 </td></tr>
 <tr><td>
@@ -356,7 +356,7 @@ Collections.ResultMap.keys
 
 </td><td>
 
-Collections.ResultMap.values
+Returns an iterator over the map values.
 
 </td></tr>
 <tr><td>
@@ -369,7 +369,7 @@ Collections.ResultMap.values
 
 </td><td>
 
-Collections.IReadOnlyCollector.valuesByIndex
+Gets all items in the collection, ordered by index.
 
 </td></tr>
 <tr><td>

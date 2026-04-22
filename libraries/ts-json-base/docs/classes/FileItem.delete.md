@@ -2,7 +2,7 @@
 
 ## FileItem.delete() method
 
-FileTree.IFileTreeFileItem.delete
+Deletes this file from its backing store.
 
 **Signature:**
 
@@ -13,3 +13,5 @@ delete(): Result<boolean>;
 **Returns:**
 
 Result&lt;boolean&gt;
+
+`Success` with `true` if the file was deleted, or `Failure` with an error message.

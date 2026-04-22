@@ -178,7 +178,7 @@ IReadOnlyValidatingResultMap&lt;[ResourceId](../type-aliases/ResourceId.md), [IR
 
 </td><td>
 
-Runtime.IResourceManager.builtResources
+A read-only result map of all built resources, keyed by resource ID.
 
 </td></tr>
 <tr><td>
@@ -195,7 +195,7 @@ number
 
 </td><td>
 
-Runtime.IResourceManager.numResources
+The number of resources in this resource manager.
 
 </td></tr>
 <tr><td>
@@ -212,7 +212,7 @@ number
 
 </td><td>
 
-Runtime.IResourceManager.numCandidates
+The number of candidates in this resource manager.
 
 </td></tr>
 </tbody></table>
@@ -256,7 +256,7 @@ Creates a new Runtime.CompiledResourceCollection | CompiledResourceCollection ob
 
 </td><td>
 
-Runtime.IResourceManager.getBuiltResource
+Gets a built resource by ID for runtime resolution.
 
 </td></tr>
 <tr><td>
@@ -269,7 +269,7 @@ Runtime.IResourceManager.getBuiltResource
 
 </td><td>
 
-Runtime.IResourceManager.validateContext
+Validates a context declaration against the qualifiers managed by this resource manager.
 
 </td></tr>
 <tr><td>

@@ -327,7 +327,7 @@ export class FileApiTreeAccessors<TCT extends string = string> {
 
   /**
    * Extract file metadata from a File.
-   * @param fileList - The File to extract metadata from
+   * @param file - The File to extract metadata from
    * @returns The {@link IFileMetadata | file metadata}
    */
   public static extractFileMetadata(file: File): IFileMetadata {

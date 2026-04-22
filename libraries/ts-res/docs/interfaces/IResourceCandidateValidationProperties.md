@@ -38,7 +38,7 @@ Description
 
 </td><td>
 
-ResourceJson.Json.ILooseResourceCandidateDecl.id
+The ResourceId | id of the resource.
 
 </td></tr>
 <tr><td>
@@ -72,7 +72,7 @@ JsonValue
 
 </td><td>
 
-ResourceJson.Json.ILooseResourceCandidateDecl.json
+The JSON value of the resource.
 
 </td></tr>
 <tr><td>
@@ -89,7 +89,7 @@ ResourceJson.Json.ILooseResourceCandidateDecl.json
 
 </td><td>
 
-ResourceJson.Json.ILooseResourceCandidateDecl.mergeMethod
+The merge method to be used when merging the resource into the existing resource.
 
 </td></tr>
 </tbody></table>

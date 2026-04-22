@@ -2,7 +2,7 @@
 
 ## FileItem.setRawContents() method
 
-FileTree.IFileTreeFileItem.setRawContents
+Sets the raw contents of the file.
 
 **Signature:**
 
@@ -14,9 +14,11 @@ setRawContents(contents: string): Result<string>;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>contents</td><td>string</td><td></td></tr>
+<tr><td>contents</td><td>string</td><td>The string contents to save.</td></tr>
 </tbody></table>
 
 **Returns:**
 
 Result&lt;string&gt;
+
+`Success` if the file was saved, or `Failure` with an error message.

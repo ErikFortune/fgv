@@ -2,7 +2,7 @@
 
 ## QualifierType.systemTypeName property
 
-QualifierTypes.IQualifierType.systemTypeName
+Name of the underlying system type.
 
 **Signature:**
 

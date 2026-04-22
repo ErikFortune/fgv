@@ -135,7 +135,7 @@ Creates a new Import.Importers.FsItemImporter | FsItemImporter.
 
 </td><td>
 
-Import.Importers.IImporter.import
+Imports an item, extracting any resources or candidates from it and returns an optional
 
 </td></tr>
 </tbody></table>

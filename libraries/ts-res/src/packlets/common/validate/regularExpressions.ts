@@ -37,8 +37,8 @@ export const identifierList: RegExp = /^[a-zA-Z_][a-zA-Z0-9_\-]*(,[a-zA-Z_][a-zA
 
 /**
  * The format of a {@link ConditionKey | condition key} is:
- * <qualifierName>-[<value>][\@<priority>](<scoreAsDefault>) where operator is `matches`, or
- * <qualifierName>-<operator>-[<value>][\@<priority>](<scoreAsDefault>)
+ * \<qualifierName\>-\[<value>\]\[\@<priority>\]\(\<scoreAsDefault\>\) where operator is `matches`, or
+ * \<qualifierName\>-\<operator\>-\[<value>\]\[\@<priority>\]\(\<scoreAsDefault\>\)
  * @internal
  */
 export const conditionKey: RegExp =

@@ -2,7 +2,7 @@
 
 ## Collector.has() method
 
-Returns `true` if the map contains a key.
+Returns true if the map contains an entry with the given key.
 
 **Signature:**
 
@@ -14,7 +14,7 @@ has(key: CollectibleKey<TITEM>): boolean;
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>key</td><td>CollectibleKey&lt;TITEM&gt;</td><td>The key to check.</td></tr>
+<tr><td>key</td><td>CollectibleKey&lt;TITEM&gt;</td><td>The key to check for.</td></tr>
 </tbody></table>
 
 **Returns:**
