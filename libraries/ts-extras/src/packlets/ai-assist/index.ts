@@ -20,6 +20,7 @@ export {
   type IAiAssistSettings,
   DEFAULT_AI_ASSIST,
   type IAiAssistKeyStore,
+  type IAiImageAttachment,
   type IAiImageData,
   type IAiImageGenerationOptions,
   type IAiImageGenerationParams,

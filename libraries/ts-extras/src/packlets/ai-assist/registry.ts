@@ -45,7 +45,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: '',
     defaultModel: '',
     supportedTools: [],
-    corsRestricted: false
+    corsRestricted: false,
+    acceptsImageInput: false
   },
   {
     id: 'anthropic',
@@ -56,7 +57,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://api.anthropic.com/v1',
     defaultModel: 'claude-sonnet-4-5-20250929',
     supportedTools: ['web_search'],
-    corsRestricted: false
+    corsRestricted: false,
+    acceptsImageInput: true
   },
   {
     id: 'google-gemini',
@@ -68,6 +70,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-3.0-generate-002' },
     supportedTools: ['web_search'],
     corsRestricted: false,
+    acceptsImageInput: true,
     imageApiFormat: 'gemini-imagen'
   },
   {
@@ -79,7 +82,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://api.groq.com/openai/v1',
     defaultModel: 'llama-3.3-70b-versatile',
     supportedTools: [],
-    corsRestricted: false
+    corsRestricted: false,
+    acceptsImageInput: false
   },
   {
     id: 'mistral',
@@ -90,7 +94,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://api.mistral.ai/v1',
     defaultModel: 'mistral-large-latest',
     supportedTools: [],
-    corsRestricted: false
+    corsRestricted: false,
+    acceptsImageInput: false
   },
   {
     id: 'openai',
@@ -102,6 +107,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
     supportedTools: ['web_search'],
     corsRestricted: false,
+    acceptsImageInput: true,
     imageApiFormat: 'openai-images'
   },
   {
@@ -118,6 +124,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     },
     supportedTools: ['web_search'],
     corsRestricted: true,
+    acceptsImageInput: true,
     imageApiFormat: 'xai-images'
   }
 ];

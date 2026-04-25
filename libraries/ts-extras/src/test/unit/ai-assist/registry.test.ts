@@ -74,6 +74,22 @@ describe('AiAssist.registry', () => {
       });
     });
 
+    test('vision-capable providers declare acceptsImageInput=true', () => {
+      for (const id of ['openai', 'anthropic', 'google-gemini', 'xai-grok'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(desc.acceptsImageInput).toBe(true);
+        });
+      }
+    });
+
+    test('non-vision providers declare acceptsImageInput=false', () => {
+      for (const id of ['copy-paste', 'groq', 'mistral'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(desc.acceptsImageInput).toBe(false);
+        });
+      }
+    });
+
     test('chat-only providers leave imageApiFormat undefined', () => {
       expect(AiAssist.getProviderDescriptor('anthropic')).toSucceedAndSatisfy((desc) => {
         expect(desc.imageApiFormat).toBeUndefined();

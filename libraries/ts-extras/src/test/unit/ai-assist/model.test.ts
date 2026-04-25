@@ -33,6 +33,32 @@ describe('AiPrompt', () => {
     const prompt = new AiAssist.AiPrompt('user text', 'system text');
     expect(prompt.combined).toBe('user text\n\nsystem text');
   });
+
+  test('defaults attachments to an empty array', () => {
+    const prompt = new AiAssist.AiPrompt('u', 's');
+    expect(prompt.attachments).toEqual([]);
+  });
+
+  test('stores attachments when supplied', () => {
+    const att: AiAssist.IAiImageAttachment = { mimeType: 'image/png', base64: 'AAAA' };
+    const prompt = new AiAssist.AiPrompt('u', 's', [att]);
+    expect(prompt.attachments).toEqual([att]);
+  });
+
+  test('combined includes a sentinel when attachments are present', () => {
+    const att: AiAssist.IAiImageAttachment = { mimeType: 'image/png', base64: 'AAAA' };
+    const prompt = new AiAssist.AiPrompt('describe this', 'be terse', [att]);
+    expect(prompt.combined).toMatch(/\[1 image attachment\(s\) — not included in copied text\]/);
+    expect(prompt.combined).toContain('describe this');
+    expect(prompt.combined).toContain('be terse');
+  });
+
+  test('combined sentinel reflects attachment count', () => {
+    const a: AiAssist.IAiImageAttachment = { mimeType: 'image/png', base64: 'A' };
+    const b: AiAssist.IAiImageAttachment = { mimeType: 'image/jpeg', base64: 'B' };
+    const prompt = new AiAssist.AiPrompt('u', 's', [a, b]);
+    expect(prompt.combined).toMatch(/\[2 image attachment\(s\)/);
+  });
 });
 
 describe('toDataUrl', () => {

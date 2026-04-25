@@ -56,6 +56,27 @@ export function toDataUrl(image: IAiImageData): string {
   return `data:${image.mimeType};base64,${image.base64}`;
 }
 
+/**
+ * Image attachment for a vision (image-input) prompt.
+ *
+ * @remarks
+ * Extends {@link IAiImageData} with an OpenAI-specific `detail` hint that is
+ * silently ignored by Anthropic, Gemini, and other providers.
+ *
+ * @public
+ */
+export interface IAiImageAttachment extends IAiImageData {
+  /**
+   * OpenAI vision detail hint:
+   * - `'low'`: faster, cheaper, lower fidelity
+   * - `'high'`: slower, more expensive, higher fidelity
+   * - `'auto'` (default): provider chooses
+   *
+   * Ignored by providers other than OpenAI.
+   */
+  readonly detail?: 'low' | 'high' | 'auto';
+}
+
 // ============================================================================
 // AiPrompt
 // ============================================================================
@@ -70,15 +91,30 @@ export class AiPrompt {
   public readonly system: string;
   /** User request: the specific entity generation request. */
   public readonly user: string;
+  /**
+   * Optional image attachments. When present, vision-capable providers will
+   * include them in the user message; non-vision providers will reject the
+   * call up front (see {@link IAiProviderDescriptor.acceptsImageInput}).
+   */
+  public readonly attachments: ReadonlyArray<IAiImageAttachment>;
 
-  public constructor(user: string, system: string) {
+  public constructor(user: string, system: string, attachments?: ReadonlyArray<IAiImageAttachment>) {
     this.system = system;
     this.user = user;
+    this.attachments = attachments ?? [];
   }
 
-  /** Combined single-string version (user + system joined) for copy/paste. */
+  /**
+   * Combined single-string version (user + system joined) for copy/paste.
+   * When attachments are present, includes a sentinel noting they aren't
+   * part of the copied text.
+   */
   public get combined(): string {
-    return `${this.user}\n\n${this.system}`;
+    const sentinel =
+      this.attachments.length > 0
+        ? `\n\n[${this.attachments.length} image attachment(s) — not included in copied text]`
+        : '';
+    return `${this.user}${sentinel}\n\n${this.system}`;
   }
 }
 
@@ -306,6 +342,12 @@ export interface IAiProviderDescriptor {
   readonly supportedTools: ReadonlyArray<AiServerToolType>;
   /** Whether this provider's API enforces CORS restrictions that prevent direct browser calls. */
   readonly corsRestricted: boolean;
+  /**
+   * Whether this provider's chat completions API accepts image input
+   * (i.e. supports vision prompts). When false, calls with
+   * `prompt.attachments` are rejected up front.
+   */
+  readonly acceptsImageInput: boolean;
   /**
    * Which image-generation API format this provider uses, or undefined if it
    * does not support image generation.

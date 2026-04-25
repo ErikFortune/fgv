@@ -38,6 +38,7 @@ declare namespace AiAssist {
         IAiAssistSettings,
         DEFAULT_AI_ASSIST,
         IAiAssistKeyStore,
+        IAiImageAttachment,
         IAiImageData,
         IAiImageGenerationOptions,
         IAiImageGenerationParams,
@@ -100,7 +101,9 @@ type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation';
 
 // @public
 class AiPrompt {
-    constructor(user: string, system: string);
+    constructor(user: string, system: string, attachments?: ReadonlyArray<IAiImageAttachment>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    readonly attachments: ReadonlyArray<IAiImageAttachment>;
     get combined(): string;
     readonly system: string;
     readonly user: string;
@@ -519,6 +522,13 @@ interface IAiGeneratedImage extends IAiImageData {
     readonly revisedPrompt?: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageData"
+//
+// @public
+interface IAiImageAttachment extends IAiImageData {
+    readonly detail?: 'low' | 'high' | 'auto';
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "toDataUrl"
 //
 // @public
@@ -578,6 +588,7 @@ interface IAiModelInfo {
 
 // @public
 interface IAiProviderDescriptor {
+    readonly acceptsImageInput: boolean;
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;

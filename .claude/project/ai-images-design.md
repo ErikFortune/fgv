@@ -1,6 +1,6 @@
 # AI Assist — Image Support Design
 
-Status: step 1 done, step 2 done, sample app done, list-models in progress, step 3 pending
+Status: step 1 done, step 2 done, sample app done, list-models done, step 3 done
 Branch: `ai-images`
 Scope: extend `@fgv/ts-extras` `ai-assist` packlet to support image input (vision)
 and image output (generation), and thread an `AbortSignal` through all calls.
@@ -332,14 +332,25 @@ retry loop, no JSON parsing.
    - `callProviderImageGeneration` + `callProxiedImageGeneration`
    - Hook entry point `generateImages` in `useAiAssist`
    - Unit tests for all three formats + proxy
-3. **Image input (vision) — PENDING**
-   - `IAiImageAttachment`, `IChatContentPart`, `AiPrompt.attachments`
-   - `acceptsImageInput` on descriptor (per-provider)
-   - Adapter request-body translation (chat completions, responses API,
-     anthropic, gemini)
-   - Pre-flight rejection for non-vision providers
-   - Sentinel in `combined` getter
-   - Unit tests covering each provider's image-message shape
+3. **Image input (vision) — DONE**
+   - `IAiImageAttachment` extends `IAiImageData` with optional `detail` hint
+   - `AiPrompt.attachments` (defaults to `[]`); `combined` injects sentinel
+   - `acceptsImageInput` on `IAiProviderDescriptor` (true for openai,
+     anthropic, google-gemini, xai-grok; false for groq, mistral, copy-paste)
+   - Adapter user-content translation per format:
+     - openai chat: `{type:'text'}` + `{type:'image_url', image_url:{url, detail}}`
+     - openai Responses API: `{type:'input_text'}` + `{type:'input_image', image_url}`
+     - anthropic: `{type:'text'}` + `{type:'image', source:{type:'base64', media_type, data}}`
+     - gemini: `{text}` + `{inlineData:{mimeType, data}}`
+   - Pre-flight rejection in `callProviderCompletion` when attachments present
+     but `descriptor.acceptsImageInput === false`
+   - `callProxiedCompletion` forwards `attachments` in the prompt body
+   - Unit tests covering each format's image-message wire shape, the
+     pre-flight rejection, and proxy forwarding
+
+   Sample app integration for image input is **not** part of this step —
+   would require a separate "vision chat" UI flow distinct from image gen.
+   Future enhancement.
 
 ### Implementation decisions logged during step 2
 

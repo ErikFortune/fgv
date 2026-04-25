@@ -49,7 +49,8 @@ import {
   type IAiProviderDescriptor,
   type IChatMessage,
   type ModelSpec,
-  resolveModel
+  resolveModel,
+  toDataUrl
 } from './model';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG } from './registry';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
@@ -102,15 +103,18 @@ export interface IProviderCompletionParams {
 
 /**
  * Builds the messages array from prompt + optional correction messages.
+ * The caller supplies the user content (string for text-only, parts array
+ * for vision prompts) since the parts shape differs by format.
  * @internal
  */
 function buildMessages(
-  prompt: AiPrompt,
+  systemPrompt: string,
+  userContent: string | unknown[],
   additionalMessages?: ReadonlyArray<IChatMessage>
-): Array<{ role: string; content: string }> {
-  const messages: Array<{ role: string; content: string }> = [
-    { role: 'system', content: prompt.system },
-    { role: 'user', content: prompt.user }
+): Array<{ role: string; content: string | unknown[] }> {
+  const messages: Array<{ role: string; content: string | unknown[] }> = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userContent }
   ];
   if (additionalMessages) {
     for (const msg of additionalMessages) {
@@ -118,6 +122,81 @@ function buildMessages(
     }
   }
   return messages;
+}
+
+/**
+ * Builds the user content for OpenAI Chat Completions when attachments are
+ * present. Returns a string when there are no attachments.
+ * @internal
+ */
+function buildOpenAiChatUserContent(prompt: AiPrompt): string | unknown[] {
+  if (prompt.attachments.length === 0) {
+    return prompt.user;
+  }
+  return [
+    { type: 'text', text: prompt.user },
+    ...prompt.attachments.map((att) => ({
+      type: 'image_url',
+      image_url: {
+        url: toDataUrl(att),
+        ...(att.detail !== undefined ? { detail: att.detail } : {})
+      }
+    }))
+  ];
+}
+
+/**
+ * Builds the user content for OpenAI / xAI Responses API when attachments
+ * are present. Responses API uses `input_text` / `input_image` part types,
+ * distinct from Chat Completions' `text` / `image_url`.
+ * @internal
+ */
+function buildOpenAiResponsesUserContent(prompt: AiPrompt): string | unknown[] {
+  if (prompt.attachments.length === 0) {
+    return prompt.user;
+  }
+  return [
+    { type: 'input_text', text: prompt.user },
+    ...prompt.attachments.map((att) => ({
+      type: 'input_image',
+      image_url: toDataUrl(att),
+      ...(att.detail !== undefined ? { detail: att.detail } : {})
+    }))
+  ];
+}
+
+/**
+ * Builds the user-message content for Anthropic when attachments are present.
+ * @internal
+ */
+function buildAnthropicUserContent(prompt: AiPrompt): string | unknown[] {
+  if (prompt.attachments.length === 0) {
+    return prompt.user;
+  }
+  return [
+    { type: 'text', text: prompt.user },
+    ...prompt.attachments.map((att) => ({
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: att.mimeType,
+        data: att.base64
+      }
+    }))
+  ];
+}
+
+/**
+ * Builds the Gemini `parts` array for the user turn, including any image
+ * attachments as `inlineData` parts.
+ * @internal
+ */
+function buildGeminiUserParts(prompt: AiPrompt): Array<Record<string, unknown>> {
+  const parts: Array<Record<string, unknown>> = [{ text: prompt.user }];
+  for (const att of prompt.attachments) {
+    parts.push({ inlineData: { mimeType: att.mimeType, data: att.base64 } });
+  }
+  return parts;
 }
 
 /**
@@ -371,7 +450,7 @@ async function callOpenAiCompletion(
   signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
-  const messages = buildMessages(prompt, additionalMessages);
+  const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), additionalMessages);
   const body = { model: config.model, messages, temperature };
 
   const headers: Record<string, string> = {
@@ -432,7 +511,7 @@ async function callOpenAiResponsesCompletion(
   signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
-  const input = buildMessages(prompt, additionalMessages);
+  const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), additionalMessages);
   const body: Record<string, unknown> = {
     model: config.model,
     input,
@@ -508,7 +587,9 @@ async function callAnthropicCompletion(
   const url = `${config.baseUrl}/messages`;
 
   // Anthropic uses system as a top-level field, not in messages
-  const messages: Array<{ role: string; content: string }> = [{ role: 'user', content: prompt.user }];
+  const messages: Array<{ role: string; content: string | unknown[] }> = [
+    { role: 'user', content: buildAnthropicUserContent(prompt) }
+  ];
   if (additionalMessages) {
     for (const msg of additionalMessages) {
       // Anthropic doesn't have a system role in messages
@@ -594,8 +675,8 @@ async function callGeminiCompletion(
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
   // Gemini uses 'contents' with 'parts', and 'model' role instead of 'assistant'
-  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [
-    { role: 'user', parts: [{ text: prompt.user }] }
+  const contents: Array<{ role: string; parts: Array<Record<string, unknown>> }> = [
+    { role: 'user', parts: buildGeminiUserParts(prompt) }
   ];
   if (additionalMessages) {
     for (const msg of additionalMessages) {
@@ -681,6 +762,9 @@ export async function callProviderCompletion(
 
   if (!descriptor.baseUrl) {
     return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  }
+  if (prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
   }
 
   const hasTools = tools !== undefined && tools.length > 0;
@@ -1445,10 +1529,14 @@ export async function callProxiedCompletion(
     signal
   } = params;
 
+  const promptBody: Record<string, unknown> = { system: prompt.system, user: prompt.user };
+  if (prompt.attachments.length > 0) {
+    promptBody.attachments = prompt.attachments;
+  }
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
     apiKey,
-    prompt: { system: prompt.system, user: prompt.user },
+    prompt: promptBody,
     temperature: temperature ?? 0.7
   };
   if (additionalMessages && additionalMessages.length > 0) {
