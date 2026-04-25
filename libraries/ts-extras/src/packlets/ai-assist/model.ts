@@ -34,7 +34,7 @@ import { type Result } from '@fgv/ts-utils';
  * and image output (generation responses).
  *
  * @remarks
- * The base64 string is raw — no `data:` URL prefix. Use {@link toDataUrl} to
+ * The base64 string is raw — no `data:` URL prefix. Use {@link AiAssist.toDataUrl} to
  * format it for browser-display contexts.
  *
  * @public
@@ -94,7 +94,7 @@ export class AiPrompt {
   /**
    * Optional image attachments. When present, vision-capable providers will
    * include them in the user message; non-vision providers will reject the
-   * call up front (see {@link IAiProviderDescriptor.acceptsImageInput}).
+   * call up front (see {@link AiAssist.IAiProviderDescriptor.acceptsImageInput}).
    */
   public readonly attachments: ReadonlyArray<IAiImageAttachment>;
 
@@ -432,7 +432,7 @@ export interface IAiGeneratedImage extends IAiImageData {
 
 /**
  * Capability vocabulary used to describe what a model can do. Used as both
- * a filter and as a tag in {@link IAiModelInfo.capabilities}.
+ * a filter and as a tag in {@link AiAssist.IAiModelInfo.capabilities}.
  *
  * @remarks
  * Adding a new capability is cheap; adding the *first* one after consumers
@@ -482,7 +482,7 @@ export interface IAiModelCapabilityRule {
  * @public
  */
 export interface IAiModelCapabilityConfig {
-  /** Per-provider rules. Tried before {@link global}. */
+  /** Per-provider rules. Tried before {@link AiAssist.IAiModelCapabilityConfig.global}. */
   readonly perProvider?: { readonly [P in AiProviderId]?: ReadonlyArray<IAiModelCapabilityRule> };
   /** Cross-provider fallback rules. */
   readonly global?: ReadonlyArray<IAiModelCapabilityRule>;

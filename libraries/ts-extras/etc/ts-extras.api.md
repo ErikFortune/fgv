@@ -94,7 +94,7 @@ const aiAssistSettings: Converter<IAiAssistSettings>;
 // @public
 type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiModelInfo"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation';
@@ -102,7 +102,7 @@ type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation';
 // @public
 class AiPrompt {
     constructor(user: string, system: string, attachments?: ReadonlyArray<IAiImageAttachment>);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly attachments: ReadonlyArray<IAiImageAttachment>;
     get combined(): string;
     readonly system: string;
@@ -529,7 +529,7 @@ interface IAiImageAttachment extends IAiImageData {
     readonly detail?: 'low' | 'high' | 'auto';
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "toDataUrl"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IAiImageData {
@@ -564,7 +564,7 @@ interface IAiImageGenerationResponse {
 // @public
 interface IAiModelCapabilityConfig {
     readonly global?: ReadonlyArray<IAiModelCapabilityRule>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "global"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly perProvider?: {
         readonly [P in AiProviderId]?: ReadonlyArray<IAiModelCapabilityRule>;
     };

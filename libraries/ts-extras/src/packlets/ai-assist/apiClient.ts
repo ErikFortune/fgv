@@ -1228,6 +1228,7 @@ function applyCapabilityConfig(
 
   for (const rules of rulesets) {
     for (const rule of rules) {
+      rule.idPattern.lastIndex = 0;
       if (rule.idPattern.test(modelId)) {
         for (const cap of rule.capabilities) {
           caps.add(cap);
