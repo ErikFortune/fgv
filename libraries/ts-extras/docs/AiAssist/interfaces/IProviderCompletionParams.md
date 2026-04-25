@@ -160,4 +160,21 @@ readonly [IAiWebSearchToolConfig](../../interfaces/IAiWebSearchToolConfig.md)[]
 Server-side tools to include in the request.
 
 </td></tr>
+<tr><td>
+
+[signal](./IProviderCompletionParams.signal.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+AbortSignal
+
+</td><td>
+
+Optional abort signal for cancelling the in-flight request.
+
+</td></tr>
 </tbody></table>

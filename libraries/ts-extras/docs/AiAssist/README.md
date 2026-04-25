@@ -113,6 +113,87 @@ Minimal keystore interface for AI assist API key resolution.
 </td></tr>
 <tr><td>
 
+[IAiImageAttachment](./interfaces/IAiImageAttachment.md)
+
+</td><td>
+
+Image attachment for a vision (image-input) prompt.
+
+</td></tr>
+<tr><td>
+
+[IAiImageData](./interfaces/IAiImageData.md)
+
+</td><td>
+
+Universal image representation used for both image input (vision prompts)
+
+</td></tr>
+<tr><td>
+
+[IAiImageGenerationOptions](./interfaces/IAiImageGenerationOptions.md)
+
+</td><td>
+
+Options for image generation requests.
+
+</td></tr>
+<tr><td>
+
+[IAiImageGenerationParams](./interfaces/IAiImageGenerationParams.md)
+
+</td><td>
+
+Parameters for an image-generation request.
+
+</td></tr>
+<tr><td>
+
+[IAiGeneratedImage](./interfaces/IAiGeneratedImage.md)
+
+</td><td>
+
+A single generated image.
+
+</td></tr>
+<tr><td>
+
+[IAiImageGenerationResponse](./interfaces/IAiImageGenerationResponse.md)
+
+</td><td>
+
+Result of an image-generation call.
+
+</td></tr>
+<tr><td>
+
+[IAiModelCapabilityRule](./interfaces/IAiModelCapabilityRule.md)
+
+</td><td>
+
+One rule in an IAiModelCapabilityConfig.
+
+</td></tr>
+<tr><td>
+
+[IAiModelCapabilityConfig](./interfaces/IAiModelCapabilityConfig.md)
+
+</td><td>
+
+Configuration that maps model id patterns to capabilities.
+
+</td></tr>
+<tr><td>
+
+[IAiModelInfo](./interfaces/IAiModelInfo.md)
+
+</td><td>
+
+Information about a single model returned by a provider's list endpoint,
+
+</td></tr>
+<tr><td>
+
 [IModelSpecMap](./interfaces/IModelSpecMap.md)
 
 </td><td>
@@ -129,6 +210,24 @@ A model specification: either a simple model string or a record mapping
 Parameters for a provider completion request.
 
 </td></tr>
+<tr><td>
+
+[IProviderImageGenerationParams](./interfaces/IProviderImageGenerationParams.md)
+
+</td><td>
+
+Parameters for an image-generation request.
+
+</td></tr>
+<tr><td>
+
+[IProviderListModelsParams](./interfaces/IProviderListModelsParams.md)
+
+</td><td>
+
+Parameters for a list-models request.
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -143,6 +242,15 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[AiModelCapability](./type-aliases/AiModelCapability.md)
+
+</td><td>
+
+Capability vocabulary used to describe what a model can do.
+
+</td></tr>
 <tr><td>
 
 [AiProviderId](./type-aliases/AiProviderId.md)
@@ -177,6 +285,15 @@ Union of all server-side tool configurations.
 </td><td>
 
 API format categories for provider routing.
+
+</td></tr>
+<tr><td>
+
+[AiImageApiFormat](./type-aliases/AiImageApiFormat.md)
+
+</td><td>
+
+API format categories for image-generation provider routing.
 
 </td></tr>
 <tr><td>
@@ -222,6 +339,15 @@ Resolves a ModelSpec to a concrete model string given an optional context key.
 </td></tr>
 <tr><td>
 
+[toDataUrl](./functions/toDataUrl.md)
+
+</td><td>
+
+Formats an IAiImageData as a `data:` URL suitable for browser display.
+
+</td></tr>
+<tr><td>
+
 [getProviderDescriptors](./functions/getProviderDescriptors.md)
 
 </td><td>
@@ -255,6 +381,43 @@ Calls the appropriate chat completion API for a given provider.
 
 Calls the AI completion endpoint on a proxy server instead of calling
 the provider API directly from the browser.
+
+</td></tr>
+<tr><td>
+
+[callProviderImageGeneration](./functions/callProviderImageGeneration.md)
+
+</td><td>
+
+Calls the appropriate image-generation API for a given provider.
+
+</td></tr>
+<tr><td>
+
+[callProxiedImageGeneration](./functions/callProxiedImageGeneration.md)
+
+</td><td>
+
+Calls the image-generation endpoint on a proxy server instead of calling
+
+</td></tr>
+<tr><td>
+
+[callProviderListModels](./functions/callProviderListModels.md)
+
+</td><td>
+
+Lists models available from a provider, with capabilities resolved from
+native provider info (where supplied) and a configurable rule set.
+
+</td></tr>
+<tr><td>
+
+[callProxiedListModels](./functions/callProxiedListModels.md)
+
+</td><td>
+
+Calls the model-listing endpoint on a proxy server.
 
 </td></tr>
 <tr><td>
@@ -314,6 +477,16 @@ Default context key used as fallback when resolving a ModelSpec.
 </td><td>
 
 All valid provider ID values, in the same order as the registry.
+
+</td></tr>
+<tr><td>
+
+[DEFAULT_MODEL_CAPABILITY_CONFIG](./variables/DEFAULT_MODEL_CAPABILITY_CONFIG.md)
+
+</td><td>
+
+Default capability config used by `callProviderListModels` when callers
+don't supply their own.
 
 </td></tr>
 <tr><td>
