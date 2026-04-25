@@ -471,8 +471,10 @@ Plus `listModels(provider, capability?)` on the `useAiAssist` hook.
 
 ## Open follow-ups (not in scope)
 
-- **`useAiAssist` hook tests.** The whole hook (chat + image gen) is currently
-  uncovered. Add when the hook is wired into a UI flow.
+- ~~**`useAiAssist` hook tests.**~~ Done. Hook coverage at 99.78% statements
+  / 88.54% branches across `actions`, `copyPrompt`, `generateDirect`,
+  `generateImages`, and `listModels`. The remaining branch gap is mostly
+  optional-chaining permutations on logger/keystore presence.
 - **Consumer proxy must implement `/api/ai/image-generation` before
   enabling.** Any consumer with `proxyAllProviders: true` (or with `xai-grok`
   enabled, since it's CORS-restricted) will fail at runtime the first time

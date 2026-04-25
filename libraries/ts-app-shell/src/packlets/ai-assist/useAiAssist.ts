@@ -335,7 +335,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
           }
         }
 
-        // Unreachable, but TypeScript needs it
+        /* c8 ignore next 2 - unreachable: every loop iteration returns; TypeScript needs the trailing return */
         return fail('AI generation failed');
       } finally {
         setIsWorking(false);
