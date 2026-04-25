@@ -67,6 +67,7 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     defaultModel: 'grok-4-1-fast',
     supportedTools: ['web_search'],
     corsRestricted: true,
+    acceptsImageInput: true,
     ...overrides
   };
 }

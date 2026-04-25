@@ -26,6 +26,58 @@
 import { type Result } from '@fgv/ts-utils';
 
 // ============================================================================
+// Image Data
+// ============================================================================
+
+/**
+ * Universal image representation used for both image input (vision prompts)
+ * and image output (generation responses).
+ *
+ * @remarks
+ * The base64 string is raw — no `data:` URL prefix. Use {@link AiAssist.toDataUrl} to
+ * format it for browser-display contexts.
+ *
+ * @public
+ */
+export interface IAiImageData {
+  /** MIME type, e.g. `'image/png'`, `'image/jpeg'`, `'image/webp'`. */
+  readonly mimeType: string;
+  /** Base64-encoded image bytes (no `data:` prefix). */
+  readonly base64: string;
+}
+
+/**
+ * Formats an {@link IAiImageData} as a `data:` URL suitable for browser display.
+ * @param image - The image to format
+ * @returns A `data:<mime>;base64,<data>` URL string
+ * @public
+ */
+export function toDataUrl(image: IAiImageData): string {
+  return `data:${image.mimeType};base64,${image.base64}`;
+}
+
+/**
+ * Image attachment for a vision (image-input) prompt.
+ *
+ * @remarks
+ * Extends {@link IAiImageData} with an OpenAI-specific `detail` hint that is
+ * silently ignored by Anthropic, Gemini, and other providers.
+ *
+ * @public
+ */
+export interface IAiImageAttachment extends IAiImageData {
+  /**
+   * OpenAI vision detail hint:
+   * - `'low'`: faster, cheaper, lower fidelity
+   * - `'high'`: slower, more expensive, higher fidelity
+   * - `'auto'` (default): provider chooses
+   *
+   * Ignored by providers other than OpenAI.
+   */
+  readonly detail?: 'low' | 'high' | 'auto';
+}
+
+// ============================================================================
 // AiPrompt
 // ============================================================================
 
@@ -39,15 +91,30 @@ export class AiPrompt {
   public readonly system: string;
   /** User request: the specific entity generation request. */
   public readonly user: string;
+  /**
+   * Optional image attachments. When present, vision-capable providers will
+   * include them in the user message; non-vision providers will reject the
+   * call up front (see {@link AiAssist.IAiProviderDescriptor.acceptsImageInput}).
+   */
+  public readonly attachments: ReadonlyArray<IAiImageAttachment>;
 
-  public constructor(user: string, system: string) {
+  public constructor(user: string, system: string, attachments?: ReadonlyArray<IAiImageAttachment>) {
     this.system = system;
     this.user = user;
+    this.attachments = attachments ?? [];
   }
 
-  /** Combined single-string version (user + system joined) for copy/paste. */
+  /**
+   * Combined single-string version (user + system joined) for copy/paste.
+   * When attachments are present, includes a sentinel noting they aren't
+   * part of the copied text.
+   */
   public get combined(): string {
-    return `${this.user}\n\n${this.system}`;
+    const sentinel =
+      this.attachments.length > 0
+        ? `\n\n[${this.attachments.length} image attachment(s) — not included in copied text]`
+        : '';
+    return `${this.user}${sentinel}\n\n${this.system}`;
   }
 }
 
@@ -231,6 +298,12 @@ export type AiProviderId =
  */
 export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
 
+/**
+ * API format categories for image-generation provider routing.
+ * @public
+ */
+export type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images';
+
 // ============================================================================
 // Completion Response
 // ============================================================================
@@ -269,6 +342,159 @@ export interface IAiProviderDescriptor {
   readonly supportedTools: ReadonlyArray<AiServerToolType>;
   /** Whether this provider's API enforces CORS restrictions that prevent direct browser calls. */
   readonly corsRestricted: boolean;
+  /**
+   * Whether this provider's chat completions API accepts image input
+   * (i.e. supports vision prompts). When false, calls with
+   * `prompt.attachments` are rejected up front.
+   */
+  readonly acceptsImageInput: boolean;
+  /**
+   * Which image-generation API format this provider uses, or undefined if it
+   * does not support image generation.
+   *
+   * @remarks
+   * Image-model selection reuses the existing `image` {@link ModelSpecKey}.
+   * Providers with `imageApiFormat` set should declare a model in
+   * `defaultModel.image`, e.g. `{ base: 'gpt-4o', image: 'dall-e-3' }`.
+   */
+  readonly imageApiFormat?: AiImageApiFormat;
+}
+
+// ============================================================================
+// Image Generation
+// ============================================================================
+
+/**
+ * Options for image generation requests.
+ *
+ * @remarks
+ * Provider compatibility is documented per field. The library does not
+ * pre-validate against per-model constraints (e.g. `dall-e-3` rejects
+ * `count > 1`); provider 400 errors surface through the failure path.
+ *
+ * @public
+ */
+export interface IAiImageGenerationOptions {
+  /**
+   * Image dimensions. Used by openai-format providers (mapped to the
+   * provider's `size` field). Ignored by Imagen — use
+   * {@link IAiImageGenerationOptions.imagen} `aspectRatio` instead.
+   *
+   * Note: each model has its own accepted set; `dall-e-3` only accepts the
+   * values listed here.
+   */
+  readonly size?: '1024x1024' | '1024x1792' | '1792x1024' | 'auto';
+  /**
+   * Number of images to generate. Default 1.
+   *
+   * Note: `dall-e-3` rejects `count > 1`.
+   */
+  readonly count?: number;
+  /** Generation quality hint where supported. */
+  readonly quality?: 'standard' | 'high';
+  /** Random seed for reproducibility, where supported. */
+  readonly seed?: number;
+  /**
+   * Imagen-specific options. Ignored by other providers.
+   */
+  readonly imagen?: {
+    readonly negativePrompt?: string;
+    readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+  };
+}
+
+/**
+ * Parameters for an image-generation request.
+ * @public
+ */
+export interface IAiImageGenerationParams {
+  /** The text prompt describing the desired image. */
+  readonly prompt: string;
+  /** Optional generation options. */
+  readonly options?: IAiImageGenerationOptions;
+}
+
+/**
+ * A single generated image.
+ * @public
+ */
+export interface IAiGeneratedImage extends IAiImageData {
+  /**
+   * The prompt as rewritten by the provider, if any. OpenAI's image models
+   * commonly rewrite prompts; other providers do not.
+   */
+  readonly revisedPrompt?: string;
+}
+
+// ============================================================================
+// Model Catalog (listModels)
+// ============================================================================
+
+/**
+ * Capability vocabulary used to describe what a model can do. Used as both
+ * a filter and as a tag in {@link AiAssist.IAiModelInfo.capabilities}.
+ *
+ * @remarks
+ * Adding a new capability is cheap; adding the *first* one after consumers
+ * already exist forces churn. The initial vocabulary is intentionally broad
+ * even though only `image-generation` is fully exercised today.
+ *
+ * @public
+ */
+export type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation';
+
+/**
+ * Information about a single model returned by a provider's list endpoint,
+ * with capabilities already resolved (native + config rules).
+ * @public
+ */
+export interface IAiModelInfo {
+  /** Provider-native model identifier. */
+  readonly id: string;
+  /** Resolved capability set — union of native declarations and config rules. */
+  readonly capabilities: ReadonlySet<AiModelCapability>;
+  /** Friendly name for display, when known. */
+  readonly displayName?: string;
+}
+
+/**
+ * One rule in an {@link IAiModelCapabilityConfig}. Multiple rules can match
+ * a single model — their capability arrays are unioned.
+ * @public
+ */
+export interface IAiModelCapabilityRule {
+  /** RegExp tested against the model id (using `.test`). */
+  readonly idPattern: RegExp;
+  /** Capabilities this rule attributes to matching models. */
+  readonly capabilities: ReadonlyArray<AiModelCapability>;
+  /**
+   * Friendly display-name override for matching models. The function form
+   * lets one rule format many ids (e.g. `(id) => id.toUpperCase()`).
+   * If multiple matching rules supply `displayName`, the first match wins.
+   */
+  readonly displayName?: string | ((id: string) => string);
+}
+
+/**
+ * Configuration that maps model id patterns to capabilities. Used to
+ * augment (or, where the provider supplies no capability info, fully
+ * derive) the capability set for each listed model.
+ * @public
+ */
+export interface IAiModelCapabilityConfig {
+  /** Per-provider rules. Tried before {@link AiAssist.IAiModelCapabilityConfig.global}. */
+  readonly perProvider?: { readonly [P in AiProviderId]?: ReadonlyArray<IAiModelCapabilityRule> };
+  /** Cross-provider fallback rules. */
+  readonly global?: ReadonlyArray<IAiModelCapabilityRule>;
+}
+
+/**
+ * Result of an image-generation call.
+ * @public
+ */
+export interface IAiImageGenerationResponse {
+  /** The generated images, in provider-returned order. */
+  readonly images: ReadonlyArray<IAiGeneratedImage>;
 }
 
 // ============================================================================

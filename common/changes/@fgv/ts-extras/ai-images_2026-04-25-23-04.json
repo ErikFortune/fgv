@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add support for image generation to AI Assist",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

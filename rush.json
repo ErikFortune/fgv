@@ -533,6 +533,12 @@
       "tags": ["apps", "tests", "vite"]
     },
     {
+      "packageName": "@fgv/ai-image-gen-sample",
+      "projectFolder": "samples/ai-image-gen-sample",
+      "shouldPublish": false,
+      "tags": ["samples", "ai", "react", "ui"]
+    },
+    {
       "packageName": "@fgv/typedoc-compact-theme",
       "projectFolder": "plugins/typedoc-compact-theme",
       "shouldPublish": true,

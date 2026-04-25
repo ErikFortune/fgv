@@ -103,6 +103,25 @@ export interface IUseAiAssistResult {
     convert: (from: unknown) => Result<TEntity>,
     tools?: ReadonlyArray<AiAssist.AiServerToolConfig>
   ) => Promise<Result<IAiAssistResult<TEntity>>>;
+  /**
+   * Execute an image-generation action: calls the provider's image API and
+   * returns the generated images.
+   * @returns Success with the image generation response, or failure.
+   */
+  readonly generateImages: (
+    provider: AiAssist.AiProviderId,
+    params: AiAssist.IAiImageGenerationParams,
+    signal?: AbortSignal
+  ) => Promise<Result<AiAssist.IAiImageGenerationResponse>>;
+  /**
+   * List the models available from a provider, optionally filtered by capability.
+   * @returns Success with the resolved model list, or failure (no silent fallback).
+   */
+  readonly listModels: (
+    provider: AiAssist.AiProviderId,
+    capability?: AiAssist.AiModelCapability,
+    signal?: AbortSignal
+  ) => Promise<Result<ReadonlyArray<AiAssist.IAiModelInfo>>>;
 }
 
 // ============================================================================
@@ -316,7 +335,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
           }
         }
 
-        // Unreachable, but TypeScript needs it
+        /* c8 ignore next 2 - unreachable: every loop iteration returns; TypeScript needs the trailing return */
         return fail('AI generation failed');
       } finally {
         setIsWorking(false);
@@ -325,5 +344,113 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
     [settings, keyStore, logger]
   );
 
-  return { actions, isWorking, copyPrompt, generateDirect };
+  const generateImages = useCallback(
+    async (
+      provider: AiAssist.AiProviderId,
+      params: AiAssist.IAiImageGenerationParams,
+      signal?: AbortSignal
+    ): Promise<Result<AiAssist.IAiImageGenerationResponse>> => {
+      const providerConfig = settings?.providers.find((p) => p.provider === provider);
+      if (!providerConfig) {
+        return fail(`Provider "${provider}" not configured`);
+      }
+
+      const descriptorResult = AiAssist.getProviderDescriptor(provider);
+      if (descriptorResult.isFailure()) {
+        return fail(descriptorResult.message);
+      }
+      const descriptor = descriptorResult.value;
+
+      if (descriptor.imageApiFormat === undefined) {
+        return fail(`Provider "${provider}" does not support image generation`);
+      }
+
+      if (!providerConfig.secretName) {
+        return fail(`Provider "${provider}" has no secret name configured`);
+      }
+      if (!keyStore) {
+        return fail('No keystore available');
+      }
+
+      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      if (apiKeyResult.isFailure()) {
+        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+      }
+
+      setIsWorking(true);
+      try {
+        const requestParams: AiAssist.IProviderImageGenerationParams = {
+          descriptor,
+          apiKey: apiKeyResult.value,
+          params,
+          modelOverride: providerConfig.model,
+          logger,
+          signal
+        };
+        const useProxy: boolean =
+          !!settings?.proxyUrl && (settings.proxyAllProviders === true || descriptor.corsRestricted);
+        const result = useProxy
+          ? await AiAssist.callProxiedImageGeneration(settings!.proxyUrl!, requestParams)
+          : await AiAssist.callProviderImageGeneration(requestParams);
+        if (result.isFailure()) {
+          logger?.error(`AI image generation failed: ${result.message}`);
+        }
+        return result;
+      } finally {
+        setIsWorking(false);
+      }
+    },
+    [settings, keyStore, logger]
+  );
+
+  const listModels = useCallback(
+    async (
+      provider: AiAssist.AiProviderId,
+      capability?: AiAssist.AiModelCapability,
+      signal?: AbortSignal
+    ): Promise<Result<ReadonlyArray<AiAssist.IAiModelInfo>>> => {
+      const providerConfig = settings?.providers.find((p) => p.provider === provider);
+      if (!providerConfig) {
+        return fail(`Provider "${provider}" not configured`);
+      }
+
+      const descriptorResult = AiAssist.getProviderDescriptor(provider);
+      if (descriptorResult.isFailure()) {
+        return fail(descriptorResult.message);
+      }
+      const descriptor = descriptorResult.value;
+
+      if (!providerConfig.secretName) {
+        return fail(`Provider "${provider}" has no secret name configured`);
+      }
+      if (!keyStore) {
+        return fail('No keystore available');
+      }
+
+      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      if (apiKeyResult.isFailure()) {
+        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+      }
+
+      const requestParams: AiAssist.IProviderListModelsParams = {
+        descriptor,
+        apiKey: apiKeyResult.value,
+        ...(capability !== undefined ? { capability } : {}),
+        logger,
+        signal
+      };
+      const useProxy: boolean =
+        !!settings?.proxyUrl && (settings.proxyAllProviders === true || descriptor.corsRestricted);
+      const result = useProxy
+        ? await AiAssist.callProxiedListModels(settings!.proxyUrl!, requestParams)
+        : await AiAssist.callProviderListModels(requestParams);
+      if (result.isFailure()) {
+        logger?.error(`AI list-models failed: ${result.message}`);
+      }
+      return result;
+    },
+    [settings, keyStore, logger]
+  );
+
+  return { actions, isWorking, copyPrompt, generateDirect, generateImages, listModels };
 }

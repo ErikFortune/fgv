@@ -50,8 +50,58 @@ describe('AiAssist.registry', () => {
         expect(desc.needsSecret).toBe(true);
         expect(desc.apiFormat).toBe('openai');
         expect(desc.baseUrl).toBeTruthy();
-        expect(desc.defaultModel).toEqual({ base: 'grok-4-1-fast', tools: 'grok-4-1-fast-reasoning' });
+        expect(desc.defaultModel).toEqual({
+          base: 'grok-4-1-fast',
+          tools: 'grok-4-1-fast-reasoning',
+          image: 'grok-2-image-1212'
+        });
         expect(desc.supportedTools).toContain('web_search');
+        expect(desc.imageApiFormat).toBe('xai-images');
+      });
+    });
+
+    test('returns descriptor with image generation support for openai', () => {
+      expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
+        expect(desc.imageApiFormat).toBe('openai-images');
+        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('dall-e-3');
+      });
+    });
+
+    test('returns descriptor with image generation support for google-gemini', () => {
+      expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((desc) => {
+        expect(desc.imageApiFormat).toBe('gemini-imagen');
+        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('imagen-3.0-generate-002');
+      });
+    });
+
+    test('vision-capable providers declare acceptsImageInput=true', () => {
+      for (const id of ['openai', 'anthropic', 'google-gemini', 'xai-grok'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(desc.acceptsImageInput).toBe(true);
+        });
+      }
+    });
+
+    test('non-vision providers declare acceptsImageInput=false', () => {
+      for (const id of ['copy-paste', 'groq', 'mistral'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(desc.acceptsImageInput).toBe(false);
+        });
+      }
+    });
+
+    test('chat-only providers leave imageApiFormat undefined', () => {
+      expect(AiAssist.getProviderDescriptor('anthropic')).toSucceedAndSatisfy((desc) => {
+        expect(desc.imageApiFormat).toBeUndefined();
+      });
+      expect(AiAssist.getProviderDescriptor('groq')).toSucceedAndSatisfy((desc) => {
+        expect(desc.imageApiFormat).toBeUndefined();
+      });
+      expect(AiAssist.getProviderDescriptor('mistral')).toSucceedAndSatisfy((desc) => {
+        expect(desc.imageApiFormat).toBeUndefined();
+      });
+      expect(AiAssist.getProviderDescriptor('copy-paste')).toSucceedAndSatisfy((desc) => {
+        expect(desc.imageApiFormat).toBeUndefined();
       });
     });
 

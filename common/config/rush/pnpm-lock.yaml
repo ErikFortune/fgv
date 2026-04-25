@@ -1583,6 +1583,85 @@ importers:
         specifier: 2.11.27
         version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
 
+  ../../samples/ai-image-gen-sample:
+    dependencies:
+      '@fgv/ts-app-shell':
+        specifier: workspace:*
+        version: link:../../libraries/ts-app-shell
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-extras
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils
+      react:
+        specifier: ~19.2.3
+        version: 19.2.4
+      react-dom:
+        specifier: ~19.2.3
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@babel/core':
+        specifier: ~7.29.0
+        version: 7.29.0
+      '@babel/preset-env':
+        specifier: ~7.29.0
+        version: 7.29.2(@babel/core@7.29.0)
+      '@babel/preset-react':
+        specifier: ~7.28.5
+        version: 7.28.5(@babel/core@7.29.0)
+      '@babel/preset-typescript':
+        specifier: ~7.28.5
+        version: 7.28.5(@babel/core@7.29.0)
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.19.37
+      '@types/react':
+        specifier: ~19.2.8
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ~19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      autoprefixer:
+        specifier: ~10.4.23
+        version: 10.4.27(postcss@8.5.8)
+      babel-loader:
+        specifier: ~10.1.0
+        version: 10.1.1(@babel/core@7.29.0)(webpack@5.105.4)
+      css-loader:
+        specifier: ~7.1.2
+        version: 7.1.4(webpack@5.105.4)
+      html-webpack-plugin:
+        specifier: ~5.6.5
+        version: 5.6.6(webpack@5.105.4)
+      postcss:
+        specifier: ~8.5.6
+        version: 8.5.8
+      postcss-loader:
+        specifier: ~8.2.0
+        version: 8.2.1(postcss@8.5.8)(typescript@5.9.3)(webpack@5.105.4)
+      rimraf:
+        specifier: ^6.1.2
+        version: 6.1.3
+      style-loader:
+        specifier: ~4.0.0
+        version: 4.0.0(webpack@5.105.4)
+      tailwindcss:
+        specifier: ^3.4.0
+        version: 3.4.19(yaml@2.8.3)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      webpack:
+        specifier: ~5.105.4
+        version: 5.105.4(webpack-cli@6.0.1)
+      webpack-cli:
+        specifier: ~6.0.1
+        version: 6.0.1(webpack-dev-server@5.2.3)(webpack@5.105.4)
+      webpack-dev-server:
+        specifier: ~5.2.2
+        version: 5.2.3(webpack-cli@6.0.1)(webpack@5.105.4)
+
   ../../tools/repo-template:
     dependencies:
       commander:
