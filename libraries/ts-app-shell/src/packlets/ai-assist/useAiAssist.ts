@@ -103,6 +103,16 @@ export interface IUseAiAssistResult {
     convert: (from: unknown) => Result<TEntity>,
     tools?: ReadonlyArray<AiAssist.AiServerToolConfig>
   ) => Promise<Result<IAiAssistResult<TEntity>>>;
+  /**
+   * Execute an image-generation action: calls the provider's image API and
+   * returns the generated images.
+   * @returns Success with the image generation response, or failure.
+   */
+  readonly generateImages: (
+    provider: AiAssist.AiProviderId,
+    params: AiAssist.IAiImageGenerationParams,
+    signal?: AbortSignal
+  ) => Promise<Result<AiAssist.IAiImageGenerationResponse>>;
 }
 
 // ============================================================================
@@ -325,5 +335,64 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
     [settings, keyStore, logger]
   );
 
-  return { actions, isWorking, copyPrompt, generateDirect };
+  const generateImages = useCallback(
+    async (
+      provider: AiAssist.AiProviderId,
+      params: AiAssist.IAiImageGenerationParams,
+      signal?: AbortSignal
+    ): Promise<Result<AiAssist.IAiImageGenerationResponse>> => {
+      const providerConfig = settings?.providers.find((p) => p.provider === provider);
+      if (!providerConfig) {
+        return fail(`Provider "${provider}" not configured`);
+      }
+
+      const descriptorResult = AiAssist.getProviderDescriptor(provider);
+      if (descriptorResult.isFailure()) {
+        return fail(descriptorResult.message);
+      }
+      const descriptor = descriptorResult.value;
+
+      if (descriptor.imageApiFormat === undefined) {
+        return fail(`Provider "${provider}" does not support image generation`);
+      }
+
+      if (!providerConfig.secretName) {
+        return fail(`Provider "${provider}" has no secret name configured`);
+      }
+      if (!keyStore) {
+        return fail('No keystore available');
+      }
+
+      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      if (apiKeyResult.isFailure()) {
+        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+      }
+
+      setIsWorking(true);
+      try {
+        const requestParams: AiAssist.IProviderImageGenerationParams = {
+          descriptor,
+          apiKey: apiKeyResult.value,
+          params,
+          modelOverride: providerConfig.model,
+          logger,
+          signal
+        };
+        const useProxy: boolean =
+          !!settings?.proxyUrl && (settings.proxyAllProviders === true || descriptor.corsRestricted);
+        const result = useProxy
+          ? await AiAssist.callProxiedImageGeneration(settings!.proxyUrl!, requestParams)
+          : await AiAssist.callProviderImageGeneration(requestParams);
+        if (result.isFailure()) {
+          logger?.error(`AI image generation failed: ${result.message}`);
+        }
+        return result;
+      } finally {
+        setIsWorking(false);
+      }
+    },
+    [settings, keyStore, logger]
+  );
+
+  return { actions, isWorking, copyPrompt, generateDirect, generateImages };
 }

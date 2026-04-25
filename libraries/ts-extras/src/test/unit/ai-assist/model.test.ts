@@ -35,6 +35,18 @@ describe('AiPrompt', () => {
   });
 });
 
+describe('toDataUrl', () => {
+  test('formats image data as a data URL', () => {
+    const image: AiAssist.IAiImageData = { mimeType: 'image/png', base64: 'AAAA' };
+    expect(AiAssist.toDataUrl(image)).toBe('data:image/png;base64,AAAA');
+  });
+
+  test('preserves the supplied MIME type', () => {
+    const image: AiAssist.IAiImageData = { mimeType: 'image/jpeg', base64: '/9j/4AAQ' };
+    expect(AiAssist.toDataUrl(image)).toBe('data:image/jpeg;base64,/9j/4AAQ');
+  });
+});
+
 describe('resolveModel', () => {
   test('returns a string spec directly regardless of context', () => {
     expect(AiAssist.resolveModel('grok-4-1-fast')).toBe('grok-4-1-fast');

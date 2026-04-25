@@ -31,23 +31,33 @@ declare namespace AiAssist {
         IAiCompletionResponse,
         IChatMessage,
         AiApiFormat,
+        AiImageApiFormat,
         IAiProviderDescriptor,
         IAiAssistProviderConfig,
         IAiAssistSettings,
         DEFAULT_AI_ASSIST,
         IAiAssistKeyStore,
+        IAiImageData,
+        IAiImageGenerationOptions,
+        IAiImageGenerationParams,
+        IAiGeneratedImage,
+        IAiImageGenerationResponse,
         ModelSpec,
         ModelSpecKey,
         IModelSpecMap,
         allModelSpecKeys,
         MODEL_SPEC_BASE_KEY,
         resolveModel,
+        toDataUrl,
         allProviderIds,
         getProviderDescriptors,
         getProviderDescriptor,
         callProviderCompletion,
         callProxiedCompletion,
+        callProviderImageGeneration,
+        callProxiedImageGeneration,
         IProviderCompletionParams,
+        IProviderImageGenerationParams,
         aiProviderId,
         aiServerToolType,
         aiWebSearchToolConfig,
@@ -71,6 +81,9 @@ const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
 //
 // @public
 const aiAssistSettings: Converter<IAiAssistSettings>;
+
+// @public
+type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images';
 
 // @public
 class AiPrompt {
@@ -131,11 +144,22 @@ const base64String: Converter<string>;
 // @public
 function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+//
+// @public
+function callProviderImageGeneration(params: IProviderImageGenerationParams): Promise<Result<IAiImageGenerationResponse>>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderCompletionParams"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderCompletion"
 //
 // @public
 function callProxiedCompletion(proxyUrl: string, params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageGenerationResponse"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderImageGeneration"
+//
+// @public
+function callProxiedImageGeneration(proxyUrl: string, params: IProviderImageGenerationParams): Promise<Result<IAiImageGenerationResponse>>;
 
 declare namespace Constants {
     export {
@@ -467,6 +491,43 @@ interface IAiCompletionResponse {
 }
 
 // @public
+interface IAiGeneratedImage extends IAiImageData {
+    readonly revisedPrompt?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "toDataUrl"
+//
+// @public
+interface IAiImageData {
+    readonly base64: string;
+    readonly mimeType: string;
+}
+
+// @public
+interface IAiImageGenerationOptions {
+    readonly count?: number;
+    readonly imagen?: {
+        readonly negativePrompt?: string;
+        readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+    };
+    readonly quality?: 'standard' | 'high';
+    readonly seed?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageGenerationOptions"
+    readonly size?: '1024x1024' | '1024x1792' | '1792x1024' | 'auto';
+}
+
+// @public
+interface IAiImageGenerationParams {
+    readonly options?: IAiImageGenerationOptions;
+    readonly prompt: string;
+}
+
+// @public
+interface IAiImageGenerationResponse {
+    readonly images: ReadonlyArray<IAiGeneratedImage>;
+}
+
+// @public
 interface IAiProviderDescriptor {
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
@@ -474,6 +535,8 @@ interface IAiProviderDescriptor {
     readonly corsRestricted: boolean;
     readonly defaultModel: ModelSpec;
     readonly id: AiProviderId;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
+    readonly imageApiFormat?: AiImageApiFormat;
     readonly label: string;
     readonly needsSecret: boolean;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
@@ -685,8 +748,19 @@ interface IProviderCompletionParams {
     readonly logger?: Logging.ILogger;
     readonly modelOverride?: ModelSpec;
     readonly prompt: AiPrompt;
+    readonly signal?: AbortSignal;
     readonly temperature?: number;
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
+}
+
+// @public
+interface IProviderImageGenerationParams {
+    readonly apiKey: string;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly logger?: Logging.ILogger;
+    readonly modelOverride?: ModelSpec;
+    readonly params: IAiImageGenerationParams;
+    readonly signal?: AbortSignal;
 }
 
 // @public
@@ -1048,6 +1122,11 @@ function templateString(defaultContext?: unknown): Conversion.StringConverter<st
 
 // @public
 function toBase64(bytes: Uint8Array): string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageData"
+//
+// @public
+function toDataUrl(image: IAiImageData): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

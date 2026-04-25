@@ -38,6 +38,10 @@ import {
   AiPrompt,
   type AiServerToolConfig,
   type IAiCompletionResponse,
+  type IAiGeneratedImage,
+  type IAiImageGenerationOptions,
+  type IAiImageGenerationParams,
+  type IAiImageGenerationResponse,
   type IAiProviderDescriptor,
   type IChatMessage,
   type ModelSpec,
@@ -83,6 +87,8 @@ export interface IProviderCompletionParams {
   readonly logger?: Logging.ILogger;
   /** Server-side tools to include in the request. Overrides settings-level tool config when provided. */
   readonly tools?: ReadonlyArray<AiServerToolConfig>;
+  /** Optional abort signal for cancelling the in-flight request. */
+  readonly signal?: AbortSignal;
 }
 
 // ============================================================================
@@ -117,7 +123,8 @@ async function fetchJson(
   url: string,
   headers: Record<string, string>,
   body: unknown,
-  logger?: Logging.ILogger
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
 ): Promise<Result<JsonObject>> {
   /* c8 ignore next 1 - optional logger */
   logger?.detail(`AI API request: POST ${url}`);
@@ -130,7 +137,8 @@ async function fetchJson(
         'Content-Type': 'application/json',
         ...headers
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal
     });
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : String(err);
@@ -304,7 +312,8 @@ async function callOpenAiCompletion(
   prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
-  logger?: Logging.ILogger
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt, additionalMessages);
@@ -316,7 +325,7 @@ async function callOpenAiCompletion(
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI completion: model=${config.model}`);
-  const jsonResult = await fetchJson(url, headers, body, logger);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -364,7 +373,8 @@ async function callOpenAiResponsesCompletion(
   tools: ReadonlyArray<AiServerToolConfig>,
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
-  logger?: Logging.ILogger
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt, additionalMessages);
@@ -381,7 +391,7 @@ async function callOpenAiResponsesCompletion(
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI Responses API: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
-  const jsonResult = await fetchJson(url, headers, body, logger);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -437,7 +447,8 @@ async function callAnthropicCompletion(
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
-  tools?: ReadonlyArray<AiServerToolConfig>
+  tools?: ReadonlyArray<AiServerToolConfig>,
+  signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
 
@@ -475,7 +486,7 @@ async function callAnthropicCompletion(
     'anthropic-dangerous-direct-browser-access': 'true'
   };
 
-  const jsonResult = await fetchJson(url, headers, body, logger);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -522,7 +533,8 @@ async function callGeminiCompletion(
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
-  tools?: ReadonlyArray<AiServerToolConfig>
+  tools?: ReadonlyArray<AiServerToolConfig>,
+  signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
@@ -560,7 +572,7 @@ async function callGeminiCompletion(
     'x-goog-api-key': config.apiKey
   };
 
-  const jsonResult = await fetchJson(url, headers, body, logger);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -608,7 +620,8 @@ export async function callProviderCompletion(
     temperature = 0.7,
     modelOverride,
     logger,
-    tools
+    tools,
+    signal
   } = params;
 
   if (!descriptor.baseUrl) {
@@ -636,17 +649,273 @@ export async function callProviderCompletion(
   switch (descriptor.apiFormat) {
     case 'openai':
       if (hasTools) {
-        return callOpenAiResponsesCompletion(config, prompt, tools, additionalMessages, temperature, logger);
+        return callOpenAiResponsesCompletion(
+          config,
+          prompt,
+          tools,
+          additionalMessages,
+          temperature,
+          logger,
+          signal
+        );
       }
-      return callOpenAiCompletion(config, prompt, additionalMessages, temperature, logger);
+      return callOpenAiCompletion(config, prompt, additionalMessages, temperature, logger, signal);
     case 'anthropic':
-      return callAnthropicCompletion(config, prompt, additionalMessages, temperature, logger, tools);
+      return callAnthropicCompletion(config, prompt, additionalMessages, temperature, logger, tools, signal);
     case 'gemini':
-      return callGeminiCompletion(config, prompt, additionalMessages, temperature, logger, tools);
+      return callGeminiCompletion(config, prompt, additionalMessages, temperature, logger, tools, signal);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;
       return fail(`unsupported API format: ${String(_exhaustive)}`);
+    }
+  }
+}
+
+// ============================================================================
+// Image generation — request types
+// ============================================================================
+
+/**
+ * Parameters for an image-generation request.
+ * @public
+ */
+export interface IProviderImageGenerationParams {
+  /** The provider descriptor */
+  readonly descriptor: IAiProviderDescriptor;
+  /** API key for authentication */
+  readonly apiKey: string;
+  /** The image-generation request */
+  readonly params: IAiImageGenerationParams;
+  /** Optional model override — string or context-aware map (uses descriptor.defaultModel.image otherwise) */
+  readonly modelOverride?: ModelSpec;
+  /** Optional logger for request/response observability. */
+  readonly logger?: Logging.ILogger;
+  /** Optional abort signal for cancelling the in-flight request. */
+  readonly signal?: AbortSignal;
+}
+
+// ============================================================================
+// Image generation — response validators
+// ============================================================================
+
+// ---- OpenAI / xAI images format ----
+
+/** @internal */
+interface IOpenAiImageItem {
+  b64_json: string;
+  revised_prompt?: string;
+}
+/** @internal */
+interface IOpenAiImageResponse {
+  data: IOpenAiImageItem[];
+}
+
+const openAiImageItem: Validator<IOpenAiImageItem> = Validators.object<IOpenAiImageItem>({
+  b64_json: Validators.string,
+  revised_prompt: Validators.string.optional()
+});
+const openAiImageResponse: Validator<IOpenAiImageResponse> = Validators.object<IOpenAiImageResponse>({
+  data: Validators.arrayOf(openAiImageItem).withConstraint((arr) => arr.length > 0)
+});
+
+// ---- Gemini Imagen format ----
+
+/** @internal */
+interface IImagenPrediction {
+  bytesBase64Encoded: string;
+  mimeType?: string;
+}
+/** @internal */
+interface IImagenResponse {
+  predictions: IImagenPrediction[];
+}
+
+const imagenPrediction: Validator<IImagenPrediction> = Validators.object<IImagenPrediction>({
+  bytesBase64Encoded: Validators.string,
+  mimeType: Validators.string.optional()
+});
+const imagenResponse: Validator<IImagenResponse> = Validators.object<IImagenResponse>({
+  predictions: Validators.arrayOf(imagenPrediction).withConstraint((arr) => arr.length > 0)
+});
+
+// ---- Proxied image generation response ----
+
+const proxiedGeneratedImage: Validator<IAiGeneratedImage> = Validators.object<IAiGeneratedImage>({
+  mimeType: Validators.string,
+  base64: Validators.string,
+  revisedPrompt: Validators.string.optional()
+});
+const proxiedImageGenerationResponse: Validator<IAiImageGenerationResponse> =
+  Validators.object<IAiImageGenerationResponse>({
+    images: Validators.arrayOf(proxiedGeneratedImage).withConstraint((arr) => arr.length > 0)
+  });
+
+// ============================================================================
+// Image generation — adapters
+// ============================================================================
+
+/**
+ * Calls the OpenAI Images API. Used for both `openai-images` and `xai-images`
+ * formats — the request shape is the same; the only difference is whether the
+ * `size` field is honored (OpenAI: yes, xAI: ignored at the provider).
+ *
+ * @internal
+ */
+async function callOpenAiImageGeneration(
+  config: IAiApiConfig,
+  request: IAiImageGenerationParams,
+  defaultMimeType: string,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<IAiImageGenerationResponse>> {
+  const url = `${config.baseUrl}/images/generations`;
+  const opts: IAiImageGenerationOptions = request.options ?? {};
+  const body: Record<string, unknown> = {
+    model: config.model,
+    prompt: request.prompt,
+    n: opts.count ?? 1,
+    response_format: 'b64_json'
+  };
+  if (opts.size !== undefined) {
+    body.size = opts.size;
+  }
+  if (opts.quality !== undefined) {
+    body.quality = opts.quality;
+  }
+  if (opts.seed !== undefined) {
+    body.seed = opts.seed;
+  }
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${config.apiKey}`
+  };
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`Image generation: model=${config.model}, n=${body.n}`);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return openAiImageResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `OpenAI images API response: ${msg}`)
+    .onSuccess((response) => {
+      const images: IAiGeneratedImage[] = response.data.map((item) => ({
+        mimeType: defaultMimeType,
+        base64: item.b64_json,
+        ...(item.revised_prompt !== undefined ? { revisedPrompt: item.revised_prompt } : {})
+      }));
+      return succeed({ images });
+    });
+}
+
+/**
+ * Calls the Gemini Imagen `:predict` endpoint.
+ * @internal
+ */
+async function callImagenGeneration(
+  config: IAiApiConfig,
+  request: IAiImageGenerationParams,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<IAiImageGenerationResponse>> {
+  const url = `${config.baseUrl}/models/${config.model}:predict`;
+  const opts: IAiImageGenerationOptions = request.options ?? {};
+  const parameters: Record<string, unknown> = {
+    sampleCount: opts.count ?? 1
+  };
+  if (opts.imagen?.aspectRatio !== undefined) {
+    parameters.aspectRatio = opts.imagen.aspectRatio;
+  }
+  if (opts.imagen?.negativePrompt !== undefined) {
+    parameters.negativePrompt = opts.imagen.negativePrompt;
+  }
+  if (opts.seed !== undefined) {
+    parameters.seed = opts.seed;
+  }
+
+  const body: Record<string, unknown> = {
+    instances: [{ prompt: request.prompt }],
+    parameters
+  };
+
+  const headers: Record<string, string> = {
+    'x-goog-api-key': config.apiKey
+  };
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`Imagen generation: model=${config.model}, n=${parameters.sampleCount}`);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return imagenResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `Imagen API response: ${msg}`)
+    .onSuccess((response) => {
+      const images: IAiGeneratedImage[] = response.predictions.map((p) => ({
+        mimeType: p.mimeType ?? 'image/png',
+        base64: p.bytesBase64Encoded
+      }));
+      return succeed({ images });
+    });
+}
+
+// ============================================================================
+// Image generation — dispatcher
+// ============================================================================
+
+/**
+ * Calls the appropriate image-generation API for a given provider.
+ *
+ * Routes based on `descriptor.imageApiFormat`:
+ * - `'openai-images'` for OpenAI (DALL-E, gpt-image-1)
+ * - `'xai-images'` for xAI Grok image models
+ * - `'gemini-imagen'` for Google Imagen
+ *
+ * Image-model selection reuses the existing `'image'` {@link ModelSpecKey}.
+ *
+ * @param params - Request parameters including descriptor, API key, and prompt
+ * @returns The generated images, or a failure
+ * @public
+ */
+export async function callProviderImageGeneration(
+  params: IProviderImageGenerationParams
+): Promise<Result<IAiImageGenerationResponse>> {
+  const { descriptor, apiKey, params: request, modelOverride, logger, signal } = params;
+
+  if (descriptor.imageApiFormat === undefined) {
+    return fail(`provider "${descriptor.id}" does not support image generation`);
+  }
+  if (!descriptor.baseUrl) {
+    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  }
+
+  const config: IAiApiConfig = {
+    baseUrl: descriptor.baseUrl,
+    apiKey,
+    model: resolveModel(modelOverride ?? descriptor.defaultModel, 'image')
+  };
+  /* c8 ignore next 6 - optional logger diagnostic output */
+  if (logger) {
+    logger.info(
+      `AI image generation: provider=${descriptor.id}, format=${descriptor.imageApiFormat}, ` +
+        `model=${config.model}`
+    );
+  }
+
+  switch (descriptor.imageApiFormat) {
+    case 'openai-images':
+      return callOpenAiImageGeneration(config, request, 'image/png', logger, signal);
+    case 'xai-images':
+      return callOpenAiImageGeneration(config, request, 'image/jpeg', logger, signal);
+    case 'gemini-imagen':
+      return callImagenGeneration(config, request, logger, signal);
+    /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
+    default: {
+      const _exhaustive: never = descriptor.imageApiFormat;
+      return fail(`unsupported image API format: ${String(_exhaustive)}`);
     }
   }
 }
@@ -672,8 +941,17 @@ export async function callProxiedCompletion(
   proxyUrl: string,
   params: IProviderCompletionParams
 ): Promise<Result<IAiCompletionResponse>> {
-  const { descriptor, apiKey, prompt, additionalMessages, temperature, modelOverride, logger, tools } =
-    params;
+  const {
+    descriptor,
+    apiKey,
+    prompt,
+    additionalMessages,
+    temperature,
+    modelOverride,
+    logger,
+    tools,
+    signal
+  } = params;
 
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
@@ -695,7 +973,7 @@ export async function callProxiedCompletion(
   logger?.info(`AI proxy request: provider=${descriptor.id}, proxy=${proxyUrl}`);
 
   const url = `${proxyUrl}/api/ai/completion`;
-  const jsonResult = await fetchJson(url, {}, body, logger);
+  const jsonResult = await fetchJson(url, {}, body, logger, signal);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -714,4 +992,61 @@ export async function callProxiedCompletion(
     content: response.content,
     truncated: response.truncated === true
   });
+}
+
+// ============================================================================
+// Proxied image generation
+// ============================================================================
+
+/**
+ * Calls the image-generation endpoint on a proxy server instead of calling
+ * the provider API directly from the browser.
+ *
+ * @remarks
+ * The proxy contract:
+ * - Endpoint: `POST ${proxyUrl}/api/ai/image-generation`
+ * - Request body: `{providerId, apiKey, params, modelOverride?}`
+ * - Success response body: an {@link IAiImageGenerationResponse}
+ * - Error response body: `{error: string}` (surfaced as `proxy: ${error}`)
+ *
+ * The proxy server is responsible for descriptor lookup, model resolution,
+ * provider dispatch, and response normalization.
+ *
+ * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`)
+ * @param params - Same parameters as {@link callProviderImageGeneration}
+ * @returns The generated images, or a failure
+ * @public
+ */
+export async function callProxiedImageGeneration(
+  proxyUrl: string,
+  params: IProviderImageGenerationParams
+): Promise<Result<IAiImageGenerationResponse>> {
+  const { descriptor, apiKey, params: request, modelOverride, logger, signal } = params;
+
+  const body: Record<string, unknown> = {
+    providerId: descriptor.id,
+    apiKey,
+    params: request
+  };
+  if (modelOverride !== undefined) {
+    body.modelOverride = modelOverride;
+  }
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`AI image proxy request: provider=${descriptor.id}, proxy=${proxyUrl}`);
+
+  const url = `${proxyUrl}/api/ai/image-generation`;
+  const jsonResult = await fetchJson(url, {}, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+
+  const response = jsonResult.value as Record<string, unknown>;
+  if (typeof response.error === 'string') {
+    return fail(`proxy: ${response.error}`);
+  }
+
+  return proxiedImageGenerationResponse
+    .validate(response)
+    .withErrorFormat((msg) => `proxy returned invalid response: ${msg}`);
 }

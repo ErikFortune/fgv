@@ -13,22 +13,36 @@ export {
   type IAiCompletionResponse,
   type IChatMessage,
   type AiApiFormat,
+  type AiImageApiFormat,
   type IAiProviderDescriptor,
   type IAiAssistProviderConfig,
   type IAiAssistSettings,
   DEFAULT_AI_ASSIST,
   type IAiAssistKeyStore,
+  type IAiImageData,
+  type IAiImageGenerationOptions,
+  type IAiImageGenerationParams,
+  type IAiGeneratedImage,
+  type IAiImageGenerationResponse,
   type ModelSpec,
   type ModelSpecKey,
   type IModelSpecMap,
   allModelSpecKeys,
   MODEL_SPEC_BASE_KEY,
-  resolveModel
+  resolveModel,
+  toDataUrl
 } from './model';
 
 export { allProviderIds, getProviderDescriptors, getProviderDescriptor } from './registry';
 
-export { callProviderCompletion, callProxiedCompletion, type IProviderCompletionParams } from './apiClient';
+export {
+  callProviderCompletion,
+  callProxiedCompletion,
+  callProviderImageGeneration,
+  callProxiedImageGeneration,
+  type IProviderCompletionParams,
+  type IProviderImageGenerationParams
+} from './apiClient';
 
 export {
   aiProviderId,

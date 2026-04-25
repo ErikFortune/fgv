@@ -65,9 +65,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: 'gemini-2.5-flash',
+    defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-3.0-generate-002' },
     supportedTools: ['web_search'],
-    corsRestricted: false
+    corsRestricted: false,
+    imageApiFormat: 'gemini-imagen'
   },
   {
     id: 'groq',
@@ -98,9 +99,10 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o',
+    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
     supportedTools: ['web_search'],
-    corsRestricted: false
+    corsRestricted: false,
+    imageApiFormat: 'openai-images'
   },
   {
     id: 'xai-grok',
@@ -109,9 +111,14 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.x.ai/v1',
-    defaultModel: { base: 'grok-4-1-fast', tools: 'grok-4-1-fast-reasoning' },
+    defaultModel: {
+      base: 'grok-4-1-fast',
+      tools: 'grok-4-1-fast-reasoning',
+      image: 'grok-2-image-1212'
+    },
     supportedTools: ['web_search'],
-    corsRestricted: true
+    corsRestricted: true,
+    imageApiFormat: 'xai-images'
   }
 ];
 

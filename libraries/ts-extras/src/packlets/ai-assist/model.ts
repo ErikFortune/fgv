@@ -26,6 +26,37 @@
 import { type Result } from '@fgv/ts-utils';
 
 // ============================================================================
+// Image Data
+// ============================================================================
+
+/**
+ * Universal image representation used for both image input (vision prompts)
+ * and image output (generation responses).
+ *
+ * @remarks
+ * The base64 string is raw — no `data:` URL prefix. Use {@link toDataUrl} to
+ * format it for browser-display contexts.
+ *
+ * @public
+ */
+export interface IAiImageData {
+  /** MIME type, e.g. `'image/png'`, `'image/jpeg'`, `'image/webp'`. */
+  readonly mimeType: string;
+  /** Base64-encoded image bytes (no `data:` prefix). */
+  readonly base64: string;
+}
+
+/**
+ * Formats an {@link IAiImageData} as a `data:` URL suitable for browser display.
+ * @param image - The image to format
+ * @returns A `data:<mime>;base64,<data>` URL string
+ * @public
+ */
+export function toDataUrl(image: IAiImageData): string {
+  return `data:${image.mimeType};base64,${image.base64}`;
+}
+
+// ============================================================================
 // AiPrompt
 // ============================================================================
 
@@ -231,6 +262,12 @@ export type AiProviderId =
  */
 export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
 
+/**
+ * API format categories for image-generation provider routing.
+ * @public
+ */
+export type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images';
+
 // ============================================================================
 // Completion Response
 // ============================================================================
@@ -269,6 +306,91 @@ export interface IAiProviderDescriptor {
   readonly supportedTools: ReadonlyArray<AiServerToolType>;
   /** Whether this provider's API enforces CORS restrictions that prevent direct browser calls. */
   readonly corsRestricted: boolean;
+  /**
+   * Which image-generation API format this provider uses, or undefined if it
+   * does not support image generation.
+   *
+   * @remarks
+   * Image-model selection reuses the existing `image` {@link ModelSpecKey}.
+   * Providers with `imageApiFormat` set should declare a model in
+   * `defaultModel.image`, e.g. `{ base: 'gpt-4o', image: 'dall-e-3' }`.
+   */
+  readonly imageApiFormat?: AiImageApiFormat;
+}
+
+// ============================================================================
+// Image Generation
+// ============================================================================
+
+/**
+ * Options for image generation requests.
+ *
+ * @remarks
+ * Provider compatibility is documented per field. The library does not
+ * pre-validate against per-model constraints (e.g. `dall-e-3` rejects
+ * `count > 1`); provider 400 errors surface through the failure path.
+ *
+ * @public
+ */
+export interface IAiImageGenerationOptions {
+  /**
+   * Image dimensions. Used by openai-format providers (mapped to the
+   * provider's `size` field). Ignored by Imagen — use
+   * {@link IAiImageGenerationOptions.imagen} `aspectRatio` instead.
+   *
+   * Note: each model has its own accepted set; `dall-e-3` only accepts the
+   * values listed here.
+   */
+  readonly size?: '1024x1024' | '1024x1792' | '1792x1024' | 'auto';
+  /**
+   * Number of images to generate. Default 1.
+   *
+   * Note: `dall-e-3` rejects `count > 1`.
+   */
+  readonly count?: number;
+  /** Generation quality hint where supported. */
+  readonly quality?: 'standard' | 'high';
+  /** Random seed for reproducibility, where supported. */
+  readonly seed?: number;
+  /**
+   * Imagen-specific options. Ignored by other providers.
+   */
+  readonly imagen?: {
+    readonly negativePrompt?: string;
+    readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+  };
+}
+
+/**
+ * Parameters for an image-generation request.
+ * @public
+ */
+export interface IAiImageGenerationParams {
+  /** The text prompt describing the desired image. */
+  readonly prompt: string;
+  /** Optional generation options. */
+  readonly options?: IAiImageGenerationOptions;
+}
+
+/**
+ * A single generated image.
+ * @public
+ */
+export interface IAiGeneratedImage extends IAiImageData {
+  /**
+   * The prompt as rewritten by the provider, if any. OpenAI's image models
+   * commonly rewrite prompts; other providers do not.
+   */
+  readonly revisedPrompt?: string;
+}
+
+/**
+ * Result of an image-generation call.
+ * @public
+ */
+export interface IAiImageGenerationResponse {
+  /** The generated images, in provider-returned order. */
+  readonly images: ReadonlyArray<IAiGeneratedImage>;
 }
 
 // ============================================================================

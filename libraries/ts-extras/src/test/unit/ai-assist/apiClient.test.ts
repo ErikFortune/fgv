@@ -268,6 +268,54 @@ describe('callProviderCompletion', () => {
   });
 
   // ==========================================================================
+  // AbortSignal threading — one assertion per format proves wire-through.
+  // ==========================================================================
+
+  describe('abort signal', () => {
+    test.each([
+      ['openai (chat completions)', makeDescriptor({ apiFormat: 'openai' }), () => openAiResponse('ok')],
+      [
+        'openai (Responses API with tools)',
+        makeDescriptor({ apiFormat: 'openai' }),
+        () => responsesApiResponse('ok')
+      ],
+      ['anthropic', makeDescriptor({ apiFormat: 'anthropic' }), () => anthropicResponse('ok')],
+      ['gemini', makeDescriptor({ apiFormat: 'gemini' }), () => geminiResponse('ok')]
+    ])('forwards signal to fetch for %s', async (label, descriptor, makeBody) => {
+      mockFetchResponse(makeBody());
+      const controller = new AbortController();
+      const isResponsesApi = label.includes('Responses API');
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        signal: controller.signal,
+        tools: isResponsesApi ? [{ type: 'web_search' }] : undefined
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[1].signal).toBe(controller.signal);
+    });
+
+    test('surfaces AbortError as a failure', async () => {
+      const abortError = new Error('The operation was aborted');
+      abortError.name = 'AbortError';
+      mockFetchError(abortError);
+      const descriptor = makeDescriptor({ apiFormat: 'openai' });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        signal: new AbortController().signal
+      });
+
+      expect(result).toFailWith(/aborted/i);
+    });
+  });
+
+  // ==========================================================================
   // OpenAI-compatible (xAI, OpenAI, Groq, Mistral)
   // ==========================================================================
 
@@ -863,5 +911,521 @@ describe('callProviderCompletion', () => {
         expect(response.content).toBe('Search grounded answer');
       });
     });
+  });
+});
+
+// ============================================================================
+// Image generation
+// ============================================================================
+
+function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProviderDescriptor {
+  return {
+    id: 'openai',
+    label: 'OpenAI',
+    buttonLabel: 'AI Assist | OpenAI',
+    needsSecret: true,
+    apiFormat: 'openai',
+    baseUrl: 'https://api.openai.com/v1',
+    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
+    supportedTools: [],
+    corsRestricted: false,
+    imageApiFormat: 'openai-images',
+    ...overrides
+  };
+}
+
+function openAiImageBody(b64s: string[], revisedPrompt?: string): unknown {
+  return {
+    data: b64s.map((b64) => ({
+      b64_json: b64,
+      ...(revisedPrompt !== undefined ? { revised_prompt: revisedPrompt } : {})
+    }))
+  };
+}
+
+function imagenBody(b64s: string[], mimeType?: string): unknown {
+  return {
+    predictions: b64s.map((b64) => ({
+      bytesBase64Encoded: b64,
+      ...(mimeType !== undefined ? { mimeType } : {})
+    }))
+  };
+}
+
+describe('callProviderImageGeneration', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  describe('common validation', () => {
+    test('fails when descriptor has no imageApiFormat', async () => {
+      const descriptor = makeDescriptor(); // chat-only xai-grok descriptor with no imageApiFormat
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toFailWith(/does not support image generation/i);
+    });
+
+    test('fails when descriptor has no baseUrl', async () => {
+      const descriptor = makeImageDescriptor({ baseUrl: '' });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toFailWith(/no API endpoint/i);
+    });
+
+    test('surfaces fetch network errors', async () => {
+      mockFetchError(new Error('ECONNREFUSED'));
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toFailWith(/ECONNREFUSED/);
+    });
+
+    test('surfaces non-2xx responses', async () => {
+      mockFetchHttpError(400, 'Bad request');
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toFailWith(/400/);
+    });
+
+    test('uses modelOverride when provided', async () => {
+      mockFetchResponse(openAiImageBody(['AAAA']));
+      const descriptor = makeImageDescriptor();
+
+      await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' },
+        modelOverride: 'gpt-image-1'
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('gpt-image-1');
+    });
+
+    test('resolves model with image context from default ModelSpec map', async () => {
+      mockFetchResponse(openAiImageBody(['AAAA']));
+      const descriptor = makeImageDescriptor(); // defaultModel = { base: 'gpt-4o', image: 'dall-e-3' }
+
+      await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('dall-e-3');
+    });
+  });
+
+  describe('openai-images format', () => {
+    test('returns image with default png mime type', async () => {
+      mockFetchResponse(openAiImageBody(['AAAA']));
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.images).toHaveLength(1);
+        expect(response.images[0].mimeType).toBe('image/png');
+        expect(response.images[0].base64).toBe('AAAA');
+        expect(response.images[0].revisedPrompt).toBeUndefined();
+      });
+    });
+
+    test('surfaces revised_prompt as revisedPrompt', async () => {
+      mockFetchResponse(openAiImageBody(['AAAA'], 'a cute orange tabby cat'));
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.images[0].revisedPrompt).toBe('a cute orange tabby cat');
+      });
+    });
+
+    test('returns multiple images', async () => {
+      mockFetchResponse(openAiImageBody(['AAAA', 'BBBB', 'CCCC']));
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat', options: { count: 3 } }
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.images.map((i) => i.base64)).toEqual(['AAAA', 'BBBB', 'CCCC']);
+      });
+    });
+
+    test('sends correct request structure', async () => {
+      mockFetchResponse(openAiImageBody(['AAAA']));
+      const descriptor = makeImageDescriptor();
+
+      await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: {
+          prompt: 'a cat',
+          options: { size: '1024x1024', quality: 'high', seed: 42 }
+        }
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/images/generations');
+      // eslint-disable-next-line dot-notation
+      expect(fetchCall[1].headers['Authorization']).toBe('Bearer test-key');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body).toEqual({
+        model: 'dall-e-3',
+        prompt: 'a cat',
+        n: 1,
+        response_format: 'b64_json',
+        size: '1024x1024',
+        quality: 'high',
+        seed: 42
+      });
+    });
+
+    test('omits optional fields when not provided', async () => {
+      mockFetchResponse(openAiImageBody(['AAAA']));
+      const descriptor = makeImageDescriptor();
+
+      await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.size).toBeUndefined();
+      expect(body.quality).toBeUndefined();
+      expect(body.seed).toBeUndefined();
+      expect(body.n).toBe(1);
+    });
+
+    test('fails when response data array is empty', async () => {
+      mockFetchResponse({ data: [] });
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toFailWith(/OpenAI images API response/i);
+    });
+
+    test('forwards abort signal to fetch', async () => {
+      mockFetchResponse(openAiImageBody(['AAAA']));
+      const descriptor = makeImageDescriptor();
+      const controller = new AbortController();
+
+      await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' },
+        signal: controller.signal
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[1].signal).toBe(controller.signal);
+    });
+  });
+
+  describe('xai-images format', () => {
+    const descriptor = makeImageDescriptor({
+      id: 'xai-grok',
+      label: 'xAI Grok',
+      buttonLabel: 'AI Assist | Grok',
+      apiFormat: 'openai',
+      baseUrl: 'https://api.x.ai/v1',
+      defaultModel: { base: 'grok-4-1-fast', image: 'grok-2-image-1212' },
+      corsRestricted: true,
+      imageApiFormat: 'xai-images'
+    });
+
+    test('returns image with default jpeg mime type', async () => {
+      mockFetchResponse(openAiImageBody(['XYZ']));
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.images[0].mimeType).toBe('image/jpeg');
+        expect(response.images[0].base64).toBe('XYZ');
+      });
+    });
+
+    test('uses xAI baseUrl', async () => {
+      mockFetchResponse(openAiImageBody(['XYZ']));
+
+      await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.x.ai/v1/images/generations');
+    });
+  });
+
+  describe('gemini-imagen format', () => {
+    const descriptor = makeImageDescriptor({
+      id: 'google-gemini',
+      label: 'Google Gemini',
+      buttonLabel: 'AI Assist | Gemini',
+      apiFormat: 'gemini',
+      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+      defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-3.0-generate-002' },
+      imageApiFormat: 'gemini-imagen'
+    });
+
+    test('returns image using mimeType from prediction', async () => {
+      mockFetchResponse(imagenBody(['GGG'], 'image/webp'));
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.images[0].mimeType).toBe('image/webp');
+        expect(response.images[0].base64).toBe('GGG');
+      });
+    });
+
+    test('falls back to png mime when prediction omits it', async () => {
+      mockFetchResponse(imagenBody(['GGG']));
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.images[0].mimeType).toBe('image/png');
+      });
+    });
+
+    test('sends predict endpoint URL and Imagen request shape', async () => {
+      mockFetchResponse(imagenBody(['GGG']));
+
+      await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: {
+          prompt: 'a cat',
+          options: {
+            count: 2,
+            seed: 123,
+            imagen: { aspectRatio: '16:9', negativePrompt: 'no dogs' }
+          }
+        }
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe(
+        'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict'
+      );
+      expect(fetchCall[1].headers['x-goog-api-key']).toBe('test-key');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body).toEqual({
+        instances: [{ prompt: 'a cat' }],
+        parameters: {
+          sampleCount: 2,
+          aspectRatio: '16:9',
+          negativePrompt: 'no dogs',
+          seed: 123
+        }
+      });
+    });
+
+    test('omits optional Imagen parameters when not provided', async () => {
+      mockFetchResponse(imagenBody(['GGG']));
+
+      await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.parameters).toEqual({ sampleCount: 1 });
+    });
+
+    test('fails when predictions array is empty', async () => {
+      mockFetchResponse({ predictions: [] });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toFailWith(/Imagen API response/i);
+    });
+
+    test('surfaces Imagen network errors', async () => {
+      mockFetchError(new Error('ETIMEDOUT'));
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toFailWith(/ETIMEDOUT/);
+    });
+  });
+});
+
+describe('callProxiedImageGeneration', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  test('calls the proxy image-generation endpoint and returns images', async () => {
+    mockFetchResponse({
+      images: [{ mimeType: 'image/png', base64: 'AAAA', revisedPrompt: 'rewritten' }]
+    });
+    const descriptor = makeImageDescriptor();
+
+    const result = await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
+      descriptor,
+      apiKey: 'test-key',
+      params: { prompt: 'a cat' }
+    });
+
+    expect(result).toSucceedAndSatisfy((response) => {
+      expect(response.images).toEqual([
+        { mimeType: 'image/png', base64: 'AAAA', revisedPrompt: 'rewritten' }
+      ]);
+    });
+    const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+    expect(fetchCall[0]).toBe('http://localhost:3001/api/ai/image-generation');
+    expect(JSON.parse(fetchCall[1].body)).toEqual({
+      providerId: 'openai',
+      apiKey: 'test-key',
+      params: { prompt: 'a cat' }
+    });
+  });
+
+  test('includes modelOverride in request body when provided', async () => {
+    mockFetchResponse({ images: [{ mimeType: 'image/png', base64: 'AAAA' }] });
+    const descriptor = makeImageDescriptor();
+
+    await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
+      descriptor,
+      apiKey: 'test-key',
+      params: { prompt: 'a cat' },
+      modelOverride: 'gpt-image-1'
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.modelOverride).toBe('gpt-image-1');
+  });
+
+  test('surfaces proxy error response', async () => {
+    mockFetchResponse({ error: 'provider rejected request' });
+    const descriptor = makeImageDescriptor();
+
+    const result = await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
+      descriptor,
+      apiKey: 'test-key',
+      params: { prompt: 'a cat' }
+    });
+
+    expect(result).toFailWith(/proxy: provider rejected request/);
+  });
+
+  test('fails when proxy returns malformed images', async () => {
+    mockFetchResponse({ images: [{ mimeType: 'image/png' }] }); // missing base64
+    const descriptor = makeImageDescriptor();
+
+    const result = await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
+      descriptor,
+      apiKey: 'test-key',
+      params: { prompt: 'a cat' }
+    });
+
+    expect(result).toFailWith(/proxy returned invalid response/i);
+  });
+
+  test('forwards abort signal', async () => {
+    mockFetchResponse({ images: [{ mimeType: 'image/png', base64: 'AAAA' }] });
+    const descriptor = makeImageDescriptor();
+    const controller = new AbortController();
+
+    await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
+      descriptor,
+      apiKey: 'test-key',
+      params: { prompt: 'a cat' },
+      signal: controller.signal
+    });
+
+    const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+    expect(fetchCall[1].signal).toBe(controller.signal);
+  });
+
+  test('surfaces fetch network errors', async () => {
+    mockFetchError(new Error('ECONNREFUSED'));
+    const descriptor = makeImageDescriptor();
+
+    const result = await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
+      descriptor,
+      apiKey: 'test-key',
+      params: { prompt: 'a cat' }
+    });
+
+    expect(result).toFailWith(/ECONNREFUSED/);
   });
 });
