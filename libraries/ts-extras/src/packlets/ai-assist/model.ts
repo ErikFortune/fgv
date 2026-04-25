@@ -384,6 +384,68 @@ export interface IAiGeneratedImage extends IAiImageData {
   readonly revisedPrompt?: string;
 }
 
+// ============================================================================
+// Model Catalog (listModels)
+// ============================================================================
+
+/**
+ * Capability vocabulary used to describe what a model can do. Used as both
+ * a filter and as a tag in {@link IAiModelInfo.capabilities}.
+ *
+ * @remarks
+ * Adding a new capability is cheap; adding the *first* one after consumers
+ * already exist forces churn. The initial vocabulary is intentionally broad
+ * even though only `image-generation` is fully exercised today.
+ *
+ * @public
+ */
+export type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation';
+
+/**
+ * Information about a single model returned by a provider's list endpoint,
+ * with capabilities already resolved (native + config rules).
+ * @public
+ */
+export interface IAiModelInfo {
+  /** Provider-native model identifier. */
+  readonly id: string;
+  /** Resolved capability set — union of native declarations and config rules. */
+  readonly capabilities: ReadonlySet<AiModelCapability>;
+  /** Friendly name for display, when known. */
+  readonly displayName?: string;
+}
+
+/**
+ * One rule in an {@link IAiModelCapabilityConfig}. Multiple rules can match
+ * a single model — their capability arrays are unioned.
+ * @public
+ */
+export interface IAiModelCapabilityRule {
+  /** RegExp tested against the model id (using `.test`). */
+  readonly idPattern: RegExp;
+  /** Capabilities this rule attributes to matching models. */
+  readonly capabilities: ReadonlyArray<AiModelCapability>;
+  /**
+   * Friendly display-name override for matching models. The function form
+   * lets one rule format many ids (e.g. `(id) => id.toUpperCase()`).
+   * If multiple matching rules supply `displayName`, the first match wins.
+   */
+  readonly displayName?: string | ((id: string) => string);
+}
+
+/**
+ * Configuration that maps model id patterns to capabilities. Used to
+ * augment (or, where the provider supplies no capability info, fully
+ * derive) the capability set for each listed model.
+ * @public
+ */
+export interface IAiModelCapabilityConfig {
+  /** Per-provider rules. Tried before {@link global}. */
+  readonly perProvider?: { readonly [P in AiProviderId]?: ReadonlyArray<IAiModelCapabilityRule> };
+  /** Cross-provider fallback rules. */
+  readonly global?: ReadonlyArray<IAiModelCapabilityRule>;
+}
+
 /**
  * Result of an image-generation call.
  * @public

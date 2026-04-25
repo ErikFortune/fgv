@@ -5,6 +5,7 @@
 
 export {
   AiPrompt,
+  type AiModelCapability,
   type AiProviderId,
   type AiServerToolType,
   type AiServerToolConfig,
@@ -24,6 +25,9 @@ export {
   type IAiImageGenerationParams,
   type IAiGeneratedImage,
   type IAiImageGenerationResponse,
+  type IAiModelCapabilityRule,
+  type IAiModelCapabilityConfig,
+  type IAiModelInfo,
   type ModelSpec,
   type ModelSpecKey,
   type IModelSpecMap,
@@ -33,15 +37,23 @@ export {
   toDataUrl
 } from './model';
 
-export { allProviderIds, getProviderDescriptors, getProviderDescriptor } from './registry';
+export {
+  allProviderIds,
+  getProviderDescriptors,
+  getProviderDescriptor,
+  DEFAULT_MODEL_CAPABILITY_CONFIG
+} from './registry';
 
 export {
   callProviderCompletion,
   callProxiedCompletion,
   callProviderImageGeneration,
   callProxiedImageGeneration,
+  callProviderListModels,
+  callProxiedListModels,
   type IProviderCompletionParams,
-  type IProviderImageGenerationParams
+  type IProviderImageGenerationParams,
+  type IProviderListModelsParams
 } from './apiClient';
 
 export {

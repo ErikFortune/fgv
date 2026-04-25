@@ -25,7 +25,7 @@
 
 import { fail, Result, succeed } from '@fgv/ts-utils';
 
-import { type AiProviderId, type IAiProviderDescriptor } from './model';
+import { type AiProviderId, type IAiModelCapabilityConfig, type IAiProviderDescriptor } from './model';
 
 // ============================================================================
 // Built-in providers
@@ -162,3 +162,40 @@ export function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>
   }
   return succeed(descriptor);
 }
+
+// ============================================================================
+// Default model capability config
+// ============================================================================
+
+/**
+ * Default capability config used by `callProviderListModels` when callers
+ * don't supply their own. Patterns are intentionally narrow — false
+ * positives are worse than missing a model. Caller can override per call
+ * via {@link IProviderListModelsParams.capabilityConfig}.
+ *
+ * @public
+ */
+export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
+  perProvider: {
+    openai: [
+      { idPattern: /^dall-e/, capabilities: ['image-generation'] },
+      { idPattern: /^gpt-image/, capabilities: ['image-generation'] },
+      { idPattern: /^gpt-4/, capabilities: ['chat', 'tools', 'vision'] },
+      { idPattern: /^gpt-3\.5/, capabilities: ['chat'] },
+      { idPattern: /^o\d/, capabilities: ['chat', 'tools'] }
+    ],
+    'xai-grok': [
+      { idPattern: /-image/, capabilities: ['image-generation'] },
+      { idPattern: /^grok-4/, capabilities: ['chat', 'tools', 'vision'] },
+      { idPattern: /^grok-3/, capabilities: ['chat', 'tools'] },
+      { idPattern: /^grok-2/, capabilities: ['chat', 'vision'] }
+    ],
+    'google-gemini': [
+      { idPattern: /^imagen/, capabilities: ['image-generation'] },
+      { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }
+    ],
+    anthropic: [{ idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }],
+    groq: [{ idPattern: /./, capabilities: ['chat'] }],
+    mistral: [{ idPattern: /./, capabilities: ['chat'] }]
+  }
+};

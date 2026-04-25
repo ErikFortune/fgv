@@ -23,6 +23,7 @@ type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
 declare namespace AiAssist {
     export {
         AiPrompt,
+        AiModelCapability,
         AiProviderId,
         AiServerToolType,
         AiServerToolConfig,
@@ -42,6 +43,9 @@ declare namespace AiAssist {
         IAiImageGenerationParams,
         IAiGeneratedImage,
         IAiImageGenerationResponse,
+        IAiModelCapabilityRule,
+        IAiModelCapabilityConfig,
+        IAiModelInfo,
         ModelSpec,
         ModelSpecKey,
         IModelSpecMap,
@@ -52,12 +56,16 @@ declare namespace AiAssist {
         allProviderIds,
         getProviderDescriptors,
         getProviderDescriptor,
+        DEFAULT_MODEL_CAPABILITY_CONFIG,
         callProviderCompletion,
         callProxiedCompletion,
         callProviderImageGeneration,
         callProxiedImageGeneration,
+        callProviderListModels,
+        callProxiedListModels,
         IProviderCompletionParams,
         IProviderImageGenerationParams,
+        IProviderListModelsParams,
         aiProviderId,
         aiServerToolType,
         aiWebSearchToolConfig,
@@ -84,6 +92,11 @@ const aiAssistSettings: Converter<IAiAssistSettings>;
 
 // @public
 type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiModelInfo"
+//
+// @public
+type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation';
 
 // @public
 class AiPrompt {
@@ -149,6 +162,9 @@ function callProviderCompletion(params: IProviderCompletionParams): Promise<Resu
 // @public
 function callProviderImageGeneration(params: IProviderImageGenerationParams): Promise<Result<IAiImageGenerationResponse>>;
 
+// @public
+function callProviderListModels(params: IProviderListModelsParams): Promise<Result<ReadonlyArray<IAiModelInfo>>>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderCompletionParams"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderCompletion"
 //
@@ -160,6 +176,9 @@ function callProxiedCompletion(proxyUrl: string, params: IProviderCompletionPara
 //
 // @public
 function callProxiedImageGeneration(proxyUrl: string, params: IProviderImageGenerationParams): Promise<Result<IAiImageGenerationResponse>>;
+
+// @public
+function callProxiedListModels(proxyUrl: string, params: IProviderListModelsParams): Promise<Result<ReadonlyArray<IAiModelInfo>>>;
 
 declare namespace Constants {
     export {
@@ -285,6 +304,11 @@ const DEFAULT_ALGORITHM: "AES-256-GCM";
 
 // @public
 const DEFAULT_KEYSTORE_ITERATIONS: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderListModelsParams"
+//
+// @public
+const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -528,6 +552,31 @@ interface IAiImageGenerationResponse {
 }
 
 // @public
+interface IAiModelCapabilityConfig {
+    readonly global?: ReadonlyArray<IAiModelCapabilityRule>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "global"
+    readonly perProvider?: {
+        readonly [P in AiProviderId]?: ReadonlyArray<IAiModelCapabilityRule>;
+    };
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiModelCapabilityConfig"
+//
+// @public
+interface IAiModelCapabilityRule {
+    readonly capabilities: ReadonlyArray<AiModelCapability>;
+    readonly displayName?: string | ((id: string) => string);
+    readonly idPattern: RegExp;
+}
+
+// @public
+interface IAiModelInfo {
+    readonly capabilities: ReadonlySet<AiModelCapability>;
+    readonly displayName?: string;
+    readonly id: string;
+}
+
+// @public
 interface IAiProviderDescriptor {
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
@@ -760,6 +809,17 @@ interface IProviderImageGenerationParams {
     readonly logger?: Logging.ILogger;
     readonly modelOverride?: ModelSpec;
     readonly params: IAiImageGenerationParams;
+    readonly signal?: AbortSignal;
+}
+
+// @public
+interface IProviderListModelsParams {
+    readonly apiKey: string;
+    readonly capability?: AiModelCapability;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "DEFAULT_MODEL_CAPABILITY_CONFIG"
+    readonly capabilityConfig?: IAiModelCapabilityConfig;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly logger?: Logging.ILogger;
     readonly signal?: AbortSignal;
 }
 

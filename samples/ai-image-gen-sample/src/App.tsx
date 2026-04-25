@@ -40,6 +40,13 @@ export function App(): React.JSX.Element {
   const [modelsByProvider, setModelsByProvider] = useState<ReadonlyMap<AiAssist.AiProviderId, string>>(
     () => new Map(IMAGE_PROVIDERS.map((p) => [p, defaultModelFor(p)]))
   );
+  const [availableModelsByProvider, setAvailableModelsByProvider] = useState<
+    ReadonlyMap<AiAssist.AiProviderId, ReadonlyArray<AiAssist.IAiModelInfo>>
+  >(new Map());
+  const [modelListErrorByProvider, setModelListErrorByProvider] = useState<
+    ReadonlyMap<AiAssist.AiProviderId, string>
+  >(new Map());
+  const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [lastResult, setLastResult] = useState<AiAssist.IAiImageGenerationResponse | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
@@ -69,7 +76,7 @@ export function App(): React.JSX.Element {
     [provider, modelsByProvider]
   );
 
-  const { isWorking, generateImages } = useAiAssist({ settings, keyStore });
+  const { isWorking, generateImages, listModels } = useAiAssist({ settings, keyStore });
 
   const setApiKey = (next: string): void => {
     setApiKeysByProvider((prev) => {
@@ -105,6 +112,36 @@ export function App(): React.JSX.Element {
     abortControllerRef.current?.abort();
   };
 
+  const handleFetchModels = async (): Promise<void> => {
+    const targetProvider = provider;
+    setIsFetchingModels(true);
+    const result = await listModels(targetProvider, 'image-generation');
+    setIsFetchingModels(false);
+    if (result.isFailure()) {
+      setModelListErrorByProvider((prev) => {
+        const updated = new Map(prev);
+        updated.set(targetProvider, result.message);
+        return updated;
+      });
+      setAvailableModelsByProvider((prev) => {
+        const updated = new Map(prev);
+        updated.set(targetProvider, []);
+        return updated;
+      });
+    } else {
+      setAvailableModelsByProvider((prev) => {
+        const updated = new Map(prev);
+        updated.set(targetProvider, result.value);
+        return updated;
+      });
+      setModelListErrorByProvider((prev) => {
+        const updated = new Map(prev);
+        updated.delete(targetProvider);
+        return updated;
+      });
+    }
+  };
+
   const currentKey = apiKeysByProvider.get(provider) ?? '';
   const currentModel = modelsByProvider.get(provider) ?? '';
 
@@ -130,6 +167,12 @@ export function App(): React.JSX.Element {
           model={currentModel}
           modelPlaceholder={defaultModelFor(provider)}
           onModelChange={setModel}
+          availableModels={availableModelsByProvider.get(provider) ?? []}
+          isFetchingModels={isFetchingModels}
+          modelListError={modelListErrorByProvider.get(provider)}
+          onFetchModels={() => {
+            void handleFetchModels();
+          }}
         />
 
         <PromptPanel

@@ -1,6 +1,6 @@
 # AI Assist — Image Support Design
 
-Status: step 1 done, step 2 done, step 3 pending
+Status: step 1 done, step 2 done, sample app done, list-models in progress, step 3 pending
 Branch: `ai-images`
 Scope: extend `@fgv/ts-extras` `ai-assist` packlet to support image input (vision)
 and image output (generation), and thread an `AbortSignal` through all calls.
@@ -358,6 +358,103 @@ retry loop, no JSON parsing.
 Tests follow the pattern in
 `libraries/ts-extras/src/test/unit/ai-assist/apiClient.test.ts`
 (global `fetch` mocked per test).
+
+---
+
+---
+
+## List models
+
+Many providers do not authoritatively declare per-model capabilities, and
+model-id sets churn (the Imagen 404 in the sample is the canonical case).
+The library exposes a generic `listModels` that:
+
+- Calls each provider's HTTP list endpoint via the existing `apiFormat`
+  dispatch (no new descriptor field needed).
+- Translates native capability declarations where the provider supplies them
+  (Gemini's `supportedGenerationMethods`).
+- Augments capabilities from a config of `(idPattern → capabilities)` rules,
+  shipped as `DEFAULT_MODEL_CAPABILITY_CONFIG`. Callers can override per call.
+- Optionally filters by capability.
+- Returns `Result.fail` on listing errors — never silently falls back to
+  empty. Consumers can show the error and fall back to free-text entry.
+
+### Capability vocabulary
+
+```ts
+export type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation';
+```
+
+Adding more later is cheap; adding the *first* one after consumers exist
+forces churn everywhere. All four are in the initial vocab.
+
+### Config shape
+
+```ts
+export interface IAiModelCapabilityRule {
+  readonly idPattern: RegExp;
+  readonly capabilities: ReadonlyArray<AiModelCapability>;
+  /** Optional friendly-name override; the function form lets one rule format
+   *  many ids (e.g. `(id) => id.toUpperCase()`). */
+  readonly displayName?: string | ((id: string) => string);
+}
+
+export interface IAiModelCapabilityConfig {
+  /** Per-provider rules tried before global rules. */
+  readonly perProvider?: { readonly [P in AiProviderId]?: ReadonlyArray<IAiModelCapabilityRule> };
+  /** Cross-provider fallback. */
+  readonly global?: ReadonlyArray<IAiModelCapabilityRule>;
+}
+
+export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig;
+```
+
+### Resolution algorithm
+
+For each model returned by the provider:
+
+1. Translate native capability info if the provider supplied any.
+2. Walk per-provider rules then global rules; **union** every match's
+   capabilities into the model's set. Multiple rules can contribute, so
+   focused rules (one capability per rule) compose cleanly.
+3. Filter by the requested capability if specified.
+
+### API surface
+
+```ts
+export interface IAiModelInfo {
+  readonly id: string;
+  readonly capabilities: ReadonlySet<AiModelCapability>;
+  readonly displayName?: string;
+}
+
+export interface IProviderListModelsParams {
+  readonly descriptor: IAiProviderDescriptor;
+  readonly apiKey: string;
+  readonly capability?: AiModelCapability;
+  readonly capabilityConfig?: IAiModelCapabilityConfig;
+  readonly signal?: AbortSignal;
+  readonly logger?: Logging.ILogger;
+}
+
+callProviderListModels(params): Promise<Result<ReadonlyArray<IAiModelInfo>>>
+callProxiedListModels(proxyUrl, params): Promise<Result<ReadonlyArray<IAiModelInfo>>>
+```
+
+Plus `listModels(provider, capability?)` on the `useAiAssist` hook.
+
+### List endpoints (keyed off existing `apiFormat`)
+
+| `apiFormat` | Endpoint                  | Auth header    | Native capability info             |
+|-------------|---------------------------|----------------|------------------------------------|
+| openai      | `GET ${baseUrl}/models`   | `Bearer`       | none — fully driven by config      |
+| anthropic   | `GET ${baseUrl}/models`   | `x-api-key`    | none — fully driven by config      |
+| gemini      | `GET ${baseUrl}/models`   | `x-goog-api-key` | `supportedGenerationMethods` array |
+
+### Out of scope (deferred)
+
+- **Caching.** Listing is a config-level operation called rarely; no need to
+  cache yet. Add per-session memoization if it ever shows up in profiling.
 
 ---
 
