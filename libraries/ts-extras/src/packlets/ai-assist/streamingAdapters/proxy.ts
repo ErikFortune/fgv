@@ -21,7 +21,7 @@
 /**
  * Streaming adapter for a caller-provided proxy server. Unlike the
  * provider-specific adapters, the proxy speaks our own unified vocabulary
- * directly: each `data:` line is a JSON-serialized {@link IAiStreamEvent},
+ * directly: each `data:` line is a JSON-serialized {@link AiAssist.IAiStreamEvent},
  * so this adapter only validates the event-type discriminator and forwards.
  *
  * @packageDocumentation
@@ -61,7 +61,7 @@ const proxyEventEnvelope: Validator<IProxyEventEnvelope> = Validators.object<IPr
 // ============================================================================
 
 /**
- * Translates a proxied SSE stream back into {@link IAiStreamEvent} objects.
+ * Translates a proxied SSE stream back into {@link AiAssist.IAiStreamEvent} objects.
  * Validation is limited to the type discriminator; the proxy is contractually
  * required to emit shape-correct unified events.
  *
@@ -104,7 +104,7 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
  * - Endpoint: `POST ${proxyUrl}/api/ai/completion-stream`
  * - Request body: same JSON as `/api/ai/completion` plus `"stream": true`
  * - Response: `Content-Type: text/event-stream`; body is the unified
- *   {@link IAiStreamEvent} JSON-serialized one event per SSE `data:` line
+ *   {@link AiAssist.IAiStreamEvent} JSON-serialized one event per SSE `data:` line
  *   (no `event:` line needed since the type discriminator is in the JSON).
  * - Error response (when the proxy can't even start): JSON `{error: string}`
  *   with a non-2xx status, surfaced as `proxy: ${error}`.

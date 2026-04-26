@@ -513,8 +513,12 @@ export type IAiStreamEvent =
 ```
 
 Mid-stream errors surface as a terminal `error` event. `done` arrives
-only on success. Caller-initiated abort just stops iteration; no event
-needed.
+only on success. Caller-initiated abort currently surfaces as a terminal
+`error` event too: aborting the underlying fetch/read raises an
+`AbortError` from the SSE iterator, which adapters convert into a
+terminal `error` event before the iterable ends. Callers that need to
+distinguish abort from genuine failure can check for `AbortError`-style
+messages, or test `signal.aborted` after the iterable resolves.
 
 ### API
 

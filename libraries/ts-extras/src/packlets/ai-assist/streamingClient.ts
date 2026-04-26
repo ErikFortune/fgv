@@ -46,12 +46,12 @@ export type { IProviderCompletionStreamParams } from './streamingAdapters/common
  * Pre-flight rejection: when `descriptor.streamingCorsRestricted === true`
  * and the call isn't being routed through a proxy, this returns
  * `Result.fail` before fetch is invoked. Callers should route through
- * {@link callProxiedCompletionStream} or surface the failure to the user.
+ * {@link AiAssist.callProxiedCompletionStream} or surface the failure to the user.
  *
  * Connection-time failures (auth, network, non-2xx) surface as the outer
  * `Result.fail`. Once iteration begins, errors mid-stream surface as a
- * terminal error event ({@link IAiStreamError}) followed by the iterable
- * ending. The final successful event is {@link IAiStreamDone}.
+ * terminal error event ({@link AiAssist.IAiStreamError}) followed by the iterable
+ * ending. The final successful event is {@link AiAssist.IAiStreamDone}.
  *
  * @param params - Request parameters including descriptor, API key, prompt, and optional tools
  * @returns A streaming iterable of unified events, or a Result.fail

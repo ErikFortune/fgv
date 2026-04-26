@@ -27,7 +27,7 @@ are exposed via a top-level toggle:
 - Rendering returned images via `AiAssist.toDataUrl`.
 
 ### Streaming Chat mode
-- Calling `streamDirect` with conversation history (`additionalMessages`),
+- Calling `streamDirect` with conversation history (`messagesBefore`),
   appending text deltas to the active assistant message, and capturing the
   final aggregated text on `done`.
 - Optional `web_search` tool toggle (where the provider supports it). Tool
@@ -41,8 +41,9 @@ are exposed via a top-level toggle:
 - The proxy path. xAI Grok is CORS-restricted from the browser, so without
   a proxy server it will fail when called directly from this sample. To test
   the proxy path, set `proxyUrl` in `App.tsx` and stand up a server that
-  implements `POST /api/ai/image-generation` per the contract in
-  `.claude/project/ai-images-design.md`.
+  implements the relevant endpoints from `.claude/project/ai-images-design.md`:
+  `POST /api/ai/image-generation` for image mode and
+  `POST /api/ai/completion-stream` for streaming chat mode.
 - Persistent secret storage. API keys live in memory for the session only.
   See `@fgv/ts-extras` `KeyStore` for a real encrypted-keystore implementation.
 
