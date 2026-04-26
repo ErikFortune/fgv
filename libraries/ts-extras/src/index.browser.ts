@@ -21,6 +21,7 @@
  */
 
 /* c8 ignore start - Browser-specific export used conditionally in package.json */
+import * as AiAssist from './packlets/ai-assist';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as Crypto from './packlets/crypto-utils/index.browser';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -37,5 +38,5 @@ import { Converters } from './packlets/conversion';
 
 // Browser-safe exports - Node.js crypto-based providers excluded
 // Use BrowserCryptoProvider from @fgv/ts-web-extras for browser crypto
-export { Converters, Crypto, Csv, Experimental, Hash, Mustache, RecordJar, ZipFileTree };
+export { AiAssist, Converters, Crypto, Csv, Experimental, Hash, Mustache, RecordJar, ZipFileTree };
 /* c8 ignore stop */

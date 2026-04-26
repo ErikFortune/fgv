@@ -103,6 +103,42 @@ export interface IUseAiAssistResult {
     convert: (from: unknown) => Result<TEntity>,
     tools?: ReadonlyArray<AiAssist.AiServerToolConfig>
   ) => Promise<Result<IAiAssistResult<TEntity>>>;
+  /**
+   * Execute an image-generation action: calls the provider's image API and
+   * returns the generated images.
+   * @returns Success with the image generation response, or failure.
+   */
+  readonly generateImages: (
+    provider: AiAssist.AiProviderId,
+    params: AiAssist.IAiImageGenerationParams,
+    signal?: AbortSignal
+  ) => Promise<Result<AiAssist.IAiImageGenerationResponse>>;
+  /**
+   * List the models available from a provider, optionally filtered by capability.
+   * @returns Success with the resolved model list, or failure (no silent fallback).
+   */
+  readonly listModels: (
+    provider: AiAssist.AiProviderId,
+    capability?: AiAssist.AiModelCapability,
+    signal?: AbortSignal
+  ) => Promise<Result<ReadonlyArray<AiAssist.IAiModelInfo>>>;
+  /**
+   * Stream a chat completion from the provider. The `onEvent` callback fires
+   * for every event (text deltas, tool progress, errors); the returned
+   * promise resolves with the aggregated final text and truncation flag on
+   * success, or with `Result.fail` when the stream couldn't be started or
+   * ended in a terminal error event.
+   */
+  readonly streamDirect: (
+    provider: AiAssist.AiProviderId,
+    prompt: AiAssist.AiPrompt,
+    onEvent: (event: AiAssist.IAiStreamEvent) => void,
+    options?: {
+      readonly tools?: ReadonlyArray<AiAssist.AiServerToolConfig>;
+      readonly messagesBefore?: ReadonlyArray<AiAssist.IChatMessage>;
+      readonly signal?: AbortSignal;
+    }
+  ) => Promise<Result<{ readonly fullText: string; readonly truncated: boolean }>>;
 }
 
 // ============================================================================
@@ -316,7 +352,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
           }
         }
 
-        // Unreachable, but TypeScript needs it
+        /* c8 ignore next 2 - unreachable: every loop iteration returns; TypeScript needs the trailing return */
         return fail('AI generation failed');
       } finally {
         setIsWorking(false);
@@ -325,5 +361,223 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
     [settings, keyStore, logger]
   );
 
-  return { actions, isWorking, copyPrompt, generateDirect };
+  const generateImages = useCallback(
+    async (
+      provider: AiAssist.AiProviderId,
+      params: AiAssist.IAiImageGenerationParams,
+      signal?: AbortSignal
+    ): Promise<Result<AiAssist.IAiImageGenerationResponse>> => {
+      const providerConfig = settings?.providers.find((p) => p.provider === provider);
+      if (!providerConfig) {
+        return fail(`Provider "${provider}" not configured`);
+      }
+
+      const descriptorResult = AiAssist.getProviderDescriptor(provider);
+      if (descriptorResult.isFailure()) {
+        return fail(descriptorResult.message);
+      }
+      const descriptor = descriptorResult.value;
+
+      if (descriptor.imageApiFormat === undefined) {
+        return fail(`Provider "${provider}" does not support image generation`);
+      }
+
+      if (!providerConfig.secretName) {
+        return fail(`Provider "${provider}" has no secret name configured`);
+      }
+      if (!keyStore) {
+        return fail('No keystore available');
+      }
+
+      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      if (apiKeyResult.isFailure()) {
+        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+      }
+
+      setIsWorking(true);
+      try {
+        const requestParams: AiAssist.IProviderImageGenerationParams = {
+          descriptor,
+          apiKey: apiKeyResult.value,
+          params,
+          modelOverride: providerConfig.model,
+          logger,
+          signal
+        };
+        const useProxy: boolean =
+          !!settings?.proxyUrl && (settings.proxyAllProviders === true || descriptor.corsRestricted);
+        const result = useProxy
+          ? await AiAssist.callProxiedImageGeneration(settings!.proxyUrl!, requestParams)
+          : await AiAssist.callProviderImageGeneration(requestParams);
+        if (result.isFailure()) {
+          logger?.error(`AI image generation failed: ${result.message}`);
+        }
+        return result;
+      } finally {
+        setIsWorking(false);
+      }
+    },
+    [settings, keyStore, logger]
+  );
+
+  const listModels = useCallback(
+    async (
+      provider: AiAssist.AiProviderId,
+      capability?: AiAssist.AiModelCapability,
+      signal?: AbortSignal
+    ): Promise<Result<ReadonlyArray<AiAssist.IAiModelInfo>>> => {
+      const providerConfig = settings?.providers.find((p) => p.provider === provider);
+      if (!providerConfig) {
+        return fail(`Provider "${provider}" not configured`);
+      }
+
+      const descriptorResult = AiAssist.getProviderDescriptor(provider);
+      if (descriptorResult.isFailure()) {
+        return fail(descriptorResult.message);
+      }
+      const descriptor = descriptorResult.value;
+
+      if (!providerConfig.secretName) {
+        return fail(`Provider "${provider}" has no secret name configured`);
+      }
+      if (!keyStore) {
+        return fail('No keystore available');
+      }
+
+      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      if (apiKeyResult.isFailure()) {
+        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+      }
+
+      const requestParams: AiAssist.IProviderListModelsParams = {
+        descriptor,
+        apiKey: apiKeyResult.value,
+        ...(capability !== undefined ? { capability } : {}),
+        logger,
+        signal
+      };
+      const useProxy: boolean =
+        !!settings?.proxyUrl && (settings.proxyAllProviders === true || descriptor.corsRestricted);
+      const result = useProxy
+        ? await AiAssist.callProxiedListModels(settings!.proxyUrl!, requestParams)
+        : await AiAssist.callProviderListModels(requestParams);
+      if (result.isFailure()) {
+        logger?.error(`AI list-models failed: ${result.message}`);
+      }
+      return result;
+    },
+    [settings, keyStore, logger]
+  );
+
+  const streamDirect = useCallback(
+    async (
+      provider: AiAssist.AiProviderId,
+      prompt: AiAssist.AiPrompt,
+      onEvent: (event: AiAssist.IAiStreamEvent) => void,
+      options?: {
+        readonly tools?: ReadonlyArray<AiAssist.AiServerToolConfig>;
+        readonly messagesBefore?: ReadonlyArray<AiAssist.IChatMessage>;
+        readonly signal?: AbortSignal;
+      }
+    ): Promise<Result<{ readonly fullText: string; readonly truncated: boolean }>> => {
+      const providerConfig = settings?.providers.find((p) => p.provider === provider);
+      if (!providerConfig) {
+        return fail(`Provider "${provider}" not configured`);
+      }
+
+      const descriptorResult = AiAssist.getProviderDescriptor(provider);
+      if (descriptorResult.isFailure()) {
+        return fail(descriptorResult.message);
+      }
+      const descriptor = descriptorResult.value;
+
+      if (!providerConfig.secretName) {
+        return fail(`Provider "${provider}" has no secret name configured`);
+      }
+      if (!keyStore) {
+        return fail('No keystore available');
+      }
+
+      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      if (apiKeyResult.isFailure()) {
+        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+      }
+
+      const effectiveTools = AiAssist.resolveEffectiveTools(descriptor, providerConfig.tools, options?.tools);
+      const requestParams: AiAssist.IProviderCompletionStreamParams = {
+        descriptor,
+        apiKey: apiKeyResult.value,
+        prompt,
+        messagesBefore: options?.messagesBefore,
+        modelOverride: providerConfig.model,
+        logger,
+        tools: effectiveTools.length > 0 ? effectiveTools : undefined,
+        signal: options?.signal
+      };
+      const useProxy: boolean =
+        !!settings?.proxyUrl && (settings.proxyAllProviders === true || descriptor.streamingCorsRestricted);
+      const openResult = useProxy
+        ? await AiAssist.callProxiedCompletionStream(settings!.proxyUrl!, requestParams)
+        : await AiAssist.callProviderCompletionStream(requestParams);
+      if (openResult.isFailure()) {
+        logger?.error(`AI streaming failed to start: ${openResult.message}`);
+        return fail(openResult.message);
+      }
+
+      setIsWorking(true);
+      let fullText = '';
+      let truncated = false;
+      let terminalError: string | undefined;
+      let receivedTerminalEvent = false;
+      try {
+        for await (const event of openResult.value) {
+          try {
+            onEvent(event);
+          } catch (err: unknown) {
+            // Consumer callback threw (e.g. setState-after-unmount). Convert
+            // into a terminal failure so streamDirect always resolves to a
+            // Result instead of rejecting and breaking its contract.
+            terminalError = `AI stream event handler failed: ${
+              err instanceof Error ? err.message : String(err)
+            }`;
+            receivedTerminalEvent = true;
+            break;
+          }
+          if (event.type === 'text-delta') {
+            fullText += event.delta;
+          } else if (event.type === 'done') {
+            fullText = event.fullText;
+            truncated = event.truncated;
+            receivedTerminalEvent = true;
+          } else if (event.type === 'error') {
+            terminalError = event.message;
+            receivedTerminalEvent = true;
+          }
+        }
+      } finally {
+        setIsWorking(false);
+      }
+      if (terminalError !== undefined) {
+        logger?.error(`AI streaming ended in error: ${terminalError}`);
+        return fail(terminalError);
+      }
+      if (!receivedTerminalEvent) {
+        const message = 'AI stream ended without a terminal done or error event';
+        logger?.error(message);
+        return fail(message);
+      }
+      return succeed({ fullText, truncated });
+    },
+    [settings, keyStore, logger]
+  );
+
+  return {
+    actions,
+    isWorking,
+    copyPrompt,
+    generateDirect,
+    generateImages,
+    listModels,
+    streamDirect
+  };
 }

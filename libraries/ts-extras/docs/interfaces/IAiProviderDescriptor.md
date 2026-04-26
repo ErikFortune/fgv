@@ -177,4 +177,57 @@ boolean
 Whether this provider's API enforces CORS restrictions that prevent direct browser calls.
 
 </td></tr>
+<tr><td>
+
+[streamingCorsRestricted](./IAiProviderDescriptor.streamingCorsRestricted.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Whether this provider's streaming completion endpoint requires a proxy
+for direct browser calls.
+
+</td></tr>
+<tr><td>
+
+[acceptsImageInput](./IAiProviderDescriptor.acceptsImageInput.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Whether this provider's chat completions API accepts image input
+(i.e.
+
+</td></tr>
+<tr><td>
+
+[imageApiFormat](./IAiProviderDescriptor.imageApiFormat.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[AiImageApiFormat](../type-aliases/AiImageApiFormat.md)
+
+</td><td>
+
+Which image-generation API format this provider uses, or undefined if it
+
+</td></tr>
 </tbody></table>

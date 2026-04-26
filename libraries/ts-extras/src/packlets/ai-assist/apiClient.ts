@@ -36,13 +36,29 @@ import { fail, type Logging, Result, succeed, type Validator, Validators } from 
 
 import {
   AiPrompt,
+  type AiModelCapability,
   type AiServerToolConfig,
   type IAiCompletionResponse,
+  type IAiGeneratedImage,
+  type IAiImageGenerationOptions,
+  type IAiImageGenerationParams,
+  type IAiImageGenerationResponse,
+  type IAiModelCapabilityConfig,
+  type IAiModelCapabilityRule,
+  type IAiModelInfo,
   type IAiProviderDescriptor,
   type IChatMessage,
   type ModelSpec,
   resolveModel
 } from './model';
+import {
+  buildAnthropicMessages,
+  buildGeminiContents,
+  buildMessages,
+  buildOpenAiChatUserContent,
+  buildOpenAiResponsesUserContent
+} from './chatRequestBuilders';
+import { DEFAULT_MODEL_CAPABILITY_CONFIG } from './registry';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
 
 // ============================================================================
@@ -83,31 +99,13 @@ export interface IProviderCompletionParams {
   readonly logger?: Logging.ILogger;
   /** Server-side tools to include in the request. Overrides settings-level tool config when provided. */
   readonly tools?: ReadonlyArray<AiServerToolConfig>;
+  /** Optional abort signal for cancelling the in-flight request. */
+  readonly signal?: AbortSignal;
 }
 
 // ============================================================================
 // Shared helpers
 // ============================================================================
-
-/**
- * Builds the messages array from prompt + optional correction messages.
- * @internal
- */
-function buildMessages(
-  prompt: AiPrompt,
-  additionalMessages?: ReadonlyArray<IChatMessage>
-): Array<{ role: string; content: string }> {
-  const messages: Array<{ role: string; content: string }> = [
-    { role: 'system', content: prompt.system },
-    { role: 'user', content: prompt.user }
-  ];
-  if (additionalMessages) {
-    for (const msg of additionalMessages) {
-      messages.push({ role: msg.role, content: msg.content });
-    }
-  }
-  return messages;
-}
 
 /**
  * Makes an HTTP request and returns the parsed JSON, or a failure.
@@ -117,7 +115,8 @@ async function fetchJson(
   url: string,
   headers: Record<string, string>,
   body: unknown,
-  logger?: Logging.ILogger
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
 ): Promise<Result<JsonObject>> {
   /* c8 ignore next 1 - optional logger */
   logger?.detail(`AI API request: POST ${url}`);
@@ -130,8 +129,59 @@ async function fetchJson(
         'Content-Type': 'application/json',
         ...headers
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal
     });
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : String(err);
+    /* c8 ignore next 1 - optional logger */
+    logger?.error(`AI API request failed: ${detail}`);
+    return fail(`AI API request failed: ${detail}`);
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'unknown error');
+    /* c8 ignore next 1 - optional logger */
+    logger?.error(`AI API returned ${response.status}: ${errorText}`);
+    return fail(`AI API returned ${response.status}: ${errorText}`);
+  }
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.detail(`AI API response: ${response.status}`);
+
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch {
+    /* c8 ignore next 1 - optional logger */
+    logger?.error('AI API returned invalid JSON response');
+    return fail('AI API returned invalid JSON response');
+  }
+
+  if (!isJsonObject(json)) {
+    /* c8 ignore next 1 - optional logger */
+    logger?.error('AI API returned non-object JSON response');
+    return fail('AI API returned non-object JSON response');
+  }
+  return succeed(json);
+}
+
+/**
+ * Makes an HTTP GET request and returns the parsed JSON, or a failure.
+ * @internal
+ */
+async function fetchGetJson(
+  url: string,
+  headers: Record<string, string>,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<JsonObject>> {
+  /* c8 ignore next 1 - optional logger */
+  logger?.detail(`AI API request: GET ${url}`);
+
+  let response: Response;
+  try {
+    response = await fetch(url, { method: 'GET', headers, signal });
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : String(err);
     /* c8 ignore next 1 - optional logger */
@@ -304,10 +354,13 @@ async function callOpenAiCompletion(
   prompt: AiPrompt,
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
-  logger?: Logging.ILogger
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
-  const messages = buildMessages(prompt, additionalMessages);
+  const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
+    tail: additionalMessages
+  });
   const body = { model: config.model, messages, temperature };
 
   const headers: Record<string, string> = {
@@ -316,7 +369,7 @@ async function callOpenAiCompletion(
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI completion: model=${config.model}`);
-  const jsonResult = await fetchJson(url, headers, body, logger);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -364,10 +417,13 @@ async function callOpenAiResponsesCompletion(
   tools: ReadonlyArray<AiServerToolConfig>,
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
-  logger?: Logging.ILogger
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
-  const input = buildMessages(prompt, additionalMessages);
+  const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
+    tail: additionalMessages
+  });
   const body: Record<string, unknown> = {
     model: config.model,
     input,
@@ -381,7 +437,7 @@ async function callOpenAiResponsesCompletion(
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI Responses API: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
-  const jsonResult = await fetchJson(url, headers, body, logger);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -437,20 +493,13 @@ async function callAnthropicCompletion(
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
-  tools?: ReadonlyArray<AiServerToolConfig>
+  tools?: ReadonlyArray<AiServerToolConfig>,
+  signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
 
   // Anthropic uses system as a top-level field, not in messages
-  const messages: Array<{ role: string; content: string }> = [{ role: 'user', content: prompt.user }];
-  if (additionalMessages) {
-    for (const msg of additionalMessages) {
-      // Anthropic doesn't have a system role in messages
-      if (msg.role !== 'system') {
-        messages.push({ role: msg.role, content: msg.content });
-      }
-    }
-  }
+  const messages = buildAnthropicMessages(prompt, { tail: additionalMessages });
 
   const body: Record<string, unknown> = {
     model: config.model,
@@ -475,7 +524,7 @@ async function callAnthropicCompletion(
     'anthropic-dangerous-direct-browser-access': 'true'
   };
 
-  const jsonResult = await fetchJson(url, headers, body, logger);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -522,24 +571,13 @@ async function callGeminiCompletion(
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
-  tools?: ReadonlyArray<AiServerToolConfig>
+  tools?: ReadonlyArray<AiServerToolConfig>,
+  signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
   // Gemini uses 'contents' with 'parts', and 'model' role instead of 'assistant'
-  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [
-    { role: 'user', parts: [{ text: prompt.user }] }
-  ];
-  if (additionalMessages) {
-    for (const msg of additionalMessages) {
-      if (msg.role !== 'system') {
-        contents.push({
-          role: msg.role === 'assistant' ? 'model' : msg.role,
-          parts: [{ text: msg.content }]
-        });
-      }
-    }
-  }
+  const contents = buildGeminiContents(prompt, { tail: additionalMessages });
 
   const body: Record<string, unknown> = {
     systemInstruction: { parts: [{ text: prompt.system }] },
@@ -560,7 +598,7 @@ async function callGeminiCompletion(
     'x-goog-api-key': config.apiKey
   };
 
-  const jsonResult = await fetchJson(url, headers, body, logger);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -608,11 +646,15 @@ export async function callProviderCompletion(
     temperature = 0.7,
     modelOverride,
     logger,
-    tools
+    tools,
+    signal
   } = params;
 
   if (!descriptor.baseUrl) {
     return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  }
+  if (prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
   }
 
   const hasTools = tools !== undefined && tools.length > 0;
@@ -636,19 +678,713 @@ export async function callProviderCompletion(
   switch (descriptor.apiFormat) {
     case 'openai':
       if (hasTools) {
-        return callOpenAiResponsesCompletion(config, prompt, tools, additionalMessages, temperature, logger);
+        return callOpenAiResponsesCompletion(
+          config,
+          prompt,
+          tools,
+          additionalMessages,
+          temperature,
+          logger,
+          signal
+        );
       }
-      return callOpenAiCompletion(config, prompt, additionalMessages, temperature, logger);
+      return callOpenAiCompletion(config, prompt, additionalMessages, temperature, logger, signal);
     case 'anthropic':
-      return callAnthropicCompletion(config, prompt, additionalMessages, temperature, logger, tools);
+      return callAnthropicCompletion(config, prompt, additionalMessages, temperature, logger, tools, signal);
     case 'gemini':
-      return callGeminiCompletion(config, prompt, additionalMessages, temperature, logger, tools);
+      return callGeminiCompletion(config, prompt, additionalMessages, temperature, logger, tools, signal);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;
       return fail(`unsupported API format: ${String(_exhaustive)}`);
     }
   }
+}
+
+// ============================================================================
+// Image generation — request types
+// ============================================================================
+
+/**
+ * Parameters for an image-generation request.
+ * @public
+ */
+export interface IProviderImageGenerationParams {
+  /** The provider descriptor */
+  readonly descriptor: IAiProviderDescriptor;
+  /** API key for authentication */
+  readonly apiKey: string;
+  /** The image-generation request */
+  readonly params: IAiImageGenerationParams;
+  /** Optional model override — string or context-aware map (uses descriptor.defaultModel.image otherwise) */
+  readonly modelOverride?: ModelSpec;
+  /** Optional logger for request/response observability. */
+  readonly logger?: Logging.ILogger;
+  /** Optional abort signal for cancelling the in-flight request. */
+  readonly signal?: AbortSignal;
+}
+
+// ============================================================================
+// Image generation — response validators
+// ============================================================================
+
+// ---- OpenAI / xAI images format ----
+
+/** @internal */
+interface IOpenAiImageItem {
+  b64_json: string;
+  revised_prompt?: string;
+}
+/** @internal */
+interface IOpenAiImageResponse {
+  data: IOpenAiImageItem[];
+}
+
+const openAiImageItem: Validator<IOpenAiImageItem> = Validators.object<IOpenAiImageItem>({
+  b64_json: Validators.string,
+  revised_prompt: Validators.string.optional()
+});
+const openAiImageResponse: Validator<IOpenAiImageResponse> = Validators.object<IOpenAiImageResponse>({
+  data: Validators.arrayOf(openAiImageItem).withConstraint((arr) => arr.length > 0)
+});
+
+// ---- Gemini Imagen format ----
+
+/** @internal */
+interface IImagenPrediction {
+  bytesBase64Encoded: string;
+  mimeType?: string;
+}
+/** @internal */
+interface IImagenResponse {
+  predictions: IImagenPrediction[];
+}
+
+const imagenPrediction: Validator<IImagenPrediction> = Validators.object<IImagenPrediction>({
+  bytesBase64Encoded: Validators.string,
+  mimeType: Validators.string.optional()
+});
+const imagenResponse: Validator<IImagenResponse> = Validators.object<IImagenResponse>({
+  predictions: Validators.arrayOf(imagenPrediction).withConstraint((arr) => arr.length > 0)
+});
+
+// ---- Proxied image generation response ----
+
+const proxiedGeneratedImage: Validator<IAiGeneratedImage> = Validators.object<IAiGeneratedImage>({
+  mimeType: Validators.string,
+  base64: Validators.string,
+  revisedPrompt: Validators.string.optional()
+});
+const proxiedImageGenerationResponse: Validator<IAiImageGenerationResponse> =
+  Validators.object<IAiImageGenerationResponse>({
+    images: Validators.arrayOf(proxiedGeneratedImage).withConstraint((arr) => arr.length > 0)
+  });
+
+// ---- Proxied list-models response ----
+
+/**
+ * Wire shape for proxy list-models responses. `capabilities` arrives as an
+ * array (Sets don't survive JSON), then gets reassembled into a `Set` in
+ * {@link callProxiedListModels}.
+ * @internal
+ */
+interface IProxiedListModelsEntry {
+  id: string;
+  capabilities: AiModelCapability[];
+  displayName?: string;
+}
+/** @internal */
+interface IProxiedListModelsBody {
+  models: IProxiedListModelsEntry[];
+}
+
+const proxiedListModelsEntry: Validator<IProxiedListModelsEntry> = Validators.object<IProxiedListModelsEntry>(
+  {
+    id: Validators.string,
+    capabilities: Validators.arrayOf(
+      Validators.enumeratedValue<AiModelCapability>(['chat', 'tools', 'vision', 'image-generation'])
+    ),
+    displayName: Validators.string.optional()
+  }
+);
+const proxiedListModelsResponse: Validator<IProxiedListModelsBody> =
+  Validators.object<IProxiedListModelsBody>({
+    models: Validators.arrayOf(proxiedListModelsEntry)
+  });
+
+// ============================================================================
+// Image generation — adapters
+// ============================================================================
+
+/**
+ * Calls the OpenAI Images API. Used for both `openai-images` and `xai-images`
+ * formats — the request shape is the same; the only difference is whether the
+ * `size` field is honored (OpenAI: yes, xAI: ignored at the provider).
+ *
+ * @internal
+ */
+async function callOpenAiImageGeneration(
+  config: IAiApiConfig,
+  request: IAiImageGenerationParams,
+  defaultMimeType: string,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<IAiImageGenerationResponse>> {
+  const url = `${config.baseUrl}/images/generations`;
+  const opts: IAiImageGenerationOptions = request.options ?? {};
+  const body: Record<string, unknown> = {
+    model: config.model,
+    prompt: request.prompt,
+    n: opts.count ?? 1,
+    response_format: 'b64_json'
+  };
+  if (opts.size !== undefined) {
+    body.size = opts.size;
+  }
+  if (opts.quality !== undefined) {
+    body.quality = opts.quality;
+  }
+  if (opts.seed !== undefined) {
+    body.seed = opts.seed;
+  }
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${config.apiKey}`
+  };
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`Image generation: model=${config.model}, n=${body.n}`);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return openAiImageResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `OpenAI images API response: ${msg}`)
+    .onSuccess((response) => {
+      const images: IAiGeneratedImage[] = response.data.map((item) => ({
+        mimeType: defaultMimeType,
+        base64: item.b64_json,
+        ...(item.revised_prompt !== undefined ? { revisedPrompt: item.revised_prompt } : {})
+      }));
+      return succeed({ images });
+    });
+}
+
+/**
+ * Calls the Gemini Imagen `:predict` endpoint.
+ * @internal
+ */
+async function callImagenGeneration(
+  config: IAiApiConfig,
+  request: IAiImageGenerationParams,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<IAiImageGenerationResponse>> {
+  const url = `${config.baseUrl}/models/${config.model}:predict`;
+  const opts: IAiImageGenerationOptions = request.options ?? {};
+  const parameters: Record<string, unknown> = {
+    sampleCount: opts.count ?? 1
+  };
+  if (opts.imagen?.aspectRatio !== undefined) {
+    parameters.aspectRatio = opts.imagen.aspectRatio;
+  }
+  if (opts.imagen?.negativePrompt !== undefined) {
+    parameters.negativePrompt = opts.imagen.negativePrompt;
+  }
+  if (opts.seed !== undefined) {
+    parameters.seed = opts.seed;
+  }
+
+  const body: Record<string, unknown> = {
+    instances: [{ prompt: request.prompt }],
+    parameters
+  };
+
+  const headers: Record<string, string> = {
+    'x-goog-api-key': config.apiKey
+  };
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`Imagen generation: model=${config.model}, n=${parameters.sampleCount}`);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return imagenResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `Imagen API response: ${msg}`)
+    .onSuccess((response) => {
+      const images: IAiGeneratedImage[] = response.predictions.map((p) => ({
+        mimeType: p.mimeType ?? 'image/png',
+        base64: p.bytesBase64Encoded
+      }));
+      return succeed({ images });
+    });
+}
+
+// ============================================================================
+// Image generation — dispatcher
+// ============================================================================
+
+/**
+ * Calls the appropriate image-generation API for a given provider.
+ *
+ * Routes based on `descriptor.imageApiFormat`:
+ * - `'openai-images'` for OpenAI (DALL-E, gpt-image-1)
+ * - `'xai-images'` for xAI Grok image models
+ * - `'gemini-imagen'` for Google Imagen
+ *
+ * Image-model selection reuses the existing `'image'` {@link ModelSpecKey}.
+ *
+ * @param params - Request parameters including descriptor, API key, and prompt
+ * @returns The generated images, or a failure
+ * @public
+ */
+export async function callProviderImageGeneration(
+  params: IProviderImageGenerationParams
+): Promise<Result<IAiImageGenerationResponse>> {
+  const { descriptor, apiKey, params: request, modelOverride, logger, signal } = params;
+
+  if (descriptor.imageApiFormat === undefined) {
+    return fail(`provider "${descriptor.id}" does not support image generation`);
+  }
+  if (!descriptor.baseUrl) {
+    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  }
+
+  const config: IAiApiConfig = {
+    baseUrl: descriptor.baseUrl,
+    apiKey,
+    model: resolveModel(modelOverride ?? descriptor.defaultModel, 'image')
+  };
+  /* c8 ignore next 6 - optional logger diagnostic output */
+  if (logger) {
+    logger.info(
+      `AI image generation: provider=${descriptor.id}, format=${descriptor.imageApiFormat}, ` +
+        `model=${config.model}`
+    );
+  }
+
+  switch (descriptor.imageApiFormat) {
+    case 'openai-images':
+      return callOpenAiImageGeneration(config, request, 'image/png', logger, signal);
+    case 'xai-images':
+      return callOpenAiImageGeneration(config, request, 'image/jpeg', logger, signal);
+    case 'gemini-imagen':
+      return callImagenGeneration(config, request, logger, signal);
+    /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
+    default: {
+      const _exhaustive: never = descriptor.imageApiFormat;
+      return fail(`unsupported image API format: ${String(_exhaustive)}`);
+    }
+  }
+}
+
+// ============================================================================
+// List models — request types
+// ============================================================================
+
+/**
+ * Parameters for a list-models request.
+ * @public
+ */
+export interface IProviderListModelsParams {
+  /** The provider descriptor */
+  readonly descriptor: IAiProviderDescriptor;
+  /** API key for authentication */
+  readonly apiKey: string;
+  /** Optional capability filter; when set, only models declaring this capability are returned. */
+  readonly capability?: AiModelCapability;
+  /** Optional capability config override (defaults to {@link DEFAULT_MODEL_CAPABILITY_CONFIG}). */
+  readonly capabilityConfig?: IAiModelCapabilityConfig;
+  /** Optional logger for request/response observability. */
+  readonly logger?: Logging.ILogger;
+  /** Optional abort signal for cancelling the in-flight request. */
+  readonly signal?: AbortSignal;
+}
+
+// ============================================================================
+// List models — response validators
+// ============================================================================
+
+// ---- OpenAI / xAI / Groq / Mistral list format ----
+
+/** @internal */
+interface IOpenAiListEntry {
+  id: string;
+}
+/** @internal */
+interface IOpenAiListResponse {
+  data: IOpenAiListEntry[];
+}
+
+const openAiListEntry: Validator<IOpenAiListEntry> = Validators.object<IOpenAiListEntry>({
+  id: Validators.string
+});
+const openAiListResponse: Validator<IOpenAiListResponse> = Validators.object<IOpenAiListResponse>({
+  data: Validators.arrayOf(openAiListEntry)
+});
+
+// ---- Anthropic list format ----
+
+/** @internal */
+interface IAnthropicListEntry {
+  id: string;
+  display_name?: string;
+}
+/** @internal */
+interface IAnthropicListResponse {
+  data: IAnthropicListEntry[];
+}
+
+const anthropicListEntry: Validator<IAnthropicListEntry> = Validators.object<IAnthropicListEntry>({
+  id: Validators.string,
+  display_name: Validators.string.optional()
+});
+const anthropicListResponse: Validator<IAnthropicListResponse> = Validators.object<IAnthropicListResponse>({
+  data: Validators.arrayOf(anthropicListEntry)
+});
+
+// ---- Gemini list format ----
+
+/** @internal */
+interface IGeminiListEntry {
+  name: string;
+  displayName?: string;
+  supportedGenerationMethods?: string[];
+}
+/** @internal */
+interface IGeminiListResponse {
+  models: IGeminiListEntry[];
+}
+
+const geminiListEntry: Validator<IGeminiListEntry> = Validators.object<IGeminiListEntry>({
+  name: Validators.string,
+  displayName: Validators.string.optional(),
+  supportedGenerationMethods: Validators.arrayOf(Validators.string).optional()
+});
+const geminiListResponse: Validator<IGeminiListResponse> = Validators.object<IGeminiListResponse>({
+  models: Validators.arrayOf(geminiListEntry)
+});
+
+// ============================================================================
+// List models — capability resolution
+// ============================================================================
+
+/**
+ * Translates Gemini's `supportedGenerationMethods` strings into our abstract
+ * capability vocabulary. Methods without a mapping are ignored.
+ * @internal
+ */
+function geminiMethodsToCapabilities(methods: ReadonlyArray<string>): ReadonlyArray<AiModelCapability> {
+  const out: AiModelCapability[] = [];
+  for (const m of methods) {
+    if (m === 'generateContent') {
+      out.push('chat');
+    } else if (m === 'predict') {
+      out.push('image-generation');
+    }
+  }
+  return out;
+}
+
+/**
+ * Strips the `models/` prefix Gemini includes on listed model names.
+ * @internal
+ */
+function geminiBareId(name: string): string {
+  return name.startsWith('models/') ? name.substring('models/'.length) : name;
+}
+
+/**
+ * Applies a capability config to a model id. Walks per-provider rules then
+ * global rules; unions all matching rules' capabilities. Returns the union
+ * and the first matching `displayName` (if any).
+ * @internal
+ */
+function applyCapabilityConfig(
+  config: IAiModelCapabilityConfig,
+  providerId: string,
+  modelId: string
+): { capabilities: AiModelCapability[]; displayName: string | undefined } {
+  const caps = new Set<AiModelCapability>();
+  let displayName: string | undefined;
+
+  const rulesets: ReadonlyArray<ReadonlyArray<IAiModelCapabilityRule>> = [
+    config.perProvider?.[providerId as keyof typeof config.perProvider] ?? [],
+    config.global ?? []
+  ];
+
+  for (const rules of rulesets) {
+    for (const rule of rules) {
+      rule.idPattern.lastIndex = 0;
+      if (rule.idPattern.test(modelId)) {
+        for (const cap of rule.capabilities) {
+          caps.add(cap);
+        }
+        if (displayName === undefined && rule.displayName !== undefined) {
+          displayName = typeof rule.displayName === 'function' ? rule.displayName(modelId) : rule.displayName;
+        }
+      }
+    }
+  }
+  return { capabilities: Array.from(caps), displayName };
+}
+
+/**
+ * Combines provider-native capability info (when supplied) and config-derived
+ * capability info into a final {@link IAiModelInfo}.
+ * @internal
+ */
+function buildModelInfo(
+  providerId: string,
+  id: string,
+  nativeCapabilities: ReadonlyArray<AiModelCapability>,
+  nativeDisplayName: string | undefined,
+  config: IAiModelCapabilityConfig
+): IAiModelInfo {
+  const fromConfig = applyCapabilityConfig(config, providerId, id);
+  const all = new Set<AiModelCapability>([...nativeCapabilities, ...fromConfig.capabilities]);
+  return {
+    id,
+    capabilities: all,
+    ...(nativeDisplayName !== undefined
+      ? { displayName: nativeDisplayName }
+      : fromConfig.displayName !== undefined
+      ? { displayName: fromConfig.displayName }
+      : {})
+  };
+}
+
+// ============================================================================
+// List models — adapters
+// ============================================================================
+
+/**
+ * Calls the OpenAI-style `GET /models` endpoint. Used by openai, xai-grok,
+ * groq, and mistral. Provider supplies no capability info — capabilities are
+ * derived entirely from the config.
+ * @internal
+ */
+async function callOpenAiListModels(
+  config: IAiApiConfig,
+  providerId: string,
+  capabilityConfig: IAiModelCapabilityConfig,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
+  const url = `${config.baseUrl}/models`;
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${config.apiKey}`
+  };
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`List models: provider=${providerId}, format=openai`);
+  const jsonResult = await fetchGetJson(url, headers, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return openAiListResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `OpenAI models API response: ${msg}`)
+    .onSuccess((response) => {
+      const models = response.data.map((entry) =>
+        buildModelInfo(providerId, entry.id, [], undefined, capabilityConfig)
+      );
+      return succeed(models);
+    });
+}
+
+/**
+ * Calls the Anthropic `GET /models` endpoint. Provider supplies a
+ * `display_name` but no native capability info.
+ * @internal
+ */
+async function callAnthropicListModels(
+  config: IAiApiConfig,
+  providerId: string,
+  capabilityConfig: IAiModelCapabilityConfig,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
+  const url = `${config.baseUrl}/models`;
+  const headers: Record<string, string> = {
+    'x-api-key': config.apiKey,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true'
+  };
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`List models: provider=${providerId}, format=anthropic`);
+  const jsonResult = await fetchGetJson(url, headers, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return anthropicListResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `Anthropic models API response: ${msg}`)
+    .onSuccess((response) => {
+      const models = response.data.map((entry) =>
+        buildModelInfo(providerId, entry.id, [], entry.display_name, capabilityConfig)
+      );
+      return succeed(models);
+    });
+}
+
+/**
+ * Calls the Gemini `GET /models` endpoint. Provider supplies both a
+ * `displayName` and `supportedGenerationMethods` — translated to native
+ * capabilities and unioned with config-derived capabilities.
+ * @internal
+ */
+async function callGeminiListModels(
+  config: IAiApiConfig,
+  providerId: string,
+  capabilityConfig: IAiModelCapabilityConfig,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
+  const url = `${config.baseUrl}/models`;
+  const headers: Record<string, string> = {
+    'x-goog-api-key': config.apiKey
+  };
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`List models: provider=${providerId}, format=gemini`);
+  const jsonResult = await fetchGetJson(url, headers, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  return geminiListResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `Gemini models API response: ${msg}`)
+    .onSuccess((response) => {
+      const models = response.models.map((entry) => {
+        const id = geminiBareId(entry.name);
+        const native = entry.supportedGenerationMethods
+          ? geminiMethodsToCapabilities(entry.supportedGenerationMethods)
+          : [];
+        return buildModelInfo(providerId, id, native, entry.displayName, capabilityConfig);
+      });
+      return succeed(models);
+    });
+}
+
+// ============================================================================
+// List models — dispatcher
+// ============================================================================
+
+/**
+ * Lists models available from a provider, with capabilities resolved from
+ * native provider info (where supplied) and a configurable rule set.
+ *
+ * Routes based on `descriptor.apiFormat` — listing reuses the existing
+ * format dispatch and does not require a separate descriptor field.
+ *
+ * @param params - Request parameters including descriptor, API key, and optional capability filter
+ * @returns The resolved model list, or a failure
+ * @public
+ */
+export async function callProviderListModels(
+  params: IProviderListModelsParams
+): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
+  const { descriptor, apiKey, capability, capabilityConfig, logger, signal } = params;
+
+  if (!descriptor.baseUrl) {
+    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  }
+
+  const config: IAiApiConfig = {
+    baseUrl: descriptor.baseUrl,
+    apiKey,
+    model: '' // unused by listing
+  };
+  const effectiveConfig = capabilityConfig ?? DEFAULT_MODEL_CAPABILITY_CONFIG;
+
+  let listResult: Result<ReadonlyArray<IAiModelInfo>>;
+  switch (descriptor.apiFormat) {
+    case 'openai':
+      listResult = await callOpenAiListModels(config, descriptor.id, effectiveConfig, logger, signal);
+      break;
+    case 'anthropic':
+      listResult = await callAnthropicListModels(config, descriptor.id, effectiveConfig, logger, signal);
+      break;
+    case 'gemini':
+      listResult = await callGeminiListModels(config, descriptor.id, effectiveConfig, logger, signal);
+      break;
+    /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
+    default: {
+      const _exhaustive: never = descriptor.apiFormat;
+      return fail(`unsupported API format: ${String(_exhaustive)}`);
+    }
+  }
+
+  if (listResult.isFailure()) {
+    return listResult;
+  }
+  if (capability === undefined) {
+    return listResult;
+  }
+  return succeed(listResult.value.filter((m) => m.capabilities.has(capability)));
+}
+
+// ============================================================================
+// Proxied list models
+// ============================================================================
+
+/**
+ * Calls the model-listing endpoint on a proxy server.
+ *
+ * @remarks
+ * Proxy contract:
+ * - Endpoint: `POST ${proxyUrl}/api/ai/list-models`
+ * - Request body: `{providerId, apiKey, capability?}`. Capability config is
+ *   not forwarded — the proxy applies its own (typically the same default
+ *   the library ships).
+ * - Success response body: an `IAiModelInfo[]` (under key `models`) where
+ *   `capabilities` is serialized as a string array (not Set, which doesn't
+ *   round-trip through JSON).
+ * - Error response body: `{error: string}`, surfaced as `proxy: ${error}`.
+ *
+ * @public
+ */
+export async function callProxiedListModels(
+  proxyUrl: string,
+  params: IProviderListModelsParams
+): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
+  const { descriptor, apiKey, capability, logger, signal } = params;
+
+  const body: Record<string, unknown> = {
+    providerId: descriptor.id,
+    apiKey
+  };
+  if (capability !== undefined) {
+    body.capability = capability;
+  }
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`AI list-models proxy request: provider=${descriptor.id}, proxy=${proxyUrl}`);
+
+  const url = `${proxyUrl}/api/ai/list-models`;
+  const jsonResult = await fetchJson(url, {}, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+
+  const response = jsonResult.value as Record<string, unknown>;
+  if (typeof response.error === 'string') {
+    return fail(`proxy: ${response.error}`);
+  }
+
+  return proxiedListModelsResponse
+    .validate(response)
+    .withErrorFormat((msg) => `proxy returned invalid response: ${msg}`)
+    .onSuccess((parsed) => {
+      const models: IAiModelInfo[] = parsed.models.map((m) => ({
+        id: m.id,
+        capabilities: new Set<AiModelCapability>(m.capabilities),
+        ...(m.displayName !== undefined ? { displayName: m.displayName } : {})
+      }));
+      return succeed(models);
+    });
 }
 
 // ============================================================================
@@ -672,13 +1408,26 @@ export async function callProxiedCompletion(
   proxyUrl: string,
   params: IProviderCompletionParams
 ): Promise<Result<IAiCompletionResponse>> {
-  const { descriptor, apiKey, prompt, additionalMessages, temperature, modelOverride, logger, tools } =
-    params;
+  const {
+    descriptor,
+    apiKey,
+    prompt,
+    additionalMessages,
+    temperature,
+    modelOverride,
+    logger,
+    tools,
+    signal
+  } = params;
 
+  const promptBody: Record<string, unknown> = { system: prompt.system, user: prompt.user };
+  if (prompt.attachments.length > 0) {
+    promptBody.attachments = prompt.attachments;
+  }
   const body: Record<string, unknown> = {
     providerId: descriptor.id,
     apiKey,
-    prompt: { system: prompt.system, user: prompt.user },
+    prompt: promptBody,
     temperature: temperature ?? 0.7
   };
   if (additionalMessages && additionalMessages.length > 0) {
@@ -695,7 +1444,7 @@ export async function callProxiedCompletion(
   logger?.info(`AI proxy request: provider=${descriptor.id}, proxy=${proxyUrl}`);
 
   const url = `${proxyUrl}/api/ai/completion`;
-  const jsonResult = await fetchJson(url, {}, body, logger);
+  const jsonResult = await fetchJson(url, {}, body, logger, signal);
   if (jsonResult.isFailure()) {
     return fail(jsonResult.message);
   }
@@ -714,4 +1463,61 @@ export async function callProxiedCompletion(
     content: response.content,
     truncated: response.truncated === true
   });
+}
+
+// ============================================================================
+// Proxied image generation
+// ============================================================================
+
+/**
+ * Calls the image-generation endpoint on a proxy server instead of calling
+ * the provider API directly from the browser.
+ *
+ * @remarks
+ * The proxy contract:
+ * - Endpoint: `POST ${proxyUrl}/api/ai/image-generation`
+ * - Request body: `{providerId, apiKey, params, modelOverride?}`
+ * - Success response body: an {@link IAiImageGenerationResponse}
+ * - Error response body: `{error: string}` (surfaced as `proxy: ${error}`)
+ *
+ * The proxy server is responsible for descriptor lookup, model resolution,
+ * provider dispatch, and response normalization.
+ *
+ * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`)
+ * @param params - Same parameters as {@link callProviderImageGeneration}
+ * @returns The generated images, or a failure
+ * @public
+ */
+export async function callProxiedImageGeneration(
+  proxyUrl: string,
+  params: IProviderImageGenerationParams
+): Promise<Result<IAiImageGenerationResponse>> {
+  const { descriptor, apiKey, params: request, modelOverride, logger, signal } = params;
+
+  const body: Record<string, unknown> = {
+    providerId: descriptor.id,
+    apiKey,
+    params: request
+  };
+  if (modelOverride !== undefined) {
+    body.modelOverride = modelOverride;
+  }
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`AI image proxy request: provider=${descriptor.id}, proxy=${proxyUrl}`);
+
+  const url = `${proxyUrl}/api/ai/image-generation`;
+  const jsonResult = await fetchJson(url, {}, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+
+  const response = jsonResult.value as Record<string, unknown>;
+  if (typeof response.error === 'string') {
+    return fail(`proxy: ${response.error}`);
+  }
+
+  return proxiedImageGenerationResponse
+    .validate(response)
+    .withErrorFormat((msg) => `proxy returned invalid response: ${msg}`);
 }

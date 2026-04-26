@@ -23,7 +23,7 @@ Description
 <tbody>
 <tr><td>
 
-`constructor(user, system)`
+`constructor(user, system, attachments)`
 
 </td><td>
 
@@ -88,6 +88,23 @@ string
 </td><td>
 
 User request: the specific entity generation request.
+
+</td></tr>
+<tr><td>
+
+[attachments](./AiPrompt.attachments.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IAiImageAttachment](../../interfaces/IAiImageAttachment.md)[]
+
+</td><td>
+
+Optional image attachments.
 
 </td></tr>
 <tr><td>

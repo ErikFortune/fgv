@@ -25,7 +25,7 @@
 
 import { fail, Result, succeed } from '@fgv/ts-utils';
 
-import { type AiProviderId, type IAiProviderDescriptor } from './model';
+import { type AiProviderId, type IAiModelCapabilityConfig, type IAiProviderDescriptor } from './model';
 
 // ============================================================================
 // Built-in providers
@@ -45,7 +45,9 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: '',
     defaultModel: '',
     supportedTools: [],
-    corsRestricted: false
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false
   },
   {
     id: 'anthropic',
@@ -56,7 +58,9 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://api.anthropic.com/v1',
     defaultModel: 'claude-sonnet-4-5-20250929',
     supportedTools: ['web_search'],
-    corsRestricted: false
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: true
   },
   {
     id: 'google-gemini',
@@ -65,9 +69,12 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: 'gemini-2.5-flash',
+    defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-3.0-generate-002' },
     supportedTools: ['web_search'],
-    corsRestricted: false
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: true,
+    imageApiFormat: 'gemini-imagen'
   },
   {
     id: 'groq',
@@ -78,7 +85,9 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://api.groq.com/openai/v1',
     defaultModel: 'llama-3.3-70b-versatile',
     supportedTools: [],
-    corsRestricted: false
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false
   },
   {
     id: 'mistral',
@@ -89,7 +98,9 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     baseUrl: 'https://api.mistral.ai/v1',
     defaultModel: 'mistral-large-latest',
     supportedTools: [],
-    corsRestricted: false
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false
   },
   {
     id: 'openai',
@@ -98,9 +109,12 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o',
+    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
     supportedTools: ['web_search'],
-    corsRestricted: false
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: true,
+    imageApiFormat: 'openai-images'
   },
   {
     id: 'xai-grok',
@@ -109,9 +123,16 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'openai',
     baseUrl: 'https://api.x.ai/v1',
-    defaultModel: { base: 'grok-4-1-fast', tools: 'grok-4-1-fast-reasoning' },
+    defaultModel: {
+      base: 'grok-4-1-fast',
+      tools: 'grok-4-1-fast-reasoning',
+      image: 'grok-2-image-1212'
+    },
     supportedTools: ['web_search'],
-    corsRestricted: true
+    corsRestricted: true,
+    streamingCorsRestricted: true,
+    acceptsImageInput: true,
+    imageApiFormat: 'xai-images'
   }
 ];
 
@@ -155,3 +176,40 @@ export function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>
   }
   return succeed(descriptor);
 }
+
+// ============================================================================
+// Default model capability config
+// ============================================================================
+
+/**
+ * Default capability config used by `callProviderListModels` when callers
+ * don't supply their own. Patterns are intentionally narrow — false
+ * positives are worse than missing a model. Caller can override per call
+ * via {@link IProviderListModelsParams.capabilityConfig}.
+ *
+ * @public
+ */
+export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
+  perProvider: {
+    openai: [
+      { idPattern: /^dall-e/, capabilities: ['image-generation'] },
+      { idPattern: /^gpt-image/, capabilities: ['image-generation'] },
+      { idPattern: /^gpt-4/, capabilities: ['chat', 'tools', 'vision'] },
+      { idPattern: /^gpt-3\.5/, capabilities: ['chat'] },
+      { idPattern: /^o\d/, capabilities: ['chat', 'tools'] }
+    ],
+    'xai-grok': [
+      { idPattern: /-image/, capabilities: ['image-generation'] },
+      { idPattern: /^grok-4/, capabilities: ['chat', 'tools', 'vision'] },
+      { idPattern: /^grok-3/, capabilities: ['chat', 'tools'] },
+      { idPattern: /^grok-2/, capabilities: ['chat', 'vision'] }
+    ],
+    'google-gemini': [
+      { idPattern: /^imagen/, capabilities: ['image-generation'] },
+      { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }
+    ],
+    anthropic: [{ idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }],
+    groq: [{ idPattern: /./, capabilities: ['chat'] }],
+    mistral: [{ idPattern: /./, capabilities: ['chat'] }]
+  }
+};
