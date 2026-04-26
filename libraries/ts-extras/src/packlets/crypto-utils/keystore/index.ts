@@ -25,6 +25,7 @@
 
 // Types and interfaces
 export * from './model';
+export * from './privateKeyStorage';
 
 // Converters namespace
 import * as Converters from './converters';

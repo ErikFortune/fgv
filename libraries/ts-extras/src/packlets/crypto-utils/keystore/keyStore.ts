@@ -39,10 +39,10 @@ import {
   IImportKeyOptions,
   IImportSecretOptions,
   IKeyStoreCreateParams,
+  IKeyStoreEntryJson,
   IKeyStoreFile,
   IKeyStoreOpenParams,
   IKeyStoreSecretEntry,
-  IKeyStoreSecretEntryJson,
   IKeyStoreVaultContents,
   KEYSTORE_FORMAT,
   KeyStoreLockState,
@@ -890,7 +890,7 @@ export class KeyStore implements IEncryptionProvider {
     const salt = this._salt!;
 
     // Build vault contents
-    const secretEntries: Record<string, IKeyStoreSecretEntryJson> = {};
+    const secretEntries: Record<string, IKeyStoreEntryJson> = {};
     for (const [name, entry] of secrets) {
       secretEntries[name] = {
         name: entry.name,
@@ -996,6 +996,10 @@ export class KeyStore implements IEncryptionProvider {
     }
     const secrets = new Map<string, IKeyStoreSecretEntry>();
     for (const [name, jsonEntry] of Object.entries(vaultResult.value.secrets)) {
+      /* c8 ignore next 3 - asymmetric handling lands in step 3; no public API writes these entries yet */
+      if (jsonEntry.type === 'asymmetric-keypair') {
+        return fail(`Secret '${name}': asymmetric-keypair entries are not yet supported by this KeyStore`);
+      }
       const keyBytesResult = this._cryptoProvider.fromBase64(jsonEntry.key);
       /* c8 ignore next 3 - error path tested but coverage intermittently missed */
       if (keyBytesResult.isFailure()) {
@@ -1003,8 +1007,7 @@ export class KeyStore implements IEncryptionProvider {
       }
       const entry: IKeyStoreSecretEntry = {
         name,
-        /* c8 ignore next 1 - backwards compatibility: old vaults may lack type field */
-        type: jsonEntry.type ?? 'encryption-key',
+        type: jsonEntry.type,
         key: keyBytesResult.value,
         description: jsonEntry.description,
         createdAt: jsonEntry.createdAt
