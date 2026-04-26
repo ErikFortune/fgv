@@ -194,6 +194,42 @@ Information about a single model returned by a provider's list endpoint,
 </td></tr>
 <tr><td>
 
+[IAiStreamTextDelta](./interfaces/IAiStreamTextDelta.md)
+
+</td><td>
+
+A text-content delta arriving during a streaming completion.
+
+</td></tr>
+<tr><td>
+
+[IAiStreamToolEvent](./interfaces/IAiStreamToolEvent.md)
+
+</td><td>
+
+A server-side tool progress event arriving during a streaming completion.
+
+</td></tr>
+<tr><td>
+
+[IAiStreamDone](./interfaces/IAiStreamDone.md)
+
+</td><td>
+
+Terminal success event for a streaming completion.
+
+</td></tr>
+<tr><td>
+
+[IAiStreamError](./interfaces/IAiStreamError.md)
+
+</td><td>
+
+Terminal failure event for a streaming completion.
+
+</td></tr>
+<tr><td>
+
 [IModelSpecMap](./interfaces/IModelSpecMap.md)
 
 </td><td>
@@ -226,6 +262,15 @@ Parameters for an image-generation request.
 </td><td>
 
 Parameters for a list-models request.
+
+</td></tr>
+<tr><td>
+
+[IProviderCompletionStreamParams](./interfaces/IProviderCompletionStreamParams.md)
+
+</td><td>
+
+Parameters for a streaming completion request.
 
 </td></tr>
 </tbody></table>
@@ -294,6 +339,15 @@ API format categories for provider routing.
 </td><td>
 
 API format categories for image-generation provider routing.
+
+</td></tr>
+<tr><td>
+
+[IAiStreamEvent](./type-aliases/IAiStreamEvent.md)
+
+</td><td>
+
+Discriminated union of events emitted by a streaming completion.
 
 </td></tr>
 <tr><td>
@@ -418,6 +472,24 @@ native provider info (where supplied) and a configurable rule set.
 </td><td>
 
 Calls the model-listing endpoint on a proxy server.
+
+</td></tr>
+<tr><td>
+
+[callProviderCompletionStream](./functions/callProviderCompletionStream.md)
+
+</td><td>
+
+Calls the appropriate streaming chat completion API for a given provider.
+
+</td></tr>
+<tr><td>
+
+[callProxiedCompletionStream](./functions/callProxiedCompletionStream.md)
+
+</td><td>
+
+Calls the streaming chat endpoint on a proxy server instead of calling
 
 </td></tr>
 <tr><td>

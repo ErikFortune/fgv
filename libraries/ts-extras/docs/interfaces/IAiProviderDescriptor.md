@@ -179,6 +179,24 @@ Whether this provider's API enforces CORS restrictions that prevent direct brows
 </td></tr>
 <tr><td>
 
+[streamingCorsRestricted](./IAiProviderDescriptor.streamingCorsRestricted.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Whether this provider's streaming completion endpoint requires a proxy
+for direct browser calls.
+
+</td></tr>
+<tr><td>
+
 [acceptsImageInput](./IAiProviderDescriptor.acceptsImageInput.md)
 
 </td><td>
