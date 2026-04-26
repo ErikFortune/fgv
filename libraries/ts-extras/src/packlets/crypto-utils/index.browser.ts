@@ -47,6 +47,9 @@ export { Converters };
 // Direct encryption provider
 export { DirectEncryptionProvider, IDirectEncryptionProviderParams } from './directEncryptionProvider';
 
+// WebCrypto parameter table for asymmetric keypair algorithms
+export { IKeyPairAlgorithmParams, keyPairAlgorithmParams } from './keyPairAlgorithmParams';
+
 // Note: NodeCryptoProvider is NOT exported in browser version
 // Use BrowserCryptoProvider from @fgv/ts-web-extras instead
 

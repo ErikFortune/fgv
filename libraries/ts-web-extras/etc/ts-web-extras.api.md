@@ -20,9 +20,13 @@ class BrowserCryptoProvider implements ICryptoProvider {
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     // Warning: (ae-forgotten-export) The symbol "IEncryptionResult" needs to be exported by the entry point index.d.ts
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
+    // Warning: (ae-forgotten-export) The symbol "KeyPairAlgorithm" needs to be exported by the entry point index.d.ts
+    generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
+    importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
 }

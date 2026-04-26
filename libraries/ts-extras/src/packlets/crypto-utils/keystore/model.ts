@@ -18,8 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { EncryptionAlgorithm, ICryptoProvider, IKeyDerivationParams } from '../model';
+import { EncryptionAlgorithm, ICryptoProvider, IKeyDerivationParams, KeyPairAlgorithm } from '../model';
 import { IPrivateKeyStorage } from './privateKeyStorage';
+
+// Re-export so consumers can continue to access the algorithm enum via the
+// CryptoUtils.KeyStore namespace alongside the rest of the keystore types.
+export { allKeyPairAlgorithms, KeyPairAlgorithm } from '../model';
 
 // ============================================================================
 // Key Store Format Types
@@ -95,20 +99,6 @@ export const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType> = [
   'api-key',
   'asymmetric-keypair'
 ];
-
-/**
- * Asymmetric keypair algorithms supported by the key store.
- * - `'ecdsa-p256'`: ECDSA over the P-256 curve, for signing.
- * - `'rsa-oaep-2048'`: RSA-OAEP, 2048-bit modulus with SHA-256, for encryption.
- * @public
- */
-export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048';
-
-/**
- * All valid key pair algorithms.
- * @public
- */
-export const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm> = ['ecdsa-p256', 'rsa-oaep-2048'];
 
 /**
  * A symmetric secret entry stored in the vault (in-memory representation).

@@ -282,6 +282,8 @@ declare namespace CryptoUtils {
         Converters_3 as Converters,
         DirectEncryptionProvider,
         IDirectEncryptionProviderParams,
+        IKeyPairAlgorithmParams,
+        keyPairAlgorithmParams,
         NodeCryptoProvider,
         nodeCryptoProvider,
         createEncryptedFile,
@@ -295,6 +297,8 @@ declare namespace CryptoUtils {
         EncryptedFileFormat,
         INamedSecret,
         IEncryptionResult,
+        KeyPairAlgorithm,
+        allKeyPairAlgorithms,
         KeyDerivationFunction,
         IKeyDerivationParams,
         IEncryptedFile,
@@ -741,9 +745,15 @@ interface ICryptoProvider {
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
 }
@@ -808,6 +818,17 @@ interface IKeyDerivationParams {
     readonly iterations: number;
     readonly kdf: KeyDerivationFunction;
     readonly salt: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IKeyPairAlgorithmParams {
+    readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams;
+    readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams;
+    readonly keyPairUsages: ReadonlyArray<KeyUsage>;
+    readonly publicKeyUsages: ReadonlyArray<KeyUsage>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1067,11 +1088,19 @@ type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048';
 // @public
 const keyPairAlgorithm: Converter<KeyPairAlgorithm>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const keyPairAlgorithmParams: Readonly<Record<KeyPairAlgorithm, IKeyPairAlgorithmParams>>;
+
 declare namespace KeyStore {
     export {
         Converters_2 as Converters,
         KeyStore_2 as KeyStore,
         isKeyStoreFile,
+        allKeyPairAlgorithms,
+        KeyPairAlgorithm,
         KeyStoreFormat,
         KEYSTORE_FORMAT,
         DEFAULT_KEYSTORE_ITERATIONS,
@@ -1081,8 +1110,6 @@ declare namespace KeyStore {
         KeyStoreAsymmetricSecretType,
         KeyStoreSecretType,
         allKeyStoreSecretTypes,
-        KeyPairAlgorithm,
-        allKeyPairAlgorithms,
         IKeyStoreSymmetricEntry,
         IKeyStoreAsymmetricEntry,
         IKeyStoreEntry,
@@ -1287,9 +1314,13 @@ class NodeCryptoProvider implements ICryptoProvider {
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
+    importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
 }

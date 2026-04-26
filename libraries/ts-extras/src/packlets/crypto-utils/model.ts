@@ -78,6 +78,20 @@ export interface IEncryptionResult {
 }
 
 /**
+ * Asymmetric keypair algorithms supported by the crypto provider.
+ * - `'ecdsa-p256'`: ECDSA over the P-256 curve, for signing.
+ * - `'rsa-oaep-2048'`: RSA-OAEP, 2048-bit modulus with SHA-256, for encryption.
+ * @public
+ */
+export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048';
+
+/**
+ * All valid key pair algorithms.
+ * @public
+ */
+export const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm> = ['ecdsa-p256', 'rsa-oaep-2048'];
+
+/**
  * Supported key derivation functions.
  * @public
  */
@@ -234,6 +248,39 @@ export interface ICryptoProvider {
    * @returns Success with decoded bytes, or Failure if invalid base64
    */
   fromBase64(base64: string): Result<Uint8Array>;
+
+  // ============================================================================
+  // Asymmetric Key Operations
+  // ============================================================================
+
+  /**
+   * Generates a new asymmetric keypair for the requested algorithm.
+   * @param algorithm - The {@link CryptoUtils.KeyPairAlgorithm | algorithm} to use.
+   * @param extractable - Whether the resulting `CryptoKey` objects may be exported.
+   * Set `false` on backends that store `CryptoKey` references directly (e.g.
+   * IndexedDB). Set `true` when the private key must round-trip through JWK or
+   * PKCS#8 (e.g. encrypted-file backends).
+   * @returns Success with the generated `CryptoKeyPair`, or Failure with error context.
+   */
+  generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
+
+  /**
+   * Exports the public half of a keypair as a JSON Web Key.
+   * @param publicKey - The public `CryptoKey` to export. Must be an `extractable`
+   * key generated for an asymmetric algorithm.
+   * @returns Success with the JWK, or Failure with error context.
+   */
+  exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
+
+  /**
+   * Re-imports a public-key JWK as a `CryptoKey` usable for verification or
+   * encryption (depending on algorithm).
+   * @param jwk - The JSON Web Key produced by {@link CryptoUtils.ICryptoProvider.exportPublicKeyJwk | exportPublicKeyJwk}.
+   * @param algorithm - The {@link CryptoUtils.KeyPairAlgorithm | algorithm} the
+   * key was generated for. Determines the import parameters and key usages.
+   * @returns Success with the imported public `CryptoKey`, or Failure with error context.
+   */
+  importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
 }
 
 // ============================================================================

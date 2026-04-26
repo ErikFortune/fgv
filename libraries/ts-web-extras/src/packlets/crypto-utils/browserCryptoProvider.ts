@@ -19,12 +19,14 @@
 // SOFTWARE.
 
 /* c8 ignore start - Browser-only implementation cannot be tested in Node.js environment */
-import { captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
+import { captureAsyncResult, captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 
 type ICryptoProvider = CryptoUtils.ICryptoProvider;
 type IEncryptionResult = CryptoUtils.IEncryptionResult;
+type KeyPairAlgorithm = CryptoUtils.KeyPairAlgorithm;
 const CryptoConstants = CryptoUtils.Constants;
+const keyPairAlgorithmParams = CryptoUtils.keyPairAlgorithmParams;
 
 /**
  * Extracts an `ArrayBuffer` from a Uint8Array, handling the potential SharedArrayBuffer case.
@@ -317,6 +319,51 @@ export class BrowserCryptoProvider implements ICryptoProvider {
     } catch (e) {
       return Failure.with('Invalid base64 string');
     }
+  }
+
+  // ============================================================================
+  // Asymmetric Key Operations
+  // ============================================================================
+
+  /**
+   * Generates a new asymmetric keypair via Web Crypto.
+   * @param algorithm - The algorithm to use.
+   * @param extractable - Whether the resulting keys may be exported.
+   * @returns `Success` with the generated `CryptoKeyPair`, or `Failure` with an error.
+   */
+  public async generateKeyPair(
+    algorithm: KeyPairAlgorithm,
+    extractable: boolean
+  ): Promise<Result<CryptoKeyPair>> {
+    const params = keyPairAlgorithmParams[algorithm];
+    const result = await captureAsyncResult(() =>
+      this._crypto.subtle.generateKey(params.generateKey, extractable, params.keyPairUsages)
+    );
+    return result.withErrorFormat((e) => `Failed to generate ${algorithm} keypair: ${e}`);
+  }
+
+  /**
+   * Exports a public `CryptoKey` as a JSON Web Key.
+   * @param publicKey - Extractable public key to export.
+   * @returns `Success` with the JWK, or `Failure` with an error.
+   */
+  public async exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>> {
+    const result = await captureAsyncResult(() => this._crypto.subtle.exportKey('jwk', publicKey));
+    return result.withErrorFormat((e) => `Failed to export public key as JWK: ${e}`);
+  }
+
+  /**
+   * Imports a public-key JWK as a `CryptoKey` for the requested algorithm.
+   * @param jwk - The JSON Web Key produced by a prior export.
+   * @param algorithm - The algorithm the key was generated for.
+   * @returns `Success` with the imported public `CryptoKey`, or `Failure` with an error.
+   */
+  public async importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>> {
+    const params = keyPairAlgorithmParams[algorithm];
+    const result = await captureAsyncResult(() =>
+      this._crypto.subtle.importKey('jwk', jwk, params.importPublicKey, true, params.publicKeyUsages)
+    );
+    return result.withErrorFormat((e) => `Failed to import ${algorithm} public key from JWK: ${e}`);
   }
 }
 
