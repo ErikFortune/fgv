@@ -40,8 +40,7 @@ export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
     }
   }, [turns, activeToolEvents]);
 
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
+  const submitMessage = (): void => {
     if (!canSubmit || isWorking || input.trim().length === 0) {
       return;
     }
@@ -50,6 +49,11 @@ export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
     const text = input;
     setInput('');
     void onSend(text, { tools });
+  };
+
+  const handleSubmit = (e: React.FormEvent): void => {
+    e.preventDefault();
+    submitMessage();
   };
 
   return (
@@ -119,7 +123,7 @@ export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSubmit(e);
+                submitMessage();
               }
             }}
             disabled={isWorking}

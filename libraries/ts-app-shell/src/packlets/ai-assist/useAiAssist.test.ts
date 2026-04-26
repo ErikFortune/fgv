@@ -982,6 +982,19 @@ describe('useAiAssist › streamDirect', () => {
     expect(events.map((e) => e.type)).toEqual(['text-delta', 'error']);
   });
 
+  test('returns Result.fail when the stream ends without a terminal done or error event', async () => {
+    // Simulates a misbehaving proxy/transport that closes the stream after
+    // some content but without ever sending a `done` or `error` event.
+    directSpy.mockResolvedValueOnce(succeed(makeStreamSource([{ type: 'text-delta', delta: 'partial' }])));
+    const { result } = renderHook(() => useAiAssist(defaultParams()));
+    let r: Result<{ fullText: string; truncated: boolean }> | undefined;
+    await act(async () => {
+      r = await result.current.streamDirect('openai', TEST_PROMPT, jest.fn());
+    });
+    expect(r?.isFailure()).toBe(true);
+    expect(r?.message).toMatch(/without a terminal done or error event/);
+  });
+
   test('forwards tools and messagesBefore to the underlying call', async () => {
     directSpy.mockResolvedValueOnce(
       succeed(makeStreamSource([{ type: 'done', truncated: false, fullText: '' }]))

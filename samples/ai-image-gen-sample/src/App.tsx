@@ -180,18 +180,22 @@ export function App(): React.JSX.Element {
     const assistantTurn: IChatTurn = { role: 'assistant', content: '', isStreaming: true };
     setChatTurns((prev) => [...prev, userTurn, assistantTurn]);
 
-    // Build the prompt: system stays empty for plain chat; user is the new message.
-    // Prior turns go into messagesBefore so they're sent between system and user.
+    // System prompt is a generic helpful-assistant string; prior turns go into
+    // messagesBefore so they're sent between system and the new user message.
     const messagesBefore: AiAssist.IChatMessage[] = chatTurns
       .filter((t) => t.role === 'user' || t.role === 'assistant')
       .map((t) => ({ role: t.role, content: t.content }));
     const prompt = new AiAssist.AiPrompt(text, 'You are a helpful assistant.');
+
+    let receivedAnyContent = false;
+    let inlineError: string | undefined;
 
     const result = await streamDirect(
       provider,
       prompt,
       (event) => {
         if (event.type === 'text-delta') {
+          receivedAnyContent = true;
           setChatTurns((prev) => {
             const next = [...prev];
             const last = next[next.length - 1];
@@ -206,21 +210,46 @@ export function App(): React.JSX.Element {
           } else if (event.phase === 'completed') {
             setActiveToolEvents((prev) => prev.slice(0, -1));
           }
+        } else if (event.type === 'done') {
+          // Replace accumulated text with the adapter's canonical fullText so
+          // the transcript can't drift from what the model actually produced.
+          receivedAnyContent = event.fullText.length > 0;
+          setChatTurns((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last && last.role === 'assistant') {
+              next[next.length - 1] = { ...last, content: event.fullText };
+            }
+            return next;
+          });
+        } else if (event.type === 'error') {
+          inlineError = event.message;
         }
       },
       { tools: options.tools, messagesBefore, signal: controller.signal }
     );
     abortControllerRef.current = undefined;
     setActiveToolEvents([]);
+
+    // Finalize the assistant turn: clear its streaming flag, or drop it
+    // entirely if nothing arrived (connect failed or aborted with no output).
     setChatTurns((prev) => {
       const next = [...prev];
       const last = next[next.length - 1];
-      if (last && last.role === 'assistant') {
-        next[next.length - 1] = { ...last, isStreaming: false };
+      if (!last || last.role !== 'assistant') {
+        return next;
       }
+      if (!receivedAnyContent && last.content.length === 0) {
+        next.pop();
+        return next;
+      }
+      next[next.length - 1] = { ...last, isStreaming: false };
       return next;
     });
-    if (result.isFailure()) {
+
+    if (inlineError !== undefined) {
+      setChatError(inlineError);
+    } else if (result.isFailure()) {
       setChatError(result.message);
     }
   };

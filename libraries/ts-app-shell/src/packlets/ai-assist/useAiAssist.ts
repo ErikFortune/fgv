@@ -528,6 +528,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
       let fullText = '';
       let truncated = false;
       let terminalError: string | undefined;
+      let receivedTerminalEvent = false;
       try {
         for await (const event of openResult.value) {
           onEvent(event);
@@ -536,8 +537,10 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
           } else if (event.type === 'done') {
             fullText = event.fullText;
             truncated = event.truncated;
+            receivedTerminalEvent = true;
           } else if (event.type === 'error') {
             terminalError = event.message;
+            receivedTerminalEvent = true;
           }
         }
       } finally {
@@ -546,6 +549,11 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
       if (terminalError !== undefined) {
         logger?.error(`AI streaming ended in error: ${terminalError}`);
         return fail(terminalError);
+      }
+      if (!receivedTerminalEvent) {
+        const message = 'AI stream ended without a terminal done or error event';
+        logger?.error(message);
+        return fail(message);
       }
       return succeed({ fullText, truncated });
     },
