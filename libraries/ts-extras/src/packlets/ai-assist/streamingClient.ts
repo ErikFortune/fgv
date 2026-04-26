@@ -45,6 +45,7 @@ import {
   type ModelSpec,
   resolveModel
 } from './model';
+import { parseSseEventJson, readSseEvents } from './sseParser';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
 
 // ============================================================================
@@ -92,100 +93,6 @@ interface IStreamApiConfig {
   readonly baseUrl: string;
   readonly apiKey: string;
   readonly model: string;
-}
-
-interface ISseMessage {
-  readonly event?: string;
-  readonly data: string;
-}
-
-// ============================================================================
-// SSE parsing
-// ============================================================================
-
-/**
- * Parses a single SSE chunk (text between blank lines) into an
- * {@link ISseMessage}. Returns undefined for chunks with no data lines
- * (comments, heartbeats).
- *
- * @internal
- */
-function parseSseChunk(chunk: string): ISseMessage | undefined {
-  let event: string | undefined;
-  const dataLines: string[] = [];
-  for (const line of chunk.split('\n')) {
-    if (line.startsWith('event:')) {
-      event = line.slice(6).trim();
-    } else if (line.startsWith('data:')) {
-      // Per the SSE spec the value starts after the colon, with one optional leading space stripped.
-      const value = line.slice(5);
-      dataLines.push(value.startsWith(' ') ? value.slice(1) : value);
-    }
-  }
-  if (dataLines.length === 0) {
-    return undefined;
-  }
-  return event !== undefined ? { event, data: dataLines.join('\n') } : { data: dataLines.join('\n') };
-}
-
-/**
- * Reads an SSE response body and yields parsed messages. Handles partial
- * chunks across read boundaries via a buffer; terminates when the stream
- * closes (normal end or aborted fetch).
- *
- * @internal
- */
-async function* readSseStream(body: ReadableStream<Uint8Array>): AsyncGenerator<ISseMessage> {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  try {
-    let streaming = true;
-    while (streaming) {
-      const { value, done } = await reader.read();
-      if (done) {
-        streaming = false;
-        if (buffer.length > 0) {
-          const tail = parseSseChunk(buffer.replace(/\r\n/g, '\n'));
-          if (tail) {
-            yield tail;
-          }
-        }
-        break;
-      }
-      buffer += decoder.decode(value, { stream: true });
-      // SSE messages are separated by a blank line; some servers use \r\n.
-      const normalized = buffer.replace(/\r\n/g, '\n');
-      const parts = normalized.split('\n\n');
-      // Last element is the partial chunk (no terminating blank line yet); buffer it.
-      buffer = parts.pop() ?? '';
-      for (const chunk of parts) {
-        const message = parseSseChunk(chunk);
-        if (message) {
-          yield message;
-        }
-      }
-    }
-  } finally {
-    reader.releaseLock();
-  }
-}
-
-/**
- * Parses an SSE message's `data` field as JSON; returns undefined for
- * sentinel values like `[DONE]` or for non-JSON payloads.
- *
- * @internal
- */
-function parseSseJson(data: string): unknown | undefined {
-  if (data === '[DONE]') {
-    return undefined;
-  }
-  try {
-    return JSON.parse(data);
-  } catch {
-    return undefined;
-  }
 }
 
 // ============================================================================
@@ -257,8 +164,8 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
     if (!response.body) return;
-    for await (const message of readSseStream(response.body)) {
-      const json = parseSseJson(message.data);
+    for await (const message of readSseEvents(response.body)) {
+      const json = parseSseEventJson(message.data);
       if (json === undefined) {
         // [DONE] sentinel or unparseable; skip
         continue;
@@ -309,10 +216,10 @@ async function* translateOpenAiResponsesStream(response: Response): AsyncGenerat
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
     if (!response.body) return;
-    for await (const message of readSseStream(response.body)) {
+    for await (const message of readSseEvents(response.body)) {
       const eventName = message.event;
       if (eventName === 'response.output_text.delta') {
-        const json = parseSseJson(message.data) as { delta?: string } | undefined;
+        const json = parseSseEventJson(message.data) as { delta?: string } | undefined;
         const delta = json?.delta;
         if (typeof delta === 'string' && delta.length > 0) {
           fullText += delta;
@@ -323,11 +230,11 @@ async function* translateOpenAiResponsesStream(response: Response): AsyncGenerat
       } else if (eventName === 'response.web_search_call.completed') {
         yield { type: 'tool-event', toolType: 'web_search', phase: 'completed' };
       } else if (eventName === 'response.completed') {
-        const json = parseSseJson(message.data) as { response?: { status?: string } } | undefined;
+        const json = parseSseEventJson(message.data) as { response?: { status?: string } } | undefined;
         truncated = json?.response?.status === 'incomplete';
         completed = true;
       } else if (eventName === 'response.failed' || eventName === 'error') {
-        const json = parseSseJson(message.data) as
+        const json = parseSseEventJson(message.data) as
           | { error?: { message?: string }; message?: string }
           | undefined;
         const errMsg = json?.error?.message ?? json?.message ?? 'Responses API stream failed';
@@ -366,10 +273,10 @@ async function* translateAnthropicStream(response: Response): AsyncGenerator<IAi
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
     if (!response.body) return;
-    for await (const message of readSseStream(response.body)) {
+    for await (const message of readSseEvents(response.body)) {
       const eventName = message.event;
       if (eventName === 'content_block_start') {
-        const json = parseSseJson(message.data) as
+        const json = parseSseEventJson(message.data) as
           | { content_block?: { type?: string; name?: string } }
           | undefined;
         const block = json?.content_block;
@@ -379,7 +286,9 @@ async function* translateAnthropicStream(response: Response): AsyncGenerator<IAi
           yield { type: 'tool-event', toolType: 'web_search', phase: 'completed' };
         }
       } else if (eventName === 'content_block_delta') {
-        const json = parseSseJson(message.data) as { delta?: { type?: string; text?: string } } | undefined;
+        const json = parseSseEventJson(message.data) as
+          | { delta?: { type?: string; text?: string } }
+          | undefined;
         if (json?.delta?.type === 'text_delta' && typeof json.delta.text === 'string') {
           const delta = json.delta.text;
           if (delta.length > 0) {
@@ -388,14 +297,14 @@ async function* translateAnthropicStream(response: Response): AsyncGenerator<IAi
           }
         }
       } else if (eventName === 'message_delta') {
-        const json = parseSseJson(message.data) as { delta?: { stop_reason?: string } } | undefined;
+        const json = parseSseEventJson(message.data) as { delta?: { stop_reason?: string } } | undefined;
         if (json?.delta?.stop_reason === 'max_tokens') {
           truncated = true;
         }
       } else if (eventName === 'message_stop') {
         stopped = true;
       } else if (eventName === 'error') {
-        const json = parseSseJson(message.data) as { error?: { message?: string } } | undefined;
+        const json = parseSseEventJson(message.data) as { error?: { message?: string } } | undefined;
         yield {
           type: 'error',
           message: json?.error?.message ?? 'Anthropic stream returned an error event'
@@ -434,8 +343,8 @@ async function* translateGeminiStream(response: Response): AsyncGenerator<IAiStr
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
     if (!response.body) return;
-    for await (const message of readSseStream(response.body)) {
-      const json = parseSseJson(message.data);
+    for await (const message of readSseEvents(response.body)) {
+      const json = parseSseEventJson(message.data);
       if (json === undefined) {
         continue;
       }
@@ -734,8 +643,8 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
     if (!response.body) return;
-    for await (const message of readSseStream(response.body)) {
-      const json = parseSseJson(message.data);
+    for await (const message of readSseEvents(response.body)) {
+      const json = parseSseEventJson(message.data);
       if (json === undefined) {
         continue;
       }
