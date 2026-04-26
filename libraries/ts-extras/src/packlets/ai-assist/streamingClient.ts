@@ -66,10 +66,12 @@ export interface IProviderCompletionStreamParams {
   /** The structured prompt to send */
   readonly prompt: AiPrompt;
   /**
-   * Additional messages to append after system+user (e.g. for chat history).
-   * These are appended in order after the initial system and user messages.
+   * Prior conversation history to insert between the system prompt and the
+   * prompt's user message. The new user turn (carried by `prompt.user`) is
+   * always sent last, so the wire shape becomes
+   * `[system, ...messagesBefore, user=prompt.user]`.
    */
-  readonly additionalMessages?: ReadonlyArray<IChatMessage>;
+  readonly messagesBefore?: ReadonlyArray<IChatMessage>;
   /** Sampling temperature (default: 0.7) */
   readonly temperature?: number;
   /** Optional model override — string or context-aware map. */
@@ -475,13 +477,15 @@ async function* translateGeminiStream(response: Response): AsyncGenerator<IAiStr
 async function callOpenAiChatStream(
   config: IStreamApiConfig,
   prompt: AiPrompt,
-  additionalMessages: ReadonlyArray<IChatMessage> | undefined,
+  messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/chat/completions`;
-  const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), additionalMessages);
+  const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
+    head: messagesBefore
+  });
   const body = { model: config.model, messages, temperature, stream: true };
   const headers: Record<string, string> = { Authorization: `Bearer ${config.apiKey}` };
   /* c8 ignore next 1 - optional logger */
@@ -494,13 +498,15 @@ async function callOpenAiResponsesStream(
   config: IStreamApiConfig,
   prompt: AiPrompt,
   tools: ReadonlyArray<AiServerToolConfig>,
-  additionalMessages: ReadonlyArray<IChatMessage> | undefined,
+  messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/responses`;
-  const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), additionalMessages);
+  const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
+    head: messagesBefore
+  });
   const body: Record<string, unknown> = {
     model: config.model,
     input,
@@ -520,14 +526,14 @@ async function callOpenAiResponsesStream(
 async function callAnthropicStream(
   config: IStreamApiConfig,
   prompt: AiPrompt,
-  additionalMessages: ReadonlyArray<IChatMessage> | undefined,
+  messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
   tools: ReadonlyArray<AiServerToolConfig> | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/messages`;
-  const messages = buildAnthropicMessages(prompt, additionalMessages);
+  const messages = buildAnthropicMessages(prompt, { head: messagesBefore });
   const body: Record<string, unknown> = {
     model: config.model,
     system: prompt.system,
@@ -556,14 +562,14 @@ async function callAnthropicStream(
 async function callGeminiStream(
   config: IStreamApiConfig,
   prompt: AiPrompt,
-  additionalMessages: ReadonlyArray<IChatMessage> | undefined,
+  messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
   tools: ReadonlyArray<AiServerToolConfig> | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/models/${config.model}:streamGenerateContent?alt=sse`;
-  const contents = buildGeminiContents(prompt, additionalMessages);
+  const contents = buildGeminiContents(prompt, { head: messagesBefore });
   const body: Record<string, unknown> = {
     systemInstruction: { parts: [{ text: prompt.system }] },
     contents,
@@ -611,7 +617,7 @@ export async function callProviderCompletionStream(
     descriptor,
     apiKey,
     prompt,
-    additionalMessages,
+    messagesBefore,
     temperature = 0.7,
     modelOverride,
     logger,
@@ -641,21 +647,13 @@ export async function callProviderCompletionStream(
   switch (descriptor.apiFormat) {
     case 'openai':
       if (hasTools) {
-        return callOpenAiResponsesStream(
-          config,
-          prompt,
-          tools,
-          additionalMessages,
-          temperature,
-          logger,
-          signal
-        );
+        return callOpenAiResponsesStream(config, prompt, tools, messagesBefore, temperature, logger, signal);
       }
-      return callOpenAiChatStream(config, prompt, additionalMessages, temperature, logger, signal);
+      return callOpenAiChatStream(config, prompt, messagesBefore, temperature, logger, signal);
     case 'anthropic':
-      return callAnthropicStream(config, prompt, additionalMessages, temperature, tools, logger, signal);
+      return callAnthropicStream(config, prompt, messagesBefore, temperature, tools, logger, signal);
     case 'gemini':
-      return callGeminiStream(config, prompt, additionalMessages, temperature, tools, logger, signal);
+      return callGeminiStream(config, prompt, messagesBefore, temperature, tools, logger, signal);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;
@@ -693,17 +691,8 @@ export async function callProxiedCompletionStream(
   proxyUrl: string,
   params: IProviderCompletionStreamParams
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
-  const {
-    descriptor,
-    apiKey,
-    prompt,
-    additionalMessages,
-    temperature,
-    modelOverride,
-    logger,
-    tools,
-    signal
-  } = params;
+  const { descriptor, apiKey, prompt, messagesBefore, temperature, modelOverride, logger, tools, signal } =
+    params;
 
   const promptBody: Record<string, unknown> = { system: prompt.system, user: prompt.user };
   if (prompt.attachments.length > 0) {
@@ -716,8 +705,8 @@ export async function callProxiedCompletionStream(
     temperature: temperature ?? 0.7,
     stream: true
   };
-  if (additionalMessages && additionalMessages.length > 0) {
-    body.additionalMessages = additionalMessages;
+  if (messagesBefore && messagesBefore.length > 0) {
+    body.messagesBefore = messagesBefore;
   }
   if (modelOverride !== undefined) {
     body.modelOverride = modelOverride;

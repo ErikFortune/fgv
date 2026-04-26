@@ -982,7 +982,7 @@ describe('useAiAssist › streamDirect', () => {
     expect(events.map((e) => e.type)).toEqual(['text-delta', 'error']);
   });
 
-  test('forwards tools and additionalMessages to the underlying call', async () => {
+  test('forwards tools and messagesBefore to the underlying call', async () => {
     directSpy.mockResolvedValueOnce(
       succeed(makeStreamSource([{ type: 'done', truncated: false, fullText: '' }]))
     );
@@ -990,12 +990,12 @@ describe('useAiAssist › streamDirect', () => {
     await act(async () => {
       await result.current.streamDirect('openai', TEST_PROMPT, jest.fn(), {
         tools: [{ type: 'web_search' }],
-        additionalMessages: [{ role: 'assistant', content: 'previous turn' }]
+        messagesBefore: [{ role: 'assistant', content: 'previous turn' }]
       });
     });
     const params = directSpy.mock.calls[0][0];
     expect(params.tools).toEqual([{ type: 'web_search' }]);
-    expect(params.additionalMessages).toEqual([{ role: 'assistant', content: 'previous turn' }]);
+    expect(params.messagesBefore).toEqual([{ role: 'assistant', content: 'previous turn' }]);
   });
 
   test('forwards the abort signal', async () => {

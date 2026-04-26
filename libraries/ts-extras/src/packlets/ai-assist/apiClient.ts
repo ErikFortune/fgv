@@ -358,7 +358,9 @@ async function callOpenAiCompletion(
   signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
-  const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), additionalMessages);
+  const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
+    tail: additionalMessages
+  });
   const body = { model: config.model, messages, temperature };
 
   const headers: Record<string, string> = {
@@ -419,7 +421,9 @@ async function callOpenAiResponsesCompletion(
   signal?: AbortSignal
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
-  const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), additionalMessages);
+  const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
+    tail: additionalMessages
+  });
   const body: Record<string, unknown> = {
     model: config.model,
     input,
@@ -495,7 +499,7 @@ async function callAnthropicCompletion(
   const url = `${config.baseUrl}/messages`;
 
   // Anthropic uses system as a top-level field, not in messages
-  const messages = buildAnthropicMessages(prompt, additionalMessages);
+  const messages = buildAnthropicMessages(prompt, { tail: additionalMessages });
 
   const body: Record<string, unknown> = {
     model: config.model,
@@ -573,7 +577,7 @@ async function callGeminiCompletion(
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
   // Gemini uses 'contents' with 'parts', and 'model' role instead of 'assistant'
-  const contents = buildGeminiContents(prompt, additionalMessages);
+  const contents = buildGeminiContents(prompt, { tail: additionalMessages });
 
   const body: Record<string, unknown> = {
     systemInstruction: { parts: [{ text: prompt.system }] },

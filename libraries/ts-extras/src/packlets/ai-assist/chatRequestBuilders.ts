@@ -29,7 +29,25 @@
 import { AiPrompt, type IAiImageAttachment, type IChatMessage, toDataUrl } from './model';
 
 /**
- * Builds the messages array from prompt + optional correction messages.
+ * Optional head/tail messages to weave around the prompt's user message.
+ *
+ * @internal
+ */
+export interface IBuildMessagesOptions {
+  /**
+   * Messages inserted between the system prompt and the prompt's user
+   * message (e.g. prior conversation history for multi-turn chat).
+   */
+  readonly head?: ReadonlyArray<IChatMessage>;
+  /**
+   * Messages appended after the prompt's user message (e.g. assistant
+   * + correction turns for the JSON-validation retry loop).
+   */
+  readonly tail?: ReadonlyArray<IChatMessage>;
+}
+
+/**
+ * Builds the messages array from prompt + optional head/tail messages.
  * The caller supplies the user content (string for text-only, parts array
  * for vision prompts) since the parts shape differs by format.
  *
@@ -38,14 +56,19 @@ import { AiPrompt, type IAiImageAttachment, type IChatMessage, toDataUrl } from 
 export function buildMessages(
   systemPrompt: string,
   userContent: string | unknown[],
-  additionalMessages?: ReadonlyArray<IChatMessage>
+  options?: IBuildMessagesOptions
 ): Array<{ role: string; content: string | unknown[] }> {
   const messages: Array<{ role: string; content: string | unknown[] }> = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userContent }
+    { role: 'system', content: systemPrompt }
   ];
-  if (additionalMessages) {
-    for (const msg of additionalMessages) {
+  if (options?.head) {
+    for (const msg of options.head) {
+      messages.push({ role: msg.role, content: msg.content });
+    }
+  }
+  messages.push({ role: 'user', content: userContent });
+  if (options?.tail) {
+    for (const msg of options.tail) {
       messages.push({ role: msg.role, content: msg.content });
     }
   }
@@ -132,22 +155,28 @@ export function buildGeminiUserParts(prompt: AiPrompt): Array<Record<string, unk
 }
 
 /**
- * Builds the Anthropic messages array (user + correction messages), supplying
- * the user content from {@link buildAnthropicUserContent} and filtering out
- * any system messages from `additionalMessages` (Anthropic uses a top-level
- * system field).
+ * Builds the Anthropic messages array, weaving any `head` messages between
+ * implicit system + the prompt's user message and appending `tail` messages
+ * after. System messages are filtered out (Anthropic uses a top-level system
+ * field).
  *
  * @internal
  */
 export function buildAnthropicMessages(
   prompt: AiPrompt,
-  additionalMessages?: ReadonlyArray<IChatMessage>
+  options?: IBuildMessagesOptions
 ): Array<{ role: string; content: string | unknown[] }> {
-  const messages: Array<{ role: string; content: string | unknown[] }> = [
-    { role: 'user', content: buildAnthropicUserContent(prompt) }
-  ];
-  if (additionalMessages) {
-    for (const msg of additionalMessages) {
+  const messages: Array<{ role: string; content: string | unknown[] }> = [];
+  if (options?.head) {
+    for (const msg of options.head) {
+      if (msg.role !== 'system') {
+        messages.push({ role: msg.role, content: msg.content });
+      }
+    }
+  }
+  messages.push({ role: 'user', content: buildAnthropicUserContent(prompt) });
+  if (options?.tail) {
+    for (const msg of options.tail) {
       if (msg.role !== 'system') {
         messages.push({ role: msg.role, content: msg.content });
       }
@@ -157,20 +186,31 @@ export function buildAnthropicMessages(
 }
 
 /**
- * Builds the Gemini `contents` array (user + correction messages), supplying
- * the user parts from {@link buildGeminiUserParts}.
+ * Builds the Gemini `contents` array, weaving any `head` messages before the
+ * prompt's user parts and appending `tail` messages after. System messages
+ * are filtered out (Gemini uses a top-level systemInstruction field) and
+ * assistant roles are mapped to Gemini's `model` role.
  *
  * @internal
  */
 export function buildGeminiContents(
   prompt: AiPrompt,
-  additionalMessages?: ReadonlyArray<IChatMessage>
+  options?: IBuildMessagesOptions
 ): Array<{ role: string; parts: Array<Record<string, unknown>> }> {
-  const contents: Array<{ role: string; parts: Array<Record<string, unknown>> }> = [
-    { role: 'user', parts: buildGeminiUserParts(prompt) }
-  ];
-  if (additionalMessages) {
-    for (const msg of additionalMessages) {
+  const contents: Array<{ role: string; parts: Array<Record<string, unknown>> }> = [];
+  if (options?.head) {
+    for (const msg of options.head) {
+      if (msg.role !== 'system') {
+        contents.push({
+          role: msg.role === 'assistant' ? 'model' : msg.role,
+          parts: [{ text: msg.content }]
+        });
+      }
+    }
+  }
+  contents.push({ role: 'user', parts: buildGeminiUserParts(prompt) });
+  if (options?.tail) {
+    for (const msg of options.tail) {
       if (msg.role !== 'system') {
         contents.push({
           role: msg.role === 'assistant' ? 'model' : msg.role,

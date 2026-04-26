@@ -364,6 +364,26 @@ describe('callProviderCompletionStream', () => {
       const last = events[events.length - 1];
       expect(last.type).toBe('error');
     });
+
+    test('places messagesBefore between system and the new user message', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        prompt: new AiAssist.AiPrompt('how about pasta?', 'You are a helpful assistant.'),
+        messagesBefore: [
+          { role: 'user', content: 'hi' },
+          { role: 'assistant', content: 'hello' }
+        ]
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.messages).toEqual([
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'hi' },
+        { role: 'assistant', content: 'hello' },
+        { role: 'user', content: 'how about pasta?' }
+      ]);
+    });
   });
 
   describe('openai responses API stream (with tools)', () => {
@@ -523,6 +543,27 @@ describe('callProviderCompletionStream', () => {
       const events = await collect(result.value);
       expect(events[events.length - 1].type).toBe('error');
     });
+
+    test('places messagesBefore before the new user message and filters system roles', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: new AiAssist.AiPrompt('how about pasta?', 'You are a helpful assistant.'),
+        messagesBefore: [
+          { role: 'user', content: 'hi' },
+          { role: 'assistant', content: 'hello' },
+          { role: 'system', content: 'should be filtered' }
+        ]
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.system).toBe('You are a helpful assistant.');
+      expect(body.messages).toEqual([
+        { role: 'user', content: 'hi' },
+        { role: 'assistant', content: 'hello' },
+        { role: 'user', content: 'how about pasta?' }
+      ]);
+    });
   });
 
   describe('gemini stream', () => {
@@ -588,6 +629,26 @@ describe('callProviderCompletionStream', () => {
       const events = await collect(result.value);
       expect(events[events.length - 1].type).toBe('error');
     });
+
+    test('places messagesBefore before the new user turn and maps assistant->model', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: new AiAssist.AiPrompt('how about pasta?', 'You are a helpful assistant.'),
+        messagesBefore: [
+          { role: 'user', content: 'hi' },
+          { role: 'assistant', content: 'hello' }
+        ]
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.systemInstruction).toEqual({ parts: [{ text: 'You are a helpful assistant.' }] });
+      expect(body.contents).toEqual([
+        { role: 'user', parts: [{ text: 'hi' }] },
+        { role: 'model', parts: [{ text: 'hello' }] },
+        { role: 'user', parts: [{ text: 'how about pasta?' }] }
+      ]);
+    });
   });
 });
 
@@ -635,19 +696,19 @@ describe('callProxiedCompletionStream', () => {
     expect(body).toMatchObject({ providerId: 'openai', apiKey: 'sk', stream: true });
   });
 
-  test('forwards attachments, additionalMessages, modelOverride, and tools', async () => {
+  test('forwards attachments, messagesBefore, modelOverride, and tools', async () => {
     mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
     await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
       descriptor: makeDescriptor(),
       apiKey: 'sk',
       prompt: new AiAssist.AiPrompt('q', 's', [{ mimeType: 'image/png', base64: 'A' }]),
-      additionalMessages: [{ role: 'assistant', content: 'prior' }],
+      messagesBefore: [{ role: 'assistant', content: 'prior' }],
       modelOverride: 'custom',
       tools: [{ type: 'web_search' }]
     });
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
     expect(body.prompt.attachments).toHaveLength(1);
-    expect(body.additionalMessages).toHaveLength(1);
+    expect(body.messagesBefore).toHaveLength(1);
     expect(body.modelOverride).toBe('custom');
     expect(body.tools).toEqual([{ type: 'web_search' }]);
   });

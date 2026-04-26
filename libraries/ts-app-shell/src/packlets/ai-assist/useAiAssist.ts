@@ -135,7 +135,7 @@ export interface IUseAiAssistResult {
     onEvent: (event: AiAssist.IAiStreamEvent) => void,
     options?: {
       readonly tools?: ReadonlyArray<AiAssist.AiServerToolConfig>;
-      readonly additionalMessages?: ReadonlyArray<AiAssist.IChatMessage>;
+      readonly messagesBefore?: ReadonlyArray<AiAssist.IChatMessage>;
       readonly signal?: AbortSignal;
     }
   ) => Promise<Result<{ readonly fullText: string; readonly truncated: boolean }>>;
@@ -476,7 +476,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
       onEvent: (event: AiAssist.IAiStreamEvent) => void,
       options?: {
         readonly tools?: ReadonlyArray<AiAssist.AiServerToolConfig>;
-        readonly additionalMessages?: ReadonlyArray<AiAssist.IChatMessage>;
+        readonly messagesBefore?: ReadonlyArray<AiAssist.IChatMessage>;
         readonly signal?: AbortSignal;
       }
     ): Promise<Result<{ readonly fullText: string; readonly truncated: boolean }>> => {
@@ -508,7 +508,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
         descriptor,
         apiKey: apiKeyResult.value,
         prompt,
-        additionalMessages: options?.additionalMessages,
+        messagesBefore: options?.messagesBefore,
         modelOverride: providerConfig.model,
         logger,
         tools: effectiveTools.length > 0 ? effectiveTools : undefined,

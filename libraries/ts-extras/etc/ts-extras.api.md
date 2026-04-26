@@ -872,10 +872,10 @@ interface IProviderCompletionParams {
 
 // @public
 interface IProviderCompletionStreamParams {
-    readonly additionalMessages?: ReadonlyArray<IChatMessage>;
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;
     readonly logger?: Logging.ILogger;
+    readonly messagesBefore?: ReadonlyArray<IChatMessage>;
     readonly modelOverride?: ModelSpec;
     readonly prompt: AiPrompt;
     readonly signal?: AbortSignal;

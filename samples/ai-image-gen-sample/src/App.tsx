@@ -181,8 +181,8 @@ export function App(): React.JSX.Element {
     setChatTurns((prev) => [...prev, userTurn, assistantTurn]);
 
     // Build the prompt: system stays empty for plain chat; user is the new message.
-    // History (prior turns) goes into additionalMessages so the model has context.
-    const additionalMessages: AiAssist.IChatMessage[] = chatTurns
+    // Prior turns go into messagesBefore so they're sent between system and user.
+    const messagesBefore: AiAssist.IChatMessage[] = chatTurns
       .filter((t) => t.role === 'user' || t.role === 'assistant')
       .map((t) => ({ role: t.role, content: t.content }));
     const prompt = new AiAssist.AiPrompt(text, 'You are a helpful assistant.');
@@ -208,7 +208,7 @@ export function App(): React.JSX.Element {
           }
         }
       },
-      { tools: options.tools, additionalMessages, signal: controller.signal }
+      { tools: options.tools, messagesBefore, signal: controller.signal }
     );
     abortControllerRef.current = undefined;
     setActiveToolEvents([]);
