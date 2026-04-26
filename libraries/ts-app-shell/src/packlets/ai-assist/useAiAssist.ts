@@ -531,7 +531,18 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
       let receivedTerminalEvent = false;
       try {
         for await (const event of openResult.value) {
-          onEvent(event);
+          try {
+            onEvent(event);
+          } catch (err: unknown) {
+            // Consumer callback threw (e.g. setState-after-unmount). Convert
+            // into a terminal failure so streamDirect always resolves to a
+            // Result instead of rejecting and breaking its contract.
+            terminalError = `AI stream event handler failed: ${
+              err instanceof Error ? err.message : String(err)
+            }`;
+            receivedTerminalEvent = true;
+            break;
+          }
           if (event.type === 'text-delta') {
             fullText += event.delta;
           } else if (event.type === 'done') {

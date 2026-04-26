@@ -995,6 +995,31 @@ describe('useAiAssist › streamDirect', () => {
     expect(r?.message).toMatch(/without a terminal done or error event/);
   });
 
+  test('returns Result.fail (does not reject) when the onEvent callback throws', async () => {
+    directSpy.mockResolvedValueOnce(
+      succeed(
+        makeStreamSource([
+          { type: 'text-delta', delta: 'first' },
+          { type: 'done', truncated: false, fullText: 'first' }
+        ])
+      )
+    );
+    const onEvent = jest.fn(() => {
+      throw new Error('consumer blew up');
+    });
+    const { result } = renderHook(() => useAiAssist(defaultParams()));
+    let r: Result<{ fullText: string; truncated: boolean }> | undefined;
+    // Wrap in a no-throw expectation: the hook must always resolve to a Result,
+    // never reject — that's the documented contract.
+    await act(async () => {
+      r = await result.current.streamDirect('openai', TEST_PROMPT, onEvent);
+    });
+    expect(r?.isFailure()).toBe(true);
+    expect(r?.message).toMatch(/event handler failed.*consumer blew up/);
+    // Iteration stops on the first throw so only one event is delivered.
+    expect(onEvent).toHaveBeenCalledTimes(1);
+  });
+
   test('forwards tools and messagesBefore to the underlying call', async () => {
     directSpy.mockResolvedValueOnce(
       succeed(makeStreamSource([{ type: 'done', truncated: false, fullText: '' }]))
