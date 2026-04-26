@@ -855,3 +855,190 @@ describe('useAiAssist › listModels', () => {
     expect(r?.message).toMatch(/unknown AI provider/i);
   });
 });
+
+// ============================================================================
+// streamDirect
+// ============================================================================
+
+function makeStreamSource(
+  events: ReadonlyArray<AiAssist.IAiStreamEvent>
+): AsyncIterable<AiAssist.IAiStreamEvent> {
+  return (async function* (): AsyncGenerator<AiAssist.IAiStreamEvent> {
+    for (const e of events) {
+      yield e;
+    }
+  })();
+}
+
+describe('useAiAssist › streamDirect', () => {
+  let directSpy: jest.SpyInstance;
+  let proxiedSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    directSpy = jest.spyOn(AiAssist, 'callProviderCompletionStream');
+    proxiedSpy = jest.spyOn(AiAssist, 'callProxiedCompletionStream');
+  });
+
+  afterEach(() => {
+    directSpy.mockRestore();
+    proxiedSpy.mockRestore();
+  });
+
+  test('fails when provider is not configured', async () => {
+    const { result } = renderHook(() =>
+      useAiAssist({ settings: settingsFor('openai'), keyStore: new StubKeyStore() })
+    );
+    let r: Result<{ fullText: string; truncated: boolean }> | undefined;
+    await act(async () => {
+      r = await result.current.streamDirect('anthropic', TEST_PROMPT, jest.fn());
+    });
+    expect(r?.message).toMatch(/not configured/i);
+    expect(directSpy).not.toHaveBeenCalled();
+  });
+
+  test('fails when secret name is missing', async () => {
+    const settings: AiAssist.IAiAssistSettings = { providers: [{ provider: 'openai' }] };
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore: new StubKeyStore() }));
+    let r: Result<{ fullText: string; truncated: boolean }> | undefined;
+    await act(async () => {
+      r = await result.current.streamDirect('openai', TEST_PROMPT, jest.fn());
+    });
+    expect(r?.message).toMatch(/no secret name/i);
+  });
+
+  test('fails when keystore is missing', async () => {
+    const { result } = renderHook(() =>
+      useAiAssist({ settings: settingsFor('openai'), keyStore: undefined })
+    );
+    let r: Result<{ fullText: string; truncated: boolean }> | undefined;
+    await act(async () => {
+      r = await result.current.streamDirect('openai', TEST_PROMPT, jest.fn());
+    });
+    expect(r?.message).toMatch(/no keystore/i);
+  });
+
+  test('fails when API key fetch fails', async () => {
+    const { result } = renderHook(() =>
+      useAiAssist({ settings: settingsFor('openai'), keyStore: new FailingKeyStore() })
+    );
+    let r: Result<{ fullText: string; truncated: boolean }> | undefined;
+    await act(async () => {
+      r = await result.current.streamDirect('openai', TEST_PROMPT, jest.fn());
+    });
+    expect(r?.message).toMatch(/failed to get API key/i);
+  });
+
+  test('surfaces the connect-time failure when callProviderCompletionStream returns Result.fail', async () => {
+    directSpy.mockResolvedValueOnce(fail<AsyncIterable<AiAssist.IAiStreamEvent>>('connection refused'));
+    const { result } = renderHook(() => useAiAssist(defaultParams()));
+    let r: Result<{ fullText: string; truncated: boolean }> | undefined;
+    await act(async () => {
+      r = await result.current.streamDirect('openai', TEST_PROMPT, jest.fn());
+    });
+    expect(r?.message).toBe('connection refused');
+  });
+
+  test('emits each event to the callback and returns aggregated text on done', async () => {
+    directSpy.mockResolvedValueOnce(
+      succeed(
+        makeStreamSource([
+          { type: 'text-delta', delta: 'Hi, ' },
+          { type: 'text-delta', delta: 'world!' },
+          { type: 'done', truncated: false, fullText: 'Hi, world!' }
+        ])
+      )
+    );
+    const events: AiAssist.IAiStreamEvent[] = [];
+    const { result } = renderHook(() => useAiAssist(defaultParams()));
+    let r: Result<{ fullText: string; truncated: boolean }> | undefined;
+    await act(async () => {
+      r = await result.current.streamDirect('openai', TEST_PROMPT, (e) => events.push(e));
+    });
+    expect(events.map((e) => e.type)).toEqual(['text-delta', 'text-delta', 'done']);
+    expect(r?.isSuccess()).toBe(true);
+    if (r?.isSuccess()) {
+      expect(r.value).toEqual({ fullText: 'Hi, world!', truncated: false });
+    }
+  });
+
+  test('returns Result.fail when the stream ends in a terminal error event', async () => {
+    directSpy.mockResolvedValueOnce(
+      succeed(
+        makeStreamSource([
+          { type: 'text-delta', delta: 'half' },
+          { type: 'error', message: 'rate limited' }
+        ])
+      )
+    );
+    const events: AiAssist.IAiStreamEvent[] = [];
+    const { result } = renderHook(() => useAiAssist(defaultParams()));
+    let r: Result<{ fullText: string; truncated: boolean }> | undefined;
+    await act(async () => {
+      r = await result.current.streamDirect('openai', TEST_PROMPT, (e) => events.push(e));
+    });
+    expect(r?.isFailure()).toBe(true);
+    expect(r?.message).toBe('rate limited');
+    // The callback still saw both events (caller can show partial text + error).
+    expect(events.map((e) => e.type)).toEqual(['text-delta', 'error']);
+  });
+
+  test('forwards tools and additionalMessages to the underlying call', async () => {
+    directSpy.mockResolvedValueOnce(
+      succeed(makeStreamSource([{ type: 'done', truncated: false, fullText: '' }]))
+    );
+    const { result } = renderHook(() => useAiAssist(defaultParams()));
+    await act(async () => {
+      await result.current.streamDirect('openai', TEST_PROMPT, jest.fn(), {
+        tools: [{ type: 'web_search' }],
+        additionalMessages: [{ role: 'assistant', content: 'previous turn' }]
+      });
+    });
+    const params = directSpy.mock.calls[0][0];
+    expect(params.tools).toEqual([{ type: 'web_search' }]);
+    expect(params.additionalMessages).toEqual([{ role: 'assistant', content: 'previous turn' }]);
+  });
+
+  test('forwards the abort signal', async () => {
+    directSpy.mockResolvedValueOnce(
+      succeed(makeStreamSource([{ type: 'done', truncated: false, fullText: '' }]))
+    );
+    const controller = new AbortController();
+    const { result } = renderHook(() => useAiAssist(defaultParams()));
+    await act(async () => {
+      await result.current.streamDirect('openai', TEST_PROMPT, jest.fn(), { signal: controller.signal });
+    });
+    expect(directSpy.mock.calls[0][0].signal).toBe(controller.signal);
+  });
+
+  test('routes through the proxy for streaming-CORS-restricted providers', async () => {
+    proxiedSpy.mockResolvedValueOnce(
+      succeed(makeStreamSource([{ type: 'done', truncated: false, fullText: '' }]))
+    );
+    const settings: AiAssist.IAiAssistSettings = {
+      providers: [{ provider: 'xai-grok', secretName: 'secret.xai-grok' }],
+      proxyUrl: 'http://proxy.local:3001'
+    };
+    const keyStore = new StubKeyStore(true, new Map([['secret.xai-grok', 'sk-xai']]));
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore }));
+
+    await act(async () => {
+      await result.current.streamDirect('xai-grok', TEST_PROMPT, jest.fn());
+    });
+
+    expect(proxiedSpy).toHaveBeenCalledTimes(1);
+    expect(directSpy).not.toHaveBeenCalled();
+  });
+
+  test('fails up front when descriptor lookup fails', async () => {
+    const settings: AiAssist.IAiAssistSettings = {
+      providers: [{ provider: 'unknown-z' as AiAssist.AiProviderId, secretName: 'secret.unknown' }]
+    };
+    const keyStore = new StubKeyStore(true, new Map([['secret.unknown', 'sk']]));
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore }));
+    let r: Result<{ fullText: string; truncated: boolean }> | undefined;
+    await act(async () => {
+      r = await result.current.streamDirect('unknown-z' as AiAssist.AiProviderId, TEST_PROMPT, jest.fn());
+    });
+    expect(r?.message).toMatch(/unknown AI provider/i);
+  });
+});

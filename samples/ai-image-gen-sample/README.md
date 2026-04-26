@@ -1,21 +1,40 @@
-# AI Image Generation Sample
+# AI Assist Sample
 
-A small React + Tailwind web app that demonstrates the image-generation API
-in `@fgv/ts-extras` (`AiAssist.callProviderImageGeneration` /
-`AiAssist.callProxiedImageGeneration`) via the
-`@fgv/ts-app-shell` `useAiAssist` hook.
+A small React + Tailwind web app that demonstrates the AI APIs in
+`@fgv/ts-extras` via the `@fgv/ts-app-shell` `useAiAssist` hook. Two modes
+are exposed via a top-level toggle:
+
+- **Image Generation** (`generateImages`)
+- **Streaming Chat** (`streamDirect`) — token-by-token output with optional
+  web-search tool events
 
 ## What it shows
 
-- Reading the provider registry and filtering to providers that support
-  image generation (`descriptor.imageApiFormat !== undefined`).
+### Shared
+- Reading the provider registry and filtering by capability
+  (`descriptor.imageApiFormat !== undefined` for image mode; presence of
+  `baseUrl` for chat mode).
 - Building an `IAiAssistSettings` + an `IAiAssistKeyStore` and feeding them
   to `useAiAssist`.
+- Per-provider model picker with on-demand `listModels` + `<datalist>`
+  suggestions, filtered by the active capability.
+- Threading an `AbortController` through to cancel in-flight calls.
+
+### Image Generation mode
 - Calling `generateImages` with provider-aware options:
   - OpenAI / xAI: `size`
   - Imagen: `imagen.aspectRatio`
-- Threading an `AbortController` through to cancel an in-flight request.
 - Rendering returned images via `AiAssist.toDataUrl`.
+
+### Streaming Chat mode
+- Calling `streamDirect` with conversation history (`additionalMessages`),
+  appending text deltas to the active assistant message, and capturing the
+  final aggregated text on `done`.
+- Optional `web_search` tool toggle (where the provider supports it). Tool
+  progress events surface as a "Searching the web…" indicator above the
+  transcript.
+- Pre-flight rejection for streaming-CORS-restricted providers (xAI Grok)
+  with a clear message — visible as an amber pill in the settings panel.
 
 ## What it doesn't show
 

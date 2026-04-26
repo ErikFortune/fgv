@@ -1,6 +1,8 @@
 import { AiAssist } from '@fgv/ts-extras';
 
 export interface ISettingsPanelProps {
+  /** Active mode — drives the capability labels and the list-models filter. */
+  readonly mode: 'image' | 'chat';
   readonly providers: ReadonlyArray<AiAssist.AiProviderId>;
   readonly provider: AiAssist.AiProviderId;
   readonly onProviderChange: (provider: AiAssist.AiProviderId) => void;
@@ -9,7 +11,7 @@ export interface ISettingsPanelProps {
   readonly model: string;
   readonly modelPlaceholder: string;
   readonly onModelChange: (model: string) => void;
-  /** Models fetched via listModels for this provider, filtered to image-generation. */
+  /** Models fetched via listModels, already filtered to the active capability. */
   readonly availableModels: ReadonlyArray<AiAssist.IAiModelInfo>;
   readonly isFetchingModels: boolean;
   readonly modelListError: string | undefined;
@@ -18,6 +20,7 @@ export interface ISettingsPanelProps {
 
 export function SettingsPanel(props: ISettingsPanelProps): React.JSX.Element {
   const {
+    mode,
     providers,
     provider,
     onProviderChange,
@@ -32,8 +35,10 @@ export function SettingsPanel(props: ISettingsPanelProps): React.JSX.Element {
     onFetchModels
   } = props;
   const descriptor = AiAssist.getProviderDescriptor(provider).orDefault();
-  const datalistId = `model-suggestions-${provider}`;
+  const datalistId = `model-suggestions-${mode}-${provider}`;
   const canFetchModels = apiKey.length > 0 && !isFetchingModels;
+  const capabilityLabel = mode === 'image' ? 'image-capable' : 'chat-capable';
+  const isStreamingCorsRestricted = mode === 'chat' && (descriptor?.streamingCorsRestricted ?? false);
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -111,7 +116,7 @@ export function SettingsPanel(props: ISettingsPanelProps): React.JSX.Element {
           </p>
         ) : availableModels.length > 0 ? (
           <p className="mt-2 text-xs text-slate-500">
-            {availableModels.length} image-capable model
+            {availableModels.length} {capabilityLabel} model
             {availableModels.length === 1 ? '' : 's'} found — start typing to filter the dropdown.
           </p>
         ) : (
@@ -122,10 +127,12 @@ export function SettingsPanel(props: ISettingsPanelProps): React.JSX.Element {
         )}
       </div>
 
-      {descriptor?.corsRestricted && (
+      {(descriptor?.corsRestricted || isStreamingCorsRestricted) && (
         <p className="mt-3 text-xs">
           <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800">
-            CORS-restricted (proxy required for production)
+            {isStreamingCorsRestricted
+              ? 'Streaming CORS-restricted — calls will fail without a proxy'
+              : 'CORS-restricted (proxy required for production)'}
           </span>
         </p>
       )}

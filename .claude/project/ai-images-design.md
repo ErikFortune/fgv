@@ -1,8 +1,8 @@
 # AI Assist — Image Support Design
 
 Status: step 1 done, step 2 done, sample app done, list-models done, step 3 done,
-streaming chat in progress
-Branch: `ai-images`
+streaming chat done
+Branch: `ai-images` (or successor `ai-stream`)
 Scope: extend `@fgv/ts-extras` `ai-assist` packlet to support image input (vision)
 and image output (generation), and thread an `AbortSignal` through all calls.
 

@@ -1,20 +1,29 @@
 import { useMemo, useRef, useState } from 'react';
 
 import { AiAssist } from '@fgv/ts-extras';
+import { useAiAssist } from '@fgv/ts-app-shell';
 
 import { SettingsPanel } from './components/SettingsPanel';
 import { PromptPanel } from './components/PromptPanel';
 import { ImageResults } from './components/ImageResults';
+import { ChatPanel, type IChatTurn } from './components/ChatPanel';
 import { InMemoryKeyStore } from './inMemoryKeyStore';
-import { useAiAssist } from '@fgv/ts-app-shell';
 
-/**
- * Providers that support image generation. Filtered from the full registry
- * by `imageApiFormat` presence.
- */
-const IMAGE_PROVIDERS: ReadonlyArray<AiAssist.AiProviderId> = AiAssist.getProviderDescriptors()
-  .filter((d) => d.imageApiFormat !== undefined)
-  .map((d) => d.id);
+type Mode = 'image' | 'chat';
+
+const ALL_DESCRIPTORS = AiAssist.getProviderDescriptors();
+
+const PROVIDERS_BY_MODE: Record<Mode, ReadonlyArray<AiAssist.AiProviderId>> = {
+  image: ALL_DESCRIPTORS.filter((d) => d.imageApiFormat !== undefined).map((d) => d.id),
+  // Anything with a baseUrl can do chat — the registry's only no-baseUrl entry
+  // is copy-paste, which we don't exercise from the streaming chat panel.
+  chat: ALL_DESCRIPTORS.filter((d) => d.baseUrl.length > 0).map((d) => d.id)
+};
+
+const CAPABILITY_BY_MODE: Record<Mode, AiAssist.AiModelCapability> = {
+  image: 'image-generation',
+  chat: 'chat'
+};
 
 const SECRET_NAME_PREFIX = 'sample.';
 
@@ -22,34 +31,59 @@ function secretNameFor(provider: AiAssist.AiProviderId): string {
   return `${SECRET_NAME_PREFIX}${provider}`;
 }
 
-/**
- * Initial model overrides per provider — derived from the descriptor's
- * default. Users can edit these in the UI to work around model-name churn
- * (e.g. when a provider rotates Imagen versions).
- */
-function defaultModelFor(provider: AiAssist.AiProviderId): string {
+function defaultModelFor(provider: AiAssist.AiProviderId, mode: Mode): string {
   const descriptor = AiAssist.getProviderDescriptor(provider).orDefault();
-  return descriptor ? AiAssist.resolveModel(descriptor.defaultModel, 'image') : '';
+  if (!descriptor) {
+    return '';
+  }
+  return AiAssist.resolveModel(descriptor.defaultModel, mode === 'image' ? 'image' : 'base');
+}
+
+interface IPerProviderMaps {
+  readonly models: ReadonlyMap<AiAssist.AiProviderId, string>;
+  readonly available: ReadonlyMap<AiAssist.AiProviderId, ReadonlyArray<AiAssist.IAiModelInfo>>;
+  readonly listError: ReadonlyMap<AiAssist.AiProviderId, string>;
+}
+
+function emptyPerProvider(mode: Mode): IPerProviderMaps {
+  return {
+    models: new Map(PROVIDERS_BY_MODE[mode].map((p) => [p, defaultModelFor(p, mode)])),
+    available: new Map(),
+    listError: new Map()
+  };
 }
 
 export function App(): React.JSX.Element {
-  const [provider, setProvider] = useState<AiAssist.AiProviderId>(IMAGE_PROVIDERS[0]);
+  const [mode, setMode] = useState<Mode>('image');
+  const [providersByMode, setProvidersByMode] = useState<Record<Mode, AiAssist.AiProviderId>>({
+    image: PROVIDERS_BY_MODE.image[0],
+    chat: PROVIDERS_BY_MODE.chat[0]
+  });
   const [apiKeysByProvider, setApiKeysByProvider] = useState<ReadonlyMap<AiAssist.AiProviderId, string>>(
     new Map()
   );
-  const [modelsByProvider, setModelsByProvider] = useState<ReadonlyMap<AiAssist.AiProviderId, string>>(
-    () => new Map(IMAGE_PROVIDERS.map((p) => [p, defaultModelFor(p)]))
-  );
-  const [availableModelsByProvider, setAvailableModelsByProvider] = useState<
-    ReadonlyMap<AiAssist.AiProviderId, ReadonlyArray<AiAssist.IAiModelInfo>>
-  >(new Map());
-  const [modelListErrorByProvider, setModelListErrorByProvider] = useState<
-    ReadonlyMap<AiAssist.AiProviderId, string>
-  >(new Map());
+  const [perMode, setPerMode] = useState<Record<Mode, IPerProviderMaps>>({
+    image: emptyPerProvider('image'),
+    chat: emptyPerProvider('chat')
+  });
   const [isFetchingModels, setIsFetchingModels] = useState(false);
-  const [lastResult, setLastResult] = useState<AiAssist.IAiImageGenerationResponse | undefined>(undefined);
-  const [error, setError] = useState<string | undefined>(undefined);
+
+  // Image-mode result + error
+  const [lastImageResult, setLastImageResult] = useState<AiAssist.IAiImageGenerationResponse | undefined>(
+    undefined
+  );
+  const [imageError, setImageError] = useState<string | undefined>(undefined);
+
+  // Chat-mode conversation
+  const [chatTurns, setChatTurns] = useState<ReadonlyArray<IChatTurn>>([]);
+  const [chatError, setChatError] = useState<string | undefined>(undefined);
+  const [activeToolEvents, setActiveToolEvents] = useState<ReadonlyArray<string>>([]);
+
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
+
+  const provider = providersByMode[mode];
+  const capability = CAPABILITY_BY_MODE[mode];
+  const providers = PROVIDERS_BY_MODE[mode];
 
   const keyStore = useMemo(() => {
     const secrets = new Map<string, string>();
@@ -63,8 +97,8 @@ export function App(): React.JSX.Element {
 
   const settings = useMemo<AiAssist.IAiAssistSettings>(
     () => ({
-      providers: IMAGE_PROVIDERS.map((p) => {
-        const model = modelsByProvider.get(p);
+      providers: providers.map((p) => {
+        const model = perMode[mode].models.get(p);
         return {
           provider: p,
           secretName: secretNameFor(p),
@@ -73,10 +107,14 @@ export function App(): React.JSX.Element {
       }),
       defaultProvider: provider
     }),
-    [provider, modelsByProvider]
+    [providers, mode, perMode, provider]
   );
 
-  const { isWorking, generateImages, listModels } = useAiAssist({ settings, keyStore });
+  const { isWorking, generateImages, listModels, streamDirect } = useAiAssist({ settings, keyStore });
+
+  const setProvider = (next: AiAssist.AiProviderId): void => {
+    setProvidersByMode((prev) => ({ ...prev, [mode]: next }));
+  };
 
   const setApiKey = (next: string): void => {
     setApiKeysByProvider((prev) => {
@@ -87,109 +125,195 @@ export function App(): React.JSX.Element {
   };
 
   const setModel = (next: string): void => {
-    setModelsByProvider((prev) => {
-      const updated = new Map(prev);
+    setPerMode((prev) => {
+      const updated = new Map(prev[mode].models);
       updated.set(provider, next);
-      return updated;
+      return { ...prev, [mode]: { ...prev[mode], models: updated } };
     });
   };
 
-  const handleGenerate = async (params: AiAssist.IAiImageGenerationParams): Promise<void> => {
-    setError(undefined);
-    setLastResult(undefined);
+  const handleFetchModels = async (): Promise<void> => {
+    const targetProvider = provider;
+    const targetMode = mode;
+    setIsFetchingModels(true);
+    const result = await listModels(targetProvider, capability);
+    setIsFetchingModels(false);
+    setPerMode((prev) => {
+      const current = prev[targetMode];
+      const available = new Map(current.available);
+      const listError = new Map(current.listError);
+      if (result.isFailure()) {
+        available.set(targetProvider, []);
+        listError.set(targetProvider, result.message);
+      } else {
+        available.set(targetProvider, result.value);
+        listError.delete(targetProvider);
+      }
+      return { ...prev, [targetMode]: { ...current, available, listError } };
+    });
+  };
+
+  const handleGenerateImages = async (params: AiAssist.IAiImageGenerationParams): Promise<void> => {
+    setImageError(undefined);
+    setLastImageResult(undefined);
     const controller = new AbortController();
     abortControllerRef.current = controller;
     const result = await generateImages(provider, params, controller.signal);
     abortControllerRef.current = undefined;
     if (result.isFailure()) {
-      setError(result.message);
+      setImageError(result.message);
     } else {
-      setLastResult(result.value);
+      setLastImageResult(result.value);
     }
+  };
+
+  const handleSendChat = async (
+    text: string,
+    options: { readonly tools?: ReadonlyArray<AiAssist.AiServerToolConfig> }
+  ): Promise<void> => {
+    setChatError(undefined);
+    setActiveToolEvents([]);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const userTurn: IChatTurn = { role: 'user', content: text };
+    const assistantTurn: IChatTurn = { role: 'assistant', content: '', isStreaming: true };
+    setChatTurns((prev) => [...prev, userTurn, assistantTurn]);
+
+    // Build the prompt: system stays empty for plain chat; user is the new message.
+    // History (prior turns) goes into additionalMessages so the model has context.
+    const additionalMessages: AiAssist.IChatMessage[] = chatTurns
+      .filter((t) => t.role === 'user' || t.role === 'assistant')
+      .map((t) => ({ role: t.role, content: t.content }));
+    const prompt = new AiAssist.AiPrompt(text, 'You are a helpful assistant.');
+
+    const result = await streamDirect(
+      provider,
+      prompt,
+      (event) => {
+        if (event.type === 'text-delta') {
+          setChatTurns((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last && last.role === 'assistant') {
+              next[next.length - 1] = { ...last, content: last.content + event.delta };
+            }
+            return next;
+          });
+        } else if (event.type === 'tool-event') {
+          if (event.phase === 'started') {
+            setActiveToolEvents((prev) => [...prev, `Searching the web…`]);
+          } else if (event.phase === 'completed') {
+            setActiveToolEvents((prev) => prev.slice(0, -1));
+          }
+        }
+      },
+      { tools: options.tools, additionalMessages, signal: controller.signal }
+    );
+    abortControllerRef.current = undefined;
+    setActiveToolEvents([]);
+    setChatTurns((prev) => {
+      const next = [...prev];
+      const last = next[next.length - 1];
+      if (last && last.role === 'assistant') {
+        next[next.length - 1] = { ...last, isStreaming: false };
+      }
+      return next;
+    });
+    if (result.isFailure()) {
+      setChatError(result.message);
+    }
+  };
+
+  const handleClearChat = (): void => {
+    setChatTurns([]);
+    setChatError(undefined);
+    setActiveToolEvents([]);
   };
 
   const handleAbort = (): void => {
     abortControllerRef.current?.abort();
   };
 
-  const handleFetchModels = async (): Promise<void> => {
-    const targetProvider = provider;
-    setIsFetchingModels(true);
-    const result = await listModels(targetProvider, 'image-generation');
-    setIsFetchingModels(false);
-    if (result.isFailure()) {
-      setModelListErrorByProvider((prev) => {
-        const updated = new Map(prev);
-        updated.set(targetProvider, result.message);
-        return updated;
-      });
-      setAvailableModelsByProvider((prev) => {
-        const updated = new Map(prev);
-        updated.set(targetProvider, []);
-        return updated;
-      });
-    } else {
-      setAvailableModelsByProvider((prev) => {
-        const updated = new Map(prev);
-        updated.set(targetProvider, result.value);
-        return updated;
-      });
-      setModelListErrorByProvider((prev) => {
-        const updated = new Map(prev);
-        updated.delete(targetProvider);
-        return updated;
-      });
-    }
-  };
-
   const currentKey = apiKeysByProvider.get(provider) ?? '';
-  const currentModel = modelsByProvider.get(provider) ?? '';
+  const currentModel = perMode[mode].models.get(provider) ?? '';
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-5xl px-6 py-4">
-          <h1 className="text-2xl font-semibold">AI Image Generation Sample</h1>
+          <div className="flex items-baseline justify-between gap-4">
+            <h1 className="text-2xl font-semibold">AI Assist Sample</h1>
+            <div className="inline-flex rounded-md border border-slate-200 bg-slate-100 p-0.5 text-sm font-medium">
+              {(['image', 'chat'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={`rounded px-3 py-1 transition-colors ${
+                    mode === m ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {m === 'image' ? 'Image Generation' : 'Streaming Chat'}
+                </button>
+              ))}
+            </div>
+          </div>
           <p className="mt-1 text-sm text-slate-600">
-            Demonstrates the @fgv/ts-extras image-generation API via the @fgv/ts-app-shell useAiAssist hook.
-            API keys live in memory for this session only.
+            Demonstrates the @fgv/ts-extras AI APIs via the @fgv/ts-app-shell useAiAssist hook. API keys live
+            in memory for this session only.
           </p>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
         <SettingsPanel
-          providers={IMAGE_PROVIDERS}
+          mode={mode}
+          providers={providers}
           provider={provider}
           onProviderChange={setProvider}
           apiKey={currentKey}
           onApiKeyChange={setApiKey}
           model={currentModel}
-          modelPlaceholder={defaultModelFor(provider)}
+          modelPlaceholder={defaultModelFor(provider, mode)}
           onModelChange={setModel}
-          availableModels={availableModelsByProvider.get(provider) ?? []}
+          availableModels={perMode[mode].available.get(provider) ?? []}
           isFetchingModels={isFetchingModels}
-          modelListError={modelListErrorByProvider.get(provider)}
+          modelListError={perMode[mode].listError.get(provider)}
           onFetchModels={() => {
             void handleFetchModels();
           }}
         />
 
-        <PromptPanel
-          provider={provider}
-          isWorking={isWorking}
-          canSubmit={currentKey.length > 0}
-          onGenerate={handleGenerate}
-          onAbort={handleAbort}
-        />
-
-        {error !== undefined && (
-          <div className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-            <strong className="font-semibold">Error:</strong> {error}
-          </div>
+        {mode === 'image' ? (
+          <>
+            <PromptPanel
+              provider={provider}
+              isWorking={isWorking}
+              canSubmit={currentKey.length > 0}
+              onGenerate={handleGenerateImages}
+              onAbort={handleAbort}
+            />
+            {imageError !== undefined && (
+              <div className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+                <strong className="font-semibold">Error:</strong> {imageError}
+              </div>
+            )}
+            {lastImageResult !== undefined && <ImageResults response={lastImageResult} />}
+          </>
+        ) : (
+          <ChatPanel
+            provider={provider}
+            isWorking={isWorking}
+            canSubmit={currentKey.length > 0}
+            turns={chatTurns}
+            error={chatError}
+            activeToolEvents={activeToolEvents}
+            onSend={handleSendChat}
+            onAbort={handleAbort}
+            onClear={handleClearChat}
+          />
         )}
-
-        {lastResult !== undefined && <ImageResults response={lastResult} />}
       </main>
     </div>
   );
