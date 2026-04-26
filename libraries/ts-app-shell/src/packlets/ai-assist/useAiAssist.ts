@@ -122,6 +122,23 @@ export interface IUseAiAssistResult {
     capability?: AiAssist.AiModelCapability,
     signal?: AbortSignal
   ) => Promise<Result<ReadonlyArray<AiAssist.IAiModelInfo>>>;
+  /**
+   * Stream a chat completion from the provider. The `onEvent` callback fires
+   * for every event (text deltas, tool progress, errors); the returned
+   * promise resolves with the aggregated final text and truncation flag on
+   * success, or with `Result.fail` when the stream couldn't be started or
+   * ended in a terminal error event.
+   */
+  readonly streamDirect: (
+    provider: AiAssist.AiProviderId,
+    prompt: AiAssist.AiPrompt,
+    onEvent: (event: AiAssist.IAiStreamEvent) => void,
+    options?: {
+      readonly tools?: ReadonlyArray<AiAssist.AiServerToolConfig>;
+      readonly messagesBefore?: ReadonlyArray<AiAssist.IChatMessage>;
+      readonly signal?: AbortSignal;
+    }
+  ) => Promise<Result<{ readonly fullText: string; readonly truncated: boolean }>>;
 }
 
 // ============================================================================
@@ -452,5 +469,115 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
     [settings, keyStore, logger]
   );
 
-  return { actions, isWorking, copyPrompt, generateDirect, generateImages, listModels };
+  const streamDirect = useCallback(
+    async (
+      provider: AiAssist.AiProviderId,
+      prompt: AiAssist.AiPrompt,
+      onEvent: (event: AiAssist.IAiStreamEvent) => void,
+      options?: {
+        readonly tools?: ReadonlyArray<AiAssist.AiServerToolConfig>;
+        readonly messagesBefore?: ReadonlyArray<AiAssist.IChatMessage>;
+        readonly signal?: AbortSignal;
+      }
+    ): Promise<Result<{ readonly fullText: string; readonly truncated: boolean }>> => {
+      const providerConfig = settings?.providers.find((p) => p.provider === provider);
+      if (!providerConfig) {
+        return fail(`Provider "${provider}" not configured`);
+      }
+
+      const descriptorResult = AiAssist.getProviderDescriptor(provider);
+      if (descriptorResult.isFailure()) {
+        return fail(descriptorResult.message);
+      }
+      const descriptor = descriptorResult.value;
+
+      if (!providerConfig.secretName) {
+        return fail(`Provider "${provider}" has no secret name configured`);
+      }
+      if (!keyStore) {
+        return fail('No keystore available');
+      }
+
+      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      if (apiKeyResult.isFailure()) {
+        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+      }
+
+      const effectiveTools = AiAssist.resolveEffectiveTools(descriptor, providerConfig.tools, options?.tools);
+      const requestParams: AiAssist.IProviderCompletionStreamParams = {
+        descriptor,
+        apiKey: apiKeyResult.value,
+        prompt,
+        messagesBefore: options?.messagesBefore,
+        modelOverride: providerConfig.model,
+        logger,
+        tools: effectiveTools.length > 0 ? effectiveTools : undefined,
+        signal: options?.signal
+      };
+      const useProxy: boolean =
+        !!settings?.proxyUrl && (settings.proxyAllProviders === true || descriptor.streamingCorsRestricted);
+      const openResult = useProxy
+        ? await AiAssist.callProxiedCompletionStream(settings!.proxyUrl!, requestParams)
+        : await AiAssist.callProviderCompletionStream(requestParams);
+      if (openResult.isFailure()) {
+        logger?.error(`AI streaming failed to start: ${openResult.message}`);
+        return fail(openResult.message);
+      }
+
+      setIsWorking(true);
+      let fullText = '';
+      let truncated = false;
+      let terminalError: string | undefined;
+      let receivedTerminalEvent = false;
+      try {
+        for await (const event of openResult.value) {
+          try {
+            onEvent(event);
+          } catch (err: unknown) {
+            // Consumer callback threw (e.g. setState-after-unmount). Convert
+            // into a terminal failure so streamDirect always resolves to a
+            // Result instead of rejecting and breaking its contract.
+            terminalError = `AI stream event handler failed: ${
+              err instanceof Error ? err.message : String(err)
+            }`;
+            receivedTerminalEvent = true;
+            break;
+          }
+          if (event.type === 'text-delta') {
+            fullText += event.delta;
+          } else if (event.type === 'done') {
+            fullText = event.fullText;
+            truncated = event.truncated;
+            receivedTerminalEvent = true;
+          } else if (event.type === 'error') {
+            terminalError = event.message;
+            receivedTerminalEvent = true;
+          }
+        }
+      } finally {
+        setIsWorking(false);
+      }
+      if (terminalError !== undefined) {
+        logger?.error(`AI streaming ended in error: ${terminalError}`);
+        return fail(terminalError);
+      }
+      if (!receivedTerminalEvent) {
+        const message = 'AI stream ended without a terminal done or error event';
+        logger?.error(message);
+        return fail(message);
+      }
+      return succeed({ fullText, truncated });
+    },
+    [settings, keyStore, logger]
+  );
+
+  return {
+    actions,
+    isWorking,
+    copyPrompt,
+    generateDirect,
+    generateImages,
+    listModels,
+    streamDirect
+  };
 }

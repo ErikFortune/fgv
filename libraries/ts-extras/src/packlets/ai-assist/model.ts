@@ -319,6 +319,76 @@ export interface IAiCompletionResponse {
   readonly truncated: boolean;
 }
 
+// ============================================================================
+// Streaming Events
+// ============================================================================
+
+/**
+ * A text-content delta arriving during a streaming completion.
+ * @public
+ */
+export interface IAiStreamTextDelta {
+  readonly type: 'text-delta';
+  /** The newly arrived text fragment. */
+  readonly delta: string;
+}
+
+/**
+ * A server-side tool progress event arriving during a streaming completion.
+ * Surfaced for providers that emit explicit tool-progress markers (OpenAI
+ * Responses API, Anthropic). Gemini's grounding doesn't emit these.
+ * @public
+ */
+export interface IAiStreamToolEvent {
+  readonly type: 'tool-event';
+  /** Which server-side tool this event describes. */
+  readonly toolType: AiServerToolType;
+  /** Tool lifecycle phase. */
+  readonly phase: 'started' | 'completed';
+  /**
+   * Optional provider-specific detail. For web_search this is typically the
+   * search query when available; format varies by provider.
+   */
+  readonly detail?: string;
+}
+
+/**
+ * Terminal success event for a streaming completion. Carries the aggregated
+ * full text and truncation status for callers that want both the progressive
+ * UI and the complete result.
+ * @public
+ */
+export interface IAiStreamDone {
+  readonly type: 'done';
+  /** Whether the response was truncated due to token limits. */
+  readonly truncated: boolean;
+  /** The full concatenated text from all `text-delta` events. */
+  readonly fullText: string;
+}
+
+/**
+ * Terminal failure event for a streaming completion. After this event no
+ * further events are emitted.
+ *
+ * @remarks
+ * Connection-time failures (auth, network, pre-flight CORS rejection) are
+ * surfaced via the outer `Result.fail` returned by
+ * `callProviderCompletionStream` rather than as an `error` event, so callers
+ * can distinguish "didn't start" from "started but errored mid-stream."
+ *
+ * @public
+ */
+export interface IAiStreamError {
+  readonly type: 'error';
+  readonly message: string;
+}
+
+/**
+ * Discriminated union of events emitted by a streaming completion.
+ * @public
+ */
+export type IAiStreamEvent = IAiStreamTextDelta | IAiStreamToolEvent | IAiStreamDone | IAiStreamError;
+
 /**
  * Describes a single AI provider — single source of truth for all metadata.
  * @public
@@ -342,6 +412,17 @@ export interface IAiProviderDescriptor {
   readonly supportedTools: ReadonlyArray<AiServerToolType>;
   /** Whether this provider's API enforces CORS restrictions that prevent direct browser calls. */
   readonly corsRestricted: boolean;
+  /**
+   * Whether this provider's streaming completion endpoint requires a proxy
+   * for direct browser calls. Some providers gate streaming separately from
+   * non-streaming (rare), so this is tracked independently from
+   * {@link IAiProviderDescriptor.corsRestricted}.
+   *
+   * @remarks
+   * When `true`, `callProviderCompletionStream` rejects up front unless the
+   * call is being routed through a proxy.
+   */
+  readonly streamingCorsRestricted: boolean;
   /**
    * Whether this provider's chat completions API accepts image input
    * (i.e. supports vision prompts). When false, calls with

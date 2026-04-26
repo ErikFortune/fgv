@@ -29,6 +29,11 @@ export {
   type IAiModelCapabilityRule,
   type IAiModelCapabilityConfig,
   type IAiModelInfo,
+  type IAiStreamEvent,
+  type IAiStreamTextDelta,
+  type IAiStreamToolEvent,
+  type IAiStreamDone,
+  type IAiStreamError,
   type ModelSpec,
   type ModelSpecKey,
   type IModelSpecMap,
@@ -56,6 +61,12 @@ export {
   type IProviderImageGenerationParams,
   type IProviderListModelsParams
 } from './apiClient';
+
+export {
+  callProviderCompletionStream,
+  callProxiedCompletionStream,
+  type IProviderCompletionStreamParams
+} from './streamingClient';
 
 export {
   aiProviderId,

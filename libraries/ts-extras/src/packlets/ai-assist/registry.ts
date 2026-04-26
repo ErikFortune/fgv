@@ -46,6 +46,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     defaultModel: '',
     supportedTools: [],
     corsRestricted: false,
+    streamingCorsRestricted: false,
     acceptsImageInput: false
   },
   {
@@ -58,6 +59,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     defaultModel: 'claude-sonnet-4-5-20250929',
     supportedTools: ['web_search'],
     corsRestricted: false,
+    streamingCorsRestricted: false,
     acceptsImageInput: true
   },
   {
@@ -70,6 +72,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-3.0-generate-002' },
     supportedTools: ['web_search'],
     corsRestricted: false,
+    streamingCorsRestricted: false,
     acceptsImageInput: true,
     imageApiFormat: 'gemini-imagen'
   },
@@ -83,6 +86,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     defaultModel: 'llama-3.3-70b-versatile',
     supportedTools: [],
     corsRestricted: false,
+    streamingCorsRestricted: false,
     acceptsImageInput: false
   },
   {
@@ -95,6 +99,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     defaultModel: 'mistral-large-latest',
     supportedTools: [],
     corsRestricted: false,
+    streamingCorsRestricted: false,
     acceptsImageInput: false
   },
   {
@@ -107,6 +112,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
     supportedTools: ['web_search'],
     corsRestricted: false,
+    streamingCorsRestricted: false,
     acceptsImageInput: true,
     imageApiFormat: 'openai-images'
   },
@@ -124,6 +130,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     },
     supportedTools: ['web_search'],
     corsRestricted: true,
+    streamingCorsRestricted: true,
     acceptsImageInput: true,
     imageApiFormat: 'xai-images'
   }
