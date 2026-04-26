@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "add streaming and images to ai-assist",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
