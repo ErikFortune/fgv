@@ -40,6 +40,7 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     supportedTools: ['web_search'],
     corsRestricted: true,
     acceptsImageInput: true,
+    streamingCorsRestricted: false,
     ...overrides
   };
 }
@@ -56,6 +57,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     supportedTools: [],
     corsRestricted: false,
     acceptsImageInput: true,
+    streamingCorsRestricted: false,
     imageApiFormat: 'openai-images',
     ...overrides
   };

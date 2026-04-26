@@ -49,9 +49,15 @@ import {
   type IAiProviderDescriptor,
   type IChatMessage,
   type ModelSpec,
-  resolveModel,
-  toDataUrl
+  resolveModel
 } from './model';
+import {
+  buildAnthropicMessages,
+  buildGeminiContents,
+  buildMessages,
+  buildOpenAiChatUserContent,
+  buildOpenAiResponsesUserContent
+} from './chatRequestBuilders';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG } from './registry';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
 
@@ -100,104 +106,6 @@ export interface IProviderCompletionParams {
 // ============================================================================
 // Shared helpers
 // ============================================================================
-
-/**
- * Builds the messages array from prompt + optional correction messages.
- * The caller supplies the user content (string for text-only, parts array
- * for vision prompts) since the parts shape differs by format.
- * @internal
- */
-function buildMessages(
-  systemPrompt: string,
-  userContent: string | unknown[],
-  additionalMessages?: ReadonlyArray<IChatMessage>
-): Array<{ role: string; content: string | unknown[] }> {
-  const messages: Array<{ role: string; content: string | unknown[] }> = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userContent }
-  ];
-  if (additionalMessages) {
-    for (const msg of additionalMessages) {
-      messages.push({ role: msg.role, content: msg.content });
-    }
-  }
-  return messages;
-}
-
-/**
- * Builds the user content for OpenAI Chat Completions when attachments are
- * present. Returns a string when there are no attachments.
- * @internal
- */
-function buildOpenAiChatUserContent(prompt: AiPrompt): string | unknown[] {
-  if (prompt.attachments.length === 0) {
-    return prompt.user;
-  }
-  return [
-    { type: 'text', text: prompt.user },
-    ...prompt.attachments.map((att) => ({
-      type: 'image_url',
-      image_url: {
-        url: toDataUrl(att),
-        ...(att.detail !== undefined ? { detail: att.detail } : {})
-      }
-    }))
-  ];
-}
-
-/**
- * Builds the user content for OpenAI / xAI Responses API when attachments
- * are present. Responses API uses `input_text` / `input_image` part types,
- * distinct from Chat Completions' `text` / `image_url`.
- * @internal
- */
-function buildOpenAiResponsesUserContent(prompt: AiPrompt): string | unknown[] {
-  if (prompt.attachments.length === 0) {
-    return prompt.user;
-  }
-  return [
-    { type: 'input_text', text: prompt.user },
-    ...prompt.attachments.map((att) => ({
-      type: 'input_image',
-      image_url: toDataUrl(att),
-      ...(att.detail !== undefined ? { detail: att.detail } : {})
-    }))
-  ];
-}
-
-/**
- * Builds the user-message content for Anthropic when attachments are present.
- * @internal
- */
-function buildAnthropicUserContent(prompt: AiPrompt): string | unknown[] {
-  if (prompt.attachments.length === 0) {
-    return prompt.user;
-  }
-  return [
-    { type: 'text', text: prompt.user },
-    ...prompt.attachments.map((att) => ({
-      type: 'image',
-      source: {
-        type: 'base64',
-        media_type: att.mimeType,
-        data: att.base64
-      }
-    }))
-  ];
-}
-
-/**
- * Builds the Gemini `parts` array for the user turn, including any image
- * attachments as `inlineData` parts.
- * @internal
- */
-function buildGeminiUserParts(prompt: AiPrompt): Array<Record<string, unknown>> {
-  const parts: Array<Record<string, unknown>> = [{ text: prompt.user }];
-  for (const att of prompt.attachments) {
-    parts.push({ inlineData: { mimeType: att.mimeType, data: att.base64 } });
-  }
-  return parts;
-}
 
 /**
  * Makes an HTTP request and returns the parsed JSON, or a failure.
@@ -587,17 +495,7 @@ async function callAnthropicCompletion(
   const url = `${config.baseUrl}/messages`;
 
   // Anthropic uses system as a top-level field, not in messages
-  const messages: Array<{ role: string; content: string | unknown[] }> = [
-    { role: 'user', content: buildAnthropicUserContent(prompt) }
-  ];
-  if (additionalMessages) {
-    for (const msg of additionalMessages) {
-      // Anthropic doesn't have a system role in messages
-      if (msg.role !== 'system') {
-        messages.push({ role: msg.role, content: msg.content });
-      }
-    }
-  }
+  const messages = buildAnthropicMessages(prompt, additionalMessages);
 
   const body: Record<string, unknown> = {
     model: config.model,
@@ -675,19 +573,7 @@ async function callGeminiCompletion(
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
   // Gemini uses 'contents' with 'parts', and 'model' role instead of 'assistant'
-  const contents: Array<{ role: string; parts: Array<Record<string, unknown>> }> = [
-    { role: 'user', parts: buildGeminiUserParts(prompt) }
-  ];
-  if (additionalMessages) {
-    for (const msg of additionalMessages) {
-      if (msg.role !== 'system') {
-        contents.push({
-          role: msg.role === 'assistant' ? 'model' : msg.role,
-          parts: [{ text: msg.content }]
-        });
-      }
-    }
-  }
+  const contents = buildGeminiContents(prompt, additionalMessages);
 
   const body: Record<string, unknown> = {
     systemInstruction: { parts: [{ text: prompt.system }] },

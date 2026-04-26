@@ -1,6 +1,7 @@
 # AI Assist — Image Support Design
 
-Status: step 1 done, step 2 done, sample app done, list-models done, step 3 done
+Status: step 1 done, step 2 done, sample app done, list-models done, step 3 done,
+streaming chat in progress
 Branch: `ai-images`
 Scope: extend `@fgv/ts-extras` `ai-assist` packlet to support image input (vision)
 and image output (generation), and thread an `AbortSignal` through all calls.
@@ -466,6 +467,118 @@ Plus `listModels(provider, capability?)` on the `useAiAssist` hook.
 
 - **Caching.** Listing is a config-level operation called rarely; no need to
   cache yet. Add per-session memoization if it ever shows up in profiling.
+
+---
+
+---
+
+## Streaming chat
+
+Driven by a conversational use case (recipe analysis with web-search
+grounding) where progressive output is meaningfully better UX than waiting
+for a complete response.
+
+### Decisions
+
+- **Separate entry point.** `callProviderCompletionStream` parallel to
+  `callProviderCompletion`. Streaming and the JSON-correction retry loop
+  in `generateDirect` don't compose — buffering a stream just to validate
+  defeats the point.
+- **Per-provider CORS control for streaming.** New mandatory descriptor
+  field `streamingCorsRestricted: boolean`. Initial values mirror
+  `corsRestricted` (only xai-grok is `true`); callers verify in their app
+  and we flip individual values if any provider gates streaming separately.
+- **No proxied streaming server in this repo.** We ship
+  `callProxiedCompletionStream` and a documented contract; consumer
+  implements the SSE-forwarding endpoint. `corsRestricted` providers
+  without a proxy fail up front with an actionable message.
+- **Server-side tool events surface as stream events**, but the library
+  never invokes client-side tools — that's a non-goal.
+- **Callback-based hook surface.** `streamDirect(provider, prompt,
+  onEvent, signal?)` fits React state updates better than async iterables.
+  Underlying library function returns `Promise<Result<AsyncIterable<...>>>`
+  for testability and composition.
+- **Final aggregation in the hook.** `streamDirect` resolves with
+  `Result<{fullText, truncated}>` — callers get both progressive UI
+  updates via `onEvent` and the complete result for downstream use.
+
+### Event vocabulary
+
+```ts
+export type IAiStreamEvent =
+  | { type: 'text-delta'; delta: string }
+  | { type: 'tool-event'; toolType: AiServerToolType; phase: 'started' | 'completed'; detail?: string }
+  | { type: 'done'; truncated: boolean; fullText: string }
+  | { type: 'error'; message: string };
+```
+
+Mid-stream errors surface as a terminal `error` event. `done` arrives
+only on success. Caller-initiated abort just stops iteration; no event
+needed.
+
+### API
+
+```ts
+export interface IProviderCompletionStreamParams extends IProviderCompletionParams {
+  // structurally identical; reuses descriptor / apiKey / prompt / tools / signal
+}
+
+callProviderCompletionStream(params): Promise<Result<AsyncIterable<IAiStreamEvent>>>
+callProxiedCompletionStream(proxyUrl, params): Promise<Result<AsyncIterable<IAiStreamEvent>>>
+```
+
+Plus on the hook:
+```ts
+readonly streamDirect: (
+  provider: AiProviderId,
+  prompt: AiPrompt,
+  onEvent: (event: IAiStreamEvent) => void,
+  signal?: AbortSignal
+) => Promise<Result<{ fullText: string; truncated: boolean }>>;
+```
+
+### SSE adapters per format
+
+| `apiFormat` | Endpoint                              | Notable events                              |
+|-------------|---------------------------------------|---------------------------------------------|
+| openai (chat) | `${baseUrl}/chat/completions` w/ `stream:true` | data lines with `choices[0].delta.content`; `[DONE]` marker; `finish_reason` in last data |
+| openai (responses) | `${baseUrl}/responses` w/ `stream:true` | named events: `response.output_text.delta`, `response.web_search_call.in_progress`/`.completed`, `response.completed` |
+| anthropic | `${baseUrl}/messages` w/ `stream:true` | named events: `content_block_start` (text or `server_tool_use`/`web_search_tool_result`), `content_block_delta`, `message_stop` |
+| gemini | `${baseUrl}/models/${model}:streamGenerateContent?alt=sse` | newline-separated JSON envelopes; grounding metadata in final chunk; no explicit tool-progress markers |
+
+### Pre-flight CORS rejection (graceful failure)
+
+`callProviderCompletionStream` rejects up front when
+`descriptor.streamingCorsRestricted === true` and the call isn't being
+routed through a proxy:
+```
+provider "xai-grok" requires a proxy for streaming; none is configured
+```
+Caller gets a useful Result.fail before fetch is invoked, instead of
+letting the browser CORS error surface unstructured.
+
+### Proxy contract (consumer-implemented)
+
+`POST ${proxyUrl}/api/ai/completion-stream`. Same JSON request body as
+`/api/ai/completion` plus `"stream": true`. Response: `Content-Type:
+text/event-stream`; body is the unified `IAiStreamEvent` JSON serialized
+one event per SSE `data:` line. The proxy:
+- Opens upstream SSE connection, translates provider-native events to the
+  unified vocabulary, writes them as fast as they arrive.
+- Handles client disconnect (close upstream connection, propagate abort).
+- Surfaces upstream errors as a terminal `{type: 'error', message}` event.
+
+We don't write or test the proxy server here; the contract is documented
+above for consumers to implement.
+
+### Out of scope
+
+- **Client-side tools / function calling.** No support in synchronous
+  mode either; intentional.
+- **Streaming for entity-validation use cases.** The JSON-correction retry
+  loop in `generateDirect` is a deliberately separate flow.
+- **Streaming for image generation or list-models.** Those don't have a
+  meaningful streaming model.
 
 ---
 

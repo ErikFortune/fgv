@@ -47,6 +47,11 @@ declare namespace AiAssist {
         IAiModelCapabilityRule,
         IAiModelCapabilityConfig,
         IAiModelInfo,
+        IAiStreamEvent,
+        IAiStreamTextDelta,
+        IAiStreamToolEvent,
+        IAiStreamDone,
+        IAiStreamError,
         ModelSpec,
         ModelSpecKey,
         IModelSpecMap,
@@ -67,6 +72,9 @@ declare namespace AiAssist {
         IProviderCompletionParams,
         IProviderImageGenerationParams,
         IProviderListModelsParams,
+        callProviderCompletionStream,
+        callProxiedCompletionStream,
+        IProviderCompletionStreamParams,
         aiProviderId,
         aiServerToolType,
         aiWebSearchToolConfig,
@@ -160,6 +168,13 @@ const base64String: Converter<string>;
 // @public
 function callProviderCompletion(params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProxiedCompletionStream"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiStreamError"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiStreamDone"
+//
+// @public
+function callProviderCompletionStream(params: IProviderCompletionStreamParams): Promise<Result<AsyncIterable<IAiStreamEvent>>>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
 //
 // @public
@@ -173,6 +188,11 @@ function callProviderListModels(params: IProviderListModelsParams): Promise<Resu
 //
 // @public
 function callProxiedCompletion(proxyUrl: string, params: IProviderCompletionParams): Promise<Result<IAiCompletionResponse>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiStreamEvent"
+//
+// @public
+function callProxiedCompletionStream(proxyUrl: string, params: IProviderCompletionStreamParams): Promise<Result<AsyncIterable<IAiStreamEvent>>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageGenerationResponse"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderImageGeneration"
@@ -599,7 +619,44 @@ interface IAiProviderDescriptor {
     readonly imageApiFormat?: AiImageApiFormat;
     readonly label: string;
     readonly needsSecret: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+    readonly streamingCorsRestricted: boolean;
     readonly supportedTools: ReadonlyArray<AiServerToolType>;
+}
+
+// @public
+interface IAiStreamDone {
+    readonly fullText: string;
+    readonly truncated: boolean;
+    // (undocumented)
+    readonly type: 'done';
+}
+
+// @public
+interface IAiStreamError {
+    // (undocumented)
+    readonly message: string;
+    // (undocumented)
+    readonly type: 'error';
+}
+
+// @public
+type IAiStreamEvent = IAiStreamTextDelta | IAiStreamToolEvent | IAiStreamDone | IAiStreamError;
+
+// @public
+interface IAiStreamTextDelta {
+    readonly delta: string;
+    // (undocumented)
+    readonly type: 'text-delta';
+}
+
+// @public
+interface IAiStreamToolEvent {
+    readonly detail?: string;
+    readonly phase: 'started' | 'completed';
+    readonly toolType: AiServerToolType;
+    // (undocumented)
+    readonly type: 'tool-event';
 }
 
 // @public
@@ -802,6 +859,19 @@ interface INamedSecret {
 
 // @public
 interface IProviderCompletionParams {
+    readonly additionalMessages?: ReadonlyArray<IChatMessage>;
+    readonly apiKey: string;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly logger?: Logging.ILogger;
+    readonly modelOverride?: ModelSpec;
+    readonly prompt: AiPrompt;
+    readonly signal?: AbortSignal;
+    readonly temperature?: number;
+    readonly tools?: ReadonlyArray<AiServerToolConfig>;
+}
+
+// @public
+interface IProviderCompletionStreamParams {
     readonly additionalMessages?: ReadonlyArray<IChatMessage>;
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;

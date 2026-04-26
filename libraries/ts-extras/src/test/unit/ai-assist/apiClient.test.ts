@@ -42,6 +42,7 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     supportedTools: ['web_search'],
     corsRestricted: true,
     acceptsImageInput: true,
+    streamingCorsRestricted: false,
     ...overrides
   };
 }
@@ -931,6 +932,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     supportedTools: [],
     corsRestricted: false,
     acceptsImageInput: true,
+    streamingCorsRestricted: false,
     imageApiFormat: 'openai-images',
     ...overrides
   };
@@ -1214,6 +1216,7 @@ describe('image input — gemini', () => {
       apiFormat: 'gemini',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
       acceptsImageInput: true,
+      streamingCorsRestricted: false,
       defaultModel: 'gemini-2.5-flash'
     });
 
