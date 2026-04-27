@@ -55,7 +55,7 @@ Key derivation parameters used to derive the secret key.
 
 </td><td>
 
-[IKeyStoreSecretEntry](../../../interfaces/IKeyStoreSecretEntry.md)
+[IKeyStoreSymmetricEntry](../../../interfaces/IKeyStoreSymmetricEntry.md)
 
 </td><td>
 
@@ -77,6 +77,23 @@ boolean
 </td><td>
 
 Whether this replaced an existing secret.
+
+</td></tr>
+<tr><td>
+
+[warning](./IAddSecretResult.warning.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Best-effort warning from displaced-resource cleanup.
 
 </td></tr>
 </tbody></table>

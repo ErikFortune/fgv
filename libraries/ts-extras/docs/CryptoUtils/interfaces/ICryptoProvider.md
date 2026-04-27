@@ -125,4 +125,43 @@ Encodes binary data to base64 string.
 Decodes base64 string to binary data.
 
 </td></tr>
+<tr><td>
+
+[generateKeyPair(algorithm, extractable)](./ICryptoProvider.generateKeyPair.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Generates a new asymmetric keypair for the requested algorithm.
+
+</td></tr>
+<tr><td>
+
+[exportPublicKeyJwk(publicKey)](./ICryptoProvider.exportPublicKeyJwk.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Exports the public half of a keypair as a JSON Web Key.
+
+</td></tr>
+<tr><td>
+
+[importPublicKeyJwk(jwk, algorithm)](./ICryptoProvider.importPublicKeyJwk.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Re-imports a public-key JWK as a `CryptoKey` usable for verification or
+
+</td></tr>
 </tbody></table>

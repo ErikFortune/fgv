@@ -29,7 +29,61 @@ Converter for CryptoUtils.KeyStore.KeyStoreFormat | key store format version.
 
 </td><td>
 
-Converter for CryptoUtils.KeyStore.KeyStoreSecretType | key store secret type discriminator.
+Converter for CryptoUtils.KeyStore.KeyStoreSecretType | any key store secret type discriminator.
+
+</td></tr>
+<tr><td>
+
+[keystoreSymmetricSecretType](./variables/keystoreSymmetricSecretType.md)
+
+</td><td>
+
+Converter for CryptoUtils.KeyStore.KeyStoreSymmetricSecretType | symmetric secret type discriminator.
+
+</td></tr>
+<tr><td>
+
+[keystoreAsymmetricSecretType](./variables/keystoreAsymmetricSecretType.md)
+
+</td><td>
+
+Converter for CryptoUtils.KeyStore.KeyStoreAsymmetricSecretType | asymmetric secret type discriminator.
+
+</td></tr>
+<tr><td>
+
+[keyPairAlgorithm](./variables/keyPairAlgorithm.md)
+
+</td><td>
+
+Converter for CryptoUtils.KeyStore.KeyPairAlgorithm | key pair algorithm.
+
+</td></tr>
+<tr><td>
+
+[jsonWebKeyShape](./variables/jsonWebKeyShape.md)
+
+</td><td>
+
+In-place shape check for a JSON Web Key.
+
+</td></tr>
+<tr><td>
+
+[keystoreSymmetricEntryJson](./variables/keystoreSymmetricEntryJson.md)
+
+</td><td>
+
+Converter for CryptoUtils.KeyStore.IKeyStoreSymmetricEntryJson | symmetric secret entry in JSON form.
+
+</td></tr>
+<tr><td>
+
+[keystoreAsymmetricEntryJson](./variables/keystoreAsymmetricEntryJson.md)
+
+</td><td>
+
+Converter for CryptoUtils.KeyStore.IKeyStoreAsymmetricEntryJson | asymmetric keypair entry in JSON form.
 
 </td></tr>
 <tr><td>
@@ -38,7 +92,7 @@ Converter for CryptoUtils.KeyStore.KeyStoreSecretType | key store secret type di
 
 </td><td>
 
-Converter for CryptoUtils.KeyStore.IKeyStoreSecretEntryJson | key store secret entry in JSON format.
+Discriminated-union converter for any CryptoUtils.KeyStore.IKeyStoreEntryJson | key store entry in JSON form.
 
 </td></tr>
 <tr><td>

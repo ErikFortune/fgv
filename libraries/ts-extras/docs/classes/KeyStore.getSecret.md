@@ -2,12 +2,14 @@
 
 ## KeyStore.getSecret() method
 
-Gets a secret by name.
+Gets a secret by name. Returns the CryptoUtils.KeyStore.IKeyStoreEntry | discriminated union
+— callers must check `entry.type` before accessing `key`/`id` since asymmetric
+entries carry no raw key material.
 
 **Signature:**
 
 ```typescript
-getSecret(name: string): Result<IKeyStoreSecretEntry>;
+getSecret(name: string): Result<IKeyStoreEntry>;
 ```
 
 **Parameters:**
@@ -19,6 +21,6 @@ getSecret(name: string): Result<IKeyStoreSecretEntry>;
 
 **Returns:**
 
-Result&lt;[IKeyStoreSecretEntry](../interfaces/IKeyStoreSecretEntry.md)&gt;
+Result&lt;[IKeyStoreEntry](../type-aliases/IKeyStoreEntry.md)&gt;
 
 Success with secret entry, Failure if not found or locked

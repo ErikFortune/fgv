@@ -2,10 +2,10 @@
 
 ## IImportKeyOptions.type property
 
-Secret type classification for the imported key material.
+Symmetric secret type classification for the imported key material.
 
 **Signature:**
 
 ```typescript
-readonly type: KeyStoreSecretType;
+readonly type: KeyStoreSymmetricSecretType;
 ```

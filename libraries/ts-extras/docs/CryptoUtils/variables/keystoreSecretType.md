@@ -2,7 +2,8 @@
 
 # Variable: keystoreSecretType
 
-Converter for CryptoUtils.KeyStore.KeyStoreSecretType | key store secret type discriminator.
+Converter for CryptoUtils.KeyStore.KeyStoreSecretType | any key store secret type discriminator.
+Accepts both symmetric and asymmetric type values.
 
 ## Type
 

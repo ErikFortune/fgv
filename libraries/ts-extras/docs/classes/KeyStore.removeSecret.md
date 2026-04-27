@@ -2,12 +2,16 @@
 
 ## KeyStore.removeSecret() method
 
-Removes a secret by name.
+Removes a secret by name. Vault-first: the in-memory vault entry is dropped
+before any storage cleanup runs. For asymmetric-keypair entries, best-effort
+calls CryptoUtils.KeyStore.IPrivateKeyStorage.delete on the entry's
+`id`; a failure is reported via `warning` on the result but does not roll
+back the vault removal.
 
 **Signature:**
 
 ```typescript
-removeSecret(name: string): Result<IKeyStoreSecretEntry>;
+removeSecret(name: string): Promise<Result<IRemoveSecretResult>>;
 ```
 
 **Parameters:**
@@ -19,6 +23,6 @@ removeSecret(name: string): Result<IKeyStoreSecretEntry>;
 
 **Returns:**
 
-Result&lt;[IKeyStoreSecretEntry](../interfaces/IKeyStoreSecretEntry.md)&gt;
+Promise&lt;Result&lt;[IRemoveSecretResult](../interfaces/IRemoveSecretResult.md)&gt;&gt;
 
-Success with removed entry, Failure if not found or locked
+Success with removed entry (and optional warning), Failure if not found or locked

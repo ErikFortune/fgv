@@ -239,6 +239,19 @@ Gets a secret by name.
 </td></tr>
 <tr><td>
 
+[getPublicKeyJwk(name)](./KeyStore.getPublicKeyJwk.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Returns the public-key JWK for an asymmetric-keypair entry.
+
+</td></tr>
+<tr><td>
+
 [hasSecret(name)](./KeyStore.hasSecret.md)
 
 </td><td>
@@ -326,6 +339,32 @@ Imports an API key string into the vault.
 </td><td>
 
 Retrieves an API key string by name.
+
+</td></tr>
+<tr><td>
+
+[addKeyPair(name, options)](./KeyStore.addKeyPair.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Adds a new asymmetric keypair to the vault.
+
+</td></tr>
+<tr><td>
+
+[getKeyPair(name)](./KeyStore.getKeyPair.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Retrieves the keypair for an asymmetric-keypair entry.
 
 </td></tr>
 <tr><td>
