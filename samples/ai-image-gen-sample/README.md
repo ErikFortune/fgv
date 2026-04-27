@@ -25,6 +25,14 @@ are exposed via a top-level toggle:
   - OpenAI / xAI: `size`
   - Imagen: `imagen.aspectRatio`
 - Rendering returned images via `AiAssist.toDataUrl`.
+- **Reference images** (where the provider supports them — currently OpenAI
+  `gpt-image-1` and Google `gemini-2.5-flash-image` / "Nano Banana"). Attach
+  one or more PNG/JPEG/WebP files; under the hood OpenAI calls switch to
+  `/v1/images/edits` (multipart) and Gemini calls send `inlineData` parts to
+  `:generateContent`.
+- **Anchor UX for character consistency**: generate once, click **Use as
+  reference** on your favorite result, then iterate. Reference images persist
+  across generations until cleared.
 
 ### Streaming Chat mode
 - Calling `streamDirect` with conversation history (`messagesBefore`),
