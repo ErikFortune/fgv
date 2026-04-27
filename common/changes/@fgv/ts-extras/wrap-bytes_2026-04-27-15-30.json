@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add ECIES wrapBytes/unwrapBytes (ECDH P-256 + HKDF-SHA256 + AES-GCM-256) to ICryptoProvider",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
