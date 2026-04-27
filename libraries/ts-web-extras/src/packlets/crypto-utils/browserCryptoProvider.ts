@@ -19,12 +19,8 @@
 // SOFTWARE.
 
 /* c8 ignore start - Browser-only implementation cannot be tested in Node.js environment */
-import { captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
+import { captureAsyncResult, captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
-
-type ICryptoProvider = CryptoUtils.ICryptoProvider;
-type IEncryptionResult = CryptoUtils.IEncryptionResult;
-const CryptoConstants = CryptoUtils.Constants;
 
 /**
  * Extracts an `ArrayBuffer` from a Uint8Array, handling the potential SharedArrayBuffer case.
@@ -47,7 +43,7 @@ function toArrayBuffer(arr: Uint8Array): ArrayBuffer {
  *
  * @public
  */
-export class BrowserCryptoProvider implements ICryptoProvider {
+export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
   private readonly _crypto: Crypto;
 
   /**
@@ -72,14 +68,14 @@ export class BrowserCryptoProvider implements ICryptoProvider {
    * @param key - 32-byte encryption key
    * @returns `Success` with encryption result, or `Failure` with an error.
    */
-  public async encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>> {
-    if (key.length !== CryptoConstants.AES_256_KEY_SIZE) {
-      return Failure.with(`Key must be ${CryptoConstants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
+  public async encrypt(plaintext: string, key: Uint8Array): Promise<Result<CryptoUtils.IEncryptionResult>> {
+    if (key.length !== CryptoUtils.Constants.AES_256_KEY_SIZE) {
+      return Failure.with(`Key must be ${CryptoUtils.Constants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
     }
 
     try {
       // Generate random IV
-      const iv = this._crypto.getRandomValues(new Uint8Array(CryptoConstants.GCM_IV_SIZE));
+      const iv = this._crypto.getRandomValues(new Uint8Array(CryptoUtils.Constants.GCM_IV_SIZE));
 
       // Import the key
       const cryptoKey = await this._crypto.subtle.importKey(
@@ -99,7 +95,7 @@ export class BrowserCryptoProvider implements ICryptoProvider {
         {
           name: 'AES-GCM',
           iv: iv,
-          tagLength: CryptoConstants.GCM_AUTH_TAG_SIZE * 8 // bits
+          tagLength: CryptoUtils.Constants.GCM_AUTH_TAG_SIZE * 8 // bits
         },
         cryptoKey,
         plaintextBytes
@@ -109,9 +105,9 @@ export class BrowserCryptoProvider implements ICryptoProvider {
       const encryptedArray = new Uint8Array(encryptedWithTag);
       const encryptedData = encryptedArray.slice(
         0,
-        encryptedArray.length - CryptoConstants.GCM_AUTH_TAG_SIZE
+        encryptedArray.length - CryptoUtils.Constants.GCM_AUTH_TAG_SIZE
       );
-      const authTag = encryptedArray.slice(encryptedArray.length - CryptoConstants.GCM_AUTH_TAG_SIZE);
+      const authTag = encryptedArray.slice(encryptedArray.length - CryptoUtils.Constants.GCM_AUTH_TAG_SIZE);
       return Success.with({
         iv,
         authTag,
@@ -137,15 +133,15 @@ export class BrowserCryptoProvider implements ICryptoProvider {
     iv: Uint8Array,
     authTag: Uint8Array
   ): Promise<Result<string>> {
-    if (key.length !== CryptoConstants.AES_256_KEY_SIZE) {
-      return Failure.with(`Key must be ${CryptoConstants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
+    if (key.length !== CryptoUtils.Constants.AES_256_KEY_SIZE) {
+      return Failure.with(`Key must be ${CryptoUtils.Constants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
     }
-    if (iv.length !== CryptoConstants.GCM_IV_SIZE) {
-      return Failure.with(`IV must be ${CryptoConstants.GCM_IV_SIZE} bytes, got ${iv.length}`);
+    if (iv.length !== CryptoUtils.Constants.GCM_IV_SIZE) {
+      return Failure.with(`IV must be ${CryptoUtils.Constants.GCM_IV_SIZE} bytes, got ${iv.length}`);
     }
-    if (authTag.length !== CryptoConstants.GCM_AUTH_TAG_SIZE) {
+    if (authTag.length !== CryptoUtils.Constants.GCM_AUTH_TAG_SIZE) {
       return Failure.with(
-        `Auth tag must be ${CryptoConstants.GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`
+        `Auth tag must be ${CryptoUtils.Constants.GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`
       );
     }
 
@@ -169,7 +165,7 @@ export class BrowserCryptoProvider implements ICryptoProvider {
         {
           name: 'AES-GCM',
           iv: toArrayBuffer(iv),
-          tagLength: CryptoConstants.GCM_AUTH_TAG_SIZE * 8 // bits
+          tagLength: CryptoUtils.Constants.GCM_AUTH_TAG_SIZE * 8 // bits
         },
         cryptoKey,
         encryptedWithTag
@@ -190,7 +186,9 @@ export class BrowserCryptoProvider implements ICryptoProvider {
    */
   public async generateKey(): Promise<Result<Uint8Array>> {
     try {
-      return Success.with(this._crypto.getRandomValues(new Uint8Array(CryptoConstants.AES_256_KEY_SIZE)));
+      return Success.with(
+        this._crypto.getRandomValues(new Uint8Array(CryptoUtils.Constants.AES_256_KEY_SIZE))
+      );
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       return Failure.with(`Key generation failed: ${message}`);
@@ -235,7 +233,7 @@ export class BrowserCryptoProvider implements ICryptoProvider {
           hash: 'SHA-256'
         },
         keyMaterial,
-        CryptoConstants.AES_256_KEY_SIZE * 8 // bits
+        CryptoUtils.Constants.AES_256_KEY_SIZE * 8 // bits
       );
 
       return Success.with(new Uint8Array(derivedBits));
@@ -317,6 +315,62 @@ export class BrowserCryptoProvider implements ICryptoProvider {
     } catch (e) {
       return Failure.with('Invalid base64 string');
     }
+  }
+
+  // ============================================================================
+  // Asymmetric Key Operations
+  // ============================================================================
+
+  /**
+   * Generates a new asymmetric keypair via Web Crypto.
+   * @param algorithm - The algorithm to use.
+   * @param extractable - Whether the resulting keys may be exported.
+   * @returns `Success` with the generated `CryptoKeyPair`, or `Failure` with an error.
+   */
+  public async generateKeyPair(
+    algorithm: CryptoUtils.KeyPairAlgorithm,
+    extractable: boolean
+  ): Promise<Result<CryptoKeyPair>> {
+    const params = CryptoUtils.keyPairAlgorithmParams[algorithm];
+    const result = await captureAsyncResult(() =>
+      this._crypto.subtle.generateKey(params.generateKey, extractable, params.keyPairUsages)
+    );
+    return result.withErrorFormat((e) => `Failed to generate ${algorithm} keypair: ${e}`);
+  }
+
+  /**
+   * Exports a public `CryptoKey` as a JSON Web Key.
+   * @remarks
+   * Rejects non-public keys at runtime. WebCrypto's `exportKey('jwk', ...)`
+   * does not enforce public-vs-private; without this guard a caller that
+   * passed an extractable private key would receive its private fields
+   * (`d`, `p`, `q`, ...) as JWK, defeating the method's name.
+   * @param publicKey - Extractable public key to export.
+   * @returns `Success` with the JWK, or `Failure` if not a public key or if export fails.
+   */
+  public async exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>> {
+    if (publicKey.type !== 'public') {
+      return Failure.with(`exportPublicKeyJwk requires a public CryptoKey, got '${publicKey.type}'`);
+    }
+    const result = await captureAsyncResult(() => this._crypto.subtle.exportKey('jwk', publicKey));
+    return result.withErrorFormat((e) => `Failed to export public key as JWK: ${e}`);
+  }
+
+  /**
+   * Imports a public-key JWK as a `CryptoKey` for the requested algorithm.
+   * @param jwk - The JSON Web Key produced by a prior export.
+   * @param algorithm - The algorithm the key was generated for.
+   * @returns `Success` with the imported public `CryptoKey`, or `Failure` with an error.
+   */
+  public async importPublicKeyJwk(
+    jwk: JsonWebKey,
+    algorithm: CryptoUtils.KeyPairAlgorithm
+  ): Promise<Result<CryptoKey>> {
+    const params = CryptoUtils.keyPairAlgorithmParams[algorithm];
+    const result = await captureAsyncResult(() =>
+      this._crypto.subtle.importKey('jwk', jwk, params.importPublicKey, true, params.publicKeyUsages)
+    );
+    return result.withErrorFormat((e) => `Failed to import ${algorithm} public key from JWK: ${e}`);
   }
 }
 

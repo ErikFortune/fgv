@@ -12,7 +12,7 @@ length), use KeyStore.importApiKey instead.
 **Signature:**
 
 ```typescript
-importSecret(name: string, key: Uint8Array, options?: IImportKeyOptions): Result<IAddSecretResult>;
+importSecret(name: string, key: Uint8Array, options?: IImportKeyOptions): Promise<Result<IAddSecretResult>>;
 ```
 
 **Parameters:**
@@ -26,6 +26,6 @@ importSecret(name: string, key: Uint8Array, options?: IImportKeyOptions): Result
 
 **Returns:**
 
-Result&lt;[IAddSecretResult](../../../interfaces/IAddSecretResult.md)&gt;
+Promise&lt;Result&lt;[IAddSecretResult](../../../interfaces/IAddSecretResult.md)&gt;&gt;
 
 Success with entry, Failure if locked, key invalid, or exists and !replace

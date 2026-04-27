@@ -18,7 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { EncryptionAlgorithm, ICryptoProvider, IKeyDerivationParams } from '../model';
+import { EncryptionAlgorithm, ICryptoProvider, IKeyDerivationParams, KeyPairAlgorithm } from '../model';
+import { IPrivateKeyStorage } from './privateKeyStorage';
+
+// Re-export so consumers can continue to access the algorithm enum via the
+// CryptoUtils.KeyStore namespace alongside the rest of the keystore types.
+export { allKeyPairAlgorithms, KeyPairAlgorithm } from '../model';
 
 // ============================================================================
 // Key Store Format Types
@@ -54,34 +59,70 @@ export const MIN_SALT_LENGTH: number = 16;
 // ============================================================================
 
 /**
- * Discriminator for secret types stored in the vault.
+ * Discriminator for symmetric secret types stored in the vault.
  * - `'encryption-key'`: A 32-byte AES-256 encryption key.
  * - `'api-key'`: An arbitrary-length API key string (UTF-8 encoded).
  * @public
  */
-export type KeyStoreSecretType = 'encryption-key' | 'api-key';
+export type KeyStoreSymmetricSecretType = 'encryption-key' | 'api-key';
+
+/**
+ * All valid symmetric secret types.
+ * @public
+ */
+export const allKeyStoreSymmetricSecretTypes: ReadonlyArray<KeyStoreSymmetricSecretType> = [
+  'encryption-key',
+  'api-key'
+];
+
+/**
+ * Discriminator for asymmetric secret types stored in the vault.
+ * - `'asymmetric-keypair'`: A public/private key pair. The public key is held in
+ *   the vault as a JWK; the private key lives in the supplied
+ *   {@link CryptoUtils.KeyStore.IPrivateKeyStorage} provider.
+ * @public
+ */
+export type KeyStoreAsymmetricSecretType = 'asymmetric-keypair';
+
+/**
+ * All valid asymmetric secret types.
+ * @public
+ */
+export const allKeyStoreAsymmetricSecretTypes: ReadonlyArray<KeyStoreAsymmetricSecretType> = [
+  'asymmetric-keypair'
+];
+
+/**
+ * Discriminator for any secret type stored in the vault.
+ * @public
+ */
+export type KeyStoreSecretType = KeyStoreSymmetricSecretType | KeyStoreAsymmetricSecretType;
 
 /**
  * All valid key store secret types.
  * @public
  */
-export const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType> = ['encryption-key', 'api-key'];
+export const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType> = [
+  ...allKeyStoreAsymmetricSecretTypes,
+  ...allKeyStoreSymmetricSecretTypes
+];
 
 /**
- * A secret entry stored in the vault (in-memory representation).
+ * A symmetric secret entry stored in the vault (in-memory representation).
+ * Holds the raw key material directly — for `'encryption-key'` it is a 32-byte
+ * AES-256 key; for `'api-key'` it is the UTF-8 encoded API key string.
  * @public
  */
-export interface IKeyStoreSecretEntry {
+export interface IKeyStoreSymmetricEntry {
   /**
    * Unique name for this secret (used as lookup key).
    */
   readonly name: string;
 
   /**
-   * Secret type discriminator.
-   * Defaults to `'encryption-key'` for backwards compatibility.
+   * Symmetric secret type discriminator.
    */
-  readonly type: KeyStoreSecretType;
+  readonly type: KeyStoreSymmetricSecretType;
 
   /**
    * The secret data.
@@ -102,20 +143,93 @@ export interface IKeyStoreSecretEntry {
 }
 
 /**
- * JSON-serializable version of secret entry (for storage).
+ * An asymmetric keypair entry stored in the vault (in-memory representation).
+ * Holds only the public key (as a JWK) and a stable handle (`id`) the
+ * {@link CryptoUtils.KeyStore.IPrivateKeyStorage} provider uses to fetch the private key.
  * @public
  */
-export interface IKeyStoreSecretEntryJson {
+export interface IKeyStoreAsymmetricEntry {
+  /**
+   * Unique name for this entry (used as vault lookup key, renameable).
+   */
+  readonly name: string;
+
+  /**
+   * Asymmetric secret type discriminator.
+   */
+  readonly type: KeyStoreAsymmetricSecretType;
+
+  /**
+   * Immutable handle used by {@link CryptoUtils.KeyStore.IPrivateKeyStorage} to address the
+   * private key. Independent of `name`; survives renames.
+   */
+  readonly id: string;
+
+  /**
+   * Algorithm used to generate this keypair.
+   */
+  readonly algorithm: KeyPairAlgorithm;
+
+  /**
+   * The public key as a JSON Web Key.
+   */
+  readonly publicKeyJwk: JsonWebKey;
+
+  /**
+   * Optional description for this entry.
+   */
+  readonly description?: string;
+
+  /**
+   * When this entry was added (ISO 8601).
+   */
+  readonly createdAt: string;
+}
+
+/**
+ * Any vault entry, discriminated by `type`.
+ * @public
+ */
+export type IKeyStoreEntry = IKeyStoreSymmetricEntry | IKeyStoreAsymmetricEntry;
+
+/**
+ * Backwards-compatible alias for {@link CryptoUtils.KeyStore.IKeyStoreSymmetricEntry}.
+ * @deprecated Use {@link CryptoUtils.KeyStore.IKeyStoreSymmetricEntry} for symmetric
+ * entries or {@link CryptoUtils.KeyStore.IKeyStoreEntry} for the discriminated union.
+ * @public
+ */
+export type IKeyStoreSecretEntry = IKeyStoreSymmetricEntry;
+
+/**
+ * JSON-serializable representation of a symmetric secret entry.
+ *
+ * @remarks
+ * Describes the *normalized* shape after parsing. `type` is required here
+ * because the converter (see
+ * {@link CryptoUtils.KeyStore.Converters.keystoreSymmetricEntryJson | keystoreSymmetricEntryJson})
+ * injects the default `'encryption-key'` when reading vaults written before
+ * asymmetric-keypair support added the discriminator. Raw on-wire bytes from
+ * a legacy vault may therefore omit `type`; downstream code only ever sees
+ * the post-conversion shape declared here.
+ *
+ * @public
+ */
+export interface IKeyStoreSymmetricEntryJson {
   /**
    * Unique name for this secret.
    */
   readonly name: string;
 
   /**
-   * Secret type discriminator.
-   * Optional for backwards compatibility — missing means `'encryption-key'`.
+   * Symmetric secret type discriminator.
+   *
+   * Required on this normalized model type. Vaults written prior to the
+   * asymmetric-keypair support may omit this field on the wire; the
+   * converter injects `'encryption-key'` when missing for backwards
+   * compatibility, so by the time a value of this type is observed the
+   * discriminator is always present.
    */
-  readonly type?: KeyStoreSecretType;
+  readonly type: KeyStoreSymmetricSecretType;
 
   /**
    * Base64-encoded secret data.
@@ -134,7 +248,66 @@ export interface IKeyStoreSecretEntryJson {
 }
 
 /**
- * The decrypted vault contents - a versioned map of secrets.
+ * JSON-serializable representation of an asymmetric keypair entry.
+ * The private key is not present here — it lives in the
+ * {@link CryptoUtils.KeyStore.IPrivateKeyStorage} provider, addressed by `id`.
+ * @public
+ */
+export interface IKeyStoreAsymmetricEntryJson {
+  /**
+   * Unique name for this entry.
+   */
+  readonly name: string;
+
+  /**
+   * Asymmetric secret type discriminator.
+   */
+  readonly type: KeyStoreAsymmetricSecretType;
+
+  /**
+   * Immutable handle used by {@link CryptoUtils.KeyStore.IPrivateKeyStorage} to address the
+   * private key.
+   */
+  readonly id: string;
+
+  /**
+   * Algorithm used to generate this keypair.
+   */
+  readonly algorithm: KeyPairAlgorithm;
+
+  /**
+   * The public key as a JSON Web Key.
+   */
+  readonly publicKeyJwk: JsonWebKey;
+
+  /**
+   * Optional description.
+   */
+  readonly description?: string;
+
+  /**
+   * When this entry was added (ISO 8601).
+   */
+  readonly createdAt: string;
+}
+
+/**
+ * Any JSON vault entry, discriminated by `type`.
+ * @public
+ */
+export type IKeyStoreEntryJson = IKeyStoreSymmetricEntryJson | IKeyStoreAsymmetricEntryJson;
+
+/**
+ * Backwards-compatible alias for {@link CryptoUtils.KeyStore.IKeyStoreSymmetricEntryJson}.
+ * @deprecated Use {@link CryptoUtils.KeyStore.IKeyStoreSymmetricEntryJson} for
+ * symmetric entries or {@link CryptoUtils.KeyStore.IKeyStoreEntryJson} for the
+ * discriminated union.
+ * @public
+ */
+export type IKeyStoreSecretEntryJson = IKeyStoreSymmetricEntryJson;
+
+/**
+ * The decrypted vault contents - a versioned map of entries.
  * @public
  */
 export interface IKeyStoreVaultContents {
@@ -144,9 +317,9 @@ export interface IKeyStoreVaultContents {
   readonly version: KeyStoreFormat;
 
   /**
-   * Map of secret name to secret entry.
+   * Map of entry name to entry (symmetric or asymmetric).
    */
-  readonly secrets: Record<string, IKeyStoreSecretEntryJson>;
+  readonly secrets: Record<string, IKeyStoreEntryJson>;
 }
 
 // ============================================================================
@@ -213,6 +386,13 @@ export interface IKeyStoreCreateParams {
    * PBKDF2 iterations (defaults to DEFAULT_KEYSTORE_ITERATIONS).
    */
   readonly iterations?: number;
+
+  /**
+   * Optional private-key storage backend. Required to use `addKeyPair` /
+   * `getKeyPair`; absent backends still permit opening, listing, and reading
+   * public-key metadata for asymmetric entries.
+   */
+  readonly privateKeyStorage?: IPrivateKeyStorage;
 }
 
 /**
@@ -229,6 +409,13 @@ export interface IKeyStoreOpenParams {
    * The encrypted key store file content.
    */
   readonly keystoreFile: IKeyStoreFile;
+
+  /**
+   * Optional private-key storage backend. Required to use `addKeyPair` /
+   * `getKeyPair`; absent backends still permit opening, listing, and reading
+   * public-key metadata for asymmetric entries.
+   */
+  readonly privateKeyStorage?: IPrivateKeyStorage;
 }
 
 /**
@@ -239,12 +426,21 @@ export interface IAddSecretResult {
   /**
    * The secret entry that was added.
    */
-  readonly entry: IKeyStoreSecretEntry;
+  readonly entry: IKeyStoreSymmetricEntry;
 
   /**
    * Whether this replaced an existing secret.
    */
   readonly replaced: boolean;
+
+  /**
+   * Best-effort warning from displaced-resource cleanup. Set when this call
+   * replaced an asymmetric-keypair entry but the corresponding
+   * {@link CryptoUtils.KeyStore.IPrivateKeyStorage}.delete failed; the new
+   * entry is still committed and the orphaned blob is left for consumer-side
+   * GC to reconcile.
+   */
+  readonly warning?: string;
 }
 
 /**
@@ -276,10 +472,10 @@ export interface IImportSecretOptions extends IAddSecretOptions {
  */
 export interface IImportKeyOptions extends IImportSecretOptions {
   /**
-   * Secret type classification for the imported key material.
+   * Symmetric secret type classification for the imported key material.
    * @defaultValue 'encryption-key'
    */
-  readonly type?: KeyStoreSecretType;
+  readonly type?: KeyStoreSymmetricSecretType;
 }
 
 /**
@@ -319,6 +515,73 @@ export interface IAddSecretFromPasswordResult extends IAddSecretResult {
    * can re-derive the same key for decryption.
    */
   readonly keyDerivation: IKeyDerivationParams;
+}
+
+/**
+ * Options for adding an asymmetric keypair to the key store.
+ * @public
+ */
+export interface IAddKeyPairOptions {
+  /**
+   * Algorithm to use for the new keypair.
+   */
+  readonly algorithm: KeyPairAlgorithm;
+
+  /**
+   * Optional description for the entry.
+   */
+  readonly description?: string;
+
+  /**
+   * Whether to replace an existing entry with the same name.
+   * Replacement mints a fresh storage `id` and best-effort deletes the
+   * displaced storage blob; see the keystore design doc for details.
+   */
+  readonly replace?: boolean;
+}
+
+/**
+ * Result of adding an asymmetric keypair to the key store.
+ * @public
+ */
+export interface IAddKeyPairResult {
+  /**
+   * The asymmetric entry that was added.
+   */
+  readonly entry: IKeyStoreAsymmetricEntry;
+
+  /**
+   * Whether this replaced an existing entry.
+   */
+  readonly replaced: boolean;
+
+  /**
+   * Best-effort warning from displaced-resource cleanup. Set when this call
+   * replaced a prior entry but the corresponding
+   * {@link CryptoUtils.KeyStore.IPrivateKeyStorage}.delete failed; the new
+   * keypair is still committed and the orphaned blob is left for consumer-side
+   * GC to reconcile.
+   */
+  readonly warning?: string;
+}
+
+/**
+ * Result of removing a secret from the key store.
+ * @public
+ */
+export interface IRemoveSecretResult {
+  /**
+   * The secret entry that was removed from the vault.
+   */
+  readonly entry: IKeyStoreEntry;
+
+  /**
+   * Best-effort warning from {@link CryptoUtils.KeyStore.IPrivateKeyStorage}.delete
+   * for asymmetric entries when the storage call failed. The vault entry is
+   * still considered removed and the orphaned blob is left for consumer-side
+   * GC to reconcile.
+   */
+  readonly warning?: string;
 }
 
 // ============================================================================

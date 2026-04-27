@@ -41,6 +41,9 @@ export { Converters };
 // Direct encryption provider
 export { DirectEncryptionProvider, IDirectEncryptionProviderParams } from './directEncryptionProvider';
 
+// WebCrypto parameter table for asymmetric keypair algorithms
+export { IKeyPairAlgorithmParams, keyPairAlgorithmParams } from './keyPairAlgorithmParams';
+
 // Node.js crypto provider (Node.js environment only)
 export { NodeCryptoProvider, nodeCryptoProvider } from './nodeCryptoProvider';
 

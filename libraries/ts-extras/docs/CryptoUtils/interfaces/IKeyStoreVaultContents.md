@@ -2,7 +2,7 @@
 
 # Interface: IKeyStoreVaultContents
 
-The decrypted vault contents - a versioned map of secrets.
+The decrypted vault contents - a versioned map of entries.
 
 ## Properties
 
@@ -51,11 +51,11 @@ Format version for vault contents.
 
 </td><td>
 
-Record&lt;string, [IKeyStoreSecretEntryJson](../../interfaces/IKeyStoreSecretEntryJson.md)&gt;
+Record&lt;string, [IKeyStoreEntryJson](../../type-aliases/IKeyStoreEntryJson.md)&gt;
 
 </td><td>
 
-Map of secret name to secret entry.
+Map of entry name to entry (symmetric or asymmetric).
 
 </td></tr>
 </tbody></table>

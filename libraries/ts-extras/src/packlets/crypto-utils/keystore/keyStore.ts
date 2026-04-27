@@ -32,23 +32,29 @@ import {
 import {
   DEFAULT_KEYSTORE_ITERATIONS,
   DEFAULT_SECRET_ITERATIONS,
+  IAddKeyPairOptions,
+  IAddKeyPairResult,
   IAddSecretFromPasswordOptions,
   IAddSecretFromPasswordResult,
   IAddSecretOptions,
   IAddSecretResult,
   IImportKeyOptions,
   IImportSecretOptions,
+  IKeyStoreAsymmetricEntry,
   IKeyStoreCreateParams,
+  IKeyStoreEntry,
+  IKeyStoreEntryJson,
   IKeyStoreFile,
   IKeyStoreOpenParams,
-  IKeyStoreSecretEntry,
-  IKeyStoreSecretEntryJson,
+  IKeyStoreSymmetricEntry,
   IKeyStoreVaultContents,
+  IRemoveSecretResult,
   KEYSTORE_FORMAT,
   KeyStoreLockState,
   KeyStoreSecretType,
   MIN_SALT_LENGTH
 } from './model';
+import { IPrivateKeyStorage } from './privateKeyStorage';
 import { keystoreFile, keystoreVaultContents } from './converters';
 
 /**
@@ -95,10 +101,11 @@ function getCurrentTimestamp(): string {
  */
 export class KeyStore implements IEncryptionProvider {
   private readonly _cryptoProvider: ICryptoProvider;
+  private readonly _privateKeyStorage: IPrivateKeyStorage | undefined;
   private readonly _iterations: number;
   private _keystoreFile: IKeyStoreFile | undefined;
   private _salt: Uint8Array | undefined;
-  private _secrets: Map<string, IKeyStoreSecretEntry> | undefined;
+  private _secrets: Map<string, IKeyStoreEntry> | undefined;
   private _state: KeyStoreLockState;
   private _dirty: boolean;
   private _isNew: boolean;
@@ -106,10 +113,12 @@ export class KeyStore implements IEncryptionProvider {
   private constructor(
     cryptoProvider: ICryptoProvider,
     iterations: number,
-    keystoreFile?: IKeyStoreFile,
-    isNew: boolean = true
+    keystoreFile: IKeyStoreFile | undefined,
+    isNew: boolean,
+    privateKeyStorage: IPrivateKeyStorage | undefined
   ) {
     this._cryptoProvider = cryptoProvider;
+    this._privateKeyStorage = privateKeyStorage;
     this._iterations = iterations;
     this._keystoreFile = keystoreFile;
     this._state = 'locked';
@@ -133,7 +142,9 @@ export class KeyStore implements IEncryptionProvider {
     if (iterations < 1) {
       return fail('Iterations must be at least 1');
     }
-    return succeed(new KeyStore(params.cryptoProvider, iterations, undefined, true));
+    return succeed(
+      new KeyStore(params.cryptoProvider, iterations, undefined, true, params.privateKeyStorage)
+    );
   }
 
   /**
@@ -151,7 +162,9 @@ export class KeyStore implements IEncryptionProvider {
     }
 
     const iterations = fileResult.value.keyDerivation.iterations;
-    return succeed(new KeyStore(params.cryptoProvider, iterations, fileResult.value, false));
+    return succeed(
+      new KeyStore(params.cryptoProvider, iterations, fileResult.value, false, params.privateKeyStorage)
+    );
   }
 
   // ============================================================================
@@ -279,7 +292,9 @@ export class KeyStore implements IEncryptionProvider {
     // Clear secrets from memory (overwrite for security)
     if (this._secrets) {
       for (const entry of this._secrets.values()) {
-        entry.key.fill(0);
+        if (entry.type !== 'asymmetric-keypair') {
+          entry.key.fill(0);
+        }
       }
       this._secrets.clear();
       this._secrets = undefined;
@@ -351,12 +366,14 @@ export class KeyStore implements IEncryptionProvider {
   }
 
   /**
-   * Gets a secret by name.
+   * Gets a secret by name. Returns the {@link CryptoUtils.KeyStore.IKeyStoreEntry | discriminated union}
+   * — callers must check `entry.type` before accessing `key`/`id` since asymmetric
+   * entries carry no raw key material.
    * @param name - Name of the secret
    * @returns Success with secret entry, Failure if not found or locked
    * @public
    */
-  public getSecret(name: string): Result<IKeyStoreSecretEntry> {
+  public getSecret(name: string): Result<IKeyStoreEntry> {
     if (!this._secrets) {
       return fail('Key store is locked');
     }
@@ -365,6 +382,28 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Secret '${name}' not found`);
     }
     return succeed(entry);
+  }
+
+  /**
+   * Returns the public-key JWK for an asymmetric-keypair entry.
+   * Available without {@link CryptoUtils.KeyStore.IPrivateKeyStorage} since the
+   * public key lives in the vault metadata directly.
+   * @param name - Name of the entry
+   * @returns Success with the JWK, Failure if not found, locked, or wrong type
+   * @public
+   */
+  public getPublicKeyJwk(name: string): Result<JsonWebKey> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    const entry = this._secrets.get(name);
+    if (!entry) {
+      return fail(`Secret '${name}' not found`);
+    }
+    if (entry.type !== 'asymmetric-keypair') {
+      return fail(`Secret '${name}' is not an asymmetric keypair (type: ${entry.type})`);
+    }
+    return succeed(entry.publicKeyJwk);
   }
 
   /**
@@ -395,8 +434,6 @@ export class KeyStore implements IEncryptionProvider {
       return fail('Secret name cannot be empty');
     }
 
-    const replaced = this._secrets.has(name);
-
     // Generate a new random key
     const keyResult = await this._cryptoProvider.generateKey();
     /* c8 ignore next 3 - crypto provider errors tested but coverage intermittently missed */
@@ -404,7 +441,7 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Failed to generate key: ${keyResult.message}`);
     }
 
-    const entry: IKeyStoreSecretEntry = {
+    const entry: IKeyStoreSymmetricEntry = {
       name,
       type: 'encryption-key',
       key: keyResult.value,
@@ -412,10 +449,13 @@ export class KeyStore implements IEncryptionProvider {
       createdAt: getCurrentTimestamp()
     };
 
+    const existing = this._secrets.get(name);
+    const warning = existing ? await this._releaseEntryResources(existing) : undefined;
+
     this._secrets.set(name, entry);
     this._dirty = true;
 
-    return succeed({ entry, replaced });
+    return succeed({ entry, replaced: existing !== undefined, warning });
   }
 
   /**
@@ -432,7 +472,11 @@ export class KeyStore implements IEncryptionProvider {
    * @returns Success with entry, Failure if locked, key invalid, or exists and !replace
    * @public
    */
-  public importSecret(name: string, key: Uint8Array, options?: IImportKeyOptions): Result<IAddSecretResult> {
+  public async importSecret(
+    name: string,
+    key: Uint8Array,
+    options?: IImportKeyOptions
+  ): Promise<Result<IAddSecretResult>> {
     if (!this._secrets) {
       return fail('Key store is locked');
     }
@@ -443,12 +487,12 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Key must be ${Constants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
     }
 
-    const exists = this._secrets.has(name);
-    if (exists && !options?.replace) {
+    const existing = this._secrets.get(name);
+    if (existing && !options?.replace) {
       return fail(`Secret '${name}' already exists - use replace=true to overwrite`);
     }
 
-    const entry: IKeyStoreSecretEntry = {
+    const entry: IKeyStoreSymmetricEntry = {
       name,
       type: options?.type ?? 'encryption-key',
       key: new Uint8Array(key), // Copy to prevent external modification
@@ -456,10 +500,11 @@ export class KeyStore implements IEncryptionProvider {
       createdAt: getCurrentTimestamp()
     };
 
+    const warning = existing ? await this._releaseEntryResources(existing) : undefined;
     this._secrets.set(name, entry);
     this._dirty = true;
 
-    return succeed({ entry, replaced: exists });
+    return succeed({ entry, replaced: existing !== undefined, warning });
   }
 
   /**
@@ -491,8 +536,8 @@ export class KeyStore implements IEncryptionProvider {
       return fail('Password cannot be empty');
     }
 
-    const exists = this._secrets.has(name);
-    if (exists && !options?.replace) {
+    const existing = this._secrets.get(name);
+    if (existing && !options?.replace) {
       return fail(`Secret '${name}' already exists - use replace=true to overwrite`);
     }
 
@@ -512,7 +557,7 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Key derivation failed: ${keyResult.message}`);
     }
 
-    const entry: IKeyStoreSecretEntry = {
+    const entry: IKeyStoreSymmetricEntry = {
       name,
       type: 'encryption-key',
       key: keyResult.value,
@@ -520,12 +565,14 @@ export class KeyStore implements IEncryptionProvider {
       createdAt: getCurrentTimestamp()
     };
 
+    const warning = existing ? await this._releaseEntryResources(existing) : undefined;
     this._secrets.set(name, entry);
     this._dirty = true;
 
     return succeed({
       entry,
-      replaced: exists,
+      replaced: existing !== undefined,
+      warning,
       keyDerivation: {
         kdf: 'pbkdf2',
         salt: this._cryptoProvider.toBase64(saltResult.value),
@@ -535,12 +582,16 @@ export class KeyStore implements IEncryptionProvider {
   }
 
   /**
-   * Removes a secret by name.
+   * Removes a secret by name. Vault-first: the in-memory vault entry is dropped
+   * before any storage cleanup runs. For asymmetric-keypair entries, best-effort
+   * calls {@link CryptoUtils.KeyStore.IPrivateKeyStorage}.delete on the entry's
+   * `id`; a failure is reported via `warning` on the result but does not roll
+   * back the vault removal.
    * @param name - Name of the secret to remove
-   * @returns Success with removed entry, Failure if not found or locked
+   * @returns Success with removed entry (and optional warning), Failure if not found or locked
    * @public
    */
-  public removeSecret(name: string): Result<IKeyStoreSecretEntry> {
+  public async removeSecret(name: string): Promise<Result<IRemoveSecretResult>> {
     if (!this._secrets) {
       return fail('Key store is locked');
     }
@@ -550,12 +601,13 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Secret '${name}' not found`);
     }
 
-    // Clear the key before removing (security)
-    entry.key.fill(0);
+    // Vault-first: drop the in-memory entry before touching storage so a
+    // storage failure cannot block removal.
     this._secrets.delete(name);
     this._dirty = true;
 
-    return succeed(entry);
+    const warning = await this._releaseEntryResources(entry);
+    return succeed({ entry, warning });
   }
 
   /**
@@ -567,11 +619,11 @@ export class KeyStore implements IEncryptionProvider {
    * @returns Success with entry, Failure if locked, empty, or exists and !replace
    * @public
    */
-  public importApiKey(
+  public async importApiKey(
     name: string,
     apiKey: string,
     options?: IImportSecretOptions
-  ): Result<IAddSecretResult> {
+  ): Promise<Result<IAddSecretResult>> {
     if (!this._secrets) {
       return fail('Key store is locked');
     }
@@ -582,13 +634,13 @@ export class KeyStore implements IEncryptionProvider {
       return fail('API key cannot be empty');
     }
 
-    const exists = this._secrets.has(name);
-    if (exists && !options?.replace) {
+    const existing = this._secrets.get(name);
+    if (existing && !options?.replace) {
       return fail(`Secret '${name}' already exists - use replace=true to overwrite`);
     }
 
     const encoder = new TextEncoder();
-    const entry: IKeyStoreSecretEntry = {
+    const entry: IKeyStoreSymmetricEntry = {
       name,
       type: 'api-key',
       key: encoder.encode(apiKey),
@@ -596,10 +648,11 @@ export class KeyStore implements IEncryptionProvider {
       createdAt: getCurrentTimestamp()
     };
 
+    const warning = existing ? await this._releaseEntryResources(existing) : undefined;
     this._secrets.set(name, entry);
     this._dirty = true;
 
-    return succeed({ entry, replaced: exists });
+    return succeed({ entry, replaced: existing !== undefined, warning });
   }
 
   /**
@@ -622,6 +675,132 @@ export class KeyStore implements IEncryptionProvider {
     }
     const decoder = new TextDecoder();
     return succeed(decoder.decode(entry.key));
+  }
+
+  // ============================================================================
+  // Asymmetric Keypair Management
+  // ============================================================================
+
+  /**
+   * Adds a new asymmetric keypair to the vault. Storage-first: the private key
+   * is stored under a freshly-minted `id` before the public-key vault entry is
+   * committed. If the storage call fails, no vault entry is written and the
+   * operation returns Failure.
+   *
+   * When `replace: true` displaces an existing entry (asymmetric or symmetric),
+   * a fresh `id` is minted; the displaced entry's resources are released
+   * best-effort. Failure of the storage delete is reported via `warning` on the
+   * result but does not roll back the replacement.
+   *
+   * Requires a {@link CryptoUtils.KeyStore.IPrivateKeyStorage} backend
+   * supplied at construction.
+   *
+   * @param name - Unique name for the entry
+   * @param options - Algorithm, optional description, replace flag
+   * @returns Success with the new entry, Failure if locked, no provider, or storage write failed
+   * @public
+   */
+  public async addKeyPair(name: string, options: IAddKeyPairOptions): Promise<Result<IAddKeyPairResult>> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    if (!name || name.length === 0) {
+      return fail('Entry name cannot be empty');
+    }
+    if (!this._privateKeyStorage) {
+      return fail('No private key storage configured');
+    }
+
+    const existing = this._secrets.get(name);
+    if (existing && !options.replace) {
+      return fail(`Secret '${name}' already exists - use replace=true to overwrite`);
+    }
+
+    // Generate the keypair before touching storage. extractable=true on backends
+    // that round-trip via JWK; extractable=false on backends that hold CryptoKey
+    // refs directly.
+    const extractable = !this._privateKeyStorage.supportsNonExtractable;
+    const keyPairResult = await this._cryptoProvider.generateKeyPair(options.algorithm, extractable);
+    /* c8 ignore next 3 - crypto provider errors covered in nodeCryptoProvider tests; cannot be triggered here without mocking */
+    if (keyPairResult.isFailure()) {
+      return fail(`Failed to generate keypair for '${name}': ${keyPairResult.message}`);
+    }
+    const { publicKey, privateKey } = keyPairResult.value;
+
+    const jwkResult = await this._cryptoProvider.exportPublicKeyJwk(publicKey);
+    /* c8 ignore next 3 - export of an extractable freshly-generated public key is hard to fail */
+    if (jwkResult.isFailure()) {
+      return fail(`Failed to export public key for '${name}': ${jwkResult.message}`);
+    }
+
+    const idResult = this._generateId();
+    /* c8 ignore next 3 - random-bytes failure is hard to trigger with a healthy provider */
+    if (idResult.isFailure()) {
+      return fail(`Failed to mint storage id for '${name}': ${idResult.message}`);
+    }
+    const id = idResult.value;
+
+    // Storage-first: write the private key before committing the vault entry.
+    const storeResult = await this._privateKeyStorage.store(id, privateKey);
+    if (storeResult.isFailure()) {
+      return fail(`Failed to persist private key for '${name}': ${storeResult.message}`);
+    }
+
+    const entry: IKeyStoreAsymmetricEntry = {
+      name,
+      type: 'asymmetric-keypair',
+      id,
+      algorithm: options.algorithm,
+      publicKeyJwk: jwkResult.value,
+      description: options.description,
+      createdAt: getCurrentTimestamp()
+    };
+
+    const warning = existing ? await this._releaseEntryResources(existing) : undefined;
+    this._secrets.set(name, entry);
+    this._dirty = true;
+
+    return succeed({ entry, replaced: existing !== undefined, warning });
+  }
+
+  /**
+   * Retrieves the keypair for an asymmetric-keypair entry. The private key is
+   * loaded from {@link CryptoUtils.KeyStore.IPrivateKeyStorage} on every call —
+   * the keystore never caches private `CryptoKey` references between calls.
+   * The public key is re-imported from the vault's JWK so callers always
+   * receive a `CryptoKey` rather than the JWK form.
+   * @param name - Name of the entry
+   * @returns Success with `{ publicKey, privateKey }`, Failure if not found,
+   * locked, wrong type, no provider, or storage load failed.
+   * @public
+   */
+  public async getKeyPair(name: string): Promise<Result<{ publicKey: CryptoKey; privateKey: CryptoKey }>> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    const entry = this._secrets.get(name);
+    if (!entry) {
+      return fail(`Secret '${name}' not found`);
+    }
+    if (entry.type !== 'asymmetric-keypair') {
+      return fail(`Secret '${name}' is not an asymmetric keypair (type: ${entry.type})`);
+    }
+    if (!this._privateKeyStorage) {
+      return fail('No private key storage configured');
+    }
+
+    const privateResult = await this._privateKeyStorage.load(entry.id);
+    if (privateResult.isFailure()) {
+      return fail(`Failed to load private key for '${name}': ${privateResult.message}`);
+    }
+
+    const publicResult = await this._cryptoProvider.importPublicKeyJwk(entry.publicKeyJwk, entry.algorithm);
+    /* c8 ignore next 3 - vault JWKs that previously exported cleanly are extremely unlikely to fail re-import */
+    if (publicResult.isFailure()) {
+      return fail(`Failed to re-import public key for '${name}': ${publicResult.message}`);
+    }
+
+    return succeed({ publicKey: publicResult.value, privateKey: privateResult.value });
   }
 
   /**
@@ -650,7 +829,7 @@ export class KeyStore implements IEncryptionProvider {
    * @returns Success with updated entry, Failure if source not found, target exists, or locked
    * @public
    */
-  public renameSecret(oldName: string, newName: string): Result<IKeyStoreSecretEntry> {
+  public renameSecret(oldName: string, newName: string): Result<IKeyStoreEntry> {
     if (!this._secrets) {
       return fail('Key store is locked');
     }
@@ -667,8 +846,9 @@ export class KeyStore implements IEncryptionProvider {
       return fail(`Secret '${newName}' already exists`);
     }
 
-    // Create new entry with new name (preserve type)
-    const newEntry: IKeyStoreSecretEntry = {
+    // Create new entry with new name. For asymmetric entries the spread
+    // preserves `id` so the storage handle survives the rename.
+    const newEntry: IKeyStoreEntry = {
       ...entry,
       name: newName
     };
@@ -822,6 +1002,11 @@ export class KeyStore implements IEncryptionProvider {
     if (secretResult.isFailure()) {
       return fail(`encryptByName: ${secretResult.message}`);
     }
+    if (secretResult.value.type === 'asymmetric-keypair') {
+      return fail(
+        `encryptByName: secret '${secretName}' is an asymmetric keypair, not symmetric key material`
+      );
+    }
 
     return createEncryptedFile({
       content,
@@ -852,6 +1037,9 @@ export class KeyStore implements IEncryptionProvider {
       const entry = secrets.get(secretName);
       if (!entry) {
         return fail(`Secret '${secretName}' not found in key store`);
+      }
+      if (entry.type === 'asymmetric-keypair') {
+        return fail(`Secret '${secretName}' is an asymmetric keypair, not symmetric key material`);
       }
       return succeed(entry.key);
     };
@@ -890,15 +1078,27 @@ export class KeyStore implements IEncryptionProvider {
     const salt = this._salt!;
 
     // Build vault contents
-    const secretEntries: Record<string, IKeyStoreSecretEntryJson> = {};
+    const secretEntries: Record<string, IKeyStoreEntryJson> = {};
     for (const [name, entry] of secrets) {
-      secretEntries[name] = {
-        name: entry.name,
-        type: entry.type,
-        key: this._cryptoProvider.toBase64(entry.key),
-        description: entry.description,
-        createdAt: entry.createdAt
-      };
+      if (entry.type === 'asymmetric-keypair') {
+        secretEntries[name] = {
+          name: entry.name,
+          type: entry.type,
+          id: entry.id,
+          algorithm: entry.algorithm,
+          publicKeyJwk: entry.publicKeyJwk,
+          description: entry.description,
+          createdAt: entry.createdAt
+        };
+      } else {
+        secretEntries[name] = {
+          name: entry.name,
+          type: entry.type,
+          key: this._cryptoProvider.toBase64(entry.key),
+          description: entry.description,
+          createdAt: entry.createdAt
+        };
+      }
     }
 
     const vaultContents: IKeyStoreVaultContents = {
@@ -994,22 +1194,34 @@ export class KeyStore implements IEncryptionProvider {
     if (saltResult.isFailure()) {
       return fail(`Invalid salt in key store file: ${saltResult.message}`);
     }
-    const secrets = new Map<string, IKeyStoreSecretEntry>();
+    const secrets = new Map<string, IKeyStoreEntry>();
     for (const [name, jsonEntry] of Object.entries(vaultResult.value.secrets)) {
-      const keyBytesResult = this._cryptoProvider.fromBase64(jsonEntry.key);
-      /* c8 ignore next 3 - error path tested but coverage intermittently missed */
-      if (keyBytesResult.isFailure()) {
-        return fail(`Invalid key for secret '${name}': ${keyBytesResult.message}`);
+      if (jsonEntry.type === 'asymmetric-keypair') {
+        const entry: IKeyStoreAsymmetricEntry = {
+          name,
+          type: jsonEntry.type,
+          id: jsonEntry.id,
+          algorithm: jsonEntry.algorithm,
+          publicKeyJwk: jsonEntry.publicKeyJwk,
+          description: jsonEntry.description,
+          createdAt: jsonEntry.createdAt
+        };
+        secrets.set(name, entry);
+      } else {
+        const keyBytesResult = this._cryptoProvider.fromBase64(jsonEntry.key);
+        /* c8 ignore next 3 - error path tested but coverage intermittently missed */
+        if (keyBytesResult.isFailure()) {
+          return fail(`Invalid key for secret '${name}': ${keyBytesResult.message}`);
+        }
+        const entry: IKeyStoreSymmetricEntry = {
+          name,
+          type: jsonEntry.type,
+          key: keyBytesResult.value,
+          description: jsonEntry.description,
+          createdAt: jsonEntry.createdAt
+        };
+        secrets.set(name, entry);
       }
-      const entry: IKeyStoreSecretEntry = {
-        name,
-        /* c8 ignore next 1 - backwards compatibility: old vaults may lack type field */
-        type: jsonEntry.type ?? 'encryption-key',
-        key: keyBytesResult.value,
-        description: jsonEntry.description,
-        createdAt: jsonEntry.createdAt
-      };
-      secrets.set(name, entry);
     }
 
     // All validation passed — commit state atomically
@@ -1019,5 +1231,58 @@ export class KeyStore implements IEncryptionProvider {
     this._dirty = false;
 
     return succeed(this);
+  }
+
+  // ============================================================================
+  // Private: Helpers for asymmetric flows
+  // ============================================================================
+
+  /**
+   * Releases the resources held by an entry being displaced from the vault.
+   * Symmetric entries get their key buffer zeroed in place. Asymmetric entries
+   * have their private-key blob best-effort deleted from
+   * {@link CryptoUtils.KeyStore.IPrivateKeyStorage}; if the storage call fails,
+   * a warning string is returned but the displacement still proceeds — the
+   * orphaned blob is left for consumer-side GC. Without a configured provider,
+   * asymmetric cleanup is silently skipped.
+   * @returns A warning string if storage cleanup failed, otherwise undefined.
+   */
+  private async _releaseEntryResources(entry: IKeyStoreEntry): Promise<string | undefined> {
+    if (entry.type === 'asymmetric-keypair') {
+      if (!this._privateKeyStorage) {
+        return undefined;
+      }
+      const deleteResult = await this._privateKeyStorage.delete(entry.id);
+      if (deleteResult.isFailure()) {
+        return `Failed to delete prior storage blob for '${entry.name}' (id ${entry.id}): ${deleteResult.message}`;
+      }
+      return undefined;
+    }
+    entry.key.fill(0);
+    return undefined;
+  }
+
+  /**
+   * Mints a fresh UUID v4 storage handle using the crypto provider's
+   * {@link CryptoUtils.ICryptoProvider.generateRandomBytes | generateRandomBytes}.
+   * Random-bytes failures propagate as Failure.
+   */
+  private _generateId(): Result<string> {
+    return this._cryptoProvider.generateRandomBytes(16).onSuccess((bytes) => {
+      // Per RFC 4122 §4.4: set version (4) and variant (10xx) bits.
+      // eslint-disable-next-line no-bitwise
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      // eslint-disable-next-line no-bitwise
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const hex = Array.from(bytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+      return succeed(
+        `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(
+          20,
+          32
+        )}`
+      );
+    });
   }
 }

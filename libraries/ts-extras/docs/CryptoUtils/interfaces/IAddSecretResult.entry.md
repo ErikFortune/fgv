@@ -7,5 +7,5 @@ The secret entry that was added.
 **Signature:**
 
 ```typescript
-readonly entry: IKeyStoreSecretEntry;
+readonly entry: IKeyStoreSymmetricEntry;
 ```

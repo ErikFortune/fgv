@@ -163,6 +163,15 @@ Parameters for creating a DirectEncryptionProvider.
 </td></tr>
 <tr><td>
 
+[IKeyPairAlgorithmParams](./interfaces/IKeyPairAlgorithmParams.md)
+
+</td><td>
+
+WebCrypto parameters for a single CryptoUtils.KeyPairAlgorithm.
+
+</td></tr>
+<tr><td>
+
 [ICreateEncryptedFileParams](./interfaces/ICreateEncryptedFileParams.md)
 
 </td><td>
@@ -200,6 +209,15 @@ Supported encryption algorithms.
 </td><td>
 
 Format version for encrypted files.
+
+</td></tr>
+<tr><td>
+
+[KeyPairAlgorithm](./type-aliases/KeyPairAlgorithm.md)
+
+</td><td>
+
+Asymmetric keypair algorithms supported by the crypto provider.
 
 </td></tr>
 <tr><td>
@@ -311,6 +329,25 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[allKeyPairAlgorithms](./variables/allKeyPairAlgorithms.md)
+
+</td><td>
+
+All valid key pair algorithms.
+
+</td></tr>
+<tr><td>
+
+[keyPairAlgorithmParams](./variables/keyPairAlgorithmParams.md)
+
+</td><td>
+
+Lookup table from CryptoUtils.KeyPairAlgorithm to the WebCrypto
+parameters needed to drive `crypto.subtle`.
+
+</td></tr>
 <tr><td>
 
 [nodeCryptoProvider](./variables/nodeCryptoProvider.md)

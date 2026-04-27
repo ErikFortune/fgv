@@ -64,20 +64,38 @@ Description
 <tbody>
 <tr><td>
 
-[IKeyStoreSecretEntry](./interfaces/IKeyStoreSecretEntry.md)
+[IKeyStoreSymmetricEntry](./interfaces/IKeyStoreSymmetricEntry.md)
 
 </td><td>
 
-A secret entry stored in the vault (in-memory representation).
+A symmetric secret entry stored in the vault (in-memory representation).
 
 </td></tr>
 <tr><td>
 
-[IKeyStoreSecretEntryJson](./interfaces/IKeyStoreSecretEntryJson.md)
+[IKeyStoreAsymmetricEntry](./interfaces/IKeyStoreAsymmetricEntry.md)
 
 </td><td>
 
-JSON-serializable version of secret entry (for storage).
+An asymmetric keypair entry stored in the vault (in-memory representation).
+
+</td></tr>
+<tr><td>
+
+[IKeyStoreSymmetricEntryJson](./interfaces/IKeyStoreSymmetricEntryJson.md)
+
+</td><td>
+
+JSON-serializable representation of a symmetric secret entry.
+
+</td></tr>
+<tr><td>
+
+[IKeyStoreAsymmetricEntryJson](./interfaces/IKeyStoreAsymmetricEntryJson.md)
+
+</td><td>
+
+JSON-serializable representation of an asymmetric keypair entry.
 
 </td></tr>
 <tr><td>
@@ -86,7 +104,7 @@ JSON-serializable version of secret entry (for storage).
 
 </td><td>
 
-The decrypted vault contents - a versioned map of secrets.
+The decrypted vault contents - a versioned map of entries.
 
 </td></tr>
 <tr><td>
@@ -170,6 +188,43 @@ Options for adding a secret derived from a password.
 Result of adding a password-derived secret.
 
 </td></tr>
+<tr><td>
+
+[IAddKeyPairOptions](./interfaces/IAddKeyPairOptions.md)
+
+</td><td>
+
+Options for adding an asymmetric keypair to the key store.
+
+</td></tr>
+<tr><td>
+
+[IAddKeyPairResult](./interfaces/IAddKeyPairResult.md)
+
+</td><td>
+
+Result of adding an asymmetric keypair to the key store.
+
+</td></tr>
+<tr><td>
+
+[IRemoveSecretResult](./interfaces/IRemoveSecretResult.md)
+
+</td><td>
+
+Result of removing a secret from the key store.
+
+</td></tr>
+<tr><td>
+
+[IPrivateKeyStorage](./interfaces/IPrivateKeyStorage.md)
+
+</td><td>
+
+Pluggable backend that persists raw asymmetric private keys outside of the
+encrypted keystore vault.
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -195,11 +250,65 @@ Format version for key store files.
 </td></tr>
 <tr><td>
 
+[KeyStoreSymmetricSecretType](./type-aliases/KeyStoreSymmetricSecretType.md)
+
+</td><td>
+
+Discriminator for symmetric secret types stored in the vault.
+
+</td></tr>
+<tr><td>
+
+[KeyStoreAsymmetricSecretType](./type-aliases/KeyStoreAsymmetricSecretType.md)
+
+</td><td>
+
+Discriminator for asymmetric secret types stored in the vault.
+
+</td></tr>
+<tr><td>
+
 [KeyStoreSecretType](./type-aliases/KeyStoreSecretType.md)
 
 </td><td>
 
-Discriminator for secret types stored in the vault.
+Discriminator for any secret type stored in the vault.
+
+</td></tr>
+<tr><td>
+
+[IKeyStoreEntry](./type-aliases/IKeyStoreEntry.md)
+
+</td><td>
+
+Any vault entry, discriminated by `type`.
+
+</td></tr>
+<tr><td>
+
+[IKeyStoreSecretEntry](./type-aliases/IKeyStoreSecretEntry.md)
+
+</td><td>
+
+Backwards-compatible alias for CryptoUtils.KeyStore.IKeyStoreSymmetricEntry.
+
+</td></tr>
+<tr><td>
+
+[IKeyStoreEntryJson](./type-aliases/IKeyStoreEntryJson.md)
+
+</td><td>
+
+Any JSON vault entry, discriminated by `type`.
+
+</td></tr>
+<tr><td>
+
+[IKeyStoreSecretEntryJson](./type-aliases/IKeyStoreSecretEntryJson.md)
+
+</td><td>
+
+Backwards-compatible alias for CryptoUtils.KeyStore.IKeyStoreSymmetricEntryJson.
 
 </td></tr>
 <tr><td>
@@ -273,6 +382,24 @@ Default PBKDF2 iterations for key store encryption.
 </td><td>
 
 Minimum salt length for key derivation.
+
+</td></tr>
+<tr><td>
+
+[allKeyStoreSymmetricSecretTypes](./variables/allKeyStoreSymmetricSecretTypes.md)
+
+</td><td>
+
+All valid symmetric secret types.
+
+</td></tr>
+<tr><td>
+
+[allKeyStoreAsymmetricSecretTypes](./variables/allKeyStoreAsymmetricSecretTypes.md)
+
+</td><td>
+
+All valid asymmetric secret types.
 
 </td></tr>
 <tr><td>

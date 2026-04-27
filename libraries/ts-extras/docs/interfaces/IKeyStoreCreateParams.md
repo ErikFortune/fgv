@@ -58,4 +58,21 @@ number
 PBKDF2 iterations (defaults to DEFAULT_KEYSTORE_ITERATIONS).
 
 </td></tr>
+<tr><td>
+
+[privateKeyStorage](./IKeyStoreCreateParams.privateKeyStorage.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IPrivateKeyStorage](IPrivateKeyStorage.md)
+
+</td><td>
+
+Optional private-key storage backend.
+
+</td></tr>
 </tbody></table>
