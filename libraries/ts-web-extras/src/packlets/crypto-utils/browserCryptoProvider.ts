@@ -35,6 +35,24 @@ function toArrayBuffer(arr: Uint8Array): ArrayBuffer {
 }
 
 /**
+ * Returns a fresh Uint8Array view over a non-shared ArrayBuffer copy of `arr`.
+ * Used by {@link CryptoUtils.BrowserCryptoProvider.wrapBytes | wrapBytes} and
+ * {@link CryptoUtils.BrowserCryptoProvider.unwrapBytes | unwrapBytes}: Node 20's
+ * webcrypto.subtle rejects raw `ArrayBuffer` for several `BufferSource`
+ * parameters with "is not instance of ArrayBuffer, Buffer, TypedArray, or
+ * DataView" even though `ArrayBuffer` should be valid per the spec; a
+ * TypedArray view is accepted on Node 20+ and on browsers, and the explicit
+ * `Uint8Array<ArrayBuffer>` return type also satisfies TypeScript's `BufferSource`
+ * (which excludes the `SharedArrayBuffer` branch of `Uint8Array`'s buffer type).
+ */
+function toBufferView(arr: Uint8Array): Uint8Array<ArrayBuffer> {
+  const buffer = new ArrayBuffer(arr.byteLength);
+  const view = new Uint8Array(buffer);
+  view.set(arr);
+  return view;
+}
+
+/**
  * Browser implementation of `ICryptoProvider` using the Web Crypto API.
  * Uses AES-256-GCM for authenticated encryption.
  *
@@ -404,23 +422,14 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
         ['deriveKey']
       );
       const wrapKey = await subtle.deriveKey(
-        {
-          name: 'HKDF',
-          salt: toArrayBuffer(options.salt),
-          info: toArrayBuffer(options.info),
-          hash: 'SHA-256'
-        },
+        { name: 'HKDF', salt: toBufferView(options.salt), info: toBufferView(options.info), hash: 'SHA-256' },
         hkdfBase,
         { name: 'AES-GCM', length: 256 },
         false,
         ['encrypt']
       );
       const nonce = this._crypto.getRandomValues(new Uint8Array(CryptoUtils.Constants.GCM_IV_SIZE));
-      const ctBuf = await subtle.encrypt(
-        { name: 'AES-GCM', iv: toArrayBuffer(nonce) },
-        wrapKey,
-        toArrayBuffer(plaintext)
-      );
+      const ctBuf = await subtle.encrypt({ name: 'AES-GCM', iv: nonce }, wrapKey, toBufferView(plaintext));
       const ephemeralPublicKey = await subtle.exportKey('jwk', ephemeral.publicKey);
       return {
         ephemeralPublicKey,
@@ -483,21 +492,16 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
         ['deriveKey']
       );
       const wrapKey = await subtle.deriveKey(
-        {
-          name: 'HKDF',
-          salt: toArrayBuffer(options.salt),
-          info: toArrayBuffer(options.info),
-          hash: 'SHA-256'
-        },
+        { name: 'HKDF', salt: toBufferView(options.salt), info: toBufferView(options.info), hash: 'SHA-256' },
         hkdfBase,
         { name: 'AES-GCM', length: 256 },
         false,
         ['decrypt']
       );
       const ptBuf = await subtle.decrypt(
-        { name: 'AES-GCM', iv: toArrayBuffer(nonceResult.value) },
+        { name: 'AES-GCM', iv: toBufferView(nonceResult.value) },
         wrapKey,
-        toArrayBuffer(ciphertextResult.value)
+        toBufferView(ciphertextResult.value)
       );
       return new Uint8Array(ptBuf);
     });
