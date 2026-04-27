@@ -1,6 +1,6 @@
 # KeyStore — Asymmetric Keypair Support
 
-Status: design draft, not yet started
+Status: completed
 Owner library: `@fgv/ts-extras` (interface + algorithm wiring only)
 Related downstream consumers: `@fgv/ts-web-extras` (browser IDB backend),
 `@fgv/ts-chocolate` (Node encrypted-file backend) — separate follow-on tasks
