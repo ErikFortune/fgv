@@ -416,5 +416,39 @@ describe('callProviderImageGeneration — reference images', () => {
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       expect(fetchCall[1].signal).toBe(controller.signal);
     });
+
+    // Google's Gemini provider hosts both `:generateContent` (gemini-2.5-flash-image)
+    // and `:predict` (imagen-*) image surfaces. The descriptor flag is per-provider,
+    // so the dispatcher routes by resolved model name.
+    test('routes imagen-* models to :predict when descriptor format is gemini-image-out', async () => {
+      mockFetchResponse({ predictions: [{ bytesBase64Encoded: 'III', mimeType: 'image/png' }] });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        modelOverride: 'imagen-3.0-generate-002',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.images[0].base64).toBe('III');
+      });
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe(
+        'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict'
+      );
+    });
+
+    test('rejects reference images for imagen-* models (predict-only, no refs)', async () => {
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        modelOverride: 'imagen-3.0-generate-002',
+        params: { prompt: 'a cat', referenceImages: [TEST_PNG] }
+      });
+
+      expect(result).toFailWith(/imagen-3\.0-generate-002.*reference images/i);
+      expect((global.fetch as jest.Mock).mock.calls).toHaveLength(0);
+    });
   });
 });

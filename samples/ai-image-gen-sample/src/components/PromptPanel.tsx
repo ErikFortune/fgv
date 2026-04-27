@@ -92,7 +92,7 @@ export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
   };
 
   const handleRemoveRef = (index: number): void => {
-    onReferenceImagesChange(referenceImages.filter((_, i) => i !== index));
+    onReferenceImagesChange((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleClearRefs = (): void => {

@@ -1270,8 +1270,21 @@ export async function callProviderImageGeneration(
       return callOpenAiImageGeneration(config, request, 'image/jpeg', logger, signal);
     case 'gemini-imagen':
       return callImagenGeneration(config, request, logger, signal);
-    case 'gemini-image-out':
+    case 'gemini-image-out': {
+      // Google's Gemini provider hosts two distinct image surfaces under a
+      // single baseUrl: `gemini-2.5-flash-image` via chat-style
+      // `:generateContent` (accepts reference images) and the `imagen-*`
+      // family via predict-only `:predict` (no reference images). The
+      // descriptor's `imageApiFormat` is per-provider, so dispatch by the
+      // resolved model name to pick the right endpoint.
+      if (config.model.startsWith('imagen-')) {
+        if ((request.referenceImages?.length ?? 0) > 0) {
+          return fail(`model "${config.model}" does not support reference images`);
+        }
+        return callImagenGeneration(config, request, logger, signal);
+      }
       return callGeminiImageOutGeneration(config, request, logger, signal);
+    }
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.imageApiFormat;
