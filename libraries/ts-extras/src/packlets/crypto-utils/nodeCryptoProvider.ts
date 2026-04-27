@@ -273,7 +273,7 @@ export class NodeCryptoProvider implements ICryptoProvider {
     recipientPublicKey: CryptoKey,
     options: IWrapBytesOptions
   ): Promise<Result<IWrappedBytes>> {
-    const recipientCheck = checkEcdhP256(recipientPublicKey, 'recipient public key');
+    const recipientCheck = checkEcdhP256(recipientPublicKey, 'public', 'recipient public key');
     if (recipientCheck.isFailure()) {
       return fail(`wrapBytes failed: ${recipientCheck.message}`);
     }
@@ -321,7 +321,7 @@ export class NodeCryptoProvider implements ICryptoProvider {
     recipientPrivateKey: CryptoKey,
     options: IWrapBytesOptions
   ): Promise<Result<Uint8Array>> {
-    const recipientCheck = checkEcdhP256(recipientPrivateKey, 'recipient private key');
+    const recipientCheck = checkEcdhP256(recipientPrivateKey, 'private', 'recipient private key');
     if (recipientCheck.isFailure()) {
       return fail(`unwrapBytes failed: ${recipientCheck.message}`);
     }
@@ -368,21 +368,29 @@ export class NodeCryptoProvider implements ICryptoProvider {
 }
 
 /**
- * Verifies that `key` is an ECDH P-256 `CryptoKey`. Used by the wrap/unwrap
- * methods to surface a clean `Failure` instead of letting the WebCrypto
- * deriveKey call throw a less informative error later in the pipeline.
+ * Verifies that `key` is an ECDH P-256 `CryptoKey` of the expected `keyType`
+ * (public or private). Used by the wrap/unwrap methods to surface a clean
+ * `Failure` instead of letting the WebCrypto deriveKey call throw a less
+ * informative error later in the pipeline. Key usages are intentionally not
+ * checked here: WebCrypto already produces a specific error if `deriveKey` is
+ * not in `usages`, and `deriveBits` is an equally valid alternative usage that
+ * an explicit check would have to track.
  * @param key - The CryptoKey to validate.
+ * @param keyType - The required `key.type` ('public' for wrap, 'private' for unwrap).
  * @param label - Human-readable role label included in the failure message.
- * @returns `Success` with the key (unchanged) when the algorithm and curve
- * match; otherwise `Failure` with `<label> must be ECDH P-256 (...)`.
+ * @returns `Success` with the key (unchanged) when the algorithm, curve, and
+ * type all match; otherwise `Failure` with `<label> must be ECDH P-256 (...)`.
  */
-function checkEcdhP256(key: CryptoKey, label: string): Result<CryptoKey> {
+function checkEcdhP256(key: CryptoKey, keyType: 'public' | 'private', label: string): Result<CryptoKey> {
   if (key.algorithm.name !== 'ECDH') {
     return fail(`${label} must be ECDH P-256 (got algorithm '${key.algorithm.name}')`);
   }
   const namedCurve = (key.algorithm as EcKeyAlgorithm).namedCurve;
   if (namedCurve !== 'P-256') {
     return fail(`${label} must be ECDH P-256 (got curve '${namedCurve}')`);
+  }
+  if (key.type !== keyType) {
+    return fail(`${label} must be a ${keyType} CryptoKey (got '${key.type}')`);
   }
   return succeed(key);
 }

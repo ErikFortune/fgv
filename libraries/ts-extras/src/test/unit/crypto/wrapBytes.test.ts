@@ -285,5 +285,24 @@ describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
       const result = await provider.unwrapBytes(wrapped, wrongCurve.privateKey, defaultOptions);
       expect(result).toFailWith(/unwrapBytes failed: recipient private key must be ECDH P-256.*P-384/i);
     });
+
+    test('wrap fails when recipient is an ECDH private key (not public)', async () => {
+      const pair = await generateEcdhPair();
+      const result = await provider.wrapBytes(new Uint8Array([1, 2, 3]), pair.privateKey, defaultOptions);
+      expect(result).toFailWith(
+        /wrapBytes failed: recipient public key must be a public CryptoKey \(got 'private'\)/i
+      );
+    });
+
+    test('unwrap fails when recipient is an ECDH public key (not private)', async () => {
+      const pair = await generateEcdhPair();
+      const wrapped = (
+        await provider.wrapBytes(new Uint8Array([1, 2, 3]), pair.publicKey, defaultOptions)
+      ).orThrow();
+      const result = await provider.unwrapBytes(wrapped, pair.publicKey, defaultOptions);
+      expect(result).toFailWith(
+        /unwrapBytes failed: recipient private key must be a private CryptoKey \(got 'public'\)/i
+      );
+    });
   });
 });
