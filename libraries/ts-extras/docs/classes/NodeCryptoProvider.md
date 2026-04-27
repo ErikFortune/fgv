@@ -197,4 +197,32 @@ Exports a public `CryptoKey` as a JSON Web Key.
 Imports a public-key JWK as a `CryptoKey` for the requested algorithm.
 
 </td></tr>
+<tr><td>
+
+[wrapBytes(plaintext, recipientPublicKey, options)](./NodeCryptoProvider.wrapBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Wraps `plaintext` for the holder of `recipientPublicKey` using
+ECIES (ECDH P-256 + HKDF-SHA256 + AES-GCM-256).
+
+</td></tr>
+<tr><td>
+
+[unwrapBytes(wrapped, recipientPrivateKey, options)](./NodeCryptoProvider.unwrapBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Unwraps a payload produced by `wrapBytes` using the recipient's private
+key.
+
+</td></tr>
 </tbody></table>
