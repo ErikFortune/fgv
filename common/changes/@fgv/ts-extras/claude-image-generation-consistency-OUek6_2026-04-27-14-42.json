@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add the ability to supply reference images when generating an image",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
