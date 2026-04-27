@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "update generated docs",
+      "type": "none",
+      "packageName": "@fgv/ts-json"
+    }
+  ],
+  "packageName": "@fgv/ts-json",
+  "email": "ErikFortune@outlook.com"
+}

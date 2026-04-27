@@ -215,7 +215,7 @@ Whether this provider's chat completions API accepts image input
 </td></tr>
 <tr><td>
 
-[imageApiFormat](./IAiProviderDescriptor.imageApiFormat.md)
+[imageGeneration](./IAiProviderDescriptor.imageGeneration.md)
 
 </td><td>
 
@@ -223,11 +223,11 @@ Whether this provider's chat completions API accepts image input
 
 </td><td>
 
-[AiImageApiFormat](../type-aliases/AiImageApiFormat.md)
+readonly [IAiImageModelCapability](IAiImageModelCapability.md)[]
 
 </td><td>
 
-Which image-generation API format this provider uses, or undefined if it
+Image-generation capabilities, scoped to model id prefixes.
 
 </td></tr>
 </tbody></table>
