@@ -22,9 +22,15 @@ const IMAGEN_ASPECT_RATIOS: ReadonlyArray<
   NonNullable<NonNullable<AiAssist.IAiImageGenerationOptions['imagen']>['aspectRatio']>
 > = ['1:1', '3:4', '4:3', '9:16', '16:9'];
 
-const ACCEPTED_REF_MIME_TYPES = 'image/png,image/jpeg,image/webp';
+const ACCEPTED_REF_MIME_TYPE_LIST = ['image/png', 'image/jpeg', 'image/webp'] as const;
+const ACCEPTED_REF_MIME_TYPES = ACCEPTED_REF_MIME_TYPE_LIST.join(',');
+const ACCEPTED_REF_MIME_TYPE_SET: ReadonlySet<string> = new Set(ACCEPTED_REF_MIME_TYPE_LIST);
 
 async function fileToAttachment(file: File): Promise<AiAssist.IAiImageAttachment> {
+  // `<input accept>` is only a hint, so validate explicitly (drag-drop / "All files" can bypass it).
+  if (!ACCEPTED_REF_MIME_TYPE_SET.has(file.type)) {
+    throw new Error(`unsupported file type: ${file.type || 'unknown'}`);
+  }
   const dataUrl: string = await new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
@@ -35,7 +41,7 @@ async function fileToAttachment(file: File): Promise<AiAssist.IAiImageAttachment
   const commaIdx = dataUrl.indexOf(',');
   const header = dataUrl.slice(5, dataUrl.indexOf(';'));
   const base64 = dataUrl.slice(commaIdx + 1);
-  return { mimeType: header || file.type || 'application/octet-stream', base64 };
+  return { mimeType: header || file.type, base64 };
 }
 
 export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
@@ -129,6 +135,7 @@ export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
               accept={ACCEPTED_REF_MIME_TYPES}
               multiple
               disabled={isWorking}
+              aria-label="Add reference images"
               className="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
               onChange={(e) => {
                 void handleAddRefs(e.target.files);

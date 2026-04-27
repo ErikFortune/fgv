@@ -173,7 +173,7 @@ describe('callProviderImageGeneration — reference images', () => {
         modelOverride: 'gpt-image-1',
         params: {
           prompt: 'same character side view',
-          options: { count: 2, size: '1024x1024', quality: 'high' },
+          options: { count: 2, size: '1024x1024', quality: 'high', seed: 42 },
           referenceImages: [TEST_PNG, TEST_JPEG]
         }
       });
@@ -196,6 +196,7 @@ describe('callProviderImageGeneration — reference images', () => {
       expect(body.get('response_format')).toBe('b64_json');
       expect(body.get('size')).toBe('1024x1024');
       expect(body.get('quality')).toBe('high');
+      expect(body.get('seed')).toBe('42');
       const refs = body.getAll('image[]');
       expect(refs).toHaveLength(2);
       expect((refs[0] as Blob).type).toBe('image/png');

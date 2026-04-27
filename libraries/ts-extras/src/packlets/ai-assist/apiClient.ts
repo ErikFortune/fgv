@@ -227,9 +227,12 @@ async function fetchMultipart(
 
 /**
  * Decodes a base64 string into bytes in a runtime-agnostic way: `Buffer` in
- * Node, `atob` in browsers. Returns a failure (rather than throwing) on
- * invalid input so callers can surface the error through the `Result`
- * contract.
+ * Node, `atob` in browsers. Wraps decoding in a `Result` so any thrown error
+ * (e.g. from `atob` on invalid input) is surfaced as a failure. Note that
+ * Node's `Buffer.from(..., 'base64')` does not throw on invalid input — it
+ * silently strips unrecognized characters — so failures are only observable
+ * in the browser path. Inputs to this function come from `FileReader` or
+ * prior provider responses, which are trusted to be valid.
  * @internal
  */
 function decodeBase64ToBytes(base64: string): Result<Uint8Array<ArrayBuffer>> {
@@ -1095,6 +1098,9 @@ async function callOpenAiImagesEdits(
   }
   if (opts.quality !== undefined) {
     form.append('quality', opts.quality);
+  }
+  if (opts.seed !== undefined) {
+    form.append('seed', String(opts.seed));
   }
   blobsResult.value.forEach((blob, i) => {
     form.append('image[]', blob, `ref-${i}.${extensionForMimeType(refs[i].mimeType)}`);
