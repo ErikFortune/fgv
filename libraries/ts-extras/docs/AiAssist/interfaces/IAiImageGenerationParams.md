@@ -58,4 +58,21 @@ The text prompt describing the desired image.
 Optional generation options.
 
 </td></tr>
+<tr><td>
+
+[referenceImages](./IAiImageGenerationParams.referenceImages.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IAiImageAttachment](../../interfaces/IAiImageAttachment.md)[]
+
+</td><td>
+
+Optional reference images.
+
+</td></tr>
 </tbody></table>
