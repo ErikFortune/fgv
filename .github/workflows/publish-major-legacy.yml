@@ -8,7 +8,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
       - name: Git config user
@@ -16,9 +16,9 @@ jobs:
         with:
           name: ${{secrets.GH_USER_NAME}}
           email: $${secrets.GH_USER_EMAIL}
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Verify Change Logs
         run: node common/scripts/install-run-rush.js change --verify --target-branch ${GITHUB_REF_NAME}
       - name: Rush Install
