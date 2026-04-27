@@ -110,7 +110,7 @@ describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
       );
     });
 
-    test('truncating ciphertext below the auth-tag length fails authentication', async () => {
+    test('truncating ciphertext by one byte fails GCM authentication', async () => {
       const pair = await generateEcdhPair();
       const wrapped = (
         await provider.wrapBytes(new TextEncoder().encode('payload'), pair.publicKey, defaultOptions)

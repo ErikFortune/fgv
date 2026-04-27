@@ -301,8 +301,8 @@ export class NodeCryptoProvider implements ICryptoProvider {
       const ephemeralPublicKey = await subtle.exportKey('jwk', ephemeral.publicKey);
       return {
         ephemeralPublicKey,
-        nonce: Buffer.from(nonce).toString('base64'),
-        ciphertext: Buffer.from(new Uint8Array(ctBuf)).toString('base64')
+        nonce: this.toBase64(nonce),
+        ciphertext: this.toBase64(new Uint8Array(ctBuf))
       };
     });
     return result.withErrorFormat((e) => `wrapBytes failed: ${e}`);
