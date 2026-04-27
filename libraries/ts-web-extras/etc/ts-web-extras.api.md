@@ -10,23 +10,19 @@ import { FileTree } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
-// Warning: (ae-forgotten-export) The symbol "ICryptoProvider" needs to be exported by the entry point index.d.ts
-//
 // @public
-class BrowserCryptoProvider implements ICryptoProvider {
+class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(cryptoApi?: Crypto);
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
-    // Warning: (ae-forgotten-export) The symbol "IEncryptionResult" needs to be exported by the entry point index.d.ts
-    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<CryptoUtils_2.IEncryptionResult>>;
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
     fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
-    // Warning: (ae-forgotten-export) The symbol "KeyPairAlgorithm" needs to be exported by the entry point index.d.ts
-    generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
+    generateKeyPair(algorithm: CryptoUtils_2.KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
-    importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+    importPublicKeyJwk(jwk: JsonWebKey, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
 }

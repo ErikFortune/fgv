@@ -133,17 +133,15 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
     iv: Uint8Array,
     authTag: Uint8Array
   ): Promise<Result<string>> {
-    if (key.length !== CryptoUtils.CryptoConstants.AES_256_KEY_SIZE) {
-      return Failure.with(
-        `Key must be ${CryptoUtils.CryptoConstants.AES_256_KEY_SIZE} bytes, got ${key.length}`
-      );
+    if (key.length !== CryptoUtils.Constants.AES_256_KEY_SIZE) {
+      return Failure.with(`Key must be ${CryptoUtils.Constants.AES_256_KEY_SIZE} bytes, got ${key.length}`);
     }
-    if (iv.length !== CryptoUtils.CryptoConstants.GCM_IV_SIZE) {
-      return Failure.with(`IV must be ${CryptoUtils.CryptoConstants.GCM_IV_SIZE} bytes, got ${iv.length}`);
+    if (iv.length !== CryptoUtils.Constants.GCM_IV_SIZE) {
+      return Failure.with(`IV must be ${CryptoUtils.Constants.GCM_IV_SIZE} bytes, got ${iv.length}`);
     }
-    if (authTag.length !== CryptoUtils.CryptoConstants.GCM_AUTH_TAG_SIZE) {
+    if (authTag.length !== CryptoUtils.Constants.GCM_AUTH_TAG_SIZE) {
       return Failure.with(
-        `Auth tag must be ${CryptoUtils.CryptoConstants.GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`
+        `Auth tag must be ${CryptoUtils.Constants.GCM_AUTH_TAG_SIZE} bytes, got ${authTag.length}`
       );
     }
 
@@ -189,7 +187,7 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
   public async generateKey(): Promise<Result<Uint8Array>> {
     try {
       return Success.with(
-        this._crypto.getRandomValues(new Uint8Array(CryptoUtils.CryptoConstants.AES_256_KEY_SIZE))
+        this._crypto.getRandomValues(new Uint8Array(CryptoUtils.Constants.AES_256_KEY_SIZE))
       );
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
@@ -235,7 +233,7 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
           hash: 'SHA-256'
         },
         keyMaterial,
-        CryptoUtils.CryptoConstants.AES_256_KEY_SIZE * 8 // bits
+        CryptoUtils.Constants.AES_256_KEY_SIZE * 8 // bits
       );
 
       return Success.with(new Uint8Array(derivedBits));
@@ -330,10 +328,10 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
    * @returns `Success` with the generated `CryptoKeyPair`, or `Failure` with an error.
    */
   public async generateKeyPair(
-    algorithm: KeyPairAlgorithm,
+    algorithm: CryptoUtils.KeyPairAlgorithm,
     extractable: boolean
   ): Promise<Result<CryptoKeyPair>> {
-    const params = keyPairAlgorithmParams[algorithm];
+    const params = CryptoUtils.keyPairAlgorithmParams[algorithm];
     const result = await captureAsyncResult(() =>
       this._crypto.subtle.generateKey(params.generateKey, extractable, params.keyPairUsages)
     );
