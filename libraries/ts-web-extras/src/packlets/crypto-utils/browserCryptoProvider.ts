@@ -18,10 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/* c8 ignore start - Browser-only implementation cannot be tested in Node.js environment */
 import { captureAsyncResult, captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 
+/* c8 ignore start - Used only by browser-only methods that cannot be tested in Node.js environment */
 /**
  * Extracts an `ArrayBuffer` from a Uint8Array, handling the potential SharedArrayBuffer case.
  * @param arr - The Uint8Array to extract from
@@ -33,11 +33,12 @@ function toArrayBuffer(arr: Uint8Array): ArrayBuffer {
   new Uint8Array(buffer).set(arr);
   return buffer;
 }
+/* c8 ignore stop */
 
 /**
  * Returns a fresh Uint8Array view over a non-shared ArrayBuffer copy of `arr`.
- * Used by {@link CryptoUtils.BrowserCryptoProvider.wrapBytes | wrapBytes} and
- * {@link CryptoUtils.BrowserCryptoProvider.unwrapBytes | unwrapBytes}: Node 20's
+ * Used by {@link BrowserCryptoProvider.wrapBytes | wrapBytes} and
+ * {@link BrowserCryptoProvider.unwrapBytes | unwrapBytes}: Node 20's
  * webcrypto.subtle rejects raw `ArrayBuffer` for several `BufferSource`
  * parameters with "is not instance of ArrayBuffer, Buffer, TypedArray, or
  * DataView" even though `ArrayBuffer` should be valid per the spec; a
@@ -64,6 +65,7 @@ function toBufferView(arr: Uint8Array): Uint8Array<ArrayBuffer> {
 export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
   private readonly _crypto: Crypto;
 
+  /* c8 ignore start - Existing browser-only methods cannot be tested in Node.js environment */
   /**
    * Creates a new {@link CryptoUtils.BrowserCryptoProvider | BrowserCryptoProvider}.
    * @param cryptoApi - Optional Crypto instance (defaults to globalThis.crypto)
@@ -390,6 +392,7 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
     );
     return result.withErrorFormat((e) => `Failed to import ${algorithm} public key from JWK: ${e}`);
   }
+  /* c8 ignore stop */
 
   /**
    * Wraps `plaintext` for the holder of `recipientPublicKey` using
@@ -537,6 +540,7 @@ function checkEcdhP256(key: CryptoKey, keyType: 'public' | 'private', label: str
   return succeed(key);
 }
 
+/* c8 ignore start - Constructs a provider; only meaningful in a real browser environment */
 /**
  * Creates a {@link CryptoUtils.BrowserCryptoProvider | BrowserCryptoProvider} if Web
  * Crypto API is available.

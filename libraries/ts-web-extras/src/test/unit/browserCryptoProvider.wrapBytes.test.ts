@@ -104,6 +104,20 @@ describe('BrowserCryptoProvider — wrapBytes/unwrapBytes', () => {
       );
     });
 
+    test('truncating ciphertext by one byte fails GCM authentication (still ≥ 16 bytes)', async () => {
+      const pair = await generateEcdhPair();
+      // 16-byte plaintext → 32-byte ciphertext (16 ct + 16 tag); truncate by 1 → 31 bytes ≥ 16
+      const wrapped = (
+        await provider.wrapBytes(new Uint8Array(16).fill(0xab), pair.publicKey, defaultOptions)
+      ).orThrow();
+      const ct = provider.fromBase64(wrapped.ciphertext).orThrow();
+      const truncated = ct.slice(0, ct.length - 1);
+      const tampered: CryptoUtils.IWrappedBytes = { ...wrapped, ciphertext: provider.toBase64(truncated) };
+      expect(await provider.unwrapBytes(tampered, pair.privateKey, defaultOptions)).toFailWith(
+        /unwrapBytes failed/i
+      );
+    });
+
     test('substituting a different ephemeral public key fails authentication', async () => {
       const pair = await generateEcdhPair();
       const wrapped = (
