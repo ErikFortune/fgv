@@ -22,12 +22,29 @@ import '@fgv/ts-utils-jest';
 
 import { AiAssist } from '../../..';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import type { IAiProviderDescriptor } from '../../../packlets/ai-assist/model';
+import type {
+  AiImageApiFormat,
+  IAiImageModelCapability,
+  IAiProviderDescriptor
+} from '../../../packlets/ai-assist/model';
 
 // ============================================================================
 // Test helpers (mirrors apiClient.test.ts; kept local to stay under the
 // per-file line cap).
 // ============================================================================
+
+function imgGen(
+  format: AiImageApiFormat,
+  acceptsRefs: boolean = false
+): ReadonlyArray<IAiImageModelCapability> {
+  return [
+    {
+      modelPrefix: '',
+      format,
+      ...(acceptsRefs ? { acceptsImageReferenceInput: true } : {})
+    }
+  ];
+}
 
 function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProviderDescriptor {
   return {
@@ -42,7 +59,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    imageApiFormat: 'openai-images',
+    imageGeneration: imgGen('openai-images'),
     ...overrides
   };
 }
@@ -128,12 +145,11 @@ describe('callProviderImageGeneration — reference images', () => {
   });
 
   describe('pre-flight', () => {
-    test('rejects refs when descriptor does not declare acceptsImageReferenceInput', async () => {
+    test('rejects refs when capability does not declare acceptsImageReferenceInput', async () => {
       const descriptor = makeImageDescriptor({
         id: 'xai-grok',
         baseUrl: 'https://api.x.ai/v1',
-        imageApiFormat: 'xai-images',
-        acceptsImageReferenceInput: undefined
+        imageGeneration: imgGen('xai-images')
       });
 
       const result = await AiAssist.callProviderImageGeneration({
@@ -146,9 +162,28 @@ describe('callProviderImageGeneration — reference images', () => {
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
+    test('rejects when no capability rule matches the resolved model', async () => {
+      // Descriptor declares image generation, but only for `imagen-*` models —
+      // there's no catch-all, and the requested model `gpt-image-1` doesn't
+      // match the prefix.
+      const descriptor = makeImageDescriptor({
+        defaultModel: { base: 'gpt-4o', image: 'gpt-image-1' },
+        imageGeneration: [{ modelPrefix: 'imagen-', format: 'gemini-imagen' }]
+      });
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' }
+      });
+
+      expect(result).toFailWith(/does not support image generation for model "gpt-image-1"/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
     test('treats empty referenceImages array as no-refs (no pre-flight rejection)', async () => {
       mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor({ acceptsImageReferenceInput: undefined });
+      const descriptor = makeImageDescriptor();
 
       const result = await AiAssist.callProviderImageGeneration({
         descriptor,
@@ -165,7 +200,7 @@ describe('callProviderImageGeneration — reference images', () => {
   describe('openai-images format with reference images', () => {
     test('routes to /images/edits with multipart body when refs present', async () => {
       mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor({ acceptsImageReferenceInput: true });
+      const descriptor = makeImageDescriptor({ imageGeneration: imgGen('openai-images', true) });
 
       const result = await AiAssist.callProviderImageGeneration({
         descriptor,
@@ -205,7 +240,7 @@ describe('callProviderImageGeneration — reference images', () => {
 
     test('attaches refs of varied mime types with sensible filename extensions', async () => {
       mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor({ acceptsImageReferenceInput: true });
+      const descriptor = makeImageDescriptor({ imageGeneration: imgGen('openai-images', true) });
 
       await AiAssist.callProviderImageGeneration({
         descriptor,
@@ -229,7 +264,7 @@ describe('callProviderImageGeneration — reference images', () => {
 
     test('forwards abort signal on multipart edits request', async () => {
       mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor({ acceptsImageReferenceInput: true });
+      const descriptor = makeImageDescriptor({ imageGeneration: imgGen('openai-images', true) });
       const controller = new AbortController();
 
       await AiAssist.callProviderImageGeneration({
@@ -245,7 +280,7 @@ describe('callProviderImageGeneration — reference images', () => {
 
     test('surfaces non-2xx errors from /images/edits', async () => {
       mockFetchHttpError(400, 'unsupported model');
-      const descriptor = makeImageDescriptor({ acceptsImageReferenceInput: true });
+      const descriptor = makeImageDescriptor({ imageGeneration: imgGen('openai-images', true) });
 
       const result = await AiAssist.callProviderImageGeneration({
         descriptor,
@@ -258,7 +293,7 @@ describe('callProviderImageGeneration — reference images', () => {
 
     test('surfaces network errors from /images/edits', async () => {
       mockFetchError(new Error('ECONNREFUSED'));
-      const descriptor = makeImageDescriptor({ acceptsImageReferenceInput: true });
+      const descriptor = makeImageDescriptor({ imageGeneration: imgGen('openai-images', true) });
 
       const result = await AiAssist.callProviderImageGeneration({
         descriptor,
@@ -278,8 +313,12 @@ describe('callProviderImageGeneration — reference images', () => {
       apiFormat: 'gemini',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
       defaultModel: { base: 'gemini-2.5-flash', image: 'gemini-2.5-flash-image' },
-      imageApiFormat: 'gemini-image-out',
-      acceptsImageReferenceInput: true
+      // Mirrors the built-in google-gemini descriptor: imagen-* models route to
+      // :predict, everything else to :generateContent. Order matters.
+      imageGeneration: [
+        { modelPrefix: 'imagen-', format: 'gemini-imagen' },
+        { modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }
+      ]
     });
 
     test('returns image parsed from inlineData parts (text-only request)', async () => {
@@ -418,9 +457,9 @@ describe('callProviderImageGeneration — reference images', () => {
     });
 
     // Google's Gemini provider hosts both `:generateContent` (gemini-2.5-flash-image)
-    // and `:predict` (imagen-*) image surfaces. The descriptor flag is per-provider,
-    // so the dispatcher routes by resolved model name.
-    test('routes imagen-* models to :predict when descriptor format is gemini-image-out', async () => {
+    // and `:predict` (imagen-*) image surfaces. The dispatcher resolves the
+    // capability by model id and routes accordingly.
+    test('routes imagen-* models to :predict when descriptor exposes both rules', async () => {
       mockFetchResponse({ predictions: [{ bytesBase64Encoded: 'III', mimeType: 'image/png' }] });
 
       const result = await AiAssist.callProviderImageGeneration({

@@ -15,6 +15,7 @@ export {
   type IChatMessage,
   type AiApiFormat,
   type AiImageApiFormat,
+  type IAiImageModelCapability,
   type IAiProviderDescriptor,
   type IAiAssistProviderConfig,
   type IAiAssistSettings,
@@ -47,6 +48,8 @@ export {
   allProviderIds,
   getProviderDescriptors,
   getProviderDescriptor,
+  resolveImageCapability,
+  supportsImageGeneration,
   DEFAULT_MODEL_CAPABILITY_CONFIG
 } from './registry';
 

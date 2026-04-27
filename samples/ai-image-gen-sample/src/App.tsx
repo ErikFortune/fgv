@@ -14,7 +14,7 @@ type Mode = 'image' | 'chat';
 const ALL_DESCRIPTORS = AiAssist.getProviderDescriptors();
 
 const PROVIDERS_BY_MODE: Record<Mode, ReadonlyArray<AiAssist.AiProviderId>> = {
-  image: ALL_DESCRIPTORS.filter((d) => d.imageApiFormat !== undefined).map((d) => d.id),
+  image: ALL_DESCRIPTORS.filter((d) => AiAssist.supportsImageGeneration(d)).map((d) => d.id),
   // Anything with a baseUrl can do chat — the registry's only no-baseUrl entry
   // is copy-paste, which we don't exercise from the streaming chat panel.
   chat: ALL_DESCRIPTORS.filter((d) => d.baseUrl.length > 0).map((d) => d.id)
@@ -85,8 +85,12 @@ export function App(): React.JSX.Element {
   const provider = providersByMode[mode];
   const capability = CAPABILITY_BY_MODE[mode];
   const providers = PROVIDERS_BY_MODE[mode];
-  const providerAcceptsRefs =
-    AiAssist.getProviderDescriptor(provider).orDefault()?.acceptsImageReferenceInput === true;
+  const currentImageModel = perMode.image.models.get(provider) ?? defaultModelFor(provider, 'image');
+  const imageCapability = useMemo(() => {
+    const descriptor = AiAssist.getProviderDescriptor(provider).orDefault();
+    return descriptor ? AiAssist.resolveImageCapability(descriptor, currentImageModel) : undefined;
+  }, [provider, currentImageModel]);
+  const modelAcceptsRefs = imageCapability?.acceptsImageReferenceInput === true;
 
   const keyStore = useMemo(() => {
     const secrets = new Map<string, string>();
@@ -321,6 +325,7 @@ export function App(): React.JSX.Element {
           <>
             <PromptPanel
               provider={provider}
+              imageCapability={imageCapability}
               isWorking={isWorking}
               canSubmit={currentKey.length > 0}
               referenceImages={referenceImages}
@@ -337,7 +342,7 @@ export function App(): React.JSX.Element {
               <ImageResults
                 response={lastImageResult}
                 onUseAsReference={
-                  providerAcceptsRefs
+                  modelAcceptsRefs
                     ? (image) =>
                         setReferenceImages((prev) => [
                           ...prev,

@@ -1,9 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { AiAssist } from '@fgv/ts-extras';
 
 export interface IPromptPanelProps {
   readonly provider: AiAssist.AiProviderId;
+  /**
+   * Image-generation capability resolved for the currently selected provider
+   * + model. `undefined` means the current model has no matching capability
+   * (e.g. an unknown model id) and the panel will surface no image-specific
+   * affordances.
+   */
+  readonly imageCapability: AiAssist.IAiImageModelCapability | undefined;
   readonly isWorking: boolean;
   readonly canSubmit: boolean;
   readonly referenceImages: ReadonlyArray<AiAssist.IAiImageAttachment>;
@@ -49,8 +56,16 @@ async function fileToAttachment(file: File): Promise<AiAssist.IAiImageAttachment
 }
 
 export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
-  const { provider, isWorking, canSubmit, referenceImages, onReferenceImagesChange, onGenerate, onAbort } =
-    props;
+  const {
+    provider,
+    imageCapability,
+    isWorking,
+    canSubmit,
+    referenceImages,
+    onReferenceImagesChange,
+    onGenerate,
+    onAbort
+  } = props;
 
   const [prompt, setPrompt] = useState('A friendly robot painting a watercolor landscape');
   const [count, setCount] = useState(1);
@@ -58,9 +73,8 @@ export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
   const [aspectRatio, setAspectRatio] =
     useState<NonNullable<NonNullable<AiAssist.IAiImageGenerationOptions['imagen']>['aspectRatio']>>('1:1');
 
-  const descriptor = useMemo(() => AiAssist.getProviderDescriptor(provider).orDefault(), [provider]);
-  const imageFormat = descriptor?.imageApiFormat;
-  const acceptsRefs = descriptor?.acceptsImageReferenceInput === true;
+  const imageFormat = imageCapability?.format;
+  const acceptsRefs = imageCapability?.acceptsImageReferenceInput === true;
 
   const isImagen = imageFormat === 'gemini-imagen';
   const supportsSize = imageFormat === 'openai-images';

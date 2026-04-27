@@ -56,22 +56,25 @@ describe('AiAssist.registry', () => {
           image: 'grok-2-image-1212'
         });
         expect(desc.supportedTools).toContain('web_search');
-        expect(desc.imageApiFormat).toBe('xai-images');
+        expect(desc.imageGeneration).toEqual([{ modelPrefix: '', format: 'xai-images' }]);
       });
     });
 
     test('returns descriptor with image generation support for openai', () => {
       expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageApiFormat).toBe('openai-images');
-        expect(desc.acceptsImageReferenceInput).toBe(true);
+        expect(desc.imageGeneration).toEqual([
+          { modelPrefix: '', format: 'openai-images', acceptsImageReferenceInput: true }
+        ]);
         expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('dall-e-3');
       });
     });
 
     test('returns descriptor with image generation support for google-gemini', () => {
       expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageApiFormat).toBe('gemini-image-out');
-        expect(desc.acceptsImageReferenceInput).toBe(true);
+        expect(desc.imageGeneration).toEqual([
+          { modelPrefix: 'imagen-', format: 'gemini-imagen' },
+          { modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }
+        ]);
         expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('gemini-2.5-flash-image');
       });
     });
@@ -92,19 +95,13 @@ describe('AiAssist.registry', () => {
       }
     });
 
-    test('chat-only providers leave imageApiFormat undefined', () => {
-      expect(AiAssist.getProviderDescriptor('anthropic')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageApiFormat).toBeUndefined();
-      });
-      expect(AiAssist.getProviderDescriptor('groq')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageApiFormat).toBeUndefined();
-      });
-      expect(AiAssist.getProviderDescriptor('mistral')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageApiFormat).toBeUndefined();
-      });
-      expect(AiAssist.getProviderDescriptor('copy-paste')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageApiFormat).toBeUndefined();
-      });
+    test('chat-only providers do not declare image-generation capabilities', () => {
+      for (const id of ['anthropic', 'groq', 'mistral', 'copy-paste'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(desc.imageGeneration).toBeUndefined();
+          expect(AiAssist.supportsImageGeneration(desc)).toBe(false);
+        });
+      }
     });
 
     test('copy-paste provider has no supported tools', () => {
@@ -115,6 +112,29 @@ describe('AiAssist.registry', () => {
 
     test('fails for unknown provider', () => {
       expect(AiAssist.getProviderDescriptor('unknown-provider')).toFailWith(/unknown AI provider/i);
+    });
+  });
+
+  describe('resolveImageCapability', () => {
+    test('returns the matching capability for a model that hits a specific prefix', () => {
+      const descriptor = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+      const capability = AiAssist.resolveImageCapability(descriptor, 'imagen-3.0-generate-002');
+      expect(capability).toEqual({ modelPrefix: 'imagen-', format: 'gemini-imagen' });
+    });
+
+    test('falls back to the catch-all entry when no specific prefix matches', () => {
+      const descriptor = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+      const capability = AiAssist.resolveImageCapability(descriptor, 'gemini-2.5-flash-image');
+      expect(capability).toEqual({
+        modelPrefix: '',
+        format: 'gemini-image-out',
+        acceptsImageReferenceInput: true
+      });
+    });
+
+    test('returns undefined when the provider declares no image-generation capabilities', () => {
+      const descriptor = AiAssist.getProviderDescriptor('anthropic').orThrow();
+      expect(AiAssist.resolveImageCapability(descriptor, 'claude-3-opus')).toBeUndefined();
     });
   });
 

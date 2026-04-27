@@ -25,7 +25,12 @@
 
 import { fail, Result, succeed } from '@fgv/ts-utils';
 
-import { type AiProviderId, type IAiModelCapabilityConfig, type IAiProviderDescriptor } from './model';
+import {
+  type AiProviderId,
+  type IAiImageModelCapability,
+  type IAiModelCapabilityConfig,
+  type IAiProviderDescriptor
+} from './model';
 
 // ============================================================================
 // Built-in providers
@@ -74,8 +79,12 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    imageApiFormat: 'gemini-image-out',
-    acceptsImageReferenceInput: true
+    imageGeneration: [
+      // Imagen models are predict-only and do not accept reference images.
+      // Order matters: the more specific prefix must come before the catch-all.
+      { modelPrefix: 'imagen-', format: 'gemini-imagen' },
+      { modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }
+    ]
   },
   {
     id: 'groq',
@@ -115,8 +124,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    imageApiFormat: 'openai-images',
-    acceptsImageReferenceInput: true
+    imageGeneration: [{ modelPrefix: '', format: 'openai-images', acceptsImageReferenceInput: true }]
   },
   {
     id: 'xai-grok',
@@ -134,7 +142,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: true,
     streamingCorsRestricted: true,
     acceptsImageInput: true,
-    imageApiFormat: 'xai-images'
+    imageGeneration: [{ modelPrefix: '', format: 'xai-images' }]
   }
 ];
 
@@ -177,6 +185,37 @@ export function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>
     return fail(`unknown AI provider: ${id}`);
   }
   return succeed(descriptor);
+}
+
+/**
+ * Whether a provider declares any image-generation capability at all.
+ *
+ * @param descriptor - The provider descriptor
+ * @returns `true` when {@link IAiProviderDescriptor.imageGeneration} has at
+ *   least one entry; `false` otherwise.
+ * @public
+ */
+export function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean {
+  return (descriptor.imageGeneration?.length ?? 0) > 0;
+}
+
+/**
+ * Resolve the image-generation capability that applies to a given model id
+ * for a provider. Walks {@link IAiProviderDescriptor.imageGeneration} in
+ * order and returns the first entry whose `modelPrefix` is a prefix of
+ * `modelId` (the empty prefix matches everything).
+ *
+ * @param descriptor - The provider descriptor
+ * @param modelId - The resolved image model id
+ * @returns The matching capability, or `undefined` when no rule matches or
+ *   the provider declares no image-generation capabilities.
+ * @public
+ */
+export function resolveImageCapability(
+  descriptor: IAiProviderDescriptor,
+  modelId: string
+): IAiImageModelCapability | undefined {
+  return descriptor.imageGeneration?.find((cap) => modelId.startsWith(cap.modelPrefix));
 }
 
 // ============================================================================

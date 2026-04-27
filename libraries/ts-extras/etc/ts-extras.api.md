@@ -33,6 +33,7 @@ declare namespace AiAssist {
         IChatMessage,
         AiApiFormat,
         AiImageApiFormat,
+        IAiImageModelCapability,
         IAiProviderDescriptor,
         IAiAssistProviderConfig,
         IAiAssistSettings,
@@ -62,6 +63,8 @@ declare namespace AiAssist {
         allProviderIds,
         getProviderDescriptors,
         getProviderDescriptor,
+        resolveImageCapability,
+        supportsImageGeneration,
         DEFAULT_MODEL_CAPABILITY_CONFIG,
         callProviderCompletion,
         callProxiedCompletion,
@@ -184,6 +187,8 @@ function callProviderCompletion(params: IProviderCompletionParams): Promise<Resu
 // @public
 function callProviderCompletionStream(params: IProviderCompletionStreamParams): Promise<Result<AsyncIterable<IAiStreamEvent>>>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiImageModelCapability"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
 //
 // @public
@@ -621,6 +626,16 @@ interface IAiImageGenerationResponse {
     readonly images: ReadonlyArray<IAiGeneratedImage>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+interface IAiImageModelCapability {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly acceptsImageReferenceInput?: boolean;
+    readonly format: AiImageApiFormat;
+    readonly modelPrefix: string;
+}
+
 // @public
 interface IAiModelCapabilityConfig {
     readonly global?: ReadonlyArray<IAiModelCapabilityRule>;
@@ -649,8 +664,6 @@ interface IAiModelInfo {
 // @public
 interface IAiProviderDescriptor {
     readonly acceptsImageInput: boolean;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    readonly acceptsImageReferenceInput?: boolean;
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;
@@ -658,7 +671,7 @@ interface IAiProviderDescriptor {
     readonly defaultModel: ModelSpec;
     readonly id: AiProviderId;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
-    readonly imageApiFormat?: AiImageApiFormat;
+    readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
     readonly label: string;
     readonly needsSecret: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
@@ -1484,6 +1497,11 @@ export { RecordJar }
 // @public
 function resolveEffectiveTools(descriptor: IAiProviderDescriptor, settingsTools?: ReadonlyArray<IAiToolEnablement>, perCallTools?: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<AiServerToolConfig>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function resolveImageCapability(descriptor: IAiProviderDescriptor, modelId: string): IAiImageModelCapability | undefined;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpec"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "MODEL_SPEC_BASE_KEY"
 //
@@ -1492,6 +1510,11 @@ function resolveModel(spec: ModelSpec, context?: string): string;
 
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
+//
+// @public
+function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean;
 
 // @public
 function templateString(defaultContext?: unknown): Conversion.StringConverter<string, unknown>;

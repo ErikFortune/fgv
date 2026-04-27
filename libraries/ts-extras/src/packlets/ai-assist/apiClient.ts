@@ -59,7 +59,7 @@ import {
   buildOpenAiChatUserContent,
   buildOpenAiResponsesUserContent
 } from './chatRequestBuilders';
-import { DEFAULT_MODEL_CAPABILITY_CONFIG } from './registry';
+import { DEFAULT_MODEL_CAPABILITY_CONFIG, resolveImageCapability, supportsImageGeneration } from './registry';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
 
 // ============================================================================
@@ -1221,7 +1221,9 @@ async function callImagenGeneration(
 /**
  * Calls the appropriate image-generation API for a given provider.
  *
- * Routes based on `descriptor.imageApiFormat`:
+ * Resolves a {@link IAiImageModelCapability} from
+ * {@link IAiProviderDescriptor.imageGeneration} for the requested model and
+ * routes by its `format`:
  * - `'openai-images'` for OpenAI (DALL-E, gpt-image-1)
  * - `'xai-images'` for xAI Grok image models
  * - `'gemini-imagen'` for Google Imagen `:predict`
@@ -1229,7 +1231,7 @@ async function callImagenGeneration(
  *
  * Image-model selection reuses the existing `'image'` {@link ModelSpecKey}.
  * When `request.referenceImages` is non-empty, the call is rejected up front
- * unless the descriptor declares `acceptsImageReferenceInput`.
+ * unless the resolved capability declares `acceptsImageReferenceInput`.
  *
  * @param params - Request parameters including descriptor, API key, and prompt
  * @returns The generated images, or a failure
@@ -1240,54 +1242,47 @@ export async function callProviderImageGeneration(
 ): Promise<Result<IAiImageGenerationResponse>> {
   const { descriptor, apiKey, params: request, modelOverride, logger, signal } = params;
 
-  if (descriptor.imageApiFormat === undefined) {
+  if (!supportsImageGeneration(descriptor)) {
     return fail(`provider "${descriptor.id}" does not support image generation`);
   }
   if (!descriptor.baseUrl) {
     return fail(`provider "${descriptor.id}" has no API endpoint configured`);
   }
-  if ((request.referenceImages?.length ?? 0) > 0 && !descriptor.acceptsImageReferenceInput) {
-    return fail(`provider "${descriptor.id}" does not support reference images for image generation`);
+
+  const model = resolveModel(modelOverride ?? descriptor.defaultModel, 'image');
+  const capability = resolveImageCapability(descriptor, model);
+  if (capability === undefined) {
+    return fail(`provider "${descriptor.id}" does not support image generation for model "${model}"`);
+  }
+  if ((request.referenceImages?.length ?? 0) > 0 && !capability.acceptsImageReferenceInput) {
+    return fail(`model "${model}" does not support reference images`);
   }
 
   const config: IAiApiConfig = {
     baseUrl: descriptor.baseUrl,
     apiKey,
-    model: resolveModel(modelOverride ?? descriptor.defaultModel, 'image')
+    model
   };
   /* c8 ignore next 6 - optional logger diagnostic output */
   if (logger) {
     logger.info(
-      `AI image generation: provider=${descriptor.id}, format=${descriptor.imageApiFormat}, ` +
+      `AI image generation: provider=${descriptor.id}, format=${capability.format}, ` +
         `model=${config.model}`
     );
   }
 
-  switch (descriptor.imageApiFormat) {
+  switch (capability.format) {
     case 'openai-images':
       return callOpenAiImageGeneration(config, request, 'image/png', logger, signal);
     case 'xai-images':
       return callOpenAiImageGeneration(config, request, 'image/jpeg', logger, signal);
     case 'gemini-imagen':
       return callImagenGeneration(config, request, logger, signal);
-    case 'gemini-image-out': {
-      // Google's Gemini provider hosts two distinct image surfaces under a
-      // single baseUrl: `gemini-2.5-flash-image` via chat-style
-      // `:generateContent` (accepts reference images) and the `imagen-*`
-      // family via predict-only `:predict` (no reference images). The
-      // descriptor's `imageApiFormat` is per-provider, so dispatch by the
-      // resolved model name to pick the right endpoint.
-      if (config.model.startsWith('imagen-')) {
-        if ((request.referenceImages?.length ?? 0) > 0) {
-          return fail(`model "${config.model}" does not support reference images`);
-        }
-        return callImagenGeneration(config, request, logger, signal);
-      }
+    case 'gemini-image-out':
       return callGeminiImageOutGeneration(config, request, logger, signal);
-    }
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
-      const _exhaustive: never = descriptor.imageApiFormat;
+      const _exhaustive: never = capability.format;
       return fail(`unsupported image API format: ${String(_exhaustive)}`);
     }
   }
