@@ -511,6 +511,8 @@ interface IAddKeyPairOptions {
 interface IAddKeyPairResult {
     readonly entry: IKeyStoreAsymmetricEntry;
     readonly replaced: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly warning?: string;
 }
 
 // @public
@@ -535,6 +537,8 @@ interface IAddSecretOptions {
 interface IAddSecretResult {
     readonly entry: IKeyStoreSymmetricEntry;
     readonly replaced: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly warning?: string;
 }
 
 // @public
@@ -1012,6 +1016,13 @@ interface IProviderListModelsParams {
 }
 
 // @public
+interface IRemoveSecretResult {
+    readonly entry: IKeyStoreEntry;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly warning?: string;
+}
+
+// @public
 function isEncryptedFile(json: unknown): boolean;
 
 // @public
@@ -1132,12 +1143,15 @@ declare namespace KeyStore {
         IAddSecretFromPasswordResult,
         IAddKeyPairOptions,
         IAddKeyPairResult,
+        IRemoveSecretResult,
         IPrivateKeyStorage
     }
 }
 
 // @public
 class KeyStore_2 implements IEncryptionProvider {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    addKeyPair(name: string, options: IAddKeyPairOptions): Promise<Result<IAddKeyPairResult>>;
     addSecret(name: string, options?: IAddSecretOptions): Promise<Result<IAddSecretResult>>;
     addSecretFromPassword(name: string, password: string, options?: IAddSecretFromPasswordOptions): Promise<Result<IAddSecretFromPasswordResult>>;
     changePassword(currentPassword: string, newPassword: string): Promise<Result<KeyStore_2>>;
@@ -1149,12 +1163,20 @@ class KeyStore_2 implements IEncryptionProvider {
     encryptByName<TMetadata = JsonValue>(secretName: string, content: JsonValue, metadata?: TMetadata): Promise<Result<IEncryptedFile<TMetadata>>>;
     getApiKey(name: string): Result<string>;
     getEncryptionConfig(): Result<Pick<IEncryptionConfig, 'secretProvider' | 'cryptoProvider'>>;
-    getSecret(name: string): Result<IKeyStoreSecretEntry>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getKeyPair(name: string): Promise<Result<{
+        publicKey: CryptoKey;
+        privateKey: CryptoKey;
+    }>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getPublicKeyJwk(name: string): Result<JsonWebKey>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getSecret(name: string): Result<IKeyStoreEntry>;
     getSecretProvider(): Result<SecretProvider>;
     hasSecret(name: string): Result<boolean>;
-    importApiKey(name: string, apiKey: string, options?: IImportSecretOptions): Result<IAddSecretResult>;
+    importApiKey(name: string, apiKey: string, options?: IImportSecretOptions): Promise<Result<IAddSecretResult>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
-    importSecret(name: string, key: Uint8Array, options?: IImportKeyOptions): Result<IAddSecretResult>;
+    importSecret(name: string, key: Uint8Array, options?: IImportKeyOptions): Promise<Result<IAddSecretResult>>;
     initialize(password: string): Promise<Result<KeyStore_2>>;
     get isDirty(): boolean;
     get isNew(): boolean;
@@ -1163,8 +1185,9 @@ class KeyStore_2 implements IEncryptionProvider {
     listSecretsByType(type: KeyStoreSecretType): Result<readonly string[]>;
     lock(force?: boolean): Result<KeyStore_2>;
     static open(params: IKeyStoreOpenParams): Result<KeyStore_2>;
-    removeSecret(name: string): Result<IKeyStoreSecretEntry>;
-    renameSecret(oldName: string, newName: string): Result<IKeyStoreSecretEntry>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    removeSecret(name: string): Promise<Result<IRemoveSecretResult>>;
+    renameSecret(oldName: string, newName: string): Result<IKeyStoreEntry>;
     save(password: string): Promise<Result<IKeyStoreFile>>;
     saveWithKey(derivedKey: Uint8Array): Promise<Result<IKeyStoreFile>>;
     get state(): KeyStoreLockState;
@@ -1528,6 +1551,11 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
 }
+
+// Warnings were encountered during analysis:
+//
+// src/packlets/crypto-utils/keystore/keyStore.ts:1250:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1270:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

@@ -412,6 +412,15 @@ export interface IAddSecretResult {
    * Whether this replaced an existing secret.
    */
   readonly replaced: boolean;
+
+  /**
+   * Best-effort warning from displaced-resource cleanup. Set when this call
+   * replaced an asymmetric-keypair entry but the corresponding
+   * {@link CryptoUtils.KeyStore.IPrivateKeyStorage}.delete failed; the new
+   * entry is still committed and the orphaned blob is left for consumer-side
+   * GC to reconcile.
+   */
+  readonly warning?: string;
 }
 
 /**
@@ -525,6 +534,34 @@ export interface IAddKeyPairResult {
    * Whether this replaced an existing entry.
    */
   readonly replaced: boolean;
+
+  /**
+   * Best-effort warning from displaced-resource cleanup. Set when this call
+   * replaced a prior entry but the corresponding
+   * {@link CryptoUtils.KeyStore.IPrivateKeyStorage}.delete failed; the new
+   * keypair is still committed and the orphaned blob is left for consumer-side
+   * GC to reconcile.
+   */
+  readonly warning?: string;
+}
+
+/**
+ * Result of removing a secret from the key store.
+ * @public
+ */
+export interface IRemoveSecretResult {
+  /**
+   * The secret entry that was removed from the vault.
+   */
+  readonly entry: IKeyStoreEntry;
+
+  /**
+   * Best-effort warning from {@link CryptoUtils.KeyStore.IPrivateKeyStorage}.delete
+   * for asymmetric entries when the storage call failed. The vault entry is
+   * still considered removed and the orphaned blob is left for consumer-side
+   * GC to reconcile.
+   */
+  readonly warning?: string;
 }
 
 // ============================================================================

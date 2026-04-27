@@ -21,6 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import * as CryptoUtils from '../../../../packlets/crypto-utils';
+import { InMemoryPrivateKeyStorage } from './inMemoryPrivateKeyStorage';
 
 describe('KeyStore', () => {
   const provider = CryptoUtils.nodeCryptoProvider;
@@ -142,7 +143,7 @@ describe('KeyStore', () => {
     describe('importSecret', () => {
       test('imports an existing key', async () => {
         const key = (await provider.generateKey()).orThrow();
-        const result = keystore.importSecret('imported-secret', key);
+        const result = await keystore.importSecret('imported-secret', key);
 
         expect(result).toSucceedAndSatisfy((addResult) => {
           expect(addResult.entry.name).toBe('imported-secret');
@@ -153,7 +154,7 @@ describe('KeyStore', () => {
 
       test('imports with description', async () => {
         const key = (await provider.generateKey()).orThrow();
-        const result = keystore.importSecret('imported-secret', key, { description: 'Imported key' });
+        const result = await keystore.importSecret('imported-secret', key, { description: 'Imported key' });
 
         expect(result).toSucceedAndSatisfy((addResult) => {
           expect(addResult.entry.description).toBe('Imported key');
@@ -164,8 +165,8 @@ describe('KeyStore', () => {
         const key1 = (await provider.generateKey()).orThrow();
         const key2 = (await provider.generateKey()).orThrow();
 
-        keystore.importSecret('my-secret', key1);
-        const result = keystore.importSecret('my-secret', key2);
+        await keystore.importSecret('my-secret', key1);
+        const result = await keystore.importSecret('my-secret', key2);
 
         expect(result).toFailWith(/already exists/i);
       });
@@ -174,8 +175,8 @@ describe('KeyStore', () => {
         const key1 = (await provider.generateKey()).orThrow();
         const key2 = (await provider.generateKey()).orThrow();
 
-        keystore.importSecret('my-secret', key1);
-        const result = keystore.importSecret('my-secret', key2, { replace: true });
+        await keystore.importSecret('my-secret', key1);
+        const result = await keystore.importSecret('my-secret', key2, { replace: true });
 
         expect(result).toSucceedAndSatisfy((addResult) => {
           expect(addResult.replaced).toBe(true);
@@ -183,16 +184,16 @@ describe('KeyStore', () => {
         });
       });
 
-      test('fails with wrong key size', () => {
+      test('fails with wrong key size', async () => {
         const shortKey = new Uint8Array(16);
-        const result = keystore.importSecret('my-secret', shortKey);
+        const result = await keystore.importSecret('my-secret', shortKey);
 
         expect(result).toFailWith(/32 bytes/);
       });
 
       test('fails with empty name', async () => {
         const key = (await provider.generateKey()).orThrow();
-        const result = keystore.importSecret('', key);
+        const result = await keystore.importSecret('', key);
 
         expect(result).toFailWith(/name cannot be empty/i);
       });
@@ -201,13 +202,13 @@ describe('KeyStore', () => {
         const key = (await provider.generateKey()).orThrow();
         keystore.lock(true);
 
-        const result = keystore.importSecret('my-secret', key);
+        const result = await keystore.importSecret('my-secret', key);
         expect(result).toFailWith(/locked/i);
       });
 
       test('defaults to encryption-key type when type not specified', async () => {
         const key = (await provider.generateKey()).orThrow();
-        const result = keystore.importSecret('imported-secret', key);
+        const result = await keystore.importSecret('imported-secret', key);
 
         expect(result).toSucceedAndSatisfy((addResult) => {
           expect(addResult.entry.type).toBe('encryption-key');
@@ -216,7 +217,7 @@ describe('KeyStore', () => {
 
       test('stores specified type classification', async () => {
         const key = (await provider.generateKey()).orThrow();
-        const result = keystore.importSecret('imported-secret', key, { type: 'encryption-key' });
+        const result = await keystore.importSecret('imported-secret', key, { type: 'encryption-key' });
 
         expect(result).toSucceedAndSatisfy((addResult) => {
           expect(addResult.entry.type).toBe('encryption-key');
@@ -226,8 +227,8 @@ describe('KeyStore', () => {
       test('type classification integrates with listSecretsByType', async () => {
         const key1 = (await provider.generateKey()).orThrow();
         const key2 = (await provider.generateKey()).orThrow();
-        keystore.importSecret('secret-a', key1); // defaults to 'encryption-key'
-        keystore.importSecret('secret-b', key2, { type: 'encryption-key' });
+        await keystore.importSecret('secret-a', key1); // defaults to 'encryption-key'
+        await keystore.importSecret('secret-b', key2, { type: 'encryption-key' });
 
         expect(keystore.listSecretsByType('encryption-key')).toSucceedAndSatisfy((names) => {
           expect(names).toContain('secret-a');
@@ -235,9 +236,9 @@ describe('KeyStore', () => {
         });
       });
 
-      test('type does not affect 32-byte key validation', () => {
+      test('type does not affect 32-byte key validation', async () => {
         const shortKey = new Uint8Array(16);
-        const result = keystore.importSecret('my-secret', shortKey, { type: 'encryption-key' });
+        const result = await keystore.importSecret('my-secret', shortKey, { type: 'encryption-key' });
 
         expect(result).toFailWith(/32 bytes/);
       });
@@ -246,8 +247,8 @@ describe('KeyStore', () => {
         const key1 = (await provider.generateKey()).orThrow();
         const key2 = (await provider.generateKey()).orThrow();
 
-        keystore.importSecret('my-secret', key1, { type: 'encryption-key', description: 'first' });
-        const result = keystore.importSecret('my-secret', key2, {
+        await keystore.importSecret('my-secret', key1, { type: 'encryption-key', description: 'first' });
+        const result = await keystore.importSecret('my-secret', key2, {
           type: 'encryption-key',
           description: 'replaced',
           replace: true
@@ -427,23 +428,24 @@ describe('KeyStore', () => {
       test('removes an existing secret', async () => {
         await keystore.addSecret('my-secret', { description: 'Test' });
 
-        const result = keystore.removeSecret('my-secret');
+        const result = await keystore.removeSecret('my-secret');
 
-        expect(result).toSucceedAndSatisfy((entry) => {
+        expect(result).toSucceedAndSatisfy(({ entry, warning }) => {
           expect(entry.name).toBe('my-secret');
+          expect(warning).toBeUndefined();
         });
 
         expect(keystore.hasSecret('my-secret')).toSucceedWith(false);
       });
 
-      test('fails for non-existent secret', () => {
-        const result = keystore.removeSecret('non-existent');
+      test('fails for non-existent secret', async () => {
+        const result = await keystore.removeSecret('non-existent');
         expect(result).toFailWith(/not found/i);
       });
 
-      test('fails when locked', () => {
+      test('fails when locked', async () => {
         keystore.lock(true);
-        const result = keystore.removeSecret('my-secret');
+        const result = await keystore.removeSecret('my-secret');
         expect(result).toFailWith(/locked/i);
       });
     });
@@ -498,8 +500,8 @@ describe('KeyStore', () => {
     });
 
     describe('importApiKey', () => {
-      test('imports an API key string', () => {
-        const result = keystore.importApiKey('my-api-key', 'sk-abc123');
+      test('imports an API key string', async () => {
+        const result = await keystore.importApiKey('my-api-key', 'sk-abc123');
 
         expect(result).toSucceedAndSatisfy((addResult) => {
           expect(addResult.entry.name).toBe('my-api-key');
@@ -510,8 +512,8 @@ describe('KeyStore', () => {
         });
       });
 
-      test('imports with description', () => {
-        const result = keystore.importApiKey('my-api-key', 'sk-abc123', {
+      test('imports with description', async () => {
+        const result = await keystore.importApiKey('my-api-key', 'sk-abc123', {
           description: 'OpenAI key'
         });
 
@@ -520,42 +522,42 @@ describe('KeyStore', () => {
         });
       });
 
-      test('fails when secret exists and replace not set', () => {
-        keystore.importApiKey('my-api-key', 'sk-abc123');
-        const result = keystore.importApiKey('my-api-key', 'sk-def456');
+      test('fails when secret exists and replace not set', async () => {
+        await keystore.importApiKey('my-api-key', 'sk-abc123');
+        const result = await keystore.importApiKey('my-api-key', 'sk-def456');
 
         expect(result).toFailWith(/already exists/i);
       });
 
-      test('replaces when replace=true', () => {
-        keystore.importApiKey('my-api-key', 'sk-abc123');
-        const result = keystore.importApiKey('my-api-key', 'sk-def456', { replace: true });
+      test('replaces when replace=true', async () => {
+        await keystore.importApiKey('my-api-key', 'sk-abc123');
+        const result = await keystore.importApiKey('my-api-key', 'sk-def456', { replace: true });
 
         expect(result).toSucceedAndSatisfy((addResult) => {
           expect(addResult.replaced).toBe(true);
         });
       });
 
-      test('fails with empty name', () => {
-        const result = keystore.importApiKey('', 'sk-abc123');
+      test('fails with empty name', async () => {
+        const result = await keystore.importApiKey('', 'sk-abc123');
         expect(result).toFailWith(/name cannot be empty/i);
       });
 
-      test('fails with empty API key', () => {
-        const result = keystore.importApiKey('my-api-key', '');
+      test('fails with empty API key', async () => {
+        const result = await keystore.importApiKey('my-api-key', '');
         expect(result).toFailWith(/api key cannot be empty/i);
       });
 
-      test('fails when locked', () => {
+      test('fails when locked', async () => {
         keystore.lock(true);
-        const result = keystore.importApiKey('my-api-key', 'sk-abc123');
+        const result = await keystore.importApiKey('my-api-key', 'sk-abc123');
         expect(result).toFailWith(/locked/i);
       });
     });
 
     describe('getApiKey', () => {
-      test('retrieves an imported API key', () => {
-        keystore.importApiKey('my-api-key', 'sk-abc123');
+      test('retrieves an imported API key', async () => {
+        await keystore.importApiKey('my-api-key', 'sk-abc123');
 
         const result = keystore.getApiKey('my-api-key');
         expect(result).toSucceedWith('sk-abc123');
@@ -584,8 +586,8 @@ describe('KeyStore', () => {
       test('returns only secrets of the specified type', async () => {
         await keystore.addSecret('enc-key-1');
         await keystore.addSecret('enc-key-2');
-        keystore.importApiKey('api-key-1', 'sk-abc');
-        keystore.importApiKey('api-key-2', 'sk-def');
+        await keystore.importApiKey('api-key-1', 'sk-abc');
+        await keystore.importApiKey('api-key-2', 'sk-def');
 
         expect(keystore.listSecretsByType('api-key')).toSucceedAndSatisfy((names) => {
           expect(names).toHaveLength(2);
@@ -764,7 +766,9 @@ describe('KeyStore', () => {
 
       expect(keystore2.getSecret('secret-1')).toSucceedAndSatisfy((entry) => {
         expect(entry.description).toBe('First secret');
-        expect(entry.key.length).toBe(CryptoUtils.Constants.AES_256_KEY_SIZE);
+        if (entry.type !== 'asymmetric-keypair') {
+          expect(entry.key.length).toBe(CryptoUtils.Constants.AES_256_KEY_SIZE);
+        }
       });
     });
 
@@ -774,7 +778,7 @@ describe('KeyStore', () => {
       // Create and import key
       const keystore1 = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
       await keystore1.initialize(testPassword);
-      keystore1.importSecret('my-key', originalKey);
+      await keystore1.importSecret('my-key', originalKey);
 
       // Save
       const savedFile = (await keystore1.save(testPassword)).orThrow();
@@ -788,7 +792,9 @@ describe('KeyStore', () => {
 
       // Verify key is identical
       expect(keystore2.getSecret('my-key')).toSucceedAndSatisfy((entry) => {
-        expect(entry.key).toEqual(originalKey);
+        if (entry.type !== 'asymmetric-keypair') {
+          expect(entry.key).toEqual(originalKey);
+        }
       });
     });
   });
@@ -856,7 +862,11 @@ describe('KeyStore', () => {
       await keystore.initialize(testPassword);
       await keystore.addSecret('my-secret');
 
-      const key = keystore.getSecret('my-secret').orThrow().key;
+      const entry = keystore.getSecret('my-secret').orThrow();
+      if (entry.type === 'asymmetric-keypair') {
+        throw new Error('expected symmetric entry');
+      }
+      const key = entry.key;
 
       const secretProvider = keystore.getSecretProvider().orThrow();
       const secretResult = await secretProvider('my-secret');
@@ -968,7 +978,9 @@ describe('KeyStore', () => {
       expect(keystore.getSecret('my-secret')).toSucceedAndSatisfy((entry) => {
         expect(entry.name).toBe('my-secret');
         expect(entry.description).toBe('Test secret');
-        expect(entry.key.length).toBe(CryptoUtils.Constants.AES_256_KEY_SIZE);
+        if (entry.type !== 'asymmetric-keypair') {
+          expect(entry.key.length).toBe(CryptoUtils.Constants.AES_256_KEY_SIZE);
+        }
       });
     });
 
@@ -1031,7 +1043,9 @@ describe('KeyStore', () => {
       await ks2.unlockWithKey(derivedKey);
       const secretViaKey = ks2.getSecret('my-secret').orThrow();
 
-      expect(secretViaKey.key).toEqual(secretViaPassword.key);
+      if (secretViaKey.type !== 'asymmetric-keypair' && secretViaPassword.type !== 'asymmetric-keypair') {
+        expect(secretViaKey.key).toEqual(secretViaPassword.key);
+      }
       expect(secretViaKey.name).toBe(secretViaPassword.name);
       expect(secretViaKey.description).toBe(secretViaPassword.description);
     });
@@ -1155,7 +1169,9 @@ describe('KeyStore', () => {
       const originalSecret = keystore.getSecret('my-secret').orThrow();
       const roundTrippedSecret = keystore2.getSecret('my-secret').orThrow();
 
-      expect(roundTrippedSecret.key).toEqual(originalSecret.key);
+      if (roundTrippedSecret.type !== 'asymmetric-keypair' && originalSecret.type !== 'asymmetric-keypair') {
+        expect(roundTrippedSecret.key).toEqual(originalSecret.key);
+      }
       expect(roundTrippedSecret.name).toBe(originalSecret.name);
       expect(roundTrippedSecret.description).toBe(originalSecret.description);
     });
@@ -1233,10 +1249,514 @@ describe('KeyStore', () => {
       expect(encryptResult).toSucceed();
 
       const secret = keystore.getSecret('my-secret').orThrow();
+      if (secret.type === 'asymmetric-keypair') {
+        throw new Error('expected symmetric entry');
+      }
       const decryptResult = await CryptoUtils.decryptFile(encryptResult.orThrow(), secret.key, provider);
       expect(decryptResult).toSucceedAndSatisfy((decrypted) => {
         expect(decrypted).toEqual(originalContent);
       });
+    });
+  });
+
+  // ==========================================================================
+  // Asymmetric keypair management
+  // ==========================================================================
+
+  describe('asymmetric keypairs', () => {
+    let keystore: CryptoUtils.KeyStore.KeyStore;
+    let storage: InMemoryPrivateKeyStorage;
+
+    beforeEach(async () => {
+      storage = new InMemoryPrivateKeyStorage();
+      keystore = CryptoUtils.KeyStore.KeyStore.create({
+        cryptoProvider: provider,
+        privateKeyStorage: storage
+      }).orThrow();
+      await keystore.initialize(testPassword);
+    });
+
+    describe('addKeyPair', () => {
+      test('adds an ECDSA P-256 keypair and persists private key in storage', async () => {
+        const result = await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+
+        expect(result).toSucceedAndSatisfy(({ entry, replaced, warning }) => {
+          expect(entry.name).toBe('signing');
+          expect(entry.type).toBe('asymmetric-keypair');
+          expect(entry.algorithm).toBe('ecdsa-p256');
+          expect(entry.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+          expect(entry.publicKeyJwk.kty).toBe('EC');
+          expect(replaced).toBe(false);
+          expect(warning).toBeUndefined();
+        });
+
+        const entry = keystore.getSecret('signing').orThrow();
+        if (entry.type !== 'asymmetric-keypair') {
+          throw new Error('expected asymmetric entry');
+        }
+        expect(storage.entries.has(entry.id)).toBe(true);
+      });
+
+      test('adds an RSA-OAEP 2048 keypair', async () => {
+        const result = await keystore.addKeyPair('encrypting', { algorithm: 'rsa-oaep-2048' });
+
+        expect(result).toSucceedAndSatisfy(({ entry }) => {
+          expect(entry.algorithm).toBe('rsa-oaep-2048');
+          expect(entry.publicKeyJwk.kty).toBe('RSA');
+        });
+      });
+
+      test('honours description and stores via storage backend', async () => {
+        const result = await keystore.addKeyPair('signing', {
+          algorithm: 'ecdsa-p256',
+          description: 'For document signing'
+        });
+
+        expect(result).toSucceedAndSatisfy(({ entry }) => {
+          expect(entry.description).toBe('For document signing');
+        });
+      });
+
+      test('passes extractable=false when backend supports it', async () => {
+        const result = await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+
+        expect(result).toSucceedAndSatisfy(({ entry }) => {
+          const stored = storage.entries.get(entry.id);
+          expect(stored?.extractable).toBe(false);
+        });
+      });
+
+      test('passes extractable=true when backend cannot hold non-extractable keys', async () => {
+        const extractableStorage = new InMemoryPrivateKeyStorage({ supportsNonExtractable: false });
+        const ks = CryptoUtils.KeyStore.KeyStore.create({
+          cryptoProvider: provider,
+          privateKeyStorage: extractableStorage
+        }).orThrow();
+        await ks.initialize(testPassword);
+
+        const result = await ks.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+
+        expect(result).toSucceedAndSatisfy(({ entry }) => {
+          const stored = extractableStorage.entries.get(entry.id);
+          expect(stored?.extractable).toBe(true);
+        });
+      });
+
+      test('fails without a private key storage backend', async () => {
+        const ksNoStorage = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
+        await ksNoStorage.initialize(testPassword);
+
+        const result = await ksNoStorage.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        expect(result).toFailWith(/no private key storage configured/i);
+      });
+
+      test('fails when locked', async () => {
+        keystore.lock(true);
+        const result = await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        expect(result).toFailWith(/locked/i);
+      });
+
+      test('fails with empty name', async () => {
+        const result = await keystore.addKeyPair('', { algorithm: 'ecdsa-p256' });
+        expect(result).toFailWith(/name cannot be empty/i);
+      });
+
+      test('rejects existing entry without replace=true', async () => {
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        const result = await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        expect(result).toFailWith(/already exists/i);
+      });
+
+      test('storage-write failure aborts addKeyPair (no vault entry written)', async () => {
+        const failing = new InMemoryPrivateKeyStorage({ failOn: { store: 'simulated store outage' } });
+        const ks = CryptoUtils.KeyStore.KeyStore.create({
+          cryptoProvider: provider,
+          privateKeyStorage: failing
+        }).orThrow();
+        await ks.initialize(testPassword);
+
+        const result = await ks.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        expect(result).toFailWith(/simulated store outage/);
+
+        expect(ks.hasSecret('signing')).toSucceedWith(false);
+        expect(failing.entries.size).toBe(0);
+      });
+
+      describe('replace semantics', () => {
+        test('replaces an existing asymmetric entry, mints fresh id, deletes prior blob', async () => {
+          const first = (await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' })).orThrow();
+          const oldId = first.entry.id;
+
+          const second = (
+            await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256', replace: true })
+          ).orThrow();
+
+          expect(second.replaced).toBe(true);
+          expect(second.entry.id).not.toBe(oldId);
+          expect(second.warning).toBeUndefined();
+          expect(storage.entries.has(oldId)).toBe(false);
+          expect(storage.entries.has(second.entry.id)).toBe(true);
+        });
+
+        test('replace reports warning when storage-delete of prior blob fails', async () => {
+          const failing = new InMemoryPrivateKeyStorage();
+          const ks = CryptoUtils.KeyStore.KeyStore.create({
+            cryptoProvider: provider,
+            privateKeyStorage: failing
+          }).orThrow();
+          await ks.initialize(testPassword);
+
+          const first = (await ks.addKeyPair('signing', { algorithm: 'ecdsa-p256' })).orThrow();
+          // Manually drop the entry from the underlying map so storage.delete fails.
+          failing.entries.delete(first.entry.id);
+
+          const second = (
+            await ks.addKeyPair('signing', { algorithm: 'ecdsa-p256', replace: true })
+          ).orThrow();
+
+          expect(second.replaced).toBe(true);
+          expect(second.warning).toMatch(/Failed to delete prior storage blob/);
+          // New blob is still stored — replacement is not rolled back.
+          expect(failing.entries.has(second.entry.id)).toBe(true);
+        });
+
+        test('replacing a symmetric entry with an asymmetric one zeroes the prior bytes', async () => {
+          const key = (await provider.generateKey()).orThrow();
+          await keystore.importSecret('mixed', key);
+          const sym = keystore.getSecret('mixed').orThrow();
+          if (sym.type === 'asymmetric-keypair') {
+            throw new Error('expected symmetric entry');
+          }
+          const symKey = sym.key;
+
+          const result = (
+            await keystore.addKeyPair('mixed', { algorithm: 'ecdsa-p256', replace: true })
+          ).orThrow();
+
+          expect(result.replaced).toBe(true);
+          expect(result.entry.type).toBe('asymmetric-keypair');
+          // The pre-replacement key bytes were zeroed in place.
+          expect(symKey.every((b) => b === 0)).toBe(true);
+        });
+
+        test('replacing an asymmetric entry with a symmetric one releases the storage blob', async () => {
+          const first = (await keystore.addKeyPair('mixed', { algorithm: 'ecdsa-p256' })).orThrow();
+          expect(storage.entries.has(first.entry.id)).toBe(true);
+
+          const key = (await provider.generateKey()).orThrow();
+          const result = (await keystore.importSecret('mixed', key, { replace: true })).orThrow();
+
+          expect(result.replaced).toBe(true);
+          expect(result.entry.type).toBe('encryption-key');
+          expect(storage.entries.has(first.entry.id)).toBe(false);
+        });
+
+        test('replacing an asymmetric entry via importApiKey releases storage blob', async () => {
+          const first = (await keystore.addKeyPair('mixed', { algorithm: 'ecdsa-p256' })).orThrow();
+          const result = (
+            await keystore.importApiKey('mixed', 'sk-replacement', { replace: true })
+          ).orThrow();
+          expect(result.replaced).toBe(true);
+          expect(storage.entries.has(first.entry.id)).toBe(false);
+        });
+
+        test('replacing an asymmetric entry via addSecretFromPassword releases storage blob', async () => {
+          const first = (await keystore.addKeyPair('mixed', { algorithm: 'ecdsa-p256' })).orThrow();
+          const result = (
+            await keystore.addSecretFromPassword('mixed', 'pw', { replace: true, iterations: 100 })
+          ).orThrow();
+          expect(result.replaced).toBe(true);
+          expect(storage.entries.has(first.entry.id)).toBe(false);
+        });
+
+        test('addSecret silently replacing an asymmetric entry releases storage blob', async () => {
+          const first = (await keystore.addKeyPair('mixed', { algorithm: 'ecdsa-p256' })).orThrow();
+          const result = (await keystore.addSecret('mixed')).orThrow();
+          expect(result.replaced).toBe(true);
+          expect(storage.entries.has(first.entry.id)).toBe(false);
+        });
+      });
+    });
+
+    describe('getKeyPair', () => {
+      test('returns importable public key and storage-loaded private key', async () => {
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+
+        const result = await keystore.getKeyPair('signing');
+        expect(result).toSucceedAndSatisfy(({ publicKey, privateKey }) => {
+          expect(publicKey.algorithm.name).toBe('ECDSA');
+          expect(privateKey.algorithm.name).toBe('ECDSA');
+          expect(publicKey.usages).toEqual(['verify']);
+        });
+      });
+
+      test('returns a freshly-imported public key on every call (no caching)', async () => {
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+
+        const first = (await keystore.getKeyPair('signing')).orThrow();
+        const second = (await keystore.getKeyPair('signing')).orThrow();
+
+        // Distinct CryptoKey object identities — keystore re-imports each call.
+        expect(first.publicKey).not.toBe(second.publicKey);
+      });
+
+      test('returns the same private key reference held by storage', async () => {
+        const added = (await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' })).orThrow();
+        const result = (await keystore.getKeyPair('signing')).orThrow();
+        expect(result.privateKey).toBe(storage.entries.get(added.entry.id));
+      });
+
+      test('fails for non-existent entry', async () => {
+        const result = await keystore.getKeyPair('missing');
+        expect(result).toFailWith(/not found/i);
+      });
+
+      test('fails when entry is symmetric', async () => {
+        await keystore.addSecret('sym');
+        const result = await keystore.getKeyPair('sym');
+        expect(result).toFailWith(/not an asymmetric keypair/i);
+      });
+
+      test('fails without a private key storage backend', async () => {
+        // Add a keypair via a configured keystore, save, then reopen without a backend.
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        const file = (await keystore.save(testPassword)).orThrow();
+
+        const ksNoStorage = CryptoUtils.KeyStore.KeyStore.open({
+          cryptoProvider: provider,
+          keystoreFile: file
+        }).orThrow();
+        await ksNoStorage.unlock(testPassword);
+
+        const result = await ksNoStorage.getKeyPair('signing');
+        expect(result).toFailWith(/no private key storage configured/i);
+      });
+
+      test('storage-load failure surfaces with context', async () => {
+        const failing = new InMemoryPrivateKeyStorage({ failOn: { load: 'simulated load outage' } });
+        const ks = CryptoUtils.KeyStore.KeyStore.create({
+          cryptoProvider: provider,
+          privateKeyStorage: failing
+        }).orThrow();
+        await ks.initialize(testPassword);
+        await ks.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+
+        const result = await ks.getKeyPair('signing');
+        expect(result).toFailWith(/simulated load outage/);
+      });
+
+      test('fails when locked', async () => {
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        await keystore.save(testPassword);
+        keystore.lock();
+
+        const result = await keystore.getKeyPair('signing');
+        expect(result).toFailWith(/locked/i);
+      });
+    });
+
+    describe('getPublicKeyJwk', () => {
+      test('returns the JWK without touching storage', async () => {
+        const added = (await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' })).orThrow();
+        const result = keystore.getPublicKeyJwk('signing');
+        expect(result).toSucceedWith(added.entry.publicKeyJwk);
+      });
+
+      test('works after dropping the storage backend (vault-only data)', async () => {
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        const file = (await keystore.save(testPassword)).orThrow();
+
+        const ksNoStorage = CryptoUtils.KeyStore.KeyStore.open({
+          cryptoProvider: provider,
+          keystoreFile: file
+        }).orThrow();
+        await ksNoStorage.unlock(testPassword);
+
+        expect(ksNoStorage.getPublicKeyJwk('signing')).toSucceedAndSatisfy((jwk) => {
+          expect(jwk.kty).toBe('EC');
+        });
+      });
+
+      test('fails for non-existent entry', () => {
+        expect(keystore.getPublicKeyJwk('missing')).toFailWith(/not found/i);
+      });
+
+      test('fails for symmetric entry', async () => {
+        await keystore.addSecret('sym');
+        expect(keystore.getPublicKeyJwk('sym')).toFailWith(/not an asymmetric keypair/i);
+      });
+
+      test('fails when locked', () => {
+        keystore.lock(true);
+        expect(keystore.getPublicKeyJwk('signing')).toFailWith(/locked/i);
+      });
+    });
+
+    describe('removeSecret on asymmetric entries', () => {
+      test('drops vault entry and deletes storage blob', async () => {
+        const added = (await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' })).orThrow();
+
+        const result = await keystore.removeSecret('signing');
+        expect(result).toSucceedAndSatisfy(({ entry, warning }) => {
+          expect(entry.name).toBe('signing');
+          expect(entry.type).toBe('asymmetric-keypair');
+          expect(warning).toBeUndefined();
+        });
+        expect(keystore.hasSecret('signing')).toSucceedWith(false);
+        expect(storage.entries.has(added.entry.id)).toBe(false);
+      });
+
+      test('returns warning if storage-delete fails but still drops vault entry', async () => {
+        const failing = new InMemoryPrivateKeyStorage();
+        const ks = CryptoUtils.KeyStore.KeyStore.create({
+          cryptoProvider: provider,
+          privateKeyStorage: failing
+        }).orThrow();
+        await ks.initialize(testPassword);
+        const added = (await ks.addKeyPair('signing', { algorithm: 'ecdsa-p256' })).orThrow();
+
+        // Force storage.delete to fail by removing the underlying entry first.
+        failing.entries.delete(added.entry.id);
+        const result = await ks.removeSecret('signing');
+
+        expect(result).toSucceedAndSatisfy(({ entry, warning }) => {
+          expect(entry.name).toBe('signing');
+          expect(warning).toMatch(/Failed to delete prior storage blob/);
+        });
+        expect(ks.hasSecret('signing')).toSucceedWith(false);
+      });
+
+      test('without a backend, vault removal still succeeds and is silent', async () => {
+        // Build a vault that already contains an asymmetric entry, then reopen
+        // without a backend.
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        const file = (await keystore.save(testPassword)).orThrow();
+
+        const ksNoStorage = CryptoUtils.KeyStore.KeyStore.open({
+          cryptoProvider: provider,
+          keystoreFile: file
+        }).orThrow();
+        await ksNoStorage.unlock(testPassword);
+
+        const result = await ksNoStorage.removeSecret('signing');
+        expect(result).toSucceedAndSatisfy(({ warning }) => {
+          expect(warning).toBeUndefined();
+        });
+        expect(ksNoStorage.hasSecret('signing')).toSucceedWith(false);
+      });
+    });
+
+    describe('renameSecret on asymmetric entries', () => {
+      test('preserves the storage id across rename', async () => {
+        const added = (await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' })).orThrow();
+        const oldId = added.entry.id;
+
+        const renamed = keystore.renameSecret('signing', 'docsigning').orThrow();
+        if (renamed.type !== 'asymmetric-keypair') {
+          throw new Error('expected asymmetric entry');
+        }
+        expect(renamed.id).toBe(oldId);
+        expect(storage.entries.has(oldId)).toBe(true);
+
+        // getKeyPair under the new name still resolves the same private key.
+        const pair = (await keystore.getKeyPair('docsigning')).orThrow();
+        expect(pair.privateKey).toBe(storage.entries.get(oldId));
+      });
+    });
+
+    describe('listSecretsByType for asymmetric entries', () => {
+      test('separates asymmetric entries from symmetric ones', async () => {
+        await keystore.addSecret('encryption');
+        await keystore.importApiKey('apikey', 'sk-1');
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+
+        expect(keystore.listSecretsByType('asymmetric-keypair')).toSucceedAndSatisfy((names) => {
+          expect(names).toEqual(['signing']);
+        });
+        expect(keystore.listSecretsByType('encryption-key')).toSucceedAndSatisfy((names) => {
+          expect(names).toEqual(['encryption']);
+        });
+      });
+    });
+
+    describe('round-trip with asymmetric entries', () => {
+      test('save and reopen preserves the asymmetric vault entry; getKeyPair still works', async () => {
+        const added = (await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' })).orThrow();
+        const file = (await keystore.save(testPassword)).orThrow();
+
+        const ks2 = CryptoUtils.KeyStore.KeyStore.open({
+          cryptoProvider: provider,
+          keystoreFile: file,
+          privateKeyStorage: storage
+        }).orThrow();
+        await ks2.unlock(testPassword);
+
+        const result = await ks2.getKeyPair('signing');
+        expect(result).toSucceedAndSatisfy(({ publicKey, privateKey }) => {
+          expect(publicKey.algorithm.name).toBe('ECDSA');
+          expect(privateKey).toBe(storage.entries.get(added.entry.id));
+        });
+        expect(ks2.getPublicKeyJwk('signing')).toSucceedWith(added.entry.publicKeyJwk);
+      });
+
+      test('mixed symmetric and asymmetric vault round-trips', async () => {
+        await keystore.addSecret('symmetric');
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        const file = (await keystore.save(testPassword)).orThrow();
+
+        const ks2 = CryptoUtils.KeyStore.KeyStore.open({
+          cryptoProvider: provider,
+          keystoreFile: file,
+          privateKeyStorage: storage
+        }).orThrow();
+        await ks2.unlock(testPassword);
+
+        expect(ks2.listSecrets()).toSucceedAndSatisfy((names) => {
+          expect(names).toContain('symmetric');
+          expect(names).toContain('signing');
+        });
+      });
+
+      test('encryptByName fails on asymmetric entries', async () => {
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        const result = await keystore.encryptByName('signing', { hello: 'world' });
+        expect(result).toFailWith(/asymmetric keypair, not symmetric/i);
+      });
+
+      test('getSecretProvider rejects asymmetric entries', async () => {
+        await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' });
+        const sp = keystore.getSecretProvider().orThrow();
+        const result = await sp('signing');
+        expect(result).toFailWith(/asymmetric keypair, not symmetric/i);
+      });
+    });
+  });
+
+  // ==========================================================================
+  // Backwards compatibility: vaults written before asymmetric support
+  // ==========================================================================
+
+  describe('backwards compatibility', () => {
+    test('vault produced by a prior keystore (symmetric only) opens unchanged', async () => {
+      // Build a vault with the current code, then reopen with no provider —
+      // the converter accepts legacy missing-type fields and the keystore
+      // ignores asymmetric-only state when no asymmetric entries exist.
+      const ks1 = CryptoUtils.KeyStore.KeyStore.create({ cryptoProvider: provider }).orThrow();
+      await ks1.initialize(testPassword);
+      await ks1.addSecret('legacy-key', { description: 'pre-asymmetric vault' });
+      await ks1.importApiKey('legacy-api', 'sk-old');
+      const file = (await ks1.save(testPassword)).orThrow();
+
+      const ks2 = CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: provider,
+        keystoreFile: file
+      }).orThrow();
+      await ks2.unlock(testPassword);
+
+      expect(ks2.listSecrets()).toSucceedAndSatisfy((names) => {
+        expect(names).toEqual(expect.arrayContaining(['legacy-key', 'legacy-api']));
+      });
+      expect(ks2.getApiKey('legacy-api')).toSucceedWith('sk-old');
     });
   });
 });
