@@ -344,10 +344,18 @@ export class BrowserCryptoProvider implements ICryptoProvider {
 
   /**
    * Exports a public `CryptoKey` as a JSON Web Key.
+   * @remarks
+   * Rejects non-public keys at runtime. WebCrypto's `exportKey('jwk', ...)`
+   * does not enforce public-vs-private; without this guard a caller that
+   * passed an extractable private key would receive its private fields
+   * (`d`, `p`, `q`, ...) as JWK, defeating the method's name.
    * @param publicKey - Extractable public key to export.
-   * @returns `Success` with the JWK, or `Failure` with an error.
+   * @returns `Success` with the JWK, or `Failure` if not a public key or if export fails.
    */
   public async exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>> {
+    if (publicKey.type !== 'public') {
+      return Failure.with(`exportPublicKeyJwk requires a public CryptoKey, got '${publicKey.type}'`);
+    }
     const result = await captureAsyncResult(() => this._crypto.subtle.exportKey('jwk', publicKey));
     return result.withErrorFormat((e) => `Failed to export public key as JWK: ${e}`);
   }

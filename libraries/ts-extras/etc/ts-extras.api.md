@@ -155,6 +155,9 @@ const aiWebSearchToolConfig: Converter<IAiWebSearchToolConfig>;
 const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm>;
 
 // @public
+const allKeyStoreAsymmetricSecretTypes: ReadonlyArray<KeyStoreAsymmetricSecretType>;
+
+// @public
 const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType>;
 
 // @public
@@ -238,7 +241,7 @@ declare namespace Converters_2 {
         keystoreSymmetricSecretType,
         keystoreAsymmetricSecretType,
         keyPairAlgorithm,
-        jsonWebKey,
+        jsonWebKeyShape,
         keystoreSymmetricEntryJson,
         keystoreAsymmetricEntryJson,
         keystoreSecretEntryJson,
@@ -916,6 +919,8 @@ interface IKeyStoreSymmetricEntry {
     readonly type: KeyStoreSymmetricSecretType;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 interface IKeyStoreSymmetricEntryJson {
     readonly createdAt: string;
@@ -1076,7 +1081,7 @@ interface JarRecordParserOptions {
 }
 
 // @public
-const jsonWebKey: Validator<JsonWebKey>;
+const jsonWebKeyShape: Validator<JsonWebKey>;
 
 // @public
 type KeyDerivationFunction = 'pbkdf2';
@@ -1119,6 +1124,7 @@ declare namespace KeyStore {
         KeyStoreSymmetricSecretType,
         allKeyStoreSymmetricSecretTypes,
         KeyStoreAsymmetricSecretType,
+        allKeyStoreAsymmetricSecretTypes,
         KeyStoreSecretType,
         allKeyStoreSecretTypes,
         IKeyStoreSymmetricEntry,
@@ -1245,6 +1251,7 @@ type KeyStoreSecretType = KeyStoreSymmetricSecretType | KeyStoreAsymmetricSecret
 // @public
 const keystoreSecretType: Converter<KeyStoreSecretType>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public

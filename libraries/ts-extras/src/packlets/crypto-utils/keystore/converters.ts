@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Converter, Converters, succeed, Validator, Validators } from '@fgv/ts-utils';
+import { Converter, Converters, succeed, Validation, Validator, Validators } from '@fgv/ts-utils';
 import { base64String, encryptionAlgorithm, keyDerivationParams } from '../converters';
 import {
   allKeyPairAlgorithms,
@@ -34,7 +34,8 @@ import {
   KeyStoreAsymmetricSecretType,
   KeyStoreFormat,
   KeyStoreSecretType,
-  KeyStoreSymmetricSecretType
+  KeyStoreSymmetricSecretType,
+  allKeyStoreAsymmetricSecretTypes
 } from './model';
 
 // ============================================================================
@@ -75,7 +76,7 @@ export const keystoreSymmetricSecretType: Converter<KeyStoreSymmetricSecretType>
  * @public
  */
 export const keystoreAsymmetricSecretType: Converter<KeyStoreAsymmetricSecretType> =
-  Converters.enumeratedValue<KeyStoreAsymmetricSecretType>(['asymmetric-keypair']);
+  Converters.enumeratedValue<KeyStoreAsymmetricSecretType>(allKeyStoreAsymmetricSecretTypes);
 
 // ============================================================================
 // Key Pair Algorithm Converter
@@ -89,28 +90,28 @@ export const keyPairAlgorithm: Converter<KeyPairAlgorithm> =
   Converters.enumeratedValue<KeyPairAlgorithm>(allKeyPairAlgorithms);
 
 // ============================================================================
-// JWK Validator
+// JWK Shape Validator
 // ============================================================================
 
 /**
- * In-place validator for a JSON Web Key. Performs only shallow structural
- * validation — requires `kty: string` and accepts any other fields. Per-algorithm
- * validation (correct curve params, key sizes, etc.) is delegated to
- * `crypto.subtle.importKey` at first use.
+ * In-place shape check for a JSON Web Key. Asserts only that the input is a
+ * non-array object whose `kty` discriminator is a string; every other JWK
+ * field passes through untouched. This is intentionally **not** a true JWK
+ * validator — per-algorithm correctness (RSA `n`/`e`, EC `crv`/`x`/`y`,
+ * key-size constraints, etc.) is delegated to `crypto.subtle.importKey` at
+ * first use, which is the authoritative checker. The "shape" suffix in the
+ * name is the warning sign for readers expecting full validation.
  * @remarks
- * Backed by `Validators.isA` so the original object is preserved in place,
- * including any extra JWK fields beyond `kty` (e.g. `crv`, `x`, `y`, `n`, `e`).
+ * Built with `Validators.object` (in-place, non-strict) so unknown JWK fields
+ * survive the round-trip; the cast to `FieldValidators<JsonWebKey>` is required
+ * only because TypeScript's mapped type demands an entry for every key in
+ * `JsonWebKey`. At runtime the `ObjectValidator` only inspects keys present in
+ * the field-validators map.
  * @public
  */
-export const jsonWebKey: Validator<JsonWebKey> = Validators.isA<JsonWebKey>(
-  'JsonWebKey',
-  (from): from is JsonWebKey => {
-    if (typeof from !== 'object' || from === null || Array.isArray(from)) {
-      return false;
-    }
-    return typeof (from as { kty?: unknown }).kty === 'string';
-  }
-);
+export const jsonWebKeyShape: Validator<JsonWebKey> = Validators.object<JsonWebKey>({
+  kty: Validators.string
+} as Validation.Classes.FieldValidators<JsonWebKey>);
 
 // ============================================================================
 // Symmetric Secret Entry Converter
@@ -118,8 +119,17 @@ export const jsonWebKey: Validator<JsonWebKey> = Validators.isA<JsonWebKey>(
 
 /**
  * Converter for {@link CryptoUtils.KeyStore.IKeyStoreSymmetricEntryJson | symmetric secret entry} in JSON form.
- * For backwards compatibility with vaults written before asymmetric support,
- * a missing `type` field is treated as `'encryption-key'`.
+ *
+ * @remarks
+ * Backwards compatibility with vaults written before asymmetric-keypair
+ * support: those entries may lack the `type` discriminator on the wire. To
+ * keep the model type honest (`type` is required on
+ * {@link CryptoUtils.KeyStore.IKeyStoreSymmetricEntryJson}, see its docs),
+ * we declare `type` in `optionalFields` so the inner `Converters.object` will
+ * accept input without it, then `.map()` injects the default
+ * `'encryption-key'` when missing. The output therefore always carries the
+ * discriminator and downstream code never sees the legacy missing-type form.
+ *
  * @public
  */
 export const keystoreSymmetricEntryJson: Converter<IKeyStoreSymmetricEntryJson> =
@@ -132,6 +142,8 @@ export const keystoreSymmetricEntryJson: Converter<IKeyStoreSymmetricEntryJson> 
       createdAt: Converters.string
     },
     {
+      // `type` is optional at the input layer for legacy-vault compatibility;
+      // the .map() below normalizes by injecting the default.
       optionalFields: ['type', 'description']
     }
   ).map((entry) =>
@@ -147,25 +159,21 @@ export const keystoreSymmetricEntryJson: Converter<IKeyStoreSymmetricEntryJson> 
 
 /**
  * Converter for {@link CryptoUtils.KeyStore.IKeyStoreAsymmetricEntryJson | asymmetric keypair entry} in JSON form.
- * The `publicKeyJwk` field is validated shallowly via {@link CryptoUtils.KeyStore.Converters.jsonWebKey | jsonWebKey};
- * cryptographic correctness is enforced by `crypto.subtle.importKey` at use.
+ * The `publicKeyJwk` field passes through {@link CryptoUtils.KeyStore.Converters.jsonWebKeyShape | jsonWebKeyShape}
+ * (shape check only — see its docs); cryptographic correctness is enforced by
+ * `crypto.subtle.importKey` at use.
  * @public
  */
 export const keystoreAsymmetricEntryJson: Converter<IKeyStoreAsymmetricEntryJson> =
-  Converters.object<IKeyStoreAsymmetricEntryJson>(
-    {
-      name: Converters.string,
-      type: keystoreAsymmetricSecretType,
-      id: Converters.string,
-      algorithm: keyPairAlgorithm,
-      publicKeyJwk: jsonWebKey,
-      description: Converters.string,
-      createdAt: Converters.string
-    },
-    {
-      optionalFields: ['description']
-    }
-  );
+  Converters.object<IKeyStoreAsymmetricEntryJson>({
+    name: Converters.string,
+    type: keystoreAsymmetricSecretType,
+    id: Converters.string,
+    algorithm: keyPairAlgorithm,
+    publicKeyJwk: jsonWebKeyShape,
+    description: Converters.string.optional(),
+    createdAt: Converters.string
+  });
 
 // ============================================================================
 // Discriminated-Union Entry Converter

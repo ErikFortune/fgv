@@ -373,10 +373,13 @@ describe('Crypto.NodeCryptoProvider', () => {
       });
     });
 
-    test('fails when called on a non-extractable key', async () => {
-      const pair = (await provider.generateKeyPair('ecdsa-p256', false)).orThrow();
+    test('rejects a private CryptoKey to prevent leaking private fields as JWK', async () => {
+      // WebCrypto's exportKey('jwk', privateKey) would happily return the
+      // private fields (d/p/q/...) — the runtime guard on `key.type`
+      // ensures the method honours its public-only contract.
+      const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
       const result = await provider.exportPublicKeyJwk(pair.privateKey);
-      expect(result).toFailWith(/export.*public key/i);
+      expect(result).toFailWith(/requires a public CryptoKey, got 'private'/);
     });
   });
 

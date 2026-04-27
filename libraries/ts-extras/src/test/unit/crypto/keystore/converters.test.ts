@@ -93,7 +93,7 @@ describe('Key Store Converters', () => {
     });
   });
 
-  describe('jsonWebKey', () => {
+  describe('jsonWebKeyShape', () => {
     test('accepts a JWK with kty and other fields', () => {
       const input = {
         kty: 'EC',
@@ -102,7 +102,7 @@ describe('Key Store Converters', () => {
         y: 'x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0',
         ext: true
       };
-      expect(CryptoUtils.KeyStore.Converters.jsonWebKey.validate(input)).toSucceedAndSatisfy((jwk) => {
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate(input)).toSucceedAndSatisfy((jwk) => {
         // Validators preserve extra fields in place
         expect(jwk).toBe(input);
         expect(jwk.kty).toBe('EC');
@@ -110,23 +110,23 @@ describe('Key Store Converters', () => {
     });
 
     test('rejects an object with no kty', () => {
-      expect(CryptoUtils.KeyStore.Converters.jsonWebKey.validate({ crv: 'P-256' })).toFail();
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate({ crv: 'P-256' })).toFail();
     });
 
     test('rejects when kty is not a string', () => {
-      expect(CryptoUtils.KeyStore.Converters.jsonWebKey.validate({ kty: 42 })).toFail();
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate({ kty: 42 })).toFail();
     });
 
     test('rejects an array', () => {
-      expect(CryptoUtils.KeyStore.Converters.jsonWebKey.validate(['EC', 'P-256'])).toFail();
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate(['EC', 'P-256'])).toFail();
     });
 
     test('rejects null', () => {
-      expect(CryptoUtils.KeyStore.Converters.jsonWebKey.validate(null)).toFail();
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate(null)).toFail();
     });
 
     test('rejects a primitive', () => {
-      expect(CryptoUtils.KeyStore.Converters.jsonWebKey.validate('EC')).toFail();
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate('EC')).toFail();
     });
   });
 

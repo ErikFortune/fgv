@@ -85,6 +85,14 @@ export const allKeyStoreSymmetricSecretTypes: ReadonlyArray<KeyStoreSymmetricSec
 export type KeyStoreAsymmetricSecretType = 'asymmetric-keypair';
 
 /**
+ * All valid asymmetric secret types.
+ * @public
+ */
+export const allKeyStoreAsymmetricSecretTypes: ReadonlyArray<KeyStoreAsymmetricSecretType> = [
+  'asymmetric-keypair'
+];
+
+/**
  * Discriminator for any secret type stored in the vault.
  * @public
  */
@@ -95,9 +103,8 @@ export type KeyStoreSecretType = KeyStoreSymmetricSecretType | KeyStoreAsymmetri
  * @public
  */
 export const allKeyStoreSecretTypes: ReadonlyArray<KeyStoreSecretType> = [
-  'encryption-key',
-  'api-key',
-  'asymmetric-keypair'
+  ...allKeyStoreAsymmetricSecretTypes,
+  ...allKeyStoreSymmetricSecretTypes
 ];
 
 /**
@@ -195,6 +202,16 @@ export type IKeyStoreSecretEntry = IKeyStoreSymmetricEntry;
 
 /**
  * JSON-serializable representation of a symmetric secret entry.
+ *
+ * @remarks
+ * Describes the *normalized* shape after parsing. `type` is required here
+ * because the converter (see
+ * {@link CryptoUtils.KeyStore.Converters.keystoreSymmetricEntryJson | keystoreSymmetricEntryJson})
+ * injects the default `'encryption-key'` when reading vaults written before
+ * asymmetric-keypair support added the discriminator. Raw on-wire bytes from
+ * a legacy vault may therefore omit `type`; downstream code only ever sees
+ * the post-conversion shape declared here.
+ *
  * @public
  */
 export interface IKeyStoreSymmetricEntryJson {
@@ -205,9 +222,12 @@ export interface IKeyStoreSymmetricEntryJson {
 
   /**
    * Symmetric secret type discriminator.
-   * Required in the model. Vaults written prior to the asymmetric-keypair
-   * support may omit this field on the wire; the converter injects
-   * `'encryption-key'` when missing for backwards compatibility.
+   *
+   * Required on this normalized model type. Vaults written prior to the
+   * asymmetric-keypair support may omit this field on the wire; the
+   * converter injects `'encryption-key'` when missing for backwards
+   * compatibility, so by the time a value of this type is observed the
+   * discriminator is always present.
    */
   readonly type: KeyStoreSymmetricSecretType;
 
