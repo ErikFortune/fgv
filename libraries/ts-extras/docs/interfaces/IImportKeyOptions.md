@@ -37,11 +37,11 @@ Description
 
 </td><td>
 
-[KeyStoreSecretType](../type-aliases/KeyStoreSecretType.md)
+[KeyStoreSymmetricSecretType](../type-aliases/KeyStoreSymmetricSecretType.md)
 
 </td><td>
 
-Secret type classification for the imported key material.
+Symmetric secret type classification for the imported key material.
 
 </td></tr>
 <tr><td>

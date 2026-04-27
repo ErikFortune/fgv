@@ -2,9 +2,12 @@
 
 # Variable: keystoreSecretEntryJson
 
-Converter for CryptoUtils.KeyStore.IKeyStoreSecretEntryJson | key store secret entry in JSON format.
-The `type` field is optional for backwards compatibility — missing means `'encryption-key'`.
+Discriminated-union converter for any CryptoUtils.KeyStore.IKeyStoreEntryJson | key store entry in JSON form.
+Routes by the `type` field: `'asymmetric-keypair'` is parsed by
+CryptoUtils.KeyStore.Converters.keystoreAsymmetricEntryJson | keystoreAsymmetricEntryJson,
+anything else (including a missing `type` field for backwards compatibility) by
+CryptoUtils.KeyStore.Converters.keystoreSymmetricEntryJson | keystoreSymmetricEntryJson.
 
 ## Type
 
-`Converter<IKeyStoreSecretEntryJson>`
+`Converter<IKeyStoreEntryJson>`

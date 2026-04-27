@@ -7,7 +7,7 @@ Renames a secret.
 **Signature:**
 
 ```typescript
-renameSecret(oldName: string, newName: string): Result<IKeyStoreSecretEntry>;
+renameSecret(oldName: string, newName: string): Result<IKeyStoreEntry>;
 ```
 
 **Parameters:**
@@ -20,6 +20,6 @@ renameSecret(oldName: string, newName: string): Result<IKeyStoreSecretEntry>;
 
 **Returns:**
 
-Result&lt;[IKeyStoreSecretEntry](../../interfaces/IKeyStoreSecretEntry.md)&gt;
+Result&lt;[IKeyStoreEntry](../../type-aliases/IKeyStoreEntry.md)&gt;
 
 Success with updated entry, Failure if source not found, target exists, or locked

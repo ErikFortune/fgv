@@ -2,10 +2,10 @@
 
 ## IKeyStoreVaultContents.secrets property
 
-Map of secret name to secret entry.
+Map of entry name to entry (symmetric or asymmetric).
 
 **Signature:**
 
 ```typescript
-readonly secrets: Record<string, IKeyStoreSecretEntryJson>;
+readonly secrets: Record<string, IKeyStoreEntryJson>;
 ```

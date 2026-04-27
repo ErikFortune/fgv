@@ -58,4 +58,21 @@ Crypto provider to use.
 The encrypted key store file content.
 
 </td></tr>
+<tr><td>
+
+[privateKeyStorage](./IKeyStoreOpenParams.privateKeyStorage.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IPrivateKeyStorage](IPrivateKeyStorage.md)
+
+</td><td>
+
+Optional private-key storage backend.
+
+</td></tr>
 </tbody></table>

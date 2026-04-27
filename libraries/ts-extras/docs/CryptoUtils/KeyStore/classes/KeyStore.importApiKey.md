@@ -8,7 +8,7 @@ The string is UTF-8 encoded and stored with type `'api-key'`.
 **Signature:**
 
 ```typescript
-importApiKey(name: string, apiKey: string, options?: IImportSecretOptions): Result<IAddSecretResult>;
+importApiKey(name: string, apiKey: string, options?: IImportSecretOptions): Promise<Result<IAddSecretResult>>;
 ```
 
 **Parameters:**
@@ -22,6 +22,6 @@ importApiKey(name: string, apiKey: string, options?: IImportSecretOptions): Resu
 
 **Returns:**
 
-Result&lt;[IAddSecretResult](../../../interfaces/IAddSecretResult.md)&gt;
+Promise&lt;Result&lt;[IAddSecretResult](../../../interfaces/IAddSecretResult.md)&gt;&gt;
 
 Success with entry, Failure if locked, empty, or exists and !replace
