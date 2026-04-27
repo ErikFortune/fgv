@@ -22,7 +22,13 @@ import * as crypto from 'crypto';
 import { captureAsyncResult, captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
 import * as Constants from './constants';
 import { keyPairAlgorithmParams } from './keyPairAlgorithmParams';
-import { ICryptoProvider, IEncryptionResult, KeyPairAlgorithm } from './model';
+import {
+  ICryptoProvider,
+  IEncryptionResult,
+  IWrapBytesOptions,
+  IWrappedBytes,
+  KeyPairAlgorithm
+} from './model';
 
 /**
  * Node.js implementation of {@link CryptoUtils.ICryptoProvider} using the built-in crypto module.
@@ -252,6 +258,133 @@ export class NodeCryptoProvider implements ICryptoProvider {
     );
     return result.withErrorFormat((e) => `Failed to import ${algorithm} public key from JWK: ${e}`);
   }
+
+  /**
+   * Wraps `plaintext` for the holder of `recipientPublicKey` using
+   * ECIES (ECDH P-256 + HKDF-SHA256 + AES-GCM-256). See
+   * {@link CryptoUtils.ICryptoProvider.wrapBytes | ICryptoProvider.wrapBytes}.
+   * @param plaintext - The bytes to wrap.
+   * @param recipientPublicKey - The recipient's ECDH P-256 public `CryptoKey`.
+   * @param options - HKDF salt and info; see {@link CryptoUtils.IWrapBytesOptions | IWrapBytesOptions}.
+   * @returns `Success` with the wrapped payload, or `Failure` with an error.
+   */
+  public async wrapBytes(
+    plaintext: Uint8Array,
+    recipientPublicKey: CryptoKey,
+    options: IWrapBytesOptions
+  ): Promise<Result<IWrappedBytes>> {
+    const recipientCheck = checkEcdhP256(recipientPublicKey, 'recipient public key');
+    if (recipientCheck.isFailure()) {
+      return fail(`wrapBytes failed: ${recipientCheck.message}`);
+    }
+    const subtle = crypto.webcrypto.subtle;
+    const result = await captureAsyncResult(async () => {
+      const ephemeral = (await subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
+        'deriveKey'
+      ])) as CryptoKeyPair;
+      const hkdfBase = await subtle.deriveKey(
+        { name: 'ECDH', public: recipientPublicKey },
+        ephemeral.privateKey,
+        { name: 'HKDF' },
+        false,
+        ['deriveKey']
+      );
+      const wrapKey = await subtle.deriveKey(
+        { name: 'HKDF', salt: options.salt, info: options.info, hash: 'SHA-256' },
+        hkdfBase,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt']
+      );
+      const nonce = crypto.randomBytes(Constants.GCM_IV_SIZE);
+      const ctBuf = await subtle.encrypt({ name: 'AES-GCM', iv: nonce }, wrapKey, plaintext);
+      const ephemeralPublicKey = await subtle.exportKey('jwk', ephemeral.publicKey);
+      return {
+        ephemeralPublicKey,
+        nonce: Buffer.from(nonce).toString('base64'),
+        ciphertext: Buffer.from(new Uint8Array(ctBuf)).toString('base64')
+      };
+    });
+    return result.withErrorFormat((e) => `wrapBytes failed: ${e}`);
+  }
+
+  /**
+   * Unwraps a payload produced by `wrapBytes` using the recipient's private
+   * key. See {@link CryptoUtils.ICryptoProvider.unwrapBytes | ICryptoProvider.unwrapBytes}.
+   * @param wrapped - The wrapped payload.
+   * @param recipientPrivateKey - The recipient's ECDH P-256 private `CryptoKey`.
+   * @param options - HKDF salt and info matching the wrap call.
+   * @returns `Success` with the original `plaintext`, or `Failure` with an error.
+   */
+  public async unwrapBytes(
+    wrapped: IWrappedBytes,
+    recipientPrivateKey: CryptoKey,
+    options: IWrapBytesOptions
+  ): Promise<Result<Uint8Array>> {
+    const recipientCheck = checkEcdhP256(recipientPrivateKey, 'recipient private key');
+    if (recipientCheck.isFailure()) {
+      return fail(`unwrapBytes failed: ${recipientCheck.message}`);
+    }
+    const nonceResult = this.fromBase64(wrapped.nonce);
+    if (nonceResult.isFailure()) {
+      return fail(`unwrapBytes failed: nonce: ${nonceResult.message}`);
+    }
+    const ciphertextResult = this.fromBase64(wrapped.ciphertext);
+    if (ciphertextResult.isFailure()) {
+      return fail(`unwrapBytes failed: ciphertext: ${ciphertextResult.message}`);
+    }
+    const subtle = crypto.webcrypto.subtle;
+    const result = await captureAsyncResult(async () => {
+      const ephemeralPub = await subtle.importKey(
+        'jwk',
+        wrapped.ephemeralPublicKey,
+        { name: 'ECDH', namedCurve: 'P-256' },
+        false,
+        []
+      );
+      const hkdfBase = await subtle.deriveKey(
+        { name: 'ECDH', public: ephemeralPub },
+        recipientPrivateKey,
+        { name: 'HKDF' },
+        false,
+        ['deriveKey']
+      );
+      const wrapKey = await subtle.deriveKey(
+        { name: 'HKDF', salt: options.salt, info: options.info, hash: 'SHA-256' },
+        hkdfBase,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['decrypt']
+      );
+      const ptBuf = await subtle.decrypt(
+        { name: 'AES-GCM', iv: nonceResult.value },
+        wrapKey,
+        ciphertextResult.value
+      );
+      return new Uint8Array(ptBuf);
+    });
+    return result.withErrorFormat((e) => `unwrapBytes failed: ${e}`);
+  }
+}
+
+/**
+ * Verifies that `key` is an ECDH P-256 `CryptoKey`. Used by the wrap/unwrap
+ * methods to surface a clean `Failure` instead of letting the WebCrypto
+ * deriveKey call throw a less informative error later in the pipeline.
+ * @param key - The CryptoKey to validate.
+ * @param label - Human-readable role label included in the failure message.
+ * @returns `Success` with the key (unchanged) when the algorithm and curve
+ * match; otherwise `Failure` with `<label> must be ECDH P-256 (...)`.
+ */
+function checkEcdhP256(key: CryptoKey, label: string): Result<CryptoKey> {
+  if (key.algorithm.name !== 'ECDH') {
+    return fail(`${label} must be ECDH P-256 (got algorithm '${key.algorithm.name}')`);
+  }
+  const namedCurve = (key.algorithm as EcKeyAlgorithm).namedCurve;
+  if (namedCurve !== 'P-256') {
+    return fail(`${label} must be ECDH P-256 (got curve '${namedCurve}')`);
+  }
+  return succeed(key);
 }
 
 /**

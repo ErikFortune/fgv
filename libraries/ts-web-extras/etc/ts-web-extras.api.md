@@ -25,6 +25,11 @@ class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    unwrapBytes(wrapped: CryptoUtils_2.IWrappedBytes, recipientPrivateKey: CryptoKey, options: CryptoUtils_2.IWrapBytesOptions): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: CryptoUtils_2.IWrapBytesOptions): Promise<Result<CryptoUtils_2.IWrappedBytes>>;
 }
 
 // @public
