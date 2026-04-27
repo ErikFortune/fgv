@@ -80,3 +80,4 @@ common/autoinstallers/*/.npmrc
 lib/
 dist/
 temp/
+.claude/scheduled_tasks.lock

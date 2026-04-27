@@ -109,6 +109,25 @@ Result of an encryption operation.
 </td></tr>
 <tr><td>
 
+[IWrapBytesOptions](./interfaces/IWrapBytesOptions.md)
+
+</td><td>
+
+Caller-supplied HKDF parameters that domain-separate one
+CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes call from another.
+
+</td></tr>
+<tr><td>
+
+[IWrappedBytes](./interfaces/IWrappedBytes.md)
+
+</td><td>
+
+Output of CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes.
+
+</td></tr>
+<tr><td>
+
 [IKeyDerivationParams](./interfaces/IKeyDerivationParams.md)
 
 </td><td>

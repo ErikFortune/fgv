@@ -164,4 +164,31 @@ Exports the public half of a keypair as a JSON Web Key.
 Re-imports a public-key JWK as a `CryptoKey` usable for verification or
 
 </td></tr>
+<tr><td>
+
+[wrapBytes(plaintext, recipientPublicKey, options)](./ICryptoProvider.wrapBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Wraps `plaintext` for delivery to the holder of the private key paired
+with `recipientPublicKey`.
+
+</td></tr>
+<tr><td>
+
+[unwrapBytes(wrapped, recipientPrivateKey, options)](./ICryptoProvider.unwrapBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Inverse of CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes.
+
+</td></tr>
 </tbody></table>
