@@ -226,46 +226,32 @@ async function fetchMultipart(
 }
 
 /**
- * Decodes a base64 string into bytes in a runtime-agnostic way: `Buffer` in
- * Node, `atob` in browsers. Wraps decoding in a `Result` so any thrown error
- * (e.g. from `atob` on invalid input) is surfaced as a failure. Note that
- * Node's `Buffer.from(..., 'base64')` does not throw on invalid input — it
- * silently strips unrecognized characters — so failures are only observable
- * in the browser path. Inputs to this function come from `FileReader` or
- * prior provider responses, which are trusted to be valid.
+ * Decodes a base64-encoded image attachment into a `Blob` suitable for use as
+ * a multipart file field. On Node hands the `Buffer` straight to `Blob`
+ * (Buffer extends Uint8Array) to skip an intermediate copy; falls back to
+ * `atob` in browsers. Inputs come from `FileReader` or prior provider
+ * responses, which are trusted to be valid. Note that Node's
+ * `Buffer.from(..., 'base64')` silently strips invalid characters rather
+ * than throwing, so failures are only observable in the browser path.
  * @internal
  */
-function decodeBase64ToBytes(base64: string): Result<Uint8Array<ArrayBuffer>> {
+function attachmentToBlob(attachment: IAiImageAttachment): Result<Blob> {
+  if (typeof Buffer !== 'undefined') {
+    return succeed(new Blob([Buffer.from(attachment.base64, 'base64')], { type: attachment.mimeType }));
+  }
+  /* c8 ignore start - Browser-only fallback cannot be tested in Node.js environment */
   try {
-    if (typeof Buffer !== 'undefined') {
-      const buf = Buffer.from(base64, 'base64');
-      const bytes = new Uint8Array(buf.length);
-      bytes.set(buf);
-      return succeed(bytes);
-    }
-    /* c8 ignore start - Browser-only fallback cannot be tested in Node.js environment */
-    const binary = atob(base64);
+    const binary = atob(attachment.base64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
-    return succeed(bytes);
+    return succeed(new Blob([bytes], { type: attachment.mimeType }));
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     return fail(`Invalid base64: ${message}`);
   }
   /* c8 ignore stop */
-}
-
-/**
- * Decodes a base64-encoded image attachment into a `Blob` suitable for use as
- * a multipart file field.
- * @internal
- */
-function attachmentToBlob(attachment: IAiImageAttachment): Result<Blob> {
-  return decodeBase64ToBytes(attachment.base64).onSuccess((bytes) =>
-    succeed(new Blob([bytes], { type: attachment.mimeType }))
-  );
 }
 
 /**

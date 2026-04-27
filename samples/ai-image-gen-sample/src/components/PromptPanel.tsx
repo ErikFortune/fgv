@@ -48,11 +48,23 @@ async function fileToAttachment(file: File): Promise<AiAssist.IAiImageAttachment
     reader.onerror = () => reject(reader.error ?? new Error('failed to read file'));
     reader.readAsDataURL(file);
   });
-  // dataUrl is like `data:<mime>;base64,<data>`; split into mime + raw base64
-  const commaIdx = dataUrl.indexOf(',');
-  const header = dataUrl.slice(5, dataUrl.indexOf(';'));
-  const base64 = dataUrl.slice(commaIdx + 1);
-  return { mimeType: header || file.type, base64 };
+  // FileReader.readAsDataURL is spec-defined to produce `data:<mime>;base64,<data>`,
+  // but validate the structure explicitly so a malformed prefix fails loudly
+  // instead of producing a silently miscomputed mime/base64.
+  const PREFIX = 'data:';
+  const MARKER = ';base64,';
+  if (!dataUrl.startsWith(PREFIX)) {
+    throw new Error('failed to read file: invalid data URL format');
+  }
+  const markerIdx = dataUrl.indexOf(MARKER);
+  if (markerIdx === -1) {
+    throw new Error('failed to read file: expected base64 data URL');
+  }
+  const base64 = dataUrl.slice(markerIdx + MARKER.length);
+  if (!base64) {
+    throw new Error('failed to read file: empty base64 payload');
+  }
+  return { mimeType: dataUrl.slice(PREFIX.length, markerIdx) || file.type, base64 };
 }
 
 export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
@@ -169,7 +181,9 @@ export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
             {referenceImages.length > 0 && (
               <ul className="mt-3 flex flex-wrap gap-2">
                 {referenceImages.map((ref, idx) => (
-                  <li key={idx} className="relative">
+                  // base64 payload is unique per attachment and stable across
+                  // removes, so React won't reuse DOM nodes when indices shift.
+                  <li key={ref.base64} className="relative">
                     <img
                       src={AiAssist.toDataUrl(ref)}
                       alt={`Reference ${idx + 1}`}

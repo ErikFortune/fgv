@@ -1303,8 +1303,8 @@ describe('callProviderImageGeneration', () => {
   });
 
   describe('common validation', () => {
-    test('fails when descriptor has no imageApiFormat', async () => {
-      const descriptor = makeDescriptor(); // chat-only xai-grok descriptor with no imageApiFormat
+    test('fails when descriptor declares no image-generation capabilities', async () => {
+      const descriptor = makeDescriptor(); // chat-only xai-grok descriptor; imageGeneration is unset
 
       const result = await AiAssist.callProviderImageGeneration({
         descriptor,
