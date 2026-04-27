@@ -22,10 +22,9 @@ export interface ICreateOptions {
   gitInit: boolean;
 }
 
-const RUSH_VERSION = '5.172.1';
+const RUSH_VERSION = '5.175.1';
 
-const NODE_VERSION_RANGE =
-  '>=14.15.0 <15.0.0 || >=16.13.0 <17.0.0 || >=18.15.0 <19.0.0 || >=20.18.0 <21.0.0 || >=22.22.0 <23.0.0';
+const NODE_VERSION_RANGE = '>=22.22.0 <23.0.0 || >=24.15.0 <25.0.0';
 
 export async function runCreate(options: ICreateOptions): Promise<void> {
   const { targetDir, repoUrl, versionPolicy, version, sourceDir, allowExisting, gitInit } = options;
