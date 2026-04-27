@@ -80,8 +80,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     streamingCorsRestricted: false,
     acceptsImageInput: true,
     imageGeneration: [
-      // Imagen models are predict-only and do not accept reference images.
-      // Order matters: the more specific prefix must come before the catch-all.
+      // imagen-* models are predict-only and do not accept reference images;
+      // everything else uses chat-style :generateContent with refs.
       { modelPrefix: 'imagen-', format: 'gemini-imagen' },
       { modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }
     ]
@@ -124,7 +124,14 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    imageGeneration: [{ modelPrefix: '', format: 'openai-images', acceptsImageReferenceInput: true }]
+    imageGeneration: [
+      // gpt-image-1 supports /images/edits with reference images. dall-e-3
+      // (the default image model) does not, so the catch-all rule omits
+      // acceptsImageReferenceInput; callers selecting dall-e-3 with refs hit
+      // the up-front rejection rather than a provider 400.
+      { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true },
+      { modelPrefix: '', format: 'openai-images' }
+    ]
   },
   {
     id: 'xai-grok',
@@ -201,9 +208,11 @@ export function supportsImageGeneration(descriptor: IAiProviderDescriptor): bool
 
 /**
  * Resolve the image-generation capability that applies to a given model id
- * for a provider. Walks {@link IAiProviderDescriptor.imageGeneration} in
- * order and returns the first entry whose `modelPrefix` is a prefix of
- * `modelId` (the empty prefix matches everything).
+ * for a provider. Returns the entry from
+ * {@link IAiProviderDescriptor.imageGeneration} whose `modelPrefix` is the
+ * longest prefix of `modelId`. Ties are broken by first-encountered, so rule
+ * order does not matter for correctness — only for tie-breaking among rules
+ * with identical-length prefixes (an unusual case).
  *
  * @param descriptor - The provider descriptor
  * @param modelId - The resolved image model id
@@ -215,7 +224,12 @@ export function resolveImageCapability(
   descriptor: IAiProviderDescriptor,
   modelId: string
 ): IAiImageModelCapability | undefined {
-  return descriptor.imageGeneration?.find((cap) => modelId.startsWith(cap.modelPrefix));
+  return (descriptor.imageGeneration ?? [])
+    .filter((cap) => modelId.startsWith(cap.modelPrefix))
+    .reduce<IAiImageModelCapability | undefined>(
+      (best, cap) => (best && best.modelPrefix.length >= cap.modelPrefix.length ? best : cap),
+      undefined
+    );
 }
 
 // ============================================================================

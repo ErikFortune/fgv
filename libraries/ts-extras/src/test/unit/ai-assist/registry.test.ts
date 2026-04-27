@@ -63,7 +63,8 @@ describe('AiAssist.registry', () => {
     test('returns descriptor with image generation support for openai', () => {
       expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
         expect(desc.imageGeneration).toEqual([
-          { modelPrefix: '', format: 'openai-images', acceptsImageReferenceInput: true }
+          { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true },
+          { modelPrefix: '', format: 'openai-images' }
         ]);
         expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('dall-e-3');
       });
@@ -129,6 +130,48 @@ describe('AiAssist.registry', () => {
         modelPrefix: '',
         format: 'gemini-image-out',
         acceptsImageReferenceInput: true
+      });
+    });
+
+    test('selects the most specific (longest) prefix even when the catch-all is listed first', () => {
+      // Order is intentionally "wrong": catch-all first, specific prefix
+      // second. The longest matching prefix should still win.
+      const descriptor: AiAssist.IAiProviderDescriptor = {
+        id: 'openai',
+        label: 'X',
+        buttonLabel: 'X',
+        needsSecret: true,
+        apiFormat: 'openai',
+        baseUrl: 'https://example.com',
+        defaultModel: 'gpt-image-1',
+        supportedTools: [],
+        corsRestricted: false,
+        streamingCorsRestricted: false,
+        acceptsImageInput: true,
+        imageGeneration: [
+          { modelPrefix: '', format: 'openai-images' },
+          { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true }
+        ]
+      };
+      expect(AiAssist.resolveImageCapability(descriptor, 'gpt-image-1')).toEqual({
+        modelPrefix: 'gpt-image-',
+        format: 'openai-images',
+        acceptsImageReferenceInput: true
+      });
+    });
+
+    test('routes openai built-in models to the right capability by prefix', () => {
+      const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+      // gpt-image-1 hits the specific prefix → refs supported.
+      expect(AiAssist.resolveImageCapability(descriptor, 'gpt-image-1')).toEqual({
+        modelPrefix: 'gpt-image-',
+        format: 'openai-images',
+        acceptsImageReferenceInput: true
+      });
+      // dall-e-3 falls back to the catch-all → no refs (per OpenAI's API).
+      expect(AiAssist.resolveImageCapability(descriptor, 'dall-e-3')).toEqual({
+        modelPrefix: '',
+        format: 'openai-images'
       });
     });
 

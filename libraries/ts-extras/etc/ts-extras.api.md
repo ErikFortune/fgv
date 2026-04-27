@@ -670,6 +670,7 @@ interface IAiProviderDescriptor {
     readonly corsRestricted: boolean;
     readonly defaultModel: ModelSpec;
     readonly id: AiProviderId;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ModelSpecKey"
     readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
     readonly label: string;

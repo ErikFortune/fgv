@@ -445,10 +445,10 @@ export interface IAiProviderDescriptor {
    * undefined means the provider does not support image generation.
    *
    * @remarks
-   * Rules are evaluated in order against the resolved image model id; the
-   * first whose `modelPrefix` matches wins. An empty `modelPrefix` is the
-   * catch-all (matches every model id) and must come last among entries that
-   * could otherwise overlap.
+   * The dispatcher matches the resolved model id against each rule's
+   * `modelPrefix` and selects the longest match (see
+   * {@link AiAssist.resolveImageCapability}). An empty `modelPrefix` is the
+   * catch-all and matches every model id.
    *
    * Multiple entries support providers that host more than one image-API
    * surface under one baseUrl. Google Gemini is the canonical case: the
@@ -473,7 +473,9 @@ export interface IAiProviderDescriptor {
 export interface IAiImageModelCapability {
   /**
    * Prefix matched against the resolved image model id. The empty string is
-   * the catch-all and matches every model.
+   * the catch-all and matches every model. When multiple rules' prefixes
+   * match a model id, the longest prefix wins; ties are broken by
+   * first-encountered.
    */
   readonly modelPrefix: string;
   /** API format used to dispatch requests for matching models. */
