@@ -77,6 +77,15 @@ A single chat message in OpenAI format.
 </td></tr>
 <tr><td>
 
+[IAiImageModelCapability](./interfaces/IAiImageModelCapability.md)
+
+</td><td>
+
+Image-generation capability for a model family within a provider.
+
+</td></tr>
+<tr><td>
+
 [IAiProviderDescriptor](./interfaces/IAiProviderDescriptor.md)
 
 </td><td>
@@ -416,6 +425,25 @@ Get all known provider descriptors.
 </td><td>
 
 Get a provider descriptor by id.
+
+</td></tr>
+<tr><td>
+
+[resolveImageCapability](./functions/resolveImageCapability.md)
+
+</td><td>
+
+Resolve the image-generation capability that applies to a given model id
+for a provider.
+
+</td></tr>
+<tr><td>
+
+[supportsImageGeneration](./functions/supportsImageGeneration.md)
+
+</td><td>
+
+Whether a provider declares any image-generation capability at all.
 
 </td></tr>
 <tr><td>
