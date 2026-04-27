@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/repo-template",
+      "comment": "bump node & rush versions",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/repo-template"
+}
