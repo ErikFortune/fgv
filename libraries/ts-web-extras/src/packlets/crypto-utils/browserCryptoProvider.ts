@@ -452,9 +452,19 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
     if (nonceResult.isFailure()) {
       return Failure.with(`unwrapBytes failed: nonce: ${nonceResult.message}`);
     }
+    if (nonceResult.value.length !== CryptoUtils.Constants.GCM_IV_SIZE) {
+      return Failure.with(
+        `unwrapBytes failed: nonce must be ${CryptoUtils.Constants.GCM_IV_SIZE} bytes (got ${nonceResult.value.length})`
+      );
+    }
     const ciphertextResult = this.fromBase64(wrapped.ciphertext);
     if (ciphertextResult.isFailure()) {
       return Failure.with(`unwrapBytes failed: ciphertext: ${ciphertextResult.message}`);
+    }
+    if (ciphertextResult.value.length < CryptoUtils.Constants.GCM_AUTH_TAG_SIZE) {
+      return Failure.with(
+        `unwrapBytes failed: ciphertext must be at least ${CryptoUtils.Constants.GCM_AUTH_TAG_SIZE} bytes (got ${ciphertextResult.value.length})`
+      );
     }
     const subtle = this._crypto.subtle;
     const result = await captureAsyncResult(async () => {

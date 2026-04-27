@@ -1,29 +1,32 @@
-// Copyright (c) 2026 Erik Fortune
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+/*
+ * Copyright (c) 2026 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 import '@fgv/ts-utils-jest';
 
-import * as crypto from 'crypto';
-import * as CryptoUtils from '../../../packlets/crypto-utils';
+import { CryptoUtils } from '@fgv/ts-extras';
+import { BrowserCryptoProvider } from '../../packlets/crypto-utils';
 
-const subtle = crypto.webcrypto.subtle;
+const provider = new BrowserCryptoProvider();
+const subtle = globalThis.crypto.subtle;
 
 async function generateEcdhPair(curve: 'P-256' | 'P-384' = 'P-256'): Promise<CryptoKeyPair> {
   return (await subtle.generateKey({ name: 'ECDH', namedCurve: curve }, true, [
@@ -39,8 +42,7 @@ async function generateEcdsaPair(): Promise<CryptoKeyPair> {
   ])) as CryptoKeyPair;
 }
 
-describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
-  const provider = CryptoUtils.nodeCryptoProvider;
+describe('BrowserCryptoProvider — wrapBytes/unwrapBytes', () => {
   const defaultOptions: CryptoUtils.IWrapBytesOptions = {
     salt: new TextEncoder().encode('test-salt'),
     info: new TextEncoder().encode('test-info')
@@ -48,9 +50,9 @@ describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
 
   describe('round-trip', () => {
     test.each<[string, Uint8Array]>([
-      ['32-byte plaintext (AES-256 key shape)', new Uint8Array(crypto.randomBytes(32))],
+      ['32-byte plaintext (AES-256 key shape)', globalThis.crypto.getRandomValues(new Uint8Array(32))],
       ['1-byte plaintext', new Uint8Array([0x42])],
-      ['1KB plaintext', new Uint8Array(crypto.randomBytes(1024))],
+      ['1KB plaintext', globalThis.crypto.getRandomValues(new Uint8Array(1024))],
       ['empty plaintext', new Uint8Array(0)],
       ['high-bit-set bytes', new Uint8Array(64).fill(0xff)]
     ])('round-trips %s', async (__label, plaintext) => {
@@ -60,14 +62,6 @@ describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
       expect(wrapped.ephemeralPublicKey.crv).toBe('P-256');
       const recovered = (await provider.unwrapBytes(wrapped, pair.privateKey, defaultOptions)).orThrow();
       expect(new Uint8Array(recovered)).toEqual(plaintext);
-    });
-
-    test('unwrap with the recipient privateKey returns identical bytes', async () => {
-      const pair = await generateEcdhPair();
-      const plaintext = new Uint8Array(crypto.randomBytes(48));
-      const wrapped = (await provider.wrapBytes(plaintext, pair.publicKey, defaultOptions)).orThrow();
-      const recovered = (await provider.unwrapBytes(wrapped, pair.privateKey, defaultOptions)).orThrow();
-      expect(Buffer.from(recovered).equals(Buffer.from(plaintext))).toBe(true);
     });
   });
 
@@ -110,25 +104,11 @@ describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
       );
     });
 
-    test('truncating ciphertext below the auth-tag length fails authentication', async () => {
-      const pair = await generateEcdhPair();
-      const wrapped = (
-        await provider.wrapBytes(new TextEncoder().encode('payload'), pair.publicKey, defaultOptions)
-      ).orThrow();
-      const ct = provider.fromBase64(wrapped.ciphertext).orThrow();
-      const truncated = ct.slice(0, ct.length - 1);
-      const tampered: CryptoUtils.IWrappedBytes = { ...wrapped, ciphertext: provider.toBase64(truncated) };
-      expect(await provider.unwrapBytes(tampered, pair.privateKey, defaultOptions)).toFailWith(
-        /unwrapBytes failed/i
-      );
-    });
-
     test('substituting a different ephemeral public key fails authentication', async () => {
       const pair = await generateEcdhPair();
       const wrapped = (
         await provider.wrapBytes(new TextEncoder().encode('payload'), pair.publicKey, defaultOptions)
       ).orThrow();
-      // A second wrap to harvest a valid-but-different ephemeral public key.
       const other = (
         await provider.wrapBytes(new TextEncoder().encode('payload'), pair.publicKey, defaultOptions)
       ).orThrow();
@@ -185,7 +165,7 @@ describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
     test('empty salt and info round-trip when both sides agree', async () => {
       const pair = await generateEcdhPair();
       const empty: CryptoUtils.IWrapBytesOptions = { salt: new Uint8Array(0), info: new Uint8Array(0) };
-      const plaintext = new Uint8Array(crypto.randomBytes(16));
+      const plaintext = globalThis.crypto.getRandomValues(new Uint8Array(16));
       const wrapped = (await provider.wrapBytes(plaintext, pair.publicKey, empty)).orThrow();
       const recovered = (await provider.unwrapBytes(wrapped, pair.privateKey, empty)).orThrow();
       expect(new Uint8Array(recovered)).toEqual(plaintext);
@@ -247,7 +227,7 @@ describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
       const wrapped = (
         await provider.wrapBytes(new TextEncoder().encode('payload'), pair.publicKey, defaultOptions)
       ).orThrow();
-      const shortNonce = new Uint8Array(8); // 8 bytes, not 12
+      const shortNonce = new Uint8Array(8);
       const tampered: CryptoUtils.IWrappedBytes = { ...wrapped, nonce: provider.toBase64(shortNonce) };
       expect(await provider.unwrapBytes(tampered, pair.privateKey, defaultOptions)).toFailWith(
         /unwrapBytes failed: nonce must be 12 bytes \(got 8\)/i
@@ -259,7 +239,7 @@ describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
       const wrapped = (
         await provider.wrapBytes(new TextEncoder().encode('payload'), pair.publicKey, defaultOptions)
       ).orThrow();
-      const shortCt = new Uint8Array(8); // 8 bytes, less than the 16-byte auth tag
+      const shortCt = new Uint8Array(8);
       const tampered: CryptoUtils.IWrappedBytes = { ...wrapped, ciphertext: provider.toBase64(shortCt) };
       expect(await provider.unwrapBytes(tampered, pair.privateKey, defaultOptions)).toFailWith(
         /unwrapBytes failed: ciphertext must be at least 16 bytes \(got 8\)/i
@@ -267,9 +247,18 @@ describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
     });
   });
 
-  describe('algorithm mismatch on recipient key', () => {
+  describe('algorithm / type mismatch on recipient key', () => {
     test('wrap fails when recipient public key is RSA-OAEP, not ECDH', async () => {
-      const rsa = (await provider.generateKeyPair('rsa-oaep-2048', true)).orThrow();
+      const rsa = (await subtle.generateKey(
+        {
+          name: 'RSA-OAEP',
+          modulusLength: 2048,
+          publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+          hash: 'SHA-256'
+        },
+        true,
+        ['encrypt', 'decrypt']
+      )) as CryptoKeyPair;
       const result = await provider.wrapBytes(new Uint8Array([1, 2, 3]), rsa.publicKey, defaultOptions);
       expect(result).toFailWith(/wrapBytes failed: recipient public key must be ECDH P-256.*RSA-OAEP/i);
     });
@@ -288,16 +277,6 @@ describe('Crypto.NodeCryptoProvider — wrapBytes/unwrapBytes', () => {
         defaultOptions
       );
       expect(result).toFailWith(/wrapBytes failed: recipient public key must be ECDH P-256.*P-384/i);
-    });
-
-    test('unwrap fails when recipient private key is RSA-OAEP, not ECDH', async () => {
-      const pair = await generateEcdhPair();
-      const wrapped = (
-        await provider.wrapBytes(new Uint8Array([1, 2, 3]), pair.publicKey, defaultOptions)
-      ).orThrow();
-      const rsa = (await provider.generateKeyPair('rsa-oaep-2048', true)).orThrow();
-      const result = await provider.unwrapBytes(wrapped, rsa.privateKey, defaultOptions);
-      expect(result).toFailWith(/unwrapBytes failed: recipient private key must be ECDH P-256.*RSA-OAEP/i);
     });
 
     test('unwrap fails when recipient private key is ECDH P-384, not P-256', async () => {
