@@ -39,67 +39,308 @@ describe('Key Store Converters', () => {
     });
   });
 
-  describe('keystoreSecretEntryJson', () => {
-    test('accepts valid entry with all fields', () => {
+  describe('keystoreSymmetricSecretType', () => {
+    test('accepts encryption-key', () => {
+      expect(
+        CryptoUtils.KeyStore.Converters.keystoreSymmetricSecretType.convert('encryption-key')
+      ).toSucceedWith('encryption-key');
+    });
+
+    test('accepts api-key', () => {
+      expect(CryptoUtils.KeyStore.Converters.keystoreSymmetricSecretType.convert('api-key')).toSucceedWith(
+        'api-key'
+      );
+    });
+
+    test('rejects asymmetric-keypair', () => {
+      expect(
+        CryptoUtils.KeyStore.Converters.keystoreSymmetricSecretType.convert('asymmetric-keypair')
+      ).toFail();
+    });
+  });
+
+  describe('keystoreAsymmetricSecretType', () => {
+    test('accepts asymmetric-keypair', () => {
+      expect(
+        CryptoUtils.KeyStore.Converters.keystoreAsymmetricSecretType.convert('asymmetric-keypair')
+      ).toSucceedWith('asymmetric-keypair');
+    });
+
+    test('rejects encryption-key', () => {
+      expect(CryptoUtils.KeyStore.Converters.keystoreAsymmetricSecretType.convert('encryption-key')).toFail();
+    });
+  });
+
+  describe('keyPairAlgorithm', () => {
+    test('accepts ecdsa-p256', () => {
+      expect(CryptoUtils.KeyStore.Converters.keyPairAlgorithm.convert('ecdsa-p256')).toSucceedWith(
+        'ecdsa-p256'
+      );
+    });
+
+    test('accepts rsa-oaep-2048', () => {
+      expect(CryptoUtils.KeyStore.Converters.keyPairAlgorithm.convert('rsa-oaep-2048')).toSucceedWith(
+        'rsa-oaep-2048'
+      );
+    });
+
+    test('rejects unknown algorithm', () => {
+      expect(CryptoUtils.KeyStore.Converters.keyPairAlgorithm.convert('ed25519')).toFail();
+    });
+
+    test('rejects non-string', () => {
+      expect(CryptoUtils.KeyStore.Converters.keyPairAlgorithm.convert(42)).toFail();
+    });
+  });
+
+  describe('jsonWebKeyShape', () => {
+    test('accepts a JWK with kty and other fields', () => {
+      const input = {
+        kty: 'EC',
+        crv: 'P-256',
+        x: 'f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU',
+        y: 'x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0',
+        ext: true
+      };
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate(input)).toSucceedAndSatisfy((jwk) => {
+        // Validators preserve extra fields in place
+        expect(jwk).toBe(input);
+        expect(jwk.kty).toBe('EC');
+      });
+    });
+
+    test('rejects an object with no kty', () => {
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate({ crv: 'P-256' })).toFail();
+    });
+
+    test('rejects when kty is not a string', () => {
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate({ kty: 42 })).toFail();
+    });
+
+    test('rejects an array', () => {
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate(['EC', 'P-256'])).toFail();
+    });
+
+    test('rejects null', () => {
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate(null)).toFail();
+    });
+
+    test('rejects a primitive', () => {
+      expect(CryptoUtils.KeyStore.Converters.jsonWebKeyShape.validate('EC')).toFail();
+    });
+  });
+
+  describe('keystoreSymmetricEntryJson', () => {
+    test('accepts a complete encryption-key entry', () => {
       const input = {
         name: 'my-secret',
+        type: 'encryption-key',
         key: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
         description: 'A test secret',
         createdAt: '2024-01-15T10:30:00Z'
       };
-      expect(CryptoUtils.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toSucceedAndSatisfy(
+      expect(CryptoUtils.KeyStore.Converters.keystoreSymmetricEntryJson.convert(input)).toSucceedAndSatisfy(
         (result) => {
           expect(result.name).toBe('my-secret');
+          expect(result.type).toBe('encryption-key');
           expect(result.key).toBe('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
           expect(result.description).toBe('A test secret');
-          expect(result.createdAt).toBe('2024-01-15T10:30:00Z');
         }
       );
     });
 
-    test('accepts valid entry without description', () => {
+    test('accepts an api-key entry', () => {
       const input = {
-        name: 'my-secret',
-        key: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+        name: 'service',
+        type: 'api-key',
+        key: 'c2stMTIzNA==',
         createdAt: '2024-01-15T10:30:00Z'
       };
-      expect(CryptoUtils.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toSucceedAndSatisfy(
+      expect(CryptoUtils.KeyStore.Converters.keystoreSymmetricEntryJson.convert(input)).toSucceedAndSatisfy(
         (result) => {
-          expect(result.name).toBe('my-secret');
+          expect(result.type).toBe('api-key');
           expect(result.description).toBeUndefined();
         }
       );
     });
 
-    test('rejects missing name', () => {
+    test('injects encryption-key default for legacy entries with no type', () => {
       const input = {
+        name: 'legacy',
+        key: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+        createdAt: '2024-01-15T10:30:00Z'
+      };
+      expect(CryptoUtils.KeyStore.Converters.keystoreSymmetricEntryJson.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.type).toBe('encryption-key');
+        }
+      );
+    });
+
+    test('rejects an asymmetric-keypair entry', () => {
+      const input = {
+        name: 'pair',
+        type: 'asymmetric-keypair',
         key: 'AAAA',
         createdAt: '2024-01-15T10:30:00Z'
       };
-      expect(CryptoUtils.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
+      expect(CryptoUtils.KeyStore.Converters.keystoreSymmetricEntryJson.convert(input)).toFail();
     });
 
     test('rejects missing key', () => {
       const input = {
         name: 'my-secret',
+        type: 'encryption-key',
         createdAt: '2024-01-15T10:30:00Z'
       };
-      expect(CryptoUtils.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
+      expect(CryptoUtils.KeyStore.Converters.keystoreSymmetricEntryJson.convert(input)).toFail();
     });
 
-    test('rejects missing createdAt', () => {
+    test('rejects an invalid base64 key', () => {
       const input = {
         name: 'my-secret',
-        key: 'AAAA'
-      };
-      expect(CryptoUtils.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
-    });
-
-    test('rejects invalid key format', () => {
-      const input = {
-        name: 'my-secret',
+        type: 'encryption-key',
         key: 'not!valid!base64',
         createdAt: '2024-01-15T10:30:00Z'
+      };
+      expect(CryptoUtils.KeyStore.Converters.keystoreSymmetricEntryJson.convert(input)).toFail();
+    });
+  });
+
+  describe('keystoreAsymmetricEntryJson', () => {
+    const validInput = {
+      name: 'signing',
+      type: 'asymmetric-keypair',
+      id: 'a3b1f9e0-0000-4000-8000-000000000000',
+      algorithm: 'ecdsa-p256',
+      publicKeyJwk: {
+        kty: 'EC',
+        crv: 'P-256',
+        x: 'f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU',
+        y: 'x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0'
+      },
+      description: 'Signing key',
+      createdAt: '2024-02-15T10:30:00Z'
+    };
+
+    test('accepts a complete asymmetric entry and preserves JWK fields', () => {
+      expect(
+        CryptoUtils.KeyStore.Converters.keystoreAsymmetricEntryJson.convert(validInput)
+      ).toSucceedAndSatisfy((result) => {
+        expect(result.name).toBe('signing');
+        expect(result.type).toBe('asymmetric-keypair');
+        expect(result.id).toBe(validInput.id);
+        expect(result.algorithm).toBe('ecdsa-p256');
+        expect(result.publicKeyJwk).toEqual(validInput.publicKeyJwk);
+        expect(result.publicKeyJwk.crv).toBe('P-256');
+      });
+    });
+
+    test('accepts an entry without description', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { description: _description, ...input } = validInput;
+      expect(CryptoUtils.KeyStore.Converters.keystoreAsymmetricEntryJson.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.description).toBeUndefined();
+        }
+      );
+    });
+
+    test('rejects a missing type', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { type: _type, ...input } = validInput;
+      expect(CryptoUtils.KeyStore.Converters.keystoreAsymmetricEntryJson.convert(input)).toFail();
+    });
+
+    test('rejects an unsupported algorithm', () => {
+      expect(
+        CryptoUtils.KeyStore.Converters.keystoreAsymmetricEntryJson.convert({
+          ...validInput,
+          algorithm: 'ed25519'
+        })
+      ).toFail();
+    });
+
+    test('rejects a JWK without kty', () => {
+      expect(
+        CryptoUtils.KeyStore.Converters.keystoreAsymmetricEntryJson.convert({
+          ...validInput,
+          publicKeyJwk: { crv: 'P-256' }
+        })
+      ).toFail();
+    });
+
+    test('rejects a missing id', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, ...input } = validInput;
+      expect(CryptoUtils.KeyStore.Converters.keystoreAsymmetricEntryJson.convert(input)).toFail();
+    });
+
+    test('rejects a symmetric type', () => {
+      expect(
+        CryptoUtils.KeyStore.Converters.keystoreAsymmetricEntryJson.convert({
+          ...validInput,
+          type: 'encryption-key'
+        })
+      ).toFail();
+    });
+  });
+
+  describe('keystoreSecretEntryJson (discriminated union)', () => {
+    test('routes a symmetric entry through the symmetric branch', () => {
+      const input = {
+        name: 'my-secret',
+        type: 'encryption-key',
+        key: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+        createdAt: '2024-01-15T10:30:00Z'
+      };
+      expect(CryptoUtils.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.type).toBe('encryption-key');
+          if (result.type !== 'asymmetric-keypair') {
+            expect(result.key).toBe('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
+          }
+        }
+      );
+    });
+
+    test('routes an asymmetric entry through the asymmetric branch', () => {
+      const input = {
+        name: 'pair',
+        type: 'asymmetric-keypair',
+        id: 'b1c2d3e4-0000-4000-8000-000000000000',
+        algorithm: 'rsa-oaep-2048',
+        publicKeyJwk: { kty: 'RSA', n: 'abc', e: 'AQAB' },
+        createdAt: '2024-03-10T08:00:00Z'
+      };
+      expect(CryptoUtils.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.type).toBe('asymmetric-keypair');
+          if (result.type === 'asymmetric-keypair') {
+            expect(result.algorithm).toBe('rsa-oaep-2048');
+            expect(result.id).toBe(input.id);
+          }
+        }
+      );
+    });
+
+    test('routes legacy entries (no type) through the symmetric branch', () => {
+      const input = {
+        name: 'legacy',
+        key: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+        createdAt: '2024-01-15T10:30:00Z'
+      };
+      expect(CryptoUtils.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(result.type).toBe('encryption-key');
+        }
+      );
+    });
+
+    test('rejects an entry that fits neither branch', () => {
+      const input = {
+        name: 'broken',
+        type: 'asymmetric-keypair'
       };
       expect(CryptoUtils.KeyStore.Converters.keystoreSecretEntryJson.convert(input)).toFail();
     });
@@ -129,6 +370,63 @@ describe('Key Store Converters', () => {
           expect(Object.keys(result.secrets)).toHaveLength(2);
           expect(result.secrets.secretOne.name).toBe('secretOne');
           expect(result.secrets.secretTwo.description).toBe('Another secret');
+        }
+      );
+    });
+
+    test('round-trips a vault containing both symmetric and asymmetric entries', () => {
+      const input = {
+        version: CryptoUtils.KeyStore.KEYSTORE_FORMAT,
+        secrets: {
+          symmetricOne: {
+            name: 'symmetricOne',
+            type: 'encryption-key',
+            key: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+            createdAt: '2024-01-15T10:30:00Z'
+          },
+          legacy: {
+            name: 'legacy',
+            key: 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC8=',
+            createdAt: '2024-01-15T10:30:00Z'
+          },
+          signingKey: {
+            name: 'signingKey',
+            type: 'asymmetric-keypair',
+            id: 'b1c2d3e4-0000-4000-8000-000000000000',
+            algorithm: 'ecdsa-p256',
+            publicKeyJwk: {
+              kty: 'EC',
+              crv: 'P-256',
+              x: 'f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU',
+              y: 'x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0'
+            },
+            description: 'For document signing',
+            createdAt: '2024-02-15T10:30:00Z'
+          }
+        }
+      };
+      expect(CryptoUtils.KeyStore.Converters.keystoreVaultContents.convert(input)).toSucceedAndSatisfy(
+        (result) => {
+          expect(Object.keys(result.secrets)).toHaveLength(3);
+
+          const symmetricOne = result.secrets.symmetricOne;
+          expect(symmetricOne.type).toBe('encryption-key');
+          if (symmetricOne.type !== 'asymmetric-keypair') {
+            expect(symmetricOne.key).toBe('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
+          }
+
+          const legacy = result.secrets.legacy;
+          expect(legacy.type).toBe('encryption-key');
+
+          const signingKey = result.secrets.signingKey;
+          expect(signingKey.type).toBe('asymmetric-keypair');
+          if (signingKey.type === 'asymmetric-keypair') {
+            expect(signingKey.id).toBe('b1c2d3e4-0000-4000-8000-000000000000');
+            expect(signingKey.algorithm).toBe('ecdsa-p256');
+            expect(signingKey.publicKeyJwk.kty).toBe('EC');
+            // JWK extras survive validation
+            expect(signingKey.publicKeyJwk).toEqual(input.secrets.signingKey.publicKeyJwk);
+          }
         }
       );
     });

@@ -20,6 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
+import * as crypto from 'crypto';
 import * as CryptoUtils from '../../../packlets/crypto-utils';
 
 describe('Crypto.NodeCryptoProvider', () => {
@@ -308,6 +309,150 @@ describe('Crypto.NodeCryptoProvider', () => {
   describe('singleton instance', () => {
     test('Crypto.nodeCryptoProvider is a Crypto.NodeCryptoProvider instance', () => {
       expect(CryptoUtils.nodeCryptoProvider).toBeInstanceOf(CryptoUtils.NodeCryptoProvider);
+    });
+  });
+
+  describe('generateKeyPair', () => {
+    test('generates an ECDSA P-256 keypair with sign/verify usages', async () => {
+      const result = await provider.generateKeyPair('ecdsa-p256', true);
+      expect(result).toSucceedAndSatisfy((pair) => {
+        expect(pair.privateKey.algorithm.name).toBe('ECDSA');
+        expect(pair.publicKey.algorithm.name).toBe('ECDSA');
+        expect(pair.privateKey.usages).toContain('sign');
+        expect(pair.publicKey.usages).toContain('verify');
+        expect(pair.privateKey.extractable).toBe(true);
+        expect(pair.publicKey.extractable).toBe(true);
+      });
+    });
+
+    test('generates an RSA-OAEP 2048 keypair with encrypt/decrypt usages', async () => {
+      const result = await provider.generateKeyPair('rsa-oaep-2048', true);
+      expect(result).toSucceedAndSatisfy((pair) => {
+        expect(pair.privateKey.algorithm.name).toBe('RSA-OAEP');
+        expect(pair.publicKey.algorithm.name).toBe('RSA-OAEP');
+        expect(pair.privateKey.usages).toContain('decrypt');
+        expect(pair.publicKey.usages).toContain('encrypt');
+      });
+    });
+
+    test('generates a non-extractable private key when extractable=false', async () => {
+      const result = await provider.generateKeyPair('ecdsa-p256', false);
+      expect(result).toSucceedAndSatisfy((pair) => {
+        expect(pair.privateKey.extractable).toBe(false);
+      });
+    });
+
+    test('generates unique keypairs across calls', async () => {
+      const pair1 = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      const pair2 = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      const jwk1 = (await provider.exportPublicKeyJwk(pair1.publicKey)).orThrow();
+      const jwk2 = (await provider.exportPublicKeyJwk(pair2.publicKey)).orThrow();
+      expect(jwk1).not.toEqual(jwk2);
+    });
+  });
+
+  describe('exportPublicKeyJwk', () => {
+    test('exports an ECDSA public key as a P-256 EC JWK', async () => {
+      const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      const result = await provider.exportPublicKeyJwk(pair.publicKey);
+      expect(result).toSucceedAndSatisfy((jwk) => {
+        expect(jwk.kty).toBe('EC');
+        expect(jwk.crv).toBe('P-256');
+        expect(typeof jwk.x).toBe('string');
+        expect(typeof jwk.y).toBe('string');
+      });
+    });
+
+    test('exports an RSA public key as an RSA JWK', async () => {
+      const pair = (await provider.generateKeyPair('rsa-oaep-2048', true)).orThrow();
+      const result = await provider.exportPublicKeyJwk(pair.publicKey);
+      expect(result).toSucceedAndSatisfy((jwk) => {
+        expect(jwk.kty).toBe('RSA');
+        expect(typeof jwk.n).toBe('string');
+        expect(jwk.e).toBe('AQAB');
+      });
+    });
+
+    test('rejects a private CryptoKey to prevent leaking private fields as JWK', async () => {
+      // WebCrypto's exportKey('jwk', privateKey) would happily return the
+      // private fields (d/p/q/...) — the runtime guard on `key.type`
+      // ensures the method honours its public-only contract.
+      const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      const result = await provider.exportPublicKeyJwk(pair.privateKey);
+      expect(result).toFailWith(/requires a public CryptoKey, got 'private'/);
+    });
+  });
+
+  describe('importPublicKeyJwk', () => {
+    test('round-trips an ECDSA P-256 public key through JWK', async () => {
+      const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      const jwk = (await provider.exportPublicKeyJwk(pair.publicKey)).orThrow();
+      const result = await provider.importPublicKeyJwk(jwk, 'ecdsa-p256');
+      expect(result).toSucceedAndSatisfy((reimported) => {
+        expect(reimported.algorithm.name).toBe('ECDSA');
+        expect(reimported.usages).toEqual(['verify']);
+      });
+    });
+
+    test('round-trips an RSA-OAEP 2048 public key through JWK', async () => {
+      const pair = (await provider.generateKeyPair('rsa-oaep-2048', true)).orThrow();
+      const jwk = (await provider.exportPublicKeyJwk(pair.publicKey)).orThrow();
+      const result = await provider.importPublicKeyJwk(jwk, 'rsa-oaep-2048');
+      expect(result).toSucceedAndSatisfy((reimported) => {
+        expect(reimported.algorithm.name).toBe('RSA-OAEP');
+        expect(reimported.usages).toEqual(['encrypt']);
+      });
+    });
+
+    test('fails when JWK does not match the requested algorithm', async () => {
+      const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      const jwk = (await provider.exportPublicKeyJwk(pair.publicKey)).orThrow();
+      const result = await provider.importPublicKeyJwk(jwk, 'rsa-oaep-2048');
+      expect(result).toFailWith(/import.*rsa-oaep-2048/i);
+    });
+
+    test('fails on malformed JWK', async () => {
+      const result = await provider.importPublicKeyJwk({ kty: 'EC' } as JsonWebKey, 'ecdsa-p256');
+      expect(result).toFailWith(/import.*ecdsa-p256/i);
+    });
+  });
+
+  describe('end-to-end asymmetric usage', () => {
+    test('ECDSA: signs with private key, verifies with re-imported public key', async () => {
+      const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      const jwk = (await provider.exportPublicKeyJwk(pair.publicKey)).orThrow();
+      const verifyKey = (await provider.importPublicKeyJwk(jwk, 'ecdsa-p256')).orThrow();
+
+      const message = new TextEncoder().encode('hello, asymmetry');
+      const signature = await crypto.webcrypto.subtle.sign(
+        { name: 'ECDSA', hash: 'SHA-256' },
+        pair.privateKey,
+        message
+      );
+
+      const verified = await crypto.webcrypto.subtle.verify(
+        { name: 'ECDSA', hash: 'SHA-256' },
+        verifyKey,
+        signature,
+        message
+      );
+      expect(verified).toBe(true);
+    });
+
+    test('RSA-OAEP: encrypts with re-imported public key, decrypts with private key', async () => {
+      const pair = (await provider.generateKeyPair('rsa-oaep-2048', true)).orThrow();
+      const jwk = (await provider.exportPublicKeyJwk(pair.publicKey)).orThrow();
+      const encryptKey = (await provider.importPublicKeyJwk(jwk, 'rsa-oaep-2048')).orThrow();
+
+      const plaintext = new TextEncoder().encode('confidential payload');
+      const ciphertext = await crypto.webcrypto.subtle.encrypt({ name: 'RSA-OAEP' }, encryptKey, plaintext);
+
+      const decrypted = await crypto.webcrypto.subtle.decrypt(
+        { name: 'RSA-OAEP' },
+        pair.privateKey,
+        ciphertext
+      );
+      expect(new TextDecoder().decode(decrypted)).toBe('confidential payload');
     });
   });
 
