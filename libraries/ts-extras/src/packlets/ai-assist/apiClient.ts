@@ -32,7 +32,7 @@
  */
 
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
-import { fail, type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { fail, type Logging, mapResults, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
 import {
   AiPrompt,
@@ -226,17 +226,43 @@ async function fetchMultipart(
 }
 
 /**
+ * Decodes a base64 string into bytes in a runtime-agnostic way: `Buffer` in
+ * Node, `atob` in browsers. Returns a failure (rather than throwing) on
+ * invalid input so callers can surface the error through the `Result`
+ * contract.
+ * @internal
+ */
+function decodeBase64ToBytes(base64: string): Result<Uint8Array<ArrayBuffer>> {
+  try {
+    if (typeof Buffer !== 'undefined') {
+      const buf = Buffer.from(base64, 'base64');
+      const bytes = new Uint8Array(buf.length);
+      bytes.set(buf);
+      return succeed(bytes);
+    }
+    /* c8 ignore start - Browser-only fallback cannot be tested in Node.js environment */
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return succeed(bytes);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return fail(`Invalid base64: ${message}`);
+  }
+  /* c8 ignore stop */
+}
+
+/**
  * Decodes a base64-encoded image attachment into a `Blob` suitable for use as
  * a multipart file field.
  * @internal
  */
-function attachmentToBlob(attachment: IAiImageAttachment): Blob {
-  const binary = atob(attachment.base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return new Blob([bytes], { type: attachment.mimeType });
+function attachmentToBlob(attachment: IAiImageAttachment): Result<Blob> {
+  return decodeBase64ToBytes(attachment.base64).onSuccess((bytes) =>
+    succeed(new Blob([bytes], { type: attachment.mimeType }))
+  );
 }
 
 /**
@@ -1041,7 +1067,7 @@ function callOpenAiImagesGenerations(
  * Builds and posts the multipart `/images/edits` request (with refs).
  * @internal
  */
-function callOpenAiImagesEdits(
+async function callOpenAiImagesEdits(
   config: IAiApiConfig,
   request: IAiImageGenerationParams,
   headers: Record<string, string>,
@@ -1050,19 +1076,28 @@ function callOpenAiImagesEdits(
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<JsonObject>> {
+  const blobsResult = mapResults(
+    refs.map((ref, i) => attachmentToBlob(ref).withErrorFormat((msg) => `reference image ${i}: ${msg}`))
+  );
+  /* c8 ignore next 3 - decode failure unreachable via Node's Buffer.from (silently strips invalid input) */
+  if (blobsResult.isFailure()) {
+    return fail(blobsResult.message);
+  }
+
   const opts: IAiImageGenerationOptions = request.options ?? {};
   const form = new FormData();
   form.append('model', config.model);
   form.append('prompt', request.prompt);
   form.append('n', String(n));
+  form.append('response_format', 'b64_json');
   if (opts.size !== undefined) {
     form.append('size', opts.size);
   }
   if (opts.quality !== undefined) {
     form.append('quality', opts.quality);
   }
-  refs.forEach((ref, i) => {
-    form.append('image[]', attachmentToBlob(ref), `ref-${i}.${extensionForMimeType(ref.mimeType)}`);
+  blobsResult.value.forEach((blob, i) => {
+    form.append('image[]', blob, `ref-${i}.${extensionForMimeType(refs[i].mimeType)}`);
   });
   /* c8 ignore next 1 - optional logger */
   logger?.info(`Image edit: model=${config.model}, n=${n}, refs=${refs.length}`);

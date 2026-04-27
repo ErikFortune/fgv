@@ -193,6 +193,7 @@ describe('callProviderImageGeneration — reference images', () => {
       expect(body.get('model')).toBe('gpt-image-1');
       expect(body.get('prompt')).toBe('same character side view');
       expect(body.get('n')).toBe('2');
+      expect(body.get('response_format')).toBe('b64_json');
       expect(body.get('size')).toBe('1024x1024');
       expect(body.get('quality')).toBe('high');
       const refs = body.getAll('image[]');
