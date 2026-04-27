@@ -7,7 +7,11 @@ export interface IPromptPanelProps {
   readonly isWorking: boolean;
   readonly canSubmit: boolean;
   readonly referenceImages: ReadonlyArray<AiAssist.IAiImageAttachment>;
-  readonly onReferenceImagesChange: (next: ReadonlyArray<AiAssist.IAiImageAttachment>) => void;
+  // Mirrors a `useState` setter so callers can pass `setX` directly and we can
+  // use the functional form to avoid stale-closure overwrites during async file reads.
+  readonly onReferenceImagesChange: React.Dispatch<
+    React.SetStateAction<ReadonlyArray<AiAssist.IAiImageAttachment>>
+  >;
   readonly onGenerate: (params: AiAssist.IAiImageGenerationParams) => Promise<void>;
   readonly onAbort: () => void;
 }
@@ -83,7 +87,8 @@ export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
       return;
     }
     const added = await Promise.all(Array.from(files).map(fileToAttachment));
-    onReferenceImagesChange([...referenceImages, ...added]);
+    // Functional update guards against state changing while file reads are in flight.
+    onReferenceImagesChange((prev) => [...prev, ...added]);
   };
 
   const handleRemoveRef = (index: number): void => {
@@ -138,7 +143,12 @@ export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
               aria-label="Add reference images"
               className="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
               onChange={(e) => {
-                void handleAddRefs(e.target.files);
+                handleAddRefs(e.target.files).catch((error: unknown) => {
+                  console.error('Failed to add reference images.', error);
+                  window.alert(
+                    error instanceof Error ? error.message : 'Failed to add one or more reference images.'
+                  );
+                });
                 e.target.value = '';
               }}
             />

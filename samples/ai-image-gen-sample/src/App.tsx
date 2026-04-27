@@ -85,6 +85,8 @@ export function App(): React.JSX.Element {
   const provider = providersByMode[mode];
   const capability = CAPABILITY_BY_MODE[mode];
   const providers = PROVIDERS_BY_MODE[mode];
+  const providerAcceptsRefs =
+    AiAssist.getProviderDescriptor(provider).orDefault()?.acceptsImageReferenceInput === true;
 
   const keyStore = useMemo(() => {
     const secrets = new Map<string, string>();
@@ -334,8 +336,14 @@ export function App(): React.JSX.Element {
             {lastImageResult !== undefined && (
               <ImageResults
                 response={lastImageResult}
-                onUseAsReference={(image) =>
-                  setReferenceImages((prev) => [...prev, { mimeType: image.mimeType, base64: image.base64 }])
+                onUseAsReference={
+                  providerAcceptsRefs
+                    ? (image) =>
+                        setReferenceImages((prev) => [
+                          ...prev,
+                          { mimeType: image.mimeType, base64: image.base64 }
+                        ])
+                    : undefined
                 }
               />
             )}
