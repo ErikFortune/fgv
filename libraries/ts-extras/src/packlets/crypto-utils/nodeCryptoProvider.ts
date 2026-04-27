@@ -329,9 +329,19 @@ export class NodeCryptoProvider implements ICryptoProvider {
     if (nonceResult.isFailure()) {
       return fail(`unwrapBytes failed: nonce: ${nonceResult.message}`);
     }
+    if (nonceResult.value.length !== Constants.GCM_IV_SIZE) {
+      return fail(
+        `unwrapBytes failed: nonce must be ${Constants.GCM_IV_SIZE} bytes (got ${nonceResult.value.length})`
+      );
+    }
     const ciphertextResult = this.fromBase64(wrapped.ciphertext);
     if (ciphertextResult.isFailure()) {
       return fail(`unwrapBytes failed: ciphertext: ${ciphertextResult.message}`);
+    }
+    if (ciphertextResult.value.length < Constants.GCM_AUTH_TAG_SIZE) {
+      return fail(
+        `unwrapBytes failed: ciphertext must be at least ${Constants.GCM_AUTH_TAG_SIZE} bytes (got ${ciphertextResult.value.length})`
+      );
     }
     const subtle = crypto.webcrypto.subtle;
     const result = await captureAsyncResult(async () => {
