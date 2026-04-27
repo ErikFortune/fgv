@@ -18,10 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/* c8 ignore start - Browser-only implementation cannot be tested in Node.js environment */
 import { captureAsyncResult, captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 
+/* c8 ignore start - Used only by browser-only methods that cannot be tested in Node.js environment */
 /**
  * Extracts an `ArrayBuffer` from a Uint8Array, handling the potential SharedArrayBuffer case.
  * @param arr - The Uint8Array to extract from
@@ -32,6 +32,25 @@ function toArrayBuffer(arr: Uint8Array): ArrayBuffer {
   const buffer = new ArrayBuffer(arr.byteLength);
   new Uint8Array(buffer).set(arr);
   return buffer;
+}
+/* c8 ignore stop */
+
+/**
+ * Returns a fresh Uint8Array view over a non-shared ArrayBuffer copy of `arr`.
+ * Used by {@link BrowserCryptoProvider.wrapBytes | wrapBytes} and
+ * {@link BrowserCryptoProvider.unwrapBytes | unwrapBytes}: Node 20's
+ * webcrypto.subtle rejects raw `ArrayBuffer` for several `BufferSource`
+ * parameters with "is not instance of ArrayBuffer, Buffer, TypedArray, or
+ * DataView" even though `ArrayBuffer` should be valid per the spec; a
+ * TypedArray view is accepted on Node 20+ and on browsers, and the explicit
+ * `Uint8Array<ArrayBuffer>` return type also satisfies TypeScript's `BufferSource`
+ * (which excludes the `SharedArrayBuffer` branch of `Uint8Array`'s buffer type).
+ */
+function toBufferView(arr: Uint8Array): Uint8Array<ArrayBuffer> {
+  const buffer = new ArrayBuffer(arr.byteLength);
+  const view = new Uint8Array(buffer);
+  view.set(arr);
+  return view;
 }
 
 /**
@@ -46,6 +65,7 @@ function toArrayBuffer(arr: Uint8Array): ArrayBuffer {
 export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
   private readonly _crypto: Crypto;
 
+  /* c8 ignore start - Existing browser-only methods cannot be tested in Node.js environment */
   /**
    * Creates a new {@link CryptoUtils.BrowserCryptoProvider | BrowserCryptoProvider}.
    * @param cryptoApi - Optional Crypto instance (defaults to globalThis.crypto)
@@ -372,8 +392,155 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
     );
     return result.withErrorFormat((e) => `Failed to import ${algorithm} public key from JWK: ${e}`);
   }
+  /* c8 ignore stop */
+
+  /**
+   * Wraps `plaintext` for the holder of `recipientPublicKey` using
+   * ECIES (ECDH P-256 + HKDF-SHA256 + AES-GCM-256). See
+   * {@link CryptoUtils.ICryptoProvider.wrapBytes | ICryptoProvider.wrapBytes}.
+   * @param plaintext - The bytes to wrap.
+   * @param recipientPublicKey - The recipient's ECDH P-256 public `CryptoKey`.
+   * @param options - HKDF salt and info; see {@link CryptoUtils.IWrapBytesOptions | IWrapBytesOptions}.
+   * @returns `Success` with the wrapped payload, or `Failure` with an error.
+   */
+  public async wrapBytes(
+    plaintext: Uint8Array,
+    recipientPublicKey: CryptoKey,
+    options: CryptoUtils.IWrapBytesOptions
+  ): Promise<Result<CryptoUtils.IWrappedBytes>> {
+    const recipientCheck = checkEcdhP256(recipientPublicKey, 'public', 'recipient public key');
+    if (recipientCheck.isFailure()) {
+      return Failure.with(`wrapBytes failed: ${recipientCheck.message}`);
+    }
+    const subtle = this._crypto.subtle;
+    const result = await captureAsyncResult(async () => {
+      const ephemeral = (await subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
+        'deriveKey'
+      ])) as CryptoKeyPair;
+      const hkdfBase = await subtle.deriveKey(
+        { name: 'ECDH', public: recipientPublicKey },
+        ephemeral.privateKey,
+        { name: 'HKDF' },
+        false,
+        ['deriveKey']
+      );
+      const wrapKey = await subtle.deriveKey(
+        { name: 'HKDF', salt: toBufferView(options.salt), info: toBufferView(options.info), hash: 'SHA-256' },
+        hkdfBase,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt']
+      );
+      const nonce = this._crypto.getRandomValues(new Uint8Array(CryptoUtils.Constants.GCM_IV_SIZE));
+      const ctBuf = await subtle.encrypt({ name: 'AES-GCM', iv: nonce }, wrapKey, toBufferView(plaintext));
+      const ephemeralPublicKey = await subtle.exportKey('jwk', ephemeral.publicKey);
+      return {
+        ephemeralPublicKey,
+        nonce: this.toBase64(nonce),
+        ciphertext: this.toBase64(new Uint8Array(ctBuf))
+      };
+    });
+    return result.withErrorFormat((e) => `wrapBytes failed: ${e}`);
+  }
+
+  /**
+   * Unwraps a payload produced by `wrapBytes` using the recipient's private
+   * key. See {@link CryptoUtils.ICryptoProvider.unwrapBytes | ICryptoProvider.unwrapBytes}.
+   * @param wrapped - The wrapped payload.
+   * @param recipientPrivateKey - The recipient's ECDH P-256 private `CryptoKey`.
+   * @param options - HKDF salt and info matching the wrap call.
+   * @returns `Success` with the original `plaintext`, or `Failure` with an error.
+   */
+  public async unwrapBytes(
+    wrapped: CryptoUtils.IWrappedBytes,
+    recipientPrivateKey: CryptoKey,
+    options: CryptoUtils.IWrapBytesOptions
+  ): Promise<Result<Uint8Array>> {
+    const recipientCheck = checkEcdhP256(recipientPrivateKey, 'private', 'recipient private key');
+    if (recipientCheck.isFailure()) {
+      return Failure.with(`unwrapBytes failed: ${recipientCheck.message}`);
+    }
+    const nonceResult = this.fromBase64(wrapped.nonce);
+    if (nonceResult.isFailure()) {
+      return Failure.with(`unwrapBytes failed: nonce: ${nonceResult.message}`);
+    }
+    if (nonceResult.value.length !== CryptoUtils.Constants.GCM_IV_SIZE) {
+      return Failure.with(
+        `unwrapBytes failed: nonce must be ${CryptoUtils.Constants.GCM_IV_SIZE} bytes (got ${nonceResult.value.length})`
+      );
+    }
+    const ciphertextResult = this.fromBase64(wrapped.ciphertext);
+    if (ciphertextResult.isFailure()) {
+      return Failure.with(`unwrapBytes failed: ciphertext: ${ciphertextResult.message}`);
+    }
+    if (ciphertextResult.value.length < CryptoUtils.Constants.GCM_AUTH_TAG_SIZE) {
+      return Failure.with(
+        `unwrapBytes failed: ciphertext must be at least ${CryptoUtils.Constants.GCM_AUTH_TAG_SIZE} bytes (got ${ciphertextResult.value.length})`
+      );
+    }
+    const subtle = this._crypto.subtle;
+    const result = await captureAsyncResult(async () => {
+      const ephemeralPub = await subtle.importKey(
+        'jwk',
+        wrapped.ephemeralPublicKey,
+        { name: 'ECDH', namedCurve: 'P-256' },
+        false,
+        []
+      );
+      const hkdfBase = await subtle.deriveKey(
+        { name: 'ECDH', public: ephemeralPub },
+        recipientPrivateKey,
+        { name: 'HKDF' },
+        false,
+        ['deriveKey']
+      );
+      const wrapKey = await subtle.deriveKey(
+        { name: 'HKDF', salt: toBufferView(options.salt), info: toBufferView(options.info), hash: 'SHA-256' },
+        hkdfBase,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['decrypt']
+      );
+      const ptBuf = await subtle.decrypt(
+        { name: 'AES-GCM', iv: toBufferView(nonceResult.value) },
+        wrapKey,
+        toBufferView(ciphertextResult.value)
+      );
+      return new Uint8Array(ptBuf);
+    });
+    return result.withErrorFormat((e) => `unwrapBytes failed: ${e}`);
+  }
 }
 
+/**
+ * Verifies that `key` is an ECDH P-256 `CryptoKey` of the expected `keyType`
+ * (public or private). Used by the wrap/unwrap methods to surface a clean
+ * `Failure` instead of letting the WebCrypto deriveKey call throw a less
+ * informative error later in the pipeline. Key usages are intentionally not
+ * checked here: WebCrypto already produces a specific error if `deriveKey` is
+ * not in `usages`, and `deriveBits` is an equally valid alternative usage that
+ * an explicit check would have to track.
+ * @param key - The CryptoKey to validate.
+ * @param keyType - The required `key.type` ('public' for wrap, 'private' for unwrap).
+ * @param label - Human-readable role label included in the failure message.
+ * @returns `Success` with the key (unchanged) when the algorithm, curve, and
+ * type all match; otherwise `Failure` with `<label> must be ECDH P-256 (...)`.
+ */
+function checkEcdhP256(key: CryptoKey, keyType: 'public' | 'private', label: string): Result<CryptoKey> {
+  if (key.algorithm.name !== 'ECDH') {
+    return Failure.with(`${label} must be ECDH P-256 (got algorithm '${key.algorithm.name}')`);
+  }
+  const namedCurve = (key.algorithm as EcKeyAlgorithm).namedCurve;
+  if (namedCurve !== 'P-256') {
+    return Failure.with(`${label} must be ECDH P-256 (got curve '${namedCurve}')`);
+  }
+  if (key.type !== keyType) {
+    return Failure.with(`${label} must be a ${keyType} CryptoKey (got '${key.type}')`);
+  }
+  return succeed(key);
+}
+
+/* c8 ignore start - Constructs a provider; only meaningful in a real browser environment */
 /**
  * Creates a {@link CryptoUtils.BrowserCryptoProvider | BrowserCryptoProvider} if Web
  * Crypto API is available.
