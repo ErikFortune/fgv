@@ -38,8 +38,11 @@ const ACCEPTED_REF_MIME_TYPES = ACCEPTED_REF_MIME_TYPE_LIST.join(',');
 const ACCEPTED_REF_MIME_TYPE_SET: ReadonlySet<string> = new Set(ACCEPTED_REF_MIME_TYPE_LIST);
 
 async function fileToAttachment(file: File): Promise<AiAssist.IAiImageAttachment> {
+  // Some browsers/OSes report JPEGs as `image/jpg`; normalize to the canonical
+  // `image/jpeg` before validation so they aren't rejected.
+  const fileType = file.type === 'image/jpg' ? 'image/jpeg' : file.type;
   // `<input accept>` is only a hint, so validate explicitly (drag-drop / "All files" can bypass it).
-  if (!ACCEPTED_REF_MIME_TYPE_SET.has(file.type)) {
+  if (!ACCEPTED_REF_MIME_TYPE_SET.has(fileType)) {
     throw new Error(`unsupported file type: ${file.type || 'unknown'}`);
   }
   const dataUrl: string = await new Promise((resolve, reject) => {
@@ -64,7 +67,9 @@ async function fileToAttachment(file: File): Promise<AiAssist.IAiImageAttachment
   if (!base64) {
     throw new Error('failed to read file: empty base64 payload');
   }
-  return { mimeType: dataUrl.slice(PREFIX.length, markerIdx) || file.type, base64 };
+  const headerMime = dataUrl.slice(PREFIX.length, markerIdx);
+  const mimeType = (headerMime === 'image/jpg' ? 'image/jpeg' : headerMime) || fileType;
+  return { mimeType, base64 };
 }
 
 export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
