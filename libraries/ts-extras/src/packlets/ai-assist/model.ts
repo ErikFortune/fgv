@@ -300,9 +300,20 @@ export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
 
 /**
  * API format categories for image-generation provider routing.
+ *
+ * @remarks
+ * - `'openai-images'` — OpenAI Images API. Routes to `/images/generations`
+ *   (text-only) or `/images/edits` (when reference images are present).
+ * - `'xai-images'` — xAI Images API. Same wire shape as OpenAI but text-only;
+ *   no reference-image support on grok-2-image.
+ * - `'gemini-imagen'` — Google Imagen `:predict` endpoint. Text-only.
+ * - `'gemini-image-out'` — Google Gemini chat-style `:generateContent`
+ *   endpoint that returns image parts (Gemini 2.5 Flash Image / "Nano
+ *   Banana"). Accepts reference images.
+ *
  * @public
  */
-export type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images';
+export type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'gemini-image-out';
 
 // ============================================================================
 // Completion Response
@@ -439,6 +450,17 @@ export interface IAiProviderDescriptor {
    * `defaultModel.image`, e.g. `{ base: 'gpt-4o', image: 'dall-e-3' }`.
    */
   readonly imageApiFormat?: AiImageApiFormat;
+  /**
+   * Whether this provider's image-generation API accepts reference images
+   * via {@link AiAssist.IAiImageGenerationParams.referenceImages}. When false
+   * (or undefined), calls that include reference images are rejected up front.
+   *
+   * @remarks
+   * The flag is provider-wide; per-model constraints (e.g. dall-e-3 ignores
+   * edits) are not validated by the library and surface as provider 400s,
+   * consistent with the existing image-generation policy.
+   */
+  readonly acceptsImageReferenceInput?: boolean;
 }
 
 // ============================================================================
@@ -493,6 +515,14 @@ export interface IAiImageGenerationParams {
   readonly prompt: string;
   /** Optional generation options. */
   readonly options?: IAiImageGenerationOptions;
+  /**
+   * Optional reference images. When present, the provider will use them as
+   * visual context (e.g. to preserve a character's appearance across multiple
+   * generations). Providers that do not declare
+   * {@link AiAssist.IAiProviderDescriptor.acceptsImageReferenceInput} reject
+   * the call up front. An empty array is treated identically to `undefined`.
+   */
+  readonly referenceImages?: ReadonlyArray<IAiImageAttachment>;
 }
 
 /**

@@ -73,6 +73,7 @@ export function App(): React.JSX.Element {
     undefined
   );
   const [imageError, setImageError] = useState<string | undefined>(undefined);
+  const [referenceImages, setReferenceImages] = useState<ReadonlyArray<AiAssist.IAiImageAttachment>>([]);
 
   // Chat-mode conversation
   const [chatTurns, setChatTurns] = useState<ReadonlyArray<IChatTurn>>([]);
@@ -320,6 +321,8 @@ export function App(): React.JSX.Element {
               provider={provider}
               isWorking={isWorking}
               canSubmit={currentKey.length > 0}
+              referenceImages={referenceImages}
+              onReferenceImagesChange={setReferenceImages}
               onGenerate={handleGenerateImages}
               onAbort={handleAbort}
             />
@@ -328,7 +331,14 @@ export function App(): React.JSX.Element {
                 <strong className="font-semibold">Error:</strong> {imageError}
               </div>
             )}
-            {lastImageResult !== undefined && <ImageResults response={lastImageResult} />}
+            {lastImageResult !== undefined && (
+              <ImageResults
+                response={lastImageResult}
+                onUseAsReference={(image) =>
+                  setReferenceImages((prev) => [...prev, { mimeType: image.mimeType, base64: image.base64 }])
+                }
+              />
+            )}
           </>
         ) : (
           <ChatPanel

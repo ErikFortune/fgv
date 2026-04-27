@@ -63,14 +63,16 @@ describe('AiAssist.registry', () => {
     test('returns descriptor with image generation support for openai', () => {
       expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
         expect(desc.imageApiFormat).toBe('openai-images');
+        expect(desc.acceptsImageReferenceInput).toBe(true);
         expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('dall-e-3');
       });
     });
 
     test('returns descriptor with image generation support for google-gemini', () => {
       expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageApiFormat).toBe('gemini-imagen');
-        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('imagen-3.0-generate-002');
+        expect(desc.imageApiFormat).toBe('gemini-image-out');
+        expect(desc.acceptsImageReferenceInput).toBe(true);
+        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('gemini-2.5-flash-image');
       });
     });
 

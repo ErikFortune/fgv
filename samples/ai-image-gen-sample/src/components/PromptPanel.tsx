@@ -6,6 +6,8 @@ export interface IPromptPanelProps {
   readonly provider: AiAssist.AiProviderId;
   readonly isWorking: boolean;
   readonly canSubmit: boolean;
+  readonly referenceImages: ReadonlyArray<AiAssist.IAiImageAttachment>;
+  readonly onReferenceImagesChange: (next: ReadonlyArray<AiAssist.IAiImageAttachment>) => void;
   readonly onGenerate: (params: AiAssist.IAiImageGenerationParams) => Promise<void>;
   readonly onAbort: () => void;
 }
@@ -20,8 +22,25 @@ const IMAGEN_ASPECT_RATIOS: ReadonlyArray<
   NonNullable<NonNullable<AiAssist.IAiImageGenerationOptions['imagen']>['aspectRatio']>
 > = ['1:1', '3:4', '4:3', '9:16', '16:9'];
 
+const ACCEPTED_REF_MIME_TYPES = 'image/png,image/jpeg,image/webp';
+
+async function fileToAttachment(file: File): Promise<AiAssist.IAiImageAttachment> {
+  const dataUrl: string = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error ?? new Error('failed to read file'));
+    reader.readAsDataURL(file);
+  });
+  // dataUrl is like `data:<mime>;base64,<data>`; split into mime + raw base64
+  const commaIdx = dataUrl.indexOf(',');
+  const header = dataUrl.slice(5, dataUrl.indexOf(';'));
+  const base64 = dataUrl.slice(commaIdx + 1);
+  return { mimeType: header || file.type || 'application/octet-stream', base64 };
+}
+
 export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
-  const { provider, isWorking, canSubmit, onGenerate, onAbort } = props;
+  const { provider, isWorking, canSubmit, referenceImages, onReferenceImagesChange, onGenerate, onAbort } =
+    props;
 
   const [prompt, setPrompt] = useState('A friendly robot painting a watercolor landscape');
   const [count, setCount] = useState(1);
@@ -29,10 +48,9 @@ export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
   const [aspectRatio, setAspectRatio] =
     useState<NonNullable<NonNullable<AiAssist.IAiImageGenerationOptions['imagen']>['aspectRatio']>>('1:1');
 
-  const imageFormat = useMemo(
-    () => AiAssist.getProviderDescriptor(provider).orDefault()?.imageApiFormat,
-    [provider]
-  );
+  const descriptor = useMemo(() => AiAssist.getProviderDescriptor(provider).orDefault(), [provider]);
+  const imageFormat = descriptor?.imageApiFormat;
+  const acceptsRefs = descriptor?.acceptsImageReferenceInput === true;
 
   const isImagen = imageFormat === 'gemini-imagen';
   const supportsSize = imageFormat === 'openai-images';
@@ -47,7 +65,27 @@ export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
       ...(supportsSize ? { size } : {}),
       ...(isImagen ? { imagen: { aspectRatio } } : {})
     };
-    void onGenerate({ prompt, options });
+    void onGenerate({
+      prompt,
+      options,
+      ...(acceptsRefs && referenceImages.length > 0 ? { referenceImages } : {})
+    });
+  };
+
+  const handleAddRefs = async (files: FileList | null): Promise<void> => {
+    if (!files || files.length === 0) {
+      return;
+    }
+    const added = await Promise.all(Array.from(files).map(fileToAttachment));
+    onReferenceImagesChange([...referenceImages, ...added]);
+  };
+
+  const handleRemoveRef = (index: number): void => {
+    onReferenceImagesChange(referenceImages.filter((_, i) => i !== index));
+  };
+
+  const handleClearRefs = (): void => {
+    onReferenceImagesChange([]);
   };
 
   return (
@@ -65,6 +103,62 @@ export function PromptPanel(props: IPromptPanelProps): React.JSX.Element {
             disabled={isWorking}
           />
         </label>
+
+        {acceptsRefs && (
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-700">
+                Reference images{' '}
+                <span className="font-normal text-slate-500">
+                  ({referenceImages.length} attached) — preserve a character or style across generations
+                </span>
+              </span>
+              {referenceImages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearRefs}
+                  disabled={isWorking}
+                  className="text-xs font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+            <input
+              type="file"
+              accept={ACCEPTED_REF_MIME_TYPES}
+              multiple
+              disabled={isWorking}
+              className="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
+              onChange={(e) => {
+                void handleAddRefs(e.target.files);
+                e.target.value = '';
+              }}
+            />
+            {referenceImages.length > 0 && (
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {referenceImages.map((ref, idx) => (
+                  <li key={idx} className="relative">
+                    <img
+                      src={AiAssist.toDataUrl(ref)}
+                      alt={`Reference ${idx + 1}`}
+                      className="h-16 w-16 rounded-md border border-slate-300 object-cover shadow-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveRef(idx)}
+                      disabled={isWorking}
+                      aria-label={`Remove reference image ${idx + 1}`}
+                      className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-xs text-slate-700 shadow-sm hover:bg-slate-100 disabled:opacity-50"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         <div className="grid gap-4 md:grid-cols-3">
           <label className="block text-sm">

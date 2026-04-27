@@ -40,6 +40,7 @@ import {
   type AiServerToolConfig,
   type IAiCompletionResponse,
   type IAiGeneratedImage,
+  type IAiImageAttachment,
   type IAiImageGenerationOptions,
   type IAiImageGenerationParams,
   type IAiImageGenerationResponse,
@@ -164,6 +165,98 @@ async function fetchJson(
     return fail('AI API returned non-object JSON response');
   }
   return succeed(json);
+}
+
+/**
+ * Makes a multipart/form-data POST request and returns the parsed JSON, or a
+ * failure. The Content-Type header (with boundary) is set automatically by
+ * `fetch` from the `FormData` body — callers must NOT pass it explicitly.
+ * @internal
+ */
+async function fetchMultipart(
+  url: string,
+  headers: Record<string, string>,
+  body: FormData,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<JsonObject>> {
+  /* c8 ignore next 1 - optional logger */
+  logger?.detail(`AI API request: POST ${url} (multipart)`);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+      signal
+    });
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : String(err);
+    /* c8 ignore next 1 - optional logger */
+    logger?.error(`AI API request failed: ${detail}`);
+    return fail(`AI API request failed: ${detail}`);
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'unknown error');
+    /* c8 ignore next 1 - optional logger */
+    logger?.error(`AI API returned ${response.status}: ${errorText}`);
+    return fail(`AI API returned ${response.status}: ${errorText}`);
+  }
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.detail(`AI API response: ${response.status}`);
+
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch {
+    /* c8 ignore next 1 - optional logger */
+    logger?.error('AI API returned invalid JSON response');
+    return fail('AI API returned invalid JSON response');
+  }
+
+  if (!isJsonObject(json)) {
+    /* c8 ignore next 1 - optional logger */
+    logger?.error('AI API returned non-object JSON response');
+    return fail('AI API returned non-object JSON response');
+  }
+  return succeed(json);
+}
+
+/**
+ * Decodes a base64-encoded image attachment into a `Blob` suitable for use as
+ * a multipart file field.
+ * @internal
+ */
+function attachmentToBlob(attachment: IAiImageAttachment): Blob {
+  const binary = atob(attachment.base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: attachment.mimeType });
+}
+
+/**
+ * Maps a MIME type to a sensible file extension for multipart filenames.
+ * @internal
+ */
+function extensionForMimeType(mimeType: string): string {
+  switch (mimeType) {
+    case 'image/png':
+      return 'png';
+    case 'image/jpeg':
+    case 'image/jpg':
+      return 'jpg';
+    case 'image/webp':
+      return 'webp';
+    case 'image/gif':
+      return 'gif';
+    default:
+      return 'bin';
+  }
 }
 
 /**
@@ -768,6 +861,54 @@ const imagenResponse: Validator<IImagenResponse> = Validators.object<IImagenResp
   predictions: Validators.arrayOf(imagenPrediction).withConstraint((arr) => arr.length > 0)
 });
 
+// ---- Gemini image-out (`:generateContent` returning image parts) format ----
+
+/** @internal */
+interface IGeminiImageInlineData {
+  mimeType: string;
+  data: string;
+}
+/** @internal */
+interface IGeminiImageOutPart {
+  text?: string;
+  inlineData?: IGeminiImageInlineData;
+}
+/** @internal */
+interface IGeminiImageOutContent {
+  parts: IGeminiImageOutPart[];
+}
+/** @internal */
+interface IGeminiImageOutCandidate {
+  content: IGeminiImageOutContent;
+  finishReason?: string;
+}
+/** @internal */
+interface IGeminiImageOutResponse {
+  candidates: IGeminiImageOutCandidate[];
+}
+
+const geminiImageInlineData: Validator<IGeminiImageInlineData> = Validators.object<IGeminiImageInlineData>({
+  mimeType: Validators.string,
+  data: Validators.string
+});
+const geminiImageOutPart: Validator<IGeminiImageOutPart> = Validators.object<IGeminiImageOutPart>({
+  text: Validators.string.optional(),
+  inlineData: geminiImageInlineData.optional()
+});
+const geminiImageOutContent: Validator<IGeminiImageOutContent> = Validators.object<IGeminiImageOutContent>({
+  parts: Validators.arrayOf(geminiImageOutPart).withConstraint((arr) => arr.length > 0)
+});
+const geminiImageOutCandidate: Validator<IGeminiImageOutCandidate> =
+  Validators.object<IGeminiImageOutCandidate>({
+    content: geminiImageOutContent,
+    finishReason: Validators.string.optional()
+  });
+const geminiImageOutResponse: Validator<IGeminiImageOutResponse> = Validators.object<IGeminiImageOutResponse>(
+  {
+    candidates: Validators.arrayOf(geminiImageOutCandidate).withConstraint((arr) => arr.length > 0)
+  }
+);
+
 // ---- Proxied image generation response ----
 
 const proxiedGeneratedImage: Validator<IAiGeneratedImage> = Validators.object<IAiGeneratedImage>({
@@ -821,6 +962,11 @@ const proxiedListModelsResponse: Validator<IProxiedListModelsBody> =
  * formats — the request shape is the same; the only difference is whether the
  * `size` field is honored (OpenAI: yes, xAI: ignored at the provider).
  *
+ * When `request.referenceImages` is non-empty, routes to `/images/edits`
+ * (multipart) instead of `/images/generations` (JSON). Per-model edit support
+ * is not validated here (e.g. dall-e-3 does not support edits) — the
+ * provider's 400 surfaces through the failure path.
+ *
  * @internal
  */
 async function callOpenAiImageGeneration(
@@ -830,12 +976,51 @@ async function callOpenAiImageGeneration(
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<IAiImageGenerationResponse>> {
-  const url = `${config.baseUrl}/images/generations`;
+  const opts: IAiImageGenerationOptions = request.options ?? {};
+  const refs = request.referenceImages ?? [];
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${config.apiKey}`
+  };
+  const n = opts.count ?? 1;
+
+  const fetched =
+    refs.length > 0
+      ? await callOpenAiImagesEdits(config, request, headers, n, refs, logger, signal)
+      : await callOpenAiImagesGenerations(config, request, headers, n, logger, signal);
+
+  return fetched.onSuccess((json) =>
+    openAiImageResponse
+      .validate(json)
+      .withErrorFormat((msg) => `OpenAI images API response: ${msg}`)
+      .onSuccess((response) =>
+        succeed({
+          images: response.data.map((item) => ({
+            mimeType: defaultMimeType,
+            base64: item.b64_json,
+            ...(item.revised_prompt !== undefined ? { revisedPrompt: item.revised_prompt } : {})
+          }))
+        })
+      )
+  );
+}
+
+/**
+ * Builds and posts the JSON `/images/generations` request (no refs).
+ * @internal
+ */
+function callOpenAiImagesGenerations(
+  config: IAiApiConfig,
+  request: IAiImageGenerationParams,
+  headers: Record<string, string>,
+  n: number,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<JsonObject>> {
   const opts: IAiImageGenerationOptions = request.options ?? {};
   const body: Record<string, unknown> = {
     model: config.model,
     prompt: request.prompt,
-    n: opts.count ?? 1,
+    n,
     response_format: 'b64_json'
   };
   if (opts.size !== undefined) {
@@ -847,28 +1032,93 @@ async function callOpenAiImageGeneration(
   if (opts.seed !== undefined) {
     body.seed = opts.seed;
   }
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`Image generation: model=${config.model}, n=${n}`);
+  return fetchJson(`${config.baseUrl}/images/generations`, headers, body, logger, signal);
+}
 
+/**
+ * Builds and posts the multipart `/images/edits` request (with refs).
+ * @internal
+ */
+function callOpenAiImagesEdits(
+  config: IAiApiConfig,
+  request: IAiImageGenerationParams,
+  headers: Record<string, string>,
+  n: number,
+  refs: ReadonlyArray<IAiImageAttachment>,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<JsonObject>> {
+  const opts: IAiImageGenerationOptions = request.options ?? {};
+  const form = new FormData();
+  form.append('model', config.model);
+  form.append('prompt', request.prompt);
+  form.append('n', String(n));
+  if (opts.size !== undefined) {
+    form.append('size', opts.size);
+  }
+  if (opts.quality !== undefined) {
+    form.append('quality', opts.quality);
+  }
+  refs.forEach((ref, i) => {
+    form.append('image[]', attachmentToBlob(ref), `ref-${i}.${extensionForMimeType(ref.mimeType)}`);
+  });
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`Image edit: model=${config.model}, n=${n}, refs=${refs.length}`);
+  return fetchMultipart(`${config.baseUrl}/images/edits`, headers, form, logger, signal);
+}
+
+/**
+ * Calls Gemini's chat-style `:generateContent` endpoint for image output
+ * (Gemini 2.5 Flash Image / "Nano Banana"). Accepts reference images, which
+ * are passed as `inlineData` parts alongside the text prompt.
+ *
+ * @internal
+ */
+async function callGeminiImageOutGeneration(
+  config: IAiApiConfig,
+  request: IAiImageGenerationParams,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<IAiImageGenerationResponse>> {
+  const url = `${config.baseUrl}/models/${config.model}:generateContent`;
+  const refs = request.referenceImages ?? [];
+  const parts: Array<Record<string, unknown>> = [{ text: request.prompt }];
+  for (const ref of refs) {
+    parts.push({ inlineData: { mimeType: ref.mimeType, data: ref.base64 } });
+  }
+  const body: Record<string, unknown> = {
+    contents: [{ role: 'user', parts }]
+  };
   const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`
+    'x-goog-api-key': config.apiKey
   };
 
   /* c8 ignore next 1 - optional logger */
-  logger?.info(`Image generation: model=${config.model}, n=${body.n}`);
-  const jsonResult = await fetchJson(url, headers, body, logger, signal);
-  if (jsonResult.isFailure()) {
-    return fail(jsonResult.message);
-  }
-  return openAiImageResponse
-    .validate(jsonResult.value)
-    .withErrorFormat((msg) => `OpenAI images API response: ${msg}`)
-    .onSuccess((response) => {
-      const images: IAiGeneratedImage[] = response.data.map((item) => ({
-        mimeType: defaultMimeType,
-        base64: item.b64_json,
-        ...(item.revised_prompt !== undefined ? { revisedPrompt: item.revised_prompt } : {})
-      }));
-      return succeed({ images });
-    });
+  logger?.info(`Gemini image-out: model=${config.model}, refs=${refs.length}`);
+  return (await fetchJson(url, headers, body, logger, signal)).onSuccess((json) =>
+    geminiImageOutResponse
+      .validate(json)
+      .withErrorFormat((msg) => `Gemini image API response: ${msg}`)
+      .onSuccess((response) => {
+        const images: IAiGeneratedImage[] = [];
+        for (const candidate of response.candidates) {
+          for (const part of candidate.content.parts) {
+            if (part.inlineData) {
+              images.push({
+                mimeType: part.inlineData.mimeType,
+                base64: part.inlineData.data
+              });
+            }
+          }
+        }
+        if (images.length === 0) {
+          return fail('Gemini image API response: no image parts in response');
+        }
+        return succeed({ images });
+      })
+  );
 }
 
 /**
@@ -933,9 +1183,12 @@ async function callImagenGeneration(
  * Routes based on `descriptor.imageApiFormat`:
  * - `'openai-images'` for OpenAI (DALL-E, gpt-image-1)
  * - `'xai-images'` for xAI Grok image models
- * - `'gemini-imagen'` for Google Imagen
+ * - `'gemini-imagen'` for Google Imagen `:predict`
+ * - `'gemini-image-out'` for Gemini chat-style image output (Nano Banana)
  *
  * Image-model selection reuses the existing `'image'` {@link ModelSpecKey}.
+ * When `request.referenceImages` is non-empty, the call is rejected up front
+ * unless the descriptor declares `acceptsImageReferenceInput`.
  *
  * @param params - Request parameters including descriptor, API key, and prompt
  * @returns The generated images, or a failure
@@ -951,6 +1204,9 @@ export async function callProviderImageGeneration(
   }
   if (!descriptor.baseUrl) {
     return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  }
+  if ((request.referenceImages?.length ?? 0) > 0 && !descriptor.acceptsImageReferenceInput) {
+    return fail(`provider "${descriptor.id}" does not support reference images for image generation`);
   }
 
   const config: IAiApiConfig = {
@@ -973,6 +1229,8 @@ export async function callProviderImageGeneration(
       return callOpenAiImageGeneration(config, request, 'image/jpeg', logger, signal);
     case 'gemini-imagen':
       return callImagenGeneration(config, request, logger, signal);
+    case 'gemini-image-out':
+      return callGeminiImageOutGeneration(config, request, logger, signal);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.imageApiFormat;
@@ -1481,7 +1739,10 @@ export async function callProxiedCompletion(
  * - Error response body: `{error: string}` (surfaced as `proxy: ${error}`)
  *
  * The proxy server is responsible for descriptor lookup, model resolution,
- * provider dispatch, and response normalization.
+ * provider dispatch, and response normalization. When `params.referenceImages`
+ * is present, the proxy is also responsible for repackaging it into the
+ * upstream wire format (e.g. multipart/form-data for OpenAI `/images/edits`,
+ * `inlineData` parts for Gemini `:generateContent`).
  *
  * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`)
  * @param params - Same parameters as {@link callProviderImageGeneration}

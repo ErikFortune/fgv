@@ -69,12 +69,13 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-3.0-generate-002' },
+    defaultModel: { base: 'gemini-2.5-flash', image: 'gemini-2.5-flash-image' },
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    imageApiFormat: 'gemini-imagen'
+    imageApiFormat: 'gemini-image-out',
+    acceptsImageReferenceInput: true
   },
   {
     id: 'groq',
@@ -114,7 +115,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    imageApiFormat: 'openai-images'
+    imageApiFormat: 'openai-images',
+    acceptsImageReferenceInput: true
   },
   {
     id: 'xai-grok',
@@ -206,6 +208,7 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
     ],
     'google-gemini': [
       { idPattern: /^imagen/, capabilities: ['image-generation'] },
+      { idPattern: /^gemini-.*-image/, capabilities: ['image-generation'] },
       { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
     anthropic: [{ idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }],

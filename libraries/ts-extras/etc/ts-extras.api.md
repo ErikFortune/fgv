@@ -100,7 +100,7 @@ const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
 const aiAssistSettings: Converter<IAiAssistSettings>;
 
 // @public
-type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images';
+type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'gemini-image-out';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -610,6 +610,8 @@ interface IAiImageGenerationOptions {
 interface IAiImageGenerationParams {
     readonly options?: IAiImageGenerationOptions;
     readonly prompt: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly referenceImages?: ReadonlyArray<IAiImageAttachment>;
 }
 
 // @public
@@ -645,6 +647,8 @@ interface IAiModelInfo {
 // @public
 interface IAiProviderDescriptor {
     readonly acceptsImageInput: boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly acceptsImageReferenceInput?: boolean;
     readonly apiFormat: AiApiFormat;
     readonly baseUrl: string;
     readonly buttonLabel: string;

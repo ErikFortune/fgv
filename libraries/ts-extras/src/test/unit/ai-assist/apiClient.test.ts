@@ -1696,6 +1696,20 @@ describe('callProxiedImageGeneration', () => {
     expect(body.modelOverride).toBe('gpt-image-1');
   });
 
+  test('forwards reference images through to the proxy unchanged', async () => {
+    mockFetchResponse({ images: [{ mimeType: 'image/png', base64: 'AAAA' }] });
+    const descriptor = makeImageDescriptor();
+
+    await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
+      descriptor,
+      apiKey: 'test-key',
+      params: { prompt: 'a cat', referenceImages: [TEST_PNG, TEST_JPEG] }
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.params.referenceImages).toEqual([TEST_PNG, TEST_JPEG]);
+  });
+
   test('surfaces proxy error response', async () => {
     mockFetchResponse({ error: 'provider rejected request' });
     const descriptor = makeImageDescriptor();
