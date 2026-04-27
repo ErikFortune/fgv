@@ -2,10 +2,11 @@ import { AiAssist } from '@fgv/ts-extras';
 
 export interface IImageResultsProps {
   readonly response: AiAssist.IAiImageGenerationResponse;
+  readonly onUseAsReference?: (image: AiAssist.IAiGeneratedImage) => void;
 }
 
 export function ImageResults(props: IImageResultsProps): React.JSX.Element {
-  const { response } = props;
+  const { response, onUseAsReference } = props;
   const count = response.images.length;
 
   return (
@@ -30,13 +31,24 @@ export function ImageResults(props: IImageResultsProps): React.JSX.Element {
                   {image.revisedPrompt}
                 </p>
               )}
-              <a
-                href={AiAssist.toDataUrl(image)}
-                download={`generated-${idx + 1}.${image.mimeType.split('/')[1] ?? 'png'}`}
-                className="mt-2 inline-block text-indigo-600 hover:text-indigo-800"
-              >
-                Download
-              </a>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <a
+                  href={AiAssist.toDataUrl(image)}
+                  download={`generated-${idx + 1}.${image.mimeType.split('/')[1] ?? 'png'}`}
+                  className="text-indigo-600 hover:text-indigo-800"
+                >
+                  Download
+                </a>
+                {onUseAsReference !== undefined && (
+                  <button
+                    type="button"
+                    onClick={() => onUseAsReference(image)}
+                    className="text-indigo-600 hover:text-indigo-800"
+                  >
+                    Use as reference
+                  </button>
+                )}
+              </div>
             </figcaption>
           </figure>
         ))}

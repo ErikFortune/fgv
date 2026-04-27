@@ -86,6 +86,62 @@ export interface IEncryptionResult {
 export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048';
 
 /**
+ * Caller-supplied HKDF parameters that domain-separate one
+ * {@link CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes} call from another.
+ * Two wraps that share recipient but differ on `salt` or `info` derive distinct
+ * wrap keys, so callers should pick values that bind the wrap to its
+ * application context (e.g. a content hash for `salt` and a secret name for
+ * `info`).
+ *
+ * Both fields are required; pass an empty `Uint8Array` if the caller has no
+ * value to bind on a given axis. Silent defaulting would hide protocol
+ * mistakes, so the API does not pick defaults.
+ * @public
+ */
+export interface IWrapBytesOptions {
+  /**
+   * HKDF salt. Domain-separates this wrap from others in different contexts.
+   * Caller picks; common choices include a content hash, document id, channel
+   * id, etc.
+   */
+  readonly salt: Uint8Array;
+
+  /**
+   * HKDF info. Further binds the derived key to a specific use within the
+   * calling application. Caller picks; common choices include a secret name,
+   * message type, or version tag.
+   */
+  readonly info: Uint8Array;
+}
+
+/**
+ * Output of {@link CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes}. The
+ * shape is JSON-serializable so it can travel directly over the wire or be
+ * persisted as-is.
+ * @public
+ */
+export interface IWrappedBytes {
+  /**
+   * Sender's ephemeral ECDH P-256 public key as a JSON Web Key. The matching
+   * ephemeral private key is dropped after the shared-secret derive.
+   */
+  readonly ephemeralPublicKey: JsonWebKey;
+
+  /**
+   * AES-GCM nonce, base64-encoded. 12 bytes (96 bits) — the standard AES-GCM
+   * nonce length.
+   */
+  readonly nonce: string;
+
+  /**
+   * AES-GCM ciphertext concatenated with the 16-byte authentication tag,
+   * base64-encoded. Tampering with either the nonce or the ciphertext causes
+   * unwrap to fail GCM authentication.
+   */
+  readonly ciphertext: string;
+}
+
+/**
  * All valid key pair algorithms.
  * @public
  */
@@ -281,6 +337,57 @@ export interface ICryptoProvider {
    * @returns Success with the imported public `CryptoKey`, or Failure with error context.
    */
   importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+
+  /**
+   * Wraps `plaintext` for delivery to the holder of the private key paired
+   * with `recipientPublicKey`. Uses ECIES with ECDH P-256, HKDF-SHA256, and
+   * AES-GCM-256.
+   *
+   * Generates a fresh ephemeral keypair per call; the ephemeral private key
+   * is discarded after the shared-secret derive. Only the recipient (with the
+   * matching private key) and the same HKDF parameters can recover
+   * `plaintext`.
+   *
+   * Empty `plaintext` is permitted; the resulting wrap contains only the
+   * 16-byte GCM authentication tag and round-trips back to an empty
+   * `Uint8Array`.
+   * @param plaintext - The bytes to wrap. Any length supported by AES-GCM
+   * (in practice, well below 2^39 - 256 bits).
+   * @param recipientPublicKey - The recipient's ECDH P-256 public `CryptoKey`.
+   * Must have algorithm name `'ECDH'` and named curve `'P-256'`; mismatched
+   * algorithm or curve yields a `Failure` with error context.
+   * @param options - HKDF parameters; see {@link CryptoUtils.IWrapBytesOptions | IWrapBytesOptions}.
+   * @returns `Success` with the wrapped payload, or `Failure` with error context.
+   */
+  wrapBytes(
+    plaintext: Uint8Array,
+    recipientPublicKey: CryptoKey,
+    options: IWrapBytesOptions
+  ): Promise<Result<IWrappedBytes>>;
+
+  /**
+   * Inverse of {@link CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes}.
+   * Recovers the original `plaintext` from a wrapped payload using the
+   * recipient's private key.
+   *
+   * Returns a `Failure` (never throws) on any of:
+   * - Tampered nonce or ciphertext (AES-GCM authentication fails)
+   * - Wrong private key (different shared secret derives a different wrap key)
+   * - Wrong HKDF parameters (different wrap key)
+   * - Malformed `ephemeralPublicKey` JWK
+   * - Malformed base64 in `nonce` or `ciphertext`
+   * @param wrapped - The wrapped payload produced by `wrapBytes`.
+   * @param recipientPrivateKey - The recipient's ECDH P-256 private
+   * `CryptoKey`. Must have algorithm name `'ECDH'` and named curve `'P-256'`,
+   * and key usages including `'deriveKey'` or `'deriveBits'`.
+   * @param options - The same HKDF parameters used at wrap time.
+   * @returns `Success` with the original `plaintext`, or `Failure` with error context.
+   */
+  unwrapBytes(
+    wrapped: IWrappedBytes,
+    recipientPrivateKey: CryptoKey,
+    options: IWrapBytesOptions
+  ): Promise<Result<Uint8Array>>;
 }
 
 // ============================================================================

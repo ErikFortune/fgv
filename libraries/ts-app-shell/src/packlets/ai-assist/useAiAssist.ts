@@ -378,7 +378,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
       }
       const descriptor = descriptorResult.value;
 
-      if (descriptor.imageApiFormat === undefined) {
+      if (!AiAssist.supportsImageGeneration(descriptor)) {
         return fail(`Provider "${provider}" does not support image generation`);
       }
 

@@ -25,7 +25,12 @@
 
 import { fail, Result, succeed } from '@fgv/ts-utils';
 
-import { type AiProviderId, type IAiModelCapabilityConfig, type IAiProviderDescriptor } from './model';
+import {
+  type AiProviderId,
+  type IAiImageModelCapability,
+  type IAiModelCapabilityConfig,
+  type IAiProviderDescriptor
+} from './model';
 
 // ============================================================================
 // Built-in providers
@@ -69,12 +74,17 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     needsSecret: true,
     apiFormat: 'gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-3.0-generate-002' },
+    defaultModel: { base: 'gemini-2.5-flash', image: 'gemini-2.5-flash-image' },
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    imageApiFormat: 'gemini-imagen'
+    imageGeneration: [
+      // imagen-* models are predict-only and do not accept reference images;
+      // everything else uses chat-style :generateContent with refs.
+      { modelPrefix: 'imagen-', format: 'gemini-imagen' },
+      { modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }
+    ]
   },
   {
     id: 'groq',
@@ -114,7 +124,14 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
-    imageApiFormat: 'openai-images'
+    imageGeneration: [
+      // gpt-image-1 supports /images/edits with reference images. dall-e-3
+      // (the default image model) does not, so the catch-all rule omits
+      // acceptsImageReferenceInput; callers selecting dall-e-3 with refs hit
+      // the up-front rejection rather than a provider 400.
+      { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true },
+      { modelPrefix: '', format: 'openai-images' }
+    ]
   },
   {
     id: 'xai-grok',
@@ -132,7 +149,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: true,
     streamingCorsRestricted: true,
     acceptsImageInput: true,
-    imageApiFormat: 'xai-images'
+    imageGeneration: [{ modelPrefix: '', format: 'xai-images' }]
   }
 ];
 
@@ -177,6 +194,44 @@ export function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>
   return succeed(descriptor);
 }
 
+/**
+ * Whether a provider declares any image-generation capability at all.
+ *
+ * @param descriptor - The provider descriptor
+ * @returns `true` when {@link IAiProviderDescriptor.imageGeneration} has at
+ *   least one entry; `false` otherwise.
+ * @public
+ */
+export function supportsImageGeneration(descriptor: IAiProviderDescriptor): boolean {
+  return (descriptor.imageGeneration?.length ?? 0) > 0;
+}
+
+/**
+ * Resolve the image-generation capability that applies to a given model id
+ * for a provider. Returns the entry from
+ * {@link IAiProviderDescriptor.imageGeneration} whose `modelPrefix` is the
+ * longest prefix of `modelId`. Ties are broken by first-encountered, so rule
+ * order does not matter for correctness — only for tie-breaking among rules
+ * with identical-length prefixes (an unusual case).
+ *
+ * @param descriptor - The provider descriptor
+ * @param modelId - The resolved image model id
+ * @returns The matching capability, or `undefined` when no rule matches or
+ *   the provider declares no image-generation capabilities.
+ * @public
+ */
+export function resolveImageCapability(
+  descriptor: IAiProviderDescriptor,
+  modelId: string
+): IAiImageModelCapability | undefined {
+  return (descriptor.imageGeneration ?? [])
+    .filter((cap) => modelId.startsWith(cap.modelPrefix))
+    .reduce<IAiImageModelCapability | undefined>(
+      (best, cap) => (best && best.modelPrefix.length >= cap.modelPrefix.length ? best : cap),
+      undefined
+    );
+}
+
 // ============================================================================
 // Default model capability config
 // ============================================================================
@@ -206,6 +261,7 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
     ],
     'google-gemini': [
       { idPattern: /^imagen/, capabilities: ['image-generation'] },
+      { idPattern: /^gemini-.*-image/, capabilities: ['image-generation'] },
       { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
     anthropic: [{ idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }],

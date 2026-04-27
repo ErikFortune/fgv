@@ -300,9 +300,20 @@ export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
 
 /**
  * API format categories for image-generation provider routing.
+ *
+ * @remarks
+ * - `'openai-images'` — OpenAI Images API. Routes to `/images/generations`
+ *   (text-only) or `/images/edits` (when reference images are present).
+ * - `'xai-images'` — xAI Images API. Same wire shape as OpenAI but text-only;
+ *   no reference-image support on grok-2-image.
+ * - `'gemini-imagen'` — Google Imagen `:predict` endpoint. Text-only.
+ * - `'gemini-image-out'` — Google Gemini chat-style `:generateContent`
+ *   endpoint that returns image parts (Gemini 2.5 Flash Image / "Nano
+ *   Banana"). Accepts reference images.
+ *
  * @public
  */
-export type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images';
+export type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'gemini-image-out';
 
 // ============================================================================
 // Completion Response
@@ -430,15 +441,56 @@ export interface IAiProviderDescriptor {
    */
   readonly acceptsImageInput: boolean;
   /**
-   * Which image-generation API format this provider uses, or undefined if it
-   * does not support image generation.
+   * Image-generation capabilities, scoped to model id prefixes. Empty or
+   * undefined means the provider does not support image generation.
    *
    * @remarks
+   * The dispatcher matches the resolved model id against each rule's
+   * `modelPrefix` and selects the longest match (see
+   * {@link AiAssist.resolveImageCapability}). An empty `modelPrefix` is the
+   * catch-all and matches every model id.
+   *
+   * Multiple entries support providers that host more than one image-API
+   * surface under one baseUrl. Google Gemini is the canonical case: the
+   * `imagen-*` family is predict-only via `:predict`, while
+   * `gemini-2.5-flash-image` uses chat-style `:generateContent` and accepts
+   * reference images. Listing both lets callers pick the right model and the
+   * dispatcher routes accordingly.
+   *
    * Image-model selection reuses the existing `image` {@link ModelSpecKey}.
-   * Providers with `imageApiFormat` set should declare a model in
+   * Providers that declare `imageGeneration` should declare a model in
    * `defaultModel.image`, e.g. `{ base: 'gpt-4o', image: 'dall-e-3' }`.
    */
-  readonly imageApiFormat?: AiImageApiFormat;
+  readonly imageGeneration?: ReadonlyArray<IAiImageModelCapability>;
+}
+
+/**
+ * Image-generation capability for a model family within a provider. Used as
+ * an entry in {@link IAiProviderDescriptor.imageGeneration}.
+ *
+ * @public
+ */
+export interface IAiImageModelCapability {
+  /**
+   * Prefix matched against the resolved image model id. The empty string is
+   * the catch-all and matches every model. When multiple rules' prefixes
+   * match a model id, the longest prefix wins; ties are broken by
+   * first-encountered.
+   */
+  readonly modelPrefix: string;
+  /** API format used to dispatch requests for matching models. */
+  readonly format: AiImageApiFormat;
+  /**
+   * Whether matching models accept reference images via
+   * {@link AiAssist.IAiImageGenerationParams.referenceImages}. When false or
+   * undefined, calls that include reference images are rejected up front.
+   *
+   * @remarks
+   * Per-model constraints beyond ref support (e.g. dall-e-3 ignores edits)
+   * are not validated here and surface as provider 400s, consistent with the
+   * existing image-generation policy.
+   */
+  readonly acceptsImageReferenceInput?: boolean;
 }
 
 // ============================================================================
@@ -493,6 +545,16 @@ export interface IAiImageGenerationParams {
   readonly prompt: string;
   /** Optional generation options. */
   readonly options?: IAiImageGenerationOptions;
+  /**
+   * Optional reference images. When present, the provider will use them as
+   * visual context (e.g. to preserve a character's appearance across multiple
+   * generations). The dispatcher resolves the
+   * {@link AiAssist.IAiImageModelCapability} for the requested model and
+   * rejects the call up front if `acceptsImageReferenceInput` is not set on
+   * the matching capability. An empty array is treated identically to
+   * `undefined`.
+   */
+  readonly referenceImages?: ReadonlyArray<IAiImageAttachment>;
 }
 
 /**

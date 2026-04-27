@@ -5,14 +5,14 @@
   "main": "lib/index.js",
   "types": "dist/ts-web-extras.d.ts",
   "scripts": {
-    "build": "heft test --clean",
+    "build": "NODE_OPTIONS=--disable-warning=DEP0040 heft test --clean",
     "clean": "heft clean",
-    "test": "heft test --clean",
+    "test": "NODE_OPTIONS=--disable-warning=DEP0040 heft test --clean",
     "build-docs": "typedoc --options ./config/typedoc.json",
     "build-all": "rushx build; rushx build-docs",
-    "test-handles": "jest --runInBand --detectOpenHandles",
+    "test-handles": "NODE_OPTIONS=--disable-warning=DEP0040 jest --runInBand --detectOpenHandles",
     "clean-jest": "jest --clear-cache",
-    "coverage": "jest --coverage",
+    "coverage": "NODE_OPTIONS=--disable-warning=DEP0040 jest --coverage",
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix"
   },

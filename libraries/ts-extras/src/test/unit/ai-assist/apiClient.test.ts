@@ -22,7 +22,11 @@ import '@fgv/ts-utils-jest';
 
 import { AiAssist } from '../../..';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import type { IAiProviderDescriptor } from '../../../packlets/ai-assist/model';
+import type {
+  AiImageApiFormat,
+  IAiImageModelCapability,
+  IAiProviderDescriptor
+} from '../../../packlets/ai-assist/model';
 
 // ============================================================================
 // Test helpers
@@ -920,6 +924,19 @@ describe('callProviderCompletion', () => {
 // Image generation
 // ============================================================================
 
+function imgGen(
+  format: AiImageApiFormat,
+  acceptsRefs: boolean = false
+): ReadonlyArray<IAiImageModelCapability> {
+  return [
+    {
+      modelPrefix: '',
+      format,
+      ...(acceptsRefs ? { acceptsImageReferenceInput: true } : {})
+    }
+  ];
+}
+
 function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProviderDescriptor {
   return {
     id: 'openai',
@@ -933,7 +950,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
-    imageApiFormat: 'openai-images',
+    imageGeneration: imgGen('openai-images'),
     ...overrides
   };
 }
@@ -1286,8 +1303,8 @@ describe('callProviderImageGeneration', () => {
   });
 
   describe('common validation', () => {
-    test('fails when descriptor has no imageApiFormat', async () => {
-      const descriptor = makeDescriptor(); // chat-only xai-grok descriptor with no imageApiFormat
+    test('fails when descriptor declares no image-generation capabilities', async () => {
+      const descriptor = makeDescriptor(); // chat-only xai-grok descriptor; imageGeneration is unset
 
       const result = await AiAssist.callProviderImageGeneration({
         descriptor,
@@ -1500,7 +1517,7 @@ describe('callProviderImageGeneration', () => {
       baseUrl: 'https://api.x.ai/v1',
       defaultModel: { base: 'grok-4-1-fast', image: 'grok-2-image-1212' },
       corsRestricted: true,
-      imageApiFormat: 'xai-images'
+      imageGeneration: imgGen('xai-images')
     });
 
     test('returns image with default jpeg mime type', async () => {
@@ -1540,7 +1557,7 @@ describe('callProviderImageGeneration', () => {
       apiFormat: 'gemini',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
       defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-3.0-generate-002' },
-      imageApiFormat: 'gemini-imagen'
+      imageGeneration: [{ modelPrefix: 'imagen-', format: 'gemini-imagen' }]
     });
 
     test('returns image using mimeType from prediction', async () => {
@@ -1694,6 +1711,20 @@ describe('callProxiedImageGeneration', () => {
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
     expect(body.modelOverride).toBe('gpt-image-1');
+  });
+
+  test('forwards reference images through to the proxy unchanged', async () => {
+    mockFetchResponse({ images: [{ mimeType: 'image/png', base64: 'AAAA' }] });
+    const descriptor = makeImageDescriptor();
+
+    await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
+      descriptor,
+      apiKey: 'test-key',
+      params: { prompt: 'a cat', referenceImages: [TEST_PNG, TEST_JPEG] }
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.params.referenceImages).toEqual([TEST_PNG, TEST_JPEG]);
   });
 
   test('surfaces proxy error response', async () => {
