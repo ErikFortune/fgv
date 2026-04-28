@@ -1730,6 +1730,77 @@ describe('KeyStore', () => {
         expect(result).toFailWith(/asymmetric keypair, not symmetric/i);
       });
     });
+
+    describe('ECDH P-256 keypairs', () => {
+      test('addKeyPair persists an ECDH P-256 entry with an EC public-key JWK', async () => {
+        const result = await keystore.addKeyPair('buyer-key', { algorithm: 'ecdh-p256' });
+
+        expect(result).toSucceedAndSatisfy(({ entry, replaced, warning }) => {
+          expect(entry.algorithm).toBe('ecdh-p256');
+          expect(entry.publicKeyJwk.kty).toBe('EC');
+          expect(entry.publicKeyJwk.crv).toBe('P-256');
+          expect(replaced).toBe(false);
+          expect(warning).toBeUndefined();
+        });
+
+        const entry = keystore.getSecret('buyer-key').orThrow();
+        if (entry.type !== 'asymmetric-keypair') {
+          throw new Error('expected asymmetric entry');
+        }
+        expect(storage.entries.has(entry.id)).toBe(true);
+      });
+
+      test('getPublicKeyJwk returns the stored ECDH P-256 JWK', async () => {
+        const added = (await keystore.addKeyPair('buyer-key', { algorithm: 'ecdh-p256' })).orThrow();
+        expect(keystore.getPublicKeyJwk('buyer-key')).toSucceedWith(added.entry.publicKeyJwk);
+      });
+
+      test('getKeyPair returns an importable ECDH public key and storage-loaded private key', async () => {
+        await keystore.addKeyPair('buyer-key', { algorithm: 'ecdh-p256' });
+
+        const result = await keystore.getKeyPair('buyer-key');
+        expect(result).toSucceedAndSatisfy(({ publicKey, privateKey }) => {
+          expect(publicKey.algorithm.name).toBe('ECDH');
+          expect(privateKey.algorithm.name).toBe('ECDH');
+          expect((publicKey.algorithm as EcKeyAlgorithm).namedCurve).toBe('P-256');
+          expect((privateKey.algorithm as EcKeyAlgorithm).namedCurve).toBe('P-256');
+        });
+      });
+
+      test('end-to-end: keystore-generated ECDH P-256 keypair round-trips through wrapBytes/unwrapBytes', async () => {
+        await keystore.addKeyPair('buyer-key', { algorithm: 'ecdh-p256' });
+        const { publicKey, privateKey } = (await keystore.getKeyPair('buyer-key')).orThrow();
+
+        const plaintext = new TextEncoder().encode('per-buyer wrapped secret');
+        const options = {
+          salt: new TextEncoder().encode('content-hash'),
+          info: new TextEncoder().encode('secret-name')
+        };
+
+        const wrapped = (await provider.wrapBytes(plaintext, publicKey, options)).orThrow();
+        const unwrapped = (await provider.unwrapBytes(wrapped, privateKey, options)).orThrow();
+        expect(unwrapped).toEqual(plaintext);
+      });
+
+      test('save and reopen preserves the ECDH P-256 entry; getKeyPair still works', async () => {
+        const added = (await keystore.addKeyPair('buyer-key', { algorithm: 'ecdh-p256' })).orThrow();
+        const file = (await keystore.save(testPassword)).orThrow();
+
+        const ks2 = CryptoUtils.KeyStore.KeyStore.open({
+          cryptoProvider: provider,
+          keystoreFile: file,
+          privateKeyStorage: storage
+        }).orThrow();
+        await ks2.unlock(testPassword);
+
+        const result = await ks2.getKeyPair('buyer-key');
+        expect(result).toSucceedAndSatisfy(({ publicKey, privateKey }) => {
+          expect(publicKey.algorithm.name).toBe('ECDH');
+          expect(privateKey).toBe(storage.entries.get(added.entry.id));
+        });
+        expect(ks2.getPublicKeyJwk('buyer-key')).toSucceedWith(added.entry.publicKeyJwk);
+      });
+    });
   });
 
   // ==========================================================================
