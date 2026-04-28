@@ -349,6 +349,28 @@ describe('Crypto.NodeCryptoProvider', () => {
       const jwk2 = (await provider.exportPublicKeyJwk(pair2.publicKey)).orThrow();
       expect(jwk1).not.toEqual(jwk2);
     });
+
+    test('generates an ECDH P-256 keypair with derive usages on the private key', async () => {
+      const result = await provider.generateKeyPair('ecdh-p256', true);
+      expect(result).toSucceedAndSatisfy((pair) => {
+        expect(pair.privateKey.algorithm.name).toBe('ECDH');
+        expect(pair.publicKey.algorithm.name).toBe('ECDH');
+        expect((pair.privateKey.algorithm as EcKeyAlgorithm).namedCurve).toBe('P-256');
+        expect((pair.publicKey.algorithm as EcKeyAlgorithm).namedCurve).toBe('P-256');
+        expect(pair.privateKey.usages).toContain('deriveKey');
+        // WebCrypto strips usages a public ECDH key cannot exercise.
+        expect(pair.publicKey.usages).toEqual([]);
+        expect(pair.privateKey.extractable).toBe(true);
+        expect(pair.publicKey.extractable).toBe(true);
+      });
+    });
+
+    test('generates a non-extractable ECDH P-256 private key when extractable=false', async () => {
+      const result = await provider.generateKeyPair('ecdh-p256', false);
+      expect(result).toSucceedAndSatisfy((pair) => {
+        expect(pair.privateKey.extractable).toBe(false);
+      });
+    });
   });
 
   describe('exportPublicKeyJwk', () => {
@@ -370,6 +392,17 @@ describe('Crypto.NodeCryptoProvider', () => {
         expect(jwk.kty).toBe('RSA');
         expect(typeof jwk.n).toBe('string');
         expect(jwk.e).toBe('AQAB');
+      });
+    });
+
+    test('exports an ECDH public key as a P-256 EC JWK', async () => {
+      const pair = (await provider.generateKeyPair('ecdh-p256', true)).orThrow();
+      const result = await provider.exportPublicKeyJwk(pair.publicKey);
+      expect(result).toSucceedAndSatisfy((jwk) => {
+        expect(jwk.kty).toBe('EC');
+        expect(jwk.crv).toBe('P-256');
+        expect(typeof jwk.x).toBe('string');
+        expect(typeof jwk.y).toBe('string');
       });
     });
 
@@ -401,6 +434,18 @@ describe('Crypto.NodeCryptoProvider', () => {
       expect(result).toSucceedAndSatisfy((reimported) => {
         expect(reimported.algorithm.name).toBe('RSA-OAEP');
         expect(reimported.usages).toEqual(['encrypt']);
+      });
+    });
+
+    test('round-trips an ECDH P-256 public key through JWK', async () => {
+      const pair = (await provider.generateKeyPair('ecdh-p256', true)).orThrow();
+      const jwk = (await provider.exportPublicKeyJwk(pair.publicKey)).orThrow();
+      const result = await provider.importPublicKeyJwk(jwk, 'ecdh-p256');
+      expect(result).toSucceedAndSatisfy((reimported) => {
+        expect(reimported.algorithm.name).toBe('ECDH');
+        expect((reimported.algorithm as EcKeyAlgorithm).namedCurve).toBe('P-256');
+        // Public ECDH keys cannot derive on their own — empty usages.
+        expect(reimported.usages).toEqual([]);
       });
     });
 
@@ -453,6 +498,22 @@ describe('Crypto.NodeCryptoProvider', () => {
         ciphertext
       );
       expect(new TextDecoder().decode(decrypted)).toBe('confidential payload');
+    });
+
+    test('ECDH P-256: wrapBytes with re-imported public key, unwrapBytes with private key', async () => {
+      const recipient = (await provider.generateKeyPair('ecdh-p256', true)).orThrow();
+      const jwk = (await provider.exportPublicKeyJwk(recipient.publicKey)).orThrow();
+      const recipientPublic = (await provider.importPublicKeyJwk(jwk, 'ecdh-p256')).orThrow();
+
+      const plaintext = new TextEncoder().encode('per-buyer wrapped secret');
+      const options = {
+        salt: new TextEncoder().encode('content-hash'),
+        info: new TextEncoder().encode('secret-name')
+      };
+
+      const wrapped = (await provider.wrapBytes(plaintext, recipientPublic, options)).orThrow();
+      const unwrapped = (await provider.unwrapBytes(wrapped, recipient.privateKey, options)).orThrow();
+      expect(unwrapped).toEqual(plaintext);
     });
   });
 

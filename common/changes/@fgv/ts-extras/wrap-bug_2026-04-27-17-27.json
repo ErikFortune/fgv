@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add 'ecdh-p256' to KeyPairAlgorithm so wrapBytes/unwrapBytes recipient keypairs can be minted via the public surface",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

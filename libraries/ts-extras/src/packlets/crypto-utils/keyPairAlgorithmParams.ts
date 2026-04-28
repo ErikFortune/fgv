@@ -77,5 +77,15 @@ export const keyPairAlgorithmParams: Readonly<Record<KeyPairAlgorithm, IKeyPairA
     importPublicKey: { name: 'RSA-OAEP', hash: 'SHA-256' },
     keyPairUsages: ['encrypt', 'decrypt'],
     publicKeyUsages: ['encrypt']
+  },
+  'ecdh-p256': {
+    generateKey: { name: 'ECDH', namedCurve: 'P-256' },
+    importPublicKey: { name: 'ECDH', namedCurve: 'P-256' },
+    // WebCrypto filters per-role: the private key takes both derive usages,
+    // and the public key gets [] since an ECDH public key alone cannot derive.
+    keyPairUsages: ['deriveKey', 'deriveBits'],
+    // Importing only the recipient's public key — empty usages because a
+    // standalone ECDH public key has no derivation capability.
+    publicKeyUsages: []
   }
 };

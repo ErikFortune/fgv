@@ -1137,8 +1137,11 @@ const keyDerivationFunction: Converter<KeyDerivationFunction>;
 // @public
 const keyDerivationParams: Converter<IKeyDerivationParams>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048';
+type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
