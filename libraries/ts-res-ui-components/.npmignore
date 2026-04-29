@@ -43,6 +43,7 @@ etc/
 
 # Build artifacts that shouldn't be published
 lib-commonjs/
+dist/
 
 # Documentation source
 docs/
