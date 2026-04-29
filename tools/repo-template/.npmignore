@@ -7,7 +7,7 @@ CLAUDE.md
 .vscode/
 .DS_Store
 
-# Test and coverage files  
+# Test and coverage files
 coverage/
 *.test.ts
 *.test.js
@@ -28,12 +28,6 @@ jest.config.*
 tsconfig.json
 config/
 
-# Build configuration files (for web tools)
-babel.config.js
-webpack.config.js
-tailwind.config.js
-postcss.config.js
-
 # Source files (if publishing only built output)
 # Uncomment if you only want to publish dist/lib
 src/
@@ -49,14 +43,6 @@ etc/
 
 # Build artifacts that shouldn't be published
 lib-commonjs/
-
-# Development and test data
-test-data/
-*_PLAN.md
-EXAMPLE_*.md
-
-# Development assets (for web tools)
-public/
 
 # Documentation source
 docs/
