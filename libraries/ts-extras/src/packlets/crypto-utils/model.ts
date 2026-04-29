@@ -81,9 +81,13 @@ export interface IEncryptionResult {
  * Asymmetric keypair algorithms supported by the crypto provider.
  * - `'ecdsa-p256'`: ECDSA over the P-256 curve, for signing.
  * - `'rsa-oaep-2048'`: RSA-OAEP, 2048-bit modulus with SHA-256, for encryption.
+ * - `'ecdh-p256'`: ECDH over the P-256 curve, for key agreement
+ *   (e.g. as the recipient keypair in
+ *   {@link CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes} /
+ *   {@link CryptoUtils.ICryptoProvider.unwrapBytes | unwrapBytes}).
  * @public
  */
-export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048';
+export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256';
 
 /**
  * Caller-supplied HKDF parameters that domain-separate one
@@ -145,7 +149,11 @@ export interface IWrappedBytes {
  * All valid key pair algorithms.
  * @public
  */
-export const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm> = ['ecdsa-p256', 'rsa-oaep-2048'];
+export const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm> = [
+  'ecdsa-p256',
+  'rsa-oaep-2048',
+  'ecdh-p256'
+];
 
 /**
  * Supported key derivation functions.

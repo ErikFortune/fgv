@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Standardize .npmignore: drop stray debug script, fix ts-sudoku-ui leaks, add missing .npmignore for tool packages",
+      "type": "none",
+      "packageName": "@fgv/repo-template"
+    }
+  ],
+  "packageName": "@fgv/repo-template",
+  "email": "ErikFortune@outlook.com"
+}
