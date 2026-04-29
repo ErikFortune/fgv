@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "bump version",
+      "type": "none",
+      "packageName": "@fgv/heft-dual-rig"
+    }
+  ],
+  "packageName": "@fgv/heft-dual-rig",
+  "email": "ErikFortune@outlook.com"
+}
