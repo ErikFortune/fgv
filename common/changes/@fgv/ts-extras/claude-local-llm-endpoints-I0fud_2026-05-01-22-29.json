@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add endpoint override and local-LLM provider descriptors (ollama, openai-compat) for self-hosted OpenAI-compatible servers; tighten endpoint validation (reject query/fragment/userinfo, strip trailing slash, redact endpoint from error messages); omit Authorization header when apiKey is empty; fail-fast in completion/streaming/image-gen dispatchers when no model is resolved.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
