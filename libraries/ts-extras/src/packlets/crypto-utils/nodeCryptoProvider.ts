@@ -221,8 +221,14 @@ export class NodeCryptoProvider implements ICryptoProvider {
     extractable: boolean
   ): Promise<Result<CryptoKeyPair>> {
     const params = keyPairAlgorithmParams[algorithm];
-    const result = await captureAsyncResult(() =>
-      crypto.webcrypto.subtle.generateKey(params.generateKey, extractable, params.keyPairUsages)
+    // Falls through `subtle.generateKey`'s broad `AlgorithmIdentifier` overload
+    // because the table mixes asymmetric variants (RSA / EC / Ed25519). Every
+    // entry is asymmetric by construction, so the result is a `CryptoKeyPair`.
+    const result = await captureAsyncResult(
+      async () =>
+        (await crypto.webcrypto.subtle.generateKey(params.generateKey as AlgorithmIdentifier, extractable, [
+          ...params.keyPairUsages
+        ])) as CryptoKeyPair
     );
     return result.withErrorFormat((e) => `Failed to generate ${algorithm} keypair: ${e}`);
   }

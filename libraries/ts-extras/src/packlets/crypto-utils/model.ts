@@ -85,9 +85,12 @@ export interface IEncryptionResult {
  *   (e.g. as the recipient keypair in
  *   {@link CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes} /
  *   {@link CryptoUtils.ICryptoProvider.unwrapBytes | unwrapBytes}).
+ * - `'ed25519'`: Edwards-curve Digital Signature Algorithm over Curve25519,
+ *   for signing. Deterministic, no per-signature nonce, simpler to use
+ *   safely than ECDSA.
  * @public
  */
-export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256';
+export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519';
 
 /**
  * Caller-supplied HKDF parameters that domain-separate one
@@ -152,7 +155,8 @@ export interface IWrappedBytes {
 export const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm> = [
   'ecdsa-p256',
   'rsa-oaep-2048',
-  'ecdh-p256'
+  'ecdh-p256',
+  'ed25519'
 ];
 
 /**

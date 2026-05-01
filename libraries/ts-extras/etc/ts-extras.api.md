@@ -857,8 +857,8 @@ interface IKeyDerivationParams {
 //
 // @public
 interface IKeyPairAlgorithmParams {
-    readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams;
-    readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams;
+    readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams | Algorithm;
+    readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams | Algorithm;
     readonly keyPairUsages: ReadonlyArray<KeyUsage>;
     readonly publicKeyUsages: ReadonlyArray<KeyUsage>;
 }
@@ -1146,7 +1146,7 @@ const keyDerivationParams: Converter<IKeyDerivationParams>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256';
+type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
