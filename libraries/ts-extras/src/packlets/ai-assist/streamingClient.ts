@@ -29,6 +29,7 @@
 
 import { fail, Result } from '@fgv/ts-utils';
 
+import { resolveEffectiveBaseUrl } from './endpoint';
 import { type IAiStreamEvent, resolveModel } from './model';
 import { callAnthropicStream } from './streamingAdapters/anthropic';
 import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './streamingAdapters/common';
@@ -69,11 +70,13 @@ export async function callProviderCompletionStream(
     modelOverride,
     logger,
     tools,
-    signal
+    signal,
+    endpoint
   } = params;
 
-  if (!descriptor.baseUrl) {
-    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
+  if (baseUrlResult.isFailure()) {
+    return fail(baseUrlResult.message);
   }
   if (descriptor.streamingCorsRestricted) {
     return fail(`provider "${descriptor.id}" requires a proxy for streaming; none is configured`);
@@ -85,10 +88,17 @@ export async function callProviderCompletionStream(
   const hasTools = tools !== undefined && tools.length > 0;
   const modelContext = hasTools ? 'tools' : undefined;
 
+  const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
+  if (model.length === 0) {
+    return fail(
+      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+    );
+  }
+
   const config: IStreamApiConfig = {
-    baseUrl: descriptor.baseUrl,
+    baseUrl: baseUrlResult.value,
     apiKey,
-    model: resolveModel(modelOverride ?? descriptor.defaultModel, modelContext)
+    model
   };
 
   switch (descriptor.apiFormat) {

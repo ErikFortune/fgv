@@ -114,6 +114,22 @@ describe('AiAssist.registry', () => {
     test('fails for unknown provider', () => {
       expect(AiAssist.getProviderDescriptor('unknown-provider')).toFailWith(/unknown AI provider/i);
     });
+
+    test('exposes ollama as a non-secret openai-format provider with a localhost default', () => {
+      expect(AiAssist.getProviderDescriptor('ollama')).toSucceedAndSatisfy((desc) => {
+        expect(desc.needsSecret).toBe(false);
+        expect(desc.apiFormat).toBe('openai');
+        expect(desc.baseUrl).toBe('http://localhost:11434/v1');
+      });
+    });
+
+    test('exposes openai-compat as a non-secret openai-format provider with no default baseUrl', () => {
+      expect(AiAssist.getProviderDescriptor('openai-compat')).toSucceedAndSatisfy((desc) => {
+        expect(desc.needsSecret).toBe(false);
+        expect(desc.apiFormat).toBe('openai');
+        expect(desc.baseUrl).toBe('');
+      });
+    });
   });
 
   describe('resolveImageCapability', () => {
