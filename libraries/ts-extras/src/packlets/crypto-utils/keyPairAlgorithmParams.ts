@@ -31,17 +31,21 @@ export interface IKeyPairAlgorithmParams {
   /**
    * Algorithm parameters for `crypto.subtle.generateKey`. Always an asymmetric
    * variant — these algorithms produce a `CryptoKeyPair`, not a single key.
-   * The plain `Algorithm` shape covers WebCrypto Secure-Curves entries such as
-   * Ed25519, which take only `{ name }`.
+   * The literal `{ name: 'Ed25519' }` member covers WebCrypto's Secure-Curves
+   * Ed25519 algorithm, which takes only a `name`; using a literal rather than
+   * the base `Algorithm` keeps the union closed to the algorithms this table
+   * supports.
    */
-  readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams | Algorithm;
+  readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams | { readonly name: 'Ed25519' };
 
   /**
    * Algorithm parameters for `crypto.subtle.importKey('jwk', ...)` when
-   * importing the public half of a keypair. The plain `Algorithm` shape covers
-   * WebCrypto Secure-Curves entries such as Ed25519, which take only `{ name }`.
+   * importing the public half of a keypair. The literal `{ name: 'Ed25519' }`
+   * member covers Ed25519 imports, which take only a `name`; using a literal
+   * rather than the base `Algorithm` keeps the union closed to the algorithms
+   * this table supports.
    */
-  readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams | Algorithm;
+  readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams | { readonly name: 'Ed25519' };
 
   /**
    * Default key usages for the generated `CryptoKeyPair`. Both halves receive

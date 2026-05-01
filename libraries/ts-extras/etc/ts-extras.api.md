@@ -857,8 +857,12 @@ interface IKeyDerivationParams {
 //
 // @public
 interface IKeyPairAlgorithmParams {
-    readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams | Algorithm;
-    readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams | Algorithm;
+    readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams | {
+        readonly name: 'Ed25519';
+    };
+    readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams | {
+        readonly name: 'Ed25519';
+    };
     readonly keyPairUsages: ReadonlyArray<KeyUsage>;
     readonly publicKeyUsages: ReadonlyArray<KeyUsage>;
 }
