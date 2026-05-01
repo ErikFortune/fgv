@@ -343,6 +343,52 @@ describe('callProviderCompletionStream', () => {
       expect(result).toFailWith(/endpoint is not a valid URL/i);
       expect(global.fetch).not.toHaveBeenCalled();
     });
+
+    test('rejects an endpoint with a query string', async () => {
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        endpoint: 'http://localhost:11434/v1?token=secret'
+      });
+
+      expect(result).toFailWith(/must not include a query string or fragment/i);
+      if (result.isFailure()) {
+        expect(result.message).not.toMatch(/secret/);
+      }
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('omits the Authorization header when apiKey is empty', async () => {
+      mockSseResponse(openAiChatSse(['hi']));
+      const descriptor = AiAssist.getProviderDescriptor('ollama').orThrow();
+
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: '',
+        prompt: TEST_PROMPT,
+        endpoint: 'http://localhost:11434/v1',
+        modelOverride: 'llama3.2'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      // eslint-disable-next-line dot-notation
+      expect(fetchCall[1].headers['Authorization']).toBeUndefined();
+    });
+
+    test('fails up front when neither defaultModel nor modelOverride yields a model', async () => {
+      const descriptor = AiAssist.getProviderDescriptor('openai-compat').orThrow();
+
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: '',
+        prompt: TEST_PROMPT,
+        endpoint: 'http://10.0.0.5:8080/v1'
+      });
+
+      expect(result).toFailWith(/no model resolved/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
   });
 
   describe('openai chat completions stream', () => {

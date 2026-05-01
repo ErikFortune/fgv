@@ -218,6 +218,36 @@ describe('callProviderListModels', () => {
       expect(result).toFailWith(/endpoint is not a valid URL/i);
       expect(global.fetch).not.toHaveBeenCalled();
     });
+
+    test('rejects an endpoint with a query string', async () => {
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor,
+        apiKey: 'test-key',
+        endpoint: 'http://localhost:11434/v1?token=secret'
+      });
+
+      expect(result).toFailWith(/must not include a query string or fragment/i);
+      if (result.isFailure()) {
+        expect(result.message).not.toMatch(/secret/);
+      }
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('omits the Authorization header when apiKey is empty', async () => {
+      mockFetchResponse(openAiListBody(['llama3.2']));
+      const descriptor = AiAssist.getProviderDescriptor('ollama').orThrow();
+
+      await AiAssist.callProviderListModels({
+        descriptor,
+        apiKey: '',
+        endpoint: 'http://localhost:11434/v1'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[1].headers.Authorization).toBeUndefined();
+    });
   });
 
   describe('openai apiFormat (config-derived capabilities)', () => {

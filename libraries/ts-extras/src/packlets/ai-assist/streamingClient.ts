@@ -88,10 +88,17 @@ export async function callProviderCompletionStream(
   const hasTools = tools !== undefined && tools.length > 0;
   const modelContext = hasTools ? 'tools' : undefined;
 
+  const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
+  if (model.length === 0) {
+    return fail(
+      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+    );
+  }
+
   const config: IStreamApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
-    model: resolveModel(modelOverride ?? descriptor.defaultModel, modelContext)
+    model
   };
 
   switch (descriptor.apiFormat) {

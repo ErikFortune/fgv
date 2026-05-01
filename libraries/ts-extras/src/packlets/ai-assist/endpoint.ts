@@ -30,10 +30,23 @@ import { fail, Result, succeed } from '@fgv/ts-utils';
 import { type IAiProviderDescriptor } from './model';
 
 /**
+ * Builds an OpenAI-style `Authorization: Bearer ${key}` header, or an empty
+ * record when the key is empty. Self-hosted/local OpenAI-compatible servers
+ * (Ollama, LM Studio, llama.cpp) often reject `Authorization: Bearer ` with
+ * an empty key, so we omit the header entirely in that case.
+ *
+ * @internal
+ */
+export function bearerAuthHeader(apiKey: string): Record<string, string> {
+  return apiKey.length > 0 ? { Authorization: `Bearer ${apiKey}` } : {};
+}
+
+/**
  * Resolves the effective base URL for a request, validating the optional
- * `endpoint` override when present. Returns the validated URL with any
- * trailing slash stripped so per-route suffix concatenation (e.g.
- * `/chat/completions`) produces the same shape as the default-baseUrl path.
+ * `endpoint` override when present. Returns the URL with any trailing slash
+ * stripped so per-route suffix concatenation (e.g. `/chat/completions`)
+ * produces the same shape regardless of whether the caller supplied an
+ * override or the descriptor's default is used.
  *
  * @internal
  */
@@ -45,7 +58,7 @@ export function resolveEffectiveBaseUrl(
     if (!descriptor.baseUrl) {
       return fail(`provider "${descriptor.id}" has no API endpoint configured`);
     }
-    return succeed(descriptor.baseUrl);
+    return succeed(descriptor.baseUrl.replace(/\/+$/, ''));
   }
   if (typeof endpoint !== 'string' || endpoint.length === 0) {
     return fail(`provider "${descriptor.id}": endpoint must be a non-empty http(s) URL`);
@@ -54,10 +67,21 @@ export function resolveEffectiveBaseUrl(
   try {
     parsed = new URL(endpoint);
   } catch {
-    return fail(`provider "${descriptor.id}": endpoint is not a valid URL: ${endpoint}`);
+    return fail(`provider "${descriptor.id}": endpoint is not a valid URL`);
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return fail(`provider "${descriptor.id}": endpoint must use http or https: ${endpoint}`);
+    return fail(`provider "${descriptor.id}": endpoint must use http or https (got ${parsed.protocol})`);
   }
-  return succeed(endpoint.replace(/\/+$/, ''));
+  if (parsed.search.length > 0 || parsed.hash.length > 0) {
+    return fail(`provider "${descriptor.id}": endpoint must not include a query string or fragment`);
+  }
+  if (parsed.username.length > 0 || parsed.password.length > 0) {
+    return fail(
+      `provider "${descriptor.id}": endpoint must not include userinfo; pass credentials via apiKey instead`
+    );
+  }
+  // Reconstruct from origin + pathname so the returned URL is normalized
+  // (no userinfo, no query, no fragment) and the suffix concat in callers
+  // produces a well-formed request URL.
+  return succeed(`${parsed.origin}${parsed.pathname}`.replace(/\/+$/, ''));
 }

@@ -59,7 +59,7 @@ import {
   buildOpenAiChatUserContent,
   buildOpenAiResponsesUserContent
 } from './chatRequestBuilders';
-import { resolveEffectiveBaseUrl } from './endpoint';
+import { bearerAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG, resolveImageCapability, supportsImageGeneration } from './registry';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
 
@@ -487,9 +487,7 @@ async function callOpenAiCompletion(
   });
   const body = { model: config.model, messages, temperature };
 
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`
-  };
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI completion: model=${config.model}`);
@@ -555,9 +553,7 @@ async function callOpenAiResponsesCompletion(
     temperature
   };
 
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`
-  };
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI Responses API: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
@@ -786,10 +782,17 @@ export async function callProviderCompletion(
   const hasTools = tools !== undefined && tools.length > 0;
   const modelContext = hasTools ? 'tools' : undefined;
 
+  const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
+  if (model.length === 0) {
+    return fail(
+      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+    );
+  }
+
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
-    model: resolveModel(modelOverride ?? descriptor.defaultModel, modelContext)
+    model
   };
   /* c8 ignore next 8 - optional logger diagnostic output */
   if (logger) {
@@ -1019,9 +1022,7 @@ async function callOpenAiImageGeneration(
 ): Promise<Result<IAiImageGenerationResponse>> {
   const opts: IAiImageGenerationOptions = request.options ?? {};
   const refs = request.referenceImages ?? [];
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`
-  };
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
   const n = opts.count ?? 1;
 
   const fetched =
@@ -1263,6 +1264,11 @@ export async function callProviderImageGeneration(
   }
 
   const model = resolveModel(modelOverride ?? descriptor.defaultModel, 'image');
+  if (model.length === 0) {
+    return fail(
+      `provider "${descriptor.id}": no image model resolved; pass modelOverride or set descriptor.defaultModel.image`
+    );
+  }
   const capability = resolveImageCapability(descriptor, model);
   if (capability === undefined) {
     return fail(`provider "${descriptor.id}" does not support image generation for model "${model}"`);
@@ -1501,9 +1507,7 @@ async function callOpenAiListModels(
   signal?: AbortSignal
 ): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
   const url = `${config.baseUrl}/models`;
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`
-  };
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
   /* c8 ignore next 1 - optional logger */
   logger?.info(`List models: provider=${providerId}, format=openai`);
   const jsonResult = await fetchGetJson(url, headers, logger, signal);
