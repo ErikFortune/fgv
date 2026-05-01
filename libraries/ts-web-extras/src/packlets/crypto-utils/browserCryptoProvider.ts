@@ -352,8 +352,14 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
     extractable: boolean
   ): Promise<Result<CryptoKeyPair>> {
     const params = CryptoUtils.keyPairAlgorithmParams[algorithm];
-    const result = await captureAsyncResult(() =>
-      this._crypto.subtle.generateKey(params.generateKey, extractable, params.keyPairUsages)
+    // Falls through `subtle.generateKey`'s broad `AlgorithmIdentifier` overload
+    // because the table mixes asymmetric variants (RSA / EC / Ed25519). Every
+    // entry is asymmetric by construction, so the result is a `CryptoKeyPair`.
+    const result = await captureAsyncResult(
+      async () =>
+        (await this._crypto.subtle.generateKey(params.generateKey as AlgorithmIdentifier, extractable, [
+          ...params.keyPairUsages
+        ])) as CryptoKeyPair
     );
     return result.withErrorFormat((e) => `Failed to generate ${algorithm} keypair: ${e}`);
   }
