@@ -102,11 +102,55 @@ export interface IProviderCompletionParams {
   readonly tools?: ReadonlyArray<AiServerToolConfig>;
   /** Optional abort signal for cancelling the in-flight request. */
   readonly signal?: AbortSignal;
+  /**
+   * Optional override of the descriptor's default base URL. When set, the
+   * dispatcher uses this URL (scheme + host + optional port + optional path
+   * prefix) and appends the descriptor's per-route suffix (e.g.
+   * `/chat/completions`) the same way it composes against the default.
+   *
+   * Must be a well-formed `http`/`https` URL string. Used to dispatch the same
+   * provider descriptor against a self-hosted or local endpoint (e.g.
+   * `http://localhost:11434/v1` for Ollama, or LAN-hosted OpenAI-compatible
+   * servers).
+   *
+   * Setting `endpoint` does not change the auth shape: providers with
+   * `needsSecret === true` still require an API key.
+   */
+  readonly endpoint?: string;
 }
 
 // ============================================================================
 // Shared helpers
 // ============================================================================
+
+/**
+ * Resolves the effective base URL for a request, validating the optional
+ * `endpoint` override when present. Returns the validated URL with any
+ * trailing slash stripped so per-route suffix concatenation produces the
+ * same shape as the default-baseUrl path.
+ * @internal
+ */
+function resolveEffectiveBaseUrl(descriptor: IAiProviderDescriptor, endpoint?: string): Result<string> {
+  if (endpoint === undefined) {
+    if (!descriptor.baseUrl) {
+      return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+    }
+    return succeed(descriptor.baseUrl);
+  }
+  if (typeof endpoint !== 'string' || endpoint.length === 0) {
+    return fail(`provider "${descriptor.id}": endpoint must be a non-empty http(s) URL`);
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(endpoint);
+  } catch {
+    return fail(`provider "${descriptor.id}": endpoint is not a valid URL: ${endpoint}`);
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return fail(`provider "${descriptor.id}": endpoint must use http or https: ${endpoint}`);
+  }
+  return succeed(endpoint.replace(/\/+$/, ''));
+}
 
 /**
  * Makes an HTTP request and returns the parsed JSON, or a failure.
@@ -755,11 +799,13 @@ export async function callProviderCompletion(
     modelOverride,
     logger,
     tools,
-    signal
+    signal,
+    endpoint
   } = params;
 
-  if (!descriptor.baseUrl) {
-    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
+  if (baseUrlResult.isFailure()) {
+    return fail(baseUrlResult.message);
   }
   if (prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
     return fail(`provider "${descriptor.id}" does not accept image input`);
@@ -769,7 +815,7 @@ export async function callProviderCompletion(
   const modelContext = hasTools ? 'tools' : undefined;
 
   const config: IAiApiConfig = {
-    baseUrl: descriptor.baseUrl,
+    baseUrl: baseUrlResult.value,
     apiKey,
     model: resolveModel(modelOverride ?? descriptor.defaultModel, modelContext)
   };

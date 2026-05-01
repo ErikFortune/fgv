@@ -287,10 +287,12 @@ export type AiProviderId =
   | 'copy-paste'
   | 'xai-grok'
   | 'openai'
+  | 'openai-compat'
   | 'anthropic'
   | 'google-gemini'
   | 'groq'
-  | 'mistral';
+  | 'mistral'
+  | 'ollama';
 
 /**
  * API format categories for provider routing.

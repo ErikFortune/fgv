@@ -918,6 +918,154 @@ describe('callProviderCompletion', () => {
       });
     });
   });
+
+  // ==========================================================================
+  // endpoint override (local / self-hosted LLM endpoints)
+  // ==========================================================================
+
+  describe('endpoint override', () => {
+    test('substitutes endpoint for descriptor.baseUrl when posting', async () => {
+      mockFetchResponse(openAiResponse('local response'));
+      const descriptor = makeDescriptor({ apiFormat: 'openai' });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        endpoint: 'http://localhost:11434/v1',
+        modelOverride: 'llama3.2'
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.content).toBe('local response');
+      });
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://localhost:11434/v1/chat/completions');
+    });
+
+    test('uses descriptor.baseUrl when endpoint is undefined', async () => {
+      mockFetchResponse(openAiResponse('default-host response'));
+      const descriptor = makeDescriptor({ apiFormat: 'openai' });
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.x.ai/v1/chat/completions');
+    });
+
+    test('strips a trailing slash from endpoint before appending the route suffix', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const descriptor = makeDescriptor({ apiFormat: 'openai' });
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        endpoint: 'http://localhost:11434/v1/',
+        modelOverride: 'llama3.2'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://localhost:11434/v1/chat/completions');
+    });
+
+    test('honors endpoint when descriptor.baseUrl is empty (openai-compat)', async () => {
+      mockFetchResponse(openAiResponse('lan response'));
+      const descriptor = AiAssist.getProviderDescriptor('openai-compat').orThrow();
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: '',
+        prompt: testPrompt,
+        endpoint: 'http://192.168.1.42:1234/v1',
+        modelOverride: 'qwen2.5-coder'
+      });
+
+      expect(result).toSucceedWith({ content: 'lan response', truncated: false });
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://192.168.1.42:1234/v1/chat/completions');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('qwen2.5-coder');
+    });
+
+    test('routes through the endpoint for the anthropic format too', async () => {
+      mockFetchResponse(anthropicResponse('local claude'));
+      const descriptor = makeDescriptor({
+        id: 'anthropic',
+        apiFormat: 'anthropic',
+        baseUrl: 'https://api.anthropic.com/v1',
+        defaultModel: 'claude-sonnet-4-5-20250929'
+      });
+
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        endpoint: 'http://localhost:8787/anthropic'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://localhost:8787/anthropic/messages');
+    });
+
+    test('rejects an empty endpoint string', async () => {
+      const descriptor = makeDescriptor({ apiFormat: 'openai' });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        endpoint: ''
+      });
+
+      expect(result).toFailWith(/endpoint must be a non-empty/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('rejects a malformed endpoint URL', async () => {
+      const descriptor = makeDescriptor({ apiFormat: 'openai' });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        endpoint: 'not a url'
+      });
+
+      expect(result).toFailWith(/endpoint is not a valid URL/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('rejects a non-http(s) endpoint URL', async () => {
+      const descriptor = makeDescriptor({ apiFormat: 'openai' });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        endpoint: 'ftp://example.com/api'
+      });
+
+      expect(result).toFailWith(/endpoint must use http or https/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('still fails when no endpoint is provided and the descriptor has no baseUrl', async () => {
+      const descriptor = AiAssist.getProviderDescriptor('openai-compat').orThrow();
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: '',
+        prompt: testPrompt
+      });
+
+      expect(result).toFailWith(/no API endpoint/i);
+    });
+  });
 });
 
 // ============================================================================
