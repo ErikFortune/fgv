@@ -59,6 +59,7 @@ import {
   buildOpenAiChatUserContent,
   buildOpenAiResponsesUserContent
 } from './chatRequestBuilders';
+import { resolveEffectiveBaseUrl } from './endpoint';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG, resolveImageCapability, supportsImageGeneration } from './registry';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
 
@@ -122,35 +123,6 @@ export interface IProviderCompletionParams {
 // ============================================================================
 // Shared helpers
 // ============================================================================
-
-/**
- * Resolves the effective base URL for a request, validating the optional
- * `endpoint` override when present. Returns the validated URL with any
- * trailing slash stripped so per-route suffix concatenation produces the
- * same shape as the default-baseUrl path.
- * @internal
- */
-function resolveEffectiveBaseUrl(descriptor: IAiProviderDescriptor, endpoint?: string): Result<string> {
-  if (endpoint === undefined) {
-    if (!descriptor.baseUrl) {
-      return fail(`provider "${descriptor.id}" has no API endpoint configured`);
-    }
-    return succeed(descriptor.baseUrl);
-  }
-  if (typeof endpoint !== 'string' || endpoint.length === 0) {
-    return fail(`provider "${descriptor.id}": endpoint must be a non-empty http(s) URL`);
-  }
-  let parsed: URL;
-  try {
-    parsed = new URL(endpoint);
-  } catch {
-    return fail(`provider "${descriptor.id}": endpoint is not a valid URL: ${endpoint}`);
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return fail(`provider "${descriptor.id}": endpoint must use http or https: ${endpoint}`);
-  }
-  return succeed(endpoint.replace(/\/+$/, ''));
-}
 
 /**
  * Makes an HTTP request and returns the parsed JSON, or a failure.
@@ -876,6 +848,14 @@ export interface IProviderImageGenerationParams {
   readonly logger?: Logging.ILogger;
   /** Optional abort signal for cancelling the in-flight request. */
   readonly signal?: AbortSignal;
+  /**
+   * Optional override of the descriptor's default base URL. Same semantics as
+   * the non-streaming completion path's endpoint: a well-formed `http`/`https`
+   * URL substituted for `descriptor.baseUrl` when composing the request, with
+   * the per-route suffix (e.g. `/images/generations`, `:predict`) appended
+   * unchanged.
+   */
+  readonly endpoint?: string;
 }
 
 // ============================================================================
@@ -1272,13 +1252,14 @@ async function callImagenGeneration(
 export async function callProviderImageGeneration(
   params: IProviderImageGenerationParams
 ): Promise<Result<IAiImageGenerationResponse>> {
-  const { descriptor, apiKey, params: request, modelOverride, logger, signal } = params;
+  const { descriptor, apiKey, params: request, modelOverride, logger, signal, endpoint } = params;
 
   if (!supportsImageGeneration(descriptor)) {
     return fail(`provider "${descriptor.id}" does not support image generation`);
   }
-  if (!descriptor.baseUrl) {
-    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
+  if (baseUrlResult.isFailure()) {
+    return fail(baseUrlResult.message);
   }
 
   const model = resolveModel(modelOverride ?? descriptor.defaultModel, 'image');
@@ -1291,7 +1272,7 @@ export async function callProviderImageGeneration(
   }
 
   const config: IAiApiConfig = {
-    baseUrl: descriptor.baseUrl,
+    baseUrl: baseUrlResult.value,
     apiKey,
     model
   };
@@ -1341,6 +1322,12 @@ export interface IProviderListModelsParams {
   readonly logger?: Logging.ILogger;
   /** Optional abort signal for cancelling the in-flight request. */
   readonly signal?: AbortSignal;
+  /**
+   * Optional override of the descriptor's default base URL — a well-formed
+   * `http`/`https` URL substituted for `descriptor.baseUrl`, with the
+   * per-format `/models` route appended unchanged.
+   */
+  readonly endpoint?: string;
 }
 
 // ============================================================================
@@ -1625,14 +1612,15 @@ async function callGeminiListModels(
 export async function callProviderListModels(
   params: IProviderListModelsParams
 ): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
-  const { descriptor, apiKey, capability, capabilityConfig, logger, signal } = params;
+  const { descriptor, apiKey, capability, capabilityConfig, logger, signal, endpoint } = params;
 
-  if (!descriptor.baseUrl) {
-    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
+  if (baseUrlResult.isFailure()) {
+    return fail(baseUrlResult.message);
   }
 
   const config: IAiApiConfig = {
-    baseUrl: descriptor.baseUrl,
+    baseUrl: baseUrlResult.value,
     apiKey,
     model: '' // unused by listing
   };

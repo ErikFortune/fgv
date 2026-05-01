@@ -1015,6 +1015,7 @@ interface IProviderCompletionParams {
 interface IProviderCompletionStreamParams {
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly messagesBefore?: ReadonlyArray<IChatMessage>;
     readonly modelOverride?: ModelSpec;
@@ -1028,6 +1029,7 @@ interface IProviderCompletionStreamParams {
 interface IProviderImageGenerationParams {
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly modelOverride?: ModelSpec;
     readonly params: IAiImageGenerationParams;
@@ -1041,6 +1043,7 @@ interface IProviderListModelsParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "DEFAULT_MODEL_CAPABILITY_CONFIG"
     readonly capabilityConfig?: IAiModelCapabilityConfig;
     readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly signal?: AbortSignal;
 }

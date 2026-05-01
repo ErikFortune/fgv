@@ -1531,6 +1531,41 @@ describe('callProviderImageGeneration', () => {
     });
   });
 
+  describe('endpoint override', () => {
+    test('substitutes endpoint for descriptor.baseUrl when generating', async () => {
+      mockFetchResponse(openAiImageBody(['AAAA']));
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' },
+        endpoint: 'http://localhost:8080/v1',
+        modelOverride: 'gpt-image-1'
+      });
+
+      expect(result).toSucceedAndSatisfy((response) => {
+        expect(response.images).toHaveLength(1);
+      });
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://localhost:8080/v1/images/generations');
+    });
+
+    test('rejects a malformed endpoint URL', async () => {
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'a cat' },
+        endpoint: 'not a url'
+      });
+
+      expect(result).toFailWith(/endpoint is not a valid URL/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
   describe('openai-images format', () => {
     test('returns image with default png mime type', async () => {
       mockFetchResponse(openAiImageBody(['AAAA']));

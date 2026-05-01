@@ -297,6 +297,54 @@ describe('callProviderCompletionStream', () => {
     });
   });
 
+  describe('endpoint override', () => {
+    test('substitutes endpoint for descriptor.baseUrl when streaming', async () => {
+      mockSseResponse(openAiChatSse(['hi']));
+      const descriptor = AiAssist.getProviderDescriptor('ollama').orThrow();
+
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: '',
+        prompt: TEST_PROMPT,
+        endpoint: 'http://localhost:11434/v1',
+        modelOverride: 'llama3.2'
+      });
+
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://localhost:11434/v1/chat/completions');
+    });
+
+    test('honors endpoint when descriptor.baseUrl is empty (openai-compat)', async () => {
+      mockSseResponse(openAiChatSse(['hi']));
+      const descriptor = AiAssist.getProviderDescriptor('openai-compat').orThrow();
+
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: '',
+        prompt: TEST_PROMPT,
+        endpoint: 'http://192.168.1.42:1234/v1',
+        modelOverride: 'qwen2.5-coder'
+      });
+
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://192.168.1.42:1234/v1/chat/completions');
+    });
+
+    test('rejects a malformed endpoint URL up front', async () => {
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        endpoint: 'not a url'
+      });
+
+      expect(result).toFailWith(/endpoint is not a valid URL/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
   describe('openai chat completions stream', () => {
     test('translates text deltas and emits done', async () => {
       mockSseResponse(openAiChatSse(['Hello, ', 'world!']));
