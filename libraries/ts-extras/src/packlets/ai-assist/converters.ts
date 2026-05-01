@@ -140,7 +140,8 @@ export const aiAssistProviderConfig: Converter<IAiAssistProviderConfig> =
     provider: aiProviderId,
     secretName: Converters.string.optional(),
     model: modelSpec.optional(),
-    tools: Converters.arrayOf(aiToolEnablement).optional()
+    tools: Converters.arrayOf(aiToolEnablement).optional(),
+    endpoint: Converters.string.optional()
   });
 
 /**
