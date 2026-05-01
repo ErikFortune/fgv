@@ -1266,7 +1266,9 @@ export async function callProviderImageGeneration(
   const model = resolveModel(modelOverride ?? descriptor.defaultModel, 'image');
   if (model.length === 0) {
     return fail(
-      `provider "${descriptor.id}": no image model resolved; pass modelOverride or set descriptor.defaultModel.image`
+      `provider "${descriptor.id}": no image model resolved; ` +
+        `pass modelOverride or set descriptor.defaultModel ` +
+        `(a plain string, or an object with an "image" entry)`
     );
   }
   const capability = resolveImageCapability(descriptor, model);
