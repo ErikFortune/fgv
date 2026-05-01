@@ -146,6 +146,39 @@ export interface IUseAiAssistResult {
 // ============================================================================
 
 /**
+ * Resolves the API key for a dispatcher call, honoring `descriptor.needsSecret`.
+ *
+ * - When `descriptor.needsSecret === false` (e.g. ollama, openai-compat),
+ *   returns the configured key if one happens to be set in the keystore, or
+ *   an empty string otherwise. ts-extras omits the `Authorization` header
+ *   entirely for empty keys, which self-hosted servers expect.
+ * - When `descriptor.needsSecret !== false`, requires `secretName`, an
+ *   unlocked keystore, and a successful key fetch.
+ *
+ * @internal
+ */
+function resolveApiKey(
+  descriptor: AiAssist.IAiProviderDescriptor,
+  providerConfig: AiAssist.IAiAssistProviderConfig,
+  keyStore: AiAssist.IAiAssistKeyStore | undefined
+): Result<string> {
+  const { provider, secretName } = providerConfig;
+  if (descriptor.needsSecret === false) {
+    if (!secretName || !keyStore?.isUnlocked) {
+      return succeed('');
+    }
+    return succeed(keyStore.getApiKey(secretName).orDefault('') ?? '');
+  }
+  if (!secretName) {
+    return fail(`Provider "${provider}" has no secret name configured`);
+  }
+  if (!keyStore) {
+    return fail('No keystore available');
+  }
+  return keyStore.getApiKey(secretName).withErrorFormat((m) => `Failed to get API key: ${m}`);
+}
+
+/**
  * Checks whether a parsed AI response is an error object (with an "error" field)
  * rather than a valid entity. AI prompts instruct the model to return
  * `{ "error": "...", "term": "..." }` when it cannot confidently generate the entity.
@@ -193,8 +226,13 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
       let isAvailable = true;
       let unavailableReason: string | undefined;
 
-      if (config.provider !== 'copy-paste') {
-        // API-based providers need a secret name and unlocked keystore with that secret
+      const descriptor = AiAssist.getProviderDescriptor(config.provider).orDefault();
+
+      // Self-hosted / no-secret providers (e.g. ollama, openai-compat) skip
+      // the keystore check entirely — they're available as long as the
+      // descriptor exists. Providers with `needsSecret: true` still require
+      // a configured secretName and an unlocked keystore.
+      if (config.provider !== 'copy-paste' && descriptor?.needsSecret !== false) {
         if (!config.secretName) {
           isAvailable = false;
           unavailableReason = 'No API key secret configured';
@@ -213,8 +251,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
         }
       }
 
-      const label =
-        AiAssist.getProviderDescriptor(config.provider).orDefault()?.buttonLabel ?? config.provider;
+      const label = descriptor?.buttonLabel ?? config.provider;
       return {
         provider: config.provider,
         label,
@@ -254,17 +291,9 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
       }
       const descriptor = descriptorResult.value;
 
-      if (!providerConfig.secretName) {
-        return fail(`Provider "${provider}" has no secret name configured`);
-      }
-      if (!keyStore) {
-        return fail('No keystore available');
-      }
-
-      // Get API key from keystore
-      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      const apiKeyResult = resolveApiKey(descriptor, providerConfig, keyStore);
       if (apiKeyResult.isFailure()) {
-        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+        return fail(apiKeyResult.message);
       }
 
       setIsWorking(true);
@@ -283,6 +312,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
             prompt,
             additionalMessages: correctionMessages.length > 0 ? correctionMessages : undefined,
             modelOverride: providerConfig.model,
+            endpoint: providerConfig.endpoint,
             logger,
             tools: effectiveTools.length > 0 ? effectiveTools : undefined
           };
@@ -382,16 +412,9 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
         return fail(`Provider "${provider}" does not support image generation`);
       }
 
-      if (!providerConfig.secretName) {
-        return fail(`Provider "${provider}" has no secret name configured`);
-      }
-      if (!keyStore) {
-        return fail('No keystore available');
-      }
-
-      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      const apiKeyResult = resolveApiKey(descriptor, providerConfig, keyStore);
       if (apiKeyResult.isFailure()) {
-        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+        return fail(apiKeyResult.message);
       }
 
       setIsWorking(true);
@@ -401,6 +424,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
           apiKey: apiKeyResult.value,
           params,
           modelOverride: providerConfig.model,
+          endpoint: providerConfig.endpoint,
           logger,
           signal
         };
@@ -437,22 +461,16 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
       }
       const descriptor = descriptorResult.value;
 
-      if (!providerConfig.secretName) {
-        return fail(`Provider "${provider}" has no secret name configured`);
-      }
-      if (!keyStore) {
-        return fail('No keystore available');
-      }
-
-      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      const apiKeyResult = resolveApiKey(descriptor, providerConfig, keyStore);
       if (apiKeyResult.isFailure()) {
-        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+        return fail(apiKeyResult.message);
       }
 
       const requestParams: AiAssist.IProviderListModelsParams = {
         descriptor,
         apiKey: apiKeyResult.value,
         ...(capability !== undefined ? { capability } : {}),
+        endpoint: providerConfig.endpoint,
         logger,
         signal
       };
@@ -491,16 +509,9 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
       }
       const descriptor = descriptorResult.value;
 
-      if (!providerConfig.secretName) {
-        return fail(`Provider "${provider}" has no secret name configured`);
-      }
-      if (!keyStore) {
-        return fail('No keystore available');
-      }
-
-      const apiKeyResult = keyStore.getApiKey(providerConfig.secretName);
+      const apiKeyResult = resolveApiKey(descriptor, providerConfig, keyStore);
       if (apiKeyResult.isFailure()) {
-        return fail(`Failed to get API key: ${apiKeyResult.message}`);
+        return fail(apiKeyResult.message);
       }
 
       const effectiveTools = AiAssist.resolveEffectiveTools(descriptor, providerConfig.tools, options?.tools);
@@ -510,6 +521,7 @@ export function useAiAssist(params: IUseAiAssistParams): IUseAiAssistResult {
         prompt,
         messagesBefore: options?.messagesBefore,
         modelOverride: providerConfig.model,
+        endpoint: providerConfig.endpoint,
         logger,
         tools: effectiveTools.length > 0 ? effectiveTools : undefined,
         signal: options?.signal

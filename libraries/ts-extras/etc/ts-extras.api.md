@@ -560,6 +560,7 @@ interface IAiAssistKeyStore {
 
 // @public
 interface IAiAssistProviderConfig {
+    readonly endpoint?: string;
     readonly model?: ModelSpec;
     readonly provider: AiProviderId;
     readonly secretName?: string;
