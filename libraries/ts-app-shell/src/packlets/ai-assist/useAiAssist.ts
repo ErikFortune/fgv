@@ -146,14 +146,6 @@ export interface IUseAiAssistResult {
 // ============================================================================
 
 /**
- * Checks whether a parsed AI response is an error object (with an "error" field)
- * rather than a valid entity. AI prompts instruct the model to return
- * `{ "error": "...", "term": "..." }` when it cannot confidently generate the entity.
- *
- * @param parsed - The parsed JSON from the AI response
- * @returns A failure Result with the error message if it's an error object, or undefined if not
- */
-/**
  * Resolves the API key for a dispatcher call, honoring `descriptor.needsSecret`.
  *
  * - When `descriptor.needsSecret === false` (e.g. ollama, openai-compat),
@@ -186,6 +178,14 @@ function resolveApiKey(
   return keyStore.getApiKey(secretName).withErrorFormat((m) => `Failed to get API key: ${m}`);
 }
 
+/**
+ * Checks whether a parsed AI response is an error object (with an "error" field)
+ * rather than a valid entity. AI prompts instruct the model to return
+ * `{ "error": "...", "term": "..." }` when it cannot confidently generate the entity.
+ *
+ * @param parsed - The parsed JSON from the AI response
+ * @returns A failure Result with the error message if it's an error object, or undefined if not
+ */
 export function checkForAiErrorObject(parsed: unknown): Result<never> | undefined {
   if (
     typeof parsed === 'object' &&
