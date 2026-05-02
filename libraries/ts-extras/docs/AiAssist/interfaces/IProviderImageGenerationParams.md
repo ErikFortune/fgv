@@ -126,4 +126,21 @@ AbortSignal
 Optional abort signal for cancelling the in-flight request.
 
 </td></tr>
+<tr><td>
+
+[endpoint](./IProviderImageGenerationParams.endpoint.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional override of the descriptor's default base URL.
+
+</td></tr>
 </tbody></table>
