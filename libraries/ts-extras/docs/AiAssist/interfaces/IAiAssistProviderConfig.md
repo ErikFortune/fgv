@@ -92,4 +92,21 @@ readonly [IAiToolEnablement](../../interfaces/IAiToolEnablement.md)[]
 Tool enablement/configuration.
 
 </td></tr>
+<tr><td>
+
+[endpoint](./IAiAssistProviderConfig.endpoint.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+Optional caller-supplied endpoint URL (http/https).
+
+</td></tr>
 </tbody></table>
