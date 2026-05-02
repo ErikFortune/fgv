@@ -27,9 +27,9 @@ If you cannot find what you need here, ask before adding a new dependency or rol
 | [`base`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils/src/packlets/base) | `Result<T>` (`succeed`/`fail`/`captureResult`), `mapResults`/`mapSuccess`/`mapFailures`/`allSucceed`, `MessageAggregator`, branded types (`Brand<T>`), normalization helpers. **Always use `Result<T>` for fallible ops.** |
 | [`conversion`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils/src/packlets/conversion) | `Converters.{string,number,boolean,object,arrayOf,enumeratedValue,optionalField,...}` for transforming/parsing untyped input into typed values. **Use instead of manual `typeof` checks + casts.** |
 | [`validation`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils/src/packlets/validation) | `Validators.{object,arrayOf,isA,oneOf,...}` for in-place validation of class instances or already-constructed objects. |
-| [`collections`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils/src/packlets/collections) | `ResultMap`, `ValidatingResultMap`, `Collector`, `ConvertingCollector`, `ValidatingCollector`, `KeyValueConverters`. **Use these instead of raw `Map`/`Record` when keys/values need validation.** |
+| [`collections`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils/src/packlets/collections) | `ResultMap`, `ValidatingResultMap`, `Collector`, `ConvertingCollector`, `ValidatingCollector`, `KeyValueConverters`. **Result-friendly:** operations return `Result<T>` so they drop directly into `.onSuccess` chains. Use instead of raw `Map`/`Record` when keys/values need validation. |
 | [`hash`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils/src/packlets/hash) | `Crc32Normalizer`, `HashingNormalizer` — deterministic hashing/normalization of arbitrary objects. |
-| [`logging`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils/src/packlets/logging) | `Logger`, `LogReporter` — basic structured logger. |
+| [`logging`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils/src/packlets/logging) | `Logger`, `LogReporter` — Result-friendly logger that can be inserted into a Result chain to log success/failure values without breaking the chain. |
 
 ### `@fgv/ts-utils-jest` — Result-aware Jest matchers
 [libraries/ts-utils-jest](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils-jest)
@@ -49,7 +49,7 @@ If you cannot find what you need here, ask before adding a new dependency or rol
 | [`json-compatible`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/json-compatible) | `JsonCompatibleType<T>` — compile-time check that a typed interface is JSON-serializable. |
 | [`converters`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/converters), [`validators`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/validators) | JSON-shaped converters/validators (e.g. `Converters.jsonObject`, `Converters.jsonValue`). |
 | [`json-file`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/json-file) | `JsonFsHelper`, `JsonTreeHelper` — load/save JSON files, walk JSON trees. |
-| [`file-tree`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/file-tree) | `FileTree`, `FsTree`, in-memory tree — abstract directory/file traversal that works across Node/browser/zip backends. **Use this instead of raw `fs` when code may need to run in a browser or read from a zip.** |
+| [`file-tree`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/file-tree) | `FileTree`, `FsTree`, in-memory tree — abstract directory/file traversal that works across Node/browser/zip/in-memory backends. **Default to `FileTree` for any file/directory access — only fall back to raw `fs` if you have a concrete reason it cannot work.** |
 
 ### `@fgv/ts-json` — templating, conditionals, diff, edit
 [libraries/ts-json](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json)
@@ -68,7 +68,7 @@ If you cannot find what you need here, ask before adding a new dependency or rol
 ### `@fgv/ts-bcp47` — BCP-47 language tags
 [libraries/ts-bcp47](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-bcp47)
 
-`Bcp47.tag(...)`, `Bcp47.similarity(...)`, normalization to canonical/preferred form, IANA registry access (`iana` packlet), UN M.49 region data (`unsd` packlet). **Use this instead of regex-parsing language tags or hand-rolling locale fallback.**
+`Bcp47.tag(...)`, `Bcp47.similarity(...)`, normalization to canonical/preferred form, IANA registry access (`iana` packlet), UN M.49 region data (`unsd` packlet). **Use this instead of regex-parsing language tags or hand-rolling locale fallback.** The language-distance/similarity scoring is designed to plug directly into `@fgv/ts-res` qualifier matching — prefer it over a custom locale-match function if you are working with ts-res.
 
 ---
 
@@ -109,11 +109,6 @@ A full conditional-resource runtime: qualifier types, qualifiers, conditions, de
 | [`file-tree`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/file-tree), [`file-api-types`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/file-api-types) | `FileTree` over the browser File System Access API. |
 | [`helpers`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/helpers) | Browser file-tree convenience helpers. |
 | [`url-utils`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/url-utils) | `urlParams` parsing/serialization. |
-
-### `@fgv/ts-sudoku-lib` / `@fgv/ts-sudoku-ui`
-[ts-sudoku-lib](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-sudoku-lib) · [ts-sudoku-ui](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-sudoku-ui)
-
-Sudoku rules engine (puzzles, hints, collections, file I/O) and React entry/display components. Domain-specific.
 
 ---
 
