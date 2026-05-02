@@ -221,15 +221,22 @@ export class NodeCryptoProvider implements ICryptoProvider {
     extractable: boolean
   ): Promise<Result<CryptoKeyPair>> {
     const params = keyPairAlgorithmParams[algorithm];
-    // Falls through `subtle.generateKey`'s broad `AlgorithmIdentifier` overload
-    // because the table mixes asymmetric variants (RSA / EC / Ed25519). Every
-    // entry is asymmetric by construction, so the result is a `CryptoKeyPair`.
-    const result = await captureAsyncResult(
-      async () =>
-        (await crypto.webcrypto.subtle.generateKey(params.generateKey as AlgorithmIdentifier, extractable, [
-          ...params.keyPairUsages
-        ])) as CryptoKeyPair
-    );
+    // Widening upcast to `AlgorithmIdentifier` steers TS to subtle.generateKey's
+    // broad overload, which accepts the Ed25519 `{ name: 'Ed25519' }` shape and
+    // returns `CryptoKey | CryptoKeyPair`. The narrowing back to `CryptoKeyPair`
+    // is a runtime check via the `in` operator, not a type assertion.
+    const result = await captureAsyncResult(async () => {
+      const generated = await crypto.webcrypto.subtle.generateKey(
+        params.generateKey as AlgorithmIdentifier,
+        extractable,
+        [...params.keyPairUsages]
+      );
+      if ('privateKey' in generated && 'publicKey' in generated) {
+        return generated;
+      }
+      /* c8 ignore next - unreachable: every entry in keyPairAlgorithmParams produces a keypair */
+      throw new Error(`${algorithm} unexpectedly produced a single CryptoKey`);
+    });
     return result.withErrorFormat((e) => `Failed to generate ${algorithm} keypair: ${e}`);
   }
 
