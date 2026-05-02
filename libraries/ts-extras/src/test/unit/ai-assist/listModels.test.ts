@@ -171,6 +171,85 @@ describe('callProviderListModels', () => {
     });
   });
 
+  describe('endpoint override', () => {
+    test('substitutes endpoint for descriptor.baseUrl when listing', async () => {
+      mockFetchResponse(openAiListBody(['llama3.2', 'qwen2.5']));
+      const descriptor = AiAssist.getProviderDescriptor('ollama').orThrow();
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor,
+        apiKey: '',
+        endpoint: 'http://localhost:11434/v1'
+      });
+
+      expect(result).toSucceedAndSatisfy((models) => {
+        expect(models.map((m) => m.id).sort()).toEqual(['llama3.2', 'qwen2.5']);
+      });
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://localhost:11434/v1/models');
+    });
+
+    test('honors endpoint when descriptor.baseUrl is empty (openai-compat)', async () => {
+      mockFetchResponse(openAiListBody(['lan-model']));
+      const descriptor = AiAssist.getProviderDescriptor('openai-compat').orThrow();
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor,
+        apiKey: '',
+        endpoint: 'http://192.168.1.42:1234/v1'
+      });
+
+      expect(result).toSucceedAndSatisfy((models) => {
+        expect(models.map((m) => m.id)).toEqual(['lan-model']);
+      });
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://192.168.1.42:1234/v1/models');
+    });
+
+    test('rejects a malformed endpoint URL', async () => {
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor,
+        apiKey: 'test-key',
+        endpoint: 'not a url'
+      });
+
+      expect(result).toFailWith(/endpoint is not a valid URL/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('rejects an endpoint with a query string', async () => {
+      const descriptor = makeImageDescriptor();
+
+      const result = await AiAssist.callProviderListModels({
+        descriptor,
+        apiKey: 'test-key',
+        endpoint: 'http://localhost:11434/v1?token=secret'
+      });
+
+      expect(result).toFailWith(/must not include a query string or fragment/i);
+      if (result.isFailure()) {
+        expect(result.message).not.toMatch(/secret/);
+      }
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('omits the Authorization header when apiKey is empty', async () => {
+      mockFetchResponse(openAiListBody(['llama3.2']));
+      const descriptor = AiAssist.getProviderDescriptor('ollama').orThrow();
+
+      await AiAssist.callProviderListModels({
+        descriptor,
+        apiKey: '',
+        endpoint: 'http://localhost:11434/v1'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[1].headers.Authorization).toBeUndefined();
+    });
+  });
+
   describe('openai apiFormat (config-derived capabilities)', () => {
     test('returns models with capabilities from default config', async () => {
       mockFetchResponse(openAiListBody(['dall-e-3', 'gpt-4o', 'gpt-3.5-turbo']));

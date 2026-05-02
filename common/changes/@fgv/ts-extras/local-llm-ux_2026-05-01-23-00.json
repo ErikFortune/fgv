@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add optional endpoint field to IAiAssistProviderConfig (and its converter) so app-shell consumers can persist a per-provider endpoint override.",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

@@ -121,7 +121,7 @@ class AiPrompt {
 }
 
 // @public
-type AiProviderId = 'copy-paste' | 'xai-grok' | 'openai' | 'anthropic' | 'google-gemini' | 'groq' | 'mistral';
+type AiProviderId = 'copy-paste' | 'xai-grok' | 'openai' | 'openai-compat' | 'anthropic' | 'google-gemini' | 'groq' | 'mistral' | 'ollama';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "AiProviderId"
 //
@@ -560,6 +560,7 @@ interface IAiAssistKeyStore {
 
 // @public
 interface IAiAssistProviderConfig {
+    readonly endpoint?: string;
     readonly model?: ModelSpec;
     readonly provider: AiProviderId;
     readonly secretName?: string;
@@ -856,8 +857,12 @@ interface IKeyDerivationParams {
 //
 // @public
 interface IKeyPairAlgorithmParams {
-    readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams;
-    readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams;
+    readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams | {
+        readonly name: 'Ed25519';
+    };
+    readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams | {
+        readonly name: 'Ed25519';
+    };
     readonly keyPairUsages: ReadonlyArray<KeyUsage>;
     readonly publicKeyUsages: ReadonlyArray<KeyUsage>;
 }
@@ -1002,6 +1007,7 @@ interface IProviderCompletionParams {
     readonly additionalMessages?: ReadonlyArray<IChatMessage>;
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly modelOverride?: ModelSpec;
     readonly prompt: AiPrompt;
@@ -1014,6 +1020,7 @@ interface IProviderCompletionParams {
 interface IProviderCompletionStreamParams {
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly messagesBefore?: ReadonlyArray<IChatMessage>;
     readonly modelOverride?: ModelSpec;
@@ -1027,6 +1034,7 @@ interface IProviderCompletionStreamParams {
 interface IProviderImageGenerationParams {
     readonly apiKey: string;
     readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly modelOverride?: ModelSpec;
     readonly params: IAiImageGenerationParams;
@@ -1040,6 +1048,7 @@ interface IProviderListModelsParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "DEFAULT_MODEL_CAPABILITY_CONFIG"
     readonly capabilityConfig?: IAiModelCapabilityConfig;
     readonly descriptor: IAiProviderDescriptor;
+    readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
     readonly signal?: AbortSignal;
 }
@@ -1141,7 +1150,7 @@ const keyDerivationParams: Converter<IKeyDerivationParams>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256';
+type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

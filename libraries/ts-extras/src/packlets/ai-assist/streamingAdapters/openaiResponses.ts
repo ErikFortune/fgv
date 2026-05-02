@@ -30,6 +30,7 @@
 import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
 import { buildMessages, buildOpenAiResponsesUserContent } from '../chatRequestBuilders';
+import { bearerAuthHeader } from '../endpoint';
 import { AiPrompt, type AiServerToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toResponsesApiTools } from '../toolFormats';
@@ -177,7 +178,7 @@ export async function callOpenAiResponsesStream(
     temperature,
     stream: true
   };
-  const headers: Record<string, string> = { Authorization: `Bearer ${config.apiKey}` };
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
   /* c8 ignore next 1 - optional logger */
   logger?.info(
     `OpenAI Responses streaming: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`

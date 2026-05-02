@@ -36,7 +36,7 @@ Description
 
 </td><td>
 
-{ copy-paste?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; xai-grok?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; openai?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; anthropic?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; google-gemini?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; groq?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; mistral?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[] }
+{ copy-paste?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; xai-grok?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; openai?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; openai-compat?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; anthropic?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; google-gemini?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; groq?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; mistral?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[]; ollama?: readonly [IAiModelCapabilityRule](../../interfaces/IAiModelCapabilityRule.md)[] }
 
 </td><td>
 

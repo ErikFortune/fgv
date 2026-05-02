@@ -113,6 +113,19 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     acceptsImageInput: false
   },
   {
+    id: 'ollama',
+    label: 'Ollama (self-hosted)',
+    buttonLabel: 'AI Assist | Ollama',
+    needsSecret: false,
+    apiFormat: 'openai',
+    baseUrl: 'http://localhost:11434/v1',
+    defaultModel: '',
+    supportedTools: [],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false
+  },
+  {
     id: 'openai',
     label: 'OpenAI',
     buttonLabel: 'AI Assist | OpenAI',
@@ -132,6 +145,19 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
       { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true },
       { modelPrefix: '', format: 'openai-images' }
     ]
+  },
+  {
+    id: 'openai-compat',
+    label: 'OpenAI-compatible (self-hosted)',
+    buttonLabel: 'AI Assist | OpenAI-compat',
+    needsSecret: false,
+    apiFormat: 'openai',
+    baseUrl: '',
+    defaultModel: '',
+    supportedTools: [],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: false
   },
   {
     id: 'xai-grok',

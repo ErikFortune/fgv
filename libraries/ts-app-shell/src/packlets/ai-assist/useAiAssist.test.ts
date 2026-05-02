@@ -204,6 +204,27 @@ describe('useAiAssist › actions', () => {
     const defaults = result.current.actions.filter((a) => a.isDefault);
     expect(defaults[0].provider).toBe('copy-paste');
   });
+
+  test('marks no-secret providers (ollama) available without a configured secret or keystore', () => {
+    const settings: AiAssist.IAiAssistSettings = {
+      providers: [{ provider: 'ollama', endpoint: 'http://localhost:11434/v1', model: 'llama3.2' }]
+    };
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore: undefined }));
+
+    expect(result.current.actions[0].provider).toBe('ollama');
+    expect(result.current.actions[0].isAvailable).toBe(true);
+    expect(result.current.actions[0].unavailableReason).toBeUndefined();
+  });
+
+  test('marks no-secret providers (openai-compat) available even with a locked keystore', () => {
+    const settings: AiAssist.IAiAssistSettings = {
+      providers: [{ provider: 'openai-compat', endpoint: 'http://10.0.0.5:8080/v1', model: 'mistral-7b' }]
+    };
+    const keyStore = new StubKeyStore(false); // locked
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore }));
+
+    expect(result.current.actions[0].isAvailable).toBe(true);
+  });
 });
 
 // ============================================================================
@@ -539,6 +560,24 @@ describe('useAiAssist › generateDirect', () => {
 
     expect(proxiedSpy).toHaveBeenCalledTimes(1);
   });
+
+  test('forwards endpoint and uses an empty apiKey for no-secret providers (ollama)', async () => {
+    mockSucceed(directSpy, { content: '{"x":1}', truncated: false });
+    const settings: AiAssist.IAiAssistSettings = {
+      providers: [{ provider: 'ollama', endpoint: 'http://localhost:11434/v1', model: 'llama3.2' }]
+    };
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore: undefined }));
+
+    await act(async () => {
+      await result.current.generateDirect('ollama', TEST_PROMPT, succeed);
+    });
+
+    expect(directSpy).toHaveBeenCalledTimes(1);
+    const call = directSpy.mock.calls[0][0] as AiAssist.IProviderCompletionParams;
+    expect(call.endpoint).toBe('http://localhost:11434/v1');
+    expect(call.apiKey).toBe('');
+    expect(call.modelOverride).toBe('llama3.2');
+  });
 });
 
 // ============================================================================
@@ -700,6 +739,31 @@ describe('useAiAssist › generateImages', () => {
 
     expect(r?.message).toMatch(/unknown AI provider/i);
   });
+
+  test('forwards endpoint when configured (e.g. self-hosted reverse proxy)', async () => {
+    mockSucceed(directSpy, { images: [{ mimeType: 'image/png', base64: 'A' }] });
+    const settings: AiAssist.IAiAssistSettings = {
+      providers: [
+        {
+          provider: 'openai',
+          secretName: 'secret.openai',
+          endpoint: 'http://10.0.0.5:8080/v1',
+          model: 'gpt-image-1'
+        }
+      ]
+    };
+    const keyStore = new StubKeyStore(true, new Map([['secret.openai', 'sk-test']]));
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore }));
+
+    await act(async () => {
+      await result.current.generateImages('openai', { prompt: 'cat' });
+    });
+
+    expect(directSpy).toHaveBeenCalledTimes(1);
+    const call = directSpy.mock.calls[0][0] as AiAssist.IProviderImageGenerationParams;
+    expect(call.endpoint).toBe('http://10.0.0.5:8080/v1');
+    expect(call.modelOverride).toBe('gpt-image-1');
+  });
 });
 
 // ============================================================================
@@ -853,6 +917,23 @@ describe('useAiAssist › listModels', () => {
     });
 
     expect(r?.message).toMatch(/unknown AI provider/i);
+  });
+
+  test('forwards endpoint and uses an empty apiKey for no-secret providers (ollama)', async () => {
+    mockSucceed(directSpy, []);
+    const settings: AiAssist.IAiAssistSettings = {
+      providers: [{ provider: 'ollama', endpoint: 'http://localhost:11434/v1' }]
+    };
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore: undefined }));
+
+    await act(async () => {
+      await result.current.listModels('ollama');
+    });
+
+    expect(directSpy).toHaveBeenCalledTimes(1);
+    const call = directSpy.mock.calls[0][0] as AiAssist.IProviderListModelsParams;
+    expect(call.endpoint).toBe('http://localhost:11434/v1');
+    expect(call.apiKey).toBe('');
   });
 });
 
@@ -1078,5 +1159,25 @@ describe('useAiAssist › streamDirect', () => {
       r = await result.current.streamDirect('unknown-z' as AiAssist.AiProviderId, TEST_PROMPT, jest.fn());
     });
     expect(r?.message).toMatch(/unknown AI provider/i);
+  });
+
+  test('forwards endpoint and uses an empty apiKey for no-secret providers (ollama)', async () => {
+    directSpy.mockResolvedValueOnce(
+      succeed(makeStreamSource([{ type: 'done', truncated: false, fullText: 'hi' }]))
+    );
+    const settings: AiAssist.IAiAssistSettings = {
+      providers: [{ provider: 'ollama', endpoint: 'http://localhost:11434/v1', model: 'llama3.2' }]
+    };
+    const { result } = renderHook(() => useAiAssist({ settings, keyStore: undefined }));
+
+    await act(async () => {
+      await result.current.streamDirect('ollama', TEST_PROMPT, jest.fn());
+    });
+
+    expect(directSpy).toHaveBeenCalledTimes(1);
+    const call = directSpy.mock.calls[0][0] as AiAssist.IProviderCompletionStreamParams;
+    expect(call.endpoint).toBe('http://localhost:11434/v1');
+    expect(call.apiKey).toBe('');
+    expect(call.modelOverride).toBe('llama3.2');
   });
 });

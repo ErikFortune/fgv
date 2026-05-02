@@ -59,6 +59,7 @@ import {
   buildOpenAiChatUserContent,
   buildOpenAiResponsesUserContent
 } from './chatRequestBuilders';
+import { bearerAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG, resolveImageCapability, supportsImageGeneration } from './registry';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
 
@@ -102,6 +103,21 @@ export interface IProviderCompletionParams {
   readonly tools?: ReadonlyArray<AiServerToolConfig>;
   /** Optional abort signal for cancelling the in-flight request. */
   readonly signal?: AbortSignal;
+  /**
+   * Optional override of the descriptor's default base URL. When set, the
+   * dispatcher uses this URL (scheme + host + optional port + optional path
+   * prefix) and appends the descriptor's per-route suffix (e.g.
+   * `/chat/completions`) the same way it composes against the default.
+   *
+   * Must be a well-formed `http`/`https` URL string. Used to dispatch the same
+   * provider descriptor against a self-hosted or local endpoint (e.g.
+   * `http://localhost:11434/v1` for Ollama, or LAN-hosted OpenAI-compatible
+   * servers).
+   *
+   * Setting `endpoint` does not change the auth shape: providers with
+   * `needsSecret === true` still require an API key.
+   */
+  readonly endpoint?: string;
 }
 
 // ============================================================================
@@ -471,9 +487,7 @@ async function callOpenAiCompletion(
   });
   const body = { model: config.model, messages, temperature };
 
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`
-  };
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI completion: model=${config.model}`);
@@ -539,9 +553,7 @@ async function callOpenAiResponsesCompletion(
     temperature
   };
 
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`
-  };
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI Responses API: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
@@ -755,11 +767,13 @@ export async function callProviderCompletion(
     modelOverride,
     logger,
     tools,
-    signal
+    signal,
+    endpoint
   } = params;
 
-  if (!descriptor.baseUrl) {
-    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
+  if (baseUrlResult.isFailure()) {
+    return fail(baseUrlResult.message);
   }
   if (prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
     return fail(`provider "${descriptor.id}" does not accept image input`);
@@ -768,10 +782,17 @@ export async function callProviderCompletion(
   const hasTools = tools !== undefined && tools.length > 0;
   const modelContext = hasTools ? 'tools' : undefined;
 
+  const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
+  if (model.length === 0) {
+    return fail(
+      `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
+    );
+  }
+
   const config: IAiApiConfig = {
-    baseUrl: descriptor.baseUrl,
+    baseUrl: baseUrlResult.value,
     apiKey,
-    model: resolveModel(modelOverride ?? descriptor.defaultModel, modelContext)
+    model
   };
   /* c8 ignore next 8 - optional logger diagnostic output */
   if (logger) {
@@ -830,6 +851,14 @@ export interface IProviderImageGenerationParams {
   readonly logger?: Logging.ILogger;
   /** Optional abort signal for cancelling the in-flight request. */
   readonly signal?: AbortSignal;
+  /**
+   * Optional override of the descriptor's default base URL. Same semantics as
+   * the non-streaming completion path's endpoint: a well-formed `http`/`https`
+   * URL substituted for `descriptor.baseUrl` when composing the request, with
+   * the per-route suffix (e.g. `/images/generations`, `:predict`) appended
+   * unchanged.
+   */
+  readonly endpoint?: string;
 }
 
 // ============================================================================
@@ -993,9 +1022,7 @@ async function callOpenAiImageGeneration(
 ): Promise<Result<IAiImageGenerationResponse>> {
   const opts: IAiImageGenerationOptions = request.options ?? {};
   const refs = request.referenceImages ?? [];
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`
-  };
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
   const n = opts.count ?? 1;
 
   const fetched =
@@ -1226,16 +1253,24 @@ async function callImagenGeneration(
 export async function callProviderImageGeneration(
   params: IProviderImageGenerationParams
 ): Promise<Result<IAiImageGenerationResponse>> {
-  const { descriptor, apiKey, params: request, modelOverride, logger, signal } = params;
+  const { descriptor, apiKey, params: request, modelOverride, logger, signal, endpoint } = params;
 
   if (!supportsImageGeneration(descriptor)) {
     return fail(`provider "${descriptor.id}" does not support image generation`);
   }
-  if (!descriptor.baseUrl) {
-    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
+  if (baseUrlResult.isFailure()) {
+    return fail(baseUrlResult.message);
   }
 
   const model = resolveModel(modelOverride ?? descriptor.defaultModel, 'image');
+  if (model.length === 0) {
+    return fail(
+      `provider "${descriptor.id}": no image model resolved; ` +
+        `pass modelOverride or set descriptor.defaultModel ` +
+        `(a plain string, or an object with an "image" entry)`
+    );
+  }
   const capability = resolveImageCapability(descriptor, model);
   if (capability === undefined) {
     return fail(`provider "${descriptor.id}" does not support image generation for model "${model}"`);
@@ -1245,7 +1280,7 @@ export async function callProviderImageGeneration(
   }
 
   const config: IAiApiConfig = {
-    baseUrl: descriptor.baseUrl,
+    baseUrl: baseUrlResult.value,
     apiKey,
     model
   };
@@ -1295,6 +1330,12 @@ export interface IProviderListModelsParams {
   readonly logger?: Logging.ILogger;
   /** Optional abort signal for cancelling the in-flight request. */
   readonly signal?: AbortSignal;
+  /**
+   * Optional override of the descriptor's default base URL — a well-formed
+   * `http`/`https` URL substituted for `descriptor.baseUrl`, with the
+   * per-format `/models` route appended unchanged.
+   */
+  readonly endpoint?: string;
 }
 
 // ============================================================================
@@ -1468,9 +1509,7 @@ async function callOpenAiListModels(
   signal?: AbortSignal
 ): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
   const url = `${config.baseUrl}/models`;
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`
-  };
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
   /* c8 ignore next 1 - optional logger */
   logger?.info(`List models: provider=${providerId}, format=openai`);
   const jsonResult = await fetchGetJson(url, headers, logger, signal);
@@ -1579,14 +1618,15 @@ async function callGeminiListModels(
 export async function callProviderListModels(
   params: IProviderListModelsParams
 ): Promise<Result<ReadonlyArray<IAiModelInfo>>> {
-  const { descriptor, apiKey, capability, capabilityConfig, logger, signal } = params;
+  const { descriptor, apiKey, capability, capabilityConfig, logger, signal, endpoint } = params;
 
-  if (!descriptor.baseUrl) {
-    return fail(`provider "${descriptor.id}" has no API endpoint configured`);
+  const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
+  if (baseUrlResult.isFailure()) {
+    return fail(baseUrlResult.message);
   }
 
   const config: IAiApiConfig = {
-    baseUrl: descriptor.baseUrl,
+    baseUrl: baseUrlResult.value,
     apiKey,
     model: '' // unused by listing
   };

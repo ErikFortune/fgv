@@ -29,6 +29,7 @@
 import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
 
 import { buildMessages, buildOpenAiChatUserContent } from '../chatRequestBuilders';
+import { bearerAuthHeader } from '../endpoint';
 import { AiPrompt, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
@@ -158,7 +159,7 @@ export async function callOpenAiChatStream(
     head: messagesBefore
   });
   const body = { model: config.model, messages, temperature, stream: true };
-  const headers: Record<string, string> = { Authorization: `Bearer ${config.apiKey}` };
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI streaming completion: model=${config.model}`);
   const conn = await openSseConnection(url, headers, body, logger, signal);

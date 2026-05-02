@@ -36,7 +36,7 @@ Description
 
 </td><td>
 
-{ copy-paste?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; xai-grok?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; openai?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; anthropic?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; google-gemini?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; groq?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; mistral?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[] }
+{ copy-paste?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; xai-grok?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; openai?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; openai-compat?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; anthropic?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; google-gemini?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; groq?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; mistral?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[]; ollama?: readonly [IAiModelCapabilityRule](IAiModelCapabilityRule.md)[] }
 
 </td><td>
 

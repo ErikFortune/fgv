@@ -7,5 +7,5 @@ All known AI provider identifiers.
 ## Type
 
 ```typescript
-type AiProviderId = "copy-paste" | "xai-grok" | "openai" | "anthropic" | "google-gemini" | "groq" | "mistral"
+type AiProviderId = "copy-paste" | "xai-grok" | "openai" | "openai-compat" | "anthropic" | "google-gemini" | "groq" | "mistral" | "ollama"
 ```

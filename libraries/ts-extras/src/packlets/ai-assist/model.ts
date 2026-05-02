@@ -287,10 +287,12 @@ export type AiProviderId =
   | 'copy-paste'
   | 'xai-grok'
   | 'openai'
+  | 'openai-compat'
   | 'anthropic'
   | 'google-gemini'
   | 'groq'
-  | 'mistral';
+  | 'mistral'
+  | 'ollama';
 
 /**
  * API format categories for provider routing.
@@ -657,6 +659,14 @@ export interface IAiAssistProviderConfig {
   readonly model?: ModelSpec;
   /** Tool enablement/configuration. Tools are disabled unless explicitly enabled. */
   readonly tools?: ReadonlyArray<IAiToolEnablement>;
+  /**
+   * Optional caller-supplied endpoint URL (http/https). Overrides
+   * `descriptor.baseUrl` for this provider. Used to point a provider at a
+   * self-hosted server (Ollama, LM Studio, llama.cpp's openai-server) or a
+   * local proxy. Validation lives in `@fgv/ts-extras` — query strings,
+   * fragments, and userinfo are rejected.
+   */
+  readonly endpoint?: string;
 }
 
 /**
