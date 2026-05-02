@@ -371,6 +371,25 @@ describe('Crypto.NodeCryptoProvider', () => {
         expect(pair.privateKey.extractable).toBe(false);
       });
     });
+
+    test('generates an Ed25519 keypair with sign/verify usages', async () => {
+      const result = await provider.generateKeyPair('ed25519', true);
+      expect(result).toSucceedAndSatisfy((pair) => {
+        expect(pair.privateKey.algorithm.name).toBe('Ed25519');
+        expect(pair.publicKey.algorithm.name).toBe('Ed25519');
+        expect(pair.privateKey.usages).toContain('sign');
+        expect(pair.publicKey.usages).toContain('verify');
+        expect(pair.privateKey.extractable).toBe(true);
+        expect(pair.publicKey.extractable).toBe(true);
+      });
+    });
+
+    test('generates a non-extractable Ed25519 private key when extractable=false', async () => {
+      const result = await provider.generateKeyPair('ed25519', false);
+      expect(result).toSucceedAndSatisfy((pair) => {
+        expect(pair.privateKey.extractable).toBe(false);
+      });
+    });
   });
 
   describe('exportPublicKeyJwk', () => {
@@ -403,6 +422,16 @@ describe('Crypto.NodeCryptoProvider', () => {
         expect(jwk.crv).toBe('P-256');
         expect(typeof jwk.x).toBe('string');
         expect(typeof jwk.y).toBe('string');
+      });
+    });
+
+    test('exports an Ed25519 public key as an OKP JWK', async () => {
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      const result = await provider.exportPublicKeyJwk(pair.publicKey);
+      expect(result).toSucceedAndSatisfy((jwk) => {
+        expect(jwk.kty).toBe('OKP');
+        expect(jwk.crv).toBe('Ed25519');
+        expect(typeof jwk.x).toBe('string');
       });
     });
 
@@ -446,6 +475,16 @@ describe('Crypto.NodeCryptoProvider', () => {
         expect((reimported.algorithm as EcKeyAlgorithm).namedCurve).toBe('P-256');
         // Public ECDH keys cannot derive on their own — empty usages.
         expect(reimported.usages).toEqual([]);
+      });
+    });
+
+    test('round-trips an Ed25519 public key through JWK', async () => {
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      const jwk = (await provider.exportPublicKeyJwk(pair.publicKey)).orThrow();
+      const result = await provider.importPublicKeyJwk(jwk, 'ed25519');
+      expect(result).toSucceedAndSatisfy((reimported) => {
+        expect(reimported.algorithm.name).toBe('Ed25519');
+        expect(reimported.usages).toEqual(['verify']);
       });
     });
 
@@ -498,6 +537,32 @@ describe('Crypto.NodeCryptoProvider', () => {
         ciphertext
       );
       expect(new TextDecoder().decode(decrypted)).toBe('confidential payload');
+    });
+
+    test('Ed25519: signs with private key, verifies with re-imported public key', async () => {
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      const jwk = (await provider.exportPublicKeyJwk(pair.publicKey)).orThrow();
+      const verifyKey = (await provider.importPublicKeyJwk(jwk, 'ed25519')).orThrow();
+
+      const message = new TextEncoder().encode('hello, edwards');
+      const signature = await crypto.webcrypto.subtle.sign({ name: 'Ed25519' }, pair.privateKey, message);
+
+      const verified = await crypto.webcrypto.subtle.verify(
+        { name: 'Ed25519' },
+        verifyKey,
+        signature,
+        message
+      );
+      expect(verified).toBe(true);
+
+      const tampered = new TextEncoder().encode('hello, edwards!');
+      const verifiedTampered = await crypto.webcrypto.subtle.verify(
+        { name: 'Ed25519' },
+        verifyKey,
+        signature,
+        tampered
+      );
+      expect(verifiedTampered).toBe(false);
     });
 
     test('ECDH P-256: wrapBytes with re-imported public key, unwrapBytes with private key', async () => {

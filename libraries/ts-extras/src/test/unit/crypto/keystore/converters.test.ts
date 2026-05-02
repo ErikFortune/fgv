@@ -84,8 +84,12 @@ describe('Key Store Converters', () => {
       );
     });
 
+    test('accepts ed25519', () => {
+      expect(CryptoUtils.KeyStore.Converters.keyPairAlgorithm.convert('ed25519')).toSucceedWith('ed25519');
+    });
+
     test('rejects unknown algorithm', () => {
-      expect(CryptoUtils.KeyStore.Converters.keyPairAlgorithm.convert('ed25519')).toFail();
+      expect(CryptoUtils.KeyStore.Converters.keyPairAlgorithm.convert('rsa-pss-2048')).toFail();
     });
 
     test('rejects non-string', () => {
@@ -256,7 +260,7 @@ describe('Key Store Converters', () => {
       expect(
         CryptoUtils.KeyStore.Converters.keystoreAsymmetricEntryJson.convert({
           ...validInput,
-          algorithm: 'ed25519'
+          algorithm: 'rsa-pss-2048'
         })
       ).toFail();
     });
