@@ -21,6 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { Converters as BaseConverters, Validators as BaseValidators } from '@fgv/ts-utils';
 import { Converters, sanitizeJson } from '../..';
 
 describe('converters', () => {
@@ -281,6 +282,63 @@ describe('converters', () => {
         expect(v.outer).toEqual({ inner: 'value' });
         expect(v.list).toEqual([1, 2, 3]);
       });
+    });
+  });
+
+  describe('stringifiedJson', () => {
+    test('parses to JsonValue when no inner converter is supplied', () => {
+      const converter = Converters.stringifiedJson();
+      expect(converter.convert('{"name":"test","value":42}')).toSucceedWith({ name: 'test', value: 42 });
+      expect(converter.convert('[1,2,3]')).toSucceedWith([1, 2, 3]);
+      expect(converter.convert('"hello"')).toSucceedWith('hello');
+      expect(converter.convert('42')).toSucceedWith(42);
+      expect(converter.convert('true')).toSucceedWith(true);
+      expect(converter.convert('null')).toSucceedWith(null);
+    });
+
+    test('applies a Converter inner step to the parsed value', () => {
+      interface ITestShape {
+        name: string;
+        value: number;
+      }
+      const inner = BaseConverters.object<ITestShape>({
+        name: BaseConverters.string,
+        value: BaseConverters.number
+      });
+      const converter = Converters.stringifiedJson<ITestShape>(inner);
+      expect(converter.convert('{"name":"test","value":42}')).toSucceedWith({ name: 'test', value: 42 });
+    });
+
+    test('applies a Validator inner step to the parsed value', () => {
+      interface ITestShape {
+        name: string;
+        value: number;
+      }
+      const inner = BaseValidators.object<ITestShape>({
+        name: BaseValidators.string,
+        value: BaseValidators.number
+      });
+      const converter = Converters.stringifiedJson<ITestShape>(inner);
+      expect(converter.convert('{"name":"test","value":42}')).toSucceedWith({ name: 'test', value: 42 });
+    });
+
+    test('fails when the input is not a string', () => {
+      const converter = Converters.stringifiedJson();
+      expect(converter.convert({ name: 'test' })).toFailWith(/input must be a string/i);
+      expect(converter.convert(42)).toFailWith(/input must be a string/i);
+      expect(converter.convert(undefined)).toFailWith(/input must be a string/i);
+    });
+
+    test('fails when the JSON is malformed', () => {
+      const converter = Converters.stringifiedJson();
+      expect(converter.convert('{not: valid}')).toFailWith(/failed to parse json/i);
+      expect(converter.convert('')).toFailWith(/failed to parse json/i);
+    });
+
+    test('propagates inner converter failures', () => {
+      const inner = BaseConverters.object<{ name: string }>({ name: BaseConverters.string });
+      const converter = Converters.stringifiedJson<{ name: string }>(inner);
+      expect(converter.convert('{"name":42}')).toFail();
     });
   });
 });

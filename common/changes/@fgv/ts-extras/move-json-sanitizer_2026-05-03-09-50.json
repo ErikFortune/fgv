@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist: add fence-tolerant JSON helpers (extractJsonText, fencedStringifiedJson) and end-to-end generateJsonCompletion<T> for validated JSON-mode LLM completions",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
