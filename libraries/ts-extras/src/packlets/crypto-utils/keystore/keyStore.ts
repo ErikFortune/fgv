@@ -593,17 +593,27 @@ export class KeyStore implements IEncryptionProvider {
    * those same parameters here for verification.
    *
    * Re-derives a key from `password` + `keyDerivation`, then compares it to
-   * the stored key material in constant time. Only valid for symmetric entries
-   * whose stored key length matches the derived key length (32 bytes for
-   * PBKDF2/AES-256 as derived by `cryptoProvider.deriveKey`).
+   * the stored key material in constant time. Restricted to entries of type
+   * `'encryption-key'` — the type produced by `addSecretFromPassword`. Other
+   * symmetric types (`'api-key'`) and asymmetric entries are rejected so
+   * the boolean result reflects "this slot accepts this password" rather
+   * than an incidental byte-equality match against unrelated material.
+   *
+   * Note: the keystore does not currently flag whether an `'encryption-key'`
+   * entry was actually password-derived (vs. random via `addSecret` or raw
+   * via `importSecret`). A `true` result therefore means "the candidate
+   * password produces the same 32 bytes currently stored", which is what
+   * the equivalent consumer-side helper (`verifyGatePassword`) already
+   * implies for entries it manages.
    *
    * @param name - Name of the secret to verify against
    * @param password - Candidate password to test
    * @param keyDerivation - The key derivation parameters returned by
-   * `addSecretFromPassword` when the secret was created
+   * `addSecretFromPassword` when the secret was created. Only
+   * `kdf: 'pbkdf2'` is supported.
    * @returns Success(true) when the candidate matches the stored key,
    * Success(false) when it does not, Failure if locked, secret missing,
-   * wrong type, or key derivation fails
+   * wrong type, unsupported `kdf`, or key derivation fails
    * @public
    */
   public async verifySecretFromPassword(
@@ -617,13 +627,16 @@ export class KeyStore implements IEncryptionProvider {
     if (!password || password.length === 0) {
       return fail('Password cannot be empty');
     }
+    if (keyDerivation.kdf !== 'pbkdf2') {
+      return fail(`Unsupported kdf '${keyDerivation.kdf}' (expected 'pbkdf2')`);
+    }
 
     const entry = this._secrets.get(name);
     if (!entry) {
       return fail(`Secret '${name}' not found`);
     }
-    if (entry.type === 'asymmetric-keypair') {
-      return fail(`Secret '${name}' is not symmetric key material (type: ${entry.type})`);
+    if (entry.type !== 'encryption-key') {
+      return fail(`Secret '${name}' is not a password-verifiable encryption key (type: ${entry.type})`);
     }
 
     const saltResult = this._cryptoProvider.fromBase64(keyDerivation.salt);
@@ -1326,17 +1339,14 @@ export class KeyStore implements IEncryptionProvider {
   }
 
   /**
-   * Mints a fresh UUID v4 storage handle using the crypto provider's
-   * {@link CryptoUtils.ICryptoProvider.generateRandomBytes | generateRandomBytes}.
-   * Random-bytes failures propagate as Failure.
-   */
-  /**
    * Constant-time byte comparison. Returns false immediately for length
    * mismatch (length is not secret); for equal-length inputs, walks the full
    * buffer accumulating differences via XOR so the running time does not leak
    * the position of the first differing byte.
    */
   private static _timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+    /* c8 ignore next 3 - defensive: callers in this class only compare
+       PBKDF2-derived 32-byte keys against encryption-key entries (also 32 bytes) */
     if (a.length !== b.length) {
       return false;
     }
@@ -1348,6 +1358,11 @@ export class KeyStore implements IEncryptionProvider {
     return diff === 0;
   }
 
+  /**
+   * Mints a fresh UUID v4 storage handle using the crypto provider's
+   * {@link CryptoUtils.ICryptoProvider.generateRandomBytes | generateRandomBytes}.
+   * Random-bytes failures propagate as Failure.
+   */
   private _generateId(): Result<string> {
     return this._cryptoProvider.generateRandomBytes(16).onSuccess((bytes) => {
       // Per RFC 4122 §4.4: set version (4) and variant (10xx) bits.

@@ -386,20 +386,11 @@ describe('KeyStore', () => {
         expect(result).toSucceedWith(false);
       });
 
-      test('returns false when stored key length differs from derived key length', async () => {
-        // api-key entries store the UTF-8 encoded string, which is unlikely to be 32 bytes.
-        await keystore.importApiKey('an-api-key', 'short');
-        const result = await keystore.verifySecretFromPassword('an-api-key', 'short', {
-          kdf: 'pbkdf2',
-          salt: CryptoUtils.toBase64(provider.generateRandomBytes(16).orThrow()),
-          iterations: 100000
-        });
-        expect(result).toSucceedWith(false);
-      });
-
-      test('verifies an api-key entry whose stored bytes happen to match the derived key', async () => {
-        // Construct a 32-byte api-key entry from a known derived key so the type
-        // check does not block verification for symmetric entries other than 'encryption-key'.
+      test('rejects api-key entries even when the stored bytes match the derived key', async () => {
+        // Construct a 32-byte api-key entry from a known derived key. Although
+        // the bytes would compare equal, verifySecretFromPassword refuses
+        // non-encryption-key types so callers cannot accidentally probe an
+        // api-key as a password slot.
         const salt = provider.generateRandomBytes(16).orThrow();
         const derived = (await provider.deriveKey('shared-pw', salt, 100000)).orThrow();
         await keystore.importSecret('matched-api-key', derived, { type: 'api-key' });
@@ -408,7 +399,16 @@ describe('KeyStore', () => {
           salt: CryptoUtils.toBase64(salt),
           iterations: 100000
         });
-        expect(result).toSucceedWith(true);
+        expect(result).toFailWith(/not a password-verifiable encryption key/i);
+      });
+
+      test('fails for unsupported kdf', async () => {
+        const added = (await keystore.addSecretFromPassword('pw-secret', 'my-password')).orThrow();
+        const result = await keystore.verifySecretFromPassword('pw-secret', 'my-password', {
+          ...added.keyDerivation,
+          kdf: 'scrypt' as unknown as 'pbkdf2'
+        });
+        expect(result).toFailWith(/unsupported kdf/i);
       });
 
       test('fails when locked', async () => {
@@ -451,7 +451,7 @@ describe('KeyStore', () => {
           salt: CryptoUtils.toBase64(provider.generateRandomBytes(16).orThrow()),
           iterations: 100000
         });
-        expect(result).toFailWith(/not symmetric/i);
+        expect(result).toFailWith(/not a password-verifiable encryption key/i);
       });
 
       test('fails with invalid base64 salt', async () => {
