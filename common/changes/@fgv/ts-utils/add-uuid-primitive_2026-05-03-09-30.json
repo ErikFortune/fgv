@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Add platform-agnostic UUID primitive: generateUuid(), Uuid branded type, isValidUuid() type guard (wraps globalThis.crypto.randomUUID for Node >= 18 and modern browsers).",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

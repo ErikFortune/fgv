@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Implement ICryptoProvider.generateUuid() in BrowserCryptoProvider; delegates to the @fgv/ts-utils primitive.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}
