@@ -84,3 +84,18 @@ export {
 } from './converters';
 
 export { resolveEffectiveTools } from './toolFormats';
+
+export {
+  extractJsonText,
+  fencedStringifiedJson,
+  type IFencedStringifiedJsonOptions,
+  type JsonTextExtractor
+} from './jsonResponse';
+
+export {
+  generateJsonCompletion,
+  SMART_JSON_PROMPT_HINT,
+  type IGenerateJsonCompletionParams,
+  type IGenerateJsonCompletionResult,
+  type JsonPromptHint
+} from './jsonCompletion';

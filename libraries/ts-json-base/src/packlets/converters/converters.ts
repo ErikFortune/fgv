@@ -26,6 +26,7 @@ import {
   Converters as BaseConverters,
   Result,
   StringConverter,
+  Validator,
   captureResult,
   fail,
   succeed
@@ -256,6 +257,38 @@ export function enumeratedValue<T>(
       return fail(message ?? `Invalid enumerated value ${JSON.stringify(from)}`);
     }
   );
+}
+
+/**
+ * Creates a converter that accepts a string, parses it as JSON, and optionally
+ * applies the supplied inner converter or validator to the parsed value.
+ *
+ * @remarks
+ * Unlike {@link jsonConverter}, the inner step is optional. When omitted, the
+ * converter resolves to the parsed `JsonValue` (object, array, or primitive).
+ * Both `Converter<T>` and `Validator<T>` are accepted because both expose
+ * `convert(unknown): Result<T>`.
+ *
+ * @param inner - Optional `Converter<T>` or `Validator<T>` applied to the
+ * parsed JSON value.
+ * @returns Converter that parses a JSON string into `T` (or `JsonValue` when
+ * no inner step is supplied).
+ * @public
+ */
+/** @public */
+export function stringifiedJson(): Converter<JsonValue>;
+/** @public */
+export function stringifiedJson<T>(inner: Converter<T> | Validator<T>): Converter<T>;
+export function stringifiedJson<T>(inner?: Converter<T> | Validator<T>): Converter<T | JsonValue> {
+  const step: { convert(from: unknown): Result<T | JsonValue> } = inner ?? jsonValue;
+  return new Conversion.BaseConverter<T | JsonValue>((from: unknown): Result<T | JsonValue> => {
+    if (typeof from !== 'string') {
+      return fail('stringifiedJson: input must be a string.');
+    }
+    return captureResult<unknown>(() => JSON.parse(from))
+      .withErrorFormat((msg) => `stringifiedJson: failed to parse JSON: ${msg}`)
+      .onSuccess((parsed) => step.convert(parsed));
+  });
 }
 
 /**

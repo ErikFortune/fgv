@@ -87,7 +87,16 @@ declare namespace AiAssist {
         aiAssistSettings,
         modelSpecKey,
         modelSpec,
-        resolveEffectiveTools
+        resolveEffectiveTools,
+        extractJsonText,
+        fencedStringifiedJson,
+        IFencedStringifiedJsonOptions,
+        JsonTextExtractor,
+        generateJsonCompletion,
+        SMART_JSON_PROMPT_HINT,
+        IGenerateJsonCompletionParams,
+        IGenerateJsonCompletionResult,
+        JsonPromptHint
     }
 }
 export { AiAssist }
@@ -451,6 +460,19 @@ class ExtendedArray<T> extends Array<T> {
 // @beta
 function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<T, TC>, onError?: Conversion.OnError): Converter<ExtendedArray<T>, TC>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "JsonTextExtractor"
+//
+// @public
+const extractJsonText: JsonTextExtractor;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "extractJsonText"
+//
+// @public
+function fencedStringifiedJson(options?: IFencedStringifiedJsonOptions<never>): Converter<JsonValue>;
+
+// @public (undocumented)
+function fencedStringifiedJson<T>(options: IFencedStringifiedJsonOptions<T>): Converter<T>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @beta
@@ -496,6 +518,12 @@ const GCM_AUTH_TAG_SIZE: number;
 
 // @public
 const GCM_IV_SIZE: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderCompletion"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "fencedStringifiedJson"
+//
+// @public
+function generateJsonCompletion<T>(params: IGenerateJsonCompletionParams<T>): Promise<Result<IGenerateJsonCompletionResult<T>>>;
 
 // @public
 function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>;
@@ -832,6 +860,37 @@ interface IEncryptionResult {
     readonly iv: Uint8Array;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "fencedStringifiedJson"
+//
+// @public
+interface IFencedStringifiedJsonOptions<T> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "extractJsonText"
+    readonly extractor?: JsonTextExtractor;
+    readonly inner?: Converter<T> | Validator<T>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "generateJsonCompletion"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderCompletionParams"
+//
+// @public
+interface IGenerateJsonCompletionParams<T> extends IProviderCompletionParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "fencedStringifiedJson"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IGenerateJsonCompletionParams"
+    readonly converter?: Converter<T> | Validator<T>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IGenerateJsonCompletionParams"
+    readonly jsonConverter?: Converter<T>;
+    readonly promptHint?: JsonPromptHint;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "generateJsonCompletion"
+//
+// @public
+interface IGenerateJsonCompletionResult<T> {
+    readonly raw: string;
+    readonly response: IAiCompletionResponse;
+    readonly value: T;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IImportSecretOptions"
 //
@@ -1129,6 +1188,15 @@ interface JarRecordParserOptions {
     // (undocumented)
     readonly fixedContinuationSize?: number;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "generateJsonCompletion"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "SMART_JSON_PROMPT_HINT"
+//
+// @public
+type JsonPromptHint = 'smart' | 'none' | string;
+
+// @public
+type JsonTextExtractor = (text: string) => Result<string>;
 
 // @public
 const jsonWebKeyShape: Validator<JsonWebKey>;
@@ -1525,6 +1593,11 @@ function resolveModel(spec: ModelSpec, context?: string): string;
 
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IGenerateJsonCompletionParams"
+//
+// @public
+const SMART_JSON_PROMPT_HINT: string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //

@@ -47,7 +47,7 @@ If you cannot find what you need here, ask before adding a new dependency or rol
 |---|---|
 | [`json`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/json) | `JsonValue`/`JsonObject`/`JsonArray`/`JsonPrimitive` type definitions. |
 | [`json-compatible`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/json-compatible) | `JsonCompatibleType<T>` — compile-time check that a typed interface is JSON-serializable. |
-| [`converters`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/converters), [`validators`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/validators) | JSON-shaped converters/validators (e.g. `Converters.jsonObject`, `Converters.jsonValue`). |
+| [`converters`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/converters), [`validators`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/validators) | JSON-shaped converters/validators (e.g. `Converters.jsonObject`, `Converters.jsonValue`, `Converters.stringifiedJson` — parses a JSON string then optionally validates with an inner `Converter<T>` or `Validator<T>`). |
 | [`json-file`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/json-file) | `JsonFsHelper`, `JsonTreeHelper` — load/save JSON files, walk JSON trees. |
 | [`file-tree`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json-base/src/packlets/file-tree) | `FileTree`, `FsTree`, in-memory tree — abstract directory/file traversal that works across Node/browser/zip/in-memory backends. **Default to `FileTree` for any file/directory access — only fall back to raw `fs` if you have a concrete reason it cannot work.** |
 
@@ -100,6 +100,7 @@ A full conditional-resource runtime: qualifier types, qualifiers, conditions, de
 | [`hash`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras/src/packlets/hash) | `Md5Normalizer` (Node + browser variants). |
 | [`zip-file-tree`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras/src/packlets/zip-file-tree) | `FileTree` accessors backed by a ZIP archive. |
 | [`conversion`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras/src/packlets/conversion) | Extra converters beyond ts-utils. |
+| [`ai-assist`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras/src/packlets/ai-assist) | LLM provider client + JSON-tolerant response handling. `callProviderCompletion`/`callProviderCompletionStream` (OpenAI, xAI, Anthropic, Gemini), provider/model registry, `AiPrompt`. **For JSON-shaped completions use `generateJsonCompletion<T>({ converter, ... })`** — it appends a smart "raw JSON only" prompt hint and runs the response through `fencedStringifiedJson`, which strips Markdown fences, leading preamble, and trailing prose before validating with the caller's `Converter<T>` or `Validator<T>`. The bare `extractJsonText` helper is exported for callers that just need wrapper-stripping; `fencedStringifiedJson({ extractor, inner })` is the extension point for custom extractors. **Don't reimplement fence-stripping in consumers.** |
 
 ### `@fgv/ts-web-extras` — browser-only utilities
 [libraries/ts-web-extras](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras)
@@ -143,6 +144,9 @@ Several core abstractions are defined once and have separate Node and browser im
 - **Symmetric encryption / decryption (AES-GCM)?** → `DirectEncryptionProvider` or `KeyStore.encryptByName` from `@fgv/ts-extras/crypto-utils`, backed by `NodeCryptoProvider` (Node) or `BrowserCryptoProvider` (browser).
 - **Password-protected vault for keys / API keys / keypairs?** → `KeyStore` from `@fgv/ts-extras/crypto-utils`. Use `addSecretFromPassword` to derive + store, `verifySecretFromPassword` for constant-time password verification.
 - **PBKDF2 key derivation, ECIES wrap/unwrap, asymmetric keypairs (Ed25519, ECDSA-P256, ECDH-P256, RSA-OAEP)?** → `ICryptoProvider` from `@fgv/ts-extras/crypto-utils`. Never call `node:crypto` or `crypto.subtle` directly.
+- **Parsing a JSON-shaped string (with optional inner validation)?** → `Converters.stringifiedJson(inner?)` from `@fgv/ts-json-base/converters`.
+- **Asking an LLM for JSON and getting a validated `T`?** → `AiAssist.generateJsonCompletion<T>({ converter, ... })` from `@fgv/ts-extras/ai-assist`. Tolerates Markdown fences, preamble, and trailing prose by default. Don't reimplement fence-stripping in consumers.
+- **Stripping LLM Markdown fences from raw text?** → `AiAssist.extractJsonText` (default extractor) or `AiAssist.fencedStringifiedJson({ extractor, inner })` (extension point) from `@fgv/ts-extras/ai-assist`.
 - **Parsing / comparing language tags?** → `@fgv/ts-bcp47`.
 - **Context-conditional resources?** → `@fgv/ts-res`.
 - **Jest matchers for `Result<T>`?** → `@fgv/ts-utils-jest`.

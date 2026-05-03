@@ -67,6 +67,7 @@ declare namespace Converters {
     export {
         literal,
         enumeratedValue,
+        stringifiedJson,
         jsonConverter,
         IJsonConverterContext,
         jsonPrimitive,
@@ -810,6 +811,12 @@ const string: StringConverter<string, IJsonConverterContext>;
 //
 // @public
 const string_2: Validation.Classes.StringValidator<string, IJsonValidatorContext>;
+
+// @public (undocumented)
+function stringifiedJson(): Converter<JsonValue>;
+
+// @public (undocumented)
+function stringifiedJson<T>(inner: Converter<T> | Validator<T>): Converter<T>;
 
 // @public
 type Validator_2<T, TC = unknown> = Validator<JsonCompatibleType<T>, TC>;
