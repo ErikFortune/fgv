@@ -52,7 +52,7 @@ export function isValidUuid(value: string): value is Uuid {
  * API (`globalThis.crypto.randomUUID`). Works in Node.js \>= 18 and modern
  * browsers without per-call runtime checks.
  * @returns A new {@link Uuid}.
- * @throws An `Error` if the runtime does not expose `globalThis.crypto.randomUUID`\.
+ * @throws An `Error` if the runtime does not expose `globalThis.crypto.randomUUID`.
  * This indicates an unsupported platform, not a per-call failure mode, so it is
  * surfaced as a thrown error rather than a `Result`.
  * @public

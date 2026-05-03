@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 
+import { isValidUuid } from '@fgv/ts-utils';
 import { BrowserCryptoProvider } from '../../packlets/crypto-utils';
 
 const provider = new BrowserCryptoProvider();
@@ -29,7 +30,7 @@ const provider = new BrowserCryptoProvider();
 describe('BrowserCryptoProvider — generateUuid', () => {
   test('generates a canonical UUID', () => {
     expect(provider.generateUuid()).toSucceedAndSatisfy((uuid) => {
-      expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+      expect(isValidUuid(uuid)).toBe(true);
     });
   });
 
