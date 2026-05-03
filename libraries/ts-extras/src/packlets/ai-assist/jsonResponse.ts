@@ -58,20 +58,17 @@ function stripBom(text: string): string {
 }
 
 function findBalancedJsonSubstring(text: string): string | undefined {
-  const firstObject = text.indexOf('{');
-  const firstArray = text.indexOf('[');
-  const candidates = [firstObject, firstArray].filter((idx) => idx >= 0);
-  if (candidates.length === 0) {
-    return undefined;
-  }
-  const start = Math.min(...candidates);
-  const open = text.charAt(start);
-  const close = open === '{' ? '}' : ']';
-
-  let depth = 0;
+  // Walk the text once tracking string state. The first '{' or '[' that is
+  // *outside* a quoted string is the candidate start; from there, count
+  // matching close characters while ignoring delimiters that appear inside
+  // strings.
   let inString = false;
   let escape = false;
-  for (let i = start; i < text.length; i++) {
+  let start = -1;
+  let open = '';
+  let close = '';
+  let depth = 0;
+  for (let i = 0; i < text.length; i++) {
     const ch = text.charAt(i);
     if (inString) {
       if (escape) {
@@ -85,6 +82,15 @@ function findBalancedJsonSubstring(text: string): string | undefined {
     }
     if (ch === '"') {
       inString = true;
+      continue;
+    }
+    if (start < 0) {
+      if (ch === '{' || ch === '[') {
+        start = i;
+        open = ch;
+        close = ch === '{' ? '}' : ']';
+        depth = 1;
+      }
       continue;
     }
     if (ch === open) {
@@ -130,17 +136,16 @@ export const extractJsonText: JsonTextExtractor = (text: string): Result<string>
     return fail('extractJsonText: no JSON content found.');
   }
 
+  // Whole-candidate primitive check runs before the brace scan so that a
+  // valid JSON string containing braces (e.g. `"text with { }"`) is returned
+  // intact instead of being mangled into the first balanced `{ }` match.
+  if (JSON_KEYWORD.test(candidate) || JSON_NUMBER.test(candidate) || JSON_STRING.test(candidate)) {
+    return succeed(candidate);
+  }
+
   const balanced = findBalancedJsonSubstring(candidate);
   if (balanced !== undefined) {
     return succeed(balanced);
-  }
-
-  // Allow primitive JSON when the entire candidate parses as a JSON primitive.
-  // Anything that merely starts with one (e.g. `42 trailing text`) falls
-  // through so the caller sees a clear "no JSON-shaped substring" failure
-  // rather than a downstream JSON.parse error.
-  if (JSON_KEYWORD.test(candidate) || JSON_NUMBER.test(candidate) || JSON_STRING.test(candidate)) {
-    return succeed(candidate);
   }
 
   return fail('extractJsonText: no JSON-shaped substring found.');

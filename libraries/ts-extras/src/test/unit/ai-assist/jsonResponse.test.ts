@@ -130,6 +130,16 @@ describe('extractJsonText', () => {
     expect(extractJsonText('null')).toSucceedWith('null');
   });
 
+  test('returns a JSON string containing braces intact (does not extract inner braces)', () => {
+    expect(extractJsonText('"text with { } here"')).toSucceedWith('"text with { } here"');
+    expect(extractJsonText('"contains [1, 2] and {a:1}"')).toSucceedWith('"contains [1, 2] and {a:1}"');
+  });
+
+  test('skips braces inside quoted strings in the preamble before locating real JSON', () => {
+    const input = 'Output: "ignored { brace }" then actual: {"a":1}';
+    expect(extractJsonText(input)).toSucceedWith('{"a":1}');
+  });
+
   test('rejects candidates that merely start like a JSON primitive', () => {
     expect(extractJsonText('42 trailing text')).toFailWith(/no JSON-shaped substring/i);
     expect(extractJsonText('"a" "b"')).toFailWith(/no JSON-shaped substring/i);
