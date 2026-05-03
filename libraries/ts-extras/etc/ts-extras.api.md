@@ -1202,7 +1202,7 @@ interface JarRecordParserOptions {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type JsonPromptHint = 'smart' | 'none' | string;
+type JsonPromptHint = 'smart' | 'none' | (string & {});
 
 // @public
 type JsonTextExtractor = (text: string) => Result<string>;

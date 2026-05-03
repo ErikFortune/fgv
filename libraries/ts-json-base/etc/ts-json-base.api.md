@@ -812,7 +812,7 @@ const string: StringConverter<string, IJsonConverterContext>;
 // @public
 const string_2: Validation.Classes.StringValidator<string, IJsonValidatorContext>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "jsonConverter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function stringifiedJson(): Converter<JsonValue>;

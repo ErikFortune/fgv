@@ -51,9 +51,14 @@ export const SMART_JSON_PROMPT_HINT: string =
  * - `'none'`: do not modify the prompt.
  * - A string: append the supplied text verbatim.
  *
+ * @remarks
+ * The `string & {}` branch is the standard TypeScript trick that prevents
+ * the literal members from being widened away — callers still get
+ * autocomplete for `'smart'` and `'none'` while accepting any string.
+ *
  * @public
  */
-export type JsonPromptHint = 'smart' | 'none' | string;
+export type JsonPromptHint = 'smart' | 'none' | (string & {});
 
 /**
  * Parameters for {@link AiAssist.generateJsonCompletion}. Extends

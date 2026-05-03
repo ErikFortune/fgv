@@ -121,11 +121,20 @@ describe('extractJsonText', () => {
 
   test('returns a primitive JSON value when present', () => {
     expect(extractJsonText('"hello"')).toSucceedWith('"hello"');
+    expect(extractJsonText('"with \\"escapes\\""')).toSucceedWith('"with \\"escapes\\""');
     expect(extractJsonText('42')).toSucceedWith('42');
     expect(extractJsonText('-3.14')).toSucceedWith('-3.14');
+    expect(extractJsonText('1.5e10')).toSucceedWith('1.5e10');
     expect(extractJsonText('true')).toSucceedWith('true');
     expect(extractJsonText('false')).toSucceedWith('false');
     expect(extractJsonText('null')).toSucceedWith('null');
+  });
+
+  test('rejects candidates that merely start like a JSON primitive', () => {
+    expect(extractJsonText('42 trailing text')).toFailWith(/no JSON-shaped substring/i);
+    expect(extractJsonText('"a" "b"')).toFailWith(/no JSON-shaped substring/i);
+    expect(extractJsonText('truthy')).toFailWith(/no JSON-shaped substring/i);
+    expect(extractJsonText('-1.2.3')).toFailWith(/no JSON-shaped substring/i);
   });
 
   test('fails on empty input', () => {

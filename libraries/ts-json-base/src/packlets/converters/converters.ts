@@ -264,7 +264,7 @@ export function enumeratedValue<T>(
  * applies the supplied inner converter or validator to the parsed value.
  *
  * @remarks
- * Unlike {@link jsonConverter}, the inner step is optional. When omitted, the
+ * Unlike {@link Converters.jsonConverter}, the inner step is optional. When omitted, the
  * converter resolves to the parsed `JsonValue` (object, array, or primitive).
  * Both `Converter<T>` and `Validator<T>` are accepted because both expose
  * `convert(unknown): Result<T>`.

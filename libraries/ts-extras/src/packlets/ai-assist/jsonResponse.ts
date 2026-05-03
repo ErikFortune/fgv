@@ -45,7 +45,13 @@ import { Converters as JsonBaseConverters, type JsonValue } from '@fgv/ts-json-b
 export type JsonTextExtractor = (text: string) => Result<string>;
 
 const FENCED_BLOCK: RegExp = /```[A-Za-z0-9_-]*\s*\r?\n([\s\S]*?)\r?\n?```/;
-const BOM: RegExp = /^﻿/;
+const BOM: RegExp = /^\uFEFF/;
+// Full RFC 8259 grammar so the extractor only succeeds when the entire
+// candidate parses as a JSON primitive (instead of just starting like one).
+const JSON_NUMBER: RegExp = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+// eslint-disable-next-line no-control-regex
+const JSON_STRING: RegExp = /^"(?:[^"\\\u0000-\u001F]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"$/;
+const JSON_KEYWORD: RegExp = /^(?:true|false|null)$/;
 
 function stripBom(text: string): string {
   return text.replace(BOM, '');
@@ -129,9 +135,11 @@ export const extractJsonText: JsonTextExtractor = (text: string): Result<string>
     return succeed(balanced);
   }
 
-  // Allow primitive JSON (e.g. `"text"`, `42`, `true`, `null`) when no object
-  // or array delimiter is present but the content already looks like JSON.
-  if (/^(true|false|null)$/.test(candidate) || /^-?\d/.test(candidate) || /^".*"$/.test(candidate)) {
+  // Allow primitive JSON when the entire candidate parses as a JSON primitive.
+  // Anything that merely starts with one (e.g. `42 trailing text`) falls
+  // through so the caller sees a clear "no JSON-shaped substring" failure
+  // rather than a downstream JSON.parse error.
+  if (JSON_KEYWORD.test(candidate) || JSON_NUMBER.test(candidate) || JSON_STRING.test(candidate)) {
     return succeed(candidate);
   }
 
