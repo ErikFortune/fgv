@@ -18,7 +18,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { captureAsyncResult, captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
+import {
+  captureAsyncResult,
+  captureResult,
+  fail,
+  Failure,
+  generateUuid,
+  Result,
+  succeed,
+  Success,
+  Uuid
+} from '@fgv/ts-utils';
 import { CryptoUtils } from '@fgv/ts-extras';
 
 /* c8 ignore start - Used only by browser-only methods that cannot be tested in Node.js environment */
@@ -303,6 +313,15 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
       const message = e instanceof Error ? e.message : String(e);
       return Failure.with(`Random bytes generation failed: ${message}`);
     }
+  }
+
+  /**
+   * Generates a cryptographically random UUIDv4 via the platform Web Crypto API.
+   * @returns `Success` with the generated UUID, or `Failure` if the runtime
+   * does not expose `globalThis.crypto.randomUUID`.
+   */
+  public generateUuid(): Result<Uuid> {
+    return captureResult(() => generateUuid());
   }
 
   /**

@@ -603,6 +603,22 @@ describe('Crypto.NodeCryptoProvider', () => {
     });
   });
 
+  describe('generateUuid', () => {
+    test('generates a canonical UUID', () => {
+      expect(provider.generateUuid()).toSucceedAndSatisfy((uuid) => {
+        expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+      });
+    });
+
+    test('generates a different UUID on each call', () => {
+      const uuids = new Set<string>();
+      for (let i = 0; i < 50; i++) {
+        uuids.add(provider.generateUuid().orThrow());
+      }
+      expect(uuids.size).toBe(50);
+    });
+  });
+
   describe('toBase64', () => {
     test('encodes empty array', () => {
       const result = provider.toBase64(new Uint8Array(0));
