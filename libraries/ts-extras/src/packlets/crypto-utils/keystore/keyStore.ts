@@ -27,6 +27,7 @@ import {
   IEncryptedFile,
   IEncryptionConfig,
   IEncryptionProvider,
+  IKeyDerivationParams,
   SecretProvider
 } from '../model';
 import {
@@ -579,6 +580,68 @@ export class KeyStore implements IEncryptionProvider {
         iterations
       }
     });
+  }
+
+  /**
+   * Verifies that a candidate password derives the same key material currently
+   * stored under `name`, using the supplied
+   * {@link CryptoUtils.IKeyDerivationParams | key derivation parameters}.
+   *
+   * The keystore does not persist per-slot key derivation parameters with the
+   * entry — callers receive them from `addSecretFromPassword` and store them
+   * alongside the encrypted artifact (or wherever else makes sense). Pass
+   * those same parameters here for verification.
+   *
+   * Re-derives a key from `password` + `keyDerivation`, then compares it to
+   * the stored key material in constant time. Only valid for symmetric entries
+   * whose stored key length matches the derived key length (32 bytes for
+   * PBKDF2/AES-256 as derived by `cryptoProvider.deriveKey`).
+   *
+   * @param name - Name of the secret to verify against
+   * @param password - Candidate password to test
+   * @param keyDerivation - The key derivation parameters returned by
+   * `addSecretFromPassword` when the secret was created
+   * @returns Success(true) when the candidate matches the stored key,
+   * Success(false) when it does not, Failure if locked, secret missing,
+   * wrong type, or key derivation fails
+   * @public
+   */
+  public async verifySecretFromPassword(
+    name: string,
+    password: string,
+    keyDerivation: IKeyDerivationParams
+  ): Promise<Result<boolean>> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    if (!password || password.length === 0) {
+      return fail('Password cannot be empty');
+    }
+
+    const entry = this._secrets.get(name);
+    if (!entry) {
+      return fail(`Secret '${name}' not found`);
+    }
+    if (entry.type === 'asymmetric-keypair') {
+      return fail(`Secret '${name}' is not symmetric key material (type: ${entry.type})`);
+    }
+
+    const saltResult = this._cryptoProvider.fromBase64(keyDerivation.salt);
+    if (saltResult.isFailure()) {
+      return fail(`Invalid salt: ${saltResult.message}`);
+    }
+
+    const derivedResult = await this._cryptoProvider.deriveKey(
+      password,
+      saltResult.value,
+      keyDerivation.iterations
+    );
+    /* c8 ignore next 3 - crypto provider errors covered in nodeCryptoProvider tests */
+    if (derivedResult.isFailure()) {
+      return fail(`Key derivation failed: ${derivedResult.message}`);
+    }
+
+    return succeed(KeyStore._timingSafeEqual(derivedResult.value, entry.key));
   }
 
   /**
@@ -1267,6 +1330,24 @@ export class KeyStore implements IEncryptionProvider {
    * {@link CryptoUtils.ICryptoProvider.generateRandomBytes | generateRandomBytes}.
    * Random-bytes failures propagate as Failure.
    */
+  /**
+   * Constant-time byte comparison. Returns false immediately for length
+   * mismatch (length is not secret); for equal-length inputs, walks the full
+   * buffer accumulating differences via XOR so the running time does not leak
+   * the position of the first differing byte.
+   */
+  private static _timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) {
+      return false;
+    }
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) {
+      // eslint-disable-next-line no-bitwise
+      diff |= a[i] ^ b[i];
+    }
+    return diff === 0;
+  }
+
   private _generateId(): Result<string> {
     return this._cryptoProvider.generateRandomBytes(16).onSuccess((bytes) => {
       // Per RFC 4122 §4.4: set version (4) and variant (10xx) bits.

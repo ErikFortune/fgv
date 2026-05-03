@@ -1252,6 +1252,8 @@ class KeyStore_2 implements IEncryptionProvider {
     get state(): KeyStoreLockState;
     unlock(password: string): Promise<Result<KeyStore_2>>;
     unlockWithKey(derivedKey: Uint8Array): Promise<Result<KeyStore_2>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    verifySecretFromPassword(name: string, password: string, keyDerivation: IKeyDerivationParams): Promise<Result<boolean>>;
 }
 
 // @public
@@ -1629,8 +1631,7 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/crypto-utils/keystore/keyStore.ts:1250:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/crypto-utils/keystore/keyStore.ts:1270:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1313:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 
