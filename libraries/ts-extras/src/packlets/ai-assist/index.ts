@@ -88,6 +88,7 @@ export { resolveEffectiveTools } from './toolFormats';
 export {
   extractJsonText,
   fencedStringifiedJson,
+  type IFencedStringifiedJsonExtractorOptions,
   type IFencedStringifiedJsonOptions,
   type JsonTextExtractor
 } from './jsonResponse';

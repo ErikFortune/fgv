@@ -34,7 +34,7 @@ import { fencedStringifiedJson } from './jsonResponse';
 import { AiPrompt, type IAiCompletionResponse } from './model';
 
 /**
- * Default system-prompt suffix appended when {@link IGenerateJsonCompletionParams.promptHint}
+ * Default system-prompt suffix appended when {@link AiAssist.IGenerateJsonCompletionParams.promptHint}
  * is `'smart'` (the default). Designed to discourage code fences and prose in
  * the model's response while still tolerating them via the read-side extractor.
  * @public
@@ -45,9 +45,9 @@ export const SMART_JSON_PROMPT_HINT: string =
 
 /**
  * Controls the optional system-prompt augmentation applied by
- * {@link generateJsonCompletion}.
+ * {@link AiAssist.generateJsonCompletion}.
  *
- * - `'smart'` (default): append {@link SMART_JSON_PROMPT_HINT}.
+ * - `'smart'` (default): append {@link AiAssist.SMART_JSON_PROMPT_HINT}.
  * - `'none'`: do not modify the prompt.
  * - A string: append the supplied text verbatim.
  *
@@ -56,22 +56,24 @@ export const SMART_JSON_PROMPT_HINT: string =
 export type JsonPromptHint = 'smart' | 'none' | string;
 
 /**
- * Parameters for {@link generateJsonCompletion}. Extends
- * {@link IProviderCompletionParams} with JSON-validation knobs.
+ * Parameters for {@link AiAssist.generateJsonCompletion}. Extends
+ * {@link AiAssist.IProviderCompletionParams} with JSON-validation knobs.
  * @public
  */
 export interface IGenerateJsonCompletionParams<T> extends IProviderCompletionParams {
   /**
    * Caller-supplied `Converter<T>` or `Validator<T>` applied to the parsed
-   * JSON value. Wrapped internally in {@link fencedStringifiedJson} unless
-   * {@link IGenerateJsonCompletionParams.jsonConverter} is provided.
+   * JSON value. Wrapped internally in {@link AiAssist.fencedStringifiedJson}
+   * unless {@link AiAssist.IGenerateJsonCompletionParams.jsonConverter} is
+   * provided.
    */
   readonly converter?: Converter<T> | Validator<T>;
 
   /**
    * Full string-to-`T` pipeline override. When supplied, takes precedence over
-   * {@link IGenerateJsonCompletionParams.converter} and lets the caller plug
-   * in a custom extractor or skip the default fence tolerance entirely.
+   * {@link AiAssist.IGenerateJsonCompletionParams.converter} and lets the
+   * caller plug in a custom extractor or skip the default fence tolerance
+   * entirely.
    */
   readonly jsonConverter?: Converter<T>;
 
@@ -83,7 +85,7 @@ export interface IGenerateJsonCompletionParams<T> extends IProviderCompletionPar
 }
 
 /**
- * Successful result of {@link generateJsonCompletion}.
+ * Successful result of {@link AiAssist.generateJsonCompletion}.
  * @public
  */
 export interface IGenerateJsonCompletionResult<T> {
@@ -105,10 +107,11 @@ function applyPromptHint(prompt: AiPrompt, hint: JsonPromptHint): AiPrompt {
 }
 
 /**
- * Calls {@link callProviderCompletion}, then runs the response text through a
- * tolerant JSON converter (default: {@link fencedStringifiedJson}) and the
- * caller's `converter`/`validator`. Returns the validated value plus the raw
- * text and underlying completion response for diagnostics.
+ * Calls {@link AiAssist.callProviderCompletion}, then runs the response text
+ * through a tolerant JSON converter (default:
+ * {@link AiAssist.fencedStringifiedJson}) and the caller's
+ * `converter`/`validator`. Returns the validated value plus the raw text and
+ * underlying completion response for diagnostics.
  *
  * @remarks
  * The default smart prompt hint asks the model to emit raw JSON. The read-side

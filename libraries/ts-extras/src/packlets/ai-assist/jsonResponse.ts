@@ -94,7 +94,7 @@ function findBalancedJsonSubstring(text: string): string | undefined {
 }
 
 /**
- * Default {@link JsonTextExtractor | extractor} for LLM responses. Tolerates:
+ * Default {@link AiAssist.JsonTextExtractor | extractor} for LLM responses. Tolerates:
  *
  * - Leading/trailing whitespace and a leading byte-order mark.
  * - Markdown code fences (with or without a language tag).
@@ -139,27 +139,34 @@ export const extractJsonText: JsonTextExtractor = (text: string): Result<string>
 };
 
 /**
- * Options for {@link fencedStringifiedJson}.
+ * Options shared by every {@link AiAssist.fencedStringifiedJson} call.
  * @public
  */
-export interface IFencedStringifiedJsonOptions<T> {
+export interface IFencedStringifiedJsonExtractorOptions {
   /**
-   * Optional pre-parse extractor. Defaults to {@link extractJsonText}.
+   * Optional pre-parse extractor. Defaults to {@link AiAssist.extractJsonText}.
    * Provide a custom extractor to handle response shapes the default does not
    * understand.
    */
   readonly extractor?: JsonTextExtractor;
-  /**
-   * Optional inner converter or validator applied to the parsed JSON value.
-   * When omitted, the converter resolves to the parsed `JsonValue`.
-   */
-  readonly inner?: Converter<T> | Validator<T>;
+}
+
+/**
+ * Options for the validating overload of {@link AiAssist.fencedStringifiedJson}.
+ * `inner` is required so the typed `Converter<T>` return value can never lie
+ * about the runtime shape.
+ * @public
+ */
+export interface IFencedStringifiedJsonOptions<T> extends IFencedStringifiedJsonExtractorOptions {
+  /** Inner converter or validator applied to the parsed JSON value. */
+  readonly inner: Converter<T> | Validator<T>;
 }
 
 /**
  * Creates a `Converter` that accepts raw LLM response text, runs it through a
- * tolerant extractor (default: {@link extractJsonText}), parses the extracted
- * substring as JSON, and applies an optional inner converter or validator.
+ * tolerant extractor (default: {@link AiAssist.extractJsonText}), parses the
+ * extracted substring as JSON, and applies an optional inner converter or
+ * validator.
  *
  * @example
  * ```ts
@@ -167,18 +174,28 @@ export interface IFencedStringifiedJsonOptions<T> {
  * const result = converter.convert(llmText); // Result<MyShape>
  * ```
  *
- * @param options - Optional extractor + inner step. Both default to sane values.
- * @returns A `Converter<T>` (or `Converter<JsonValue>` when no inner step).
+ * @param options - Optional extractor; omit to keep the default. Without an
+ * `inner` step, the converter resolves to the parsed `JsonValue`.
+ * @returns A `Converter<JsonValue>`.
  * @public
  */
-export function fencedStringifiedJson(options?: IFencedStringifiedJsonOptions<never>): Converter<JsonValue>;
-/** @public */
+export function fencedStringifiedJson(options?: IFencedStringifiedJsonExtractorOptions): Converter<JsonValue>;
+/**
+ * Creates a `Converter` that accepts raw LLM response text, runs it through a
+ * tolerant extractor (default: {@link AiAssist.extractJsonText}), parses the
+ * extracted substring as JSON, and applies the supplied inner converter or
+ * validator.
+ *
+ * @param options - Required `inner` converter/validator and optional extractor.
+ * @returns A `Converter<T>`.
+ * @public
+ */
 export function fencedStringifiedJson<T>(options: IFencedStringifiedJsonOptions<T>): Converter<T>;
 export function fencedStringifiedJson<T>(
-  options?: IFencedStringifiedJsonOptions<T>
+  options?: IFencedStringifiedJsonExtractorOptions | IFencedStringifiedJsonOptions<T>
 ): Converter<T | JsonValue> {
   const extractor: JsonTextExtractor = options?.extractor ?? extractJsonText;
-  const inner = options?.inner;
+  const inner = (options as IFencedStringifiedJsonOptions<T> | undefined)?.inner;
   const parser: Converter<T | JsonValue> =
     inner !== undefined ? JsonBaseConverters.stringifiedJson<T>(inner) : JsonBaseConverters.stringifiedJson();
 

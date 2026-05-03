@@ -275,9 +275,15 @@ export function enumeratedValue<T>(
  * no inner step is supplied).
  * @public
  */
-/** @public */
 export function stringifiedJson(): Converter<JsonValue>;
-/** @public */
+/**
+ * Creates a converter that accepts a string, parses it as JSON, and applies
+ * the supplied inner converter or validator to the parsed value.
+ *
+ * @param inner - `Converter<T>` or `Validator<T>` applied to the parsed JSON.
+ * @returns Converter that parses a JSON string into `T`.
+ * @public
+ */
 export function stringifiedJson<T>(inner: Converter<T> | Validator<T>): Converter<T>;
 export function stringifiedJson<T>(inner?: Converter<T> | Validator<T>): Converter<T | JsonValue> {
   const step: { convert(from: unknown): Result<T | JsonValue> } = inner ?? jsonValue;

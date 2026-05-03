@@ -201,6 +201,12 @@ describe('fencedStringifiedJson', () => {
     expect(converter.convert('{"name":"x","value":"not a number"}')).toFail();
   });
 
+  test('accepts an extractor-only options object and returns Converter<JsonValue>', () => {
+    const customExtractor = (text: string): Result<string> => succeed(text.replace(/^RAW: /, ''));
+    const converter = fencedStringifiedJson({ extractor: customExtractor });
+    expect(converter.convert('RAW: {"a":1}')).toSucceedWith({ a: 1 });
+  });
+
   test('uses a custom extractor when supplied', () => {
     let called = 0;
     const customExtractor = (text: string): Result<string> => {

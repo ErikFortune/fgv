@@ -90,6 +90,7 @@ declare namespace AiAssist {
         resolveEffectiveTools,
         extractJsonText,
         fencedStringifiedJson,
+        IFencedStringifiedJsonExtractorOptions,
         IFencedStringifiedJsonOptions,
         JsonTextExtractor,
         generateJsonCompletion,
@@ -460,17 +461,19 @@ class ExtendedArray<T> extends Array<T> {
 // @beta
 function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<T, TC>, onError?: Conversion.OnError): Converter<ExtendedArray<T>, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "JsonTextExtractor"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const extractJsonText: JsonTextExtractor;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "extractJsonText"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function fencedStringifiedJson(options?: IFencedStringifiedJsonOptions<never>): Converter<JsonValue>;
+function fencedStringifiedJson(options?: IFencedStringifiedJsonExtractorOptions): Converter<JsonValue>;
 
-// @public (undocumented)
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 function fencedStringifiedJson<T>(options: IFencedStringifiedJsonOptions<T>): Converter<T>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -519,8 +522,8 @@ const GCM_AUTH_TAG_SIZE: number;
 // @public
 const GCM_IV_SIZE: number;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "callProviderCompletion"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "fencedStringifiedJson"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function generateJsonCompletion<T>(params: IGenerateJsonCompletionParams<T>): Promise<Result<IGenerateJsonCompletionResult<T>>>;
@@ -860,29 +863,35 @@ interface IEncryptionResult {
     readonly iv: Uint8Array;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "fencedStringifiedJson"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IFencedStringifiedJsonOptions<T> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "extractJsonText"
+interface IFencedStringifiedJsonExtractorOptions {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly extractor?: JsonTextExtractor;
-    readonly inner?: Converter<T> | Validator<T>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "generateJsonCompletion"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IProviderCompletionParams"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IFencedStringifiedJsonOptions<T> extends IFencedStringifiedJsonExtractorOptions {
+    readonly inner: Converter<T> | Validator<T>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IGenerateJsonCompletionParams<T> extends IProviderCompletionParams {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "fencedStringifiedJson"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IGenerateJsonCompletionParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly converter?: Converter<T> | Validator<T>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IGenerateJsonCompletionParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly jsonConverter?: Converter<T>;
     readonly promptHint?: JsonPromptHint;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "generateJsonCompletion"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IGenerateJsonCompletionResult<T> {
@@ -1189,8 +1198,8 @@ interface JarRecordParserOptions {
     readonly fixedContinuationSize?: number;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "generateJsonCompletion"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "SMART_JSON_PROMPT_HINT"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 type JsonPromptHint = 'smart' | 'none' | string;
@@ -1594,7 +1603,7 @@ function resolveModel(spec: ModelSpec, context?: string): string;
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IGenerateJsonCompletionParams"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const SMART_JSON_PROMPT_HINT: string;
