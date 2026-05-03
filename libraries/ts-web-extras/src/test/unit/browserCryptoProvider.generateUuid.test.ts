@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Erik Fortune
+ * Copyright (c) 2026 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,25 @@
  * SOFTWARE.
  */
 
-export * from './brand';
-export * from './mapResults';
-export * from './messageAggregator';
-export { Normalizer } from './normalize';
-export * from './result';
-export * from './utils';
-export * from './uuid';
+import '@fgv/ts-utils-jest';
+
+import { isValidUuid } from '@fgv/ts-utils';
+import { BrowserCryptoProvider } from '../../packlets/crypto-utils';
+
+const provider = new BrowserCryptoProvider();
+
+describe('BrowserCryptoProvider — generateUuid', () => {
+  test('generates a canonical UUID', () => {
+    expect(provider.generateUuid()).toSucceedAndSatisfy((uuid) => {
+      expect(isValidUuid(uuid)).toBe(true);
+    });
+  });
+
+  test('generates a different UUID on each call', () => {
+    const uuids = new Set<string>();
+    for (let i = 0; i < 50; i++) {
+      uuids.add(provider.generateUuid().orThrow());
+    }
+    expect(uuids.size).toBe(50);
+  });
+});
