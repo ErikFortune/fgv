@@ -9,6 +9,7 @@ import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { Uuid } from '@fgv/ts-utils';
 
 // @public
 class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
@@ -22,6 +23,7 @@ class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
     generateKey(): Promise<Result<Uint8Array>>;
     generateKeyPair(algorithm: CryptoUtils_2.KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
+    generateUuid(): Result<Uuid>;
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;

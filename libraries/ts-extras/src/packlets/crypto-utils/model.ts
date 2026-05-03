@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { JsonValue } from '@fgv/ts-json-base';
-import { Result } from '@fgv/ts-utils';
+import { Result, Uuid } from '@fgv/ts-utils';
 
 import * as Constants from './constants';
 export { Constants };
@@ -304,6 +304,16 @@ export interface ICryptoProvider {
    * @returns Success with random bytes, or Failure with error
    */
   generateRandomBytes(length: number): Result<Uint8Array>;
+
+  /**
+   * Generates a cryptographically random UUIDv4 using the provider's
+   * underlying source of randomness. The default Node and browser
+   * implementations delegate to `globalThis.crypto.randomUUID`;
+   * deterministic providers (e.g. test stubs) may override to produce
+   * reproducible values.
+   * @returns Success with a canonical UUID, or Failure with error.
+   */
+  generateUuid(): Result<Uuid>;
 
   /**
    * Encodes binary data to base64 string.

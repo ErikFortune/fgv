@@ -1129,6 +1129,9 @@ interface FunctionConstraintTrait {
     type: 'function';
 }
 
+// @public
+export function generateUuid(): Uuid;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1764,6 +1767,9 @@ export function isKeyOf<T extends object>(key: string | number | symbol, item: T
 //
 // @public
 function isValidator<T, TC>(converterOrValidator: Converter<T, TC> | Validator<T, TC>): converterOrValidator is Validator<T, TC>;
+
+// @public
+export function isValidUuid(value: string): value is Uuid;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2725,6 +2731,9 @@ declare namespace Utils {
         isIterable
     }
 }
+
+// @public
+export type Uuid = Brand<string, 'Uuid'>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

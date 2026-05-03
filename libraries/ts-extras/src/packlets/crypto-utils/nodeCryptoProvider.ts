@@ -19,7 +19,17 @@
 // SOFTWARE.
 
 import * as crypto from 'crypto';
-import { captureAsyncResult, captureResult, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
+import {
+  captureAsyncResult,
+  captureResult,
+  fail,
+  Failure,
+  generateUuid,
+  Result,
+  succeed,
+  Success,
+  Uuid
+} from '@fgv/ts-utils';
 import * as Constants from './constants';
 import { keyPairAlgorithmParams } from './keyPairAlgorithmParams';
 import {
@@ -182,6 +192,15 @@ export class NodeCryptoProvider implements ICryptoProvider {
       return Failure.with('Length must be at least 1');
     }
     return captureResult(() => new Uint8Array(crypto.randomBytes(length)));
+  }
+
+  /**
+   * Generates a cryptographically random UUIDv4 via the platform Web Crypto API.
+   * @returns `Success` with the generated UUID, or `Failure` if the runtime
+   * does not expose `globalThis.crypto.randomUUID`.
+   */
+  public generateUuid(): Result<Uuid> {
+    return captureResult(() => generateUuid());
   }
 
   /**
