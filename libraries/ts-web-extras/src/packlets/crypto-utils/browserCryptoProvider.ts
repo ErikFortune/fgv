@@ -322,6 +322,7 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
    * `Crypto` instance does not expose `randomUUID`.
    */
   public generateUuid(): Result<Uuid> {
+    /* c8 ignore next 3 - randomUUID is always available in supported runtimes (Node 22+, modern browsers) */
     if (typeof this._crypto.randomUUID !== 'function') {
       return Failure.with('Crypto instance does not expose randomUUID');
     }
