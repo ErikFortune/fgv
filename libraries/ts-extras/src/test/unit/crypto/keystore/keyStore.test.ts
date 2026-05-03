@@ -353,6 +353,118 @@ describe('KeyStore', () => {
       });
     });
 
+    describe('verifySecretFromPassword', () => {
+      test('returns true for matching password', async () => {
+        const added = (await keystore.addSecretFromPassword('pw-secret', 'my-password')).orThrow();
+        const result = await keystore.verifySecretFromPassword(
+          'pw-secret',
+          'my-password',
+          added.keyDerivation
+        );
+        expect(result).toSucceedWith(true);
+      });
+
+      test('returns false for mismatched password', async () => {
+        const added = (await keystore.addSecretFromPassword('pw-secret', 'my-password')).orThrow();
+        const result = await keystore.verifySecretFromPassword(
+          'pw-secret',
+          'wrong-password',
+          added.keyDerivation
+        );
+        expect(result).toSucceedWith(false);
+      });
+
+      test('returns false when keyDerivation salt does not match', async () => {
+        // Re-deriving with a different salt produces a different key, so verification fails.
+        const added = (await keystore.addSecretFromPassword('pw-secret', 'my-password')).orThrow();
+        const otherSalt = provider.generateRandomBytes(16).orThrow();
+        const result = await keystore.verifySecretFromPassword('pw-secret', 'my-password', {
+          kdf: 'pbkdf2',
+          salt: CryptoUtils.toBase64(otherSalt),
+          iterations: added.keyDerivation.iterations
+        });
+        expect(result).toSucceedWith(false);
+      });
+
+      test('rejects api-key entries even when the stored bytes match the derived key', async () => {
+        // Construct a 32-byte api-key entry from a known derived key. Although
+        // the bytes would compare equal, verifySecretFromPassword refuses
+        // non-encryption-key types so callers cannot accidentally probe an
+        // api-key as a password slot.
+        const salt = provider.generateRandomBytes(16).orThrow();
+        const derived = (await provider.deriveKey('shared-pw', salt, 100000)).orThrow();
+        await keystore.importSecret('matched-api-key', derived, { type: 'api-key' });
+        const result = await keystore.verifySecretFromPassword('matched-api-key', 'shared-pw', {
+          kdf: 'pbkdf2',
+          salt: CryptoUtils.toBase64(salt),
+          iterations: 100000
+        });
+        expect(result).toFailWith(/not a password-verifiable encryption key/i);
+      });
+
+      test('fails for unsupported kdf', async () => {
+        const added = (await keystore.addSecretFromPassword('pw-secret', 'my-password')).orThrow();
+        const result = await keystore.verifySecretFromPassword('pw-secret', 'my-password', {
+          ...added.keyDerivation,
+          kdf: 'scrypt' as unknown as 'pbkdf2'
+        });
+        expect(result).toFailWith(/unsupported kdf/i);
+      });
+
+      test('fails when locked', async () => {
+        const added = (await keystore.addSecretFromPassword('pw-secret', 'my-password')).orThrow();
+        keystore.lock(true);
+        const result = await keystore.verifySecretFromPassword(
+          'pw-secret',
+          'my-password',
+          added.keyDerivation
+        );
+        expect(result).toFailWith(/locked/i);
+      });
+
+      test('fails with empty password', async () => {
+        const added = (await keystore.addSecretFromPassword('pw-secret', 'my-password')).orThrow();
+        const result = await keystore.verifySecretFromPassword('pw-secret', '', added.keyDerivation);
+        expect(result).toFailWith(/password cannot be empty/i);
+      });
+
+      test('fails when secret does not exist', async () => {
+        const result = await keystore.verifySecretFromPassword('missing', 'pw', {
+          kdf: 'pbkdf2',
+          salt: CryptoUtils.toBase64(provider.generateRandomBytes(16).orThrow()),
+          iterations: 100000
+        });
+        expect(result).toFailWith(/not found/i);
+      });
+
+      test('fails for asymmetric-keypair entries', async () => {
+        const storage = new InMemoryPrivateKeyStorage();
+        const ksWithStorage = CryptoUtils.KeyStore.KeyStore.create({
+          cryptoProvider: provider,
+          privateKeyStorage: storage
+        }).orThrow();
+        await ksWithStorage.initialize(testPassword);
+        await ksWithStorage.addKeyPair('kp', { algorithm: 'ed25519' });
+
+        const result = await ksWithStorage.verifySecretFromPassword('kp', 'anything', {
+          kdf: 'pbkdf2',
+          salt: CryptoUtils.toBase64(provider.generateRandomBytes(16).orThrow()),
+          iterations: 100000
+        });
+        expect(result).toFailWith(/not a password-verifiable encryption key/i);
+      });
+
+      test('fails with invalid base64 salt', async () => {
+        await keystore.addSecretFromPassword('pw-secret', 'my-password');
+        const result = await keystore.verifySecretFromPassword('pw-secret', 'my-password', {
+          kdf: 'pbkdf2',
+          salt: '!!!not-base64!!!',
+          iterations: 100000
+        });
+        expect(result).toFailWith(/invalid salt/i);
+      });
+    });
+
     describe('getSecret', () => {
       test('retrieves an existing secret', async () => {
         await keystore.addSecret('my-secret', { description: 'Test' });

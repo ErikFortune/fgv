@@ -93,6 +93,7 @@ A full conditional-resource runtime: qualifier types, qualifiers, conditions, de
 
 | Packlet | Use for |
 |---|---|
+| [`crypto-utils`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras/src/packlets/crypto-utils) | Cross-runtime crypto surface. **`ICryptoProvider`** interface (AES-256-GCM encrypt/decrypt, PBKDF2 `deriveKey`, SHA-256, secure random, asymmetric keypair gen + JWK export/import, ECIES `wrapBytes`/`unwrapBytes`); **`NodeCryptoProvider`** (Node implementation — pair with `BrowserCryptoProvider` from `ts-web-extras` on the browser side). **`KeyStore`** — password-protected vault for symmetric keys, API keys, and asymmetric keypairs (Ed25519, ECDSA-P256, ECDH-P256, RSA-OAEP); supports `addSecret`, `addSecretFromPassword`, `verifySecretFromPassword` (constant-time), `addKeyPair`, lock/unlock/save/changePassword, with optional `IPrivateKeyStorage` backend for non-extractable private keys. `DirectEncryptionProvider`, `createEncryptedFile`/`decryptFile`/`tryDecryptFile` for one-off encrypted JSON artifacts. **Use this for any password-derived key, encrypted-at-rest artifact, or named-key lookup; do not roll your own PBKDF2 / timing-safe compare.** |
 | [`experimental`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras/src/packlets/experimental) | `ExtendedArray<T>`, `RangeOf<T>` (open/closed orderable ranges), `Formattable<T>` (mustache-printable wrappers). |
 | [`csv`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras/src/packlets/csv) | CSV parse/format helpers (file + in-memory). |
 | [`record-jar`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras/src/packlets/record-jar) | Record-jar (RFC 5646 appendix-style) parsing. |
@@ -105,10 +106,23 @@ A full conditional-resource runtime: qualifier types, qualifiers, conditions, de
 
 | Packlet | Use for |
 |---|---|
-| [`crypto`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/crypto) | `BrowserHashProvider` — Web Crypto-backed hashing. |
-| [`file-tree`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/file-tree), [`file-api-types`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/file-api-types) | `FileTree` over the browser File System Access API. |
+| [`crypto-utils`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/crypto-utils) | **`BrowserCryptoProvider`** — Web Crypto API implementation of `ICryptoProvider` (the same interface `NodeCryptoProvider` implements). `BrowserHashProvider` for SHA-family hashing. **Use these to back `KeyStore`, `DirectEncryptionProvider`, or any other ts-extras `crypto-utils` consumer in the browser without touching `node:crypto`.** |
+| [`file-tree`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/file-tree), [`file-api-types`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/file-api-types) | `FileTree` over the browser File System Access API — drop-in implementation of the same `FileTree` interface used by `FsTree` (Node) and `ZipFileTreeAccessors` (zip). |
 | [`helpers`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/helpers) | Browser file-tree convenience helpers. |
 | [`url-utils`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras/src/packlets/url-utils) | `urlParams` parsing/serialization. |
+
+---
+
+## Cross-runtime interfaces
+
+Several core abstractions are defined once and have separate Node and browser implementations. Code against the interface; pick the implementation at the composition root.
+
+| Interface | Node impl | Browser impl | Notes |
+|---|---|---|---|
+| `FileTree` (`@fgv/ts-json-base/file-tree`) | `FsTree` (`ts-json-base/file-tree`) | `FileTree` over File System Access API (`ts-web-extras/file-tree`) | Also: `ZipFileTreeAccessors` (`ts-extras/zip-file-tree`), in-memory tree (`ts-json-base/file-tree`). |
+| `ICryptoProvider` (`@fgv/ts-extras/crypto-utils`) | `NodeCryptoProvider` (`ts-extras/crypto-utils`) | `BrowserCryptoProvider` (`ts-web-extras/crypto-utils`) | Same surface for AES-GCM, PBKDF2, SHA-256, random bytes, asymmetric key ops, ECIES wrap/unwrap. |
+| Hash normalizer | `Md5Normalizer` (`ts-extras/hash`), `Crc32Normalizer` (`ts-utils/hash`) | `Md5Normalizer.browser` (`ts-extras/hash`), `BrowserHashProvider` (`ts-web-extras/crypto-utils`) | `Crc32Normalizer` is pure JS and runs everywhere. |
+| `IEncryptionProvider` (`@fgv/ts-extras/crypto-utils`) | `KeyStore`, `DirectEncryptionProvider` | same (back with `BrowserCryptoProvider`) | The provider is runtime-agnostic; only the underlying `ICryptoProvider` differs. |
 
 ---
 
@@ -125,7 +139,10 @@ A full conditional-resource runtime: qualifier types, qualifiers, conditions, de
 - **Deep-merging JSON?** → `JsonEditor.mergeObjectInPlace` from `@fgv/ts-json/editor`.
 - **Diffing JSON?** → `@fgv/ts-json/diff`.
 - **Branded ID type?** → `Brand<T>` from `@fgv/ts-utils/base`.
-- **Hashing / canonical hash of an object?** → `Crc32Normalizer` (`ts-utils/hash`) or `Md5Normalizer` (`ts-extras/hash` / `ts-web-extras/crypto`).
+- **Hashing / canonical hash of an object?** → `Crc32Normalizer` (`ts-utils/hash`) or `Md5Normalizer` (`ts-extras/hash` / `ts-web-extras/crypto-utils`).
+- **Symmetric encryption / decryption (AES-GCM)?** → `DirectEncryptionProvider` or `KeyStore.encryptByName` from `@fgv/ts-extras/crypto-utils`, backed by `NodeCryptoProvider` (Node) or `BrowserCryptoProvider` (browser).
+- **Password-protected vault for keys / API keys / keypairs?** → `KeyStore` from `@fgv/ts-extras/crypto-utils`. Use `addSecretFromPassword` to derive + store, `verifySecretFromPassword` for constant-time password verification.
+- **PBKDF2 key derivation, ECIES wrap/unwrap, asymmetric keypairs (Ed25519, ECDSA-P256, ECDH-P256, RSA-OAEP)?** → `ICryptoProvider` from `@fgv/ts-extras/crypto-utils`. Never call `node:crypto` or `crypto.subtle` directly.
 - **Parsing / comparing language tags?** → `@fgv/ts-bcp47`.
 - **Context-conditional resources?** → `@fgv/ts-res`.
 - **Jest matchers for `Result<T>`?** → `@fgv/ts-utils-jest`.
