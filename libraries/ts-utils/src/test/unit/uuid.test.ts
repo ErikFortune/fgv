@@ -35,6 +35,8 @@ describe('uuid module', () => {
       ['missing a group', '1b9d6bcd-bbfd-4b2d-9b5d'],
       ['extra characters', '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bedX'],
       ['nil UUID (version nibble is 0)', '00000000-0000-0000-0000-000000000000'],
+      ['well-formed v1 UUID (version nibble is 1)', '1b9d6bcd-bbfd-1b2d-9b5d-ab8dfbbd4bed'],
+      ['well-formed v7 UUID (version nibble is 7)', '1b9d6bcd-bbfd-7b2d-9b5d-ab8dfbbd4bed'],
       ['invalid variant nibble', '1b9d6bcd-bbfd-4b2d-7b5d-ab8dfbbd4bed'],
       ['non-hex character', '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4beZ']
     ])('rejects %s', (__label, value) => {

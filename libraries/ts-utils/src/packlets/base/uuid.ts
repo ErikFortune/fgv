@@ -23,22 +23,24 @@
 import { Brand } from './brand';
 
 /**
- * A spec-compliant UUID string (canonical 8-4-4-4-12 lowercase hex form).
+ * A canonical UUIDv4 string: 8-4-4-4-12 lowercase hex digits with version
+ * nibble `4` and variant nibble in `[89ab]`. Produced by {@link generateUuid}
+ * and validated by {@link isValidUuid}.
  * @public
  */
 export type Uuid = Brand<string, 'Uuid'>;
 
 /**
- * Canonical UUID format: 8-4-4-4-12 lowercase hex digits with the version
- * nibble in the third group and the variant nibble (8, 9, a, or b) at the
+ * Canonical UUIDv4 format: 8-4-4-4-12 lowercase hex digits with the version
+ * nibble `4` in the third group and the variant nibble (8, 9, a, or b) at the
  * start of the fourth group. Matches what `crypto.randomUUID()` returns.
  */
-const uuidRegex: RegExp = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const uuidRegex: RegExp = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 /**
- * Type guard that returns `true` when the input is a canonical UUID string.
+ * Type guard that returns `true` when the input is a canonical UUIDv4 string.
  * @param value - The string to test.
- * @returns `true` if `value` is a canonical UUID, narrowing it to {@link Uuid}.
+ * @returns `true` if `value` is a canonical UUIDv4, narrowing it to {@link Uuid}.
  * @public
  */
 export function isValidUuid(value: string): value is Uuid {
