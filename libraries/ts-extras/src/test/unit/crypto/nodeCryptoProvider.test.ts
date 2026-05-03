@@ -21,6 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import * as crypto from 'crypto';
+import { isValidUuid } from '@fgv/ts-utils';
 import * as CryptoUtils from '../../../packlets/crypto-utils';
 
 describe('Crypto.NodeCryptoProvider', () => {
@@ -600,6 +601,22 @@ describe('Crypto.NodeCryptoProvider', () => {
     test('fails with length less than 1', () => {
       expect(provider.generateRandomBytes(0)).toFailWith(/at least 1/i);
       expect(provider.generateRandomBytes(-1)).toFailWith(/at least 1/i);
+    });
+  });
+
+  describe('generateUuid', () => {
+    test('generates a canonical UUID', () => {
+      expect(provider.generateUuid()).toSucceedAndSatisfy((uuid) => {
+        expect(isValidUuid(uuid)).toBe(true);
+      });
+    });
+
+    test('generates a different UUID on each call', () => {
+      const uuids = new Set<string>();
+      for (let i = 0; i < 50; i++) {
+        uuids.add(provider.generateUuid().orThrow());
+      }
+      expect(uuids.size).toBe(50);
     });
   });
 

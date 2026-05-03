@@ -67,6 +67,7 @@ declare namespace Converters {
     export {
         literal,
         enumeratedValue,
+        stringifiedJson,
         jsonConverter,
         IJsonConverterContext,
         jsonPrimitive,
@@ -810,6 +811,14 @@ const string: StringConverter<string, IJsonConverterContext>;
 //
 // @public
 const string_2: Validation.Classes.StringValidator<string, IJsonValidatorContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function stringifiedJson(): Converter<JsonValue>;
+
+// @public
+function stringifiedJson<T>(inner: Converter<T> | Validator<T>): Converter<T>;
 
 // @public
 type Validator_2<T, TC = unknown> = Validator<JsonCompatibleType<T>, TC>;

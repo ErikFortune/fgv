@@ -12,6 +12,7 @@ import { Hash as Hash_2 } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { Uuid } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
 // @public
@@ -87,7 +88,17 @@ declare namespace AiAssist {
         aiAssistSettings,
         modelSpecKey,
         modelSpec,
-        resolveEffectiveTools
+        resolveEffectiveTools,
+        extractJsonText,
+        fencedStringifiedJson,
+        IFencedStringifiedJsonExtractorOptions,
+        IFencedStringifiedJsonOptions,
+        JsonTextExtractor,
+        generateJsonCompletion,
+        SMART_JSON_PROMPT_HINT,
+        IGenerateJsonCompletionParams,
+        IGenerateJsonCompletionResult,
+        JsonPromptHint
     }
 }
 export { AiAssist }
@@ -453,6 +464,21 @@ function extendedArrayOf<T, TC = undefined>(label: string, converter: Converter<
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
+// @public
+const extractJsonText: JsonTextExtractor;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function fencedStringifiedJson(options?: IFencedStringifiedJsonExtractorOptions): Converter<JsonValue>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function fencedStringifiedJson<T>(options: IFencedStringifiedJsonOptions<T>): Converter<T>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @beta
 function formatList<T>(format: string, items: T[], itemFormatter: Formatter<T>): Result<string>;
 
@@ -496,6 +522,12 @@ const GCM_AUTH_TAG_SIZE: number;
 
 // @public
 const GCM_IV_SIZE: number;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function generateJsonCompletion<T>(params: IGenerateJsonCompletionParams<T>): Promise<Result<IGenerateJsonCompletionResult<T>>>;
 
 // @public
 function getProviderDescriptor(id: string): Result<IAiProviderDescriptor>;
@@ -779,6 +811,7 @@ interface ICryptoProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
+    generateUuid(): Result<Uuid>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
@@ -830,6 +863,43 @@ interface IEncryptionResult {
     readonly authTag: Uint8Array;
     readonly encryptedData: Uint8Array;
     readonly iv: Uint8Array;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IFencedStringifiedJsonExtractorOptions {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly extractor?: JsonTextExtractor;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IFencedStringifiedJsonOptions<T> extends IFencedStringifiedJsonExtractorOptions {
+    readonly inner: Converter<T> | Validator<T>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IGenerateJsonCompletionParams<T> extends IProviderCompletionParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly converter?: Converter<T> | Validator<T>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly jsonConverter?: Converter<T>;
+    readonly promptHint?: JsonPromptHint;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IGenerateJsonCompletionResult<T> {
+    readonly raw: string;
+    readonly response: IAiCompletionResponse;
+    readonly value: T;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "KeyStore"
@@ -1130,6 +1200,15 @@ interface JarRecordParserOptions {
     readonly fixedContinuationSize?: number;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type JsonPromptHint = 'smart' | 'none' | (string & {});
+
+// @public
+type JsonTextExtractor = (text: string) => Result<string>;
+
 // @public
 const jsonWebKeyShape: Validator<JsonWebKey>;
 
@@ -1252,6 +1331,8 @@ class KeyStore_2 implements IEncryptionProvider {
     get state(): KeyStoreLockState;
     unlock(password: string): Promise<Result<KeyStore_2>>;
     unlockWithKey(derivedKey: Uint8Array): Promise<Result<KeyStore_2>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    verifySecretFromPassword(name: string, password: string, keyDerivation: IKeyDerivationParams): Promise<Result<boolean>>;
 }
 
 // @public
@@ -1403,6 +1484,7 @@ class NodeCryptoProvider implements ICryptoProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
+    generateUuid(): Result<Uuid>;
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
@@ -1524,6 +1606,11 @@ function resolveModel(spec: ModelSpec, context?: string): string;
 // @public
 type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const SMART_JSON_PROMPT_HINT: string;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiProviderDescriptor"
 //
 // @public
@@ -1629,8 +1716,8 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/crypto-utils/keystore/keyStore.ts:1250:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/crypto-utils/keystore/keyStore.ts:1270:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1326:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1366:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

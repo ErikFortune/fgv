@@ -27,6 +27,7 @@ import {
   IEncryptedFile,
   IEncryptionConfig,
   IEncryptionProvider,
+  IKeyDerivationParams,
   SecretProvider
 } from '../model';
 import {
@@ -579,6 +580,81 @@ export class KeyStore implements IEncryptionProvider {
         iterations
       }
     });
+  }
+
+  /**
+   * Verifies that a candidate password derives the same key material currently
+   * stored under `name`, using the supplied
+   * {@link CryptoUtils.IKeyDerivationParams | key derivation parameters}.
+   *
+   * The keystore does not persist per-slot key derivation parameters with the
+   * entry — callers receive them from `addSecretFromPassword` and store them
+   * alongside the encrypted artifact (or wherever else makes sense). Pass
+   * those same parameters here for verification.
+   *
+   * Re-derives a key from `password` + `keyDerivation`, then compares it to
+   * the stored key material in constant time. Restricted to entries of type
+   * `'encryption-key'` — the type produced by `addSecretFromPassword`. Other
+   * symmetric types (`'api-key'`) and asymmetric entries are rejected so
+   * the boolean result reflects "this slot accepts this password" rather
+   * than an incidental byte-equality match against unrelated material.
+   *
+   * Note: the keystore does not currently flag whether an `'encryption-key'`
+   * entry was actually password-derived (vs. random via `addSecret` or raw
+   * via `importSecret`). A `true` result therefore means "the candidate
+   * password produces the same 32 bytes currently stored", which is what
+   * the equivalent consumer-side helper (`verifyGatePassword`) already
+   * implies for entries it manages.
+   *
+   * @param name - Name of the secret to verify against
+   * @param password - Candidate password to test
+   * @param keyDerivation - The key derivation parameters returned by
+   * `addSecretFromPassword` when the secret was created. Only
+   * `kdf: 'pbkdf2'` is supported.
+   * @returns Success(true) when the candidate matches the stored key,
+   * Success(false) when it does not, Failure if locked, secret missing,
+   * wrong type, unsupported `kdf`, or key derivation fails
+   * @public
+   */
+  public async verifySecretFromPassword(
+    name: string,
+    password: string,
+    keyDerivation: IKeyDerivationParams
+  ): Promise<Result<boolean>> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    if (!password || password.length === 0) {
+      return fail('Password cannot be empty');
+    }
+    if (keyDerivation.kdf !== 'pbkdf2') {
+      return fail(`Unsupported kdf '${keyDerivation.kdf}' (expected 'pbkdf2')`);
+    }
+
+    const entry = this._secrets.get(name);
+    if (!entry) {
+      return fail(`Secret '${name}' not found`);
+    }
+    if (entry.type !== 'encryption-key') {
+      return fail(`Secret '${name}' is not a password-verifiable encryption key (type: ${entry.type})`);
+    }
+
+    const saltResult = this._cryptoProvider.fromBase64(keyDerivation.salt);
+    if (saltResult.isFailure()) {
+      return fail(`Invalid salt: ${saltResult.message}`);
+    }
+
+    const derivedResult = await this._cryptoProvider.deriveKey(
+      password,
+      saltResult.value,
+      keyDerivation.iterations
+    );
+    /* c8 ignore next 3 - crypto provider errors covered in nodeCryptoProvider tests */
+    if (derivedResult.isFailure()) {
+      return fail(`Key derivation failed: ${derivedResult.message}`);
+    }
+
+    return succeed(KeyStore._timingSafeEqual(derivedResult.value, entry.key));
   }
 
   /**
@@ -1260,6 +1336,26 @@ export class KeyStore implements IEncryptionProvider {
     }
     entry.key.fill(0);
     return undefined;
+  }
+
+  /**
+   * Constant-time byte comparison. Returns false immediately for length
+   * mismatch (length is not secret); for equal-length inputs, walks the full
+   * buffer accumulating differences via XOR so the running time does not leak
+   * the position of the first differing byte.
+   */
+  private static _timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+    /* c8 ignore next 3 - defensive: callers in this class only compare
+       PBKDF2-derived 32-byte keys against encryption-key entries (also 32 bytes) */
+    if (a.length !== b.length) {
+      return false;
+    }
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) {
+      // eslint-disable-next-line no-bitwise
+      diff |= a[i] ^ b[i];
+    }
+    return diff === 0;
   }
 
   /**
