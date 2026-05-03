@@ -23,7 +23,6 @@ import {
   captureResult,
   fail,
   Failure,
-  generateUuid,
   Result,
   succeed,
   Success,
@@ -314,15 +313,19 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
       return Failure.with(`Random bytes generation failed: ${message}`);
     }
   }
+  /* c8 ignore stop */
 
   /**
-   * Generates a cryptographically random UUIDv4 via the platform Web Crypto API.
-   * @returns `Success` with the generated UUID, or `Failure` if the runtime
-   * does not expose `globalThis.crypto.randomUUID`.
+   * Generates a cryptographically random UUIDv4 using the injected
+   * `Crypto` instance.
+   * @returns `Success` with the generated UUID, or `Failure` if the underlying
+   * `Crypto` instance does not expose `randomUUID`.
    */
   public generateUuid(): Result<Uuid> {
-    return captureResult(() => generateUuid());
+    return captureResult(() => this._crypto.randomUUID() as Uuid);
   }
+
+  /* c8 ignore start - browser-only methods continue */
 
   /**
    * Encodes binary data to base64 string.
