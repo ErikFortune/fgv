@@ -26,3 +26,4 @@ export * from './messageAggregator';
 export { Normalizer } from './normalize';
 export * from './result';
 export * from './utils';
+export * from './uuid';
