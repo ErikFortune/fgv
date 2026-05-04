@@ -3,10 +3,20 @@
   "version": "5.1.0",
   "description": "BCP-47 Tag Utilities",
   "main": "lib/index.js",
+  "browser": {
+    "./lib/index.js": "./lib/index.browser.js",
+    "./lib/packlets/iana": "./lib/packlets/iana/index.browser.js",
+    "./lib/packlets/iana/index.js": "./lib/packlets/iana/index.browser.js"
+  },
   "module": "dist/index.browser.js",
   "types": "dist/ts-bcp47.d.ts",
   "exports": {
     ".": {
+      "browser": {
+        "types": "./dist/ts-bcp47.d.ts",
+        "import": "./dist/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
       "node": {
         "types": "./dist/ts-bcp47.d.ts",
         "import": "./dist/index.js",
