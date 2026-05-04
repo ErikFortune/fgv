@@ -335,9 +335,9 @@ export { CryptoUtils }
 declare namespace Csv {
     export {
         parseCsvString,
+        readCsvFromTree,
         CsvOptions,
-        readCsvFileSync,
-        readCsvFromTree
+        readCsvFileSync
     }
 }
 export { Csv }
@@ -1580,11 +1580,11 @@ function readRecordJarFromTree(fileTree: FileTree.FileTree, filePath: string, op
 declare namespace RecordJar {
     export {
         parseRecordJarLines,
+        readRecordJarFromTree,
         JarRecord,
         JarFieldPicker,
         JarRecordParserOptions,
-        readRecordJarFileSync,
-        readRecordJarFromTree
+        readRecordJarFileSync
     }
 }
 export { RecordJar }

@@ -137,6 +137,19 @@ Generates cryptographically secure random bytes.
 </td></tr>
 <tr><td>
 
+[generateUuid()](./BrowserCryptoProvider.generateUuid.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Generates a cryptographically random UUIDv4 using the injected
+
+</td></tr>
+<tr><td>
+
 [toBase64(data)](./BrowserCryptoProvider.toBase64.md)
 
 </td><td>

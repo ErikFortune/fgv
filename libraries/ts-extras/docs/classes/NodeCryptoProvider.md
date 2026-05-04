@@ -134,6 +134,19 @@ Generates cryptographically secure random bytes.
 </td></tr>
 <tr><td>
 
+[generateUuid()](./NodeCryptoProvider.generateUuid.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Generates a cryptographically random UUIDv4 via the platform Web Crypto API.
+
+</td></tr>
+<tr><td>
+
 [toBase64(data)](./NodeCryptoProvider.toBase64.md)
 
 </td><td>
