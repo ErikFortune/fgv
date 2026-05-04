@@ -424,6 +424,16 @@ Async continuation callback to be called in the event that a
 Helper type to extract the element type and preserve readonly status.
 
 </td></tr>
+<tr><td>
+
+[Uuid](./type-aliases/Uuid.md)
+
+</td><td>
+
+A canonical UUIDv4 string: 8-4-4-4-12 lowercase hex digits with version
+nibble `4` and variant nibble in `[89ab]`.
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -761,6 +771,25 @@ Applies a factory method to convert an optional `ReadonlyMap<string, TS>` into a
 </td><td>
 
 Applies a factory method to convert an optional `ReadonlyMap<string, TS>` into a `Record<string, TD>`
+
+</td></tr>
+<tr><td>
+
+[isValidUuid](./functions/isValidUuid.md)
+
+</td><td>
+
+Type guard that returns `true` when the input is a canonical UUIDv4 string.
+
+</td></tr>
+<tr><td>
+
+[generateUuid](./functions/generateUuid.md)
+
+</td><td>
+
+Generates a cryptographically random UUIDv4 using the platform's Web Crypto
+API (`globalThis.crypto.randomUUID`).
 
 </td></tr>
 </tbody></table>
