@@ -80,20 +80,20 @@ Reads a record-jar from an array of strings, each of which represents one
 </td></tr>
 <tr><td>
 
-[readRecordJarFileSync](./functions/readRecordJarFileSync.md)
-
-</td><td>
-
-Reads a record-jar file from a supplied path.
-
-</td></tr>
-<tr><td>
-
 [readRecordJarFromTree](./functions/readRecordJarFromTree.md)
 
 </td><td>
 
 Reads a record-jar file from a FileTree.
+
+</td></tr>
+<tr><td>
+
+[readRecordJarFileSync](./functions/readRecordJarFileSync.md)
+
+</td><td>
+
+Reads a record-jar file from a supplied path.
 
 </td></tr>
 </tbody></table>

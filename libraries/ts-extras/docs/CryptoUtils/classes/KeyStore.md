@@ -304,6 +304,21 @@ Adds a secret derived from a password using PBKDF2.
 </td></tr>
 <tr><td>
 
+[verifySecretFromPassword(name, password, keyDerivation)](./KeyStore.verifySecretFromPassword.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Verifies that a candidate password derives the same key material currently
+stored under `name`, using the supplied
+CryptoUtils.IKeyDerivationParams | key derivation parameters.
+
+</td></tr>
+<tr><td>
+
 [removeSecret(name)](./KeyStore.removeSecret.md)
 
 </td><td>

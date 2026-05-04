@@ -22,11 +22,8 @@
 
 // Browser-safe CSV exports - excludes Node.js filesystem dependencies
 
-// Export all browser-safe parsing functionality
+// Export all browser-safe parsing functionality (includes readCsvFromTree)
 export * from './csvHelpers';
-
-// Export FileTree-based reading (web-compatible)
-export { readCsvFromTree } from './csvFileHelpers';
 
 // Exclude:
 // - readCsvFileSync (requires Node.js fs/path)

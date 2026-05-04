@@ -48,20 +48,20 @@ Parses CSV data from a string.
 </td></tr>
 <tr><td>
 
-[readCsvFileSync](./functions/readCsvFileSync.md)
-
-</td><td>
-
-Reads a CSV file from a supplied path.
-
-</td></tr>
-<tr><td>
-
 [readCsvFromTree](./functions/readCsvFromTree.md)
 
 </td><td>
 
 Reads a CSV file from a FileTree.
+
+</td></tr>
+<tr><td>
+
+[readCsvFileSync](./functions/readCsvFileSync.md)
+
+</td><td>
+
+Reads a CSV file from a supplied path.
 
 </td></tr>
 </tbody></table>
