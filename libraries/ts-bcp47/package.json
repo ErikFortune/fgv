@@ -3,7 +3,7 @@
   "version": "5.1.0",
   "description": "BCP-47 Tag Utilities",
   "main": "lib/index.js",
-  "module": "dist/index.js",
+  "module": "dist/index.browser.js",
   "types": "dist/ts-bcp47.d.ts",
   "exports": {
     ".": {
