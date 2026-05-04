@@ -101,6 +101,20 @@ Generates cryptographically secure random bytes.
 </td></tr>
 <tr><td>
 
+[generateUuid()](./ICryptoProvider.generateUuid.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Generates a cryptographically random UUIDv4 using the provider's
+underlying source of randomness.
+
+</td></tr>
+<tr><td>
+
 [toBase64(data)](./ICryptoProvider.toBase64.md)
 
 </td><td>

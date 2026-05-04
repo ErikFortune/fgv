@@ -282,6 +282,42 @@ Parameters for a list-models request.
 Parameters for a streaming completion request.
 
 </td></tr>
+<tr><td>
+
+[IFencedStringifiedJsonExtractorOptions](./interfaces/IFencedStringifiedJsonExtractorOptions.md)
+
+</td><td>
+
+Options shared by every AiAssist.fencedStringifiedJson call.
+
+</td></tr>
+<tr><td>
+
+[IFencedStringifiedJsonOptions](./interfaces/IFencedStringifiedJsonOptions.md)
+
+</td><td>
+
+Options for the validating overload of AiAssist.fencedStringifiedJson.
+
+</td></tr>
+<tr><td>
+
+[IGenerateJsonCompletionParams](./interfaces/IGenerateJsonCompletionParams.md)
+
+</td><td>
+
+Parameters for AiAssist.generateJsonCompletion.
+
+</td></tr>
+<tr><td>
+
+[IGenerateJsonCompletionResult](./interfaces/IGenerateJsonCompletionResult.md)
+
+</td><td>
+
+Successful result of AiAssist.generateJsonCompletion.
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -375,6 +411,25 @@ Discriminated union of events emitted by a streaming completion.
 </td><td>
 
 Known context keys for model specification maps.
+
+</td></tr>
+<tr><td>
+
+[JsonTextExtractor](./type-aliases/JsonTextExtractor.md)
+
+</td><td>
+
+A function that pulls a JSON-shaped substring out of arbitrary model text.
+
+</td></tr>
+<tr><td>
+
+[JsonPromptHint](./type-aliases/JsonPromptHint.md)
+
+</td><td>
+
+Controls the optional system-prompt augmentation applied by
+AiAssist.generateJsonCompletion.
 
 </td></tr>
 </tbody></table>
@@ -529,6 +584,27 @@ Calls the streaming chat endpoint on a proxy server instead of calling
 Resolves the effective tools for a completion call.
 
 </td></tr>
+<tr><td>
+
+[fencedStringifiedJson](./functions/fencedStringifiedJson.md)
+
+</td><td>
+
+Creates a `Converter` that accepts raw LLM response text, runs it through a
+
+</td></tr>
+<tr><td>
+
+[generateJsonCompletion](./functions/generateJsonCompletion.md)
+
+</td><td>
+
+Calls AiAssist.callProviderCompletion, then runs the response text
+through a tolerant JSON converter (default:
+AiAssist.fencedStringifiedJson) and the caller's
+`converter`/`validator`.
+
+</td></tr>
 </tbody></table>
 
 ## Variables
@@ -668,6 +744,25 @@ Converter for ModelSpecKey.
 </td><td>
 
 Recursive converter for ModelSpec.
+
+</td></tr>
+<tr><td>
+
+[extractJsonText](./variables/extractJsonText.md)
+
+</td><td>
+
+Default AiAssist.JsonTextExtractor | extractor for LLM responses.
+
+</td></tr>
+<tr><td>
+
+[SMART_JSON_PROMPT_HINT](./variables/SMART_JSON_PROMPT_HINT.md)
+
+</td><td>
+
+Default system-prompt suffix appended when AiAssist.IGenerateJsonCompletionParams.promptHint
+is `'smart'` (the default).
 
 </td></tr>
 </tbody></table>
