@@ -284,7 +284,8 @@ export class KsCli {
       .action((topic: string | undefined) => {
         const help = getHelpText(topic, this._program);
         if (help.isFailure()) {
-          throw new Error(help.message);
+          console.error(`Error: ${help.message}`);
+          process.exit(1);
         }
 
         console.log(help.value);
@@ -300,12 +301,14 @@ export class KsCli {
       .action(async (options: IKeystoreCommandOptions) => {
         const password = await resolvePasswordConfirmed(options, 'New keystore password');
         if (password.isFailure()) {
-          throw new Error(password.message);
+          console.error(`Error: ${password.message}`);
+          process.exit(1);
         }
 
         const created = await createKeystore(options.keystore, password.value);
         if (created.isFailure()) {
-          throw new Error(created.message);
+          console.error(`Error: ${created.message}`);
+          process.exit(1);
         }
       });
 
@@ -322,7 +325,8 @@ export class KsCli {
       .action(async (options: IPasswordChangeOptions) => {
         const currentPassword = await resolvePassword(options, 'Current keystore password');
         if (currentPassword.isFailure()) {
-          throw new Error(currentPassword.message);
+          console.error(`Error: ${currentPassword.message}`);
+          process.exit(1);
         }
 
         const newPasswordOptions: IPasswordChangeOptions = {
@@ -333,7 +337,8 @@ export class KsCli {
         };
         const nextPassword = await resolvePasswordConfirmed(newPasswordOptions, 'New keystore password');
         if (nextPassword.isFailure()) {
-          throw new Error(nextPassword.message);
+          console.error(`Error: ${nextPassword.message}`);
+          process.exit(1);
         }
 
         const changed = await changeKeystorePassword(
@@ -342,7 +347,8 @@ export class KsCli {
           nextPassword.value
         );
         if (changed.isFailure()) {
-          throw new Error(changed.message);
+          console.error(`Error: ${changed.message}`);
+          process.exit(1);
         }
       });
 
@@ -361,17 +367,20 @@ export class KsCli {
       .action(async (positionalName: string | undefined, options: IPutCommandOptions) => {
         const name = await resolveSecretName(positionalName, options);
         if (name.isFailure()) {
-          throw new Error(name.message);
+          console.error(`Error: ${name.message}`);
+          process.exit(1);
         }
 
         const password = await resolvePassword(options, 'Keystore password');
         if (password.isFailure()) {
-          throw new Error(password.message);
+          console.error(`Error: ${password.message}`);
+          process.exit(1);
         }
 
         const secret = await resolveSecretValue(options);
         if (secret.isFailure()) {
-          throw new Error(secret.message);
+          console.error(`Error: ${secret.message}`);
+          process.exit(1);
         }
 
         const stored = await storeSecret(options.keystore, password.value, name.value, secret.value, {
@@ -379,7 +388,8 @@ export class KsCli {
           replace: options.replace
         });
         if (stored.isFailure()) {
-          throw new Error(stored.message);
+          console.error(`Error: ${stored.message}`);
+          process.exit(1);
         }
       });
 
@@ -394,18 +404,21 @@ export class KsCli {
       .action(async (name: string, options: IGetCommandOptions) => {
         const password = await resolvePassword(options, 'Keystore password');
         if (password.isFailure()) {
-          throw new Error(password.message);
+          console.error(`Error: ${password.message}`);
+          process.exit(1);
         }
 
         const secret = await readSecret(options.keystore, password.value, name);
         if (secret.isFailure()) {
-          throw new Error(secret.message);
+          console.error(`Error: ${secret.message}`);
+          process.exit(1);
         }
 
         if (options.clipboard) {
           const copied = await copyTextToClipboard(secret.value);
           if (copied.isFailure()) {
-            throw new Error(copied.message);
+            console.error(`Error: ${copied.message}`);
+            process.exit(1);
           }
           return;
         }
@@ -423,12 +436,14 @@ export class KsCli {
       .action(async (options: IKeystoreCommandOptions) => {
         const password = await resolvePassword(options, 'Keystore password');
         if (password.isFailure()) {
-          throw new Error(password.message);
+          console.error(`Error: ${password.message}`);
+          process.exit(1);
         }
 
         const names = await listSecrets(options.keystore, password.value);
         if (names.isFailure()) {
-          throw new Error(names.message);
+          console.error(`Error: ${names.message}`);
+          process.exit(1);
         }
 
         for (const name of names.value) {
@@ -446,12 +461,14 @@ export class KsCli {
       .action(async (name: string, options: IKeystoreCommandOptions) => {
         const password = await resolvePassword(options, 'Keystore password');
         if (password.isFailure()) {
-          throw new Error(password.message);
+          console.error(`Error: ${password.message}`);
+          process.exit(1);
         }
 
         const removed = await removeSecret(options.keystore, password.value, name);
         if (removed.isFailure()) {
-          throw new Error(removed.message);
+          console.error(`Error: ${removed.message}`);
+          process.exit(1);
         }
       });
 
@@ -469,52 +486,61 @@ export class KsCli {
       .action(async (options: IExportCommandOptions) => {
         const password = await resolvePassword(options, 'Keystore password');
         if (password.isFailure()) {
-          throw new Error(password.message);
+          console.error(`Error: ${password.message}`);
+          process.exit(1);
         }
 
         const template = await readTemplate(options);
         if (template.isFailure()) {
-          throw new Error(template.message);
+          console.error(`Error: ${template.message}`);
+          process.exit(1);
         }
 
         const opened = await openKeystore(options.keystore, password.value);
         if (opened.isFailure()) {
-          throw new Error(opened.message);
+          console.error(`Error: ${opened.message}`);
+          process.exit(1);
         }
 
         const contextResult = await collectTemplateContext(opened.value.keystore, template.value);
         if (contextResult.isFailure()) {
-          throw new Error(contextResult.message);
+          console.error(`Error: ${contextResult.message}`);
+          process.exit(1);
         }
 
         const rendered = renderShellTemplate(template.value, contextResult.value.context);
         if (rendered.isFailure()) {
-          throw new Error(rendered.message);
+          console.error(`Error: ${rendered.message}`);
+          process.exit(1);
         }
 
         if (options.persistMissing && contextResult.value.missing.length > 0) {
           for (const [name, value] of contextResult.value.missing) {
             const stored = await opened.value.keystore.importApiKey(name, value, { replace: true });
             if (stored.isFailure()) {
-              throw new Error(`Failed to persist missing secret '${name}': ${stored.message}`);
+              console.error(`Error: Failed to persist missing secret '${name}': ${stored.message}`);
+              process.exit(1);
             }
           }
 
           const saved = await opened.value.keystore.save(password.value);
           if (saved.isFailure()) {
-            throw new Error(saved.message);
+            console.error(`Error: ${saved.message}`);
+            process.exit(1);
           }
 
           const persisted = await saveKeystoreFile(opened.value.path, saved.value);
           if (persisted.isFailure()) {
-            throw new Error(persisted.message);
+            console.error(`Error: ${persisted.message}`);
+            process.exit(1);
           }
         }
 
         if (options.clipboard) {
           const copied = await copyTextToClipboard(rendered.value);
           if (copied.isFailure()) {
-            throw new Error(copied.message);
+            console.error(`Error: ${copied.message}`);
+            process.exit(1);
           }
           return;
         }
@@ -528,16 +554,24 @@ export class KsCli {
       .option('--var <name>', 'Environment variable name to emit', 'FGV_KS_PASSWORD')
       .option('--clipboard', 'Copy the export statement to the clipboard', false)
       .action(async (options: { var?: string; clipboard?: boolean }) => {
-        const password = await promptHidden('Keystore password: ');
-        if (password.isFailure()) {
-          throw new Error(password.message);
+        const varName = options.var ?? 'FGV_KS_PASSWORD';
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(varName)) {
+          console.error(`Error: '--var' value '${varName}' is not a valid shell identifier`);
+          process.exit(1);
         }
 
-        const output = `export ${options.var ?? 'FGV_KS_PASSWORD'}=${shellQuote(password.value)}`;
+        const password = await promptHidden('Keystore password: ');
+        if (password.isFailure()) {
+          console.error(`Error: ${password.message}`);
+          process.exit(1);
+        }
+
+        const output = `export ${varName}=${shellQuote(password.value)}`;
         if (options.clipboard) {
           const copied = await copyTextToClipboard(output);
           if (copied.isFailure()) {
-            throw new Error(copied.message);
+            console.error(`Error: ${copied.message}`);
+            process.exit(1);
           }
           return;
         }

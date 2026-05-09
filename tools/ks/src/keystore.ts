@@ -1,3 +1,5 @@
+import fs from 'fs';
+
 import { CryptoUtils } from '@fgv/ts-extras';
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
@@ -79,8 +81,11 @@ export async function createKeystore(
   password: string
 ): Promise<Result<IKeystoreOpenResult>> {
   const resolvedPath = resolveKeystorePath(filePath);
-  const existing = readTextFile(resolvedPath);
-  if (existing.isSuccess()) {
+  if (fs.existsSync(resolvedPath)) {
+    const readable = readTextFile(resolvedPath);
+    if (readable.isFailure()) {
+      return fail(`Keystore file at '${resolvedPath}' exists but cannot be read: ${readable.message}`);
+    }
     return fail(`Keystore already exists at '${resolvedPath}'`);
   }
 

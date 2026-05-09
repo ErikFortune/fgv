@@ -1,7 +1,7 @@
 import { Mustache } from '@fgv/ts-extras';
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-const TEMPLATE_VARIABLE_PATTERN: RegExp = /\{\{\{?\s*([^{}\s]+)\s*\}?\}\}/g;
+const TEMPLATE_VARIABLE_PATTERN: RegExp = /\{\{\{?\s*(?:&\s*)?([^{}&\s]+)\s*\}?\}\}/g;
 
 function shellEscape(value: string): string {
   if (value.length === 0) {

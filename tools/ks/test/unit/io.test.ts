@@ -4,6 +4,8 @@ jest.mock('readline', () => ({
 
 import '@fgv/ts-utils-jest';
 
+import os from 'os';
+import path from 'path';
 import * as readline from 'readline';
 
 import { defaultKeystorePath, promptVisible, resolvePath } from '../../src/io';
@@ -14,7 +16,7 @@ describe('io helpers', () => {
   });
 
   test('defaultKeystorePath uses the home keystore name', () => {
-    expect(defaultKeystorePath().endsWith('/.fgv-ks') || defaultKeystorePath() === '.fgv-ks').toBe(true);
+    expect(defaultKeystorePath()).toBe(path.join(os.homedir(), '.fgv-ks'));
   });
 
   test('resolvePath expands tilde paths', () => {
@@ -31,7 +33,7 @@ describe('io helpers', () => {
 
     try {
       const result = await promptVisible('Secret name: ');
-      expect(result).toFailWith('Secret name: : interactive prompt requires a TTY');
+      expect(result).toFailWith(/interactive prompt requires a TTY/i);
     } finally {
       Object.defineProperty(process, 'stdin', {
         configurable: true,

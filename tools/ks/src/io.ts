@@ -80,7 +80,7 @@ export async function readAllFromStdin(): Promise<Result<string>> {
 
 export async function promptHidden(prompt: string): Promise<Result<string>> {
   if (!process.stdin.isTTY) {
-    return fail(`${prompt}: interactive prompt requires a TTY`);
+    return fail(`Interactive prompt requires a TTY (prompt: ${prompt})`);
   }
 
   return new Promise<Result<string>>((resolve) => {
@@ -132,7 +132,7 @@ export async function promptHidden(prompt: string): Promise<Result<string>> {
 
 export async function promptVisible(prompt: string): Promise<Result<string>> {
   if (!process.stdin.isTTY) {
-    return fail(`${prompt}: interactive prompt requires a TTY`);
+    return fail(`Interactive prompt requires a TTY (prompt: ${prompt})`);
   }
 
   return new Promise<Result<string>>((resolve) => {

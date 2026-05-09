@@ -17,6 +17,16 @@ describe('template helpers', () => {
     );
   });
 
+  test('extractTemplateVariables reads unescaped ampersand variables', () => {
+    expect(extractTemplateVariables('export XAI_API_KEY={{& xai}}')).toSucceedWith(['xai']);
+  });
+
+  test('renderShellTemplate renders unescaped ampersand variables', () => {
+    expect(renderShellTemplate('export XAI_API_KEY={{& xai}}', { xai: "abc'def" })).toSucceedWith(
+      "export XAI_API_KEY='abc'\"'\"'def'"
+    );
+  });
+
   test('renderShellTemplate fails when the template uses unsupported sections', () => {
     expect(renderShellTemplate('{{#xai}}value{{/xai}}', { xai: 'value' })).toFail();
   });
