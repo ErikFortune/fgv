@@ -64,13 +64,15 @@ function stripTrailingNewline(value: string): string {
   return value.replace(/\r?\n$/, '');
 }
 
-function hasPasswordSource(options: IKeystoreCommandOptions | IPasswordChangeOptions): boolean {
+function hasPasswordSource(
+  options: IKeystoreCommandOptions | IPasswordChangeOptions,
+  skipDefaultEnv: boolean = false
+): boolean {
   return Boolean(
     options.passwordEnv ||
       options.passwordFile ||
       options.passwordStdin ||
-      process.env.FGV_KS_PASSWORD ||
-      process.env.KS_PASSWORD
+      (!skipDefaultEnv && (process.env.FGV_KS_PASSWORD || process.env.KS_PASSWORD))
   );
 }
 
@@ -118,6 +120,10 @@ async function resolvePassword(
     return source;
   }
 
+  if (hasPasswordSource(options, true)) {
+    return fail(source.message);
+  }
+
   const prompted = await promptHidden(`${label}: `);
   if (prompted.isFailure()) {
     return fail(prompted.message);
@@ -152,9 +158,10 @@ async function resolveSecretName(
 
 async function resolvePasswordConfirmed(
   options: IKeystoreCommandOptions | IPasswordChangeOptions,
-  label: string
+  label: string,
+  skipDefaultEnv: boolean = false
 ): Promise<Result<string>> {
-  if (hasPasswordSource(options)) {
+  if (hasPasswordSource(options, skipDefaultEnv)) {
     return resolvePassword(options, label);
   }
 
@@ -335,7 +342,11 @@ export class KsCli {
           passwordFile: options.newPasswordFile,
           passwordStdin: options.newPasswordStdin
         };
-        const nextPassword = await resolvePasswordConfirmed(newPasswordOptions, 'New keystore password');
+        const nextPassword = await resolvePasswordConfirmed(
+          newPasswordOptions,
+          'New keystore password',
+          true
+        );
         if (nextPassword.isFailure()) {
           console.error(`Error: ${nextPassword.message}`);
           process.exit(1);
