@@ -30,4 +30,8 @@ describe('template helpers', () => {
   test('renderShellTemplate fails when the template uses unsupported sections', () => {
     expect(renderShellTemplate('{{#xai}}value{{/xai}}', { xai: 'value' })).toFail();
   });
+
+  test('renderShellTemplate treats prototype-inherited property names as missing variables', () => {
+    expect(renderShellTemplate('export X={{toString}}', {})).toFailWith(/missing template variable/i);
+  });
 });

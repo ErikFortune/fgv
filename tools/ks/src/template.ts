@@ -36,7 +36,7 @@ export function renderShellTemplate(
 ): Result<string> {
   return extractTemplateVariables(template).onSuccess((variables) => {
     for (const variable of variables) {
-      if (!(variable in context)) {
+      if (!Object.prototype.hasOwnProperty.call(context, variable)) {
         return fail(`Missing template variable '${variable}'`);
       }
     }

@@ -247,7 +247,7 @@ async function collectTemplateContext(
     return fail(variablesResult.message);
   }
 
-  const context: Record<string, string> = {};
+  const context: Record<string, string> = Object.create(null) as Record<string, string>;
   const missing: Array<[string, string]> = [];
 
   for (const variable of variablesResult.value) {
