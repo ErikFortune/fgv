@@ -94,17 +94,30 @@ export class Normalizer {
 
   /**
    * Recursively builds a byte-identical RFC 8785 JSON string.
-   * @throws For non-JSON-serializable types. Callers must wrap in captureResult.
+   * @throws For non-JSON-serializable types (non-finite numbers, Date, RegExp,
+   *   Map, Set, class instances, function, symbol, bigint, undefined).
+   *   Callers must wrap in captureResult.
    */
   protected _canonicalizeRfc8785(value: unknown): string {
     if (value === null) return 'null';
     if (typeof value === 'boolean') return value ? 'true' : 'false';
-    if (typeof value === 'number') return JSON.stringify(value);
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) {
+        throw new Error(`canonicalize: non-finite number (${value}) is not representable in JSON`);
+      }
+      return JSON.stringify(value);
+    }
     if (typeof value === 'string') return JSON.stringify(value);
     if (Array.isArray(value)) {
       return '[' + value.map((item) => this._canonicalizeRfc8785(item)).join(',') + ']';
     }
     if (typeof value === 'object') {
+      const proto = Object.getPrototypeOf(value as object) as unknown;
+      if (proto !== Object.prototype && proto !== null) {
+        throw new Error(
+          `canonicalize: cannot serialize non-plain object (${Object.prototype.toString.call(value)})`
+        );
+      }
       const obj = value as Record<string, unknown>;
       const sortedKeys = Object.keys(obj).sort((k1, k2) => this._compareKeys(k1, k2));
       const pairs = sortedKeys.map((k) => JSON.stringify(k) + ':' + this._canonicalizeRfc8785(obj[k]));

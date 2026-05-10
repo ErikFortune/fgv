@@ -235,6 +235,16 @@ describe('HashingNormalizer.canonicalize', () => {
     test('fails for non-JSON-serializable types', () => {
       expect(normalizer.canonicalize(() => 'fn')).toFail();
       expect(normalizer.canonicalize(Symbol('s'))).toFail();
+      expect(normalizer.canonicalize(new Date())).toFail();
+      expect(normalizer.canonicalize(/regex/)).toFail();
+      expect(normalizer.canonicalize(new Map())).toFail();
+      expect(normalizer.canonicalize(new Set())).toFail();
+    });
+
+    test('fails for non-finite numbers', () => {
+      expect(normalizer.canonicalize(NaN)).toFail();
+      expect(normalizer.canonicalize(Infinity)).toFail();
+      expect(normalizer.canonicalize(-Infinity)).toFail();
     });
   });
 

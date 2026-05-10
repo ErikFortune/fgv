@@ -34,12 +34,16 @@ import { keyPairAlgorithmParams } from './keyPairAlgorithmParams';
  * @public
  */
 export function multibaseBase64UrlEncode(data: Uint8Array): string {
-  // Build standard base64 from raw bytes
-  let binary = '';
-  for (let i = 0; i < data.length; i++) {
-    binary += String.fromCharCode(data[i]);
+  let base64: string;
+  if (typeof Buffer !== 'undefined') {
+    base64 = Buffer.from(data).toString('base64');
+  } else {
+    let binary = '';
+    for (let i = 0; i < data.length; i++) {
+      binary += String.fromCharCode(data[i]);
+    }
+    base64 = btoa(binary);
   }
-  const base64 = btoa(binary);
   // Convert to base64url: + → -, / → _, strip = padding
   const base64url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   return 'm' + base64url;
@@ -68,10 +72,15 @@ export function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array> {
   const base64 = body.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
   try {
-    const binary = atob(padded);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
+    let bytes: Uint8Array;
+    if (typeof Buffer !== 'undefined') {
+      bytes = new Uint8Array(Buffer.from(padded, 'base64'));
+    } else {
+      const binary = atob(padded);
+      bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
     }
     return succeed(bytes);
   } catch {

@@ -81,15 +81,15 @@ describe('exportPublicKeyAsMultibaseSpki / importPublicKeyFromMultibaseSpki', ()
       const pair = (await provider.generateKeyPair(algorithm, true)).orThrow();
 
       const exported = await CryptoUtils.exportPublicKeyAsMultibaseSpki(pair.publicKey);
-      expect(exported).toSucceedAndSatisfy(async (encoded) => {
-        expect(typeof encoded).toBe('string');
-        expect(encoded.startsWith('m')).toBe(true);
+      expect(exported).toSucceed();
+      const encoded = exported.orThrow();
+      expect(typeof encoded).toBe('string');
+      expect(encoded.startsWith('m')).toBe(true);
 
-        const imported = await CryptoUtils.importPublicKeyFromMultibaseSpki(encoded, algorithm);
-        expect(imported).toSucceedAndSatisfy((key) => {
-          expect(key.type).toBe('public');
-          expect(key.extractable).toBe(true);
-        });
+      const imported = await CryptoUtils.importPublicKeyFromMultibaseSpki(encoded, algorithm);
+      expect(imported).toSucceedAndSatisfy((key) => {
+        expect(key.type).toBe('public');
+        expect(key.extractable).toBe(true);
       });
     });
   });
