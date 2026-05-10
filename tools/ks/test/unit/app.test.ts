@@ -698,3 +698,431 @@ describe('KsCli password command - env var isolation for new password', () => {
     expect(exitSpy).not.toHaveBeenCalled();
   });
 });
+
+describe('KsCli help command', () => {
+  let exitSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
+  let consoleLogSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    exitSpy = jest.spyOn(process, 'exit').mockImplementation((code) => {
+      throw Object.assign(new Error(`process.exit:${code as number}`), { isProcessExit: true });
+    });
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('prints help text for a known topic', async () => {
+    await new KsCli().run(['node', 'ks', 'help', 'template']);
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('template'));
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  test('exits with error for an unknown topic', async () => {
+    await expect(new KsCli().run(['node', 'ks', 'help', 'bogus'])).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('bogus'));
+  });
+});
+
+describe('KsCli put command - additional error paths', () => {
+  let savedEnv: Record<string, string | undefined>;
+  let exitSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    savedEnv = saveEnv();
+    process.env.FGV_KS_PASSWORD = 'test-password';
+    delete process.env.KS_PASSWORD;
+
+    promptHiddenMock.mockReset();
+    promptVisibleMock.mockReset();
+    storeSecretMock.mockReset();
+    readTextFileMock.mockReset();
+    readAllFromStdinMock.mockReset();
+    exitSpy = jest.spyOn(process, 'exit').mockImplementation((code) => {
+      throw Object.assign(new Error(`process.exit:${code as number}`), { isProcessExit: true });
+    });
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    restoreEnv(savedEnv);
+    jest.restoreAllMocks();
+  });
+
+  test('exits with error when the name prompt returns an empty string', async () => {
+    promptVisibleMock.mockResolvedValue(succeed(''));
+
+    await expect(new KsCli().run(['node', 'ks', 'put'])).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('cannot be empty'));
+  });
+
+  test('exits with error when storeSecret fails', async () => {
+    promptHiddenMock.mockResolvedValue(succeed('secret-value'));
+    storeSecretMock.mockResolvedValue(fail('Already exists'));
+
+    await expect(new KsCli().run(['node', 'ks', 'put', '--name', 'my-key'])).rejects.toThrow(
+      'process.exit:1'
+    );
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Already exists'));
+  });
+
+  test('reads the secret value from --file', async () => {
+    readTextFileMock.mockReturnValue(succeed('file-secret-value'));
+    storeSecretMock.mockResolvedValue(succeed(undefined));
+
+    await new KsCli().run(['node', 'ks', 'put', '--name', 'my-key', '--file', '/path/to/secret']);
+
+    expect(storeSecretMock).toHaveBeenCalledWith(
+      expect.any(String),
+      'test-password',
+      'my-key',
+      'file-secret-value',
+      expect.any(Object)
+    );
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  test('exits with error when --file read fails', async () => {
+    readTextFileMock.mockReturnValue(fail('File not found'));
+
+    await expect(
+      new KsCli().run(['node', 'ks', 'put', '--name', 'my-key', '--file', '/missing/secret'])
+    ).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('File not found'));
+  });
+
+  test('reads the secret value from --stdin', async () => {
+    readAllFromStdinMock.mockResolvedValue(succeed('stdin-secret-value'));
+    storeSecretMock.mockResolvedValue(succeed(undefined));
+
+    await new KsCli().run(['node', 'ks', 'put', '--name', 'my-key', '--stdin']);
+
+    expect(storeSecretMock).toHaveBeenCalledWith(
+      expect.any(String),
+      'test-password',
+      'my-key',
+      'stdin-secret-value',
+      expect.any(Object)
+    );
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  test('exits with error when both --file and --stdin are given', async () => {
+    await expect(
+      new KsCli().run(['node', 'ks', 'put', '--name', 'my-key', '--file', '/f', '--stdin'])
+    ).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('either'));
+  });
+});
+
+describe('KsCli init command - password confirmation failures', () => {
+  let savedEnv: Record<string, string | undefined>;
+  let exitSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    savedEnv = saveEnv();
+    delete process.env.FGV_KS_PASSWORD;
+    delete process.env.KS_PASSWORD;
+
+    promptHiddenMock.mockReset();
+    createKeystoreMock.mockReset();
+    exitSpy = jest.spyOn(process, 'exit').mockImplementation((code) => {
+      throw Object.assign(new Error(`process.exit:${code as number}`), { isProcessExit: true });
+    });
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    restoreEnv(savedEnv);
+    jest.restoreAllMocks();
+  });
+
+  test('exits with error when the first password prompt fails', async () => {
+    promptHiddenMock.mockResolvedValue(fail('Not a TTY'));
+
+    await expect(new KsCli().run(['node', 'ks', 'init'])).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Not a TTY'));
+  });
+
+  test('exits with error when the second password prompt fails', async () => {
+    promptHiddenMock.mockResolvedValueOnce(succeed('password')).mockResolvedValueOnce(fail('Not a TTY'));
+
+    await expect(new KsCli().run(['node', 'ks', 'init'])).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Not a TTY'));
+  });
+});
+
+describe('KsCli export command - additional error paths', () => {
+  let savedEnv: Record<string, string | undefined>;
+  let exitSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
+  let consoleLogSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    savedEnv = saveEnv();
+    process.env.FGV_KS_PASSWORD = 'test-password';
+    delete process.env.KS_PASSWORD;
+
+    openKeystoreMock.mockReset();
+    copyTextToClipboardMock.mockReset();
+    promptHiddenMock.mockReset();
+    saveKeystoreFileMock.mockReset();
+    readTextFileMock.mockReset();
+    mockKeystoreOpenResult.keystore.getApiKey.mockReset();
+    mockKeystoreOpenResult.keystore.importApiKey.mockReset();
+    mockKeystoreOpenResult.keystore.save.mockReset();
+    exitSpy = jest.spyOn(process, 'exit').mockImplementation((code) => {
+      throw Object.assign(new Error(`process.exit:${code as number}`), { isProcessExit: true });
+    });
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    restoreEnv(savedEnv);
+    jest.restoreAllMocks();
+  });
+
+  test('reads template from --template-file', async () => {
+    readTextFileMock.mockReturnValue(succeed('export XAI_API_KEY={{xai}}'));
+    openKeystoreMock.mockResolvedValue(succeed(mockKeystoreOpenResult as never));
+    mockKeystoreOpenResult.keystore.getApiKey.mockReturnValue(succeed('my-api-key'));
+
+    await new KsCli().run(['node', 'ks', 'export', '--template-file', '/path/to/template.sh']);
+
+    expect(consoleLogSpy).toHaveBeenCalledWith("export XAI_API_KEY='my-api-key'");
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  test('exits with error when --template-file cannot be read', async () => {
+    readTextFileMock.mockReturnValue(fail('Template not found'));
+
+    await expect(
+      new KsCli().run(['node', 'ks', 'export', '--template-file', '/missing/template.sh'])
+    ).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Template not found'));
+  });
+
+  test('exits with error when both --template-file and --template-string are given', async () => {
+    await expect(
+      new KsCli().run([
+        'node',
+        'ks',
+        'export',
+        '--template-file',
+        '/some/file.sh',
+        '--template-string',
+        'export X={{x}}'
+      ])
+    ).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('either'));
+  });
+
+  test('exits with error when template contains unsupported tokens', async () => {
+    openKeystoreMock.mockResolvedValue(succeed(mockKeystoreOpenResult as never));
+
+    await expect(
+      new KsCli().run(['node', 'ks', 'export', '--template-string', '{{#section}}value{{/section}}'])
+    ).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Unsupported'));
+  });
+
+  test('exits with error when the missing-secret prompt fails', async () => {
+    openKeystoreMock.mockResolvedValue(succeed(mockKeystoreOpenResult as never));
+    mockKeystoreOpenResult.keystore.getApiKey.mockReturnValue(fail('not found'));
+    promptHiddenMock.mockResolvedValue(fail('Prompt cancelled'));
+
+    await expect(
+      new KsCli().run(['node', 'ks', 'export', '--template-string', 'export X={{xai}}'])
+    ).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Prompt cancelled'));
+  });
+
+  test('exits with error when --persist-missing importApiKey fails', async () => {
+    openKeystoreMock.mockResolvedValue(succeed(mockKeystoreOpenResult as never));
+    mockKeystoreOpenResult.keystore.getApiKey.mockReturnValue(fail('not found'));
+    promptHiddenMock.mockResolvedValue(succeed('prompted-value'));
+    mockKeystoreOpenResult.keystore.importApiKey.mockResolvedValue(fail('Import failed'));
+
+    await expect(
+      new KsCli().run(['node', 'ks', 'export', '--template-string', 'export X={{xai}}', '--persist-missing'])
+    ).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Import failed'));
+  });
+
+  test('exits with error when --persist-missing save fails', async () => {
+    openKeystoreMock.mockResolvedValue(succeed(mockKeystoreOpenResult as never));
+    mockKeystoreOpenResult.keystore.getApiKey.mockReturnValue(fail('not found'));
+    promptHiddenMock.mockResolvedValue(succeed('prompted-value'));
+    mockKeystoreOpenResult.keystore.importApiKey.mockResolvedValue(succeed(undefined));
+    mockKeystoreOpenResult.keystore.save.mockResolvedValue(fail('Save failed'));
+
+    await expect(
+      new KsCli().run(['node', 'ks', 'export', '--template-string', 'export X={{xai}}', '--persist-missing'])
+    ).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Save failed'));
+  });
+
+  test('exits with error when --persist-missing saveKeystoreFile fails', async () => {
+    openKeystoreMock.mockResolvedValue(succeed(mockKeystoreOpenResult as never));
+    mockKeystoreOpenResult.keystore.getApiKey.mockReturnValue(fail('not found'));
+    promptHiddenMock.mockResolvedValue(succeed('prompted-value'));
+    mockKeystoreOpenResult.keystore.importApiKey.mockResolvedValue(succeed(undefined));
+    mockKeystoreOpenResult.keystore.save.mockResolvedValue(succeed('encrypted' as never));
+    saveKeystoreFileMock.mockResolvedValue(fail('Disk full'));
+
+    await expect(
+      new KsCli().run(['node', 'ks', 'export', '--template-string', 'export X={{xai}}', '--persist-missing'])
+    ).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Disk full'));
+  });
+
+  test('exits with error when clipboard copy fails', async () => {
+    openKeystoreMock.mockResolvedValue(succeed(mockKeystoreOpenResult as never));
+    mockKeystoreOpenResult.keystore.getApiKey.mockReturnValue(succeed('api-key'));
+    copyTextToClipboardMock.mockResolvedValue(fail('Clipboard unavailable'));
+
+    await expect(
+      new KsCli().run(['node', 'ks', 'export', '--template-string', 'export X={{xai}}', '--clipboard'])
+    ).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Clipboard unavailable'));
+  });
+});
+
+describe('KsCli password sources - stdin and env var', () => {
+  let savedEnv: Record<string, string | undefined>;
+  let exitSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    savedEnv = saveEnv();
+    delete process.env.FGV_KS_PASSWORD;
+    delete process.env.KS_PASSWORD;
+
+    readAllFromStdinMock.mockReset();
+    readTextFileMock.mockReset();
+    listSecretsMock.mockReset();
+    exitSpy = jest.spyOn(process, 'exit').mockImplementation((code) => {
+      throw Object.assign(new Error(`process.exit:${code as number}`), { isProcessExit: true });
+    });
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    restoreEnv(savedEnv);
+    jest.restoreAllMocks();
+  });
+
+  test('reads password from --password-stdin', async () => {
+    readAllFromStdinMock.mockResolvedValue(succeed('stdin-password'));
+    listSecretsMock.mockResolvedValue(succeed([]));
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    await new KsCli().run(['node', 'ks', 'list', '--password-stdin']);
+
+    expect(listSecretsMock).toHaveBeenCalledWith(expect.any(String), 'stdin-password');
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  test('exits with error when --password-stdin read fails', async () => {
+    readAllFromStdinMock.mockResolvedValue(fail('Stdin closed'));
+
+    await expect(new KsCli().run(['node', 'ks', 'list', '--password-stdin'])).rejects.toThrow(
+      'process.exit:1'
+    );
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Stdin closed'));
+  });
+
+  test('exits with error when --password-env variable is not set', async () => {
+    delete process.env.UNSET_PW_VAR;
+
+    await expect(new KsCli().run(['node', 'ks', 'list', '--password-env', 'UNSET_PW_VAR'])).rejects.toThrow(
+      'process.exit:1'
+    );
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('UNSET_PW_VAR'));
+  });
+
+  test('reads password from --password-file', async () => {
+    readTextFileMock.mockReturnValue(succeed('file-password'));
+    listSecretsMock.mockResolvedValue(succeed([]));
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    await new KsCli().run(['node', 'ks', 'list', '--password-file', '/path/to/pw.txt']);
+
+    expect(listSecretsMock).toHaveBeenCalledWith(expect.any(String), 'file-password');
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('KsCli resolvePassword - interactive fallback failure', () => {
+  let savedEnv: Record<string, string | undefined>;
+  let exitSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    savedEnv = saveEnv();
+    delete process.env.FGV_KS_PASSWORD;
+    delete process.env.KS_PASSWORD;
+
+    promptHiddenMock.mockReset();
+    exitSpy = jest.spyOn(process, 'exit').mockImplementation((code) => {
+      throw Object.assign(new Error(`process.exit:${code as number}`), { isProcessExit: true });
+    });
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    restoreEnv(savedEnv);
+    jest.restoreAllMocks();
+  });
+
+  test('exits with error when the interactive password prompt fails', async () => {
+    promptHiddenMock.mockResolvedValue(fail('Prompt cancelled'));
+
+    await expect(new KsCli().run(['node', 'ks', 'list'])).rejects.toThrow('process.exit:1');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Prompt cancelled'));
+  });
+});
