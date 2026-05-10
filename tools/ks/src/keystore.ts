@@ -19,32 +19,24 @@ export function resolveKeystorePath(filePath?: string): string {
   return resolvePath(filePath ?? defaultKeystorePath());
 }
 
-export async function loadKeystoreFile(
-  filePath?: string
-): Promise<Result<CryptoUtils.KeyStore.IKeyStoreFile>> {
-  const resolvedPath = resolveKeystorePath(filePath);
-  const contentsResult = readTextFile(resolvedPath);
-  if (contentsResult.isFailure()) {
-    return fail(contentsResult.message);
-  }
-
-  const jsonResult = captureResult(() => JSON.parse(contentsResult.value));
-  if (jsonResult.isFailure()) {
-    return fail(`Invalid keystore file '${resolvedPath}': ${jsonResult.message}`);
-  }
-
-  const fileResult = CryptoUtils.KeyStore.Converters.keystoreFile.convert(jsonResult.value);
-  if (fileResult.isFailure()) {
-    return fail(`Invalid keystore file '${resolvedPath}': ${fileResult.message}`);
-  }
-
-  return succeed(fileResult.value);
+export function loadKeystoreFile(resolvedPath: string): Result<CryptoUtils.KeyStore.IKeyStoreFile> {
+  return readTextFile(resolvedPath)
+    .onSuccess((contents) =>
+      captureResult(() => JSON.parse(contents)).withErrorFormat(
+        (msg) => `Invalid keystore file '${resolvedPath}': ${msg}`
+      )
+    )
+    .onSuccess((json) =>
+      CryptoUtils.KeyStore.Converters.keystoreFile
+        .convert(json)
+        .withErrorFormat((msg) => `Invalid keystore file '${resolvedPath}': ${msg}`)
+    );
 }
 
-export async function saveKeystoreFile(
+export function saveKeystoreFile(
   filePath: string | undefined,
   keystoreFile: CryptoUtils.KeyStore.IKeyStoreFile
-): Promise<Result<string>> {
+): Result<string> {
   const resolvedPath = resolveKeystorePath(filePath);
   const serialized = `${JSON.stringify(keystoreFile, null, 2)}\n`;
   return writeTextFile(resolvedPath, serialized);
@@ -55,25 +47,15 @@ export async function openKeystore(
   password: string
 ): Promise<Result<IKeystoreOpenResult>> {
   const resolvedPath = resolveKeystorePath(filePath);
-  const fileResult = await loadKeystoreFile(resolvedPath);
-  if (fileResult.isFailure()) {
-    return fail(fileResult.message);
-  }
-
-  const opened = CryptoUtils.KeyStore.KeyStore.open({
-    cryptoProvider: CryptoUtils.nodeCryptoProvider,
-    keystoreFile: fileResult.value
-  });
-  if (opened.isFailure()) {
-    return fail(opened.message);
-  }
-
-  const unlocked = await opened.value.unlock(password);
-  if (unlocked.isFailure()) {
-    return fail(unlocked.message);
-  }
-
-  return succeed({ path: resolvedPath, keystore: unlocked.value });
+  return loadKeystoreFile(resolvedPath)
+    .onSuccess((file) =>
+      CryptoUtils.KeyStore.KeyStore.open({
+        cryptoProvider: CryptoUtils.nodeCryptoProvider,
+        keystoreFile: file
+      })
+    )
+    .thenOnSuccess((store) => store.unlock(password))
+    .onSuccess((keystore) => succeed({ path: resolvedPath, keystore }));
 }
 
 export async function createKeystore(
@@ -107,7 +89,7 @@ export async function createKeystore(
     return fail(`Failed to save keystore: ${saved.message}`);
   }
 
-  const savedFile = await saveKeystoreFile(resolvedPath, saved.value);
+  const savedFile = saveKeystoreFile(resolvedPath, saved.value);
   if (savedFile.isFailure()) {
     return fail(`Failed to write keystore file: ${savedFile.message}`);
   }
@@ -135,7 +117,7 @@ export async function changeKeystorePassword(
     return fail(`Failed to save keystore: ${saved.message}`);
   }
 
-  const persisted = await saveKeystoreFile(opened.value.path, saved.value);
+  const persisted = saveKeystoreFile(opened.value.path, saved.value);
   if (persisted.isFailure()) {
     return fail(`Failed to write keystore file: ${persisted.message}`);
   }
@@ -149,7 +131,7 @@ export async function storeSecret(
   name: string,
   value: string,
   options?: ISecretWriteOptions
-): Promise<Result<void>> {
+): Promise<Result<string>> {
   const opened = await openKeystore(filePath, password);
   if (opened.isFailure()) {
     return fail(opened.message);
@@ -168,12 +150,9 @@ export async function storeSecret(
     return fail(`Failed to save keystore: ${saved.message}`);
   }
 
-  const persisted = await saveKeystoreFile(opened.value.path, saved.value);
-  if (persisted.isFailure()) {
-    return fail(`Failed to write keystore file: ${persisted.message}`);
-  }
-
-  return succeed(undefined);
+  return saveKeystoreFile(opened.value.path, saved.value).withErrorFormat(
+    (msg) => `Failed to write keystore file: ${msg}`
+  );
 }
 
 export async function readSecret(
@@ -181,36 +160,21 @@ export async function readSecret(
   password: string,
   name: string
 ): Promise<Result<string>> {
-  const opened = await openKeystore(filePath, password);
-  if (opened.isFailure()) {
-    return fail(opened.message);
-  }
-
-  const result = opened.value.keystore.getApiKey(name);
-  if (result.isFailure()) {
-    return fail(result.message);
-  }
-
-  return succeed(result.value);
+  return (await openKeystore(filePath, password)).onSuccess((opened) => opened.keystore.getApiKey(name));
 }
 
 export async function listSecrets(
   filePath: string | undefined,
   password: string
 ): Promise<Result<readonly string[]>> {
-  const opened = await openKeystore(filePath, password);
-  if (opened.isFailure()) {
-    return fail(opened.message);
-  }
-
-  return opened.value.keystore.listSecrets();
+  return (await openKeystore(filePath, password)).onSuccess((opened) => opened.keystore.listSecrets());
 }
 
 export async function removeSecret(
   filePath: string | undefined,
   password: string,
   name: string
-): Promise<Result<void>> {
+): Promise<Result<string>> {
   const opened = await openKeystore(filePath, password);
   if (opened.isFailure()) {
     return fail(opened.message);
@@ -226,10 +190,7 @@ export async function removeSecret(
     return fail(`Failed to save keystore: ${saved.message}`);
   }
 
-  const persisted = await saveKeystoreFile(opened.value.path, saved.value);
-  if (persisted.isFailure()) {
-    return fail(`Failed to write keystore file: ${persisted.message}`);
-  }
-
-  return succeed(undefined);
+  return saveKeystoreFile(opened.value.path, saved.value).withErrorFormat(
+    (msg) => `Failed to write keystore file: ${msg}`
+  );
 }

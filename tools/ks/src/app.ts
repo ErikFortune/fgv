@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import pkg from '../package.json';
 
 import { CryptoUtils } from '@fgv/ts-extras';
 import { Result, fail, succeed } from '@fgv/ts-utils';
@@ -275,7 +276,7 @@ export class KsCli {
   }
 
   private _setupCommands(): void {
-    this._program.name('ks').description('Manage ts-extras keystore files').version('5.1.0');
+    this._program.name('ks').description('Manage ts-extras keystore files').version(pkg.version);
     this._program.addHelpCommand(false);
 
     this._program

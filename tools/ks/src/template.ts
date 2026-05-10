@@ -1,6 +1,8 @@
 import { Mustache } from '@fgv/ts-extras';
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
+// Mustache is used only for parsing/variable extraction. Rendering is done via regex
+// because Mustache's renderer HTML-escapes output, but we need shell-quoting instead.
 const TEMPLATE_VARIABLE_PATTERN: RegExp = /\{\{\{?\s*(?:&\s*)?([^{}&\s]+)\s*\}?\}\}/g;
 
 function shellEscape(value: string): string {

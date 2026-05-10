@@ -42,7 +42,7 @@ describe('KsCli put command', () => {
 
     promptHiddenMock.mockResolvedValue(succeed('secret-value'));
     promptVisibleMock.mockResolvedValue(succeed('secret-name'));
-    storeSecretMock.mockResolvedValue(succeed(undefined));
+    storeSecretMock.mockResolvedValue(succeed('/mock/keystore/path'));
   });
 
   afterAll(() => {

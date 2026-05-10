@@ -1,10 +1,11 @@
+import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import * as readline from 'readline';
 
 import clipboardy from 'clipboardy';
 import { FileTree, FileTree as FileTreeNamespace } from '@fgv/ts-json-base';
-import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureAsyncResult, captureResult, fail, succeed } from '@fgv/ts-utils';
 
 function expandHome(filePath: string): string {
   if (!filePath.startsWith('~')) {
@@ -55,7 +56,13 @@ export function writeTextFile(filePath: string, contents: string): Result<string
           return fail(`Unable to write '${resolvedPath}': directory is not mutable`);
         }
 
-        return directory.createChildFile(fileName, contents).onSuccess(() => succeed(resolvedPath));
+        const tmpFileName = `${fileName}.tmp`;
+        return directory.createChildFile(tmpFileName, contents).onSuccess(() =>
+          captureResult(() => {
+            fs.renameSync(path.join(directoryPath, tmpFileName), resolvedPath);
+            return resolvedPath;
+          })
+        );
       })
     );
   });
