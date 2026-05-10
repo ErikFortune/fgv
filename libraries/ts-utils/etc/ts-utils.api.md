@@ -1272,7 +1272,6 @@ type HashFunction = (parts: string[]) => string;
 // @public
 class HashingNormalizer extends Normalizer {
     constructor(hash: HashFunction);
-    canonicalize(from: unknown): Result<string>;
     // (undocumented)
     computeHash(from: unknown): Result<string>;
     // @internal
@@ -2035,20 +2034,12 @@ class NoOpLogger extends LoggerBase {
 }
 
 // @public
-export interface NormalizeOptions {
-    rules?: 'rfc8785';
-}
-
-// @public
 export class Normalizer {
+    canonicalize(from: unknown): Result<string>;
     protected _canonicalizeRfc8785(value: unknown): string;
     // @internal
     protected _compareKeys(k1: unknown, k2: unknown): number;
     normalize<T>(from: T): Result<T>;
-    // (undocumented)
-    normalize(from: unknown, options: {
-        rules: 'rfc8785';
-    }): Result<string>;
     // (undocumented)
     protected _normalizeArray(from: unknown[]): Result<unknown[]>;
     // Warning: (ae-forgotten-export) The symbol "Entry" needs to be exported by the entry point index.d.ts
