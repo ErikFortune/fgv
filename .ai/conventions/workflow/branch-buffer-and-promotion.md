@@ -41,39 +41,56 @@ line only advances via deliberate orchestrator-gated promotions.
 
 ## The promotion gate
 
-Invoked at clean stream-close moments after the buffer has
-accumulated a coherent batch of merged PRs:
+Invoked as a release event, not a routine operation. In this repo
+the promotion delta is typically large (months of accumulated
+feature work) — too large for meaningful code review, and each
+constituent PR was reviewed on its way into the buffer. The
+gate is therefore **test / docs / sibling-sweep**, not unified
+code review:
 
 1. Confirm the buffer is in known-good state — all in-flight
    followups closed or explicitly deferred; no in-progress PRs
-   blocking; baseline doc reflects the buffer's current state.
-2. Open a PR `<buffer> → <canonical>`. The PR's diff is whatever
-   has accumulated on the buffer since the last promotion.
-3. **Run one explicit automated-review pass on the unified buffer
-   state.** Even though each constituent PR was reviewed
-   individually when it landed, the unified diff can surface
-   **fix-interaction findings** — fixes that held in isolation but
-   interact when combined. Address those before merging.
-4. Merge with **merge-commit** method (preserves the constituent
-   PRs' history; squash would collapse the audit trail; rebase
-   would rewrite SHAs that other docs reference).
-5. Bump the pinned baseline file to capture the new canonical head.
-   The buffer continues to advance from the same point.
+   blocking.
+2. Confirm CI green: tests pass, coverage gates met, lint clean
+   on the buffer's current HEAD.
+3. Confirm generated docs are caught up (api-extractor output and
+   doc-update PRs reflect the current buffer state).
+4. **Run a sibling-sweep as a fresh agent** against the unified
+   buffer delta. The per-PR reviews catch within-PR issues; the
+   sibling-sweep catches **fix-interaction findings** — fixes
+   that held in isolation but interact when combined — plus
+   cross-stream inconsistencies (drifted conventions, duplicated
+   primitives, naming clashes). See
+   `.ai/conventions/workflow/sibling-sweep-lens.md`.
+   - Critical findings (production-blocking, data-corruption,
+     security, recovery-path-broken) get inline fixes before merge.
+   - Everything else routes to followups — TECH_DEBT, FUTURE, or
+     the next chore batch.
+5. Open a PR `<buffer> → <canonical>`. Merge with **merge-commit**
+   method (preserves the constituent PRs' history; squash would
+   collapse the audit trail; rebase would rewrite SHAs that other
+   docs reference).
+6. Bump the pinned baseline file to capture the new canonical head.
+   Include the lockstep version this promotion will publish (or
+   "pre-publish" if the promotion precedes the next publish event).
 
-Promotion frequency: at natural stream-close moments. Don't promote
-on every PR (defeats the buffer); don't let the buffer drift
-indefinitely (loses the "canonical is current canonical" property).
+Promotion frequency in this repo is **release-event-driven, not
+continuous** — production publish only when stability-via-
+consumption is established (at least one consumer has applied
+recent features end-to-end). Alpha publishes from the prerelease
+mirror happen independently and don't gate or require promotion.
 
-## Why the promotion needs its own review pass
+## Why the sibling-sweep, not a unified code review
 
-The per-PR automated reviews catch within-PR issues. **Cross-PR
-fix-interactions only surface when the combined state is reviewed
-together.** Per the source corpus's review-cycle data, fix-
-interactions are uncommon but real. Catching them at promotion is
-cheaper than discovering them in production. The cost of the
-promotion review pass is one automated pass on the unified PR;
-orchestrator triage of its findings is the real cost — typically
-modest.
+In smaller-delta topologies, a unified automated code-review pass
+at promotion catches fix-interactions cheaply. In this repo the
+delta is too large for that to produce useful signal — re-reviewing
+months of already-reviewed code costs a lot and finds little.
+The sibling-sweep is a different lens: it looks across PRs for
+cross-stream interaction, convention drift, and primitive
+duplication, which **is** the class of issue per-PR review can't
+catch. Net: cheaper than a full re-review, catches the things
+that actually escape per-PR review.
 
 ## Alternatives the orchestrator workflow family is compatible with
 
@@ -120,8 +137,8 @@ semantic-by-convention. Other projects may prefer `develop`,
 
 - **Direct agent merges to the canonical line.** Defeats the
   buffer's purpose.
-- **Promotion without an automated-review pass.** Skips the
-  fix-interaction catch.
+- **Promotion without a sibling-sweep.** Skips the fix-interaction
+  and cross-stream-drift catch.
 - **Squash-merge at promotion.** Collapses the audit trail of
   constituent PRs.
 - **Promotion on every PR.** Buffer becomes a passthrough; loses

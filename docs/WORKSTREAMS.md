@@ -8,26 +8,87 @@ it.
 
 ---
 
+## Repo shape (load-bearing context)
+
+This repo is a set of related but distinct utility libraries under
+`libraries/` (plus CLI tools under `tools/`), not a single coherent
+product. Work is mostly **reactive, consumer-driven, feature-shaped**:
+external consumers batch up feature requests as they do major work;
+we service those batches and publish an alpha; consumers integrate;
+once at least one consumer has applied a feature end-to-end, we
+treat that surface as validated. A feature commonly touches 1–3
+packages, so the unit of work is the **feature**, not the package.
+
+**Lockstep version policy.** When we publish, we publish everything.
+Independent roadmaps per library, single shared version. Sizing the
+blast radius of any stream needs to account for this — a change in
+one package ships in the same alpha as every other package's changes.
+
+**Stability-via-consumption.** We presume instability until at least
+one consumer has applied a feature end-to-end. `release` and the
+alphas published from `prerelease` are post-feature-PR but
+pre-validation. Production promotion is gated on observed consumer
+use, not just CI green. Case in point: a -25 → -26 type-tightening
+that would have been a production regression if -25 had shipped to
+main.
+
+## Branch flow
+
+```
+agent feature branches ─PR─▶ release ──mirror──▶ prerelease ──npm-publish─▶ alpha
+                                │
+                                └── promote (test/docs gate, not code review) ──▶ main
+```
+
+- **`release`** is the buffer line. Feature PRs merge here. Iterative
+  review cycles, followups, and slips are absorbed here.
+- **`prerelease`** mirrors `release` immediately. The only deltas vs.
+  `release` are `package.json` / version-policy files and Rush
+  changelogs. Alphas publish from `prerelease` via the
+  `npm-publish` GitHub workflow.
+- **`main`** is the canonical line. Promotion `release` → `main` is
+  a release event — it accumulates a long delta and is gated on
+  **test/docs/sibling-sweep, not code review** (each constituent PR
+  was reviewed on its way into `release`; the unified delta is too
+  large for meaningful re-review).
+
+A branch-model evolution to a more conventional "main is tip,
+hotfix branches off main" topology is on the roadmap; see the
+relevant entry in this file when it's drafted.
+
 ## Status conventions
 
 - 🟢 ready to start (all hard dependencies met)
-- 🟡 ready but trailing on a soft dependency
+- 🟡 ready but trailing on a soft dependency, or trigger TBD
 - 🔵 in flight (active design or implementation)
 - 🔴 blocked (hard dependency unmet)
-- ✅ shipped (merged to the buffer line)
+- ✅ shipped (merged to `release`)
 
-## Branch model
+## Stream entry shape
 
-Feature branches PR into `release`. The orchestrator gates
-buffer→main promotions via a unified automated-review pass.
-See `.ai/conventions/workflow/branch-buffer-and-promotion.md`.
+Every stream entry declares, at minimum:
 
-## Baseline check before kickoff
+- **Mission** — 1–2 sentences.
+- **Package surface** — explicit list of packages this stream
+  expects to modify (e.g. `ts-extras/ai-assist`, `ts-app-shell/ai-assist`).
+  This is both the reading-aid and the collision-avoidance metadata
+  for parallel streams.
+- **Out-of-scope** — paths this stream will NOT touch, when
+  collision avoidance with another stream depends on it.
+- **Acceptance criteria** — exit gates.
+- **Artifact pointer** — `.ai/tasks/active/<stream-id>/`.
 
-Every workstream session verifies its branch base against `.ai/BASELINE.md`
-before doing any work. The baseline pins the minimum release-branch
-commit a new branch must descend from so a wave of parallel streams
-shares the same foundation; bumped when a new wave launches.
+Full kickoff-prompt shape: `.ai/conventions/workflow/kickoff-prompt-shape.md`.
+
+## Branch base
+
+New streams branch from current `release` HEAD. There is no shared
+"wave base" — streams are mostly independent, and the few real
+file-boundary conflicts are caught by the package-surface and
+out-of-scope declarations in the stream entry. `.ai/BASELINE.md`
+pins the last `release` → `main` promotion (i.e. the last
+published lockstep version), used as a recovery referent and for
+sizing blast radius, not as a stream-start gate.
 
 ## Stream versions
 
@@ -56,6 +117,12 @@ Every workstream maintains live artifacts at
 throughout the run. **Migrate to `.ai/tasks/completed/<YYYY-MM>/<stream-id>/`
 and write a polished `README.md` as part of the PR — before merge,
 not as a follow-up.** See `.ai/conventions/workflow/artifact-protocol.md`.
+
+## Out-of-scope packages
+
+The sudoku packages (`ts-sudoku-lib`, `ts-sudoku-ui`) are slated to
+move to their own monorepo and are out of scope for the workflow
+substrate. Don't queue streams against them here.
 
 ---
 

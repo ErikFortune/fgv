@@ -108,7 +108,7 @@ Artifact substrate (maintained by the orchestrator):
 - `docs/CHORES.md` — cleanup batches
 - `docs/TECH_DEBT.md` + `docs/FUTURE.md` — deferred work
 - `.ai/tasks/active/<id>/` → `.ai/tasks/completed/<YYYY-MM>/<id>/` — per-stream artifacts
-- `.ai/BASELINE.md` — pinned baseline commit for the current wave
+- `.ai/BASELINE.md` — last `release` → `main` promotion (blast-radius sizing referent, not a stream-start gate)
 
 Workflow conventions are in `.ai/conventions/workflow/`.
 
