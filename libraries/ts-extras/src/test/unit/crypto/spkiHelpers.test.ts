@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import * as CryptoUtils from '../../../packlets/crypto-utils';
-import { KeyPairAlgorithm } from '../../../packlets/crypto-utils/model';
+import type { KeyPairAlgorithm } from '../../../packlets/crypto-utils';
 
 const provider = CryptoUtils.nodeCryptoProvider;
 
@@ -53,7 +53,7 @@ describe('multibaseBase64UrlEncode / multibaseBase64UrlDecode', () => {
   });
 
   test('encode/decode round-trip for 32-byte data (typical key size)', () => {
-    const data = new Uint8Array(32).map((_, i) => i);
+    const data = new Uint8Array([...Array(32).keys()]);
     const encoded = CryptoUtils.multibaseBase64UrlEncode(data);
     expect(CryptoUtils.multibaseBase64UrlDecode(encoded)).toSucceedWith(data);
   });
