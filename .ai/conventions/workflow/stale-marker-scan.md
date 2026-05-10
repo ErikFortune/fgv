@@ -44,9 +44,9 @@ The orchestrator runs the scan as part of post-merge bookkeeping:
 
 ## Anti-patterns
 
-- **Skipping the scan after a non-wave-close merge.** Markers can
-  rot at any merge, not just at wave boundaries. Run the scan as
-  part of every post-merge bookkeeping pass.
+- **Skipping the scan after a "small" merge.** Markers can rot at
+  any merge. Run the scan as part of every post-merge bookkeeping
+  pass.
 - **Flipping markers but not updating the sequencing summary.**
   The summary is its own surface and rots independently.
 - **Trusting "I just looked at the ledger yesterday" as proof of
