@@ -61,7 +61,24 @@ not as a follow-up.** See `.ai/conventions/workflow/artifact-protocol.md`.
 
 ## Active workstreams
 
-*(No active workstreams yet.)*
+### `auth-primitives-batch1` 🔵
+
+**Status:** 🔵 in flight  
+**Branch:** `claude/auth-primitives-batch1` → PR to `release`  
+**Baseline:** `9c4fd555`  
+**Scope:** `@fgv/ts-extras`, `@fgv/ts-web-extras`, `@fgv/ts-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`  
+**Blocked by:** nothing  
+**Blocking:** personaility `auth-primitives-foundation` phase 1 (X25519) and phase 2 (canonical JSON + SPKI helpers)
+
+**Mission.** Add four primitives required by the personaility auth-primitives workstream for prerelease publish `5.1.0-26`:
+1. X25519 keypair support in `CryptoUtils.KeyPairAlgorithm`
+2. RFC 8785 `canonicalize()` on `Hash.Normalizer`
+3. Multibase/SPKI encoding helpers (`exportPublicKeyAsMultibaseSpki`, `importPublicKeyFromMultibaseSpki`, `multibaseBase64UrlEncode`/`Decode`) in `@fgv/ts-extras/crypto-utils`
+4. `LIBRARY_CAPABILITIES.md` doc update (cryptography + keystore + canonicalization sections)
+
+**Cross-repo context:** personaility side is `ErikFortune/personaility`, branch `claude/auth-primitives-foundation-h34cG`. Signal "shipped" to the user when `5.1.0-26` publishes; user routes to personaility orchestrator.
+
+**Artifacts:** `.ai/tasks/active/auth-primitives-batch1/`
 
 ---
 
