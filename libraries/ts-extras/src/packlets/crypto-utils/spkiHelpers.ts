@@ -69,7 +69,7 @@ export function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array> {
     );
   }
   const body = encoded.slice(1);
-  if (!/^[A-Za-z0-9_-]*$/.test(body)) {
+  if (!/^[A-Za-z0-9_-]*$/.test(body) || body.length % 4 === 1) {
     return fail(`multibaseBase64UrlDecode: malformed base64url body`);
   }
   // Convert base64url back to standard base64 and restore padding

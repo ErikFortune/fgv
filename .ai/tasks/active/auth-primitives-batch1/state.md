@@ -11,7 +11,7 @@
 |-------|--------|-------|
 | 1 — X25519 keypair | ✅ complete | model.ts, keyPairAlgorithmParams.ts, and tests already present on branch |
 | 2 — Multibase/SPKI helpers | ✅ complete | spkiHelpers.ts created; exports added to index.ts + index.browser.ts; spkiHelpers.test.ts added |
-| 3 — RFC 8785 canonicalization | ✅ complete | canonicalize() added to HashingNormalizer; tests added to hash.test.ts |
+| 3 — RFC 8785 canonicalization | ✅ complete | canonicalize() added to base Normalizer (per ErikFortune review); tests added to normalize.test.ts |
 | 4 — LIBRARY_CAPABILITIES.md | ✅ complete | crypto-utils and hash descriptions expanded; decision shortcuts added |
 
 ---
@@ -23,8 +23,8 @@
 - Both providers (NodeCryptoProvider, BrowserCryptoProvider) are fully table-driven — no provider changes needed.
 
 ### Phase 3: canonicalize() attachment point
-- Attached to `HashingNormalizer` (not the base `Normalizer`).
-- Rationale: the brief's preferred attachment point; `Normalizer` is the foundational base class with no dependencies, and `JsonValue` type is defined in `@fgv/ts-json-base` which `ts-utils` does not depend on. A local `type JsonValue` alias was added at file scope (marked `@internal`) to avoid adding a new package dependency.
+- Attached to the base `Normalizer` (not `HashingNormalizer`).
+- Rationale: moved per ErikFortune code review (r3214578687) — `HashingNormalizer` was off-kilter since `canonicalize` uses none of the hashing functionality. The base `Normalizer` is the cleaner home and makes the method available to `Crc32Normalizer` and all other subclasses.
 - The method uses direct string emission (recursive descent) rather than constructing a JS object, to prevent integer-string key reordering by JS engines.
 
 ### Phase 2: spkiHelpers.ts
@@ -49,6 +49,6 @@
 
 ## Orchestrator review notes
 
-- Spot-checked `canonicalize` (recursive descent emits to string, no JS object reconstruction — load-bearing detail correct) and `spkiHelpers.ts` (cross-runtime via `globalThis.crypto.subtle` + `btoa`/`atob`)
+- Spot-checked `canonicalize` (recursive descent emits to string, no JS object reconstruction — load-bearing detail correct). Attached to base `Normalizer` per review feedback.
+- `spkiHelpers.ts` revised post-review: uses `Buffer`/`btoa` fallback pattern, routes all SPKI ops through `ICryptoProvider`, adds alphabet + length validation in `multibaseBase64UrlDecode`.
 - Minor style: `importPublicKeyFromMultibaseSpki` early-returns on `isFailure()` instead of `.onSuccess`-chaining the sync→async transition. Not blocking.
-- Architectural follow-up: agent attached `canonicalize` to `HashingNormalizer` with a local internal `JsonValue` alias to avoid `ts-utils → ts-json-base`. The base `Normalizer` is the cleaner long-term home; revisit once a shared `JsonValue` is hoisted or the dependency is accepted. Candidate for `TECH_DEBT.md` P3.

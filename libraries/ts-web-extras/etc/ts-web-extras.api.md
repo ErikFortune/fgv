@@ -19,12 +19,14 @@ class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<CryptoUtils_2.IEncryptionResult>>;
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
+    exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
     generateKeyPair(algorithm: CryptoUtils_2.KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
     generateUuid(): Result<Uuid>;
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+    importPublicKeySpki(spkiBytes: Uint8Array, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
