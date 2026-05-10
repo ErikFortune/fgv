@@ -6,12 +6,28 @@ jest.mock('clipboardy', () => ({
   write: jest.fn()
 }));
 
+jest.mock('@fgv/ts-json-base', () => {
+  const actual = jest.requireActual('@fgv/ts-json-base') as typeof import('@fgv/ts-json-base');
+  return {
+    ...actual,
+    FileTree: {
+      ...actual.FileTree,
+      forFilesystem: jest.fn(),
+      isMutableAccessors: jest.fn(),
+      isMutableDirectoryItem: jest.fn()
+    }
+  };
+});
+
 import '@fgv/ts-utils-jest';
 
 import os from 'os';
 import path from 'path';
 import * as readline from 'readline';
 import clipboardy from 'clipboardy';
+import { FileTree } from '@fgv/ts-json-base';
+
+import { succeed, fail } from '@fgv/ts-utils';
 
 import {
   copyTextToClipboard,
@@ -19,7 +35,9 @@ import {
   promptHidden,
   promptVisible,
   readAllFromStdin,
-  resolvePath
+  readTextFile,
+  resolvePath,
+  writeTextFile
 } from '../../src/io';
 
 const clipboardyWriteMock = clipboardy.write as unknown as jest.Mock;
@@ -258,5 +276,116 @@ describe('copyTextToClipboard', () => {
 
     const result = await copyTextToClipboard('my text');
     expect(result).toFailWith(/clipboard unavailable/i);
+  });
+});
+
+describe('readTextFile', () => {
+  const forFilesystemMock = FileTree.forFilesystem as unknown as jest.Mock;
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('returns file contents on success', () => {
+    const file = { getRawContents: jest.fn().mockReturnValue(succeed('hello world')) };
+    const tree = { getFile: jest.fn().mockReturnValue(succeed(file)) };
+    forFilesystemMock.mockReturnValue(succeed(tree));
+
+    expect(readTextFile('/test/file.txt')).toSucceedWith('hello world');
+  });
+
+  test('returns failure when filesystem cannot be initialized', () => {
+    forFilesystemMock.mockReturnValue(fail('filesystem error'));
+
+    expect(readTextFile('/test/file.txt')).toFailWith(/filesystem error/i);
+  });
+
+  test('returns failure when file cannot be found', () => {
+    const tree = { getFile: jest.fn().mockReturnValue(fail('not found')) };
+    forFilesystemMock.mockReturnValue(succeed(tree));
+
+    expect(readTextFile('/test/file.txt')).toFailWith(/not found/i);
+  });
+});
+
+describe('writeTextFile', () => {
+  const forFilesystemMock = FileTree.forFilesystem as unknown as jest.Mock;
+  const isMutableAccessorsMock = FileTree.isMutableAccessors as unknown as jest.Mock;
+  const isMutableDirectoryItemMock = FileTree.isMutableDirectoryItem as unknown as jest.Mock;
+
+  function makeMocks(): {
+    accessors: { createDirectory: jest.Mock };
+    directory: { createChildFile: jest.Mock };
+    tree: { hal: object; getDirectory: jest.Mock };
+  } {
+    const accessors = { createDirectory: jest.fn().mockReturnValue(succeed(undefined)) };
+    const directory = { createChildFile: jest.fn().mockReturnValue(succeed(undefined)) };
+    const tree = { hal: accessors, getDirectory: jest.fn().mockReturnValue(succeed(directory)) };
+    return { accessors, directory, tree };
+  }
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('writes the file and returns the resolved path', () => {
+    const { tree } = makeMocks();
+    forFilesystemMock.mockReturnValue(succeed(tree));
+    isMutableAccessorsMock.mockReturnValue(true);
+    isMutableDirectoryItemMock.mockReturnValue(true);
+
+    const result = writeTextFile('/test/dir/file.txt', 'contents');
+    expect(result).toSucceed();
+  });
+
+  test('returns failure when filesystem cannot be initialized', () => {
+    forFilesystemMock.mockReturnValue(fail('no filesystem'));
+
+    expect(writeTextFile('/test/dir/file.txt', 'contents')).toFailWith(/no filesystem/i);
+  });
+
+  test('returns failure when filesystem accessors are not mutable', () => {
+    const { tree } = makeMocks();
+    forFilesystemMock.mockReturnValue(succeed(tree));
+    isMutableAccessorsMock.mockReturnValue(false);
+
+    expect(writeTextFile('/test/dir/file.txt', 'contents')).toFailWith(/read-only/i);
+  });
+
+  test('returns failure when createDirectory fails', () => {
+    const { tree, accessors } = makeMocks();
+    accessors.createDirectory.mockReturnValue(fail('permission denied'));
+    forFilesystemMock.mockReturnValue(succeed(tree));
+    isMutableAccessorsMock.mockReturnValue(true);
+
+    expect(writeTextFile('/test/dir/file.txt', 'contents')).toFailWith(/permission denied/i);
+  });
+
+  test('returns failure when getDirectory fails', () => {
+    const { tree } = makeMocks();
+    tree.getDirectory.mockReturnValue(fail('dir not found'));
+    forFilesystemMock.mockReturnValue(succeed(tree));
+    isMutableAccessorsMock.mockReturnValue(true);
+
+    expect(writeTextFile('/test/dir/file.txt', 'contents')).toFailWith(/dir not found/i);
+  });
+
+  test('returns failure when directory is not mutable', () => {
+    const { tree } = makeMocks();
+    forFilesystemMock.mockReturnValue(succeed(tree));
+    isMutableAccessorsMock.mockReturnValue(true);
+    isMutableDirectoryItemMock.mockReturnValue(false);
+
+    expect(writeTextFile('/test/dir/file.txt', 'contents')).toFailWith(/not mutable/i);
+  });
+
+  test('returns failure when createChildFile fails', () => {
+    const { tree, directory } = makeMocks();
+    directory.createChildFile.mockReturnValue(fail('write failed'));
+    forFilesystemMock.mockReturnValue(succeed(tree));
+    isMutableAccessorsMock.mockReturnValue(true);
+    isMutableDirectoryItemMock.mockReturnValue(true);
+
+    expect(writeTextFile('/test/dir/file.txt', 'contents')).toFailWith(/write failed/i);
   });
 });

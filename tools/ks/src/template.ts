@@ -1,8 +1,6 @@
 import { Mustache } from '@fgv/ts-extras';
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-const TEMPLATE_VARIABLE_PATTERN: RegExp = /\{\{\{?\s*(?:&\s*)?([^{}&\s]+)\s*\}?\}\}/g;
-
 function shellEscape(value: string): string {
   if (value.length === 0) {
     return "''";
@@ -41,16 +39,17 @@ export function renderShellTemplate(
       }
     }
 
-    return succeed(
-      template.replace(TEMPLATE_VARIABLE_PATTERN, (__: string, rawName: string) => {
-        const name = rawName.trim();
-        const value = context[name];
-        if (value === undefined) {
-          return '';
-        }
-        return shellEscape(value);
-      })
-    );
+    let rendered = template;
+    for (const variable of variables) {
+      // Variable names come from the Mustache parser and are regex-escaped before use.
+      // eslint-disable-next-line @rushstack/security/no-unsafe-regexp -- safe: parser-validated, regex-escaped names
+      const pattern = new RegExp(
+        `\\{\\{\\{?\\s*&?\\s*${variable.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\}?\\}\\}`,
+        'g'
+      );
+      rendered = rendered.replace(pattern, () => shellEscape(context[variable]));
+    }
+    return succeed(rendered);
   });
 }
 
