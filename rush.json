@@ -490,6 +490,7 @@
       "packageName": "@fgv/ks",
       "projectFolder": "tools/ks",
       "shouldPublish": true,
+      "versionPolicyName": "base-utils",
       "tags": ["tools", "cli"]
     },
     {
