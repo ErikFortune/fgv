@@ -65,14 +65,8 @@ function stripTrailingNewline(value: string): string {
   return value.replace(/\r?\n$/, '');
 }
 
-function hasPasswordSource(options: IKeystoreCommandOptions | IPasswordChangeOptions): boolean {
-  return Boolean(
-    options.passwordEnv ||
-      options.passwordFile ||
-      options.passwordStdin ||
-      process.env.FGV_KS_PASSWORD ||
-      process.env.KS_PASSWORD
-  );
+function hasExplicitPasswordSource(options: IKeystoreCommandOptions | IPasswordChangeOptions): boolean {
+  return Boolean(options.passwordEnv || options.passwordFile || options.passwordStdin);
 }
 
 async function readPasswordFromSource(
@@ -119,6 +113,11 @@ async function resolvePassword(
     return source;
   }
 
+  // If an explicit source was configured and failed, surface the error rather than prompting
+  if (hasExplicitPasswordSource(options)) {
+    return source;
+  }
+
   const prompted = await promptHidden(`${label}: `);
   if (prompted.isFailure()) {
     return fail(prompted.message);
@@ -155,7 +154,10 @@ async function resolvePasswordConfirmed(
   options: IKeystoreCommandOptions | IPasswordChangeOptions,
   label: string
 ): Promise<Result<string>> {
-  if (hasPasswordSource(options)) {
+  // Only skip confirmation when password comes from an explicit non-interactive source.
+  // Ambient env vars (FGV_KS_PASSWORD/KS_PASSWORD) are for reading the current password
+  // and must not silently bypass confirmation when setting a new one.
+  if (hasExplicitPasswordSource(options)) {
     return resolvePassword(options, label);
   }
 
@@ -241,7 +243,13 @@ async function collectTemplateContext(
     return fail(variablesResult.message);
   }
 
-  const context: Record<string, string> = {};
+  const secretListResult = keystore.listSecrets();
+  if (secretListResult.isFailure()) {
+    return fail(`Failed to list secrets: ${secretListResult.message}`);
+  }
+  const knownSecrets = new Set(secretListResult.value);
+
+  const context = Object.create(null) as Record<string, string>;
   const missing: Array<[string, string]> = [];
 
   for (const variable of variablesResult.value) {
@@ -249,6 +257,10 @@ async function collectTemplateContext(
     if (secretResult.isSuccess()) {
       context[variable] = secretResult.value;
       continue;
+    }
+
+    if (knownSecrets.has(variable)) {
+      return fail(`Secret '${variable}' exists but is not an API key: ${secretResult.message}`);
     }
 
     const promptResult = await promptHidden(`Secret '${variable}' is missing. Enter value: `);
