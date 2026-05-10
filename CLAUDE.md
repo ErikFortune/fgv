@@ -75,20 +75,44 @@ expect(operation()).toSucceedAndSatisfy((result) => {
 });
 ```
 
+## When to load which skill
+
+Load skills just-in-time when the relevant work surface is touched:
+
+| Work surface | Skill |
+|---|---|
+| Any file I/O, directory walk, importer/exporter | `/filetree-io` |
+| Any diagnostic output, logger construction, boot path | `/ts-utils-logging` |
+| Any structural equality, dedup, object-as-map-key | `/value-hashing` |
+| Any utility-shaped code ("feels general") | `/published-primitives-reflex` |
+| Writing or reviewing `Result<T>`-returning code | `/result-pattern` |
+| Writing or reviewing tests | `/result-tests` |
+| Writing or reviewing converters, validators, type guards | `/type-safe-validation` |
+| Extracting a stream brief for a parallel run | `/workstream-brief` |
+| Drafting a design-triage-cycle kickoff | `/triage-cycle` |
+
 ## Complex Task Orchestration
 
-For complex multi-phase tasks (new features, major refactoring), the task-master workflow system is available in `.claude/agents/`. This provides:
+For coordinating parallel workstreams, the **orchestrator** is available in `.claude/agents/orchestrator.md`. It maintains the artifact substrate, selects workflow shapes, composes kickoff briefs for worker agents, and closes the lessons loop. The orchestrator is designed for frontier-model sessions where the agent is coordinating, not implementing.
 
-- Structured requirements analysis with confirmation gates
-- Design review phases
-- Implementation coordination with specialized agents
-- Automated and manual testing phases
-- Artifact preservation for future reference
+Three workflow shapes:
 
-Workflow templates are in `.ai/workflows/`. Use task-master for:
-- Multi-step features requiring coordination
-- Major refactoring with behavior preservation
-- Tasks benefiting from structured documentation
+| Shape | When |
+|---|---|
+| `stream` | Substantial feature with a known shape — use `/workstream-brief` |
+| `chore-batch` | Sequential walk through 3–6 small unrelated cleanup items |
+| `design-triage-implement` | Feature needing design exploration first — use `/triage-cycle` |
+
+Artifact substrate (maintained by the orchestrator):
+- `docs/WORKSTREAMS.md` — in-flight and completed streams
+- `docs/CHORES.md` — cleanup batches
+- `docs/TECH_DEBT.md` + `docs/FUTURE.md` — deferred work
+- `.ai/tasks/active/<id>/` → `.ai/tasks/completed/<YYYY-MM>/<id>/` — per-stream artifacts
+- `.ai/BASELINE.md` — pinned baseline commit for the current wave
+
+Workflow conventions are in `.ai/conventions/workflow/`.
+
+For single-agent structured tasks (requirements → design → implementation → review), the **task-master** is in `.claude/agents/task-master.md`. Workflow templates are in `.ai/workflows/`.
 
 ## Claude-Specific Notes
 
