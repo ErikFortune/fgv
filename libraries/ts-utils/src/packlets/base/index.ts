@@ -23,7 +23,7 @@
 export * from './brand';
 export * from './mapResults';
 export * from './messageAggregator';
-export { Normalizer } from './normalize';
+export { Normalizer, NormalizeOptions } from './normalize';
 export * from './result';
 export * from './utils';
 export * from './uuid';

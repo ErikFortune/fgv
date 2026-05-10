@@ -29,13 +29,6 @@ import { Normalizer, Result, captureResult, fail, mapResults, succeed } from '..
 export type HashFunction = (parts: string[]) => string;
 
 /**
- * JSON-compatible value as defined by RFC 8785 scope: primitive, object, or array.
- * Intentionally local to avoid a hard dependency from ts-utils → ts-json-base.
- * @internal
- */
-type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
-
-/**
  * Normalizes an arbitrary JSON object
  * @public
  */
@@ -48,64 +41,18 @@ export class HashingNormalizer extends Normalizer {
   }
 
   /**
-   * Produces a stable, byte-identical JSON string for the given `JsonValue`
-   * following the RFC 8785 "JSON Canonicalization Scheme" key-ordering rules.
+   * Produces a stable, byte-identical JSON string following RFC 8785
+   * (JSON Canonicalization Scheme) key-ordering rules.
    *
-   * **RFC 8785 compliance scope:**
-   * - Object keys are sorted lexicographically via `String(k1) < String(k2)`
-   *   (the same comparison used by {@link Normalizer._compareKeys}), which is
-   *   the ordering RFC 8785 §3.2.3 requires.
-   * - Output is emitted directly to a string via recursive descent rather than
-   *   by constructing a new JS object. This is necessary because JS engines
-   *   reorder integer-string keys (`"0"`, `"1"`, `"10"`, `"2"`) numerically
-   *   when an object is reconstructed, which would violate the lexicographic
-   *   ordering mandate for those keys (e.g. `"10"` must sort before `"2"`).
-   * - Strings are serialized via `JSON.stringify(s)` so that control characters
-   *   and Unicode escapes are handled correctly.
-   * - Numbers are serialized via `JSON.stringify(n)`, which produces standard
-   *   IEEE 754 double-precision output. **Numbers outside the safe integer range
-   *   or with more significant digits than a double can represent may lose
-   *   precision**; the RFC 8785 §3.2.2 requirement for arbitrary-precision
-   *   decimal is not covered by this implementation.
+   * Delegates to `normalize(from, { rules: 'rfc8785' })`.
    *
-   * @param value - A JSON-compatible value (string, number, boolean, null,
-   *   array, or plain object).
-   * @returns A stable JSON string with object keys in lexicographic order.
+   * @param from - Any JSON-compatible value.
+   * @returns `Result<string>` — the canonical JSON string, or a failure if
+   *   `from` contains non-serializable types (functions, symbols, bigint).
    * @public
    */
-  public canonicalize(value: JsonValue): string {
-    return this._canonicalizeValue(value);
-  }
-
-  private _canonicalizeValue(value: JsonValue): string {
-    if (value === null) {
-      return 'null';
-    }
-    if (typeof value === 'boolean') {
-      return value ? 'true' : 'false';
-    }
-    if (typeof value === 'number') {
-      return JSON.stringify(value);
-    }
-    if (typeof value === 'string') {
-      return JSON.stringify(value);
-    }
-    if (Array.isArray(value)) {
-      const items = value.map((item) => this._canonicalizeValue(item));
-      return '[' + items.join(',') + ']';
-    }
-    // Plain object: sort keys lexicographically (same as _compareKeys)
-    const obj = value as { [key: string]: JsonValue };
-    const sortedKeys = Object.keys(obj).sort((k1, k2) => {
-      const s1 = String(k1);
-      const s2 = String(k2);
-      if (s1 < s2) return -1;
-      if (s1 > s2) return 1;
-      /* c8 ignore next - defensive: object keys are distinct, equal comparison is unreachable */
-      return 0;
-    });
-    const pairs = sortedKeys.map((k) => JSON.stringify(k) + ':' + this._canonicalizeValue(obj[k]));
-    return '{' + pairs.join(',') + '}';
+  public canonicalize(from: unknown): Result<string> {
+    return this.normalize(from, { rules: 'rfc8785' });
   }
 
   public computeHash(from: unknown): Result<string> {

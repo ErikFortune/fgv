@@ -21,7 +21,7 @@
  */
 
 import { mapResults } from './mapResults';
-import { Result, fail, succeed } from './result';
+import { Result, captureResult, fail, succeed } from './result';
 
 /**
  * @internal
@@ -34,17 +34,36 @@ export type Entry<T> = [string | number | symbol, T];
 export type ResultEntry<T> = [string | number | symbol, Result<T>];
 
 /**
+ * Options controlling normalization behavior.
+ * @public
+ */
+export interface NormalizeOptions {
+  /**
+   * Apply a named compliance rule set during normalization.
+   * `'rfc8785'` produces a byte-identical JSON string using lexicographic
+   * key ordering as required by the JSON Canonicalization Scheme.
+   */
+  rules?: 'rfc8785';
+}
+
+/**
  * Normalizes an arbitrary JSON object
  * @public
  */
 export class Normalizer {
   /**
-   * Normalizes the supplied value
-   *
-   * @param from - The value to be normalized
-   * @returns A normalized version of the value
+   * Normalizes the supplied value, optionally applying a named rule set.
+   * @param from - The value to be normalized.
+   * @param options - When `rules` is `'rfc8785'`, returns a byte-identical
+   *   JSON string with lexicographically ordered object keys.
+   * @returns A normalized version of the value.
    */
-  public normalize<T>(from: T): Result<T> {
+  public normalize<T>(from: T): Result<T>;
+  public normalize(from: unknown, options: { rules: 'rfc8785' }): Result<string>;
+  public normalize<T>(from: T, options?: NormalizeOptions): Result<T | string> {
+    if (options?.rules === 'rfc8785') {
+      return captureResult(() => this._canonicalizeRfc8785(from));
+    }
     switch (typeof from) {
       case 'string':
       case 'bigint':
@@ -70,6 +89,31 @@ export class Normalizer {
         return succeed(obj as T);
     }
     return fail(`normalize: Unexpected type - cannot normalize '${typeof from}'`);
+  }
+
+  /**
+   * Recursively builds a byte-identical RFC 8785 JSON string from `value`.
+   * Builds the string directly rather than constructing an intermediate JS
+   * object, so integer-string keys (`"10"`, `"2"`) retain lexicographic order
+   * instead of being reordered numerically by the JS engine.
+   * @throws When `value` contains a non-JSON-serializable type (function,
+   *   symbol, bigint, undefined). Callers should wrap via {@link captureResult}.
+   */
+  protected _canonicalizeRfc8785(value: unknown): string {
+    if (value === null) return 'null';
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (typeof value === 'number') return JSON.stringify(value);
+    if (typeof value === 'string') return JSON.stringify(value);
+    if (Array.isArray(value)) {
+      return '[' + value.map((item) => this._canonicalizeRfc8785(item)).join(',') + ']';
+    }
+    if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      const sortedKeys = Object.keys(obj).sort((k1, k2) => this._compareKeys(k1, k2));
+      const pairs = sortedKeys.map((k) => JSON.stringify(k) + ':' + this._canonicalizeRfc8785(obj[k]));
+      return '{' + pairs.join(',') + '}';
+    }
+    throw new Error(`canonicalize: cannot serialize value of type '${typeof value}'`);
   }
 
   /**
