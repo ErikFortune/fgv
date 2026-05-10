@@ -292,6 +292,46 @@ export class NodeCryptoProvider implements ICryptoProvider {
   }
 
   /**
+   * Exports a public `CryptoKey` as a DER-encoded SPKI blob.
+   * @param publicKey - The public `CryptoKey` to export.
+   * @returns `Success` with the raw SPKI bytes, or `Failure` with error context.
+   */
+  public async exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>> {
+    if (publicKey.type !== 'public') {
+      return fail(`exportPublicKeySpki requires a public CryptoKey, got '${publicKey.type}'`);
+    }
+    const result = await captureAsyncResult(() => crypto.webcrypto.subtle.exportKey('spki', publicKey));
+    return result
+      .withErrorFormat((e) => `exportPublicKeySpki: failed to export key: ${e}`)
+      .onSuccess((buf) => succeed(new Uint8Array(buf)));
+  }
+
+  /**
+   * Imports a public key from a DER-encoded SPKI blob.
+   * @param spkiBytes - The raw SPKI bytes.
+   * @param algorithm - The algorithm the key was generated for.
+   * @returns `Success` with the imported public `CryptoKey`, or `Failure` with error context.
+   */
+  public async importPublicKeySpki(
+    spkiBytes: Uint8Array,
+    algorithm: KeyPairAlgorithm
+  ): Promise<Result<CryptoKey>> {
+    const params = keyPairAlgorithmParams[algorithm];
+    const result = await captureAsyncResult(() =>
+      crypto.webcrypto.subtle.importKey(
+        'spki',
+        spkiBytes,
+        params.importPublicKey as AlgorithmIdentifier,
+        true,
+        [...params.publicKeyUsages]
+      )
+    );
+    return result.withErrorFormat(
+      (e) => `importPublicKeySpki: failed to import ${algorithm} public key from SPKI: ${e}`
+    );
+  }
+
+  /**
    * Wraps `plaintext` for the holder of `recipientPublicKey` using
    * ECIES (ECDH P-256 + HKDF-SHA256 + AES-GCM-256). See
    * {@link CryptoUtils.ICryptoProvider.wrapBytes | ICryptoProvider.wrapBytes}.

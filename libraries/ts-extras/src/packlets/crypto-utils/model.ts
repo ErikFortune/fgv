@@ -90,9 +90,13 @@ export interface IEncryptionResult {
  *   and message rather than sampled randomly, eliminating the random-nonce
  *   reuse risk that ECDSA carries. Distinct from X25519 (key agreement over
  *   the Montgomery form, Curve25519).
+ * - `'x25519'`: Diffie-Hellman key agreement over the Montgomery form of
+ *   Curve25519. Key-agreement only — use `deriveBits`/`deriveKey` to produce
+ *   a shared secret from one party's private key and the peer's public key.
+ *   Distinct from Ed25519 (which uses the twisted-Edwards form for signing).
  * @public
  */
-export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519';
+export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519' | 'x25519';
 
 /**
  * Caller-supplied HKDF parameters that domain-separate one
@@ -158,7 +162,8 @@ export const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm> = [
   'ecdsa-p256',
   'rsa-oaep-2048',
   'ecdh-p256',
-  'ed25519'
+  'ed25519',
+  'x25519'
 ];
 
 /**
@@ -361,6 +366,22 @@ export interface ICryptoProvider {
    * @returns Success with the imported public `CryptoKey`, or Failure with error context.
    */
   importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+
+  /**
+   * Exports a public `CryptoKey` as a DER-encoded SPKI (SubjectPublicKeyInfo) blob.
+   * SPKI is the standard algorithm-agnostic format for public key storage and transport.
+   * @param publicKey - The `CryptoKey` to export. Must have `key.type === 'public'`.
+   * @returns `Success` with the raw SPKI bytes, or `Failure` with error context.
+   */
+  exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
+
+  /**
+   * Imports a public key from a DER-encoded SPKI blob.
+   * @param spkiBytes - The raw SPKI bytes produced by {@link CryptoUtils.ICryptoProvider.exportPublicKeySpki | exportPublicKeySpki}.
+   * @param algorithm - The {@link CryptoUtils.KeyPairAlgorithm | algorithm} the key was generated for.
+   * @returns `Success` with the imported public `CryptoKey`, or `Failure` with error context.
+   */
+  importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
 
   /**
    * Wraps `plaintext` for delivery to the holder of the private key paired

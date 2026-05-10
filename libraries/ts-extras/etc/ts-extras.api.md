@@ -311,6 +311,10 @@ declare namespace CryptoUtils {
         ICreateEncryptedFileParams,
         toBase64,
         tryDecryptFile,
+        exportPublicKeyAsMultibaseSpki,
+        importPublicKeyFromMultibaseSpki,
+        multibaseBase64UrlDecode,
+        multibaseBase64UrlEncode,
         isEncryptedFile,
         EncryptionAlgorithm,
         EncryptedFileFormat,
@@ -438,6 +442,11 @@ declare namespace Experimental {
     }
 }
 export { Experimental }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function exportPublicKeyAsMultibaseSpki(key: CryptoKey, provider: ICryptoProvider): Promise<Result<string>>;
 
 // @beta
 class ExtendedArray<T> extends Array<T> {
@@ -806,6 +815,7 @@ interface ICryptoProvider {
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
+    exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -815,6 +825,9 @@ interface ICryptoProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -929,9 +942,13 @@ interface IKeyDerivationParams {
 interface IKeyPairAlgorithmParams {
     readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams | {
         readonly name: 'Ed25519';
+    } | {
+        readonly name: 'X25519';
     };
     readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams | {
         readonly name: 'Ed25519';
+    } | {
+        readonly name: 'X25519';
     };
     readonly keyPairUsages: ReadonlyArray<KeyUsage>;
     readonly publicKeyUsages: ReadonlyArray<KeyUsage>;
@@ -1047,6 +1064,14 @@ interface IModelSpecMap {
     // (undocumented)
     readonly [key: string]: ModelSpec;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function importPublicKeyFromMultibaseSpki(encoded: string, algorithm: KeyPairAlgorithm, provider: ICryptoProvider): Promise<Result<CryptoKey>>;
 
 // @public
 interface IMustacheTemplateOptions {
@@ -1229,7 +1254,7 @@ const keyDerivationParams: Converter<IKeyDerivationParams>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519';
+type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519' | 'x25519';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1436,6 +1461,12 @@ type ModelSpecKey = 'base' | 'tools' | 'image';
 // @public
 const modelSpecKey: Converter<ModelSpecKey>;
 
+// @public
+function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array>;
+
+// @public
+function multibaseBase64UrlEncode(data: Uint8Array): string;
+
 declare namespace Mustache {
     export {
         IContextValidationResult,
@@ -1479,6 +1510,7 @@ class NodeCryptoProvider implements ICryptoProvider {
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
     encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
     exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
+    exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
     fromBase64(base64: string): Result<Uint8Array>;
     generateKey(): Promise<Result<Uint8Array>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1486,6 +1518,7 @@ class NodeCryptoProvider implements ICryptoProvider {
     generateRandomBytes(length: number): Result<Uint8Array>;
     generateUuid(): Result<Uuid>;
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+    importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
     toBase64(data: Uint8Array): string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

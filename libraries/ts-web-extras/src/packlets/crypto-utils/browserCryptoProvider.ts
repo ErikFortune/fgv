@@ -431,6 +431,46 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
     );
     return result.withErrorFormat((e) => `Failed to import ${algorithm} public key from JWK: ${e}`);
   }
+
+  /**
+   * Exports a public `CryptoKey` as a DER-encoded SPKI blob.
+   * @param publicKey - The public `CryptoKey` to export.
+   * @returns `Success` with the raw SPKI bytes, or `Failure` with error context.
+   */
+  public async exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>> {
+    if (publicKey.type !== 'public') {
+      return Failure.with(`exportPublicKeySpki requires a public CryptoKey, got '${publicKey.type}'`);
+    }
+    const result = await captureAsyncResult(() => this._crypto.subtle.exportKey('spki', publicKey));
+    return result
+      .withErrorFormat((e) => `exportPublicKeySpki: failed to export key: ${e}`)
+      .onSuccess((buf) => succeed(new Uint8Array(buf)));
+  }
+
+  /**
+   * Imports a public key from a DER-encoded SPKI blob.
+   * @param spkiBytes - The raw SPKI bytes.
+   * @param algorithm - The algorithm the key was generated for.
+   * @returns `Success` with the imported public `CryptoKey`, or `Failure` with error context.
+   */
+  public async importPublicKeySpki(
+    spkiBytes: Uint8Array,
+    algorithm: CryptoUtils.KeyPairAlgorithm
+  ): Promise<Result<CryptoKey>> {
+    const params = CryptoUtils.keyPairAlgorithmParams[algorithm];
+    const result = await captureAsyncResult(() =>
+      this._crypto.subtle.importKey(
+        'spki',
+        toBufferView(spkiBytes),
+        params.importPublicKey as AlgorithmIdentifier,
+        true,
+        [...params.publicKeyUsages]
+      )
+    );
+    return result.withErrorFormat(
+      (e) => `importPublicKeySpki: failed to import ${algorithm} public key from SPKI: ${e}`
+    );
+  }
   /* c8 ignore stop */
 
   /**
