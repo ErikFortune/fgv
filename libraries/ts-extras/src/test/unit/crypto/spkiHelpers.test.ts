@@ -80,13 +80,13 @@ describe('exportPublicKeyAsMultibaseSpki / importPublicKeyFromMultibaseSpki', ()
     test.each(algorithms)('%s: export then import produces a usable public key', async (algorithm) => {
       const pair = (await provider.generateKeyPair(algorithm, true)).orThrow();
 
-      const exported = await CryptoUtils.exportPublicKeyAsMultibaseSpki(pair.publicKey);
+      const exported = await CryptoUtils.exportPublicKeyAsMultibaseSpki(pair.publicKey, provider);
       expect(exported).toSucceed();
       const encoded = exported.orThrow();
       expect(typeof encoded).toBe('string');
       expect(encoded.startsWith('m')).toBe(true);
 
-      const imported = await CryptoUtils.importPublicKeyFromMultibaseSpki(encoded, algorithm);
+      const imported = await CryptoUtils.importPublicKeyFromMultibaseSpki(encoded, algorithm, provider);
       expect(imported).toSucceedAndSatisfy((key) => {
         expect(key.type).toBe('public');
         expect(key.extractable).toBe(true);
@@ -97,13 +97,13 @@ describe('exportPublicKeyAsMultibaseSpki / importPublicKeyFromMultibaseSpki', ()
   describe('exportPublicKeyAsMultibaseSpki', () => {
     test('fails when key is not a public key', async () => {
       const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
-      const result = await CryptoUtils.exportPublicKeyAsMultibaseSpki(pair.privateKey);
+      const result = await CryptoUtils.exportPublicKeyAsMultibaseSpki(pair.privateKey, provider);
       expect(result).toFailWith(/requires a public CryptoKey, got 'private'/i);
     });
 
     test('exports produce consistent multibase prefix m', async () => {
       const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
-      const result = await CryptoUtils.exportPublicKeyAsMultibaseSpki(pair.publicKey);
+      const result = await CryptoUtils.exportPublicKeyAsMultibaseSpki(pair.publicKey, provider);
       expect(result).toSucceedAndSatisfy((encoded) => {
         expect(encoded[0]).toBe('m');
       });
@@ -114,23 +114,29 @@ describe('exportPublicKeyAsMultibaseSpki / importPublicKeyFromMultibaseSpki', ()
     test('fails on bad multibase prefix', async () => {
       // Use a valid base64url body but wrong prefix
       const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
-      const encoded = (await CryptoUtils.exportPublicKeyAsMultibaseSpki(pair.publicKey)).orThrow();
+      const encoded = (await CryptoUtils.exportPublicKeyAsMultibaseSpki(pair.publicKey, provider)).orThrow();
       // Replace the 'm' prefix with 'z'
       const badPrefixed = 'z' + encoded.slice(1);
-      const result = await CryptoUtils.importPublicKeyFromMultibaseSpki(badPrefixed, 'ed25519');
+      const result = await CryptoUtils.importPublicKeyFromMultibaseSpki(badPrefixed, 'ed25519', provider);
       expect(result).toFailWith(/invalid multibase prefix/i);
     });
 
     test('fails on malformed base64url body', async () => {
-      const result = await CryptoUtils.importPublicKeyFromMultibaseSpki('m!@#invalid!!!', 'ed25519');
+      const result = await CryptoUtils.importPublicKeyFromMultibaseSpki(
+        'm!@#invalid!!!',
+        'ed25519',
+        provider
+      );
       expect(result).toFailWith(/malformed base64url/i);
     });
 
     test('fails when SPKI bytes of wrong algorithm are passed', async () => {
       // Export ed25519 key, try to import as ecdsa-p256
       const edPair = (await provider.generateKeyPair('ed25519', true)).orThrow();
-      const encoded = (await CryptoUtils.exportPublicKeyAsMultibaseSpki(edPair.publicKey)).orThrow();
-      const result = await CryptoUtils.importPublicKeyFromMultibaseSpki(encoded, 'ecdsa-p256');
+      const encoded = (
+        await CryptoUtils.exportPublicKeyAsMultibaseSpki(edPair.publicKey, provider)
+      ).orThrow();
+      const result = await CryptoUtils.importPublicKeyFromMultibaseSpki(encoded, 'ecdsa-p256', provider);
       expect(result).toFail();
     });
   });

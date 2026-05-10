@@ -18,9 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
-import { KeyPairAlgorithm } from './model';
-import { keyPairAlgorithmParams } from './keyPairAlgorithmParams';
+import { Result, fail, succeed } from '@fgv/ts-utils';
+import { ICryptoProvider, KeyPairAlgorithm } from './model';
 
 /**
  * Encodes a `Uint8Array` as a multibase base64url (no-padding) string.
@@ -96,47 +95,42 @@ export function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array> {
  * and suitable for storage and transmission.
  *
  * @param key - The `CryptoKey` to export. Must have `key.type === 'public'`.
+ * @param provider - The {@link ICryptoProvider} to use for the export operation.
  * @returns `Success` with the multibase SPKI string, or `Failure` with error context.
  * @public
  */
-export async function exportPublicKeyAsMultibaseSpki(key: CryptoKey): Promise<Result<string>> {
-  if (key.type !== 'public') {
-    return fail(`exportPublicKeyAsMultibaseSpki: requires a public CryptoKey, got '${key.type}'`);
-  }
-  const result = await captureAsyncResult(() => globalThis.crypto.subtle.exportKey('spki', key));
-  return result
-    .withErrorFormat((e) => `exportPublicKeyAsMultibaseSpki: failed to export key: ${e}`)
-    .onSuccess((buf) => succeed(multibaseBase64UrlEncode(new Uint8Array(buf))));
+export async function exportPublicKeyAsMultibaseSpki(
+  key: CryptoKey,
+  provider: ICryptoProvider
+): Promise<Result<string>> {
+  return (await provider.exportPublicKeySpki(key))
+    .withErrorFormat((e) => `exportPublicKeyAsMultibaseSpki: ${e}`)
+    .onSuccess((buf) => succeed(multibaseBase64UrlEncode(buf)));
 }
 
 /**
  * Imports a public key from a multibase base64url-encoded SPKI blob.
  *
  * Decodes the multibase prefix, decodes the base64url body, then uses
- * `crypto.subtle.importKey` with the algorithm parameters from
+ * the provider to import the key with the algorithm parameters from
  * {@link keyPairAlgorithmParams}.
  *
  * @param encoded - A multibase SPKI string produced by {@link exportPublicKeyAsMultibaseSpki}.
  * @param algorithm - The {@link KeyPairAlgorithm} the key was generated for.
+ * @param provider - The {@link ICryptoProvider} to use for the import operation.
  * @returns `Success` with the imported public `CryptoKey`, or `Failure` with error context.
  * @public
  */
 export async function importPublicKeyFromMultibaseSpki(
   encoded: string,
-  algorithm: KeyPairAlgorithm
+  algorithm: KeyPairAlgorithm,
+  provider: ICryptoProvider
 ): Promise<Result<CryptoKey>> {
   const decodeResult = multibaseBase64UrlDecode(encoded);
   if (decodeResult.isFailure()) {
     return fail(`importPublicKeyFromMultibaseSpki: ${decodeResult.message}`);
   }
-  const bytes = decodeResult.value;
-  const params = keyPairAlgorithmParams[algorithm];
-  const result = await captureAsyncResult(() =>
-    globalThis.crypto.subtle.importKey('spki', bytes, params.importPublicKey as AlgorithmIdentifier, true, [
-      ...params.publicKeyUsages
-    ])
-  );
-  return result.withErrorFormat(
-    (e) => `importPublicKeyFromMultibaseSpki: failed to import ${algorithm} public key from SPKI: ${e}`
+  return (await provider.importPublicKeySpki(decodeResult.value, algorithm)).withErrorFormat(
+    (e) => `importPublicKeyFromMultibaseSpki: ${e}`
   );
 }

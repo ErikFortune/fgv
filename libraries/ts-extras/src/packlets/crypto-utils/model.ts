@@ -368,6 +368,22 @@ export interface ICryptoProvider {
   importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
 
   /**
+   * Exports a public `CryptoKey` as a DER-encoded SPKI (SubjectPublicKeyInfo) blob.
+   * SPKI is the standard algorithm-agnostic format for public key storage and transport.
+   * @param publicKey - The `CryptoKey` to export. Must have `key.type === 'public'`.
+   * @returns `Success` with the raw SPKI bytes, or `Failure` with error context.
+   */
+  exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
+
+  /**
+   * Imports a public key from a DER-encoded SPKI blob.
+   * @param spkiBytes - The raw SPKI bytes produced by {@link CryptoUtils.ICryptoProvider.exportPublicKeySpki | exportPublicKeySpki}.
+   * @param algorithm - The {@link CryptoUtils.KeyPairAlgorithm | algorithm} the key was generated for.
+   * @returns `Success` with the imported public `CryptoKey`, or `Failure` with error context.
+   */
+  importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+
+  /**
    * Wraps `plaintext` for delivery to the holder of the private key paired
    * with `recipientPublicKey`. Uses ECIES with ECDH P-256, HKDF-SHA256, and
    * AES-GCM-256.

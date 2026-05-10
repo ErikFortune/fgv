@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Implement exportPublicKeySpki/importPublicKeySpki in BrowserCryptoProvider to match updated ICryptoProvider interface",
+      "type": "minor",
+      "packageName": "@fgv/ts-web-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}
