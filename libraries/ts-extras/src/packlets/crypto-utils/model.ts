@@ -90,9 +90,13 @@ export interface IEncryptionResult {
  *   and message rather than sampled randomly, eliminating the random-nonce
  *   reuse risk that ECDSA carries. Distinct from X25519 (key agreement over
  *   the Montgomery form, Curve25519).
+ * - `'x25519'`: Diffie-Hellman key agreement over the Montgomery form of
+ *   Curve25519. Key-agreement only — use `deriveBits`/`deriveKey` to produce
+ *   a shared secret from one party's private key and the peer's public key.
+ *   Distinct from Ed25519 (which uses the twisted-Edwards form for signing).
  * @public
  */
-export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519';
+export type KeyPairAlgorithm = 'ecdsa-p256' | 'rsa-oaep-2048' | 'ecdh-p256' | 'ed25519' | 'x25519';
 
 /**
  * Caller-supplied HKDF parameters that domain-separate one
@@ -158,7 +162,8 @@ export const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm> = [
   'ecdsa-p256',
   'rsa-oaep-2048',
   'ecdh-p256',
-  'ed25519'
+  'ed25519',
+  'x25519'
 ];
 
 /**

@@ -32,20 +32,28 @@ export interface IKeyPairAlgorithmParams {
    * Algorithm parameters for `crypto.subtle.generateKey`. Always an asymmetric
    * variant — these algorithms produce a `CryptoKeyPair`, not a single key.
    * The literal `{ name: 'Ed25519' }` member covers WebCrypto's Secure-Curves
-   * Ed25519 algorithm, which takes only a `name`; using a literal rather than
-   * the base `Algorithm` keeps the union closed to the algorithms this table
-   * supports.
+   * Ed25519 algorithm; `{ name: 'X25519' }` covers the X25519 key-agreement
+   * algorithm. Both take only a `name`; using literals rather than the base
+   * `Algorithm` keeps the union closed to the algorithms this table supports.
    */
-  readonly generateKey: RsaHashedKeyGenParams | EcKeyGenParams | { readonly name: 'Ed25519' };
+  readonly generateKey:
+    | RsaHashedKeyGenParams
+    | EcKeyGenParams
+    | { readonly name: 'Ed25519' }
+    | { readonly name: 'X25519' };
 
   /**
    * Algorithm parameters for `crypto.subtle.importKey('jwk', ...)` when
    * importing the public half of a keypair. The literal `{ name: 'Ed25519' }`
-   * member covers Ed25519 imports, which take only a `name`; using a literal
-   * rather than the base `Algorithm` keeps the union closed to the algorithms
-   * this table supports.
+   * member covers Ed25519 imports; `{ name: 'X25519' }` covers X25519 imports.
+   * Both take only a `name`; using literals rather than the base `Algorithm`
+   * keeps the union closed to the algorithms this table supports.
    */
-  readonly importPublicKey: RsaHashedImportParams | EcKeyImportParams | { readonly name: 'Ed25519' };
+  readonly importPublicKey:
+    | RsaHashedImportParams
+    | EcKeyImportParams
+    | { readonly name: 'Ed25519' }
+    | { readonly name: 'X25519' };
 
   /**
    * Default key usages for the generated `CryptoKeyPair`. Both halves receive
@@ -100,5 +108,13 @@ export const keyPairAlgorithmParams: Readonly<Record<KeyPairAlgorithm, IKeyPairA
     importPublicKey: { name: 'Ed25519' },
     keyPairUsages: ['sign', 'verify'],
     publicKeyUsages: ['verify']
+  },
+  x25519: {
+    generateKey: { name: 'X25519' },
+    importPublicKey: { name: 'X25519' },
+    // WebCrypto filters per-role: the private key takes both derive usages,
+    // the public key gets [] since a standalone X25519 public key cannot derive.
+    keyPairUsages: ['deriveKey', 'deriveBits'],
+    publicKeyUsages: []
   }
 };

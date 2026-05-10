@@ -22,7 +22,7 @@
 
 import '../helpers/jest';
 
-import { Crc32Normalizer } from '../../packlets/hash';
+import { Crc32Normalizer, HashingNormalizer } from '../../packlets/hash';
 
 describe('HashingNormalizer module', () => {
   describe('Crc32 hash function', () => {
@@ -151,6 +151,121 @@ describe('HashingNormalizer module', () => {
 
     test('fails for a non-hashable function', () => {
       expect(normalizer.computeHash(() => 'hello')).toFailWith(/unexpected type/i);
+    });
+  });
+});
+
+describe('HashingNormalizer.canonicalize', () => {
+  const normalizer = new Crc32Normalizer();
+
+  describe('key ordering', () => {
+    test('integer-string keys are sorted lexicographically, not numerically', () => {
+      // Use JSON.parse to create the object — avoids naming-convention lint on integer-string keys
+      // in object literals while still testing the canonical ordering behavior.
+      const result = normalizer.canonicalize(JSON.parse('{"10":1,"2":2,"abc":3}') as Record<string, number>);
+      // Lexicographic: "10" < "2" < "abc"
+      // Verify the raw string has keys in lex order by checking position
+      const pos10 = result.indexOf('"10"');
+      const pos2 = result.indexOf('"2"');
+      const posAbc = result.indexOf('"abc"');
+      expect(pos10).toBeLessThan(pos2);
+      expect(pos2).toBeLessThan(posAbc);
+      // Also verify values are correct
+      const parsed = JSON.parse(result) as Record<string, number>;
+      expect(parsed['10']).toBe(1);
+      expect(parsed['2']).toBe(2);
+      expect(parsed.abc).toBe(3);
+    });
+
+    test('regular string keys are sorted lexicographically', () => {
+      const result = normalizer.canonicalize({ z: 1, a: 2, m: 3 });
+      const pos_a = result.indexOf('"a"');
+      const pos_m = result.indexOf('"m"');
+      const pos_z = result.indexOf('"z"');
+      expect(pos_a).toBeLessThan(pos_m);
+      expect(pos_m).toBeLessThan(pos_z);
+    });
+  });
+
+  describe('round-trip', () => {
+    test('JSON.parse(canonicalize(value)) produces equivalent value', () => {
+      const value = { b: 2, a: 1, c: [3, 4, 5] };
+      const result = normalizer.canonicalize(value);
+      const parsed = JSON.parse(result) as typeof value;
+      expect(parsed.a).toBe(1);
+      expect(parsed.b).toBe(2);
+      expect(parsed.c).toEqual([3, 4, 5]);
+    });
+
+    test('canonicalize produces identical output on repeated calls', () => {
+      const value = { b: 'second', a: 'first', c: null };
+      const result1 = normalizer.canonicalize(value);
+      const result2 = normalizer.canonicalize(value);
+      expect(result1).toBe(result2);
+    });
+  });
+
+  describe('primitive values', () => {
+    test('null serializes to "null"', () => {
+      expect(normalizer.canonicalize(null)).toBe('null');
+    });
+
+    test('true serializes to "true"', () => {
+      expect(normalizer.canonicalize(true)).toBe('true');
+    });
+
+    test('false serializes to "false"', () => {
+      expect(normalizer.canonicalize(false)).toBe('false');
+    });
+
+    test('number serializes via JSON.stringify', () => {
+      expect(normalizer.canonicalize(42)).toBe('42');
+      expect(normalizer.canonicalize(3.14)).toBe('3.14');
+      expect(normalizer.canonicalize(-0)).toBe('0');
+    });
+
+    test('string serializes as JSON-encoded string', () => {
+      expect(normalizer.canonicalize('hello')).toBe('"hello"');
+      expect(normalizer.canonicalize('say "hi"')).toBe('"say \\"hi\\""');
+      expect(normalizer.canonicalize('line\nnewline')).toBe('"line\\nnewline"');
+    });
+  });
+
+  describe('arrays', () => {
+    test('empty array', () => {
+      expect(normalizer.canonicalize([])).toBe('[]');
+    });
+
+    test('preserves array element order', () => {
+      expect(normalizer.canonicalize([3, 1, 2])).toBe('[3,1,2]');
+    });
+
+    test('array of objects', () => {
+      const result = normalizer.canonicalize([{ b: 2, a: 1 }]);
+      expect(result).toBe('[{"a":1,"b":2}]');
+    });
+  });
+
+  describe('nested objects', () => {
+    test('sorts keys at every nesting level', () => {
+      const value = {
+        z: { b: 2, a: 1 },
+        a: { y: 'last', x: 'first' }
+      };
+      const result = normalizer.canonicalize(value);
+      // Top-level: "a" before "z"; inner a-object: "x" before "y"; inner z-object: "a" before "b"
+      expect(result).toBe('{"a":{"x":"first","y":"last"},"z":{"a":1,"b":2}}');
+    });
+
+    test('empty object', () => {
+      expect(normalizer.canonicalize({})).toBe('{}');
+    });
+  });
+
+  describe('HashingNormalizer base class canonicalize', () => {
+    test('canonicalize is available on any HashingNormalizer instance', () => {
+      const h = new HashingNormalizer((parts) => parts.join(''));
+      expect(h.canonicalize({ b: 1, a: 2 })).toBe('{"a":2,"b":1}');
     });
   });
 });

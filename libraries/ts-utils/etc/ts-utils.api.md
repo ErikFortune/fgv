@@ -1272,6 +1272,8 @@ type HashFunction = (parts: string[]) => string;
 // @public
 class HashingNormalizer extends Normalizer {
     constructor(hash: HashFunction);
+    // Warning: (ae-forgotten-export) The symbol "JsonValue" needs to be exported by the entry point index.d.ts
+    canonicalize(value: JsonValue): string;
     // (undocumented)
     computeHash(from: unknown): Result<string>;
     // @internal
