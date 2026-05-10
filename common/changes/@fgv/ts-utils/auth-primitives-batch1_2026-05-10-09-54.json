@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add Normalizer.canonicalize() for RFC 8785 compliant JSON canonicalization; rejects non-finite numbers (NaN, Infinity) and non-plain objects (Date, RegExp, Map, Set, class instances)",
+      "type": "minor",
+      "packageName": "@fgv/ts-utils"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

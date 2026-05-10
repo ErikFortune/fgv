@@ -21,7 +21,7 @@
  */
 
 import { mapResults } from './mapResults';
-import { Result, fail, succeed } from './result';
+import { Result, captureResult, fail, succeed } from './result';
 
 /**
  * @internal
@@ -70,6 +70,60 @@ export class Normalizer {
         return succeed(obj as T);
     }
     return fail(`normalize: Unexpected type - cannot normalize '${typeof from}'`);
+  }
+
+  /**
+   * Produces a stable, byte-identical JSON string following RFC 8785
+   * (JSON Canonicalization Scheme) key-ordering rules.
+   *
+   * Builds the output string directly rather than constructing an intermediate
+   * JS object, so integer-string keys (`"10"`, `"2"`) retain lexicographic
+   * order instead of being reordered numerically by the JS engine during
+   * `JSON.stringify`.
+   *
+   * @param from - Any JSON-compatible value (string, number, boolean, null,
+   *   plain object, or array). Fails for non-JSON types (Map, Set, Date,
+   *   RegExp, function, symbol, bigint, undefined).
+   * @returns `Result<string>` — the canonical JSON string, or a failure if
+   *   `from` contains non-serializable types.
+   * @public
+   */
+  public canonicalize(from: unknown): Result<string> {
+    return captureResult(() => this._canonicalizeRfc8785(from));
+  }
+
+  /**
+   * Recursively builds a byte-identical RFC 8785 JSON string.
+   * @throws For non-JSON-serializable types (non-finite numbers, Date, RegExp,
+   *   Map, Set, class instances, function, symbol, bigint, undefined).
+   *   Callers must wrap in captureResult.
+   */
+  protected _canonicalizeRfc8785(value: unknown): string {
+    if (value === null) return 'null';
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) {
+        throw new Error(`canonicalize: non-finite number (${value}) is not representable in JSON`);
+      }
+      return JSON.stringify(value);
+    }
+    if (typeof value === 'string') return JSON.stringify(value);
+    if (Array.isArray(value)) {
+      return '[' + value.map((item) => this._canonicalizeRfc8785(item)).join(',') + ']';
+    }
+    if (typeof value === 'object') {
+      const proto = Object.getPrototypeOf(value as object) as unknown;
+      if (proto !== Object.prototype && proto !== null) {
+        throw new Error(
+          `canonicalize: cannot serialize non-plain object (${Object.prototype.toString.call(value)})`
+        );
+      }
+      const obj = value as Record<string, unknown>;
+      const sortedKeys = Object.keys(obj).sort((k1, k2) => this._compareKeys(k1, k2));
+      const pairs = sortedKeys.map((k) => JSON.stringify(k) + ':' + this._canonicalizeRfc8785(obj[k]));
+      return '{' + pairs.join(',') + '}';
+    }
+    throw new Error(`canonicalize: cannot serialize value of type '${typeof value}'`);
   }
 
   /**
