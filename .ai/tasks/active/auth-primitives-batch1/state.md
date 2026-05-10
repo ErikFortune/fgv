@@ -1,6 +1,6 @@
 # Stream State: auth-primitives-batch1
 
-**Status:** 🔵 in flight — implementation complete, building/testing
+**Status:** ✅ complete — implementation committed and pushed; PR ready to open
 **Last updated:** 2026-05-10 (implementing agent)
 
 ---
@@ -42,4 +42,13 @@
 
 ## PR
 
-*(to be filled after PR opened)*
+- Branch: `origin/claude/auth-primitives-batch1`
+- Commit: `ad0d33db` — feat(auth-primitives-batch1): add X25519 keypair, SPKI helpers, RFC 8785 canonicalize, and LIBRARY_CAPABILITIES update
+- PR: https://github.com/ErikFortune/fgv/pull/322 (opened by orchestrator via GitHub MCP)
+- Status: open against `release`, awaiting review and `5.1.0-26` publish
+
+## Orchestrator review notes
+
+- Spot-checked `canonicalize` (recursive descent emits to string, no JS object reconstruction — load-bearing detail correct) and `spkiHelpers.ts` (cross-runtime via `globalThis.crypto.subtle` + `btoa`/`atob`)
+- Minor style: `importPublicKeyFromMultibaseSpki` early-returns on `isFailure()` instead of `.onSuccess`-chaining the sync→async transition. Not blocking.
+- Architectural follow-up: agent attached `canonicalize` to `HashingNormalizer` with a local internal `JsonValue` alias to avoid `ts-utils → ts-json-base`. The base `Normalizer` is the cleaner long-term home; revisit once a shared `JsonValue` is hoisted or the dependency is accepted. Candidate for `TECH_DEBT.md` P3.
