@@ -62,3 +62,11 @@ export {
   toBase64,
   tryDecryptFile
 } from './encryptedFile';
+
+// Multibase/SPKI helpers
+export {
+  exportPublicKeyAsMultibaseSpki,
+  importPublicKeyFromMultibaseSpki,
+  multibaseBase64UrlDecode,
+  multibaseBase64UrlEncode
+} from './spkiHelpers';

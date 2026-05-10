@@ -2035,6 +2035,8 @@ class NoOpLogger extends LoggerBase {
 
 // @public
 export class Normalizer {
+    canonicalize(from: unknown): Result<string>;
+    protected _canonicalizeRfc8785(value: unknown): string;
     // @internal
     protected _compareKeys(k1: unknown, k2: unknown): number;
     normalize<T>(from: T): Result<T>;

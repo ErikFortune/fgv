@@ -23,6 +23,7 @@ All coding standards, testing guidelines, and review checklists are defined in t
 @.ai/instructions/CODE_REVIEW_CHECKLIST.md
 @.ai/instructions/MONOREPO_GUIDE.md
 @.ai/instructions/ACTIVE_DEVELOPMENT.md
+@.ai/instructions/LIBRARY_CAPABILITIES.md
 
 ## Critical Rules Summary
 
@@ -139,7 +140,8 @@ Always use `rush add -p package-name` or `rush remove -p package-name`. Never us
 │   ├── TESTING_GUIDELINES.md
 │   ├── CODE_REVIEW_CHECKLIST.md
 │   ├── MONOREPO_GUIDE.md
-│   └── ACTIVE_DEVELOPMENT.md
+│   ├── ACTIVE_DEVELOPMENT.md
+│   └── LIBRARY_CAPABILITIES.md
 ├── workflows/                # Task orchestration workflows
 └── tasks/                    # Runtime task artifacts
 
