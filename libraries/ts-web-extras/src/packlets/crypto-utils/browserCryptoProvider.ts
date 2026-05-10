@@ -464,7 +464,7 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
         toBufferView(spkiBytes),
         params.importPublicKey as AlgorithmIdentifier,
         true,
-        params.publicKeyUsages as KeyUsage[]
+        [...params.publicKeyUsages]
       )
     );
     return result.withErrorFormat(

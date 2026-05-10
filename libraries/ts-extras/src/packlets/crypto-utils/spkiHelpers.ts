@@ -36,6 +36,7 @@ export function multibaseBase64UrlEncode(data: Uint8Array): string {
   let base64: string;
   if (typeof Buffer !== 'undefined') {
     base64 = Buffer.from(data).toString('base64');
+    /* c8 ignore start - browser-only: btoa path not available in Node tests */
   } else {
     let binary = '';
     for (let i = 0; i < data.length; i++) {
@@ -43,6 +44,7 @@ export function multibaseBase64UrlEncode(data: Uint8Array): string {
     }
     base64 = btoa(binary);
   }
+  /* c8 ignore stop */
   // Convert to base64url: + → -, / → _, strip = padding
   const base64url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   return 'm' + base64url;
@@ -67,6 +69,9 @@ export function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array> {
     );
   }
   const body = encoded.slice(1);
+  if (!/^[A-Za-z0-9_-]*$/.test(body)) {
+    return fail(`multibaseBase64UrlDecode: malformed base64url body`);
+  }
   // Convert base64url back to standard base64 and restore padding
   const base64 = body.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
@@ -74,6 +79,7 @@ export function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array> {
     let bytes: Uint8Array;
     if (typeof Buffer !== 'undefined') {
       bytes = new Uint8Array(Buffer.from(padded, 'base64'));
+      /* c8 ignore start - browser-only: atob path not available in Node tests */
     } else {
       const binary = atob(padded);
       bytes = new Uint8Array(binary.length);
@@ -81,7 +87,9 @@ export function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array> {
         bytes[i] = binary.charCodeAt(i);
       }
     }
+    /* c8 ignore stop */
     return succeed(bytes);
+    /* c8 ignore next 3 - defensive: regex validation above prevents invalid chars from reaching here */
   } catch {
     return fail(`multibaseBase64UrlDecode: malformed base64url body`);
   }
@@ -91,11 +99,11 @@ export function multibaseBase64UrlDecode(encoded: string): Result<Uint8Array> {
  * Exports a public `CryptoKey` as a multibase base64url-encoded SPKI blob.
  *
  * The SPKI (SubjectPublicKeyInfo) format is the standard DER-encoded structure
- * for public keys defined in RFC 5480 and RFC 5958. It is algorithm-agnostic
- * and suitable for storage and transmission.
+ * for public keys defined in RFC 5280, RFC 5480, and RFC 8410. It is
+ * algorithm-agnostic and suitable for storage and transmission.
  *
  * @param key - The `CryptoKey` to export. Must have `key.type === 'public'`.
- * @param provider - The {@link ICryptoProvider} to use for the export operation.
+ * @param provider - The {@link CryptoUtils.ICryptoProvider} to use for the export operation.
  * @returns `Success` with the multibase SPKI string, or `Failure` with error context.
  * @public
  */
@@ -113,11 +121,11 @@ export async function exportPublicKeyAsMultibaseSpki(
  *
  * Decodes the multibase prefix, decodes the base64url body, then uses
  * the provider to import the key with the algorithm parameters from
- * {@link keyPairAlgorithmParams}.
+ * {@link CryptoUtils.keyPairAlgorithmParams}.
  *
- * @param encoded - A multibase SPKI string produced by {@link exportPublicKeyAsMultibaseSpki}.
- * @param algorithm - The {@link KeyPairAlgorithm} the key was generated for.
- * @param provider - The {@link ICryptoProvider} to use for the import operation.
+ * @param encoded - A multibase SPKI string produced by {@link CryptoUtils.exportPublicKeyAsMultibaseSpki}.
+ * @param algorithm - The {@link CryptoUtils.KeyPairAlgorithm} the key was generated for.
+ * @param provider - The {@link CryptoUtils.ICryptoProvider} to use for the import operation.
  * @returns `Success` with the imported public `CryptoKey`, or `Failure` with error context.
  * @public
  */
