@@ -40,21 +40,6 @@ export class HashingNormalizer extends Normalizer {
     this._hash = hash;
   }
 
-  /**
-   * Produces a stable, byte-identical JSON string following RFC 8785
-   * (JSON Canonicalization Scheme) key-ordering rules.
-   *
-   * Delegates to `normalize(from, { rules: 'rfc8785' })`.
-   *
-   * @param from - Any JSON-compatible value.
-   * @returns `Result<string>` — the canonical JSON string, or a failure if
-   *   `from` contains non-serializable types (functions, symbols, bigint).
-   * @public
-   */
-  public canonicalize(from: unknown): Result<string> {
-    return this.normalize(from, { rules: 'rfc8785' });
-  }
-
   public computeHash(from: unknown): Result<string> {
     switch (typeof from) {
       case 'string':
