@@ -1,25 +1,35 @@
 # Active Development Guidelines
 
-This document covers guidelines specific to the libraries and applications currently under active development. These rules supplement the general coding standards.
+This document covers guidelines specific to the libraries and surfaces currently under active development. These rules supplement the general coding standards.
 
-## Active Development Scope
+## How to read this doc
 
-### Actively Developed Libraries
-| Library | Path | Purpose |
-|---------|------|---------|
-| `ts-http-storage` | `libraries/ts-http-storage` | HTTP storage provider abstraction |
-| `ts-app-shell` | `libraries/ts-app-shell` | Shared React app shell primitives |
+This repo is a set of utility libraries with independent roadmaps but a **lockstep version policy** — when we publish, we publish everything. Most libraries see at least some reactive maintenance, but a handful (and specific packlets within them) are the current frontier and accept breakage freely; the rest carry stability obligations.
 
-### Other Libraries (production, handle with care)
-Everything else under `libraries/` is in production. See [Compatibility Rules](#compatibility-rules).
+The active/production split is therefore **per-surface, not per-library**. A library can have both an established surface that needs compatibility care and an actively-developed packlet that doesn't. The lists below name the surfaces currently in the "free hand" zone; everything else is "handle with care" by default.
+
+## Currently active surfaces
+
+| Library | Active surface(s) | Notes |
+|---------|-------------------|-------|
+| `ts-extras` | `ai-assist`, `crypto-utils` | Established packlets (csv, record-jar, yaml, mustache, hash, conversion, zip-file-tree) are stable — handle with care |
+| `ts-app-shell` | All packlets | New library, no consumers yet outside this repo |
+| `ts-http-storage` | All | New library |
+| `ts-web-extras` | All | New library |
+
+Anything not listed above — including production libraries like `ts-utils`, `ts-res`, `ts-bcp47`, `ts-json`, `ts-json-base`, `ts-random`, `ts-utils-jest`, `ts-res-ui-components` — carries stability obligations. See [Compatibility Rules](#compatibility-rules).
+
+## Out-of-scope packages
+
+The sudoku packages (`ts-sudoku-lib`, `ts-sudoku-ui`) are slated to move to their own monorepo. Don't queue active development against them in this repo's workflow substrate.
 
 ---
 
 ## Compatibility Rules
 
-### New Libraries: No Compatibility Burden
+### Active surfaces: No Compatibility Burden
 
-The active-development packages (`ts-http-storage`, `ts-app-shell`) are **all new code**. Compatibility is **not** a consideration:
+Code on the active surfaces listed above is **new enough that compatibility is not a consideration**:
 
 - **Do not** preserve deprecated values, types, or re-exports
 - **Do not** add backwards-compatibility shims or renamed aliases
@@ -27,14 +37,18 @@ The active-development packages (`ts-http-storage`, `ts-app-shell`) are **all ne
 - If a change is necessary or appropriate, **break compatibility and fix consumers** rather than accumulating cruft
 - Trying to preserve compatibility in new code leads to bloat and confusion
 
-### Production Libraries: Be Careful
+### Established surfaces: Be Careful
 
-All other libraries under `libraries/` are in production:
+Everything else carries stability obligations:
 
 - Breaking changes require careful consideration of downstream impact
 - **When in doubt, ask** before making breaking changes
-- Follow semantic versioning principles
+- Follow semantic versioning principles within the lockstep policy (a breaking change anywhere bumps everyone — that's a real cost)
 - Check for consumers before removing or renaming exports
+
+### The lockstep-version wrinkle
+
+Because we publish everything together, a breaking change on an established surface is more expensive than it looks: every package's version moves, every consumer integrates a delta that includes things they didn't ask for. Prefer additive or aliased changes on established surfaces when feasible; reserve genuine breaks for cases where the new shape is materially better and the migration cost is justified.
 
 ---
 

@@ -37,9 +37,9 @@ Your job is **not** primarily to write code — it's to:
 Before doing anything, read these — they carry the conventions your predecessor codified:
 
 - `CLAUDE.md` and `.ai/instructions/ACTIVE_DEVELOPMENT.md`
-- `docs/WORKSTREAMS.md` preamble (status conventions, stream versions, shared types, baseline check, artifact protocol)
-- `docs/CHORES.md` (current active batch shape + completed precedents)
-- `.ai/BASELINE.md` (pinned baseline commit — verify before any new branch)
+- `docs/WORKSTREAMS.md` preamble (repo shape, branch flow, status conventions, stream entry shape, shared types, artifact protocol)
+- `docs/CHORES.md` (current active batch shape + completed precedents; trigger taxonomy)
+- `.ai/BASELINE.md` (last `release` → `main` promotion — used for blast-radius sizing, not as a stream-start gate)
 - Cross-cutting design docs in `docs/` relevant to the work in flight
 
 Then check `.ai/tasks/active/` for in-flight task artifacts before starting any new orchestration work.
@@ -65,10 +65,10 @@ Full workflow procedures: `.ai/conventions/workflow/` and `docs/DESIGN_PROCESS.m
 ### Stream kickoff
 
 1. Load `/workstream-brief` for the stream ID.
-2. Verify file-boundary collision avoidance against any other in-flight parallel streams.
-3. Verify the branch base against `.ai/BASELINE.md`.
+2. Verify package-surface / file-boundary collision avoidance against any other in-flight parallel streams.
+3. Branch base is current `release` HEAD (no shared "wave base" — see WORKSTREAMS.md preamble).
 4. Commit `brief.md` + empty `state.md` to `.ai/tasks/active/<stream-id>/`.
-5. Deliver kickoff prompt paste-ready: mission, in/out-of-scope paths, required reading, skills to load (with trigger conditions), missing-input rule, phases, acceptance criteria, exit artifact shape, resume protocol.
+5. Deliver kickoff prompt paste-ready: mission, package surface, in/out-of-scope paths, required reading, skills to load (with trigger conditions), missing-input rule, phases, acceptance criteria, exit artifact shape, resume protocol.
 
 ### Chore-batch kickoff
 
@@ -85,15 +85,18 @@ Compose following the interleaved-per-item shape from `.ai/conventions/workflow/
 1. Flip the stream's status marker in `docs/WORKSTREAMS.md` to ✅.
 2. Run a stale-marker scan (`.ai/conventions/workflow/stale-marker-scan.md`): anything in the ledger now stale?
 3. Drain stream followups (`.ai/conventions/workflow/inbox-and-drain.md`) — route each to FUTURE / TECH_DEBT / next chore batch / next stream.
-4. Bump `.ai/BASELINE.md` if this stream is the last in its wave.
-5. Triage any surfaced lessons (`.ai/conventions/workflow/lessons-codification-triage.md`).
+4. Triage any surfaced lessons (`.ai/conventions/workflow/lessons-codification-triage.md`).
 
-### Pre-wave chore batch assembly
+`.ai/BASELINE.md` is **not** bumped on stream merge — only on `release` → `main` promotion.
 
-1. Read each completed stream's polished `README.md` in `.ai/tasks/completed/`.
-2. Extract every chore-shaped item, follow-up, or deferred note.
+### Chore batch assembly
+
+Triggered by a concrete transition (see `docs/CHORES.md` § When to open a new batch — post-feature followup, adjacent-feature prep, pre-alpha tidy, post-consumer-integration sweep).
+
+1. Read recent completed streams' polished `README.md` in `.ai/tasks/completed/` (scope to streams whose surface is relevant to the trigger).
+2. Extract every chore-shaped item, follow-up, or deferred note tied to the trigger.
 3. Categorize each: **chore batch** / **stream** / **TECH_DEBT** / **FUTURE**.
-4. Compile proposed batch (3–6 items, tied to a concrete transition trigger).
+4. Compile proposed batch (3–6 items, all sharing the same trigger).
 5. Present to user for sign-off before landing in `docs/CHORES.md`.
 
 ### Babysitting a long PR review cycle
@@ -111,9 +114,19 @@ Post-merge: run sibling-sweep as a **fresh agent**, not the implementing agent. 
 
 When the user is doing manual testing or posting batches of findings: suggest spinning up a fresh sub-agent session in scribe mode — mirrors the four-bucket sort, writes per-file inbox entries, proposes routings. Token-cheap. Delegate rather than handling each finding inline.
 
-### Buffer-and-main promotion
+### `release` → `main` promotion
 
-When the buffer line has accumulated a coherent batch of merged PRs: confirm known-good state → open PR buffer→main → run unified automated-review pass (catches fix-interaction findings) → merge with merge-commit → bump `.ai/BASELINE.md`. See `.ai/conventions/workflow/branch-buffer-and-promotion.md`.
+A release event, not a routine operation — the delta is typically too large for meaningful code review, and each constituent PR was reviewed individually on its way into `release`. Gate is **test/docs/sibling-sweep**, not unified code review:
+
+1. Confirm CI green on `release`; tests + coverage gates pass.
+2. Confirm generated docs are caught up (api-extractor / `update generated docs` PRs current).
+3. Run a sibling-sweep as a fresh agent against the unified delta — catches fix-interaction findings that escaped per-PR review. Critical findings only get inline fixes; everything else routes to followups.
+4. Open PR `release` → `main`, merge with merge-commit (preserves audit trail).
+5. Bump `.ai/BASELINE.md` to the new `main` HEAD with the lockstep version published (or "pre-publish" if promotion precedes the next publish event).
+
+See `.ai/conventions/workflow/branch-buffer-and-promotion.md`.
+
+Note: `prerelease` mirrors `release` immediately (with version/changelog deltas only) and is the alpha-publish source. Alpha cuts are independent of promotion — alphas can ship from `release`-as-mirrored-to-`prerelease` long before any `release` → `main` promotion. Stability-via-consumption is the gate on promotion, not alpha cadence.
 
 ## Kickoff prompt checklist
 

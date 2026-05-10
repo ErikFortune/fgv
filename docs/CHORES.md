@@ -3,9 +3,11 @@
 Scheduled cleanup batches. Different from TECH_DEBT (long-running
 structural debt) and FUTURE (parking lot of ideas). A chore batch
 is a focused agent run that closes several small items at once,
-typically tied to a specific transition — between waves of
-workstreams, between phases, after a major refactor lands. Each
-batch is bounded, agent-shaped, and usually 3–6 items.
+typically tied to a specific transition — after a feature ships
+with surface-local followups, before an adjacent feature starts on
+the same surface, or after a consumer-integration round closes and
+the open items become legible. Each batch is bounded, agent-shaped,
+and usually 3–6 items.
 
 ---
 
@@ -24,12 +26,26 @@ time-critical can be promoted into the active chore batch.
 
 ### When to open a new batch
 
-- **Between waves of streams.** Two streams just merged; they
-  surfaced N items that all want to land before the next wave.
-- **After a major refactor.** A refactor that ships green but leaves
-  test-only paths or `TODO`-marked follow-ups.
-- **Pre-phase transitions.** When a phase closes and the next phase
-  begins, items that don't belong to either are chore-shaped.
+A chore batch needs a concrete transition trigger. Recognized
+triggers in this repo:
+
+- **Post-feature followup batch.** A feature stream just shipped
+  to `release` and left N small followups on its surface (test-only
+  paths, deferred coverage closures, TODO-marked cleanups).
+- **Adjacent-feature prep.** Another stream is about to start on a
+  surface adjacent to one that's been accumulating debt — clean it
+  up before the new stream touches it, so the new stream isn't
+  fighting old smells.
+- **Pre-alpha tidy.** Before cutting an alpha (i.e. before mirroring
+  `release` → `prerelease` for a publish), sweep for changelog
+  rot, doc-rot, and obvious cross-package inconsistencies that the
+  alpha would otherwise carry.
+- **Post-consumer-integration sweep.** After a consumer applies a
+  feature end-to-end, the friction they hit usually surfaces a
+  cluster of small fixes worth batching.
+
+Items that don't have a concrete trigger belong in TECH_DEBT or
+FUTURE, not here.
 
 ### Kickoff-prompt shape for chore agents
 
