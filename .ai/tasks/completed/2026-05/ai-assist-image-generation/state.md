@@ -1,7 +1,7 @@
 # Stream State: ai-assist-image-generation
 
-**Status:** 🟢 phase B (implementation) ready to start — phase A signed off
-**Last updated:** 2026-05-11 (orchestrator — phase A signoff + phase B prep)
+**Status:** ✅ complete — phase B merged; artifacts migrated to `completed/2026-05/`
+**Last updated:** 2026-05-11 (phase B agent — implementation complete)
 
 ---
 
@@ -10,7 +10,7 @@
 | Phase | Status | Notes |
 |-------|--------|-------|
 | A — research and design | ✅ complete | `design.md` written; signed off with substantial modifications. PR consolidated into the phase B prep PR (this branch). |
-| B — implementation | 🔵 in_progress | Brief: `brief-phase-b.md`. Agent started 2026-05-11. |
+| B — implementation | ✅ complete | PR #329 → `claude/ai-assist-features`. Branch: `claude/implement-image-generation-m7xMi`. |
 
 ---
 
@@ -105,4 +105,4 @@ See "Decisions overriding the design" table above.
 
 - **Phase A research:** committed to `claude/ai-image-generation-research-gtE2l`; merged into the orchestrator's phase B prep branch via `git merge --no-ff` to consolidate the phase-A→B transition into a single PR against the integration branch.
 - **Phase A + B prep PR:** `claude/ai-image-generation-phase-b-prep` → `claude/ai-assist-features` (open after orchestrator commits the brief + state.md + WORKSTREAMS update)
-- **Phase B implementation PR:** TBD by phase B agent; target `claude/ai-assist-features`
+- **Phase B implementation PR:** #329 (`claude/implement-image-generation-m7xMi` → `claude/ai-assist-features`)
