@@ -66,6 +66,8 @@ The following items were addressed across five rounds of Copilot review on PR #3
 | R5 | JSDoc for `thinking?` parameter correctly describes provider-specific temperature conflict semantics |
 | R6 | `hasThinkingConfig` is now provider-aware: a `providers` block targeting a different provider no longer triggers `'thinking'` model context |
 | R6 | `validateResolvedThinkingConfig` declined — model-level constraint validation deferred (requires model capability registry; see Followup) |
+| R7 | `hasThinkingConfig` gated on `discriminator !== undefined` — unknown providers never switch model context to `'thinking'` |
+| R7 | `modelNameMatches` suffix-pattern tightening deferred to followup (no known false positive today; see Followup) |
 
 ## Acceptance status
 
@@ -85,6 +87,7 @@ The following items were addressed across five rounds of Copilot review on PR #3
 - **`ai-assist-thinking-events`** — thinking-event surfacing (new `IAiStreamThinking` stream-event variant, response-shape extension, per-provider opt-in plumbing); deferred per D9
 - **xAI live temperature verification** — if confirmed that xAI accepts temperature + reasoning, remove the xAI branch in `checkTemperatureConflict`
 - **`validateResolvedThinkingConfig`** — pre-flight validation of model-level constraints (Gemini `thinkingBudget: 0` on Pro, Anthropic `'max'` model limits, OpenAI `'none'` on o-series); requires a model capability registry; deferred until that infrastructure exists
+- **`modelNameMatches` date-suffix tightening** — current `startsWith(name + '-')` rule could in principle match `gpt-5-pro` when targeting `gpt-5`; no concrete false positive today; deferred to followup when a real case arises
 
 ## Source artifacts
 
