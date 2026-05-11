@@ -84,6 +84,16 @@ Compose following the interleaved-per-item shape from `.ai/conventions/workflow/
 2. Verify phase B (bundle drop) is clean before drafting the kickoff.
 3. Hold the phase-C completion gate: present all four triage outputs to the user for sign-off before launching phase D. Gate is real — the user may surface a change.
 
+### Reviewing an agent PR before merge / bundling
+
+Before advancing the workflow (merging the PR, bundling it into a cluster-close prep, opening the cluster→release promotion PR):
+
+1. **Call `mcp__github__pull_request_read` with `method: get_check_runs`.** Refuse to advance if any check is `conclusion: failure`. This catches lint failures, test failures, or coverage-gate breaks that the agent may have missed in their local run. Lint is a particular hot spot — `rushx build` does NOT transitively run lint in this monorepo, so an agent's "build passes" claim doesn't cover it.
+2. **If CI is red**: send back to the agent with the failing check's URL. The fix is the agent's, not the orchestrator's (unless the lint failure is one-line-mechanical and the agent has otherwise wrapped up the stream).
+3. **Once CI is green**: proceed with the merge / bundling / promotion as planned.
+
+This is a hard precondition because once a failed-CI commit is in the integration branch, unwinding (revert, re-prep, re-promote) is painful. Pre-merge gating is the cheap path.
+
 ### Post-merge bookkeeping
 
 1. Flip the stream's status marker in `docs/WORKSTREAMS.md` to ✅.
@@ -152,10 +162,11 @@ Every kickoff prompt (stream or chore-batch) must include:
 - [ ] Missing-input rule: STOP if a required input is missing; do NOT recreate it from codebase exploration
 - [ ] Dependencies (hard and soft)
 - [ ] Phases with sub-steps
-- [ ] Acceptance criteria (exit gates)
+- [ ] Acceptance criteria (exit gates) — **must include `rushx build`, `rushx lint`, AND `rushx test` per `.ai/instructions/CODING_STANDARDS.md` § Pre-PR Validation Checklist. Lint is NOT transitively run by build; it's a separate gate that has repeatedly escaped acceptance criteria when only build+test were listed.**
 - [ ] Required exit artifact (`result.md` shape)
 - [ ] Resume protocol (read brief + state.md)
 - [ ] Branch + PR posture
+- [ ] Pre-PR `rushx fixlint` run noted as an implementer-aid (catches the mechanical class of lint errors automatically)
 
 ## Artifact substrate
 
