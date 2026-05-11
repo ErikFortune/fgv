@@ -41,6 +41,7 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
+    thinkingMode: 'optional',
     ...overrides
   };
 }
@@ -295,6 +296,93 @@ describe('callProviderCompletionStream', () => {
       expect(body.model).toBe('gpt-5');
       expect(body.stream).toBe(true);
     });
+
+    test('prefers thinking model from ModelSpec when both thinking and tools are provided', async () => {
+      const descriptor = makeDescriptor({
+        defaultModel: { base: 'gpt-4o', tools: 'gpt-4o-tools', thinking: 'gpt-o3' },
+        supportedTools: ['web_search']
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('gpt-o3');
+    });
+
+    test('does not select thinking model when thinking config is empty object', async () => {
+      const descriptor = makeDescriptor({
+        defaultModel: { base: 'gpt-4o', tools: 'gpt-4o-tools', thinking: 'gpt-o3' },
+        supportedTools: ['web_search']
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: {}
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('gpt-4o-tools');
+    });
+
+    test('does not select thinking model when providers block targets a different provider', async () => {
+      const descriptor = makeDescriptor({
+        id: 'xai-grok',
+        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' },
+        supportedTools: ['web_search']
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: { providers: [{ provider: 'anthropic', config: { effort: 'high' } }] }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('grok-reasoning');
+    });
+
+    test('does not select thinking model for unknown provider even when thinking is provided', async () => {
+      const ollamaDescriptor = makeDescriptor({
+        id: 'ollama',
+        baseUrl: 'http://localhost:11434/v1',
+        defaultModel: { base: 'llama3', tools: 'llama3-tools', thinking: 'llama3-think' },
+        supportedTools: ['web_search']
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: ollamaDescriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('llama3-tools');
+    });
+
+    test('forwards explicit temperature to request body', async () => {
+      mockSseResponse(openAiChatSse(['x']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        temperature: 0.3
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.temperature).toBe(0.3);
+    });
   });
 
   describe('endpoint override', () => {
@@ -478,6 +566,65 @@ describe('callProviderCompletionStream', () => {
         { role: 'user', content: 'how about pasta?' }
       ]);
     });
+
+    test('includes reasoning_effort and omits temperature when thinking effort provided (OpenAI chat stream)', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('high');
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('sends xAI effort as reasoning_effort and omits temperature (xAI openai-format stream)', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok' }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: { effort: 'low' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('low');
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('omits reasoning_effort for grok-4 even when thinking is active (chat stream)', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok', defaultModel: 'grok-4' }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('merges other-block params into OpenAI chat stream body', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: {
+          providers: [
+            {
+              provider: 'other',
+              models: ['gpt-4o'],
+              config: { custom_param: 'xyz' }
+            }
+          ]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.custom_param).toBe('xyz');
+    });
   });
 
   describe('openai responses API stream (with tools)', () => {
@@ -543,10 +690,60 @@ describe('callProviderCompletionStream', () => {
       const events = await collect(result.value);
       expect(events[events.length - 1].type).toBe('error');
     });
+
+    test('includes reasoning field and omits temperature when thinking provided (Responses API stream)', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning).toEqual({ effort: 'medium' });
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('omits reasoning field for grok-4 even when thinking is active (responses stream)', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok', defaultModel: 'grok-4' }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('merges other-block params into Responses API stream body', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: {
+          providers: [
+            {
+              provider: 'other',
+              models: ['gpt-4o'],
+              config: { extra_responses_param: 42 }
+            }
+          ]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.extra_responses_param).toBe(42);
+    });
   });
 
   describe('anthropic stream', () => {
     const descriptor = makeDescriptor({
+      id: 'anthropic',
       apiFormat: 'anthropic',
       baseUrl: 'https://api.anthropic.com/v1',
       defaultModel: 'claude-sonnet-4-5'
@@ -658,6 +855,52 @@ describe('callProviderCompletionStream', () => {
         { role: 'user', content: 'how about pasta?' }
       ]);
     });
+
+    test('includes thinking wire fields when thinking effort provided', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.thinking).toEqual({ type: 'enabled' });
+      expect(body.output_config).toEqual({ effort: 'high' });
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('merges other-block params into Anthropic body', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: {
+          providers: [
+            {
+              provider: 'other',
+              models: ['claude-sonnet-4-5'],
+              config: { anthropic_extra_param: 'value' }
+            }
+          ]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.anthropic_extra_param).toBe('value');
+    });
+
+    test('fails when thinking and temperature conflict on Anthropic', async () => {
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: { effort: 'high' },
+        temperature: 0.7
+      });
+      expect(result).toFailWith(/thinking mode is not compatible with temperature on provider anthropic/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
   });
 
   describe('gemini stream', () => {
@@ -722,6 +965,43 @@ describe('callProviderCompletionStream', () => {
       if (!result.isSuccess()) throw new Error('expected success');
       const events = await collect(result.value);
       expect(events[events.length - 1].type).toBe('error');
+    });
+
+    test('includes thinkingConfig in generationConfig when thinking effort provided', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.thinkingConfig).toEqual({ thinkingBudget: 4096 });
+    });
+
+    test('merges other-block params into generationConfig', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({
+          apiFormat: 'gemini',
+          baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+          defaultModel: 'gemini-2.5-flash',
+          id: 'google-gemini'
+        }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: {
+          providers: [
+            {
+              provider: 'other',
+              models: ['gemini-2.5-flash'],
+              config: { extra_thinking_param: true }
+            }
+          ]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.extra_thinking_param).toBe(true);
     });
 
     test('places messagesBefore before the new user turn and maps assistant->model', async () => {
@@ -876,5 +1156,18 @@ describe('callProxiedCompletionStream', () => {
     if (!result.isSuccess()) throw new Error('expected success');
     const events = await collect(result.value);
     expect(events.map((e) => e.type)).toEqual(['text-delta', 'done']);
+  });
+
+  test('forwards thinking field in proxy stream body when thinking is provided', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    const thinking: AiAssist.IThinkingConfig = { effort: 'high' };
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      thinking
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.thinking).toEqual({ effort: 'high' });
   });
 });

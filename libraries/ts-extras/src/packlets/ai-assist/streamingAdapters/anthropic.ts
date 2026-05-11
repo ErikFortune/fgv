@@ -32,6 +32,7 @@ import { buildAnthropicMessages } from '../chatRequestBuilders';
 import { AiPrompt, type AiServerToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toAnthropicTools } from '../toolFormats';
+import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
 
 // ============================================================================
@@ -220,18 +221,27 @@ export async function callAnthropicStream(
   temperature: number,
   tools: ReadonlyArray<AiServerToolConfig> | undefined,
   logger?: Logging.ILogger,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/messages`;
   const messages = buildAnthropicMessages(prompt, { head: messagesBefore });
+  // When thinking is active, temperature is rejected by Anthropic (validated upstream).
   const body: Record<string, unknown> = {
     model: config.model,
     system: prompt.system,
     messages,
     max_tokens: 4096,
-    temperature,
+    ...(resolvedThinking?.anthropicEffort === undefined ? { temperature } : {}),
     stream: true
   };
+  if (resolvedThinking?.anthropicEffort !== undefined) {
+    body.thinking = { type: 'enabled' };
+    body.output_config = { effort: resolvedThinking.anthropicEffort };
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(body, resolvedThinking.otherParams);
+  }
   if (tools && tools.length > 0) {
     body.tools = toAnthropicTools(tools);
   }

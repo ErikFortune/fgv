@@ -33,6 +33,7 @@ import { buildGeminiContents } from '../chatRequestBuilders';
 import { AiPrompt, type AiServerToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toGeminiTools } from '../toolFormats';
+import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
 
 // ============================================================================
@@ -166,14 +167,22 @@ export async function callGeminiStream(
   temperature: number,
   tools: ReadonlyArray<AiServerToolConfig> | undefined,
   logger?: Logging.ILogger,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/models/${config.model}:streamGenerateContent?alt=sse`;
   const contents = buildGeminiContents(prompt, { head: messagesBefore });
+  const generationConfig: Record<string, unknown> = { temperature };
+  if (resolvedThinking?.geminiThinkingBudget !== undefined) {
+    generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(generationConfig, resolvedThinking.otherParams);
+  }
   const body: Record<string, unknown> = {
     systemInstruction: { parts: [{ text: prompt.system }] },
     contents,
-    generationConfig: { temperature }
+    generationConfig
   };
   /* c8 ignore next 3 - tools branch not exercised in streaming tests */
   if (tools && tools.length > 0) {

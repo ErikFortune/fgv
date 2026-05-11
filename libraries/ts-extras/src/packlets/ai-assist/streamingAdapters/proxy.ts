@@ -122,8 +122,18 @@ export async function callProxiedCompletionStream(
   proxyUrl: string,
   params: IProviderCompletionStreamParams
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
-  const { descriptor, apiKey, prompt, messagesBefore, temperature, modelOverride, logger, tools, signal } =
-    params;
+  const {
+    descriptor,
+    apiKey,
+    prompt,
+    messagesBefore,
+    temperature,
+    modelOverride,
+    logger,
+    tools,
+    signal,
+    thinking
+  } = params;
 
   const promptBody: Record<string, unknown> = { system: prompt.system, user: prompt.user };
   if (prompt.attachments.length > 0) {
@@ -145,6 +155,9 @@ export async function callProxiedCompletionStream(
   }
   if (tools && tools.length > 0) {
     body.tools = tools;
+  }
+  if (thinking !== undefined) {
+    body.thinking = thinking;
   }
 
   /* c8 ignore next 1 - optional logger */

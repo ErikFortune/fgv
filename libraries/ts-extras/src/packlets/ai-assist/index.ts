@@ -65,7 +65,23 @@ export {
   allModelSpecKeys,
   MODEL_SPEC_BASE_KEY,
   resolveModel,
-  toDataUrl
+  toDataUrl,
+  type AiThinkingMode,
+  type IThinkingConfig,
+  type IThinkingProviderConfig,
+  type IAnthropicThinkingOptions,
+  type IOpenAiThinkingOptions,
+  type IGeminiThinkingOptions,
+  type IXAiThinkingOptions,
+  type IOtherThinkingOptions,
+  type IAnthropicThinkingConfig,
+  type IOpenAiThinkingConfig,
+  type IGeminiThinkingConfig,
+  type IXAiThinkingConfig,
+  type AnthropicThinkingModelNames,
+  type OpenAiThinkingModelNames,
+  type GeminiThinkingModelNames,
+  type XAiThinkingModelNames
 } from './model';
 
 export {
