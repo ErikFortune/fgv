@@ -49,6 +49,22 @@ Extended thinking/reasoning support on `callProviderCompletion` and `callProvide
 
 **Anthropic Sonnet 4.5 wire format (A2):** Standard `thinking: { type: 'enabled' }, output_config: { effort }` format applied. If Sonnet 4.5 requires the legacy `thinking: { type: 'enabled', budget_tokens: N }` format, a model-conditional branch is needed in the Anthropic adapter.
 
+## PR review fixes (post-merge convergence)
+
+The following items were addressed across five rounds of Copilot review on PR #334:
+
+| Round | Fix |
+|---|---|
+| R1 | Temperature omission for OpenAI/xAI when thinking active (all 4 adapter sites) |
+| R1 | xAI effort routed via `xaiEffort` field (not just `openAiEffort`) |
+| R1 | `modelContext` includes `'thinking'` when thinking param provided |
+| R2 | `stop_reason` validated as string in `callAnthropicCompletion` |
+| R2 | grok-4 model guard: `reasoning_effort` / `reasoning.effort` omitted for grok-4 at all 4 adapter sites |
+| R3 | `modelContext` prefers `'thinking'` over `'tools'` when both are present |
+| R3 | `blockApplies` uses prefix matching (`startsWith(name + '-')`) so unversioned typed names match date-suffixed registry IDs |
+| R4 | `hasThinkingConfig` guards `modelContext`: `thinking: {}` no longer triggers `'thinking'` model selection |
+| R5 | JSDoc for `thinking?` parameter correctly describes provider-specific temperature conflict semantics |
+
 ## Acceptance status
 
 - [x] All D1–D9 binding decisions implemented faithfully
@@ -60,6 +76,7 @@ Extended thinking/reasoning support on `callProviderCompletion` and `callProvide
 - [x] Anthropic D5 fix applied (tests updated for new response shape)
 - [x] LIBRARY_CAPABILITIES.md updated (thinking section; D9 deferral noted correctly)
 - [x] PR opened with A4 proxy note
+- [x] All 5 rounds of Copilot review feedback addressed; no open threads
 
 ## Followup
 

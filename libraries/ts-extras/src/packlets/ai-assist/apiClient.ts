@@ -119,7 +119,10 @@ export interface IProviderCompletionParams {
    * is unchanged: `needsSecret` providers still require an API key.
    */
   readonly endpoint?: string;
-  /** Optional thinking/reasoning config. Anthropic/OpenAI/xAI fail if temperature is also set. */
+  /**
+   * Optional thinking/reasoning config. Anthropic, OpenAI, and xAI reject `temperature` when
+   * the effective merged effort is non-`'none'`; Gemini always accepts both.
+   */
   readonly thinking?: IThinkingConfig;
 }
 
@@ -600,12 +603,7 @@ function extractAnthropicText(content: unknown[]): Result<string> {
   return succeed(textParts.join(''));
 }
 
-/**
- * Calls the Anthropic Messages API.
- * When tools are configured, includes them in the request and handles
- * mixed content block responses.
- * @internal
- */
+/** Calls the Anthropic Messages API with optional tool support. @internal */
 async function callAnthropicCompletion(
   config: IAiApiConfig,
   prompt: AiPrompt,
