@@ -80,10 +80,36 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     streamingCorsRestricted: false,
     acceptsImageInput: true,
     imageGeneration: [
-      // imagen-* models are predict-only and do not accept reference images;
-      // everything else uses chat-style :generateContent with refs.
-      { modelPrefix: 'imagen-', format: 'gemini-imagen' },
-      { modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }
+      {
+        // Imagen 4 Ultra: max 1 image
+        modelPrefix: 'imagen-4.0-ultra-',
+        format: 'gemini-imagen',
+        acceptsImageReferenceInput: false,
+        supportsQualityParam: false,
+        maxCount: 1,
+        outputParamStyle: 'none',
+        defaultOutputMimeType: 'image/png'
+      },
+      {
+        // All other Imagen 4 models: max 4 images
+        modelPrefix: 'imagen-',
+        format: 'gemini-imagen',
+        acceptsImageReferenceInput: false,
+        supportsQualityParam: false,
+        maxCount: 4,
+        outputParamStyle: 'none',
+        defaultOutputMimeType: 'image/png'
+      },
+      {
+        // Gemini Flash Image: chat-style generateContent
+        modelPrefix: '',
+        format: 'gemini-image-out',
+        acceptsImageReferenceInput: true,
+        supportsQualityParam: false,
+        maxCount: 1,
+        outputParamStyle: 'none',
+        defaultOutputMimeType: 'image/jpeg'
+      }
     ]
   },
   {
@@ -138,12 +164,44 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     streamingCorsRestricted: false,
     acceptsImageInput: true,
     imageGeneration: [
-      // gpt-image-1 supports /images/edits with reference images. dall-e-3
-      // (the default image model) does not, so the catch-all rule omits
-      // acceptsImageReferenceInput; callers selecting dall-e-3 with refs hit
-      // the up-front rejection rather than a provider 400.
-      { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true },
-      { modelPrefix: '', format: 'openai-images' }
+      {
+        modelPrefix: 'gpt-image-',
+        format: 'openai-images',
+        acceptsImageReferenceInput: true,
+        acceptedSizes: ['1024x1024', '1536x1024', '1024x1536', 'auto'],
+        supportsQualityParam: true,
+        acceptedQualities: ['low', 'medium', 'high', 'auto'],
+        maxCount: 10,
+        outputParamStyle: 'output-format',
+        defaultOutputMimeType: 'image/png'
+      },
+      {
+        modelPrefix: 'dall-e-3',
+        format: 'openai-images',
+        acceptsImageReferenceInput: false,
+        acceptedSizes: ['1024x1024', '1792x1024', '1024x1792'],
+        supportsQualityParam: true,
+        acceptedQualities: ['standard', 'hd'],
+        maxCount: 1,
+        outputParamStyle: 'response-format',
+        defaultOutputMimeType: 'image/png'
+      },
+      {
+        modelPrefix: 'dall-e-2',
+        format: 'openai-images',
+        acceptsImageReferenceInput: false,
+        acceptedSizes: ['256x256', '512x512', '1024x1024'],
+        supportsQualityParam: false,
+        maxCount: 10,
+        outputParamStyle: 'response-format',
+        defaultOutputMimeType: 'image/png'
+      },
+      {
+        modelPrefix: '',
+        format: 'openai-images',
+        outputParamStyle: 'response-format',
+        defaultOutputMimeType: 'image/png'
+      }
     ]
   },
   {
@@ -169,13 +227,34 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     defaultModel: {
       base: 'grok-4-1-fast',
       tools: 'grok-4-1-fast-reasoning',
-      image: 'grok-2-image-1212'
+      image: 'grok-imagine-image-quality'
     },
     supportedTools: ['web_search'],
     corsRestricted: true,
     streamingCorsRestricted: true,
     acceptsImageInput: true,
-    imageGeneration: [{ modelPrefix: '', format: 'xai-images' }]
+    imageGeneration: [
+      {
+        // grok-imagine models use JSON edits with image_url objects (different wire format)
+        modelPrefix: 'grok-imagine-',
+        format: 'xai-images-edits',
+        acceptsImageReferenceInput: true,
+        supportsQualityParam: false,
+        maxCount: 10,
+        outputParamStyle: 'response-format',
+        defaultOutputMimeType: 'image/jpeg'
+      },
+      {
+        // catch-all for other xai image models
+        modelPrefix: '',
+        format: 'xai-images',
+        acceptsImageReferenceInput: false,
+        supportsQualityParam: false,
+        maxCount: 10,
+        outputParamStyle: 'response-format',
+        defaultOutputMimeType: 'image/jpeg'
+      }
+    ]
   }
 ];
 

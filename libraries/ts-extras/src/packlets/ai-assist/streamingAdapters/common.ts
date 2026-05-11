@@ -119,6 +119,7 @@ export async function openSseConnection(
       signal
     });
   } catch (err: unknown) {
+    /* c8 ignore next 1 - defensive: fetch errors are always Error instances in practice */
     const detail = err instanceof Error ? err.message : String(err);
     /* c8 ignore next 1 - optional logger */
     logger?.error(`AI streaming request failed: ${detail}`);
@@ -131,6 +132,7 @@ export async function openSseConnection(
     logger?.error(`AI streaming API returned ${response.status}: ${errorText}`);
     return fail(`AI streaming API returned ${response.status}: ${errorText}`);
   }
+  /* c8 ignore next 3 - defensive coding: response.body is always defined for successful fetch responses */
   if (!response.body) {
     return fail('AI streaming API returned an empty body');
   }

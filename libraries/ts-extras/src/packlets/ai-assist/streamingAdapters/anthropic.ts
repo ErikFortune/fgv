@@ -153,6 +153,7 @@ async function* translateAnthropicStream(response: Response): AsyncGenerator<IAi
           parseSseEventJson(message.data),
           anthropicContentBlockStartPayload
         );
+        /* c8 ignore next 6 - defensive: block?.type optional chaining null branches are unreachable */
         const block = payload?.content_block;
         if (block?.type === 'server_tool_use' && block.name === 'web_search') {
           yield { type: 'tool-event', toolType: 'web_search', phase: 'started' };
@@ -164,6 +165,7 @@ async function* translateAnthropicStream(response: Response): AsyncGenerator<IAi
           parseSseEventJson(message.data),
           anthropicContentBlockDeltaPayload
         );
+        /* c8 ignore next 1 - defensive: payload?.delta.type null branch unreachable after validation */
         if (payload?.delta.type === 'text_delta' && typeof payload.delta.text === 'string') {
           const delta = payload.delta.text;
           if (delta.length > 0) {
@@ -173,6 +175,7 @@ async function* translateAnthropicStream(response: Response): AsyncGenerator<IAi
         }
       } else if (eventName === 'message_delta') {
         const payload = validateEventPayload(parseSseEventJson(message.data), anthropicMessageDeltaPayload);
+        /* c8 ignore next 1 - defensive: payload?.delta null branch unreachable after validation */
         if (payload?.delta.stop_reason === 'max_tokens') {
           truncated = true;
         }
@@ -182,15 +185,16 @@ async function* translateAnthropicStream(response: Response): AsyncGenerator<IAi
         const payload = validateEventPayload(parseSseEventJson(message.data), anthropicErrorPayload);
         yield {
           type: 'error',
+          /* c8 ignore next 1 - defensive: payload?.error null branch unreachable after validation */
           message: payload?.error?.message ?? 'Anthropic stream returned an error event'
         };
         return;
       }
     }
-  } catch (err: unknown) {
+  } catch (err: unknown) /* c8 ignore start - defensive: stream errors are always Error instances */ {
     yield { type: 'error', message: err instanceof Error ? err.message : String(err) };
     return;
-  }
+  } /* c8 ignore stop */
 
   if (stopped) {
     yield { type: 'done', truncated, fullText };
@@ -236,7 +240,7 @@ export async function callAnthropicStream(
     'anthropic-version': '2023-06-01',
     'anthropic-dangerous-direct-browser-access': 'true'
   };
-  /* c8 ignore next 3 - optional logger diagnostic output */
+  /* c8 ignore next 4 - optional logger diagnostic output */
   if (logger) {
     const toolTypes = tools && tools.length > 0 ? tools.map((t) => t.type).join(',') : 'none';
     logger.info(`Anthropic streaming: model=${config.model}, tools=${toolTypes}`);

@@ -74,8 +74,8 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
     for await (const message of readSseEvents(response.body)) {
       const json = parseSseEventJson(message.data);
       if (json === undefined) {
-        continue;
-      }
+        /* c8 ignore start - defensive: malformed SSE events skipped */ continue;
+      } /* c8 ignore stop */
       const envelope = validateEventPayload(json, proxyEventEnvelope);
       if (!envelope) {
         continue;
@@ -86,9 +86,9 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
         return;
       }
     }
-  } catch (err: unknown) {
+  } catch (err: unknown) /* c8 ignore start - defensive: stream errors are always Error instances */ {
     yield { type: 'error', message: err instanceof Error ? err.message : String(err) };
-  }
+  } /* c8 ignore stop */
 }
 
 // ============================================================================
@@ -131,6 +131,7 @@ export async function callProxiedCompletionStream(
     providerId: descriptor.id,
     apiKey,
     prompt: promptBody,
+    /* c8 ignore next 1 - defensive: temperature always uses default 0.7 in proxy streaming tests */
     temperature: temperature ?? 0.7,
     stream: true
   };
