@@ -22,11 +22,7 @@ import '@fgv/ts-utils-jest';
 
 import { AiAssist } from '../../..';
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import type {
-  AiImageApiFormat,
-  IAiImageModelCapability,
-  IAiProviderDescriptor
-} from '../../../packlets/ai-assist/model';
+import type { IAiProviderDescriptor } from '../../../packlets/ai-assist/model';
 
 // ============================================================================
 // Test helpers
@@ -47,6 +43,7 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     corsRestricted: true,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
+    thinkingMode: 'optional',
     ...overrides
   };
 }
@@ -95,7 +92,7 @@ function openAiResponse(content: string, finishReason: string = 'stop'): unknown
 
 function anthropicResponse(text: string, stopReason: string = 'end_turn'): unknown {
   return {
-    content: [{ text }],
+    content: [{ type: 'text', text }],
     stop_reason: stopReason
   };
 }
@@ -494,7 +491,19 @@ describe('callProviderCompletion', () => {
       expect(body.messages.map((m: { role: string }) => m.role)).toEqual(['user', 'assistant', 'user']);
     });
 
-    test('fails when response has invalid structure', async () => {
+    test('fails when response content is not an array', async () => {
+      mockFetchResponse({ content: 'not-an-array', stop_reason: 'end_turn' });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt
+      });
+
+      expect(result).toFailWith(/content is not an array/i);
+    });
+
+    test('fails when stop_reason is missing', async () => {
       mockFetchResponse({ content: [] });
 
       const result = await AiAssist.callProviderCompletion({
@@ -503,7 +512,19 @@ describe('callProviderCompletion', () => {
         prompt: testPrompt
       });
 
-      expect(result).toFailWith(/Anthropic API response/i);
+      expect(result).toFailWith(/stop_reason is missing or not a string/i);
+    });
+
+    test('fails when response content has no text blocks', async () => {
+      mockFetchResponse({ content: [], stop_reason: 'end_turn' });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt
+      });
+
+      expect(result).toFailWith(/no text content blocks/i);
     });
 
     test('fails when fetch throws a network error', async () => {
@@ -681,6 +702,24 @@ describe('callProviderCompletion', () => {
       expect(body.model).toBe('grok-reasoning');
     });
 
+    test('prefers thinking model from ModelSpec when both thinking and tools are provided', async () => {
+      const splitDescriptor = makeDescriptor({
+        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' }
+      });
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: splitDescriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools,
+        thinking: { effort: 'medium' }
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('grok-4.3');
+    });
+
     test('selects base model from ModelSpec when no tools', async () => {
       const splitDescriptor = makeDescriptor({
         defaultModel: { base: 'grok-fast', tools: 'grok-reasoning' }
@@ -695,6 +734,63 @@ describe('callProviderCompletion', () => {
 
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.model).toBe('grok-fast');
+    });
+
+    test('does not select thinking model when thinking config is empty object', async () => {
+      const splitDescriptor = makeDescriptor({
+        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' }
+      });
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: splitDescriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools,
+        thinking: {}
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('grok-reasoning');
+    });
+
+    test('does not select thinking model when providers block targets a different provider', async () => {
+      const splitDescriptor = makeDescriptor({
+        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' }
+      });
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: splitDescriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools,
+        thinking: { providers: [{ provider: 'openai', config: { effort: 'medium' } }] }
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('grok-reasoning');
+    });
+
+    test('does not select thinking model for unknown provider even when thinking is provided', async () => {
+      const ollamaDescriptor = makeDescriptor({
+        id: 'ollama',
+        baseUrl: 'http://localhost:11434/v1',
+        defaultModel: { base: 'llama3', tools: 'llama3-tools', thinking: 'llama3-think' },
+        corsRestricted: false
+      });
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: ollamaDescriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools,
+        thinking: { effort: 'medium' }
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('llama3-tools');
     });
 
     test('extracts text from Responses API output', async () => {
@@ -921,59 +1017,6 @@ describe('callProviderCompletion', () => {
 });
 
 // ============================================================================
-// Image generation
-// ============================================================================
-
-function imgGen(
-  format: AiImageApiFormat,
-  acceptsRefs: boolean = false
-): ReadonlyArray<IAiImageModelCapability> {
-  return [
-    {
-      modelPrefix: '',
-      format,
-      ...(acceptsRefs ? { acceptsImageReferenceInput: true } : {})
-    }
-  ];
-}
-
-function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProviderDescriptor {
-  return {
-    id: 'openai',
-    label: 'OpenAI',
-    buttonLabel: 'AI Assist | OpenAI',
-    needsSecret: true,
-    apiFormat: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    defaultModel: { base: 'gpt-4o', image: 'dall-e-3' },
-    supportedTools: [],
-    corsRestricted: false,
-    acceptsImageInput: true,
-    streamingCorsRestricted: false,
-    imageGeneration: imgGen('openai-images'),
-    ...overrides
-  };
-}
-
-function openAiImageBody(b64s: string[], revisedPrompt?: string): unknown {
-  return {
-    data: b64s.map((b64) => ({
-      b64_json: b64,
-      ...(revisedPrompt !== undefined ? { revised_prompt: revisedPrompt } : {})
-    }))
-  };
-}
-
-function imagenBody(b64s: string[], mimeType?: string): unknown {
-  return {
-    predictions: b64s.map((b64) => ({
-      bytesBase64Encoded: b64,
-      ...(mimeType !== undefined ? { mimeType } : {})
-    }))
-  };
-}
-
-// ============================================================================
 // Image input (vision) across chat adapters
 // ============================================================================
 
@@ -990,6 +1033,332 @@ const TEST_JPEG: AiAssist.IAiImageAttachment = {
 function visionPrompt(...attachments: AiAssist.IAiImageAttachment[]): AiAssist.AiPrompt {
   return new AiAssist.AiPrompt('what is in this picture?', 'You see all.', attachments);
 }
+
+// ============================================================================
+// Thinking-config wire encoding (non-streaming)
+// ============================================================================
+
+describe('thinking-config wire encoding (non-streaming)', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  describe('OpenAI chat completions', () => {
+    const descriptor = makeDescriptor({
+      id: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: 'gpt-4o',
+      corsRestricted: false
+    });
+
+    test('includes reasoning_effort and omits temperature when thinking effort provided', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('high');
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('merges other-block params into OpenAI chat body', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: {
+          providers: [{ provider: 'other', models: ['gpt-4o'], config: { custom_param: 'v' } }]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.custom_param).toBe('v');
+    });
+
+    test('fails when thinking and temperature conflict on OpenAI', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { effort: 'high' },
+        temperature: 0.7
+      });
+      expect(result).toFailWith(/thinking mode is not compatible with temperature on provider openai/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('allows temperature when OpenAI effort is none (A1 edge case)', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { providers: [{ provider: 'openai', config: { effort: 'none' } }] },
+        temperature: 0.7
+      });
+      expect(result).toSucceed();
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('none');
+      expect(body.temperature).toBe(0.7);
+    });
+  });
+
+  describe('OpenAI Responses API with tools', () => {
+    const descriptor = makeDescriptor({
+      id: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: 'gpt-4o',
+      corsRestricted: false
+    });
+    const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+
+    test('includes reasoning and omits temperature in Responses API body when thinking provided', async () => {
+      mockFetchResponse(responsesApiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        tools,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning).toEqual({ effort: 'medium' });
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('merges other-block params into Responses API body', async () => {
+      mockFetchResponse(responsesApiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        tools,
+        thinking: {
+          providers: [{ provider: 'other', models: ['gpt-4o'], config: { extra_param: 99 } }]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.extra_param).toBe(99);
+    });
+  });
+
+  describe('xAI (openai-format adapter)', () => {
+    const descriptor = makeDescriptor({
+      id: 'xai-grok',
+      baseUrl: 'https://api.x.ai/v1',
+      defaultModel: 'grok-4.3',
+      corsRestricted: false
+    });
+
+    test('sends xaiEffort as reasoning_effort and omits temperature', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('medium');
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('allows temperature when xAI effort is none', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { providers: [{ provider: 'xai', config: { effort: 'none' } }] },
+        temperature: 0.5
+      });
+      expect(result).toSucceed();
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('none');
+      expect(body.temperature).toBe(0.5);
+    });
+
+    test('omits reasoning_effort for grok-4 even when thinking is active', async () => {
+      const grok4Descriptor = makeDescriptor({
+        id: 'xai-grok',
+        baseUrl: 'https://api.x.ai/v1',
+        defaultModel: 'grok-4',
+        corsRestricted: false
+      });
+      mockFetchResponse(openAiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor: grok4Descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('omits reasoning field for grok-4 in Responses API path even when thinking is active', async () => {
+      const grok4Descriptor = makeDescriptor({
+        id: 'xai-grok',
+        baseUrl: 'https://api.x.ai/v1',
+        defaultModel: 'grok-4',
+        corsRestricted: false
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockFetchResponse(responsesApiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor: grok4Descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        tools,
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
+    });
+  });
+
+  describe('Anthropic', () => {
+    const descriptor = makeDescriptor({
+      id: 'anthropic',
+      apiFormat: 'anthropic',
+      baseUrl: 'https://api.anthropic.com/v1',
+      defaultModel: 'claude-sonnet-4-5',
+      corsRestricted: false
+    });
+
+    test('includes thinking wire fields when thinking effort provided', async () => {
+      mockFetchResponse(anthropicResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.thinking).toEqual({ type: 'enabled' });
+      expect(body.output_config).toEqual({ effort: 'high' });
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('merges other-block params into Anthropic body', async () => {
+      mockFetchResponse(anthropicResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: {
+          providers: [
+            {
+              provider: 'other',
+              models: ['claude-sonnet-4-5'],
+              config: { anthropic_extra: true }
+            }
+          ]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.anthropic_extra).toBe(true);
+    });
+
+    test('fails when thinking and temperature conflict on Anthropic', async () => {
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { effort: 'high' },
+        temperature: 0.7
+      });
+      expect(result).toFailWith(/thinking mode is not compatible with temperature on provider anthropic/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Gemini', () => {
+    const descriptor = makeDescriptor({
+      id: 'google-gemini',
+      apiFormat: 'gemini',
+      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+      defaultModel: 'gemini-2.5-flash',
+      corsRestricted: false
+    });
+
+    test('includes thinkingConfig in generationConfig when thinking effort provided', async () => {
+      mockFetchResponse(geminiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { effort: 'low' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.thinkingConfig).toEqual({ thinkingBudget: 1024 });
+    });
+
+    test('merges other-block params into Gemini generationConfig', async () => {
+      mockFetchResponse(geminiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: {
+          providers: [
+            {
+              provider: 'other',
+              models: ['gemini-2.5-flash'],
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              config: { gemini_extra_param: 'value' }
+            }
+          ]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.gemini_extra_param).toBe('value');
+    });
+
+    test('keeps temperature alongside thinking (Gemini does not reject)', async () => {
+      mockFetchResponse(geminiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { effort: 'high' },
+        temperature: 0.7
+      });
+      expect(result).toSucceed();
+    });
+  });
+
+  describe('unknown provider — thinking skipped gracefully', () => {
+    test('thinking is ignored for providers without a discriminator (ollama)', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor: makeDescriptor({
+          id: 'ollama',
+          baseUrl: 'http://localhost:11434/v1',
+          defaultModel: 'llama3.2',
+          corsRestricted: false
+        }),
+        apiKey: '',
+        prompt: testPrompt,
+        thinking: { effort: 'high' }
+      });
+      expect(result).toSucceed();
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBeUndefined();
+    });
+  });
+});
 
 describe('image input (vision) — pre-flight', () => {
   const originalFetch = global.fetch;
@@ -1288,497 +1657,5 @@ describe('image input — proxied completion forwards attachments', () => {
 
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
     expect(body.prompt.attachments).toBeUndefined();
-  });
-});
-
-describe('callProviderImageGeneration', () => {
-  const originalFetch = global.fetch;
-
-  beforeEach(() => {
-    global.fetch = jest.fn();
-  });
-
-  afterEach(() => {
-    global.fetch = originalFetch;
-  });
-
-  describe('common validation', () => {
-    test('fails when descriptor declares no image-generation capabilities', async () => {
-      const descriptor = makeDescriptor(); // chat-only xai-grok descriptor; imageGeneration is unset
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toFailWith(/does not support image generation/i);
-    });
-
-    test('fails when descriptor has no baseUrl', async () => {
-      const descriptor = makeImageDescriptor({ baseUrl: '' });
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toFailWith(/no API endpoint/i);
-    });
-
-    test('surfaces fetch network errors', async () => {
-      mockFetchError(new Error('ECONNREFUSED'));
-      const descriptor = makeImageDescriptor();
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toFailWith(/ECONNREFUSED/);
-    });
-
-    test('surfaces non-2xx responses', async () => {
-      mockFetchHttpError(400, 'Bad request');
-      const descriptor = makeImageDescriptor();
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toFailWith(/400/);
-    });
-
-    test('uses modelOverride when provided', async () => {
-      mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor();
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' },
-        modelOverride: 'gpt-image-1'
-      });
-
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('gpt-image-1');
-    });
-
-    test('resolves model with image context from default ModelSpec map', async () => {
-      mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor(); // defaultModel = { base: 'gpt-4o', image: 'dall-e-3' }
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.model).toBe('dall-e-3');
-    });
-  });
-
-  describe('openai-images format', () => {
-    test('returns image with default png mime type', async () => {
-      mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor();
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toSucceedAndSatisfy((response) => {
-        expect(response.images).toHaveLength(1);
-        expect(response.images[0].mimeType).toBe('image/png');
-        expect(response.images[0].base64).toBe('AAAA');
-        expect(response.images[0].revisedPrompt).toBeUndefined();
-      });
-    });
-
-    test('surfaces revised_prompt as revisedPrompt', async () => {
-      mockFetchResponse(openAiImageBody(['AAAA'], 'a cute orange tabby cat'));
-      const descriptor = makeImageDescriptor();
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toSucceedAndSatisfy((response) => {
-        expect(response.images[0].revisedPrompt).toBe('a cute orange tabby cat');
-      });
-    });
-
-    test('returns multiple images', async () => {
-      mockFetchResponse(openAiImageBody(['AAAA', 'BBBB', 'CCCC']));
-      const descriptor = makeImageDescriptor();
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat', options: { count: 3 } }
-      });
-
-      expect(result).toSucceedAndSatisfy((response) => {
-        expect(response.images.map((i) => i.base64)).toEqual(['AAAA', 'BBBB', 'CCCC']);
-      });
-    });
-
-    test('sends correct request structure', async () => {
-      mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor();
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: {
-          prompt: 'a cat',
-          options: { size: '1024x1024', quality: 'high', seed: 42 }
-        }
-      });
-
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-      expect(fetchCall[0]).toBe('https://api.openai.com/v1/images/generations');
-      // eslint-disable-next-line dot-notation
-      expect(fetchCall[1].headers['Authorization']).toBe('Bearer test-key');
-      const body = JSON.parse(fetchCall[1].body);
-      expect(body).toEqual({
-        model: 'dall-e-3',
-        prompt: 'a cat',
-        n: 1,
-        response_format: 'b64_json',
-        size: '1024x1024',
-        quality: 'high',
-        seed: 42
-      });
-    });
-
-    test('omits optional fields when not provided', async () => {
-      mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor();
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.size).toBeUndefined();
-      expect(body.quality).toBeUndefined();
-      expect(body.seed).toBeUndefined();
-      expect(body.n).toBe(1);
-    });
-
-    test('fails when response data array is empty', async () => {
-      mockFetchResponse({ data: [] });
-      const descriptor = makeImageDescriptor();
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toFailWith(/OpenAI images API response/i);
-    });
-
-    test('forwards abort signal to fetch', async () => {
-      mockFetchResponse(openAiImageBody(['AAAA']));
-      const descriptor = makeImageDescriptor();
-      const controller = new AbortController();
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' },
-        signal: controller.signal
-      });
-
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-      expect(fetchCall[1].signal).toBe(controller.signal);
-    });
-  });
-
-  describe('xai-images format', () => {
-    const descriptor = makeImageDescriptor({
-      id: 'xai-grok',
-      label: 'xAI Grok',
-      buttonLabel: 'AI Assist | Grok',
-      apiFormat: 'openai',
-      baseUrl: 'https://api.x.ai/v1',
-      defaultModel: { base: 'grok-4-1-fast', image: 'grok-2-image-1212' },
-      corsRestricted: true,
-      imageGeneration: imgGen('xai-images')
-    });
-
-    test('returns image with default jpeg mime type', async () => {
-      mockFetchResponse(openAiImageBody(['XYZ']));
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toSucceedAndSatisfy((response) => {
-        expect(response.images[0].mimeType).toBe('image/jpeg');
-        expect(response.images[0].base64).toBe('XYZ');
-      });
-    });
-
-    test('uses xAI baseUrl', async () => {
-      mockFetchResponse(openAiImageBody(['XYZ']));
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-      expect(fetchCall[0]).toBe('https://api.x.ai/v1/images/generations');
-    });
-  });
-
-  describe('gemini-imagen format', () => {
-    const descriptor = makeImageDescriptor({
-      id: 'google-gemini',
-      label: 'Google Gemini',
-      buttonLabel: 'AI Assist | Gemini',
-      apiFormat: 'gemini',
-      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-3.0-generate-002' },
-      imageGeneration: [{ modelPrefix: 'imagen-', format: 'gemini-imagen' }]
-    });
-
-    test('returns image using mimeType from prediction', async () => {
-      mockFetchResponse(imagenBody(['GGG'], 'image/webp'));
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toSucceedAndSatisfy((response) => {
-        expect(response.images[0].mimeType).toBe('image/webp');
-        expect(response.images[0].base64).toBe('GGG');
-      });
-    });
-
-    test('falls back to png mime when prediction omits it', async () => {
-      mockFetchResponse(imagenBody(['GGG']));
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toSucceedAndSatisfy((response) => {
-        expect(response.images[0].mimeType).toBe('image/png');
-      });
-    });
-
-    test('sends predict endpoint URL and Imagen request shape', async () => {
-      mockFetchResponse(imagenBody(['GGG']));
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: {
-          prompt: 'a cat',
-          options: {
-            count: 2,
-            seed: 123,
-            imagen: { aspectRatio: '16:9', negativePrompt: 'no dogs' }
-          }
-        }
-      });
-
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-      expect(fetchCall[0]).toBe(
-        'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict'
-      );
-      expect(fetchCall[1].headers['x-goog-api-key']).toBe('test-key');
-      const body = JSON.parse(fetchCall[1].body);
-      expect(body).toEqual({
-        instances: [{ prompt: 'a cat' }],
-        parameters: {
-          sampleCount: 2,
-          aspectRatio: '16:9',
-          negativePrompt: 'no dogs',
-          seed: 123
-        }
-      });
-    });
-
-    test('omits optional Imagen parameters when not provided', async () => {
-      mockFetchResponse(imagenBody(['GGG']));
-
-      await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.parameters).toEqual({ sampleCount: 1 });
-    });
-
-    test('fails when predictions array is empty', async () => {
-      mockFetchResponse({ predictions: [] });
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toFailWith(/Imagen API response/i);
-    });
-
-    test('surfaces Imagen network errors', async () => {
-      mockFetchError(new Error('ETIMEDOUT'));
-
-      const result = await AiAssist.callProviderImageGeneration({
-        descriptor,
-        apiKey: 'test-key',
-        params: { prompt: 'a cat' }
-      });
-
-      expect(result).toFailWith(/ETIMEDOUT/);
-    });
-  });
-});
-
-describe('callProxiedImageGeneration', () => {
-  const originalFetch = global.fetch;
-
-  beforeEach(() => {
-    global.fetch = jest.fn();
-  });
-
-  afterEach(() => {
-    global.fetch = originalFetch;
-  });
-
-  test('calls the proxy image-generation endpoint and returns images', async () => {
-    mockFetchResponse({
-      images: [{ mimeType: 'image/png', base64: 'AAAA', revisedPrompt: 'rewritten' }]
-    });
-    const descriptor = makeImageDescriptor();
-
-    const result = await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
-      descriptor,
-      apiKey: 'test-key',
-      params: { prompt: 'a cat' }
-    });
-
-    expect(result).toSucceedAndSatisfy((response) => {
-      expect(response.images).toEqual([
-        { mimeType: 'image/png', base64: 'AAAA', revisedPrompt: 'rewritten' }
-      ]);
-    });
-    const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-    expect(fetchCall[0]).toBe('http://localhost:3001/api/ai/image-generation');
-    expect(JSON.parse(fetchCall[1].body)).toEqual({
-      providerId: 'openai',
-      apiKey: 'test-key',
-      params: { prompt: 'a cat' }
-    });
-  });
-
-  test('includes modelOverride in request body when provided', async () => {
-    mockFetchResponse({ images: [{ mimeType: 'image/png', base64: 'AAAA' }] });
-    const descriptor = makeImageDescriptor();
-
-    await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
-      descriptor,
-      apiKey: 'test-key',
-      params: { prompt: 'a cat' },
-      modelOverride: 'gpt-image-1'
-    });
-
-    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-    expect(body.modelOverride).toBe('gpt-image-1');
-  });
-
-  test('forwards reference images through to the proxy unchanged', async () => {
-    mockFetchResponse({ images: [{ mimeType: 'image/png', base64: 'AAAA' }] });
-    const descriptor = makeImageDescriptor();
-
-    await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
-      descriptor,
-      apiKey: 'test-key',
-      params: { prompt: 'a cat', referenceImages: [TEST_PNG, TEST_JPEG] }
-    });
-
-    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-    expect(body.params.referenceImages).toEqual([TEST_PNG, TEST_JPEG]);
-  });
-
-  test('surfaces proxy error response', async () => {
-    mockFetchResponse({ error: 'provider rejected request' });
-    const descriptor = makeImageDescriptor();
-
-    const result = await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
-      descriptor,
-      apiKey: 'test-key',
-      params: { prompt: 'a cat' }
-    });
-
-    expect(result).toFailWith(/proxy: provider rejected request/);
-  });
-
-  test('fails when proxy returns malformed images', async () => {
-    mockFetchResponse({ images: [{ mimeType: 'image/png' }] }); // missing base64
-    const descriptor = makeImageDescriptor();
-
-    const result = await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
-      descriptor,
-      apiKey: 'test-key',
-      params: { prompt: 'a cat' }
-    });
-
-    expect(result).toFailWith(/proxy returned invalid response/i);
-  });
-
-  test('forwards abort signal', async () => {
-    mockFetchResponse({ images: [{ mimeType: 'image/png', base64: 'AAAA' }] });
-    const descriptor = makeImageDescriptor();
-    const controller = new AbortController();
-
-    await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
-      descriptor,
-      apiKey: 'test-key',
-      params: { prompt: 'a cat' },
-      signal: controller.signal
-    });
-
-    const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
-    expect(fetchCall[1].signal).toBe(controller.signal);
-  });
-
-  test('surfaces fetch network errors', async () => {
-    mockFetchError(new Error('ECONNREFUSED'));
-    const descriptor = makeImageDescriptor();
-
-    const result = await AiAssist.callProxiedImageGeneration('http://localhost:3001', {
-      descriptor,
-      apiKey: 'test-key',
-      params: { prompt: 'a cat' }
-    });
-
-    expect(result).toFailWith(/ECONNREFUSED/);
   });
 });

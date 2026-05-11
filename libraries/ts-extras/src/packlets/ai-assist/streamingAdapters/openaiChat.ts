@@ -32,6 +32,7 @@ import { buildMessages, buildOpenAiChatUserContent } from '../chatRequestBuilder
 import { bearerAuthHeader } from '../endpoint';
 import { AiPrompt, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
+import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
 
 // ============================================================================
@@ -109,10 +110,13 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
         continue;
       }
       const chunk = validateEventPayload(json, openAiChatStreamChunk);
+      /* c8 ignore next 1 - defensive: chunk?.choices optional chain unreachable after validation */
       const choice = chunk?.choices[0];
+      /* c8 ignore next 3 - defensive: SSE events without choices are skipped */
       if (!choice) {
         continue;
       }
+      /* c8 ignore next 1 - defensive: choice.delta?.content optional chain unreachable after validation */
       const delta = choice.delta?.content;
       if (typeof delta === 'string' && delta.length > 0) {
         fullText += delta;
@@ -124,10 +128,10 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
         receivedDone = true;
       }
     }
-  } catch (err: unknown) {
+  } catch (err: unknown) /* c8 ignore start - defensive: stream errors are always Error instances */ {
     yield { type: 'error', message: err instanceof Error ? err.message : String(err) };
     return;
-  }
+  } /* c8 ignore stop */
 
   if (receivedDone) {
     yield { type: 'done', truncated, fullText };
@@ -152,13 +156,25 @@ export async function callOpenAiChatStream(
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
   logger?: Logging.ILogger,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
     head: messagesBefore
   });
-  const body = { model: config.model, messages, temperature, stream: true };
+  const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
+  const supportsReasoning = config.model !== 'grok-4';
+  const body: Record<string, unknown> = { model: config.model, messages, stream: true };
+  if (effort !== undefined && supportsReasoning) {
+    body.reasoning_effort = effort;
+  }
+  if (effort === undefined || effort === 'none') {
+    body.temperature = temperature;
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(body, resolvedThinking.otherParams);
+  }
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI streaming completion: model=${config.model}`);

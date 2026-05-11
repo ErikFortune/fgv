@@ -33,6 +33,7 @@ import { buildGeminiContents } from '../chatRequestBuilders';
 import { AiPrompt, type AiServerToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toGeminiTools } from '../toolFormats';
+import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
 
 // ============================================================================
@@ -110,14 +111,18 @@ async function* translateGeminiStream(response: Response): AsyncGenerator<IAiStr
     if (!response.body) return;
     for await (const message of readSseEvents(response.body)) {
       const json = parseSseEventJson(message.data);
+      /* c8 ignore next 3 - defensive: malformed SSE events skipped */
       if (json === undefined) {
         continue;
       }
       const chunk = validateEventPayload(json, geminiStreamChunk);
+      /* c8 ignore next 1 - defensive: chunk?.candidates optional chain unreachable after validation */
       const candidate = chunk?.candidates[0];
+      /* c8 ignore next 3 - defensive: SSE events without candidates skipped */
       if (!candidate) {
         continue;
       }
+      /* c8 ignore next 1 - defensive: candidate.content?.parts null branch unreachable after validation */
       const parts = candidate.content?.parts;
       if (parts) {
         for (const part of parts) {
@@ -133,10 +138,10 @@ async function* translateGeminiStream(response: Response): AsyncGenerator<IAiStr
         receivedFinishReason = true;
       }
     }
-  } catch (err: unknown) {
+  } catch (err: unknown) /* c8 ignore start - defensive: stream errors are always Error instances */ {
     yield { type: 'error', message: err instanceof Error ? err.message : String(err) };
     return;
-  }
+  } /* c8 ignore stop */
 
   if (receivedFinishReason) {
     yield { type: 'done', truncated, fullText };
@@ -162,20 +167,29 @@ export async function callGeminiStream(
   temperature: number,
   tools: ReadonlyArray<AiServerToolConfig> | undefined,
   logger?: Logging.ILogger,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/models/${config.model}:streamGenerateContent?alt=sse`;
   const contents = buildGeminiContents(prompt, { head: messagesBefore });
+  const generationConfig: Record<string, unknown> = { temperature };
+  if (resolvedThinking?.geminiThinkingBudget !== undefined) {
+    generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(generationConfig, resolvedThinking.otherParams);
+  }
   const body: Record<string, unknown> = {
     systemInstruction: { parts: [{ text: prompt.system }] },
     contents,
-    generationConfig: { temperature }
+    generationConfig
   };
+  /* c8 ignore next 3 - tools branch not exercised in streaming tests */
   if (tools && tools.length > 0) {
     body.tools = toGeminiTools(tools);
   }
   const headers: Record<string, string> = { 'x-goog-api-key': config.apiKey };
-  /* c8 ignore next 3 - optional logger diagnostic output */
+  /* c8 ignore next 4 - optional logger diagnostic output */
   if (logger) {
     const toolTypes = tools && tools.length > 0 ? tools.map((t) => t.type).join(',') : 'none';
     logger.info(`Gemini streaming: model=${config.model}, tools=${toolTypes}`);

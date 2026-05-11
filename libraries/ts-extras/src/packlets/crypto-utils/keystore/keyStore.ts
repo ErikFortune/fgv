@@ -1223,6 +1223,7 @@ export class KeyStore implements IEncryptionProvider {
    */
   private async _decryptVault(derivedKey: Uint8Array): Promise<Result<KeyStore>> {
     const keystoreFile = this._keystoreFile;
+    /* c8 ignore next 3 - defensive coding: keystoreFile cannot be undefined at call sites */
     if (keystoreFile === undefined) {
       return fail('No key store file loaded');
     }
@@ -1345,7 +1346,7 @@ export class KeyStore implements IEncryptionProvider {
    * the position of the first differing byte.
    */
   private static _timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
-    /* c8 ignore next 3 - defensive: callers in this class only compare
+    /* c8 ignore next 4 - defensive: callers in this class only compare
        PBKDF2-derived 32-byte keys against encryption-key entries (also 32 bytes) */
     if (a.length !== b.length) {
       return false;

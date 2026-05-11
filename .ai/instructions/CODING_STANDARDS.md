@@ -507,3 +507,47 @@ const value = input || 'default'; // Wrong if 0 or '' are valid
 - Look for similar code in the codebase and follow its patterns
 - Use existing helper functions rather than creating new ones
 - Check if a Converter, Validator, or type guard already exists
+
+---
+
+## Pre-PR Validation Checklist
+
+**Before opening any PR, run the full local validation suite** in every modified package:
+
+```bash
+rushx build    # compile + emit
+rushx lint     # ESLint
+rushx test     # Jest with coverage gates
+```
+
+All three must pass. CI catches what's left, but the local feedback loop is faster and catches issues before reviewers see them.
+
+### `rushx lint` is a first-class gate
+
+`rushx build` does **not** transitively run lint in this monorepo's Heft config. Lint is a separate gate. PRs have repeatedly merged with passing build + tests but failing lint, blocking downstream cluster merges. Treat lint as mandatory, not optional.
+
+If `rushx lint` reports rule violations:
+- **Run `rushx fixlint` first.** It autofixes the mechanical class of errors (formatting, unused-import sort, missing semicolons, many style rules).
+- For violations the autofix can't resolve, fix manually — **do not disable rules to make lint pass**. If a rule genuinely shouldn't apply, surface as an open question to the orchestrator rather than adding an inline disable directive.
+
+### Acceptance criteria for any stream's exit
+
+Every stream's acceptance criteria list must include:
+
+- [ ] `rushx build` passes in every modified package
+- [ ] **`rushx lint` passes in every modified package** *(load-bearing — not transitively run by build)*
+- [ ] `rushx test` passes with 100% coverage in every modified package
+- [ ] **`rushx fixlint` was run before the final commit** *(catches the mechanical class)*
+- [ ] No `any` types; all fallible operations return `Result<T>`
+
+The bolded items above are the gap recently codified — multiple recent streams had lint failures escape into PR-open state, blocking cluster merges.
+
+### Why this gate is load-bearing
+
+Lint errors break CI. When a cluster integration branch tries to merge to `release`, a single per-stream lint failure blocks the whole cluster. The cost compounds: the cluster-close prep PR can't merge, the integration-to-release PR can't merge, and any downstream consumer waiting for the alpha gets delayed.
+
+The local cost of running lint is ~5-10 seconds per package. The downstream cost of skipping it is potentially hours of orchestrator + agent time unwinding a blocked merge.
+
+### For orchestrators
+
+When reviewing an implementing agent's PR before merge (or before bundling into a cluster-close prep), call `mcp__github__pull_request_read` with `method: get_check_runs` and refuse to advance the workflow if any check is `conclusion: failure`. Do this **before** opening downstream prep/promotion PRs — once a failed-CI commit is in the integration branch, unwinding is painful.
