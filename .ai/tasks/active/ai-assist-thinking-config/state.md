@@ -1,7 +1,7 @@
 # Stream State: ai-assist-thinking-config
 
-**Status:** 🔵 phase A revision in flight — v1 design archived, v2 commissioned
-**Last updated:** 2026-05-11 (orchestrator — v1 review + v2 commission)
+**Status:** 🟡 phase A v2 complete — design.md ready for signoff; phase B blocked on signoff
+**Last updated:** 2026-05-11 (v2 design agent — design.md written; state.md updated)
 
 ---
 
@@ -10,7 +10,7 @@
 | Phase | Status | Notes |
 |-------|--------|-------|
 | A v1 | 📦 archived | `design-v1.md` preserved. Research stands; architecture rejected at signoff for divergence from image-gen pattern. |
-| A v2 | 🟢 ready | Revision brief at `brief-phase-a-v2.md`. Awaiting fresh agent kickoff. |
+| A v2 | 🟡 awaiting signoff | `design.md` written. PR open on `claude/implement-ai-assist-v2-jGM2V`. |
 | B — implementation | ⏸ blocked on phase A v2 signoff AND on `ai-assist-image-generation` phase B landing | Brief written by orchestrator post-v2 signoff |
 
 ---
@@ -79,15 +79,48 @@ Recommend **Option C (capability-driven optional)**: add a single `IThinkingConf
 
 ---
 
+## Phase A v2 (complete — awaiting signoff)
+
+### Summary of changes from v1
+
+The v2 architecture applies the image-gen layered pattern to thinking-config while preserving all v1 research (§1 provider inventory and §2 gap analysis stand in full). The architectural rewrite covers §3-4 (and §5-8 are adjusted accordingly):
+
+**Architecture (§3):** Replaced the single unified `IThinkingConfig` (v1's Approach C) with the layered options pattern: generic `effort?: 'low' | 'medium' | 'high'` at the top level plus an optional `providers?: IThinkingProviderConfig[]` array of per-provider blocks discriminated on `provider: 'anthropic' | 'openai' | 'google' | 'xai' | 'other'`. Per-provider configs expose full provider knobs first-class (Anthropic 'max', OpenAI 'xhigh', Gemini thinkingBudget). No silent translation tables.
+
+**Family-shape decision:** Chose option (a) loose-union per provider for all four providers. Thinking-config's family splits are effort-vocabulary differences (not structural shape differences), which makes runtime validation the right tool. Nested family blocks (option b, used in image-gen for DallE vs GptImage) are not warranted here.
+
+**Temperature policy (§4):** Changed from auto-suppress to Result.fail with contextual message, per D4. Matrix: Anthropic → fail; OpenAI → fail (unless effort 'none'); Gemini → keep temperature; xAI → phase B step zero verification.
+
+**Anthropic validator fix (§7):** Confirmed unconditional fix per D5 — always use `extractAnthropicText` for the non-tools Anthropic path.
+
+**Thinking-event surfacing (§6, §7):** Out of scope per D9. `includeThoughts` field placed on `IGeminiThinkingConfig` but inert. Followup stream `ai-assist-thinking-events` handles surfacing.
+
+### Work branch
+
+- Branch: `claude/implement-ai-assist-v2-jGM2V` (harness-auto-suffixed; this is the v2 design agent's working branch)
+- PR target: `claude/ai-assist-features`
+
+### Tensions resolved
+
+- **v1 research vs D3 (no silent translation):** v1 §3.2 had a full effort-to-wire mapping table (e.g., `'high'` → `thinkingBudget: 8192` for Gemini). v2 preserves the generic effort mapping as a *documented common-subset*, distinct from the per-provider configs which pass wire values directly. This resolves the tension: generic callers get the documented mapping; power callers bypass it via per-provider blocks.
+- **v1 research on Gemini Pro:** v1 §1.3 notes Gemini 2.5 Pro cannot disable thinking (thinkingBudget: 0 is an error). v2 resolves v1's Q3 by keeping `google-gemini` descriptor as `thinkingMode: 'optional'` and documenting that Pro's always-on behavior is enforced at the model level (via runtime validation), not the provider level.
+
+---
+
 ## Open questions / blockers
 
-*(empty — v2 agent populates as research surfaces them; v1's nine open questions are resolved by D1-D9 except for D8 which is a phase B step)*
+Four open questions remain for phase B; none block v2 design signoff:
+
+1. **Q1 — xAI temperature rejection** (D8: phase B step zero): verify empirically
+2. **Q2 — Gemini token budget defaults for generic effort**: verify or adjust in phase B
+3. **Q3 — Anthropic Sonnet 4.5 wire format**: verify whether adaptive mode is accepted
+4. **Q4 — Proxy serialization counterpart**: document in phase B PR for proxy maintainers
 
 ---
 
 ## PRs
 
 - **v1 PR** (research-only, original brief): `claude/ai-assist-thinking-config-xy1J8` → `claude/ai-assist-features` — merged into the v2 commission prep PR (consolidated rather than separate)
-- **v2 commission prep PR** (this orchestrator commit): `claude/ai-assist-thinking-config-revision-prep` → `claude/ai-assist-features` — open after orchestrator pushes
-- **v2 design PR**: TBD by the v2 agent; target `claude/ai-assist-features`
+- **v2 commission prep PR** (orchestrator commit): `claude/ai-assist-thinking-config-revision-prep` → `claude/ai-assist-features` — merged
+- **v2 design PR**: `claude/implement-ai-assist-v2-jGM2V` → `claude/ai-assist-features` — open (this PR)
 - **Phase B PR**: TBD by phase B agent post-v2-signoff
