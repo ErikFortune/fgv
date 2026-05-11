@@ -1316,6 +1316,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
             {
               provider: 'other',
               models: ['gemini-2.5-flash'],
+              // eslint-disable-next-line @typescript-eslint/naming-convention
               config: { gemini_extra_param: 'value' }
             }
           ]

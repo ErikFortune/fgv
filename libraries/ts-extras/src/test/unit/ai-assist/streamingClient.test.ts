@@ -731,6 +731,7 @@ describe('callProviderCompletionStream', () => {
             {
               provider: 'other',
               models: ['gpt-4o'],
+              // eslint-disable-next-line @typescript-eslint/naming-convention
               config: { extra_responses_param: 42 }
             }
           ]
@@ -881,6 +882,7 @@ describe('callProviderCompletionStream', () => {
             {
               provider: 'other',
               models: ['claude-sonnet-4-5'],
+              // eslint-disable-next-line @typescript-eslint/naming-convention
               config: { anthropic_extra_param: 'value' }
             }
           ]
@@ -995,6 +997,7 @@ describe('callProviderCompletionStream', () => {
             {
               provider: 'other',
               models: ['gemini-2.5-flash'],
+              // eslint-disable-next-line @typescript-eslint/naming-convention
               config: { extra_thinking_param: true }
             }
           ]

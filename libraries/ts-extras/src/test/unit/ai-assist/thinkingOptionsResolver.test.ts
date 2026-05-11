@@ -372,12 +372,14 @@ describe('mergeThinkingConfig', () => {
           {
             provider: 'other',
             models: ['claude-opus-4-7'],
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             config: { custom_thinking_param: true }
           }
         ]
       };
       const result = mergeThinkingConfig(config, 'claude-opus-4-7', 'anthropic');
       expect(result).toSucceedAndSatisfy((r) => {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         expect(r.otherParams).toEqual({ custom_thinking_param: true });
       });
     });
@@ -388,6 +390,7 @@ describe('mergeThinkingConfig', () => {
           {
             provider: 'other',
             models: ['gpt-5-pro'],
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             config: { custom_thinking_param: true }
           }
         ]
