@@ -238,12 +238,11 @@ async function fetchMultipart(
     return fail('AI API returned invalid JSON response');
   } /* c8 ignore stop */
 
+  /* c8 ignore next 5 - defensive: provider returning non-object JSON on a 2xx */
   if (!isJsonObject(json)) {
-    /* c8 ignore start - defensive: provider returning non-object JSON on a 2xx */ logger?.error(
-      'AI API returned non-object JSON response'
-    );
+    logger?.error('AI API returned non-object JSON response');
     return fail('AI API returned non-object JSON response');
-  } /* c8 ignore stop */
+  }
   return succeed(json);
 }
 
@@ -338,12 +337,11 @@ async function fetchGetJson(
     return fail('AI API returned invalid JSON response');
   } /* c8 ignore stop */
 
+  /* c8 ignore next 5 - defensive: provider returning non-object JSON on a 2xx */
   if (!isJsonObject(json)) {
-    /* c8 ignore start - defensive: provider returning non-object JSON on a 2xx */ logger?.error(
-      'AI API returned non-object JSON response'
-    );
+    logger?.error('AI API returned non-object JSON response');
     return fail('AI API returned non-object JSON response');
-  } /* c8 ignore stop */
+  }
   return succeed(json);
 }
 
@@ -1238,9 +1236,7 @@ async function callGeminiImageOutGeneration(
     Object.assign(generationConfig, resolved.otherParams);
   }
 
-  const body: Record<string, unknown> = {
-    contents: [{ role: 'user', parts }]
-  };
+  const body: Record<string, unknown> = { contents: [{ role: 'user', parts }] };
   if (Object.keys(generationConfig).length > 0) {
     body.generationConfig = generationConfig;
   }
@@ -1322,10 +1318,7 @@ async function callImagenGeneration(
     instances: [{ prompt: request.prompt }],
     parameters
   };
-
-  const headers: Record<string, string> = {
-    'x-goog-api-key': config.apiKey
-  };
+  const headers: Record<string, string> = { 'x-goog-api-key': config.apiKey };
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`Imagen generation: model=${config.model}, n=${parameters.sampleCount}`);

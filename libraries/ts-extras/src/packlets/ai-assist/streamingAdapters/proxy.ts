@@ -73,10 +73,12 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
     if (!response.body) return;
     for await (const message of readSseEvents(response.body)) {
       const json = parseSseEventJson(message.data);
+      /* c8 ignore next 3 - defensive: malformed SSE events skipped */
       if (json === undefined) {
-        /* c8 ignore start - defensive: malformed SSE events skipped */ continue;
-      } /* c8 ignore stop */
+        continue;
+      }
       const envelope = validateEventPayload(json, proxyEventEnvelope);
+      /* c8 ignore next 3 - defensive: SSE events without valid envelope skipped */
       if (!envelope) {
         continue;
       }

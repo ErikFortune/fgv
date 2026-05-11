@@ -110,15 +110,17 @@ async function* translateGeminiStream(response: Response): AsyncGenerator<IAiStr
     if (!response.body) return;
     for await (const message of readSseEvents(response.body)) {
       const json = parseSseEventJson(message.data);
+      /* c8 ignore next 3 - defensive: malformed SSE events skipped */
       if (json === undefined) {
-        /* c8 ignore start - defensive: malformed SSE events skipped */ continue;
-      } /* c8 ignore stop */
+        continue;
+      }
       const chunk = validateEventPayload(json, geminiStreamChunk);
-      /* c8 ignore next 1 - defensive: chunk?.candidates null branch unreachable after validation */
+      /* c8 ignore next 1 - defensive: chunk?.candidates optional chain unreachable after validation */
       const candidate = chunk?.candidates[0];
+      /* c8 ignore next 3 - defensive: SSE events without candidates skipped */
       if (!candidate) {
-        /* c8 ignore start - defensive: SSE events without candidates skipped */ continue;
-      } /* c8 ignore stop */
+        continue;
+      }
       /* c8 ignore next 1 - defensive: candidate.content?.parts null branch unreachable after validation */
       const parts = candidate.content?.parts;
       if (parts) {

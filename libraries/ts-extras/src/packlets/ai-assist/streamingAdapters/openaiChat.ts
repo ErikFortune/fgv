@@ -109,12 +109,13 @@ async function* translateOpenAiChatStream(response: Response): AsyncGenerator<IA
         continue;
       }
       const chunk = validateEventPayload(json, openAiChatStreamChunk);
-      /* c8 ignore next 1 - defensive: chunk?.choices null branch unreachable after validation */
+      /* c8 ignore next 1 - defensive: chunk?.choices optional chain unreachable after validation */
       const choice = chunk?.choices[0];
+      /* c8 ignore next 3 - defensive: SSE events without choices are skipped */
       if (!choice) {
-        /* c8 ignore start - defensive: SSE events without choices are skipped */ continue;
-      } /* c8 ignore stop */
-      /* c8 ignore next 1 - defensive: choice.delta?.content null branch unreachable after validation */
+        continue;
+      }
+      /* c8 ignore next 1 - defensive: choice.delta?.content optional chain unreachable after validation */
       const delta = choice.delta?.content;
       if (typeof delta === 'string' && delta.length > 0) {
         fullText += delta;
