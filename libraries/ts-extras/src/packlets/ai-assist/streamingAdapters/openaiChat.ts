@@ -32,6 +32,7 @@ import { buildMessages, buildOpenAiChatUserContent } from '../chatRequestBuilder
 import { bearerAuthHeader } from '../endpoint';
 import { AiPrompt, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
+import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
 
 // ============================================================================
@@ -155,13 +156,20 @@ export async function callOpenAiChatStream(
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
   logger?: Logging.ILogger,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
     head: messagesBefore
   });
-  const body = { model: config.model, messages, temperature, stream: true };
+  const body: Record<string, unknown> = { model: config.model, messages, temperature, stream: true };
+  if (resolvedThinking?.openAiEffort !== undefined) {
+    body.reasoning_effort = resolvedThinking.openAiEffort;
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(body, resolvedThinking.otherParams);
+  }
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
   /* c8 ignore next 1 - optional logger */
   logger?.info(`OpenAI streaming completion: model=${config.model}`);

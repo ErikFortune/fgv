@@ -33,6 +33,7 @@ import {
   type AiServerToolConfig,
   type IAiProviderDescriptor,
   type IChatMessage,
+  type IThinkingConfig,
   type ModelSpec
 } from '../model';
 
@@ -75,6 +76,10 @@ export interface IProviderCompletionStreamParams {
    * dispatcher; auth shape is unaffected.
    */
   readonly endpoint?: string;
+  /**
+   * Optional thinking/reasoning mode configuration.
+   */
+  readonly thinking?: IThinkingConfig;
 }
 
 /**

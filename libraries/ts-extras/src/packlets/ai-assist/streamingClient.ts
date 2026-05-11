@@ -36,6 +36,12 @@ import { type IProviderCompletionStreamParams, type IStreamApiConfig } from './s
 import { callGeminiStream } from './streamingAdapters/gemini';
 import { callOpenAiChatStream } from './streamingAdapters/openaiChat';
 import { callOpenAiResponsesStream } from './streamingAdapters/openaiResponses';
+import {
+  checkTemperatureConflict,
+  mergeThinkingConfig,
+  providerDiscriminatorForId,
+  type IResolvedThinkingConfig
+} from './thinkingOptionsResolver';
 
 export { callProxiedCompletionStream } from './streamingAdapters/proxy';
 export type { IProviderCompletionStreamParams } from './streamingAdapters/common';
@@ -66,12 +72,13 @@ export async function callProviderCompletionStream(
     apiKey,
     prompt,
     messagesBefore,
-    temperature = 0.7,
+    temperature,
     modelOverride,
     logger,
     tools,
     signal,
-    endpoint
+    endpoint,
+    thinking
   } = params;
 
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
@@ -95,6 +102,26 @@ export async function callProviderCompletionStream(
     );
   }
 
+  // Resolve thinking config if provided
+  let resolvedThinking: IResolvedThinkingConfig | undefined;
+  if (thinking !== undefined) {
+    const discriminator = providerDiscriminatorForId(descriptor.id);
+    if (discriminator !== undefined) {
+      const mergeResult = mergeThinkingConfig(thinking, model, discriminator);
+      if (mergeResult.isFailure()) {
+        return fail(mergeResult.message);
+      }
+      resolvedThinking = mergeResult.value;
+      // Check temperature conflict (D4)
+      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
+      if (conflictResult.isFailure()) {
+        return fail(conflictResult.message);
+      }
+    }
+  }
+
+  const effectiveTemperature = temperature ?? 0.7;
+
   const config: IStreamApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
@@ -104,13 +131,48 @@ export async function callProviderCompletionStream(
   switch (descriptor.apiFormat) {
     case 'openai':
       if (hasTools) {
-        return callOpenAiResponsesStream(config, prompt, tools, messagesBefore, temperature, logger, signal);
+        return callOpenAiResponsesStream(
+          config,
+          prompt,
+          tools,
+          messagesBefore,
+          effectiveTemperature,
+          logger,
+          signal,
+          resolvedThinking
+        );
       }
-      return callOpenAiChatStream(config, prompt, messagesBefore, temperature, logger, signal);
+      return callOpenAiChatStream(
+        config,
+        prompt,
+        messagesBefore,
+        effectiveTemperature,
+        logger,
+        signal,
+        resolvedThinking
+      );
     case 'anthropic':
-      return callAnthropicStream(config, prompt, messagesBefore, temperature, tools, logger, signal);
+      return callAnthropicStream(
+        config,
+        prompt,
+        messagesBefore,
+        effectiveTemperature,
+        tools,
+        logger,
+        signal,
+        resolvedThinking
+      );
     case 'gemini':
-      return callGeminiStream(config, prompt, messagesBefore, temperature, tools, logger, signal);
+      return callGeminiStream(
+        config,
+        prompt,
+        messagesBefore,
+        effectiveTemperature,
+        tools,
+        logger,
+        signal,
+        resolvedThinking
+      );
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;

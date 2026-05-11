@@ -49,9 +49,16 @@ import {
   type IAiModelInfo,
   type IAiProviderDescriptor,
   type IChatMessage,
+  type IThinkingConfig,
   type ModelSpec,
   resolveModel
 } from './model';
+import {
+  checkTemperatureConflict,
+  mergeThinkingConfig,
+  providerDiscriminatorForId,
+  type IResolvedThinkingConfig
+} from './thinkingOptionsResolver';
 import {
   buildAnthropicMessages,
   buildGeminiContents,
@@ -123,6 +130,12 @@ export interface IProviderCompletionParams {
    * `needsSecret === true` still require an API key.
    */
   readonly endpoint?: string;
+  /**
+   * Optional thinking/reasoning mode configuration.
+   * When set on a provider that rejects temperature + thinking, any non-undefined
+   * temperature causes Result.fail with a clear error.
+   */
+  readonly thinking?: IThinkingConfig;
 }
 
 // ============================================================================
@@ -484,13 +497,20 @@ async function callOpenAiCompletion(
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/chat/completions`;
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
     tail: additionalMessages
   });
-  const body = { model: config.model, messages, temperature };
+  const body: Record<string, unknown> = { model: config.model, messages, temperature };
+  if (resolvedThinking?.openAiEffort !== undefined) {
+    body.reasoning_effort = resolvedThinking.openAiEffort;
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(body, resolvedThinking.otherParams);
+  }
 
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
 
@@ -545,7 +565,8 @@ async function callOpenAiResponsesCompletion(
   additionalMessages?: ReadonlyArray<IChatMessage>,
   temperature: number = 0.7,
   logger?: Logging.ILogger,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
@@ -557,6 +578,12 @@ async function callOpenAiResponsesCompletion(
     tools: toResponsesApiTools(tools),
     temperature
   };
+  if (resolvedThinking?.openAiEffort !== undefined) {
+    body.reasoning = { effort: resolvedThinking.openAiEffort };
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(body, resolvedThinking.otherParams);
+  }
 
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
 
@@ -619,20 +646,30 @@ async function callAnthropicCompletion(
   temperature: number = 0.7,
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
 
   // Anthropic uses system as a top-level field, not in messages
   const messages = buildAnthropicMessages(prompt, { tail: additionalMessages });
 
+  // When thinking is active, temperature is rejected by Anthropic (validated upstream).
   const body: Record<string, unknown> = {
     model: config.model,
     system: prompt.system,
     messages,
     max_tokens: 4096,
-    temperature
+    ...(resolvedThinking?.anthropicEffort === undefined ? { temperature } : {})
   };
+
+  if (resolvedThinking?.anthropicEffort !== undefined) {
+    body.thinking = { type: 'enabled' };
+    body.output_config = { effort: resolvedThinking.anthropicEffort };
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(body, resolvedThinking.otherParams);
+  }
 
   if (tools && tools.length > 0) {
     body.tools = toAnthropicTools(tools);
@@ -654,31 +691,19 @@ async function callAnthropicCompletion(
     return fail(jsonResult.message);
   }
 
-  // When tools are used, the response content is a mixed array of block types.
-  // We need to extract text from all text blocks.
-  if (tools && tools.length > 0) {
-    const rawContent = (jsonResult.value as Record<string, unknown>).content;
-    const stopReason = (jsonResult.value as Record<string, unknown>).stop_reason;
-    if (!Array.isArray(rawContent)) {
-      return fail('Anthropic API response: content is not an array');
-    }
-    return extractAnthropicText(rawContent).onSuccess((text) =>
-      succeed({
-        content: text,
-        truncated: stopReason === 'max_tokens'
-      })
-    );
+  // Unconditional extractAnthropicText: handles tools, thinking blocks, and plain text
+  // by filtering to type === 'text' blocks. This is safe for all Anthropic response shapes.
+  const rawContent = (jsonResult.value as Record<string, unknown>).content;
+  const stopReason = (jsonResult.value as Record<string, unknown>).stop_reason;
+  if (!Array.isArray(rawContent)) {
+    return fail('Anthropic API response: content is not an array');
   }
-
-  return anthropicResponse
-    .validate(jsonResult.value)
-    .withErrorFormat((msg) => `Anthropic API response: ${msg}`)
-    .onSuccess((response) => {
-      return succeed({
-        content: response.content[0].text,
-        truncated: response.stop_reason === 'max_tokens'
-      });
-    });
+  return extractAnthropicText(rawContent).onSuccess((text) =>
+    succeed({
+      content: text,
+      truncated: stopReason === 'max_tokens'
+    })
+  );
 }
 
 // ============================================================================
@@ -697,17 +722,25 @@ async function callGeminiCompletion(
   temperature: number = 0.7,
   logger?: Logging.ILogger,
   tools?: ReadonlyArray<AiServerToolConfig>,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
 
   // Gemini uses 'contents' with 'parts', and 'model' role instead of 'assistant'
   const contents = buildGeminiContents(prompt, { tail: additionalMessages });
 
+  const generationConfig: Record<string, unknown> = { temperature };
+  if (resolvedThinking?.geminiThinkingBudget !== undefined) {
+    generationConfig.thinkingConfig = { thinkingBudget: resolvedThinking.geminiThinkingBudget };
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(generationConfig, resolvedThinking.otherParams);
+  }
   const body: Record<string, unknown> = {
     systemInstruction: { parts: [{ text: prompt.system }] },
     contents,
-    generationConfig: { temperature }
+    generationConfig
   };
 
   if (tools && tools.length > 0) {
@@ -768,12 +801,13 @@ export async function callProviderCompletion(
     apiKey,
     prompt,
     additionalMessages,
-    temperature = 0.7,
+    temperature,
     modelOverride,
     logger,
     tools,
     signal,
-    endpoint
+    endpoint,
+    thinking
   } = params;
 
   const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
@@ -793,6 +827,26 @@ export async function callProviderCompletion(
       `provider "${descriptor.id}": no model resolved; pass modelOverride or set descriptor.defaultModel`
     );
   }
+
+  // Resolve thinking config if provided
+  let resolvedThinking: IResolvedThinkingConfig | undefined;
+  if (thinking !== undefined) {
+    const discriminator = providerDiscriminatorForId(descriptor.id);
+    if (discriminator !== undefined) {
+      const mergeResult = mergeThinkingConfig(thinking, model, discriminator);
+      if (mergeResult.isFailure()) {
+        return fail(mergeResult.message);
+      }
+      resolvedThinking = mergeResult.value;
+      // Check temperature conflict (D4)
+      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
+      if (conflictResult.isFailure()) {
+        return fail(conflictResult.message);
+      }
+    }
+  }
+
+  const effectiveTemperature = temperature ?? 0.7;
 
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
@@ -817,16 +871,43 @@ export async function callProviderCompletion(
           prompt,
           tools,
           additionalMessages,
-          temperature,
+          effectiveTemperature,
           logger,
-          signal
+          signal,
+          resolvedThinking
         );
       }
-      return callOpenAiCompletion(config, prompt, additionalMessages, temperature, logger, signal);
+      return callOpenAiCompletion(
+        config,
+        prompt,
+        additionalMessages,
+        effectiveTemperature,
+        logger,
+        signal,
+        resolvedThinking
+      );
     case 'anthropic':
-      return callAnthropicCompletion(config, prompt, additionalMessages, temperature, logger, tools, signal);
+      return callAnthropicCompletion(
+        config,
+        prompt,
+        additionalMessages,
+        effectiveTemperature,
+        logger,
+        tools,
+        signal,
+        resolvedThinking
+      );
     case 'gemini':
-      return callGeminiCompletion(config, prompt, additionalMessages, temperature, logger, tools, signal);
+      return callGeminiCompletion(
+        config,
+        prompt,
+        additionalMessages,
+        effectiveTemperature,
+        logger,
+        tools,
+        signal,
+        resolvedThinking
+      );
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = descriptor.apiFormat;
@@ -992,7 +1073,7 @@ const proxiedListModelsEntry: Validator<IProxiedListModelsEntry> = Validators.ob
   {
     id: Validators.string,
     capabilities: Validators.arrayOf(
-      Validators.enumeratedValue<AiModelCapability>(['chat', 'tools', 'vision', 'image-generation'])
+      Validators.enumeratedValue<AiModelCapability>(['chat', 'tools', 'vision', 'image-generation', 'thinking'])
     ),
     displayName: Validators.string.optional()
   }
@@ -1891,7 +1972,8 @@ export async function callProxiedCompletion(
     modelOverride,
     logger,
     tools,
-    signal
+    signal,
+    thinking
   } = params;
 
   const promptBody: Record<string, unknown> = { system: prompt.system, user: prompt.user };
@@ -1912,6 +1994,9 @@ export async function callProxiedCompletion(
   }
   if (tools && tools.length > 0) {
     body.tools = tools;
+  }
+  if (thinking !== undefined) {
+    body.thinking = thinking;
   }
 
   /* c8 ignore next 1 - optional logger */

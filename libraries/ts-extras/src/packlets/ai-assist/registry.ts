@@ -27,6 +27,7 @@ import { fail, Result, succeed } from '@fgv/ts-utils';
 
 import {
   type AiProviderId,
+  type AiThinkingMode,
   type IAiImageModelCapability,
   type IAiModelCapabilityConfig,
   type IAiProviderDescriptor
@@ -52,7 +53,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     supportedTools: [],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false
+    acceptsImageInput: false,
+    thinkingMode: 'unsupported'
   },
   {
     id: 'anthropic',
@@ -65,7 +67,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     supportedTools: ['web_search'],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: true
+    acceptsImageInput: true,
+    thinkingMode: 'optional'
   },
   {
     id: 'google-gemini',
@@ -79,6 +82,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
+    thinkingMode: 'optional',
     imageGeneration: [
       {
         // Imagen 4 Ultra: max 1 image
@@ -123,7 +127,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     supportedTools: [],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false
+    acceptsImageInput: false,
+    thinkingMode: 'unsupported'
   },
   {
     id: 'mistral',
@@ -136,7 +141,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     supportedTools: [],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false
+    acceptsImageInput: false,
+    thinkingMode: 'unsupported'
   },
   {
     id: 'ollama',
@@ -149,7 +155,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     supportedTools: [],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false
+    acceptsImageInput: false,
+    thinkingMode: 'unsupported'
   },
   {
     id: 'openai',
@@ -163,6 +170,7 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     corsRestricted: false,
     streamingCorsRestricted: false,
     acceptsImageInput: true,
+    thinkingMode: 'optional',
     imageGeneration: [
       {
         modelPrefix: 'gpt-image-',
@@ -215,7 +223,8 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     supportedTools: [],
     corsRestricted: false,
     streamingCorsRestricted: false,
-    acceptsImageInput: false
+    acceptsImageInput: false,
+    thinkingMode: 'unsupported'
   },
   {
     id: 'xai-grok',
@@ -225,14 +234,16 @@ const BUILTIN_PROVIDERS: ReadonlyArray<IAiProviderDescriptor> = [
     apiFormat: 'openai',
     baseUrl: 'https://api.x.ai/v1',
     defaultModel: {
-      base: 'grok-4-1-fast',
-      tools: 'grok-4-1-fast-reasoning',
+      base: 'grok-4.3',
+      tools: 'grok-4.3',
+      thinking: 'grok-4.3',
       image: 'grok-imagine-image-quality'
     },
     supportedTools: ['web_search'],
     corsRestricted: true,
     streamingCorsRestricted: true,
     acceptsImageInput: true,
+    thinkingMode: 'optional',
     imageGeneration: [
       {
         // grok-imagine models use JSON edits with image_url objects (different wire format)
@@ -354,22 +365,31 @@ export const DEFAULT_MODEL_CAPABILITY_CONFIG: IAiModelCapabilityConfig = {
     openai: [
       { idPattern: /^dall-e/, capabilities: ['image-generation'] },
       { idPattern: /^gpt-image/, capabilities: ['image-generation'] },
+      { idPattern: /^gpt-5/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gpt-4/, capabilities: ['chat', 'tools', 'vision'] },
       { idPattern: /^gpt-3\.5/, capabilities: ['chat'] },
-      { idPattern: /^o\d/, capabilities: ['chat', 'tools'] }
+      { idPattern: /^o\d/, capabilities: ['chat', 'tools', 'thinking'] }
     ],
     'xai-grok': [
       { idPattern: /-image/, capabilities: ['image-generation'] },
+      { idPattern: /^grok-4\.3/, capabilities: ['chat', 'tools', 'thinking'] },
+      { idPattern: /^grok-4$/, capabilities: ['chat', 'tools', 'thinking'] },
       { idPattern: /^grok-4/, capabilities: ['chat', 'tools', 'vision'] },
+      { idPattern: /^grok-3-mini/, capabilities: ['chat', 'tools', 'thinking'] },
       { idPattern: /^grok-3/, capabilities: ['chat', 'tools'] },
       { idPattern: /^grok-2/, capabilities: ['chat', 'vision'] }
     ],
     'google-gemini': [
       { idPattern: /^imagen/, capabilities: ['image-generation'] },
       { idPattern: /^gemini-.*-image/, capabilities: ['image-generation'] },
+      { idPattern: /^gemini-2\.5/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
       { idPattern: /^gemini-/, capabilities: ['chat', 'tools', 'vision'] }
     ],
-    anthropic: [{ idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }],
+    anthropic: [
+      { idPattern: /^claude-opus-4/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^claude-sonnet-4/, capabilities: ['chat', 'tools', 'vision', 'thinking'] },
+      { idPattern: /^claude-/, capabilities: ['chat', 'tools', 'vision'] }
+    ],
     groq: [{ idPattern: /./, capabilities: ['chat'] }],
     mistral: [{ idPattern: /./, capabilities: ['chat'] }]
   }
