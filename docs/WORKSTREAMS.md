@@ -128,24 +128,7 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `auth-primitives-batch1` 🔵
-
-**Status:** 🔵 in flight  
-**Branch:** `claude/auth-primitives-batch1` → PR to `release`  
-**Baseline:** `9c4fd555`  
-**Scope:** `@fgv/ts-extras`, `@fgv/ts-web-extras`, `@fgv/ts-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`  
-**Blocked by:** nothing  
-**Blocking:** personaility `auth-primitives-foundation` phase 1 (X25519) and phase 2 (canonical JSON + SPKI helpers)
-
-**Mission.** Add four primitives required by the personaility auth-primitives workstream for prerelease publish `5.1.0-26`:
-1. X25519 keypair support in `CryptoUtils.KeyPairAlgorithm`
-2. RFC 8785 `canonicalize()` on `Hash.Normalizer`
-3. Multibase/SPKI encoding helpers (`exportPublicKeyAsMultibaseSpki`, `importPublicKeyFromMultibaseSpki`, `multibaseBase64UrlEncode`/`Decode`) in `@fgv/ts-extras/crypto-utils`
-4. `LIBRARY_CAPABILITIES.md` doc update (cryptography + keystore + canonicalization sections)
-
-**Cross-repo context:** personaility side is `ErikFortune/personaility`, branch `claude/auth-primitives-foundation-h34cG`. Signal "shipped" to the user when `5.1.0-26` publishes; user routes to personaility orchestrator.
-
-**Artifacts:** `.ai/tasks/active/auth-primitives-batch1/`
+*(No active workstreams.)*
 
 ### `ai-assist-image-generation` 🟢
 
@@ -183,4 +166,16 @@ Both ai-assist streams (and any followups within the cluster) share an integrati
 
 ## Completed workstreams
 
-*(No completed workstreams yet.)*
+### `auth-primitives-batch1` ✅
+
+**Status:** ✅ shipped — merged in [#322](https://github.com/ErikFortune/fgv/pull/322) (`bb913392`); published in `5.1.0-26` alpha
+**Package surface:** `@fgv/ts-extras` (crypto-utils), `@fgv/ts-web-extras` (crypto-utils), `@fgv/ts-utils` (base/normalize), `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Cross-repo consumer:** [`ErikFortune/personaility`](https://github.com/ErikFortune/personaility) — `claude/auth-primitives-foundation-h34cG` (unblocked on `5.1.0-26` publish)
+
+**What shipped.** Four primitives:
+1. X25519 keypair (`'x25519'` added to `KeyPairAlgorithm`; both providers picked it up table-driven)
+2. RFC 8785 `canonicalize()` on the base `Normalizer` (moved from `HashingNormalizer` per code review)
+3. Multibase/SPKI helpers in `@fgv/ts-extras/crypto-utils` (`exportPublicKeyAsMultibaseSpki`, `importPublicKeyFromMultibaseSpki`, `multibaseBase64UrlEncode`/`Decode`)
+4. `LIBRARY_CAPABILITIES.md` cryptography + canonicalization sections
+
+**Artifacts:** `.ai/tasks/completed/2026-05/auth-primitives-batch1/` ([README](../.ai/tasks/completed/2026-05/auth-primitives-batch1/README.md))
