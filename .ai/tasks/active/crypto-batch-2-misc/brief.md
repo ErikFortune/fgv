@@ -15,9 +15,9 @@ Two small additions to `ICryptoProvider` that don't warrant their own design pha
 
    `ICryptoProvider`'s whole point is to absorb cross-runtime adaptation. Sign/verify belong inside it for the same reason every other crypto operation does. The wrapper costs near-zero today (both runtimes converge on `crypto.subtle.sign`) and pays off the day adaptation matters.
 
-2. **`timingSafeEqual` standalone** on `ICryptoProvider`. After `5.1.0-26`, `KeyStore.verifySecretFromPassword` covers personaility's primary password-verification use case. But callers comparing raw bytes outside the keystore pattern (MAC outputs, signed-token comparisons, anything needing constant-time equality) still need a primitive.
+2. **`timingSafeEqual` standalone** on `ICryptoProvider`. After `5.1.0-26`, `KeyStore.verifySecretFromPassword` covers the primary password-verification use case. But callers comparing raw bytes outside the keystore pattern (MAC outputs, signed-token comparisons, anything needing constant-time equality) still need a primitive.
 
-The full personaility-side context is at `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md`.
+The full consumer-side context is at `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`.
 
 ### Decisions already made (orchestrator + user, 2026-05-11)
 
@@ -125,7 +125,7 @@ Add `sign`, `verify`, and `timingSafeEqual` to the `crypto-utils` § listing of 
 2. `libraries/ts-extras/src/packlets/crypto-utils/nodeCryptoProvider.ts` — Node implementation patterns
 3. `libraries/ts-web-extras/src/packlets/crypto-utils/browserCryptoProvider.ts` — Browser implementation patterns
 4. `libraries/ts-extras/src/test/unit/crypto/` — test patterns
-5. `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md` — consumer context (items 5 and 6)
+5. `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md` — consumer context (items 5 and 6)
 6. `.ai/instructions/CODING_STANDARDS.md` — Result pattern, no-`any`, factory pattern
 7. `.ai/instructions/TESTING_GUIDELINES.md` — Result matchers, coverage requirements
 

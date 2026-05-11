@@ -9,11 +9,11 @@
 
 ## Context
 
-The personaility consumer needs HPKE base mode (RFC 9180) for several Phase 2 flows: per-conversation BYOK delivery, session-master-wrap at unlock, recovery-proof envelopes, and (post-batch-2) cross-hub material delivery. Each binding uses the `info` parameter to bind ciphertext to a specific context so a captured ciphertext can't be replayed elsewhere.
+A cross-repo consumer needs HPKE base mode (RFC 9180) for several Phase 2 flows: per-session material delivery, master-key wrap at unlock, recovery-proof envelopes, and (later) cross-instance material delivery. Each binding uses the `info` parameter to bind ciphertext to a specific context so a captured ciphertext can't be replayed elsewhere.
 
 **This is feature work on an active surface (`@fgv/ts-extras/crypto-utils` and `@fgv/ts-web-extras/crypto-utils`).** Per `.ai/instructions/ACTIVE_DEVELOPMENT.md`, `crypto-utils` is on the active-development list — free hand on breaking changes, but lockstep version policy means every consumer integrates the delta whether they wanted it or not.
 
-The full personaility-side context is archived at `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md`. Read it for the consumer's framing if anything below feels under-specified.
+The full consumer-side context is archived at `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`. Read it for the consumer's framing if anything below feels under-specified.
 
 ### Decisions already made (orchestrator + user, 2026-05-11)
 
@@ -80,7 +80,7 @@ D2 says HKDF surfaces in this stream. Two reasonable placements:
 - **(a)** Standalone method on `ICryptoProvider.hkdf(...)` — available to all consumers regardless of HPKE
 - **(b)** Exported from the HPKE namespace as a helper — only HPKE-shaped use cases
 
-Recommend one. Note that personaility's potential second HKDF use case (PRF output → keystore master derivation) might warrant (a); but if that derivation lives inside the WebAuthn primitive's surface in `crypto-batch-2-webauthn`, it might warrant (b). Coordinate with the design intent of the parallel WebAuthn stream where reasonable, but don't block on it.
+Recommend one. Note that the consumer's potential second HKDF use case (PRF output → derived-master derivation) might warrant (a); but if that derivation lives inside the WebAuthn primitive's surface in `crypto-batch-2-webauthn`, it might warrant (b). Coordinate with the design intent of the parallel WebAuthn stream where reasonable, but don't block on it.
 
 ### 5. `info` parameter convention
 
@@ -91,13 +91,13 @@ Propose:
 - Whether fgv provides any helpers for building canonical context-binding bytes (e.g. domain-separation prefix + structured payload)
 - Documentation guidance for callers on `info` discipline
 
-Recommendation lean: keep the API simple (caller supplies `Uint8Array`; document the cross-context risk; let callers like personaility build their own canonical-context helpers). But the design should engage with the question.
+Recommendation lean: keep the API simple (caller supplies `Uint8Array`; document the cross-context risk; let callers build their own canonical-context helpers). But the design should engage with the question.
 
 ### 6. Cross-runtime equivalence
 
 Critical correctness property: HPKE ciphertext sealed in browser must be openable in Node, and vice versa. Specifically:
-- Personaility's session-master-wrap: client (browser) seals; home hub (Node) opens
-- Personaility's BYOK delivery: client (browser) seals; recipient hub (Node) opens
+- Master-key wrap at unlock: client (browser) seals; server (Node) opens
+- Per-session material delivery: client (browser) seals; recipient server (Node) opens
 
 Propose the cross-runtime test strategy:
 - Test vectors from RFC 9180 (the spec includes canonical vectors)
@@ -130,7 +130,7 @@ Phase A reads but does not modify:
 - `libraries/ts-extras/src/packlets/crypto-utils/` — current Node implementation, especially `nodeCryptoProvider.ts`, `wrapBytes`/`unwrapBytes` (ECIES — reference, not extension target), `model.ts`
 - `libraries/ts-web-extras/src/packlets/crypto-utils/` — current Browser implementation
 - `.ai/instructions/LIBRARY_CAPABILITIES.md` § crypto-utils (current external framing)
-- `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md` — consumer context
+- `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md` — consumer context
 
 Phase A writes only:
 - `.ai/tasks/active/crypto-batch-2-hpke/design.md` (new)
@@ -142,7 +142,7 @@ Phase B (separately commissioned) will modify the crypto-utils packlets in both 
 
 ## Required reading (priority order)
 
-1. `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md` — full consumer context; load-bearing
+1. `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md` — full consumer context; load-bearing
 2. `libraries/ts-extras/src/packlets/crypto-utils/nodeCryptoProvider.ts` — current Node implementation patterns
 3. `libraries/ts-extras/src/packlets/crypto-utils/model.ts` — type definitions, `ICryptoProvider` interface, `KeyPairAlgorithm` union
 4. `libraries/ts-extras/src/packlets/crypto-utils/wrapBytes.ts` (or wherever ECIES lives) — reference for what HPKE is *separate from*

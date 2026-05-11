@@ -9,9 +9,9 @@
 
 ## Context
 
-Personaility's Phase 2 uses WebAuthn-PRF as the default daily unlock credential under η-v2 §3. At enrollment, the user touches an authenticator and the credential id + PRF salt land in personaility's credential table. At each unlock, the client invokes WebAuthn with PRF extension, gets back a deterministic 32-byte PRF output, derives the keystore master from it, HPKE-wraps to the home hub, and ships it server-side for session-establish.
+A cross-repo consumer's Phase 2 uses WebAuthn-PRF as the default daily unlock credential. At enrollment, the user touches an authenticator and the credential id + PRF salt land in the consumer's credential table. At each unlock, the client invokes WebAuthn with PRF extension, gets back a deterministic 32-byte PRF output, derives a master key from it, HPKE-wraps to the server's encryption pubkey, and ships it for session-establish.
 
-The full personaility-side context is at `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md`.
+The full consumer-side context is at `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`.
 
 ### Decisions already made (orchestrator + user, 2026-05-11)
 
@@ -131,7 +131,7 @@ WebAuthn spec evolves; `@simplewebauthn/*` ships updates. Propose:
 
 ### 8. PRF extension — flag if anything special needed
 
-Personaility specifically uses the PRF extension. PRF is a WebAuthn extension supported by `@simplewebauthn` through the standard input/output types — there's likely nothing PRF-specific the boundary wrapper needs to do (PRF lives in the caller-supplied input options and the response data). Confirm this in the design; if there's anything special (e.g., a separate `@simplewebauthn/server/prf` import path), document it.
+The consumer specifically uses the PRF extension. PRF is a WebAuthn extension supported by `@simplewebauthn` through the standard input/output types — there's likely nothing PRF-specific the boundary wrapper needs to do (PRF lives in the caller-supplied input options and the response data). Confirm this in the design; if there's anything special (e.g., a separate `@simplewebauthn/server/prf` import path), document it.
 
 ### 9. Implementation plan
 
@@ -160,7 +160,7 @@ Phase A reads but does not modify:
 - `libraries/ts-extras/src/packlets/crypto-utils/` — to understand the existing crypto-utils style (we're NOT modifying it; this stream's output lives in new packages)
 - `rush.json` and `common/config/rush/` — package-registration pattern
 - `.ai/instructions/LIBRARY_CAPABILITIES.md` § ts-utils-jest — the existing precedent for an "integration package"
-- `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md`
+- `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`
 
 Phase A writes only:
 - `.ai/tasks/active/crypto-batch-2-webauthn/design.md` (new)
@@ -172,7 +172,7 @@ Phase B (separately commissioned) will create the new packages, write the wrappe
 
 ## Required reading (priority order)
 
-1. `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md` — consumer context
+1. `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md` — consumer context
 2. `libraries/ts-utils-jest/` — full package as the precedent for "Result-integration boundary over an external library"
 3. `@simplewebauthn/server` documentation — current API for the four server-side primitives
 4. `@simplewebauthn/browser` documentation — current API for the two browser-side primitives

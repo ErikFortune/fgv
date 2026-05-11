@@ -137,9 +137,9 @@ substrate. Don't queue streams against them here.
 **Package surface:** `@fgv/ts-extras/crypto-utils`, `@fgv/ts-web-extras/crypto-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
 **Out-of-scope:** `wrapBytes`/`unwrapBytes` (ECIES; separate primitive), Argon2id, WebAuthn, sudoku packages
 
-**Mission.** Implement HPKE base mode (RFC 9180) with X25519/HKDF-SHA256/AES-256-GCM in `@fgv/ts-extras` and `@fgv/ts-web-extras` crypto-utils packlets. Required for personaility Phase 2 (per-conversation BYOK delivery, session-master-wrap at unlock, recovery-proof envelopes). Phase A produces a design doc; phase B implements per design + signoff modifications. Includes HKDF as exposed primitive (placement decided in design).
+**Mission.** Implement HPKE base mode (RFC 9180) with X25519/HKDF-SHA256/AES-256-GCM in `@fgv/ts-extras` and `@fgv/ts-web-extras` crypto-utils packlets. Required for a cross-repo consumer's Phase 2 (per-session material delivery, master-key wrap at unlock, recovery-proof envelopes). Phase A produces a design doc; phase B implements per design + signoff modifications. Includes HKDF as exposed primitive (placement decided in design).
 
-**Origin.** Personaility batch-2 handoff (archived at `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md`).
+**Origin.** Cross-repo consumer batch-2 handoff (archived at `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`).
 
 **Phase A artifacts:** `.ai/tasks/active/crypto-batch-2-hpke/{brief.md, state.md}` → produces `design.md`.
 
@@ -152,9 +152,9 @@ substrate. Don't queue streams against them here.
 **Package surface:** NEW packages `@fgv/ts-extras-argon2` and `@fgv/ts-web-extras-argon2`; modifications to `@fgv/ts-extras/crypto-utils` `ICryptoProvider` interface for composition shape; possibly `KeyStore` integration; `.ai/instructions/LIBRARY_CAPABILITIES.md`
 **Out-of-scope:** PBKDF2 (already shipped via `KeyStore.addSecretFromPassword`), HPKE, WebAuthn, other KDFs, sudoku packages
 
-**Mission.** Implement Argon2id (RFC 9106) as fgv-owned but in separate packages to keep WASM bundling out of consumers who don't need it. Required for personaility Phase 2 (recovery rows, hybrid auth passphrases). Cross-runtime output equivalence is the load-bearing correctness property.
+**Mission.** Implement Argon2id (RFC 9106) as fgv-owned but in separate packages to keep WASM bundling out of consumers who don't need it. Required for a cross-repo consumer's Phase 2 (recovery rows, hybrid auth passphrases). Cross-runtime output equivalence is the load-bearing correctness property.
 
-**Origin.** Personaility batch-2 handoff (archived at `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md`). Maintainer-policy decision Q2 resolved (a)+separate-packages on 2026-05-11.
+**Origin.** Cross-repo consumer batch-2 handoff (archived at `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`). Maintainer-policy decision Q2 resolved (a)+separate-packages on 2026-05-11.
 
 **Phase A artifacts:** `.ai/tasks/active/crypto-batch-2-argon2id/{brief.md, state.md}` → produces `design.md`.
 
@@ -169,7 +169,7 @@ substrate. Don't queue streams against them here.
 
 **Mission.** Implement a Result-integration boundary over `@simplewebauthn/server` and `@simplewebauthn/browser`. Six primitive operations total (4 server + 2 browser). No opinion baked in; consumers build their own opinionated wrappers on top. Pattern mirrors `@fgv/ts-utils-jest`'s relationship to Jest.
 
-**Origin.** Personaility batch-2 handoff. Maintainer-policy decision Q3 resolved (c)+separate-packages on 2026-05-11.
+**Origin.** Cross-repo consumer batch-2 handoff. Maintainer-policy decision Q3 resolved (c)+separate-packages on 2026-05-11.
 
 **Lessons-codification candidate:** The "Result-integration boundary over a well-maintained upstream library" pattern is worth codifying as a fgv convention after this stream lands. Plus the question of whether such packages belong in `libraries/` or a top-level `integrations/` directory. Both parked for triage; not blocking.
 
@@ -185,7 +185,7 @@ substrate. Don't queue streams against them here.
 
 **Mission.** Add `sign`, `verify`, and `timingSafeEqual` to `ICryptoProvider`. Sign/verify wrap `crypto.subtle.sign`/`crypto.subtle.verify`; timingSafeEqual uses Node's native on Node and a constant-time XOR walk on browser. Small, well-specified, no design phase needed.
 
-**Origin.** Personaility batch-2 handoff items 5 and 6. Q7 resolved on 2026-05-11 to add the wrappers (concentration of cross-runtime adaptation in `ICryptoProvider` is the load-bearing argument).
+**Origin.** Cross-repo consumer batch-2 handoff items 5 and 6. Q7 resolved on 2026-05-11 to add the wrappers (concentration of cross-runtime adaptation in `ICryptoProvider` is the load-bearing argument).
 
 **Artifacts:** `.ai/tasks/active/crypto-batch-2-misc/{brief.md, state.md}` → produces implementation PR.
 

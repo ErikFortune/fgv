@@ -9,11 +9,11 @@
 
 ## Context
 
-Personaility's Phase 2 needs Argon2id (RFC 9106) for two key-derivation paths:
-- **Recovery rows** — 256-bit BIP39 phrase → Argon2id → key that unwraps an alternate-master copy in the credential table. Even though the phrase is high-entropy (machine-generated), Argon2id's memory-hardness defends against precomputation. Personaility may pull this earlier than Phase 2 if recovery rows ship as a Phase 1 polish.
+A cross-repo consumer's Phase 2 needs Argon2id (RFC 9106) for two key-derivation paths:
+- **Recovery rows** — high-entropy machine-generated phrase → Argon2id → key that unwraps an alternate-master copy. Even though the phrase is high-entropy, Argon2id's memory-hardness defends against precomputation. May pull this earlier than Phase 2 if recovery rows ship as a Phase 1 polish.
 - **Passphrase rows (hybrid auth)** — user-typed passphrase → Argon2id → master, replacing Phase 1's PBKDF2 when hybrid auth lands.
 
-**This is feature work on an active surface.** The full personaility-side context is at `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md`.
+**This is feature work on an active surface.** The full consumer-side context is at `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`.
 
 ### Decisions already made (orchestrator + user, 2026-05-11)
 
@@ -26,7 +26,7 @@ These resolved before phase A starts. The design must respect them:
 
 - **D2 — Injectable dependency / composition shape.** The default `NodeCryptoProvider` / `BrowserCryptoProvider` in existing crypto-utils DO NOT implement Argon2id. Consumers compose (e.g. `new NodeCryptoProvider({ argon2: new NodeArgon2Provider() })`, or similar — the exact shape is part of this design's deliverable). This is the load-bearing "consumers don't pay for what they don't use" win.
 
-- **D3 — Cross-runtime output equivalence is the load-bearing correctness property.** Personaility's recovery-row flow requires Node-derived bytes ≡ Browser-derived bytes for identical inputs, because keys derived in one runtime are used to unwrap material in the other. Phase B will need a parameter sweep test verifying bit-identical output across the two implementations. Phase A's design must specify the test strategy concretely enough that phase B's brief can codify it as an acceptance criterion.
+- **D3 — Cross-runtime output equivalence is the load-bearing correctness property.** The consumer's recovery-row flow requires Node-derived bytes ≡ Browser-derived bytes for identical inputs, because keys derived in one runtime are used to unwrap material in the other. Phase B will need a parameter sweep test verifying bit-identical output across the two implementations. Phase A's design must specify the test strategy concretely enough that phase B's brief can codify it as an acceptance criterion.
 
 - **D4 — Ongoing version-sync responsibility is fgv's.** Argon2id is a memory-hard KDF; security implications mean possible short-notice security updates in the wrapped implementations. fgv concentrates this risk so consumers don't each re-figure-out the delta. Phase A's design should note any known version-pin constraints across the chosen Node + browser libraries.
 
@@ -115,7 +115,7 @@ Recommend one. Justify by thinking about how `KeyStore` (which currently uses PB
 - Or: leave `addSecretFromPassword` as-is; consumers needing Argon2id-backed entries roll their own KeyStore equivalent or use a lower-level path?
 - Or defer to a follow-up stream entirely?
 
-Recommend. Note that personaility's η-v2 wants Argon2id-backed entries; deferring means personaility uses Argon2id outside the KeyStore pattern (less ideal) or this stream extends KeyStore.
+Recommend. Note that the consumer's Phase 2 wants Argon2id-backed entries; deferring means the consumer uses Argon2id outside the KeyStore pattern (less ideal) or this stream extends KeyStore.
 
 ### 6. Cross-runtime equivalence test strategy
 
@@ -127,11 +127,11 @@ Concrete test strategy:
 
 ### 7. Parameter recommendations
 
-Document recommended parameters for personaility's two use cases:
-- **Recovery row** (256-bit BIP39 phrase → key): the phrase is high-entropy, so per-attempt cost can be moderate. OWASP baseline (memoryKiB=19456, iterations=2, parallelism=1, outputBytes=32) probably fits.
+Document recommended parameters for the consumer's two use cases:
+- **Recovery row** (high-entropy machine-generated phrase → key): the phrase is high-entropy, so per-attempt cost can be moderate. OWASP baseline (memoryKiB=19456, iterations=2, parallelism=1, outputBytes=32) probably fits.
 - **Hybrid auth passphrase** (user-typed passphrase → master): user entropy is the floor; per-attempt cost must be high enough to deter brute-force given likely passphrase strength. Recommendations TBD.
 
-These recommendations are guidance for personaility-side application code — fgv's wrapper exposes the parameters; the application picks values. But the design should document reasonable starting points.
+These recommendations are guidance for consumer-side application code — fgv's wrapper exposes the parameters; the application picks values. But the design should document reasonable starting points.
 
 ### 8. Version-sync strategy
 
@@ -161,7 +161,7 @@ Phase A reads but does not modify:
 - `libraries/ts-extras/src/packlets/crypto-utils/` — current Node implementation, especially `KeyStore` (PBKDF2 reference), `nodeCryptoProvider.ts`, `model.ts`
 - `libraries/ts-web-extras/src/packlets/crypto-utils/` — current Browser implementation
 - `.ai/instructions/LIBRARY_CAPABILITIES.md` § crypto-utils
-- `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md`
+- `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`
 - `rush.json` and `common/config/rush/` — to understand package-registration patterns
 
 Phase A writes only:
@@ -174,7 +174,7 @@ Phase B (separately commissioned) will create the new packages, modify the `ICry
 
 ## Required reading (priority order)
 
-1. `.ai/notes/personaility-handoffs/fgv-batch-2-handoff-2026-05.md` — consumer context
+1. `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md` — consumer context
 2. `libraries/ts-extras/src/packlets/crypto-utils/keyStore.ts` (or wherever `KeyStore` lives) — current PBKDF2 pattern; the pattern Argon2id should preserve continuity with
 3. `libraries/ts-extras/src/packlets/crypto-utils/nodeCryptoProvider.ts` — Node implementation patterns
 4. `libraries/ts-extras/src/packlets/crypto-utils/model.ts` — `ICryptoProvider` interface, type definitions
@@ -223,7 +223,7 @@ If a required-reading file is missing, has a shape that conflicts with this brie
 - [ ] Interface and composition idiom proposed and defended
 - [ ] KeyStore integration recommendation made
 - [ ] Cross-runtime test strategy concrete (vectors, parameter sweep, runner)
-- [ ] Parameter recommendations for both personaility use cases
+- [ ] Parameter recommendations for both consumer use cases
 - [ ] Version-sync strategy outlined
 
 ---
