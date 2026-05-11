@@ -147,6 +147,38 @@ substrate. Don't queue streams against them here.
 
 **Artifacts:** `.ai/tasks/active/auth-primitives-batch1/`
 
+### `ai-assist-image-generation` 🟢
+
+**Status:** 🟢 phase A (research + design) ready to start
+**Phase B sequencing:** strictly after this stream's design signoff
+**Branch base:** `claude/ai-assist-features` (integration branch off `release`)
+**Package surface:** `@fgv/ts-extras/ai-assist`, `@fgv/ts-app-shell/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Out-of-scope:** sudoku packages, audio/video generation, the thinking-config surface (parallel stream)
+
+**Mission.** Complete the image-generation feature properly across all four providers (OpenAI dall-e-2/3 + gpt-image-1; Google Imagen + Gemini Flash Image; xAI Grok image; openai-compat). Inventory current per-model capability divergences (size sets, quality vocabularies, reference-image support, response-format handling), design a coherent caller-facing API and registry shape, document migration impact under lockstep version policy. Phase A produces a design doc; orchestrator/user gate before phase B implementation is commissioned.
+
+**Origin.** Personaility integration surfaced two concrete failures (`gpt-image-1` + `response_format` → 400; `dall-e-3` + `count > 1` → silent provider error) — symptoms of partial provider-surface modeling, not fix-shaped bugs.
+
+**Phase A artifacts:** `.ai/tasks/active/ai-assist-image-generation/{brief.md, state.md}` → produces `design.md`.
+
+### `ai-assist-thinking-config` 🟢
+
+**Status:** 🟢 phase A (research + design) ready to start
+**Phase B sequencing:** strictly after this stream's design signoff AND after `ai-assist-image-generation` phase B lands
+**Branch base:** `claude/ai-assist-features` (integration branch off `release`)
+**Package surface:** `@fgv/ts-extras/ai-assist`, `@fgv/ts-app-shell/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Out-of-scope:** sudoku packages, image-generation surface (parallel stream)
+
+**Mission.** Complete thinking/reasoning-model support across all four providers. AiAssist currently always sends `temperature` on chat completions; thinking models (Anthropic extended thinking, OpenAI o-series, Gemini 2.5 thinking, xAI Grok reasoning) reject this. Design `IThinkingConfig` (or alternative) abstracting provider thinking surfaces, decide sampling-param interaction policy, decide model-capability signaling in the registry, address streaming and non-streaming response shapes. Phase A produces a design doc; orchestrator/user gate before phase B implementation is commissioned.
+
+**Origin.** Personaility integration surfaced thinking-model 400s; downstream of completing the feature properly across all providers.
+
+**Phase A artifacts:** `.ai/tasks/active/ai-assist-thinking-config/{brief.md, state.md}` → produces `design.md`.
+
+### Integration branch convention (active for the ai-assist cluster)
+
+Both ai-assist streams (and any followups within the cluster) share an integration branch `claude/ai-assist-features` based off `release`. Each phase PRs into the integration branch, not `release`, to keep `release` history grouped at one cohesive cluster-level merge. The integration branch merges to `release` at the end of the cluster after all stream artifacts have migrated to `completed/`. This is a per-cluster pattern, not a default — single-stream features can continue to PR directly to `release`.
+
 ---
 
 ## Completed workstreams
