@@ -761,7 +761,7 @@ export type IModelFamilyConfig =
 export interface IAiImageGenerationOptions {
   /**
    * Image dimensions for OpenAI models (mapped to `size` field).
-   * xAI uses aspectRatio; Imagen uses imagenOptions.aspectRatio.
+   * For xAI aspect ratio or Imagen aspect ratio, use the corresponding `models` family block.
    */
   readonly size?: AiImageSize;
   /** Number of images. Default 1. Some models enforce a maximum. */

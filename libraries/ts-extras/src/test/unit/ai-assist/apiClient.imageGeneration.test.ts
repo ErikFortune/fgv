@@ -580,7 +580,7 @@ describe('callProviderImageGeneration', () => {
       buttonLabel: 'AI Assist | Gemini',
       apiFormat: 'gemini',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-3.0-generate-002' },
+      defaultModel: { base: 'gemini-2.5-flash', image: 'imagen-4.0-generate-001' },
       imageGeneration: [{ modelPrefix: 'imagen-', format: 'gemini-imagen' }]
     });
 
@@ -637,7 +637,7 @@ describe('callProviderImageGeneration', () => {
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       expect(fetchCall[0]).toBe(
-        'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict'
+        'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict'
       );
       expect(fetchCall[1].headers['x-goog-api-key']).toBe('test-key');
       const body = JSON.parse(fetchCall[1].body);
@@ -741,7 +741,7 @@ describe('callProviderImageGeneration', () => {
             models: [
               {
                 provider: 'other',
-                models: ['imagen-3.0-generate-002'],
+                models: ['imagen-4.0-generate-001'],
                 config: { sampleImageStyle: 'photograph' }
               }
             ]
@@ -869,6 +869,18 @@ describe('callProviderImageGeneration', () => {
 
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.style_preset).toBe('cinematic');
+    });
+
+    test('fails when more than 3 reference images are provided', async () => {
+      const TEST_IMG: AiAssist.IAiImageAttachment = { mimeType: 'image/png', base64: 'AAAA' };
+
+      const result = await AiAssist.callProviderImageGeneration({
+        descriptor: xaiEditsDescriptor,
+        apiKey: 'test-key',
+        params: { prompt: 'add sunglasses', referenceImages: [TEST_IMG, TEST_IMG, TEST_IMG, TEST_IMG] }
+      });
+
+      expect(result).toFailWith(/at most 3 reference images/i);
     });
 
     test('surfaces network errors from xai edits endpoint', async () => {

@@ -68,7 +68,6 @@ export const isoDate: Converter<Date, unknown> = new Conversion.BaseConverter<Da
     if (from.isValid) {
       return succeed(from.toJSDate());
     }
-    /* c8 ignore next 2 - DateTime invalid path not exercised in current test suite */
     return fail(`Invalid date: ${from.invalidExplanation}`);
   }
   return fail(`Cannot convert ${JSON.stringify(from)} to Date`);
@@ -86,7 +85,6 @@ export const isoDateTime: Converter<DateTime, unknown> = new Conversion.BaseConv
       if (dt.isValid) {
         return succeed(dt);
       }
-      /* c8 ignore next 1 - invalid ISO date path not exercised in current test suite */
       return fail(`Invalid date: ${dt.invalidExplanation}`);
     } else if (typeof from === 'number') {
       return succeed(DateTime.fromMillis(from));

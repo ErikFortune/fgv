@@ -1018,17 +1018,14 @@ async function callOpenAiImageGeneration(
   const refs = request.referenceImages ?? [];
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
 
-  // Determine effective MIME type for response normalization
-  const effectiveMimeType = (() => {
-    if (resolved.outputFormat !== undefined) {
-      return `image/${resolved.outputFormat}`;
-    }
-    return capability.defaultOutputMimeType ?? 'image/png';
-  })();
+  const effectiveMimeType =
+    resolved.outputFormat !== undefined
+      ? `image/${resolved.outputFormat}`
+      : capability.defaultOutputMimeType ?? 'image/png';
 
   const fetched =
     refs.length > 0
-      ? await callOpenAiImagesEdits(config, request, headers, resolved, logger, signal)
+      ? await callOpenAiImagesEdits(config, capability, request, headers, resolved, logger, signal)
       : await callOpenAiImagesGenerations(config, request, headers, resolved, capability, logger, signal);
 
   return fetched.onSuccess((json) =>
@@ -1103,6 +1100,7 @@ function callOpenAiImagesGenerations(
 /** Builds the multipart /images/edits request with ref images. @internal */
 async function callOpenAiImagesEdits(
   config: IAiApiConfig,
+  capability: IAiImageModelCapability,
   request: IAiImageGenerationParams,
   headers: Record<string, string>,
   resolved: IResolvedImageOptions,
@@ -1122,7 +1120,9 @@ async function callOpenAiImagesEdits(
   form.append('model', config.model);
   form.append('prompt', request.prompt);
   form.append('n', String(resolved.n));
-  form.append('response_format', 'b64_json');
+  if (capability.outputParamStyle !== 'output-format') {
+    form.append('response_format', 'b64_json');
+  }
   if (resolved.size !== undefined) {
     form.append('size', resolved.size);
   }
@@ -1144,7 +1144,10 @@ async function callXaiImagesEdits(
 ): Promise<Result<JsonObject>> {
   /* c8 ignore next 1 - defensive: referenceImages always defined when this function is called */
   const refs = request.referenceImages ?? [];
-  const images = refs.slice(0, 3).map((ref) => ({
+  if (refs.length > 3) {
+    return fail(`xAI image edits supports at most 3 reference images; got ${refs.length}`);
+  }
+  const images = refs.map((ref) => ({
     type: 'image_url',
     url: `data:${ref.mimeType};base64,${ref.base64}`
   }));

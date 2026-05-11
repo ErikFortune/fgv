@@ -170,7 +170,7 @@ describe('AiAssist.registry', () => {
   describe('resolveImageCapability', () => {
     test('returns the matching capability for a model that hits a specific prefix', () => {
       const descriptor = AiAssist.getProviderDescriptor('google-gemini').orThrow();
-      const capability = AiAssist.resolveImageCapability(descriptor, 'imagen-3.0-generate-002');
+      const capability = AiAssist.resolveImageCapability(descriptor, 'imagen-4.0-generate-001');
       expect(capability).toMatchObject({ modelPrefix: 'imagen-', format: 'gemini-imagen' });
     });
 
