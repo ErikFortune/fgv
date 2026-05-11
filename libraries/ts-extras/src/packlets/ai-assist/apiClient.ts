@@ -770,8 +770,10 @@ export async function callProviderCompletion(
   }
 
   const hasTools = tools !== undefined && tools.length > 0;
+  const discriminator = providerDiscriminatorForId(descriptor.id);
   const hasThinkingConfig =
-    thinking?.effort !== undefined || (thinking?.providers !== undefined && thinking.providers.length > 0);
+    thinking?.effort !== undefined ||
+    thinking?.providers?.some((b) => b.provider === 'other' || b.provider === discriminator) === true;
   const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
 
   const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
@@ -783,7 +785,6 @@ export async function callProviderCompletion(
 
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
-    const discriminator = providerDiscriminatorForId(descriptor.id);
     if (discriminator !== undefined) {
       const mergeResult = mergeThinkingConfig(thinking, model, discriminator);
       /* c8 ignore next 3 - mergeThinkingConfig always succeeds; defensive guard */

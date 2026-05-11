@@ -333,6 +333,25 @@ describe('callProviderCompletionStream', () => {
       expect(body.model).toBe('gpt-4o-tools');
     });
 
+    test('does not select thinking model when providers block targets a different provider', async () => {
+      const descriptor = makeDescriptor({
+        id: 'xai-grok',
+        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' },
+        supportedTools: ['web_search']
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: { providers: [{ provider: 'anthropic', config: { effort: 'high' } }] }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('grok-reasoning');
+    });
+
     test('forwards explicit temperature to request body', async () => {
       mockSseResponse(openAiChatSse(['x']));
       await AiAssist.callProviderCompletionStream({
