@@ -95,6 +95,7 @@ export async function* readSseEvents(body: ReadableStream<Uint8Array>): AsyncGen
       const normalized = buffer.replace(/\r\n/g, '\n');
       const parts = normalized.split('\n\n');
       // Last element is the partial chunk (no terminating blank line yet); buffer it.
+      /* c8 ignore next 1 - defensive: parts.pop() returning undefined is unreachable after split */
       buffer = parts.pop() ?? '';
       for (const chunk of parts) {
         const event = parseSseEvent(chunk);

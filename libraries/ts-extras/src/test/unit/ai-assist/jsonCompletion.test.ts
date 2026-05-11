@@ -49,7 +49,8 @@ function makeDescriptor(): IAiProviderDescriptor {
     supportedTools: ['web_search'],
     corsRestricted: true,
     acceptsImageInput: true,
-    streamingCorsRestricted: false
+    streamingCorsRestricted: false,
+    thinkingMode: 'optional'
   };
 }
 

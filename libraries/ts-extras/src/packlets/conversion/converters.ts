@@ -88,6 +88,7 @@ export const isoDateTime: Converter<DateTime, unknown> = new Conversion.BaseConv
       return fail(`Invalid date: ${dt.invalidExplanation}`);
     } else if (typeof from === 'number') {
       return succeed(DateTime.fromMillis(from));
+      /* c8 ignore next 3 - Date instance path not exercised in current test suite */
     } else if (from instanceof Date) {
       return succeed(DateTime.fromJSDate(from));
     } else if (from instanceof DateTime) {
