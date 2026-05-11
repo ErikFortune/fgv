@@ -163,9 +163,13 @@ export async function callOpenAiChatStream(
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
     head: messagesBefore
   });
-  const body: Record<string, unknown> = { model: config.model, messages, temperature, stream: true };
-  if (resolvedThinking?.openAiEffort !== undefined) {
-    body.reasoning_effort = resolvedThinking.openAiEffort;
+  const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
+  const body: Record<string, unknown> = { model: config.model, messages, stream: true };
+  if (effort !== undefined) {
+    body.reasoning_effort = effort;
+  }
+  if (effort === undefined || effort === 'none') {
+    body.temperature = temperature;
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);

@@ -492,7 +492,7 @@ describe('callProviderCompletionStream', () => {
       ]);
     });
 
-    test('includes reasoning_effort when thinking effort provided (OpenAI chat stream)', async () => {
+    test('includes reasoning_effort and omits temperature when thinking effort provided (OpenAI chat stream)', async () => {
       mockSseResponse(openAiChatSse(['ok']));
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ id: 'openai' }),
@@ -502,6 +502,20 @@ describe('callProviderCompletionStream', () => {
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.reasoning_effort).toBe('high');
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('sends xAI effort as reasoning_effort and omits temperature (xAI openai-format stream)', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok' }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: { effort: 'low' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('low');
+      expect(body.temperature).toBeUndefined();
     });
 
     test('merges other-block params into OpenAI chat stream body', async () => {
@@ -589,7 +603,7 @@ describe('callProviderCompletionStream', () => {
       expect(events[events.length - 1].type).toBe('error');
     });
 
-    test('includes reasoning field when thinking effort provided (Responses API stream)', async () => {
+    test('includes reasoning field and omits temperature when thinking provided (Responses API stream)', async () => {
       mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
       await AiAssist.callProviderCompletionStream({
         descriptor: makeDescriptor({ id: 'openai' }),
@@ -600,6 +614,7 @@ describe('callProviderCompletionStream', () => {
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.reasoning).toEqual({ effort: 'medium' });
+      expect(body.temperature).toBeUndefined();
     });
 
     test('merges other-block params into Responses API stream body', async () => {

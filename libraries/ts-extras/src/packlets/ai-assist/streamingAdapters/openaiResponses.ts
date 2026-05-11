@@ -177,15 +177,18 @@ export async function callOpenAiResponsesStream(
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
     head: messagesBefore
   });
+  const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
   const body: Record<string, unknown> = {
     model: config.model,
     input,
     tools: toResponsesApiTools(tools),
-    temperature,
     stream: true
   };
-  if (resolvedThinking?.openAiEffort !== undefined) {
-    body.reasoning = { effort: resolvedThinking.openAiEffort };
+  if (effort !== undefined) {
+    body.reasoning = { effort };
+  }
+  if (effort === undefined || effort === 'none') {
+    body.temperature = temperature;
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);

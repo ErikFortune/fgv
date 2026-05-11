@@ -469,10 +469,13 @@ async function callOpenAiCompletion(
   const messages = buildMessages(prompt.system, buildOpenAiChatUserContent(prompt), {
     tail: additionalMessages
   });
-  const body: Record<string, unknown> = { model: config.model, messages, temperature };
-  if (resolvedThinking?.openAiEffort !== undefined) {
-    body.reasoning_effort = resolvedThinking.openAiEffort;
-  }
+  const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
+  const body: Record<string, unknown> = {
+    model: config.model,
+    messages,
+    ...(effort === undefined || effort === 'none' ? { temperature } : {}),
+    ...(effort !== undefined ? { reasoning_effort: effort } : {})
+  };
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
   }
@@ -537,15 +540,14 @@ async function callOpenAiResponsesCompletion(
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
     tail: additionalMessages
   });
+  const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
   const body: Record<string, unknown> = {
     model: config.model,
     input,
     tools: toResponsesApiTools(tools),
-    temperature
+    ...(effort === undefined || effort === 'none' ? { temperature } : {}),
+    ...(effort !== undefined ? { reasoning: { effort } } : {})
   };
-  if (resolvedThinking?.openAiEffort !== undefined) {
-    body.reasoning = { effort: resolvedThinking.openAiEffort };
-  }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
   }
@@ -615,11 +617,7 @@ async function callAnthropicCompletion(
   resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/messages`;
-
-  // Anthropic uses system as a top-level field, not in messages
   const messages = buildAnthropicMessages(prompt, { tail: additionalMessages });
-
-  // When thinking is active, temperature is rejected by Anthropic (validated upstream).
   const body: Record<string, unknown> = {
     model: config.model,
     system: prompt.system,
@@ -691,8 +689,6 @@ async function callGeminiCompletion(
   resolvedThinking?: IResolvedThinkingConfig
 ): Promise<Result<IAiCompletionResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:generateContent`;
-
-  // Gemini uses 'contents' with 'parts', and 'model' role instead of 'assistant'
   const contents = buildGeminiContents(prompt, { tail: additionalMessages });
 
   const generationConfig: Record<string, unknown> = { temperature };
@@ -775,7 +771,7 @@ export async function callProviderCompletion(
   }
 
   const hasTools = tools !== undefined && tools.length > 0;
-  const modelContext = hasTools ? 'tools' : undefined;
+  const modelContext = hasTools ? 'tools' : thinking !== undefined ? 'thinking' : undefined;
 
   const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
   if (model.length === 0) {
@@ -784,7 +780,6 @@ export async function callProviderCompletion(
     );
   }
 
-  // Resolve thinking config if provided
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
     const discriminator = providerDiscriminatorForId(descriptor.id);
@@ -1104,7 +1099,6 @@ function callOpenAiImagesGenerations(
   } else if (capability.outputParamStyle === 'output-format') {
     body.output_format = resolved.outputFormat ?? 'png';
   }
-  // 'none' or undefined: send neither
 
   if (resolved.size !== undefined) {
     body.size = resolved.size;
@@ -1938,7 +1932,6 @@ export async function callProxiedCompletion(
     return fail(jsonResult.message);
   }
 
-  // Check for error response from proxy
   const response = jsonResult.value as Record<string, unknown>;
   if (typeof response.error === 'string') {
     return fail(`proxy: ${response.error}`);

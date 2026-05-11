@@ -218,10 +218,10 @@ export const MODEL_SPEC_BASE_KEY: ModelSpecKey = 'base';
  * @example
  * ```typescript
  * // Simple — same model for all contexts:
- * const simple: ModelSpec = 'grok-4-1-fast';
+ * const simple: ModelSpec = 'grok-4.3';
  *
- * // Context-aware — reasoning model when tools are active:
- * const split: ModelSpec = { base: 'grok-4-1-fast', tools: 'grok-4-1-fast-reasoning' };
+ * // Context-aware — different model for tools and thinking:
+ * const split: ModelSpec = { base: 'grok-4.3', tools: 'grok-4.3', thinking: 'grok-4.3' };
  *
  * // Future nested — per-tool model selection:
  * const nested: ModelSpec = { base: 'grok-fast', tools: { base: 'grok-r', image: 'grok-v' } };
@@ -932,19 +932,13 @@ export type OpenAiThinkingModelNames =
  * Model IDs for Google Gemini thinking-capable models.
  * @public
  */
-export type GeminiThinkingModelNames =
-  | 'gemini-2.5-pro'
-  | 'gemini-2.5-flash'
-  | 'gemini-2.5-flash-lite';
+export type GeminiThinkingModelNames = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
 
 /**
  * Model IDs for xAI thinking-capable models.
  * @public
  */
-export type XAiThinkingModelNames =
-  | 'grok-3-mini'
-  | 'grok-4.3'
-  | 'grok-4';
+export type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4';
 
 /**
  * Anthropic-specific thinking configuration.

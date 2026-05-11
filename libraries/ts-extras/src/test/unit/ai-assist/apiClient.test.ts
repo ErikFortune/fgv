@@ -970,7 +970,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       corsRestricted: false
     });
 
-    test('includes reasoning_effort when thinking effort provided', async () => {
+    test('includes reasoning_effort and omits temperature when thinking effort provided', async () => {
       mockFetchResponse(openAiResponse('ok'));
       await AiAssist.callProviderCompletion({
         descriptor,
@@ -980,6 +980,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.reasoning_effort).toBe('high');
+      expect(body.temperature).toBeUndefined();
     });
 
     test('merges other-block params into OpenAI chat body', async () => {
@@ -1018,6 +1019,9 @@ describe('thinking-config wire encoding (non-streaming)', () => {
         temperature: 0.7
       });
       expect(result).toSucceed();
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('none');
+      expect(body.temperature).toBe(0.7);
     });
   });
 
@@ -1030,7 +1034,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
     });
     const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
 
-    test('includes reasoning in Responses API body when thinking provided', async () => {
+    test('includes reasoning and omits temperature in Responses API body when thinking provided', async () => {
       mockFetchResponse(responsesApiResponse('ok'));
       await AiAssist.callProviderCompletion({
         descriptor,
@@ -1041,6 +1045,7 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.reasoning).toEqual({ effort: 'medium' });
+      expect(body.temperature).toBeUndefined();
     });
 
     test('merges other-block params into Responses API body', async () => {
@@ -1056,6 +1061,43 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.extra_param).toBe(99);
+    });
+  });
+
+  describe('xAI (openai-format adapter)', () => {
+    const descriptor = makeDescriptor({
+      id: 'xai-grok',
+      baseUrl: 'https://api.x.ai/v1',
+      defaultModel: 'grok-4.3',
+      corsRestricted: false
+    });
+
+    test('sends xaiEffort as reasoning_effort and omits temperature', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('medium');
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('allows temperature when xAI effort is none', async () => {
+      mockFetchResponse(openAiResponse('ok'));
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { providers: [{ provider: 'xai', config: { effort: 'none' } }] },
+        temperature: 0.5
+      });
+      expect(result).toSucceed();
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('none');
+      expect(body.temperature).toBe(0.5);
     });
   });
 
