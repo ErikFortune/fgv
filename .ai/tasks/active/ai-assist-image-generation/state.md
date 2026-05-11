@@ -10,7 +10,7 @@
 | Phase | Status | Notes |
 |-------|--------|-------|
 | A — research and design | ✅ complete | `design.md` written; signed off with substantial modifications. PR consolidated into the phase B prep PR (this branch). |
-| B — implementation | 🟢 ready | Brief: `brief-phase-b.md`. Awaiting agent kickoff. |
+| B — implementation | 🔵 in_progress | Brief: `brief-phase-b.md`. Agent started 2026-05-11. |
 
 ---
 
@@ -42,6 +42,35 @@ Detail in `brief-phase-b.md`. **`brief-phase-b.md` is the binding contract; `des
 ---
 
 ## Decisions log
+
+### Phase B decisions log
+
+#### B.0 — OpenAI live-verification (completed 2026-05-11)
+
+Documentation source: web search + community reports (developers.openai.com returned 403)
+
+| Model | Param | Design [training-data] | Live-verified | Delta |
+|---|---|---|---|---|
+| dall-e-2 | sizes | 256x256, 512x512, 1024x1024 | CONFIRMED | none |
+| dall-e-2 | quality | not supported (empty) | CONFIRMED | none |
+| dall-e-2 | response_format | url, b64_json | CONFIRMED | none |
+| dall-e-2 | n | 1-10 | CONFIRMED | none |
+| dall-e-3 | sizes | 1024x1024, 1792x1024, 1024x1792 | CONFIRMED | none |
+| dall-e-3 | quality | standard, hd | CONFIRMED | none |
+| dall-e-3 | response_format | url, b64_json | CONFIRMED | none |
+| dall-e-3 | n | 1 (hard limit) | CONFIRMED | none |
+| dall-e-3 | style | vivid, natural | CONFIRMED | none |
+| gpt-image-1 | sizes | 1024x1024, 1536x1024, 1024x1536, auto | CONFIRMED | none |
+| gpt-image-1 | quality | low, medium, high, auto | CONFIRMED | none |
+| gpt-image-1 | response_format | NOT ACCEPTED — HTTP 400 | CONFIRMED | none |
+| gpt-image-1 | output_format | png, jpeg, webp | CONFIRMED | none |
+| gpt-image-1 | background | transparent, opaque, auto | CONFIRMED | none |
+| gpt-image-1 | moderation | auto, low | CONFIRMED | none |
+| gpt-image-1 | output_compression | 0-100 | CONFIRMED | none |
+
+No divergences from design.md [training-data] annotations. All training-data values confirmed.
+
+---
 
 ### Phase A (cloud agent's working branch: `claude/ai-image-generation-research-gtE2l`)
 

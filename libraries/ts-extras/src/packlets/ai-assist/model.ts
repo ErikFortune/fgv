@@ -24,6 +24,7 @@
  */
 
 import { type Result } from '@fgv/ts-utils';
+import { type JsonObject } from '@fgv/ts-json-base';
 
 // ============================================================================
 // Image Data
@@ -306,8 +307,9 @@ export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
  * @remarks
  * - `'openai-images'` — OpenAI Images API. Routes to `/images/generations`
  *   (text-only) or `/images/edits` (when reference images are present).
- * - `'xai-images'` — xAI Images API. Same wire shape as OpenAI but text-only;
- *   no reference-image support on grok-2-image.
+ * - `'xai-images'` — xAI Images API. Text-only JSON generation request.
+ * - `'xai-images-edits'` — xAI Images API for Grok Imagine models. Uses JSON
+ *   body with `{ type: "image_url" }` objects (not multipart).
  * - `'gemini-imagen'` — Google Imagen `:predict` endpoint. Text-only.
  * - `'gemini-image-out'` — Google Gemini chat-style `:generateContent`
  *   endpoint that returns image parts (Gemini 2.5 Flash Image / "Nano
@@ -315,7 +317,7 @@ export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
  *
  * @public
  */
-export type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'gemini-image-out';
+export type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
 
 // ============================================================================
 // Completion Response
@@ -486,13 +488,25 @@ export interface IAiImageModelCapability {
    * Whether matching models accept reference images via
    * {@link AiAssist.IAiImageGenerationParams.referenceImages}. When false or
    * undefined, calls that include reference images are rejected up front.
-   *
-   * @remarks
-   * Per-model constraints beyond ref support (e.g. dall-e-3 ignores edits)
-   * are not validated here and surface as provider 400s, consistent with the
-   * existing image-generation policy.
    */
   readonly acceptsImageReferenceInput?: boolean;
+  /** Accepted size strings. When present, dispatcher pre-validates. */
+  readonly acceptedSizes?: ReadonlyArray<string>;
+  /** When true, quality param is sent. When false/undefined, don't send quality. */
+  readonly supportsQualityParam?: boolean;
+  /** Accepted quality values when supportsQualityParam is true. */
+  readonly acceptedQualities?: ReadonlyArray<string>;
+  /** Maximum count (n). When present, dispatcher pre-validates. */
+  readonly maxCount?: number;
+  /**
+   * How to encode the output format on the wire:
+   * - 'response-format': send response_format: 'b64_json' (dall-e-2, dall-e-3)
+   * - 'output-format': send output_format (gpt-image-1)
+   * - 'none': send neither (Imagen, Gemini Flash)
+   */
+  readonly outputParamStyle?: 'response-format' | 'output-format' | 'none';
+  /** Default MIME type for response images. */
+  readonly defaultOutputMimeType?: string;
 }
 
 // ============================================================================
