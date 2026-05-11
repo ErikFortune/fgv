@@ -149,12 +149,15 @@ Add `sign`, `verify`, and `timingSafeEqual` to the `crypto-utils` § listing of 
 - [ ] Browser `timingSafeEqual` implementation is constant-time (no early-return)
 - [ ] 100% coverage in both packages
 - [ ] `rushx build` passes in both packages
+- [ ] **`rushx lint` passes in both packages** *(load-bearing — NOT transitively run by build; see `.ai/instructions/CODING_STANDARDS.md` § Pre-PR Validation Checklist)*
 - [ ] `rushx test` passes with 100% coverage in both
+- [ ] **`rushx fixlint` was run before the final commit** *(autofixes the mechanical class — formatting, unused-import sort, missing semicolons, many style rules)*
 - [ ] No `any` types
+- [ ] No inline lint-rule-disable directives added to make lint pass — if a rule genuinely shouldn't apply, surface to the orchestrator
 - [ ] api-extractor regenerated (`ts-extras.api.md`, `ts-web-extras.api.md`)
 - [ ] `LIBRARY_CAPABILITIES.md` updated
 - [ ] PR opened against `claude/crypto-batch-2-features` (NOT `release`)
-- [ ] Pre-merge artifact migration to `.ai/tasks/completed/2026-05/crypto-batch-2-misc/` with polished `README.md`
+- [ ] Pre-merge artifact migration to `.ai/tasks/completed/2026-05/crypto-batch-2-misc/` with polished `README.md` *(write a separate polished README — migrated state.md alone does not fulfill this)*
 
 ---
 
@@ -201,3 +204,4 @@ If a required-reading file is missing or has a conflicting shape (e.g. `crypto.s
 - Don't add `timingSafeEqual` variants (lengths-known, prefix-equality, etc.); the basic primitive is what's asked for
 - Don't pull in dependencies for `timingSafeEqual` browser implementation; a 5-line XOR walk is correct and minimal
 - Don't touch the HPKE, Argon2id, or WebAuthn surfaces — those are parallel streams
+- **Don't open the PR until `rushx build && rushx lint && rushx test` all pass locally** in both modified packages. `rushx build` does NOT transitively run lint; lint is a separate gate. Run `rushx fixlint` before the final commit to autofix the mechanical class of violations.
