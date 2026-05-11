@@ -128,40 +128,10 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-*(No active workstreams.)*
-
-### `ai-assist-image-generation` 🟢
-
-**Status:** 🟢 phase B (implementation) ready to start; phase A complete + signed off
-**Phase B sequencing:** strictly before `ai-assist-thinking-config` phase B (serial implementation; same packlet)
-**Branch base:** `claude/ai-assist-features` (integration branch off `release`)
-**Package surface:** `@fgv/ts-extras/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md` (consumer-side `ts-app-shell/ai-assist` updates deferred to a follow-up if needed)
-**Out-of-scope:** sudoku packages, audio/video generation, the thinking-config surface (queued separately), chat-completion path
-
-**Mission.** Complete the image-generation feature properly across all four providers (OpenAI dall-e-2/3 + gpt-image-1; Google Imagen 4 + Gemini Flash Image; xAI grok-imagine-image/-quality; openai-compat). Phase A produced the inventory and design; signoff modified the type architecture (layered options with model-family blocks instead of unified type) and dropped deprecated models. Phase B implements per `brief-phase-b.md`.
-
-**Origin.** Personaility integration surfaced two concrete failures (gpt-image-1 + `response_format` → 400; dall-e-3 + `count > 1` → silent provider error) — symptoms of partial provider-surface modeling, not fix-shaped bugs.
-
-**Phase B artifacts:** `.ai/tasks/active/ai-assist-image-generation/{brief.md (phase A), brief-phase-b.md (binding contract), design.md (inventory), state.md}` → produces implementation PR.
-
-### `ai-assist-thinking-config` 🟢
-
-**Status:** 🟢 phase B (implementation) ready — v2 design signed off and merged ([#332](https://github.com/ErikFortune/fgv/pull/332))
-**Phase B sequencing:** strictly after `ai-assist-image-generation` phase B (#329) merges to the integration branch (collision avoidance — same packlet)
-**Branch base:** `claude/ai-assist-features` (integration branch off `release`)
-**Package surface:** `@fgv/ts-extras/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md` (consumer-side `ts-app-shell/ai-assist` updates deferred to a follow-up if needed)
-**Out-of-scope:** sudoku packages, image-generation surface (predecessor stream), thinking-event surfacing (followup stream `ai-assist-thinking-events`)
-
-**Mission.** Complete thinking/reasoning-model support across all four providers. Phase A v2 produced the layered-architecture design (analogous to image-gen's pattern); phase B implements it. Includes: layered `IThinkingConfig` types, merge function + runtime validator, per-provider wire encoders, registry signaling additions, unconditional Anthropic non-streaming validator fix, xAI registry staleness cleanup. Step zero is live verification of three provider-API specifics (xAI temperature rejection, Gemini token budget defaults, Anthropic Sonnet 4.5 wire format).
-
-**Origin.** Cross-repo consumer integration surfaced thinking-model 400s; downstream of completing the feature properly across all providers.
-
-**Phase B artifacts:** `.ai/tasks/active/ai-assist-thinking-config/{brief.md (phase A v1 contract), brief-phase-a-v2.md (v2 commission), brief-phase-b.md (binding phase B contract), design.md (v2 layered architecture), design-v1.md (archived research reference), state.md}` → produces implementation PR.
-
 ### `ai-assist-thinking-events` 🟡
 
 **Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands
-**Branch base:** `claude/ai-assist-features` (integration branch off `release`) or a future cluster integration branch if this one merges first
+**Branch base:** `release` HEAD after the ai-assist cluster lands (`.ai/tasks/completed/2026-05/ai-assist-thinking-config/` and `ai-assist-image-generation/` available as reference)
 **Package surface:** `@fgv/ts-extras/ai-assist` (streaming adapters, model.ts, apiClient.ts), `@fgv/ts-app-shell/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
 **Out-of-scope:** the core thinking-config architecture (already shipped via `ai-assist-thinking-config`); sudoku packages
 
@@ -178,13 +148,27 @@ Design-triage-implement shape is likely; new public API has real consequences. S
 
 **Phase A artifacts:** TBD when stream is commissioned; will live at `.ai/tasks/active/ai-assist-thinking-events/`.
 
-### Integration branch convention (active for the ai-assist cluster)
-
-Both ai-assist streams (and any followups within the cluster) share an integration branch `claude/ai-assist-features` based off `release`. Each phase PRs into the integration branch, not `release`, to keep `release` history grouped at one cohesive cluster-level merge. The integration branch merges to `release` at the end of the cluster after all stream artifacts have migrated to `completed/`. This is a per-cluster pattern, not a default — single-stream features can continue to PR directly to `release`.
-
 ---
 
 ## Completed workstreams
+
+### `ai-assist-thinking-config` ✅
+
+**Status:** ✅ shipped — merged in [#334](https://github.com/ErikFortune/fgv/pull/334) into `claude/ai-assist-features` integration branch; phase A v2 design in [#332](https://github.com/ErikFortune/fgv/pull/332); commission prep in [#330](https://github.com/ErikFortune/fgv/pull/330) + [#333](https://github.com/ErikFortune/fgv/pull/333); phase B branch `claude/ai-assist-thinking-phase-b-aIY1Y`
+**Package surface:** `@fgv/ts-extras/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.**
+- Layered thinking-config architecture: `IThinkingConfig` with generic `effort?: 'low' | 'medium' | 'high'` + `providers?: ReadonlyArray<IThinkingProviderConfig>` array of per-provider blocks (Anthropic, OpenAI, Google, xAI, Other escape hatch). Per-provider configs expose full provider knobs first-class (Anthropic `'max'`, OpenAI `'xhigh'`/`'none'`/`'minimal'`, Gemini `thinkingBudget`, xAI `'none'`)
+- `thinkingOptionsResolver.ts`: 4-tier merge logic + `checkTemperatureConflict` (temperature + thinking = `Result.fail` on Anthropic / OpenAI non-'none' / xAI conservative; Gemini accepts both)
+- Registry signaling: `AiModelCapability` + `ModelSpecKey` gain `'thinking'`; `IAiProviderDescriptor.thinkingMode` (`'optional'`/`'required'`/`'unsupported'`); capability rules per provider
+- xAI registry staleness fix: retired `grok-4-1-fast`/`grok-4-1-fast-reasoning` removed; defaults updated to `grok-4.3`
+- Anthropic non-streaming validator fix: `extractAnthropicText` used unconditionally (handles thinking blocks, tools, plain text)
+- All four chat-completion paths (non-streaming + streaming) updated with thinking wire encoding; proxy passthrough wired
+- OpenAI `'none'` edge case correctly handled: setting `effort: 'none'` on gpt-5.x disables reasoning AND accepts temperature
+
+**Followup**: `ai-assist-thinking-events` (queued; thinking-event surfacing to callers; the `includeThoughts?: boolean` field placed but inert in this stream gets wired up there)
+
+**Artifacts:** `.ai/tasks/completed/2026-05/ai-assist-thinking-config/`
 
 ### `ai-assist-image-generation` ✅
 
