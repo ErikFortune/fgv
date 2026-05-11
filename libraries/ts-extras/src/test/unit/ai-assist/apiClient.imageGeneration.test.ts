@@ -106,6 +106,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
+    thinkingMode: 'optional',
     imageGeneration: imgGen('openai-images', false, {
       outputParamStyle: 'response-format',
       supportsQualityParam: true,
@@ -128,6 +129,7 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     corsRestricted: true,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
+    thinkingMode: 'optional',
     ...overrides
   };
 }

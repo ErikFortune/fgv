@@ -31,7 +31,6 @@ import type {
   IThinkingProviderConfig,
   IAnthropicThinkingConfig,
   IOpenAiThinkingConfig,
-  IGeminiThinkingConfig,
   IXAiThinkingConfig
 } from './model';
 
@@ -279,6 +278,7 @@ function applyBlock(
         }
         return updated;
       }
+      /* c8 ignore next - blockApplies guarantees provider match; unreachable for google */
       break;
     case 'xai':
       if (block.provider === 'xai') {

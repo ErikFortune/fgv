@@ -108,12 +108,14 @@ export async function callProviderCompletionStream(
     const discriminator = providerDiscriminatorForId(descriptor.id);
     if (discriminator !== undefined) {
       const mergeResult = mergeThinkingConfig(thinking, model, discriminator);
+      /* c8 ignore next 3 - mergeThinkingConfig always succeeds; defensive guard */
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }
-      resolvedThinking = mergeResult.value;
+      const merged = mergeResult.value;
+      resolvedThinking = merged;
       // Check temperature conflict (D4)
-      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
+      const conflictResult = checkTemperatureConflict(merged, discriminator, temperature);
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }

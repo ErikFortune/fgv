@@ -100,10 +100,7 @@ export interface IProviderCompletionParams {
   readonly apiKey: string;
   /** The structured prompt to send */
   readonly prompt: AiPrompt;
-  /**
-   * Additional messages to append after system+user (e.g. for correction retries).
-   * These are appended in order after the initial system and user messages.
-   */
+  /** Additional messages to append after system+user in order (e.g. for correction retries). */
   readonly additionalMessages?: ReadonlyArray<IChatMessage>;
   /** Sampling temperature (default: 0.7) */
   readonly temperature?: number;
@@ -116,25 +113,13 @@ export interface IProviderCompletionParams {
   /** Optional abort signal for cancelling the in-flight request. */
   readonly signal?: AbortSignal;
   /**
-   * Optional override of the descriptor's default base URL. When set, the
-   * dispatcher uses this URL (scheme + host + optional port + optional path
-   * prefix) and appends the descriptor's per-route suffix (e.g.
-   * `/chat/completions`) the same way it composes against the default.
-   *
-   * Must be a well-formed `http`/`https` URL string. Used to dispatch the same
-   * provider descriptor against a self-hosted or local endpoint (e.g.
-   * `http://localhost:11434/v1` for Ollama, or LAN-hosted OpenAI-compatible
-   * servers).
-   *
-   * Setting `endpoint` does not change the auth shape: providers with
-   * `needsSecret === true` still require an API key.
+   * Optional override of the descriptor's default base URL (scheme + host +
+   * optional port + path prefix). The per-route suffix (e.g. `/chat/completions`)
+   * is appended unchanged. Must be a well-formed `http`/`https` URL. Auth shape
+   * is unchanged: `needsSecret` providers still require an API key.
    */
   readonly endpoint?: string;
-  /**
-   * Optional thinking/reasoning mode configuration.
-   * When set on a provider that rejects temperature + thinking, any non-undefined
-   * temperature causes Result.fail with a clear error.
-   */
+  /** Optional thinking/reasoning config. Anthropic/OpenAI/xAI fail if temperature is also set. */
   readonly thinking?: IThinkingConfig;
 }
 
@@ -426,26 +411,6 @@ const responsesApiOutputItem: Validator<Record<string, unknown>> = Validators.is
 const responsesApiResponse: Validator<IResponsesApiResponse> = Validators.object<IResponsesApiResponse>({
   output: Validators.arrayOf(responsesApiOutputItem).withConstraint((arr) => arr.length > 0),
   status: Validators.string
-});
-
-// ---- Anthropic format ----
-
-/** @internal */
-interface IAnthropicContentBlock {
-  text: string;
-}
-/** @internal */
-interface IAnthropicResponse {
-  content: IAnthropicContentBlock[];
-  stop_reason: string;
-}
-
-const anthropicContentBlock: Validator<IAnthropicContentBlock> = Validators.object<IAnthropicContentBlock>({
-  text: Validators.string
-});
-const anthropicResponse: Validator<IAnthropicResponse> = Validators.object<IAnthropicResponse>({
-  content: Validators.arrayOf(anthropicContentBlock).withConstraint((arr) => arr.length > 0),
-  stop_reason: Validators.string
 });
 
 // ---- Gemini format ----
@@ -778,17 +743,8 @@ async function callGeminiCompletion(
 
 /**
  * Calls the appropriate chat completion API for a given provider.
- *
- * Routes based on the provider descriptor's `apiFormat` field:
- * - `'openai'` for xAI, OpenAI, Groq, Mistral
- * - `'anthropic'` for Anthropic Claude
- * - `'gemini'` for Google Gemini
- *
- * When tools are provided and the provider supports them:
- * - OpenAI-format providers switch to the Responses API
- * - Anthropic includes tools in the Messages API request
- * - Gemini includes Google Search grounding
- *
+ * Routes by `apiFormat`: `'openai'` (xAI/OpenAI/Groq/Mistral — switches to Responses API when
+ * tools are set), `'anthropic'`, or `'gemini'`.
  * @param params - Request parameters including descriptor, API key, prompt, and optional tools
  * @returns The completion response with content and truncation status, or a failure
  * @public
@@ -834,12 +790,13 @@ export async function callProviderCompletion(
     const discriminator = providerDiscriminatorForId(descriptor.id);
     if (discriminator !== undefined) {
       const mergeResult = mergeThinkingConfig(thinking, model, discriminator);
+      /* c8 ignore next 3 - mergeThinkingConfig always succeeds; defensive guard */
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }
-      resolvedThinking = mergeResult.value;
-      // Check temperature conflict (D4)
-      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
+      const merged = mergeResult.value;
+      resolvedThinking = merged;
+      const conflictResult = checkTemperatureConflict(merged, discriminator, temperature);
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
@@ -937,13 +894,7 @@ export interface IProviderImageGenerationParams {
   readonly logger?: Logging.ILogger;
   /** Optional abort signal for cancelling the in-flight request. */
   readonly signal?: AbortSignal;
-  /**
-   * Optional override of the descriptor's default base URL. Same semantics as
-   * the non-streaming completion path's endpoint: a well-formed `http`/`https`
-   * URL substituted for `descriptor.baseUrl` when composing the request, with
-   * the per-route suffix (e.g. `/images/generations`, `:predict`) appended
-   * unchanged.
-   */
+  /** Optional override of the descriptor's base URL; per-route suffix is appended unchanged. */
   readonly endpoint?: string;
 }
 
@@ -1073,7 +1024,13 @@ const proxiedListModelsEntry: Validator<IProxiedListModelsEntry> = Validators.ob
   {
     id: Validators.string,
     capabilities: Validators.arrayOf(
-      Validators.enumeratedValue<AiModelCapability>(['chat', 'tools', 'vision', 'image-generation', 'thinking'])
+      Validators.enumeratedValue<AiModelCapability>([
+        'chat',
+        'tools',
+        'vision',
+        'image-generation',
+        'thinking'
+      ])
     ),
     displayName: Validators.string.optional()
   }
@@ -1428,20 +1385,10 @@ async function callImagenGeneration(
 
 /**
  * Calls the appropriate image-generation API for a given provider.
- *
- * Resolves a {@link IAiImageModelCapability} from
- * {@link IAiProviderDescriptor.imageGeneration} for the requested model and
- * routes by its `format`:
- * - `'openai-images'` for OpenAI (DALL-E, gpt-image-1)
- * - `'xai-images'` for xAI Grok image models (JSON generations)
- * - `'xai-images-edits'` for xAI Grok Imagine models (JSON edits with image_url)
- * - `'gemini-imagen'` for Google Imagen `:predict`
- * - `'gemini-image-out'` for Gemini chat-style image output
- *
- * Image-model selection reuses the existing `'image'` {@link ModelSpecKey}.
- * When `request.referenceImages` is non-empty, the call is rejected up front
- * unless the resolved capability declares `acceptsImageReferenceInput`.
- *
+ * Routes by the `format` field of the resolved {@link IAiImageModelCapability}:
+ * `'openai-images'`, `'xai-images'`, `'xai-images-edits'`, `'gemini-imagen'`,
+ * or `'gemini-image-out'`. Rejects up front if `referenceImages` is set but the
+ * capability does not declare `acceptsImageReferenceInput`.
  * @param params - Request parameters including descriptor, API key, and prompt
  * @returns The generated images, or a failure
  * @public
@@ -1551,11 +1498,7 @@ export interface IProviderListModelsParams {
   readonly logger?: Logging.ILogger;
   /** Optional abort signal for cancelling the in-flight request. */
   readonly signal?: AbortSignal;
-  /**
-   * Optional override of the descriptor's default base URL — a well-formed
-   * `http`/`https` URL substituted for `descriptor.baseUrl`, with the
-   * per-format `/models` route appended unchanged.
-   */
+  /** Optional override of the descriptor's base URL; per-format `/models` route is appended unchanged. */
   readonly endpoint?: string;
 }
 
@@ -1827,12 +1770,8 @@ async function callGeminiListModels(
 // ============================================================================
 
 /**
- * Lists models available from a provider, with capabilities resolved from
- * native provider info (where supplied) and a configurable rule set.
- *
- * Routes based on `descriptor.apiFormat` — listing reuses the existing
- * format dispatch and does not require a separate descriptor field.
- *
+ * Lists models available from a provider, routing by `descriptor.apiFormat`.
+ * Capabilities are resolved from native provider info and a configurable rule set.
  * @param params - Request parameters including descriptor, API key, and optional capability filter
  * @returns The resolved model list, or a failure
  * @public
@@ -1887,18 +1826,9 @@ export async function callProviderListModels(
 
 /**
  * Calls the model-listing endpoint on a proxy server.
- *
- * @remarks
- * Proxy contract:
- * - Endpoint: `POST ${proxyUrl}/api/ai/list-models`
- * - Request body: `{providerId, apiKey, capability?}`. Capability config is
- *   not forwarded — the proxy applies its own (typically the same default
- *   the library ships).
- * - Success response body: an `IAiModelInfo[]` (under key `models`) where
- *   `capabilities` is serialized as a string array (not Set, which doesn't
- *   round-trip through JSON).
- * - Error response body: `{error: string}`, surfaced as `proxy: ${error}`.
- *
+ * Endpoint: `POST ${proxyUrl}/api/ai/list-models`. Capability config is not
+ * forwarded. `capabilities` is serialized as a string array. Error body
+ * `{error: string}` is surfaced as `proxy: ${error}`.
  * @public
  */
 export async function callProxiedListModels(
@@ -2031,20 +1961,11 @@ export async function callProxiedCompletion(
 /**
  * Calls the image-generation endpoint on a proxy server instead of calling
  * the provider API directly from the browser.
- *
- * @remarks
- * The proxy contract:
- * - Endpoint: `POST ${proxyUrl}/api/ai/image-generation`
- * - Request body: `{providerId, apiKey, params, modelOverride?}`
- * - Success response body: an {@link IAiImageGenerationResponse}
- * - Error response body: `{error: string}` (surfaced as `proxy: ${error}`)
- *
- * The proxy server is responsible for descriptor lookup, model resolution,
- * provider dispatch, and response normalization. When `params.referenceImages`
- * is present, the proxy is also responsible for repackaging it into the
- * upstream wire format (e.g. multipart/form-data for OpenAI `/images/edits`,
- * `inlineData` parts for Gemini `:generateContent`).
- *
+ * Endpoint: `POST ${proxyUrl}/api/ai/image-generation`. Request body:
+ * `{providerId, apiKey, params, modelOverride?}`. The proxy handles descriptor
+ * lookup, model resolution, provider dispatch, and response normalization
+ * (including repackaging `referenceImages` for the upstream wire format).
+ * Error body `{error: string}` is surfaced as `proxy: ${error}`.
  * @param proxyUrl - Base URL of the proxy server (e.g. `http://localhost:3001`)
  * @param params - Same parameters as {@link callProviderImageGeneration}
  * @returns The generated images, or a failure

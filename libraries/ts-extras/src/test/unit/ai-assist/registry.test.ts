@@ -51,8 +51,9 @@ describe('AiAssist.registry', () => {
         expect(desc.apiFormat).toBe('openai');
         expect(desc.baseUrl).toBeTruthy();
         expect(desc.defaultModel).toEqual({
-          base: 'grok-4-1-fast',
-          tools: 'grok-4-1-fast-reasoning',
+          base: 'grok-4.3',
+          tools: 'grok-4.3',
+          thinking: 'grok-4.3',
           image: 'grok-imagine-image-quality'
         });
         expect(desc.supportedTools).toContain('web_search');
@@ -199,6 +200,7 @@ describe('AiAssist.registry', () => {
         corsRestricted: false,
         streamingCorsRestricted: false,
         acceptsImageInput: true,
+        thinkingMode: 'optional',
         imageGeneration: [
           { modelPrefix: '', format: 'openai-images' },
           { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true }

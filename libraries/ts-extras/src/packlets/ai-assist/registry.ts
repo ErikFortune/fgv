@@ -27,7 +27,6 @@ import { fail, Result, succeed } from '@fgv/ts-utils';
 
 import {
   type AiProviderId,
-  type AiThinkingMode,
   type IAiImageModelCapability,
   type IAiModelCapabilityConfig,
   type IAiProviderDescriptor

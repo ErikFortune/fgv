@@ -46,6 +46,7 @@ function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProv
     corsRestricted: true,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
+    thinkingMode: 'optional',
     ...overrides
   };
 }
@@ -215,6 +216,21 @@ describe('callProxiedCompletion — optional body fields and error paths', () =>
 
     expect(result).toFailWith(/proxy returned invalid response: missing content/);
   });
+
+  test('forwards thinking field in proxy body when provided', async () => {
+    mockFetchResponse({ content: 'ok' });
+
+    const thinking: AiAssist.IThinkingConfig = { effort: 'high' };
+    await AiAssist.callProxiedCompletion('http://localhost:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'test-key',
+      prompt: testPrompt,
+      thinking
+    });
+
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.thinking).toEqual({ effort: 'high' });
+  });
 });
 
 // ============================================================================
@@ -247,6 +263,7 @@ function makeImageDescriptorWithoutMimeType(
     corsRestricted: false,
     acceptsImageInput: false,
     streamingCorsRestricted: false,
+    thinkingMode: 'unsupported',
     imageGeneration: imgGen('xai-images', { outputParamStyle: 'response-format' }),
     ...overrides
   };
