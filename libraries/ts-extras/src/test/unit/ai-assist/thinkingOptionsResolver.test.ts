@@ -441,6 +441,56 @@ describe('mergeThinkingConfig', () => {
     });
   });
 
+  describe('model name prefix matching', () => {
+    test('typed provider block matches versioned model id via prefix', () => {
+      const config: IThinkingConfig = {
+        providers: [
+          {
+            provider: 'anthropic',
+            models: ['claude-sonnet-4-5'],
+            config: { effort: 'high' }
+          }
+        ]
+      };
+      const result = mergeThinkingConfig(config, 'claude-sonnet-4-5-20250929', 'anthropic');
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.anthropicEffort).toBe('high');
+      });
+    });
+
+    test('other block matches versioned model id via prefix', () => {
+      const config: IThinkingConfig = {
+        providers: [
+          {
+            provider: 'other',
+            models: ['gpt-4o'],
+            config: { custom_param: 'yes' }
+          }
+        ]
+      };
+      const result = mergeThinkingConfig(config, 'gpt-4o-2024-11-20', 'openai');
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.otherParams).toEqual({ custom_param: 'yes' });
+      });
+    });
+
+    test('prefix match does not match a different model version', () => {
+      const config: IThinkingConfig = {
+        providers: [
+          {
+            provider: 'anthropic',
+            models: ['claude-sonnet-4-5'],
+            config: { effort: 'high' }
+          }
+        ]
+      };
+      const result = mergeThinkingConfig(config, 'claude-sonnet-4-6-20251001', 'anthropic');
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.anthropicEffort).toBeUndefined();
+      });
+    });
+  });
+
   // ============================================================================
   // applyBlock — provider blocks with no override (config fields all undefined)
   // ============================================================================

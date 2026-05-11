@@ -702,6 +702,24 @@ describe('callProviderCompletion', () => {
       expect(body.model).toBe('grok-reasoning');
     });
 
+    test('prefers thinking model from ModelSpec when both thinking and tools are provided', async () => {
+      const splitDescriptor = makeDescriptor({
+        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' }
+      });
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: splitDescriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools,
+        thinking: { effort: 'medium' }
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('grok-4.3');
+    });
+
     test('selects base model from ModelSpec when no tools', async () => {
       const splitDescriptor = makeDescriptor({
         defaultModel: { base: 'grok-fast', tools: 'grok-reasoning' }

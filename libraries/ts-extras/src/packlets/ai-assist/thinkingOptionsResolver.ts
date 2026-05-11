@@ -136,12 +136,20 @@ function genericEffortToXai(effort: 'low' | 'medium' | 'high'): IXAiThinkingConf
  *
  * Applicability rules:
  * - provider must match the coarse discriminator
- * - if models array is present, resolved model must be in it
+ * - if models array is present, resolved model must match (exact or base-name prefix)
  * - if models array is absent, the block is provider-generic (applies to all)
+ *
+ * Prefix matching supports versioned IDs: `'claude-sonnet-4-5'` matches resolved
+ * `'claude-sonnet-4-5-20250929'`. An entry matches when it equals the resolved model
+ * or when the resolved model starts with the entry followed by a `-`.
  *
  * 'other' blocks require models to be present (enforced by the type).
  * @internal
  */
+function modelNameMatches(resolvedModel: string, name: string): boolean {
+  return resolvedModel === name || resolvedModel.startsWith(`${name}-`);
+}
+
 function blockApplies(
   block: IThinkingProviderConfig,
   resolvedModel: string,
@@ -151,10 +159,10 @@ function blockApplies(
     return false;
   }
   if (block.provider === 'other') {
-    return block.models.includes(resolvedModel);
+    return block.models.some((name) => modelNameMatches(resolvedModel, name));
   }
   if (block.models !== undefined) {
-    return (block.models as ReadonlyArray<string>).includes(resolvedModel);
+    return (block.models as ReadonlyArray<string>).some((name) => modelNameMatches(resolvedModel, name));
   }
   return true; // provider-generic block
 }

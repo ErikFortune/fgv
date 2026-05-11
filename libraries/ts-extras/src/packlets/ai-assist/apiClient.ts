@@ -772,7 +772,7 @@ export async function callProviderCompletion(
   }
 
   const hasTools = tools !== undefined && tools.length > 0;
-  const modelContext = hasTools ? 'tools' : thinking !== undefined ? 'thinking' : undefined;
+  const modelContext = thinking !== undefined ? 'thinking' : hasTools ? 'tools' : undefined;
 
   const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
   if (model.length === 0) {
