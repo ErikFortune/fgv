@@ -637,10 +637,19 @@ export interface IGeminiFlashImageGenerationConfig {
 // ---- Model-family option blocks ----
 
 /**
+ * Base shape shared by all named family option blocks.
+ * Provides a typed `models` field for applicability filtering without unsafe casts.
+ * @public
+ */
+export interface INamedModelFamilyConfig {
+  readonly models?: readonly string[];
+}
+
+/**
  * Options block scoped to DALL-E family models.
  * @public
  */
-export interface IDallEModelOptions {
+export interface IDallEModelOptions extends INamedModelFamilyConfig {
   /** Discriminator: openai provider lineage. */
   readonly provider: 'openai';
   /** Family identifier. */
@@ -655,7 +664,7 @@ export interface IDallEModelOptions {
  * Options block scoped to GPT Image family models.
  * @public
  */
-export interface IGptImageModelOptions {
+export interface IGptImageModelOptions extends INamedModelFamilyConfig {
   readonly provider: 'openai';
   readonly family: 'gpt-image';
   readonly models?: GptImageModelNames[];
@@ -666,7 +675,7 @@ export interface IGptImageModelOptions {
  * Options block scoped to xAI Grok Imagine family models.
  * @public
  */
-export interface IGrokImagineModelOptions {
+export interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
   readonly provider: 'xai';
   readonly family: 'grok-imagine';
   readonly models?: GrokImagineModelNames[];
@@ -677,7 +686,7 @@ export interface IGrokImagineModelOptions {
  * Options block scoped to Google Imagen 4 models.
  * @public
  */
-export interface IImagen4ModelOptions {
+export interface IImagen4ModelOptions extends INamedModelFamilyConfig {
   readonly provider: 'google';
   readonly family: 'imagen-4';
   readonly models?: Imagen4ModelNames[];
@@ -688,7 +697,7 @@ export interface IImagen4ModelOptions {
  * Options block scoped to Gemini Flash Image models.
  * @public
  */
-export interface IGeminiFlashImageModelOptions {
+export interface IGeminiFlashImageModelOptions extends INamedModelFamilyConfig {
   readonly provider: 'google';
   readonly family: 'gemini-flash-image';
   readonly models?: GeminiFlashImageModelNames[];

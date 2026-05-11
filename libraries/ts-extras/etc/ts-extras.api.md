@@ -906,8 +906,10 @@ interface IDallEImageGenerationConfig {
     readonly style?: 'vivid' | 'natural';
 }
 
+// Warning: (ae-forgotten-export) The symbol "INamedModelFamilyConfig" needs to be exported by the entry point index.d.ts
+//
 // @public
-interface IDallEModelOptions {
+interface IDallEModelOptions extends INamedModelFamilyConfig {
     readonly config: IDallEImageGenerationConfig;
     readonly family: 'dall-e';
     readonly models?: DallEModelNames[];
@@ -977,7 +979,7 @@ interface IGeminiFlashImageGenerationConfig {
 }
 
 // @public
-interface IGeminiFlashImageModelOptions {
+interface IGeminiFlashImageModelOptions extends INamedModelFamilyConfig {
     // (undocumented)
     readonly config: IGeminiFlashImageGenerationConfig;
     // (undocumented)
@@ -1021,7 +1023,7 @@ interface IGptImageGenerationConfig {
 }
 
 // @public
-interface IGptImageModelOptions {
+interface IGptImageModelOptions extends INamedModelFamilyConfig {
     // (undocumented)
     readonly config: IGptImageGenerationConfig;
     // (undocumented)
@@ -1039,7 +1041,7 @@ interface IGrokImagineImageGenerationConfig {
 }
 
 // @public
-interface IGrokImagineModelOptions {
+interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
     // (undocumented)
     readonly config: IGrokImagineImageGenerationConfig;
     // (undocumented)
@@ -1062,7 +1064,7 @@ interface IImagen4GenerationConfig {
 }
 
 // @public
-interface IImagen4ModelOptions {
+interface IImagen4ModelOptions extends INamedModelFamilyConfig {
     // (undocumented)
     readonly config: IImagen4GenerationConfig;
     // (undocumented)

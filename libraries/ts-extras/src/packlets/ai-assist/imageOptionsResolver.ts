@@ -30,6 +30,7 @@ import type {
   IAiImageModelCapability,
   IAiImageGenerationOptions,
   IModelFamilyConfig,
+  INamedModelFamilyConfig,
   IDallEModelOptions,
   IGptImageModelOptions,
   IGrokImagineModelOptions,
@@ -63,25 +64,23 @@ function providerLineageForFormat(format: string): 'openai' | 'xai' | 'google' |
 // ============================================================================
 
 function isDallEModelOptions(block: IModelFamilyConfig): block is IDallEModelOptions {
-  return block.provider === 'openai' && (block as IDallEModelOptions).family === 'dall-e';
+  return block.provider === 'openai' && block.family === 'dall-e';
 }
 
 function isGptImageModelOptions(block: IModelFamilyConfig): block is IGptImageModelOptions {
-  return block.provider === 'openai' && (block as IGptImageModelOptions).family === 'gpt-image';
+  return block.provider === 'openai' && block.family === 'gpt-image';
 }
 
 function isGrokImagineModelOptions(block: IModelFamilyConfig): block is IGrokImagineModelOptions {
-  return block.provider === 'xai' && (block as IGrokImagineModelOptions).family === 'grok-imagine';
+  return block.provider === 'xai' && block.family === 'grok-imagine';
 }
 
 function isImagen4ModelOptions(block: IModelFamilyConfig): block is IImagen4ModelOptions {
-  return block.provider === 'google' && (block as IImagen4ModelOptions).family === 'imagen-4';
+  return block.provider === 'google' && block.family === 'imagen-4';
 }
 
 function isGeminiFlashImageModelOptions(block: IModelFamilyConfig): block is IGeminiFlashImageModelOptions {
-  return (
-    block.provider === 'google' && (block as IGeminiFlashImageModelOptions).family === 'gemini-flash-image'
-  );
+  return block.provider === 'google' && block.family === 'gemini-flash-image';
 }
 
 function isOtherModelOptions(block: IModelFamilyConfig): block is IOtherModelOptions {
@@ -206,9 +205,9 @@ function isApplicableBlock(block: IModelFamilyConfig, modelId: string): boolean 
     return block.models.includes(modelId);
   }
   // Has models array? Must include this modelId.
-  const typedBlock = block as { models?: string[] };
-  if (typedBlock.models !== undefined && typedBlock.models.length > 0) {
-    return typedBlock.models.includes(modelId);
+  const named = block as INamedModelFamilyConfig;
+  if (named.models !== undefined && named.models.length > 0) {
+    return named.models.includes(modelId);
   }
   // No models array = family-generic = applies to all in this family
   return true;
@@ -217,8 +216,8 @@ function isApplicableBlock(block: IModelFamilyConfig, modelId: string): boolean 
 function isFamilyGenericBlock(block: IModelFamilyConfig): boolean {
   /* c8 ignore next 1 - defensive coding: other blocks are filtered before isFamilyGenericBlock is called */
   if (isOtherModelOptions(block)) return false;
-  const typedBlock = block as { models?: string[] };
-  return typedBlock.models === undefined || typedBlock.models.length === 0;
+  const named = block as INamedModelFamilyConfig;
+  return named.models === undefined || named.models.length === 0;
 }
 
 function applyBlock(resolved: IResolvedImageOptions, block: IModelFamilyConfig): IResolvedImageOptions {
