@@ -144,19 +144,39 @@ substrate. Don't queue streams against them here.
 
 **Phase B artifacts:** `.ai/tasks/active/ai-assist-image-generation/{brief.md (phase A), brief-phase-b.md (binding contract), design.md (inventory), state.md}` → produces implementation PR.
 
-### `ai-assist-thinking-config` 🟢
+### `ai-assist-thinking-config` 🔵
 
-**Status:** 🟢 phase A (research + design) ready to start
-**Phase B sequencing:** strictly after this stream's design signoff AND after `ai-assist-image-generation` phase B lands
+**Status:** 🔵 phase A revision in flight — v1 design archived, v2 commissioned
+**Phase B sequencing:** strictly after v2 signoff AND after `ai-assist-image-generation` phase B lands
 **Branch base:** `claude/ai-assist-features` (integration branch off `release`)
 **Package surface:** `@fgv/ts-extras/ai-assist`, `@fgv/ts-app-shell/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
-**Out-of-scope:** sudoku packages, image-generation surface (parallel stream)
+**Out-of-scope:** sudoku packages, image-generation surface (parallel stream), thinking-event surfacing (followup stream `ai-assist-thinking-events`)
 
-**Mission.** Complete thinking/reasoning-model support across all four providers. AiAssist currently always sends `temperature` on chat completions; thinking models (Anthropic extended thinking, OpenAI o-series, Gemini 2.5 thinking, xAI Grok reasoning) reject this. Design `IThinkingConfig` (or alternative) abstracting provider thinking surfaces, decide sampling-param interaction policy, decide model-capability signaling in the registry, address streaming and non-streaming response shapes. Phase A produces a design doc; orchestrator/user gate before phase B implementation is commissioned.
+**Mission.** Complete thinking/reasoning-model support across all four providers. v1 phase A produced solid provider research but proposed a unified-type architecture that diverged from the parallel `ai-assist-image-generation` stream's signed-off layered pattern. v2 revision applies the layered pattern to thinking-config while preserving v1's research and practical findings (Anthropic non-streaming validator break, xAI registry staleness, temperature-suppression need).
 
-**Origin.** Personaility integration surfaced thinking-model 400s; downstream of completing the feature properly across all providers.
+**Origin.** Cross-repo consumer integration surfaced thinking-model 400s; downstream of completing the feature properly across all providers.
 
-**Phase A artifacts:** `.ai/tasks/active/ai-assist-thinking-config/{brief.md, state.md}` → produces `design.md`.
+**Phase A v2 artifacts:** `.ai/tasks/active/ai-assist-thinking-config/{brief.md (v1 contract), brief-phase-a-v2.md (binding revision contract), design-v1.md (archived v1 design), state.md}` → produces new `design.md` (v2).
+
+### `ai-assist-thinking-events` 🟡
+
+**Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands
+**Branch base:** `claude/ai-assist-features` (integration branch off `release`) or a future cluster integration branch if this one merges first
+**Package surface:** `@fgv/ts-extras/ai-assist` (streaming adapters, model.ts, apiClient.ts), `@fgv/ts-app-shell/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Out-of-scope:** the core thinking-config architecture (already shipped via `ai-assist-thinking-config`); sudoku packages
+
+**Mission.** Surface thinking/reasoning content to callers in streaming and non-streaming responses. The `ai-assist-thinking-config` stream silently discards thinking content; this stream adds the explicit surface. Likely scope:
+- New `IAiStreamEvent` variant for thinking deltas (or alternative shape)
+- Non-streaming response shape: `thinking?: string` field (or similar) on `IAiCompletionResponse`
+- Opt-in plumbing (`IGeminiThinkingOptions.config.includeThoughts` placed by thinking-config stream — wire it up here for all providers)
+- Per-provider surfacing logic (Anthropic `thinking_delta` events; Gemini `thought: true` parts; OpenAI encrypted reasoning items if exposed)
+- Token accounting (`thinkingTokens?: number` on response)
+
+Design-triage-implement shape is likely; new public API has real consequences. Specifically: should existing `IAiStreamEvent`-handling code see thinking-delta events whether they ask for them or not (forcing all consumers to update), or are they opt-in via the per-provider config (silent for callers who don't opt in)? The opt-in default seems right; design phase confirms.
+
+**Origin.** Carved out of `ai-assist-thinking-config` phase A v2 (D9). Required because v1's "future extension point" hand-wave didn't meet the bar of "concrete trackable followup."
+
+**Phase A artifacts:** TBD when stream is commissioned; will live at `.ai/tasks/active/ai-assist-thinking-events/`.
 
 ### Integration branch convention (active for the ai-assist cluster)
 
