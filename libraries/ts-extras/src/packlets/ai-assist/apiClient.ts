@@ -1394,7 +1394,7 @@ export async function callProviderImageGeneration(
   const resolved = resolveImageOptions(model, capability, request.options);
   const validationResult = validateResolvedOptions(model, capability, resolved);
   if (validationResult.isFailure()) {
-    return fail(validationResult.message);
+    return fail<IAiImageGenerationResponse>(validationResult.message);
   }
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
