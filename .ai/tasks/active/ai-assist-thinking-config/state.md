@@ -1,7 +1,7 @@
 # Stream State: ai-assist-thinking-config
 
-**Status:** 🟡 phase A v2 complete — design.md ready for signoff; phase B blocked on signoff
-**Last updated:** 2026-05-11 (v2 design agent — design.md written; state.md updated)
+**Status:** 🔵 phase B in progress — implementation underway
+**Last updated:** 2026-05-11 (phase B agent — implementation started; B.0 verified below)
 
 ---
 
@@ -10,8 +10,8 @@
 | Phase | Status | Notes |
 |-------|--------|-------|
 | A v1 | 📦 archived | `design-v1.md` preserved. Research stands; architecture rejected at signoff for divergence from image-gen pattern. |
-| A v2 | 🟡 awaiting signoff | `design.md` written. PR open on `claude/implement-ai-assist-v2-jGM2V`. |
-| B — implementation | ⏸ blocked on phase A v2 signoff AND on `ai-assist-image-generation` phase B landing | Brief written by orchestrator post-v2 signoff |
+| A v2 | ✅ complete | `design.md` merged via PR #332 into `claude/ai-assist-features`. |
+| B — implementation | 🔵 in progress | `ai-assist-image-generation` phase B (#329) merged; implementation underway on `claude/ai-assist-thinking-phase-b-aIY1Y`. |
 
 ---
 
@@ -118,9 +118,31 @@ Four open questions remain for phase B; none block v2 design signoff:
 
 ---
 
+## Phase B checkpoints
+
+### B.0 — Live verification (D8)
+
+**xAI temperature rejection:** Live API call not possible in this session (no API key access). Applied conservative default: `Result.fail` when `xaiEffort !== undefined && xaiEffort !== 'none'` and temperature is provided — same policy as Anthropic/OpenAI. If live verification confirms xAI accepts temperature, update `checkTemperatureConflict` in `thinkingOptionsResolver.ts` to remove the xAI branch (matching Gemini's pass-through behavior).
+
+**Gemini token budget defaults (Q2):** Design doc values (low=1024, medium=4096, high=8192) applied as documented. These are defensible but not sourced from live docs. Callers needing Gemini-specific tuning should use the `providers` array with `IGeminiThinkingConfig.thinkingBudget` directly.
+
+**Anthropic Sonnet 4.5 wire format (Q3):** Implemented using the standard `thinking: { type: 'enabled' }, output_config: { effort }` wire format. If Sonnet 4.5 requires the legacy `thinking: { type: 'enabled', budget_tokens: N }` format, a model-conditional branch is needed in `callAnthropicCompletion`. This is an implementation detail that doesn't affect the type architecture.
+
+### B.1–B.7 — Implementation
+
+- **model.ts:** `IThinkingConfig`, `IThinkingProviderConfig`, per-provider config/options types, model-name unions, `AiThinkingMode`, `'thinking'` added to `AiModelCapability`/`ModelSpecKey`/`allModelSpecKeys`, `thinkingMode` on `IAiProviderDescriptor`
+- **thinkingOptionsResolver.ts:** `mergeThinkingConfig`, `checkTemperatureConflict`, `providerDiscriminatorForId`, `IResolvedThinkingConfig`
+- **registry.ts:** `thinkingMode` on all descriptors; xAI staleness fix (D7); `'thinking'` capability rules added
+- **apiClient.ts:** `thinking?` on params; D5 unconditional Anthropic fix; thinking wire encoding x4; temperature+thinking=Result.fail (D4); proxied updates
+- **streaming adapters:** `thinking?` on `IProviderCompletionStreamParams`; all 4 adapters + proxy updated
+- **streamingClient.ts:** resolve+conflict-check before dispatching; pass through to adapters
+- **index.ts:** all new types exported
+
+---
+
 ## PRs
 
 - **v1 PR** (research-only, original brief): `claude/ai-assist-thinking-config-xy1J8` → `claude/ai-assist-features` — merged into the v2 commission prep PR (consolidated rather than separate)
 - **v2 commission prep PR** (orchestrator commit): `claude/ai-assist-thinking-config-revision-prep` → `claude/ai-assist-features` — merged
-- **v2 design PR**: `claude/implement-ai-assist-v2-jGM2V` → `claude/ai-assist-features` — open (this PR)
-- **Phase B PR**: TBD by phase B agent post-v2-signoff
+- **v2 design PR**: `claude/implement-ai-assist-v2-jGM2V` → `claude/ai-assist-features` — merged (#332)
+- **Phase B PR**: `claude/ai-assist-thinking-phase-b-aIY1Y` → `claude/ai-assist-features` — TBD

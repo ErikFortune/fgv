@@ -192,13 +192,13 @@ export interface IAiToolEnablement {
  * Known context keys for model specification maps.
  * @public
  */
-export type ModelSpecKey = 'base' | 'tools' | 'image';
+export type ModelSpecKey = 'base' | 'tools' | 'image' | 'thinking';
 
 /**
  * All valid {@link ModelSpecKey} values.
  * @public
  */
-export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = ['base', 'tools', 'image'];
+export const allModelSpecKeys: ReadonlyArray<ModelSpecKey> = ['base', 'tools', 'image', 'thinking'];
 
 /**
  * Default context key used as fallback when resolving a {@link ModelSpec}.
@@ -410,6 +410,12 @@ export interface IAiStreamError {
 export type IAiStreamEvent = IAiStreamTextDelta | IAiStreamToolEvent | IAiStreamDone | IAiStreamError;
 
 /**
+ * Thinking/reasoning mode support for a provider.
+ * @public
+ */
+export type AiThinkingMode = 'optional' | 'required' | 'unsupported';
+
+/**
  * Describes a single AI provider — single source of truth for all metadata.
  * @public
  */
@@ -449,6 +455,13 @@ export interface IAiProviderDescriptor {
    * `prompt.attachments` are rejected up front.
    */
   readonly acceptsImageInput: boolean;
+  /**
+   * Whether this provider supports thinking/reasoning mode.
+   * - 'optional': thinking can be enabled but is not required
+   * - 'required': thinking is always active (e.g. o-series models)
+   * - 'unsupported': thinking is not supported
+   */
+  readonly thinkingMode: AiThinkingMode;
   /**
    * Image-generation capabilities, scoped to model id prefixes. Empty or
    * undefined means the provider does not support image generation.
@@ -830,7 +843,7 @@ export interface IAiGeneratedImage extends IAiImageData {
  *
  * @public
  */
-export type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation';
+export type AiModelCapability = 'chat' | 'tools' | 'vision' | 'image-generation' | 'thinking';
 
 /**
  * Information about a single model returned by a provider's list endpoint,
@@ -884,6 +897,215 @@ export interface IAiModelCapabilityConfig {
 export interface IAiImageGenerationResponse {
   /** The generated images, in provider-returned order. */
   readonly images: ReadonlyArray<IAiGeneratedImage>;
+}
+
+// ============================================================================
+// Thinking / Reasoning Config — Layered Options Types
+// ============================================================================
+
+/**
+ * Model IDs for Anthropic thinking-capable models.
+ * @public
+ */
+export type AnthropicThinkingModelNames =
+  | 'claude-sonnet-4-5'
+  | 'claude-sonnet-4-6'
+  | 'claude-opus-4-6'
+  | 'claude-opus-4-7';
+
+/**
+ * Model IDs for OpenAI thinking-capable models.
+ * @public
+ */
+export type OpenAiThinkingModelNames =
+  | 'o3'
+  | 'o4-mini'
+  | 'o3-deep-research'
+  | 'o4-mini-deep-research'
+  | 'gpt-5'
+  | 'gpt-5.1'
+  | 'gpt-5.2'
+  | 'gpt-5.5'
+  | 'gpt-5-pro';
+
+/**
+ * Model IDs for Google Gemini thinking-capable models.
+ * @public
+ */
+export type GeminiThinkingModelNames =
+  | 'gemini-2.5-pro'
+  | 'gemini-2.5-flash'
+  | 'gemini-2.5-flash-lite';
+
+/**
+ * Model IDs for xAI thinking-capable models.
+ * @public
+ */
+export type XAiThinkingModelNames =
+  | 'grok-3-mini'
+  | 'grok-4.3'
+  | 'grok-4';
+
+/**
+ * Anthropic-specific thinking configuration.
+ * @public
+ */
+export interface IAnthropicThinkingConfig {
+  /**
+   * Anthropic effort level. Maps 1:1 to `output_config.effort` on the wire.
+   * - 'low' | 'medium' | 'high': all thinking-capable models
+   * - 'max': Opus 4.6 only
+   */
+  readonly effort?: 'low' | 'medium' | 'high' | 'max';
+}
+
+/**
+ * OpenAI-specific thinking configuration.
+ * @remarks
+ * Maps to `reasoning_effort` (Chat Completions path) or `reasoning.effort`
+ * (Responses API path) on the wire. The adapter selects the correct field.
+ * @public
+ */
+export interface IOpenAiThinkingConfig {
+  /**
+   * OpenAI reasoning effort. Maps 1:1 to the wire field.
+   * - 'none': disables reasoning (gpt-5.x only; rejected by o-series)
+   * - 'minimal': fastest (gpt-5.x)
+   * - 'low' | 'medium' | 'high': standard tiers
+   * - 'xhigh': highest (select gpt-5.x models only)
+   *
+   * @remarks
+   * When effective effort is 'none', reasoning is disabled and temperature is
+   * accepted by gpt-5.x models. This is the only case where temperature and
+   * thinking config co-exist without a Result.fail.
+   */
+  readonly effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
+}
+
+/**
+ * Google Gemini-specific thinking configuration.
+ * @public
+ */
+export interface IGeminiThinkingConfig {
+  /**
+   * Token budget for thinking. Maps 1:1 to `thinkingBudget` on the wire.
+   * - 0: disable thinking (Flash and Flash-Lite only; error on Pro)
+   * - positive integer: soft token cap
+   * - -1: dynamic
+   * - omitted: model default
+   */
+  readonly thinkingBudget?: number;
+  /**
+   * Whether to include thought summaries in the response.
+   * @remarks
+   * INERT in phase B. Adapters never send `includeThoughts: true`.
+   * Wired up by the followup stream `ai-assist-thinking-events`.
+   */
+  readonly includeThoughts?: boolean;
+}
+
+/**
+ * xAI-specific thinking configuration.
+ * @public
+ */
+export interface IXAiThinkingConfig {
+  /**
+   * xAI reasoning effort. Maps 1:1 to `reasoning_effort` on the wire.
+   * For grok-4, the adapter omits this field (grok-4 always reasons and
+   * rejects the parameter).
+   */
+  readonly effort?: 'none' | 'low' | 'medium' | 'high';
+}
+
+/**
+ * Anthropic-specific thinking options block.
+ * @public
+ */
+export interface IAnthropicThinkingOptions {
+  readonly provider: 'anthropic';
+  readonly models?: ReadonlyArray<AnthropicThinkingModelNames>;
+  readonly config: IAnthropicThinkingConfig;
+}
+
+/**
+ * OpenAI-specific thinking options block.
+ * @public
+ */
+export interface IOpenAiThinkingOptions {
+  readonly provider: 'openai';
+  readonly models?: ReadonlyArray<OpenAiThinkingModelNames>;
+  readonly config: IOpenAiThinkingConfig;
+}
+
+/**
+ * Google Gemini-specific thinking options block.
+ * @public
+ */
+export interface IGeminiThinkingOptions {
+  readonly provider: 'google';
+  readonly models?: ReadonlyArray<GeminiThinkingModelNames>;
+  readonly config: IGeminiThinkingConfig;
+}
+
+/**
+ * xAI-specific thinking options block.
+ * @public
+ */
+export interface IXAiThinkingOptions {
+  readonly provider: 'xai';
+  readonly models?: ReadonlyArray<XAiThinkingModelNames>;
+  readonly config: IXAiThinkingConfig;
+}
+
+/**
+ * Escape-hatch options block for providers not covered by typed configs.
+ * @remarks
+ * `models` is required — no implicit "all" for unknown providers.
+ * `config` fields are merged verbatim into the wire request.
+ * @public
+ */
+export interface IOtherThinkingOptions {
+  readonly provider: 'other';
+  readonly models: ReadonlyArray<string>;
+  readonly config: JsonObject;
+}
+
+/**
+ * Discriminated union of per-provider thinking config blocks.
+ * @public
+ */
+export type IThinkingProviderConfig =
+  | IAnthropicThinkingOptions
+  | IOpenAiThinkingOptions
+  | IGeminiThinkingOptions
+  | IXAiThinkingOptions
+  | IOtherThinkingOptions;
+
+/**
+ * Thinking/reasoning mode configuration for a completion request.
+ *
+ * @remarks
+ * The generic `effort` field covers the common-subset cross-provider vocabulary.
+ * For provider-specific precision (Anthropic 'max', OpenAI 'xhigh', Gemini token
+ * budgets, xAI effort-level tuning), use the `providers` array.
+ *
+ * Absence (or undefined) means "no thinking mode" — existing callers are unaffected.
+ *
+ * @public
+ */
+export interface IThinkingConfig {
+  /**
+   * Cross-provider effort level. Common-subset mapping:
+   * - 'low': Anthropic effort:low | OpenAI effort:low | Gemini thinkingBudget:1024 | xAI reasoning_effort:low
+   * - 'medium': effort:medium | effort:medium | thinkingBudget:4096 | reasoning_effort:medium
+   * - 'high': effort:high | effort:high | thinkingBudget:8192 | reasoning_effort:high
+   */
+  readonly effort?: 'low' | 'medium' | 'high';
+  /**
+   * Optional per-provider precision blocks. Blocks for providers that don't
+   * match the resolved model's provider are silently skipped.
+   */
+  readonly providers?: ReadonlyArray<IThinkingProviderConfig>;
 }
 
 // ============================================================================
