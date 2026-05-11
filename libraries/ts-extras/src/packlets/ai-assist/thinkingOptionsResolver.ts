@@ -187,6 +187,10 @@ function isModelSpecific(block: IThinkingProviderConfig): boolean {
  *
  * Blocks whose provider does not match are silently skipped.
  *
+ * Note: when the resolved OpenAI effort is `'none'`, reasoning is disabled and
+ * temperature is accepted; see {@link IOpenAiThinkingConfig.effort} for the full
+ * hybrid-mode semantics.
+ *
  * @param config - The caller's IThinkingConfig
  * @param resolvedModel - The concrete model string after registry resolution
  * @param discriminator - Coarse provider family
