@@ -114,6 +114,11 @@ describe('Converters module', () => {
       expect(ExtraConverters.isoDateTime.convert('whatever')).toFailWith(/invalid date/i);
     });
 
+    test('fails for an invalid DateTime object', () => {
+      const invalid = DateTime.invalid('unit test');
+      expect(ExtraConverters.isoDateTime.convert(invalid)).toFailWith(/invalid date/i);
+    });
+
     test('fails for an unexpected type', () => {
       expect(ExtraConverters.isoDateTime.convert({ date: new Date() })).toFailWith(/cannot convert/i);
     });

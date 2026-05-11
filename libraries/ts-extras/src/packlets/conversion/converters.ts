@@ -95,10 +95,8 @@ export const isoDateTime: Converter<DateTime, unknown> = new Conversion.BaseConv
       if (from.isValid) {
         return succeed(from);
       }
-      /* c8 ignore next 2 - DateTime invalid path not exercised in current test suite */
       return fail(`Invalid date: ${from.invalidExplanation}`);
     }
-    /* c8 ignore next 2 - fallthrough path not exercised in current test suite */
     return fail(`Cannot convert ${JSON.stringify(from)} to DateTime`);
   }
 );

@@ -639,7 +639,7 @@ export interface IGeminiFlashImageGenerationConfig {
 /**
  * Base shape shared by all named family option blocks.
  * Provides a typed `models` field for applicability filtering without unsafe casts.
- * @public
+ * @internal
  */
 export interface INamedModelFamilyConfig {
   readonly models?: readonly string[];
