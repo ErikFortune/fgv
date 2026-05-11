@@ -130,20 +130,6 @@ substrate. Don't queue streams against them here.
 
 *(No active workstreams.)*
 
-### `ai-assist-image-generation` 🟢
-
-**Status:** 🟢 phase B (implementation) ready to start; phase A complete + signed off
-**Phase B sequencing:** strictly before `ai-assist-thinking-config` phase B (serial implementation; same packlet)
-**Branch base:** `claude/ai-assist-features` (integration branch off `release`)
-**Package surface:** `@fgv/ts-extras/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md` (consumer-side `ts-app-shell/ai-assist` updates deferred to a follow-up if needed)
-**Out-of-scope:** sudoku packages, audio/video generation, the thinking-config surface (queued separately), chat-completion path
-
-**Mission.** Complete the image-generation feature properly across all four providers (OpenAI dall-e-2/3 + gpt-image-1; Google Imagen 4 + Gemini Flash Image; xAI grok-imagine-image/-quality; openai-compat). Phase A produced the inventory and design; signoff modified the type architecture (layered options with model-family blocks instead of unified type) and dropped deprecated models. Phase B implements per `brief-phase-b.md`.
-
-**Origin.** Personaility integration surfaced two concrete failures (gpt-image-1 + `response_format` → 400; dall-e-3 + `count > 1` → silent provider error) — symptoms of partial provider-surface modeling, not fix-shaped bugs.
-
-**Phase B artifacts:** `.ai/tasks/active/ai-assist-image-generation/{brief.md (phase A), brief-phase-b.md (binding contract), design.md (inventory), state.md}` → produces implementation PR.
-
 ### `ai-assist-thinking-config` 🟢
 
 **Status:** 🟢 phase A (research + design) ready to start
@@ -165,6 +151,20 @@ Both ai-assist streams (and any followups within the cluster) share an integrati
 ---
 
 ## Completed workstreams
+
+### `ai-assist-image-generation` ✅
+
+**Status:** ✅ shipped — PR [#329](https://github.com/ErikFortune/fgv/pull/329) → `claude/ai-assist-features`; branch `claude/implement-image-generation-m7xMi`
+**Package surface:** `@fgv/ts-extras/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.**
+- Layered image generation options architecture: `IAiImageGenerationOptions` with generic top-level fields (`size`, `quality`, `seed`, `count`) + `models?: ReadonlyArray<IModelFamilyConfig>` for family-scoped blocks (`IDallEModelOptions`, `IGptImageModelOptions`, `IGrokImagineModelOptions`, `IImagen4ModelOptions`, `IGeminiFlashImageModelOptions`, `IOtherModelOptions` escape hatch)
+- `imageOptionsResolver.ts`: 4-tier merge logic (generic → family-generic → model-specific ≈ Other) + registry-driven validation
+- Registry updated: deprecated models dropped (`imagen-3.*`, `grok-2-image-1212`, `grok-imagine-image-pro`); xAI default corrected to `grok-imagine-image-quality`; all models annotated with `acceptedSizes`, `supportsQualityParam`, `acceptedQualities`, `maxCount`, `outputParamStyle`
+- `apiClient.ts`: gpt-image-1 `output_format` fix (edits + generations paths); xAI JSON-body edits adapter; Imagen 4 params; Gemini aspect-ratio support; fail-fast for >3 xAI reference images
+- Root cause fixes: gpt-image-1 HTTP 400 on `response_format`; dall-e-3 `count > 1`; dall-e-3 quality `'hd'` encoding
+
+**Artifacts:** `.ai/tasks/completed/2026-05/ai-assist-image-generation/`
 
 ### `auth-primitives-batch1` ✅
 

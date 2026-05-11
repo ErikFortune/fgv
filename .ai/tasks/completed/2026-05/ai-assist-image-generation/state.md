@@ -1,7 +1,7 @@
 # Stream State: ai-assist-image-generation
 
-**Status:** ✅ complete — phase B merged; artifacts migrated to `completed/2026-05/`
-**Last updated:** 2026-05-11 (phase B agent — implementation complete)
+**Status:** ✅ complete — PR #329 ready to merge into `claude/ai-assist-features`
+**Last updated:** 2026-05-11 (phase B agent — review feedback addressed)
 
 ---
 
@@ -105,4 +105,12 @@ See "Decisions overriding the design" table above.
 
 - **Phase A research:** committed to `claude/ai-image-generation-research-gtE2l`; merged into the orchestrator's phase B prep branch via `git merge --no-ff` to consolidate the phase-A→B transition into a single PR against the integration branch.
 - **Phase A + B prep PR:** `claude/ai-image-generation-phase-b-prep` → `claude/ai-assist-features` (open after orchestrator commits the brief + state.md + WORKSTREAMS update)
-- **Phase B implementation PR:** #329 (`claude/implement-image-generation-m7xMi` → `claude/ai-assist-features`)
+- **Phase B implementation PR:** #329 (`claude/implement-image-generation-m7xMi` → `claude/ai-assist-features`) — review feedback fully addressed; ready to merge
+
+### Phase B review rounds
+
+**Round 1 (manual):** P2-CAST-1/2 (unsafe casts in type guards → added `INamedModelFamilyConfig` base; removed casts), P2-CHAIN-1 (explicit `fail<T>` type param).
+
+**Round 2 (Copilot):** Thread `capability` into `callOpenAiImagesEdits` for `outputParamStyle`; fail-fast >3 xAI reference images; stale JSDoc on `size`; deprecated Imagen 3 model ids in tests → all updated to Imagen 4; `conversion/converters.ts` c8 ignores replaced with real tests.
+
+**Round 3 (Copilot):** `INamedModelFamilyConfig` `@public` → `@internal`; remove stale c8 ignores from `isoDateTime` + add missing invalid-DateTime test; fix `LIBRARY_CAPABILITIES.md` (`outputFormat` is gpt-image family-block key, not top-level).
