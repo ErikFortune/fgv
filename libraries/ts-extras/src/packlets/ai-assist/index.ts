@@ -23,6 +23,30 @@ export {
   type IAiAssistKeyStore,
   type IAiImageAttachment,
   type IAiImageData,
+  type AiImageSize,
+  type AiImageQuality,
+  type DallE2Size,
+  type DallE3Size,
+  type GptImageSize,
+  type DallE3Quality,
+  type GptImageQuality,
+  type DallEModelNames,
+  type GptImageModelNames,
+  type GrokImagineModelNames,
+  type Imagen4ModelNames,
+  type GeminiFlashImageModelNames,
+  type IDallEImageGenerationConfig,
+  type IGptImageGenerationConfig,
+  type IGrokImagineImageGenerationConfig,
+  type IImagen4GenerationConfig,
+  type IGeminiFlashImageGenerationConfig,
+  type IDallEModelOptions,
+  type IGptImageModelOptions,
+  type IGrokImagineModelOptions,
+  type IImagen4ModelOptions,
+  type IGeminiFlashImageModelOptions,
+  type IOtherModelOptions,
+  type IModelFamilyConfig,
   type IAiImageGenerationOptions,
   type IAiImageGenerationParams,
   type IAiGeneratedImage,
@@ -43,6 +67,12 @@ export {
   resolveModel,
   toDataUrl
 } from './model';
+
+export {
+  type IResolvedImageOptions,
+  resolveImageOptions,
+  validateResolvedOptions
+} from './imageOptionsResolver';
 
 export {
   allProviderIds,

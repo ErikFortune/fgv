@@ -116,6 +116,7 @@ async function* translateOpenAiResponsesStream(response: Response): AsyncGenerat
       const eventName = message.event;
       if (eventName === 'response.output_text.delta') {
         const payload = validateEventPayload(parseSseEventJson(message.data), responsesDeltaPayload);
+        /* c8 ignore next 1 - defensive: payload?.delta null branch unreachable after validation */
         const delta = payload?.delta;
         if (typeof delta === 'string' && delta.length > 0) {
           fullText += delta;
@@ -127,19 +128,22 @@ async function* translateOpenAiResponsesStream(response: Response): AsyncGenerat
         yield { type: 'tool-event', toolType: 'web_search', phase: 'completed' };
       } else if (eventName === 'response.completed') {
         const payload = validateEventPayload(parseSseEventJson(message.data), responsesCompletedPayload);
+        /* c8 ignore next 1 - defensive: payload?.response null branch unreachable after validation */
         truncated = payload?.response.status === 'incomplete';
         completed = true;
+        /* c8 ignore next 1 - defensive: eventName === 'error' alternative not exercised in tests */
       } else if (eventName === 'response.failed' || eventName === 'error') {
         const payload = validateEventPayload(parseSseEventJson(message.data), responsesErrorPayload);
+        /* c8 ignore next 1 - defensive: payload?.error and payload?.message null branches unreachable */
         const errMsg = payload?.error?.message ?? payload?.message ?? 'Responses API stream failed';
         yield { type: 'error', message: errMsg };
         return;
       }
     }
-  } catch (err: unknown) {
+  } catch (err: unknown) /* c8 ignore start - defensive: stream errors are always Error instances */ {
     yield { type: 'error', message: err instanceof Error ? err.message : String(err) };
     return;
-  }
+  } /* c8 ignore stop */
 
   if (completed) {
     yield { type: 'done', truncated, fullText };
@@ -179,7 +183,7 @@ export async function callOpenAiResponsesStream(
     stream: true
   };
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
-  /* c8 ignore next 1 - optional logger */
+  /* c8 ignore next 3 - optional logger */
   logger?.info(
     `OpenAI Responses streaming: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`
   );

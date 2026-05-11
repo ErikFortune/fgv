@@ -24,6 +24,7 @@
  */
 
 import { type Result } from '@fgv/ts-utils';
+import { type JsonObject } from '@fgv/ts-json-base';
 
 // ============================================================================
 // Image Data
@@ -306,8 +307,9 @@ export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
  * @remarks
  * - `'openai-images'` — OpenAI Images API. Routes to `/images/generations`
  *   (text-only) or `/images/edits` (when reference images are present).
- * - `'xai-images'` — xAI Images API. Same wire shape as OpenAI but text-only;
- *   no reference-image support on grok-2-image.
+ * - `'xai-images'` — xAI Images API. Text-only JSON generation request.
+ * - `'xai-images-edits'` — xAI Images API for Grok Imagine models. Uses JSON
+ *   body with `{ type: "image_url" }` objects (not multipart).
  * - `'gemini-imagen'` — Google Imagen `:predict` endpoint. Text-only.
  * - `'gemini-image-out'` — Google Gemini chat-style `:generateContent`
  *   endpoint that returns image parts (Gemini 2.5 Flash Image / "Nano
@@ -315,7 +317,12 @@ export type AiApiFormat = 'openai' | 'anthropic' | 'gemini';
  *
  * @public
  */
-export type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'gemini-image-out';
+export type AiImageApiFormat =
+  | 'openai-images'
+  | 'gemini-imagen'
+  | 'xai-images'
+  | 'xai-images-edits'
+  | 'gemini-image-out';
 
 // ============================================================================
 // Completion Response
@@ -486,14 +493,244 @@ export interface IAiImageModelCapability {
    * Whether matching models accept reference images via
    * {@link AiAssist.IAiImageGenerationParams.referenceImages}. When false or
    * undefined, calls that include reference images are rejected up front.
-   *
-   * @remarks
-   * Per-model constraints beyond ref support (e.g. dall-e-3 ignores edits)
-   * are not validated here and surface as provider 400s, consistent with the
-   * existing image-generation policy.
    */
   readonly acceptsImageReferenceInput?: boolean;
+  /** Accepted size strings. When present, dispatcher pre-validates. */
+  readonly acceptedSizes?: ReadonlyArray<string>;
+  /** When true, quality param is sent. When false/undefined, don't send quality. */
+  readonly supportsQualityParam?: boolean;
+  /** Accepted quality values when supportsQualityParam is true. */
+  readonly acceptedQualities?: ReadonlyArray<string>;
+  /** Maximum count (n). When present, dispatcher pre-validates. */
+  readonly maxCount?: number;
+  /**
+   * How to encode the output format on the wire:
+   * - 'response-format': send response_format: 'b64_json' (dall-e-2, dall-e-3)
+   * - 'output-format': send output_format (gpt-image-1)
+   * - 'none': send neither (Imagen, Gemini Flash)
+   */
+  readonly outputParamStyle?: 'response-format' | 'output-format' | 'none';
+  /** Default MIME type for response images. */
+  readonly defaultOutputMimeType?: string;
 }
+
+// ============================================================================
+// Image Generation — Layered Options Types
+// ============================================================================
+
+/** Pixel dimension sizes accepted by dall-e-2. @public */
+export type DallE2Size = '256x256' | '512x512' | '1024x1024';
+
+/** Pixel dimension sizes accepted by dall-e-3. @public */
+export type DallE3Size = '1024x1024' | '1792x1024' | '1024x1792';
+
+/** Pixel dimension sizes accepted by gpt-image-1. @public */
+export type GptImageSize = '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
+
+/** All accepted image size strings across all providers. @public */
+export type AiImageSize = DallE2Size | DallE3Size | GptImageSize;
+
+/** Quality values for dall-e-3. @public */
+export type DallE3Quality = 'standard' | 'hd';
+
+/** Quality values for gpt-image-1. @public */
+export type GptImageQuality = 'low' | 'medium' | 'high' | 'auto';
+
+/** All accepted quality strings across all providers. @public */
+export type AiImageQuality = DallE3Quality | GptImageQuality;
+
+/** Model names in the DALL-E family. @public */
+export type DallEModelNames = 'dall-e-2' | 'dall-e-3';
+
+/** Model names in the GPT Image family. @public */
+export type GptImageModelNames = 'gpt-image-1';
+
+/** Model names in the xAI Grok Imagine family. @public */
+export type GrokImagineModelNames = 'grok-imagine-image' | 'grok-imagine-image-quality';
+
+/** Model names in the Imagen 4 family. @public */
+export type Imagen4ModelNames =
+  | 'imagen-4.0-generate-001'
+  | 'imagen-4.0-ultra-generate-001'
+  | 'imagen-4.0-fast-generate-001';
+
+/** Model names in the Gemini Flash Image family. @public */
+export type GeminiFlashImageModelNames = 'gemini-2.5-flash-image';
+
+// ---- Family-level config shapes ----
+
+/**
+ * Provider-specific config for DALL-E models (dall-e-2, dall-e-3).
+ * @remarks
+ * style is only valid for dall-e-3; the runtime validator rejects it for dall-e-2.
+ * @public
+ */
+export interface IDallEImageGenerationConfig {
+  /** Image dimensions (dall-e-2: 256x256|512x512|1024x1024; dall-e-3: 1024x1024|1792x1024|1024x1792). */
+  readonly size?: DallE2Size | DallE3Size;
+  /** dall-e-3 only. Quality tier. */
+  readonly quality?: DallE3Quality;
+  /** dall-e-3 only. Visual style. */
+  readonly style?: 'vivid' | 'natural';
+}
+
+/**
+ * Provider-specific config for gpt-image-1.
+ * @public
+ */
+export interface IGptImageGenerationConfig {
+  /** Image dimensions. */
+  readonly size?: GptImageSize;
+  /** Quality tier. */
+  readonly quality?: GptImageQuality;
+  /** Output format (replaces response_format for this model). */
+  readonly outputFormat?: 'png' | 'jpeg' | 'webp';
+  /** JPEG/WebP compression level 0–100. */
+  readonly outputCompression?: number;
+  /** Background transparency control. */
+  readonly background?: 'transparent' | 'opaque' | 'auto';
+  /** Content moderation strictness. */
+  readonly moderation?: 'low' | 'auto';
+}
+
+/**
+ * Provider-specific config for xAI Grok Imagine models.
+ * @public
+ */
+export interface IGrokImagineImageGenerationConfig {
+  /** Aspect ratio string (xAI uses aspect ratios, not pixel dimensions). */
+  readonly aspectRatio?: string;
+  /** Resolution hint. */
+  readonly resolution?: string;
+}
+
+/**
+ * Provider-specific config for Google Imagen 4 models.
+ * @public
+ */
+export interface IImagen4GenerationConfig {
+  /** Aspect ratio string. */
+  readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+  /** Output resolution. */
+  readonly imageSize?: '1K' | '2K';
+  /** Whether to add SynthID watermark. Must be false to use seed. */
+  readonly addWatermark?: boolean;
+  /** LLM-based prompt rewriting. */
+  readonly enhancePrompt?: boolean;
+  /** Output MIME type. */
+  readonly outputMimeType?: 'image/jpeg' | 'image/png';
+  /** JPEG compression quality. */
+  readonly outputCompressionQuality?: number;
+  /** Person generation policy. */
+  readonly personGeneration?: 'allow_all' | 'allow_adult' | 'dont_allow';
+}
+
+/**
+ * Provider-specific config for Gemini Flash Image.
+ * @public
+ */
+export interface IGeminiFlashImageGenerationConfig {
+  /** Aspect ratio string. */
+  readonly aspectRatio?: string;
+}
+
+// ---- Model-family option blocks ----
+
+/**
+ * Base shape shared by all named family option blocks.
+ * Provides a typed `models` field for applicability filtering without unsafe casts.
+ * @internal
+ */
+export interface INamedModelFamilyConfig {
+  readonly models?: readonly string[];
+}
+
+/**
+ * Options block scoped to DALL-E family models.
+ * @public
+ */
+export interface IDallEModelOptions extends INamedModelFamilyConfig {
+  /** Discriminator: openai provider lineage. */
+  readonly provider: 'openai';
+  /** Family identifier. */
+  readonly family: 'dall-e';
+  /** Optional model names this block applies to. Omit = applies to all DALL-E models. */
+  readonly models?: DallEModelNames[];
+  /** Family-specific config. */
+  readonly config: IDallEImageGenerationConfig;
+}
+
+/**
+ * Options block scoped to GPT Image family models.
+ * @public
+ */
+export interface IGptImageModelOptions extends INamedModelFamilyConfig {
+  readonly provider: 'openai';
+  readonly family: 'gpt-image';
+  readonly models?: GptImageModelNames[];
+  readonly config: IGptImageGenerationConfig;
+}
+
+/**
+ * Options block scoped to xAI Grok Imagine family models.
+ * @public
+ */
+export interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
+  readonly provider: 'xai';
+  readonly family: 'grok-imagine';
+  readonly models?: GrokImagineModelNames[];
+  readonly config: IGrokImagineImageGenerationConfig;
+}
+
+/**
+ * Options block scoped to Google Imagen 4 models.
+ * @public
+ */
+export interface IImagen4ModelOptions extends INamedModelFamilyConfig {
+  readonly provider: 'google';
+  readonly family: 'imagen-4';
+  readonly models?: Imagen4ModelNames[];
+  readonly config: IImagen4GenerationConfig;
+}
+
+/**
+ * Options block scoped to Gemini Flash Image models.
+ * @public
+ */
+export interface IGeminiFlashImageModelOptions extends INamedModelFamilyConfig {
+  readonly provider: 'google';
+  readonly family: 'gemini-flash-image';
+  readonly models?: GeminiFlashImageModelNames[];
+  readonly config: IGeminiFlashImageGenerationConfig;
+}
+
+/**
+ * Escape-hatch options block for models not covered by a named family.
+ * @remarks
+ * `models` is required — there is no implicit "all" for unknown model families.
+ * `config` is `JsonObject` — passed verbatim to the wire request with no validation.
+ * This is the "trust me, I know what I'm doing" path for callers who need to send
+ * wire params our typed configs don't yet expose.
+ * @public
+ */
+export interface IOtherModelOptions {
+  readonly provider: 'other';
+  readonly models: string[];
+  readonly config: JsonObject;
+}
+
+/**
+ * Discriminated union of all model-family option blocks.
+ * Discriminated on `provider` + `family` fields.
+ * @public
+ */
+export type IModelFamilyConfig =
+  | IDallEModelOptions
+  | IGptImageModelOptions
+  | IGrokImagineModelOptions
+  | IImagen4ModelOptions
+  | IGeminiFlashImageModelOptions
+  | IOtherModelOptions;
 
 // ============================================================================
 // Image Generation
@@ -503,39 +740,46 @@ export interface IAiImageModelCapability {
  * Options for image generation requests.
  *
  * @remarks
- * Provider compatibility is documented per field. The library does not
- * pre-validate against per-model constraints (e.g. `dall-e-3` rejects
- * `count > 1`); provider 400 errors surface through the failure path.
+ * Uses a layered architecture:
+ * 1. Generic top-level options (size, count, quality, seed) apply across providers
+ *    via the resolved model's registry mapping.
+ * 2. Optional `models` array contains model-family-scoped blocks; the resolver
+ *    picks applicable blocks based on the resolved model and applies them in
+ *    declaration order.
+ *
+ * **Merge precedence (later wins):**
+ * 1. Generic top-level options (lowest precedence)
+ * 2. Family-generic blocks (matching family, models field omitted)
+ * 3. Model-specific blocks (models array includes resolved model name)
+ * 4. Other blocks (provider: 'other', models array includes resolved model name)
+ *
+ * Provider-mismatch: blocks whose provider doesn't match the dispatcher's
+ * provider lineage are silently skipped.
  *
  * @public
  */
 export interface IAiImageGenerationOptions {
   /**
-   * Image dimensions. Used by openai-format providers (mapped to the
-   * provider's `size` field). Ignored by Imagen — use
-   * {@link IAiImageGenerationOptions.imagen} `aspectRatio` instead.
-   *
-   * Note: each model has its own accepted set; `dall-e-3` only accepts the
-   * values listed here.
+   * Image dimensions for OpenAI models (mapped to `size` field).
+   * For xAI aspect ratio or Imagen aspect ratio, use the corresponding `models` family block.
    */
-  readonly size?: '1024x1024' | '1024x1792' | '1792x1024' | 'auto';
-  /**
-   * Number of images to generate. Default 1.
-   *
-   * Note: `dall-e-3` rejects `count > 1`.
-   */
+  readonly size?: AiImageSize;
+  /** Number of images. Default 1. Some models enforce a maximum. */
   readonly count?: number;
-  /** Generation quality hint where supported. */
-  readonly quality?: 'standard' | 'high';
-  /** Random seed for reproducibility, where supported. */
+  /**
+   * Quality tier. Accepted values differ per model:
+   * - dall-e-3: 'standard' | 'hd'
+   * - gpt-image-1: 'low' | 'medium' | 'high' | 'auto'
+   * Other models ignore this field.
+   */
+  readonly quality?: AiImageQuality;
+  /** Reproducibility seed, where supported. */
   readonly seed?: number;
   /**
-   * Imagen-specific options. Ignored by other providers.
+   * Optional precision via model-family-scoped blocks. The resolver picks
+   * applicable blocks dynamically based on the resolved model.
    */
-  readonly imagen?: {
-    readonly negativePrompt?: string;
-    readonly aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
-  };
+  readonly models?: ReadonlyArray<IModelFamilyConfig>;
 }
 
 /**

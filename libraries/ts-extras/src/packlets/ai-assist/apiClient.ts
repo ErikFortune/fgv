@@ -41,9 +41,9 @@ import {
   type IAiCompletionResponse,
   type IAiGeneratedImage,
   type IAiImageAttachment,
-  type IAiImageGenerationOptions,
   type IAiImageGenerationParams,
   type IAiImageGenerationResponse,
+  type IAiImageModelCapability,
   type IAiModelCapabilityConfig,
   type IAiModelCapabilityRule,
   type IAiModelInfo,
@@ -61,6 +61,11 @@ import {
 } from './chatRequestBuilders';
 import { bearerAuthHeader, resolveEffectiveBaseUrl } from './endpoint';
 import { DEFAULT_MODEL_CAPABILITY_CONFIG, resolveImageCapability, supportsImageGeneration } from './registry';
+import {
+  resolveImageOptions,
+  validateResolvedOptions,
+  type IResolvedImageOptions
+} from './imageOptionsResolver';
 import { toAnthropicTools, toGeminiTools, toResponsesApiTools } from './toolFormats';
 
 // ============================================================================
@@ -208,6 +213,7 @@ async function fetchMultipart(
       signal
     });
   } catch (err: unknown) {
+    /* c8 ignore next 1 - defensive: fetch errors are always Error instances in practice */
     const detail = err instanceof Error ? err.message : String(err);
     /* c8 ignore next 1 - optional logger */
     logger?.error(`AI API request failed: ${detail}`);
@@ -227,14 +233,13 @@ async function fetchMultipart(
   let json: unknown;
   try {
     json = await response.json();
-  } catch {
-    /* c8 ignore next 1 - optional logger */
+  } catch /* c8 ignore start - defensive: response.json() failure on a 2xx */ {
     logger?.error('AI API returned invalid JSON response');
     return fail('AI API returned invalid JSON response');
-  }
+  } /* c8 ignore stop */
 
+  /* c8 ignore next 5 - defensive: provider returning non-object JSON on a 2xx */
   if (!isJsonObject(json)) {
-    /* c8 ignore next 1 - optional logger */
     logger?.error('AI API returned non-object JSON response');
     return fail('AI API returned non-object JSON response');
   }
@@ -307,6 +312,7 @@ async function fetchGetJson(
   try {
     response = await fetch(url, { method: 'GET', headers, signal });
   } catch (err: unknown) {
+    /* c8 ignore next 1 - defensive: fetch errors are always Error instances in practice */
     const detail = err instanceof Error ? err.message : String(err);
     /* c8 ignore next 1 - optional logger */
     logger?.error(`AI API request failed: ${detail}`);
@@ -326,14 +332,13 @@ async function fetchGetJson(
   let json: unknown;
   try {
     json = await response.json();
-  } catch {
-    /* c8 ignore next 1 - optional logger */
+  } catch /* c8 ignore start - defensive: response.json() failure on a 2xx */ {
     logger?.error('AI API returned invalid JSON response');
     return fail('AI API returned invalid JSON response');
-  }
+  } /* c8 ignore stop */
 
+  /* c8 ignore next 5 - defensive: provider returning non-object JSON on a 2xx */
   if (!isJsonObject(json)) {
-    /* c8 ignore next 1 - optional logger */
     logger?.error('AI API returned non-object JSON response');
     return fail('AI API returned non-object JSON response');
   }
@@ -1001,34 +1006,27 @@ const proxiedListModelsResponse: Validator<IProxiedListModelsBody> =
 // Image generation — adapters
 // ============================================================================
 
-/**
- * Calls the OpenAI Images API. Used for both `openai-images` and `xai-images`
- * formats — the request shape is the same; the only difference is whether the
- * `size` field is honored (OpenAI: yes, xAI: ignored at the provider).
- *
- * When `request.referenceImages` is non-empty, routes to `/images/edits`
- * (multipart) instead of `/images/generations` (JSON). Per-model edit support
- * is not validated here (e.g. dall-e-3 does not support edits) — the
- * provider's 400 surfaces through the failure path.
- *
- * @internal
- */
+/** Routes to /images/generations or /images/edits; handles outputParamStyle. @internal */
 async function callOpenAiImageGeneration(
   config: IAiApiConfig,
   request: IAiImageGenerationParams,
-  defaultMimeType: string,
+  capability: IAiImageModelCapability,
+  resolved: IResolvedImageOptions,
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<IAiImageGenerationResponse>> {
-  const opts: IAiImageGenerationOptions = request.options ?? {};
   const refs = request.referenceImages ?? [];
   const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
-  const n = opts.count ?? 1;
+
+  const effectiveMimeType =
+    resolved.outputFormat !== undefined
+      ? `image/${resolved.outputFormat}`
+      : capability.defaultOutputMimeType ?? 'image/png';
 
   const fetched =
     refs.length > 0
-      ? await callOpenAiImagesEdits(config, request, headers, n, refs, logger, signal)
-      : await callOpenAiImagesGenerations(config, request, headers, n, logger, signal);
+      ? await callOpenAiImagesEdits(config, capability, request, headers, resolved, logger, signal)
+      : await callOpenAiImagesGenerations(config, request, headers, resolved, capability, logger, signal);
 
   return fetched.onSuccess((json) =>
     openAiImageResponse
@@ -1037,7 +1035,7 @@ async function callOpenAiImageGeneration(
       .onSuccess((response) =>
         succeed({
           images: response.data.map((item) => ({
-            mimeType: defaultMimeType,
+            mimeType: effectiveMimeType,
             base64: item.b64_json,
             ...(item.revised_prompt !== undefined ? { revisedPrompt: item.revised_prompt } : {})
           }))
@@ -1046,52 +1044,70 @@ async function callOpenAiImageGeneration(
   );
 }
 
-/**
- * Builds and posts the JSON `/images/generations` request (no refs).
- * @internal
- */
+/** Builds the JSON /images/generations request; handles outputParamStyle. @internal */
 function callOpenAiImagesGenerations(
   config: IAiApiConfig,
   request: IAiImageGenerationParams,
   headers: Record<string, string>,
-  n: number,
+  resolved: IResolvedImageOptions,
+  capability: IAiImageModelCapability,
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<JsonObject>> {
-  const opts: IAiImageGenerationOptions = request.options ?? {};
   const body: Record<string, unknown> = {
     model: config.model,
     prompt: request.prompt,
-    n,
-    response_format: 'b64_json'
+    n: resolved.n
   };
-  if (opts.size !== undefined) {
-    body.size = opts.size;
+
+  // Output format param — conditional on model capability
+  if (capability.outputParamStyle === 'response-format') {
+    body.response_format = 'b64_json';
+  } else if (capability.outputParamStyle === 'output-format') {
+    body.output_format = resolved.outputFormat ?? 'png';
   }
-  if (opts.quality !== undefined) {
-    body.quality = opts.quality;
+  // 'none' or undefined: send neither
+
+  if (resolved.size !== undefined) {
+    body.size = resolved.size;
   }
-  if (opts.seed !== undefined) {
-    body.seed = opts.seed;
+  if (capability.supportsQualityParam && resolved.quality !== undefined) {
+    body.quality = resolved.quality;
+  }
+  if (resolved.seed !== undefined) {
+    body.seed = resolved.seed;
+  }
+  if (resolved.style !== undefined) {
+    body.style = resolved.style;
+  }
+  if (resolved.background !== undefined) {
+    body.background = resolved.background;
+  }
+  if (resolved.moderation !== undefined) {
+    body.moderation = resolved.moderation;
+  }
+  if (resolved.outputCompression !== undefined) {
+    body.output_compression = resolved.outputCompression;
+  }
+  if (resolved.otherParams !== undefined) {
+    Object.assign(body, resolved.otherParams);
   }
   /* c8 ignore next 1 - optional logger */
-  logger?.info(`Image generation: model=${config.model}, n=${n}`);
+  logger?.info(`Image generation: model=${config.model}, n=${resolved.n}`);
   return fetchJson(`${config.baseUrl}/images/generations`, headers, body, logger, signal);
 }
 
-/**
- * Builds and posts the multipart `/images/edits` request (with refs).
- * @internal
- */
+/** Builds the multipart /images/edits request with ref images. @internal */
 async function callOpenAiImagesEdits(
   config: IAiApiConfig,
+  capability: IAiImageModelCapability,
   request: IAiImageGenerationParams,
   headers: Record<string, string>,
-  n: number,
-  refs: ReadonlyArray<IAiImageAttachment>,
+  resolved: IResolvedImageOptions,
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<JsonObject>> {
+  const refs = request.referenceImages!; // callers verify refs.length > 0 before calling this function
   const blobsResult = mapResults(
     refs.map((ref, i) => attachmentToBlob(ref).withErrorFormat((msg) => `reference image ${i}: ${msg}`))
   );
@@ -1100,39 +1116,111 @@ async function callOpenAiImagesEdits(
     return fail(blobsResult.message);
   }
 
-  const opts: IAiImageGenerationOptions = request.options ?? {};
   const form = new FormData();
   form.append('model', config.model);
   form.append('prompt', request.prompt);
-  form.append('n', String(n));
-  form.append('response_format', 'b64_json');
-  if (opts.size !== undefined) {
-    form.append('size', opts.size);
+  form.append('n', String(resolved.n));
+  if (capability.outputParamStyle !== 'output-format') {
+    form.append('response_format', 'b64_json');
   }
-  if (opts.quality !== undefined) {
-    form.append('quality', opts.quality);
-  }
-  if (opts.seed !== undefined) {
-    form.append('seed', String(opts.seed));
+  if (resolved.size !== undefined) {
+    form.append('size', resolved.size);
   }
   blobsResult.value.forEach((blob, i) => {
     form.append('image[]', blob, `ref-${i}.${extensionForMimeType(refs[i].mimeType)}`);
   });
   /* c8 ignore next 1 - optional logger */
-  logger?.info(`Image edit: model=${config.model}, n=${n}, refs=${refs.length}`);
+  logger?.info(`Image edit: model=${config.model}, n=${resolved.n}, refs=${refs.length}`);
   return fetchMultipart(`${config.baseUrl}/images/edits`, headers, form, logger, signal);
 }
 
-/**
- * Calls Gemini's chat-style `:generateContent` endpoint for image output
- * (Gemini 2.5 Flash Image / "Nano Banana"). Accepts reference images, which
- * are passed as `inlineData` parts alongside the text prompt.
- *
- * @internal
- */
+/** Calls xAI /images/edits with JSON body (not multipart); up to 3 source images. @internal */
+async function callXaiImagesEdits(
+  config: IAiApiConfig,
+  request: IAiImageGenerationParams,
+  resolved: IResolvedImageOptions,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<JsonObject>> {
+  /* c8 ignore next 1 - defensive: referenceImages always defined when this function is called */
+  const refs = request.referenceImages ?? [];
+  if (refs.length > 3) {
+    return fail(`xAI image edits supports at most 3 reference images; got ${refs.length}`);
+  }
+  const images = refs.map((ref) => ({
+    type: 'image_url',
+    url: `data:${ref.mimeType};base64,${ref.base64}`
+  }));
+
+  const body: Record<string, unknown> = {
+    model: config.model,
+    prompt: request.prompt,
+    n: resolved.n,
+    response_format: 'b64_json',
+    image: images
+  };
+  if (resolved.aspectRatio !== undefined) {
+    body.aspect_ratio = resolved.aspectRatio;
+  }
+  if (resolved.resolution !== undefined) {
+    body.resolution = resolved.resolution;
+  }
+  if (resolved.otherParams !== undefined) {
+    Object.assign(body, resolved.otherParams);
+  }
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`xAI image edit: model=${config.model}, n=${resolved.n}, refs=${refs.length}`);
+  return fetchJson(`${config.baseUrl}/images/edits`, bearerAuthHeader(config.apiKey), body, logger, signal);
+}
+
+/** Calls xAI /images/generations; uses aspect_ratio instead of size. @internal */
+async function callXaiImageGeneration(
+  config: IAiApiConfig,
+  request: IAiImageGenerationParams,
+  capability: IAiImageModelCapability,
+  resolved: IResolvedImageOptions,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal
+): Promise<Result<IAiImageGenerationResponse>> {
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
+  const body: Record<string, unknown> = {
+    model: config.model,
+    prompt: request.prompt,
+    n: resolved.n,
+    response_format: 'b64_json'
+  };
+  if (resolved.aspectRatio !== undefined) {
+    body.aspect_ratio = resolved.aspectRatio;
+  }
+  if (resolved.resolution !== undefined) {
+    body.resolution = resolved.resolution;
+  }
+  if (resolved.otherParams !== undefined) {
+    Object.assign(body, resolved.otherParams);
+  }
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`xAI image generation: model=${config.model}, n=${resolved.n}`);
+  const fetched = await fetchJson(`${config.baseUrl}/images/generations`, headers, body, logger, signal);
+  return fetched.onSuccess((json) =>
+    openAiImageResponse
+      .validate(json)
+      .withErrorFormat((msg) => `xAI images API response: ${msg}`)
+      .onSuccess((response) =>
+        succeed({
+          images: response.data.map((item) => ({
+            mimeType: capability.defaultOutputMimeType ?? 'image/jpeg',
+            base64: item.b64_json
+          }))
+        })
+      )
+  );
+}
+
+/** Calls Gemini :generateContent for image output; accepts ref images as inlineData. @internal */
 async function callGeminiImageOutGeneration(
   config: IAiApiConfig,
   request: IAiImageGenerationParams,
+  resolved: IResolvedImageOptions,
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<IAiImageGenerationResponse>> {
@@ -1142,9 +1230,19 @@ async function callGeminiImageOutGeneration(
   for (const ref of refs) {
     parts.push({ inlineData: { mimeType: ref.mimeType, data: ref.base64 } });
   }
-  const body: Record<string, unknown> = {
-    contents: [{ role: 'user', parts }]
-  };
+
+  const generationConfig: Record<string, unknown> = {};
+  if (resolved.geminiAspectRatio !== undefined) {
+    generationConfig.imageConfig = { aspectRatio: resolved.geminiAspectRatio };
+  }
+  if (resolved.otherParams !== undefined) {
+    Object.assign(generationConfig, resolved.otherParams);
+  }
+
+  const body: Record<string, unknown> = { contents: [{ role: 'user', parts }] };
+  if (Object.keys(generationConfig).length > 0) {
+    body.generationConfig = generationConfig;
+  }
   const headers: Record<string, string> = {
     'x-goog-api-key': config.apiKey
   };
@@ -1175,39 +1273,55 @@ async function callGeminiImageOutGeneration(
   );
 }
 
-/**
- * Calls the Gemini Imagen `:predict` endpoint.
- * @internal
- */
+/** Calls the Gemini Imagen :predict endpoint with Imagen 4 params. @internal */
 async function callImagenGeneration(
   config: IAiApiConfig,
   request: IAiImageGenerationParams,
+  resolved: IResolvedImageOptions,
   logger?: Logging.ILogger,
   signal?: AbortSignal
 ): Promise<Result<IAiImageGenerationResponse>> {
   const url = `${config.baseUrl}/models/${config.model}:predict`;
-  const opts: IAiImageGenerationOptions = request.options ?? {};
   const parameters: Record<string, unknown> = {
-    sampleCount: opts.count ?? 1
+    sampleCount: resolved.n
   };
-  if (opts.imagen?.aspectRatio !== undefined) {
-    parameters.aspectRatio = opts.imagen.aspectRatio;
+  if (resolved.imagenAspectRatio !== undefined) {
+    parameters.aspectRatio = resolved.imagenAspectRatio;
   }
-  if (opts.imagen?.negativePrompt !== undefined) {
-    parameters.negativePrompt = opts.imagen.negativePrompt;
+  if (resolved.imageSize !== undefined) {
+    parameters.imageSize = resolved.imageSize;
   }
-  if (opts.seed !== undefined) {
-    parameters.seed = opts.seed;
+  if (resolved.addWatermark !== undefined) {
+    parameters.addWatermark = resolved.addWatermark;
+  }
+  if (resolved.enhancePrompt !== undefined) {
+    parameters.enhancePrompt = resolved.enhancePrompt;
+  }
+  if (resolved.imagenOutputMimeType !== undefined || resolved.imagenOutputCompressionQuality !== undefined) {
+    const outputOptions: Record<string, unknown> = {};
+    if (resolved.imagenOutputMimeType !== undefined) {
+      outputOptions.mimeType = resolved.imagenOutputMimeType;
+    }
+    if (resolved.imagenOutputCompressionQuality !== undefined) {
+      outputOptions.compressionQuality = resolved.imagenOutputCompressionQuality;
+    }
+    parameters.outputOptions = outputOptions;
+  }
+  if (resolved.personGeneration !== undefined) {
+    parameters.personGeneration = resolved.personGeneration;
+  }
+  if (resolved.seed !== undefined) {
+    parameters.seed = resolved.seed;
+  }
+  if (resolved.otherParams !== undefined) {
+    Object.assign(parameters, resolved.otherParams);
   }
 
   const body: Record<string, unknown> = {
     instances: [{ prompt: request.prompt }],
     parameters
   };
-
-  const headers: Record<string, string> = {
-    'x-goog-api-key': config.apiKey
-  };
+  const headers: Record<string, string> = { 'x-goog-api-key': config.apiKey };
 
   /* c8 ignore next 1 - optional logger */
   logger?.info(`Imagen generation: model=${config.model}, n=${parameters.sampleCount}`);
@@ -1238,9 +1352,10 @@ async function callImagenGeneration(
  * {@link IAiProviderDescriptor.imageGeneration} for the requested model and
  * routes by its `format`:
  * - `'openai-images'` for OpenAI (DALL-E, gpt-image-1)
- * - `'xai-images'` for xAI Grok image models
+ * - `'xai-images'` for xAI Grok image models (JSON generations)
+ * - `'xai-images-edits'` for xAI Grok Imagine models (JSON edits with image_url)
  * - `'gemini-imagen'` for Google Imagen `:predict`
- * - `'gemini-image-out'` for Gemini chat-style image output (Nano Banana)
+ * - `'gemini-image-out'` for Gemini chat-style image output
  *
  * Image-model selection reuses the existing `'image'` {@link ModelSpecKey}.
  * When `request.referenceImages` is non-empty, the call is rejected up front
@@ -1279,6 +1394,11 @@ export async function callProviderImageGeneration(
     return fail(`model "${model}" does not support reference images`);
   }
 
+  const resolved = resolveImageOptions(model, capability, request.options);
+  const validationResult = validateResolvedOptions(model, capability, resolved);
+  if (validationResult.isFailure()) {
+    return fail<IAiImageGenerationResponse>(validationResult.message);
+  }
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,
@@ -1294,13 +1414,33 @@ export async function callProviderImageGeneration(
 
   switch (capability.format) {
     case 'openai-images':
-      return callOpenAiImageGeneration(config, request, 'image/png', logger, signal);
+      return callOpenAiImageGeneration(config, request, capability, resolved, logger, signal);
     case 'xai-images':
-      return callOpenAiImageGeneration(config, request, 'image/jpeg', logger, signal);
+      return callXaiImageGeneration(config, request, capability, resolved, logger, signal);
+    case 'xai-images-edits': {
+      const refs = request.referenceImages ?? [];
+      if (refs.length > 0) {
+        const editsResult = await callXaiImagesEdits(config, request, resolved, logger, signal);
+        return editsResult.onSuccess((json) =>
+          openAiImageResponse
+            .validate(json)
+            .withErrorFormat((msg) => `xAI images API response: ${msg}`)
+            .onSuccess((response) =>
+              succeed({
+                images: response.data.map((item) => ({
+                  mimeType: capability.defaultOutputMimeType ?? 'image/jpeg',
+                  base64: item.b64_json
+                }))
+              })
+            )
+        );
+      }
+      return callXaiImageGeneration(config, request, capability, resolved, logger, signal);
+    }
     case 'gemini-imagen':
-      return callImagenGeneration(config, request, logger, signal);
+      return callImagenGeneration(config, request, resolved, logger, signal);
     case 'gemini-image-out':
-      return callGeminiImageOutGeneration(config, request, logger, signal);
+      return callGeminiImageOutGeneration(config, request, resolved, logger, signal);
     /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
     default: {
       const _exhaustive: never = capability.format;
@@ -1428,6 +1568,7 @@ function geminiMethodsToCapabilities(methods: ReadonlyArray<string>): ReadonlyAr
  * @internal
  */
 function geminiBareId(name: string): string {
+  /* c8 ignore next 1 - defensive: Gemini API always returns names prefixed with 'models/' */
   return name.startsWith('models/') ? name.substring('models/'.length) : name;
 }
 

@@ -79,6 +79,11 @@ describe('Converters module', () => {
       expect(ExtraConverters.isoDate.convert('whatever')).toFailWith(/invalid date/i);
     });
 
+    test('fails for an invalid DateTime object', () => {
+      const invalid = DateTime.invalid('unit test');
+      expect(ExtraConverters.isoDate.convert(invalid)).toFailWith(/invalid date/i);
+    });
+
     test('fails for an unexpected type', () => {
       expect(ExtraConverters.isoDate.convert({ date: new Date() })).toFailWith(/cannot convert/i);
     });
@@ -106,11 +111,16 @@ describe('Converters module', () => {
     });
 
     test('fails for a malformed date', () => {
-      expect(ExtraConverters.isoDate.convert('whatever')).toFailWith(/invalid date/i);
+      expect(ExtraConverters.isoDateTime.convert('whatever')).toFailWith(/invalid date/i);
+    });
+
+    test('fails for an invalid DateTime object', () => {
+      const invalid = DateTime.invalid('unit test');
+      expect(ExtraConverters.isoDateTime.convert(invalid)).toFailWith(/invalid date/i);
     });
 
     test('fails for an unexpected type', () => {
-      expect(ExtraConverters.isoDate.convert({ date: new Date() })).toFailWith(/cannot convert/i);
+      expect(ExtraConverters.isoDateTime.convert({ date: new Date() })).toFailWith(/cannot convert/i);
     });
   });
 

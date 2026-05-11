@@ -1,7 +1,7 @@
 # Stream State: ai-assist-image-generation
 
-**Status:** 🟢 phase B (implementation) ready to start — phase A signed off
-**Last updated:** 2026-05-11 (orchestrator — phase A signoff + phase B prep)
+**Status:** ✅ complete — PR #329 ready to merge into `claude/ai-assist-features`
+**Last updated:** 2026-05-11 (phase B agent — review feedback addressed)
 
 ---
 
@@ -10,7 +10,7 @@
 | Phase | Status | Notes |
 |-------|--------|-------|
 | A — research and design | ✅ complete | `design.md` written; signed off with substantial modifications. PR consolidated into the phase B prep PR (this branch). |
-| B — implementation | 🟢 ready | Brief: `brief-phase-b.md`. Awaiting agent kickoff. |
+| B — implementation | ✅ complete | PR #329 → `claude/ai-assist-features`. Branch: `claude/implement-image-generation-m7xMi`. |
 
 ---
 
@@ -42,6 +42,35 @@ Detail in `brief-phase-b.md`. **`brief-phase-b.md` is the binding contract; `des
 ---
 
 ## Decisions log
+
+### Phase B decisions log
+
+#### B.0 — OpenAI live-verification (completed 2026-05-11)
+
+Documentation source: web search + community reports (developers.openai.com returned 403)
+
+| Model | Param | Design [training-data] | Live-verified | Delta |
+|---|---|---|---|---|
+| dall-e-2 | sizes | 256x256, 512x512, 1024x1024 | CONFIRMED | none |
+| dall-e-2 | quality | not supported (empty) | CONFIRMED | none |
+| dall-e-2 | response_format | url, b64_json | CONFIRMED | none |
+| dall-e-2 | n | 1-10 | CONFIRMED | none |
+| dall-e-3 | sizes | 1024x1024, 1792x1024, 1024x1792 | CONFIRMED | none |
+| dall-e-3 | quality | standard, hd | CONFIRMED | none |
+| dall-e-3 | response_format | url, b64_json | CONFIRMED | none |
+| dall-e-3 | n | 1 (hard limit) | CONFIRMED | none |
+| dall-e-3 | style | vivid, natural | CONFIRMED | none |
+| gpt-image-1 | sizes | 1024x1024, 1536x1024, 1024x1536, auto | CONFIRMED | none |
+| gpt-image-1 | quality | low, medium, high, auto | CONFIRMED | none |
+| gpt-image-1 | response_format | NOT ACCEPTED — HTTP 400 | CONFIRMED | none |
+| gpt-image-1 | output_format | png, jpeg, webp | CONFIRMED | none |
+| gpt-image-1 | background | transparent, opaque, auto | CONFIRMED | none |
+| gpt-image-1 | moderation | auto, low | CONFIRMED | none |
+| gpt-image-1 | output_compression | 0-100 | CONFIRMED | none |
+
+No divergences from design.md [training-data] annotations. All training-data values confirmed.
+
+---
 
 ### Phase A (cloud agent's working branch: `claude/ai-image-generation-research-gtE2l`)
 
@@ -76,4 +105,12 @@ See "Decisions overriding the design" table above.
 
 - **Phase A research:** committed to `claude/ai-image-generation-research-gtE2l`; merged into the orchestrator's phase B prep branch via `git merge --no-ff` to consolidate the phase-A→B transition into a single PR against the integration branch.
 - **Phase A + B prep PR:** `claude/ai-image-generation-phase-b-prep` → `claude/ai-assist-features` (open after orchestrator commits the brief + state.md + WORKSTREAMS update)
-- **Phase B implementation PR:** TBD by phase B agent; target `claude/ai-assist-features`
+- **Phase B implementation PR:** #329 (`claude/implement-image-generation-m7xMi` → `claude/ai-assist-features`) — review feedback fully addressed; ready to merge
+
+### Phase B review rounds
+
+**Round 1 (manual):** P2-CAST-1/2 (unsafe casts in type guards → added `INamedModelFamilyConfig` base; removed casts), P2-CHAIN-1 (explicit `fail<T>` type param).
+
+**Round 2 (Copilot):** Thread `capability` into `callOpenAiImagesEdits` for `outputParamStyle`; fail-fast >3 xAI reference images; stale JSDoc on `size`; deprecated Imagen 3 model ids in tests → all updated to Imagen 4; `conversion/converters.ts` c8 ignores replaced with real tests.
+
+**Round 3 (Copilot):** `INamedModelFamilyConfig` `@public` → `@internal`; remove stale c8 ignores from `isoDateTime` + add missing invalid-DateTime test; fix `LIBRARY_CAPABILITIES.md` (`outputFormat` is gpt-image family-block key, not top-level).
