@@ -736,6 +736,24 @@ describe('callProviderCompletion', () => {
       expect(body.model).toBe('grok-fast');
     });
 
+    test('does not select thinking model when thinking config is empty object', async () => {
+      const splitDescriptor = makeDescriptor({
+        defaultModel: { base: 'grok-fast', tools: 'grok-reasoning', thinking: 'grok-4.3' }
+      });
+      mockFetchResponse(responsesApiResponse('ok'));
+
+      await AiAssist.callProviderCompletion({
+        descriptor: splitDescriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools,
+        thinking: {}
+      });
+
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('grok-reasoning');
+    });
+
     test('extracts text from Responses API output', async () => {
       mockFetchResponse(responsesApiResponse('Web search found: chocolate truffles'));
 

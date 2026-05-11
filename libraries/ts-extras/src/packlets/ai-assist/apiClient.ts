@@ -772,7 +772,9 @@ export async function callProviderCompletion(
   }
 
   const hasTools = tools !== undefined && tools.length > 0;
-  const modelContext = thinking !== undefined ? 'thinking' : hasTools ? 'tools' : undefined;
+  const hasThinkingConfig =
+    thinking?.effort !== undefined || (thinking?.providers !== undefined && thinking.providers.length > 0);
+  const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
 
   const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
   if (model.length === 0) {
@@ -790,9 +792,8 @@ export async function callProviderCompletion(
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }
-      const merged = mergeResult.value;
-      resolvedThinking = merged;
-      const conflictResult = checkTemperatureConflict(merged, discriminator, temperature);
+      resolvedThinking = mergeResult.value;
+      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
@@ -800,7 +801,6 @@ export async function callProviderCompletion(
   }
 
   const effectiveTemperature = temperature ?? 0.7;
-
   const config: IAiApiConfig = {
     baseUrl: baseUrlResult.value,
     apiKey,

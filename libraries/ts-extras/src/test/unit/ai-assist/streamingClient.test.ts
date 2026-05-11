@@ -315,6 +315,24 @@ describe('callProviderCompletionStream', () => {
       expect(body.model).toBe('gpt-o3');
     });
 
+    test('does not select thinking model when thinking config is empty object', async () => {
+      const descriptor = makeDescriptor({
+        defaultModel: { base: 'gpt-4o', tools: 'gpt-4o-tools', thinking: 'gpt-o3' },
+        supportedTools: ['web_search']
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: {}
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('gpt-4o-tools');
+    });
+
     test('forwards explicit temperature to request body', async () => {
       mockSseResponse(openAiChatSse(['x']));
       await AiAssist.callProviderCompletionStream({

@@ -93,7 +93,9 @@ export async function callProviderCompletionStream(
   }
 
   const hasTools = tools !== undefined && tools.length > 0;
-  const modelContext = thinking !== undefined ? 'thinking' : hasTools ? 'tools' : undefined;
+  const hasThinkingConfig =
+    thinking?.effort !== undefined || (thinking?.providers !== undefined && thinking.providers.length > 0);
+  const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
 
   const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
   if (model.length === 0) {
@@ -102,7 +104,6 @@ export async function callProviderCompletionStream(
     );
   }
 
-  // Resolve thinking config if provided
   let resolvedThinking: IResolvedThinkingConfig | undefined;
   if (thinking !== undefined) {
     const discriminator = providerDiscriminatorForId(descriptor.id);
@@ -112,10 +113,8 @@ export async function callProviderCompletionStream(
       if (mergeResult.isFailure()) {
         return fail(mergeResult.message);
       }
-      const merged = mergeResult.value;
-      resolvedThinking = merged;
-      // Check temperature conflict (D4)
-      const conflictResult = checkTemperatureConflict(merged, discriminator, temperature);
+      resolvedThinking = mergeResult.value;
+      const conflictResult = checkTemperatureConflict(resolvedThinking, discriminator, temperature);
       if (conflictResult.isFailure()) {
         return fail(conflictResult.message);
       }
