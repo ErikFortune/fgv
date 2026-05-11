@@ -164,8 +164,9 @@ export async function callOpenAiChatStream(
     head: messagesBefore
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
+  const supportsReasoning = config.model !== 'grok-4';
   const body: Record<string, unknown> = { model: config.model, messages, stream: true };
-  if (effort !== undefined) {
+  if (effort !== undefined && supportsReasoning) {
     body.reasoning_effort = effort;
   }
   if (effort === undefined || effort === 'none') {

@@ -503,8 +503,20 @@ describe('callProviderCompletion', () => {
       expect(result).toFailWith(/content is not an array/i);
     });
 
-    test('fails when response content has no text blocks', async () => {
+    test('fails when stop_reason is missing', async () => {
       mockFetchResponse({ content: [] });
+
+      const result = await AiAssist.callProviderCompletion({
+        descriptor,
+        apiKey: 'test-key',
+        prompt: testPrompt
+      });
+
+      expect(result).toFailWith(/stop_reason is missing or not a string/i);
+    });
+
+    test('fails when response content has no text blocks', async () => {
+      mockFetchResponse({ content: [], stop_reason: 'end_turn' });
 
       const result = await AiAssist.callProviderCompletion({
         descriptor,
@@ -1098,6 +1110,46 @@ describe('thinking-config wire encoding (non-streaming)', () => {
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.reasoning_effort).toBe('none');
       expect(body.temperature).toBe(0.5);
+    });
+
+    test('omits reasoning_effort for grok-4 even when thinking is active', async () => {
+      const grok4Descriptor = makeDescriptor({
+        id: 'xai-grok',
+        baseUrl: 'https://api.x.ai/v1',
+        defaultModel: 'grok-4',
+        corsRestricted: false
+      });
+      mockFetchResponse(openAiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor: grok4Descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('omits reasoning field for grok-4 in Responses API path even when thinking is active', async () => {
+      const grok4Descriptor = makeDescriptor({
+        id: 'xai-grok',
+        baseUrl: 'https://api.x.ai/v1',
+        defaultModel: 'grok-4',
+        corsRestricted: false
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockFetchResponse(responsesApiResponse('ok'));
+      await AiAssist.callProviderCompletion({
+        descriptor: grok4Descriptor,
+        apiKey: 'sk',
+        prompt: testPrompt,
+        tools,
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
     });
   });
 

@@ -178,13 +178,14 @@ export async function callOpenAiResponsesStream(
     head: messagesBefore
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
+  const supportsReasoning = config.model !== 'grok-4';
   const body: Record<string, unknown> = {
     model: config.model,
     input,
     tools: toResponsesApiTools(tools),
     stream: true
   };
-  if (effort !== undefined) {
+  if (effort !== undefined && supportsReasoning) {
     body.reasoning = { effort };
   }
   if (effort === undefined || effort === 'none') {

@@ -474,7 +474,7 @@ async function callOpenAiCompletion(
     model: config.model,
     messages,
     ...(effort === undefined || effort === 'none' ? { temperature } : {}),
-    ...(effort !== undefined ? { reasoning_effort: effort } : {})
+    ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning_effort: effort } : {})
   };
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -546,7 +546,7 @@ async function callOpenAiResponsesCompletion(
     input,
     tools: toResponsesApiTools(tools),
     ...(effort === undefined || effort === 'none' ? { temperature } : {}),
-    ...(effort !== undefined ? { reasoning: { effort } } : {})
+    ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {})
   };
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -654,12 +654,13 @@ async function callAnthropicCompletion(
     return fail(jsonResult.message);
   }
 
-  // Unconditional extractAnthropicText: handles tools, thinking blocks, and plain text
-  // by filtering to type === 'text' blocks. This is safe for all Anthropic response shapes.
   const rawContent = (jsonResult.value as Record<string, unknown>).content;
   const stopReason = (jsonResult.value as Record<string, unknown>).stop_reason;
   if (!Array.isArray(rawContent)) {
     return fail('Anthropic API response: content is not an array');
+  }
+  if (typeof stopReason !== 'string') {
+    return fail('Anthropic API response: stop_reason is missing or not a string');
   }
   return extractAnthropicText(rawContent).onSuccess((text) =>
     succeed({

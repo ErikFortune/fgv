@@ -518,6 +518,19 @@ describe('callProviderCompletionStream', () => {
       expect(body.temperature).toBeUndefined();
     });
 
+    test('omits reasoning_effort for grok-4 even when thinking is active (chat stream)', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok', defaultModel: 'grok-4' }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
+    });
+
     test('merges other-block params into OpenAI chat stream body', async () => {
       mockSseResponse(openAiChatSse(['ok']));
       await AiAssist.callProviderCompletionStream({
@@ -614,6 +627,20 @@ describe('callProviderCompletionStream', () => {
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.reasoning).toEqual({ effort: 'medium' });
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('omits reasoning field for grok-4 even when thinking is active (responses stream)', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok', defaultModel: 'grok-4' }),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning).toBeUndefined();
       expect(body.temperature).toBeUndefined();
     });
 
