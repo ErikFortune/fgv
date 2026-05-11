@@ -40,9 +40,13 @@ Before doing anything, read these — they carry the conventions your predecesso
 - `docs/WORKSTREAMS.md` preamble (repo shape, branch flow, status conventions, stream entry shape, shared types, artifact protocol)
 - `docs/CHORES.md` (current active batch shape + completed precedents; trigger taxonomy)
 - `.ai/BASELINE.md` (last `release` → `main` promotion — used for blast-radius sizing, not as a stream-start gate)
+- `.ai/conventions/workflow/doc-graduation.md` (which docs live where; the discipline for what graduates to `release` vs stays on `claude/orchestrator-session`)
 - Cross-cutting design docs in `docs/` relevant to the work in flight
 
-Then check `.ai/tasks/active/` for in-flight task artifacts before starting any new orchestration work.
+Then check both surfaces for in-flight context:
+
+- `.ai/tasks/active/` for in-flight task artifacts
+- `claude/orchestrator-session` branch (if it exists on remote) for orchestrator-side decision-tracks, lessons-pending, and handoff notes from the previous session. See `.ai/notes/orchestrator/README.md` (on `release`) for the structure.
 
 ## Workflow shapes
 
@@ -66,8 +70,8 @@ Full workflow procedures: `.ai/conventions/workflow/` and `docs/DESIGN_PROCESS.m
 
 1. Load `/workstream-brief` for the stream ID.
 2. Verify package-surface / file-boundary collision avoidance against any other in-flight parallel streams.
-3. Branch base is current `release` HEAD (no shared "wave base" — see WORKSTREAMS.md preamble).
-4. Commit `brief.md` + empty `state.md` to `.ai/tasks/active/<stream-id>/`.
+3. Branch base is current `release` HEAD (no shared "wave base" — see WORKSTREAMS.md preamble) or cluster integration branch if the stream is part of a cluster.
+4. Commit `brief.md` + empty `state.md` to `.ai/tasks/active/<stream-id>/` via a substrate-prep branch + PR per `.ai/conventions/workflow/doc-graduation.md` § "Per-stream prep branch mechanic". After the prep PR merges, treat the substrate as canonical on the integration branch; later amendments use a follow-up `chore/<stream>-amend` PR, not edits to a session-branch copy.
 5. Deliver kickoff prompt paste-ready: mission, package surface, in/out-of-scope paths, required reading, skills to load (with trigger conditions), missing-input rule, phases, acceptance criteria, exit artifact shape, resume protocol.
 
 ### Chore-batch kickoff
@@ -113,6 +117,14 @@ Post-merge: run sibling-sweep as a **fresh agent**, not the implementing agent. 
 ### Delegating capture to a scribe session
 
 When the user is doing manual testing or posting batches of findings: suggest spinning up a fresh sub-agent session in scribe mode — mirrors the four-bucket sort, writes per-file inbox entries, proposes routings. Token-cheap. Delegate rather than handling each finding inline.
+
+### Doc graduation and session-branch hygiene
+
+Per `.ai/conventions/workflow/doc-graduation.md`: the default is that orchestrator-authored docs stay on `claude/orchestrator-session`, not on `release`. Only docs with a named downstream consumer requiring a stable URL graduate to `release` (or to a cluster integration branch). Substrate (`brief.md`, `state.md`) graduates via substrate-prep PR; cross-cutting decision-tracks, lessons-pending notes, and pre-spec drafts live on the session branch under `.ai/notes/orchestrator/`.
+
+Periodic sweeps from session branch to `release` via `chore/orchestrator-sweep-<date>` (squash-merged) at natural moments (cluster close; orchestrator handoff; codification batch complete).
+
+After a substrate-prep PR merges, the integration-branch copy is canonical. Subsequent amendments use a follow-up `chore/<stream>-amend` PR; don't edit the session-branch copy and expect those edits to reach the agent.
 
 ### `release` → `main` promotion
 
