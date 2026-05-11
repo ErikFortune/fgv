@@ -132,17 +132,17 @@ substrate. Don't queue streams against them here.
 
 ### `ai-assist-image-generation` 🟢
 
-**Status:** 🟢 phase A (research + design) ready to start
-**Phase B sequencing:** strictly after this stream's design signoff
+**Status:** 🟢 phase B (implementation) ready to start; phase A complete + signed off
+**Phase B sequencing:** strictly before `ai-assist-thinking-config` phase B (serial implementation; same packlet)
 **Branch base:** `claude/ai-assist-features` (integration branch off `release`)
-**Package surface:** `@fgv/ts-extras/ai-assist`, `@fgv/ts-app-shell/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
-**Out-of-scope:** sudoku packages, audio/video generation, the thinking-config surface (parallel stream)
+**Package surface:** `@fgv/ts-extras/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md` (consumer-side `ts-app-shell/ai-assist` updates deferred to a follow-up if needed)
+**Out-of-scope:** sudoku packages, audio/video generation, the thinking-config surface (queued separately), chat-completion path
 
-**Mission.** Complete the image-generation feature properly across all four providers (OpenAI dall-e-2/3 + gpt-image-1; Google Imagen + Gemini Flash Image; xAI Grok image; openai-compat). Inventory current per-model capability divergences (size sets, quality vocabularies, reference-image support, response-format handling), design a coherent caller-facing API and registry shape, document migration impact under lockstep version policy. Phase A produces a design doc; orchestrator/user gate before phase B implementation is commissioned.
+**Mission.** Complete the image-generation feature properly across all four providers (OpenAI dall-e-2/3 + gpt-image-1; Google Imagen 4 + Gemini Flash Image; xAI grok-imagine-image/-quality; openai-compat). Phase A produced the inventory and design; signoff modified the type architecture (layered options with model-family blocks instead of unified type) and dropped deprecated models. Phase B implements per `brief-phase-b.md`.
 
-**Origin.** Personaility integration surfaced two concrete failures (`gpt-image-1` + `response_format` → 400; `dall-e-3` + `count > 1` → silent provider error) — symptoms of partial provider-surface modeling, not fix-shaped bugs.
+**Origin.** Personaility integration surfaced two concrete failures (gpt-image-1 + `response_format` → 400; dall-e-3 + `count > 1` → silent provider error) — symptoms of partial provider-surface modeling, not fix-shaped bugs.
 
-**Phase A artifacts:** `.ai/tasks/active/ai-assist-image-generation/{brief.md, state.md}` → produces `design.md`.
+**Phase B artifacts:** `.ai/tasks/active/ai-assist-image-generation/{brief.md (phase A), brief-phase-b.md (binding contract), design.md (inventory), state.md}` → produces implementation PR.
 
 ### `ai-assist-thinking-config` 🟢
 
