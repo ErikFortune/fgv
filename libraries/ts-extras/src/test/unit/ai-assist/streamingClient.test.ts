@@ -352,6 +352,26 @@ describe('callProviderCompletionStream', () => {
       expect(body.model).toBe('grok-reasoning');
     });
 
+    test('does not select thinking model for unknown provider even when thinking is provided', async () => {
+      const ollamaDescriptor = makeDescriptor({
+        id: 'ollama',
+        baseUrl: 'http://localhost:11434/v1',
+        defaultModel: { base: 'llama3', tools: 'llama3-tools', thinking: 'llama3-think' },
+        supportedTools: ['web_search']
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: ollamaDescriptor,
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('llama3-tools');
+    });
+
     test('forwards explicit temperature to request body', async () => {
       mockSseResponse(openAiChatSse(['x']));
       await AiAssist.callProviderCompletionStream({

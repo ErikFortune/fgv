@@ -772,8 +772,9 @@ export async function callProviderCompletion(
   const hasTools = tools !== undefined && tools.length > 0;
   const discriminator = providerDiscriminatorForId(descriptor.id);
   const hasThinkingConfig =
-    thinking?.effort !== undefined ||
-    thinking?.providers?.some((b) => b.provider === 'other' || b.provider === discriminator) === true;
+    discriminator !== undefined &&
+    (thinking?.effort !== undefined ||
+      thinking?.providers?.some((b) => b.provider === 'other' || b.provider === discriminator) === true);
   const modelContext = hasThinkingConfig ? 'thinking' : hasTools ? 'tools' : undefined;
 
   const model = resolveModel(modelOverride ?? descriptor.defaultModel, modelContext);
