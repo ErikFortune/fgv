@@ -242,6 +242,17 @@ const allProviderIds: ReadonlyArray<AiProviderId>;
 type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-opus-4-6' | 'claude-opus-4-7';
 
 // @public
+const ARGON2ID_OWASP_MIN: IArgon2idParams;
+
+// @public
+const ARGON2ID_PASSPHRASE: IArgon2idParams;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const argon2idKeyDerivationParams: Converter<IArgon2idKeyDerivationParams>;
+
+// @public
 const base64String: Converter<string>;
 
 // @public
@@ -326,6 +337,8 @@ declare namespace Converters_3 {
         encryptedFileFormat,
         encryptedFileErrorMode,
         keyDerivationFunction,
+        pbkdf2KeyDerivationParams,
+        argon2idKeyDerivationParams,
         keyDerivationParams,
         base64String,
         uint8ArrayFromBase64,
@@ -380,7 +393,13 @@ declare namespace CryptoUtils {
         IWrappedBytes,
         allKeyPairAlgorithms,
         KeyDerivationFunction,
+        IPbkdf2KeyDerivationParams,
+        IArgon2idKeyDerivationParams,
         IKeyDerivationParams,
+        IArgon2idParams,
+        ARGON2ID_OWASP_MIN,
+        ARGON2ID_PASSPHRASE,
+        IArgon2idProvider,
         IEncryptedFile,
         ICryptoProvider,
         IEncryptionProvider,
@@ -665,6 +684,14 @@ interface IAddKeyPairResult {
 }
 
 // @public
+interface IAddSecretFromPasswordArgon2idOptions {
+    readonly description?: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly params?: IArgon2idParams;
+    readonly replace?: boolean;
+}
+
+// @public
 interface IAddSecretFromPasswordOptions extends IAddSecretOptions {
     readonly iterations?: number;
     readonly replace?: boolean;
@@ -888,6 +915,28 @@ interface IAnthropicThinkingOptions {
     readonly models?: ReadonlyArray<AnthropicThinkingModelNames>;
     // (undocumented)
     readonly provider: 'anthropic';
+}
+
+// @public
+interface IArgon2idKeyDerivationParams {
+    readonly iterations: number;
+    readonly kdf: 'argon2id';
+    readonly memoryKiB: number;
+    readonly parallelism: number;
+    readonly salt: string;
+}
+
+// @public
+interface IArgon2idParams {
+    readonly iterations: number;
+    readonly memoryKiB: number;
+    readonly outputBytes: number;
+    readonly parallelism: number;
+}
+
+// @public
+interface IArgon2idProvider {
+    argon2id(password: Uint8Array | string, salt: Uint8Array, params: IArgon2idParams): Promise<Result<Uint8Array>>;
 }
 
 // @public
@@ -1178,11 +1227,7 @@ interface IImportSecretOptions extends IAddSecretOptions {
 }
 
 // @public
-interface IKeyDerivationParams {
-    readonly iterations: number;
-    readonly kdf: KeyDerivationFunction;
-    readonly salt: string;
-}
+type IKeyDerivationParams = IPbkdf2KeyDerivationParams | IArgon2idKeyDerivationParams;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1251,7 +1296,7 @@ interface IKeyStoreFile {
     readonly encryptedData: string;
     readonly format: KeyStoreFormat;
     readonly iv: string;
-    readonly keyDerivation: IKeyDerivationParams;
+    readonly keyDerivation: IPbkdf2KeyDerivationParams;
 }
 
 // @public
@@ -1374,6 +1419,13 @@ interface IOtherThinkingOptions {
     readonly models: ReadonlyArray<string>;
     // (undocumented)
     readonly provider: 'other';
+}
+
+// @public
+interface IPbkdf2KeyDerivationParams {
+    readonly iterations: number;
+    readonly kdf: 'pbkdf2';
+    readonly salt: string;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1594,7 +1646,7 @@ type JsonTextExtractor = (text: string) => Result<string>;
 const jsonWebKeyShape: Validator<JsonWebKey>;
 
 // @public
-type KeyDerivationFunction = 'pbkdf2';
+type KeyDerivationFunction = 'pbkdf2' | 'argon2id';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1660,6 +1712,7 @@ declare namespace KeyStore {
         IAddSecretFromPasswordOptions,
         DEFAULT_SECRET_ITERATIONS,
         IAddSecretFromPasswordResult,
+        IAddSecretFromPasswordArgon2idOptions,
         IAddKeyPairOptions,
         IAddKeyPairResult,
         IRemoveSecretResult,
@@ -1673,6 +1726,7 @@ class KeyStore_2 implements IEncryptionProvider {
     addKeyPair(name: string, options: IAddKeyPairOptions): Promise<Result<IAddKeyPairResult>>;
     addSecret(name: string, options?: IAddSecretOptions): Promise<Result<IAddSecretResult>>;
     addSecretFromPassword(name: string, password: string, options?: IAddSecretFromPasswordOptions): Promise<Result<IAddSecretFromPasswordResult>>;
+    addSecretFromPasswordArgon2id(name: string, password: string, argon2idProvider: IArgon2idProvider, options?: IAddSecretFromPasswordArgon2idOptions): Promise<Result<IAddSecretFromPasswordResult>>;
     changePassword(currentPassword: string, newPassword: string): Promise<Result<KeyStore_2>>;
     static create(params: IKeyStoreCreateParams): Result<KeyStore_2>;
     get cryptoProvider(): ICryptoProvider;
@@ -1714,6 +1768,7 @@ class KeyStore_2 implements IEncryptionProvider {
     unlockWithKey(derivedKey: Uint8Array): Promise<Result<KeyStore_2>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     verifySecretFromPassword(name: string, password: string, keyDerivation: IKeyDerivationParams): Promise<Result<boolean>>;
+    verifySecretFromPasswordArgon2id(name: string, password: string, argon2idProvider: IArgon2idProvider, keyDerivation: IArgon2idKeyDerivationParams): Promise<Result<boolean>>;
 }
 
 // @public
@@ -1903,6 +1958,11 @@ function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
 
 // @public
 function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions): Result<JarRecord[]>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const pbkdf2KeyDerivationParams: Converter<IPbkdf2KeyDerivationParams>;
 
 // @public
 class RangeOf<T> implements RangeOfProperties<T> {
@@ -2123,8 +2183,8 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/crypto-utils/keystore/keyStore.ts:1327:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/crypto-utils/keystore/keyStore.ts:1366:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1463:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1502:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

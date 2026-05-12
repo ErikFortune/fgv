@@ -27,7 +27,11 @@ import {
   IEncryptedFile,
   IEncryptionConfig,
   IEncryptionProvider,
+  IArgon2idKeyDerivationParams,
+  IArgon2idProvider,
+  IArgon2idParams,
   IKeyDerivationParams,
+  ARGON2ID_OWASP_MIN,
   SecretProvider
 } from '../model';
 import {
@@ -35,6 +39,7 @@ import {
   DEFAULT_SECRET_ITERATIONS,
   IAddKeyPairOptions,
   IAddKeyPairResult,
+  IAddSecretFromPasswordArgon2idOptions,
   IAddSecretFromPasswordOptions,
   IAddSecretFromPasswordResult,
   IAddSecretOptions,
@@ -652,6 +657,137 @@ export class KeyStore implements IEncryptionProvider {
     /* c8 ignore next 3 - crypto provider errors covered in nodeCryptoProvider tests */
     if (derivedResult.isFailure()) {
       return fail(`Key derivation failed: ${derivedResult.message}`);
+    }
+
+    return succeed(KeyStore._timingSafeEqual(derivedResult.value, entry.key));
+  }
+
+  /**
+   * Adds a secret derived from a password using Argon2id (RFC 9106).
+   *
+   * The Argon2id provider must be supplied explicitly; the KeyStore does not
+   * hold one by default (consumers opt in by depending on the argon2 package).
+   *
+   * Returns the key derivation parameters so callers can store them alongside
+   * encrypted artifacts, enabling future re-derivation and verification.
+   *
+   * @param name - Unique name for the secret
+   * @param password - Password or passphrase
+   * @param argon2idProvider - Argon2id provider (Node or Browser implementation)
+   * @param options - Optional: Argon2id params (defaults to ARGON2ID_OWASP_MIN), description, replace flag
+   * @returns Success with entry and keyDerivation params, Failure if locked or invalid
+   * @public
+   */
+  public async addSecretFromPasswordArgon2id(
+    name: string,
+    password: string,
+    argon2idProvider: IArgon2idProvider,
+    options?: IAddSecretFromPasswordArgon2idOptions
+  ): Promise<Result<IAddSecretFromPasswordResult>> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    if (!name || name.length === 0) {
+      return fail('Secret name cannot be empty');
+    }
+    if (!password || password.length === 0) {
+      return fail('Password cannot be empty');
+    }
+
+    const existing = this._secrets.get(name);
+    if (existing && !options?.replace) {
+      return fail(`Secret '${name}' already exists - use replace=true to overwrite`);
+    }
+
+    const params: IArgon2idParams = options?.params ?? ARGON2ID_OWASP_MIN;
+
+    const saltResult = this._cryptoProvider.generateRandomBytes(MIN_SALT_LENGTH);
+    /* c8 ignore next 3 - crypto provider errors tested but coverage intermittently missed */
+    if (saltResult.isFailure()) {
+      return fail(`Failed to generate salt: ${saltResult.message}`);
+    }
+
+    const keyResult = await argon2idProvider.argon2id(password, saltResult.value, params);
+    if (keyResult.isFailure()) {
+      return fail(`Argon2id key derivation failed: ${keyResult.message}`);
+    }
+    if (keyResult.value.length !== Constants.AES_256_KEY_SIZE) {
+      return fail(
+        `Argon2id outputBytes must be ${Constants.AES_256_KEY_SIZE} for KeyStore secrets, got ${keyResult.value.length}`
+      );
+    }
+
+    const entry: IKeyStoreSymmetricEntry = {
+      name,
+      type: 'encryption-key',
+      key: keyResult.value,
+      description: options?.description,
+      createdAt: getCurrentTimestamp()
+    };
+
+    const warning = existing ? await this._releaseEntryResources(existing) : undefined;
+    this._secrets.set(name, entry);
+    this._dirty = true;
+
+    const keyDerivation: IArgon2idKeyDerivationParams = {
+      kdf: 'argon2id',
+      salt: this._cryptoProvider.toBase64(saltResult.value),
+      memoryKiB: params.memoryKiB,
+      iterations: params.iterations,
+      parallelism: params.parallelism
+    };
+
+    return succeed({ entry, replaced: existing !== undefined, warning, keyDerivation });
+  }
+
+  /**
+   * Verifies a candidate password against an Argon2id-derived entry using the
+   * supplied key derivation parameters. Constant-time comparison.
+   *
+   * @param name - Name of the secret to verify against
+   * @param password - Candidate password to test
+   * @param argon2idProvider - Argon2id provider (must produce bit-identical output for identical inputs)
+   * @param keyDerivation - The Argon2id key derivation parameters returned by `addSecretFromPasswordArgon2id`
+   * @returns Success(true) if candidate matches stored key, Success(false) if not,
+   * Failure if locked, secret missing, wrong type, or derivation fails
+   * @public
+   */
+  public async verifySecretFromPasswordArgon2id(
+    name: string,
+    password: string,
+    argon2idProvider: IArgon2idProvider,
+    keyDerivation: IArgon2idKeyDerivationParams
+  ): Promise<Result<boolean>> {
+    if (!this._secrets) {
+      return fail('Key store is locked');
+    }
+    if (!password || password.length === 0) {
+      return fail('Password cannot be empty');
+    }
+
+    const entry = this._secrets.get(name);
+    if (!entry) {
+      return fail(`Secret '${name}' not found`);
+    }
+    if (entry.type !== 'encryption-key') {
+      return fail(`Secret '${name}' is not a password-verifiable encryption key (type: ${entry.type})`);
+    }
+
+    const saltResult = this._cryptoProvider.fromBase64(keyDerivation.salt);
+    if (saltResult.isFailure()) {
+      return fail(`Invalid salt: ${saltResult.message}`);
+    }
+
+    const params: IArgon2idParams = {
+      memoryKiB: keyDerivation.memoryKiB,
+      iterations: keyDerivation.iterations,
+      parallelism: keyDerivation.parallelism,
+      outputBytes: entry.key.length
+    };
+
+    const derivedResult = await argon2idProvider.argon2id(password, saltResult.value, params);
+    if (derivedResult.isFailure()) {
+      return fail(`Argon2id key derivation failed: ${derivedResult.message}`);
     }
 
     return succeed(KeyStore._timingSafeEqual(derivedResult.value, entry.key));

@@ -170,28 +170,135 @@ export const allKeyPairAlgorithms: ReadonlyArray<KeyPairAlgorithm> = [
  * Supported key derivation functions.
  * @public
  */
-export type KeyDerivationFunction = 'pbkdf2';
+export type KeyDerivationFunction = 'pbkdf2' | 'argon2id';
+
+/**
+ * PBKDF2 key derivation parameters.
+ * @public
+ */
+export interface IPbkdf2KeyDerivationParams {
+  /** Key derivation function discriminator. */
+  readonly kdf: 'pbkdf2';
+  /** Base64-encoded salt used for key derivation. */
+  readonly salt: string;
+  /** Number of iterations used for key derivation. */
+  readonly iterations: number;
+}
+
+/**
+ * Argon2id key derivation parameters (RFC 9106).
+ * @public
+ */
+export interface IArgon2idKeyDerivationParams {
+  /** Key derivation function discriminator. */
+  readonly kdf: 'argon2id';
+  /** Base64-encoded salt used for key derivation. */
+  readonly salt: string;
+  /** Memory cost in kibibytes. */
+  readonly memoryKiB: number;
+  /** Number of passes (time cost). */
+  readonly iterations: number;
+  /** Degree of parallelism. */
+  readonly parallelism: number;
+}
 
 /**
  * Key derivation parameters stored in encrypted files.
- * Allows decryption with password without needing to know the original salt/iterations.
+ * Discriminated union on `kdf` field: `'pbkdf2'` or `'argon2id'`.
  * @public
  */
-export interface IKeyDerivationParams {
+export type IKeyDerivationParams = IPbkdf2KeyDerivationParams | IArgon2idKeyDerivationParams;
+
+// ============================================================================
+// Argon2id Types
+// ============================================================================
+
+/**
+ * Parameters for Argon2id key derivation (RFC 9106).
+ * All fields are required; fgv does not pick defaults silently.
+ * @public
+ */
+export interface IArgon2idParams {
   /**
-   * Key derivation function used.
+   * Memory cost in kibibytes (KiB).
+   * OWASP 2023 minimum: 19456 (19 MiB). Stronger: 65536 (64 MiB).
+   * Constraint: \>= 8.
    */
-  readonly kdf: KeyDerivationFunction;
+  readonly memoryKiB: number;
 
   /**
-   * Base64-encoded salt used for key derivation.
-   */
-  readonly salt: string;
-
-  /**
-   * Number of iterations used for key derivation.
+   * Number of passes (iterations / time cost).
+   * OWASP 2023 minimum: 2. Range: \>= 1.
    */
   readonly iterations: number;
+
+  /**
+   * Degree of parallelism (threads).
+   * Note: WASM-based implementations compute sequentially regardless of this value,
+   * but the value is wired into the algorithm and AFFECTS the output hash bytes.
+   * Callers must use the same parallelism value consistently for a given secret.
+   * Range: 1–255.
+   */
+  readonly parallelism: number;
+
+  /**
+   * Number of output bytes (hash length).
+   * Typical values: 16 (128-bit), 32 (256-bit, AES-256 key), 64 (512-bit).
+   * Constraint: \>= 4.
+   */
+  readonly outputBytes: number;
+}
+
+/**
+ * Recommended OWASP 2023 minimum Argon2id parameters.
+ * Suitable for recovery-row key derivation (high-entropy inputs).
+ * @public
+ */
+export const ARGON2ID_OWASP_MIN: IArgon2idParams = {
+  memoryKiB: 19456,
+  iterations: 2,
+  parallelism: 1,
+  outputBytes: 32
+} as const;
+
+/**
+ * Stronger Argon2id parameters suitable for user-typed passphrases.
+ * @public
+ */
+export const ARGON2ID_PASSPHRASE: IArgon2idParams = {
+  memoryKiB: 65536,
+  iterations: 3,
+  parallelism: 1,
+  outputBytes: 32
+} as const;
+
+/**
+ * Argon2id key derivation provider (RFC 9106).
+ *
+ * Implementations are in separate packages to avoid WASM bundle costs for
+ * consumers who don't need Argon2id:
+ * - Node: `@fgv/ts-extras-argon2` (`NodeArgon2Provider`)
+ * - Browser: `@fgv/ts-web-extras-argon2` (`BrowserArgon2Provider`)
+ *
+ * @public
+ */
+export interface IArgon2idProvider {
+  /**
+   * Derives key material from a password using Argon2id (RFC 9106 §3.1).
+   *
+   * Returns the raw derived bytes as a `Uint8Array`. Both Node and browser
+   * implementations produce bit-identical output for identical inputs.
+   *
+   * @param password - Password or passphrase. Accepts string (UTF-8) or raw bytes.
+   * @param salt - Salt bytes. Must be random and unique per credential (\>= 16 bytes recommended).
+   * @param params - Argon2id parameters. Use `ARGON2ID_OWASP_MIN` as a starting point.
+   * @returns Success with derived bytes, Failure with error context.
+   */
+  argon2id(
+    password: Uint8Array | string,
+    salt: Uint8Array,
+    params: IArgon2idParams
+  ): Promise<Result<Uint8Array>>;
 }
 
 /**

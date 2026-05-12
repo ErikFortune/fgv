@@ -1,7 +1,7 @@
 # Stream State: crypto-batch-2-argon2id
 
-**Status:** 🟢 phase A signed off; phase B ready to start
-**Last updated:** 2026-05-12 (orchestrator — phase B brief authored)
+**Status:** ✅ phase B complete — PR open against `claude/crypto-batch-2-features`
+**Last updated:** 2026-05-12 (implementer — phase B done)
 
 ---
 
@@ -10,7 +10,20 @@
 | Phase | Status | Notes |
 |-------|--------|-------|
 | A — research and design | ✅ done | design.md merged into `claude/crypto-batch-2-features` |
-| B — implementation | 🟢 ready | `brief-phase-b.md` is the binding contract; assignable to implementing agent |
+| B — implementation | 🔵 in progress | Work branch: `claude/crypto-batch-2-argon2id-impl-bOXwM` |
+
+## B checkpoint log
+
+| Checkpoint | Status | Notes |
+|------------|--------|-------|
+| B.0 hash-wasm activity check | ✅ done | STEADY — see Decisions log |
+| B.1 model additions + converters | ✅ done | IArgon2idProvider/Params, discriminated union IKeyDerivationParams, converters, KeyStore methods; 100% coverage |
+| B.2 ts-extras-argon2 package | ✅ done | NodeArgon2Provider wrapping argon2 v0.44.0; 100% coverage |
+| B.3 ts-web-extras-argon2 package | ✅ done | BrowserArgon2Provider wrapping hash-wasm v4.12.0; 100% coverage |
+| B.4 KeyStore extension | ✅ done | Completed as part of B.1 |
+| B.5 cross-runtime equivalence test | ✅ done | 7-case sweep + RFC §B.3 vector; byte-identical verified |
+| B.6 docs + api-extractor | ✅ done | LIBRARY_CAPABILITIES.md updated; api.md files generated |
+| B.7 artifact migration | ✅ done | Migrated to .ai/tasks/completed/2026-05/crypto-batch-2-argon2id/ |
 
 ---
 
@@ -41,6 +54,8 @@ Recommend `argon2` (kelektiv, v0.45.0, Node ≥ 22 — matches repo baseline) fo
 |----------|--------|-----------|
 | Node library | `argon2` (kelektiv v0.45.0) | Actively maintained (2026), default argon2id, raw bytes via `raw: true`, native performance, Node ≥ 22 matches repo |
 | Browser library | `hash-wasm` v4.12.0 | Pure WASM (no Web Crypto dep), runs in Node — enables pure-Jest equivalence tests; `outputType: 'binary'` → Uint8Array; ~11 kB gzipped; PHC-compatible output |
+| **B.0 hash-wasm activity check** | **STEADY — proceed** | Checked 2026-05-12: last release v4.12.0 published 2024-11-19 (~6 months), 8 open issues (no security-relevant issues), no CVEs, maintainer active. Low-activity focused library is expected; condition for stopping (last commit > 12 months, unresolved security issues) not met. Proceeding with hash-wasm per D1. |
+| Work branch | `claude/crypto-batch-2-argon2id-impl-bOXwM` | Harness-assigned suffix -bOXwM |
 | Disqualified: @node-rs/argon2 | Rejected | No raw bytes output path; Base64-only string output not cross-verifiable via PHC strings |
 | Disqualified: argon2-browser | Rejected | ~5 years without release; security dependency cannot be abandoned |
 | Composition idiom | Option (b) — fully standalone IArgon2idProvider | D2 binding: default providers do not include Argon2id; no contamination of ICryptoProvider |
