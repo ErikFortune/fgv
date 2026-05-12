@@ -212,4 +212,117 @@ describe('Crypto Converters', () => {
       expect(converter.convert(fileWithBadMetadata)).toFailWith(/Invalid metadata/i);
     });
   });
+
+  describe('keyDerivationFunction', () => {
+    test('accepts "pbkdf2"', () => {
+      expect(CryptoUtils.Converters.keyDerivationFunction.convert('pbkdf2')).toSucceedWith('pbkdf2');
+    });
+
+    test('accepts "argon2id"', () => {
+      expect(CryptoUtils.Converters.keyDerivationFunction.convert('argon2id')).toSucceedWith('argon2id');
+    });
+
+    test('rejects unknown kdf', () => {
+      expect(CryptoUtils.Converters.keyDerivationFunction.convert('scrypt')).toFail();
+    });
+  });
+
+  describe('pbkdf2KeyDerivationParams', () => {
+    test('converts valid PBKDF2 params', () => {
+      expect(
+        CryptoUtils.Converters.pbkdf2KeyDerivationParams.convert({
+          kdf: 'pbkdf2',
+          salt: 'AAAA',
+          iterations: 100000
+        })
+      ).toSucceedWith({ kdf: 'pbkdf2', salt: 'AAAA', iterations: 100000 });
+    });
+
+    test('rejects argon2id kdf value', () => {
+      expect(
+        CryptoUtils.Converters.pbkdf2KeyDerivationParams.convert({
+          kdf: 'argon2id',
+          salt: 'AAAA',
+          iterations: 3,
+          memoryKiB: 19456,
+          parallelism: 1
+        })
+      ).toFail();
+    });
+
+    test('rejects missing salt', () => {
+      expect(
+        CryptoUtils.Converters.pbkdf2KeyDerivationParams.convert({ kdf: 'pbkdf2', iterations: 1 })
+      ).toFail();
+    });
+  });
+
+  describe('argon2idKeyDerivationParams', () => {
+    test('converts valid Argon2id params', () => {
+      expect(
+        CryptoUtils.Converters.argon2idKeyDerivationParams.convert({
+          kdf: 'argon2id',
+          salt: 'AAAA',
+          memoryKiB: 19456,
+          iterations: 2,
+          parallelism: 1
+        })
+      ).toSucceedWith({ kdf: 'argon2id', salt: 'AAAA', memoryKiB: 19456, iterations: 2, parallelism: 1 });
+    });
+
+    test('rejects pbkdf2 kdf value', () => {
+      expect(
+        CryptoUtils.Converters.argon2idKeyDerivationParams.convert({
+          kdf: 'pbkdf2',
+          salt: 'AAAA',
+          iterations: 1
+        })
+      ).toFail();
+    });
+
+    test('rejects missing memoryKiB', () => {
+      expect(
+        CryptoUtils.Converters.argon2idKeyDerivationParams.convert({
+          kdf: 'argon2id',
+          salt: 'AAAA',
+          iterations: 2,
+          parallelism: 1
+        })
+      ).toFail();
+    });
+  });
+
+  describe('keyDerivationParams (discriminated union)', () => {
+    test('converts PBKDF2 params', () => {
+      expect(
+        CryptoUtils.Converters.keyDerivationParams.convert({
+          kdf: 'pbkdf2',
+          salt: 'AAAA',
+          iterations: 350000
+        })
+      ).toSucceedWith({ kdf: 'pbkdf2', salt: 'AAAA', iterations: 350000 });
+    });
+
+    test('converts Argon2id params', () => {
+      expect(
+        CryptoUtils.Converters.keyDerivationParams.convert({
+          kdf: 'argon2id',
+          salt: 'BBBB',
+          memoryKiB: 65536,
+          iterations: 3,
+          parallelism: 1
+        })
+      ).toSucceedWith({ kdf: 'argon2id', salt: 'BBBB', memoryKiB: 65536, iterations: 3, parallelism: 1 });
+    });
+
+    test('rejects unknown kdf', () => {
+      expect(
+        CryptoUtils.Converters.keyDerivationParams.convert({ kdf: 'scrypt', salt: 'AAAA', iterations: 1 })
+      ).toFail();
+    });
+
+    test('rejects non-object', () => {
+      expect(CryptoUtils.Converters.keyDerivationParams.convert('pbkdf2')).toFail();
+    });
+  });
 });

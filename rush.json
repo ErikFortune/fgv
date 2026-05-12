@@ -417,8 +417,22 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-extras-argon2",
+      "projectFolder": "libraries/ts-extras-argon2",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-web-extras",
       "projectFolder": "libraries/ts-web-extras",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-web-extras-argon2",
+      "projectFolder": "libraries/ts-web-extras-argon2",
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries"]
@@ -578,6 +592,20 @@
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-extras-webauthn",
+      "projectFolder": "libraries/ts-extras-webauthn",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-web-extras-webauthn",
+      "projectFolder": "libraries/ts-web-extras-webauthn",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "browser"]
     }
   ]
 }

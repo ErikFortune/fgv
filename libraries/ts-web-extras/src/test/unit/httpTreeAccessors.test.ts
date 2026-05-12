@@ -50,7 +50,10 @@ function makeMockResponse(options: IMockResponse): Response {
   } as unknown as Response;
 }
 
-type FetchCall = { url: string; init?: RequestInit };
+interface FetchCall {
+  url: string;
+  init?: RequestInit;
+}
 
 /**
  * Creates a mock fetch function that returns responses for each call in order.

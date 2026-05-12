@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras-argon2",
+      "comment": "New package. BrowserArgon2Provider — pure-WASM implementation of IArgon2idProvider backed by hash-wasm. Runs identically in browsers and Node.js; output is byte-identical to NodeArgon2Provider (@fgv/ts-extras-argon2) for the same inputs and parameters.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras-argon2",
+  "email": "noreply@anthropic.com"
+}

@@ -25,9 +25,11 @@ import {
   EncryptedFileErrorMode,
   EncryptedFileFormat,
   EncryptionAlgorithm,
+  IArgon2idKeyDerivationParams,
   IEncryptedFile,
   IKeyDerivationParams,
   INamedSecret,
+  IPbkdf2KeyDerivationParams,
   KeyDerivationFunction
 } from './model';
 
@@ -62,17 +64,41 @@ export const encryptedFileErrorMode: Converter<EncryptedFileErrorMode> =
  * @public
  */
 export const keyDerivationFunction: Converter<KeyDerivationFunction> =
-  Converters.enumeratedValue<KeyDerivationFunction>(['pbkdf2']);
+  Converters.enumeratedValue<KeyDerivationFunction>(['pbkdf2', 'argon2id']);
+
+/**
+ * Converter for {@link CryptoUtils.IPbkdf2KeyDerivationParams | PBKDF2 key derivation parameters}.
+ * @public
+ */
+export const pbkdf2KeyDerivationParams: Converter<IPbkdf2KeyDerivationParams> =
+  Converters.object<IPbkdf2KeyDerivationParams>({
+    kdf: Converters.enumeratedValue<'pbkdf2'>(['pbkdf2']),
+    salt: Converters.string,
+    iterations: Converters.number
+  });
+
+/**
+ * Converter for {@link CryptoUtils.IArgon2idKeyDerivationParams | Argon2id key derivation parameters}.
+ * @public
+ */
+export const argon2idKeyDerivationParams: Converter<IArgon2idKeyDerivationParams> =
+  Converters.object<IArgon2idKeyDerivationParams>({
+    kdf: Converters.enumeratedValue<'argon2id'>(['argon2id']),
+    salt: Converters.string,
+    memoryKiB: Converters.number,
+    iterations: Converters.number,
+    parallelism: Converters.number
+  });
 
 /**
  * Converter for {@link CryptoUtils.IKeyDerivationParams | key derivation parameters}.
+ * Handles both PBKDF2 and Argon2id discriminated union arms.
  * @public
  */
-export const keyDerivationParams: Converter<IKeyDerivationParams> = Converters.object<IKeyDerivationParams>({
-  kdf: keyDerivationFunction,
-  salt: Converters.string,
-  iterations: Converters.number
-});
+export const keyDerivationParams: Converter<IKeyDerivationParams> = Converters.oneOf<IKeyDerivationParams>([
+  pbkdf2KeyDerivationParams,
+  argon2idKeyDerivationParams
+]);
 
 /**
  * Converter for base64 strings (validates format).

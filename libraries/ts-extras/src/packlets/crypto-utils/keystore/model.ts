@@ -18,7 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { EncryptionAlgorithm, ICryptoProvider, IKeyDerivationParams, KeyPairAlgorithm } from '../model';
+import {
+  EncryptionAlgorithm,
+  ICryptoProvider,
+  IArgon2idParams,
+  IKeyDerivationParams,
+  IPbkdf2KeyDerivationParams,
+  KeyPairAlgorithm
+} from '../model';
 import { IPrivateKeyStorage } from './privateKeyStorage';
 
 // Re-export so consumers can continue to access the algorithm enum via the
@@ -357,9 +364,9 @@ export interface IKeyStoreFile {
   readonly encryptedData: string;
 
   /**
-   * Key derivation parameters (required for key store - always password-derived).
+   * Key derivation parameters for the vault master key (always PBKDF2).
    */
-  readonly keyDerivation: IKeyDerivationParams;
+  readonly keyDerivation: IPbkdf2KeyDerivationParams;
 }
 
 // ============================================================================
@@ -515,6 +522,25 @@ export interface IAddSecretFromPasswordResult extends IAddSecretResult {
    * can re-derive the same key for decryption.
    */
   readonly keyDerivation: IKeyDerivationParams;
+}
+
+/**
+ * Options for adding an Argon2id password-derived secret.
+ * @public
+ */
+export interface IAddSecretFromPasswordArgon2idOptions {
+  /**
+   * Argon2id parameters. Defaults to {@link CryptoUtils.ARGON2ID_OWASP_MIN}.
+   */
+  readonly params?: IArgon2idParams;
+  /**
+   * Optional description for the secret.
+   */
+  readonly description?: string;
+  /**
+   * Whether to replace an existing secret with the same name.
+   */
+  readonly replace?: boolean;
 }
 
 /**
