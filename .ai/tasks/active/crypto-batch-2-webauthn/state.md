@@ -89,4 +89,4 @@ All four documented in design.md §11 OQ-4.
 
 ## PR
 
-*(link to be added once PR is open)*
+[#342](https://github.com/ErikFortune/fgv/pull/342) — `claude/webauthn-batch-design-LqIDQ` → `claude/crypto-batch-2-features`
