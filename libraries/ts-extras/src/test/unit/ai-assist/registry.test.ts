@@ -51,31 +51,67 @@ describe('AiAssist.registry', () => {
         expect(desc.apiFormat).toBe('openai');
         expect(desc.baseUrl).toBeTruthy();
         expect(desc.defaultModel).toEqual({
-          base: 'grok-4-1-fast',
-          tools: 'grok-4-1-fast-reasoning',
-          image: 'grok-2-image-1212'
+          base: 'grok-4.3',
+          tools: 'grok-4.3',
+          thinking: 'grok-4.3',
+          image: 'grok-imagine-image-quality'
         });
         expect(desc.supportedTools).toContain('web_search');
-        expect(desc.imageGeneration).toEqual([{ modelPrefix: '', format: 'xai-images' }]);
+        expect(desc.imageGeneration).toHaveLength(2);
+        expect(desc.imageGeneration?.[0]).toMatchObject({
+          modelPrefix: 'grok-imagine-',
+          format: 'xai-images-edits'
+        });
+        expect(desc.imageGeneration?.[1]).toMatchObject({ modelPrefix: '', format: 'xai-images' });
       });
     });
 
     test('returns descriptor with image generation support for openai', () => {
       expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageGeneration).toEqual([
-          { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true },
-          { modelPrefix: '', format: 'openai-images' }
-        ]);
+        expect(desc.imageGeneration).toHaveLength(4);
+        expect(desc.imageGeneration?.[0]).toMatchObject({
+          modelPrefix: 'gpt-image-',
+          format: 'openai-images',
+          acceptsImageReferenceInput: true,
+          outputParamStyle: 'output-format'
+        });
+        expect(desc.imageGeneration?.[1]).toMatchObject({
+          modelPrefix: 'dall-e-3',
+          format: 'openai-images',
+          outputParamStyle: 'response-format'
+        });
+        expect(desc.imageGeneration?.[2]).toMatchObject({
+          modelPrefix: 'dall-e-2',
+          format: 'openai-images',
+          outputParamStyle: 'response-format'
+        });
+        expect(desc.imageGeneration?.[3]).toMatchObject({
+          modelPrefix: '',
+          format: 'openai-images',
+          outputParamStyle: 'response-format'
+        });
         expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('dall-e-3');
       });
     });
 
     test('returns descriptor with image generation support for google-gemini', () => {
       expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((desc) => {
-        expect(desc.imageGeneration).toEqual([
-          { modelPrefix: 'imagen-', format: 'gemini-imagen' },
-          { modelPrefix: '', format: 'gemini-image-out', acceptsImageReferenceInput: true }
-        ]);
+        expect(desc.imageGeneration).toHaveLength(3);
+        expect(desc.imageGeneration?.[0]).toMatchObject({
+          modelPrefix: 'imagen-4.0-ultra-',
+          format: 'gemini-imagen',
+          maxCount: 1
+        });
+        expect(desc.imageGeneration?.[1]).toMatchObject({
+          modelPrefix: 'imagen-',
+          format: 'gemini-imagen',
+          maxCount: 4
+        });
+        expect(desc.imageGeneration?.[2]).toMatchObject({
+          modelPrefix: '',
+          format: 'gemini-image-out',
+          acceptsImageReferenceInput: true
+        });
         expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('gemini-2.5-flash-image');
       });
     });
@@ -135,14 +171,14 @@ describe('AiAssist.registry', () => {
   describe('resolveImageCapability', () => {
     test('returns the matching capability for a model that hits a specific prefix', () => {
       const descriptor = AiAssist.getProviderDescriptor('google-gemini').orThrow();
-      const capability = AiAssist.resolveImageCapability(descriptor, 'imagen-3.0-generate-002');
-      expect(capability).toEqual({ modelPrefix: 'imagen-', format: 'gemini-imagen' });
+      const capability = AiAssist.resolveImageCapability(descriptor, 'imagen-4.0-generate-001');
+      expect(capability).toMatchObject({ modelPrefix: 'imagen-', format: 'gemini-imagen' });
     });
 
     test('falls back to the catch-all entry when no specific prefix matches', () => {
       const descriptor = AiAssist.getProviderDescriptor('google-gemini').orThrow();
       const capability = AiAssist.resolveImageCapability(descriptor, 'gemini-2.5-flash-image');
-      expect(capability).toEqual({
+      expect(capability).toMatchObject({
         modelPrefix: '',
         format: 'gemini-image-out',
         acceptsImageReferenceInput: true
@@ -164,6 +200,7 @@ describe('AiAssist.registry', () => {
         corsRestricted: false,
         streamingCorsRestricted: false,
         acceptsImageInput: true,
+        thinkingMode: 'optional',
         imageGeneration: [
           { modelPrefix: '', format: 'openai-images' },
           { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true }
@@ -178,16 +215,18 @@ describe('AiAssist.registry', () => {
 
     test('routes openai built-in models to the right capability by prefix', () => {
       const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
-      // gpt-image-1 hits the specific prefix → refs supported.
-      expect(AiAssist.resolveImageCapability(descriptor, 'gpt-image-1')).toEqual({
+      // gpt-image-1 hits the specific prefix → refs supported, output-format style.
+      expect(AiAssist.resolveImageCapability(descriptor, 'gpt-image-1')).toMatchObject({
         modelPrefix: 'gpt-image-',
         format: 'openai-images',
-        acceptsImageReferenceInput: true
+        acceptsImageReferenceInput: true,
+        outputParamStyle: 'output-format'
       });
-      // dall-e-3 falls back to the catch-all → no refs (per OpenAI's API).
-      expect(AiAssist.resolveImageCapability(descriptor, 'dall-e-3')).toEqual({
-        modelPrefix: '',
-        format: 'openai-images'
+      // dall-e-3 hits the dall-e-3 prefix → response-format style.
+      expect(AiAssist.resolveImageCapability(descriptor, 'dall-e-3')).toMatchObject({
+        modelPrefix: 'dall-e-3',
+        format: 'openai-images',
+        outputParamStyle: 'response-format'
       });
     });
 

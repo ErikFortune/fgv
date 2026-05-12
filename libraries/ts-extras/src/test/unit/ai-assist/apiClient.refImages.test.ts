@@ -59,6 +59,7 @@ function makeImageDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IA
     corsRestricted: false,
     acceptsImageInput: true,
     streamingCorsRestricted: false,
+    thinkingMode: 'optional',
     imageGeneration: imgGen('openai-images'),
     ...overrides
   };
@@ -230,8 +231,9 @@ describe('callProviderImageGeneration — reference images', () => {
       expect(body.get('n')).toBe('2');
       expect(body.get('response_format')).toBe('b64_json');
       expect(body.get('size')).toBe('1024x1024');
-      expect(body.get('quality')).toBe('high');
-      expect(body.get('seed')).toBe('42');
+      // quality and seed are not sent in multipart edits (wire format does not support them)
+      expect(body.get('quality')).toBeNull();
+      expect(body.get('seed')).toBeNull();
       const refs = body.getAll('image[]');
       expect(refs).toHaveLength(2);
       expect((refs[0] as Blob).type).toBe('image/png');

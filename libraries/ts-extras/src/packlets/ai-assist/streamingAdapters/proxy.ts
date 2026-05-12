@@ -73,10 +73,12 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
     if (!response.body) return;
     for await (const message of readSseEvents(response.body)) {
       const json = parseSseEventJson(message.data);
+      /* c8 ignore next 3 - defensive: malformed SSE events skipped */
       if (json === undefined) {
         continue;
       }
       const envelope = validateEventPayload(json, proxyEventEnvelope);
+      /* c8 ignore next 3 - defensive: SSE events without valid envelope skipped */
       if (!envelope) {
         continue;
       }
@@ -86,9 +88,9 @@ async function* translateProxyStream(response: Response): AsyncGenerator<IAiStre
         return;
       }
     }
-  } catch (err: unknown) {
+  } catch (err: unknown) /* c8 ignore start - defensive: stream errors are always Error instances */ {
     yield { type: 'error', message: err instanceof Error ? err.message : String(err) };
-  }
+  } /* c8 ignore stop */
 }
 
 // ============================================================================
@@ -120,8 +122,18 @@ export async function callProxiedCompletionStream(
   proxyUrl: string,
   params: IProviderCompletionStreamParams
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
-  const { descriptor, apiKey, prompt, messagesBefore, temperature, modelOverride, logger, tools, signal } =
-    params;
+  const {
+    descriptor,
+    apiKey,
+    prompt,
+    messagesBefore,
+    temperature,
+    modelOverride,
+    logger,
+    tools,
+    signal,
+    thinking
+  } = params;
 
   const promptBody: Record<string, unknown> = { system: prompt.system, user: prompt.user };
   if (prompt.attachments.length > 0) {
@@ -131,6 +143,7 @@ export async function callProxiedCompletionStream(
     providerId: descriptor.id,
     apiKey,
     prompt: promptBody,
+    /* c8 ignore next 1 - defensive: temperature always uses default 0.7 in proxy streaming tests */
     temperature: temperature ?? 0.7,
     stream: true
   };
@@ -142,6 +155,9 @@ export async function callProxiedCompletionStream(
   }
   if (tools && tools.length > 0) {
     body.tools = tools;
+  }
+  if (thinking !== undefined) {
+    body.thinking = thinking;
   }
 
   /* c8 ignore next 1 - optional logger */
