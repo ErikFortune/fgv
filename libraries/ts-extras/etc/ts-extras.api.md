@@ -381,6 +381,8 @@ declare namespace CryptoUtils {
         importPublicKeyFromMultibaseSpki,
         multibaseBase64UrlDecode,
         multibaseBase64UrlEncode,
+        HpkeProvider,
+        IHpkeSealResult,
         isEncryptedFile,
         EncryptionAlgorithm,
         EncryptedFileFormat,
@@ -652,6 +654,19 @@ declare namespace Hash {
     }
 }
 export { Hash }
+
+// @public
+class HpkeProvider {
+    static create(subtle: SubtleCrypto): Result<HpkeProvider>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
+    static decodeEnvelope(envelope: Uint8Array): Result<IHpkeSealResult>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IHpkeSealResult"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
+    static encodeEnvelope(result: IHpkeSealResult): Uint8Array;
+    hkdf(secret: Uint8Array, salt: Uint8Array, info: Uint8Array, length: number): Promise<Result<Uint8Array>>;
+    openBase(recipientPrivateKey: CryptoKey, info: Uint8Array, aad: Uint8Array, enc: Uint8Array, ciphertext: Uint8Array): Promise<Result<Uint8Array>>;
+    sealBase(recipientPublicKey: CryptoKey, info: Uint8Array, aad: Uint8Array, plaintext: Uint8Array): Promise<Result<IHpkeSealResult>>;
+}
 
 // @public
 interface IAddKeyPairOptions {
@@ -1165,6 +1180,14 @@ interface IGrokImagineModelOptions extends INamedModelFamilyConfig {
     readonly models?: GrokImagineModelNames[];
     // (undocumented)
     readonly provider: 'xai';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "HpkeProvider"
+//
+// @public
+interface IHpkeSealResult {
+    readonly ciphertext: Uint8Array;
+    readonly enc: Uint8Array;
 }
 
 // @public
