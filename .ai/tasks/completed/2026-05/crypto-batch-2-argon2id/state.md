@@ -1,7 +1,7 @@
 # Stream State: crypto-batch-2-argon2id
 
-**Status:** 🟢 phase A signed off; phase B ready to start
-**Last updated:** 2026-05-12 (orchestrator — phase B brief authored)
+**Status:** ✅ phase B complete — PR open against `claude/crypto-batch-2-features`
+**Last updated:** 2026-05-12 (implementer — phase B done)
 
 ---
 
@@ -17,13 +17,13 @@
 | Checkpoint | Status | Notes |
 |------------|--------|-------|
 | B.0 hash-wasm activity check | ✅ done | STEADY — see Decisions log |
-| B.1 model additions + converters | 🔵 in progress | |
-| B.2 ts-extras-argon2 package | ⬜ pending | |
-| B.3 ts-web-extras-argon2 package | ⬜ pending | |
-| B.4 KeyStore extension | ⬜ pending | |
-| B.5 cross-runtime equivalence test | ⬜ pending | |
-| B.6 docs + api-extractor | ⬜ pending | |
-| B.7 artifact migration | ⬜ pending | |
+| B.1 model additions + converters | ✅ done | IArgon2idProvider/Params, discriminated union IKeyDerivationParams, converters, KeyStore methods; 100% coverage |
+| B.2 ts-extras-argon2 package | ✅ done | NodeArgon2Provider wrapping argon2 v0.44.0; 100% coverage |
+| B.3 ts-web-extras-argon2 package | ✅ done | BrowserArgon2Provider wrapping hash-wasm v4.12.0; 100% coverage |
+| B.4 KeyStore extension | ✅ done | Completed as part of B.1 |
+| B.5 cross-runtime equivalence test | ✅ done | 7-case sweep + RFC §B.3 vector; byte-identical verified |
+| B.6 docs + api-extractor | ✅ done | LIBRARY_CAPABILITIES.md updated; api.md files generated |
+| B.7 artifact migration | ✅ done | Migrated to .ai/tasks/completed/2026-05/crypto-batch-2-argon2id/ |
 
 ---
 
