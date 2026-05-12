@@ -490,7 +490,7 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
   }
 
   /**
-   * Verifies a signature produced by {@link sign}.
+   * Verifies a signature produced by {@link BrowserCryptoProvider.sign}.
    * @param publicKey - A verify `CryptoKey` (`'ecdsa-p256'` or `'ed25519'`).
    * @param signature - The raw signature bytes.
    * @param data - The original data that was signed.
