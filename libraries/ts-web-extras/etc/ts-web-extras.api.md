@@ -55,6 +55,8 @@ function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
 
 declare namespace CryptoUtils {
     export {
+        HpkeProvider,
+        IHpkeSealResult,
         BrowserHashProvider,
         createBrowserCryptoProvider,
         BrowserCryptoProvider
@@ -247,6 +249,16 @@ function fromFileList(fileList: FileList, params?: FileTree.IFileTreeInitParams<
 // @public
 function getOriginalFile(fileList: FileList, path: string): Result<File>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const HpkeProvider: typeof CryptoUtils_2.HpkeProvider;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "HpkeProvider"
+//
+// @public
+type HpkeProvider = CryptoUtils_2.HpkeProvider;
+
 // @public
 export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
     // (undocumented)
@@ -314,6 +326,11 @@ export interface IFsAccessApis {
     // (undocumented)
     showSaveFilePicker(options?: ShowSaveFilePickerOptions): Promise<FileSystemFileHandle_2>;
 }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "HpkeProvider"
+//
+// @public
+type IHpkeSealResult = CryptoUtils_2.IHpkeSealResult;
 
 // @public
 export interface IHttpTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {

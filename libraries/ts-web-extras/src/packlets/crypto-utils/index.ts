@@ -27,3 +27,30 @@
 
 export * from './browserHashProvider';
 export * from './browserCryptoProvider';
+
+// HpkeProvider re-export: implementation lives in @fgv/ts-extras CryptoUtils packlet;
+// re-exported here so browser callers can import from @fgv/ts-web-extras for this primitive.
+// We import from the top-level namespace to avoid relying on package.json exports path
+// resolution (which requires moduleResolution: node16 or bundler).
+import { CryptoUtils } from '@fgv/ts-extras';
+
+/**
+ * HPKE base mode (RFC 9180) — `DHKEM(X25519, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM`.
+ * Re-exported from `@fgv/ts-extras` for browser consumers.
+ * @see {@link CryptoUtils.HpkeProvider}
+ * @public
+ */
+export const HpkeProvider = CryptoUtils.HpkeProvider;
+
+/**
+ * Instance type of {@link HpkeProvider}.
+ * @public
+ */
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type HpkeProvider = CryptoUtils.HpkeProvider;
+
+/**
+ * Output of {@link HpkeProvider.sealBase}. Re-exported from `@fgv/ts-extras`.
+ * @public
+ */
+export type IHpkeSealResult = CryptoUtils.IHpkeSealResult;

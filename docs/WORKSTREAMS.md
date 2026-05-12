@@ -128,21 +128,15 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `crypto-batch-2-hpke` 🟢
+### `crypto-batch-2-hpke` ✅ COMPLETED 2026-05
 
-**Status:** 🟢 phase A signed off; phase B ready to start
+**Status:** ✅ Implemented and merged to `claude/crypto-batch-2-features`
 **Cluster:** crypto-batch-2 (integration branch `claude/crypto-batch-2-features`)
-**Branch base:** `claude/crypto-batch-2-features` (integration branch off `release`)
 **Package surface:** `@fgv/ts-extras/crypto-utils`, `@fgv/ts-web-extras/crypto-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
-**Out-of-scope:** `wrapBytes`/`unwrapBytes` (ECIES; separate primitive), Argon2id, WebAuthn, sudoku packages
 
-**Mission.** Implement HPKE base mode (RFC 9180) with X25519/HKDF-SHA256/AES-256-GCM as a class-based `HpkeProvider` in `@fgv/ts-extras/crypto-utils`, re-exported from `@fgv/ts-web-extras/crypto-utils`. Required for a cross-repo consumer's Phase 2 (per-session material delivery, master-key wrap at unlock, recovery-proof envelopes). HKDF exposed as a method on the same class (not on `ICryptoProvider`).
+**Mission.** Implemented HPKE base mode (RFC 9180) — DHKEM(X25519, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM — as `HpkeProvider` class in `@fgv/ts-extras`, re-exported from `@fgv/ts-web-extras`. 100% coverage; cross-runtime anchor vectors validated on both Node and jsdom.
 
-**Signoff modification:** design's "subtle as first parameter" function-based API replaced with a class-based `HpkeProvider` pattern (private constructor + static `create(subtle): Result<HpkeProvider>`). Rest of design stands.
-
-**Origin.** Cross-repo consumer batch-2 handoff (archived at `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`).
-
-**Artifacts:** `.ai/tasks/active/crypto-batch-2-hpke/{brief.md, design.md, state.md, brief-phase-b.md}`. `brief-phase-b.md` is the binding phase B contract.
+**Artifacts:** `.ai/tasks/completed/2026-05/crypto-batch-2-hpke/`
 
 ### `crypto-batch-2-argon2id` 🟢
 

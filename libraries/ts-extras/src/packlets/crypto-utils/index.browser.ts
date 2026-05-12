@@ -70,3 +70,7 @@ export {
   multibaseBase64UrlDecode,
   multibaseBase64UrlEncode
 } from './spkiHelpers';
+
+// HPKE base mode (RFC 9180) — DHKEM(X25519, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM
+// hpkeProvider.ts has no Node-specific imports and is safe in the browser entry point.
+export { HpkeProvider, IHpkeSealResult } from './hpkeProvider';
