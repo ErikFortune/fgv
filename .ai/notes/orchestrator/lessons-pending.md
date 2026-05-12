@@ -127,6 +127,24 @@ Active clusters at most recent sweep point:
 
 ---
 
+### L13. Cross-runtime entry-point export divergence — recurring class of bug
+
+**Observed:** Post-cluster (2026-05-11), two bug fixes came in:
+1. `@fgv/ts-extras` exporting `Crypto` instead of `CryptoUtils` from `index.browser.ts`, surfacing as `CryptoUtils.Keystore undefined` in the personaility web app integration. Consumer caught it; user fixed inline with a one-off test for that specific import.
+2. `repo-template` skipping transitive dependencies on link. Discovered while testing #1's fix. Single-occurrence tooling bug; git-only.
+
+The first is the load-bearing observation: cross-runtime entry-point export drift has bitten the team multiple times. Pattern is structural — api-extractor runs only on the Node entry point, so the browser entry diverges silently. Per-symbol comprehensive coverage isn't viable given the API surface.
+
+The bug also drove the next alpha publish forward: rather than waiting for the originally-planned cadence, the fix-and-publish path produced `5.0.1-27` to unblock the personaility consumer.
+
+**Rule:** Opportunistic per-library micro-tests assert top-level export names match between Node and browser entries. Trigger: anytime a library's `index.browser.ts` is touched substantively, or anytime a cross-runtime export bug is reported, the affected library's micro-test gets added/expanded.
+
+**Codification status:** Codified in `docs/TECH_DEBT.md` as a P2 entry (#341 open). Trigger condition baked into the entry. No commitment to backfill across all libraries — added when a library's browser entry is touched.
+
+**Lesson-meta (process):** Two bug-report-driven codifications this session — lint gate (#337) and now this. Consumer-first detection plus inline fixes by the user is the ship-then-fix operating model. The orchestrator surface is for *patterns surfaced by bugs*, not for individual bug fixes themselves. Git is sufficient for the fixes; TECH_DEBT entries appear only when a pattern recurs or structural prevention is worth scoping. The pattern of "user fixes bug → orchestrator captures the systemic lesson if it's worth elevating" is now established.
+
+---
+
 ## Sweep history
 
 *(no sweeps yet — this file is being initialized at 2026-05-11)*
