@@ -128,64 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `crypto-batch-2-hpke` ✅ COMPLETED 2026-05
-
-**Status:** ✅ Implemented and merged to `claude/crypto-batch-2-features`
-**Cluster:** crypto-batch-2 (integration branch `claude/crypto-batch-2-features`)
-**Package surface:** `@fgv/ts-extras/crypto-utils`, `@fgv/ts-web-extras/crypto-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
-
-**Mission.** Implemented HPKE base mode (RFC 9180) — DHKEM(X25519, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM — as `HpkeProvider` class in `@fgv/ts-extras`, re-exported from `@fgv/ts-web-extras`. 100% coverage; cross-runtime anchor vectors validated on both Node and jsdom.
-
-**Artifacts:** `.ai/tasks/completed/2026-05/crypto-batch-2-hpke/`
-
-### `crypto-batch-2-argon2id` 🟢
-
-**Status:** 🟢 phase A signed off; phase B ready to start
-**Cluster:** crypto-batch-2 (integration branch `claude/crypto-batch-2-features`)
-**Branch base:** `claude/crypto-batch-2-features` (integration branch off `release`)
-**Package surface:** NEW packages `@fgv/ts-extras-argon2` (Node, wraps `argon2`) and `@fgv/ts-web-extras-argon2` (browser, wraps `hash-wasm`); model additions in `@fgv/ts-extras/crypto-utils` (`IArgon2idProvider`, `IArgon2idParams`, `IKeyDerivationParams` discriminated union); `KeyStore` integration (`addSecretFromPasswordArgon2id` / `verifySecretFromPasswordArgon2id`); `.ai/instructions/LIBRARY_CAPABILITIES.md`
-**Out-of-scope:** PBKDF2 (already shipped via `KeyStore.addSecretFromPassword`), HPKE, WebAuthn, other KDFs, sudoku packages
-
-**Mission.** Implement Argon2id (RFC 9106) as fgv-owned but in separate packages to keep WASM bundling out of consumers who don't need it. Required for a cross-repo consumer's Phase 2 (recovery rows, hybrid auth passphrases). Cross-runtime output equivalence is the load-bearing correctness property; testable as plain Jest in Node because `hash-wasm` is pure WASM.
-
-**Signoff:** as designed. Open questions resolved (readable parameter naming; JSDoc warning on `parallelism > 1` for WASM; discriminated union for `IKeyDerivationParams`; cross-runtime test placement in `ts-extras-argon2/`). Orchestrator precondition (B.0): live `hash-wasm` activity check.
-
-**Origin.** Cross-repo consumer batch-2 handoff (archived at `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`). Maintainer-policy decision Q2 resolved (a)+separate-packages on 2026-05-11.
-
-**Artifacts:** `.ai/tasks/active/crypto-batch-2-argon2id/{brief.md, design.md, state.md, brief-phase-b.md}`. `brief-phase-b.md` is the binding phase B contract.
-
-### `crypto-batch-2-webauthn` 🟢
-
-**Status:** 🟢 phase A signed off; phase B ready to start
-**Cluster:** crypto-batch-2 (integration branch `claude/crypto-batch-2-features`)
-**Branch base:** `claude/crypto-batch-2-features` (integration branch off `release`)
-**Package surface:** NEW packages `@fgv/ts-extras-webauthn` (wraps `@simplewebauthn/server`) and `@fgv/ts-web-extras-webauthn` (wraps `@simplewebauthn/browser`); `common/config/rush/common-versions.json` preferredVersions; `.ai/instructions/LIBRARY_CAPABILITIES.md`
-**Out-of-scope:** Attestation policy, challenge state management, extension helpers, algorithm allowlist, ceremony orchestration, anything that's not one of six primitive operations (strictly enforced in phase B brief D2)
-
-**Mission.** Implement a Result-integration boundary over `@simplewebauthn/server` and `@simplewebauthn/browser`. Six primitive operations total (4 server + 2 browser), each a one-line `captureAsyncResult` wrapper. No opinion baked in; consumers build their own opinionated wrappers on top. Pattern mirrors `@fgv/ts-utils-jest`'s relationship to Jest.
-
-**Signoff:** as designed. Open questions resolved (`libraries/` placement; v13+ only; `Parameters<>` aliases accepted; the four rejected abstractions stay rejected). The phase A draft PR #342 is being superseded by the consolidated cluster work; orchestrator will close it on prep PR merge.
-
-**Origin.** Cross-repo consumer batch-2 handoff. Maintainer-policy decision Q3 resolved (c)+separate-packages on 2026-05-11.
-
-**Lessons-codification candidate:** The "Result-integration boundary over a well-maintained upstream library" pattern is worth codifying as a fgv convention after this stream lands. Plus the question of whether such packages belong in `libraries/` or a top-level `integrations/` directory. Both parked for triage; not blocking.
-
-**Artifacts:** `.ai/tasks/active/crypto-batch-2-webauthn/{brief.md, design.md, state.md, brief-phase-b.md}`. `brief-phase-b.md` is the binding phase B contract.
-
-### `crypto-batch-2-misc` 🟢
-
-**Status:** 🟢 implementation-only (no design phase); ready to start
-**Cluster:** crypto-batch-2 (integration branch `claude/crypto-batch-2-features`)
-**Branch base:** `claude/crypto-batch-2-features` (integration branch off `release`)
-**Package surface:** `@fgv/ts-extras/crypto-utils`, `@fgv/ts-web-extras/crypto-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
-**Out-of-scope:** HPKE, Argon2id, WebAuthn (parallel streams), KeyStore changes, sudoku packages
-
-**Mission.** Add `sign`, `verify`, and `timingSafeEqual` to `ICryptoProvider`. Sign/verify wrap `crypto.subtle.sign`/`crypto.subtle.verify`; timingSafeEqual uses Node's native on Node and a constant-time XOR walk on browser. Small, well-specified, no design phase needed.
-
-**Origin.** Cross-repo consumer batch-2 handoff items 5 and 6. Q7 resolved on 2026-05-11 to add the wrappers (concentration of cross-runtime adaptation in `ICryptoProvider` is the load-bearing argument).
-
-**Artifacts:** `.ai/tasks/active/crypto-batch-2-misc/{brief.md, state.md}` → produces implementation PR.
-
 ### `ai-assist-thinking-events` 🟡
 
 **Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands (now satisfied; ai-assist cluster shipped via #336)
@@ -206,13 +148,68 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 **Phase A artifacts:** TBD when stream is commissioned; will live at `.ai/tasks/active/ai-assist-thinking-events/`.
 
-### Integration branch convention (active for the crypto-batch-2 cluster)
-
-The four crypto-batch-2 streams share an integration branch `claude/crypto-batch-2-features` based off `release`. Each phase PRs into the integration branch, not `release`. The integration branch merges to `release` at the end of the cluster after all stream artifacts have migrated to `completed/`. Same pattern as the ai-assist cluster.
-
 ---
 
 ## Completed workstreams
+
+### `crypto-batch-2-hpke` ✅
+
+**Status:** ✅ shipped — merged in [#348](https://github.com/ErikFortune/fgv/pull/348) into `claude/crypto-batch-2-features` integration branch; phase A design in [#343](https://github.com/ErikFortune/fgv/pull/343); phase B brief in [#346](https://github.com/ErikFortune/fgv/pull/346); branch `claude/crypto-batch-2-hpke-impl-pR3QU`
+**Package surface:** `@fgv/ts-extras/crypto-utils`, `@fgv/ts-web-extras/crypto-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.**
+- `HpkeProvider` class (private constructor + static `create(subtle)` factory) implementing HPKE base mode (RFC 9180) with cipher suite DHKEM(X25519, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM
+- Public surface: `sealBase`, `openBase`, `hkdf`, `encodeEnvelope`, `decodeEnvelope`. Internal Encap/Decap/KeySchedule stay private.
+- Single implementation in `ts-extras` re-exported from `ts-web-extras` for browser callers; `CryptoUtils.HpkeProvider` namespace path works for both `moduleResolution: node` and `bundler` consumers
+- B.0 RFC verification caught a design-vs-RFC discrepancy: design.md §1 used label `"dh"` in ExtractAndExpand; RFC 9180 §4.1 specifies `"eae_prk"`. Agent stopped, surfaced, corrected (confirmed via OpenSSL happykey + multiple independent implementations)
+- Cross-runtime anchor vectors: Node-sealed ciphertext opens correctly on jsdom Web Crypto. 24 Node tests + 18 browser tests, 100% coverage.
+
+**Artifacts:** `.ai/tasks/completed/2026-05/crypto-batch-2-hpke/`
+
+### `crypto-batch-2-argon2id` ✅
+
+**Status:** ✅ shipped — merged in [#349](https://github.com/ErikFortune/fgv/pull/349) into `claude/crypto-batch-2-features` integration branch; phase A design in [#344](https://github.com/ErikFortune/fgv/pull/344); phase B brief in [#346](https://github.com/ErikFortune/fgv/pull/346); branch `claude/crypto-batch-2-argon2id-impl-bOXwM`
+**Package surface:** NEW packages `@fgv/ts-extras-argon2` (Node, wraps `argon2`) and `@fgv/ts-web-extras-argon2` (browser, wraps `hash-wasm`); model additions in `@fgv/ts-extras/crypto-utils`; `KeyStore` integration; `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.**
+- `IArgon2idProvider`, `IArgon2idParams`, `ARGON2ID_OWASP_MIN`, `ARGON2ID_PASSPHRASE` in `@fgv/ts-extras/crypto-utils/model.ts`
+- `IKeyDerivationParams` converted to discriminated union (`'pbkdf2'` | `'argon2id'`)
+- `NodeArgon2Provider` in `@fgv/ts-extras-argon2` backed by `argon2` (kelektiv v0.44.0)
+- `BrowserArgon2Provider` in `@fgv/ts-web-extras-argon2` backed by `hash-wasm` v4.12.0 — pure WASM, runs identically in Node and browsers
+- `KeyStore.addSecretFromPasswordArgon2id` and `verifySecretFromPasswordArgon2id` (explicit `IArgon2idProvider` injection — KeyStore does not hold one by default)
+- Cross-runtime byte-identical output verified: RFC 9106 §B.3 vector produces `03aab965...6d0c2e` on both providers; plus 7-case parameter sweep. 100% coverage across all three packages.
+
+**Artifacts:** `.ai/tasks/completed/2026-05/crypto-batch-2-argon2id/`
+
+### `crypto-batch-2-webauthn` ✅
+
+**Status:** ✅ shipped — merged in [#347](https://github.com/ErikFortune/fgv/pull/347) into `claude/crypto-batch-2-features` integration branch; phase A design in [#342](https://github.com/ErikFortune/fgv/pull/342); phase B brief in [#346](https://github.com/ErikFortune/fgv/pull/346); branch `claude/crypto-batch-2-webauthn-impl-6XN80`
+**Package surface:** NEW packages `@fgv/ts-extras-webauthn` (wraps `@simplewebauthn/server`) and `@fgv/ts-web-extras-webauthn` (wraps `@simplewebauthn/browser`); `common/config/rush/common-versions.json`; `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.** Result-integration boundary — six primitive functions, nothing else:
+- Server: `generateRegistrationOptions`, `verifyRegistrationResponse`, `generateAuthenticationOptions`, `verifyAuthenticationResponse`
+- Browser: `startRegistration`, `startAuthentication`
+- Each a one-line `captureAsyncResult(() => upstream(options))` over `@simplewebauthn/*` v13
+- No challenge generators, no PRF helpers, no autofill validators, no credential builders, no ceremony orchestration (four temptations explicitly considered and rejected per OQ-4)
+- Type re-exports limited to direct-signature types; `jest.mock` upstream entirely (no real WebAuthn ceremony in tests). 100% coverage in both packages.
+
+**Followup**: `integrations/` vs `libraries/` directory convention (parked to FUTURE.md); see also TECH_DEBT P3 entry on `"sideEffects": false` field consistency for new pure-library packages.
+
+**Artifacts:** `.ai/tasks/completed/2026-05/crypto-batch-2-webauthn/`
+
+### `crypto-batch-2-misc` ✅
+
+**Status:** ✅ shipped — merged in [#345](https://github.com/ErikFortune/fgv/pull/345) into `claude/crypto-batch-2-features` integration branch; branch `claude/add-crypto-provider-methods-hHMYd`
+**Package surface:** `@fgv/ts-extras/crypto-utils`, `@fgv/ts-web-extras/crypto-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.** Five new methods on `ICryptoProvider` (and both concrete implementations):
+- `sign(privateKey, data)` / `verify(publicKey, signature, data)` — Ed25519 and ECDSA-P256, algorithm inferred from key
+- `timingSafeEqual(a, b)` — constant-time byte comparison (Node `crypto.timingSafeEqual`; browser XOR-walk accumulator)
+- `hmacSha256(key, data)` / `verifyHmacSha256(key, signature, data)` — HMAC-SHA256 MAC with constant-time verification via `timingSafeEqual`
+
+`sign`/`verify`/`timingSafeEqual` were specified in the stream brief; `hmacSha256`/`verifyHmacSha256` added during implementation per orchestrator review request (cross-repo consumer surfaced the need).
+
+**Artifacts:** `.ai/tasks/completed/2026-05/crypto-batch-2-misc/`
 
 ### `ai-assist-thinking-config` ✅
 
