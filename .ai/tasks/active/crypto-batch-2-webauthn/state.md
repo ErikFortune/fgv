@@ -37,6 +37,14 @@ PR target: `claude/crypto-batch-2-features`
 
 ---
 
+## Work branch
+
+`claude/webauthn-batch-design-LqIDQ` (harness-assigned)
+
+PR target: `claude/crypto-batch-2-features`
+
+---
+
 ## Decisions log
 
 | Decision | Choice | Rationale |
