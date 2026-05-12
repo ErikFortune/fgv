@@ -167,10 +167,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@testing-library/dom':
         specifier: ^10.4.0
         version: 10.4.1
@@ -276,10 +276,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -397,10 +397,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -477,6 +477,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
   ../../libraries/ts-extras-argon2:
     dependencies:
       '@fgv/ts-extras':
@@ -488,16 +489,32 @@ importers:
       argon2:
         specifier: ~0.44.0
         version: 0.44.0
+=======
+  ../../libraries/ts-extras-webauthn:
+    dependencies:
+      '@simplewebauthn/server':
+        specifier: ^13.0.0
+        version: 13.3.0
+>>>>>>> claude/crypto-batch-2-features
     devDependencies:
       '@fgv/heft-dual-rig':
         specifier: workspace:*
         version: link:../../rigs/heft-dual-rig
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
       '@fgv/ts-web-extras-argon2':
         specifier: workspace:*
         version: link:../ts-web-extras-argon2
+=======
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../ts-utils
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../ts-utils-jest
+>>>>>>> claude/crypto-batch-2-features
       '@microsoft/api-extractor':
         specifier: ^7.55.2
         version: 7.57.7(@types/node@20.19.37)
@@ -509,10 +526,17 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
         version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
         version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+=======
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+      '@rushstack/heft-node-rig':
+        specifier: 2.11.27
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+>>>>>>> claude/crypto-batch-2-features
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -531,9 +555,12 @@ importers:
       eslint:
         specifier: ^9.39.2
         version: 9.39.4(jiti@2.6.1)
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
       eslint-config-prettier:
         specifier: ^10.1.8
         version: 10.1.8(eslint@9.39.4(jiti@2.6.1))
+=======
+>>>>>>> claude/crypto-batch-2-features
       eslint-plugin-import:
         specifier: ^2.32.0
         version: 2.32.0(eslint@9.39.4(jiti@2.6.1))
@@ -543,9 +570,12 @@ importers:
       eslint-plugin-node:
         specifier: ^11.1.0
         version: 11.1.0(eslint@9.39.4(jiti@2.6.1))
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
       eslint-plugin-prettier:
         specifier: ^5.5.4
         version: 5.5.5(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1))(prettier@3.8.1)
+=======
+>>>>>>> claude/crypto-batch-2-features
       eslint-plugin-promise:
         specifier: ^7.2.1
         version: 7.2.1(eslint@9.39.4(jiti@2.6.1))
@@ -555,9 +585,12 @@ importers:
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
       prettier:
         specifier: ^3.7.4
         version: 3.8.1
+=======
+>>>>>>> claude/crypto-batch-2-features
       rimraf:
         specifier: ^6.1.2
         version: 6.1.3
@@ -603,10 +636,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -675,10 +708,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -778,10 +811,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -866,7 +899,7 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -933,10 +966,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -1054,7 +1087,7 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-web-rig':
         specifier: 1.4.3
         version: 1.4.3(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-node@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))(webpack-cli@6.0.1)
@@ -1159,10 +1192,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -1268,7 +1301,7 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-web-rig':
         specifier: 1.4.3
         version: 1.4.3(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-node@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))(webpack-cli@6.0.1)
@@ -1379,10 +1412,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -1485,10 +1518,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -1588,10 +1621,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -1653,6 +1686,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
   ../../libraries/ts-web-extras-argon2:
     dependencies:
       '@fgv/ts-extras':
@@ -1664,10 +1698,23 @@ importers:
       hash-wasm:
         specifier: ~4.12.0
         version: 4.12.0
+=======
+  ../../libraries/ts-web-extras-webauthn:
+    dependencies:
+      '@simplewebauthn/browser':
+        specifier: ^13.0.0
+        version: 13.3.0
+>>>>>>> claude/crypto-batch-2-features
     devDependencies:
       '@fgv/heft-dual-rig':
         specifier: workspace:*
         version: link:../../rigs/heft-dual-rig
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
+=======
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../ts-utils
+>>>>>>> claude/crypto-batch-2-features
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
@@ -1682,10 +1729,17 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
         version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
         version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+=======
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+      '@rushstack/heft-node-rig':
+        specifier: 2.11.27
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+>>>>>>> claude/crypto-batch-2-features
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -1704,9 +1758,12 @@ importers:
       eslint:
         specifier: ^9.39.2
         version: 9.39.4(jiti@2.6.1)
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
       eslint-config-prettier:
         specifier: ^10.1.8
         version: 10.1.8(eslint@9.39.4(jiti@2.6.1))
+=======
+>>>>>>> claude/crypto-batch-2-features
       eslint-plugin-import:
         specifier: ^2.32.0
         version: 2.32.0(eslint@9.39.4(jiti@2.6.1))
@@ -1716,9 +1773,12 @@ importers:
       eslint-plugin-node:
         specifier: ^11.1.0
         version: 11.1.0(eslint@9.39.4(jiti@2.6.1))
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
       eslint-plugin-prettier:
         specifier: ^5.5.4
         version: 5.5.5(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1))(prettier@3.8.1)
+=======
+>>>>>>> claude/crypto-batch-2-features
       eslint-plugin-promise:
         specifier: ^7.2.1
         version: 7.2.1(eslint@9.39.4(jiti@2.6.1))
@@ -1728,9 +1788,15 @@ importers:
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.37)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+<<<<<<< claude/crypto-batch-2-argon2id-impl-bOXwM
       prettier:
         specifier: ^3.7.4
         version: 3.8.1
+=======
+      jest-environment-jsdom:
+        specifier: ^29.7.0
+        version: 29.7.0
+>>>>>>> claude/crypto-batch-2-features
       rimraf:
         specifier: ^6.1.2
         version: 6.1.3
@@ -1766,7 +1832,7 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
 
   ../../samples/ai-image-gen-sample:
     dependencies:
@@ -1876,10 +1942,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -1916,7 +1982,7 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/node':
         specifier: ^20.14.9
         version: 20.19.37
@@ -2016,7 +2082,7 @@ importers:
         version: 1.3.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-lint-plugin':
         specifier: 1.2.7
         version: 1.2.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)
@@ -2113,7 +2179,7 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/jest':
         specifier: ^29.5.14
         version: 29.5.14
@@ -2165,10 +2231,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -2232,10 +2298,10 @@ importers:
         version: 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-node-rig':
         specifier: 2.11.27
-        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@types/heft-jest':
         specifier: 1.0.6
         version: 1.0.6
@@ -2356,7 +2422,7 @@ importers:
         version: 1.3.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)
       '@rushstack/heft-jest-plugin':
         specifier: 1.2.6
-        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+        version: 1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-lint-plugin':
         specifier: 1.2.7
         version: 1.2.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)
@@ -3511,6 +3577,9 @@ packages:
     peerDependencies:
       react: '>= 16 || ^19.0.0-rc'
 
+  '@hexagon/base64@1.1.28':
+    resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
+
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -3780,6 +3849,9 @@ packages:
   '@leichtgewicht/ip-codec@2.0.5':
     resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
 
+  '@levischuck/tiny-cbor@0.2.11':
+    resolution: {integrity: sha512-llBRm4dT4Z89aRsm6u2oEZ8tfwL/2l6BwpZ7JcyieouniDECM5AqNgr/y08zalEIvW3RSK4upYyybDcmjXqAow==}
+
   '@microsoft/api-documenter@7.29.7':
     resolution: {integrity: sha512-hBI9sBwyhSNfLxSoP2IOZcFOwqYeRG6uRc5scEeBD2oaz+jrJ3mwe/amSiY4Dz/Q8RWCLCWHf1WYqabEmhMlug==}
     hasBin: true
@@ -3813,6 +3885,9 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
+  '@peculiar/asn1-android@2.7.0':
+    resolution: {integrity: sha512-iD3VskhVQnM4nE3PN9cBdPTR7JrqZy3FYk+uD2CeG6DUqKoANqaEfx0f7izPmW+Qm5JBM35ek+viLCmjy18ByQ==}
+
   '@peculiar/asn1-cms@2.6.1':
     resolution: {integrity: sha512-vdG4fBF6Lkirkcl53q6eOdn3XYKt+kJTG59edgRZORlg/3atWWEReRCx5rYE1ZzTTX6vLK5zDMjHh7vbrcXGtw==}
 
@@ -3837,11 +3912,17 @@ packages:
   '@peculiar/asn1-schema@2.6.0':
     resolution: {integrity: sha512-xNLYLBFTBKkCzEZIw842BxytQQATQv+lDTCEMZ8C196iJcJJMBUZxrhSTxLaohMyKK8QlzRNTRkUmanucnDSqg==}
 
+  '@peculiar/asn1-schema@2.7.0':
+    resolution: {integrity: sha512-W8ZfWzLmQnrcky+eh3tni4IozMdqBDiHWU0N+vve/UGjMaUs8c0L7A2oEdkBXS8rTpWDpK/aoI3DG/L/hxmxPg==}
+
   '@peculiar/asn1-x509-attr@2.6.1':
     resolution: {integrity: sha512-tlW6cxoHwgcQghnJwv3YS+9OO1737zgPogZ+CgWRUK4roEwIPzRH4JEiG770xe5HX2ATfCpmX60gurfWIF9dcQ==}
 
   '@peculiar/asn1-x509@2.6.1':
     resolution: {integrity: sha512-O9jT5F1A2+t3r7C4VT7LYGXqkGLK7Kj1xFpz7U0isPrubwU5PbDoyYtx6MiGst29yq7pXN5vZbQFKRCP+lLZlA==}
+
+  '@peculiar/utils@2.0.3':
+    resolution: {integrity: sha512-+oL3HPFRIZ1St2K50lWCXiioIgSoxzz7R1J3uF6neO2yl1sgmpgY6XXJH4BdpoDkMWznQTeYF6oWNDZLCdQ4eQ==}
 
   '@peculiar/x509@1.14.3':
     resolution: {integrity: sha512-C2Xj8FZ0uHWeCXXqX5B4/gVFQmtSkiuOolzAgutjTfseNOHT3pUjljDZsTSxXFGgio54bCzVFqmEOUrIVk8RDA==}
@@ -4167,6 +4248,13 @@ packages:
 
   '@shikijs/vscode-textmate@10.0.2':
     resolution: {integrity: sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg==}
+
+  '@simplewebauthn/browser@13.3.0':
+    resolution: {integrity: sha512-BE/UWv6FOToAdVk0EokzkqQQDOWtNydYlY6+OrmiZ5SCNmb41VehttboTetUM3T/fr6EAFYVXjz4My2wg230rQ==}
+
+  '@simplewebauthn/server@13.3.0':
+    resolution: {integrity: sha512-MLHYFrYG8/wK2i+86XMhiecK72nMaHKKt4bo+7Q1TbuG9iGjlSdfkPWKO5ZFE/BX+ygCJ7pr8H/AJeyAj1EaTQ==}
+    engines: {node: '>=20.0.0'}
 
   '@sinclair/typebox@0.27.10':
     resolution: {integrity: sha512-MTBk/3jGLNB2tVxv6uLlFh1iu64iYOQ2PbdOSK3NW8JZsmlaOh2q6sdtKowBhfw8QFLmYNzTW4/oK4uATIi6ZA==}
@@ -6615,6 +6703,15 @@ packages:
 
   jest-environment-jsdom@29.5.0:
     resolution: {integrity: sha512-/KG8yEK4aN8ak56yFVdqFDzKNHgF4BAymCx2LbPNPsUshUlfAl0eX402Xm1pt+eoG9SLZEUVifqXtX8SK74KCw==}
+    engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    peerDependencies:
+      canvas: ^2.5.0
+    peerDependenciesMeta:
+      canvas:
+        optional: true
+
+  jest-environment-jsdom@29.7.0:
+    resolution: {integrity: sha512-k9iQbsf9OyOfdzWH8HDmrRT0gSIcX+FLNW7IQq94tFX0gynPwqDTW0Ho6iMVNjGz/nb+l/vW3dWM2bbLLpkbXA==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     peerDependencies:
       canvas: ^2.5.0
@@ -10262,6 +10359,8 @@ snapshots:
     dependencies:
       react: 19.2.4
 
+  '@hexagon/base64@1.1.28': {}
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -10695,6 +10794,8 @@ snapshots:
 
   '@leichtgewicht/ip-codec@2.0.5': {}
 
+  '@levischuck/tiny-cbor@0.2.11': {}
+
   '@microsoft/api-documenter@7.29.7(@types/node@20.19.37)':
     dependencies:
       '@microsoft/api-extractor-model': 7.33.4(@types/node@20.19.37)
@@ -10756,6 +10857,12 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
+
+  '@peculiar/asn1-android@2.7.0':
+    dependencies:
+      '@peculiar/asn1-schema': 2.7.0
+      asn1js: 3.0.7
+      tslib: 2.8.1
 
   '@peculiar/asn1-cms@2.6.1':
     dependencies:
@@ -10819,6 +10926,12 @@ snapshots:
       pvtsutils: 1.3.6
       tslib: 2.8.1
 
+  '@peculiar/asn1-schema@2.7.0':
+    dependencies:
+      '@peculiar/utils': 2.0.3
+      asn1js: 3.0.7
+      tslib: 2.8.1
+
   '@peculiar/asn1-x509-attr@2.6.1':
     dependencies:
       '@peculiar/asn1-schema': 2.6.0
@@ -10831,6 +10944,10 @@ snapshots:
       '@peculiar/asn1-schema': 2.6.0
       asn1js: 3.0.7
       pvtsutils: 1.3.6
+      tslib: 2.8.1
+
+  '@peculiar/utils@2.0.3':
+    dependencies:
       tslib: 2.8.1
 
   '@peculiar/x509@1.14.3':
@@ -11058,7 +11175,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@rushstack/heft-jest-plugin@1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))':
+  '@rushstack/heft-jest-plugin@1.2.6(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.7.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))':
     dependencies:
       '@jest/core': 29.5.0(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@jest/reporters': 29.5.0
@@ -11073,32 +11190,8 @@ snapshots:
       lodash: 4.17.23
       punycode: 2.3.1
     optionalDependencies:
-      jest-environment-jsdom: 29.5.0
+      jest-environment-jsdom: 29.7.0
       jest-environment-node: 29.7.0
-    transitivePeerDependencies:
-      - '@types/node'
-      - babel-plugin-macros
-      - node-notifier
-      - supports-color
-      - ts-node
-
-  '@rushstack/heft-jest-plugin@1.2.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.5.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))':
-    dependencies:
-      '@jest/core': 29.5.0(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
-      '@jest/reporters': 29.5.0
-      '@jest/transform': 29.5.0
-      '@rushstack/heft': 1.2.7(@types/node@20.19.37)
-      '@rushstack/heft-config-file': 0.20.3(@types/node@20.19.37)
-      '@rushstack/node-core-library': 5.20.3(@types/node@20.19.37)
-      '@rushstack/terminal': 0.22.3(@types/node@20.19.37)
-      jest-config: 29.5.0(@types/node@20.19.37)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
-      jest-resolve: 29.5.0
-      jest-snapshot: 29.5.0
-      lodash: 4.17.23
-      punycode: 2.3.1
-    optionalDependencies:
-      jest-environment-jsdom: 29.5.0
-      jest-environment-node: 29.5.0
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -11130,6 +11223,30 @@ snapshots:
       - supports-color
       - ts-node
 
+  '@rushstack/heft-jest-plugin@1.2.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.5.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))':
+    dependencies:
+      '@jest/core': 29.5.0(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+      '@jest/reporters': 29.5.0
+      '@jest/transform': 29.5.0
+      '@rushstack/heft': 1.2.7(@types/node@20.19.37)
+      '@rushstack/heft-config-file': 0.20.3(@types/node@20.19.37)
+      '@rushstack/node-core-library': 5.20.3(@types/node@20.19.37)
+      '@rushstack/terminal': 0.22.3(@types/node@20.19.37)
+      jest-config: 29.5.0(@types/node@20.19.37)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+      jest-resolve: 29.5.0
+      jest-snapshot: 29.5.0
+      lodash: 4.17.23
+      punycode: 2.3.1
+    optionalDependencies:
+      jest-environment-jsdom: 29.7.0
+      jest-environment-node: 29.5.0
+    transitivePeerDependencies:
+      - '@types/node'
+      - babel-plugin-macros
+      - node-notifier
+      - supports-color
+      - ts-node
+
   '@rushstack/heft-lint-plugin@1.2.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)':
     dependencies:
       '@rushstack/heft': 1.2.7(@types/node@20.19.37)
@@ -11139,13 +11256,13 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@rushstack/heft-node-rig@2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))':
+  '@rushstack/heft-node-rig@2.11.27(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jiti@2.6.1)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))':
     dependencies:
       '@microsoft/api-extractor': 7.57.7(@types/node@20.19.37)
       '@rushstack/eslint-config': 4.6.4(eslint@9.37.0(jiti@2.6.1))(typescript@5.8.3)
       '@rushstack/heft': 1.2.7(@types/node@20.19.37)
       '@rushstack/heft-api-extractor-plugin': 1.3.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)
-      '@rushstack/heft-jest-plugin': 1.2.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.5.0)(jest-environment-node@29.5.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
+      '@rushstack/heft-jest-plugin': 1.2.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)(jest-environment-jsdom@29.7.0)(jest-environment-node@29.5.0)(ts-node@10.9.2(@types/node@20.19.37)(typescript@5.9.3))
       '@rushstack/heft-lint-plugin': 1.2.7(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)
       '@rushstack/heft-typescript-plugin': 1.3.2(@rushstack/heft@1.2.7(@types/node@20.19.37))(@types/node@20.19.37)
       '@types/heft-jest': 1.0.1
@@ -11390,6 +11507,19 @@ snapshots:
       '@types/hast': 3.0.4
 
   '@shikijs/vscode-textmate@10.0.2': {}
+
+  '@simplewebauthn/browser@13.3.0': {}
+
+  '@simplewebauthn/server@13.3.0':
+    dependencies:
+      '@hexagon/base64': 1.1.28
+      '@levischuck/tiny-cbor': 0.2.11
+      '@peculiar/asn1-android': 2.7.0
+      '@peculiar/asn1-ecc': 2.6.1
+      '@peculiar/asn1-rsa': 2.6.1
+      '@peculiar/asn1-schema': 2.6.0
+      '@peculiar/asn1-x509': 2.6.1
+      '@peculiar/x509': 1.14.3
 
   '@sinclair/typebox@0.27.10': {}
 
@@ -14549,6 +14679,21 @@ snapshots:
       pretty-format: 29.7.0
 
   jest-environment-jsdom@29.5.0:
+    dependencies:
+      '@jest/environment': 29.7.0
+      '@jest/fake-timers': 29.7.0
+      '@jest/types': 29.6.3
+      '@types/jsdom': 20.0.1
+      '@types/node': 20.19.37
+      jest-mock: 29.7.0
+      jest-util: 29.7.0
+      jsdom: 20.0.3
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  jest-environment-jsdom@29.7.0:
     dependencies:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
