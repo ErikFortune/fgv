@@ -44,6 +44,7 @@
     "type": "git",
     "url": "https://github.com/ErikFortune/fgv.git"
   },
+  "sideEffects": false,
   "dependencies": {
     "@simplewebauthn/server": "^13.0.0"
   },
