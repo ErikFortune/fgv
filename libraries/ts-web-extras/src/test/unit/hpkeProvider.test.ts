@@ -119,7 +119,7 @@ describe('HpkeProvider (browser / Web Crypto)', () => {
   });
 
   describe('sealBase / openBase roundtrip', () => {
-    let hpke: HpkeProvider;
+    let hpke: typeof HpkeProvider.prototype;
     let recipientPub: CryptoKey;
     let recipientPriv: CryptoKey;
 
@@ -190,7 +190,7 @@ describe('HpkeProvider (browser / Web Crypto)', () => {
   });
 
   describe('openBase input validation', () => {
-    let hpke: HpkeProvider;
+    let hpke: typeof HpkeProvider.prototype;
     let recipientPriv: CryptoKey;
 
     beforeEach(async () => {
@@ -224,7 +224,7 @@ describe('HpkeProvider (browser / Web Crypto)', () => {
   });
 
   describe('openBase with cross-runtime anchors (Node.js-generated vectors)', () => {
-    let hpke: HpkeProvider;
+    let hpke: typeof HpkeProvider.prototype;
     let recipientPriv: CryptoKey;
 
     beforeEach(async () => {
@@ -243,7 +243,7 @@ describe('HpkeProvider (browser / Web Crypto)', () => {
   });
 
   describe('hkdf', () => {
-    let hpke: HpkeProvider;
+    let hpke: typeof HpkeProvider.prototype;
 
     beforeEach(() => {
       hpke = HpkeProvider.create(subtle).orThrow();

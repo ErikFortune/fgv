@@ -43,14 +43,7 @@ import { CryptoUtils } from '@fgv/ts-extras';
 export const HpkeProvider = CryptoUtils.HpkeProvider;
 
 /**
- * Instance type of {@link HpkeProvider}.
- * @public
- */
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export type HpkeProvider = CryptoUtils.HpkeProvider;
-
-/**
- * Output of {@link HpkeProvider.sealBase}. Re-exported from `@fgv/ts-extras`.
+ * Output of `HpkeProvider.sealBase`. Re-exported from `@fgv/ts-extras`.
  * @public
  */
 export type IHpkeSealResult = CryptoUtils.IHpkeSealResult;

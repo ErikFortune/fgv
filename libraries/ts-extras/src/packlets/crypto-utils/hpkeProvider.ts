@@ -319,7 +319,10 @@ export class HpkeProvider {
    * `plaintext` with AES-256-GCM.
    *
    * @param recipientPublicKey - Recipient's X25519 public `CryptoKey`
-   *   (`algorithm.name === 'X25519'`, `type === 'public'`).
+   *   (`algorithm.name === 'X25519'`, `type === 'public'`, **`extractable: true`**).
+   *   Must be extractable — DHKEM Encap calls `exportKey('raw', ...)` on this key to
+   *   build the KEM shared-secret context. Keys imported with `extractable: false` will
+   *   cause this method to return a `Failure`.
    * @param info - Context-binding bytes. **Load-bearing — no default.**
    *   Binds this ciphertext to a specific application context, preventing replay
    *   across different contexts sharing the same recipient keypair.
