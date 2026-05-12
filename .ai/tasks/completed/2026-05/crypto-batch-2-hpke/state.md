@@ -10,7 +10,7 @@
 | Phase | Status | Notes |
 |-------|--------|-------|
 | A — research and design | ✅ done | design.md merged into `claude/crypto-batch-2-features` |
-| B — implementation | 🟢 ready | `brief-phase-b.md` is the binding contract; assignable to implementing agent |
+| B — implementation | 🟡 in progress | B.0 complete (discrepancy found and resolved); B.1–B.6 in progress |
 
 ---
 
@@ -34,15 +34,18 @@ Phase B contract is baked into `.ai/tasks/active/crypto-batch-2-hpke/brief-phase
 
 | Decision | Rationale |
 |---|---|
-| Namespace `Hpke` (PascalCase) | Matches existing `KeyStore`, `Converters` namespace casing; RFC acronym HPKE would be inconsistent |
-| Functions take `SubtleCrypto` as first param | Decouples from `ICryptoProvider` (D1); enables single implementation for both Node and browser without code duplication; Node passes `crypto.webcrypto.subtle`, browser passes `globalThis.crypto.subtle` |
+| Class `HpkeProvider` (brief D2 override) | Matches existing fgv pattern: `NodeCryptoProvider`, `BrowserCryptoProvider`, `KeyStore`, `DirectEncryptionProvider` — all classes with `create` factories. Brief overrides design's function-based API. |
+| `SubtleCrypto` captured at construction | Matches class-based pattern; no per-call cognitive overhead; test injection trivial |
 | `{ enc, ciphertext }` output — ciphertext includes GCM auth tag | Matches RFC 9180 AEAD output convention and Web Crypto AES-GCM behavior; splitting tag is unnecessary complexity |
-| HKDF as `Hpke.hkdf` (option b) | Keeps `ICryptoProvider` lean; HKDF is naturally associated with HPKE; promotion to `ICryptoProvider` is forward-compatible |
-| `encodeEnvelope`/`decodeEnvelope` helpers included | Consumer use cases transport enc+ciphertext as a unit; enc is always 32 bytes for X25519 so the split is unambiguous |
-| No lower-level primitives exposed | Prevents caller misuse of encap/decap/key_schedule; promote if genuinely needed |
-| No fgv helper for canonical `info` construction | Application-specific; premature abstraction |
-| `info` typed as `Uint8Array`, not string | Matches RFC 9180, existing `IWrapBytesOptions.info`, avoids implicit encoding |
-| HPKE module in `ts-extras` only, no separate browser implementation | Both Node 20+ and browsers expose identical `SubtleCrypto`; single implementation serves both; browser consumers get it via `ts-web-extras` re-export |
+| HKDF as `HpkeProvider.hkdf(...)` | Keeps `ICryptoProvider` lean; HKDF is naturally associated with HPKE; promotion to `ICryptoProvider` is forward-compatible (D4) |
+| `encodeEnvelope`/`decodeEnvelope` as namespace on class | Consumer use cases transport enc+ciphertext as a unit; enc is always 32 bytes for X25519 so the split is unambiguous; namespace merge with class is idiomatic TypeScript |
+| No lower-level primitives exposed (D7) | Prevents caller misuse of encap/decap/key_schedule; promote if genuinely needed |
+| No fgv helper for canonical `info` construction (D8) | Application-specific; premature abstraction |
+| `info` typed as `Uint8Array`, not string | Matches RFC 9180, existing `IWrapBytesOptions.info`, avoids implicit encoding (D5) |
+| HPKE implementation in `ts-extras` only, re-export from `ts-web-extras` | Both Node 20+ and browsers expose identical `SubtleCrypto`; single implementation serves both (D6) |
+| **B.0 DISCREPANCY RESOLVED: `"eae_prk"` label** | design.md §1 had `"dh"` as the LabeledExtract label in ExtractAndExpand. RFC 9180 §4.1 uses `"eae_prk"`. Confirmed by OpenSSL happykey implementation, web search pseudocode, and multiple independent HPKE implementations. design.md was drawn from training corpus without live RFC access. Orchestrator approved correction on 2026-05-12. Implementation uses RFC-correct `"eae_prk"`. |
+| **B.0: RFC test vectors** | RFC 9180 Appendix A has NO test vectors for DHKEM(X25519)+AES-256-GCM. A.1 covers X25519+AES-128-GCM; A.6 covers P-521+AES-256-GCM. Using design §6 mitigation: self-generated cross-runtime anchors from Node implementation, shared with ts-web-extras tests. RFC A.1 vectors validate KEM internals (shared_secret uses same kem_suite_id). |
+| `atob` for JWK base64url decode | Node 20+ and modern browsers both expose `atob` as global. Avoids Node-specific `Buffer` import in hpkeProvider.ts; needed to extract recipient public key bytes from JWK `x` field in Decap. |
 
 ---
 
@@ -50,10 +53,10 @@ Phase B contract is baked into `.ai/tasks/active/crypto-batch-2-hpke/brief-phase
 
 | ID | Question | Impact | Status |
 |---|---|---|---|
-| Q1 | RFC 9180 test vectors for exact cipher suite (DHKEM(X25519)+HKDF-SHA256+AES-256-GCM) may not exist in Appendix A | Cross-runtime correctness anchor; mitigated by self-generated vectors approach | ⚠️ Phase B agent must verify at rfc-editor.org |
-| Q2 | `{ enc, ciphertext }` vs `{ enc, ciphertext, tag }` — design uses inclusive ciphertext | Wire format compatibility with consumer | 🔵 Confirm at signoff or proceed |
-| Q3 | Browser platform version floor (Chrome 113+, Safari 16.4+, Firefox 118+ for X25519) | Documentation only; no implementation impact | ⏸ Phase B to document in LIBRARY_CAPABILITIES.md |
-| Q4 | WebAuthn stream may need `ICryptoProvider.hkdf` vs `Hpke.hkdf` | Interface design coordination | 🔵 Confirm at orchestrator-level before phase B of either stream |
+| Q1 | RFC 9180 test vectors for exact cipher suite (DHKEM(X25519)+HKDF-SHA256+AES-256-GCM) may not exist in Appendix A | Cross-runtime correctness anchor; mitigated by self-generated vectors approach | ✅ Resolved in B.0: confirmed no AES-256-GCM vectors for X25519 in RFC Appendix A. Using self-generated cross-runtime anchors per design §6 mitigation. |
+| Q2 | `{ enc, ciphertext }` vs `{ enc, ciphertext, tag }` — design uses inclusive ciphertext | Wire format compatibility with consumer | ✅ Resolved in brief: D3 confirms inclusive ciphertext. |
+| Q3 | Browser platform version floor (Chrome 113+, Safari 16.4+, Firefox 118+ for X25519) | Documentation only; no implementation impact | ✅ Documented in LIBRARY_CAPABILITIES.md (B.5). |
+| Q4 | WebAuthn stream may need `ICryptoProvider.hkdf` vs `Hpke.hkdf` | Interface design coordination | 🔵 Deferred: hkdf stays on HpkeProvider per D4. |
 
 ---
 
