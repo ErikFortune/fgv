@@ -223,3 +223,77 @@ describe('BrowserCryptoProvider — timingSafeEqual', () => {
     expect(provider.timingSafeEqual(a, b)).toBe(false);
   });
 });
+
+describe('BrowserCryptoProvider — hmacSha256 / verifyHmacSha256', () => {
+  async function generateHmacKey(): Promise<CryptoKey> {
+    return crypto.subtle.generateKey({ name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  }
+
+  describe('round-trip', () => {
+    test('produces a non-empty MAC', async () => {
+      const data = new TextEncoder().encode('hello, hmac');
+      const key = await generateHmacKey();
+
+      const macResult = await provider.hmacSha256(key, data);
+      expect(macResult).toSucceedAndSatisfy((mac) => {
+        expect(mac).toBeInstanceOf(Uint8Array);
+        expect(mac.length).toBeGreaterThan(0);
+      });
+    });
+
+    test('verifyHmacSha256 returns true for a correct MAC', async () => {
+      const data = new TextEncoder().encode('hello, hmac');
+      const key = await generateHmacKey();
+
+      const mac = (await provider.hmacSha256(key, data)).orThrow();
+      expect(await provider.verifyHmacSha256(key, mac, data)).toSucceedWith(true);
+    });
+
+    test('verifyHmacSha256 returns false for tampered data', async () => {
+      const data = new TextEncoder().encode('original');
+      const key = await generateHmacKey();
+
+      const mac = (await provider.hmacSha256(key, data)).orThrow();
+      const tampered = new TextEncoder().encode('tampered');
+
+      expect(await provider.verifyHmacSha256(key, mac, tampered)).toSucceedWith(false);
+    });
+
+    test('verifyHmacSha256 returns false for tampered MAC', async () => {
+      const data = new TextEncoder().encode('hello');
+      const key = await generateHmacKey();
+
+      const mac = (await provider.hmacSha256(key, data)).orThrow();
+      const badMac = new Uint8Array(mac);
+      badMac[0] ^= 0xff;
+
+      expect(await provider.verifyHmacSha256(key, badMac, data)).toSucceedWith(false);
+    });
+
+    test('verifyHmacSha256 returns false for wrong key', async () => {
+      const data = new TextEncoder().encode('hello');
+      const key = await generateHmacKey();
+      const otherKey = await generateHmacKey();
+
+      const mac = (await provider.hmacSha256(key, data)).orThrow();
+      expect(await provider.verifyHmacSha256(otherKey, mac, data)).toSucceedWith(false);
+    });
+
+    test('handles empty data', async () => {
+      const data = new Uint8Array(0);
+      const key = await generateHmacKey();
+
+      const mac = (await provider.hmacSha256(key, data)).orThrow();
+      expect(await provider.verifyHmacSha256(key, mac, data)).toSucceedWith(true);
+    });
+  });
+
+  describe('failure cases', () => {
+    test('hmacSha256 fails with a non-HMAC key (AES-GCM)', async () => {
+      const data = new TextEncoder().encode('hello');
+      const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+
+      expect(await provider.hmacSha256(key, data)).toFailWith(/hmacSha256 failed/i);
+    });
+  });
+});

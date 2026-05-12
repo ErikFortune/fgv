@@ -485,6 +485,33 @@ export interface ICryptoProvider {
    * `false` otherwise.
    */
   timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean;
+
+  /**
+   * Computes an HMAC-SHA256 authentication code for `data` using `key`.
+   *
+   * The key must be a `CryptoKey` with `'sign'` usage and algorithm name
+   * `'HMAC'` (e.g. derived via PBKDF2 or imported with
+   * `crypto.subtle.importKey`). Use {@link ICryptoProvider.verifyHmacSha256}
+   * for constant-time verification of the output.
+   * @param key - An HMAC `CryptoKey` with `'sign'` usage.
+   * @param data - The bytes to authenticate.
+   * @returns `Success` with the 32-byte MAC, or `Failure` with error context.
+   */
+  hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+
+  /**
+   * Verifies an HMAC-SHA256 authentication code in constant time.
+   *
+   * Computes the expected MAC over `data` with `key`, then compares it to
+   * `signature` using {@link ICryptoProvider.timingSafeEqual} so that
+   * mismatches do not leak information through timing.
+   * @param key - An HMAC `CryptoKey` with `'sign'` usage.
+   * @param signature - The MAC bytes to verify (typically 32 bytes).
+   * @param data - The original data that was authenticated.
+   * @returns `Success` with `true` if the MAC is valid, `false` if it is not,
+   * or `Failure` with error context if the MAC computation itself failed.
+   */
+  verifyHmacSha256(key: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
 }
 
 // ============================================================================

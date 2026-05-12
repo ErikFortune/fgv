@@ -923,6 +923,8 @@ interface ICryptoProvider {
     generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
     generateUuid(): Result<Uuid>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+    hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
@@ -939,6 +941,8 @@ interface ICryptoProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     verify(publicKey: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "ICryptoProvider"
+    verifyHmacSha256(key: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<IWrappedBytes>>;
 }
@@ -1844,6 +1848,7 @@ class NodeCryptoProvider implements ICryptoProvider {
     generateKeyPair(algorithm: KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
     generateUuid(): Result<Uuid>;
+    hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
@@ -1854,6 +1859,7 @@ class NodeCryptoProvider implements ICryptoProvider {
     unwrapBytes(wrapped: IWrappedBytes, recipientPrivateKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<Uint8Array>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "NodeCryptoProvider"
     verify(publicKey: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
+    verifyHmacSha256(key: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<IWrappedBytes>>;

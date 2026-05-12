@@ -378,6 +378,36 @@ export class NodeCryptoProvider implements ICryptoProvider {
   }
 
   /**
+   * Computes an HMAC-SHA256 MAC for `data` using `key`.
+   * @param key - An HMAC `CryptoKey` with `'sign'` usage.
+   * @param data - The bytes to authenticate.
+   * @returns `Success` with the 32-byte MAC, or `Failure` with error context.
+   */
+  public async hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>> {
+    const result = await captureAsyncResult(() => crypto.webcrypto.subtle.sign({ name: 'HMAC' }, key, data));
+    return result
+      .withErrorFormat((e) => `hmacSha256 failed: ${e}`)
+      .onSuccess((buf) => succeed(new Uint8Array(buf)));
+  }
+
+  /**
+   * Verifies an HMAC-SHA256 MAC in constant time.
+   * @param key - An HMAC `CryptoKey` with `'sign'` usage.
+   * @param signature - The MAC bytes to verify.
+   * @param data - The original data that was authenticated.
+   * @returns `Success` with `true` if valid, `false` if not, or `Failure` with error context.
+   */
+  public async verifyHmacSha256(
+    key: CryptoKey,
+    signature: Uint8Array,
+    data: Uint8Array
+  ): Promise<Result<boolean>> {
+    return (await this.hmacSha256(key, data))
+      .withErrorFormat((e) => `verifyHmacSha256 failed: ${e}`)
+      .onSuccess((mac) => succeed(this.timingSafeEqual(mac, signature)));
+  }
+
+  /**
    * Wraps `plaintext` for the holder of `recipientPublicKey` using
    * ECIES (ECDH P-256 + HKDF-SHA256 + AES-GCM-256). See
    * {@link CryptoUtils.ICryptoProvider.wrapBytes | ICryptoProvider.wrapBytes}.
