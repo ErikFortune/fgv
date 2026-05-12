@@ -31,6 +31,14 @@ interface IRushProject {
   projectFolder: string;
 }
 
+interface IPackageJsonDependencies {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+}
+
+type FgvDependencyGraph = Map<string, Set<string>>;
+
 // ── Discovery helpers ──
 
 /**
@@ -40,6 +48,33 @@ function readRushProjects(rushJsonPath: string): IRushProject[] {
   const content = fs.readFileSync(rushJsonPath, 'utf-8');
   const rush = parseJsonc(content) as { projects: IRushProject[] };
   return rush.projects;
+}
+
+/**
+ * Read a package.json and return its dependency sections.
+ */
+function readPackageJson(pkgJsonPath: string): IPackageJsonDependencies {
+  return JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8')) as IPackageJsonDependencies;
+}
+
+/**
+ * Collect a package.json's dependency names for direct consumer discovery.
+ */
+function collectDirectFgvDependencies(pkgJson: IPackageJsonDependencies): Set<string> {
+  const allDeps: Record<string, string> = {
+    ...(pkgJson.dependencies ?? {}),
+    ...(pkgJson.devDependencies ?? {}),
+    ...(pkgJson.peerDependencies ?? {})
+  };
+
+  const deps = new Set<string>();
+  for (const [name, spec] of Object.entries(allDeps)) {
+    if (name.startsWith('@fgv/') && spec !== 'workspace:*') {
+      deps.add(name);
+    }
+  }
+
+  return deps;
 }
 
 /**
@@ -61,22 +96,86 @@ function discoverFgvDeps(repoDir: string): Map<string, string[]> {
       continue;
     }
 
-    const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
-    const allDeps: Record<string, string> = {
-      ...pkgJson.dependencies,
-      ...pkgJson.devDependencies
-    };
-
-    for (const [name, spec] of Object.entries(allDeps)) {
-      if (name.startsWith('@fgv/') && spec !== 'workspace:*') {
-        const existing = deps.get(name) ?? [];
-        existing.push(project.projectFolder);
-        deps.set(name, existing);
-      }
+    const pkgJson = readPackageJson(pkgJsonPath);
+    for (const name of collectDirectFgvDependencies(pkgJson)) {
+      const existing = deps.get(name) ?? [];
+      existing.push(project.projectFolder);
+      deps.set(name, existing);
     }
   }
 
   return deps;
+}
+
+/**
+ * Build an internal @fgv package dependency graph from the fgv worktree.
+ * Only dependencies that exist in the fgv Rush projects are retained.
+ */
+function buildFgvDependencyGraph(fgvDir: string, fgvPackageMap: Map<string, string>): FgvDependencyGraph {
+  const rushJsonPath = path.join(fgvDir, 'rush.json');
+  if (!fs.existsSync(rushJsonPath)) {
+    throw new Error(`fgv rush.json not found at ${rushJsonPath}`);
+  }
+
+  const projects = readRushProjects(rushJsonPath);
+  const graph = new Map<string, Set<string>>();
+
+  for (const project of projects) {
+    const pkgJsonPath = path.join(fgvDir, project.projectFolder, 'package.json');
+    if (!fs.existsSync(pkgJsonPath)) {
+      continue;
+    }
+
+    const pkgJson = readPackageJson(pkgJsonPath);
+    const internalDeps = new Set<string>();
+    const allDeps: Record<string, string> = {
+      ...(pkgJson.dependencies ?? {}),
+      ...(pkgJson.devDependencies ?? {}),
+      ...(pkgJson.peerDependencies ?? {})
+    };
+
+    for (const [dependencyName] of Object.entries(allDeps)) {
+      if (fgvPackageMap.has(dependencyName) && dependencyName !== project.packageName) {
+        internalDeps.add(dependencyName);
+      }
+    }
+
+    graph.set(project.packageName, internalDeps);
+  }
+
+  return graph;
+}
+
+/**
+ * Expand a set of package names to include all transitive internal dependencies.
+ */
+function expandFgvDependencyClosure(
+  seedPackageNames: Iterable<string>,
+  graph: FgvDependencyGraph
+): Set<string> {
+  const resolved = new Set<string>();
+  const pending = [...seedPackageNames];
+
+  while (pending.length > 0) {
+    const packageName = pending.pop();
+    if (!packageName || resolved.has(packageName)) {
+      continue;
+    }
+
+    resolved.add(packageName);
+    const directDeps = graph.get(packageName);
+    if (!directDeps) {
+      continue;
+    }
+
+    for (const dependencyName of directDeps) {
+      if (!resolved.has(dependencyName)) {
+        pending.push(dependencyName);
+      }
+    }
+  }
+
+  return resolved;
 }
 
 /**
@@ -169,13 +268,15 @@ export async function runLink(options: ILinkOptions): Promise<void> {
   }
 
   const fgvPackageMap = buildFgvPackageMap(fgvDir);
+  const fgvDependencyGraph = buildFgvDependencyGraph(fgvDir, fgvPackageMap);
+  const linkedPackageNames = expandFgvDependencyClosure(fgvDeps.keys(), fgvDependencyGraph);
 
   // Compute file: overrides relative to common/temp/
   const commonTempDir = path.join(repoDir, 'common', 'temp');
   const overrides: Record<string, string> = {};
   const warnings: string[] = [];
 
-  for (const packageName of fgvDeps.keys()) {
+  for (const packageName of linkedPackageNames) {
     const projectFolder = fgvPackageMap.get(packageName);
     if (!projectFolder) {
       warnings.push(`  Warning: ${packageName} not found in fgv worktree — skipping`);
