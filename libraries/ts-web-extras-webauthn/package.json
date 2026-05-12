@@ -1,0 +1,82 @@
+{
+  "name": "@fgv/ts-web-extras-webauthn",
+  "version": "5.1.0",
+  "description": "Result-integration boundary over @simplewebauthn/browser",
+  "main": "lib/index.js",
+  "types": "dist/ts-web-extras-webauthn.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
+      "types": "./dist/ts-web-extras-webauthn.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "NODE_OPTIONS=--disable-warning=DEP0040 heft test --clean",
+    "clean": "heft clean",
+    "test": "NODE_OPTIONS=--disable-warning=DEP0040 heft test --clean",
+    "test-handles": "NODE_OPTIONS=--disable-warning=DEP0040 jest --runInBand --detectOpenHandles",
+    "clean-jest": "jest --clear-cache",
+    "update-snapshot": "jest --updateSnapshot",
+    "coverage": "NODE_OPTIONS=--disable-warning=DEP0040 jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
+  },
+  "keywords": [
+    "browser",
+    "typescript",
+    "webauthn",
+    "result",
+    "simplewebauthn"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ErikFortune/fgv/issues"
+  },
+  "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-web-extras-webauthn#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@simplewebauthn/browser": "^13.0.0"
+  },
+  "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@microsoft/api-extractor": "^7.55.2",
+    "@rushstack/eslint-config": "4.6.4",
+    "@rushstack/heft": "1.2.7",
+    "@rushstack/heft-jest-plugin": "1.2.6",
+    "@rushstack/heft-node-rig": "2.11.27",
+    "@types/heft-jest": "1.0.6",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.14.9",
+    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/parser": "^8.52.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-tsdoc": "~0.5.2",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "rimraf": "^6.1.2",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "@fgv/ts-utils": "workspace:*"
+  }
+}

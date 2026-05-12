@@ -25,12 +25,18 @@ class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
     generateKeyPair(algorithm: CryptoUtils_2.KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
     generateRandomBytes(length: number): Result<Uint8Array>;
     generateUuid(): Result<Uuid>;
+    hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     importPublicKeySpki(spkiBytes: Uint8Array, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
+    sign(privateKey: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean;
     toBase64(data: Uint8Array): string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     unwrapBytes(wrapped: CryptoUtils_2.IWrappedBytes, recipientPrivateKey: CryptoKey, options: CryptoUtils_2.IWrapBytesOptions): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "BrowserCryptoProvider"
+    verify(publicKey: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
+    verifyHmacSha256(key: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: CryptoUtils_2.IWrapBytesOptions): Promise<Result<CryptoUtils_2.IWrappedBytes>>;
@@ -49,6 +55,8 @@ function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
 
 declare namespace CryptoUtils {
     export {
+        HpkeProvider,
+        IHpkeSealResult,
         BrowserHashProvider,
         createBrowserCryptoProvider,
         BrowserCryptoProvider
@@ -241,6 +249,11 @@ function fromFileList(fileList: FileList, params?: FileTree.IFileTreeInitParams<
 // @public
 function getOriginalFile(fileList: FileList, path: string): Result<File>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const HpkeProvider: typeof CryptoUtils_2.HpkeProvider;
+
 // @public
 export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
     // (undocumented)
@@ -308,6 +321,9 @@ export interface IFsAccessApis {
     // (undocumented)
     showSaveFilePicker(options?: ShowSaveFilePickerOptions): Promise<FileSystemFileHandle_2>;
 }
+
+// @public
+type IHpkeSealResult = CryptoUtils_2.IHpkeSealResult;
 
 // @public
 export interface IHttpTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {
