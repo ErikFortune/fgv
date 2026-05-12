@@ -1,7 +1,7 @@
 # Stream State: crypto-batch-2-argon2id
 
-**Status:** 🟡 phase A complete — awaiting orchestrator signoff before phase B
-**Last updated:** 2026-05-12 (implementing agent — claude/argon2id-package-split-EhzDh)
+**Status:** 🟢 phase A signed off; phase B ready to start
+**Last updated:** 2026-05-12 (orchestrator — phase B brief authored)
 
 ---
 
@@ -9,8 +9,23 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| A — research and design | 🟡 complete, awaiting signoff | design.md written; PR open targeting claude/crypto-batch-2-features |
-| B — implementation | ⏸ blocked on phase A signoff | Brief to be written by orchestrator post-signoff |
+| A — research and design | ✅ done | design.md merged into `claude/crypto-batch-2-features` |
+| B — implementation | 🟢 ready | `brief-phase-b.md` is the binding contract; assignable to implementing agent |
+
+---
+
+## Phase A signoff summary (orchestrator)
+
+Design approved **as designed**. Open question resolutions:
+
+- **OQ1 (parameter naming):** keep readable form (`memoryKiB` / `iterations` / `parallelism` / `outputBytes`). Do not collapse to RFC's `m`/`t`/`p`.
+- **OQ2 (parallelism > 1 on WASM):** JSDoc warning is sufficient — no runtime logged warning.
+- **OQ3 (discriminated union for `IKeyDerivationParams`):** proceed with the union approach. Phase B audits `keystore/converters.ts` and `keyStore.ts` access sites.
+- **OQ5 (cross-runtime test placement):** in `libraries/ts-extras-argon2/` with a `devDependency` on `@fgv/ts-web-extras-argon2`. Plain Jest in Node — no browser runner needed because `hash-wasm` is pure WASM.
+
+Orchestrator-flagged precondition (B.0): live `hash-wasm` GitHub activity check before kickoff. If maintenance has materially deteriorated, STOP and surface — do not pivot to `argon2-browser` unilaterally.
+
+Phase B contract is baked into `.ai/tasks/active/crypto-batch-2-argon2id/brief-phase-b.md`. Where the brief conflicts with the design, the brief wins.
 
 ---
 
