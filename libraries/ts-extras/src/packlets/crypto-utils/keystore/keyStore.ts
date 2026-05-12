@@ -711,6 +711,11 @@ export class KeyStore implements IEncryptionProvider {
     if (keyResult.isFailure()) {
       return fail(`Argon2id key derivation failed: ${keyResult.message}`);
     }
+    if (keyResult.value.length !== Constants.AES_256_KEY_SIZE) {
+      return fail(
+        `Argon2id outputBytes must be ${Constants.AES_256_KEY_SIZE} for KeyStore secrets, got ${keyResult.value.length}`
+      );
+    }
 
     const entry: IKeyStoreSymmetricEntry = {
       name,

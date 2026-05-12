@@ -90,7 +90,7 @@ describe('KeyStore Argon2id methods', () => {
         memoryKiB: 65536,
         iterations: 3,
         parallelism: 1,
-        outputBytes: 64
+        outputBytes: 32
       };
       const result = await keystore.addSecretFromPasswordArgon2id(
         'a2-secret',
@@ -102,11 +102,25 @@ describe('KeyStore Argon2id methods', () => {
       );
 
       expect(result).toSucceedAndSatisfy((addResult) => {
-        expect(addResult.entry.key.length).toBe(64);
+        expect(addResult.entry.key.length).toBe(32);
         const kd = addResult.keyDerivation as CryptoUtils.IArgon2idKeyDerivationParams;
         expect(kd.memoryKiB).toBe(65536);
         expect(kd.iterations).toBe(3);
       });
+    });
+
+    test('fails when outputBytes is not 32 (AES-256 key size)', async () => {
+      const badParams: CryptoUtils.IArgon2idParams = {
+        memoryKiB: 65536,
+        iterations: 3,
+        parallelism: 1,
+        outputBytes: 64
+      };
+      expect(
+        await keystore.addSecretFromPasswordArgon2id('a2-secret', 'my-password', mockArgon2idProvider, {
+          params: badParams
+        })
+      ).toFailWith(/outputBytes must be 32/i);
     });
 
     test('adds description when supplied', async () => {

@@ -23,6 +23,7 @@ import {
   ICryptoProvider,
   IArgon2idParams,
   IKeyDerivationParams,
+  IPbkdf2KeyDerivationParams,
   KeyPairAlgorithm
 } from '../model';
 import { IPrivateKeyStorage } from './privateKeyStorage';
@@ -363,9 +364,9 @@ export interface IKeyStoreFile {
   readonly encryptedData: string;
 
   /**
-   * Key derivation parameters (required for key store - always password-derived).
+   * Key derivation parameters for the vault master key (always PBKDF2).
    */
-  readonly keyDerivation: IKeyDerivationParams;
+  readonly keyDerivation: IPbkdf2KeyDerivationParams;
 }
 
 // ============================================================================

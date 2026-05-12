@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@fgv/ts-web-extras-argon2": "workspace:*",
@@ -72,9 +73,10 @@
     "eslint-plugin-tsdoc": "~0.5.2"
   },
   "dependencies": {
-    "@fgv/ts-extras": "workspace:*",
-    "@fgv/ts-utils": "workspace:*",
     "argon2": "~0.44.0"
   },
-  "peerDependencies": {}
+  "peerDependencies": {
+    "@fgv/ts-extras": "workspace:*",
+    "@fgv/ts-utils": "workspace:*"
+  }
 }

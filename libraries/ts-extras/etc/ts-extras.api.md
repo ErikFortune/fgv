@@ -1273,7 +1273,7 @@ interface IKeyStoreFile {
     readonly encryptedData: string;
     readonly format: KeyStoreFormat;
     readonly iv: string;
-    readonly keyDerivation: IKeyDerivationParams;
+    readonly keyDerivation: IPbkdf2KeyDerivationParams;
 }
 
 // @public
@@ -2160,8 +2160,8 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/crypto-utils/keystore/keyStore.ts:1458:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/crypto-utils/keystore/keyStore.ts:1497:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1463:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1502:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 
