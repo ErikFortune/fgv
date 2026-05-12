@@ -474,6 +474,62 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
   /* c8 ignore stop */
 
   /**
+   * Signs `data` with `privateKey` using the algorithm inferred from the key.
+   * @param privateKey - A signing `CryptoKey` (`'ecdsa-p256'` or `'ed25519'`).
+   * @param data - The bytes to sign.
+   * @returns `Success` with the raw signature bytes, or `Failure` with error context.
+   */
+  public async sign(privateKey: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>> {
+    const algorithm = signAlgorithmFromKey(privateKey);
+    const result = await captureAsyncResult(() =>
+      this._crypto.subtle.sign(algorithm, privateKey, toBufferView(data))
+    );
+    return result
+      .withErrorFormat((e) => `sign failed: ${e}`)
+      .onSuccess((buf) => succeed(new Uint8Array(buf)));
+  }
+
+  /**
+   * Verifies a signature produced by {@link BrowserCryptoProvider.sign | sign}.
+   * @param publicKey - A verify `CryptoKey` (`'ecdsa-p256'` or `'ed25519'`).
+   * @param signature - The raw signature bytes.
+   * @param data - The original data that was signed.
+   * @returns `Success` with `true` if valid, `false` if not, or `Failure` with error context.
+   */
+  public async verify(
+    publicKey: CryptoKey,
+    signature: Uint8Array,
+    data: Uint8Array
+  ): Promise<Result<boolean>> {
+    const algorithm = signAlgorithmFromKey(publicKey);
+    const result = await captureAsyncResult(() =>
+      this._crypto.subtle.verify(algorithm, publicKey, toBufferView(signature), toBufferView(data))
+    );
+    return result.withErrorFormat((e) => `verify failed: ${e}`);
+  }
+
+  /**
+   * Compares two byte arrays in constant time.
+   *
+   * Accumulates XOR differences with bitwise-OR; no early-return is possible
+   * once the length check passes, making timing independent of the byte
+   * values. Returns `false` immediately on length mismatch (length is not
+   * secret in normal use).
+   * @param a - First byte array.
+   * @param b - Second byte array.
+   * @returns `true` if lengths match and all bytes are equal, `false` otherwise.
+   */
+  public timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) {
+      // eslint-disable-next-line no-bitwise
+      diff |= a[i] ^ b[i];
+    }
+    return diff === 0;
+  }
+
+  /**
    * Wraps `plaintext` for the holder of `recipientPublicKey` using
    * ECIES (ECDH P-256 + HKDF-SHA256 + AES-GCM-256). See
    * {@link CryptoUtils.ICryptoProvider.wrapBytes | ICryptoProvider.wrapBytes}.
@@ -589,6 +645,19 @@ export class BrowserCryptoProvider implements CryptoUtils.ICryptoProvider {
     });
     return result.withErrorFormat((e) => `unwrapBytes failed: ${e}`);
   }
+}
+
+/**
+ * Derives the algorithm identifier needed by `crypto.subtle.sign/verify`
+ * from the key's embedded `algorithm` property. ECDSA requires an explicit
+ * `hash` parameter that is not stored on the key object itself; all other
+ * supported signing algorithms (`Ed25519`) use the key algorithm as-is.
+ */
+function signAlgorithmFromKey(key: CryptoKey): AlgorithmIdentifier | EcdsaParams {
+  if (key.algorithm.name === 'ECDSA') {
+    return { name: 'ECDSA', hash: 'SHA-256' };
+  }
+  return key.algorithm as AlgorithmIdentifier;
 }
 
 /**

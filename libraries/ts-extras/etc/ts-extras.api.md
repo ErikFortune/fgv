@@ -829,9 +829,15 @@ interface ICryptoProvider {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    sign(privateKey: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean;
     toBase64(data: Uint8Array): string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     unwrapBytes(wrapped: IWrappedBytes, recipientPrivateKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    verify(publicKey: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<IWrappedBytes>>;
 }
@@ -1520,9 +1526,13 @@ class NodeCryptoProvider implements ICryptoProvider {
     importPublicKeyJwk(jwk: JsonWebKey, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     importPublicKeySpki(spkiBytes: Uint8Array, algorithm: KeyPairAlgorithm): Promise<Result<CryptoKey>>;
     sha256(data: string): Promise<Result<string>>;
+    sign(privateKey: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean;
     toBase64(data: Uint8Array): string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     unwrapBytes(wrapped: IWrappedBytes, recipientPrivateKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "NodeCryptoProvider"
+    verify(publicKey: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: IWrapBytesOptions): Promise<Result<IWrappedBytes>>;
@@ -1749,7 +1759,7 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/crypto-utils/keystore/keyStore.ts:1326:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/crypto-utils/keystore/keyStore.ts:1327:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/crypto-utils/keystore/keyStore.ts:1366:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
