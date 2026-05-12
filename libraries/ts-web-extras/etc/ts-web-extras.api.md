@@ -34,7 +34,7 @@ class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
     toBase64(data: Uint8Array): string;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     unwrapBytes(wrapped: CryptoUtils_2.IWrappedBytes, recipientPrivateKey: CryptoKey, options: CryptoUtils_2.IWrapBytesOptions): Promise<Result<Uint8Array>>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "BrowserCryptoProvider"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "sign"
     verify(publicKey: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
     verifyHmacSha256(key: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
