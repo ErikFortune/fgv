@@ -1,7 +1,7 @@
 # Stream State: crypto-batch-2-webauthn
 
-**Status:** 🔵 phase A complete — awaiting orchestrator signoff for phase B
-**Last updated:** 2026-05-12 (implementing agent — phase A complete)
+**Status:** 🟢 phase A signed off; phase B ready to start
+**Last updated:** 2026-05-12 (orchestrator — phase B brief authored)
 
 ---
 
@@ -9,8 +9,23 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| A — research and design | ✅ done | design.md committed; PR open on `claude/crypto-batch-2-features` |
-| B — implementation | ⏸ blocked on phase A signoff | Brief written by orchestrator post-signoff |
+| A — research and design | ✅ done | design.md merged into `claude/crypto-batch-2-features` (via consolidated phase-B prep) |
+| B — implementation | 🟢 ready | `brief-phase-b.md` is the binding contract; assignable to implementing agent |
+
+---
+
+## Phase A signoff summary (orchestrator)
+
+Design approved **as designed** — the Result-integration-boundary discipline (six primitives, nothing else) is exactly the right shape. Open question resolutions:
+
+- **OQ-1 (libraries/ vs integrations/):** stay in `libraries/`. The `integrations/` convention question is a separate lessons-codification chore.
+- **OQ-2 (v12 support):** v13+ only. Do not include `@simplewebauthn/types`.
+- **OQ-3 (`VerifyRegistrationResponseOpts` namespace duplication risk):** accept; `Parameters<>` alias guarantees structural identity.
+- **OQ-4 (rejected abstractions):** the four temptations stay rejected. The phase B brief encodes them as a "don't" list — abstraction creep is the failure mode for this stream.
+
+PR #342 (the phase A draft) is being superseded by the consolidated cluster work. Orchestrator will close it when the prep PR merges; implementing agent does not need to touch it.
+
+Phase B contract is baked into `.ai/tasks/active/crypto-batch-2-webauthn/brief-phase-b.md`. Where the brief conflicts with the design, the brief wins.
 
 ---
 

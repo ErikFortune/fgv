@@ -1,7 +1,7 @@
 # Stream State: crypto-batch-2-hpke
 
-**Status:** 🔵 phase A complete; phase B awaiting signoff
-**Last updated:** 2026-05-12 (phase A implementing agent)
+**Status:** 🟢 phase A signed off; phase B ready to start
+**Last updated:** 2026-05-12 (orchestrator — phase B brief authored)
 
 ---
 
@@ -9,8 +9,18 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| A — research and design | ✅ done | design.md committed; PR open against `claude/crypto-batch-2-features` |
-| B — implementation | ⏸ blocked on phase A signoff | Brief to be written by orchestrator post-signoff |
+| A — research and design | ✅ done | design.md merged into `claude/crypto-batch-2-features` |
+| B — implementation | 🟢 ready | `brief-phase-b.md` is the binding contract; assignable to implementing agent |
+
+---
+
+## Phase A signoff summary (orchestrator)
+
+Design approved with **one significant modification**: the design's "subtle as first parameter" function-based API is replaced with a **class-based `HpkeProvider` pattern** (private constructor + static `create(subtle): Result<HpkeProvider>`), matching the existing `NodeCryptoProvider` / `BrowserCryptoProvider` / `KeyStore` / `DirectEncryptionProvider` shape. The rest of the design (cipher suite; ciphertext format with inclusive auth tag; HKDF placement on the class rather than `ICryptoProvider`; `info` as first-class `Uint8Array`; internal primitives stay internal; no context-binding helper; cross-runtime via re-export with shared test vectors) stands as designed.
+
+Orchestrator added one non-optional precondition (B.0): live RFC 9180 verification. The phase A agent's research session was rfc-editor.org-blocked, so phase B must verify algorithm pseudocode and test-vector availability before encoding constants.
+
+Phase B contract is baked into `.ai/tasks/active/crypto-batch-2-hpke/brief-phase-b.md`. Where the brief conflicts with the design, the brief wins.
 
 ---
 

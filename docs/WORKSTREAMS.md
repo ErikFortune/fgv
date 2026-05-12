@@ -130,50 +130,53 @@ substrate. Don't queue streams against them here.
 
 ### `crypto-batch-2-hpke` 🟢
 
-**Status:** 🟢 phase A (research + design) ready to start
+**Status:** 🟢 phase A signed off; phase B ready to start
 **Cluster:** crypto-batch-2 (integration branch `claude/crypto-batch-2-features`)
-**Phase B sequencing:** decided post-design-signoff
 **Branch base:** `claude/crypto-batch-2-features` (integration branch off `release`)
 **Package surface:** `@fgv/ts-extras/crypto-utils`, `@fgv/ts-web-extras/crypto-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
 **Out-of-scope:** `wrapBytes`/`unwrapBytes` (ECIES; separate primitive), Argon2id, WebAuthn, sudoku packages
 
-**Mission.** Implement HPKE base mode (RFC 9180) with X25519/HKDF-SHA256/AES-256-GCM in `@fgv/ts-extras` and `@fgv/ts-web-extras` crypto-utils packlets. Required for a cross-repo consumer's Phase 2 (per-session material delivery, master-key wrap at unlock, recovery-proof envelopes). Phase A produces a design doc; phase B implements per design + signoff modifications. Includes HKDF as exposed primitive (placement decided in design).
+**Mission.** Implement HPKE base mode (RFC 9180) with X25519/HKDF-SHA256/AES-256-GCM as a class-based `HpkeProvider` in `@fgv/ts-extras/crypto-utils`, re-exported from `@fgv/ts-web-extras/crypto-utils`. Required for a cross-repo consumer's Phase 2 (per-session material delivery, master-key wrap at unlock, recovery-proof envelopes). HKDF exposed as a method on the same class (not on `ICryptoProvider`).
+
+**Signoff modification:** design's "subtle as first parameter" function-based API replaced with a class-based `HpkeProvider` pattern (private constructor + static `create(subtle): Result<HpkeProvider>`). Rest of design stands.
 
 **Origin.** Cross-repo consumer batch-2 handoff (archived at `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`).
 
-**Phase A artifacts:** `.ai/tasks/active/crypto-batch-2-hpke/{brief.md, state.md}` → produces `design.md`.
+**Artifacts:** `.ai/tasks/active/crypto-batch-2-hpke/{brief.md, design.md, state.md, brief-phase-b.md}`. `brief-phase-b.md` is the binding phase B contract.
 
 ### `crypto-batch-2-argon2id` 🟢
 
-**Status:** 🟢 phase A (research + design) ready to start
+**Status:** 🟢 phase A signed off; phase B ready to start
 **Cluster:** crypto-batch-2 (integration branch `claude/crypto-batch-2-features`)
-**Phase B sequencing:** decided post-design-signoff
 **Branch base:** `claude/crypto-batch-2-features` (integration branch off `release`)
-**Package surface:** NEW packages `@fgv/ts-extras-argon2` and `@fgv/ts-web-extras-argon2`; modifications to `@fgv/ts-extras/crypto-utils` `ICryptoProvider` interface for composition shape; possibly `KeyStore` integration; `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Package surface:** NEW packages `@fgv/ts-extras-argon2` (Node, wraps `argon2`) and `@fgv/ts-web-extras-argon2` (browser, wraps `hash-wasm`); model additions in `@fgv/ts-extras/crypto-utils` (`IArgon2idProvider`, `IArgon2idParams`, `IKeyDerivationParams` discriminated union); `KeyStore` integration (`addSecretFromPasswordArgon2id` / `verifySecretFromPasswordArgon2id`); `.ai/instructions/LIBRARY_CAPABILITIES.md`
 **Out-of-scope:** PBKDF2 (already shipped via `KeyStore.addSecretFromPassword`), HPKE, WebAuthn, other KDFs, sudoku packages
 
-**Mission.** Implement Argon2id (RFC 9106) as fgv-owned but in separate packages to keep WASM bundling out of consumers who don't need it. Required for a cross-repo consumer's Phase 2 (recovery rows, hybrid auth passphrases). Cross-runtime output equivalence is the load-bearing correctness property.
+**Mission.** Implement Argon2id (RFC 9106) as fgv-owned but in separate packages to keep WASM bundling out of consumers who don't need it. Required for a cross-repo consumer's Phase 2 (recovery rows, hybrid auth passphrases). Cross-runtime output equivalence is the load-bearing correctness property; testable as plain Jest in Node because `hash-wasm` is pure WASM.
+
+**Signoff:** as designed. Open questions resolved (readable parameter naming; JSDoc warning on `parallelism > 1` for WASM; discriminated union for `IKeyDerivationParams`; cross-runtime test placement in `ts-extras-argon2/`). Orchestrator precondition (B.0): live `hash-wasm` activity check.
 
 **Origin.** Cross-repo consumer batch-2 handoff (archived at `.ai/notes/cross-repo-handoffs/fgv-batch-2-handoff-2026-05.md`). Maintainer-policy decision Q2 resolved (a)+separate-packages on 2026-05-11.
 
-**Phase A artifacts:** `.ai/tasks/active/crypto-batch-2-argon2id/{brief.md, state.md}` → produces `design.md`.
+**Artifacts:** `.ai/tasks/active/crypto-batch-2-argon2id/{brief.md, design.md, state.md, brief-phase-b.md}`. `brief-phase-b.md` is the binding phase B contract.
 
 ### `crypto-batch-2-webauthn` 🟢
 
-**Status:** 🟢 phase A (research + design) ready to start
+**Status:** 🟢 phase A signed off; phase B ready to start
 **Cluster:** crypto-batch-2 (integration branch `claude/crypto-batch-2-features`)
-**Phase B sequencing:** decided post-design-signoff
 **Branch base:** `claude/crypto-batch-2-features` (integration branch off `release`)
-**Package surface:** NEW packages `@fgv/ts-extras-webauthn` and `@fgv/ts-web-extras-webauthn`; `.ai/instructions/LIBRARY_CAPABILITIES.md`
-**Out-of-scope:** Attestation policy, challenge state management, extension helpers, algorithm allowlist, ceremony orchestration, anything that's not one of six primitive operations (strictly enforced per D3 in brief)
+**Package surface:** NEW packages `@fgv/ts-extras-webauthn` (wraps `@simplewebauthn/server`) and `@fgv/ts-web-extras-webauthn` (wraps `@simplewebauthn/browser`); `common/config/rush/common-versions.json` preferredVersions; `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Out-of-scope:** Attestation policy, challenge state management, extension helpers, algorithm allowlist, ceremony orchestration, anything that's not one of six primitive operations (strictly enforced in phase B brief D2)
 
-**Mission.** Implement a Result-integration boundary over `@simplewebauthn/server` and `@simplewebauthn/browser`. Six primitive operations total (4 server + 2 browser). No opinion baked in; consumers build their own opinionated wrappers on top. Pattern mirrors `@fgv/ts-utils-jest`'s relationship to Jest.
+**Mission.** Implement a Result-integration boundary over `@simplewebauthn/server` and `@simplewebauthn/browser`. Six primitive operations total (4 server + 2 browser), each a one-line `captureAsyncResult` wrapper. No opinion baked in; consumers build their own opinionated wrappers on top. Pattern mirrors `@fgv/ts-utils-jest`'s relationship to Jest.
+
+**Signoff:** as designed. Open questions resolved (`libraries/` placement; v13+ only; `Parameters<>` aliases accepted; the four rejected abstractions stay rejected). The phase A draft PR #342 is being superseded by the consolidated cluster work; orchestrator will close it on prep PR merge.
 
 **Origin.** Cross-repo consumer batch-2 handoff. Maintainer-policy decision Q3 resolved (c)+separate-packages on 2026-05-11.
 
 **Lessons-codification candidate:** The "Result-integration boundary over a well-maintained upstream library" pattern is worth codifying as a fgv convention after this stream lands. Plus the question of whether such packages belong in `libraries/` or a top-level `integrations/` directory. Both parked for triage; not blocking.
 
-**Phase A artifacts:** `.ai/tasks/active/crypto-batch-2-webauthn/{brief.md, state.md}` → produces `design.md`.
+**Artifacts:** `.ai/tasks/active/crypto-batch-2-webauthn/{brief.md, design.md, state.md, brief-phase-b.md}`. `brief-phase-b.md` is the binding phase B contract.
 
 ### `crypto-batch-2-misc` 🟢
 
