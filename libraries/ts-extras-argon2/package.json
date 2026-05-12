@@ -10,6 +10,7 @@
         "import": "./lib/index.js",
         "require": "./lib/index.js"
       },
+      "default": "./lib/index.js",
       "types": "./dist/ts-extras-argon2.d.ts"
     }
   },
