@@ -35,6 +35,17 @@ opportunistically when the right surface area is touched.
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] `@fgv/ts-web-extras` is missing `eslint.config.js`; `rushx lint` fails for the whole package.**
+  ESLint 10.x requires `eslint.config.(js|mjs|cjs)`; `libraries/ts-web-extras/` has neither it nor a legacy `.eslintrc*`. Running `rushx lint` exits 2 with `ESLint couldn't find an eslint.config...`. Every other monorepo package has the file. This means the per-stream pre-PR lint gate has been bypassed for any stream touching `ts-web-extras` (e.g. `crypto-batch-2-misc`, `crypto-batch-2-hpke`, `auth-primitives-batch1`). Per stream READMEs the failure was acknowledged as "pre-existing infrastructure gap" rather than fixed in-stream.
+
+  **Trigger**: before the next stream that touches `ts-web-extras`; ideally before the next `release → main` promotion so we don't ship more code through an un-linted gate.
+
+  **Scope sketch**: copy `eslint.config.js` from a sibling package (`ts-extras` is the closest analog — same browser-flavored content, same dev-deps). Verify `rushx lint` passes on the existing `ts-web-extras` source. Fix any newly-surfaced violations (these would have been there for some time; likely small). Optional: add a guard test or CI step that fails when any package's `rushx lint` exits non-zero, so the next time this happens it surfaces immediately.
+
+  **Not a P1**: existing code shipped and downstream consumers integrate it; no production breakage today. P2 because it's an active gate-bypass — any new code landing in `ts-web-extras` is un-linted, which is exactly the failure mode the lint-gate codification (PR #337) was meant to prevent.
+
+  **Reference**: surfaced in `crypto-batch-2-misc` stream README ("Pre-existing issues"); confirmed during `crypto-batch-2` cluster-close (PR #350).
+
 - **[P2] Replace try/catch + instanceof-Error boilerplate in `ai-assist/apiClient.ts` with `captureAsyncResult`.**
   Four identical `catch (err: unknown) { const detail = err instanceof Error ? err.message : String(err); return fail(...detail...); }` blocks at lines ~158, 217, 272, 316. Each carries a `/* c8 ignore next 1 - defensive: fetch errors are always Error instances in practice */` directive to suppress the untestable catch branch — a signal that `captureAsyncResult()` is the right replacement. `captureAsyncResult` handles the `Error`-vs-string normalisation internally and makes the `c8 ignore` directives unnecessary.
 
@@ -60,6 +71,17 @@ opportunistically when the right surface area is touched.
   **Reference**: bug reported via personaility web app integration; one-off test added in the fix PR (see `@fgv/ts-extras` browser entry).
 
 ## P3 — Opportunistic cleanup
+
+- **[P3] New pure-library packages must declare `"sideEffects": false` in `package.json`.**
+  Every `libraries/` package whose `src/index.ts` exports only functions and types (no module-level side effects) carries `"sideEffects": false` so bundlers can tree-shake it. This was caught in PR review on `crypto-batch-2-webauthn`: `@fgv/ts-extras-webauthn` was missing the field; `@fgv/ts-web-extras-webauthn` had it. Fixed in-stream, but the gap reveals a scaffolding-checklist hole — the standard "new package" template doesn't enforce it.
+
+  **Trigger**: next stream that creates a new pure-library package, or next time someone refactors the scaffolding template / `rush.json` registration guide.
+
+  **Scope sketch**: (a) audit existing `libraries/*/package.json` to confirm everyone has the field correctly set (one quick grep), and (b) add a line to the per-package scaffolding doc / convention note that flags `"sideEffects": false` as required alongside `"main"` and `"types"`. Optionally add a tiny test or pre-PR check that fails when a `libraries/` package is missing the field and has no module-level side effects.
+
+  **Not a P2**: failure mode is "consumer bundle size slightly larger than necessary," not a functional regression.
+
+  **Reference**: PR #347 review (crypto-batch-2-webauthn); lesson captured in `.ai/tasks/completed/2026-05/crypto-batch-2-webauthn/README.md` § L1.
 
 - **[P3] `resolveImageCapability` in `ai-assist/registry.ts` returns `| undefined` instead of `Result<IAiImageModelCapability>`.**
   `registry.ts:328–339`. The function returns `undefined` when no capability matches `modelId`, silently swallowing the "unknown model" case. Callers must null-check rather than chain. Returning `Result<IAiImageModelCapability>` with a contextual error message would let callers propagate the failure cleanly.
