@@ -577,6 +577,20 @@
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-extras-webauthn",
+      "projectFolder": "libraries/ts-extras-webauthn",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-web-extras-webauthn",
+      "projectFolder": "libraries/ts-web-extras-webauthn",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "browser"]
     }
   ]
 }
