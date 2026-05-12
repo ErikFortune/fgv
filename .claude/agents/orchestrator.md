@@ -40,9 +40,13 @@ Before doing anything, read these — they carry the conventions your predecesso
 - `docs/WORKSTREAMS.md` preamble (repo shape, branch flow, status conventions, stream entry shape, shared types, artifact protocol)
 - `docs/CHORES.md` (current active batch shape + completed precedents; trigger taxonomy)
 - `.ai/BASELINE.md` (last `release` → `main` promotion — used for blast-radius sizing, not as a stream-start gate)
+- `.ai/conventions/workflow/doc-graduation.md` (which docs live where; the discipline for what graduates to `release` vs stays on `claude/orchestrator-session`)
 - Cross-cutting design docs in `docs/` relevant to the work in flight
 
-Then check `.ai/tasks/active/` for in-flight task artifacts before starting any new orchestration work.
+Then check both surfaces for in-flight context:
+
+- `.ai/tasks/active/` for in-flight task artifacts
+- `claude/orchestrator-session` branch (if it exists on remote) for orchestrator-side decision-tracks, lessons-pending, and handoff notes from the previous session. See `.ai/notes/orchestrator/README.md` (on `release`) for the structure.
 
 ## Workflow shapes
 
@@ -66,8 +70,8 @@ Full workflow procedures: `.ai/conventions/workflow/` and `docs/DESIGN_PROCESS.m
 
 1. Load `/workstream-brief` for the stream ID.
 2. Verify package-surface / file-boundary collision avoidance against any other in-flight parallel streams.
-3. Branch base is current `release` HEAD (no shared "wave base" — see WORKSTREAMS.md preamble).
-4. Commit `brief.md` + empty `state.md` to `.ai/tasks/active/<stream-id>/`.
+3. Branch base is current `release` HEAD (no shared "wave base" — see WORKSTREAMS.md preamble) or cluster integration branch if the stream is part of a cluster.
+4. Commit `brief.md` + empty `state.md` to `.ai/tasks/active/<stream-id>/` via a substrate-prep branch + PR per `.ai/conventions/workflow/doc-graduation.md` § "Per-stream prep branch mechanic". After the prep PR merges, treat the substrate as canonical on the integration branch; later amendments use a follow-up `chore/<stream>-amend` PR, not edits to a session-branch copy.
 5. Deliver kickoff prompt paste-ready: mission, package surface, in/out-of-scope paths, required reading, skills to load (with trigger conditions), missing-input rule, phases, acceptance criteria, exit artifact shape, resume protocol.
 
 ### Chore-batch kickoff
@@ -79,6 +83,16 @@ Compose following the interleaved-per-item shape from `.ai/conventions/workflow/
 1. Load `/triage-cycle` for the feature id + implementing stream id.
 2. Verify phase B (bundle drop) is clean before drafting the kickoff.
 3. Hold the phase-C completion gate: present all four triage outputs to the user for sign-off before launching phase D. Gate is real — the user may surface a change.
+
+### Reviewing an agent PR before merge / bundling
+
+Before advancing the workflow (merging the PR, bundling it into a cluster-close prep, opening the cluster→release promotion PR):
+
+1. **Call `mcp__github__pull_request_read` with `method: get_check_runs`.** Refuse to advance if any check is `conclusion: failure`. This catches lint failures, test failures, or coverage-gate breaks that the agent may have missed in their local run. Lint is a particular hot spot — `rushx build` does NOT transitively run lint in this monorepo, so an agent's "build passes" claim doesn't cover it.
+2. **If CI is red**: send back to the agent with the failing check's URL. The fix is the agent's, not the orchestrator's (unless the lint failure is one-line-mechanical and the agent has otherwise wrapped up the stream).
+3. **Once CI is green**: proceed with the merge / bundling / promotion as planned.
+
+This is a hard precondition because once a failed-CI commit is in the integration branch, unwinding (revert, re-prep, re-promote) is painful. Pre-merge gating is the cheap path.
 
 ### Post-merge bookkeeping
 
@@ -114,6 +128,14 @@ Post-merge: run sibling-sweep as a **fresh agent**, not the implementing agent. 
 
 When the user is doing manual testing or posting batches of findings: suggest spinning up a fresh sub-agent session in scribe mode — mirrors the four-bucket sort, writes per-file inbox entries, proposes routings. Token-cheap. Delegate rather than handling each finding inline.
 
+### Doc graduation and session-branch hygiene
+
+Per `.ai/conventions/workflow/doc-graduation.md`: the default is that orchestrator-authored docs stay on `claude/orchestrator-session`, not on `release`. Only docs with a named downstream consumer requiring a stable URL graduate to `release` (or to a cluster integration branch). Substrate (`brief.md`, `state.md`) graduates via substrate-prep PR; cross-cutting decision-tracks, lessons-pending notes, and pre-spec drafts live on the session branch under `.ai/notes/orchestrator/`.
+
+Periodic sweeps from session branch to `release` via `chore/orchestrator-sweep-<date>` (squash-merged) at natural moments (cluster close; orchestrator handoff; codification batch complete).
+
+After a substrate-prep PR merges, the integration-branch copy is canonical. Subsequent amendments use a follow-up `chore/<stream>-amend` PR; don't edit the session-branch copy and expect those edits to reach the agent.
+
 ### `release` → `main` promotion
 
 A release event, not a routine operation — the delta is typically too large for meaningful code review, and each constituent PR was reviewed individually on its way into `release`. Gate is **test/docs/sibling-sweep**, not unified code review:
@@ -140,10 +162,11 @@ Every kickoff prompt (stream or chore-batch) must include:
 - [ ] Missing-input rule: STOP if a required input is missing; do NOT recreate it from codebase exploration
 - [ ] Dependencies (hard and soft)
 - [ ] Phases with sub-steps
-- [ ] Acceptance criteria (exit gates)
+- [ ] Acceptance criteria (exit gates) — **must include `rushx build`, `rushx lint`, AND `rushx test` per `.ai/instructions/CODING_STANDARDS.md` § Pre-PR Validation Checklist. Lint is NOT transitively run by build; it's a separate gate that has repeatedly escaped acceptance criteria when only build+test were listed.**
 - [ ] Required exit artifact (`result.md` shape)
 - [ ] Resume protocol (read brief + state.md)
 - [ ] Branch + PR posture
+- [ ] Pre-PR `rushx fixlint` run noted as an implementer-aid (catches the mechanical class of lint errors automatically)
 
 ## Artifact substrate
 

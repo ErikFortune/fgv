@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Improve ai-assist imaging support, add thinking model support",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
