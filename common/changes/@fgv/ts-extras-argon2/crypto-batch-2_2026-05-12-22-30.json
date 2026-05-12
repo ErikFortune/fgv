@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-argon2",
+      "comment": "New package. NodeArgon2Provider — Node implementation of IArgon2idProvider backed by argon2 (kelektiv). Pair with @fgv/ts-web-extras-argon2 for cross-runtime Argon2id key derivation.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-argon2",
+  "email": "noreply@anthropic.com"
+}
