@@ -106,6 +106,16 @@ Both packages live in `libraries/` per OQ-1 resolution. The `integrations/` conv
 
 ---
 
+## Lessons learned
+
+### L1 — `"sideEffects": false` is a required field for pure library packages
+
+Every pure library in this monorepo carries `"sideEffects": false` in its `package.json` so bundlers can tree-shake it. This was caught in PR review on this stream (`ts-extras-webauthn` was missing it; `ts-web-extras-webauthn` had it). 
+
+**For future streams:** any new `libraries/` package whose `src/index.ts` exports only functions and types (no module-level side effects) must include `"sideEffects": false` before opening a PR. Add it alongside `"main"` and `"types"` as part of the standard package scaffold.
+
+---
+
 ## Followups (FUTURE / TECH_DEBT candidates)
 
 - **`integrations/` convention question (OQ-1):** whether the "Result-integration boundary over a well-maintained upstream library" pattern deserves its own top-level directory. Lessons-codification chore; does not block this stream.

@@ -125,6 +125,16 @@ my-package/
 └── README.md                 # Package documentation
 ```
 
+**Required `package.json` fields for pure library packages:**
+
+Any `libraries/` package that exports only functions and types (no module-level side effects) must include:
+
+```json
+"sideEffects": false
+```
+
+This is required for bundlers to tree-shake the package. Add it alongside `"main"` and `"types"` when scaffolding a new library. All existing pure libraries (`@fgv/ts-utils`, `@fgv/ts-extras`, etc.) carry this field.
+
 ### Packlet Organization
 
 Libraries organize code into "packlets" - cohesive modules under `src/packlets/`:
