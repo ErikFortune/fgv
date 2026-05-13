@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { fail, type Result, Logging } from '@fgv/ts-utils';
+import { fail, type Result, Logging, Failure } from '@fgv/ts-utils';
 import { FileSystemAccessTreeAccessors } from '../../packlets/file-tree';
 import { FileApiTreeAccessors } from '../../packlets/file-tree';
 import { FileTree } from '@fgv/ts-json-base';
@@ -690,7 +690,10 @@ describe('FileSystemAccessTreeAccessors', () => {
         accessors.saveFileContents('/file2.txt', 'modified2').orThrow();
 
         // Replace the file handles with ones that fail to write
-        const handles = (accessors as any)._handles as Map<string, any>;
+        const handles = (accessors as unknown as Record<string, unknown>)._handles as Map<
+          string,
+          FileSystemFileHandle
+        >;
         for (const [, handle] of handles) {
           handle.createWritable = jest.fn().mockRejectedValue(new Error('Write permission denied'));
         }
@@ -715,7 +718,7 @@ describe('FileSystemAccessTreeAccessors', () => {
         const originalGetFileContents = accessors.getFileContents.bind(accessors);
         accessors.getFileContents = jest.fn((path: string) => {
           if (path === '/newfile.txt') {
-            return { isSuccess: () => false, isFailure: () => true, message: 'File read error' } as any;
+            return Failure.with('File read error');
           }
           return originalGetFileContents(path);
         });
@@ -736,9 +739,13 @@ describe('FileSystemAccessTreeAccessors', () => {
         accessors.saveFileContents('/test.txt', 'modified').orThrow();
 
         // Replace the handle with one that fails to write
-        const handles = (accessors as any)._handles as Map<string, any>;
+        const handles = (accessors as unknown as Record<string, unknown>)._handles as Map<
+          string,
+          FileSystemFileHandle
+        >;
         const handle = handles.get('/test.txt');
-        handle.createWritable = jest.fn().mockRejectedValue(new Error('Disk full'));
+        expect(handle).toBeDefined();
+        handle!.createWritable = jest.fn().mockRejectedValue(new Error('Disk full'));
 
         const syncResult = await accessors.syncToDisk();
         expect(syncResult).toFailWith(/Failed to write file.*Disk full/i);
@@ -754,8 +761,8 @@ describe('FileSystemAccessTreeAccessors', () => {
         ).orThrow();
 
         // Override resolveAbsolutePath to return an empty path to trigger the error
-        const originalResolveAbsolutePath = (accessors as any).resolveAbsolutePath.bind(accessors);
-        (accessors as any).resolveAbsolutePath = jest.fn((path: string) => {
+        const originalResolveAbsolutePath = accessors.resolveAbsolutePath.bind(accessors);
+        accessors.resolveAbsolutePath = jest.fn((path: string) => {
           if (path === '/badpath') {
             return ''; // This will result in no parts after split
           }
@@ -787,7 +794,8 @@ describe('FileSystemAccessTreeAccessors', () => {
         accessors.saveFileContents('/newdir/newfile.txt', 'new content').orThrow();
 
         // Mock getDirectoryHandle to fail
-        const rootDir = (accessors as any)._rootDir;
+        const rootDir = (accessors as unknown as Record<string, unknown>)
+          ._rootDir as FileSystemDirectoryHandle;
         rootDir.getDirectoryHandle = jest.fn().mockRejectedValue(new Error('Permission denied'));
 
         const syncResult = await accessors.syncToDisk();
@@ -849,7 +857,8 @@ describe('FileSystemAccessTreeAccessors', () => {
         accessors.deleteFile('/toDelete.txt').orThrow();
 
         // Make removeEntry fail to trigger the error path in _deleteFileFromDisk
-        const rootDir = (accessors as any)._rootDir;
+        const rootDir = (accessors as unknown as Record<string, unknown>)
+          ._rootDir as FileSystemDirectoryHandle;
         rootDir.removeEntry = jest.fn().mockRejectedValue(new Error('Cannot delete: file locked'));
 
         const syncResult = await accessors.syncToDisk();
@@ -870,7 +879,8 @@ describe('FileSystemAccessTreeAccessors', () => {
         accessors.deleteFile('/target.txt').orThrow();
 
         // Directly make _rootDir.removeEntry throw a non-Error value to test the catch branch
-        const rootDir = (accessors as any)._rootDir;
+        const rootDir = (accessors as unknown as Record<string, unknown>)
+          ._rootDir as FileSystemDirectoryHandle;
         rootDir.removeEntry = jest.fn().mockRejectedValue('non-error string');
 
         const syncResult = await accessors.syncToDisk();

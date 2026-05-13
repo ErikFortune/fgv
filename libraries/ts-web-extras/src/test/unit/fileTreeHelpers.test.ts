@@ -432,7 +432,7 @@ describe('FileTreeHelpers', () => {
       const result = FileTreeHelpers.getOriginalFile(fileList, 'folder/subfolder/file.txt');
       expect(result).toSucceedAndSatisfy((file) => {
         expect(file.name).toBe('file.txt');
-        expect((file as any).webkitRelativePath).toBe('folder/subfolder/file.txt');
+        expect(file.webkitRelativePath).toBe('folder/subfolder/file.txt');
       });
     });
 
