@@ -11,16 +11,28 @@ import { IPatchOperation, patchFile } from '../packlets/jsonc';
 
 // ── Interfaces ──
 
+/**
+ * Options for the link command, which sets up file: overrides to a local fgv worktree.
+ * @public
+ */
 export interface ILinkOptions {
   fgvDir: string;
   repoDir: string;
 }
 
+/**
+ * Options for the unlink command, which restores published package dependencies.
+ * @public
+ */
 export interface IUnlinkOptions {
   repoDir: string;
   version?: string;
 }
 
+/**
+ * Options for the update-fgv-versions command, which bumps \@fgv/* dependency version specs across all projects.
+ * @public
+ */
 export interface IUpdateFgvVersionsOptions {
   repoDir: string;
   version?: string;
@@ -78,8 +90,8 @@ function collectDirectFgvDependencies(pkgJson: IPackageJsonDependencies): Set<st
 }
 
 /**
- * Scan a consumer Rush repo and collect all @fgv/* dependencies (excluding workspace:* entries).
- * Returns a map of packageName -> list of project folders that depend on it.
+ * Scan a consumer Rush repo and collect all \@fgv/* dependencies (excluding workspace:* entries).
+ * Returns a map of packageName to list of project folders that depend on it.
  */
 function discoverFgvDeps(repoDir: string): Map<string, string[]> {
   const rushJsonPath = path.join(repoDir, 'rush.json');
@@ -108,7 +120,7 @@ function discoverFgvDeps(repoDir: string): Map<string, string[]> {
 }
 
 /**
- * Build an internal @fgv package dependency graph from the fgv worktree.
+ * Build an internal \@fgv package dependency graph from the fgv worktree.
  * Only dependencies that exist in the fgv Rush projects are retained.
  */
 function buildFgvDependencyGraph(fgvDir: string, fgvPackageMap: Map<string, string>): FgvDependencyGraph {
@@ -179,7 +191,7 @@ function expandFgvDependencyClosure(
 }
 
 /**
- * Read the fgv worktree's rush.json and build a map of packageName -> projectFolder.
+ * Read the fgv worktree's rush.json and build a map of packageName to projectFolder.
  */
 function buildFgvPackageMap(fgvDir: string): Map<string, string> {
   const rushJsonPath = path.join(fgvDir, 'rush.json');
@@ -198,7 +210,7 @@ function buildFgvPackageMap(fgvDir: string): Map<string, string> {
 // ── Version helpers ──
 
 /**
- * Query npm for the latest prerelease version of @fgv/ts-utils and construct a ~X.Y.Z spec.
+ * Query npm for the latest prerelease version of \@fgv/ts-utils and construct a ~X.Y.Z spec.
  */
 function resolveLatestFgvVersion(): string {
   const output = execSync('npm view @fgv/ts-utils dist-tags --json', { encoding: 'utf-8' });
@@ -211,7 +223,7 @@ function resolveLatestFgvVersion(): string {
 }
 
 /**
- * Update all @fgv/* dependency versions (excluding workspace:*) in a consumer repo's package.json files.
+ * Update all \@fgv/* dependency versions (excluding workspace:*) in a consumer repo's package.json files.
  * Uses jsonc-parser modify() to preserve formatting.
  */
 function updateVersionsInPackageJsons(repoDir: string, versionSpec: string): string[] {

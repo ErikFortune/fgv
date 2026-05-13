@@ -70,7 +70,7 @@ export interface ISeededRandomSourceCreateParams {
  * @public
  */
 export class SeededRandomSource {
-  private currentState: number;
+  private _currentState: number;
   public readonly seed: string;
   public readonly lineage: ReadonlyArray<string>;
   private _counter: number;
@@ -88,7 +88,7 @@ export class SeededRandomSource {
    * @param init - The constructor parameters.
    */
   protected constructor(init: ISeededRandomSourceConstructorParams) {
-    this.currentState = init.state;
+    this._currentState = init.state;
     this.seed = init.seed;
     this._counter = init.counter;
     this._step = init.step;
@@ -133,8 +133,8 @@ export class SeededRandomSource {
    */
   public next(): number {
     this._counter += 1;
-    const { value, nextState } = this._step(this.currentState);
-    this.currentState = nextState;
+    const { value, nextState } = this._step(this._currentState);
+    this._currentState = nextState;
     return value;
   }
 
@@ -144,7 +144,7 @@ export class SeededRandomSource {
    */
   public clone(): SeededRandomSource {
     return new SeededRandomSource({
-      state: this.currentState,
+      state: this._currentState,
       seed: this.seed,
       counter: this._counter,
       lineage: this.lineage,
@@ -158,7 +158,7 @@ export class SeededRandomSource {
    * @returns A new seeded random source with a hashed state and label.
    */
   public createChild(label: string): SeededRandomSource {
-    const { seed, state } = SeededRandomSource.hashStateAndLabel(this.currentState, label);
+    const { seed, state } = SeededRandomSource.hashStateAndLabel(this._currentState, label);
     const lineage = [...this.lineage, `${this._counter}:${label}`];
     return new SeededRandomSource({ state, seed, counter: 0, lineage, step: this._step });
   }
@@ -172,7 +172,9 @@ export class SeededRandomSource {
     const nextState = (currentState + 0x6d2b79f5) >>> 0;
 
     let t = nextState;
+    // eslint-disable-next-line no-bitwise
     t = Math.imul(t ^ (t >>> 15), t | 1);
+    // eslint-disable-next-line no-bitwise
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
 
     const value = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
@@ -192,7 +194,7 @@ export class SeededRandomSource {
     if (!isNaN(parsedSeed) && isFinite(parsedSeed)) {
       return { seed, state: parsedSeed };
     }
-    return { seed, state: SeededRandomSource.hashString(seed) };
+    return { seed, state: SeededRandomSource._hashString(seed) };
   }
 
   /**
@@ -203,7 +205,7 @@ export class SeededRandomSource {
    */
   public static hashStateAndLabel(state: number, label: string): ISeedPair {
     const seed = `${state >>> 0}:${label}`;
-    return { seed, state: SeededRandomSource.hashString(seed) };
+    return { seed, state: SeededRandomSource._hashString(seed) };
   }
 
   /**
@@ -211,7 +213,7 @@ export class SeededRandomSource {
    * @param value - The string value.
    * @returns A hashed string value.
    */
-  private static hashString(value: string): number {
+  private static _hashString(value: string): number {
     let hash = 0x811c9dc5;
 
     for (let index = 0; index < value.length; index++) {

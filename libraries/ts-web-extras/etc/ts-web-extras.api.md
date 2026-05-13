@@ -65,10 +65,10 @@ declare namespace CryptoUtils {
 export { CryptoUtils }
 
 // @public
-export const DEFAULT_DIRECTORY_HANDLE_DB = "chocolate-lab-storage";
+export const DEFAULT_DIRECTORY_HANDLE_DB: string;
 
 // @public
-export const DEFAULT_DIRECTORY_HANDLE_STORE = "directory-handles";
+export const DEFAULT_DIRECTORY_HANDLE_STORE: string;
 
 // @public
 const defaultFileApiTreeInitParams: FileTree.IFileTreeInitParams<string>;
@@ -102,7 +102,7 @@ function extractFileListMetadata(fileList: FileList): Array<IFileMetadata>;
 function extractFileMetadata(file: File): IFileMetadata;
 
 // @public
-export class FileApiTreeAccessors<TCT extends string = string> {
+export class FileApiTreeAccessors {
     static create<TCT extends string = string>(initializers: TreeInitializer[], params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static createFromHttp<TCT extends string = string>(params: IHttpTreeParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static createFromLocalStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<FileTree.FileTree<TCT>>;

@@ -18,6 +18,7 @@ export interface ITemplateVars {
 export function renderTemplate(template: string, vars: ITemplateVars): string {
   let result = template;
   for (const [key, value] of Object.entries(vars)) {
+    /* eslint-disable-next-line @rushstack/security/no-unsafe-regexp */
     result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
   }
   return result;
