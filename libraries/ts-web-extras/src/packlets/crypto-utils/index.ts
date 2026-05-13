@@ -40,7 +40,7 @@ import { CryptoUtils } from '@fgv/ts-extras';
  * @see {@link CryptoUtils.HpkeProvider}
  * @public
  */
-export const HpkeProvider = CryptoUtils.HpkeProvider;
+export const HpkeProvider: typeof CryptoUtils.HpkeProvider = CryptoUtils.HpkeProvider;
 
 /**
  * Output of `HpkeProvider.sealBase`. Re-exported from `@fgv/ts-extras`.

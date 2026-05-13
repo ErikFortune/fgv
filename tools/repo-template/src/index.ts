@@ -1,5 +1,5 @@
 /**
- * @fgv/repo-template — CLI tool for creating and maintaining fgv-derived Rush monorepos.
+ * \@fgv/repo-template — CLI tool for creating and maintaining fgv-derived Rush monorepos.
  *
  * @packageDocumentation
  */

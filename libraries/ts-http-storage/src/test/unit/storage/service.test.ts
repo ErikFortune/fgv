@@ -30,7 +30,7 @@ class StubProvider implements IHttpStorageProvider {
     return succeed({ path, contents, contentType });
   }
 
-  public async deleteFile(_path: string): Promise<Result<boolean>> {
+  public async deleteFile(__path: string): Promise<Result<boolean>> {
     return succeed(true);
   }
 

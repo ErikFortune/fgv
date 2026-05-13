@@ -26,7 +26,7 @@ function getOwnPackageVersion(): string {
 }
 
 /**
- * Resolve the @fgv/* dependency version spec for init-library.
+ * Resolve the \@fgv/* dependency version spec for init-library.
  *
  * - In the fgv repo itself: returns "workspace:*"
  * - In a sibling/consumer repo: derives a version range from the repo-template's own
@@ -54,7 +54,7 @@ export type RigType = 'dual' | 'node' | 'browser';
 export type CategoryType = 'libraries' | 'tools' | 'apps' | 'services';
 
 export interface IInitLibraryOptions {
-  /** Package name (e.g. "ts-my-lib" — will be prefixed with @fgv/) */
+  /** Package name (e.g. "ts-my-lib" — will be prefixed with \@fgv/) */
   name: string;
   /** Short description */
   description: string;
@@ -68,7 +68,7 @@ export interface IInitLibraryOptions {
   versionPolicy: string;
   /** Initial version */
   version: string;
-  /** Dependency version for @fgv/* packages ("workspace:*" for fgv, "^5.1.0-0" for consumers) */
+  /** Dependency version for \@fgv/* packages ("workspace:*" for fgv, "^5.1.0-0" for consumers) */
   fgvDepVersion: string;
 }
 
@@ -157,11 +157,11 @@ export async function runInitLibrary(options: IInitLibraryOptions): Promise<void
   devDependencies['@types/heft-jest'] = '1.0.6';
   devDependencies['@types/jest'] = '^29.5.14';
   devDependencies['@types/node'] = '^20.14.9';
-  devDependencies['typescript'] = '5.9.3';
+  devDependencies.typescript = '5.9.3';
   devDependencies['@rushstack/eslint-config'] = '4.6.4';
-  devDependencies['eslint'] = '^9.39.2';
+  devDependencies.eslint = '^9.39.2';
   // Typedoc dependencies
-  devDependencies['typedoc'] = '~0.28.16';
+  devDependencies.typedoc = '~0.28.16';
   devDependencies['@fgv/typedoc-compact-theme'] = fgvDepVersion;
 
   const packageJson: Record<string, unknown> = {
@@ -194,8 +194,8 @@ export async function runInitLibrary(options: IInitLibraryOptions): Promise<void
 
   // Add dual-emit exports for dual rig
   if (rig === 'dual') {
-    packageJson['module'] = 'dist/index.js';
-    packageJson['exports'] = {
+    packageJson.module = 'dist/index.js';
+    packageJson.exports = {
       '.': {
         types: './lib/index.d.ts',
         import: './dist/index.js',
@@ -228,7 +228,7 @@ export async function runInitLibrary(options: IInitLibraryOptions): Promise<void
     rigPackageName: rigConfig.rigPackageName
   };
   if (rigConfig.rigProfile) {
-    rigJson['rigProfile'] = rigConfig.rigProfile;
+    rigJson.rigProfile = rigConfig.rigProfile;
   }
 
   fs.writeFileSync(path.join(projectDir, 'config', 'rig.json'), JSON.stringify(rigJson, null, 2) + '\n');
