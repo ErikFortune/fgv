@@ -2219,6 +2219,9 @@ interface ObjectValidatorOptions<T, TC> extends ValidatorOptions<TC> {
 export function omit<T extends object, K extends keyof T>(from: T, exclude: K[]): Omit<T, K>;
 
 // @public
+export type OneOf<T> = T extends readonly unknown[] ? T[number] : never;
+
+// @public
 function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC> | Validator<T, TC>>, onError?: OnError): Converter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2590,6 +2593,9 @@ function stringifyLogValue(value: unknown, maxLength?: number): string;
 interface StringMatchOptions {
     message?: string;
 }
+
+// @public
+export type StringOneOf<T> = Extract<OneOf<T>, string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
