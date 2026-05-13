@@ -35,16 +35,37 @@ opportunistically when the right surface area is touched.
 
 ## P2 — Fix before next major feature in affected area
 
-- **[P2] `@fgv/ts-web-extras` is missing `eslint.config.js`; `rushx lint` fails for the whole package.**
-  ESLint 10.x requires `eslint.config.(js|mjs|cjs)`; `libraries/ts-web-extras/` has neither it nor a legacy `.eslintrc*`. Running `rushx lint` exits 2 with `ESLint couldn't find an eslint.config...`. Every other monorepo package has the file. This means the per-stream pre-PR lint gate has been bypassed for any stream touching `ts-web-extras` (e.g. `crypto-batch-2-misc`, `crypto-batch-2-hpke`, `auth-primitives-batch1`). Per stream READMEs the failure was acknowledged as "pre-existing infrastructure gap" rather than fixed in-stream.
+- **[P2] `@fgv/ts-web-extras` lint content cleanup (config landed; 126 source violations remain).**
+  Local sweep (chore/comprehensive-lint-fix) added the missing `eslint.config.js` to three sibling packages (`ts-http-storage`, `ts-random`, `tools/repo-template`) which all pass clean. Adding the same config to `ts-web-extras` surfaces **126 problems (6 errors + 120 warnings)** that were hidden while the config was missing. The config addition for `ts-web-extras` is therefore being held back until the source violations are resolved; the package continues to bypass the lint gate in the meantime.
 
-  **Trigger**: before the next stream that touches `ts-web-extras`; ideally before the next `release → main` promotion so we don't ship more code through an un-linted gate.
+  Rule-violation breakdown:
+  | Rule | Count | Character |
+  |---|---|---|
+  | `@typescript-eslint/naming-convention` | 52 | DOM-mirror interfaces in `file-api-types/` (`FileSystemHandle`, `FileSystemFileHandle`, `FileSystemDirectoryHandle`, etc.) + test `Mock*` types missing `I` prefix |
+  | `@typescript-eslint/no-explicit-any` | 24 | Real `any` types in fileApiTreeAccessors / fileSystemAccessTreeAccessors / mocks — repo-banned |
+  | `@typescript-eslint/explicit-member-accessibility` | 17 | Missing `public` / `private` modifiers |
+  | `@rushstack/typedef-var` | 8 | Missing type annotations |
+  | `@typescript-eslint/no-unused-vars` | 7 | Mechanical cleanup |
+  | `@rushstack/no-new-null` | 6 | File API mirrors that use `null` (browser convention) |
+  | `no-void` | 4 errors | `return void x` pattern; mechanical fix |
+  | `require-yield` | 2 | Likely async-generator issues |
+  | `@rushstack/packlets/mechanics` | 2 | Packlet boundary |
+  | `import/no-internal-modules` | 1 error | Plugin rule definition missing — config-side fix |
+  | `require-atomic-updates` | 1 error | `globalThis.fetch = ...` race condition flag in tests; needs human review |
+  | Other | 2 | `prefer-const`, `typedef` |
 
-  **Scope sketch**: copy `eslint.config.js` from a sibling package (`ts-extras` is the closest analog — same browser-flavored content, same dev-deps). Verify `rushx lint` passes on the existing `ts-web-extras` source. Fix any newly-surfaced violations (these would have been there for some time; likely small). Optional: add a guard test or CI step that fails when any package's `rushx lint` exits non-zero, so the next time this happens it surfaces immediately.
+  **Trigger**: next time `ts-web-extras` is open for substantive changes, or before the next `release → main` promotion (so we don't keep shipping un-linted browser-side code).
 
-  **Not a P1**: existing code shipped and downstream consumers integrate it; no production breakage today. P2 because it's an active gate-bypass — any new code landing in `ts-web-extras` is un-linted, which is exactly the failure mode the lint-gate codification (PR #337) was meant to prevent.
+  **Scope sketch**: three policy questions to adjudicate before mechanical work:
+  1. **DOM-mirror naming.** The 3 DOM-mirror interfaces in `file-api-types/` intentionally match browser API names. Recommend: scoped rule override for that file rather than rename. Per CODING_STANDARDS, surface to orchestrator before disabling.
+  2. **`no-explicit-any` (24 violations).** These violate the repo's "absolute and non-negotiable" Priority-1 rule. Genuine fixes required (likely `unknown` + cast in test mocks; real types in production adapters).
+  3. **Test-file `Mock*` interface names.** Either rename (mechanical) or apply a test-file-scoped override.
 
-  **Reference**: surfaced in `crypto-batch-2-misc` stream README ("Pre-existing issues"); confirmed during `crypto-batch-2` cluster-close (PR #350).
+  After adjudication, mechanical fixes for the rest are straightforward (4× `no-void`, 17× missing accessibility, 8× missing typedefs, 7× unused vars, 1× `prefer-const`, etc.). The `require-atomic-updates` and `import/no-internal-modules` errors need individual investigation.
+
+  **Not a P1**: shipped code; no production breakage; downstream consumers integrate it. P2 because the gate is actively bypassed for browser-side changes.
+
+  **Reference**: PR #353 (this stream) added the three sibling configs and confirmed scope; original P2 entry from PR #350 (cluster close) reframed.
 
 - **[P2] Replace try/catch + instanceof-Error boilerplate in `ai-assist/apiClient.ts` with `captureAsyncResult`.**
   Four identical `catch (err: unknown) { const detail = err instanceof Error ? err.message : String(err); return fail(...detail...); }` blocks at lines ~158, 217, 272, 316. Each carries a `/* c8 ignore next 1 - defensive: fetch errors are always Error instances in practice */` directive to suppress the untestable catch branch — a signal that `captureAsyncResult()` is the right replacement. `captureAsyncResult` handles the `Error`-vs-string normalisation internally and makes the `c8 ignore` directives unnecessary.
