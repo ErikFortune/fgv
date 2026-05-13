@@ -2072,6 +2072,9 @@ importers:
         specifier: ~3.3.1
         version: 3.3.1
     devDependencies:
+      '@rushstack/eslint-config':
+        specifier: 4.6.4
+        version: 4.6.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       '@rushstack/heft':
         specifier: 1.2.7
         version: 1.2.7(@types/node@20.19.41)
