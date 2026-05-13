@@ -30,28 +30,28 @@ import { LocalStorageTreeAccessors, FileApiTreeAccessors } from '../../packlets/
 class MockStorage implements Storage {
   private _data: Map<string, string> = new Map();
 
-  get length(): number {
+  public get length(): number {
     return this._data.size;
   }
 
-  clear(): void {
+  public clear(): void {
     this._data.clear();
   }
 
-  getItem(key: string): string | null {
+  public getItem(key: string): string | null {
     return this._data.get(key) ?? null;
   }
 
-  key(index: number): string | null {
+  public key(index: number): string | null {
     const keys = Array.from(this._data.keys());
     return keys[index] ?? null;
   }
 
-  removeItem(key: string): void {
+  public removeItem(key: string): void {
     this._data.delete(key);
   }
 
-  setItem(key: string, value: string): void {
+  public setItem(key: string, value: string): void {
     this._data.set(key, value);
   }
 }

@@ -103,7 +103,7 @@ export interface IFileMetadata {
  * Supports File API (FileList) and File System Access API handles.
  * @public
  */
-export class FileApiTreeAccessors<TCT extends string = string> {
+export class FileApiTreeAccessors {
   /**
    * Create a persistent FileTree from a File System Access API directory handle.
    * Changes to files can be synced back to disk.

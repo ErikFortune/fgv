@@ -22,7 +22,7 @@
 
 import { DetailedResult, fail, Result, succeed, succeedWithDetail } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
+import { isJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Configuration for LocalStorageTreeAccessors.

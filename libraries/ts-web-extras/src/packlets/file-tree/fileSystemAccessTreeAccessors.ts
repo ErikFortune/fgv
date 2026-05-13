@@ -20,15 +20,7 @@
  * SOFTWARE.
  */
 
-import {
-  Result,
-  succeed,
-  fail,
-  captureResult,
-  DetailedResult,
-  succeedWithDetail,
-  Logging
-} from '@fgv/ts-utils';
+import { Result, succeed, fail, DetailedResult, succeedWithDetail, Logging } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { FileSystemDirectoryHandle, FileSystemFileHandle } from '../file-api-types';
 
@@ -380,7 +372,7 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
         this._pendingDeletions.add(path);
 
         if (this._autoSync) {
-          void this._runAutoSyncTask(path, 'delete', () => this._deleteFileFromDisk(path));
+          this._runAutoSyncTask(path, 'delete', () => this._deleteFileFromDisk(path)).catch(() => undefined);
         }
       }
     }
@@ -400,7 +392,7 @@ export class FileSystemAccessTreeAccessors<TCT extends string = string>
       // Auto-sync if enabled
       if (this._autoSync) {
         // Fire and log-on-failure; don't block the save path.
-        void this._runAutoSyncTask(path, 'save', () => this._syncFile(path));
+        this._runAutoSyncTask(path, 'save', () => this._syncFile(path)).catch(() => undefined);
       }
     }
 

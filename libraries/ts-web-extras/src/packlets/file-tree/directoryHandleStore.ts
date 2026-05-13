@@ -32,13 +32,13 @@ import { FileSystemDirectoryHandle } from '../file-api-types';
  * Default IndexedDB database name for directory handles.
  * @public
  */
-export const DEFAULT_DIRECTORY_HANDLE_DB = 'chocolate-lab-storage';
+export const DEFAULT_DIRECTORY_HANDLE_DB: string = 'chocolate-lab-storage';
 
 /**
  * Default IndexedDB store name for directory handles.
  * @public
  */
-export const DEFAULT_DIRECTORY_HANDLE_STORE = 'directory-handles';
+export const DEFAULT_DIRECTORY_HANDLE_STORE: string = 'directory-handles';
 
 /**
  * Manages persistence of {@link FileSystemDirectoryHandle} objects in IndexedDB.

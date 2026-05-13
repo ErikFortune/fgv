@@ -27,8 +27,7 @@ import {
   parseQualifierDefaults,
   parseResourceTypes,
   extractDirectoryPath,
-  isFilePath,
-  type IUrlConfigOptions
+  isFilePath
 } from '../../packlets/url-utils';
 
 // Mock window.location.search for testing

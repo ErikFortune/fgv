@@ -50,7 +50,7 @@ function makeMockResponse(options: IMockResponse): Response {
   } as unknown as Response;
 }
 
-interface FetchCall {
+interface IFetchCall {
   url: string;
   init?: RequestInit;
 }
@@ -59,8 +59,8 @@ interface FetchCall {
  * Creates a mock fetch function that returns responses for each call in order.
  * Each entry maps to one fetch() invocation in call order.
  */
-function makeMockFetch(responses: IMockResponse[]): { fetchImpl: typeof fetch; calls: FetchCall[] } {
-  const calls: FetchCall[] = [];
+function makeMockFetch(responses: IMockResponse[]): { fetchImpl: typeof fetch; calls: IFetchCall[] } {
+  const calls: IFetchCall[] = [];
   let callIndex = 0;
 
   const fetchImpl = (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
@@ -87,7 +87,7 @@ function makeThrowingFetch(message: string): typeof fetch {
 // ---- Shared test data builders ----
 
 /** Minimal tree-children response for a single file at root. */
-function rootWithOneFile(fileName = 'data.json'): unknown {
+function rootWithOneFile(fileName: string = 'data.json'): unknown {
   return {
     path: '/',
     children: [{ path: `/${fileName}`, name: fileName, type: 'file' }]
@@ -1010,9 +1010,7 @@ describe('HttpTreeAccessors', () => {
       const originalGet = accessors.getFileContents.bind(accessors);
       accessors.getFileContents = (path: string) => {
         if (path === '/data.json') {
-          // eslint-disable-next-line import/no-internal-modules
-          const { fail: failResult } = require('@fgv/ts-utils') as typeof import('@fgv/ts-utils');
-          return failResult('simulated get failure');
+          return fail('simulated get failure');
         }
         return originalGet(path);
       };
@@ -1578,7 +1576,7 @@ describe('HttpTreeAccessors', () => {
       // 3. _doSync loops back, snapshots the new item, and syncs it too
       // 4. Only one POST /sync is sent at the end, after all items are drained
       let callCount = 0;
-      let saveHook: (() => void) | undefined;
+      const hookRef: { fn?: () => void } = {};
 
       const fetchImpl: typeof fetch = (url, init) => {
         callCount++;
@@ -1596,7 +1594,7 @@ describe('HttpTreeAccessors', () => {
 
         // Call 3: first PUT /file for a.json — trigger a write mid-sync
         if (callCount === 3 && init?.method === 'PUT') {
-          saveHook?.();
+          hookRef.fn?.();
           return Promise.resolve(makeMockResponse({ ok: true, jsonValue: fileResponse('/a.json', '"v1"') }));
         }
 
@@ -1626,11 +1624,11 @@ describe('HttpTreeAccessors', () => {
 
       // Set up the hook BEFORE starting sync — the mock fetch for the PUT
       // runs synchronously within syncToDisk(), so the hook must be in place.
-      saveHook = () => {
+      hookRef.fn = () => {
         accessors.saveFileContents('/a.json', '"v2"').orThrow();
       };
 
-      // Start sync — during the first PUT, saveHook fires and writes v2.
+      // Start sync — during the first PUT, hookRef.fn fires and writes v2.
       // The drain loop in _doSync picks this up and PUTs again before
       // sending the final POST /sync.
       const result = await accessors.syncToDisk();

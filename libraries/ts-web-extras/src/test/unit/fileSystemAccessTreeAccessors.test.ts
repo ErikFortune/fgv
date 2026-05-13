@@ -25,11 +25,7 @@ import { fail, type Result, Logging } from '@fgv/ts-utils';
 import { FileSystemAccessTreeAccessors } from '../../packlets/file-tree';
 import { FileApiTreeAccessors } from '../../packlets/file-tree';
 import { FileTree } from '@fgv/ts-json-base';
-import {
-  createMockDirectoryHandle,
-  createMockFileHandle,
-  MockFileSystemWritableFileStream
-} from '../utils/fileSystemAccessMocks';
+import { createMockDirectoryHandle, createMockFileHandle } from '../utils/fileSystemAccessMocks';
 
 describe('FileSystemAccessTreeAccessors', () => {
   describe('fromDirectoryHandle', () => {
