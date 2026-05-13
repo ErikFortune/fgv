@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-utils",
-      "comment": "Add AnyValueOf",
+      "comment": "Add OneOf and StringOneOf",
       "type": "none"
     }
   ],
