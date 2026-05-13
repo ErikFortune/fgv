@@ -129,9 +129,6 @@ class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID ex
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: IMessageAggregator): Result<T>;
 
 // @public
-export type AnyValueOf<T> = T extends readonly unknown[] ? T[number] : never;
-
-// @public
 function arrayOf<T, TC = unknown>(converter: Converter<T, TC> | Validator<T, TC>, onError?: OnError): Converter<T[], TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2222,6 +2219,9 @@ interface ObjectValidatorOptions<T, TC> extends ValidatorOptions<TC> {
 export function omit<T extends object, K extends keyof T>(from: T, exclude: K[]): Omit<T, K>;
 
 // @public
+export type OneOf<T> = T extends readonly unknown[] ? T[number] : never;
+
+// @public
 function oneOf<T, TC = unknown>(converters: Array<Converter<T, TC> | Validator<T, TC>>, onError?: OnError): Converter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2594,6 +2594,9 @@ interface StringMatchOptions {
     message?: string;
 }
 
+// @public
+export type StringOneOf<T> = Extract<OneOf<T>, string>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2609,9 +2612,6 @@ class StringValidator<T extends string = string, TC = unknown> extends GenericVa
 //
 // @public
 type StringValidatorConstructorParams<T extends string = string, TC = unknown> = GenericValidatorConstructorParams<T, TC>;
-
-// @public
-export type StringValueOf<T> = Extract<AnyValueOf<T>, string>;
 
 // @public
 export function succeed<T>(value: T): Success<T>;
