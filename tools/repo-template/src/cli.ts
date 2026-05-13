@@ -162,9 +162,7 @@ export class RepoTemplateCli {
       .description('Apply targeted edits to a JSONC config file while preserving comments')
       .allowUnknownOption(true)
       .helpOption(false)
-      .action(async (file, _opts, cmd) => {
-        // Parse the raw args after the file argument as patch operations
-        const rawArgs = cmd.args.slice(1); // skip the file arg
+      .action(async (file, __opts, cmd) => {
         // Actually, commander passes remaining args differently. Let's get them from process.argv
         const allArgs = process.argv;
         const patchIdx = allArgs.indexOf('patch');

@@ -9,7 +9,15 @@ import { execSync, ExecSyncOptions } from 'child_process';
 /**
  * Directories to exclude when copying shared packages.
  */
-const EXCLUDED_DIRS = new Set(['node_modules', 'lib', 'dist', '.heft', 'temp', 'coverage', 'rush-logs']);
+const EXCLUDED_DIRS: Set<string> = new Set([
+  'node_modules',
+  'lib',
+  'dist',
+  '.heft',
+  'temp',
+  'coverage',
+  'rush-logs'
+]);
 
 /**
  * Copy a single file, creating parent directories as needed.

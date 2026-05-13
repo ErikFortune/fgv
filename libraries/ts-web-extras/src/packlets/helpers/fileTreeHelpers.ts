@@ -22,7 +22,7 @@
 
 import { Result } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { FileApiTreeAccessors, IFileMetadata } from '../file-tree/fileApiTreeAccessors';
+import { FileApiTreeAccessors, IFileMetadata } from '../file-tree';
 
 /**
  * Default initialization parameters for a `FileTree` using {@link FileApiTreeAccessors}.

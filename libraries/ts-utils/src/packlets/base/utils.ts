@@ -23,6 +23,20 @@
 import { Result, fail, succeed } from './result';
 
 /**
+ * Union of all values in an array/tuple type, preserving literal types if possible.
+ * If T is not an array/tuple, results in `never`.
+ * @public
+ */
+export type OneOf<T> = T extends readonly unknown[] ? T[number] : never;
+
+/**
+ * Union of all string values in an array/tuple type, preserving literal types if possible.
+ * If T is not an array/tuple, results in `never`.
+ * @public
+ */
+export type StringOneOf<T> = Extract<OneOf<T>, string>;
+
+/**
  * Helper type-guard function to report whether a specified key is present in
  * a supplied object.
  * @param key - The key to be tested.

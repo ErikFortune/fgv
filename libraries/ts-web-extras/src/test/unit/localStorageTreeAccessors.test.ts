@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 import { LocalStorageTreeAccessors, FileApiTreeAccessors } from '../../packlets/file-tree';
+import { Failure } from '@fgv/ts-utils';
 
 /**
  * Mock Storage implementation for testing
@@ -30,28 +31,28 @@ import { LocalStorageTreeAccessors, FileApiTreeAccessors } from '../../packlets/
 class MockStorage implements Storage {
   private _data: Map<string, string> = new Map();
 
-  get length(): number {
+  public get length(): number {
     return this._data.size;
   }
 
-  clear(): void {
+  public clear(): void {
     this._data.clear();
   }
 
-  getItem(key: string): string | null {
+  public getItem(key: string): string | null {
     return this._data.get(key) ?? null;
   }
 
-  key(index: number): string | null {
+  public key(index: number): string | null {
     const keys = Array.from(this._data.keys());
     return keys[index] ?? null;
   }
 
-  removeItem(key: string): void {
+  public removeItem(key: string): void {
     this._data.delete(key);
   }
 
-  setItem(key: string, value: string): void {
+  public setItem(key: string, value: string): void {
     this._data.set(key, value);
   }
 }
@@ -580,8 +581,8 @@ describe('LocalStorageTreeAccessors', () => {
 
     test('createFromLocalStorage fails when localStorage is not available', () => {
       // Remove the global window object to ensure no fallback
-      const originalWindow = (global as any).window;
-      delete (global as any).window;
+      const originalWindow = global.window;
+      delete (global as Partial<typeof globalThis>).window;
 
       const result = FileApiTreeAccessors.createFromLocalStorage({
         pathToKeyMap: {
@@ -591,7 +592,7 @@ describe('LocalStorageTreeAccessors', () => {
       });
 
       // Restore window
-      (global as any).window = originalWindow;
+      global.window = originalWindow;
 
       expect(result).toFailWith(/localStorage is not available/i);
     });
@@ -655,7 +656,7 @@ describe('LocalStorageTreeAccessors', () => {
       const originalGetFileContents = accessors.getFileContents.bind(accessors);
       accessors.getFileContents = jest.fn((path: string) => {
         if (path === '/data/ingredients/collection1.json') {
-          return { isSuccess: () => false, isFailure: () => true, message: 'File not found' } as any;
+          return Failure.with('File not found');
         }
         return originalGetFileContents(path);
       });
@@ -967,7 +968,7 @@ describe('LocalStorageTreeAccessors', () => {
         })
       );
 
-      const inferContentType = jest.fn((filePath: string, _provided: string | undefined) => {
+      const inferContentType = jest.fn((filePath: string, __provided: string | undefined) => {
         const { succeed: s } = require('@fgv/ts-utils') as typeof import('@fgv/ts-utils');
         return s('application/json' as string);
       });
