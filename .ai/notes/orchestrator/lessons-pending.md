@@ -145,6 +145,77 @@ The bug also drove the next alpha publish forward: rather than waiting for the o
 
 ---
 
+### L14. B.0 live-verification gates earn their keep when phase A research was incomplete
+
+**Observed:** During crypto-batch-2-hpke phase B, the implementing agent hit a real RFC-vs-design discrepancy on the first non-trivial implementation step: design.md §1 used the LabeledExtract label `"dh"` in the ExtractAndExpand step, but RFC 9180 §4.1 actually specifies `"eae_prk"`. The agent stopped, surfaced the discrepancy, and after orchestrator adjudication corrected to the RFC value (confirmed via OpenSSL happykey and multiple independent implementations). The brief had encoded a non-optional **B.0** ("phase B step zero — live RFC verification") because the phase A agent's research session was rfc-editor.org-blocked (HTTP 403), so the algorithm pseudocode in `design.md §1` was drawn from training-corpus memory rather than the authoritative spec.
+
+**Rule:** When phase A research is known-incomplete — rate-limited fetches, network-blocked spec sources, training-corpus-only protocol details, deprecated upstream library versions — encode a **non-optional verification step at the top of the phase B brief** with a clear stop-and-surface rule. Cost: one round-trip if a discrepancy surfaces. Alternative: silent algorithmic divergence shipped in code, much more expensive to unwind post-publish.
+
+**Codification candidate:** Add to `.claude/agents/orchestrator.md` § "When phase A research is known-incomplete" subsection (or extend the brief-shape convention at `.ai/conventions/workflow/`). The phase-B-brief template for streams with a recognized phase A gap should default to including a B.0 verification step. Examples worth citing: HPKE (RFC fetch blocked → label discrepancy caught); Argon2id (hash-wasm activity check at B.0, no issues surfaced but the discipline was correct).
+
+**Reference:** crypto-batch-2-hpke phase B brief (`.ai/tasks/completed/2026-05/crypto-batch-2-hpke/brief-phase-b.md` §B.0); state.md decisions log records the resolution; #348 PR body cites the correction.
+
+---
+
+### L15. Silent lint-gate bypass compounds. Anti-patterns metastasize when nobody pushes back.
+
+**Observed:** During crypto-batch-2 cluster close, surfaced that `@fgv/ts-web-extras` had no `eslint.config.js` and `rushx lint` was exiting code 2 silently for that package. Subsequent sweep found four packages in this state (`ts-web-extras`, `ts-http-storage`, `ts-random`, `repo-template`). Once configs were added back, the violations accumulated under the silent gate became visible:
+
+- **126 lint violations** in `ts-web-extras` source (6 errors + 120 warnings) after restoring its config
+- **20 instances** of a specific anti-pattern: mock partial-Result-shape cast to `any`. Tests had been returning `{ isSuccess: () => true, value: x, orDefault: () => x }` (a hand-rolled subset of the `Result<T>` interface) cast to `any` because the partial didn't conform. The Result pattern's whole point is reified in the `succeed()` / `fail()` helpers, but contributors converged on the partial-mock-cast shortcut because nothing was pushing back.
+- **23 hand-rolled `globalThis.X = mock` save-and-restore patterns** across the monorepo (16 in `ts-extras/ai-assist`, rest scattered). Once one test got away with the manual pattern, copy-paste did the rest. The original lint gate would have flagged the first instance via `require-atomic-updates`.
+- Other classes accumulated similarly: 24× `no-explicit-any`, 17× missing `explicit-member-accessibility`, etc.
+
+**Rule:** A silent lint-gate bypass is exponentially expensive. The cost compounds not from any individual rule violation but from the **anti-pattern propagation** that follows when the immune system stops responding. Twelve months of un-gated browser-side code accumulated three distinct anti-patterns (`as any` Result mocks, manual `globalThis.X` save/restore, missing type annotations), each with 10–25 instances.
+
+**Codification candidate:**
+
+1. **CI guard.** Add a CI step that fails fast when any package's `rushx lint` exits non-zero with "couldn't find eslint.config" specifically. Current behavior: the rush-orchestrator marks the package as FAILURE but the cluster integration branches kept advancing because the message looked like infrastructure noise rather than a gate signal. A package without an eslint config should be a hard failure with a clear remediation message ("create `eslint.config.js` matching sibling packages"), not silent skip.
+
+2. **Per-PR sweep gate.** When a PR touches files in a package whose `rushx lint` is currently broken, require either fixing the lint config first OR explicitly acknowledging the broken gate in the PR description. The cost of fixing once is small; the cost of contributing un-linted code through a broken gate compounds.
+
+3. **Scaffolding-checklist hole.** The TECH_DEBT P3 entry on `"sideEffects": false` already captures one dimension. Same shape of fix needed for `eslint.config.js`: any new `libraries/*` or `tools/*` package without one should fail the new-package scaffolding template check.
+
+**Reference:** crypto-batch-2-misc README "Pre-existing issues" first surfaced the ts-web-extras gap; PR #353 restored configs for three sibling packages; PR #354 reduced ts-web-extras violations from 126 → 0 across two passes (orchestrator's automated work + Erik's manual cleanup of the anti-patterns). Tech-debt entries added in the cluster-close prep PR #350.
+
+---
+
+### L16. Hand-rolled-spy contagion is a tell that needs its own sweep.
+
+**Observed:** Investigation of one `require-atomic-updates` error on `globalThis.fetch = mock; ... globalThis.fetch = original;` (line 1224 of `httpTreeAccessors.test.ts`) revealed the pattern was replicated 22 more times across the monorepo:
+
+- 16 in `libraries/ts-extras/src/test/unit/ai-assist/` (`apiClient.test.ts` accounts for the largest concentration)
+- 4 in `libraries/ts-extras/src/test/unit/ai-assist/` other test files
+- 3 in `libraries/ts-web-extras/src/test/unit/`
+
+All hand-rolling what `jest.spyOn(globalThis, 'fetch').mockImplementation(...)` + `.mockRestore()` provides natively. Issues with the manual pattern: (a) verbose, (b) fragile under exceptions if cleanup isn't in `finally`, (c) doesn't auto-cleanup between tests, (d) trips `require-atomic-updates`. (HPKE-style finding: in Node 18+, `globalThis.fetch` isn't an own-property, so `jest.spyOn` and `jest.replaceProperty` both fail; the right pattern is either `Object.defineProperty`-with-descriptor for the descriptor-aware case, or for branches like `fetchImpl ?? globalThis.fetch` just `/* c8 ignore */` the fallback and skip the global pollution.)
+
+**Rule:** When you find an anti-pattern in one place, **always sweep** the full repo before deciding the local fix. If grep returns 3 instances of the same shape, you're not fixing one bug — you're proposing a convention; if 20, you're paying down a debt with compound interest.
+
+**Codification candidate:**
+
+1. **TECH_DEBT P3 entry** to clean up the 23 hand-rolled save/restore instances. Migration: replace `const originalX = globalThis.X; globalThis.X = mock; ... globalThis.X = originalX;` with `jest.spyOn(globalThis, 'X').mockImplementation(mock)` + `.mockRestore()` where the property is own / Jest can spy. For globals where it can't (e.g. Node's `globalThis.fetch`), `Object.defineProperty`-with-descriptor for the save/restore (calls evade `require-atomic-updates`).
+
+2. **Test-skills doc update.** The `/result-tests` skill should explicitly call out the "use jest.spyOn / jest.replaceProperty for globals; do not hand-roll save/restore" guidance. Same shape as the `/result-pattern` guidance ban on `Result<void>` — a documented anti-pattern with a recommended replacement.
+
+3. **Sweep-discipline reminder for orchestrator.** Add to the orchestrator agent's pre-fix checklist: "Before proposing a fix for a code-shape concern, grep the repo for occurrences. If >3, file as TECH_DEBT or chore-batch rather than fixing in this PR." The instinct is to fix-in-place; the discipline is to scope-first.
+
+**Reference:** crypto-batch-2 lint follow-up sweep (PR #354); `require-atomic-updates` error investigation surfaced the pattern.
+
+---
+
+### L17. Pre-existing build issues in `localStorageTreeAccessors.test.ts` (separate tech debt)
+
+**Observed:** During the ts-web-extras lint cleanup sweep, ran `rushx build` and saw the package fail with TS2353 / TS2339 errors at lines 926, 945, 971, 980, 983, 998, 1005 of `localStorageTreeAccessors.test.ts`: `'mutable'` not in `ILocalStorageTreeParams`, `'inferContentType'` not in `ILocalStorageTreeParams`, missing `toSucceed` / `toSucceedWith` matchers on what infers as `any`. Verified by stashing my changes and re-running on `release` baseline — same errors exist on HEAD. These predate the lint cleanup.
+
+**Pattern:** A package whose tests don't compile but whose production code does — same disconnect class as the silent lint-bypass (L15) but for `tsc`. Probably the `LocalStorageTreeAccessors` API changed (renamed `mutable` field, removed `inferContentType` param) and the tests weren't updated. The package builds production code with `--composite` semantics so the test compile is in a separate pass that nobody checked.
+
+**Codification candidate:** Either (a) fix the tests so the package's `rushx build` is green end-to-end, or (b) audit what `rushx build` actually runs vs what `rushx test` runs — if the test compile is happening at test time instead of build time, the per-stream pre-PR validation should be running `rushx test` rather than (or in addition to) `rushx build`. The CODING_STANDARDS Pre-PR Validation Checklist currently lists "rushx build / rushx lint / rushx test" but doesn't enforce that all three actually run a meaningful pass on each package. Worth confirming the test compile is part of `rushx test` and that agents are running it.
+
+**Reference:** crypto-batch-2 lint follow-up sweep (PR #354 body's "Pre-existing build issue" section); verified on `release` HEAD `b3f87159f` and `15c94adad`.
+
+---
+
 ## Sweep history
 
 *(no sweeps yet — this file is being initialized at 2026-05-11)*
