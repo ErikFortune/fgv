@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 import { LocalStorageTreeAccessors, FileApiTreeAccessors } from '../../packlets/file-tree';
+import { Failure } from '@fgv/ts-utils';
 
 /**
  * Mock Storage implementation for testing
@@ -655,7 +656,7 @@ describe('LocalStorageTreeAccessors', () => {
       const originalGetFileContents = accessors.getFileContents.bind(accessors);
       accessors.getFileContents = jest.fn((path: string) => {
         if (path === '/data/ingredients/collection1.json') {
-          fail('File not found');
+          return Failure.with('File not found');
         }
         return originalGetFileContents(path);
       });

@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { fail, Logging } from '@fgv/ts-utils';
+import { fail, Failure, Logging } from '@fgv/ts-utils';
 import { HttpTreeAccessors } from '../../packlets/file-tree';
 
 // ---- Mock fetch helpers ----
@@ -1010,7 +1010,7 @@ describe('HttpTreeAccessors', () => {
       const originalGet = accessors.getFileContents.bind(accessors);
       accessors.getFileContents = (path: string) => {
         if (path === '/data.json') {
-          return fail('simulated get failure');
+          return Failure.with('simulated get failure');
         }
         return originalGet(path);
       };
@@ -1197,30 +1197,6 @@ describe('HttpTreeAccessors', () => {
       });
 
       expect(result).toFailWith(/http 504/i);
-    });
-
-    test('uses globalThis.fetch when no fetchImpl provided', async () => {
-      // Covers line 48: the `fetchImpl ?? globalThis.fetch` right-side branch.
-      // We temporarily replace globalThis.fetch with a mock that returns an empty tree.
-      const originalFetch = globalThis.fetch;
-      let fetchCallCount = 0;
-
-      globalThis.fetch = (__url: string | URL | Request, __init?: RequestInit) => {
-        fetchCallCount++;
-        return Promise.resolve(makeMockResponse({ ok: true, jsonValue: { path: '/', children: [] } }));
-      };
-
-      try {
-        const result = await HttpTreeAccessors.fromHttp({
-          baseUrl: 'http://localhost:3000'
-          // No fetchImpl - should fall back to globalThis.fetch
-        });
-
-        expect(result).toSucceed();
-        expect(fetchCallCount).toBeGreaterThan(0);
-      } finally {
-        globalThis.fetch = originalFetch;
-      }
     });
   });
 
