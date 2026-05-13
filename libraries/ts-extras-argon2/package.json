@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras-argon2",
-  "version": "5.1.0-27",
+  "version": "5.1.0-28",
   "description": "Argon2id key derivation for Node.js (wraps argon2/kelektiv)",
   "main": "lib/index.js",
   "types": "dist/ts-extras-argon2.d.ts",

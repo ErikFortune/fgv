@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "change logs",
+      "type": "none",
+      "packageName": "@fgv/ts-sudoku-ui"
+    }
+  ],
+  "packageName": "@fgv/ts-sudoku-ui",
+  "email": "ErikFortune@outlook.com"
+}
