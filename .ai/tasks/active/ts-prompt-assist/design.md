@@ -493,8 +493,14 @@ export interface IQualifierAxisRegistration {
 ### 3.12 Stored record (returned by the store)
 
 ```ts
+import type { ResourceJson } from '@fgv/ts-res';
+
 export interface IPromptCandidateRecord {
-  readonly conditions: Readonly<Record<string, string>>;
+  /** Full ts-res `ConditionSetDecl` shape (record-sugar, record-with-
+   *  details, or array form). Unlocks `operator`, `priority`,
+   *  `scoreAsDefault` per condition — no narrowing vs ts-res. See
+   *  §10.1 for the rationale. Empty `{}` = unconditional base. */
+  readonly conditions: ResourceJson.ConditionSetDecl;
   readonly body: string;
 }
 
@@ -585,6 +591,18 @@ export interface IPromptResolveTrace {
   readonly resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>;
   /** Slot values rejected by safeguards (length cap, regex screen). */
   readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
+  /** Per-candidate ts-res match disposition. One entry for `single-best`;
+   *  N entries for `concat-fragments` (least→most-specific order). */
+  readonly candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>;
+}
+
+export interface ICandidateMatchTraceEntry {
+  /** Index into the record's `candidates` array. */
+  readonly candidateIndex: number;
+  /** ts-res match disposition: `'match'` (qualifier present + matched)
+   *  or `'matchAsDefault'` (qualifier absent; scored via
+   *  `scoreAsDefault`). */
+  readonly matchType: 'match' | 'matchAsDefault';
 }
 
 export interface ISafeguardFinding {
@@ -844,10 +862,46 @@ examples:                      # optional
         output: <any>
 outputValidations: [<validator-id>, ...]   # optional
 candidates:                    # required
-  - conditions: {...}          # ts-res qualifier conditions; empty {} = base
+  # Conditions accept the full ts-res `ResourceJson.ConditionSetDecl`:
+  # all three forms are valid. Empty `{}` = unconditional base.
+
+  # Form 1 — sugar (record of name → value, operator defaults to 'matches'):
+  - conditions: { tone: playful }
     body: |
-      Body text with {{{slotName}}} triple-brace tokens.
+      Hey {{{userName}}}! ...
+
+  # Form 2 — record with details (per-condition operator / priority / scoreAsDefault):
+  - conditions:
+      tone:
+        value: formal
+        priority: 100             # override qualifier's default priority
+        scoreAsDefault: 0.6       # soft-match if `tone` absent from context
+      region:
+        value: emea
+        operator: matchesPrefix
+    body: |
+      Good day, {{{userName}}}. ...
+
+  # Form 3 — array (full ILooseConditionDecl entries):
+  - conditions:
+      - qualifierName: tone
+        value: playful
+        priority: 100
+      - qualifierName: region
+        value: na
+    body: |
+      What's good, {{{userName}}}? ...
+
+  # Empty conditions = base candidate (always matches):
+  - conditions: {}
+    body: |
+      Hello {{{userName}}}. ...
 ```
+
+**Note on capability surface.** The schema delegates to ts-res's
+`ConditionSetDecl`, so `operator`, `priority`, and `scoreAsDefault` are
+all available to prompt authors without ts-prompt-assist re-narrowing.
+See §10.1 for the full inherited-vs-not capability table.
 
 Scope-level bindings file: `<root>/<scope-encoding>/_bindings.yaml`
 (schema matches `IScopeSlotBindingsRecord`).
@@ -1003,8 +1057,39 @@ Per-call, after substitution context is built, before Mustache renders:
 
 ## 10. Composition semantics (locked)
 
-1. **`single-best`.** Library calls ts-res's best-match candidate
-   selector. One candidate wins; its body is the unsubstituted source.
+### 10.1 ts-res capability surface (what passes through unchanged)
+
+The prompt YAML schema **delegates conditions to ts-res's
+`ResourceJson.ConditionSetDecl`** rather than re-narrowing to a sugar-
+only flat record. Anything ts-res accepts in a `ConditionSetDecl`,
+candidates in this schema accept — record-sugar (`{ tone: playful }`),
+record-with-details (`{ tone: { value, operator?, priority?,
+scoreAsDefault? } }`), or array form (`[{ qualifierName, value,
+operator?, priority?, scoreAsDefault? }]`).
+
+This means **`operator`, `priority`, and `scoreAsDefault` per
+condition are available to prompt authors at v0.1**, by delegation —
+not by re-implementation. The §15 audit commits to reusing
+`ResourceJson` Converters at the candidate→ts-res handoff; the
+conditions schema follows directly.
+
+**What is NOT reused at v0.1** (and why):
+
+| ts-res capability | v0.1 status | Rationale |
+|---|---|---|
+| `ResourceValueMergeMethod` (`augment` / `replace` / ...) | **Not reused.** `compositionMode: 'concat-fragments'` is fixed `\n`-join; `'single-best'` returns one body. | ts-res's merge methods are JSON-shape-aware; prompt bodies are Mustache strings. Overloading "join with newline" as one of N merge methods muddies the consumer mental model with no v0.1 use case driving it. |
+| `IResourceCandidateDecl.isPartial` | **Not reused.** All prompt candidates are complete bodies. | Same — partial-JSON semantics don't map to prompt strings. |
+| `IResourceCandidateDecl.json` (arbitrary JSON body) | **Not reused.** Prompt candidate body is `string` (Mustache template). | Bodies feed Mustache and then become slot values; arbitrary JSON has no path through the substitution pipeline at v0.1. |
+| `ConditionOperator` | **Reused as-is.** | Inherited from ts-res via `ConditionSetDecl`. |
+| `priority` per condition | **Reused as-is.** | Inherited via `ConditionSetDecl`. |
+| `scoreAsDefault` per condition | **Reused as-is.** Interacts with the chain walker per §10.6. | Inherited via `ConditionSetDecl`. |
+
+If a v0.2 use case for merge methods or partial bodies surfaces, the
+discriminator already exists on `compositionMode` (extend the union)
+and the schema is forward-compat — adding new merge methods doesn't
+break sugar-shape conditions or single-best resolution.
+
+### 10.2 Composition modes
 2. **`concat-fragments`.** Library calls ts-res's "all matching
    candidates" selector. Candidates are joined least→most-specific
    (per ts-res's specificity ordering) with a single `\n` separator.
@@ -1034,6 +1119,28 @@ Per-call, after substitution context is built, before Mustache renders:
 **Trace `safeguardFindings.kind` union, finalized:**
 `'max-length' | 'suspicious-pattern' | 'screening-skipped' |
 'enforced-override-ignored'`.
+
+### 10.6 `scoreAsDefault` and the chain walker
+
+`scoreAsDefault` lets a candidate "softly match" when its qualifier is
+absent from the resolve context (ts-res semantics, unchanged). This is
+an **intra-record** behavior: within the winning scope's record, ts-res
+picks the candidate per its normal scoring, with `scoreAsDefault`
+participating when the qualifier is absent.
+
+`scoreAsDefault` does NOT trigger cross-scope fallback. The chain
+walker still stops at the first scope with a record for the id (§10.4).
+If author wants a "soft default" variant available everywhere, they
+ship it in the base scope as a candidate with `scoreAsDefault` set;
+more-specific scopes can override with their own record (full
+replacement) or simply add bindings (per §1 / OQ-2).
+
+The trace surfaces ts-res's match disposition per resolved candidate
+(`'match' | 'matchAsDefault'`) on the `IResolvedPrompt` so editor
+surfaces can show "this candidate matched as default" without re-
+querying ts-res. Field name pinned: `IPromptResolveTrace.candidateMatchType:
+'match' | 'matchAsDefault'`. Added to §4.2's `IPromptResolveTrace`
+shape (phase B implements alongside the other trace fields).
 
 ---
 
