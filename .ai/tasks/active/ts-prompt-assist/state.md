@@ -1,7 +1,7 @@
 # Stream State: ts-prompt-assist
 
-**Status:** 🟢 phase A ready — substrate prepped; integration branch + phase A agent commission pending
-**Last updated:** 2026-05-13 (orchestrator — substrate prep)
+**Status:** 🟢 phase A drafted — `design.md` locked; PR pending
+**Last updated:** 2026-05-15 (phase A agent — design lock)
 
 ---
 
@@ -9,7 +9,7 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| A — research and design | 🟢 ready | `brief.md` + `design-brief.md` authored; awaiting phase A agent commission against `claude/ts-prompt-assist-features` integration branch |
+| A — research and design | 🟢 drafted | `design.md` locked; OQ-1 through OQ-6 resolved; PR pending against `claude/ts-prompt-assist-features` |
 | B — implementation | ⏸ blocked on phase A signoff | Brief to be authored by orchestrator post-triage |
 | Refine — consumer-port pressure-test | ⏸ blocked on phase B publish | personaility port surfaces gaps; 1–2 follow-up PRs absorb refinements before integration→release promotion |
 
@@ -61,6 +61,35 @@
 
 ---
 
+## Phase A decision log (agent, 2026-05-15)
+
+| OQ | Decision | Summary |
+|---|---|---|
+| OQ-1 | flat default + function override | Default rejects `/ \ \0 :` + reserved Win device names + non-portable POSIX chars; consumers supply `scopeEncoding` / `scopeDecoding` for nested-directory layouts. Rationale: simplest path that doesn't paint v0.2 into a corner; tightening defaults later is breaking. |
+| OQ-2 | strict (replace) | Binding-supplied `substitutions` entirely replace parent's for inner resolve; trace records `'replace'` vs `'inherit'` mode. Rationale: clean mental model for shared fragments; relaxing later is additive. |
+| OQ-3 | interface includes `watch?`; FileTree stubs; InMemory implements; event shape pinned | `IPromptStoreEvent.kind: 'descriptor-changed' \| 'descriptor-removed' \| 'bindings-changed' \| 'qualifier-axes-changed'`. Rationale: pinning event shape under InMemory tests prevents v0.2 interface churn. |
+| OQ-4 | unified `IPromptRegistry` with four typed sub-registries | One `registry` create-param exposing `converters` / `qualifierEnums` / `slotKinds` / `outputValidations` sub-registries. Splits qualifier enums out of the original combined shape registry. Rationale: distinct concerns deserve distinct typed namespaces, but consumers want one bag to pass around. |
+| OQ-5 | drop the generic on `IJsonOutputContract`; minimal free-text; `outputValidations` on descriptor | Future JSON variants extend the discriminated union (`'json-array'`, `'json-stream'`) rather than parameterizing. `outputValidations` stays on `IPromptDescriptor`, not on the JSON contract, to keep growth open for future free-text validators. |
+| OQ-6 | shape (a) — `escape?` option on `MustacheTemplate.create` | Additive `escape: 'html' \| 'none' \| (s) => string` on the canonical primitive in ts-extras. Default `'html'` preserves back-compat. Implementation MUST use `Mustache.Writer` instance, not `Mustache.escape` global. Double-brace rejection stays in ts-prompt-assist (consumer-discipline concern, not Mustache concern). |
+
+## New questions surfaced (non-blocking)
+
+| ID | Question | Where it lives |
+|---|---|---|
+| NQ-1 | `extractJsonText` export status from `@fgv/ts-extras/ai-assist` — currently public or internal? | design.md §8 step 1; phase B verifies / promotes |
+| NQ-2 | YAML loader: does `@fgv/ts-json-base/json-file` already cover it, or does phase B need to add `js-yaml`? | design.md §11.2; phase B surfaces if new dep needed |
+| NQ-3 | Exact `IFileTreeItem` import path/symbol from `@fgv/ts-json-base/file-tree` | design.md §5.1; phase B verifies |
+| NQ-4 | `PromptRegistry.empty()` infallible factory — keep alongside `.create()` or collapse? | design.md §4.3; default: keep both for v0.1 |
+
+## Cluster-scope summary (for orchestrator)
+
+The `ts-prompt-assist-features` cluster touches **two libraries**:
+
+1. **`@fgv/ts-extras`** (existing, established surface) — strictly **additive** change to the `mustache` packlet: `escape?: MustacheEscapeStrategy` option on `MustacheTemplate.create` (default `'html'`, preserves back-compat). Implementation MUST use a per-instance `Mustache.Writer` rather than mutating `Mustache.escape` globally. No removed / renamed / behavior-changed exports.
+2. **`@fgv/ts-prompt-assist`** (new library) — full v0.1 implementation per this design.
+
+Phase B implementation order: ts-extras Mustache extension lands first (B.0), then ts-prompt-assist consumes it from the start (B.1 onward).
+
 ## Substrate prep checklist (orchestrator)
 
 - [x] Add stream entry to `docs/WORKSTREAMS.md` (Active section, before `ai-assist-thinking-events`)
@@ -77,7 +106,8 @@
 
 ## PR
 
-Substrate-prep PR: TBD (pending push)
+Substrate-prep PR: merged (#356, 2026-05-13).
+Phase A PR: TBD (pending push of `claude/ts-prompt-assist-phase-a-Y8JIM` → `claude/ts-prompt-assist-features`).
 
 ---
 
