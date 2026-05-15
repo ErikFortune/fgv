@@ -67,7 +67,7 @@
 |---|---|---|
 | OQ-1 | flat default + function override | Default rejects `/ \ \0 :` + reserved Win device names + non-portable POSIX chars; consumers supply `scopeEncoding` / `scopeDecoding` for nested-directory layouts. Rationale: simplest path that doesn't paint v0.2 into a corner; tightening defaults later is breaking. |
 | OQ-2 | strict (replace) | Binding-supplied `substitutions` entirely replace parent's for inner resolve; trace records `'replace'` vs `'inherit'` mode. Rationale: clean mental model for shared fragments; relaxing later is additive. |
-| OQ-3 | interface includes `watch?`; FileTree stubs; InMemory implements; event shape pinned | `IPromptStoreEvent.kind: 'descriptor-changed' \| 'descriptor-removed' \| 'bindings-changed' \| 'qualifier-axes-changed'`. Rationale: pinning event shape under InMemory tests prevents v0.2 interface churn. |
+| OQ-3 | interface includes `watch?`; **no v0.1 adapter implements**; event shape pinned (revised 2026-05-15 per Erik review) | `IPromptStoreEvent.kind: 'descriptor-changed' \| 'descriptor-removed' \| 'bindings-changed' \| 'qualifier-axes-changed'`. No standalone InMemory store (per Erik), so no v0.1 driver for watch impl; pinning the event shape costs nothing and prevents future interface churn. First concrete hot-reload consumer drives implementation in a follow-up. |
 | OQ-4 | unified `IPromptRegistry` with **three** typed sub-registries (revised 2026-05-15 per Erik review); qualifier config delegated to ts-res | `IPromptRegistry` exposes `converters` / `slotKinds` / `outputValidations`. **`qualifierEnums` sub-registry dropped** — ts-res's `LiteralQualifierType` already owns closed-value qualifier sets; duplicating in ts-prompt-assist forced two-place registration (drift bug). `PromptLibrary.create` takes a `qualifiers: IReadOnlyQualifierCollector \| IQualifierDecl[]` param directly. Per-scope `_qualifiers.yaml` replaced by ONE root-level `<root>/_qualifiers.yaml` using ts-res's `IQualifierDecl` schema (validated by ts-res's own Converter); the file is optional. `IPromptStore.getQualifierAxes` becomes `getQualifierConfig(): IQualifierDecl[] \| undefined`. |
 | OQ-5 | drop the generic on `IJsonOutputContract`; minimal free-text; `outputValidations` on descriptor | Future JSON variants extend the discriminated union (`'json-array'`, `'json-stream'`) rather than parameterizing. `outputValidations` stays on `IPromptDescriptor`, not on the JSON contract, to keep growth open for future free-text validators. |
 | OQ-6 | shape (a) — `escape?` option on `MustacheTemplate.create` | Additive `escape: 'html' \| 'none' \| (s) => string` on the canonical primitive in ts-extras. Default `'html'` preserves back-compat. Implementation MUST use `Mustache.Writer` instance, not `Mustache.escape` global. Double-brace rejection stays in ts-prompt-assist (consumer-discipline concern, not Mustache concern). |
@@ -77,10 +77,11 @@
 | ID | Question | Where it lives |
 |---|---|---|
 | NQ-1 | `extractJsonText` export status from `@fgv/ts-extras/ai-assist` — currently public or internal? | design.md §8 step 1; phase B verifies / promotes |
-| ~~NQ-2~~ | ~~YAML loader~~ — **RESOLVED by §15 import-packlet audit.** Use `@fgv/ts-extras`'s `yaml.yamlConverter<T>(inner)`. No new direct `js-yaml` dep. | design.md §15.3 |
-| NQ-3 | Exact `IFileTreeItem` import path/symbol from `@fgv/ts-json-base/file-tree` | design.md §5.1; phase B verifies |
+| ~~NQ-1~~ | ~~extractJsonText~~ — **RESOLVED** (Erik 2026-05-15): export it publicly from `@fgv/ts-extras/ai-assist`. Additive; in cluster scope. | design.md §15.6 |
+| ~~NQ-2~~ | ~~YAML loader~~ — **RESOLVED** by §15 audit: use `@fgv/ts-extras`'s `yaml.yamlConverter<T>(inner)`. Erik clarifies: ts-extras wraps js-yaml; not in ts-json-base because of the dep. | design.md §15.3, §15.6 |
+| ~~NQ-3~~ | ~~`FileTreeItem` path~~ — **RESOLVED** (Erik): `@fgv/ts-json-base/file-tree`, symbol `FileTree.FileTreeItem`. | design.md §15.6 |
 | NQ-4 | `PromptRegistry.empty()` infallible factory — keep alongside `.create()` or collapse? | design.md §4.3; default: keep both for v0.1 |
-| NQ-5 | Exact ts-res resolve API surface consumed by `PromptLibrary._resolveCandidates` — verify `resolveResource` / `resolveAllResourceCandidates` (or equivalents) are public; if not, additive ts-res export is in cluster scope | design.md §15.5 |
+| NQ-5 (revised) | **Option C locked** — lazy materialization into a shared long-lived ts-res `ResourceManager`. Phase B verifies incremental add-after-build (or extends ts-res additively; cluster scope). Fallbacks documented in §15.5: (ii) periodic rebuild, (iii) Option A with `TECH_DEBT.md` entry. | design.md §15.5 |
 
 ## Phase A re-audit: ts-res `import` packlet (2026-05-15, addendum)
 
@@ -99,6 +100,21 @@ Triggered by orchestrator prompt asking whether the loader reinvents ts-res's im
 **Gap surfaced and pinned:** the candidate→ts-res-resolve handoff (NQ-5) was underspecified in earlier drafts. Now locked: **Option A** (per-resolve ts-res construction, cached by `(scope, id, Crc32Normalizer.computeHash(candidates))`). The `ResourceJson` candidate-decl Converters in ts-res are the reuse point for validating candidates into ts-res's shape. Phase B confirms exact public exports.
 
 **Resolved NQ-2:** YAML loader is the existing `@fgv/ts-extras/yaml` packlet, not a new `js-yaml` direct dep. Per `/published-primitives-reflex`.
+
+---
+
+## Erik review checkpoint 2026-05-15
+
+Erik reviewed the design and surfaced four points + three NQ resolutions:
+
+| Point | Disposition |
+|---|---|
+| Trace integration with ts-res's step-by-step resolution logging | ts-res publishes `IResourceResolverCacheListener` (cache hit/miss/error/clear events on condition / conditionSet / decision caches) + per-condition match details on `ConditionSetResolutionResult`. ts-prompt-assist (a) accepts a `cacheListener?: IResourceResolverCacheListener` on `PromptLibrary.create`, (b) defaults to forwarding to ILogger at debug level, (c) surfaces ts-res's `IConditionMatchResult[]` per candidate in `IPromptResolveTrace.candidateMatches[]`. Editor surfaces can mirror ts-res-browser's view without ts-res additions. |
+| `PromptLibrary` accepts an `ILogger` and uses it for observability | Pinned in §4.1 with the event taxonomy (debug: materialization, cache events, resource-binding entry/exit, safeguard findings, Mustache parse/render, store invocations; warn: disallowed-qualifier stripping, regex-screen matches under `'warn'`, ignored enforced overrides; error: resolve failures paired with the Result return). Default `Logging.noOpLogger`. |
+| Separate `InMemoryPromptStore` vs `FileTreePromptStore + InMemoryFileTree` | Dropped standalone `InMemoryPromptStore`. Tests/dev use `FileTreePromptStore` over `InMemoryFileTree` via a `PromptStoreFixture.build(seed)` helper that serializes the seed into the in-memory tree. Cascades: OQ-3 revised (no v0.1 adapter implements watch); event shape still pinned. |
+| §15.5 caching | **Option C locked.** One long-lived ResourceManager shared across all resources; lazy materialization on demand; ts-res's intrinsic caches do the heavy lifting (O(1) on warm qualifier shapes). Erik's explicit guidance: cache resources (cheap, bounded cardinality), NOT outputs (combinatorial in open qualifier space). NQ-5 revised: phase B verifies incremental add-after-build in ts-res or extends additively. Fallback strategies documented in §15.5. |
+
+NQ-1 (extractJsonText): export publicly. NQ-3 (IFileTreeItem path): confirmed.
 
 ## Cluster-scope summary (for orchestrator)
 

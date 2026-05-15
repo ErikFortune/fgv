@@ -36,7 +36,9 @@ policy decision routed to the orchestrator, not a design decision.
    Library, not consumer.
 6. **Storage-agnostic via `IPromptStore`.** `FileTreePromptStore` is the
    canonical v0.1 adapter (via `@fgv/ts-json-base` FileTree, per the
-   `filetree-io` skill); `InMemoryPromptStore` for tests. SQL/Mongo
+   `filetree-io` skill); tests use FileTreePromptStore over
+   `InMemoryFileTree` from `@fgv/ts-json-base` (no standalone
+   in-memory store class — see §5.2 revised). SQL/Mongo
    adapters drop in later.
 7. **Standalone package above `ts-res`.** Ships as `libraries/ts-prompt-
    assist/`, depending on `@fgv/ts-res` and transitively `ts-utils`,
@@ -115,26 +117,30 @@ records the substitution mode it used (`'replace' | 'inherit'`), so
 editor surfaces can show "this inner resolve saw a fresh substitution
 set" vs "this inner resolve inherited the parent's substitutions."
 
-### OQ-3 — `watch()` semantics: **interface includes; FileTreePromptStore stubs; InMemory implements; event shape pinned**
+### OQ-3 — `watch()` semantics: **interface includes; no v0.1 adapter implements; event shape pinned**
 
-**Decision.**
+**Decision (revised — Erik review 2026-05-15).**
 
 - `IPromptStore.watch?` is on the interface as an **optional** method.
-- `FileTreePromptStore` v0.1 does **not** implement `watch` (the property
-  is `undefined`). Documented as "supplied by a future stream"; consumers
-  that need hot-reload either use `InMemoryPromptStore` (during dev) or
-  supply their own adapter.
-- `InMemoryPromptStore` **implements** `watch` and tests exercise it.
-  This forces the event shape to be exercised by real code at v0.1, even
-  though the canonical adapter doesn't fire events.
-- The event shape is pinned now (see §5 type spec).
+- **No v0.1 adapter implements it.** `FileTreePromptStore` leaves it
+  `undefined`. There is no standalone `InMemoryPromptStore` (see §5.2 —
+  tests use `FileTreePromptStore` over `InMemoryFileTree`), which also
+  leaves it `undefined`.
+- The `IPromptStoreEvent` shape is pinned now (see §4.5) so a future
+  adapter implementing `watch` doesn't churn the type surface.
+- Phase B does not exercise `watch` under tests at v0.1; the first
+  concrete hot-reload consumer drives implementation in a follow-up
+  stream.
 
-**Rationale.** Omitting `watch` from the interface entirely means adding
-it later is a breaking change to the interface (every adapter must adopt
-it). Optional-on-interface + pinned event shape costs nothing now and
-prevents that churn. Forcing `InMemoryPromptStore` to implement it
-exercises the event shape under tests so we surface design gaps now, not
-at the first hot-reload consumer.
+**Rationale.** Earlier draft required `InMemoryPromptStore` to
+implement `watch` and exercise it under tests, on the grounds that
+"forcing the event shape under real code now prevents v0.2 churn."
+That justification weakens when the in-memory store itself goes away
+(per Erik's note: `FileTreePromptStore + InMemoryFileTree` is enough).
+Pinning the event shape without exercising it is a small risk; the
+shape is structurally simple (`kind`, `scope`, `id?`) and the cost of
+revising one event-shape detail in v0.2 is much lower than the cost
+of carrying an unmotivated `watch` impl + adapter through v0.1.
 
 ### OQ-4 — Registries: **unified `IPromptRegistry` with three typed sub-registries; qualifier config delegated to ts-res**
 
@@ -552,7 +558,27 @@ export interface IPromptLibraryCreateParams {
    *  output validation, custom slot kinds, or output converters. */
   readonly registry?: IPromptRegistry;
   readonly safetyPolicy?: IPromptSafetyPolicy;
+  /** Diagnostic logger. Receives debug-level events for: candidate
+   *  materialization into the runtime resource manager, cache hits/
+   *  misses (via the ts-res cache listener — see `cacheListener`
+   *  below), resource-binding entry/exit, safeguard findings,
+   *  Mustache template parse / render, store invocations. Receives
+   *  warn-level events for stripped `disallowed` qualifiers, regex-
+   *  screen matches under `onSuspicious: 'warn'`, and ignored
+   *  `enforced` binding overrides. Receives error-level events for
+   *  resolve failures BEFORE the Result is returned (so logging is
+   *  paired with the failure return; see `/ts-utils-logging`). When
+   *  omitted, defaults to `Logging.noOpLogger`. */
   readonly logger?: Logging.ILogger;
+  /** Optional ts-res cache listener (`@fgv/ts-res/runtime/
+   *  cacheListener`). When supplied, receives condition / conditionSet /
+   *  decision cache hit/miss/error/clear events from the underlying
+   *  ts-res `ResourceResolver`. Lets consumers (e.g. an editor UI
+   *  mirroring ts-res-browser's step-by-step view) instrument
+   *  resolution without ts-prompt-assist re-emitting the same
+   *  events. When omitted, the library installs an internal listener
+   *  that forwards events to `logger` at debug level. */
+  readonly cacheListener?: TsRes.Runtime.IResourceResolverCacheListener;
   /** Default 5. Resource bindings exceeding this depth fail loudly. */
   readonly resourceBindingDepthLimit?: number;
   /** Default 256. LRU cap on parsed Mustache templates. */
@@ -626,10 +652,19 @@ export interface IPromptResolveTrace {
 export interface ICandidateMatchTraceEntry {
   /** Index into the record's `candidates` array. */
   readonly candidateIndex: number;
-  /** ts-res match disposition: `'match'` (qualifier present + matched)
-   *  or `'matchAsDefault'` (qualifier absent; scored via
-   *  `scoreAsDefault`). */
+  /** ts-res aggregate match disposition for this candidate's condition
+   *  set: `'match'` (all conditions matched on their qualifier values)
+   *  or `'matchAsDefault'` (at least one condition matched via
+   *  `scoreAsDefault`). Mirrors ts-res's `ConditionMatchType` minus
+   *  the `'noMatch'` variant (filtered candidates don't appear here). */
   readonly matchType: 'match' | 'matchAsDefault';
+  /** Per-condition match details, as returned by ts-res. Rich enough
+   *  for an editor surface to mirror ts-res-browser's step-by-step
+   *  resolution view ("qualifier X had value Y; condition matched
+   *  with score Z at priority P") without re-resolving. The library
+   *  forwards ts-res's `IConditionMatchResult[]` unchanged — no
+   *  re-narrowing or re-shaping. */
+  readonly conditions: ReadonlyArray<TsRes.Runtime.IConditionMatchResult>;
 }
 
 export interface ISafeguardFinding {
@@ -837,22 +872,46 @@ packlet (per §15 audit). No new `js-yaml` direct dep.
 
 **YAML schema (locked).** See §5.3.
 
-### 5.2 `InMemoryPromptStore`
+### 5.2 In-memory store for tests — **no standalone `InMemoryPromptStore`**
+
+**Decision (revised 2026-05-15 per Erik review):** there is no
+separate `InMemoryPromptStore` class. Tests and dev fixtures use
+`FileTreePromptStore` over an `InMemoryFileTree` from
+`@fgv/ts-json-base`.
+
+**Rationale.** The proposed `InMemoryPromptStore` would duplicate
+`FileTreePromptStore`'s entire read path (YAML parsing, descriptor
+Converter, candidate validation, qualifier-config loading) against an
+in-memory data structure. The FileTree abstraction is precisely the
+seam designed for this — same store, different backend. Per
+`/filetree-io`: "The convention is to use the FileTree abstraction
+... so the same code works against node fs, in-memory, zip files."
+
+**Test fixture helper.** The library ships a single small helper
+`PromptStoreFixture.build(seed: IPromptStoreFixtureSeed):
+Result<IPromptStore>` that:
+
+1. Constructs an `InMemoryFileTree`.
+2. Serializes the seed (descriptors / bindings / qualifier config) to
+   YAML and writes the files into the tree at the expected paths.
+3. Returns a `FileTreePromptStore` over that tree.
 
 ```ts
-export interface IInMemoryPromptStoreSeed {
+export interface IPromptStoreFixtureSeed {
   readonly records?: ReadonlyArray<IStoredPromptRecord>;
   readonly bindings?: ReadonlyArray<IScopeSlotBindingsRecord>;
-  /** Optional qualifier configuration — ts-res `IQualifierDecl`
-   *  shape. When set, the store exposes it via `getQualifierConfig`. */
   readonly qualifiers?: ReadonlyArray<TsRes.Qualifiers.IQualifierDecl>;
 }
 
-export class InMemoryPromptStore implements IPromptStore {
-  public static create(seed?: IInMemoryPromptStoreSeed): Result<InMemoryPromptStore>;
-  // Implements ALL methods including watch (per OQ-3).
-}
+export const PromptStoreFixture: {
+  build(seed: IPromptStoreFixtureSeed): Promise<Result<IPromptStore>>;
+};
 ```
+
+This keeps the YAML round-trip path in the test loop (catches
+schema drift) while reusing the canonical adapter.
+
+`watch?` is `undefined` on the resulting store (per OQ-3 revised).
 
 ### 5.3 YAML descriptor schema (locked for v0.1)
 
@@ -1390,7 +1449,8 @@ The cluster integration branch is ready for promotion to `release`
 1. **Type system implemented.** Every type from §3 is exported with
    `allFooValues` arrays + Converters for each string-union, branded
    scalars validated, discriminated-union Converters route on `kind`.
-2. **`PromptLibrary.resolve` end-to-end** against `InMemoryPromptStore`:
+2. **`PromptLibrary.resolve` end-to-end** against
+   `FileTreePromptStore` over `InMemoryFileTree`:
    chain walk, qualifier-conditioned candidate selection (both
    composition modes), binding merge with `enforced` lock, caller-sub
    override (except `enforced`), Mustache render via the extended
@@ -1412,8 +1472,12 @@ The cluster integration branch is ready for promotion to `release`
    `trace.safeguardFindings`.
 7. **Unified `IPromptRegistry`** with four typed sub-registries; library
    accepts a single `registry` create-param.
-8. **`InMemoryPromptStore.watch`** fires `IPromptStoreEvent` on `put` /
-   `putBindings` / `delete`; tests exercise subscribe / unsubscribe.
+8. **ts-res cache-listener integration.** `PromptLibrary` accepts an
+   `IResourceResolverCacheListener` (per §4.1); when omitted, the
+   library installs an internal listener that forwards events to
+   the supplied `ILogger` at debug level. Tests verify the wire-
+   through (subscribed listener receives hit/miss events on the
+   conditions / conditionSet / decision caches).
 9. **ts-extras `mustache` packlet extension** lands in the cluster:
    additive `escape` option on `MustacheTemplate.create`, Writer-based
    per-instance escape, no global mutation, existing tests still pass.
@@ -1428,7 +1492,8 @@ The cluster integration branch is ready for promotion to `release`
     `libraries/ts-extras` and `libraries/ts-prompt-assist`.
 15. **Pressure-test handoff package.** A short README in
     `libraries/ts-prompt-assist/` documents quick-start (`PromptLibrary`
-    + `InMemoryPromptStore` + a tiny example) so the first-consumer port
+    + `PromptStoreFixture.build` over `InMemoryFileTree` + a tiny
+    example) so the first-consumer port
     can begin without reading the design doc.
 
 ---
@@ -1467,7 +1532,7 @@ the actual sequence.
   `MustacheTemplate.create`, Writer-based per-instance escape, tests
   cover `'html'` (existing), `'none'`, and custom-function variants.
   Must land before B.1 needs it.
-- **B.1 — Types + `InMemoryPromptStore` + `PromptLibrary.resolve`
+- **B.1 — Types + test fixture + `PromptLibrary.resolve`
   happy path.** Branded scalars, Converters for all string-unions,
   discriminated-union Converters, `IPromptDescriptor` Converter,
   unified `PromptRegistry`, chain walker, binding merger (without
@@ -1617,122 +1682,171 @@ reimplementing utility-shaped code (FileTree walking, YAML parsing, ts-
 res candidate decl validation). We ARE refusing to adopt a builder-
 pipeline framing that doesn't fit the store's access pattern.
 
-### 15.5 Candidate → ts-res resolve handoff (new question NQ-5)
+### 15.5 Candidate → ts-res resolve handoff — **Option C (lazy materialization into a shared ResourceManager)**
 
-The audit DID surface a real gap in the design: §10 says "library calls
-ts-res's best-match candidate selector / all-matching candidate
-selector" without specifying **how the candidates loaded from a store
-record cross into ts-res's resolve machinery**. Two viable architectures:
+**Decision (revised 2026-05-15 per Erik review).** The library
+maintains **one long-lived runtime resource manager** for the entire
+PromptLibrary instance. The `IPromptStore` is the **source of truth**.
+Resources materialize into the runtime **on demand** — a chain-walked
+record gets ingested into the runtime the first time anyone asks for
+it; subsequent resolves with different qualifier contexts hit ts-res's
+intrinsic O(1) caches.
 
-**Option A — per-record ts-res `Resource` constructed at resolve time.**
-`PromptLibrary.resolve` receives `IStoredPromptRecord` from the store,
-constructs a transient ts-res `Resource` (or equivalent in-memory
-candidate set) from `record.candidates`, and calls ts-res's resolve
-APIs against it. Cleaner separation; per-resolve construction cost
-(mitigated by caching keyed by record identity).
+This is a third option, materially better than the earlier-drafted A
+and B, in two ways: (i) ts-res's condition / conditionSet / decision
+caches (its `IResourceResolverCacheListener` substrate) are shared
+across **all** prompts, so resolving any prompt warms the qualifier
+machinery for every other prompt; (ii) the store-record-to-resource
+materialization happens at most once per `(scope, id, record-hash)`,
+not per resolve.
 
-**Option B — store eagerly materializes a ts-res `ResourceManager` per
-scope.** `FileTreePromptStore.create` walks the tree, ingests
-candidates into per-scope `ResourceManagerBuilder` instances (here
-ts-res import's `CollectionImporter` IS the right primitive, scoped per
-scope-directory), and `IStoredPromptRecord.candidates` is replaced by
-a `ResourceJson.ResourceDeclCollection` (or the constructed
-`Resource`) the store hands back. More up-front cost; less per-resolve
-work; uses ts-res import for the bit it IS shaped for.
+**Architecture pin (locked):**
 
-**Phase A recommendation: Option A for v0.1.** Rationale:
+1. **One shared, long-lived `ResourceManagerBuilder` + `ResourceManager`
+   pair** inside `PromptLibrary`. Built once at `PromptLibrary.create`
+   with the qualifier configuration (per OQ-4 revised). Initially
+   empty of resources.
+2. **Per-resolve flow:**
+   a. Chain walker queries `IPromptStore` for `(scope, id)` records.
+      Finds the winning scope's record.
+   b. Compute `key = (scope, id, Crc32Normalizer.computeHash(
+      record.candidates))`.
+   c. Look the key up in `PromptLibrary`'s materialized-resource map.
+      On hit: skip to step (e).
+   d. **Cache miss:** validate `record.candidates` via ts-res's
+      `ResourceJson` candidate-decl Converters; synthesize a ts-res
+      resource id (e.g. `<scope-encoded>/<promptId>`); add the resource
+      into the runtime via the long-lived builder; record `key` in the
+      materialized-resource map.
+   e. Ask the ts-res `ResourceResolver` to resolve the synthesized id
+      against the caller's qualifier context. ts-res's internal caches
+      (condition / conditionSet / decision) deliver O(1) on warm
+      qualifier values.
+3. **No output caching.** The library does NOT cache rendered prompt
+   bodies, substituted bodies, or post-`validateAndRender` output.
+   Outputs are combinatorial across the open qualifier space; caching
+   them would be unbounded and the cache-hit ratio asymptotes toward
+   zero as the qualifier set grows. ts-res's intra-resolution caches
+   are the right cache level — they're keyed on shapes (conditions,
+   condition sets, decisions) whose cardinality is bounded by the
+   prompt corpus, not by the open qualifier-value space.
+4. **Invalidation.** When the store changes (any future hot-reload
+   path), the materialized-resource entries for affected
+   `(scope, id)` pairs are evicted; ts-res's caches drop too via the
+   `cacheClear` listener event. v0.1 has no hot-reload, so the
+   materialized map only grows.
+5. **Resource binding inner resolves use the same shared runtime** —
+   nothing special. The inner prompt id is materialized on first
+   access just like a top-level resolve.
 
-- Keeps `IPromptStore` purely data — implementations don't need to know
-  about ts-res `ResourceManagerBuilder`. The brief's binding rule "SQL
-  / Mongo adapters drop in later — interface design must enable this"
-  is much easier to satisfy if the store returns plain JSON-shaped
-  records than if it returns ts-res constructed objects.
-- Per-resolve construction is bounded — caching by
-  `(scope, id, record-hash)` (via `Crc32Normalizer.computeHash`)
-  caps the cost; the existing `templateCacheSize` LRU pattern extends
-  naturally to a candidate-set cache.
-- Easier to evolve to Option B later (the store interface stays the
-  same; only `PromptLibrary` internals change).
+**Mustache template cache (separate, unchanged).** Parsed
+`MustacheTemplate` instances are still cached by `(promptId,
+bodyHash)` with `templateCacheSize` LRU (§6). This is a parse cache,
+not an output cache — cardinality bounded by the prompt-corpus body
+count, fully appropriate to cache.
 
-**Concrete handoff for phase B:** `PromptLibrary.resolve` calls a
-private `_resolveCandidates(record, qualifiers)` helper that:
+**Phase B implementation latitude.** Option C is the architectural
+target. If phase B finds ts-res's `ResourceManagerBuilder` does not
+yet support **incremental add-after-build** (i.e. adding a new
+resource to an already-built runtime without rebuilding), phase B
+MAY:
 
-1. Looks up a cached `Resource` (or candidate-set) keyed by
-   `(scope, id, Crc32Normalizer.computeHash(record.candidates))`.
-2. On cache miss: validates `record.candidates` via the appropriate
-   `ResourceJson` converters (this IS a reuse of ts-res — the
-   `ResourceJson` converters in `libraries/ts-res/src/packlets/
-   resource-json/convert.ts` are the canonical decl-shape Converters)
-   and constructs the ts-res resolve unit. Cache the result.
-3. Returns the candidate(s) selected per §10.2's `isPartial`-driven
-   composition rules.
+- (i) Extend ts-res with an incremental-add API. Additive; in cluster
+  scope per the active-development surface for `ts-prompt-assist`.
+  Preferred.
+- (ii) Implement a periodic rebuild strategy (e.g. rebuild on first
+  miss after N misses, or amortize via builder-batch). Acceptable
+  v0.1 fallback if (i) is too large for the cluster.
+- (iii) Fall back to Option A (per-resolve construction with hash-
+  keyed cache). Acceptable last-resort v0.1 fallback; phase B
+  documents the gap in `TECH_DEBT.md` so the v0.2 cycle can pick up
+  Option C.
 
-**Phase B verifies the exact ts-res resolve API to call.** With the
-`compositionMode` removal (§10.2), phase B calls ts-res's "all-matching
-candidates with `isPartial` honored" pathway — likely an existing API
-that already returns the merge chain. Phase B confirms the actual
-function names and
-shapes in `libraries/ts-res/src/packlets/resources/` and adjusts.
-If the appropriate API is not yet public on `ts-res`, phase B
-surfaces the gap (additive export from ts-res is in cluster scope as
-per the active-development surface for `ts-prompt-assist`'s needs;
-explicitly NOT in scope: breaking changes to ts-res).
+The store interface (§4.6) is **identical** under all three paths —
+plain `IStoredPromptRecord` returned. The choice is internal to
+`PromptLibrary`. So evolving from a fallback to the target is
+non-breaking to consumers.
 
-**NQ-5 (recorded in state.md):** "exact ts-res resolve API surface
-consumed by `PromptLibrary._resolveCandidates`; verify the public
-exports exist or surface the additive gap."
+**NQ-5 (revised, recorded in state.md):** "Verify ts-res's runtime
+supports incremental resource add-after-build (or that adding it is
+additive). If yes, lock Option C. If the add-after-build API gap is
+larger than cluster scope can accommodate, phase B picks (ii) or
+(iii) per the latitude above."
+
+**Why not Option A or B (recorded so this isn't re-litigated):**
+
+- **Option A** (per-resolve transient ts-res `Resource`) discards
+  ts-res's intra-resolution caches between resolves — every resolve
+  rebuilds the condition / conditionSet / decision caches from
+  scratch. Wasteful, especially when prompts share qualifier axes
+  (the common case).
+- **Option B** (store eagerly builds per-scope ResourceManagers) puts
+  ts-res construction logic into every `IPromptStore` implementation.
+  Every SQL / Mongo adapter would need its own ts-res ingestion
+  pipeline. Violates the brief's binding rule "Storage-agnostic via
+  `IPromptStore`."
+- **Option C** centralizes the ts-res integration in the library
+  (one place), shares caches across all resources (best warm-cache
+  behavior), and keeps the store interface plain-data
+  (adapter-friendly).
 
 ### 15.6 Adjustments to earlier sections
 
-The audit reveals these clarifications to lock now (no contradiction
-with prior sections; just sharpening):
-
-- **§5.1 `FileTreePromptStore` implementation note:** YAML parsing is
-  via `@fgv/ts-extras`'s `yaml.yamlConverter<T>(inner)` packlet, NOT
-  via a new `js-yaml` direct dep and NOT via ts-res `import`'s
-  `fileContentConverter` seam. Update the `js-yaml` "phase B
-  surfaces" caveat in §11.2 — **NQ-2 is resolved here: use the
-  ts-extras `yaml` packlet.**
-- **§10 composition semantics, new sub-bullet:** the candidate-to-
-  ts-res handoff is **Option A** per §15.5. The store returns plain
-  `IStoredPromptRecord`; `PromptLibrary` constructs ts-res resolve
-  data structures per-resolve, cached.
+- **§5.1 `FileTreePromptStore`:** YAML parsing via
+  `@fgv/ts-extras`'s `yaml.yamlConverter<T>(inner)` packlet (per
+  Erik's note: ts-extras's wrapper is a simple js-yaml wrapper not
+  hoisted into ts-json-base specifically because of the dep). No new
+  direct `js-yaml` dep at the ts-prompt-assist level. **NQ-2
+  resolved.**
+- **§10 composition semantics:** the candidate-to-ts-res handoff is
+  **Option C** (lazy materialization into a shared long-lived
+  ResourceManager) per §15.5. The store returns plain
+  `IStoredPromptRecord`; `PromptLibrary` ingests on demand into one
+  shared runtime. ts-res's intrinsic caches deliver O(1) on warm
+  qualifier shapes.
 - **§3.12 `IStoredPromptRecord.candidates`:** remains
   `ReadonlyArray<IPromptCandidateRecord>` (plain JSON-shaped); does
   NOT become a ts-res `Resource` or `ResourceDeclCollection` on the
   store surface. The library does the lifting at resolve time.
 - **§11.2 dependencies:** `@fgv/ts-extras`'s `yaml` packlet is the
-  YAML loader. No new direct `js-yaml` dep.
+  YAML loader. No new direct `js-yaml` dep at this level.
+- **NQ-1 (extractJsonText):** Erik confirms — phase B exports
+  `extractJsonText` publicly from `@fgv/ts-extras/ai-assist` if
+  it's currently internal. Additive in ts-extras; in cluster scope.
+- **NQ-3 (IFileTreeItem path):** Erik confirms the
+  `@fgv/ts-json-base/file-tree` path is correct; phase B picks up
+  the exact symbol name (`FileTree.FileTreeItem` per ts-res's import
+  packlet usage at `libraries/ts-res/src/packlets/import/
+  importManager.ts:53` — `params.fileTree?: FileTree.FileTree`).
 
 ---
 
 ## 16. New questions surfaced (none binding-blocking)
 
-These are minor; phase B can either decide or surface to the
-orchestrator as they arise. None gate the design lock.
+These are minor or have Erik-confirmed dispositions; phase B picks them
+up as they arise. None gate the design lock.
 
-- **`extractJsonText` re-export shape.** §8 step 1 reuses
-  `@fgv/ts-extras/ai-assist`'s `extractJsonText`. Phase B verifies
-  this is a stable public export; if it's currently `internal`, phase
-  B either promotes it (additive in ts-extras) or inlines minimally
-  with a `TECH_DEBT.md` entry.
-- **~~YAML loader dep~~** — **resolved by §15 audit.** Use
-  `@fgv/ts-extras`'s `yaml` packlet (`yamlConverter<T>(inner)`). No
-  new direct `js-yaml` dep; ts-extras already wraps it as the
-  canonical primitive.
-- **`IFileTreeItem` exact import path.** §5.1 sketches the type from
-  `@fgv/ts-json-base/file-tree`. Phase B verifies the exact exported
-  symbol name and adjusts.
+- **~~NQ-1 extractJsonText~~** — **resolved.** Erik approves exporting
+  `extractJsonText` publicly from `@fgv/ts-extras/ai-assist` (additive
+  in ts-extras; in cluster scope as a small follow-on commit).
+- **~~NQ-2 YAML loader~~** — **resolved by §15 audit.** Use
+  `@fgv/ts-extras`'s `yaml` packlet (`yamlConverter<T>(inner)`). It's
+  a thin wrapper over js-yaml not hoisted into ts-json-base because of
+  the dep; ts-prompt-assist consumes it directly.
+- **~~NQ-3 IFileTreeItem~~** — **resolved.** Path is
+  `@fgv/ts-json-base/file-tree` (Erik confirms). Symbol is
+  `FileTree.FileTreeItem` (matches ts-res import packlet usage at
+  `libraries/ts-res/src/packlets/import/importManager.ts:53`).
 - **`PromptRegistry.empty()` vs `.create()`.** §4.3 ships both; the
   intent is `.empty()` is infallible (returns the instance, not
-  `Result`), `.create()` is the standard fallible factory and matches
-  the family convention. Phase B may collapse to just `.create()` if
-  the infallible path turns out to never be needed. Default keep both.
-- **NQ-5: ts-res resolve API surface for candidate selection.** §15.5
-  pins Option A (per-resolve construction) and identifies the reuse
-  point: `ResourceJson`'s candidate-decl Converters from
-  `libraries/ts-res/src/packlets/resource-json/convert.ts`. Phase B
-  verifies the exact public exports (`resolveResource` /
-  `resolveAllResourceCandidates` per brief; confirm names). If the
-  required public surface doesn't exist, additive export from
-  ts-res is in cluster scope; ts-res breaking changes are NOT.
+  `Result`), `.create()` is the standard fallible factory. Phase B
+  may collapse to just `.create()` if the infallible path turns out
+  to never be needed.
+- **NQ-5 (revised) — ts-res incremental resource add-after-build.**
+  §15.5 commits to **Option C** (lazy materialization into a shared
+  long-lived `ResourceManager`). Phase B verifies that ts-res's
+  runtime supports incremental adds (or that adding it is additive in
+  cluster scope). Phase B implementation latitude is documented in
+  §15.5: prefer (i) extend ts-res additively; acceptable fallbacks
+  (ii) periodic-rebuild or (iii) Option A (per-resolve transient)
+  with `TECH_DEBT.md` entry.
