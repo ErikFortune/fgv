@@ -136,48 +136,46 @@ prevents that churn. Forcing `InMemoryPromptStore` to implement it
 exercises the event shape under tests so we surface design gaps now, not
 at the first hot-reload consumer.
 
-### OQ-4 — Registries: **unified `IPromptRegistry` with namespaced sub-registries**
+### OQ-4 — Registries: **unified `IPromptRegistry` with three typed sub-registries; qualifier config delegated to ts-res**
 
-**Decision.** Replace the three separate registries
-(`IPromptShapeRegistry`, `ISlotKindRegistry`, `IPromptOutputValidationRegistry`)
-on the create-params with **one unified `IPromptRegistry`** exposing
-namespaced sub-registries:
+**Decision (revised — Erik review 2026-05-15).** Replace the three
+separate registries on the create-params with **one unified
+`IPromptRegistry`** exposing namespaced sub-registries:
 
 ```ts
 export interface IPromptRegistry {
   readonly converters: IPromptConverterRegistry;        // output Converters by ConverterId
-  readonly qualifierEnums: IPromptQualifierEnumRegistry; // closed qualifier value sets by AxisName
   readonly slotKinds: IPromptSlotKindRegistry;          // slot-kind serializers by string kind
   readonly outputValidations: IPromptOutputValidationRegistry;
 }
 ```
 
-Each sub-registry is still its own typed interface (no `any`-typed
-omnibus map). `PromptLibrary.create` takes a single `registry?:
-IPromptRegistry` param instead of three.
+**Qualifier configuration is NOT a sub-registry of `IPromptRegistry`.**
+It is delegated entirely to ts-res. `PromptLibrary.create` takes a
+`qualifiers: ts-res qualifier configuration` parameter directly
+(see §4.1 for the exact shape — `IReadOnlyQualifierCollector` or a
+declarative `IQualifierDecl[]` that the library converts on create).
 
-**Rationale.**
+**Rationale for the qualifier delegation.** ts-res's
+`LiteralQualifierType` already owns the closed-value-set concept via
+its type config (`TCFGJSON extends JsonObject`). A consumer adding a
+"tone: formal | casual | playful" qualifier registers it ONCE in ts-
+res's qualifier collector. Having a parallel `qualifierEnums` registry
+in ts-prompt-assist forced consumers to register the same closed set
+twice — a guaranteed drift bug. Dropping it removes the duplication
+and uses the canonical primitive. Consistent with §15's "reuse where
+ts-res is canonical, diverge only on file structure" principle.
 
-- The three sub-concerns are genuinely distinct (output Converters,
-  qualifier enums, slot-kind serializers, output validators), so a flat
-  bag would collide ids across concerns. Keeping them typed sub-
-  registries preserves type safety.
-- But the create-params noise of three separate registry params is real,
-  especially when the consumer registers a handful of things across all
-  four namespaces at boot. One `registry` param + sub-registry property
-  access reads cleanly and lets the consumer pre-build a configured
-  registry once and pass it around.
-- The "qualifier enums" namespace was implicit in the original
-  `IPromptShapeRegistry` (Converters + enums together). Splitting it
-  cleanly is part of this decision — Converters and qualifier-value-set
-  enums are different concerns (one transforms output, the other
-  constrains qualifier values).
-- A library-supplied `PromptRegistry.create()` factory produces an
-  empty unified registry that consumers populate at boot.
+**Trade-offs of unified `IPromptRegistry` (unchanged from earlier
+draft).** Three sub-concerns are genuinely distinct, so keeping them
+typed sub-registries preserves type safety while collapsing the
+create-params noise to one `registry` param. A library-supplied
+`PromptRegistry.create()` factory produces an empty unified registry
+that consumers populate at boot.
 
 **Trade-off acknowledged.** This is the largest divergence from the
 proposed shape. The conceptual model is unchanged; only the API
-ergonomics shift.
+ergonomics shift, and the qualifier duplication is eliminated.
 
 ### OQ-5 — Output-contract growth path: **drop the generic; keep minimal `'free-text'`; single `converterId` for `'json'`; `outputValidations` stays on the descriptor**
 
@@ -475,24 +473,12 @@ export interface IScopeSlotBindingsRecord {
 
 ### 3.11 Qualifier axis registration
 
-```ts
-export type QualifierAxisType = 'string' | 'enum' | 'numeric';
-
-export interface IQualifierAxisRegistration {
-  readonly name: AxisName;
-  readonly priority: number;
-  readonly type: QualifierAxisType;
-  readonly description?: string;
-  /** For `type: 'enum'`: inline closed values, OR a reference to a
-   *  shape-registry enum id (the registry resolves at boot). Exactly
-   *  one of `values` or `enumRef` is required for `type: 'enum'`. */
-  readonly values?: ReadonlyArray<string>;
-  readonly enumRef?: AxisName;
-}
-```
-
-(`QualifierAxisType` is a closed value set; ships `allQualifierAxisTypeValues`
-+ Converter.)
+**Removed per OQ-4 revision.** ts-prompt-assist defines no qualifier-
+axis registration shape of its own. Qualifier configuration is
+ts-res's `IQualifierDecl` shape (from
+`@fgv/ts-res/qualifiers/qualifierDecl`), validated by ts-res's own
+Converters. ts-prompt-assist passes through unchanged. See §4.1
+`qualifiers` create-param and §5.3 root-level `_qualifiers.yaml`.
 
 ### 3.12 Stored record (returned by the store)
 
@@ -543,9 +529,27 @@ export interface IStoredPromptRecord {
 ```ts
 export interface IPromptLibraryCreateParams {
   readonly store: IPromptStore;
+  /** ts-res qualifier configuration. The library accepts either a
+   *  pre-built `IReadOnlyQualifierCollector` (when the consumer already
+   *  maintains a ts-res qualifier set) or a declarative `IQualifierDecl[]`
+   *  (the library builds the collector internally via ts-res's
+   *  Converters). REQUIRED — there is no default qualifier set.
+   *  See OQ-4 rationale: ts-res owns qualifier value sets, including
+   *  closed-value enums via `LiteralQualifierType`. ts-prompt-assist
+   *  does not duplicate this surface. */
+  readonly qualifiers:
+    | TsRes.Qualifiers.IReadOnlyQualifierCollector
+    | ReadonlyArray<TsRes.Qualifiers.IQualifierDecl>;
+  /** Optional ts-res qualifier-type collector. When `qualifiers` is
+   *  supplied as a pre-built `IReadOnlyQualifierCollector`, this is
+   *  inferred from it. When `qualifiers` is supplied as decls, this
+   *  must supply at least the qualifier types referenced by those
+   *  decls (e.g. `LiteralQualifierType`, `LanguageQualifierType`).
+   *  Defaults to ts-res's system qualifier types when omitted. */
+  readonly qualifierTypes?: TsRes.QualifierTypes.ReadOnlyQualifierTypeCollector;
   /** Unified registry (per OQ-4). When omitted, the library uses
    *  `PromptRegistry.empty()` — fine for tests that don't exercise
-   *  output validation, custom slot kinds, or qualifier enums. */
+   *  output validation, custom slot kinds, or output converters. */
   readonly registry?: IPromptRegistry;
   readonly safetyPolicy?: IPromptSafetyPolicy;
   readonly logger?: Logging.ILogger;
@@ -647,7 +651,6 @@ flagged" without re-running screening.
 ```ts
 export interface IPromptRegistry {
   readonly converters: IPromptConverterRegistry;
-  readonly qualifierEnums: IPromptQualifierEnumRegistry;
   readonly slotKinds: IPromptSlotKindRegistry;
   readonly outputValidations: IPromptOutputValidationRegistry;
 }
@@ -658,11 +661,11 @@ export interface IPromptConverterRegistry {
   has(id: ConverterId): boolean;
 }
 
-export interface IPromptQualifierEnumRegistry {
-  register(name: AxisName, values: ReadonlyArray<string>): Result<AxisName>;
-  get(name: AxisName): Result<ReadonlyArray<string>>;
-  has(name: AxisName): boolean;
-}
+// Qualifier-enum registry intentionally absent — see OQ-4. Closed
+// qualifier value sets live in ts-res via `LiteralQualifierType`.
+// `PromptLibrary` consults the ts-res qualifier collector supplied
+// on `create()` for value-set queries (editor "what values are
+// valid for this axis?" hints).
 
 export interface IPromptSlotKindRegistry {
   register(kind: string, serializer: ISlotSerializer): Result<string>;
@@ -767,7 +770,12 @@ export interface IPromptStore {
   get(scope: ScopeKey, id: PromptId): Promise<Result<IStoredPromptRecord | undefined>>;
   list(filter?: IPromptStoreListFilter): Promise<Result<ReadonlyArray<IStoredPromptRecord>>>;
   getBindings(scope: ScopeKey): Promise<Result<IScopeSlotBindingsRecord | undefined>>;
-  getQualifierAxes(scope: ScopeKey): Promise<Result<ReadonlyArray<IQualifierAxisRegistration>>>;
+  /** Returns the ts-res qualifier configuration this store
+   *  publishes, OR `undefined` if the store carries no qualifier
+   *  config (consumer supplies it directly to `PromptLibrary.create`).
+   *  Returned shape is ts-res's `IQualifierDecl[]`; the library
+   *  uses ts-res's Converters to build the runtime collector. */
+  getQualifierConfig(): Promise<Result<ReadonlyArray<TsRes.Qualifiers.IQualifierDecl> | undefined>>;
 
   // Optional write surface
   put?(record: IStoredPromptRecord): Promise<Result<IStoredPromptRecord>>;
@@ -778,6 +786,15 @@ export interface IPromptStore {
   watch?(handler: (event: IPromptStoreEvent) => void): IDisposable;
 }
 ```
+
+**Qualifier-config resolution at `PromptLibrary.create`.** The library
+prefers the create-params `qualifiers` if supplied. Otherwise it calls
+`store.getQualifierConfig()`; if that returns decls, the library
+builds the collector via ts-res's Converters. If both are absent,
+`create` fails with a clear error. Consumers that want their
+qualifier config to travel with their prompts (round-trippable
+data) drop a root-level `_qualifiers.yaml` in their FileTree (§5.3);
+consumers that manage qualifiers in code pass the collector directly.
 
 **Adjustments vs the brief.** Write methods return the written/deleted
 value (no `Result<void>`); the brief had `Result<void>` which is an
@@ -808,19 +825,15 @@ export class FileTreePromptStore implements IPromptStore {
   public static create(
     params: IFileTreePromptStoreCreateParams
   ): Promise<Result<FileTreePromptStore>>;
-  // get / list / getBindings / getQualifierAxes implemented
+  // get / list / getBindings / getQualifierConfig implemented
   // put / putBindings / delete / watch: NOT implemented in v0.1
 }
 ```
 
 **Implementation rule (binding).** All file reads/writes go through
 `FileTree` (per the `/filetree-io` skill). Never `node:fs` directly.
-The descriptor / bindings / axes are YAML; v0.1 uses `js-yaml` (already
-a transitive dep via `@fgv/ts-json-base`'s YAML support — phase B
-verifies and surfaces if not). YAML choice surfaces here because the
-brief doesn't pre-pick one; if `@fgv/ts-json-base` doesn't already
-provide a YAML loader, phase B surfaces to the orchestrator before
-adding a new dep.
+YAML parsing uses `@fgv/ts-extras`'s `yaml.yamlConverter<T>(inner)`
+packlet (per §15 audit). No new `js-yaml` direct dep.
 
 **YAML schema (locked).** See §5.3.
 
@@ -830,7 +843,9 @@ adding a new dep.
 export interface IInMemoryPromptStoreSeed {
   readonly records?: ReadonlyArray<IStoredPromptRecord>;
   readonly bindings?: ReadonlyArray<IScopeSlotBindingsRecord>;
-  readonly axes?: ReadonlyArray<{ readonly scope: ScopeKey; readonly axes: ReadonlyArray<IQualifierAxisRegistration> }>;
+  /** Optional qualifier configuration — ts-res `IQualifierDecl`
+   *  shape. When set, the store exposes it via `getQualifierConfig`. */
+  readonly qualifiers?: ReadonlyArray<TsRes.Qualifiers.IQualifierDecl>;
 }
 
 export class InMemoryPromptStore implements IPromptStore {
@@ -929,14 +944,40 @@ See §10.1 for the full inherited-vs-not capability table.
 Scope-level bindings file: `<root>/<scope-encoding>/_bindings.yaml`
 (schema matches `IScopeSlotBindingsRecord`).
 
-Scope-level qualifier axes file:
-`<root>/<scope-encoding>/_qualifiers.yaml` (schema matches
-`{ scope: ScopeKey; axes: ReadonlyArray<IQualifierAxisRegistration> }`).
+**Root-level qualifier configuration file** (optional):
+`<root>/_qualifiers.yaml`. Schema is ts-res's `IQualifierDecl[]` shape
+under a single `qualifiers:` key:
+
+```yaml
+# <root>/_qualifiers.yaml
+qualifiers:
+  - name: tone
+    typeName: literal:tone           # references a LiteralQualifierType
+                                     # registered in the QualifierTypeCollector
+                                     # with values [formal, casual, playful]
+    defaultPriority: 500
+  - name: region
+    typeName: territory              # ts-res system type
+    defaultPriority: 800
+  - name: lang
+    typeName: language               # ts-res system type
+    defaultPriority: 1000
+    defaultValue: en
+```
+
+Schema validation reuses ts-res's `qualifierDecl` Converter from
+`@fgv/ts-res/qualifiers/convert` — no ts-prompt-assist re-narrowing.
+The file is OPTIONAL: consumers who supply
+`IPromptLibraryCreateParams.qualifiers` directly in code can omit it.
+**There is no per-scope qualifier registration** (ts-res qualifier
+config is global to the resolver; per-scope axes would force a fork
+of ts-res's qualifier model that v0.1 has no use case to justify).
 
 **Filename-id consistency rule.** The descriptor's `id` field MUST equal
 the filename stem (`<prompt-id>` in the path). Loader rejects mismatches
 loudly. Underscore-prefixed filenames (`_bindings.yaml`,
-`_qualifiers.yaml`) are reserved for scope-level metadata.
+`_qualifiers.yaml`) are reserved (scope-level for `_bindings`, root-
+level for `_qualifiers`).
 
 ---
 
@@ -1248,7 +1289,6 @@ libraries/ts-prompt-assist/
 │   │   │   ├── index.ts
 │   │   │   ├── promptRegistry.ts
 │   │   │   ├── converterRegistry.ts
-│   │   │   ├── qualifierEnumRegistry.ts
 │   │   │   ├── slotKindRegistry.ts
 │   │   │   └── outputValidationRegistry.ts
 │   │   ├── store/              # IPromptStore + adapters
@@ -1497,7 +1537,7 @@ Different shape, different access pattern:
 
 1. **Access is lookup-oriented**, not build-oriented. `IPromptStore` is
    `get(scope, id)` / `list(filter)` / `getBindings(scope)` /
-   `getQualifierAxes(scope)`. The store does not own a
+   `getQualifierConfig()`. The store does not own a
    `ResourceManagerBuilder`; it owns per-(scope, id) records.
 2. **Data shape is broader than ts-res candidates**. Each YAML file
    contains prompt-specific metadata (title, slots, output contract,
@@ -1538,8 +1578,9 @@ ImportManager pipeline:
   packlet is the canonical primitive (per `/published-primitives-reflex`).
 - `@fgv/ts-extras`'s `yaml.yamlConverter<IScopeSlotBindingsRecord>(...)`
   for `_bindings.yaml`.
-- `@fgv/ts-extras`'s `yaml.yamlConverter<...axes...>(...)` for
-  `_qualifiers.yaml`.
+- `@fgv/ts-extras`'s `yaml.yamlConverter<...>(...)` wrapping ts-res's
+  own `qualifierDecl` Converter for `<root>/_qualifiers.yaml` (when
+  the consumer ships qualifier config in the FileTree — see §5.3).
 
 **`FileTreePromptStore` does NOT instantiate `ImportManager`,
 `PathImporter`, `FsItemImporter`, `JsonImporter`, or
