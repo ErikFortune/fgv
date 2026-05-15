@@ -16,6 +16,7 @@ The active/production split is therefore **per-surface, not per-library**. A lib
 | `ts-app-shell` | All packlets | New library, no consumers yet outside this repo |
 | `ts-http-storage` | All | New library |
 | `ts-web-extras` | All | New library |
+| `ts-prompt-assist` | All | New library (v0.1; design + initial implementation in flight via the `ts-prompt-assist` workstream) |
 
 Anything not listed above — including production libraries like `ts-utils`, `ts-res`, `ts-bcp47`, `ts-json`, `ts-json-base`, `ts-random`, `ts-utils-jest`, `ts-res-ui-components` — carries stability obligations. See [Compatibility Rules](#compatibility-rules).
 
