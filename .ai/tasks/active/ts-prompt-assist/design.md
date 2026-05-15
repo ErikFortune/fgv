@@ -327,7 +327,6 @@ surface, catches typos at the call site, and matches `ConverterId` /
 ### 3.2 String-union types (closed within the library)
 
 ```ts
-export type PromptCompositionMode = 'single-best' | 'concat-fragments';
 export type SlotBindingKind       = 'literal' | 'resource';
 export type SlotDirective         = 'constraint' | 'hint' | 'prose';
 export type SlotWritability       = 'any-scope' | 'schema-only' | 'system-only';
@@ -335,9 +334,11 @@ export type OutputContractKind    = 'free-text' | 'json';
 export type ResourceSubstitutionMode = 'replace' | 'inherit'; // trace-only, OQ-2
 ```
 
-Each ships `allFooValues` + a Converter (e.g.
-`Convert.promptCompositionMode`) per repo convention. Phase B writes
-the Converters; this design locks the value sets.
+(`PromptCompositionMode` is **removed** — see §10.1 for rationale.
+ts-res's per-candidate `isPartial` is the canonical knob for
+"this variant layers on top of others vs terminates the chain.")
+
+Each ships `allFooValues` + a Converter per repo convention.
 
 ### 3.3 Open string fields (consumer-narrowed)
 
@@ -452,8 +453,11 @@ export interface IPromptDescriptor {
   readonly surface: string;                       // open; consumer-narrowed
   readonly qualifiers?: IPromptQualifierMetadata;
   readonly slots: ReadonlyArray<IPromptSlot>;
-  readonly compositionMode: PromptCompositionMode;
   readonly output: PromptOutputContract;
+  /** Optional join policy override for partial-candidate composition.
+   *  See §10.1. Default: `{ separator: '\n\n', order: 'specificity-
+   *  ascending', trimTrailingWhitespace: true }`. */
+  readonly join?: IPromptJoinPolicy;
   readonly safeguards?: IPromptSafeguardOverrides;
   readonly examples?: ReadonlyArray<IPromptExampleSet>;
   readonly outputValidations?: ReadonlyArray<ValidatorId>;
@@ -501,7 +505,25 @@ export interface IPromptCandidateRecord {
    *  `scoreAsDefault` per condition — no narrowing vs ts-res. See
    *  §10.1 for the rationale. Empty `{}` = unconditional base. */
   readonly conditions: ResourceJson.ConditionSetDecl;
+  /** When `true`, this candidate participates in chain composition —
+   *  if a more-specific candidate also matches, this candidate's body
+   *  layers underneath. When `false` or omitted, this candidate
+   *  terminates the chain (a single complete body, no layering).
+   *  Mirrors ts-res's `IResourceCandidateDecl.isPartial`. See §10.1. */
+  readonly isPartial?: boolean;
   readonly body: string;
+}
+
+export interface IPromptJoinPolicy {
+  /** String inserted between fragments. Default `'\n\n'`. */
+  readonly separator?: string;
+  /** Fragment order. `'specificity-ascending'` puts least-specific
+   *  first (general guidance → specific overrides). Default. */
+  readonly order?: 'specificity-ascending' | 'specificity-descending';
+  /** Whether to strip trailing whitespace per fragment before joining.
+   *  Default `true` (avoids accidental triple-newline gaps from YAML
+   *  block scalars). */
+  readonly trimTrailingWhitespace?: boolean;
 }
 
 export interface IStoredPromptRecord {
@@ -591,8 +613,9 @@ export interface IPromptResolveTrace {
   readonly resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>;
   /** Slot values rejected by safeguards (length cap, regex screen). */
   readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
-  /** Per-candidate ts-res match disposition. One entry for `single-best`;
-   *  N entries for `concat-fragments` (least→most-specific order). */
+  /** Per-candidate ts-res match disposition. One entry when a non-
+   *  partial candidate wins alone; N entries (specificity-ascending)
+   *  when partials compose into the final body. */
   readonly candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>;
 }
 
@@ -828,7 +851,6 @@ id: <prompt-id>
 title: <string>
 description: <string>          # optional
 surface: <string>              # consumer-narrowed
-compositionMode: single-best | concat-fragments
 qualifiers:                    # optional, IPromptQualifierMetadata shape
   required: [<axis>, ...]
   expected:
@@ -862,40 +884,41 @@ examples:                      # optional
         output: <any>
 outputValidations: [<validator-id>, ...]   # optional
 candidates:                    # required
-  # Conditions accept the full ts-res `ResourceJson.ConditionSetDecl`:
-  # all three forms are valid. Empty `{}` = unconditional base.
+  # conditions: full ts-res `ResourceJson.ConditionSetDecl` (sugar, record-
+  # with-details, or array form).
+  # isPartial: when true, layers under any more-specific matching candidate;
+  # when false / omitted, terminates the composition chain. See §10.2.
 
-  # Form 1 — sugar (record of name → value, operator defaults to 'matches'):
-  - conditions: { tone: playful }
-    body: |
-      Hey {{{userName}}}! ...
+  # Base — general guidance that layers under everything:
+  - conditions: {}
+    isPartial: true
+    body: 'Be helpful and concise.'
 
-  # Form 2 — record with details (per-condition operator / priority / scoreAsDefault):
+  # Tone layer — applies on top of base when tone qualifier matches:
+  - conditions: { tone: formal }
+    isPartial: true
+    body: 'Use formal address. Avoid contractions.'
+
+  # Per-condition details — operator / priority / scoreAsDefault:
   - conditions:
       tone:
-        value: formal
-        priority: 100             # override qualifier's default priority
-        scoreAsDefault: 0.6       # soft-match if `tone` absent from context
-      region:
-        value: emea
-        operator: matchesPrefix
-    body: |
-      Good day, {{{userName}}}. ...
-
-  # Form 3 — array (full ILooseConditionDecl entries):
-  - conditions:
-      - qualifierName: tone
         value: playful
         priority: 100
+        scoreAsDefault: 0.6
+    isPartial: true
+    body: "Use a playful, conversational register."
+
+  # Terminal regional override — does NOT layer; replaces base + tone:
+  - conditions: { region: emea }
+    body: 'EMEA compliance addendum: ...'   # isPartial omitted = terminal
+
+  # Array form (equivalent to record-with-details):
+  - conditions:
       - qualifierName: region
         value: na
-    body: |
-      What's good, {{{userName}}}? ...
-
-  # Empty conditions = base candidate (always matches):
-  - conditions: {}
-    body: |
-      Hello {{{userName}}}. ...
+      - qualifierName: tone
+        value: formal
+    body: 'NA formal addendum: ...'
 ```
 
 **Note on capability surface.** The schema delegates to ts-res's
@@ -1062,59 +1085,107 @@ Per-call, after substitution context is built, before Mustache renders:
 The prompt YAML schema **delegates conditions to ts-res's
 `ResourceJson.ConditionSetDecl`** rather than re-narrowing to a sugar-
 only flat record. Anything ts-res accepts in a `ConditionSetDecl`,
-candidates in this schema accept — record-sugar (`{ tone: playful }`),
-record-with-details (`{ tone: { value, operator?, priority?,
-scoreAsDefault? } }`), or array form (`[{ qualifierName, value,
-operator?, priority?, scoreAsDefault? }]`).
+candidates in this schema accept — record-sugar, record-with-details,
+or array form.
 
-This means **`operator`, `priority`, and `scoreAsDefault` per
-condition are available to prompt authors at v0.1**, by delegation —
-not by re-implementation. The §15 audit commits to reusing
-`ResourceJson` Converters at the candidate→ts-res handoff; the
-conditions schema follows directly.
-
-**What is NOT reused at v0.1** (and why):
+**Capability reuse table (revised — `isPartial` IS reused).** The
+earlier draft lumped `isPartial` and `ResourceValueMergeMethod`
+together as "JSON-shape-aware, not reusable." That was wrong:
+`isPartial` is a **control-flow knob** (does this candidate terminate
+the chain, or layer with more-specific matches?) — the value shape is
+irrelevant. `ResourceValueMergeMethod` IS shape-aware (`augment` =
+JSON deep-merge, `delete` = property removal). The two come apart.
 
 | ts-res capability | v0.1 status | Rationale |
 |---|---|---|
-| `ResourceValueMergeMethod` (`augment` / `replace` / ...) | **Not reused.** `compositionMode: 'concat-fragments'` is fixed `\n`-join; `'single-best'` returns one body. | ts-res's merge methods are JSON-shape-aware; prompt bodies are Mustache strings. Overloading "join with newline" as one of N merge methods muddies the consumer mental model with no v0.1 use case driving it. |
-| `IResourceCandidateDecl.isPartial` | **Not reused.** All prompt candidates are complete bodies. | Same — partial-JSON semantics don't map to prompt strings. |
-| `IResourceCandidateDecl.json` (arbitrary JSON body) | **Not reused.** Prompt candidate body is `string` (Mustache template). | Bodies feed Mustache and then become slot values; arbitrary JSON has no path through the substitution pipeline at v0.1. |
-| `ConditionOperator` | **Reused as-is.** | Inherited from ts-res via `ConditionSetDecl`. |
+| `ConditionOperator` | **Reused as-is.** | Inherited via `ConditionSetDecl`. |
 | `priority` per condition | **Reused as-is.** | Inherited via `ConditionSetDecl`. |
 | `scoreAsDefault` per condition | **Reused as-is.** Interacts with the chain walker per §10.6. | Inherited via `ConditionSetDecl`. |
+| **`IResourceCandidateDecl.isPartial`** | **Reused as-is.** Per-candidate chain-termination control. | Control-flow, not shape-aware. Strictly more expressive than a per-prompt binary "single-best vs concat-everything." Replaces the dropped `compositionMode` field. |
+| `ResourceValueMergeMethod` (`augment` / `delete` / `replace`) | **Not reused.** | `augment` and `delete` are JSON-property operations with no string analogue. `replace` is exactly what `isPartial: false` already expresses. |
+| `IResourceCandidateDecl.json` (arbitrary JSON body) | **Not reused.** Prompt candidate body is `string` (Mustache template). | Bodies feed Mustache then become slot values; JSON has no path through the substitution pipeline at v0.1. |
 
-If a v0.2 use case for merge methods or partial bodies surfaces, the
-discriminator already exists on `compositionMode` (extend the union)
-and the schema is forward-compat — adding new merge methods doesn't
-break sugar-shape conditions or single-best resolution.
+### 10.2 `compositionMode` is removed (was: `'single-best' \| 'concat-fragments'`)
 
-### 10.2 Composition modes
-2. **`concat-fragments`.** Library calls ts-res's "all matching
-   candidates" selector. Candidates are joined least→most-specific
-   (per ts-res's specificity ordering) with a single `\n` separator.
-   Substitution runs **once on the concatenated body**, not per
-   fragment (so a slot referenced in any fragment renders consistently
-   across the assembled output).
-3. **Chain walking is independent of intra-record qualifier
-   resolution.** The chain walker selects the winning scope's
-   `IStoredPromptRecord`; ts-res then operates within that record.
-4. **No cross-scope body merging.** If the winning scope's record has
+The earlier draft had `IPromptDescriptor.compositionMode` as a per-
+prompt binary controlling whether resolve returns one body or
+concatenates all matches. **That field is dropped.** ts-res's per-
+candidate `isPartial` is strictly more expressive:
+
+| Author intent | Earlier draft | v0.1 (locked) |
+|---|---|---|
+| "Best match wins, alone." | `compositionMode: single-best` | All candidates' `isPartial` omitted / `false`. |
+| "Layer all matches together." | `compositionMode: concat-fragments` | All candidates `isPartial: true` except the terminal. |
+| "Layer SOME variants on a base; specific overrides terminate." | **Inexpressible.** | Author marks `isPartial: true` surgically per candidate. |
+
+The third case is real (the chat-app use case Erik raised:
+"tenant override fragment layers on top of global base; a tenant-
+specific regional override terminates the chain"). The earlier
+`compositionMode` shape couldn't express it without splitting the
+prompt id, forking the descriptor, or hand-orchestrating in the
+consumer — exactly the pain the library is supposed to eliminate.
+
+**Semantics (locked):**
+
+1. ts-res selects matching candidates per the qualifier context.
+2. Walk those candidates in **specificity-ascending order** (least-
+   specific first). Collect bodies until a candidate with
+   `isPartial !== true` is encountered — that candidate is the
+   terminal; collection includes it and stops.
+3. If all matching candidates are `isPartial: true`, the chain ends
+   at the most-specific match (no terminal needed — every fragment
+   participates).
+4. If only one candidate matches and it is `isPartial: true` or
+   omitted, that candidate's body is the result (no join needed).
+5. Bodies are joined per `IPromptDescriptor.join` (default
+   `{ separator: '\n\n', order: 'specificity-ascending',
+   trimTrailingWhitespace: true }`).
+6. Mustache substitution runs **once on the joined body** (consistent
+   slot rendering across fragments).
+
+**Default join policy rationale.** `\n\n` is the canonical LLM
+paragraph break — fragments read as paragraphs. Specificity-ascending
+order puts general guidance first and specific overrides last,
+matching the "later instructions take precedence" pattern most LLMs
+treat as natural. `trimTrailingWhitespace: true` defuses YAML block-
+scalar trailing-newline quirks that would otherwise produce triple-
+newline gaps.
+
+### 10.3 Chain walking is independent of intra-record candidate composition
+
+The scope-chain walker (§10.4) picks the winning scope's
+`IStoredPromptRecord`. ts-res then operates **within that record's
+candidate set** — chain composition via `isPartial` happens inside one
+scope's record. **`isPartial` does NOT trigger cross-scope fallback**;
+the chain walker still stops at the first scope with a record for the
+id.
+
+If an author wants a tenant scope to layer fragments on top of the
+global scope's body, they ship a record at the tenant scope whose
+candidates reference the global as a **resource binding** (§7), not
+via cross-scope candidate layering. The two mechanisms are orthogonal:
+
+| Want | Use |
+|---|---|
+| Layer variants of one body within one scope | per-candidate `isPartial` within the record |
+| Compose a tenant body on top of a global fragment | resource binding (§7) — fragment lives as its own prompt id |
+
+### 10.4 Cross-scope behavior
+
+1. **No cross-scope body merging.** If the winning scope's record has
    no matching candidate under the qualifier context, ts-res's
    in-record fallback applies (matches the empty-conditions base if
    one exists; fails otherwise). The library does NOT fall through to
    another scope to find a candidate. Failure surfaces as
    `prompt '<id>' scope '<scope>': no candidate matched qualifiers
    <ctx>; record has no base candidate`.
-5. **Binding merge IS cross-scope.** Bindings merge across the entire
+2. **Binding merge IS cross-scope.** Bindings merge across the entire
    chain (most-specific wins, `enforced` higher-scope locks).
-6. **Caller-substitution interaction.** Caller `substitutions` override
+3. **Caller-substitution interaction.** Caller `substitutions` override
    merged bindings per slot. Exception: if the merged binding has
    `enforced: true`, the caller substitution is ignored and a
    `safeguardFindings` entry records the override attempt with
-   `kind: 'screening-skipped'`, `disposition: 'info'`. (Re-using
-   `screening-skipped` is wrong; phase A pins a dedicated kind:
-   `'enforced-override-ignored'` — added to the `kind` union in §4.2.)
+   `kind: 'enforced-override-ignored'`, `disposition: 'info'`.
 
 **Trace `safeguardFindings.kind` union, finalized:**
 `'max-length' | 'suspicious-pattern' | 'screening-skipped' |
@@ -1552,11 +1623,14 @@ private `_resolveCandidates(record, qualifiers)` helper that:
    `ResourceJson` converters in `libraries/ts-res/src/packlets/
    resource-json/convert.ts` are the canonical decl-shape Converters)
    and constructs the ts-res resolve unit. Cache the result.
-3. Returns the candidate(s) selected per `descriptor.compositionMode`.
+3. Returns the candidate(s) selected per §10.2's `isPartial`-driven
+   composition rules.
 
-**Phase B verifies the exact ts-res resolve API to call.** The brief
-says `resolveResource` (`single-best`) and `resolveAllResourceCandidates`
-(`concat-fragments`); phase B confirms the actual function names and
+**Phase B verifies the exact ts-res resolve API to call.** With the
+`compositionMode` removal (§10.2), phase B calls ts-res's "all-matching
+candidates with `isPartial` honored" pathway — likely an existing API
+that already returns the merge chain. Phase B confirms the actual
+function names and
 shapes in `libraries/ts-res/src/packlets/resources/` and adjusts.
 If the appropriate API is not yet public on `ts-res`, phase B
 surfaces the gap (additive export from ts-res is in cluster scope as
