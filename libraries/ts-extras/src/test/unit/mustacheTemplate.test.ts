@@ -66,7 +66,33 @@ describe('MustacheTemplate', () => {
         expect(template.options.tags).toEqual(['{{', '}}']);
         expect(template.options.includeComments).toBe(false);
         expect(template.options.includePartials).toBe(false);
+        expect(template.options.escape).toBe('html');
       });
+    });
+
+    test('accepts escape: html option explicitly', () => {
+      expect(MustacheTemplate.create('Hello {{name}}!', { escape: 'html' })).toSucceedAndSatisfy(
+        (template) => {
+          expect(template.options.escape).toBe('html');
+        }
+      );
+    });
+
+    test('accepts escape: none option', () => {
+      expect(MustacheTemplate.create('Hello {{name}}!', { escape: 'none' })).toSucceedAndSatisfy(
+        (template) => {
+          expect(template.options.escape).toBe('none');
+        }
+      );
+    });
+
+    test('accepts custom escape function', () => {
+      const customEscape = (s: string): string => s.toUpperCase();
+      expect(MustacheTemplate.create('Hello {{name}}!', { escape: customEscape })).toSucceedAndSatisfy(
+        (template) => {
+          expect(template.options.escape).toBe(customEscape);
+        }
+      );
     });
   });
 
@@ -428,6 +454,47 @@ describe('MustacheTemplate', () => {
       const template = MustacheTemplate.create('Hello World!').orThrow();
 
       expect(template.render({})).toSucceedWith('Hello World!');
+    });
+  });
+
+  describe('render - escape strategies', () => {
+    test('html escape is the default: escapes HTML special characters', () => {
+      const template = MustacheTemplate.create('{{value}}').orThrow();
+      expect(template.render({ value: '<b>bold</b> & "quoted"' })).toSucceedWith(
+        '&lt;b&gt;bold&lt;&#x2F;b&gt; &amp; &quot;quoted&quot;'
+      );
+    });
+
+    test('html escape explicit: same behavior as default', () => {
+      const template = MustacheTemplate.create('{{value}}', { escape: 'html' }).orThrow();
+      expect(template.render({ value: '<script>' })).toSucceedWith('&lt;script&gt;');
+    });
+
+    test('none escape: passes values verbatim without HTML encoding', () => {
+      const template = MustacheTemplate.create('{{value}}', { escape: 'none' }).orThrow();
+      expect(template.render({ value: '<b>bold</b> & "quoted"' })).toSucceedWith('<b>bold</b> & "quoted"');
+    });
+
+    test('none escape: numeric values pass through as string', () => {
+      const template = MustacheTemplate.create('{{count}}', { escape: 'none' }).orThrow();
+      expect(template.render({ count: 42 })).toSucceedWith('42');
+    });
+
+    test('custom escape function is applied to each value', () => {
+      const template = MustacheTemplate.create('{{a}} and {{b}}', {
+        escape: (s) => s.toUpperCase()
+      }).orThrow();
+      expect(template.render({ a: 'hello', b: 'world' })).toSucceedWith('HELLO and WORLD');
+    });
+
+    test('triple-brace (unescaped) is always verbatim regardless of escape strategy', () => {
+      const template = MustacheTemplate.create('{{{value}}}', { escape: 'none' }).orThrow();
+      expect(template.render({ value: '<b>bold</b>' })).toSucceedWith('<b>bold</b>');
+    });
+
+    test('none escape does not affect text nodes, only interpolations', () => {
+      const template = MustacheTemplate.create('prefix {{val}} suffix', { escape: 'none' }).orThrow();
+      expect(template.render({ val: '<x>' })).toSucceedWith('prefix <x> suffix');
     });
   });
 

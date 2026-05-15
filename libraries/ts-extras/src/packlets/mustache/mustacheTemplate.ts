@@ -21,7 +21,21 @@
  */
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import Mustache, { TemplateSpans } from 'mustache';
+import Mustache, { type RenderOptions, TemplateSpans } from 'mustache';
+
+const _htmlEntities: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+  '/': '&#x2F;',
+  '`': '&#x60;',
+  '=': '&#x3D;'
+};
+function _htmlEscape(str: string): string {
+  return str.replace(/[&<>"'`=/]/g, (s) => _htmlEntities[s]);
+}
 
 import {
   IContextValidationResult,
@@ -29,6 +43,7 @@ import {
   IMustacheTemplateOptions,
   IRequiredMustacheTemplateOptions,
   IVariableRef,
+  MustacheEscapeStrategy,
   MustacheTokenType
 } from './interfaces';
 
@@ -38,7 +53,8 @@ import {
 const DEFAULT_OPTIONS: IRequiredMustacheTemplateOptions = {
   tags: ['{{', '}}'],
   includeComments: false,
-  includePartials: false
+  includePartials: false,
+  escape: 'html'
 };
 
 /**
@@ -58,12 +74,22 @@ export class MustacheTemplate {
   public readonly options: Readonly<IRequiredMustacheTemplateOptions>;
 
   private readonly _tokens: TemplateSpans;
+  private readonly _writer: Mustache.Writer;
+  private readonly _renderConfig: RenderOptions | undefined;
   private _variables?: readonly IVariableRef[];
 
-  private constructor(template: string, tokens: TemplateSpans, options: IRequiredMustacheTemplateOptions) {
+  private constructor(
+    template: string,
+    tokens: TemplateSpans,
+    options: IRequiredMustacheTemplateOptions,
+    writer: Mustache.Writer,
+    renderConfig: RenderOptions | undefined
+  ) {
     this.template = template;
     this._tokens = tokens;
     this.options = options;
+    this._writer = writer;
+    this._renderConfig = renderConfig;
   }
 
   /**
@@ -74,8 +100,10 @@ export class MustacheTemplate {
    */
   public static create(template: string, options?: IMustacheTemplateOptions): Result<MustacheTemplate> {
     const resolvedOptions = MustacheTemplate._resolveOptions(options);
+    const writer = new Mustache.Writer();
+    const renderConfig = MustacheTemplate._buildRenderConfig(resolvedOptions.escape);
     return MustacheTemplate._parseTokens(template, resolvedOptions).onSuccess((tokens) => {
-      return succeed(new MustacheTemplate(template, tokens, resolvedOptions));
+      return succeed(new MustacheTemplate(template, tokens, resolvedOptions, writer, renderConfig));
     });
   }
 
@@ -177,7 +205,7 @@ export class MustacheTemplate {
    * @returns Success with the rendered string, or Failure if rendering fails
    */
   public render(context: unknown): Result<string> {
-    return captureResult(() => Mustache.render(this.template, context));
+    return captureResult(() => this._writer.render(this.template, context, undefined, this._renderConfig));
   }
 
   /**
@@ -203,8 +231,19 @@ export class MustacheTemplate {
     return {
       tags: options.tags ? [options.tags[0], options.tags[1]] : DEFAULT_OPTIONS.tags,
       includeComments: options.includeComments ?? DEFAULT_OPTIONS.includeComments,
-      includePartials: options.includePartials ?? DEFAULT_OPTIONS.includePartials
+      includePartials: options.includePartials ?? DEFAULT_OPTIONS.includePartials,
+      escape: options.escape ?? DEFAULT_OPTIONS.escape
     };
+  }
+
+  private static _buildRenderConfig(escape: MustacheEscapeStrategy): RenderOptions {
+    if (escape === 'html') {
+      return { escape: (value: unknown) => _htmlEscape(String(value)) };
+    }
+    if (escape === 'none') {
+      return { escape: (value: unknown) => String(value) };
+    }
+    return { escape: (value: unknown) => escape(String(value)) };
   }
 
   private static _parseTokens(

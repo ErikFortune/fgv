@@ -111,6 +111,15 @@ export interface IContextValidationResult {
 }
 
 /**
+ * Strategy for escaping values rendered by a MustacheTemplate.
+ * - `'html'` (default): standard HTML entity escaping
+ * - `'none'`: no escaping (values are inserted verbatim)
+ * - function: custom escape function called for each `{{ value }}`
+ * @public
+ */
+export type MustacheEscapeStrategy = 'html' | 'none' | ((value: string) => string);
+
+/**
  * Options for template parsing and validation.
  * @public
  */
@@ -129,6 +138,13 @@ export interface IMustacheTemplateOptions {
    * Whether to include partial references in variable extraction (default: false)
    */
   readonly includePartials?: boolean;
+
+  /**
+   * Escape strategy for `{{ value }}` interpolations (default: `'html'`).
+   * Use `'none'` for verbatim passthrough (e.g. when building LLM prompts
+   * where HTML escaping is undesirable).
+   */
+  readonly escape?: MustacheEscapeStrategy;
 }
 
 /**
@@ -139,6 +155,7 @@ export interface IRequiredMustacheTemplateOptions {
   readonly tags: [string, string];
   readonly includeComments: boolean;
   readonly includePartials: boolean;
+  readonly escape: MustacheEscapeStrategy;
 }
 
 /* c8 ignore stop */

@@ -81,7 +81,7 @@
 | ~~NQ-2~~ | ~~YAML loader~~ — **RESOLVED** by §15 audit: use `@fgv/ts-extras`'s `yaml.yamlConverter<T>(inner)`. Erik clarifies: ts-extras wraps js-yaml; not in ts-json-base because of the dep. | design.md §15.3, §15.6 |
 | ~~NQ-3~~ | ~~`FileTreeItem` path~~ — **RESOLVED** (Erik): `@fgv/ts-json-base/file-tree`, symbol `FileTree.FileTreeItem`. | design.md §15.6 |
 | NQ-4 | `PromptRegistry.empty()` infallible factory — keep alongside `.create()` or collapse? | design.md §4.3; default: keep both for v0.1 |
-| NQ-5 (revised) | **Option C locked** — lazy materialization into a shared long-lived ts-res `ResourceManager`. Phase B verifies incremental add-after-build (or extends ts-res additively; cluster scope). Fallbacks documented in §15.5: (ii) periodic rebuild, (iii) Option A with `TECH_DEBT.md` entry. | design.md §15.5 |
+| ~~NQ-5~~ | ~~Option C locked~~ — **RESOLVED** (phase B audit 2026-05-15): `ResourceManagerBuilder.addResource()` + `getBuiltResource()` already support incremental lazy-add-after-build natively. No ts-res extension required. `addResource` does NOT reset `_built` for existing resources; `getBuiltResource` lazy-builds per-resource on first access via `_builtResources.validating.getOrAdd`. Option C is feasible directly with the current ts-res surface. | design.md §15.5 |
 
 ## Phase A re-audit: ts-res `import` packlet (2026-05-15, addendum)
 

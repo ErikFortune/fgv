@@ -23,7 +23,8 @@
 import { Result, captureResult, mapResults, succeed } from '@fgv/ts-utils';
 import Mustache from 'mustache';
 
-Mustache.escape = (s: string) => s;
+const _passthroughWriter: Mustache.Writer = new Mustache.Writer();
+const _passthroughConfig: { escape: (s: string) => string } = { escape: (s: string) => s };
 
 /**
  * Destination format for some formatted string.
@@ -69,7 +70,7 @@ export class FormattableBase {
    * {@inheritDoc Experimental.Formattable.format}
    */
   public format(template: string): Result<string> {
-    return captureResult(() => Mustache.render(template, this));
+    return captureResult(() => _passthroughWriter.render(template, this, undefined, _passthroughConfig));
   }
 }
 
