@@ -135,6 +135,7 @@ substrate. Don't queue streams against them here.
 **Workflow shape:** design-triage-implement-refine (single-stream new-library; consumer-port pressure-test absorbed via follow-up PRs on the same integration branch)
 **Phase A artifacts:** `.ai/tasks/active/ts-prompt-assist/{brief.md, design-brief.md, state.md}` → produces `design.md`
 **Package surface (new):** `@fgv/ts-prompt-assist` (new library; placement `libraries/ts-prompt-assist/`)
+**Package surface (extended):** `@fgv/ts-extras/mustache` — additive extension to `MustacheTemplate` to support verbatim-passthrough rendering (see brief.md OQ-6). Cluster touches this packlet so `ts-prompt-assist` consumes a first-class API rather than implementing workarounds. Additive only (no removed/renamed exports), preserving the established-surface compatibility contract.
 **Library dep graph:** depends on `@fgv/ts-utils`, `@fgv/ts-res`, `@fgv/ts-extras` (`MustacheTemplate`), `@fgv/ts-json-base` (FileTree). Sits above `ts-res` in the dep graph — folding into `ts-extras` would create a cycle, hence the standalone-package decision.
 **Out-of-scope (this stream):** SQL/Mongo store adapters; editor UI; samples app; LLM-call orchestration; anti-jailbreak text content; schema-version migration; sudoku packages.
 
@@ -152,7 +153,7 @@ The data-structure specifics in the design brief are **proposed** — phase A lo
 
 **Origin.** Consumer-driven feature request. Pattern emerged from observation that two in-codebase prompt libraries had reinvented the same machinery with subtly different policies; tenant-level visual/brand-style override has no canonical home; variation prompts hit-or-miss across surfaces. Generalizing the resolution machinery gives operators one mental model.
 
-**First consumer / pressure-test plan.** `personaility` will port an existing in-codebase prompt resolution implementation to consume this library. Pressure-test surfaces API gaps; 1–2 follow-up PRs on the integration branch absorb refinements before the integration→release promotion. Possibly also a test app (modeled on `ai-assist-image-generator`) — decision deferred; could also be built **into** the image generator. Surface as a subsequent stream once v0.1 lands.
+**First consumer / pressure-test plan.** The first consumer is an agent chat application that will port an existing in-codebase prompt resolution implementation to consume this library. Pressure-test surfaces API gaps; 1–2 follow-up PRs on the integration branch absorb refinements before the integration→release promotion. Possibly also a test app (modeled on `ai-assist-image-generator`) — decision deferred; could also be built **into** the image generator. Surface as a subsequent stream once v0.1 lands.
 
 **Sequencing.** Independent of `ai-assist-thinking-events`; the two streams can run in parallel. No dependencies on in-flight work as of stream commission.
 

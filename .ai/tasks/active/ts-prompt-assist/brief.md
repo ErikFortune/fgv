@@ -36,7 +36,7 @@ These are **not** open for redesign:
 7. **Standalone package above `ts-res`.** `@fgv/ts-prompt-assist` ships as `libraries/ts-prompt-assist/`, depending on `@fgv/ts-res` (and transitively `ts-utils`, `ts-extras` for Mustache, `ts-json-base` for FileTree). Cannot fold into `ts-extras` (would create a cycle since `ts-res` depends on `ts-extras`).
 8. **Triple-brace Mustache canonical.** `{{{name}}}` in bodies; loader rejects `{{name}}` and `{{&name}}` tokens with a clear error citing the prompt id. Use `@fgv/ts-extras`'s `MustacheTemplate.create(...).validateAndRender(...)`.
 9. **Consumer-shape-agnostic.** ScopeKey is opaque; `surface` / `slot.kind` / `slot.source` are open strings narrowed by consumer-supplied descriptor Converter at load time; closed-vocabulary registrations live in registries the consumer populates at boot.
-10. **First consumer is `personaility`.** Phase A doesn't need to know personaility-specific shapes (the library is shape-agnostic), but acceptance criteria should be informed by "is this surface enough to express the listed consumer needs without forcing personaility to fork the library or pre-massage data."
+10. **First consumer is an agent chat application.** Phase A doesn't need to know the consumer's specific shapes (the library is shape-agnostic), but acceptance criteria should be informed by "is this surface enough to express the listed consumer needs without forcing the consumer to fork the library or pre-massage data."
 
 ---
 
@@ -111,6 +111,35 @@ The brief proposes `OutputContractKinds = 'free-text' | 'json'` with a comment t
 - Is the generic parameter pulling its weight at v0.1, or does it complicate the type without benefit until the second JSON variant arrives?
 - For the `'free-text'` kind: anything beyond the `kind` discriminator (e.g. character-count assertion, language tag, trailing-newline contract)? Or strictly minimal for v0.1?
 - For the `'json'` kind: is the single `converterId` enough, or should there be a stream of post-converter validators inline (e.g. `validators: ConverterId[]`) vs the current `outputValidations: ReadonlyArray<string>` on the descriptor?
+
+### OQ-6 (orchestrator-flagged): Mustache canonical form — where does "verbatim passthrough" live?
+
+The design brief asserts **triple-brace canonical** (`{{{name}}}`) for `ts-prompt-assist` bodies because Mustache's default double-brace `{{name}}` HTML-escapes (`& → &amp;`, `' → &#39;`), which is wrong for LLM prompt content. The brief's proposed approach: the descriptor loader scans for double-brace tokens and rejects them with a clear error.
+
+**Re-framing (post-orchestrator-review):** the right surface for "Mustache that passes values verbatim" is `@fgv/ts-extras`'s `MustacheTemplate`, **not** a re-implementation or separate convention in `ts-prompt-assist`. Any other consumer that builds LLM-prompt-like content would benefit from the same primitive. Re-implementing in `ts-prompt-assist` creates a stylistic divergence between the two libraries; leveling up `ts-extras` makes the no-escape pattern a first-class, documented part of the canonical Mustache surface.
+
+The current `@fgv/ts-extras/mustache` packlet uses standard mustache.js with default delimiters and default HTML-escape behavior (tests at `libraries/ts-extras/src/test/unit/mustacheTemplate.test.ts:66` confirm `tags === ['{{', '}}']`; standard escaping is in effect). Standard mustache.js does support triple-brace `{{{name}}}` as the unescaped escape-hatch, but ts-extras doesn't document or surface this as a load-bearing pattern.
+
+**Direction (orchestrator-set):** extend `@fgv/ts-extras`'s `MustacheTemplate` so verbatim-passthrough rendering is a first-class, documented capability of the canonical Mustache surface. `ts-prompt-assist` consumes the extended API rather than implementing workarounds in its own loader. Any future consumer that needs LLM-prompt-style verbatim Mustache picks up the same primitive — no stylistic divergence between libraries.
+
+**Phase A picks the API shape.** Candidate shapes:
+
+| Shape | Description |
+|---|---|
+| (a) Option on `MustacheTemplate.create` | New `escapeStrategy?: 'html' \| 'none' \| (s: string) => string` (or similar) on the create options. Default stays `'html'` for back-compat. `ts-prompt-assist` passes `'none'`. Per-template state, no global mutation. |
+| (b) Strict-passthrough mode flag | New `passthrough?: boolean` create option that (i) disables HTML escape, (ii) optionally rejects double-brace tokens at template-parse time so authors who want unescaped MUST use triple-brace. Combines escape policy with author-discipline enforcement. |
+| (c) Sibling primitive in `ts-extras/mustache` | New `PassthroughMustacheTemplate` (or `UnescapedMustacheTemplate`) class that wraps the same machinery with a different policy. More surface noise but signals intent at the type level. |
+
+**Phase A audit:**
+1. Does mustache.js (the version ts-extras depends on) expose a per-render or per-template escape configuration, or is the only knob `Mustache.escape` (global mutable)?
+2. If global-only: a sibling primitive in ts-extras (shape c) avoids global-state mutation by scoping its renders through a wrapper that sets/restores escape. Shapes (a) and (b) need similar internal discipline.
+3. If a per-template / per-render API exists: shapes (a) or (b) are clean.
+
+**Cluster-scope implication:** the `ts-prompt-assist-features` integration branch includes ts-extras `mustache` packlet changes alongside the new library. The change is **additive** to ts-extras (no removed/renamed exports), which fits the "additive change on established surface" pattern that's acceptable in the lockstep model even though ts-extras's `mustache` packlet sits on the "established/stable" surface per `ACTIVE_DEVELOPMENT.md`. Phase B implementation order: ts-extras mustache extension lands first, ts-prompt-assist consumes it.
+
+**Orchestrator's recommendation (non-binding):** shape (a) — the option on create reads cleanest at consumer call-sites and doesn't require choosing strict-passthrough as a coupled policy. Shape (b) is appropriate if phase A wants the loader-side discipline guarantee baked into the type. Shape (c) only if escape state genuinely can't be scoped without a wrapper class.
+
+This concern is the kind of thing a phase A audit catches but a "just implement the brief" stream would miss. The design brief is consumer-supplied and didn't pressure-test the choice against the existing ts-extras Mustache surface.
 
 ---
 

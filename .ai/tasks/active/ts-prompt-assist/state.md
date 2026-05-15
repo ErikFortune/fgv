@@ -30,7 +30,8 @@
 | Standalone package above `ts-res` | Folding into `ts-extras` would create a cycle (`ts-res` already depends on `ts-extras`). Confirmed in design-brief.md §"Why a separate package" |
 | Workflow shape: design-triage-implement-refine | Conceptual model is binding but data shapes are proposed; 3+ open questions warrant a phase A signoff before implementation. Consumer-port pressure-test ("refine") absorbed via integration-branch follow-up PRs |
 | Integration branch (vs direct-off-release stream) | Cluster expected to be multi-stream (library v0.1 → consumer-port refinements → possibly samples / editor UX). Long-lived branch allows v0.1 alpha + pressure-test absorption + v0.2 to ship as one cohesive merge to `release` |
-| First-consumer port = personaility | Pressure-test plan: 1–2 follow-up PRs on the integration branch absorb gaps surfaced by the port |
+| First-consumer port = an agent chat application | Pressure-test plan: 1–2 follow-up PRs on the integration branch absorb gaps surfaced by the port |
+| ts-extras `mustache` packlet is in cluster scope | Erik's direction (2026-05-13): "instead of dancing around ts-extras mustache limitations, fix ts-extras and use the fixed API." Cluster will additively extend `MustacheTemplate` to support verbatim-passthrough rendering; `ts-prompt-assist` consumes the extended API. Phase A picks the specific API shape (OQ-6 candidates a/b/c) |
 | Active surface registration | Added `ts-prompt-assist` to `.ai/instructions/ACTIVE_DEVELOPMENT.md` table (free hand on breaking changes during v0.x) |
 | Alpha target | `5.1.0-29` or later; may accumulate to `6.0` based on API-stability evidence after pressure-test |
 | Sequencing | Independent of `ai-assist-thinking-events` (queued). Streams can run in parallel; no conflicting surface |
@@ -49,6 +50,7 @@
 | OQ-3 | `watch()` semantics — include in interface? optional? full event-shape definition? | design-brief.md §"Open questions" |
 | OQ-4 | Three separate registries vs one unified `IPromptRegistry` with namespaced sub-registries | orchestrator review |
 | OQ-5 | Output-contract growth path — is the `IJsonOutputContract<TKIND>` generic pulling its weight at v0.1? | orchestrator review |
+| OQ-6 | Mustache canonical form — extend ts-extras `MustacheTemplate` for verbatim-passthrough; pick API shape (option on create / strict-passthrough mode / sibling primitive) | orchestrator review (Erik direction: extend ts-extras, don't work around it) |
 
 ### Deferred (not phase A's concern)
 
