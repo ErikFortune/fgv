@@ -107,7 +107,7 @@ Phase B implementation order: ts-extras Mustache extension lands first (B.0), th
 ## PR
 
 Substrate-prep PR: merged (#356, 2026-05-13).
-Phase A PR: TBD (pending push of `claude/ts-prompt-assist-phase-a-Y8JIM` → `claude/ts-prompt-assist-features`).
+Phase A PR: https://github.com/ErikFortune/fgv/pull/357 (`claude/ts-prompt-assist-phase-a-Y8JIM` → `claude/ts-prompt-assist-features`).
 
 ---
 
