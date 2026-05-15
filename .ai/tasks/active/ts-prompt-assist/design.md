@@ -1279,7 +1279,212 @@ them.
 
 ---
 
-## 15. New questions surfaced (none binding-blocking)
+## 15. ts-res `import` packlet audit — deliberate divergence
+
+Phase A re-audit (post-orchestrator prompt) of the loader design against
+`libraries/ts-res/src/packlets/import/`. Verdict: **partial overlap; the
+loader does NOT reinvent ts-res import — they target different access
+patterns and shapes. The lower-level primitives ts-res import depends on
+are the right reuse target.** Divergence is deliberate; rationale below.
+
+### 15.1 What ts-res `import` is
+
+Read `importManager.ts`, `importable.ts`, `fsItem.ts`,
+`importers/{pathImporter,fsItemImporter,jsonImporter,collectionImporter}.ts`.
+The import packlet is a **builder pipeline** that ingests sources of
+several types — `'path'`, `'fsItem'`, `'json'`, `'resourceCollection'`,
+`'resourceTree'` — into a `ResourceManagerBuilder`. Pipeline shape:
+
+1. `PathImporter` — given a path string + `FileTree`, walks the tree,
+   emits `IImportableFsItem` per file.
+2. `FsItemImporter` — given an `FsItem` (which has already parsed
+   condition tokens out of the filename, e.g. `greeting.lang-en.yaml`
+   → `baseName: 'greeting'`, `conditions: [{lang: 'en'}]`), reads the
+   file, optionally runs a `fileContentConverter: Converter<JsonValue>`
+   over the raw content (this is the YAML-to-JSON seam), emits
+   `IImportableJson`.
+3. `JsonImporter` — converts the JSON into ts-res `ResourceDeclTree` /
+   `ResourceDeclCollection` shapes.
+4. `CollectionImporter` — adds the decls into the
+   `ResourceManagerBuilder`.
+
+The whole pipeline is **builder-oriented**: push N sources in,
+`ResourceManagerBuilder` accumulates, then `ResourceManager.create()`
+freezes it. There is no per-scope segmentation; ts-res's
+`ResourceManager` is global to the build.
+
+### 15.2 What ts-prompt-assist's `FileTreePromptStore` needs
+
+Different shape, different access pattern:
+
+1. **Access is lookup-oriented**, not build-oriented. `IPromptStore` is
+   `get(scope, id)` / `list(filter)` / `getBindings(scope)` /
+   `getQualifierAxes(scope)`. The store does not own a
+   `ResourceManagerBuilder`; it owns per-(scope, id) records.
+2. **Data shape is broader than ts-res candidates**. Each YAML file
+   contains prompt-specific metadata (title, slots, output contract,
+   safeguards, examples, output validations) that ts-res does not
+   model, **plus** the candidates array (`{conditions, body}` pairs)
+   which IS ts-res-shaped. The candidate sub-shape is a subset of
+   `ResourceJson.ResourceDeclCollection`; the descriptor metadata
+   has no ts-res analogue.
+3. **Per-scope segmentation is first-class**. The chain walker
+   consults scope records in order. A scope is a distinct directory
+   under `<root>/`; conceptually each scope is its own resource set.
+   ts-res import has no notion of scope-scoped builders.
+4. **Filename conventions differ**. ts-res's `FsItem` parses condition
+   tokens **out of the filename** (e.g. `.lang-en.yaml` → a
+   condition). ts-prompt-assist puts conditions **inside** the YAML
+   as a per-candidate `conditions:` block (one file per `(scope, id)`,
+   N candidates within). Filename in ts-prompt-assist carries only the
+   prompt id, plus the reserved `_bindings` / `_qualifiers` records.
+
+### 15.3 Where the overlap genuinely IS, and how to handle it
+
+The overlap is at the **lower-level primitives**, not at the
+ImportManager pipeline:
+
+| Need | ts-res import's path | Right primitive for ts-prompt-assist |
+|---|---|---|
+| Walk a `FileTree` | `PathImporter` (wraps `FileTree`) | `FileTree` from `@fgv/ts-json-base` **directly** (per `/filetree-io` skill) |
+| Read a file, parse YAML → typed value | `FsItemImporter` + a `fileContentConverter` | `@fgv/ts-extras`'s **`yaml.yamlConverter<T>(inner)`** (resolves NQ-2) |
+| JSON → ts-res candidate decls | `JsonImporter` + `ResourceJson` converters | **Reuse `ResourceJson.ResourceDeclCollection` converters** for the candidates sub-shape only (see §15.5) |
+| Build a ts-res ResourceManager for candidate selection | `CollectionImporter` → `ResourceManagerBuilder` | **Phase B integration question — see §15.5 / NQ-5 below** |
+
+**Concretely, `FileTreePromptStore` consumes:**
+
+- `FileTree` directly (not via `PathImporter`).
+- `@fgv/ts-extras`'s `yaml.yamlConverter<IStoredPromptRecord>(promptRecordConverter)`
+  to read each `<prompt-id>.yaml` and produce a typed record in one shot.
+  This resolves NQ-2: no new direct `js-yaml` dep; the ts-extras `yaml`
+  packlet is the canonical primitive (per `/published-primitives-reflex`).
+- `@fgv/ts-extras`'s `yaml.yamlConverter<IScopeSlotBindingsRecord>(...)`
+  for `_bindings.yaml`.
+- `@fgv/ts-extras`'s `yaml.yamlConverter<...axes...>(...)` for
+  `_qualifiers.yaml`.
+
+**`FileTreePromptStore` does NOT instantiate `ImportManager`,
+`PathImporter`, `FsItemImporter`, `JsonImporter`, or
+`CollectionImporter`.** The ImportManager pipeline is the wrong shape:
+its output target is a `ResourceManagerBuilder`, not a lookup-oriented
+store keyed by `(scope, id)`. Forcing the prompt-store data into the
+import pipeline would require either:
+
+- Inventing a new `IImporter` whose target is "a `(scope, id) →
+  IStoredPromptRecord` map" — which is just `FileTreePromptStore`
+  itself wearing a hat. No reuse.
+- Discarding the descriptor metadata, slots, output contract, bindings,
+  axes (everything that's not ts-res candidates). The import pipeline
+  has no slot for these.
+- Adopting the filename-token convention for conditions, which breaks
+  the YAML schema locked in §5.3 and forces filename-encoded conditions
+  (per-candidate `conditions:` blocks become impossible; only one
+  candidate per file via filename tokens).
+
+None of these are wins.
+
+### 15.4 Deliberate divergence — recorded rationale
+
+| Divergence | Rationale |
+|---|---|
+| `FileTreePromptStore` uses `FileTree` directly, not `PathImporter` | `PathImporter` is glue between a path string and an `IImportableFsItem` queue. ts-prompt-assist's store iterates known directory shapes (`<scope>/<id>.yaml`) and has no need for the queue / dispatch indirection. |
+| `FileTreePromptStore` uses `@fgv/ts-extras/yaml.yamlConverter` directly, not `FsItemImporter`'s `fileContentConverter` seam | Same primitive, lower coupling. The `fileContentConverter` exists in `FsItemImporter` precisely so YAML can be plumbed into the import pipeline; in ts-prompt-assist we want YAML→typed-record without the pipeline. |
+| Per-candidate `conditions:` block in YAML, not filename-encoded conditions | One YAML file per `(scope, id)` co-locates descriptor + all candidates (round-trip-friendly across FileTree / SQL / Mongo). Filename-encoded conditions force one-candidate-per-file and lose round-tripping through key/value backends. The descriptor needs to travel with the candidates. |
+| `IPromptStore.get(scope, id)` instead of building a global ts-res `ResourceManager` at store creation | Per-scope segmentation is first-class to the conceptual model. A single global ResourceManager cannot represent the scope chain — the chain walker needs distinct per-scope record sets. |
+| No reuse of `ImportManager` / `CollectionImporter` | They target `ResourceManagerBuilder`, not the prompt-store's `(scope, id) → record` map. See §15.3. |
+
+This divergence aligns with `/published-primitives-reflex`: we are NOT
+reimplementing utility-shaped code (FileTree walking, YAML parsing, ts-
+res candidate decl validation). We ARE refusing to adopt a builder-
+pipeline framing that doesn't fit the store's access pattern.
+
+### 15.5 Candidate → ts-res resolve handoff (new question NQ-5)
+
+The audit DID surface a real gap in the design: §10 says "library calls
+ts-res's best-match candidate selector / all-matching candidate
+selector" without specifying **how the candidates loaded from a store
+record cross into ts-res's resolve machinery**. Two viable architectures:
+
+**Option A — per-record ts-res `Resource` constructed at resolve time.**
+`PromptLibrary.resolve` receives `IStoredPromptRecord` from the store,
+constructs a transient ts-res `Resource` (or equivalent in-memory
+candidate set) from `record.candidates`, and calls ts-res's resolve
+APIs against it. Cleaner separation; per-resolve construction cost
+(mitigated by caching keyed by record identity).
+
+**Option B — store eagerly materializes a ts-res `ResourceManager` per
+scope.** `FileTreePromptStore.create` walks the tree, ingests
+candidates into per-scope `ResourceManagerBuilder` instances (here
+ts-res import's `CollectionImporter` IS the right primitive, scoped per
+scope-directory), and `IStoredPromptRecord.candidates` is replaced by
+a `ResourceJson.ResourceDeclCollection` (or the constructed
+`Resource`) the store hands back. More up-front cost; less per-resolve
+work; uses ts-res import for the bit it IS shaped for.
+
+**Phase A recommendation: Option A for v0.1.** Rationale:
+
+- Keeps `IPromptStore` purely data — implementations don't need to know
+  about ts-res `ResourceManagerBuilder`. The brief's binding rule "SQL
+  / Mongo adapters drop in later — interface design must enable this"
+  is much easier to satisfy if the store returns plain JSON-shaped
+  records than if it returns ts-res constructed objects.
+- Per-resolve construction is bounded — caching by
+  `(scope, id, record-hash)` (via `Crc32Normalizer.computeHash`)
+  caps the cost; the existing `templateCacheSize` LRU pattern extends
+  naturally to a candidate-set cache.
+- Easier to evolve to Option B later (the store interface stays the
+  same; only `PromptLibrary` internals change).
+
+**Concrete handoff for phase B:** `PromptLibrary.resolve` calls a
+private `_resolveCandidates(record, qualifiers)` helper that:
+
+1. Looks up a cached `Resource` (or candidate-set) keyed by
+   `(scope, id, Crc32Normalizer.computeHash(record.candidates))`.
+2. On cache miss: validates `record.candidates` via the appropriate
+   `ResourceJson` converters (this IS a reuse of ts-res — the
+   `ResourceJson` converters in `libraries/ts-res/src/packlets/
+   resource-json/convert.ts` are the canonical decl-shape Converters)
+   and constructs the ts-res resolve unit. Cache the result.
+3. Returns the candidate(s) selected per `descriptor.compositionMode`.
+
+**Phase B verifies the exact ts-res resolve API to call.** The brief
+says `resolveResource` (`single-best`) and `resolveAllResourceCandidates`
+(`concat-fragments`); phase B confirms the actual function names and
+shapes in `libraries/ts-res/src/packlets/resources/` and adjusts.
+If the appropriate API is not yet public on `ts-res`, phase B
+surfaces the gap (additive export from ts-res is in cluster scope as
+per the active-development surface for `ts-prompt-assist`'s needs;
+explicitly NOT in scope: breaking changes to ts-res).
+
+**NQ-5 (recorded in state.md):** "exact ts-res resolve API surface
+consumed by `PromptLibrary._resolveCandidates`; verify the public
+exports exist or surface the additive gap."
+
+### 15.6 Adjustments to earlier sections
+
+The audit reveals these clarifications to lock now (no contradiction
+with prior sections; just sharpening):
+
+- **§5.1 `FileTreePromptStore` implementation note:** YAML parsing is
+  via `@fgv/ts-extras`'s `yaml.yamlConverter<T>(inner)` packlet, NOT
+  via a new `js-yaml` direct dep and NOT via ts-res `import`'s
+  `fileContentConverter` seam. Update the `js-yaml` "phase B
+  surfaces" caveat in §11.2 — **NQ-2 is resolved here: use the
+  ts-extras `yaml` packlet.**
+- **§10 composition semantics, new sub-bullet:** the candidate-to-
+  ts-res handoff is **Option A** per §15.5. The store returns plain
+  `IStoredPromptRecord`; `PromptLibrary` constructs ts-res resolve
+  data structures per-resolve, cached.
+- **§3.12 `IStoredPromptRecord.candidates`:** remains
+  `ReadonlyArray<IPromptCandidateRecord>` (plain JSON-shaped); does
+  NOT become a ts-res `Resource` or `ResourceDeclCollection` on the
+  store surface. The library does the lifting at resolve time.
+- **§11.2 dependencies:** `@fgv/ts-extras`'s `yaml` packlet is the
+  YAML loader. No new direct `js-yaml` dep.
+
+---
+
+## 16. New questions surfaced (none binding-blocking)
 
 These are minor; phase B can either decide or surface to the
 orchestrator as they arise. None gate the design lock.
@@ -1289,9 +1494,10 @@ orchestrator as they arise. None gate the design lock.
   this is a stable public export; if it's currently `internal`, phase
   B either promotes it (additive in ts-extras) or inlines minimally
   with a `TECH_DEBT.md` entry.
-- **YAML loader dep.** §11.2 documents — phase B verifies
-  `@fgv/ts-json-base/json-file` covers YAML; if not, adding `js-yaml`
-  is a new direct dep and phase B surfaces.
+- **~~YAML loader dep~~** — **resolved by §15 audit.** Use
+  `@fgv/ts-extras`'s `yaml` packlet (`yamlConverter<T>(inner)`). No
+  new direct `js-yaml` dep; ts-extras already wraps it as the
+  canonical primitive.
 - **`IFileTreeItem` exact import path.** §5.1 sketches the type from
   `@fgv/ts-json-base/file-tree`. Phase B verifies the exact exported
   symbol name and adjusts.
@@ -1300,3 +1506,11 @@ orchestrator as they arise. None gate the design lock.
   `Result`), `.create()` is the standard fallible factory and matches
   the family convention. Phase B may collapse to just `.create()` if
   the infallible path turns out to never be needed. Default keep both.
+- **NQ-5: ts-res resolve API surface for candidate selection.** §15.5
+  pins Option A (per-resolve construction) and identifies the reuse
+  point: `ResourceJson`'s candidate-decl Converters from
+  `libraries/ts-res/src/packlets/resource-json/convert.ts`. Phase B
+  verifies the exact public exports (`resolveResource` /
+  `resolveAllResourceCandidates` per brief; confirm names). If the
+  required public surface doesn't exist, additive export from
+  ts-res is in cluster scope; ts-res breaking changes are NOT.

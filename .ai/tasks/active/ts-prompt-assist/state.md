@@ -77,9 +77,28 @@
 | ID | Question | Where it lives |
 |---|---|---|
 | NQ-1 | `extractJsonText` export status from `@fgv/ts-extras/ai-assist` — currently public or internal? | design.md §8 step 1; phase B verifies / promotes |
-| NQ-2 | YAML loader: does `@fgv/ts-json-base/json-file` already cover it, or does phase B need to add `js-yaml`? | design.md §11.2; phase B surfaces if new dep needed |
+| ~~NQ-2~~ | ~~YAML loader~~ — **RESOLVED by §15 import-packlet audit.** Use `@fgv/ts-extras`'s `yaml.yamlConverter<T>(inner)`. No new direct `js-yaml` dep. | design.md §15.3 |
 | NQ-3 | Exact `IFileTreeItem` import path/symbol from `@fgv/ts-json-base/file-tree` | design.md §5.1; phase B verifies |
 | NQ-4 | `PromptRegistry.empty()` infallible factory — keep alongside `.create()` or collapse? | design.md §4.3; default: keep both for v0.1 |
+| NQ-5 | Exact ts-res resolve API surface consumed by `PromptLibrary._resolveCandidates` — verify `resolveResource` / `resolveAllResourceCandidates` (or equivalents) are public; if not, additive ts-res export is in cluster scope | design.md §15.5 |
+
+## Phase A re-audit: ts-res `import` packlet (2026-05-15, addendum)
+
+Triggered by orchestrator prompt asking whether the loader reinvents ts-res's import packlet.
+
+**Verdict:** partial overlap; **the loader does NOT reinvent ts-res import**. They target different access patterns (lookup vs build), different data shapes (descriptors + bindings + axes + candidates vs ts-res `ResourceManagerBuilder`-targeted decls), and different filename conventions (per-candidate `conditions:` blocks in YAML vs ts-res's filename-token-encoded conditions). The reuse target is the **lower-level primitives** ts-res import depends on, not the ImportManager pipeline itself.
+
+**Recorded divergence (design.md §15):**
+
+- `FileTreePromptStore` uses `FileTree` directly (not `PathImporter`).
+- YAML parsing via `@fgv/ts-extras`'s `yaml.yamlConverter<T>` (not via `FsItemImporter`'s `fileContentConverter` seam).
+- One YAML file per `(scope, id)` with descriptor + all candidates co-located; conditions inline per candidate (not filename-encoded).
+- `IPromptStore.get(scope, id)` lookup-oriented (not a global `ResourceManagerBuilder`).
+- No use of `ImportManager` / `CollectionImporter` (their target shape is wrong).
+
+**Gap surfaced and pinned:** the candidate→ts-res-resolve handoff (NQ-5) was underspecified in earlier drafts. Now locked: **Option A** (per-resolve ts-res construction, cached by `(scope, id, Crc32Normalizer.computeHash(candidates))`). The `ResourceJson` candidate-decl Converters in ts-res are the reuse point for validating candidates into ts-res's shape. Phase B confirms exact public exports.
+
+**Resolved NQ-2:** YAML loader is the existing `@fgv/ts-extras/yaml` packlet, not a new `js-yaml` direct dep. Per `/published-primitives-reflex`.
 
 ## Cluster-scope summary (for orchestrator)
 
