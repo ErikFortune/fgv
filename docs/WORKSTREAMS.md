@@ -128,6 +128,41 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `ts-prompt-assist` 🟢
+
+**Status:** 🟢 phase A (research + design) ready to start
+**Cluster:** `ts-prompt-assist-features` (integration branch `claude/ts-prompt-assist-features` off `release`)
+**Workflow shape:** design-triage-implement-refine (single-stream new-library; consumer-port pressure-test absorbed via follow-up PRs on the same integration branch)
+**Phase A artifacts:** `.ai/tasks/active/ts-prompt-assist/{brief.md, design-brief.md, state.md}` → produces `design.md`
+**Package surface (new):** `@fgv/ts-prompt-assist` (new library; placement `libraries/ts-prompt-assist/`)
+**Package surface (extended):** `@fgv/ts-extras/mustache` — additive extension to `MustacheTemplate` to support verbatim-passthrough rendering (see brief.md OQ-6). Cluster touches this packlet so `ts-prompt-assist` consumes a first-class API rather than implementing workarounds. Additive only (no removed/renamed exports), preserving the established-surface compatibility contract.
+**Library dep graph:** depends on `@fgv/ts-utils`, `@fgv/ts-res`, `@fgv/ts-extras` (`MustacheTemplate`), `@fgv/ts-json-base` (FileTree). Sits above `ts-res` in the dep graph — folding into `ts-extras` would create a cycle, hence the standalone-package decision.
+**Out-of-scope (this stream):** SQL/Mongo store adapters; editor UI; samples app; LLM-call orchestration; anti-jailbreak text content; schema-version migration; sudoku packages.
+
+**Mission.** Ship `@fgv/ts-prompt-assist` v0.1: ts-res-driven prompt resolution with Mustache substitution as a reusable capability. Consumers bring their own scope model, actor types, prompt content; the library provides the resolution machinery, type system, descriptor schema, storage abstraction, and LLM-prompt safeguards. Mental model: every consumer surface that calls an LLM with a prompt does **lookup** (qualifier-conditioned variant selection) then **compose** (Mustache substitution); the library standardizes both halves.
+
+**Binding conceptual model** (per the consumer-supplied design brief at `.ai/tasks/active/ts-prompt-assist/design-brief.md`):
+1. Lookup-then-compose
+2. Scope-chain walking with bindings (most-specific wins; `enforced` lock; caller subs override merged bindings except enforced)
+3. Open qualifier metadata (`required` / `expected` / `disallowed`, never closed enums per descriptor)
+4. Resource bindings as first-class (recursive resolve with cycle detection + depth cap; enables shared sub-prompts)
+5. Output validation library-side (strip fences → parse JSON → Converter → registered validators)
+6. Storage-agnostic via `IPromptStore`; FileTree adapter canonical for v0.1; in-memory for tests
+
+The data-structure specifics in the design brief are **proposed** — phase A locks the shape and resolves the three open questions (scope encoding flexibility, resource-binding substitution merge semantics, `watch()` semantics).
+
+**Origin.** Consumer-driven feature request. Pattern emerged from observation that two in-codebase prompt libraries had reinvented the same machinery with subtly different policies; tenant-level visual/brand-style override has no canonical home; variation prompts hit-or-miss across surfaces. Generalizing the resolution machinery gives operators one mental model.
+
+**First consumer / pressure-test plan.** The first consumer is an agent chat application that will port an existing in-codebase prompt resolution implementation to consume this library. Pressure-test surfaces API gaps; 1–2 follow-up PRs on the integration branch absorb refinements before the integration→release promotion. Possibly also a test app (modeled on `ai-assist-image-generator`) — decision deferred; could also be built **into** the image generator. Surface as a subsequent stream once v0.1 lands.
+
+**Sequencing.** Independent of `ai-assist-thinking-events`; the two streams can run in parallel. No dependencies on in-flight work as of stream commission.
+
+**Alpha target.** `5.1.0-29` or later; stream may accumulate to `6.0` depending on API-stability evidence after pressure-test. Stable cut is gated on consumer-port settling, not calendar.
+
+**Future streams (queued; not commissioned):**
+- `ts-prompt-assist-samples` — sample/test app demonstrating end-to-end usage (might be standalone OR merged into `ai-assist-image-generator`)
+- `ts-prompt-assist-editor-ui` — generic editor UX for prompt editing (decide whether to make consumer-shape-agnostic vs require consumer-side implementation; UX is complex enough that sharing would be valuable, but the consumer-specific surfaces may make full generalization impractical). See `docs/FUTURE.md`.
+
 ### `ai-assist-thinking-events` 🟡
 
 **Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands (now satisfied; ai-assist cluster shipped via #336)
