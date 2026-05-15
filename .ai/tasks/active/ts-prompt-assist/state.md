@@ -1,7 +1,7 @@
 # Stream State: ts-prompt-assist
 
-**Status:** 🟢 phase A drafted — `design.md` locked; PR pending
-**Last updated:** 2026-05-15 (phase A agent — design lock)
+**Status:** 🟢 phase A signed off + merged; phase B ready to start
+**Last updated:** 2026-05-15 (orchestrator — phase B brief authored)
 
 ---
 
@@ -9,9 +9,9 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| A — research and design | 🟢 drafted | `design.md` locked; OQ-1 through OQ-6 resolved; PR pending against `claude/ts-prompt-assist-features` |
-| B — implementation | ⏸ blocked on phase A signoff | Brief to be authored by orchestrator post-triage |
-| Refine — consumer-port pressure-test | ⏸ blocked on phase B publish | personaility port surfaces gaps; 1–2 follow-up PRs absorb refinements before integration→release promotion |
+| A — research and design | ✅ done | `design.md` merged into `claude/ts-prompt-assist-features` via [#357](https://github.com/ErikFortune/fgv/pull/357). All 6 OQs resolved with rationale; new §15 documents ts-res `import` packlet audit (deliberate divergence) and locks the Option C candidate→ts-res handoff strategy. |
+| B — implementation | 🟢 ready | `brief-phase-b.md` is the binding phase B contract; assignable to implementing agent. Recommended sub-phasing per design §14: B.0 ts-extras additive extensions → B.1 types + happy-path resolve → B.2 resource bindings → B.3 FileTreePromptStore + YAML → B.4 output validation → B.5 safeguards → B.6 docs + api-extractor + change files |
+| Refine — consumer-port pressure-test | ⏸ blocked on phase B publish | First-consumer port (an agent chat application) surfaces gaps; 1–2 follow-up PRs on the integration branch absorb refinements before integration→release promotion |
 
 ---
 
