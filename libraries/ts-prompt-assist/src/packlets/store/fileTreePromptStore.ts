@@ -163,11 +163,13 @@ export class FileTreePromptStore implements IPromptStore {
 
   /** {@inheritDoc IPromptStore.list} */
   public async list(filter?: IPromptStoreListFilter): Promise<Result<ReadonlyArray<IStoredPromptRecord>>> {
-    const rootDirResult = this._root.getDirectory('.');
+    const rootDirResult = this._root.getDirectory('/');
+    /* c8 ignore next 3 - defensive coding: root directory should always be accessible */
     if (rootDirResult.isFailure()) {
       return fail(`list: ${rootDirResult.message}`);
     }
     const childrenResult = rootDirResult.value.getChildren();
+    /* c8 ignore next 3 - defensive coding: root directory children should always be listable */
     if (childrenResult.isFailure()) {
       return fail(`list: ${childrenResult.message}`);
     }
@@ -183,9 +185,11 @@ export class FileTreePromptStore implements IPromptStore {
       if (filter?.scope !== undefined && filter.scope !== scope) continue;
 
       const subDirResult = this._root.getDirectory(child.absolutePath);
+      /* c8 ignore next 1 - defensive coding: subdirectory should always be accessible */
       if (subDirResult.isFailure()) continue;
 
       const filesResult = subDirResult.value.getChildren();
+      /* c8 ignore next 1 - defensive coding: subdirectory children should always be listable */
       if (filesResult.isFailure()) continue;
 
       for (const file of filesResult.value) {

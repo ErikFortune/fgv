@@ -21,13 +21,14 @@
  */
 
 import '@fgv/ts-utils-jest';
-// eslint-disable-next-line import/no-internal-modules
 import { Convert } from '../../../../packlets/types/ids';
 
 describe('Convert namespace (branded id converters)', () => {
   describe('Convert.promptId', () => {
     test('converts a valid string to PromptId', () => {
-      expect(Convert.promptId.convert('my-prompt')).toSucceedWith('my-prompt');
+      expect(Convert.promptId.convert('my-prompt')).toSucceedAndSatisfy((id) => {
+        expect(id as string).toBe('my-prompt');
+      });
     });
 
     test('fails on non-string input', () => {
@@ -45,7 +46,9 @@ describe('Convert namespace (branded id converters)', () => {
 
   describe('Convert.slotName', () => {
     test('converts a valid string to SlotName', () => {
-      expect(Convert.slotName.convert('user-name')).toSucceedWith('user-name');
+      expect(Convert.slotName.convert('user-name')).toSucceedAndSatisfy((name) => {
+        expect(name as string).toBe('user-name');
+      });
     });
 
     test('fails on non-string input', () => {
@@ -55,7 +58,9 @@ describe('Convert namespace (branded id converters)', () => {
 
   describe('Convert.resourceId', () => {
     test('converts a valid string to ResourceId', () => {
-      expect(Convert.resourceId.convert('res-123')).toSucceedWith('res-123');
+      expect(Convert.resourceId.convert('res-123')).toSucceedAndSatisfy((id) => {
+        expect(id as string).toBe('res-123');
+      });
     });
 
     test('fails on non-string input', () => {
@@ -65,7 +70,9 @@ describe('Convert namespace (branded id converters)', () => {
 
   describe('Convert.converterId', () => {
     test('converts a valid string to ConverterId', () => {
-      expect(Convert.converterId.convert('json-converter')).toSucceedWith('json-converter');
+      expect(Convert.converterId.convert('json-converter')).toSucceedAndSatisfy((id) => {
+        expect(id as string).toBe('json-converter');
+      });
     });
 
     test('fails on non-string input', () => {
@@ -75,7 +82,9 @@ describe('Convert namespace (branded id converters)', () => {
 
   describe('Convert.serializerId', () => {
     test('converts a valid string to SerializerId', () => {
-      expect(Convert.serializerId.convert('my-serializer')).toSucceedWith('my-serializer');
+      expect(Convert.serializerId.convert('my-serializer')).toSucceedAndSatisfy((id) => {
+        expect(id as string).toBe('my-serializer');
+      });
     });
 
     test('fails on non-string input', () => {
@@ -85,7 +94,9 @@ describe('Convert namespace (branded id converters)', () => {
 
   describe('Convert.validatorId', () => {
     test('converts a valid string to ValidatorId', () => {
-      expect(Convert.validatorId.convert('schema-validator')).toSucceedWith('schema-validator');
+      expect(Convert.validatorId.convert('schema-validator')).toSucceedAndSatisfy((id) => {
+        expect(id as string).toBe('schema-validator');
+      });
     });
 
     test('fails on non-string input', () => {
@@ -95,7 +106,9 @@ describe('Convert namespace (branded id converters)', () => {
 
   describe('Convert.axisName', () => {
     test('converts a valid string to AxisName', () => {
-      expect(Convert.axisName.convert('language')).toSucceedWith('language');
+      expect(Convert.axisName.convert('language')).toSucceedAndSatisfy((name) => {
+        expect(name as string).toBe('language');
+      });
     });
 
     test('fails on non-string input', () => {
@@ -105,7 +118,9 @@ describe('Convert namespace (branded id converters)', () => {
 
   describe('Convert.scopeKey', () => {
     test('converts a valid string to ScopeKey', () => {
-      expect(Convert.scopeKey.convert('global')).toSucceedWith('global');
+      expect(Convert.scopeKey.convert('global')).toSucceedAndSatisfy((key) => {
+        expect(key as string).toBe('global');
+      });
     });
 
     test('fails on non-string input', () => {

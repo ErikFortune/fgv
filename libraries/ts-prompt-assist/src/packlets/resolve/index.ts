@@ -153,7 +153,7 @@ export class PromptLibrary {
 
     const record: IStoredPromptRecord = winningRecord;
     const descriptor: IPromptDescriptor = record.descriptor;
-    const tsResKey = `${winningScope}::${req.id}`;
+    const tsResKey = `${winningScope as string}.${req.id as string}`;
 
     // Step 3: Register candidates in builder (if not already registered).
     if (!this._registeredKeys.has(tsResKey)) {
@@ -162,7 +162,8 @@ export class PromptLibrary {
           id: tsResKey,
           json: { body: candidate.body },
           conditions: candidate.conditions as ResourceJson.Json.ConditionSetDecl,
-          isPartial: candidate.isPartial ?? false
+          isPartial: candidate.isPartial ?? false,
+          resourceTypeName: 'json'
         };
         const addResult = this._builder.addLooseCandidate(decl);
         if (addResult.isFailure()) {

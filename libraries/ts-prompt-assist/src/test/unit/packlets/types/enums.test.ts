@@ -21,7 +21,6 @@
  */
 
 import '@fgv/ts-utils-jest';
-// eslint-disable-next-line import/no-internal-modules
 import {
   allSlotBindingKindValues,
   slotBindingKindConverter,
