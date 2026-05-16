@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Converters } from '@fgv/ts-utils';
+import { Converter, Converters } from '@fgv/ts-utils';
 
 /**
  * Discriminator for slot binding kinds.
@@ -38,7 +38,8 @@ export const allSlotBindingKindValues: ReadonlyArray<SlotBindingKind> = ['litera
  * Converts an unknown value to a {@link SlotBindingKind}.
  * @public
  */
-export const slotBindingKindConverter = Converters.enumeratedValue<SlotBindingKind>(allSlotBindingKindValues);
+export const slotBindingKindConverter: Converter<SlotBindingKind> =
+  Converters.enumeratedValue<SlotBindingKind>(allSlotBindingKindValues);
 
 /**
  * Directive that describes how a slot binding should be interpreted.
@@ -56,7 +57,8 @@ export const allSlotDirectiveValues: ReadonlyArray<SlotDirective> = ['constraint
  * Converts an unknown value to a {@link SlotDirective}.
  * @public
  */
-export const slotDirectiveConverter = Converters.enumeratedValue<SlotDirective>(allSlotDirectiveValues);
+export const slotDirectiveConverter: Converter<SlotDirective> =
+  Converters.enumeratedValue<SlotDirective>(allSlotDirectiveValues);
 
 /**
  * Controls which scopes may write a slot binding.
@@ -78,7 +80,8 @@ export const allSlotWritabilityValues: ReadonlyArray<SlotWritability> = [
  * Converts an unknown value to a {@link SlotWritability}.
  * @public
  */
-export const slotWritabilityConverter = Converters.enumeratedValue<SlotWritability>(allSlotWritabilityValues);
+export const slotWritabilityConverter: Converter<SlotWritability> =
+  Converters.enumeratedValue<SlotWritability>(allSlotWritabilityValues);
 
 /**
  * Discriminates prompt output kinds.
@@ -96,7 +99,7 @@ export const allOutputContractKindValues: ReadonlyArray<OutputContractKind> = ['
  * Converts an unknown value to an {@link OutputContractKind}.
  * @public
  */
-export const outputContractKindConverter =
+export const outputContractKindConverter: Converter<OutputContractKind> =
   Converters.enumeratedValue<OutputContractKind>(allOutputContractKindValues);
 
 /**
@@ -118,9 +121,8 @@ export const allResourceSubstitutionModeValues: ReadonlyArray<ResourceSubstituti
  * Converts an unknown value to a {@link ResourceSubstitutionMode}.
  * @public
  */
-export const resourceSubstitutionModeConverter = Converters.enumeratedValue<ResourceSubstitutionMode>(
-  allResourceSubstitutionModeValues
-);
+export const resourceSubstitutionModeConverter: Converter<ResourceSubstitutionMode> =
+  Converters.enumeratedValue<ResourceSubstitutionMode>(allResourceSubstitutionModeValues);
 
 /**
  * Disposition for suspicious-pattern safeguard findings.
@@ -159,6 +161,5 @@ export const allPromptStoreEventKindValues: ReadonlyArray<PromptStoreEventKind> 
  * Converts an unknown value to a {@link PromptStoreEventKind}.
  * @public
  */
-export const promptStoreEventKindConverter = Converters.enumeratedValue<PromptStoreEventKind>(
-  allPromptStoreEventKindValues
-);
+export const promptStoreEventKindConverter: Converter<PromptStoreEventKind> =
+  Converters.enumeratedValue<PromptStoreEventKind>(allPromptStoreEventKindValues);

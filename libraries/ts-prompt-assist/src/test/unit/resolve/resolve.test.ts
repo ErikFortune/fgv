@@ -22,9 +22,9 @@
 
 import '@fgv/ts-utils-jest';
 import { Converters } from '@fgv/ts-utils';
-import { PromptLibrary } from '../../../../packlets/resolve';
-import { PromptStoreFixture } from '../../../../packlets/store/promptStoreFixture';
-import { PromptRegistry } from '../../../../packlets/registry';
+import { PromptLibrary } from '../../../packlets/resolve';
+import { PromptStoreFixture } from '../../../packlets/store';
+import { PromptRegistry } from '../../../packlets/registry';
 import type {
   IStoredPromptRecord,
   IScopeSlotBindingsRecord,
@@ -32,7 +32,7 @@ import type {
   PromptId,
   ScopeKey,
   SlotName
-} from '../../../../packlets/types';
+} from '../../../packlets/types';
 
 const globalScope = 'global' as unknown as ScopeKey;
 const tenantScope = 'tenant-a' as unknown as ScopeKey;
@@ -445,7 +445,7 @@ describe('PromptLibrary', () => {
 
   describe('resolveAndValidateOutput', () => {
     let library: PromptLibrary;
-    const testConverterId = 'test-conv' as unknown as import('../../../../packlets/types').ConverterId;
+    const testConverterId = 'test-conv' as unknown as import('../../../packlets/types').ConverterId;
 
     beforeEach(async () => {
       const store = PromptStoreFixture.build({

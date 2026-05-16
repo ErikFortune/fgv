@@ -22,12 +22,12 @@
 
 import '@fgv/ts-utils-jest';
 import { Converters, fail, succeed } from '@fgv/ts-utils';
-import { processOutput } from '../../../../packlets/output';
-import { PromptRegistry } from '../../../../packlets/registry';
-import type { IPromptDescriptor } from '../../../../packlets/types';
-import type { ConverterId, PromptId, SlotName, ValidatorId } from '../../../../packlets/types';
-import type { IPromptRegistry } from '../../../../packlets/registry';
-import type { IOutputValidationContext } from '../../../../packlets/registry';
+import { processOutput } from '../../../packlets/output';
+import { PromptRegistry } from '../../../packlets/registry';
+import type { IPromptDescriptor } from '../../../packlets/types';
+import type { ConverterId, PromptId, SlotName, ValidatorId } from '../../../packlets/types';
+import type { IPromptRegistry } from '../../../packlets/registry';
+import type { IOutputValidationContext } from '../../../packlets/registry';
 
 const testId = 'test-prompt' as unknown as PromptId;
 const testConverterId = 'my-converter' as unknown as ConverterId;
@@ -36,7 +36,7 @@ const testValidatorId = 'my-validator' as unknown as ValidatorId;
 function makeContext(): IOutputValidationContext {
   return {
     promptId: testId,
-    substitutions: new Map<SlotName, import('../../../../packlets/types').IBindingTraceEntry>()
+    substitutions: new Map<SlotName, import('../../../packlets/types').IBindingTraceEntry>()
   };
 }
 

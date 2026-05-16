@@ -21,8 +21,8 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { storedPromptRecordConverter } from '../../../../packlets/converters/descriptorConverter';
-import type { PromptId, ScopeKey } from '../../../../packlets/types';
+import { storedPromptRecordConverter } from '../../../packlets/converters';
+import type { PromptId, ScopeKey } from '../../../packlets/types';
 
 const testScope = 'global' as unknown as ScopeKey;
 const testId = 'greet' as unknown as PromptId;

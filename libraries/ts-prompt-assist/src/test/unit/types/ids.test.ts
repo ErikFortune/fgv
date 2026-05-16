@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Convert } from '../../../../packlets/types/ids';
+import { Convert } from '../../../packlets/types';
 
 describe('Convert namespace (branded id converters)', () => {
   describe('Convert.promptId', () => {

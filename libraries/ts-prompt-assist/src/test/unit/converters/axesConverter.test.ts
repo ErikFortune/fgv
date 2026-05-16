@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { qualifierDeclsConverter } from '../../../../packlets/converters/axesConverter';
+import { qualifierDeclsConverter } from '../../../packlets/converters';
 
 describe('qualifierDeclsConverter', () => {
   describe('success cases', () => {

@@ -35,16 +35,16 @@ export const allSuspiciousDispositionValues: ReadonlyArray<SuspiciousDisposition
 export type AxisName = Brand<string, 'AxisName'>;
 
 // @public
-export namespace Convert {
-    const promptId: Converter<PromptId, unknown>;
-    const slotName: Converter<SlotName, unknown>;
-    const resourceId: Converter<ResourceId, unknown>;
-    const converterId: Converter<ConverterId, unknown>;
-    const serializerId: Converter<SerializerId, unknown>;
-    const validatorId: Converter<ValidatorId, unknown>;
-    const axisName: Converter<AxisName, unknown>;
-    const scopeKey: Converter<ScopeKey, unknown>;
-}
+export const Convert: {
+    promptId: Converter<PromptId>;
+    slotName: Converter<SlotName>;
+    resourceId: Converter<ResourceId>;
+    converterId: Converter<ConverterId>;
+    serializerId: Converter<SerializerId>;
+    validatorId: Converter<ValidatorId>;
+    axisName: Converter<AxisName>;
+    scopeKey: Converter<ScopeKey>;
+};
 
 // @public
 export type ConverterId = Brand<string, 'ConverterId'>;
@@ -362,7 +362,7 @@ export const literalSlotBindingConverter: Converter<ILiteralSlotBinding>;
 export type OutputContractKind = 'free-text' | 'json';
 
 // @public
-export const outputContractKindConverter: Converter<OutputContractKind, readonly OutputContractKind[]>;
+export const outputContractKindConverter: Converter<OutputContractKind>;
 
 // @public
 export function processOutput<T>(rawOutput: string, descriptor: IPromptDescriptor, registry: IPromptRegistry, validationContext: IOutputValidationContext): Result<T>;
@@ -414,7 +414,7 @@ export class PromptSlotKindRegistry implements IPromptSlotKindRegistry {
 export type PromptStoreEventKind = 'descriptor-changed' | 'descriptor-removed' | 'bindings-changed' | 'qualifier-axes-changed';
 
 // @public
-export const promptStoreEventKindConverter: Converter<PromptStoreEventKind, readonly PromptStoreEventKind[]>;
+export const promptStoreEventKindConverter: Converter<PromptStoreEventKind>;
 
 // @public
 export class PromptStoreFixture {
@@ -437,7 +437,7 @@ export const resourceSlotBindingConverter: Converter<IResourceSlotBinding>;
 export type ResourceSubstitutionMode = 'replace' | 'inherit';
 
 // @public
-export const resourceSubstitutionModeConverter: Converter<ResourceSubstitutionMode, readonly ResourceSubstitutionMode[]>;
+export const resourceSubstitutionModeConverter: Converter<ResourceSubstitutionMode>;
 
 // @public
 export function runSafeguards(slotValues: ReadonlyMap<SlotName, string>, descriptor: IPromptDescriptor, policy: IPromptSafetyPolicy | undefined): Result<ReadonlyArray<ISafeguardFinding>>;
@@ -461,13 +461,13 @@ export const slotBindingConverter: Converter<SlotBinding>;
 export type SlotBindingKind = 'literal' | 'resource';
 
 // @public
-export const slotBindingKindConverter: Converter<SlotBindingKind, readonly SlotBindingKind[]>;
+export const slotBindingKindConverter: Converter<SlotBindingKind>;
 
 // @public
 export type SlotDirective = 'constraint' | 'hint' | 'prose';
 
 // @public
-export const slotDirectiveConverter: Converter<SlotDirective, readonly SlotDirective[]>;
+export const slotDirectiveConverter: Converter<SlotDirective>;
 
 // @public
 export type SlotName = Brand<string, 'SlotName'>;
@@ -476,7 +476,7 @@ export type SlotName = Brand<string, 'SlotName'>;
 export type SlotWritability = 'any-scope' | 'schema-only' | 'system-only';
 
 // @public
-export const slotWritabilityConverter: Converter<SlotWritability, readonly SlotWritability[]>;
+export const slotWritabilityConverter: Converter<SlotWritability>;
 
 // @public
 export function storedPromptRecordConverter(scope: ScopeKey, expectedId: PromptId): Converter<IStoredPromptRecord>;

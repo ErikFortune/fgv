@@ -27,8 +27,8 @@ import {
   PromptConverterRegistry,
   PromptSlotKindRegistry,
   PromptOutputValidationRegistry
-} from '../../../../packlets/registry';
-import type { ConverterId, ValidatorId } from '../../../../packlets/types';
+} from '../../../packlets/registry';
+import type { ConverterId, ValidatorId } from '../../../packlets/types';
 
 const testConverterId = 'my-converter' as unknown as ConverterId;
 const testValidatorId = 'my-validator' as unknown as ValidatorId;
@@ -181,7 +181,7 @@ describe('PromptOutputValidationRegistry', () => {
         expect(validator).toBeDefined();
         expect(
           validator.validate('anything', {
-            promptId: 'p' as unknown as import('../../../../packlets/types').PromptId,
+            promptId: 'p' as unknown as import('../../../packlets/types').PromptId,
             substitutions: new Map()
           })
         ).toSucceed();

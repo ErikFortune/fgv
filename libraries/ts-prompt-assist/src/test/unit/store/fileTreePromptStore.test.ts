@@ -23,8 +23,8 @@
 import '@fgv/ts-utils-jest';
 import { Logging, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { PromptStoreFixture } from '../../../../packlets/store/promptStoreFixture';
-import { FileTreePromptStore } from '../../../../packlets/store/fileTreePromptStore';
+import { PromptStoreFixture } from '../../../packlets/store';
+import { FileTreePromptStore } from '../../../packlets/store';
 import type {
   IStoredPromptRecord,
   IScopeSlotBindingsRecord,
@@ -32,7 +32,7 @@ import type {
   PromptId,
   ScopeKey,
   SlotName
-} from '../../../../packlets/types';
+} from '../../../packlets/types';
 
 const globalScope = 'global' as unknown as ScopeKey;
 const tenantScope = 'tenant-a' as unknown as ScopeKey;
@@ -99,7 +99,7 @@ describe('FileTreePromptStore via PromptStoreFixture', () => {
             'name' as unknown as SlotName,
             {
               kind: 'resource',
-              resourceId: 'res-1' as unknown as import('../../../../packlets/types').ResourceId,
+              resourceId: 'res-1' as unknown as import('../../../packlets/types').ResourceId,
               directive: 'prose'
             }
           ]
@@ -117,7 +117,7 @@ describe('FileTreePromptStore via PromptStoreFixture', () => {
             'name' as unknown as SlotName,
             {
               kind: 'resource',
-              resourceId: 'res-1' as unknown as import('../../../../packlets/types').ResourceId,
+              resourceId: 'res-1' as unknown as import('../../../packlets/types').ResourceId,
               directive: 'prose',
               qualifiers: { language: 'en' },
               scopeOverride: [globalScope],

@@ -21,8 +21,8 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { scopeSlotBindingsRecordConverter } from '../../../../packlets/converters/bindingsConverter';
-import type { ScopeKey } from '../../../../packlets/types';
+import { scopeSlotBindingsRecordConverter } from '../../../packlets/converters';
+import type { ScopeKey } from '../../../packlets/types';
 
 const testScope = 'global' as unknown as ScopeKey;
 
@@ -39,9 +39,7 @@ describe('scopeSlotBindingsRecordConverter', () => {
       expect(converter.convert(input)).toSucceedAndSatisfy((record) => {
         expect(record.scope).toBe(testScope);
         expect(record.bindings.size).toBe(1);
-        const binding = record.bindings.get(
-          'name' as unknown as import('../../../../packlets/types').SlotName
-        );
+        const binding = record.bindings.get('name' as unknown as import('../../../packlets/types').SlotName);
         expect(binding?.kind).toBe('literal');
         if (binding?.kind === 'literal') {
           expect(binding.value).toBe('Alice');
@@ -58,7 +56,7 @@ describe('scopeSlotBindingsRecordConverter', () => {
       };
       expect(converter.convert(input)).toSucceedAndSatisfy((record) => {
         const binding = record.bindings.get(
-          'system' as unknown as import('../../../../packlets/types').SlotName
+          'system' as unknown as import('../../../packlets/types').SlotName
         );
         expect(binding?.kind).toBe('resource');
       });
@@ -91,9 +89,7 @@ describe('scopeSlotBindingsRecordConverter', () => {
         }
       };
       expect(converter.convert(input)).toSucceedAndSatisfy((record) => {
-        const binding = record.bindings.get(
-          'name' as unknown as import('../../../../packlets/types').SlotName
-        );
+        const binding = record.bindings.get('name' as unknown as import('../../../packlets/types').SlotName);
         expect(binding?.enforced).toBe(true);
       });
     });
@@ -111,9 +107,7 @@ describe('scopeSlotBindingsRecordConverter', () => {
         }
       };
       expect(converter.convert(input)).toSucceedAndSatisfy((record) => {
-        const binding = record.bindings.get(
-          'data' as unknown as import('../../../../packlets/types').SlotName
-        );
+        const binding = record.bindings.get('data' as unknown as import('../../../packlets/types').SlotName);
         expect(binding?.kind).toBe('resource');
         if (binding?.kind === 'resource') {
           expect(binding.qualifiers).toEqual({ language: 'en' });

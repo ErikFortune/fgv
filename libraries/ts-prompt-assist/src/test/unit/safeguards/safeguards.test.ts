@@ -21,9 +21,9 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { runSafeguards } from '../../../../packlets/safeguards';
-import type { IPromptDescriptor, IPromptSafetyPolicy, SlotName } from '../../../../packlets/types';
-import type { PromptId } from '../../../../packlets/types';
+import { runSafeguards } from '../../../packlets/safeguards';
+import type { IPromptDescriptor, IPromptSafetyPolicy, SlotName } from '../../../packlets/types';
+import type { PromptId } from '../../../packlets/types';
 
 const testId = 'greet' as unknown as PromptId;
 

@@ -35,7 +35,7 @@ import {
   allSuspiciousDispositionValues,
   allPromptStoreEventKindValues,
   promptStoreEventKindConverter
-} from '../../../../packlets/types/enums';
+} from '../../../packlets/types';
 
 describe('SlotBindingKind', () => {
   test('allSlotBindingKindValues contains the expected values', () => {

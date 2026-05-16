@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Brand, Converters, succeed } from '@fgv/ts-utils';
+import { Brand, Converter, Converters, succeed } from '@fgv/ts-utils';
 
 /**
  * Branded type for prompt identifiers.
@@ -74,21 +74,30 @@ export type ScopeKey = Brand<string, 'ScopeKey'>;
  * Converters for branded scalar types.
  * @public
  */
-export namespace Convert {
+export const Convert: {
+  promptId: Converter<PromptId>;
+  slotName: Converter<SlotName>;
+  resourceId: Converter<ResourceId>;
+  converterId: Converter<ConverterId>;
+  serializerId: Converter<SerializerId>;
+  validatorId: Converter<ValidatorId>;
+  axisName: Converter<AxisName>;
+  scopeKey: Converter<ScopeKey>;
+} = {
   /** Converts an unknown value to a {@link PromptId}. */
-  export const promptId = Converters.string.map((s) => succeed(s as PromptId));
+  promptId: Converters.string.map((s) => succeed(s as PromptId)) as Converter<PromptId>,
   /** Converts an unknown value to a {@link SlotName}. */
-  export const slotName = Converters.string.map((s) => succeed(s as SlotName));
+  slotName: Converters.string.map((s) => succeed(s as SlotName)) as Converter<SlotName>,
   /** Converts an unknown value to a {@link ResourceId}. */
-  export const resourceId = Converters.string.map((s) => succeed(s as ResourceId));
+  resourceId: Converters.string.map((s) => succeed(s as ResourceId)) as Converter<ResourceId>,
   /** Converts an unknown value to a {@link ConverterId}. */
-  export const converterId = Converters.string.map((s) => succeed(s as ConverterId));
+  converterId: Converters.string.map((s) => succeed(s as ConverterId)) as Converter<ConverterId>,
   /** Converts an unknown value to a {@link SerializerId}. */
-  export const serializerId = Converters.string.map((s) => succeed(s as SerializerId));
+  serializerId: Converters.string.map((s) => succeed(s as SerializerId)) as Converter<SerializerId>,
   /** Converts an unknown value to a {@link ValidatorId}. */
-  export const validatorId = Converters.string.map((s) => succeed(s as ValidatorId));
+  validatorId: Converters.string.map((s) => succeed(s as ValidatorId)) as Converter<ValidatorId>,
   /** Converts an unknown value to an {@link AxisName}. */
-  export const axisName = Converters.string.map((s) => succeed(s as AxisName));
+  axisName: Converters.string.map((s) => succeed(s as AxisName)) as Converter<AxisName>,
   /** Converts an unknown value to a {@link ScopeKey}. */
-  export const scopeKey = Converters.string.map((s) => succeed(s as ScopeKey));
-}
+  scopeKey: Converters.string.map((s) => succeed(s as ScopeKey)) as Converter<ScopeKey>
+};
