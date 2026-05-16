@@ -1,0 +1,246 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ * SPDX-License-Identifier: MIT
+ */
+
+import { Result, fail, succeed } from '@fgv/ts-utils';
+import { PromptId, ScopeKey, SlotName } from '../types';
+import { IPromptDescriptor } from '../types';
+import { PromptSubstitutions } from '../types';
+import { IQualifierContext } from '../types';
+import {
+  IBindingTraceEntry,
+  ICandidateMatchTraceEntry,
+  IPromptResolveTrace,
+  IResolvedPrompt
+} from '../types';
+import { IPromptStore } from '../store';
+import { IPromptRegistry } from '../registry';
+import { walkScopeChain } from './chainWalker';
+import { mergeBindings } from './bindingMerger';
+import { MustacheTemplateCache } from './mustacheCache';
+import { joinBodies, selectCandidates } from './candidateSelector';
+
+/**
+ * Parameters for {@link PromptLibrary.create}.
+ *
+ * @remarks
+ * `TResponse` is the consumer-extended response union. Defaults to the open
+ * `\{ kind: string \}` lower bound for consumers who only use free-text
+ * output.
+ *
+ * @public
+ */
+export interface IPromptLibraryCreateParams<TResponse extends { kind: string } = { kind: string }> {
+  readonly store: IPromptStore;
+  /** Unified registry. Optional; defaults to an empty registry. */
+  readonly registry?: IPromptRegistry<TResponse>;
+  /** Default 256. */
+  readonly templateCacheSize?: number;
+}
+
+/**
+ * Resolve request.
+ * @public
+ */
+export interface IPromptResolveRequest {
+  readonly id: PromptId;
+  /** Most-specific to most-general. */
+  readonly chain: ReadonlyArray<ScopeKey>;
+  readonly qualifiers: IQualifierContext;
+  readonly substitutions?: PromptSubstitutions;
+}
+
+/**
+ * Main entry point per design §4.1.
+ *
+ * @remarks
+ * Generic over `TResponse extends \{ kind: string \}` so the JSON output
+ * pipeline (B-4) wires up without any cast.
+ *
+ * The B-1 foundation implements:
+ * - {@link PromptLibrary.describe} — load and return a descriptor
+ * - {@link PromptLibrary.resolve} — chain walk + binding merge + intra-record
+ *   candidate selection (specificity-ascending; stops at first terminal) +
+ *   Mustache render via the LRU-cached `MustacheTemplate`s + full trace
+ *
+ * Resource binding resolution (B-2), full ts-res integration with the long-
+ * lived `ResourceManagerBuilder` (B-1b follow-up), full output validation
+ * (B-4), and input safeguards (B-4) are layered on top in subsequent
+ * sub-phases. The only `safeguardFindings` kind emitted by B-1 is
+ * `'enforced-override-ignored'` (per design §10.4).
+ *
+ * @public
+ */
+export class PromptLibrary<TResponse extends { kind: string } = { kind: string }> {
+  private readonly _store: IPromptStore;
+  private readonly _registry?: IPromptRegistry<TResponse>;
+  private readonly _mustacheCache: MustacheTemplateCache;
+  private readonly _descriptorCache: Map<string, IPromptDescriptor>;
+
+  private constructor(
+    store: IPromptStore,
+    registry: IPromptRegistry<TResponse> | undefined,
+    mustacheCache: MustacheTemplateCache
+  ) {
+    this._store = store;
+    this._registry = registry;
+    this._mustacheCache = mustacheCache;
+    this._descriptorCache = new Map();
+  }
+
+  /** Family-convention factory. */
+  public static async create<TResponse extends { kind: string } = { kind: string }>(
+    params: IPromptLibraryCreateParams<TResponse>
+  ): Promise<Result<PromptLibrary<TResponse>>> {
+    return MustacheTemplateCache.create(params.templateCacheSize).onSuccess((cache) =>
+      succeed(new PromptLibrary<TResponse>(params.store, params.registry, cache))
+    );
+  }
+
+  /**
+   * Returns the descriptor for a prompt by id, searching across all scopes.
+   * Convenience for editor surfaces that don't want to specify a scope
+   * chain. Returns the first record found via `store.list`.
+   *
+   * @remarks
+   * Copilot review (PR #362, deferred to B-1b): the descriptor cache is
+   * keyed by `id` alone, with no scope/chain qualification. If the same id
+   * exists at multiple scopes with diverging descriptors, this method
+   * returns whichever record `store.list` happened to return first. v0.1
+   * consumers (the chat-app pressure-test) carry one descriptor shape per
+   * id across all scopes, so the simple key is appropriate. B-1b should
+   * either validate at load time that descriptors for the same id are
+   * identical across scopes, or take a chain and key the cache by
+   * `(id, winningScope)` to handle genuinely divergent descriptors.
+   *
+   * Copilot review (PR #362, deferred to B-2/B-3): there is no cache
+   * invalidation. The v0.1 FileTree adapter is read-only and `watch` is
+   * unimplemented (per OQ-3 revised), so the cache cannot go stale. Once
+   * a write-capable or `watch`-implementing adapter lands, this method
+   * must subscribe to store events and call `_descriptorCache.delete(id)`
+   * on `descriptor-changed` / `descriptor-removed`.
+   */
+  public async describe(id: PromptId): Promise<Result<IPromptDescriptor>> {
+    const cached = this._descriptorCache.get(id);
+    if (cached !== undefined) {
+      return succeed(cached);
+    }
+    return (await this._store.list({ id }))
+      .withErrorFormat((msg) => `prompt '${id}': store.list failed: ${msg}`)
+      .onSuccess((list) => {
+        if (list.length === 0) {
+          return fail(`prompt '${id}': not found in any scope`);
+        }
+        const descriptor = list[0].descriptor;
+        this._descriptorCache.set(id, descriptor);
+        return succeed(descriptor);
+      });
+  }
+
+  /**
+   * Resolves a prompt against the supplied chain + qualifier context +
+   * caller substitutions. Returns the rendered body plus full trace.
+   */
+  public async resolve(req: IPromptResolveRequest): Promise<Result<IResolvedPrompt>> {
+    const walked = await walkScopeChain(this._store, req.id, req.chain);
+    if (walked.isFailure()) {
+      return fail(walked.message);
+    }
+    const { record, winningScope, scopesConsulted, scopeBindings } = walked.value;
+    const descriptor = record.descriptor;
+
+    const mergeResult = mergeBindings(req.chain, scopeBindings, descriptor.slots, req.substitutions);
+    if (mergeResult.isFailure()) {
+      return fail(`prompt '${req.id}': ${mergeResult.message}`);
+    }
+    const { merged, safeguardFindings } = mergeResult.value;
+
+    const selection = selectCandidates(record.candidates, req.qualifiers);
+    if (selection.isFailure()) {
+      return fail(`prompt '${req.id}' scope '${winningScope}': ${selection.message}`);
+    }
+    const selected = selection.value.selected;
+
+    const joinedBody = joinBodies(selected, descriptor.join);
+    const renderContext = this._buildRenderContext(merged);
+
+    const rendered = this._mustacheCache
+      .getOrParse(req.id, joinedBody)
+      .onSuccess((template) => template.validateAndRender(renderContext));
+    if (rendered.isFailure()) {
+      return fail(`prompt '${req.id}': ${rendered.message}`);
+    }
+
+    const candidateMatches: ICandidateMatchTraceEntry[] = selected.map((s) => ({
+      candidateIndex: s.index,
+      // B-1 foundation candidate selector emits 'match' only. Full ts-res
+      // integration in the follow-up surfaces 'matchAsDefault' here.
+      matchType: 'match',
+      conditions: []
+    }));
+
+    const trace: IPromptResolveTrace = {
+      winningScope,
+      scopesConsulted,
+      mergedBindings: merged,
+      resourceBindingResolutions: [],
+      safeguardFindings,
+      candidateMatches
+    };
+
+    return succeed<IResolvedPrompt>({
+      id: req.id,
+      body: rendered.value,
+      descriptor,
+      trace
+    });
+  }
+
+  /**
+   * Resolves and validates the output of an LLM call against the descriptor's
+   * output contract.
+   *
+   * @remarks
+   * Full output validation — fence strip, JSON.parse, Converter dispatch,
+   * typed validator chain — is B-4's scope. The B-1 foundation is the
+   * surrounding plumbing (chain walk, binding merge, candidate select,
+   * Mustache render). Per guardrail #4, this method does NOT return a
+   * silent placeholder: it fails loudly with a B-4 deferral message for
+   * every output kind. The B-1 unit tests assert that failure rather than
+   * a faked success. The signature is pinned per design §4.1 + §17.2.5 so
+   * B-4 can land without reshaping `PromptLibrary`'s API.
+   *
+   * Copilot review (PR #362, deferred to B-4): the deferral message is
+   * emitted only AFTER calling `this.resolve(req)`, so callers pay the
+   * full chain-walk + render cost before failing. B-1 keeps the resolve
+   * call so the failure message can cite the actual `descriptor.output.kind`
+   * (informative for the consumer). When B-4 implements the real pipeline,
+   * the resolve cost is necessary anyway and this stops being premature.
+   */
+  public async resolveAndValidateOutput<T extends TResponse>(
+    req: IPromptResolveRequest,
+    rawOutput: string
+  ): Promise<Result<T>> {
+    return (await this.resolve(req)).onSuccess((resolved) =>
+      fail<T>(
+        `prompt '${req.id}': resolveAndValidateOutput (output.kind '${resolved.descriptor.output.kind}', rawOutput length ${rawOutput.length}) is not yet implemented in the B-1 foundation (B-4 ships the output validation pipeline)`
+      )
+    );
+  }
+
+  // Copilot review (PR #362, deferred to B-1b): the render context indexes
+  // by `entry.name` (the SlotName branded string) but does not validate the
+  // name is a valid Mustache identifier. A SlotName like `'foo.bar'` would
+  // be parsed by Mustache as a section path `foo` → `bar`, not as a flat
+  // key. B-1b should either tighten `Convert.slotName` to require the
+  // Mustache "name" production (`[A-Za-z_][A-Za-z0-9_]*`) or document the
+  // constraint on the public type.
+  private _buildRenderContext(merged: ReadonlyMap<SlotName, IBindingTraceEntry>): Record<string, string> {
+    const ctx: Record<string, string> = {};
+    merged.forEach((entry, name) => {
+      ctx[name] = entry.value;
+    });
+    return ctx;
+  }
+}
