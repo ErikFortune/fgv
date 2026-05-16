@@ -22,8 +22,8 @@
 
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { Mustache } from '@fgv/ts-extras';
+import type { ResourceJson } from '@fgv/ts-res';
 import type {
-  ConditionSetDecl,
   IExpectedQualifierAxis,
   IJsonOutputContract,
   IPromptCandidateRecord,
@@ -169,7 +169,8 @@ function parseCandidates(
       return fail(tokenResult.message);
     }
     const isPartial = item.isPartial === true ? (true as const) : undefined;
-    const conditions: ConditionSetDecl = (item.conditions as ConditionSetDecl) ?? {};
+    const conditions: ResourceJson.Json.ConditionSetDecl =
+      (item.conditions as ResourceJson.Json.ConditionSetDecl) ?? {};
     results.push({ conditions, isPartial, body });
   }
   return succeed(results);

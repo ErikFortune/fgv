@@ -44,51 +44,6 @@ import type { IQualifierContext, PromptSubstitutions, SlotBinding } from './bind
 export type { OutputContractKind };
 
 /**
- * Structural representation of a ts-res condition set declaration.
- * Matches the shape of `ResourceJson.Json.ConditionSetDecl` from `@fgv/ts-res`.
- * @public
- */
-export type ConditionSetDecl =
-  | ReadonlyArray<Readonly<Record<string, string | ILooseConditionDecl>>>
-  | Record<string, string | IChildConditionDecl>;
-
-/**
- * Structural match for a loose condition declaration (array-form element).
- * @public
- */
-export interface ILooseConditionDecl {
-  readonly name?: string;
-  readonly value?: string;
-  readonly operator?: string;
-  readonly priority?: number;
-  [key: string]: unknown;
-}
-
-/**
- * Structural match for a child condition declaration (record-form value).
- * @public
- */
-export interface IChildConditionDecl {
-  readonly operator?: string;
-  readonly priority?: number;
-  [key: string]: unknown;
-}
-
-/**
- * Structural representation of a ts-res condition match result.
- * Matches the shape of `Runtime.IConditionMatchResult` from `@fgv/ts-res`.
- * @public
- */
-export interface IConditionMatchResult {
-  /** The condition index. */
-  readonly conditionIndex: number;
-  /** Whether the condition matched. */
-  readonly matched: boolean;
-  /** Match score, if applicable. */
-  readonly matchScore?: number;
-}
-
-/**
  * Output contract for a free-text prompt.
  * @public
  */
@@ -253,7 +208,7 @@ export interface IPromptCandidateRecord {
    * Full ts-res ConditionSetDecl shape (record-sugar, record-with-details, or array form).
    * Empty `{}` means unconditional base.
    */
-  readonly conditions: ConditionSetDecl;
+  readonly conditions: unknown;
   /**
    * When true, this candidate layers under more-specific candidates.
    * When false or omitted, this candidate terminates the composition chain.
@@ -352,7 +307,7 @@ export interface ICandidateMatchTraceEntry {
   /** ts-res match disposition. */
   readonly matchType: 'match' | 'matchAsDefault';
   /** Per-condition match details from ts-res. */
-  readonly conditions: ReadonlyArray<IConditionMatchResult>;
+  readonly conditions: ReadonlyArray<unknown>;
 }
 
 /**
