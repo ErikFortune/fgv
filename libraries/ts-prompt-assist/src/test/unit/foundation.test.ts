@@ -786,7 +786,7 @@ describe('ts-prompt-assist foundation', () => {
       expect(await store.get(TEST_SCOPE, 'nope' as unknown as PromptId)).toSucceedWith(undefined);
     });
 
-    test('resolveAndValidateOutput passes through free-text', async () => {
+    test('resolveAndValidateOutput fails loudly on free-text descriptors (B-4 deferral)', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
       const lib = (await PromptLibrary.create({ store })).orThrow();
       const result = await lib.resolveAndValidateOutput<{ kind: string }>(
@@ -798,10 +798,11 @@ describe('ts-prompt-assist foundation', () => {
         },
         'raw LLM output'
       );
-      expect(result).toSucceedWith('raw LLM output' as unknown as { kind: string });
+      expect(result).toFailWith(/B-4 ships the output validation pipeline/);
+      expect(result).toFailWith(/output\.kind 'free-text'/);
     });
 
-    test('resolveAndValidateOutput fails on json descriptors (B-4 deferral)', async () => {
+    test('resolveAndValidateOutput fails loudly on json descriptors (B-4 deferral)', async () => {
       const jsonRecord: IStoredPromptRecord = buildDescriptor({
         descriptor: {
           ...buildDescriptor().descriptor,
@@ -994,36 +995,18 @@ describe('ts-prompt-assist foundation', () => {
       });
     });
 
-    test('candidate selector handles array conditions whose value is not a string', () => {
+    test('candidate selector accepts record-with-details conditions', () => {
+      // The IChildConditionDecl.value is typed `string`; we exercise the
+      // typed record-with-details branch using a valid string value.
       const candidates: ReadonlyArray<IPromptCandidateRecord> = [
         {
-          conditions: [
-            { qualifierName: 'lang', value: 99 }
-          ] as unknown as IPromptCandidateRecord['conditions'],
-          body: 'numeric'
+          conditions: { lang: { value: 'fr', priority: 100 } },
+          body: 'french'
         }
       ];
-      // The non-string value collapses to '' in the normalizer; the candidate
-      // matches only when the context's lang value is also '' (i.e., never,
-      // since contexts are typed as Record<string,string> with non-empty
-      // values in practice). The selection therefore fails-by-no-match,
-      // which is the structurally observable consequence of the branch.
-      expect(selectCandidates(candidates, { lang: 'en' })).toFailWith(/no candidate matched/);
-    });
-
-    test('candidate selector skips conditions with non-string value', () => {
-      // Exercises the record-with-details path where the inner value isn't a
-      // string (falls through silently — those conditions don't constrain).
-      // Cast through unknown so the test can carry the intentionally non-
-      // string shape without TypeScript rejecting the constructed input.
-      const candidates: ReadonlyArray<IPromptCandidateRecord> = [
-        {
-          conditions: { lang: { value: 99 } } as unknown as IPromptCandidateRecord['conditions'],
-          body: 'numeric-condition'
-        }
-      ];
-      // With no constraining string conditions, the candidate matches any context.
-      expect(selectCandidates(candidates, {})).toSucceed();
+      expect(selectCandidates(candidates, { lang: 'fr' })).toSucceedAndSatisfy((sel) => {
+        expect(sel.selected[0].index).toBe(0);
+      });
     });
 
     test('resolveAndValidateOutput propagates resolve failures', async () => {

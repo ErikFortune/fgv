@@ -31,23 +31,12 @@ function normalizeConditions(
   conditions: ResourceJson.Json.ConditionSetDecl
 ): ReadonlyArray<{ readonly qualifier: string; readonly value: string }> {
   if (Array.isArray(conditions)) {
-    return conditions.map((c) => ({
-      qualifier: c.qualifierName,
-      value: typeof c.value === 'string' ? c.value : ''
-    }));
+    return conditions.map((c) => ({ qualifier: c.qualifierName, value: c.value }));
   }
-  const entries: { qualifier: string; value: string }[] = [];
-  for (const [name, decl] of Object.entries(conditions as Record<string, unknown>)) {
-    if (typeof decl === 'string') {
-      entries.push({ qualifier: name, value: decl });
-    } else if (typeof decl === 'object' && decl !== null && 'value' in decl) {
-      const v = (decl as { value: unknown }).value;
-      if (typeof v === 'string') {
-        entries.push({ qualifier: name, value: v });
-      }
-    }
-  }
-  return entries;
+  return Object.entries(conditions).map(([name, decl]) => ({
+    qualifier: name,
+    value: typeof decl === 'string' ? decl : decl.value
+  }));
 }
 
 function candidateMatches(

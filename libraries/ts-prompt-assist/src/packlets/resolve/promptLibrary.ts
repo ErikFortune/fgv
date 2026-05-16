@@ -180,35 +180,27 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   }
 
   /**
-   * Resolves and validates the output of an LLM call against the
-   * descriptor's output contract.
+   * Resolves and validates the output of an LLM call against the descriptor's
+   * output contract.
    *
    * @remarks
-   * The B-1 foundation supports only `output.kind: 'free-text'` (returns the
-   * raw output unchanged). JSON output validation — fence strip → parse →
-   * Converter → typed validator chain — is B-4's scope. Calling
-   * `resolveAndValidateOutput` with a `json`-output descriptor returns a
-   * `Result.fail` citing the B-4 dependency, NOT a silent placeholder.
+   * Full output validation — fence strip, JSON.parse, Converter dispatch,
+   * typed validator chain — is B-4's scope. The B-1 foundation is the
+   * surrounding plumbing (chain walk, binding merge, candidate select,
+   * Mustache render). Per guardrail #4, this method does NOT return a
+   * silent placeholder: it fails loudly with a B-4 deferral message for
+   * every output kind. The B-1 unit tests assert that failure rather than
+   * a faked success. The signature is pinned per design §4.1 + §17.2.5 so
+   * B-4 can land without reshaping `PromptLibrary`'s API.
    */
   public async resolveAndValidateOutput<T extends TResponse>(
     req: IPromptResolveRequest,
     rawOutput: string
   ): Promise<Result<T>> {
-    const resolved = await this.resolve(req);
-    if (resolved.isFailure()) {
-      return fail(resolved.message);
-    }
-    if (resolved.value.descriptor.output.kind === 'free-text') {
-      // Free-text passes through unchanged. The cast is type-equivalent to
-      // the `T extends TResponse` (the consumer asked for T; free-text
-      // outputs return the raw string) — but since v0.1 free-text doesn't
-      // run output validators, this code path is for the "free-text only"
-      // consumer who doesn't parameterize TResponse.
-      const passthrough = rawOutput as unknown as T;
-      return succeed(passthrough);
-    }
-    return fail(
-      `prompt '${req.id}': resolveAndValidateOutput for kind: 'json' is not yet implemented in the B-1 foundation (B-4 ships the output validation pipeline)`
+    return (await this.resolve(req)).onSuccess((resolved) =>
+      fail<T>(
+        `prompt '${req.id}': resolveAndValidateOutput (output.kind '${resolved.descriptor.output.kind}', rawOutput length ${rawOutput.length}) is not yet implemented in the B-1 foundation (B-4 ships the output validation pipeline)`
+      )
     );
   }
 
