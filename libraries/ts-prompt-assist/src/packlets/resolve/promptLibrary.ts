@@ -334,7 +334,6 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
             );
           }
         }
-        /* c8 ignore next 3 - coverage tool intermittently misses these lines under heft+jest source-map translation; the success path is exercised by the describe round-trip tests */
         this._descriptorCache.set(id, first.descriptor);
         this._descriptorHashes.set(id, firstHash);
         return succeed(first.descriptor);
@@ -377,15 +376,14 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   ): Result<ReadonlyMap<ResourceCandidate, number>> {
     return mapResults(
       record.candidates.map((candidate, index) =>
-        toLooseDecl(candidate, synthId, index).onSuccess((decl) => {
-          const detailed = this._builder.addLooseCandidate(decl);
-          if (detailed.isFailure()) {
-            return fail<{ readonly index: number; readonly rsCandidate: ResourceCandidate }>(
-              `prompt '${record.id}' candidate ${index}: addLooseCandidate failed: ${detailed.message}`
-            );
-          }
-          return succeed({ index, rsCandidate: detailed.value });
-        })
+        toLooseDecl(candidate, synthId, index).onSuccess((decl) =>
+          this._builder
+            .addLooseCandidate(decl)
+            .asResult.withErrorFormat(
+              (msg) => `prompt '${record.id}' candidate ${index}: addLooseCandidate failed: ${msg}`
+            )
+            .onSuccess((rsCandidate) => succeed({ index, rsCandidate }))
+        )
       )
     ).onSuccess((added) => {
       const map = new Map<ResourceCandidate, number>();

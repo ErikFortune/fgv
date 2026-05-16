@@ -213,7 +213,7 @@ describe('ts-prompt-assist foundation', () => {
         output: { kind: 'streaming-json' },
         candidates: [{ conditions: {}, body: 'Hi' }]
       };
-      expect(promptFileConverter.convert(yaml)).toFailWith(/unknown kind/);
+      expect(promptFileConverter.convert(yaml)).toFailWith(/No converter for discriminator/);
     });
 
     test('descriptorConverter parses a json output descriptor', () => {
@@ -273,12 +273,18 @@ describe('ts-prompt-assist foundation', () => {
 
     test('unknown slot binding kind rejected', () => {
       expect(slotBindingConverter.convert({ kind: 'who-knows', value: 'x', directive: 'prose' })).toFailWith(
-        /unknown kind/
+        /No converter for discriminator/
       );
     });
 
     test('non-object rejected', () => {
-      expect(slotBindingConverter.convert('nope')).toFailWith(/expected an object/);
+      expect(slotBindingConverter.convert('nope')).toFailWith(/Not a discriminated object/);
+    });
+
+    test('missing kind discriminator rejected', () => {
+      expect(slotBindingConverter.convert({ value: 'x', directive: 'prose' })).toFailWith(
+        /Discriminator property kind not present/
+      );
     });
 
     test('promptSubstitutionsConverter accepts bare strings and nested bindings', () => {
@@ -1110,6 +1116,21 @@ describe('ts-prompt-assist foundation', () => {
       expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
         expect(r.body).toBe('formal default');
         expect(r.trace.candidateMatches[0].matchType).toBe('matchAsDefault');
+      });
+    });
+
+    test('describe accepts identical descriptors at multiple scopes', async () => {
+      // Multi-scope path: exercises the for-loop body in
+      // `_populateDescriptorCache` (hashing the second descriptor and
+      // confirming equality) and the success tail (cache set + return).
+      const records: ReadonlyArray<IStoredPromptRecord> = [
+        buildDescriptor(),
+        buildDescriptor({ scope: TENANT_SCOPE })
+      ];
+      const store = await buildStore({ records });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      expect(await lib.describe(TEST_PROMPT)).toSucceedAndSatisfy((d) => {
+        expect(d.title).toBe('Greeting');
       });
     });
 

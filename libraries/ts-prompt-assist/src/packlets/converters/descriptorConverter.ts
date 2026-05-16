@@ -76,19 +76,11 @@ const jsonOutputConverter: Converter<IJsonOutputContract> = Converters.object<IJ
   converterId: Convert.converterId
 });
 
-const outputConverter: Converter<PromptOutputContract> = Converters.generic<PromptOutputContract>(
-  (from: unknown): Result<PromptOutputContract> => {
-    if (typeof from !== 'object' || from === null) {
-      return fail("output: expected an object with 'kind'");
-    }
-    const kindValue = (from as { kind?: unknown }).kind;
-    if (kindValue === 'free-text') {
-      return textOutputConverter.convert(from);
-    }
-    if (kindValue === 'json') {
-      return jsonOutputConverter.convert(from);
-    }
-    return fail(`output: unknown kind '${String(kindValue)}'`);
+const outputConverter: Converter<PromptOutputContract> = Converters.discriminatedObject<PromptOutputContract>(
+  'kind',
+  {
+    'free-text': textOutputConverter,
+    json: jsonOutputConverter
   }
 );
 

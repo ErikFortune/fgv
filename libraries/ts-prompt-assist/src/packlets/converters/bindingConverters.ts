@@ -62,19 +62,11 @@ const resourceSlotBindingConverter: Converter<IResourceSlotBinding> = Converters
  *
  * @public
  */
-export const slotBindingConverter: Converter<SlotBinding> = Converters.generic<SlotBinding>(
-  (from: unknown): Result<SlotBinding> => {
-    if (typeof from !== 'object' || from === null) {
-      return fail('slot binding: expected an object');
-    }
-    const kindValue = (from as { kind?: unknown }).kind;
-    if (kindValue === 'literal') {
-      return literalSlotBindingConverter.convert(from);
-    }
-    if (kindValue === 'resource') {
-      return resourceSlotBindingConverter.convert(from);
-    }
-    return fail(`slot binding: unknown kind '${String(kindValue)}'`);
+export const slotBindingConverter: Converter<SlotBinding> = Converters.discriminatedObject<SlotBinding>(
+  'kind',
+  {
+    literal: literalSlotBindingConverter,
+    resource: resourceSlotBindingConverter
   }
 );
 
