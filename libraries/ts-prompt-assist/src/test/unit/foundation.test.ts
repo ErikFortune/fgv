@@ -5,6 +5,7 @@ import '@fgv/ts-utils-jest';
 import {
   Convert,
   EnumConvert,
+  FileTreePromptStore,
   IPromptCandidateRecord,
   IPromptFileContents,
   IPromptStore,
@@ -44,6 +45,7 @@ import {
 } from '../../index';
 import { ConverterRegistry, OutputValidationRegistry, SlotKindRegistry } from '../../index';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { Qualifiers } from '@fgv/ts-res';
 
 const TEST_SCOPE = 'global' as unknown as ScopeKey;
@@ -947,21 +949,11 @@ describe('ts-prompt-assist foundation', () => {
     test('FileTreePromptStore.create accepts explicit scopeDecoding', async () => {
       // Drive the constructor's `params.scopeDecoding ?? default` branch by
       // supplying both encoder + decoder on FileTreePromptStore.create
-      // directly. The package surfaces `FileTreePromptStore` and
-      // `IFileTreePromptStoreCreateParams` through index, but the store
-      // itself needs an in-memory FileTree root — use the fixture's
-      // serialization but feed it via a custom create call.
+      // directly. Build an in-memory FileTree root with a directory the
+      // custom decoder can handle.
       const customEncoding = (s: ScopeKey): Result<string> => succeed(s);
       const customDecoding = (encoded: string): Result<ScopeKey> => succeed(encoded as unknown as ScopeKey);
 
-      const fixtureStore = (await PromptStoreFixture.build({ records: [buildDescriptor()] })).orThrow();
-      // Pull the FileTree the fixture wrapped via the public surface.
-      // Workaround: list() forces a full tree walk which exercises the
-      // decoder. Since we cannot re-extract the underlying root, we instead
-      // re-run the fixture path with the same decoder behavior by
-      // constructing FileTreePromptStore directly through the public API.
-      const { FileTreePromptStore } = await import('../../packlets/store/fileTreePromptStore');
-      const { FileTree } = await import('@fgv/ts-json-base');
       const tree = FileTree.inMemory([
         { path: `/${TEST_SCOPE}/${TEST_PROMPT}.yaml`, contents: 'irrelevant' }
       ]).orThrow();
@@ -976,7 +968,6 @@ describe('ts-prompt-assist foundation', () => {
       // .list() walks the tree and invokes the decoder once per scope dir.
       // We don't care whether the YAML parses — only that the decoder ran.
       await store.list();
-      expect(fixtureStore).toBeDefined();
     });
 
     test('candidate selector handles array-form and record-with-details conditions', () => {

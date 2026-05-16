@@ -39,8 +39,8 @@ export async function walkScopeChain(
   let winning: { record: IStoredPromptRecord; scope: ScopeKey } | undefined;
 
   for (const scope of chain) {
-    scopesConsulted.push(scope);
     if (winning === undefined) {
+      scopesConsulted.push(scope);
       const lookup = (await store.get(scope, id)).withErrorFormat(
         (msg) => `prompt '${id}' scope '${scope}': store.get failed: ${msg}`
       );

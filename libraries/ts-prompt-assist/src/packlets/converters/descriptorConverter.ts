@@ -125,7 +125,7 @@ const exampleSetConverter: Converter<IPromptExampleSet> = Converters.object<IPro
 
 /**
  * Converter for the prompt descriptor metadata (without the candidates).
- * Cross-cutting body validation lives on the {@link promptRecordConverter}
+ * Cross-cutting body validation lives on the {@link promptFileConverter}
  * because candidates carry the bodies.
  *
  * @public

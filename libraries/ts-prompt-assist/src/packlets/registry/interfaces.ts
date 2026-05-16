@@ -4,7 +4,7 @@
  */
 
 import { Converter, Result } from '@fgv/ts-utils';
-import { ConverterId, SerializerId, SlotName, ValidatorId } from '../types';
+import { ConverterId, SlotName, ValidatorId } from '../types';
 import { IBindingTraceEntry } from '../types';
 import { PromptId } from '../types';
 
@@ -106,6 +106,3 @@ export interface IPromptRegistry<TResponse extends { kind: string } = { kind: st
   readonly slotKinds: IPromptSlotKindRegistry;
   readonly outputValidations: IPromptOutputValidationRegistry<TResponse>;
 }
-
-/** Stand-in to satisfy unused-import detection for SerializerId in callers. */
-export type { SerializerId };

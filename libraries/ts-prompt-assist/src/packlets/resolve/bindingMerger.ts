@@ -33,8 +33,10 @@ export interface IBindingMergeResult {
  * recorded as `'enforced-override-ignored'`).
  *
  * The chain is supplied most-specific first (`chain[0]` is the most-specific
- * scope). The winning scope produced by the chain walker is `chain[0]` for
- * the resolved descriptor.
+ * scope). The chain walker selects the most-specific scope that actually
+ * holds a record for the prompt id — that scope is recorded as
+ * `IPromptResolveTrace.winningScope` and is what binding merge calls
+ * `winningScope` in trace entries with `source: 'binding'`.
  *
  * @param chain - Scope chain, most-specific first.
  * @param scopeBindings - Map from scope key to its bindings record (a scope

@@ -84,8 +84,6 @@ export function defaultScopeDecoding(encoded: string): Result<ScopeKey>;
 // @public
 export function defaultScopeEncoding(scope: ScopeKey): Result<string>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-prompt-assist" does not have an export "promptRecordConverter"
-//
 // @public
 export const descriptorConverter: Converter<IPromptDescriptor>;
 
