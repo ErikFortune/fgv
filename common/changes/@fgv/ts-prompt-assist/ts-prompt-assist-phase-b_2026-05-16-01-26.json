@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Phase B: implement resolve packlet (PromptLibrary, FileTreePromptStore, converters, safeguards, output pipeline); 100% test coverage",
+      "type": "minor",
+      "packageName": "@fgv/ts-prompt-assist"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "noreply@anthropic.com"
+}

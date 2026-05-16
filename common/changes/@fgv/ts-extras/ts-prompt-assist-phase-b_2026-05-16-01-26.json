@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add escapeStrategy option to MustacheTemplate.create() (additive, backwards-compatible); add PassthroughMustacheTemplate sibling class",
+      "type": "minor",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}
