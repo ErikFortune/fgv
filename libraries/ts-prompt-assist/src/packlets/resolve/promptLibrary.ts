@@ -113,6 +113,13 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    * either validate at load time that descriptors for the same id are
    * identical across scopes, or take a chain and key the cache by
    * `(id, winningScope)` to handle genuinely divergent descriptors.
+   *
+   * Copilot review (PR #362, deferred to B-2/B-3): there is no cache
+   * invalidation. The v0.1 FileTree adapter is read-only and `watch` is
+   * unimplemented (per OQ-3 revised), so the cache cannot go stale. Once
+   * a write-capable or `watch`-implementing adapter lands, this method
+   * must subscribe to store events and call `_descriptorCache.delete(id)`
+   * on `descriptor-changed` / `descriptor-removed`.
    */
   public async describe(id: PromptId): Promise<Result<IPromptDescriptor>> {
     const cached = this._descriptorCache.get(id);

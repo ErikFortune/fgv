@@ -62,7 +62,17 @@ export class FileTreePromptStore implements IPromptStore {
     this._scopeDecoding = params.scopeDecoding ?? defaultScopeDecoding;
   }
 
-  /** Family-convention factory. */
+  /**
+   * Family-convention factory.
+   *
+   * @remarks
+   * Copilot review (PR #362): the signature is `Promise<Result<...>>` for
+   * forward compatibility with FsTree adapters whose construction may do
+   * real I/O. The v0.1 FileTree backend is in-memory or already-loaded
+   * FsTree, so this factory resolves synchronously via `Promise.resolve`.
+   * Consumers can safely `await` the result without worrying about extra
+   * microtask cost.
+   */
   public static create(params: IFileTreePromptStoreCreateParams): Promise<Result<FileTreePromptStore>> {
     return Promise.resolve(succeed(new FileTreePromptStore(params)));
   }

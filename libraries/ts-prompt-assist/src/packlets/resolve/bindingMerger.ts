@@ -32,6 +32,15 @@ export interface IBindingMergeResult {
  * enforced binding wins (and caller substitutions for that slot are
  * recorded as `'enforced-override-ignored'`).
  *
+ * Cross-scope binding merge is INTENTIONAL: bindings from EVERY scope in
+ * the chain are merged, including scopes that are more specific than the
+ * scope whose record was selected by the chain walker. A tenant-scope
+ * `_bindings.yaml` therefore contributes to a resolve whose record lives
+ * at the global scope. The two mechanisms (record lookup, binding merge)
+ * are deliberately decoupled per design §10.4: "Binding merge IS cross-
+ * scope … bindings merge across the entire chain (most-specific wins,
+ * `enforced` higher-scope locks)."
+ *
  * The chain is supplied most-specific first (`chain[0]` is the most-specific
  * scope). The chain walker selects the most-specific scope that actually
  * holds a record for the prompt id — that scope is recorded as

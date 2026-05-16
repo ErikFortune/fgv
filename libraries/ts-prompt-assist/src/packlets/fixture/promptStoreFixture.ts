@@ -22,16 +22,19 @@ export interface IPromptStoreFixtureSeed {
   readonly records?: ReadonlyArray<IStoredPromptRecord>;
   readonly bindings?: ReadonlyArray<IScopeSlotBindingsRecord>;
   readonly qualifiers?: ReadonlyArray<Qualifiers.IQualifierDecl>;
-  /** Optional scope encoder. Defaults to identity (path-safety enforced). */
+  /**
+   * Optional scope encoder. Defaults to identity (path-safety enforced
+   * via {@link defaultScopeEncoding}).
+   */
   readonly scopeEncoding?: (scope: ScopeKey) => Result<string>;
-  // Copilot review (PR #362, deferred to B-1b): when a non-identity
-  // `scopeEncoding` is supplied, the fixture does NOT plumb a paired
-  // `scopeDecoding` through to FileTreePromptStore.create. `store.list()`
-  // will then decode directory names via the default decoder, producing
-  // ScopeKeys that don't round-trip with the custom encoder. B-1b should
-  // either add `readonly scopeDecoding?` here and forward it, or constrain
-  // the seed to require both halves. v0.1 fixture consumers stay on the
-  // identity encoder; non-identity is exercised only as a coverage probe.
+  /**
+   * Optional scope decoder. Defaults to identity (path-safety enforced
+   * via {@link defaultScopeDecoding}). When `scopeEncoding` is non-
+   * identity, supplying a paired `scopeDecoding` is REQUIRED — otherwise
+   * `store.list()` (and any operation that walks directory names back to
+   * `ScopeKey`s) will round-trip incorrectly.
+   */
+  readonly scopeDecoding?: (encoded: string) => Result<ScopeKey>;
 }
 
 function serializeBindingsRecord(record: IScopeSlotBindingsRecord): Result<string> {
@@ -140,7 +143,8 @@ function buildSeededStore(seed: IPromptStoreFixtureSeed): Promise<Result<IPrompt
     }
     return FileTreePromptStore.create({
       root: rootResult.value,
-      scopeEncoding: seed.scopeEncoding
+      scopeEncoding: seed.scopeEncoding,
+      scopeDecoding: seed.scopeDecoding
     });
   });
 }

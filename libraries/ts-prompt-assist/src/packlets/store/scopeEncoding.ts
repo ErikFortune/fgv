@@ -60,8 +60,13 @@ export function defaultScopeEncoding(scope: ScopeKey): Result<string> {
       `scope '${raw}': contains characters outside the POSIX portable filename set; supply a custom scopeEncoding`
     );
   }
-  if (RESERVED_WIN_DEVICES.has(raw.toUpperCase())) {
-    return fail(`scope '${raw}': matches a reserved Windows device name`);
+  // Windows reserves device names both bare AND with any extension —
+  // `CON`, `CON.txt`, `con.yaml` are all rejected by NTFS. Check the
+  // basename portion (text before the first `.`) against the reserved
+  // set, not just the whole encoded string.
+  const basename = raw.split('.')[0];
+  if (RESERVED_WIN_DEVICES.has(basename.toUpperCase())) {
+    return fail(`scope '${raw}': basename '${basename}' matches a reserved Windows device name`);
   }
   return succeed(raw);
 }

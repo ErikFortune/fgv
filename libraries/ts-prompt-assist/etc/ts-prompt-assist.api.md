@@ -444,6 +444,7 @@ export interface IPromptStoreFixtureSeed {
     readonly qualifiers?: ReadonlyArray<Qualifiers.IQualifierDecl>;
     // (undocumented)
     readonly records?: ReadonlyArray<IStoredPromptRecord>;
+    readonly scopeDecoding?: (encoded: string) => Result<ScopeKey>;
     readonly scopeEncoding?: (scope: ScopeKey) => Result<string>;
 }
 
