@@ -35,6 +35,29 @@ opportunistically when the right surface area is touched.
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] `descriptorConverter.ts` casts `item.conditions` to `ResourceJson.Json.ConditionSetDecl` without validation.**
+  `libraries/ts-prompt-assist/src/packlets/converters/descriptorConverter.ts`, `parseCandidates()`, line ~178.
+  `ConditionSetDecl` is `ReadonlyArray<ILooseConditionDecl> | Record<string, string | IChildConditionDecl>` — a union type that requires a real converter to validate safely. The current code does `(item.conditions as ResourceJson.Json.ConditionSetDecl) ?? {}` which is an unsafe runtime cast.
+
+  **Trigger**: next substantive change to the prompt descriptor converter or candidate parsing pipeline.
+
+  **Scope sketch**: either (a) expose a `conditionSetDeclConverter` from `@fgv/ts-res/resource-json` and use it here, or (b) write a local converter that validates the union shape. The `??  {}` default-to-empty-record is correct and can be kept; only the cast needs replacement.
+
+  **Not a P3**: this is in the YAML parsing path — any malformed `conditions` field in a prompt file silently passes through rather than producing a descriptive error. Real defect risk.
+
+  **Reference**: PR #359 review comment (ErikFortune, line 173); unsafe cast was a placeholder during initial implementation.
+
+- **[P2] `ts-prompt-assist` registry `get<T>()` casts stored `unknown` entries to `T` without runtime validation.**
+  `libraries/ts-prompt-assist/src/packlets/registry/converterRegistry.ts` (`PromptConverterRegistry.get<T>`) and `outputValidationRegistry.ts` (`PromptOutputValidationRegistry.get<T>`). Both registries store entries as `Converter<unknown>` / `IPromptOutputValidator<unknown>` and return them as `Converter<T>` / `IPromptOutputValidator<T>` via an unsafe cast inside `get<T>()`. Callers rely on the stored instance being the right generic type at the call site.
+
+  **Trigger**: next design iteration on the registry API, or when a mismatched type is caught in production.
+
+  **Scope sketch**: redesign the registry to accept a type discriminator at registration time (e.g. a string tag paired with the generic) so `get<T>(id)` can verify the stored entry is compatible with `T` at runtime, not just at the TypeScript call site. Alternatively, store typed descriptors and make the generic variance explicit.
+
+  **Not a P3**: a type mismatch between registered converter/validator and call-site generic silently produces wrong output rather than a detectable error.
+
+  **Reference**: PR #359 review comments; design limitation acknowledged during phase B implementation.
+
 - **[P2] `@fgv/ts-web-extras` lint content cleanup (config landed; 126 source violations remain).**
   Local sweep (chore/comprehensive-lint-fix) added the missing `eslint.config.js` to three sibling packages (`ts-http-storage`, `ts-random`, `tools/repo-template`) which all pass clean. Adding the same config to `ts-web-extras` surfaces **126 problems (6 errors + 120 warnings)** that were hidden while the config was missing. The config addition for `ts-web-extras` is therefore being held back until the source violations are resolved; the package continues to bypass the lint gate in the meantime.
 
