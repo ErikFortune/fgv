@@ -57,6 +57,11 @@ function validateBodyTokens(body: string, promptId: PromptId, candidateIndex: nu
       `prompt '${promptId}' candidate ${candidateIndex}: invalid Mustache body: ${templateResult.message}`
     );
   }
+  if (/\{\{&/.test(body)) {
+    return fail(
+      `prompt '${promptId}' candidate ${candidateIndex}: body uses '{{& ...}}' syntax; use triple-brace '{{{name}}}' instead`
+    );
+  }
   const variables = templateResult.value.extractVariables();
   for (const variable of variables) {
     if (variable.tokenType === 'name') {

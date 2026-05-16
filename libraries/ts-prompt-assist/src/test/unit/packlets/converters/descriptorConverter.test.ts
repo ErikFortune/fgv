@@ -264,6 +264,13 @@ describe('storedPromptRecordConverter', () => {
       expect(converter.convert(payload)).toFailWith(/double-brace/i);
     });
 
+    test('fails when body uses ampersand-brace tokens', () => {
+      const payload = makeValidRecord({
+        candidates: [{ conditions: {}, body: 'Hello, {{& name}}!' }]
+      });
+      expect(converter.convert(payload)).toFailWith(/triple-brace/i);
+    });
+
     test('fails when candidate body has invalid Mustache syntax', () => {
       const payload = makeValidRecord({
         candidates: [{ conditions: {}, body: 'Hello {{#unclosed}} world' }]

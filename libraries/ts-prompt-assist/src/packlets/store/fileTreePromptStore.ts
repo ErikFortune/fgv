@@ -40,6 +40,11 @@ import {
 /** Reserved filename stems that are not treated as prompt files. */
 const RESERVED_STEMS: ReadonlySet<string> = new Set(['_bindings', '_qualifiers']);
 
+/** Returns true if a failure message indicates "file not found" rather than a real IO error. */
+function isFileNotFound(message: string): boolean {
+  return /not found|ENOENT/i.test(message);
+}
+
 /** Windows reserved device names (case-insensitive). */
 const WINDOWS_RESERVED: ReadonlySet<string> = new Set([
   'CON',
@@ -149,7 +154,9 @@ export class FileTreePromptStore implements IPromptStore {
     const filePath = `${encoded}/${id}.yaml`;
     const fileResult = this._root.getFile(filePath);
     if (fileResult.isFailure()) {
-      return succeed(undefined);
+      return isFileNotFound(fileResult.message)
+        ? succeed(undefined)
+        : fail(`${filePath}: ${fileResult.message}`);
     }
     const rawResult = fileResult.value.getRawContents();
     if (rawResult.isFailure()) {
@@ -220,7 +227,9 @@ export class FileTreePromptStore implements IPromptStore {
     const filePath = `${encoded}/_bindings.yaml`;
     const fileResult = this._root.getFile(filePath);
     if (fileResult.isFailure()) {
-      return succeed(undefined);
+      return isFileNotFound(fileResult.message)
+        ? succeed(undefined)
+        : fail(`${filePath}: ${fileResult.message}`);
     }
     const rawResult = fileResult.value.getRawContents();
     if (rawResult.isFailure()) {
@@ -234,7 +243,9 @@ export class FileTreePromptStore implements IPromptStore {
     const filePath = '_qualifiers.yaml';
     const fileResult = this._root.getFile(filePath);
     if (fileResult.isFailure()) {
-      return succeed(undefined);
+      return isFileNotFound(fileResult.message)
+        ? succeed(undefined)
+        : fail(`${filePath}: ${fileResult.message}`);
     }
     const rawResult = fileResult.value.getRawContents();
     if (rawResult.isFailure()) {

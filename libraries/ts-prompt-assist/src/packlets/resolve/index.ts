@@ -211,6 +211,7 @@ export class PromptLibrary {
 
     // Step 8: Gather scope-level bindings (walk from most-general to most-specific).
     const mergedBindingMap = new Map<SlotName, SlotBinding>();
+    const mergedBindingScopeMap = new Map<SlotName, ScopeKey>();
     const reversedChain = [...req.chain].reverse();
     for (const scope of reversedChain) {
       const bindingsResult = await this._store.getBindings(scope);
@@ -221,6 +222,7 @@ export class PromptLibrary {
       if (bindingsRecord !== undefined) {
         for (const [slotName, binding] of bindingsRecord.bindings) {
           mergedBindingMap.set(slotName, binding);
+          mergedBindingScopeMap.set(slotName, scope);
         }
       }
     }
@@ -294,6 +296,7 @@ export class PromptLibrary {
       slotValueMap.set(slot.name, value);
       bindingTrace.set(slot.name, {
         source: traceSource,
+        winningScope: traceSource === 'binding' ? mergedBindingScopeMap.get(slot.name) : undefined,
         directive: binding?.directive ?? 'prose',
         value,
         wasEnforced
