@@ -46,7 +46,9 @@ export const resourceSlotBindingConverter: Converter<IResourceSlotBinding> =
     resourceId: Convert.resourceId,
     qualifiers: Converters.recordOf(Converters.string).optional(),
     scopeOverride: Converters.arrayOf(Convert.scopeKey).optional(),
-    substitutions: Converters.recordOf(Converters.string).optional(),
+    substitutions: Converters.recordOf(
+      Converters.oneOf<string | ILiteralSlotBinding>([Converters.string, literalSlotBindingConverter])
+    ).optional(),
     directive: slotDirectiveConverter,
     enforced: Converters.boolean.optional()
   });

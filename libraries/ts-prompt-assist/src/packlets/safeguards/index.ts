@@ -70,6 +70,7 @@ export function runSafeguards(
 
     if (shouldScreen && suspiciousPatterns.length > 0) {
       for (const pattern of suspiciousPatterns) {
+        pattern.lastIndex = 0;
         if (pattern.test(value)) {
           const disposition = onSuspicious === 'reject' ? 'reject' : 'warn';
           const detail = `slot '${name}' matched suspicious pattern /${pattern.source}/`;

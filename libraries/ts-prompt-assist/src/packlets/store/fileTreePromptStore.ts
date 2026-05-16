@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Logging, Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { FileTree as FileTreeNs } from '@fgv/ts-json-base';
 import { Yaml } from '@fgv/ts-extras';
 import type {
@@ -36,13 +36,6 @@ import {
   scopeSlotBindingsRecordConverter,
   storedPromptRecordConverter
 } from '../converters';
-
-/** Logging interface subset used by the store. */
-interface ILogger {
-  debug(message: string): void;
-  warn(message: string): void;
-  error(message: string): void;
-}
 
 /** Reserved filename stems that are not treated as prompt files. */
 const RESERVED_STEMS: ReadonlySet<string> = new Set(['_bindings', '_qualifiers']);
@@ -109,14 +102,14 @@ export interface IFileTreePromptStoreCreateParams {
    * Custom scope encoding function.
    * Default: identity with path-safety validation.
    */
-  readonly scopeEncoding?: (scope: ScopeKey) => string;
+  readonly scopeEncoding?: (scope: ScopeKey) => Result<string>;
   /**
    * Custom scope decoding function.
    * Default: identity with path-safety validation.
    */
   readonly scopeDecoding?: (encoded: string) => Result<ScopeKey>;
   /** Optional logger for warnings during list operations. */
-  readonly logger?: ILogger;
+  readonly logger?: Logging.ILogger;
 }
 
 /**
@@ -126,13 +119,13 @@ export interface IFileTreePromptStoreCreateParams {
  */
 export class FileTreePromptStore implements IPromptStore {
   private readonly _root: FileTreeNs.FileTree;
-  private readonly _scopeEncoding: (scope: ScopeKey) => string;
+  private readonly _scopeEncoding: (scope: ScopeKey) => Result<string>;
   private readonly _scopeDecoding: (encoded: string) => Result<ScopeKey>;
-  private readonly _logger: ILogger | undefined;
+  private readonly _logger: Logging.ILogger | undefined;
 
   private constructor(params: IFileTreePromptStoreCreateParams) {
     this._root = params.root;
-    this._scopeEncoding = params.scopeEncoding ?? ((scope) => scope as string);
+    this._scopeEncoding = params.scopeEncoding ?? ((scope) => validateDefaultScopeEncoding(scope as string));
     this._scopeDecoding =
       params.scopeDecoding ??
       ((encoded) => validateDefaultScopeEncoding(encoded).onSuccess(() => succeed(encoded as ScopeKey)));
@@ -148,7 +141,11 @@ export class FileTreePromptStore implements IPromptStore {
 
   /** {@inheritDoc IPromptStore.get} */
   public async get(scope: ScopeKey, id: PromptId): Promise<Result<IStoredPromptRecord | undefined>> {
-    const encoded = this._scopeEncoding(scope);
+    const encodeResult = this._scopeEncoding(scope);
+    if (encodeResult.isFailure()) {
+      return fail(`scope '${scope}': ${encodeResult.message}`);
+    }
+    const encoded = encodeResult.value;
     const filePath = `${encoded}/${id}.yaml`;
     const fileResult = this._root.getFile(filePath);
     if (fileResult.isFailure()) {
@@ -215,7 +212,11 @@ export class FileTreePromptStore implements IPromptStore {
 
   /** {@inheritDoc IPromptStore.getBindings} */
   public async getBindings(scope: ScopeKey): Promise<Result<IScopeSlotBindingsRecord | undefined>> {
-    const encoded = this._scopeEncoding(scope);
+    const encodeResult = this._scopeEncoding(scope);
+    if (encodeResult.isFailure()) {
+      return fail(`scope '${scope}': ${encodeResult.message}`);
+    }
+    const encoded = encodeResult.value;
     const filePath = `${encoded}/_bindings.yaml`;
     const fileResult = this._root.getFile(filePath);
     if (fileResult.isFailure()) {

@@ -21,6 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { Logging, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { PromptStoreFixture } from '../../../../packlets/store/promptStoreFixture';
 import { FileTreePromptStore } from '../../../../packlets/store/fileTreePromptStore';
@@ -291,11 +292,8 @@ describe('FileTreePromptStore via PromptStoreFixture', () => {
       const root = FileTree.inMemory([]).orThrow();
       const result = FileTreePromptStore.create({
         root,
-        scopeEncoding: (scope) => `prefix-${scope as string}`,
-        scopeDecoding: (encoded) => {
-          const { succeed } = require('@fgv/ts-utils');
-          return succeed(encoded.replace('prefix-', '') as unknown as ScopeKey);
-        }
+        scopeEncoding: (scope) => succeed(`prefix-${scope as string}`),
+        scopeDecoding: (encoded) => succeed(encoded.replace('prefix-', '') as unknown as ScopeKey)
       });
       expect(result).toSucceed();
     });
@@ -357,6 +355,13 @@ describe('FileTreePromptStore via PromptStoreFixture', () => {
       const result = await store.get(globalScope, greetId);
       expect(result).toFail();
     });
+
+    test('fails when default scope encoding rejects the scope (path traversal)', async () => {
+      const root = FileTree.inMemory([]).orThrow();
+      const store = FileTreePromptStore.create({ root }).orThrow();
+      const result = await store.get('../traversal' as unknown as ScopeKey, greetId);
+      expect(result).toFailWith(/scope/i);
+    });
   });
 
   describe('getBindings() error paths', () => {
@@ -367,6 +372,13 @@ describe('FileTreePromptStore via PromptStoreFixture', () => {
       const store = FileTreePromptStore.create({ root }).orThrow();
       const result = await store.getBindings(globalScope);
       expect(result).toFail();
+    });
+
+    test('fails when default scope encoding rejects the scope (path traversal)', async () => {
+      const root = FileTree.inMemory([]).orThrow();
+      const store = FileTreePromptStore.create({ root }).orThrow();
+      const result = await store.getBindings('../traversal' as unknown as ScopeKey);
+      expect(result).toFailWith(/scope/i);
     });
   });
 
@@ -383,14 +395,7 @@ describe('FileTreePromptStore via PromptStoreFixture', () => {
 
   describe('list() with logger', () => {
     test('skips and logs a warning when a record file has invalid content', async () => {
-      const warnings: string[] = [];
-      const mockLogger = {
-        debug: () => undefined,
-        warn: (msg: string) => {
-          warnings.push(msg);
-        },
-        error: () => undefined
-      };
+      const logger = new Logging.InMemoryLogger('warning');
 
       // Create a store with a file that parses as YAML (via JSON.stringify producing valid YAML text)
       // but fails the stored prompt record converter (missing required fields)
@@ -401,11 +406,11 @@ describe('FileTreePromptStore via PromptStoreFixture', () => {
           contents: { notAPrompt: true }
         }
       ]).orThrow();
-      const store = FileTreePromptStore.create({ root, logger: mockLogger }).orThrow();
+      const store = FileTreePromptStore.create({ root, logger }).orThrow();
       const result = await store.list();
       expect(result).toSucceed();
-      expect(warnings).toHaveLength(1);
-      expect(warnings[0]).toMatch(/skipping/i);
+      expect(logger.logged).toHaveLength(1);
+      expect(logger.logged[0]).toMatch(/skipping/i);
     });
 
     test('silently skips invalid record without logging when no logger is provided', async () => {

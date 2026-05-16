@@ -80,15 +80,17 @@ function _runValidators<T>(
   registry: IPromptRegistry,
   context: IOutputValidationContext
 ): Result<T> {
+  let current = value;
   for (const validatorId of validatorIds) {
     const validatorResult = registry.outputValidations.get(validatorId);
     if (validatorResult.isFailure()) {
       return fail(`output: validator '${validatorId}': ${validatorResult.message}`);
     }
-    const runResult = validatorResult.value.validate(value, context);
+    const runResult = validatorResult.value.validate(current, context);
     if (runResult.isFailure()) {
       return fail(`output: validator '${validatorId}' failed: ${runResult.message}`);
     }
+    current = runResult.value as T;
   }
-  return succeed(value);
+  return succeed(current);
 }

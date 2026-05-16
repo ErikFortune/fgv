@@ -33,7 +33,7 @@ export type IQualifierContext = Readonly<Record<string, string>>;
  * Caller-supplied substitution value: a bare string is sugar for a literal prose binding.
  * @public
  */
-export type PromptSubstitutions = Readonly<Record<string, string | SlotBinding>>;
+export type PromptSubstitutions = Readonly<Record<string, string | ILiteralSlotBinding>>;
 
 /**
  * A literal value binding for a slot.
