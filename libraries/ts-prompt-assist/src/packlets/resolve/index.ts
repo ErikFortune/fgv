@@ -288,9 +288,7 @@ export class PromptLibrary {
           traceSource = 'binding';
         }
       } else {
-        // Resource binding — not implemented in v0.1; use empty string.
-        value = '';
-        traceSource = 'binding';
+        return fail(`slot '${slot.name}': resource slot bindings are not supported in v0.1`);
       }
 
       slotValueMap.set(slot.name, value);

@@ -35,9 +35,6 @@ export const allSuspiciousDispositionValues: ReadonlyArray<SuspiciousDisposition
 export type AxisName = Brand<string, 'AxisName'>;
 
 // @public
-export type ConditionSetDecl = ReadonlyArray<Readonly<Record<string, string | ILooseConditionDecl>>> | Record<string, string | IChildConditionDecl>;
-
-// @public
 export namespace Convert {
     const promptId: Converter<PromptId, unknown>;
     const slotName: Converter<SlotName, unknown>;
@@ -73,25 +70,8 @@ export interface IBindingTraceEntry {
 // @public
 export interface ICandidateMatchTraceEntry {
     readonly candidateIndex: number;
-    readonly conditions: ReadonlyArray<IConditionMatchResult>;
+    readonly conditions: ReadonlyArray<unknown>;
     readonly matchType: 'match' | 'matchAsDefault';
-}
-
-// @public
-export interface IChildConditionDecl {
-    // (undocumented)
-    [key: string]: unknown;
-    // (undocumented)
-    readonly operator?: string;
-    // (undocumented)
-    readonly priority?: number;
-}
-
-// @public
-export interface IConditionMatchResult {
-    readonly conditionIndex: number;
-    readonly matched: boolean;
-    readonly matchScore?: number;
 }
 
 // @public
@@ -129,20 +109,6 @@ export interface ILiteralSlotBinding {
 }
 
 // @public
-export interface ILooseConditionDecl {
-    // (undocumented)
-    [key: string]: unknown;
-    // (undocumented)
-    readonly name?: string;
-    // (undocumented)
-    readonly operator?: string;
-    // (undocumented)
-    readonly priority?: number;
-    // (undocumented)
-    readonly value?: string;
-}
-
-// @public
 export interface IOutputValidationContext {
     readonly promptId: PromptId;
     readonly substitutions: ReadonlyMap<SlotName, IBindingTraceEntry>;
@@ -151,7 +117,7 @@ export interface IOutputValidationContext {
 // @public
 export interface IPromptCandidateRecord {
     readonly body: string;
-    readonly conditions: ConditionSetDecl;
+    readonly conditions: unknown;
     readonly isPartial?: boolean;
 }
 
