@@ -3,99 +3,19 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
 import { IPromptCandidateRecord, IPromptJoinPolicy } from '../types';
-import { IQualifierContext } from '../types';
-import { ResourceJson } from '@fgv/ts-res';
-
-/**
- * Outcome of candidate selection.
- *
- * @remarks
- * B-1 foundation uses a minimal in-record selector: a candidate matches when
- * every condition in its (normalized) condition set is exactly satisfied by
- * the supplied {@link IQualifierContext}, OR when its condition set is
- * empty. Specificity is computed as the count of conditions in the set
- * (more conditions = more specific). The full ts-res integration (with the
- * long-lived `ResourceManagerBuilder`, qualifier types, scoreAsDefault,
- * priority etc.) ships in a follow-up to this B-1 foundation as scoped in
- * `state.md`.
- *
- * @public
- */
-export interface ICandidateSelectionResult {
-  readonly selected: ReadonlyArray<{ readonly candidate: IPromptCandidateRecord; readonly index: number }>;
-}
-
-function normalizeConditions(
-  conditions: ResourceJson.Json.ConditionSetDecl
-): ReadonlyArray<{ readonly qualifier: string; readonly value: string }> {
-  if (Array.isArray(conditions)) {
-    return conditions.map((c) => ({ qualifier: c.qualifierName, value: c.value }));
-  }
-  return Object.entries(conditions).map(([name, decl]) => ({
-    qualifier: name,
-    value: typeof decl === 'string' ? decl : decl.value
-  }));
-}
-
-function candidateMatches(
-  candidate: IPromptCandidateRecord,
-  context: IQualifierContext
-): { readonly matches: boolean; readonly specificity: number } {
-  const normalized = normalizeConditions(candidate.conditions);
-  for (const cond of normalized) {
-    if (context[cond.qualifier] !== cond.value) {
-      return { matches: false, specificity: normalized.length };
-    }
-  }
-  return { matches: true, specificity: normalized.length };
-}
-
-/**
- * Selects the matching candidates from a record's candidate array in
- * specificity-ascending order, stopping at (and including) the first
- * terminal (`isPartial !== true`) candidate per design §10.2.
- *
- * @public
- */
-export function selectCandidates(
-  candidates: ReadonlyArray<IPromptCandidateRecord>,
-  context: IQualifierContext
-): Result<ICandidateSelectionResult> {
-  const matching: { candidate: IPromptCandidateRecord; index: number; specificity: number }[] = [];
-  for (let i = 0; i < candidates.length; i++) {
-    const candidate = candidates[i];
-    const { matches, specificity } = candidateMatches(candidate, context);
-    if (matches) {
-      matching.push({ candidate, index: i, specificity });
-    }
-  }
-  if (matching.length === 0) {
-    return fail('no candidate matched the supplied qualifier context');
-  }
-  // Specificity-ascending: lowest specificity first.
-  // Copilot review (PR #362, deferred to B-1b): ties on `specificity` are
-  // broken by `Array.prototype.sort` stability (guaranteed in modern V8),
-  // which falls back to source-file order. B-1b's full ts-res integration
-  // applies priority-based tiebreaking; until then consumers should not
-  // rely on tie-break behavior across candidates of equal specificity.
-  matching.sort((a, b) => a.specificity - b.specificity);
-
-  // Collect until (and including) first terminal.
-  const collected: { candidate: IPromptCandidateRecord; index: number }[] = [];
-  for (const entry of matching) {
-    collected.push({ candidate: entry.candidate, index: entry.index });
-    if (entry.candidate.isPartial !== true) {
-      break;
-    }
-  }
-  return succeed({ selected: collected });
-}
 
 /**
  * Joins selected candidate bodies per the supplied join policy (or the
  * design-§10.2 defaults).
+ *
+ * @remarks
+ * `trimTrailingWhitespace: true` strips all trailing whitespace (the
+ * `\s+$` form) — including bare trailing spaces, not just YAML-block-
+ * scalar trailing newlines. This matches the option's name; consumers
+ * who need to preserve trailing whitespace (e.g. trailing newlines)
+ * pass `trimTrailingWhitespace: false`.
+ *
  * @public
  */
 export function joinBodies(
@@ -108,13 +28,7 @@ export function joinBodies(
 
   const ordered = order === 'specificity-descending' ? [...selected].reverse() : selected;
 
-  // Copilot review (PR #362, deferred to B-1b): `trimTrailingWhitespace`
-  // currently only strips trailing newlines preceded by spaces/tabs (the
-  // YAML block-scalar trailing-newline shape that motivated the option in
-  // design §10.2). A body ending in just trailing spaces — `'hello '` —
-  // is NOT trimmed despite the option name. B-1b should either widen to
-  // `/\s+$/` or rename the option to clarify the narrower contract.
   return ordered
-    .map(({ candidate }) => (trim ? candidate.body.replace(/[ \t]*\n+\s*$/, '') : candidate.body))
+    .map(({ candidate }) => (trim ? candidate.body.replace(/\s+$/, '') : candidate.body))
     .join(separator);
 }

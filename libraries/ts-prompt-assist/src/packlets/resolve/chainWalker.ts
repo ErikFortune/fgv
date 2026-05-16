@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { PromptId, ScopeKey } from '../types';
 import { IScopeSlotBindingsRecord, IStoredPromptRecord } from '../types';
 import { IPromptStore } from '../store';
@@ -57,25 +57,29 @@ export async function walkScopeChain(
     return fail(`prompt '${id}': no record found in scope chain [${chain.join(', ')}]`);
   }
 
-  // Copilot review (PR #362, deferred to B-1b): this loop awaits
-  // `store.getBindings` sequentially for every scope in the chain. For an
-  // in-process FileTree adapter the cost is negligible, but for a future
-  // out-of-process adapter (SQL / Mongo) a 5-scope chain becomes 5
-  // sequential round-trips. The getBindings calls are mutually independent
-  // and could be `Promise.all`-ed; B-1b should parallelize once a remote
-  // adapter is in play.
+  // Bindings lookups across scopes are independent, so fire them in
+  // parallel. For the in-process FileTree adapter this is a no-op; for
+  // future out-of-process adapters (SQL / Mongo) it converts a chain-
+  // length-many sequential round-trips into one round-trip-wide.
+  const bindingsResults = await Promise.all(
+    chain.map((scope) =>
+      store
+        .getBindings(scope)
+        .then((r) =>
+          r.withErrorFormat((msg) => `prompt '${id}' scope '${scope}': store.getBindings failed: ${msg}`)
+        )
+    )
+  );
   const scopeBindings = new Map<ScopeKey, IScopeSlotBindingsRecord>();
-  for (const scope of chain) {
-    const result = (await store.getBindings(scope)).withErrorFormat(
-      (msg) => `prompt '${id}' scope '${scope}': store.getBindings failed: ${msg}`
-    );
-    if (result.isFailure()) {
-      return fail(result.message);
-    }
-    if (result.value !== undefined) {
-      scopeBindings.set(scope, result.value);
-    }
+  const aggregated = mapResults(bindingsResults);
+  if (aggregated.isFailure()) {
+    return fail(aggregated.message);
   }
+  aggregated.value.forEach((record, i) => {
+    if (record !== undefined) {
+      scopeBindings.set(chain[i], record);
+    }
+  });
 
   return succeed({
     record: winning.record,

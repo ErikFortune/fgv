@@ -30,16 +30,14 @@ export interface IPromptQualifierMetadata {
  * Maps qualifier axis name to value.
  *
  * @remarks
- * Copilot review (PR #362, deferred to B-1b): this context is flat-
- * string-valued, but `IPromptCandidateRecord.conditions` accepts the
- * full ts-res `ConditionSetDecl` (record-with-details with `priority` /
- * `scoreAsDefault`, and array form). The B-1 candidate selector projects
- * condition decls down to their `.value` and compares against this flat
- * context, so priority and scoreAsDefault on the descriptor side are
- * effectively ignored. B-1b's full ts-res integration (per design §15.5
- * Option C) replaces the candidate selector with ts-res's resolver,
- * which observes priority and scoreAsDefault directly — at which point
- * this asymmetry disappears.
+ * The context is intentionally a flat `Record<string, string>` even
+ * though `IPromptCandidateRecord.conditions` accepts the richer ts-res
+ * `ConditionSetDecl` (record-with-details with `priority` /
+ * `scoreAsDefault`, plus array form). The asymmetry is by design: ts-
+ * res's `SimpleContextQualifierProvider` itself takes a flat
+ * `Record<string, string>`, so caller context is intentionally simple;
+ * descriptor-side condition complexity flows through ts-res's resolver
+ * unchanged. See design §10 + §15.5 (Option C) for the rationale.
  *
  * @public
  */

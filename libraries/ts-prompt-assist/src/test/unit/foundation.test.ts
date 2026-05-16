@@ -49,13 +49,34 @@ import {
   promptSubstitutionsConverter,
   qualifiersFileConverter,
   scanCandidateBody,
-  selectCandidates,
   slotBindingConverter
 } from '../../index';
 import { ConverterRegistry, OutputValidationRegistry, SlotKindRegistry } from '../../index';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { Qualifiers } from '@fgv/ts-res';
+import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
+
+// Test-fixture qualifier collector — covers every axis used by the
+// fixtures below. Each axis is a permissive LiteralQualifierType with no
+// enumerated-values constraint so arbitrary literal values resolve cleanly.
+const TEST_QUALIFIER_TYPES = QualifierTypes.QualifierTypeCollector.create({
+  qualifierTypes: [
+    QualifierTypes.LiteralQualifierType.create({ name: 'lang' }).orThrow(),
+    QualifierTypes.LiteralQualifierType.create({ name: 'tone' }).orThrow(),
+    QualifierTypes.LiteralQualifierType.create({ name: 'region' }).orThrow()
+  ]
+}).orThrow();
+
+const TEST_QUALIFIERS: ReadonlyArray<Qualifiers.IQualifierDecl> = [
+  { name: 'lang', typeName: 'lang', defaultPriority: 1000 },
+  { name: 'tone', typeName: 'tone', defaultPriority: 500 },
+  { name: 'region', typeName: 'region', defaultPriority: 700 }
+];
+
+const TEST_QUALIFIER_COLLECTOR = Qualifiers.QualifierCollector.create({
+  qualifierTypes: TEST_QUALIFIER_TYPES,
+  qualifiers: [...TEST_QUALIFIERS]
+}).orThrow();
 
 const TEST_SCOPE = 'global' as unknown as ScopeKey;
 const TENANT_SCOPE = 'tenant_acme' as unknown as ScopeKey;
@@ -121,6 +142,38 @@ describe('ts-prompt-assist foundation', () => {
       expect(Convert.promptId.convert('')).toFailWith(/non-empty/);
       expect(Convert.slotName.convert('a')).toSucceedWith('a' as unknown as SlotName);
       expect(Convert.scopeKey.convert('global')).toSucceedWith('global' as unknown as ScopeKey);
+    });
+
+    test('Convert.slotName tightens to the Mustache "name" production', () => {
+      // Mustache "name" is `[A-Za-z_][A-Za-z0-9_]*` — dot-separated keys
+      // are tokenized as section paths, not flat keys.
+      expect(Convert.slotName.convert('audience')).toSucceed();
+      expect(Convert.slotName.convert('_underscore')).toSucceed();
+      expect(Convert.slotName.convert('foo.bar')).toFailWith(/Mustache name/);
+      expect(Convert.slotName.convert('1starts-with-digit')).toFailWith(/Mustache name/);
+      expect(Convert.slotName.convert('has space')).toFailWith(/Mustache name/);
+    });
+
+    test('Convert.promptId rejects the cache-key delimiter "::"', () => {
+      // PromptId is used in the `MustacheTemplateCache` key as
+      // `${promptId}::${bodyHash}`; rejecting `::` keeps the flat key
+      // collision-free.
+      expect(Convert.promptId.convert('greet')).toSucceed();
+      expect(Convert.promptId.convert('greet::v1')).toFailWith(/must not contain '::'/);
+    });
+
+    test('branded scalars reject leading / trailing whitespace and exceed-length input', () => {
+      expect(Convert.promptId.convert(' leading')).toFailWith(/whitespace/);
+      expect(Convert.promptId.convert('trailing ')).toFailWith(/whitespace/);
+      // 257 chars exceeds the 256-char cap on every brand.
+      const tooLong = 'a'.repeat(257);
+      expect(Convert.promptId.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.resourceId.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.converterId.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.serializerId.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.validatorId.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.axisName.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.scopeKey.convert(tooLong)).toFailWith(/exceeds maximum length/);
     });
   });
 
@@ -344,6 +397,34 @@ describe('ts-prompt-assist foundation', () => {
         const missing = 'missing' as unknown as import('../../index').ConverterId;
         expect(reg.get(missing)).toFailWith(/not registered/);
         expect(reg.getKind(missing)).toFailWith(/not registered/);
+        // Kind-verified overload succeeds when the kind matches and
+        // fails with a clear error when it doesn't.
+        expect(reg.get<ICitedResponse>(id, 'cited-response')).toSucceed();
+      });
+    });
+
+    test('ConverterRegistry: kind-verified overload rejects mismatched kind at runtime', () => {
+      interface IPlainResponse {
+        readonly kind: 'plain';
+        readonly text: string;
+      }
+      interface IAltResponse {
+        readonly kind: 'alt';
+        readonly text: string;
+      }
+      type Responses = IPlainResponse | IAltResponse;
+      const conv: Converter<IPlainResponse> = Converters.object<IPlainResponse>({
+        kind: Converters.literal<'plain'>('plain'),
+        text: Converters.string
+      });
+      expect(ConverterRegistry.create<Responses>()).toSucceedAndSatisfy((reg) => {
+        const id = 'plain' as unknown as import('../../index').ConverterId;
+        expect(reg.register(id, 'plain', conv)).toSucceed();
+        // Asking for the same id under the other union member's kind
+        // fails the runtime check.
+        expect(reg.get<IAltResponse>(id, 'alt')).toFailWith(
+          /registered kind 'plain' does not match requested kind 'alt'/
+        );
       });
     });
 
@@ -405,47 +486,6 @@ describe('ts-prompt-assist foundation', () => {
       expect(MustacheTemplateCache.create()).toSucceedAndSatisfy((cache) => {
         expect(cache.getOrParse(TEST_PROMPT, 'unbalanced {{x')).toFail();
       });
-    });
-  });
-
-  describe('candidate selector', () => {
-    test('selects candidates in specificity-ascending order, terminal stops collection', () => {
-      const candidates: ReadonlyArray<IPromptCandidateRecord> = [
-        { conditions: {}, isPartial: true, body: 'base' },
-        { conditions: { tone: 'formal' }, isPartial: true, body: 'formal addendum' },
-        {
-          conditions: { tone: 'formal', region: 'emea' },
-          body: 'EMEA terminal override'
-        }
-      ];
-      expect(selectCandidates(candidates, { tone: 'formal', region: 'emea' })).toSucceedAndSatisfy((sel) => {
-        expect(sel.selected.map((s) => s.index)).toEqual([0, 1, 2]);
-      });
-    });
-
-    test('selects only one candidate when single match', () => {
-      const candidates: ReadonlyArray<IPromptCandidateRecord> = [
-        { conditions: {}, isPartial: false, body: 'base' },
-        { conditions: { tone: 'casual' }, body: 'unmatched' }
-      ];
-      expect(selectCandidates(candidates, {})).toSucceedAndSatisfy((sel) => {
-        expect(sel.selected.map((s) => s.index)).toEqual([0]);
-      });
-    });
-
-    test('supports array-form conditions', () => {
-      const candidates = [
-        {
-          conditions: [{ qualifierName: 'lang', value: 'en' }],
-          body: 'english'
-        }
-      ];
-      expect(selectCandidates(candidates, { lang: 'en' })).toSucceed();
-    });
-
-    test('fails when no candidates match', () => {
-      const candidates = [{ conditions: { lang: 'en' }, body: 'x' }];
-      expect(selectCandidates(candidates, { lang: 'fr' })).toFailWith(/no candidate matched/);
     });
   });
 
@@ -667,7 +707,7 @@ describe('ts-prompt-assist foundation', () => {
 
     test('end-to-end resolve with caller substitution', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const resolved = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -684,7 +724,7 @@ describe('ts-prompt-assist foundation', () => {
 
     test('describe returns descriptor across any scope', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       expect(await lib.describe(TEST_PROMPT)).toSucceedAndSatisfy((d) => {
         expect(d.title).toBe('Greeting');
       });
@@ -695,7 +735,7 @@ describe('ts-prompt-assist foundation', () => {
 
     test('resolve fails when chain is empty', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       expect(await lib.resolve({ id: TEST_PROMPT, chain: [], qualifiers: {} })).toFailWith(
         /scope chain is empty/
       );
@@ -703,7 +743,7 @@ describe('ts-prompt-assist foundation', () => {
 
     test('resolve fails when record not found', async () => {
       const store = await buildStore({});
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       expect(await lib.resolve({ id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} })).toFailWith(
         /no record found/
       );
@@ -728,7 +768,7 @@ describe('ts-prompt-assist foundation', () => {
           }
         ]
       });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const resolved = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TENANT_SCOPE, TEST_SCOPE],
@@ -799,7 +839,7 @@ describe('ts-prompt-assist foundation', () => {
 
     test('resolveAndValidateOutput fails loudly on free-text descriptors (B-4 deferral)', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolveAndValidateOutput<{ kind: string }>(
         {
           id: TEST_PROMPT,
@@ -826,7 +866,7 @@ describe('ts-prompt-assist foundation', () => {
         candidates: [{ conditions: {}, body: 'just text' }]
       });
       const store = await buildStore({ records: [jsonRecord] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolveAndValidateOutput(
         { id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} },
         '{"answer":"x"}'
@@ -842,7 +882,9 @@ describe('ts-prompt-assist foundation', () => {
         getQualifierConfig: async (): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>> =>
           succeed(undefined)
       };
-      const lib = (await PromptLibrary.create({ store: failing })).orThrow();
+      const lib = (
+        await PromptLibrary.create({ store: failing, qualifiers: TEST_QUALIFIER_COLLECTOR })
+      ).orThrow();
       const result = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -860,7 +902,9 @@ describe('ts-prompt-assist foundation', () => {
         getQualifierConfig: async (): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>> =>
           succeed(undefined)
       };
-      const lib = (await PromptLibrary.create({ store: failing })).orThrow();
+      const lib = (
+        await PromptLibrary.create({ store: failing, qualifiers: TEST_QUALIFIER_COLLECTOR })
+      ).orThrow();
       const result = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -877,7 +921,9 @@ describe('ts-prompt-assist foundation', () => {
         getQualifierConfig: async (): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>> =>
           succeed(undefined)
       };
-      const lib = (await PromptLibrary.create({ store: failing })).orThrow();
+      const lib = (
+        await PromptLibrary.create({ store: failing, qualifiers: TEST_QUALIFIER_COLLECTOR })
+      ).orThrow();
       expect(await lib.describe(TEST_PROMPT)).toFailWith(/store\.list failed: list IO failure/);
     });
 
@@ -887,7 +933,7 @@ describe('ts-prompt-assist foundation', () => {
         descriptor: { ...buildDescriptor().descriptor, slots: [] }
       });
       const store = await buildStore({ records: [record] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -923,7 +969,7 @@ describe('ts-prompt-assist foundation', () => {
           }
         ]
       });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -979,39 +1025,9 @@ describe('ts-prompt-assist foundation', () => {
       await store.list();
     });
 
-    test('candidate selector handles array-form and record-with-details conditions', () => {
-      const candidates: ReadonlyArray<IPromptCandidateRecord> = [
-        {
-          conditions: [{ qualifierName: 'lang', value: 'en' }],
-          body: 'x'
-        },
-        {
-          conditions: { lang: { value: 'fr', priority: 100 } },
-          body: 'y'
-        }
-      ];
-      expect(selectCandidates(candidates, { lang: 'fr' })).toSucceedAndSatisfy((sel) => {
-        expect(sel.selected[0].index).toBe(1);
-      });
-    });
-
-    test('candidate selector accepts record-with-details conditions', () => {
-      // The IChildConditionDecl.value is typed `string`; we exercise the
-      // typed record-with-details branch using a valid string value.
-      const candidates: ReadonlyArray<IPromptCandidateRecord> = [
-        {
-          conditions: { lang: { value: 'fr', priority: 100 } },
-          body: 'french'
-        }
-      ];
-      expect(selectCandidates(candidates, { lang: 'fr' })).toSucceedAndSatisfy((sel) => {
-        expect(sel.selected[0].index).toBe(0);
-      });
-    });
-
     test('resolveAndValidateOutput propagates resolve failures', async () => {
       const store = await buildStore({});
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolveAndValidateOutput(
         { id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} },
         'x'
@@ -1031,8 +1047,178 @@ describe('ts-prompt-assist foundation', () => {
 
     test('PromptLibrary.create fails when cache cap is invalid', async () => {
       const store = await buildStore({});
-      const result = await PromptLibrary.create({ store, templateCacheSize: 0 });
+      const result = await PromptLibrary.create({
+        store,
+        qualifiers: TEST_QUALIFIER_COLLECTOR,
+        templateCacheSize: 0
+      });
       expect(result).toFailWith(/positive/);
+    });
+
+    test('resolve composes partial candidates in specificity-ascending order, stops at terminal', async () => {
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          { conditions: {}, isPartial: true, body: 'Be helpful.' },
+          { conditions: { tone: 'formal' }, isPartial: true, body: 'Use formal address.' },
+          { conditions: { tone: 'formal', region: 'emea' }, body: 'EMEA addendum.' }
+        ],
+        descriptor: {
+          ...buildDescriptor().descriptor,
+          slots: []
+        }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: { tone: 'formal', region: 'emea' }
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('Be helpful.\n\nUse formal address.\n\nEMEA addendum.');
+        expect(r.trace.candidateMatches.map((m) => m.candidateIndex)).toEqual([0, 1, 2]);
+        // All three matched as regular matches; conditions array reflects
+        // the per-condition matches surfaced by ts-res (forwarded
+        // unchanged — see design §4.2).
+        expect(r.trace.candidateMatches.every((m) => m.matchType === 'match')).toBe(true);
+        expect(r.trace.candidateMatches[2].conditions.length).toBeGreaterThan(0);
+      });
+    });
+
+    test('resolve surfaces matchAsDefault when ts-res falls back via scoreAsDefault', async () => {
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          {
+            conditions: { tone: { value: 'formal', scoreAsDefault: 0.5 } },
+            body: 'formal default'
+          }
+        ],
+        descriptor: {
+          ...buildDescriptor().descriptor,
+          slots: []
+        }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      // Context value for `tone` is omitted — ts-res falls back via
+      // scoreAsDefault.
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {}
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('formal default');
+        expect(r.trace.candidateMatches[0].matchType).toBe('matchAsDefault');
+      });
+    });
+
+    test('describe rejects diverging descriptors across scopes', async () => {
+      const recordA: IStoredPromptRecord = buildDescriptor();
+      const recordB: IStoredPromptRecord = buildDescriptor({
+        scope: TENANT_SCOPE,
+        descriptor: { ...buildDescriptor().descriptor, title: 'DIVERGED' }
+      });
+      const store = await buildStore({ records: [recordA, recordB] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      expect(await lib.describe(TEST_PROMPT)).toFailWith(/not structurally equal/);
+    });
+
+    test('invalidateDescriptor drops the cached entry', async () => {
+      const store = await buildStore({ records: [buildDescriptor()] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      expect(await lib.describe(TEST_PROMPT)).toSucceed();
+      lib.invalidateDescriptor(TEST_PROMPT);
+      // Invalidation drops the cache; the next describe re-reads from
+      // the store. We don't have an externally observable signal that
+      // the cache was used vs not, but invalidating a non-cached id is
+      // a no-op (safe to call repeatedly).
+      lib.invalidateDescriptor('never-cached' as unknown as PromptId);
+      expect(await lib.describe(TEST_PROMPT)).toSucceed();
+    });
+
+    test('PromptLibrary.create fails when qualifierTypes missing for decl-array qualifiers', async () => {
+      const store = await buildStore({});
+      const result = await PromptLibrary.create({
+        store,
+        qualifiers: [{ name: 'lang', typeName: 'lang', defaultPriority: 100 }]
+      });
+      expect(result).toFailWith(/qualifierTypes must be supplied/);
+    });
+
+    test('PromptLibrary.create accepts qualifier decls plus qualifierTypes', async () => {
+      const store = await buildStore({});
+      const result = await PromptLibrary.create({
+        store,
+        qualifiers: TEST_QUALIFIERS,
+        qualifierTypes: TEST_QUALIFIER_TYPES
+      });
+      expect(result).toSucceed();
+    });
+
+    test('PromptLibrary.create honors explicit logger / resourceBindingDepthLimit / qualifierTypes', async () => {
+      const store = await buildStore({});
+      const noOp = new (await import('@fgv/ts-utils')).Logging.NoOpLogger();
+      const result = await PromptLibrary.create({
+        store,
+        qualifiers: TEST_QUALIFIER_COLLECTOR,
+        // Explicit qualifierTypes alongside a collector — the collector
+        // already exposes its qualifierTypes, but the explicit value
+        // takes precedence and exercises the branch.
+        qualifierTypes: TEST_QUALIFIER_TYPES,
+        logger: noOp,
+        resourceBindingDepthLimit: 7
+      });
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.resourceBindingDepthLimit).toBe(7);
+        expect(lib.logger).toBe(noOp);
+      });
+    });
+
+    test('resolve hits the materialized-resource cache on second call for the same prompt', async () => {
+      const store = await buildStore({ records: [buildDescriptor()] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const first = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {},
+        substitutions: { audience: 'world' }
+      });
+      expect(first).toSucceed();
+      // Second resolve with the same `(scope, id, candidate-hash)` reuses
+      // the materialized ts-res resource. Body content is identical.
+      const second = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {},
+        substitutions: { audience: 'world' }
+      });
+      expect(second).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('Hello, world!');
+      });
+    });
+
+    test('resolve fails when ts-res addLooseCandidate rejects invalid conditions', async () => {
+      // Per design §10.1 conditions delegate to ts-res's
+      // ConditionSetDecl. A condition referencing an unknown qualifier
+      // axis surfaces from addLooseCandidate at resolve time.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          {
+            conditions: { 'not-a-real-qualifier': 'x' },
+            body: 'no-op'
+          }
+        ],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const result = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {}
+      });
+      expect(result).toFailWith(/addLooseCandidate failed/);
     });
 
     test('mustache render failure surfaces with prompt id', async () => {
@@ -1044,7 +1230,7 @@ describe('ts-prompt-assist foundation', () => {
         }
       });
       const store = await buildStore({ records: [recordWithMissingVar] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],

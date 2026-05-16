@@ -18,28 +18,25 @@ const literalSlotBindingConverter: Converter<ILiteralSlotBinding> = Converters.o
   { optionalFields: ['enforced'] }
 );
 
-// A holder for the late-bound slot-binding converter; populated below.
-// Using indirection lets us thread the recursion through substitutions
-// without triggering use-before-define on the converter constants.
-//
-// Copilot review (PR #362, deferred to B-1b): the mutable-singleton
-// pattern is unusual for this codebase. A cleaner alternative is
-// `Converters.generic(() => slotBindingConverter)` with the thunk
-// captured at call time. B-1b should refactor once we're confident
-// the recursion shape is stable (resource-binding resolution lands in
-// B-2 and may reshape this dispatch).
-const _slotBindingHolder: { converter?: Converter<SlotBinding> } = {};
-
-function convertSlotBinding(from: unknown): Result<SlotBinding> {
-  const c = _slotBindingHolder.converter;
-  /* c8 ignore next 2 - module-init guarantees populated by first invocation */
-  if (c === undefined) return fail('slot binding: converter not initialized');
-  return c.convert(from);
-}
+// The slot-binding Converter is mutually recursive with the
+// substitution-entry Converter (a resource binding may carry nested
+// substitutions, each of which may itself be a slot binding). A direct
+// closure-thunk reference to `slotBindingConverter` would trip
+// `@typescript-eslint/no-use-before-define` because the const it
+// references is declared later in the file. We resolve the cycle via a
+// tiny holder that's populated the moment `slotBindingConverter` is
+// assigned, below — module evaluation order guarantees the holder is
+// populated before any convert call runs. The holder's mutation is
+// internal to this module; it is never reassigned and never observed
+// before initialization.
+const _bindingDispatch: { resolve: (from: unknown) => Result<SlotBinding> } = {
+  /* c8 ignore next 2 - module-init guarantees this is overwritten before any call */
+  resolve: (): Result<SlotBinding> => fail('slot binding: converter not initialized')
+};
 
 const substitutionEntryConverter: Converter<string | SlotBinding> = Converters.oneOf<string | SlotBinding>([
   Converters.string,
-  Converters.generic<SlotBinding>((from: unknown) => convertSlotBinding(from))
+  Converters.generic<SlotBinding>((from: unknown) => _bindingDispatch.resolve(from))
 ]);
 
 const substitutionsConverter: Converter<PromptSubstitutions> = Converters.recordOf<string | SlotBinding>(
@@ -81,7 +78,9 @@ export const slotBindingConverter: Converter<SlotBinding> = Converters.generic<S
   }
 );
 
-_slotBindingHolder.converter = slotBindingConverter;
+// Wire the dispatch holder. After this line, `_bindingDispatch.resolve`
+// forwards every convert call to the full slot-binding Converter.
+_bindingDispatch.resolve = (from: unknown): Result<SlotBinding> => slotBindingConverter.convert(from);
 
 /**
  * Converter for the caller-supplied substitutions map (allows bare-string

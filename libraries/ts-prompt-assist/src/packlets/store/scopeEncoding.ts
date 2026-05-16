@@ -15,19 +15,18 @@ import { ScopeKey, Convert } from '../types';
 //     scopeEncoding.
 //   - reserved Windows device names
 
-// Copilot review (PR #362, deferred to B-1b): the reserved-device set
-// omits `COM0` / `LPT0` (added on Windows 11 / Server 2022+) and the
-// superscript-digit historical variants. The list matches design §OQ-1
-// as written; B-1b should widen to `i = 0..9` once a real Windows-host
-// test confirms the broader rejection. The current set still rejects
-// the names that real-world filesystems actually return.
+// Reserved Windows device basenames. Includes COM0..9 and LPT0..9 — the
+// 0-suffixed variants were added in Windows 11 / Server 2022. Names are
+// matched case-insensitively against the basename (text before the first
+// `.`). Consumers who need names that collide with these on POSIX must
+// supply a custom `scopeEncoding`.
 const RESERVED_WIN_DEVICES: ReadonlySet<string> = new Set<string>([
   'CON',
   'PRN',
   'AUX',
   'NUL',
-  ...Array.from({ length: 9 }, (__v, i) => `COM${i + 1}`),
-  ...Array.from({ length: 9 }, (__v, i) => `LPT${i + 1}`)
+  ...Array.from({ length: 10 }, (__v, i) => `COM${i}`),
+  ...Array.from({ length: 10 }, (__v, i) => `LPT${i}`)
 ]);
 
 const PORTABLE_FILENAME_RE: RegExp = /^[A-Za-z0-9._-]+$/;
@@ -37,13 +36,11 @@ const PORTABLE_FILENAME_RE: RegExp = /^[A-Za-z0-9._-]+$/;
  * in design §OQ-1 enforced.
  *
  * @remarks
- * Copilot review (PR #362, deferred to B-1b): the case-insensitive
- * reserved-device check rejects mixed-case forms like `'Aux'` even though
- * a consumer might want such a name on POSIX (where the rejection is
- * unnecessary). Consumers who need names that collide with Windows
- * device names must supply a custom `scopeEncoding` (e.g. prefix all
- * scopes with a sentinel character that takes them out of the device-
- * name space). The default path optimizes for cross-platform safety.
+ * The case-insensitive reserved-device check rejects mixed-case forms
+ * (e.g. `'Aux'`, `'con.txt'`) even though POSIX hosts don't reserve
+ * those names. The default path optimizes for cross-platform safety;
+ * consumers who need such names supply a custom `scopeEncoding` per
+ * design OQ-1.
  *
  * @public
  */

@@ -191,15 +191,17 @@ export const promptFileConverter: Converter<IPromptFileContents> = Converters.ge
     if (typeof from !== 'object' || from === null) {
       return fail('prompt file: expected an object');
     }
-    // Copilot review (PR #362, deferred to B-1b): `descriptorConverter` is
-    // a non-strict `Converters.object` so it silently ignores the
-    // `candidates` field; we re-parse `candidates` separately below. If
-    // `Converters.object` ever switches to strict-by-default this will
-    // start rejecting prompt files. B-1b should split `{ candidates,
-    // ...descriptorRaw }` explicitly before invoking `descriptorConverter`.
-    const raw = from as { readonly candidates?: unknown };
+    // Split the prompt file into descriptor fields + candidates so the
+    // descriptor Converter never sees the `candidates` field. This keeps
+    // the file Converter robust against a future `Converters.object`
+    // strict-by-default switch and avoids the wasted re-parse of the
+    // entire object when descriptor Converters become more expensive.
+    const { candidates: rawCandidates, ...descriptorRaw } = from as {
+      readonly candidates?: unknown;
+      readonly [key: string]: unknown;
+    };
     return descriptorConverter
-      .convert(from)
+      .convert(descriptorRaw)
       .withErrorFormat((msg) => `prompt file: invalid descriptor: ${msg}`)
       .onSuccess((descriptor) => {
         if (descriptor.output.kind === 'free-text' && (descriptor.outputValidations?.length ?? 0) > 0) {
@@ -208,7 +210,7 @@ export const promptFileConverter: Converter<IPromptFileContents> = Converters.ge
           );
         }
         return Converters.arrayOf(looseCandidateBodyConverter)
-          .convert(raw.candidates)
+          .convert(rawCandidates)
           .withErrorFormat((msg) => `prompt '${descriptor.id}': invalid candidates: ${msg}`)
           .onSuccess((candidates) =>
             mapResults(candidates.map((c, i) => scanCandidateBody(c.body, descriptor.id, i))).onSuccess(() =>

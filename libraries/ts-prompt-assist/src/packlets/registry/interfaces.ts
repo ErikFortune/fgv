@@ -63,8 +63,17 @@ export interface IPromptConverterRegistry<TResponse extends { kind: string }> {
     converter: Converter<T>
   ): Result<ConverterId>;
 
-  /** Retrieves a registered Converter, narrowed to `T`. */
+  /** Retrieves a registered Converter, narrowed to `T`. The no-kind
+   *  overload trusts the caller's `T` — prefer the kind-verified
+   *  overload below in code paths that don't otherwise establish the
+   *  kind invariant. */
   get<T extends TResponse = TResponse>(id: ConverterId): Result<Converter<T>>;
+
+  /** Retrieves a registered Converter, verifying at runtime that the
+   *  recorded producing `kind` matches the requested `T['kind']`. Fails
+   *  with a clear error when the registered Converter produces a
+   *  different kind. */
+  get<T extends TResponse>(id: ConverterId, kind: T['kind']): Result<Converter<T>>;
 
   /** Returns the declared response kind for a registered Converter. */
   getKind(id: ConverterId): Result<TResponse['kind']>;
