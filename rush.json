@@ -417,6 +417,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-prompt-assist",
+      "projectFolder": "libraries/ts-prompt-assist",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-extras-argon2",
       "projectFolder": "libraries/ts-extras-argon2",
       "shouldPublish": true,

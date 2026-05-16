@@ -1,0 +1,11 @@
+{
+  "extends": "./node_modules/@rushstack/heft-node-rig/profiles/default/tsconfig-base.json",
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "types": ["heft-jest", "node"],
+    "lib": ["es2020", "DOM"],
+    "paths": {
+      "@fgv/ts-res": ["./node_modules/@fgv/ts-res/lib/index.d.ts"]
+    }
+  }
+}
