@@ -1119,6 +1119,35 @@ describe('ts-prompt-assist foundation', () => {
       });
     });
 
+    test('resolve prefers regular matches over matchAsDefault fallbacks', async () => {
+      // Mixed candidate set: one regular-match candidate plus one
+      // default-match candidate (via `scoreAsDefault`). ts-res returns
+      // both groups; the library must pick only the regular set so a
+      // default partial never layers before a regular terminal.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          { conditions: {}, body: 'regular base (always matches)' },
+          {
+            conditions: { tone: { value: 'formal', scoreAsDefault: 0.5 } },
+            body: 'default fallback (lower preference)'
+          }
+        ],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {}
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('regular base (always matches)');
+        expect(r.trace.candidateMatches).toHaveLength(1);
+        expect(r.trace.candidateMatches[0].matchType).toBe('match');
+      });
+    });
+
     test('describe accepts identical descriptors at multiple scopes', async () => {
       // Multi-scope path: exercises the for-loop body in
       // `_populateDescriptorCache` (hashing the second descriptor and

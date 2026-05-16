@@ -135,8 +135,8 @@ interface IMaterializedPrompt {
  * Generic over `TResponse extends \{ kind: string \}` so the JSON output
  * pipeline (B-4) wires up without any cast.
  *
- * Holds one long-lived ts-res {@link Resources.ResourceManagerBuilder |
- * ResourceManagerBuilder} for the lifetime of the instance (per design
+ * Holds one long-lived ts-res {@link ResourceManagerBuilder | ResourceManagerBuilder}
+ * for the lifetime of the instance (per design
  * §15.5 Option C / §17.1). Prompt records materialize into the builder
  * on first resolve via `addLooseCandidate`; subsequent resolves reuse
  * the cached materialization and ride ts-res's intrinsic O(1)
@@ -149,7 +149,6 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   private readonly _registry?: IPromptRegistry<TResponse>;
   private readonly _mustacheCache: MustacheTemplateCache;
   private readonly _descriptorCache: Map<string, IPromptDescriptor>;
-  private readonly _descriptorHashes: Map<string, string>;
   private readonly _qualifierCollector: Qualifiers.IReadOnlyQualifierCollector;
   private readonly _qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
   private readonly _builder: ResourceManagerBuilder;
@@ -184,7 +183,6 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     this._registry = params.registry;
     this._mustacheCache = params.mustacheCache;
     this._descriptorCache = new Map();
-    this._descriptorHashes = new Map();
     this._qualifierCollector = params.qualifierCollector;
     this._qualifierTypes = params.qualifierTypes;
     this._builder = params.builder;
@@ -260,7 +258,6 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    */
   public invalidateDescriptor(id: PromptId): void {
     this._descriptorCache.delete(id);
-    this._descriptorHashes.delete(id);
   }
 
   /**
@@ -335,7 +332,6 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
           }
         }
         this._descriptorCache.set(id, first.descriptor);
-        this._descriptorHashes.set(id, firstHash);
         return succeed(first.descriptor);
       });
   }
@@ -374,22 +370,37 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     record: IStoredPromptRecord,
     synthId: string
   ): Result<ReadonlyMap<ResourceCandidate, number>> {
+    // Two-phase materialization. Phase 1: validate every candidate's
+    // decl shape (synchronous, no builder mutation). Phase 2: commit
+    // the validated decls via `addLooseCandidate`. If any phase-1
+    // validation fails, the long-lived builder is left untouched, so
+    // a malformed record never pollutes future resolves of unrelated
+    // prompts. Phase-2 mid-walk failures are rare — they require an
+    // internal ts-res error after a validated decl — and re-running
+    // materialize is idempotent because `addLooseCandidate` dedupes
+    // candidates by condition-set key.
     return mapResults(
-      record.candidates.map((candidate, index) =>
-        toLooseDecl(candidate, synthId, index).onSuccess((decl) =>
-          this._builder
-            .addLooseCandidate(decl)
-            .asResult.withErrorFormat(
-              (msg) => `prompt '${record.id}' candidate ${index}: addLooseCandidate failed: ${msg}`
-            )
-            .onSuccess((rsCandidate) => succeed({ index, rsCandidate }))
-        )
-      )
-    ).onSuccess((added) => {
-      const map = new Map<ResourceCandidate, number>();
-      added.forEach((entry) => map.set(entry.rsCandidate, entry.index));
-      return succeed<ReadonlyMap<ResourceCandidate, number>>(map);
-    });
+      record.candidates.map((candidate, index) => toLooseDecl(candidate, synthId, index))
+    ).onSuccess((decls) => this._commitDecls(record, decls));
+  }
+
+  private _commitDecls(
+    record: IStoredPromptRecord,
+    decls: ReadonlyArray<ResourceJson.Json.ILooseResourceCandidateDecl>
+  ): Result<ReadonlyMap<ResourceCandidate, number>> {
+    const map = new Map<ResourceCandidate, number>();
+    for (let index = 0; index < decls.length; index++) {
+      const addResult = this._builder
+        .addLooseCandidate(decls[index])
+        .asResult.withErrorFormat(
+          (msg) => `prompt '${record.id}' candidate ${index}: addLooseCandidate failed: ${msg}`
+        );
+      if (addResult.isFailure()) {
+        return fail(addResult.message);
+      }
+      map.set(addResult.value, index);
+    }
+    return succeed(map);
   }
 
   private _resolveCandidates(
@@ -607,15 +618,21 @@ function projectMatches(
   };
 
   const rsCandidates = materialized.resource.candidates;
-  const regular = collectAt(rsCandidates, resolution.instanceIndices, 'match');
+  // Per ts-res semantics, regular matches are strictly preferred over
+  // default matches: `resolveResource` returns the first regular match
+  // when available and only falls back to defaults when none exist.
+  // ts-prompt-assist's specificity-ascending walk applies the same
+  // preference: use the regular set if non-empty, otherwise fall back
+  // to defaults. Mixing the two would let a default partial layer
+  // before a regular terminal, which violates ts-res's match-preference
+  // contract.
+  const usingDefaults = resolution.instanceIndices.length === 0;
+  const indices = usingDefaults ? resolution.defaultInstanceIndices : resolution.instanceIndices;
+  const matchType: 'match' | 'matchAsDefault' = usingDefaults ? 'matchAsDefault' : 'match';
+  const collectResult = collectAt(rsCandidates, indices, matchType);
   /* c8 ignore next 3 - defensive: collectAt failures require ts-res to return invalid indices or unmapped candidates */
-  if (regular.isFailure()) {
-    return fail(regular.message);
-  }
-  const defaults = collectAt(rsCandidates, resolution.defaultInstanceIndices, 'matchAsDefault');
-  /* c8 ignore next 3 - defensive: collectAt failures require ts-res to return invalid indices or unmapped candidates */
-  if (defaults.isFailure()) {
-    return fail(defaults.message);
+  if (collectResult.isFailure()) {
+    return fail(collectResult.message);
   }
 
   // ts-res returns priority-descending (most specific first). Design

@@ -592,7 +592,7 @@ export const promptFileConverter: Converter<IPromptFileContents>;
 // @public
 export type PromptId = Brand<string, 'PromptId'>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-prompt-assist" does not have an export "Resources"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-prompt-assist" does not have an export "ResourceManagerBuilder"
 //
 // @public
 export class PromptLibrary<TResponse extends {
