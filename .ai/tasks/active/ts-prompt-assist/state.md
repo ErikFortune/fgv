@@ -10,7 +10,7 @@
 | Phase | Status | Notes |
 |-------|--------|-------|
 | A — research and design | ✅ done | `design.md` merged into `claude/ts-prompt-assist-features` via [#357](https://github.com/ErikFortune/fgv/pull/357). All 6 OQs resolved; §15 documents ts-res `import` packlet audit; §17 (added 2026-05-16) documents the validator-chain redesign + NQ-5 resolution + restart guardrails. |
-| B — implementation | 🟡 restart in progress | First attempt (PR #359) retired without merge after ~35 reviewer-flagged issues. Rescoped into sub-phase commissions (B-0a through B-5) per `brief-phase-b.md`. B-0a (NQ-5 audit) done by orchestrator 2026-05-16. B-0b commissionable. |
+| B — implementation | 🟡 restart in progress | First attempt (PR #359) retired without merge after ~35 reviewer-flagged issues. Rescoped into sub-phase commissions (B-0a through B-5) per `brief-phase-b.md`. B-0a (NQ-5 audit) done by orchestrator 2026-05-16. **B-0b complete 2026-05-16** (ts-extras additive: `MustacheTemplate.create({escape})` + `extractJsonText` public-export confirmation). B-1 commissionable. |
 | Refine — consumer-port pressure-test | ⏸ blocked on phase B publish | First-consumer port (an agent chat application) surfaces gaps; 1–2 follow-up PRs on the integration branch absorb refinements before integration→release promotion |
 
 ---
@@ -23,6 +23,7 @@
 | 2026-05-15/16 | Implementation produced [PR #359](https://github.com/ErikFortune/fgv/pull/359) targeting `release` (incorrect base; brief said integration branch) |
 | 2026-05-16 | PR #359 reviewed; ~35 issues flagged across structural design-level violations, family-convention violations, correctness bugs, process violations. Erik closed PR #359 "retire and regroup" |
 | 2026-05-16 | Orchestrator rescope: brief amended with 10 explicit guardrails + sub-phase decomposition; design.md §17 added with validator-chain redesign + NQ-5 resolution + kind-naming decision. B-0b commissionable next. |
+| 2026-05-16 | **B-0b completed.** ts-extras additive: `MustacheEscapeStrategy` type + `escape?` option on `IMustacheTemplateOptions`; per-instance `Mustache.Writer` with locally-implemented `HTML_ESCAPE` so the strategy is immune to `Mustache.escape` global mutation (notably from `experimental/formatter.ts`); 8 new tests cover all three strategies (`'html'` back-compat, `'none'` verbatim, custom function) + concurrent-template safety + `validateAndRender` integration + triple-brace always-unescaped. `extractJsonText` confirmed already `@public` and re-exported from the ai-assist packlet — no source change needed; api.md regenerated. Rush change file added. Build / lint / fixlint / test all green; 100% coverage on `mustache` packlet; code-reviewer approved (no Priority 1/2 findings). Work branch: `claude/implement-b-0b-agent-R8kzX`. |
 
 ---
 

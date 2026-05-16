@@ -21,7 +21,7 @@
  */
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import Mustache, { TemplateSpans } from 'mustache';
+import Mustache, { EscapeFunction, TemplateSpans, Writer } from 'mustache';
 
 import {
   IContextValidationResult,
@@ -29,6 +29,7 @@ import {
   IMustacheTemplateOptions,
   IRequiredMustacheTemplateOptions,
   IVariableRef,
+  MustacheEscapeStrategy,
   MustacheTokenType
 } from './interfaces';
 
@@ -38,8 +39,48 @@ import {
 const DEFAULT_OPTIONS: IRequiredMustacheTemplateOptions = {
   tags: ['{{', '}}'],
   includeComments: false,
-  includePartials: false
+  includePartials: false,
+  escape: 'html'
 };
+
+/**
+ * HTML entity map matching mustache.js's internal `escapeHtml`. Held
+ * locally so the `'html'` escape strategy does not depend on the global
+ * `Mustache.escape` (which other packlets — notably `experimental` —
+ * mutate at module load and which mustache.js itself defines as
+ * mutable). Per-instance escape avoids that shared-state coupling.
+ */
+const HTML_ENTITY_MAP: Readonly<Record<string, string>> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+  '/': '&#x2F;',
+  '`': '&#x60;',
+  '=': '&#x3D;'
+};
+
+const HTML_ESCAPE: EscapeFunction = (value) =>
+  String(value).replace(/[&<>"'`=/]/g, (ch) => HTML_ENTITY_MAP[ch]);
+
+const PASSTHROUGH_ESCAPE: EscapeFunction = (value) => String(value);
+
+/**
+ * Resolves a {@link MustacheEscapeStrategy} into the per-render
+ * `escape` function understood by `Mustache.Writer.render`. The
+ * resolved function is always non-`undefined` so the writer never
+ * consults the (mutable, process-global) `Mustache.escape`.
+ */
+function _resolveEscapeFunction(strategy: MustacheEscapeStrategy): EscapeFunction {
+  if (strategy === 'html') {
+    return HTML_ESCAPE;
+  }
+  if (strategy === 'none') {
+    return PASSTHROUGH_ESCAPE;
+  }
+  return (value) => strategy(String(value));
+}
 
 /**
  * A helper class for working with Mustache templates that provides
@@ -58,12 +99,16 @@ export class MustacheTemplate {
   public readonly options: Readonly<IRequiredMustacheTemplateOptions>;
 
   private readonly _tokens: TemplateSpans;
+  private readonly _writer: Writer;
+  private readonly _escapeFn: EscapeFunction;
   private _variables?: readonly IVariableRef[];
 
   private constructor(template: string, tokens: TemplateSpans, options: IRequiredMustacheTemplateOptions) {
     this.template = template;
     this._tokens = tokens;
     this.options = options;
+    this._writer = new Mustache.Writer();
+    this._escapeFn = _resolveEscapeFunction(options.escape);
   }
 
   /**
@@ -177,7 +222,9 @@ export class MustacheTemplate {
    * @returns Success with the rendered string, or Failure if rendering fails
    */
   public render(context: unknown): Result<string> {
-    return captureResult(() => Mustache.render(this.template, context));
+    return captureResult(() =>
+      this._writer.render(this.template, context, undefined, { escape: this._escapeFn })
+    );
   }
 
   /**
@@ -203,7 +250,8 @@ export class MustacheTemplate {
     return {
       tags: options.tags ? [options.tags[0], options.tags[1]] : DEFAULT_OPTIONS.tags,
       includeComments: options.includeComments ?? DEFAULT_OPTIONS.includeComments,
-      includePartials: options.includePartials ?? DEFAULT_OPTIONS.includePartials
+      includePartials: options.includePartials ?? DEFAULT_OPTIONS.includePartials,
+      escape: options.escape ?? DEFAULT_OPTIONS.escape
     };
   }
 

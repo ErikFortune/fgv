@@ -111,6 +111,23 @@ export interface IContextValidationResult {
 }
 
 /**
+ * Strategy applied to double-brace `{{name}}` tokens at render time.
+ *
+ * - `'html'`: the standard mustache.js HTML escape (back-compat default).
+ * - `'none'`: verbatim passthrough — values are interpolated as-is
+ *   (coerced to `String`). Suitable for LLM-prompt rendering and other
+ *   non-HTML targets where `& → &amp;` corrupts the output.
+ * - `(value) => string`: caller-supplied escape function.
+ *
+ * Note: triple-brace `{{{name}}}` (and `{{&name}}`) tokens are always
+ * rendered unescaped regardless of this strategy — that is the standard
+ * mustache.js semantics and is not affected by this option.
+ *
+ * @public
+ */
+export type MustacheEscapeStrategy = 'html' | 'none' | ((value: string) => string);
+
+/**
  * Options for template parsing and validation.
  * @public
  */
@@ -129,6 +146,24 @@ export interface IMustacheTemplateOptions {
    * Whether to include partial references in variable extraction (default: false)
    */
   readonly includePartials?: boolean;
+
+  /**
+   * Escape strategy applied to double-brace `{{name}}` tokens at render
+   * time. Default `'html'` preserves the existing mustache.js behavior
+   * (back-compat).
+   *
+   * Pass `'none'` for LLM-prompt or other non-HTML targets where the
+   * default `& → &amp;` escape would corrupt the output. Pass a custom
+   * function for any other escape policy.
+   *
+   * The strategy is applied per-template via a private `Mustache.Writer`
+   * instance; no global state on the `mustache` module is mutated, so
+   * concurrent templates with different strategies are safe.
+   *
+   * Note: triple-brace `{{{name}}}` tokens are always rendered unescaped
+   * regardless of strategy (standard mustache.js semantics).
+   */
+  readonly escape?: MustacheEscapeStrategy;
 }
 
 /**
@@ -139,6 +174,7 @@ export interface IRequiredMustacheTemplateOptions {
   readonly tags: [string, string];
   readonly includeComments: boolean;
   readonly includePartials: boolean;
+  readonly escape: MustacheEscapeStrategy;
 }
 
 /* c8 ignore stop */
