@@ -7,6 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
 // @public
@@ -107,11 +108,10 @@ export interface IExpectedQualifierAxis {
 
 // @public
 export interface IFileTreePromptStoreCreateParams {
-    // Warning: (ae-forgotten-export) The symbol "ILogger" needs to be exported by the entry point index.d.ts
-    readonly logger?: ILogger;
+    readonly logger?: Logging.ILogger;
     readonly root: FileTree.FileTree;
     readonly scopeDecoding?: (encoded: string) => Result<ScopeKey>;
-    readonly scopeEncoding?: (scope: ScopeKey) => string;
+    readonly scopeEncoding?: (scope: ScopeKey) => Result<string>;
 }
 
 // @public
@@ -456,7 +456,7 @@ export class PromptStoreFixture {
 }
 
 // @public
-export type PromptSubstitutions = Readonly<Record<string, string | SlotBinding>>;
+export type PromptSubstitutions = Readonly<Record<string, string | ILiteralSlotBinding>>;
 
 // @public
 export const qualifierDeclsConverter: Converter<ReadonlyArray<IQualifierDecl>>;
