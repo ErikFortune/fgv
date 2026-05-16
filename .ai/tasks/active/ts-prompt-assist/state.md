@@ -1,7 +1,7 @@
 # Stream State: ts-prompt-assist
 
-**Status:** 🟢 phase A signed off + merged; phase B ready to start
-**Last updated:** 2026-05-15 (orchestrator — phase B brief authored)
+**Status:** 🟡 phase A merged; phase B in restart — PR #359 retired; rescoped into sub-phase commissions
+**Last updated:** 2026-05-16 (orchestrator — rescope after PR #359 retire)
 
 ---
 
@@ -9,9 +9,20 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| A — research and design | ✅ done | `design.md` merged into `claude/ts-prompt-assist-features` via [#357](https://github.com/ErikFortune/fgv/pull/357). All 6 OQs resolved with rationale; new §15 documents ts-res `import` packlet audit (deliberate divergence) and locks the Option C candidate→ts-res handoff strategy. |
-| B — implementation | 🟢 ready | `brief-phase-b.md` is the binding phase B contract; assignable to implementing agent. Recommended sub-phasing per design §14: B.0 ts-extras additive extensions → B.1 types + happy-path resolve → B.2 resource bindings → B.3 FileTreePromptStore + YAML → B.4 output validation → B.5 safeguards → B.6 docs + api-extractor + change files |
+| A — research and design | ✅ done | `design.md` merged into `claude/ts-prompt-assist-features` via [#357](https://github.com/ErikFortune/fgv/pull/357). All 6 OQs resolved; §15 documents ts-res `import` packlet audit; §17 (added 2026-05-16) documents the validator-chain redesign + NQ-5 resolution + restart guardrails. |
+| B — implementation | 🟡 restart in progress | First attempt (PR #359) retired without merge after ~35 reviewer-flagged issues. Rescoped into sub-phase commissions (B-0a through B-5) per `brief-phase-b.md`. B-0a (NQ-5 audit) done by orchestrator 2026-05-16. B-0b commissionable. |
 | Refine — consumer-port pressure-test | ⏸ blocked on phase B publish | First-consumer port (an agent chat application) surfaces gaps; 1–2 follow-up PRs on the integration branch absorb refinements before integration→release promotion |
+
+---
+
+## Phase B restart history
+
+| Date | Event |
+|---|---|
+| 2026-05-15 | Phase B first attempt commissioned against `brief-phase-b.md` via [#358](https://github.com/ErikFortune/fgv/pull/358) (single-agent run; Sonnet) |
+| 2026-05-15/16 | Implementation produced [PR #359](https://github.com/ErikFortune/fgv/pull/359) targeting `release` (incorrect base; brief said integration branch) |
+| 2026-05-16 | PR #359 reviewed; ~35 issues flagged across structural design-level violations, family-convention violations, correctness bugs, process violations. Erik closed PR #359 "retire and regroup" |
+| 2026-05-16 | Orchestrator rescope: brief amended with 10 explicit guardrails + sub-phase decomposition; design.md §17 added with validator-chain redesign + NQ-5 resolution + kind-naming decision. B-0b commissionable next. |
 
 ---
 
@@ -139,10 +150,27 @@ Phase B implementation order: ts-extras Mustache extension lands first (B.0), th
 
 ---
 
+## Phase B rescope decision log (orchestrator, 2026-05-16)
+
+| Decision | Rationale |
+|---|---|
+| **NQ-5 resolved: Option C achievable with zero ts-res changes** | Orchestrator audit confirmed ts-res's `ResourceManagerBuilder` natively supports `addLooseCandidate` / `addResource` / `addCondition` / `addConditionSet` post-construction and implements `IResourceManager` itself. Phase B holds a long-lived builder inside `PromptLibrary`; calls `addLooseCandidate` on cache miss; uses the builder directly as the `IResourceManager` for a `ResourceResolver`. Fallbacks (ii) and (iii) from design §15.5 are documented but not the target. See design §17.1. |
+| **Validator-chain redesigned: discriminated-union-typed registries** | First attempt (PR #359) produced `runResult.value as T` cast in the chain runner — the original `Result<unknown>` shape forced it. Redesign per design §17.2: registries parameterized by `TResponse extends { kind: string }`; consumers extend the union with their own response shapes; each validator declares `appliesTo: TResponse['kind']`; chain runtime narrows via `value.kind` lookup; no cast anywhere. Belt (loader-side reject) + suspenders (runtime fail on kind mismatch). |
+| **`kind` discriminator naming kept universally** | Multiple `kind` fields now exist across the design (`output.kind`, `SlotBinding.kind`, `IPromptStoreEvent.kind`, `ISafeguardFinding.kind`, NEW consumer response `kind`). Decision: keep `kind` everywhere per TypeScript community convention + `@fgv/*` family convention; rename specific sites only if a real conflict surfaces during implementation. JSDoc clarifies discriminator role at definition. See design §17.2.7. |
+| **Sub-phase decomposition replaces single-agent run** | PR #359 demonstrated mid-run context drift is a real failure mode in a single long agent run. Restart decomposes phase B into 5–6 separate agent commissions (B-0a orchestrator audit; B-0b ts-extras additive; B-1 foundation; B-2 resource bindings; B-3 FileTreePromptStore + YAML; B-4 output validation + safeguards; B-5 docs + handoff). Each agent starts cold against `design.md` + `state.md` + `brief-phase-b.md` — no carried context across sub-phases. Orchestrator reviews each PR before next sub-phase commissions. See `brief-phase-b.md` "Phase B sub-phase decomposition". |
+| **10 explicit guardrails added to brief-phase-b.md** | Made existing CODING_STANDARDS rules unmissable because PR #359 demonstrated the failure modes are real when not enforced upfront: no unsafe casts, no `unknown` without rationale, no type-shadowing, no silent unimplemented placeholders, no inline `eslint-disable`, mandatory `code-reviewer`, integration-branch PR target binding, factory pattern, index.ts barrel-only, Result chaining. Each guardrail tagged to a specific PR #359 failure where applicable. |
+| **Model selection: Opus for B-0b probe and B-1 foundation; Sonnet for B-2/B-3/B-4/B-5** | B-0b is a small isolated probe of the new brief shape; Opus for the disciplinary properties. B-1 is the foundation run; Opus where it matters most. After the foundation lands clean, Sonnet against a working foundation for follow-ons. |
+
+---
+
 ## PR
 
 Substrate-prep PR: merged (#356, 2026-05-13).
-Phase A PR: https://github.com/ErikFortune/fgv/pull/357 (`claude/ts-prompt-assist-phase-a-Y8JIM` → `claude/ts-prompt-assist-features`).
+Phase A PR: merged (#357, 2026-05-15).
+Phase B brief authoring PR: merged (#358, 2026-05-15).
+Phase B first attempt (retired): #359 (closed 2026-05-16, not merged).
+Phase B rescope prep PR: this PR.
+Phase B sub-phase PRs (incoming): B-0b → B-5.
 
 ---
 

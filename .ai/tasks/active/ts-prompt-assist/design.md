@@ -1850,3 +1850,355 @@ up as they arise. None gate the design lock.
   §15.5: prefer (i) extend ts-res additively; acceptable fallbacks
   (ii) periodic-rebuild or (iii) Option A (per-resolve transient)
   with `TECH_DEBT.md` entry.
+
+---
+
+## 17. Phase B prep — corrections after PR #359 retire (2026-05-16)
+
+PR #359 (initial phase B attempt) was retired without merge. The
+implementing agent produced ~35 reviewer-flagged issues spanning
+structural design-level violations, family-convention violations,
+correctness bugs, and process violations (see PR #359 close comment
+for the catalog). The corrections below amend earlier sections to
+remove identified failure modes BEFORE re-commissioning. They are
+binding for the restart.
+
+### 17.1 NQ-5 resolved — ts-res natively supports incremental add-after-build
+
+**Outcome of the orchestrator audit (B-0a):** ts-res's
+`ResourceManagerBuilder` already implements `IResourceManager` (has
+`builtResources`, `numResources`, `resourceIds`, `getBuiltResource`,
+`validateContext`, etc. — see
+`libraries/ts-res/src/packlets/runtime/iResourceManager.ts` and
+`libraries/ts-res/src/packlets/resources/resourceManagerBuilder.ts`).
+Public methods include:
+
+- `addLooseCandidate(...)`
+- `addResource(...)`
+- `addCondition(decl)`
+- `addConditionSet(conditions)`
+- `getBuiltResource(id)`
+- `getAllBuiltResources()`
+- `validateContext(context)`
+
+These are first-class, post-construction-callable. There is no
+build-then-freeze step required — a long-lived `ResourceManagerBuilder`
+instance held inside `PromptLibrary` IS the runtime resource manager
+for `ResourceResolver` purposes.
+
+**Conclusion:** §15.5 Option C is achievable with **zero ts-res
+changes**. Phase B holds a `ResourceManagerBuilder` for the lifetime
+of the `PromptLibrary` instance; calls `addLooseCandidate` (or
+`addResource` depending on which is the right granularity per
+`ResourceJson` decl shape) on cache miss; uses the builder directly
+as the `IResourceManager` for a `ResourceResolver`.
+
+The fallback options (ii) periodic-rebuild and (iii) per-resolve
+transient remain documented in §15.5 for record but are not the
+target. Phase B implements Option C against the builder.
+
+NQ-5 closes resolved.
+
+### 17.2 Validator-chain typing — redesigned to discriminated-union-typed registries
+
+**Problem identified in PR #359 review:** the original §4.3 shape
+required `IPromptOutputValidator.validate` to return `Result<unknown>`,
+and the chain machinery cast back to `T` at the call site. Even
+correcting to `IPromptOutputValidator<T = unknown>` (generic with
+default) doesn't fix the deeper issue — the registry stores
+heterogeneous validators as `IPromptOutputValidator<unknown>` (the
+registry can't statically know each validator's specific `T`), so
+either the chain reintroduces a cast OR the consumer is forced to
+handle `unknown` at the call site (kicking the problem upstream
+rather than eliminating it).
+
+**Decision (binding):** **Discriminated-union-typed registries.** The
+consumer extends a base union with their own response shapes; each
+shape self-discriminates via a `kind` field; the registry is
+parameterized by the extended union; the validator chain is
+end-to-end-typed with no cast at any boundary.
+
+#### 17.2.1 Shape
+
+```ts
+// Response shape contract (consumer-side):
+//   Every output-Converter's produced type T must satisfy
+//   { kind: string }. The `kind` field is the discriminator the
+//   validator chain narrows on.
+
+// Library-side: no built-in union members for v0.1 (consumer-defined
+// universe). The library is generic over the union. The empty
+// universe (no Converters / no validators) is the v0.1 default —
+// nothing is forced on consumers who don't use the JSON output
+// pipeline.
+
+// Registry parameterization (per OQ-4 + this amendment):
+export interface IPromptRegistry<TResponse extends { kind: string } = { kind: string }> {
+  readonly converters: IPromptConverterRegistry<TResponse>;
+  readonly slotKinds: IPromptSlotKindRegistry;
+  readonly outputValidations: IPromptOutputValidationRegistry<TResponse>;
+}
+
+export interface IPromptConverterRegistry<TResponse extends { kind: string }> {
+  register<T extends TResponse>(id: ConverterId, converter: Converter<T>): Result<ConverterId>;
+  get<T extends TResponse = TResponse>(id: ConverterId): Result<Converter<T>>;
+  has(id: ConverterId): boolean;
+}
+
+export interface IPromptOutputValidator<TResponse extends { kind: string }> {
+  /** Discriminator value(s) this validator applies to. Single string for
+   *  validators that target one response kind; readonly array for cross-
+   *  kind validators. */
+  readonly appliesTo: TResponse['kind'] | ReadonlyArray<TResponse['kind']>;
+  /** Validates the converted output. The chain runner only invokes this
+   *  when `value.kind` matches `appliesTo`. */
+  validate(value: TResponse, context: IOutputValidationContext): Result<true>;
+}
+
+export interface IPromptOutputValidationRegistry<TResponse extends { kind: string }> {
+  register(id: ValidatorId, validator: IPromptOutputValidator<TResponse>): Result<ValidatorId>;
+  get(id: ValidatorId): Result<IPromptOutputValidator<TResponse>>;
+  has(id: ValidatorId): boolean;
+}
+```
+
+#### 17.2.2 Consumer extension example
+
+```ts
+// Consumer-defined response shapes:
+interface ICitedResponse      { kind: 'cited-response'; answer: string; citedIds: ReadonlyArray<string> }
+interface IClassifierResponse { kind: 'classifier-response'; class: string; confidence: number }
+type ChatResponses = ICitedResponse | IClassifierResponse;
+
+// Consumer's typed registry:
+const registry: IPromptRegistry<ChatResponses> = PromptRegistry.create<ChatResponses>().orThrow();
+
+// Register a Converter for cited responses (T narrows to ICitedResponse):
+registry.converters.register(
+  'cited-response' as ConverterId,
+  citedResponseConverter // : Converter<ICitedResponse>
+);
+
+// Register a validator for cited responses (typed input, no cast):
+const citedIdsAreInInputs: IPromptOutputValidator<ChatResponses> = {
+  appliesTo: 'cited-response',
+  validate(value, ctx) {
+    if (value.kind !== 'cited-response') return succeed(true); // appliesTo guards this; defensive only
+    const inputs = ctx.substitutions;
+    const missing = value.citedIds.filter((id) => !inputs.has(id as SlotName));
+    if (missing.length > 0) {
+      return fail(`citedIds not present in input bag: ${missing.join(', ')}`);
+    }
+    return succeed(true);
+  }
+};
+registry.outputValidations.register('cited-ids-in-inputs' as ValidatorId, citedIdsAreInInputs);
+```
+
+#### 17.2.3 Chain runtime (typed end-to-end; no cast)
+
+```ts
+// Inside PromptLibrary.resolveAndValidateOutput<T extends TResponse>(req, rawOutput):
+return Output
+  .extractJsonText(rawOutput)
+  .onSuccess((cleaned) => captureResult(() => JSON.parse(cleaned)))
+  .onSuccess((parsed) =>
+    registry.converters.get<T>(descriptor.output.converterId).onSuccess((converter) =>
+      converter.convert(parsed)
+    )
+  )
+  .onSuccess((value: T) => {
+    // value.kind is T['kind'] — strongly typed.
+    const aggregator = new MessageAggregator();
+    for (const id of descriptor.outputValidations ?? []) {
+      const vr = registry.outputValidations.get(id);
+      if (vr.isFailure()) {
+        aggregator.addMessage(`validator '${id}' not registered`);
+        continue;
+      }
+      const validator = vr.value;
+      const targets = Array.isArray(validator.appliesTo) ? validator.appliesTo : [validator.appliesTo];
+      if (!targets.includes(value.kind)) {
+        // Runtime safety net (belt). Loader-side reject is the suspenders
+        // (see §17.2.4). If a validator id slipped through descriptor
+        // load, fail explicitly with both kinds cited.
+        aggregator.addMessage(
+          `prompt '${descriptor.id}': validator '${id}' (appliesTo: ${targets.join('|')}) doesn't match output kind '${value.kind}'`
+        );
+        continue;
+      }
+      // No cast: validator.validate accepts TResponse; value extends TResponse.
+      validator.validate(value, ctx).aggregateError(aggregator);
+    }
+    return aggregator.hasMessages ? fail(aggregator.toString('; ')) : succeed(value);
+  });
+```
+
+No `unknown` exposed to the consumer; no `as T` anywhere; type
+flows from the Converter through every validator to the final
+`Result<T>`. Validator authors are guaranteed `value.kind` matches
+their `appliesTo` at the entry of `validate` (chain runner guards
+it).
+
+#### 17.2.4 Loader-side validation + runtime-fail (belt and suspenders)
+
+**Belt — loader-side reject at descriptor load.** The descriptor
+Converter (the `DescriptorConverter` in
+`packlets/converters/descriptorConverter.ts`) verifies, for each
+`outputValidations[]` entry:
+
+1. The validator id is registered in `registry.outputValidations`.
+2. The validator's `appliesTo` includes the response kind produced by
+   `output.converterId`'s registered Converter (the registry exposes
+   the response kind for each registered ConverterId — see §17.2.5).
+
+Mismatches fail descriptor load with a clear error citing both the
+validator's `appliesTo` and the descriptor's `output.converterId`'s
+declared response kind. This catches drift at boot.
+
+**Suspenders — runtime-fail on actual `value.kind` mismatch.** Even
+with loader-side checks, the chain runner verifies
+`value.kind ∈ validator.appliesTo` at runtime (per §17.2.3 example).
+This guards against:
+- Registry mutation after descriptor load
+- Converter implementation bugs that return wrong-kind values
+- Future patterns we haven't anticipated
+
+Both checks live at well-defined boundaries; neither is "just in
+case" defensive coding.
+
+#### 17.2.5 Discoverability of response kind from ConverterId
+
+The loader-side check (§17.2.4) requires `registry.converters` to
+expose the response kind for each `ConverterId`. The library cannot
+inspect a `Converter<T>`'s `T` reflectively at runtime (TypeScript
+types are erased). The registry therefore tracks the registered kind
+alongside each Converter:
+
+```ts
+export interface IPromptConverterRegistry<TResponse extends { kind: string }> {
+  /** Register a Converter that produces a specific TResponse member.
+   *  The `kind` parameter is the discriminator value the Converter is
+   *  guaranteed to emit. The chain runtime asserts this at first
+   *  invocation per descriptor (catches register-time lies). */
+  register<T extends TResponse>(id: ConverterId, kind: T['kind'], converter: Converter<T>): Result<ConverterId>;
+  get<T extends TResponse = TResponse>(id: ConverterId): Result<Converter<T>>;
+  /** Returns the declared response kind for a registered Converter. */
+  getKind(id: ConverterId): Result<TResponse['kind']>;
+  has(id: ConverterId): boolean;
+}
+```
+
+`getKind(id)` is what the descriptor Converter (loader) calls when
+validating `outputValidations[]` entries against `output.converterId`.
+
+#### 17.2.6 `'free-text'` interaction
+
+`output: { kind: 'free-text' }` descriptors:
+
+- `resolveAndValidateOutput<T>` for free-text returns the raw output
+  verbatim (per §8). No Converter, no validators in v0.1.
+- The descriptor loader continues to reject `outputValidations` on
+  `'free-text'` descriptors (per §8) until v0.2 introduces post-render
+  free-text validators.
+- The `TResponse` type parameter on the registry is irrelevant for
+  free-text resolves — the chain doesn't run. Consumers who only use
+  free-text never need to parameterize the registry; the default
+  `TResponse = { kind: string }` is sufficient.
+
+#### 17.2.7 `kind` naming — keep universally
+
+The library and design now have multiple `kind` discriminators:
+- `IPromptDescriptor.output.kind: 'free-text' | 'json'`
+- `SlotBinding.kind: 'literal' | 'resource'`
+- `IPromptStoreEvent.kind: 'descriptor-changed' | ...`
+- `ISafeguardFinding.kind: 'max-length' | ...`
+- **NEW** — consumer response value `kind` (per §17.2)
+
+**Decision:** keep `kind` universally. Rationale:
+
+- `kind` is the de-facto TypeScript community convention for
+  discriminated-union discriminator fields.
+- The `@fgv/*` family already uses `kind` everywhere (ts-res resource
+  decls, ts-extras crypto types, etc.). Renaming any of them would
+  break the family convention.
+- The discriminators are in structurally separate code paths —
+  descriptor YAML, slot bindings, store events, trace findings, and
+  response values don't share a code site where ambiguity could bite.
+- JSDoc on the consumer response interfaces should clarify the
+  discriminator role at the point of definition.
+
+If a real conflict surfaces during implementation, rename the
+specific conflicting site then. Until then, follow convention.
+
+### 17.3 Amendments to earlier sections
+
+This subsection enumerates the sections changed by §17 so phase B
+implements against the corrected shape. Where §17 and the earlier
+section conflict, **§17 wins**.
+
+- **§3.4 (Output contract)** — unchanged. `PromptOutputContract`
+  shape is identical; the consumer-side response value typing is the
+  TResponse parameter on the registry, not on the descriptor's
+  output contract.
+- **§3.9 (Descriptor)** — unchanged. `outputValidations: ReadonlyArray<ValidatorId>`
+  is the same; the validators behind those ids are now typed against
+  `TResponse` via the registry.
+- **§4.1 (`PromptLibrary` create params)** — `PromptLibrary` is
+  generic over `TResponse extends { kind: string } = { kind: string }`.
+  `IPromptLibraryCreateParams<TResponse>` accepts `registry?:
+  IPromptRegistry<TResponse>`. Default parameter preserves consumers
+  who don't use the JSON output pipeline.
+- **§4.3 (Registry shapes)** — replaced by §17.2.1 + §17.2.5
+  (parameterized by `TResponse`; Converters declare their emitted
+  `kind`).
+- **§4.6 (`IPromptStore`)** — unchanged.
+- **§8 (Output validation pipeline)** — clarified per §17.2.3 +
+  §17.2.4 (loader-side reject + runtime-fail; no cast in the chain).
+- **§12 (Acceptance criteria)** — adds: loader rejects descriptors
+  whose `outputValidations` reference validators with non-matching
+  `appliesTo`; chain runtime rejects mismatch (test both belt and
+  suspenders).
+
+No changes to §1, §2 OQ resolutions, §5–§7, §9–§11, §13–§16.
+
+### 17.4 Implementation discipline (binding for phase B restart)
+
+Beyond the technical corrections in §17.1–§17.3, the phase B
+restart adopts the following guardrails (see `brief-phase-b.md`
+§"Guardrails for the restart" for the full list, recapped here for
+design-doc completeness):
+
+1. **No unsafe casts (`as T`, `as unknown as T`) in product code.**
+   If the type system rejects what you're doing, **STOP and ask the
+   orchestrator** — the data shape is wrong, you're missing a
+   Converter / Validator, or the type definition needs refinement.
+   Cast-driven typing is the failure mode this design now explicitly
+   protects against.
+2. **No `unknown` in product code without explicit rationale.** If
+   reaching for `unknown`, **STOP and ask**.
+3. **Do not shadow types from `@fgv/*` libraries.** Use ts-res /
+   ts-extras / ts-utils / ts-json-base types by their import paths.
+   If a type isn't exported where you need it, surface to the
+   orchestrator (additive promote is in scope per CODING_STANDARDS
+   §"Extending Core Libraries").
+4. **Do not ship unimplemented features as placeholders.** If a
+   sub-phase doesn't fit, surface and split.
+5. **Lint warnings are never "expected" or "pre-existing".** Fix
+   them (`rushx fixlint`, then manual).
+6. **Mandatory `code-reviewer` agent invocation** before declaring
+   any packlet complete.
+7. **PR target binding** — integration branch `claude/ts-prompt-assist-features`,
+   NOT `release`.
+8. **Family-convention factory pattern** on every fallible class
+   (`static create(...): Result<T>`).
+9. **Code in `index.ts` is barrel-exports only** — move logic to
+   dedicated files.
+10. **Use Result chaining throughout.** `/result-pattern` skill load
+    is mandatory; result-chained sequences read better than
+    intermediate-variable cascades.
+
+These guardrails are not new repo policy — they are existing
+CODING_STANDARDS rules made explicit because PR #359 demonstrated
+the failure modes are real and consequential when not enforced
+upfront.
