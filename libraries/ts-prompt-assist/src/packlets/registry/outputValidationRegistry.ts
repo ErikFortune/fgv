@@ -21,9 +21,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import type { SlotName, ValidatorId } from '../types/ids';
-import type { PromptId } from '../types/ids';
-import type { IBindingTraceEntry } from '../types/descriptor';
+import type { SlotName, ValidatorId, PromptId, IBindingTraceEntry } from '../types';
 
 /**
  * Context passed to output validators.
@@ -38,14 +36,14 @@ export interface IOutputValidationContext {
 
 /**
  * An output validator that validates and optionally normalizes prompt output.
+ * Type parameter `T` is the type of value validated and returned.
  * @public
  */
-export interface IPromptOutputValidator {
+export interface IPromptOutputValidator<T = unknown> {
   /**
-   * Validates the output. Returns a (possibly normalized) value.
-   * Validators may return a different type than they receive to normalize.
+   * Validates the output. Returns a (possibly normalized) value of type `T`.
    */
-  validate(output: unknown, context: IOutputValidationContext): Result<unknown>;
+  validate(output: T, context: IOutputValidationContext): Result<T>;
 }
 
 /**
@@ -55,8 +53,8 @@ export interface IPromptOutputValidator {
 export interface IPromptOutputValidationRegistry {
   /** Register a validator. Returns the id on success. */
   register(id: ValidatorId, validator: IPromptOutputValidator): Result<ValidatorId>;
-  /** Get a validator. Fails if not registered. */
-  get(id: ValidatorId): Result<IPromptOutputValidator>;
+  /** Get a typed validator. Fails if not registered. */
+  get<T>(id: ValidatorId): Result<IPromptOutputValidator<T>>;
   /** Check if a validator is registered. */
   has(id: ValidatorId): boolean;
 }
@@ -66,7 +64,7 @@ export interface IPromptOutputValidationRegistry {
  * @public
  */
 export class PromptOutputValidationRegistry implements IPromptOutputValidationRegistry {
-  private readonly _validators = new Map<ValidatorId, IPromptOutputValidator>();
+  private readonly _validators: Map<ValidatorId, IPromptOutputValidator> = new Map();
 
   /** {@inheritDoc IPromptOutputValidationRegistry.register} */
   public register(id: ValidatorId, validator: IPromptOutputValidator): Result<ValidatorId> {
@@ -78,12 +76,12 @@ export class PromptOutputValidationRegistry implements IPromptOutputValidationRe
   }
 
   /** {@inheritDoc IPromptOutputValidationRegistry.get} */
-  public get(id: ValidatorId): Result<IPromptOutputValidator> {
+  public get<T>(id: ValidatorId): Result<IPromptOutputValidator<T>> {
     const validator = this._validators.get(id);
     if (validator === undefined) {
       return fail(`output validator '${id}' is not registered`);
     }
-    return succeed(validator);
+    return succeed(validator as IPromptOutputValidator<T>);
   }
 
   /** {@inheritDoc IPromptOutputValidationRegistry.has} */

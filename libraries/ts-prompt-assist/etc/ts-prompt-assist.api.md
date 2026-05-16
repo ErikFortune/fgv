@@ -172,14 +172,14 @@ export interface IPromptLibraryCreateParams {
 
 // @public
 export interface IPromptOutputValidationRegistry {
-    get(id: ValidatorId): Result<IPromptOutputValidator>;
+    get<T>(id: ValidatorId): Result<IPromptOutputValidator<T>>;
     has(id: ValidatorId): boolean;
     register(id: ValidatorId, validator: IPromptOutputValidator): Result<ValidatorId>;
 }
 
 // @public
-export interface IPromptOutputValidator {
-    validate(output: unknown, context: IOutputValidationContext): Result<unknown>;
+export interface IPromptOutputValidator<T = unknown> {
+    validate(output: T, context: IOutputValidationContext): Result<T>;
 }
 
 // @public
@@ -389,7 +389,7 @@ export type PromptOutputContract = ITextOutputContract | IJsonOutputContract;
 
 // @public
 export class PromptOutputValidationRegistry implements IPromptOutputValidationRegistry {
-    get(id: ValidatorId): Result<IPromptOutputValidator>;
+    get<T>(id: ValidatorId): Result<IPromptOutputValidator<T>>;
     has(id: ValidatorId): boolean;
     register(id: ValidatorId, validator: IPromptOutputValidator): Result<ValidatorId>;
 }

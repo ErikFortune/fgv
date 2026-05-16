@@ -149,7 +149,7 @@ export interface IPromptExampleSet {
  * @public
  */
 export interface IPromptJoinPolicy {
-  /** String inserted between fragments. Default: '\n\n'. */
+  /** String inserted between fragments. Default: newline + newline. */
   readonly separator?: string;
   /** Fragment order. Default: 'specificity-ascending'. */
   readonly order?: 'specificity-ascending' | 'specificity-descending';

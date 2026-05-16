@@ -49,7 +49,7 @@ export interface IPromptSlotKindRegistry {
  * @public
  */
 export class PromptSlotKindRegistry implements IPromptSlotKindRegistry {
-  private readonly _serializers = new Map<string, ISlotSerializer>();
+  private readonly _serializers: Map<string, ISlotSerializer> = new Map();
 
   /** {@inheritDoc IPromptSlotKindRegistry.register} */
   public register(kind: string, serializer: ISlotSerializer): Result<string> {

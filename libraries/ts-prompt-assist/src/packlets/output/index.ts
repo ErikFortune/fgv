@@ -23,8 +23,7 @@
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 import type { IPromptDescriptor, ValidatorId } from '../types';
-import type { IPromptRegistry } from '../registry';
-import type { IOutputValidationContext } from '../registry/outputValidationRegistry';
+import type { IPromptRegistry, IOutputValidationContext } from '../registry';
 
 /**
  * Processes the raw LLM output through the full output pipeline:
@@ -82,7 +81,7 @@ function _runValidators<T>(
 ): Result<T> {
   let current = value;
   for (const validatorId of validatorIds) {
-    const validatorResult = registry.outputValidations.get(validatorId);
+    const validatorResult = registry.outputValidations.get<T>(validatorId);
     if (validatorResult.isFailure()) {
       return fail(`output: validator '${validatorId}': ${validatorResult.message}`);
     }
@@ -90,7 +89,7 @@ function _runValidators<T>(
     if (runResult.isFailure()) {
       return fail(`output: validator '${validatorId}' failed: ${runResult.message}`);
     }
-    current = runResult.value as T;
+    current = runResult.value;
   }
   return succeed(current);
 }

@@ -21,7 +21,7 @@
  */
 
 import { Converter, Result, fail, succeed } from '@fgv/ts-utils';
-import type { ConverterId } from '../types/ids';
+import type { ConverterId } from '../types';
 
 /**
  * Registry of output converters indexed by id.
@@ -41,7 +41,7 @@ export interface IPromptConverterRegistry {
  * @public
  */
 export class PromptConverterRegistry implements IPromptConverterRegistry {
-  private readonly _converters = new Map<ConverterId, Converter<unknown>>();
+  private readonly _converters: Map<ConverterId, Converter<unknown>> = new Map();
 
   /** {@inheritDoc IPromptConverterRegistry.register} */
   public register<T>(id: ConverterId, converter: Converter<T>): Result<ConverterId> {
