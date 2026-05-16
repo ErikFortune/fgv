@@ -1,6 +1,15 @@
 // Copyright (c) 2026 Erik Fortune
 // SPDX-License-Identifier: MIT
 
+// Note on `as unknown as BrandedType` in test fixtures: per the repo
+// CODING_STANDARDS ("Special Cases → Test Files"), branded-type
+// construction in test data may use this pattern. Copilot review on
+// PR #362 flagged the repeated casts as a style concern; the casts
+// stay because the alternative (`Convert.<brand>.convert(...).orThrow()`)
+// adds visual noise to fixture setup without strengthening any contract
+// — the brand validators currently only check non-empty (see ids.ts
+// brandedString review note).
+
 import '@fgv/ts-utils-jest';
 import {
   Convert,

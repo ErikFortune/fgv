@@ -24,6 +24,14 @@ export interface IPromptStoreFixtureSeed {
   readonly qualifiers?: ReadonlyArray<Qualifiers.IQualifierDecl>;
   /** Optional scope encoder. Defaults to identity (path-safety enforced). */
   readonly scopeEncoding?: (scope: ScopeKey) => Result<string>;
+  // Copilot review (PR #362, deferred to B-1b): when a non-identity
+  // `scopeEncoding` is supplied, the fixture does NOT plumb a paired
+  // `scopeDecoding` through to FileTreePromptStore.create. `store.list()`
+  // will then decode directory names via the default decoder, producing
+  // ScopeKeys that don't round-trip with the custom encoder. B-1b should
+  // either add `readonly scopeDecoding?` here and forward it, or constrain
+  // the seed to require both halves. v0.1 fixture consumers stay on the
+  // identity encoder; non-identity is exercised only as a coverage probe.
 }
 
 function serializeBindingsRecord(record: IScopeSlotBindingsRecord): Result<string> {
@@ -64,6 +72,13 @@ export const PromptStoreFixture: {
   }
 } as const;
 
+// Copilot review (PR #362, deferred to B-1b): the three `mapResults` /
+// `serializeQualifiers` calls below run eagerly regardless of upstream
+// failure (they only short-circuit when threaded through `onSuccess`).
+// For small fixture seeds this is harmless; for large seeds with an
+// early-input failure it wastes serialization work. B-1b should
+// restructure as a single chained `mapResults` over the union of files,
+// or compute each step lazily inside `onSuccess` callbacks.
 function buildSeededStore(seed: IPromptStoreFixtureSeed): Promise<Result<IPromptStore>> {
   const encode = seed.scopeEncoding ?? defaultScopeEncoding;
   const files: FileTree.IInMemoryFile[] = [];

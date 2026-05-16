@@ -70,6 +70,15 @@ export type AxisName = Brand<string, 'AxisName'>;
  */
 export type ScopeKey = Brand<string, 'ScopeKey'>;
 
+// Copilot review (PR #362, deferred to B-1b): `brandedString` only
+// rejects the empty string — there is no upper-bound length check and
+// no character-class restriction. Downstream consumers assume more
+// (e.g. `SlotName` is used verbatim as a Mustache identifier; `ScopeKey`
+// passes through `defaultScopeEncoding`'s additional path-safety check).
+// B-1b should tighten per-brand: e.g. require Mustache "name"
+// production for `SlotName`, reject whitespace for all ids, cap length
+// at a reasonable maximum. Doing so now would constrain the
+// pressure-test consumer's id shapes before we know what they look like.
 function brandedString<T extends string>(brand: string): Converter<T> {
   return Converters.string.map((from: string): Result<T> => {
     if (from.length === 0) {

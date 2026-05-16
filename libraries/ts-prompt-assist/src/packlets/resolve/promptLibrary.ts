@@ -102,6 +102,17 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    * Returns the descriptor for a prompt by id, searching across all scopes.
    * Convenience for editor surfaces that don't want to specify a scope
    * chain. Returns the first record found via `store.list`.
+   *
+   * @remarks
+   * Copilot review (PR #362, deferred to B-1b): the descriptor cache is
+   * keyed by `id` alone, with no scope/chain qualification. If the same id
+   * exists at multiple scopes with diverging descriptors, this method
+   * returns whichever record `store.list` happened to return first. v0.1
+   * consumers (the chat-app pressure-test) carry one descriptor shape per
+   * id across all scopes, so the simple key is appropriate. B-1b should
+   * either validate at load time that descriptors for the same id are
+   * identical across scopes, or take a chain and key the cache by
+   * `(id, winningScope)` to handle genuinely divergent descriptors.
    */
   public async describe(id: PromptId): Promise<Result<IPromptDescriptor>> {
     const cached = this._descriptorCache.get(id);
@@ -192,6 +203,13 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    * every output kind. The B-1 unit tests assert that failure rather than
    * a faked success. The signature is pinned per design §4.1 + §17.2.5 so
    * B-4 can land without reshaping `PromptLibrary`'s API.
+   *
+   * Copilot review (PR #362, deferred to B-4): the deferral message is
+   * emitted only AFTER calling `this.resolve(req)`, so callers pay the
+   * full chain-walk + render cost before failing. B-1 keeps the resolve
+   * call so the failure message can cite the actual `descriptor.output.kind`
+   * (informative for the consumer). When B-4 implements the real pipeline,
+   * the resolve cost is necessary anyway and this stops being premature.
    */
   public async resolveAndValidateOutput<T extends TResponse>(
     req: IPromptResolveRequest,
@@ -204,6 +222,13 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     );
   }
 
+  // Copilot review (PR #362, deferred to B-1b): the render context indexes
+  // by `entry.name` (the SlotName branded string) but does not validate the
+  // name is a valid Mustache identifier. A SlotName like `'foo.bar'` would
+  // be parsed by Mustache as a section path `foo` → `bar`, not as a flat
+  // key. B-1b should either tighten `Convert.slotName` to require the
+  // Mustache "name" production (`[A-Za-z_][A-Za-z0-9_]*`) or document the
+  // constraint on the public type.
   private _buildRenderContext(merged: ReadonlyMap<SlotName, IBindingTraceEntry>): Record<string, string> {
     const ctx: Record<string, string> = {};
     merged.forEach((entry, name) => {

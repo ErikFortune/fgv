@@ -57,6 +57,13 @@ export async function walkScopeChain(
     return fail(`prompt '${id}': no record found in scope chain [${chain.join(', ')}]`);
   }
 
+  // Copilot review (PR #362, deferred to B-1b): this loop awaits
+  // `store.getBindings` sequentially for every scope in the chain. For an
+  // in-process FileTree adapter the cost is negligible, but for a future
+  // out-of-process adapter (SQL / Mongo) a 5-scope chain becomes 5
+  // sequential round-trips. The getBindings calls are mutually independent
+  // and could be `Promise.all`-ed; B-1b should parallelize once a remote
+  // adapter is in play.
   const scopeBindings = new Map<ScopeKey, IScopeSlotBindingsRecord>();
   for (const scope of chain) {
     const result = (await store.getBindings(scope)).withErrorFormat(

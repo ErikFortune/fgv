@@ -47,6 +47,13 @@ export class MustacheTemplateCache {
       .computeHash(body)
       .withErrorFormat((msg) => `prompt '${promptId}': hash failed: ${msg}`)
       .onSuccess((bodyHash) => {
+        // Copilot review (PR #362, deferred to B-1b): the `::` delimiter
+        // is safe today because `Convert.promptId` rejects empty strings
+        // only (no character-class restriction). If `brandedString` is
+        // tightened later to reject `::` in PromptIds (see ids.ts review
+        // note), this key is collision-free. If `PromptId` keeps allowing
+        // arbitrary characters, switch this to a nested map keyed by
+        // `promptId` then `bodyHash` to avoid any collision risk.
         const key = `${promptId}::${bodyHash}`;
         const existing = this._entries.get(key);
         if (existing !== undefined) {

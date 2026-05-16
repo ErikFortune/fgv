@@ -75,6 +75,11 @@ export function selectCandidates(
     return fail('no candidate matched the supplied qualifier context');
   }
   // Specificity-ascending: lowest specificity first.
+  // Copilot review (PR #362, deferred to B-1b): ties on `specificity` are
+  // broken by `Array.prototype.sort` stability (guaranteed in modern V8),
+  // which falls back to source-file order. B-1b's full ts-res integration
+  // applies priority-based tiebreaking; until then consumers should not
+  // rely on tie-break behavior across candidates of equal specificity.
   matching.sort((a, b) => a.specificity - b.specificity);
 
   // Collect until (and including) first terminal.
@@ -103,6 +108,12 @@ export function joinBodies(
 
   const ordered = order === 'specificity-descending' ? [...selected].reverse() : selected;
 
+  // Copilot review (PR #362, deferred to B-1b): `trimTrailingWhitespace`
+  // currently only strips trailing newlines preceded by spaces/tabs (the
+  // YAML block-scalar trailing-newline shape that motivated the option in
+  // design §10.2). A body ending in just trailing spaces — `'hello '` —
+  // is NOT trimmed despite the option name. B-1b should either widen to
+  // `/\s+$/` or rename the option to clarify the narrower contract.
   return ordered
     .map(({ candidate }) => (trim ? candidate.body.replace(/[ \t]*\n+\s*$/, '') : candidate.body))
     .join(separator);

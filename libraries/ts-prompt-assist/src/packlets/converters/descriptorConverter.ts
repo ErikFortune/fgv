@@ -191,6 +191,12 @@ export const promptFileConverter: Converter<IPromptFileContents> = Converters.ge
     if (typeof from !== 'object' || from === null) {
       return fail('prompt file: expected an object');
     }
+    // Copilot review (PR #362, deferred to B-1b): `descriptorConverter` is
+    // a non-strict `Converters.object` so it silently ignores the
+    // `candidates` field; we re-parse `candidates` separately below. If
+    // `Converters.object` ever switches to strict-by-default this will
+    // start rejecting prompt files. B-1b should split `{ candidates,
+    // ...descriptorRaw }` explicitly before invoking `descriptorConverter`.
     const raw = from as { readonly candidates?: unknown };
     return descriptorConverter
       .convert(from)

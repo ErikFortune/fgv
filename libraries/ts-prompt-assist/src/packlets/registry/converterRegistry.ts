@@ -55,6 +55,16 @@ export class ConverterRegistry<TResponse extends { kind: string }>
     // the producer commits to; consumers ask for a narrower `T` and receive
     // a Converter typed for that T. Runtime kind-mismatch is caught by the
     // chain runner's belt+suspenders check (§17.2.4).
+    //
+    // Copilot review (PR #362, deferred to B-4): the cast does not verify
+    // at compile time that the caller's `T` is compatible with the stored
+    // `kind`. A safer surface would either remove the type parameter from
+    // `get` (forcing callers to narrow via `value.kind` themselves) or
+    // accept the kind discriminator on `get` and verify it before
+    // returning, e.g. `get<T>(id, kind: T['kind'])`. B-4 ships the chain
+    // runner that asserts kind on every call — once that lands, this
+    // narrowing is verified by a runtime guard at the point of use, which
+    // is the design's stated contract.
     const narrowed: Converter<T> = entry.converter as unknown as Converter<T>;
     return succeed(narrowed);
   }

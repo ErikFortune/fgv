@@ -21,6 +21,13 @@ const literalSlotBindingConverter: Converter<ILiteralSlotBinding> = Converters.o
 // A holder for the late-bound slot-binding converter; populated below.
 // Using indirection lets us thread the recursion through substitutions
 // without triggering use-before-define on the converter constants.
+//
+// Copilot review (PR #362, deferred to B-1b): the mutable-singleton
+// pattern is unusual for this codebase. A cleaner alternative is
+// `Converters.generic(() => slotBindingConverter)` with the thunk
+// captured at call time. B-1b should refactor once we're confident
+// the recursion shape is stable (resource-binding resolution lands in
+// B-2 and may reshape this dispatch).
 const _slotBindingHolder: { converter?: Converter<SlotBinding> } = {};
 
 function convertSlotBinding(from: unknown): Result<SlotBinding> {
