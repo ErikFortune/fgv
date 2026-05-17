@@ -24,21 +24,16 @@
 import '@fgv/ts-utils-jest';
 import * as path from 'path';
 import { FileTree } from '@fgv/ts-json-base';
-import { FileTreePromptStore } from '../../index';
 import {
-  ConverterId,
+  Convert,
+  FileTreePromptStore,
   IOutputValidationContext,
   IPromptOutputValidator,
   IPromptSafetyPolicy,
   IPromptStoreFixtureSeed,
-  PromptId,
   PromptLibrary,
   PromptRegistry,
-  PromptStoreFixture,
-  ResourceId,
-  ScopeKey,
-  SlotName,
-  ValidatorId
+  PromptStoreFixture
 } from '../../index';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
@@ -54,8 +49,9 @@ describe('README smoke tests', () => {
       qualifiers: [{ name: 'tone', typeName: 'tone', defaultPriority: 500 }]
     }).orThrow();
 
-    const SCOPE = 'global' as unknown as ScopeKey;
-    const GREETING = 'greeting' as unknown as PromptId;
+    const SCOPE = Convert.scopeKey.convert('global').orThrow();
+    const GREETING = Convert.promptId.convert('greeting').orThrow();
+    const AUDIENCE = Convert.slotName.convert('audience').orThrow();
 
     const seed: IPromptStoreFixtureSeed = {
       records: [
@@ -67,7 +63,7 @@ describe('README smoke tests', () => {
             title: 'Greeting',
             schemaVersion: '1',
             surface: 'chat',
-            slots: [{ name: 'audience' as unknown as SlotName, description: 'who to greet' }],
+            slots: [{ name: AUDIENCE, description: 'who to greet' }],
             output: { kind: 'free-text' }
           },
           candidates: [
@@ -106,7 +102,7 @@ describe('README smoke tests', () => {
     // Base body first; the partial layers on (specificity-ascending).
     expect(formal.body).toBe('Hello, world!\n\nGreetings, world. We trust this message finds you well.');
     expect(formal.trace.candidateMatches).toHaveLength(2);
-    expect(formal.trace.mergedBindings.get('audience' as unknown as SlotName)?.source).toBe('caller-sub');
+    expect(formal.trace.mergedBindings.get(AUDIENCE)?.source).toBe('caller-sub');
   });
 
   test('typed JSON output validation', async () => {
@@ -121,6 +117,11 @@ describe('README smoke tests', () => {
     }
     type Responses = ICitedResponse | IClassifierResponse;
 
+    const CITED_CONVERTER_ID = Convert.converterId.convert('cited').orThrow();
+    const CITED_VALIDATOR_ID = Convert.validatorId.convert('cited-ids-present').orThrow();
+    const SCOPE = Convert.scopeKey.convert('global').orThrow();
+    const PROMPT = Convert.promptId.convert('cited-q').orThrow();
+
     const registry = PromptRegistry.create<Responses>().orThrow();
 
     const citedConverter: Converter<ICitedResponse> = Converters.object<ICitedResponse>({
@@ -128,7 +129,7 @@ describe('README smoke tests', () => {
       answer: Converters.string,
       citedIds: Converters.arrayOf(Converters.string)
     });
-    registry.converters.register('cited' as unknown as ConverterId, 'cited', citedConverter).orThrow();
+    registry.converters.register(CITED_CONVERTER_ID, 'cited', citedConverter).orThrow();
 
     const citedIdsAreNonEmpty: IPromptOutputValidator<Responses> = {
       appliesTo: 'cited',
@@ -141,12 +142,8 @@ describe('README smoke tests', () => {
           : fail(`prompt '${context.promptId}': citedIds is empty`);
       }
     };
-    registry.outputValidations
-      .register('cited-ids-present' as unknown as ValidatorId, citedIdsAreNonEmpty)
-      .orThrow();
+    registry.outputValidations.register(CITED_VALIDATOR_ID, citedIdsAreNonEmpty).orThrow();
 
-    const SCOPE = 'global' as unknown as ScopeKey;
-    const PROMPT = 'cited-q' as unknown as PromptId;
     const store = (
       await PromptStoreFixture.build({
         records: [
@@ -159,8 +156,8 @@ describe('README smoke tests', () => {
               schemaVersion: '1',
               surface: 'chat',
               slots: [],
-              output: { kind: 'json', converterId: 'cited' as unknown as ConverterId },
-              outputValidations: ['cited-ids-present' as unknown as ValidatorId]
+              output: { kind: 'json', converterId: CITED_CONVERTER_ID },
+              outputValidations: [CITED_VALIDATOR_ID]
             },
             candidates: [{ conditions: {}, body: 'Answer the question and cite sources.' }]
           }
@@ -206,24 +203,29 @@ describe('README smoke tests', () => {
   });
 
   test('resource bindings — outer prompt binds slot to an inner prompt', async () => {
-    const SCOPE = 'global' as unknown as ScopeKey;
+    const SCOPE = Convert.scopeKey.convert('global').orThrow();
+    const OUTER = Convert.promptId.convert('outer').orThrow();
+    const INNER = Convert.promptId.convert('inner').orThrow();
+    const AUDIENCE = Convert.slotName.convert('audience').orThrow();
+    const INNER_RESOURCE_ID = Convert.resourceId.convert('inner').orThrow();
+
     const seed: IPromptStoreFixtureSeed = {
       records: [
         {
           scope: SCOPE,
-          id: 'outer' as unknown as PromptId,
+          id: OUTER,
           descriptor: {
-            id: 'outer' as unknown as PromptId,
+            id: OUTER,
             title: 'Outer',
             schemaVersion: '1',
             surface: 'chat',
             slots: [
               {
-                name: 'audience' as unknown as SlotName,
+                name: AUDIENCE,
                 description: 'who to greet',
                 defaultBinding: {
                   kind: 'resource',
-                  resourceId: 'inner' as unknown as ResourceId,
+                  resourceId: INNER_RESOURCE_ID,
                   directive: 'prose'
                 }
               }
@@ -234,9 +236,9 @@ describe('README smoke tests', () => {
         },
         {
           scope: SCOPE,
-          id: 'inner' as unknown as PromptId,
+          id: INNER,
           descriptor: {
-            id: 'inner' as unknown as PromptId,
+            id: INNER,
             title: 'Inner',
             schemaVersion: '1',
             surface: 'chat',
@@ -261,7 +263,7 @@ describe('README smoke tests', () => {
 
     const resolved = (
       await library.resolve({
-        id: 'outer' as unknown as PromptId,
+        id: OUTER,
         chain: [SCOPE],
         qualifiers: {}
       })
@@ -272,8 +274,9 @@ describe('README smoke tests', () => {
   });
 
   test('safety policy — anti-jailbreak preface + suspicious-pattern screen', async () => {
-    const SCOPE = 'global' as unknown as ScopeKey;
-    const PROMPT = 'p' as unknown as PromptId;
+    const SCOPE = Convert.scopeKey.convert('global').orThrow();
+    const PROMPT = Convert.promptId.convert('safety-demo').orThrow();
+    const MESSAGE = Convert.slotName.convert('message').orThrow();
 
     const safetyPolicy: IPromptSafetyPolicy = {
       defaultMaxLength: 4000,
@@ -291,12 +294,12 @@ describe('README smoke tests', () => {
           id: PROMPT,
           descriptor: {
             id: PROMPT,
-            title: 'p',
+            title: 'safety demo',
             schemaVersion: '1',
             surface: 'chat',
             slots: [
               {
-                name: 'message' as unknown as SlotName,
+                name: MESSAGE,
                 description: 'user message',
                 source: 'user-input'
               }
@@ -337,10 +340,10 @@ describe('README smoke tests', () => {
   });
 
   test('quick start — on-disk FileTreePromptStore', async () => {
-    // Mirrors the README's on-disk YAML quick-start verbatim, against
-    // the on-disk fixture under data/test/ts-prompt-assist/basic/
-    // (which already contains _qualifiers.yaml, global/greeting.yaml,
-    // and global/_bindings.yaml in the exact shape the README documents).
+    // Mirrors the README's on-disk YAML quick-start against the on-disk
+    // fixture under data/test/ts-prompt-assist/basic/ (which already
+    // contains _qualifiers.yaml, global/greeting.yaml, and
+    // global/_bindings.yaml in the exact shape the README documents).
     const FIXTURE_ROOT = path.resolve(__dirname, '../../../../../data/test/ts-prompt-assist/basic');
 
     const tree = FileTree.forFilesystem().orThrow();
@@ -361,8 +364,8 @@ describe('README smoke tests', () => {
 
     const resolved = (
       await library.resolve({
-        id: 'greeting' as unknown as PromptId,
-        chain: ['global' as unknown as ScopeKey],
+        id: Convert.promptId.convert('greeting').orThrow(),
+        chain: [Convert.scopeKey.convert('global').orThrow()],
         qualifiers: {}
         // No `substitutions` — the scope-level `_bindings.yaml`
         // supplies `audience: 'world'`.

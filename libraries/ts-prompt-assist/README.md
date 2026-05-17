@@ -34,25 +34,12 @@ The fastest path to a working `PromptLibrary` is the `PromptStoreFixture`
 helper, which seeds an in-memory `FileTreePromptStore` from authored records.
 Tests and demos use the same code path as the disk-backed store.
 
-> **On the `as unknown as <BrandedId>` casts in the examples.** The
-> snippets below construct branded ids (`PromptId`, `SlotName`,
-> `ScopeKey`, etc.) inline with `as unknown as` for readability. In
-> production code that originates ids from untrusted input, prefer the
-> validating constructors: `Convert.slotName.convert(value).orThrow()`,
-> `Convert.promptId.convert(value).orThrow()`, etc. The validators
-> enforce per-brand constraints — e.g. `SlotName` must match the
-> Mustache name production (`[A-Za-z_][A-Za-z0-9_]*`) so substitution
-> doesn't tokenize the slot key as a section path. Ids loaded from
-> YAML through `FileTreePromptStore` are already validated.
-
 ```typescript
 import {
+  Convert,
   IPromptStoreFixtureSeed,
-  PromptId,
   PromptLibrary,
-  PromptStoreFixture,
-  ScopeKey,
-  SlotName
+  PromptStoreFixture
 } from '@fgv/ts-prompt-assist';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
 
@@ -69,9 +56,14 @@ const qualifiers = Qualifiers.QualifierCollector.create({
   qualifiers: [{ name: 'tone', typeName: 'tone', defaultPriority: 500 }]
 }).orThrow();
 
-// 2. Author a tiny prompt descriptor + candidate body.
-const SCOPE = 'global' as unknown as ScopeKey;
-const GREETING = 'greeting' as unknown as PromptId;
+// 2. Construct branded ids through the published validators. Each
+//    `Convert.<brand>.convert(...)` enforces the per-brand contract —
+//    e.g. `SlotName` rejects anything that isn't a valid Mustache name
+//    (`[A-Za-z_][A-Za-z0-9_]*`), so a typo like `'audience.name'` fails
+//    at construction instead of silently breaking substitution.
+const SCOPE = Convert.scopeKey.convert('global').orThrow();
+const GREETING = Convert.promptId.convert('greeting').orThrow();
+const AUDIENCE = Convert.slotName.convert('audience').orThrow();
 
 const seed: IPromptStoreFixtureSeed = {
   records: [
@@ -83,7 +75,7 @@ const seed: IPromptStoreFixtureSeed = {
         title: 'Greeting',
         schemaVersion: '1',
         surface: 'chat',
-        slots: [{ name: 'audience' as unknown as SlotName, description: 'who to greet' }],
+        slots: [{ name: AUDIENCE, description: 'who to greet' }],
         output: { kind: 'free-text' }
       },
       candidates: [
@@ -136,7 +128,7 @@ console.log(formal.body);
 //    merged bindings, safeguard findings, and recursive resource-binding
 //    inner traces.
 console.log(formal.trace.candidateMatches.length); // → 2 (base + partial)
-console.log(formal.trace.mergedBindings.get('audience' as unknown as SlotName)?.source);
+console.log(formal.trace.mergedBindings.get(AUDIENCE)?.source);
 // → 'caller-sub'
 ```
 
@@ -205,7 +197,7 @@ custom types — same constraint applies).
 Wiring this up:
 
 ```typescript
-import { FileTreePromptStore, PromptLibrary, PromptId, ScopeKey } from '@fgv/ts-prompt-assist';
+import { Convert, FileTreePromptStore, PromptLibrary } from '@fgv/ts-prompt-assist';
 import { FileTree } from '@fgv/ts-json-base';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
 
@@ -234,8 +226,8 @@ const library = (await PromptLibrary.create({ store, qualifiers })).orThrow();
 
 const resolved = (
   await library.resolve({
-    id: 'greeting' as unknown as PromptId,
-    chain: ['global' as unknown as ScopeKey],
+    id: Convert.promptId.convert('greeting').orThrow(),
+    chain: [Convert.scopeKey.convert('global').orThrow()],
     qualifiers: {}
     // No `substitutions` — the scope-level `_bindings.yaml` supplies
     // `audience: 'world'`.
@@ -262,15 +254,12 @@ assertion (see "Two patterns avoid the wrong-member trap" below).
 
 ```typescript
 import {
-  ConverterId,
+  Convert,
   IOutputValidationContext,
   IPromptOutputValidator,
-  PromptId,
   PromptLibrary,
   PromptRegistry,
-  PromptStoreFixture,
-  ScopeKey,
-  ValidatorId
+  PromptStoreFixture
 } from '@fgv/ts-prompt-assist';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
@@ -288,6 +277,12 @@ interface IClassifierResponse {
 }
 type Responses = ICitedResponse | IClassifierResponse;
 
+// Construct branded ids through the validators.
+const CITED_CONVERTER_ID = Convert.converterId.convert('cited').orThrow();
+const CITED_VALIDATOR_ID = Convert.validatorId.convert('cited-ids-present').orThrow();
+const SCOPE = Convert.scopeKey.convert('global').orThrow();
+const PROMPT = Convert.promptId.convert('cited-q').orThrow();
+
 // Build the typed registry.
 const registry = PromptRegistry.create<Responses>().orThrow();
 
@@ -296,9 +291,7 @@ const citedConverter: Converter<ICitedResponse> = Converters.object<ICitedRespon
   answer: Converters.string,
   citedIds: Converters.arrayOf(Converters.string)
 });
-registry.converters
-  .register('cited' as unknown as ConverterId, 'cited', citedConverter)
-  .orThrow();
+registry.converters.register(CITED_CONVERTER_ID, 'cited', citedConverter).orThrow();
 
 // Validator typed against the response union; `appliesTo` is the
 // discriminator value the chain runner narrows on. `context` carries
@@ -319,13 +312,9 @@ const citedIdsAreNonEmpty: IPromptOutputValidator<Responses> = {
       : fail(`prompt '${context.promptId}': citedIds is empty`);
   }
 };
-registry.outputValidations
-  .register('cited-ids-present' as unknown as ValidatorId, citedIdsAreNonEmpty)
-  .orThrow();
+registry.outputValidations.register(CITED_VALIDATOR_ID, citedIdsAreNonEmpty).orThrow();
 
 // Descriptor declares the converter id and the validators to chain.
-const SCOPE = 'global' as unknown as ScopeKey;
-const PROMPT = 'cited-q' as unknown as PromptId;
 const store = (
   await PromptStoreFixture.build({
     records: [
@@ -338,8 +327,8 @@ const store = (
           schemaVersion: '1',
           surface: 'chat',
           slots: [],
-          output: { kind: 'json', converterId: 'cited' as unknown as ConverterId },
-          outputValidations: ['cited-ids-present' as unknown as ValidatorId]
+          output: { kind: 'json', converterId: CITED_CONVERTER_ID },
+          outputValidations: [CITED_VALIDATOR_ID]
         },
         candidates: [{ conditions: {}, body: 'Answer the question and cite sources.' }]
       }
@@ -430,36 +419,42 @@ under `trace.resourceBindingResolutions[].innerTrace`.
 
 ```typescript
 import {
+  Convert,
   IPromptStoreFixtureSeed,
-  PromptId,
   PromptLibrary,
-  PromptStoreFixture,
-  ResourceId,
-  ScopeKey,
-  SlotName
+  PromptStoreFixture
 } from '@fgv/ts-prompt-assist';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
 
-const SCOPE = 'global' as unknown as ScopeKey;
+const SCOPE = Convert.scopeKey.convert('global').orThrow();
+const OUTER = Convert.promptId.convert('outer').orThrow();
+const INNER = Convert.promptId.convert('inner').orThrow();
+const AUDIENCE = Convert.slotName.convert('audience').orThrow();
+// `ResourceId` references another prompt by id — the inner-resolve
+// treats it as a `PromptId`. The library re-validates resource ids
+// through `Convert.promptId` at resolve time; we use that validator
+// directly here so a typo containing `'::'` (the cache key delimiter,
+// rejected by `Convert.promptId`) fails at authoring instead.
+const INNER_RESOURCE_ID = Convert.resourceId.convert('inner').orThrow();
 
 // Outer prompt's `audience` slot defaults to the body of another prompt.
 const seed: IPromptStoreFixtureSeed = {
   records: [
     {
       scope: SCOPE,
-      id: 'outer' as unknown as PromptId,
+      id: OUTER,
       descriptor: {
-        id: 'outer' as unknown as PromptId,
+        id: OUTER,
         title: 'Outer',
         schemaVersion: '1',
         surface: 'chat',
         slots: [
           {
-            name: 'audience' as unknown as SlotName,
+            name: AUDIENCE,
             description: 'who to greet',
             defaultBinding: {
               kind: 'resource',
-              resourceId: 'inner' as unknown as ResourceId,
+              resourceId: INNER_RESOURCE_ID,
               directive: 'prose',
               // `substitutions: { ... }` here would REPLACE the parent's
               // substitutions for the inner resolve (OQ-2 strict-replace
@@ -473,9 +468,9 @@ const seed: IPromptStoreFixtureSeed = {
     },
     {
       scope: SCOPE,
-      id: 'inner' as unknown as PromptId,
+      id: INNER,
       descriptor: {
-        id: 'inner' as unknown as PromptId,
+        id: INNER,
         title: 'Inner',
         schemaVersion: '1',
         surface: 'chat',
@@ -500,7 +495,7 @@ const library = (await PromptLibrary.create({ store, qualifiers })).orThrow();
 
 const resolved = (
   await library.resolve({
-    id: 'outer' as unknown as PromptId,
+    id: OUTER,
     chain: [SCOPE],
     qualifiers: {}
   })
@@ -552,19 +547,18 @@ discarded this way.
 // surfaces findings in the trace; with `'reject'` the resolve itself
 // fails.
 import {
+  Convert,
   IPromptSafetyPolicy,
   IPromptStoreFixtureSeed,
-  PromptId,
   PromptLibrary,
-  PromptStoreFixture,
-  ScopeKey,
-  SlotName
+  PromptStoreFixture
 } from '@fgv/ts-prompt-assist';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
 import { succeed } from '@fgv/ts-utils';
 
-const SCOPE = 'global' as unknown as ScopeKey;
-const PROMPT = 'p' as unknown as PromptId;
+const SCOPE = Convert.scopeKey.convert('global').orThrow();
+const PROMPT = Convert.promptId.convert('safety-demo').orThrow();
+const MESSAGE = Convert.slotName.convert('message').orThrow();
 
 const seed: IPromptStoreFixtureSeed = {
   records: [
@@ -573,12 +567,12 @@ const seed: IPromptStoreFixtureSeed = {
       id: PROMPT,
       descriptor: {
         id: PROMPT,
-        title: 'p',
+        title: 'safety demo',
         schemaVersion: '1',
         surface: 'chat',
         slots: [
           {
-            name: 'message' as unknown as SlotName,
+            name: MESSAGE,
             description: 'user message',
             // `source` flags this slot for regex screening when the
             // policy's `screenedSources` includes the same label.
