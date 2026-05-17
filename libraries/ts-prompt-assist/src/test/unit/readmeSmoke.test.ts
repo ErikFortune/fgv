@@ -1,7 +1,8 @@
 // Copyright (c) 2026 Erik Fortune
 // SPDX-License-Identifier: MIT
 
-// Smoke tests that execute every README quick-start verbatim:
+// Smoke tests that mirror every README quick-start closely enough to
+// catch API drift:
 //   - in-memory PromptStoreFixture (test #1)
 //   - typed JSON output validation (test #2)
 //   - resource bindings (test #3)
@@ -9,12 +10,16 @@
 //   - on-disk FileTreePromptStore (test #5) — exercises
 //     `FileTree.forFilesystem()` + `PromptLibrary.create` + `resolve`
 //     against the fixture under `data/test/ts-prompt-assist/basic/`.
-// The intent is not coverage (the foundation + resource-binding +
-// output suites already drive the public surface end-to-end) — it
-// is to guarantee that every README quick-start remains paste-and-run.
-// If any snippet drifts from the shipped API, this file fails to
-// compile or to resolve, surfacing the drift before a consumer
-// reading the README hits it.
+// These are not byte-for-byte copies of the README — `console.log`s
+// become `expect` assertions, and the disk example substitutes its
+// `/path/to/prompts` placeholder for the fixture directory — but the
+// shapes (imports, builder chains, resolve call, return-handling)
+// match. The intent is not coverage (the foundation +
+// resource-binding + output suites already drive the public surface
+// end-to-end) — it is to guarantee that every README quick-start
+// remains paste-and-run. If any snippet drifts from the shipped API,
+// this file fails to compile or to resolve, surfacing the drift
+// before a consumer reading the README hits it.
 
 import '@fgv/ts-utils-jest';
 import * as path from 'path';

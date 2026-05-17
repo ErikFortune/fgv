@@ -34,6 +34,17 @@ The fastest path to a working `PromptLibrary` is the `PromptStoreFixture`
 helper, which seeds an in-memory `FileTreePromptStore` from authored records.
 Tests and demos use the same code path as the disk-backed store.
 
+> **On the `as unknown as <BrandedId>` casts in the examples.** The
+> snippets below construct branded ids (`PromptId`, `SlotName`,
+> `ScopeKey`, etc.) inline with `as unknown as` for readability. In
+> production code that originates ids from untrusted input, prefer the
+> validating constructors: `Convert.slotName.convert(value).orThrow()`,
+> `Convert.promptId.convert(value).orThrow()`, etc. The validators
+> enforce per-brand constraints — e.g. `SlotName` must match the
+> Mustache name production (`[A-Za-z_][A-Za-z0-9_]*`) so substitution
+> doesn't tokenize the slot key as a section path. Ids loaded from
+> YAML through `FileTreePromptStore` are already validated.
+
 ```typescript
 import {
   IPromptStoreFixtureSeed,
@@ -504,11 +515,14 @@ pairs and rejected loudly. The depth cap defaults to 5 and is
 configurable per library instance via
 `IPromptLibraryCreateParams.resourceBindingDepthLimit`.
 
-Cross-scope binding merge: when the chain has multiple scopes, scope-level
-bindings (`_bindings.yaml`) merge most-specific-wins, with one exception —
-a binding marked `enforced: true` locks the slot so caller substitutions
-are ignored (the trace surfaces an `'enforced-override-ignored'`
-finding).
+Cross-scope binding merge: when the chain has multiple scopes,
+scope-level bindings (`_bindings.yaml`) merge most-specific-wins —
+with one exception. A binding marked `enforced: true` LOCKS the slot:
+the merger walks from most-general scope to most-specific, and once a
+slot's winning entry is `enforced`, neither a more-specific scope's
+binding NOR a caller substitution can overwrite it. The trace surfaces
+an `'enforced-override-ignored'` finding when a caller substitution is
+discarded this way.
 
 ---
 
@@ -683,9 +697,10 @@ pressure-test settles:
   conditional-resource runtime; supplies the qualifier types, condition
   sets, and decision resolver that drive candidate selection.
 - **[`@fgv/ts-extras`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras)** —
-  `MustacheTemplate.create({ escape })` for the verbatim renderer;
-  `Yaml.yamlConverter` for descriptor / bindings / qualifier loading;
-  `AiAssist.extractJsonText` for fence-tolerant JSON output parsing.
+  `MustacheTemplate.create(template, { escape })` for the verbatim
+  renderer; `Yaml.yamlConverter` for descriptor / bindings / qualifier
+  loading; `AiAssist.extractJsonText` for fence-tolerant JSON output
+  parsing.
 - **[`@fgv/ts-utils`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils)** —
   `Result<T>`, `Converters`, `Logging`, `Normalizer.canonicalize` for
   RFC 8785 canonical JSON.

@@ -98,7 +98,12 @@ export interface IPromptConverterRegistry<TResponse extends { kind: string }> {
  * @public
  */
 export interface IPromptSlotKindRegistry {
-  /** Registers a serializer for the given slot kind. Fails if `kind` is already registered. */
+  /**
+   * Registers a serializer for the given slot kind. Fails if `kind` is
+   * empty or if `kind` is already registered. `kind` is a plain string
+   * (not a branded id), so the implementation enforces non-emptiness
+   * here.
+   */
   register(kind: string, serializer: ISlotSerializer): Result<string>;
   /** Returns the registered serializer for `kind`. Fails if not registered. */
   get(kind: string): Result<ISlotSerializer>;

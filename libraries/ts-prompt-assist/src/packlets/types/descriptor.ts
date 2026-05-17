@@ -64,7 +64,13 @@ export interface IPromptDescriptor {
   readonly description?: string;
   /** Schema version. Only `'1'` is supported in v0.1. */
   readonly schemaVersion: '1';
-  /** Open string narrowed by the consumer's descriptor Converter. */
+  /**
+   * Open string identifying the rendering target (e.g. `'chat'`,
+   * `'completion'`, `'embed'`). v0.1 ships no per-consumer descriptor-
+   * Converter hook; the built-in `descriptorConverter` accepts any
+   * non-empty string. Consumers needing stricter narrowing can
+   * post-validate after `describe()` / per-record `store.get()`.
+   */
   readonly surface: string;
   /** Optional ts-res qualifier-axis hints (required / expected / disallowed). */
   readonly qualifiers?: IPromptQualifierMetadata;
@@ -83,8 +89,11 @@ export interface IPromptDescriptor {
    * `output.converterId` converts the raw response. Validators must be
    * registered in the library's {@link IPromptRegistry} and their `appliesTo`
    * must include the response kind produced by `output.converterId`'s
-   * Converter; the loader rejects descriptors that violate this contract.
-   * Only valid when `output.kind === 'json'`.
+   * Converter. The store / descriptor file loader does NOT have access to
+   * the registry, so this contract is enforced at `PromptLibrary.describe()`
+   * / `resolve()` time (and cached per descriptor). Only valid when
+   * `output.kind === 'json'`; the descriptor file loader does reject
+   * `outputValidations` on `'free-text'` descriptors at load time.
    */
   readonly outputValidations?: ReadonlyArray<ValidatorId>;
 }

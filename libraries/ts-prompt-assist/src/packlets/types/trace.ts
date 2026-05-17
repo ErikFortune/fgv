@@ -29,7 +29,12 @@ export interface IBindingTraceEntry {
   readonly source: BindingTraceSource;
   /** Set when `source === 'binding'`. The scope whose `_bindings.yaml` won. */
   readonly winningScope?: ScopeKey;
-  /** Framing directive carried with the binding (`'constraint' | 'hint' | 'prose'`). */
+  /**
+   * Framing directive carried with the binding
+   * (`'constraint' | 'hint' | 'prose'`). For `source === 'empty'` (the
+   * fallback when no binding, default, or caller substitution applies)
+   * this field is `'prose'` — placeholder metadata, not author intent.
+   */
   readonly directive: SlotDirective;
   /** Post-serialization, pre-Mustache string fed into the template renderer. */
   readonly value: string;
