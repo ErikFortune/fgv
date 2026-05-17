@@ -121,7 +121,14 @@ export interface IPromptResolveTrace {
   readonly mergedBindings: ReadonlyMap<SlotName, IBindingTraceEntry>;
   /** One entry per resource-binding slot, with the inner resolve's full trace. */
   readonly resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>;
-  /** Length-cap rejects, suspicious-pattern hits, screening skips, enforced-override-ignored. */
+  /**
+   * Warn / info safeguard findings: `'suspicious-pattern'` matches under
+   * `onSuspicious: 'warn'`, `'screening-skipped'`, and
+   * `'enforced-override-ignored'`. Reject paths (length-cap violations,
+   * `'suspicious-pattern'` matches under `onSuspicious: 'reject'`) fail
+   * the resolve before an `IResolvedPrompt` is constructed, so their
+   * details surface in the failure message rather than here.
+   */
   readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
   /** Per-candidate match details, specificity-ascending. */
   readonly candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>;

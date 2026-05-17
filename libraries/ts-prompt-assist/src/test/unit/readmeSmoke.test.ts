@@ -121,7 +121,9 @@ describe('README smoke tests', () => {
         if (value.kind !== 'cited') {
           return fail(`prompt '${context.promptId}': not a cited response`);
         }
-        return value.citedIds.length > 0 ? succeed(true as const) : fail('citedIds is empty');
+        return value.citedIds.length > 0
+          ? succeed(true as const)
+          : fail(`prompt '${context.promptId}': citedIds is empty`);
       }
     };
     registry.outputValidations

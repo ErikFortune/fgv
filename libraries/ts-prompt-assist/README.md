@@ -199,10 +199,12 @@ const store = (await FileTreePromptStore.create({ root })).orThrow();
 // Qualifier config — `PromptLibrary.create` requires this directly as a
 // parameter. `_qualifiers.yaml` is visible via `store.getQualifierConfig()`
 // for tooling that wants to round-trip the config alongside its prompts;
-// the library itself does not consume it on `create`. Wire it through
-// yourself when you want the store's declarations to drive the runtime
-// (e.g. `(await store.getQualifierConfig()).orThrow()` → pass to
-// `PromptLibrary.create`).
+// the library itself does not consume it on `create`. To drive the
+// runtime from the store, fetch the decls AND build the matching
+// `QualifierTypeCollector` (you still own that), then pass both to
+// `PromptLibrary.create` — either as a pre-built `QualifierCollector`,
+// or by passing the decls + `qualifierTypes` (decl-array path REQUIRES
+// `qualifierTypes`).
 const qualifierTypes = QualifierTypes.QualifierTypeCollector.create({
   qualifierTypes: [QualifierTypes.LiteralQualifierType.create({ name: 'lang' }).orThrow()]
 }).orThrow();
@@ -294,7 +296,9 @@ const citedIdsAreNonEmpty: IPromptOutputValidator<Responses> = {
     if (value.kind !== 'cited') {
       return fail(`prompt '${context.promptId}': not a cited response`);
     }
-    return value.citedIds.length > 0 ? succeed(true as const) : fail('citedIds is empty');
+    return value.citedIds.length > 0
+      ? succeed(true as const)
+      : fail(`prompt '${context.promptId}': citedIds is empty`);
   }
 };
 registry.outputValidations
@@ -349,19 +353,30 @@ const validated = (
   )
 ).orThrow();
 
-// `validated` is typed as `ICitedResponse` — no cast at the call site.
-console.log(validated.answer); // → "42"
-console.log(validated.citedIds); // → ["a"]
+// `validated` is typed as `ICitedResponse`. The library does not bind `T`
+// to the descriptor's converter id at compile time — narrow on
+// `validated.kind` if the prompt could legitimately resolve to a
+// different union member:
+if (validated.kind === 'cited') {
+  console.log(validated.answer); // → "42"
+  console.log(validated.citedIds); // → ["a"]
+}
 ```
 
-The validator chain is end-to-end typed: the `Converter`'s `T` flows
-through the registry by `(kind, converter)` pair, the chain runner
-narrows on `value.kind` before invoking each validator, and the final
-`Result<T>` carries the caller's declared `T`. Loader-side checks
+Inside the chain, the `Converter`'s `T` flows through the registry by
+`(kind, converter)` pair without a cast — the chain runner narrows on
+`value.kind` before invoking each validator. Loader-side checks
 (invoked from `describe()` and `resolve()`) reject descriptors whose
 `outputValidations` reference validators that don't apply to the
 declared response kind; the runtime path re-checks `value.kind` against
-each validator's `appliesTo` as a safety net.
+each validator's `appliesTo` as a safety net. The public generic
+`T extends TResponse` on `resolveAndValidateOutput<T>` is a caller
+assertion narrowing the pipeline's `TResponse` to a specific union
+member — the belt + suspenders constrain it structurally but do not
+bind it to the descriptor's converter id, so a caller can request
+`<IClassifierResponse>` for a descriptor whose converter produces
+`ICitedResponse`. Discriminate on `value.kind` (as above) when that
+matters.
 
 ---
 
@@ -404,7 +419,7 @@ const seed: IPromptStoreFixtureSeed = {
             defaultBinding: {
               kind: 'resource',
               resourceId: 'inner' as unknown as ResourceId,
-              directive: 'prose'
+              directive: 'prose',
               // `substitutions: { ... }` here would REPLACE the parent's
               // substitutions for the inner resolve (OQ-2 strict-replace
               // semantics); omitting it inherits the parent's substitutions.
@@ -570,9 +585,14 @@ console.log(resolved.body.startsWith('[SYSTEM]')); // → true
 console.log(resolved.trace.safeguardFindings.some((f) => f.kind === 'suspicious-pattern')); // → true
 ```
 
-All safeguard findings — length-cap rejects, suspicious-pattern matches,
-`'screening-skipped'`, and `'enforced-override-ignored'` — surface in
-`trace.safeguardFindings`.
+Warn / info findings — `'suspicious-pattern'` matches under
+`onSuspicious: 'warn'`, `'screening-skipped'`, and
+`'enforced-override-ignored'` — surface in `trace.safeguardFindings` on
+the resolved prompt. **Reject paths do not return a trace**: length-cap
+violations and `'suspicious-pattern'` matches under
+`onSuspicious: 'reject'` fail the resolve with the rejection cited in
+the error message, since there is no `IResolvedPrompt` to attach a
+trace to.
 
 ---
 
