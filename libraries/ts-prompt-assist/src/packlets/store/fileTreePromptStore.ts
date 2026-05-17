@@ -40,6 +40,9 @@ const BINDINGS_FILE_NAME: string = '_bindings.yaml';
 const QUALIFIERS_FILE_NAME: string = '_qualifiers.yaml';
 
 const promptYamlConverter: Converter<IPromptFileContents> = Yaml.yamlConverter(promptFileConverter);
+const bindingsYamlConverter: Converter<IBindingsFileContents> = Yaml.yamlConverter(bindingsFileConverter);
+const qualifiersYamlConverter: Converter<IQualifiersFileContents> =
+  Yaml.yamlConverter(qualifiersFileConverter);
 
 /**
  * Per design §5.3 the descriptor's `id` field MUST equal the filename
@@ -58,9 +61,6 @@ function verifyFilenameId(
   }
   return succeed(contents);
 }
-const bindingsYamlConverter: Converter<IBindingsFileContents> = Yaml.yamlConverter(bindingsFileConverter);
-const qualifiersYamlConverter: Converter<IQualifiersFileContents> =
-  Yaml.yamlConverter(qualifiersFileConverter);
 
 /**
  * Read-only FileTree-backed {@link IPromptStore}. v0.1 implements `get`,
