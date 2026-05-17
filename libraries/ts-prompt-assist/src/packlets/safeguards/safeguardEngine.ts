@@ -121,6 +121,12 @@ function screenSlotValue(input: IScreenInput): IScreenOutcome {
     return { findings: [] };
   }
 
+  // Descriptor-level override takes priority over policy-level source
+  // gating: a descriptor that opts out via `skipInjectionScreening`
+  // bypasses screening regardless of whether the slot's source is in
+  // `policy.screenedSources`. The two branches each emit a
+  // `'screening-skipped'` info finding with a distinguishable `detail`
+  // string so consumers can tell which gate fired.
   if (skipScreening) {
     return {
       findings: [

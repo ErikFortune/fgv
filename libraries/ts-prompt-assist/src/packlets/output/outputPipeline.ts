@@ -35,6 +35,13 @@ export function assertOutputValidationsCompatible<TResponse extends { kind: stri
   registry: IPromptRegistry<TResponse> | undefined
 ): Result<true> {
   const validationIds = descriptor.outputValidations ?? [];
+  // Two early exits collapsed: free-text descriptors have no Converter
+  // and no validators to check; json descriptors with an empty
+  // `outputValidations[]` have nothing to compatibility-check against.
+  // The "json + no validators + no registry" runtime failure lives on
+  // `resolveAndValidateOutput` itself, not the loader-side check —
+  // this function's contract is validator-to-converter compatibility,
+  // not registry presence.
   if (descriptor.output.kind !== 'json' || validationIds.length === 0) {
     return succeed(true as const);
   }
