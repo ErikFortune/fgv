@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Hash, Logging, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Logging, Normalizer, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { sanitizeJsonObject } from '@fgv/ts-json-base';
 import {
   QualifierTypes,
@@ -174,12 +174,14 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   private readonly _synthIdByKey: Map<string, string>;
   /**
    * Normalizer used to compute RFC 8785 canonical-JSON strings for true
-   * structural equality (vs. CRC32 hash equality, which is not collision-
-   * resistant). Used for descriptor cross-scope equality checks in
-   * `_populateDescriptorCache` and for the materialized-resource cache
-   * key.
+   * structural equality. Used for descriptor cross-scope equality checks
+   * in `_populateDescriptorCache`, for the materialized-resource cache
+   * key, and for resource-binding cycle-detection keys. No hash function
+   * participates — equality of canonical-JSON strings is exact structural
+   * equality, so the base `Normalizer` (canonicalize only) is the right
+   * primitive.
    */
-  private readonly _normalizer: Hash.Crc32Normalizer;
+  private readonly _normalizer: Normalizer;
   /**
    * Monotonic counter feeding the synthesized ts-res resource id
    * (`prompt_<n>`). Sequential ids guarantee no collisions across
@@ -221,7 +223,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     this._builder = params.builder;
     this._materialized = new Map();
     this._synthIdByKey = new Map();
-    this._normalizer = new Hash.Crc32Normalizer();
+    this._normalizer = new Normalizer();
     this._nextSynthIdSerial = 0;
     this._cacheListener = params.cacheListener;
     this.logger = params.logger;
@@ -272,7 +274,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    * Cache key is `id` alone. To honor the design's invariant that
    * descriptors for the same id are identical across scopes, the load-
    * time check validates that all `store.list({ id })` entries are
-   * structurally equal (via `Hash.Crc32Normalizer`) and fails loudly on
+   * structurally equal (via RFC 8785 canonical-JSON) and fails loudly on
    * drift. The cache survives subsequent calls; consumers wanting to
    * drop an entry (e.g. after a write through a future write-capable
    * adapter) call {@link PromptLibrary.invalidateDescriptor}.

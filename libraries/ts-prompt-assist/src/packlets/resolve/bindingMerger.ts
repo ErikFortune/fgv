@@ -38,7 +38,6 @@ export interface IPendingResourceBinding {
  */
 export interface IBindingMergeResult {
   readonly merged: ReadonlyMap<SlotName, IBindingTraceEntry>;
-  readonly mergedBindings: ReadonlyMap<SlotName, SlotBinding>;
   readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
   readonly pendingResourceBindings: ReadonlyArray<IPendingResourceBinding>;
 }
@@ -106,7 +105,6 @@ export function mergeBindings(
   }
 
   const merged = new Map<SlotName, IBindingTraceEntry>();
-  const mergedBindings = new Map<SlotName, SlotBinding>();
   const safeguardFindings: ISafeguardFinding[] = [];
   const pendingResourceBindings: IPendingResourceBinding[] = [];
 
@@ -129,7 +127,6 @@ export function mergeBindings(
         winner.scope,
         true,
         merged,
-        mergedBindings,
         pendingResourceBindings
       );
       if (installed.isFailure()) {
@@ -147,7 +144,6 @@ export function mergeBindings(
         undefined,
         false,
         merged,
-        mergedBindings,
         pendingResourceBindings
       );
       if (installed.isFailure()) {
@@ -164,7 +160,6 @@ export function mergeBindings(
         winner.scope,
         winner.binding.enforced === true,
         merged,
-        mergedBindings,
         pendingResourceBindings
       );
       if (installed.isFailure()) {
@@ -181,7 +176,6 @@ export function mergeBindings(
         undefined,
         false,
         merged,
-        mergedBindings,
         pendingResourceBindings
       );
       if (installed.isFailure()) {
@@ -203,7 +197,7 @@ export function mergeBindings(
     });
   }
 
-  return succeed({ merged, mergedBindings, safeguardFindings, pendingResourceBindings });
+  return succeed({ merged, safeguardFindings, pendingResourceBindings });
 }
 
 function installBinding(
@@ -213,7 +207,6 @@ function installBinding(
   winningScope: ScopeKey | undefined,
   wasEnforced: boolean,
   merged: Map<SlotName, IBindingTraceEntry>,
-  mergedBindings: Map<SlotName, SlotBinding>,
   pending: IPendingResourceBinding[]
 ): Result<true> {
   if (binding.kind === 'resource') {
@@ -227,7 +220,6 @@ function installBinding(
       value: '',
       wasEnforced
     });
-    mergedBindings.set(slot.name, binding);
     pending.push({ slot: slot.name, binding });
     return succeed(true as const);
   }
@@ -239,7 +231,6 @@ function installBinding(
       value,
       wasEnforced
     });
-    mergedBindings.set(slot.name, binding);
     return succeed(true as const);
   });
 }
