@@ -174,6 +174,8 @@ describe('README smoke tests', () => {
     const library = (await PromptLibrary.create<Responses>({ store, qualifiers, registry })).orThrow();
 
     const rawOutput = '```json\n{"kind":"cited","answer":"42","citedIds":["a"]}\n```';
+
+    // Pattern 1: bind T to the specific union member.
     const validated = (
       await library.resolveAndValidateOutput<ICitedResponse>(
         { id: PROMPT, chain: [SCOPE], qualifiers: {} },
@@ -182,6 +184,20 @@ describe('README smoke tests', () => {
     ).orThrow();
     expect(validated.answer).toBe('42');
     expect(validated.citedIds).toEqual(['a']);
+
+    // Pattern 2: omit the type argument so T defaults to TResponse,
+    // then narrow on `value.kind`. Exercises the README's second
+    // pattern verbatim — keeps the union-narrowing snippet in lockstep
+    // with the shipped API.
+    const eitherShape = (
+      await library.resolveAndValidateOutput({ id: PROMPT, chain: [SCOPE], qualifiers: {} }, rawOutput)
+    ).orThrow();
+    if (eitherShape.kind === 'cited') {
+      expect(eitherShape.answer).toBe('42');
+      expect(eitherShape.citedIds).toEqual(['a']);
+    } else {
+      throw new Error(`unexpected kind: ${eitherShape.kind}`);
+    }
   });
 
   test('resource bindings — outer prompt binds slot to an inner prompt', async () => {

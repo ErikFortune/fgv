@@ -367,11 +367,14 @@ const validated = (
 console.log(validated.answer); // → "42"
 console.log(validated.citedIds); // → ["a"]
 
-// If the prompt could legitimately resolve to MORE than one response
-// shape (e.g. a generic "ask anything" prompt whose descriptor's
-// converter produces the full `Responses` union), omit the narrow type
-// argument so `T` defaults to `TResponse` and narrow on `value.kind`
-// AFTER the resolve:
+// If the caller doesn't want to commit to a single union member at the
+// call site (e.g. they're holding a generic handle whose descriptor
+// might be `cited` or `classifier`), omit the narrow type argument.
+// `T` defaults to `TResponse` (the full registered union), so the
+// return type is `Responses`. Note: the descriptor's `converterId`
+// still points to a single-kind converter; the runtime value is
+// single-kind. The default-`T` form just lets the caller defer the
+// narrowing to a `value.kind` discriminator AFTER the resolve:
 const eitherShape = (
   await library.resolveAndValidateOutput(
     { id: PROMPT, chain: [SCOPE], qualifiers: {} },
