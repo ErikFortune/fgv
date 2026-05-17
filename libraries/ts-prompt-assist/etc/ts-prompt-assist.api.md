@@ -305,6 +305,7 @@ export interface IPromptLibraryCreateParams<TResponse extends {
     readonly qualifierTypes?: QualifierTypes.ReadOnlyQualifierTypeCollector;
     readonly registry?: IPromptRegistry<TResponse>;
     readonly resourceBindingDepthLimit?: number;
+    readonly safetyPolicy?: IPromptSafetyPolicy;
     // (undocumented)
     readonly store: IPromptStore;
     readonly templateCacheSize?: number;
@@ -387,6 +388,15 @@ export interface IPromptSafeguardOverrides {
     readonly defaultMaxLength?: number;
     // (undocumented)
     readonly skipInjectionScreening?: boolean;
+}
+
+// @public
+export interface IPromptSafetyPolicy {
+    readonly antiJailbreakPreface?: (descriptor: IPromptDescriptor) => Result<string>;
+    readonly defaultMaxLength?: number;
+    readonly onSuspicious?: SuspiciousDisposition;
+    readonly screenedSources?: ReadonlyArray<string>;
+    readonly suspiciousPatterns?: ReadonlyArray<RegExp>;
 }
 
 // @public
@@ -711,6 +721,9 @@ export type SlotWritability = 'any-scope' | 'schema-only' | 'system-only';
 
 // @public
 export const substitutionEntry: Converter<string | SlotBinding>;
+
+// @public
+export type SuspiciousDisposition = 'warn' | 'reject';
 
 // @public
 export type ValidatorId = Brand<string, 'ValidatorId'>;
