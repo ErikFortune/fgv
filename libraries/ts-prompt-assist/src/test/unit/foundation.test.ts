@@ -49,13 +49,34 @@ import {
   promptSubstitutionsConverter,
   qualifiersFileConverter,
   scanCandidateBody,
-  selectCandidates,
   slotBindingConverter
 } from '../../index';
 import { ConverterRegistry, OutputValidationRegistry, SlotKindRegistry } from '../../index';
-import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { Qualifiers } from '@fgv/ts-res';
+import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
+
+// Test-fixture qualifier collector — covers every axis used by the
+// fixtures below. Each axis is a permissive LiteralQualifierType with no
+// enumerated-values constraint so arbitrary literal values resolve cleanly.
+const TEST_QUALIFIER_TYPES = QualifierTypes.QualifierTypeCollector.create({
+  qualifierTypes: [
+    QualifierTypes.LiteralQualifierType.create({ name: 'lang' }).orThrow(),
+    QualifierTypes.LiteralQualifierType.create({ name: 'tone' }).orThrow(),
+    QualifierTypes.LiteralQualifierType.create({ name: 'region' }).orThrow()
+  ]
+}).orThrow();
+
+const TEST_QUALIFIERS: ReadonlyArray<Qualifiers.IQualifierDecl> = [
+  { name: 'lang', typeName: 'lang', defaultPriority: 1000 },
+  { name: 'tone', typeName: 'tone', defaultPriority: 500 },
+  { name: 'region', typeName: 'region', defaultPriority: 700 }
+];
+
+const TEST_QUALIFIER_COLLECTOR = Qualifiers.QualifierCollector.create({
+  qualifierTypes: TEST_QUALIFIER_TYPES,
+  qualifiers: [...TEST_QUALIFIERS]
+}).orThrow();
 
 const TEST_SCOPE = 'global' as unknown as ScopeKey;
 const TENANT_SCOPE = 'tenant_acme' as unknown as ScopeKey;
@@ -122,6 +143,38 @@ describe('ts-prompt-assist foundation', () => {
       expect(Convert.slotName.convert('a')).toSucceedWith('a' as unknown as SlotName);
       expect(Convert.scopeKey.convert('global')).toSucceedWith('global' as unknown as ScopeKey);
     });
+
+    test('Convert.slotName tightens to the Mustache "name" production', () => {
+      // Mustache "name" is `[A-Za-z_][A-Za-z0-9_]*` — dot-separated keys
+      // are tokenized as section paths, not flat keys.
+      expect(Convert.slotName.convert('audience')).toSucceed();
+      expect(Convert.slotName.convert('_underscore')).toSucceed();
+      expect(Convert.slotName.convert('foo.bar')).toFailWith(/Mustache name/);
+      expect(Convert.slotName.convert('1starts-with-digit')).toFailWith(/Mustache name/);
+      expect(Convert.slotName.convert('has space')).toFailWith(/Mustache name/);
+    });
+
+    test('Convert.promptId rejects the cache-key delimiter "::"', () => {
+      // PromptId is used in the `MustacheTemplateCache` key as
+      // `${promptId}::${bodyHash}`; rejecting `::` keeps the flat key
+      // collision-free.
+      expect(Convert.promptId.convert('greet')).toSucceed();
+      expect(Convert.promptId.convert('greet::v1')).toFailWith(/must not contain '::'/);
+    });
+
+    test('branded scalars reject leading / trailing whitespace and exceed-length input', () => {
+      expect(Convert.promptId.convert(' leading')).toFailWith(/whitespace/);
+      expect(Convert.promptId.convert('trailing ')).toFailWith(/whitespace/);
+      // 257 chars exceeds the 256-char cap on every brand.
+      const tooLong = 'a'.repeat(257);
+      expect(Convert.promptId.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.resourceId.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.converterId.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.serializerId.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.validatorId.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.axisName.convert(tooLong)).toFailWith(/exceeds maximum length/);
+      expect(Convert.scopeKey.convert(tooLong)).toFailWith(/exceeds maximum length/);
+    });
   });
 
   describe('descriptor converter / body scanner', () => {
@@ -160,7 +213,7 @@ describe('ts-prompt-assist foundation', () => {
         output: { kind: 'streaming-json' },
         candidates: [{ conditions: {}, body: 'Hi' }]
       };
-      expect(promptFileConverter.convert(yaml)).toFailWith(/unknown kind/);
+      expect(promptFileConverter.convert(yaml)).toFailWith(/No converter for discriminator/);
     });
 
     test('descriptorConverter parses a json output descriptor', () => {
@@ -220,12 +273,18 @@ describe('ts-prompt-assist foundation', () => {
 
     test('unknown slot binding kind rejected', () => {
       expect(slotBindingConverter.convert({ kind: 'who-knows', value: 'x', directive: 'prose' })).toFailWith(
-        /unknown kind/
+        /No converter for discriminator/
       );
     });
 
     test('non-object rejected', () => {
-      expect(slotBindingConverter.convert('nope')).toFailWith(/expected an object/);
+      expect(slotBindingConverter.convert('nope')).toFailWith(/Not a discriminated object/);
+    });
+
+    test('missing kind discriminator rejected', () => {
+      expect(slotBindingConverter.convert({ value: 'x', directive: 'prose' })).toFailWith(
+        /Discriminator property kind not present/
+      );
     });
 
     test('promptSubstitutionsConverter accepts bare strings and nested bindings', () => {
@@ -305,6 +364,19 @@ describe('ts-prompt-assist foundation', () => {
       expect(defaultScopeEncoding('global' as unknown as ScopeKey)).toSucceedWith('global');
     });
 
+    test('default encoding rejects every COM0..9 / LPT0..9 reserved device', () => {
+      // The B-1b widening added the 0-suffixed variants (Windows 11 /
+      // Server 2022). Earlier versions of the set only had COM1..9 /
+      // LPT1..9; this regression-protects both the 0 case and the rest
+      // of the range, including basename variants.
+      for (let i = 0; i <= 9; i++) {
+        expect(defaultScopeEncoding(`COM${i}` as unknown as ScopeKey)).toFailWith(/reserved Windows/);
+        expect(defaultScopeEncoding(`LPT${i}` as unknown as ScopeKey)).toFailWith(/reserved Windows/);
+        expect(defaultScopeEncoding(`COM${i}.txt` as unknown as ScopeKey)).toFailWith(/reserved Windows/);
+        expect(defaultScopeEncoding(`lpt${i}` as unknown as ScopeKey)).toFailWith(/reserved Windows/);
+      }
+    });
+
     test('default decoding round-trips identity', () => {
       expect(defaultScopeDecoding('tenant_acme')).toSucceedWith('tenant_acme' as unknown as ScopeKey);
       expect(defaultScopeDecoding('a/b')).toFailWith(/outside the POSIX/);
@@ -344,6 +416,34 @@ describe('ts-prompt-assist foundation', () => {
         const missing = 'missing' as unknown as import('../../index').ConverterId;
         expect(reg.get(missing)).toFailWith(/not registered/);
         expect(reg.getKind(missing)).toFailWith(/not registered/);
+        // Kind-verified overload succeeds when the kind matches and
+        // fails with a clear error when it doesn't.
+        expect(reg.get<ICitedResponse>(id, 'cited-response')).toSucceed();
+      });
+    });
+
+    test('ConverterRegistry: kind-verified overload rejects mismatched kind at runtime', () => {
+      interface IPlainResponse {
+        readonly kind: 'plain';
+        readonly text: string;
+      }
+      interface IAltResponse {
+        readonly kind: 'alt';
+        readonly text: string;
+      }
+      type Responses = IPlainResponse | IAltResponse;
+      const conv: Converter<IPlainResponse> = Converters.object<IPlainResponse>({
+        kind: Converters.literal<'plain'>('plain'),
+        text: Converters.string
+      });
+      expect(ConverterRegistry.create<Responses>()).toSucceedAndSatisfy((reg) => {
+        const id = 'plain' as unknown as import('../../index').ConverterId;
+        expect(reg.register(id, 'plain', conv)).toSucceed();
+        // Asking for the same id under the other union member's kind
+        // fails the runtime check.
+        expect(reg.get<IAltResponse>(id, 'alt')).toFailWith(
+          /registered kind 'plain' does not match requested kind 'alt'/
+        );
       });
     });
 
@@ -405,47 +505,6 @@ describe('ts-prompt-assist foundation', () => {
       expect(MustacheTemplateCache.create()).toSucceedAndSatisfy((cache) => {
         expect(cache.getOrParse(TEST_PROMPT, 'unbalanced {{x')).toFail();
       });
-    });
-  });
-
-  describe('candidate selector', () => {
-    test('selects candidates in specificity-ascending order, terminal stops collection', () => {
-      const candidates: ReadonlyArray<IPromptCandidateRecord> = [
-        { conditions: {}, isPartial: true, body: 'base' },
-        { conditions: { tone: 'formal' }, isPartial: true, body: 'formal addendum' },
-        {
-          conditions: { tone: 'formal', region: 'emea' },
-          body: 'EMEA terminal override'
-        }
-      ];
-      expect(selectCandidates(candidates, { tone: 'formal', region: 'emea' })).toSucceedAndSatisfy((sel) => {
-        expect(sel.selected.map((s) => s.index)).toEqual([0, 1, 2]);
-      });
-    });
-
-    test('selects only one candidate when single match', () => {
-      const candidates: ReadonlyArray<IPromptCandidateRecord> = [
-        { conditions: {}, isPartial: false, body: 'base' },
-        { conditions: { tone: 'casual' }, body: 'unmatched' }
-      ];
-      expect(selectCandidates(candidates, {})).toSucceedAndSatisfy((sel) => {
-        expect(sel.selected.map((s) => s.index)).toEqual([0]);
-      });
-    });
-
-    test('supports array-form conditions', () => {
-      const candidates = [
-        {
-          conditions: [{ qualifierName: 'lang', value: 'en' }],
-          body: 'english'
-        }
-      ];
-      expect(selectCandidates(candidates, { lang: 'en' })).toSucceed();
-    });
-
-    test('fails when no candidates match', () => {
-      const candidates = [{ conditions: { lang: 'en' }, body: 'x' }];
-      expect(selectCandidates(candidates, { lang: 'fr' })).toFailWith(/no candidate matched/);
     });
   });
 
@@ -667,7 +726,7 @@ describe('ts-prompt-assist foundation', () => {
 
     test('end-to-end resolve with caller substitution', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const resolved = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -684,7 +743,7 @@ describe('ts-prompt-assist foundation', () => {
 
     test('describe returns descriptor across any scope', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       expect(await lib.describe(TEST_PROMPT)).toSucceedAndSatisfy((d) => {
         expect(d.title).toBe('Greeting');
       });
@@ -695,7 +754,7 @@ describe('ts-prompt-assist foundation', () => {
 
     test('resolve fails when chain is empty', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       expect(await lib.resolve({ id: TEST_PROMPT, chain: [], qualifiers: {} })).toFailWith(
         /scope chain is empty/
       );
@@ -703,7 +762,7 @@ describe('ts-prompt-assist foundation', () => {
 
     test('resolve fails when record not found', async () => {
       const store = await buildStore({});
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       expect(await lib.resolve({ id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} })).toFailWith(
         /no record found/
       );
@@ -728,7 +787,7 @@ describe('ts-prompt-assist foundation', () => {
           }
         ]
       });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const resolved = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TENANT_SCOPE, TEST_SCOPE],
@@ -799,7 +858,7 @@ describe('ts-prompt-assist foundation', () => {
 
     test('resolveAndValidateOutput fails loudly on free-text descriptors (B-4 deferral)', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolveAndValidateOutput<{ kind: string }>(
         {
           id: TEST_PROMPT,
@@ -826,7 +885,7 @@ describe('ts-prompt-assist foundation', () => {
         candidates: [{ conditions: {}, body: 'just text' }]
       });
       const store = await buildStore({ records: [jsonRecord] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolveAndValidateOutput(
         { id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} },
         '{"answer":"x"}'
@@ -842,7 +901,9 @@ describe('ts-prompt-assist foundation', () => {
         getQualifierConfig: async (): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>> =>
           succeed(undefined)
       };
-      const lib = (await PromptLibrary.create({ store: failing })).orThrow();
+      const lib = (
+        await PromptLibrary.create({ store: failing, qualifiers: TEST_QUALIFIER_COLLECTOR })
+      ).orThrow();
       const result = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -860,7 +921,9 @@ describe('ts-prompt-assist foundation', () => {
         getQualifierConfig: async (): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>> =>
           succeed(undefined)
       };
-      const lib = (await PromptLibrary.create({ store: failing })).orThrow();
+      const lib = (
+        await PromptLibrary.create({ store: failing, qualifiers: TEST_QUALIFIER_COLLECTOR })
+      ).orThrow();
       const result = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -877,7 +940,9 @@ describe('ts-prompt-assist foundation', () => {
         getQualifierConfig: async (): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>> =>
           succeed(undefined)
       };
-      const lib = (await PromptLibrary.create({ store: failing })).orThrow();
+      const lib = (
+        await PromptLibrary.create({ store: failing, qualifiers: TEST_QUALIFIER_COLLECTOR })
+      ).orThrow();
       expect(await lib.describe(TEST_PROMPT)).toFailWith(/store\.list failed: list IO failure/);
     });
 
@@ -887,7 +952,7 @@ describe('ts-prompt-assist foundation', () => {
         descriptor: { ...buildDescriptor().descriptor, slots: [] }
       });
       const store = await buildStore({ records: [record] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -923,7 +988,7 @@ describe('ts-prompt-assist foundation', () => {
           }
         ]
       });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -943,6 +1008,18 @@ describe('ts-prompt-assist foundation', () => {
         trimTrailingWhitespace: false
       });
       expect(out).toBe('b|a');
+    });
+
+    test('joinBodies default trim policy strips trailing spaces and newlines', () => {
+      // The B-1b regex widening switched the trim pattern from the
+      // narrow newline-only form to `/\s+$/`, so bodies ending in
+      // trailing spaces (not just newlines) are now trimmed.
+      const selected: ReadonlyArray<{ candidate: IPromptCandidateRecord }> = [
+        { candidate: { conditions: {}, body: 'first body   ' } }, // trailing spaces only
+        { candidate: { conditions: {}, body: 'second body\n\n' } } // trailing newlines
+      ];
+      const out = joinBodies(selected, undefined);
+      expect(out).toBe('first body\n\nsecond body');
     });
 
     test('FileTreePromptStore accepts custom scopeEncoding', async () => {
@@ -979,39 +1056,9 @@ describe('ts-prompt-assist foundation', () => {
       await store.list();
     });
 
-    test('candidate selector handles array-form and record-with-details conditions', () => {
-      const candidates: ReadonlyArray<IPromptCandidateRecord> = [
-        {
-          conditions: [{ qualifierName: 'lang', value: 'en' }],
-          body: 'x'
-        },
-        {
-          conditions: { lang: { value: 'fr', priority: 100 } },
-          body: 'y'
-        }
-      ];
-      expect(selectCandidates(candidates, { lang: 'fr' })).toSucceedAndSatisfy((sel) => {
-        expect(sel.selected[0].index).toBe(1);
-      });
-    });
-
-    test('candidate selector accepts record-with-details conditions', () => {
-      // The IChildConditionDecl.value is typed `string`; we exercise the
-      // typed record-with-details branch using a valid string value.
-      const candidates: ReadonlyArray<IPromptCandidateRecord> = [
-        {
-          conditions: { lang: { value: 'fr', priority: 100 } },
-          body: 'french'
-        }
-      ];
-      expect(selectCandidates(candidates, { lang: 'fr' })).toSucceedAndSatisfy((sel) => {
-        expect(sel.selected[0].index).toBe(0);
-      });
-    });
-
     test('resolveAndValidateOutput propagates resolve failures', async () => {
       const store = await buildStore({});
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolveAndValidateOutput(
         { id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} },
         'x'
@@ -1031,8 +1078,477 @@ describe('ts-prompt-assist foundation', () => {
 
     test('PromptLibrary.create fails when cache cap is invalid', async () => {
       const store = await buildStore({});
-      const result = await PromptLibrary.create({ store, templateCacheSize: 0 });
+      const result = await PromptLibrary.create({
+        store,
+        qualifiers: TEST_QUALIFIER_COLLECTOR,
+        templateCacheSize: 0
+      });
       expect(result).toFailWith(/positive/);
+    });
+
+    test('resolve composes partial overrides onto the full base candidate', async () => {
+      // Aligned with ts-res's value-composition semantic per design §10.2:
+      // the candidate with `isPartial` omitted/false is the full base;
+      // more-specific candidates marked `isPartial: true` are overrides
+      // that layer onto the base. ts-res returns matches in priority-
+      // descending order; the walk collects partials until the first
+      // full candidate (inclusive), then the trace + join reverse to
+      // specificity-ascending so the base appears first.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          { conditions: {}, body: 'Be helpful.' }, // full base — terminates the walk
+          { conditions: { tone: 'formal' }, isPartial: true, body: 'Use formal address.' },
+          { conditions: { tone: 'formal', region: 'emea' }, isPartial: true, body: 'EMEA addendum.' }
+        ],
+        descriptor: {
+          ...buildDescriptor().descriptor,
+          slots: []
+        }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: { tone: 'formal', region: 'emea' }
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('Be helpful.\n\nUse formal address.\n\nEMEA addendum.');
+        expect(r.trace.candidateMatches.map((m) => m.candidateIndex)).toEqual([0, 1, 2]);
+        // All three matched as regular matches; conditions array reflects
+        // the per-condition matches surfaced by ts-res (forwarded
+        // unchanged — see design §4.2).
+        expect(r.trace.candidateMatches.every((m) => m.matchType === 'match')).toBe(true);
+        expect(r.trace.candidateMatches[2].conditions.length).toBeGreaterThan(0);
+      });
+    });
+
+    test('resolve surfaces matchAsDefault when ts-res falls back via scoreAsDefault', async () => {
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          {
+            conditions: { tone: { value: 'formal', scoreAsDefault: 0.5 } },
+            body: 'formal default'
+          }
+        ],
+        descriptor: {
+          ...buildDescriptor().descriptor,
+          slots: []
+        }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      // Context value for `tone` is omitted — ts-res falls back via
+      // scoreAsDefault.
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {}
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('formal default');
+        expect(r.trace.candidateMatches[0].matchType).toBe('matchAsDefault');
+      });
+    });
+
+    test('resolve stops at the full base when only a matchAsDefault partial would layer above', async () => {
+      // The full base is a regular match; the more-specific partial only
+      // matches as default. Per ts-res's value-composition order
+      // (regulars before defaults), the walk hits the regular full base
+      // before the default partial — so the partial never participates.
+      // This is intentional: ts-res treats default matches as strictly
+      // lower-priority than any regular match. Authors who want the
+      // partial to layer must either make it a regular match or make
+      // the base partial too.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          { conditions: {}, body: 'regular base.' }, // full base, regular match
+          {
+            conditions: { tone: { value: 'formal', scoreAsDefault: 0.5 } },
+            isPartial: true,
+            body: 'default partial that should not layer.'
+          }
+        ],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {}
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('regular base.');
+        expect(r.trace.candidateMatches).toHaveLength(1);
+        expect(r.trace.candidateMatches[0].matchType).toBe('match');
+      });
+    });
+
+    test('resolve layers a regular partial onto the full regular base', async () => {
+      // Both candidates are regular matches; the override is marked
+      // partial. Walk collects override (partial → continue), then base
+      // (full → stop). Reversed for join: base first, override last.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          { conditions: {}, body: 'base body.' },
+          { conditions: { tone: 'formal' }, isPartial: true, body: 'formal override.' }
+        ],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: { tone: 'formal' }
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('base body.\n\nformal override.');
+        expect(r.trace.candidateMatches).toHaveLength(2);
+        expect(r.trace.candidateMatches[0].matchType).toBe('match');
+        expect(r.trace.candidateMatches[1].matchType).toBe('match');
+      });
+    });
+
+    test('describe accepts identical descriptors at multiple scopes', async () => {
+      // Multi-scope path: exercises the for-loop body in
+      // `_populateDescriptorCache` (hashing the second descriptor and
+      // confirming equality) and the success tail (cache set + return).
+      const records: ReadonlyArray<IStoredPromptRecord> = [
+        buildDescriptor(),
+        buildDescriptor({ scope: TENANT_SCOPE })
+      ];
+      const store = await buildStore({ records });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      expect(await lib.describe(TEST_PROMPT)).toSucceedAndSatisfy((d) => {
+        expect(d.title).toBe('Greeting');
+      });
+    });
+
+    test('describe rejects diverging descriptors across scopes', async () => {
+      const recordA: IStoredPromptRecord = buildDescriptor();
+      const recordB: IStoredPromptRecord = buildDescriptor({
+        scope: TENANT_SCOPE,
+        descriptor: { ...buildDescriptor().descriptor, title: 'DIVERGED' }
+      });
+      const store = await buildStore({ records: [recordA, recordB] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      expect(await lib.describe(TEST_PROMPT)).toFailWith(/not structurally equal/);
+    });
+
+    test('invalidateDescriptor drops the cached entry', async () => {
+      const store = await buildStore({ records: [buildDescriptor()] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      expect(await lib.describe(TEST_PROMPT)).toSucceed();
+      lib.invalidateDescriptor(TEST_PROMPT);
+      // Invalidation drops the cache; the next describe re-reads from
+      // the store. We don't have an externally observable signal that
+      // the cache was used vs not, but invalidating a non-cached id is
+      // a no-op (safe to call repeatedly).
+      lib.invalidateDescriptor('never-cached' as unknown as PromptId);
+      expect(await lib.describe(TEST_PROMPT)).toSucceed();
+    });
+
+    test('PromptLibrary.create fails when qualifierTypes missing for decl-array qualifiers', async () => {
+      const store = await buildStore({});
+      const result = await PromptLibrary.create({
+        store,
+        qualifiers: [{ name: 'lang', typeName: 'lang', defaultPriority: 100 }]
+      });
+      expect(result).toFailWith(/qualifierTypes must be supplied/);
+    });
+
+    test('PromptLibrary.create accepts qualifier decls plus qualifierTypes', async () => {
+      const store = await buildStore({});
+      const result = await PromptLibrary.create({
+        store,
+        qualifiers: TEST_QUALIFIERS,
+        qualifierTypes: TEST_QUALIFIER_TYPES
+      });
+      expect(result).toSucceed();
+    });
+
+    test('PromptLibrary.create rejects non-integer / non-positive resourceBindingDepthLimit', async () => {
+      const store = await buildStore({});
+      expect(
+        await PromptLibrary.create({
+          store,
+          qualifiers: TEST_QUALIFIER_COLLECTOR,
+          resourceBindingDepthLimit: 0
+        })
+      ).toFailWith(/expected a positive integer/);
+      expect(
+        await PromptLibrary.create({
+          store,
+          qualifiers: TEST_QUALIFIER_COLLECTOR,
+          resourceBindingDepthLimit: -1
+        })
+      ).toFailWith(/expected a positive integer/);
+      expect(
+        await PromptLibrary.create({
+          store,
+          qualifiers: TEST_QUALIFIER_COLLECTOR,
+          resourceBindingDepthLimit: 2.5
+        })
+      ).toFailWith(/expected a positive integer/);
+      expect(
+        await PromptLibrary.create({
+          store,
+          qualifiers: TEST_QUALIFIER_COLLECTOR,
+          resourceBindingDepthLimit: Number.NaN
+        })
+      ).toFailWith(/expected a positive integer/);
+    });
+
+    test('PromptLibrary.create honors explicit logger / resourceBindingDepthLimit / qualifierTypes', async () => {
+      const store = await buildStore({});
+      const noOp = new Logging.NoOpLogger();
+      const result = await PromptLibrary.create({
+        store,
+        qualifiers: TEST_QUALIFIER_COLLECTOR,
+        // Explicit qualifierTypes alongside a collector — the collector
+        // already exposes its qualifierTypes, but the explicit value
+        // takes precedence and exercises the branch.
+        qualifierTypes: TEST_QUALIFIER_TYPES,
+        logger: noOp,
+        resourceBindingDepthLimit: 7
+      });
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.resourceBindingDepthLimit).toBe(7);
+        expect(lib.logger).toBe(noOp);
+      });
+    });
+
+    test('cacheListener supplied at create time receives ts-res cache events during resolve', async () => {
+      // The listener is forwarded into the per-resolve `ResourceResolver`;
+      // verify that resolving a prompt with conditions fires at least
+      // one `onCacheMiss` event on the condition cache so the wiring
+      // can't silently regress.
+      interface IEvent {
+        readonly kind: 'hit' | 'miss';
+        readonly cache: string;
+      }
+      const events: IEvent[] = [];
+      const listener = {
+        onCacheHit(cache: string): void {
+          events.push({ kind: 'hit', cache });
+        },
+        onCacheMiss(cache: string): void {
+          events.push({ kind: 'miss', cache });
+        },
+        onCacheError(): void {
+          /* not exercised */
+        },
+        onContextError(): void {
+          /* not exercised */
+        },
+        onCacheClear(): void {
+          /* not exercised */
+        }
+      };
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [{ conditions: { tone: 'formal' }, body: 'formal body.' }],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (
+        await PromptLibrary.create({
+          store,
+          qualifiers: TEST_QUALIFIER_COLLECTOR,
+          cacheListener: listener
+        })
+      ).orThrow();
+      const result = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: { tone: 'formal' }
+      });
+      expect(result).toSucceed();
+      expect(events.length).toBeGreaterThan(0);
+      expect(events.some((e) => e.kind === 'miss')).toBe(true);
+    });
+
+    test('resolve tolerates an in-memory record with explicit `undefined` optional fields', async () => {
+      // Programmatic IPromptDescriptor / IPromptCandidateRecord values
+      // may set optional fields to `undefined` instead of omitting
+      // them. The pre-canonicalize sanitizer drops `undefined` so
+      // `canonicalize` doesn't trip on a value it cannot serialize.
+      const candidate: IPromptCandidateRecord = {
+        conditions: {},
+        isPartial: undefined,
+        body: 'hello {{{audience}}}!'
+      };
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [candidate],
+        descriptor: { ...buildDescriptor().descriptor, description: undefined, qualifiers: undefined }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      expect(await lib.describe(TEST_PROMPT)).toSucceed();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {},
+        substitutions: { audience: 'world' }
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('hello world!');
+      });
+    });
+
+    test('resolve dedupes byte-identical authored candidates and pins the trace to the first index', async () => {
+      // ts-res's `addLooseCandidate` dedupes by condition-set key with
+      // a `ResourceCandidate.equal` tiebreaker — so two BYTE-IDENTICAL
+      // candidates (same conditions, same body, same isPartial)
+      // collapse to one entry in the built resource. The library's
+      // origin-index map preserves the FIRST authored index when ts-res
+      // returns the existing candidate on the second call, so the
+      // trace points to the candidate position ts-res actually retains.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          { conditions: {}, body: 'shared body.' },
+          { conditions: {}, body: 'shared body.' }
+        ],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {}
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('shared body.');
+        // Single candidate after dedup; trace points at the FIRST
+        // authored index (0), never the dedup-shadowed second (1).
+        expect(r.trace.candidateMatches).toHaveLength(1);
+        expect(r.trace.candidateMatches[0].candidateIndex).toBe(0);
+      });
+    });
+
+    test('resolve composes when every matching candidate is a partial (no full base)', async () => {
+      // All candidates are `isPartial: true`. The walk never hits a
+      // non-partial, so the collection exits via the loop's natural
+      // termination. Result: every partial participates, joined in
+      // specificity-ascending order.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          { conditions: {}, isPartial: true, body: 'base partial.' },
+          { conditions: { tone: 'formal' }, isPartial: true, body: 'tone partial.' }
+        ],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: { tone: 'formal' }
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('base partial.\n\ntone partial.');
+        expect(r.trace.candidateMatches).toHaveLength(2);
+      });
+    });
+
+    test('resolve hits the materialized-resource cache on second call for the same prompt', async () => {
+      const store = await buildStore({ records: [buildDescriptor()] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      expect(lib.materializedCount).toBe(0);
+
+      const first = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {},
+        substitutions: { audience: 'world' }
+      });
+      expect(first).toSucceed();
+      expect(lib.materializedCount).toBe(1);
+
+      // Second resolve with the same (scope, id, canonical candidates)
+      // must hit the materialization cache — the count stays at 1, so
+      // we know `_materializeIfNeeded` short-circuited without calling
+      // `addLooseCandidate` again.
+      const second = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {},
+        substitutions: { audience: 'world' }
+      });
+      expect(second).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('Hello, world!');
+      });
+      expect(lib.materializedCount).toBe(1);
+    });
+
+    test('repeated resolves of a malformed record fail fast without builder mutation', async () => {
+      // Phase-1 qualifier-name pre-validation catches the unknown
+      // qualifier before any candidate reaches `addLooseCandidate`, so
+      // the long-lived builder is never mutated. The synth-id reserved
+      // on first attempt persists in the reservation map (so it would
+      // be reused if phase 2 ever DID get a chance to commit), but no
+      // resources are created either way — orphan count stays at zero
+      // across N retries.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [{ conditions: { 'not-a-real-qualifier': 'x' }, body: 'no-op' }],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      for (let i = 0; i < 3; i++) {
+        const r = await lib.resolve({ id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} });
+        expect(r).toFailWith(/unknown qualifier 'not-a-real-qualifier'/);
+      }
+      expect(lib.materializedCount).toBe(0);
+    });
+
+    test('resolve rejects an invalid qualifier-name format in the request context', async () => {
+      // `ValidatingSimpleContextQualifierProvider` validates qualifier
+      // NAMES at construction. A name that doesn't match the qualifier-
+      // name production (e.g. starts with a digit) fails the resolver
+      // creation path with a clear, prompt-id-qualified error.
+      const store = await buildStore({ records: [buildDescriptor()] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      // Construct via Object.fromEntries so the literal-key lint rule
+      // doesn't fire on the intentionally-malformed name.
+      const malformed = Object.fromEntries([['123invalid', 'x']]);
+      const result = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: malformed,
+        substitutions: { audience: 'world' }
+      });
+      expect(result).toFailWith(/qualifier context invalid/);
+    });
+
+    test('resolve fails fast on unknown qualifier names before mutating the builder', async () => {
+      // Per design §10.1 conditions delegate to ts-res's
+      // ConditionSetDecl. The library pre-validates every condition's
+      // qualifier-name against the registered qualifier collector
+      // BEFORE phase-2 commits any candidate to the long-lived builder
+      // — so an unknown qualifier surfaces as a fast-fail with no
+      // builder mutation. (Without this guard, the failure would still
+      // happen, but earlier candidates from the same record could have
+      // already committed orphan conditions / decisions.)
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          {
+            conditions: { 'not-a-real-qualifier': 'x' },
+            body: 'no-op'
+          }
+        ],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const result = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {}
+      });
+      expect(result).toFailWith(/unknown qualifier 'not-a-real-qualifier'/);
     });
 
     test('mustache render failure surfaces with prompt id', async () => {
@@ -1044,7 +1560,7 @@ describe('ts-prompt-assist foundation', () => {
         }
       });
       const store = await buildStore({ records: [recordWithMissingVar] });
-      const lib = (await PromptLibrary.create({ store })).orThrow();
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],

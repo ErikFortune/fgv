@@ -76,9 +76,13 @@ export interface IPromptCandidateRecord {
    */
   readonly conditions: ResourceJson.Json.ConditionSetDecl;
   /**
-   * When `true`, this candidate participates in chain composition — layers
-   * underneath more-specific matches. When `false` or omitted, this
-   * candidate terminates the composition chain.
+   * Aligned with ts-res's `resolveComposedResourceValue` semantic
+   * (design §10.2): `isPartial: true` marks a more-specific override
+   * that layers ONTO the full base; `isPartial: false` (or omitted)
+   * marks the full base body. The walk consumes ts-res's priority-
+   * descending order, collects partials until the first non-partial
+   * (full → stop), then reverses for the join so the base appears
+   * first and the most-specific override appears last.
    */
   readonly isPartial?: boolean;
   readonly body: string;

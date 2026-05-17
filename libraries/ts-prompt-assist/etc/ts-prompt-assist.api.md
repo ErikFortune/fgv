@@ -7,8 +7,10 @@
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { Mustache } from '@fgv/ts-extras';
 import { Qualifiers } from '@fgv/ts-res';
+import { QualifierTypes } from '@fgv/ts-res';
 import { ResourceJson } from '@fgv/ts-res';
 import { Result } from '@fgv/ts-utils';
 import { Runtime } from '@fgv/ts-res';
@@ -70,6 +72,8 @@ export class ConverterRegistry<TResponse extends {
     }>(): Result<ConverterRegistry<TResponse>>;
     // (undocumented)
     get<T extends TResponse = TResponse>(id: ConverterId): Result<Converter<T>>;
+    // (undocumented)
+    get<T extends TResponse>(id: ConverterId, kind: T['kind']): Result<Converter<T>>;
     // (undocumented)
     getKind(id: ConverterId): Result<TResponse['kind']>;
     // (undocumented)
@@ -146,15 +150,6 @@ export interface ICandidateMatchTraceEntry {
 }
 
 // @public
-export interface ICandidateSelectionResult {
-    // (undocumented)
-    readonly selected: ReadonlyArray<{
-        readonly candidate: IPromptCandidateRecord;
-        readonly index: number;
-    }>;
-}
-
-// @public
 export interface IChainWalkResult {
     // (undocumented)
     readonly record: IStoredPromptRecord;
@@ -226,6 +221,7 @@ export interface IPromptConverterRegistry<TResponse extends {
     kind: string;
 }> {
     get<T extends TResponse = TResponse>(id: ConverterId): Result<Converter<T>>;
+    get<T extends TResponse>(id: ConverterId, kind: T['kind']): Result<Converter<T>>;
     getKind(id: ConverterId): Result<TResponse['kind']>;
     has(id: ConverterId): boolean;
     register<T extends TResponse>(id: ConverterId, kind: T['kind'], converter: Converter<T>): Result<ConverterId>;
@@ -295,7 +291,12 @@ export interface IPromptLibraryCreateParams<TResponse extends {
 } = {
     kind: string;
 }> {
+    readonly cacheListener?: Runtime.IResourceResolverCacheListener;
+    readonly logger?: Logging.ILogger;
+    readonly qualifiers: Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<Qualifiers.IQualifierDecl>;
+    readonly qualifierTypes?: QualifierTypes.ReadOnlyQualifierTypeCollector;
     readonly registry?: IPromptRegistry<TResponse>;
+    readonly resourceBindingDepthLimit?: number;
     // (undocumented)
     readonly store: IPromptStore;
     readonly templateCacheSize?: number;
@@ -603,8 +604,12 @@ export class PromptLibrary<TResponse extends {
         kind: string;
     }>(params: IPromptLibraryCreateParams<TResponse>): Promise<Result<PromptLibrary<TResponse>>>;
     describe(id: PromptId): Promise<Result<IPromptDescriptor>>;
+    invalidateDescriptor(id: PromptId): void;
+    readonly logger: Logging.ILogger;
+    get materializedCount(): number;
     resolve(req: IPromptResolveRequest): Promise<Result<IResolvedPrompt>>;
     resolveAndValidateOutput<T extends TResponse>(req: IPromptResolveRequest, rawOutput: string): Promise<Result<T>>;
+    readonly resourceBindingDepthLimit: number;
 }
 
 // @public
@@ -663,9 +668,6 @@ export function scanCandidateBody(body: string, promptId: PromptId, candidateInd
 
 // @public
 export type ScopeKey = Brand<string, 'ScopeKey'>;
-
-// @public
-export function selectCandidates(candidates: ReadonlyArray<IPromptCandidateRecord>, context: IQualifierContext): Result<ICandidateSelectionResult>;
 
 // @public
 export type SerializerId = Brand<string, 'SerializerId'>;

@@ -70,19 +70,63 @@ export type AxisName = Brand<string, 'AxisName'>;
  */
 export type ScopeKey = Brand<string, 'ScopeKey'>;
 
-// Copilot review (PR #362, deferred to B-1b): `brandedString` only
-// rejects the empty string — there is no upper-bound length check and
-// no character-class restriction. Downstream consumers assume more
-// (e.g. `SlotName` is used verbatim as a Mustache identifier; `ScopeKey`
-// passes through `defaultScopeEncoding`'s additional path-safety check).
-// B-1b should tighten per-brand: e.g. require Mustache "name"
-// production for `SlotName`, reject whitespace for all ids, cap length
-// at a reasonable maximum. Doing so now would constrain the
-// pressure-test consumer's id shapes before we know what they look like.
-function brandedString<T extends string>(brand: string): Converter<T> {
+/**
+ * Maximum length of any branded identifier in the library. Picked to be
+ * larger than any reasonable id authors would supply while still bounded
+ * to defuse adversarial inputs (e.g. multi-megabyte ids used as cache
+ * keys).
+ */
+const MAX_BRAND_LENGTH: number = 256;
+
+/**
+ * Mustache "name" production per the spec — `[A-Za-z_][A-Za-z0-9_]*`.
+ * Slot names are used verbatim as Mustache substitution keys, so a name
+ * like `'foo.bar'` would be tokenized as a section path `foo` → `bar`
+ * rather than a flat key. `Convert.slotName` enforces the strict
+ * production so substitution semantics match author intent.
+ */
+const MUSTACHE_NAME_RE: RegExp = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+interface IBrandedIdOptions {
+  /** Optional substring the value must NOT contain. Per-brand specific —
+   *  e.g. `PromptId` rejects `'::'` to defuse the `MustacheTemplateCache`
+   *  key-delimiter collision. */
+  readonly rejectSubstring?: string;
+  /** Optional pattern the value must match. Per-brand specific — e.g.
+   *  `SlotName` requires the Mustache "name" production so slot keys
+   *  index a flat render context cleanly. The error message takes the
+   *  shape "&lt;brand&gt;: '&lt;value&gt;' &lt;patternDescription&gt;",
+   *  so describe the constraint inline (e.g. "is not a valid Mustache
+   *  name"). */
+  readonly mustMatch?: { readonly pattern: RegExp; readonly patternDescription: string };
+}
+
+/**
+ * Builds a `Converter` for one of the branded id types in this library.
+ * All brands share the per-brand hygiene: non-empty, length-capped,
+ * whitespace-trimmed; each brand may layer on additional constraints
+ * (e.g. `SlotName`'s Mustache-name regex; `PromptId`'s no-`::` rule)
+ * via the options bag.
+ *
+ * Not exported — the per-brand `Convert.<brand>` constants are the
+ * public surface.
+ */
+function brandedIdConverter<T extends string>(brand: string, options?: IBrandedIdOptions): Converter<T> {
   return Converters.string.map((from: string): Result<T> => {
     if (from.length === 0) {
       return fail(`${brand}: must be a non-empty string`);
+    }
+    if (from.length > MAX_BRAND_LENGTH) {
+      return fail(`${brand}: exceeds maximum length ${MAX_BRAND_LENGTH} (got ${from.length})`);
+    }
+    if (from !== from.trim()) {
+      return fail(`${brand}: must not have leading or trailing whitespace`);
+    }
+    if (options?.mustMatch !== undefined && !options.mustMatch.pattern.test(from)) {
+      return fail(`${brand}: '${from}' ${options.mustMatch.patternDescription}`);
+    }
+    if (options?.rejectSubstring !== undefined && from.includes(options.rejectSubstring)) {
+      return fail(`${brand}: '${from}' must not contain '${options.rejectSubstring}'`);
     }
     return succeed(from as unknown as T);
   });
@@ -102,20 +146,30 @@ export const Convert: {
   readonly axisName: Converter<AxisName>;
   readonly scopeKey: Converter<ScopeKey>;
 } = {
-  /** Validates an `unknown` value as a {@link PromptId}. */
-  promptId: brandedString<PromptId>('PromptId'),
-  /** Validates an `unknown` value as a {@link SlotName}. */
-  slotName: brandedString<SlotName>('SlotName'),
+  /** Validates an `unknown` value as a {@link PromptId}. Rejects ids
+   *  that contain `::` so the `MustacheTemplateCache` key delimiter is
+   *  collision-free. */
+  promptId: brandedIdConverter<PromptId>('PromptId', { rejectSubstring: '::' }),
+  /** Validates an `unknown` value as a {@link SlotName}. Tightens to
+   *  the Mustache "name" production (`[A-Za-z_][A-Za-z0-9_]*`) so slot
+   *  names are stable Mustache identifiers — `'foo.bar'` would
+   *  otherwise be tokenized as a section path. */
+  slotName: brandedIdConverter<SlotName>('SlotName', {
+    mustMatch: {
+      pattern: MUSTACHE_NAME_RE,
+      patternDescription: `is not a valid Mustache name (must match ${MUSTACHE_NAME_RE})`
+    }
+  }),
   /** Validates an `unknown` value as a {@link ResourceId}. */
-  resourceId: brandedString<ResourceId>('ResourceId'),
+  resourceId: brandedIdConverter<ResourceId>('ResourceId'),
   /** Validates an `unknown` value as a {@link ConverterId}. */
-  converterId: brandedString<ConverterId>('ConverterId'),
+  converterId: brandedIdConverter<ConverterId>('ConverterId'),
   /** Validates an `unknown` value as a {@link SerializerId}. */
-  serializerId: brandedString<SerializerId>('SerializerId'),
+  serializerId: brandedIdConverter<SerializerId>('SerializerId'),
   /** Validates an `unknown` value as a {@link ValidatorId}. */
-  validatorId: brandedString<ValidatorId>('ValidatorId'),
+  validatorId: brandedIdConverter<ValidatorId>('ValidatorId'),
   /** Validates an `unknown` value as an {@link AxisName}. */
-  axisName: brandedString<AxisName>('AxisName'),
+  axisName: brandedIdConverter<AxisName>('AxisName'),
   /** Validates an `unknown` value as a {@link ScopeKey}. */
-  scopeKey: brandedString<ScopeKey>('ScopeKey')
+  scopeKey: brandedIdConverter<ScopeKey>('ScopeKey')
 } as const;
