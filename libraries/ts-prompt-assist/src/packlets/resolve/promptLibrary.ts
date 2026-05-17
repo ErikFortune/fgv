@@ -23,14 +23,22 @@ import {
   IBindingTraceEntry,
   ICandidateMatchTraceEntry,
   IPromptResolveTrace,
-  IResolvedPrompt
+  IResolvedPrompt,
+  ISafeguardFinding
 } from '../types';
 import { IPromptStore } from '../store';
 import { IPromptRegistry } from '../registry';
 import { walkScopeChain } from './chainWalker';
-import { mergeBindings } from './bindingMerger';
+import { IBindingMergeResult, mergeBindings } from './bindingMerger';
 import { MustacheTemplateCache } from './mustacheCache';
 import { joinBodies } from './candidateSelector';
+import {
+  IResourceBindingResolveResult,
+  IResourceBindingStackFrame,
+  buildCycleKey,
+  formatCycleError,
+  resolvePendingResourceBindings
+} from './resourceBindingResolver';
 
 /**
  * ts-res resource type name the library synthesizes for prompt records.
@@ -301,23 +309,103 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   /**
    * Resolves a prompt against the supplied chain + qualifier context +
    * caller substitutions. Returns the rendered body plus full trace.
+   *
+   * @remarks
+   * Resource bindings declared on the resolved record are recursively
+   * resolved (depth-capped per {@link PromptLibrary.resourceBindingDepthLimit}; cycle-
+   * detected via RFC 8785 canonical-JSON keys on
+   * `\{ chain, id \}` pairs). The inner resolves flow through the same
+   * long-lived ts-res `ResourceManagerBuilder` so materialization caches
+   * hit across the recursion.
    */
   public async resolve(req: IPromptResolveRequest): Promise<Result<IResolvedPrompt>> {
-    return (await walkScopeChain(this._store, req.id, req.chain)).onSuccess((walked) =>
-      mergeBindings(req.chain, walked.scopeBindings, walked.record.descriptor.slots, req.substitutions)
-        .withErrorFormat((msg) => `prompt '${req.id}': ${msg}`)
-        .onSuccess((mergeResult) =>
-          this._materializeIfNeeded(walked.record).onSuccess((materialized) =>
-            this._resolveCandidates(
-              walked.winningScope,
-              req.id,
-              walked.record,
-              materialized,
-              req.qualifiers
-            ).onSuccess((matches) => this._renderResolved(req, walked, mergeResult, matches))
-          )
+    return this._resolveInternal(req, 0, []);
+  }
+
+  private async _resolveInternal(
+    req: IPromptResolveRequest,
+    depth: number,
+    stack: IResourceBindingStackFrame[]
+  ): Promise<Result<IResolvedPrompt>> {
+    if (depth > this.resourceBindingDepthLimit) {
+      return fail(
+        `prompt '${req.id}': resource binding depth limit (${this.resourceBindingDepthLimit}) exceeded`
+      );
+    }
+    const keyResult = buildCycleKey(this._normalizer, req.chain, req.id);
+    /* c8 ignore next 6 - defensive: canonicalize on a sanitized chain/id pair does not fail for any input the type system allows */
+    if (keyResult.isFailure()) {
+      return fail(`prompt '${req.id}': failed to build cycle-detection key: ${keyResult.message}`);
+    }
+    const key = keyResult.value;
+    if (stack.some((f) => f.key === key)) {
+      // The cycle branch is only reached when the stack already has at
+      // least one frame, so `stack[0]` is defined — the outermost prompt
+      // (the original public-`resolve` request) is what the error cites.
+      return fail(formatCycleError(stack[0].id, stack, req.id));
+    }
+    stack.push({ key, id: req.id });
+    try {
+      return await this._resolveOnce(req, depth, stack);
+    } finally {
+      stack.pop();
+    }
+  }
+
+  private async _resolveOnce(
+    req: IPromptResolveRequest,
+    depth: number,
+    stack: IResourceBindingStackFrame[]
+  ): Promise<Result<IResolvedPrompt>> {
+    return (await walkScopeChain(this._store, req.id, req.chain))
+      .onSuccess((walked) =>
+        mergeBindings(req.chain, walked.scopeBindings, walked.record.descriptor.slots, req.substitutions)
+          .withErrorFormat((msg) => `prompt '${req.id}': ${msg}`)
+          .onSuccess((mergeResult) => succeed({ walked, mergeResult } as const))
+      )
+      .thenOnSuccess(async ({ walked, mergeResult }) =>
+        (await this._resolveResourceBindings(req, mergeResult, depth, stack)).onSuccess((rb) =>
+          succeed({ walked, mergeResult, rb } as const)
         )
-    );
+      )
+      .onSuccess(({ walked, mergeResult, rb }) =>
+        this._materializeIfNeeded(walked.record)
+          .onSuccess((materialized) =>
+            this._resolveCandidates(walked.winningScope, req.id, walked.record, materialized, req.qualifiers)
+          )
+          .onSuccess((matches) => this._renderResolved(req, walked, mergeResult, matches, rb))
+      );
+  }
+
+  private async _resolveResourceBindings(
+    req: IPromptResolveRequest,
+    mergeResult: IBindingMergeResult,
+    depth: number,
+    stack: IResourceBindingStackFrame[]
+  ): Promise<Result<IResourceBindingResolveResult>> {
+    if (mergeResult.pendingResourceBindings.length === 0) {
+      return succeed({ traceEntries: [], rewrites: new Map<SlotName, string>() });
+    }
+    return resolvePendingResourceBindings({
+      pending: mergeResult.pendingResourceBindings,
+      outerChain: req.chain,
+      outerQualifiers: req.qualifiers,
+      outerSubstitutions: req.substitutions,
+      outerId: req.id,
+      depth,
+      stack,
+      innerResolve: (innerReq, innerDepth, innerStack) =>
+        this._resolveInternal(
+          {
+            id: innerReq.id,
+            chain: innerReq.chain,
+            qualifiers: innerReq.qualifiers,
+            substitutions: innerReq.substitutions
+          },
+          innerDepth,
+          innerStack
+        )
+    });
   }
 
   /**
@@ -564,23 +652,29 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     },
     mergeResult: {
       readonly merged: ReadonlyMap<SlotName, IBindingTraceEntry>;
-      readonly safeguardFindings: ReadonlyArray<import('../types').ISafeguardFinding>;
+      readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
     },
     matches: ReadonlyArray<{
       readonly candidate: IPromptCandidateRecord;
       readonly index: number;
       readonly matchType: 'match' | 'matchAsDefault';
       readonly conditions: ReadonlyArray<Runtime.IConditionMatchResult>;
-    }>
+    }>,
+    resourceBindings: IResourceBindingResolveResult
   ): Result<IResolvedPrompt> {
     const descriptor = walked.record.descriptor;
     const selected = matches.map(({ candidate, index }) => ({ candidate, index }));
     const joinedBody = joinBodies(selected, descriptor.join);
+    // Fold the resource-binding rewrites into a fresh merged-bindings map
+    // so the trace surface stays a `ReadonlyMap` and `mergeBindings`'s
+    // placeholder values for resource-bound slots are replaced with the
+    // inner-resolve body.
+    const finalMerged = applyResourceBindingRewrites(mergeResult.merged, resourceBindings.rewrites);
     return this._mustacheCache
       .getOrParse(req.id, joinedBody)
       .onSuccess((template) =>
         template
-          .validateAndRender(this._buildRenderContext(mergeResult.merged))
+          .validateAndRender(this._buildRenderContext(finalMerged))
           .withErrorFormat((msg) => `prompt '${req.id}': ${msg}`)
       )
       .onSuccess((rendered) => {
@@ -592,8 +686,8 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
         const trace: IPromptResolveTrace = {
           winningScope: walked.winningScope,
           scopesConsulted: walked.scopesConsulted,
-          mergedBindings: mergeResult.merged,
-          resourceBindingResolutions: [],
+          mergedBindings: finalMerged,
+          resourceBindingResolutions: resourceBindings.traceEntries,
           safeguardFindings: mergeResult.safeguardFindings,
           candidateMatches
         };
@@ -613,6 +707,25 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     });
     return ctx;
   }
+}
+
+function applyResourceBindingRewrites(
+  merged: ReadonlyMap<SlotName, IBindingTraceEntry>,
+  rewrites: ReadonlyMap<SlotName, string>
+): ReadonlyMap<SlotName, IBindingTraceEntry> {
+  if (rewrites.size === 0) {
+    return merged;
+  }
+  const out = new Map(merged);
+  rewrites.forEach((value, slot) => {
+    const prev = out.get(slot);
+    /* c8 ignore next 3 - defensive: rewrites are produced from the same pending list bindingMerger built from `merged`; a missing slot would indicate a contract break */
+    if (prev === undefined) {
+      return;
+    }
+    out.set(slot, { ...prev, value });
+  });
+  return out;
 }
 
 function validateResourceBindingDepthLimit(value: number | undefined): Result<number> {

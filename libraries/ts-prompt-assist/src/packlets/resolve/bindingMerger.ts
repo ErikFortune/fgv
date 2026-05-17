@@ -12,14 +12,35 @@ import { IBindingTraceEntry, ISafeguardFinding } from '../types';
 import { normalizeSubstitutionEntry } from '../converters';
 
 /**
+ * A resource-binding entry that survives the synchronous binding merge with
+ * an empty placeholder `value` and must be resolved asynchronously by the
+ * caller (the recursive resource-binding resolver in `PromptLibrary`).
+ * @public
+ */
+export interface IPendingResourceBinding {
+  readonly slot: SlotName;
+  readonly binding: IResourceSlotBinding;
+}
+
+/**
  * Outcome of binding merge: per slot, the winning entry plus any safeguard
  * findings produced during merge (notably `'enforced-override-ignored'`).
+ *
+ * @remarks
+ * Each resource-binding entry in `merged` carries a placeholder `value: ''`;
+ * its corresponding `IPendingResourceBinding` appears in
+ * `pendingResourceBindings`. The caller (the recursive resource-binding
+ * resolver in `PromptLibrary`) builds a final `Map` from `merged` and
+ * overrides each pending entry's `value` with the inner resolve's body
+ * before rendering.
+ *
  * @public
  */
 export interface IBindingMergeResult {
   readonly merged: ReadonlyMap<SlotName, IBindingTraceEntry>;
   readonly mergedBindings: ReadonlyMap<SlotName, SlotBinding>;
   readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
+  readonly pendingResourceBindings: ReadonlyArray<IPendingResourceBinding>;
 }
 
 /**
@@ -36,16 +57,13 @@ export interface IBindingMergeResult {
  * the chain are merged, including scopes that are more specific than the
  * scope whose record was selected by the chain walker. A tenant-scope
  * `_bindings.yaml` therefore contributes to a resolve whose record lives
- * at the global scope. The two mechanisms (record lookup, binding merge)
- * are deliberately decoupled per design §10.4: "Binding merge IS cross-
- * scope … bindings merge across the entire chain (most-specific wins,
- * `enforced` higher-scope locks)."
+ * at the global scope.
  *
- * The chain is supplied most-specific first (`chain[0]` is the most-specific
- * scope). The chain walker selects the most-specific scope that actually
- * holds a record for the prompt id — that scope is recorded as
- * `IPromptResolveTrace.winningScope` and is what binding merge calls
- * `winningScope` in trace entries with `source: 'binding'`.
+ * Resource bindings are NOT serialized synchronously — the merge produces
+ * a trace entry with an empty placeholder `value` and surfaces the
+ * binding in `pendingResourceBindings`. The caller (PromptLibrary)
+ * performs the recursive inner resolve and rewrites each entry's `value`
+ * with the inner body before rendering.
  *
  * @param chain - Scope chain, most-specific first.
  * @param scopeBindings - Map from scope key to its bindings record (a scope
@@ -76,17 +94,11 @@ export function mergeBindings(
     }
     record.bindings.forEach((binding, slot) => {
       const existing = winning.get(slot);
-      // Specificity rule: more-specific (smaller i) takes precedence unless
-      // an existing entry is enforced from a more-general scope.
       if (existing === undefined) {
         winning.set(slot, { binding, scope });
         return;
       }
       if (existing.binding.enforced === true) {
-        // Lock from a more-general scope holds; this scope's value is
-        // overridden only if it is also enforced AND we are at a STILL
-        // more-general scope — which can't happen because we walk general-
-        // to-specific. So keep existing.
         return;
       }
       winning.set(slot, { binding, scope });
@@ -96,15 +108,13 @@ export function mergeBindings(
   const merged = new Map<SlotName, IBindingTraceEntry>();
   const mergedBindings = new Map<SlotName, SlotBinding>();
   const safeguardFindings: ISafeguardFinding[] = [];
+  const pendingResourceBindings: IPendingResourceBinding[] = [];
 
   for (const slot of slots) {
     const winner = winning.get(slot.name);
     const callerEntry = callerSubstitutions?.[slot.name];
     const slotDefault = slot.defaultBinding;
 
-    // If a non-enforced winner exists and the caller supplied a sub for
-    // this slot, the caller sub wins. If the winner is enforced, the
-    // caller sub is rejected and a safeguard finding emitted.
     if (winner !== undefined && winner.binding.enforced === true && callerEntry !== undefined) {
       safeguardFindings.push({
         slot: slot.name,
@@ -112,69 +122,71 @@ export function mergeBindings(
         disposition: 'info',
         detail: `slot '${slot.name}': caller substitution ignored; binding at scope '${winner.scope}' is enforced`
       });
-      const entryResult = serializeBinding(slot, winner.binding);
-      /* c8 ignore next 4 - same shape as the dedicated serialize-failure test */
-      if (entryResult.isFailure()) {
-        return fail(entryResult.message);
+      const installed = installBinding(
+        slot,
+        winner.binding,
+        'binding',
+        winner.scope,
+        true,
+        merged,
+        mergedBindings,
+        pendingResourceBindings
+      );
+      if (installed.isFailure()) {
+        return fail(installed.message);
       }
-
-      merged.set(slot.name, {
-        source: 'binding',
-        winningScope: winner.scope,
-        directive: winner.binding.directive,
-        value: entryResult.value,
-        wasEnforced: true
-      });
-      mergedBindings.set(slot.name, winner.binding);
       continue;
     }
 
     if (callerEntry !== undefined) {
       const binding = normalizeSubstitutionEntry(callerEntry);
-      const entryResult = serializeBinding(slot, binding);
-      /* c8 ignore next 3 - same shape as the dedicated serialize-failure test */
-      if (entryResult.isFailure()) {
-        return fail(entryResult.message);
+      const installed = installBinding(
+        slot,
+        binding,
+        'caller-sub',
+        undefined,
+        false,
+        merged,
+        mergedBindings,
+        pendingResourceBindings
+      );
+      if (installed.isFailure()) {
+        return fail(installed.message);
       }
-      merged.set(slot.name, {
-        source: 'caller-sub',
-        directive: binding.directive,
-        value: entryResult.value,
-        wasEnforced: false
-      });
-      mergedBindings.set(slot.name, binding);
       continue;
     }
 
     if (winner !== undefined) {
-      const entryResult = serializeBinding(slot, winner.binding);
-      if (entryResult.isFailure()) {
-        return fail(entryResult.message);
+      const installed = installBinding(
+        slot,
+        winner.binding,
+        'binding',
+        winner.scope,
+        winner.binding.enforced === true,
+        merged,
+        mergedBindings,
+        pendingResourceBindings
+      );
+      if (installed.isFailure()) {
+        return fail(installed.message);
       }
-      merged.set(slot.name, {
-        source: 'binding',
-        winningScope: winner.scope,
-        directive: winner.binding.directive,
-        value: entryResult.value,
-        wasEnforced: winner.binding.enforced === true
-      });
-      mergedBindings.set(slot.name, winner.binding);
       continue;
     }
 
     if (slotDefault !== undefined) {
-      const entryResult = serializeBinding(slot, slotDefault);
-      /* c8 ignore next 3 - same shape as the dedicated serialize-failure test */
-      if (entryResult.isFailure()) {
-        return fail(entryResult.message);
+      const installed = installBinding(
+        slot,
+        slotDefault,
+        'default',
+        undefined,
+        false,
+        merged,
+        mergedBindings,
+        pendingResourceBindings
+      );
+      if (installed.isFailure()) {
+        return fail(installed.message);
       }
-      merged.set(slot.name, {
-        source: 'default',
-        directive: slotDefault.directive,
-        value: entryResult.value,
-        wasEnforced: false
-      });
-      mergedBindings.set(slot.name, slotDefault);
       continue;
     }
 
@@ -191,14 +203,45 @@ export function mergeBindings(
     });
   }
 
-  return succeed({ merged, mergedBindings, safeguardFindings });
+  return succeed({ merged, mergedBindings, safeguardFindings, pendingResourceBindings });
 }
 
-function serializeBinding(slot: IPromptSlot, binding: SlotBinding): Result<string> {
-  if (binding.kind === 'literal') {
-    return serializeLiteral(slot, binding);
+function installBinding(
+  slot: IPromptSlot,
+  binding: SlotBinding,
+  source: IBindingTraceEntry['source'],
+  winningScope: ScopeKey | undefined,
+  wasEnforced: boolean,
+  merged: Map<SlotName, IBindingTraceEntry>,
+  mergedBindings: Map<SlotName, SlotBinding>,
+  pending: IPendingResourceBinding[]
+): Result<true> {
+  if (binding.kind === 'resource') {
+    // The placeholder `value: ''` is rewritten by the caller (the
+    // recursive resource-binding resolver in PromptLibrary) once the
+    // inner resolve completes.
+    merged.set(slot.name, {
+      source,
+      winningScope,
+      directive: binding.directive,
+      value: '',
+      wasEnforced
+    });
+    mergedBindings.set(slot.name, binding);
+    pending.push({ slot: slot.name, binding });
+    return succeed(true as const);
   }
-  return serializeResource(slot, binding);
+  return serializeLiteral(slot, binding).onSuccess((value) => {
+    merged.set(slot.name, {
+      source,
+      winningScope,
+      directive: binding.directive,
+      value,
+      wasEnforced
+    });
+    mergedBindings.set(slot.name, binding);
+    return succeed(true as const);
+  });
 }
 
 function serializeLiteral(slot: IPromptSlot, binding: ILiteralSlotBinding): Result<string> {
@@ -214,12 +257,4 @@ function serializeLiteral(slot: IPromptSlot, binding: ILiteralSlotBinding): Resu
     );
   }
   return succeed(binding.value);
-}
-
-function serializeResource(slot: IPromptSlot, binding: IResourceSlotBinding): Result<string> {
-  // Per the brief's B-1 out-of-scope list: resource bindings resolve in B-2.
-  // The foundation MUST fail loudly rather than silently emit a placeholder.
-  return fail(
-    `slot '${slot.name}': resource binding to '${binding.resourceId}' is not yet implemented in the B-1 foundation (B-2 ships recursive resource binding resolution)`
-  );
 }

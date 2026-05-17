@@ -693,7 +693,7 @@ describe('ts-prompt-assist foundation', () => {
       );
     });
 
-    test('resource binding fails with B-2 deferral message', () => {
+    test('resource binding survives merge with placeholder value and pending entry', () => {
       const scopeBindings = new Map<ScopeKey, IScopeSlotBindingsRecord>([
         [
           TEST_SCOPE,
@@ -712,9 +712,57 @@ describe('ts-prompt-assist foundation', () => {
           }
         ]
       ]);
-      expect(mergeBindings([TEST_SCOPE], scopeBindings, slots, undefined)).toFailWith(
-        /resource binding to 'other' is not yet implemented/
-      );
+      expect(mergeBindings([TEST_SCOPE], scopeBindings, slots, undefined)).toSucceedAndSatisfy((result) => {
+        const entry = result.merged.get('audience' as unknown as SlotName)!;
+        expect(entry.value).toBe('');
+        expect(entry.source).toBe('binding');
+        expect(result.pendingResourceBindings).toHaveLength(1);
+        expect(result.pendingResourceBindings[0].slot).toBe('audience');
+      });
+    });
+
+    test('non-string slot kind fails through caller-sub path', () => {
+      const customKindSlots = [{ name: 's' as unknown as SlotName, description: '', kind: 'color' }];
+      expect(
+        mergeBindings([TEST_SCOPE], new Map(), customKindSlots, {
+          s: { kind: 'literal', value: 'red', directive: 'prose' } as SlotBinding
+        })
+      ).toFailWith(/not supported/);
+    });
+
+    test('non-string slot kind fails through default-binding path', () => {
+      const customKindSlots = [
+        {
+          name: 's' as unknown as SlotName,
+          description: '',
+          kind: 'color',
+          defaultBinding: { kind: 'literal', value: 'red', directive: 'prose' } as SlotBinding
+        }
+      ];
+      expect(mergeBindings([TEST_SCOPE], new Map(), customKindSlots, undefined)).toFailWith(/not supported/);
+    });
+
+    test('non-string slot kind fails through enforced + caller-sub path', () => {
+      const customKindSlots = [{ name: 's' as unknown as SlotName, description: '', kind: 'color' }];
+      const scopeBindings = new Map<ScopeKey, IScopeSlotBindingsRecord>([
+        [
+          TEST_SCOPE,
+          {
+            scope: TEST_SCOPE,
+            bindings: new Map([
+              [
+                's' as unknown as SlotName,
+                { kind: 'literal', value: 'red', directive: 'prose', enforced: true } as SlotBinding
+              ]
+            ])
+          }
+        ]
+      ]);
+      expect(
+        mergeBindings([TEST_SCOPE], scopeBindings, customKindSlots, {
+          s: 'override'
+        })
+      ).toFailWith(/not supported/);
     });
   });
 
