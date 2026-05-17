@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Converter, Result, mapResults, succeed } from '@fgv/ts-utils';
+import { Converter, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Yaml } from '@fgv/ts-extras';
 import { Qualifiers } from '@fgv/ts-res';
@@ -40,6 +40,24 @@ const BINDINGS_FILE_NAME: string = '_bindings.yaml';
 const QUALIFIERS_FILE_NAME: string = '_qualifiers.yaml';
 
 const promptYamlConverter: Converter<IPromptFileContents> = Yaml.yamlConverter(promptFileConverter);
+
+/**
+ * Per design §5.3 the descriptor's `id` field MUST equal the filename
+ * stem (`<prompt-id>.yaml`). The loader rejects mismatches loudly so
+ * round-trip stores and cross-backend tooling cannot drift between
+ * the on-disk identifier and the in-record identifier.
+ */
+function verifyFilenameId(
+  file: FileTree.IFileTreeFileItem,
+  contents: IPromptFileContents
+): Result<IPromptFileContents> {
+  if (contents.descriptor.id !== file.baseName) {
+    return fail(
+      `prompt file '${file.absolutePath}': descriptor.id '${contents.descriptor.id}' does not match filename stem '${file.baseName}'`
+    );
+  }
+  return succeed(contents);
+}
 const bindingsYamlConverter: Converter<IBindingsFileContents> = Yaml.yamlConverter(bindingsFileConverter);
 const qualifiersYamlConverter: Converter<IQualifiersFileContents> =
   Yaml.yamlConverter(qualifiersFileConverter);
@@ -167,6 +185,7 @@ export class FileTreePromptStore implements IPromptStore {
       return file
         .getRawContents()
         .onSuccess((text) => promptYamlConverter.convert(text))
+        .onSuccess((contents) => verifyFilenameId(file, contents))
         .onSuccess((contents) => succeed(buildStoredPromptRecord(scope, contents)));
     });
   }
@@ -188,6 +207,7 @@ export class FileTreePromptStore implements IPromptStore {
             file
               .getRawContents()
               .onSuccess((text) => promptYamlConverter.convert(text))
+              .onSuccess((contents) => verifyFilenameId(file, contents))
               .onSuccess((contents) => succeed(buildStoredPromptRecord(scope, contents)))
           )
         );
