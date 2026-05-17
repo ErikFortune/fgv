@@ -4,6 +4,7 @@
  */
 
 import { Hash, Logging, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { sanitizeJsonObject } from '@fgv/ts-json-base';
 import {
   QualifierTypes,
   Qualifiers,
@@ -356,15 +357,19 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     // id-only `_descriptorCache` would silently return the wrong
     // descriptor for one of the scopes. Canonical-JSON comparison is
     // exact: equal strings ⇔ structurally-equal values.
-    return this._normalizer
-      .canonicalize(first.descriptor)
+    //
+    // Sanitize through `JSON.parse(JSON.stringify(...))` first so an
+    // in-memory descriptor with explicit-`undefined` optional fields
+    // (TypeScript-valid but not JSON-representable) doesn't trip
+    // `canonicalize`'s "cannot serialize undefined" guard.
+    return this._descriptorCanonical(first.descriptor)
       .withErrorFormat((msg) => `prompt '${id}': failed to canonicalize descriptor: ${msg}`)
       .onSuccess((firstCanonical) => {
         for (let i = 1; i < list.length; i++) {
-          const result = this._normalizer
-            .canonicalize(list[i].descriptor)
-            .withErrorFormat((msg) => `prompt '${id}': failed to canonicalize descriptor: ${msg}`);
-          /* c8 ignore next 3 - defensive: canonicalize does not fail for any descriptor shape produced by descriptorConverter */
+          const result = this._descriptorCanonical(list[i].descriptor).withErrorFormat(
+            (msg) => `prompt '${id}': failed to canonicalize descriptor: ${msg}`
+          );
+          /* c8 ignore next 3 - defensive: canonicalize after sanitize does not fail for any descriptor shape produced by descriptorConverter */
           if (result.isFailure()) {
             return fail<IPromptDescriptor>(result.message);
           }
@@ -379,6 +384,10 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
       });
   }
 
+  private _descriptorCanonical(descriptor: IPromptDescriptor): Result<string> {
+    return sanitizeJsonObject(descriptor).onSuccess((sanitized) => this._normalizer.canonicalize(sanitized));
+  }
+
   private _materializeIfNeeded(record: IStoredPromptRecord): Result<IMaterializedPrompt> {
     // Materialization-cache key uses RFC 8785 canonical-JSON over
     // (scope, id, candidates). String equality of canonical-JSON is
@@ -387,8 +396,12 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     // sequential, not content-derived, so distinct records never share
     // a ts-res resource even when their cache keys happen to share
     // bytes.
-    return this._normalizer
-      .canonicalize({ scope: record.scope, id: record.id, candidates: record.candidates })
+    // Sanitize before canonicalize so in-memory records with
+    // explicit-`undefined` optional fields (e.g. an authored
+    // `IPromptCandidateRecord.isPartial: undefined`) don't trip
+    // `canonicalize`'s rejection of `undefined`.
+    return sanitizeJsonObject({ scope: record.scope, id: record.id, candidates: record.candidates })
+      .onSuccess((sanitized) => this._normalizer.canonicalize(sanitized))
       .withErrorFormat((msg) => `prompt '${record.id}' scope '${record.scope}': canonicalize failed: ${msg}`)
       .onSuccess((cacheKey) => {
         const cached = this._materialized.get(cacheKey);
@@ -469,7 +482,14 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
       if (addResult.isFailure()) {
         return fail(addResult.message);
       }
-      map.set(addResult.value, index);
+      // ts-res dedupes candidates with identical condition sets — if
+      // the author wrote two candidates whose conditions collapse to
+      // the same key, the second `addLooseCandidate` call returns the
+      // first one. Keep the FIRST authored origin index so the trace
+      // points to the candidate that actually wins ts-res's dedupe.
+      if (!map.has(addResult.value)) {
+        map.set(addResult.value, index);
+      }
     }
     return succeed(map);
   }

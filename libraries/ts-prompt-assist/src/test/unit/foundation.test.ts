@@ -1320,6 +1320,139 @@ describe('ts-prompt-assist foundation', () => {
       });
     });
 
+    test('cacheListener supplied at create time receives ts-res cache events during resolve', async () => {
+      // The listener is forwarded into the per-resolve `ResourceResolver`;
+      // verify that resolving a prompt with conditions fires at least
+      // one `onCacheMiss` event on the condition cache so the wiring
+      // can't silently regress.
+      interface IEvent {
+        readonly kind: 'hit' | 'miss';
+        readonly cache: string;
+      }
+      const events: IEvent[] = [];
+      const listener = {
+        onCacheHit(cache: string): void {
+          events.push({ kind: 'hit', cache });
+        },
+        onCacheMiss(cache: string): void {
+          events.push({ kind: 'miss', cache });
+        },
+        onCacheError(): void {
+          /* not exercised */
+        },
+        onContextError(): void {
+          /* not exercised */
+        },
+        onCacheClear(): void {
+          /* not exercised */
+        }
+      };
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [{ conditions: { tone: 'formal' }, body: 'formal body.' }],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (
+        await PromptLibrary.create({
+          store,
+          qualifiers: TEST_QUALIFIER_COLLECTOR,
+          cacheListener: listener
+        })
+      ).orThrow();
+      const result = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: { tone: 'formal' }
+      });
+      expect(result).toSucceed();
+      expect(events.length).toBeGreaterThan(0);
+      expect(events.some((e) => e.kind === 'miss')).toBe(true);
+    });
+
+    test('resolve tolerates an in-memory record with explicit `undefined` optional fields', async () => {
+      // Programmatic IPromptDescriptor / IPromptCandidateRecord values
+      // may set optional fields to `undefined` instead of omitting
+      // them. The pre-canonicalize sanitizer drops `undefined` so
+      // `canonicalize` doesn't trip on a value it cannot serialize.
+      const candidate: IPromptCandidateRecord = {
+        conditions: {},
+        isPartial: undefined,
+        body: 'hello {{{audience}}}!'
+      };
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [candidate],
+        descriptor: { ...buildDescriptor().descriptor, description: undefined, qualifiers: undefined }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      expect(await lib.describe(TEST_PROMPT)).toSucceed();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {},
+        substitutions: { audience: 'world' }
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('hello world!');
+      });
+    });
+
+    test('resolve dedupes byte-identical authored candidates and pins the trace to the first index', async () => {
+      // ts-res's `addLooseCandidate` dedupes by condition-set key with
+      // a `ResourceCandidate.equal` tiebreaker — so two BYTE-IDENTICAL
+      // candidates (same conditions, same body, same isPartial)
+      // collapse to one entry in the built resource. The library's
+      // origin-index map preserves the FIRST authored index when ts-res
+      // returns the existing candidate on the second call, so the
+      // trace points to the candidate position ts-res actually retains.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          { conditions: {}, body: 'shared body.' },
+          { conditions: {}, body: 'shared body.' }
+        ],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {}
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('shared body.');
+        // Single candidate after dedup; trace points at the FIRST
+        // authored index (0), never the dedup-shadowed second (1).
+        expect(r.trace.candidateMatches).toHaveLength(1);
+        expect(r.trace.candidateMatches[0].candidateIndex).toBe(0);
+      });
+    });
+
+    test('resolve composes when every matching candidate is a partial (no full base)', async () => {
+      // All candidates are `isPartial: true`. The walk never hits a
+      // non-partial, so the collection exits via the loop's natural
+      // termination. Result: every partial participates, joined in
+      // specificity-ascending order.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          { conditions: {}, isPartial: true, body: 'base partial.' },
+          { conditions: { tone: 'formal' }, isPartial: true, body: 'tone partial.' }
+        ],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: { tone: 'formal' }
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('base partial.\n\ntone partial.');
+        expect(r.trace.candidateMatches).toHaveLength(2);
+      });
+    });
+
     test('resolve hits the materialized-resource cache on second call for the same prompt', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
       const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
