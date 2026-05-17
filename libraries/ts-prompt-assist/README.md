@@ -430,11 +430,12 @@ const SCOPE = Convert.scopeKey.convert('global').orThrow();
 const OUTER = Convert.promptId.convert('outer').orThrow();
 const INNER = Convert.promptId.convert('inner').orThrow();
 const AUDIENCE = Convert.slotName.convert('audience').orThrow();
-// `ResourceId` references another prompt by id — the inner-resolve
-// treats it as a `PromptId`. The library re-validates resource ids
-// through `Convert.promptId` at resolve time; we use that validator
-// directly here so a typo containing `'::'` (the cache key delimiter,
-// rejected by `Convert.promptId`) fails at authoring instead.
+// `ResourceId` references another prompt by id. `Convert.resourceId`
+// applies the common brand hygiene (non-empty, length-capped, no
+// leading/trailing whitespace) but does NOT reject `'::'` — that
+// stricter rule is `Convert.promptId`'s, and the library re-validates
+// the resource id as a `PromptId` at resolve time, so a stray `'::'`
+// fails loudly there rather than at authoring.
 const INNER_RESOURCE_ID = Convert.resourceId.convert('inner').orThrow();
 
 // Outer prompt's `audience` slot defaults to the body of another prompt.
