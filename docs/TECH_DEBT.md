@@ -31,7 +31,24 @@ opportunistically when the right surface area is touched.
 
 ## P1 — Blocking
 
-*(None.)*
+- **[P1] `ts-prompt-assist` validator-chain caller-controlled `T` is not runtime-verified (urgent).**
+  Three entangled type-safety holes in the output-validation pipeline allow a caller's type parameter to diverge from the runtime value's actual shape:
+
+  1. **`ConverterRegistry.get<T>(id)` no-kind overload** (`libraries/ts-prompt-assist/src/packlets/registry/converterRegistry.ts:74`) returns `Converter<T>` for any caller-declared `T extends TResponse`. The cast `entry.converter as unknown as Converter<T>` trusts the caller; the suspenders re-check on `value.kind` only fires when the descriptor has `outputValidations[]`. A descriptor with a `classifier`-producing Converter requested as `ICitedResponse` and no validators returns a classifier-shaped value typed as cited. (Flagged by Erik PR #369 review as "unsafe cast"; expand-rationale on the cast was the orchestrator's interim fix.)
+
+  2. **`runOutputValidationPipeline` calls the no-kind overload** (`libraries/ts-prompt-assist/src/packlets/output/outputPipeline.ts:103`) and feeds the result straight through `fencedStringifiedJson<T>` to the validator chain. Even when the descriptor *declares* a registered Converter, the library does not verify the descriptor's recorded producing-kind against the caller's `T['kind']` before dispatch. (Erik +1'd Copilot's PR #369 callout of this exact issue.)
+
+  3. **`resolveAndValidateOutput<T extends TResponse>` free-text branch** (`libraries/ts-prompt-assist/src/packlets/resolve/promptLibrary.ts:473`) returns `succeed(rawOutput as unknown as T)`. With the default `TResponse = { kind: string }`, callers literally cannot supply `T = string` — they receive a `Result<{ kind: string }>` whose runtime is a string, and any consumer dereferencing `.kind` on the returned value hits `undefined`. (Flagged by Copilot on PR #369.) Design §8 specifies the cast and §17.2.6 says consumers shouldn't parameterize for free-text, but the type signature is still lying.
+
+  **Trigger**: before the consumer port (agent chat application) hits the JSON-output path in earnest. The cluster's pressure-test absorption is the natural deadline — shipping into a consumer that exercises JSON output without fixing this would re-create the PR #359 failure mode.
+
+  **Scope sketch**: three coordinated fixes against each other.
+  - For (1) + (2): make the JSON pipeline call `registry.converters.getKind(descriptor.output.converterId)` first, verify it matches `T['kind']` at runtime against the caller's stated expectation. Caller path: either (a) pass an expected kind into `resolveAndValidateOutput` so the library can check, or (b) rework `IPromptConverterRegistry` so the lookup is always kind-verified (the no-kind overload becomes private / removed).
+  - For (3): split the signature. `resolveAndValidateOutput` is two operations — free-text returns `Result<string>`, JSON returns `Result<T extends TResponse>`. Either introduce overloads keyed on the descriptor's static-knowability of `output.kind`, or split into `resolveAndValidateJsonOutput<T>` + `resolveAndValidateFreeTextOutput`. This is a binding-design amendment to §8 + §17.2.6.
+
+  **Not a P2**: this is the precise failure-mode family that triggered the PR #359 retire + design §17.2 redesign. The cluster's restart discipline ("no `Result<unknown>` / no cast at the validator boundary") is half-honored — the chain itself is cast-free, but the *entry* to the chain is not. Surfaces as silent runtime corruption in consumer code rather than a clean `Result.fail`.
+
+  **Reference**: PR #369 review threads — Copilot at `libraries/ts-prompt-assist/src/packlets/resolve/promptLibrary.ts:473`, `libraries/ts-prompt-assist/src/packlets/output/outputPipeline.ts:103`; Erik at `libraries/ts-prompt-assist/src/packlets/registry/converterRegistry.ts:74` ("unsafe cast") + `+1` on the outputPipeline thread. B-4 shipped per the design's letter; this entry tracks the design-level hole the review surfaced.
 
 ## P2 — Fix before next major feature in affected area
 

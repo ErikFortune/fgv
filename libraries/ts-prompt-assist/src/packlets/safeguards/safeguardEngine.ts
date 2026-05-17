@@ -68,6 +68,19 @@ export function applySafeguards(
     const value = entry.value;
 
     const lengthCap = slot.maxLength ?? descriptorDefaultMaxLength ?? policyDefaultMaxLength;
+    if (lengthCap !== undefined && !isFiniteNonNegativeInteger(lengthCap)) {
+      // Length caps are plain `number` on `IPromptSlot.maxLength`,
+      // `IPromptSafeguardOverrides.defaultMaxLength`, and
+      // `IPromptSafetyPolicy.defaultMaxLength`, so `NaN` and negative
+      // values are syntactically valid but semantically incoherent
+      // (`value.length > NaN` is `false` — silently disables the cap;
+      // negative caps reject every non-empty value). Reject loudly at
+      // apply time so the misconfiguration surfaces with the prompt id
+      // and slot name attached (Copilot review on PR #369).
+      return fail(
+        `prompt '${descriptor.id}': slot '${slot.name}': maxLength must be a finite non-negative integer (got ${lengthCap})`
+      );
+    }
     if (lengthCap !== undefined && value.length > lengthCap) {
       const finding: ISafeguardFinding = {
         slot: slot.name,
@@ -112,6 +125,10 @@ interface IScreenInput {
 interface IScreenOutcome {
   readonly findings: ReadonlyArray<ISafeguardFinding>;
   readonly rejection?: string;
+}
+
+function isFiniteNonNegativeInteger(n: number): boolean {
+  return Number.isInteger(n) && n >= 0;
 }
 
 function screenSlotValue(input: IScreenInput): IScreenOutcome {

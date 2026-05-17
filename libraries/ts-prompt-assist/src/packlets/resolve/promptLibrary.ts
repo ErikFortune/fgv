@@ -738,39 +738,41 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     // placeholder values for resource-bound slots are replaced with the
     // inner-resolve body.
     const finalMerged = applyResourceBindingRewrites(mergeResult.merged, resourceBindings.rewrites);
-    return applySafeguards(descriptor, finalMerged, this._safetyPolicy)
-      .withErrorFormat((msg) => `prompt '${req.id}': ${msg}`)
-      .onSuccess((safeguardResult) =>
-        this._mustacheCache
-          .getOrParse(req.id, joinedBody)
-          .onSuccess((template) =>
-            template
-              .validateAndRender(this._buildRenderContext(finalMerged))
-              .withErrorFormat((msg) => `prompt '${req.id}': ${msg}`)
-          )
-          .onSuccess((rendered) => this._applyAntiJailbreakPreface(descriptor, rendered))
-          .onSuccess((finalBody) => {
-            const candidateMatches: ICandidateMatchTraceEntry[] = matches.map((m) => ({
-              candidateIndex: m.index,
-              matchType: m.matchType,
-              conditions: m.conditions
-            }));
-            const trace: IPromptResolveTrace = {
-              winningScope: walked.winningScope,
-              scopesConsulted: walked.scopesConsulted,
-              mergedBindings: finalMerged,
-              resourceBindingResolutions: resourceBindings.traceEntries,
-              safeguardFindings: [...mergeResult.safeguardFindings, ...safeguardResult.findings],
-              candidateMatches
-            };
-            return succeed<IResolvedPrompt>({
-              id: req.id,
-              body: finalBody,
-              descriptor,
-              trace
-            });
-          })
-      );
+    // No outer `withErrorFormat` here: `applySafeguards` already formats
+    // its reject messages with `prompt '${descriptor.id}': ...`, and
+    // double-wrapping produces `prompt 'p': prompt 'p': ...` noise
+    // (Copilot review on PR #369).
+    return applySafeguards(descriptor, finalMerged, this._safetyPolicy).onSuccess((safeguardResult) =>
+      this._mustacheCache
+        .getOrParse(req.id, joinedBody)
+        .onSuccess((template) =>
+          template
+            .validateAndRender(this._buildRenderContext(finalMerged))
+            .withErrorFormat((msg) => `prompt '${req.id}': ${msg}`)
+        )
+        .onSuccess((rendered) => this._applyAntiJailbreakPreface(descriptor, rendered))
+        .onSuccess((finalBody) => {
+          const candidateMatches: ICandidateMatchTraceEntry[] = matches.map((m) => ({
+            candidateIndex: m.index,
+            matchType: m.matchType,
+            conditions: m.conditions
+          }));
+          const trace: IPromptResolveTrace = {
+            winningScope: walked.winningScope,
+            scopesConsulted: walked.scopesConsulted,
+            mergedBindings: finalMerged,
+            resourceBindingResolutions: resourceBindings.traceEntries,
+            safeguardFindings: [...mergeResult.safeguardFindings, ...safeguardResult.findings],
+            candidateMatches
+          };
+          return succeed<IResolvedPrompt>({
+            id: req.id,
+            body: finalBody,
+            descriptor,
+            trace
+          });
+        })
+    );
   }
 
   private _applyAntiJailbreakPreface(descriptor: IPromptDescriptor, rendered: string): Result<string> {

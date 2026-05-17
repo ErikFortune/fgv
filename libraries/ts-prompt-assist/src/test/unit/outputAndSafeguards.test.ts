@@ -710,46 +710,102 @@ describe('B-4: input safeguards', () => {
   });
 
   test('safeguardFindings on the trace co-exist with the merge stage findings (enforced-override-ignored)', async () => {
+    // Layer an enforced scope binding on the chain so `mergeBindings`
+    // emits `'enforced-override-ignored'` when the caller supplies a
+    // substitution for the same slot; then run the safeguard screen
+    // against the (enforced) value so a `'suspicious-pattern'` warn
+    // finding lands alongside the merge finding. The trace must surface
+    // BOTH findings.
     const record = buildFreeTextRecord({
       slots: [{ name: 'topic', source: 'untrusted' }],
       body: '{{{topic}}}'
     });
-    // Layer an enforced binding so merge emits enforced-override-ignored,
-    // then run the safeguard screen so its finding is appended.
-    const lib = await buildLib(
-      [
-        {
-          ...record,
-          // No scope bindings here — we use caller-sub + enforced default binding
-          descriptor: {
-            ...record.descriptor,
-            slots: [
-              {
-                name: 'topic' as unknown as SlotName,
-                description: '',
-                source: 'untrusted',
-                defaultBinding: undefined
-              }
-            ]
-          }
-        }
-      ],
-      {
+    const enforcedScope: import('../../index').IScopeSlotBindingsRecord = {
+      scope: SCOPE,
+      bindings: new Map([
+        [
+          'topic' as unknown as SlotName,
+          {
+            kind: 'literal',
+            value: 'jailbreak phrase',
+            directive: 'prose',
+            enforced: true
+          } as SlotBinding
+        ]
+      ])
+    };
+    const store = (
+      await PromptStoreFixture.build({ records: [record], bindings: [enforcedScope] })
+    ).orThrow();
+    const lib = (
+      await PromptLibrary.create<Responses>({
+        store,
+        qualifiers: TEST_QUALIFIER_COLLECTOR,
         safetyPolicy: {
           screenedSources: ['untrusted'],
-          suspiciousPatterns: [/foo/]
+          suspiciousPatterns: [/jailbreak/]
         }
-      }
-    );
+      })
+    ).orThrow();
     const result = await lib.resolve({
       id: PROMPT,
       chain: [SCOPE],
       qualifiers: {},
-      substitutions: { topic: 'foo' }
+      substitutions: { topic: 'caller value' }
     });
     expect(result).toSucceedAndSatisfy((r) => {
       const kinds = r.trace.safeguardFindings.map((f) => f.kind);
+      expect(kinds).toContain('enforced-override-ignored');
       expect(kinds).toContain('suspicious-pattern');
+      // Order: merge findings come first (they are emitted during
+      // synchronous binding merge), safeguard-engine findings come
+      // after (they run on the merged map).
+      expect(kinds.indexOf('enforced-override-ignored')).toBeLessThan(kinds.indexOf('suspicious-pattern'));
     });
+  });
+
+  test('non-finite / negative maxLength rejects at apply time with prompt + slot context', async () => {
+    // `slot.maxLength` is plain `number`, so NaN / negative values are
+    // syntactically valid TypeScript. The safeguard engine rejects them
+    // at apply time rather than silently mis-applying.
+    const recordNaN = buildFreeTextRecord({
+      slots: [{ name: 'topic', maxLength: Number.NaN }],
+      body: '{{{topic}}}'
+    });
+    const lib1 = await buildLib([recordNaN]);
+    const r1 = await lib1.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'anything' }
+    });
+    expect(r1).toFailWith(/slot 'topic': maxLength must be a finite non-negative integer \(got NaN\)/);
+
+    const recordNeg = buildFreeTextRecord({
+      slots: [{ name: 'topic', maxLength: -1 }],
+      body: '{{{topic}}}'
+    });
+    const lib2 = await buildLib([recordNeg]);
+    const r2 = await lib2.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'anything' }
+    });
+    expect(r2).toFailWith(/maxLength must be a finite non-negative integer \(got -1\)/);
+
+    // Non-integer fractional value
+    const recordFrac = buildFreeTextRecord({
+      slots: [{ name: 'topic', maxLength: 3.5 }],
+      body: '{{{topic}}}'
+    });
+    const lib3 = await buildLib([recordFrac]);
+    const r3 = await lib3.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'ab' }
+    });
+    expect(r3).toFailWith(/maxLength must be a finite non-negative integer \(got 3\.5\)/);
   });
 });
