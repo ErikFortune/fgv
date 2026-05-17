@@ -904,7 +904,7 @@ describe('ts-prompt-assist foundation', () => {
       expect(await store.get(TEST_SCOPE, 'nope' as unknown as PromptId)).toSucceedWith(undefined);
     });
 
-    test('resolveAndValidateOutput fails loudly on free-text descriptors (B-4 deferral)', async () => {
+    test('resolveAndValidateOutput returns raw output verbatim for free-text descriptors', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
       const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
       const result = await lib.resolveAndValidateOutput<{ kind: string }>(
@@ -916,11 +916,10 @@ describe('ts-prompt-assist foundation', () => {
         },
         'raw LLM output'
       );
-      expect(result).toFailWith(/B-4 ships the output validation pipeline/);
-      expect(result).toFailWith(/output\.kind 'free-text'/);
+      expect(result).toSucceedWith('raw LLM output' as unknown as { kind: string });
     });
 
-    test('resolveAndValidateOutput fails loudly on json descriptors (B-4 deferral)', async () => {
+    test('resolveAndValidateOutput rejects json descriptors without a registry', async () => {
       const jsonRecord: IStoredPromptRecord = buildDescriptor({
         descriptor: {
           ...buildDescriptor().descriptor,
@@ -938,7 +937,7 @@ describe('ts-prompt-assist foundation', () => {
         { id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} },
         '{"answer":"x"}'
       );
-      expect(result).toFailWith(/B-4/);
+      expect(result).toFailWith(/requires a registry/);
     });
 
     test('chain walker surfaces store.get failures with scope context', async () => {

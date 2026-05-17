@@ -18,7 +18,7 @@ import {
 import { PromptId, ScopeKey, SlotName } from '../types';
 import { IPromptCandidateRecord, IPromptDescriptor, IStoredPromptRecord } from '../types';
 import { PromptSubstitutions } from '../types';
-import { IQualifierContext } from '../types';
+import { IPromptSafetyPolicy, IQualifierContext } from '../types';
 import {
   IBindingTraceEntry,
   ICandidateMatchTraceEntry,
@@ -28,6 +28,8 @@ import {
 } from '../types';
 import { IPromptStore } from '../store';
 import { IPromptRegistry } from '../registry';
+import { applySafeguards } from '../safeguards';
+import { assertOutputValidationsCompatible, runOutputValidationPipeline } from '../output';
 import { walkScopeChain } from './chainWalker';
 import { IBindingMergeResult, mergeBindings } from './bindingMerger';
 import { MustacheTemplateCache } from './mustacheCache';
@@ -106,6 +108,12 @@ export interface IPromptLibraryCreateParams<TResponse extends { kind: string } =
   readonly resourceBindingDepthLimit?: number;
   /** Default 256. LRU cap on parsed Mustache templates. */
   readonly templateCacheSize?: number;
+  /**
+   * Optional safety policy per design §4.4. When omitted, no global
+   * defaultMaxLength applies (per-slot and per-descriptor caps still do),
+   * no regex screening runs, and no anti-jailbreak preface is injected.
+   */
+  readonly safetyPolicy?: IPromptSafetyPolicy;
 }
 
 /**
@@ -190,6 +198,20 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    */
   private _nextSynthIdSerial: number;
   private readonly _cacheListener?: Runtime.IResourceResolverCacheListener;
+  private readonly _safetyPolicy?: IPromptSafetyPolicy;
+  /**
+   * Set of RFC 8785 canonical-JSON keys for descriptors that have
+   * already passed the loader-side compatibility check (see
+   * `assertOutputValidationsCompatible` in the `output` packlet).
+   * Keying by canonical content (NOT prompt id) makes the cache
+   * immune to a same-id-different-descriptor scenario across
+   * scopes — different descriptors produce different keys; a
+   * subsequent descriptor revision is automatically a cache miss.
+   * Invoked from both `describe` and `resolve` (and from
+   * `resolveAndValidateOutput` via `resolve`), so the cache amortises
+   * across all three entry points.
+   */
+  private readonly _validatedRegistryKeys: Set<string>;
   /**
    * Per-instance resource-binding depth limit. Exposed as public readonly
    * so B-2's recursive resource-binding resolver can pin against the
@@ -213,6 +235,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     readonly cacheListener?: Runtime.IResourceResolverCacheListener;
     readonly logger: Logging.ILogger;
     readonly resourceBindingDepthLimit: number;
+    readonly safetyPolicy?: IPromptSafetyPolicy;
   }) {
     this._store = params.store;
     this._registry = params.registry;
@@ -228,6 +251,8 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     this._cacheListener = params.cacheListener;
     this.logger = params.logger;
     this.resourceBindingDepthLimit = params.resourceBindingDepthLimit;
+    this._safetyPolicy = params.safetyPolicy;
+    this._validatedRegistryKeys = new Set();
   }
 
   /** Family-convention factory. */
@@ -255,7 +280,8 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
                       builder,
                       cacheListener: params.cacheListener,
                       logger: params.logger ?? new Logging.NoOpLogger(),
-                      resourceBindingDepthLimit: depthLimit
+                      resourceBindingDepthLimit: depthLimit,
+                      safetyPolicy: params.safetyPolicy
                     })
                   )
                 )
@@ -361,6 +387,9 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   ): Promise<Result<IResolvedPrompt>> {
     return (await walkScopeChain(this._store, req.id, req.chain))
       .onSuccess((walked) =>
+        this._validateAgainstRegistry(walked.record.descriptor).onSuccess(() => succeed(walked))
+      )
+      .onSuccess((walked) =>
         mergeBindings(req.chain, walked.scopeBindings, walked.record.descriptor.slots, req.substitutions)
           .withErrorFormat((msg) => `prompt '${req.id}': ${msg}`)
           .onSuccess((mergeResult) => succeed({ walked, mergeResult } as const))
@@ -412,25 +441,54 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
 
   /**
    * Resolves and validates the output of an LLM call against the descriptor's
-   * output contract.
+   * output contract, per design §8.
    *
    * @remarks
-   * Full output validation — fence strip, JSON.parse, Converter
-   * dispatch, typed validator chain — is B-4's scope. The B-1b
-   * foundation pre-runs the chain walk + render so the failure message
-   * cites the actual `descriptor.output.kind`; that resolve cost is
-   * also paid by the real B-4 pipeline, so the ordering is not
-   * premature.
+   * For `output.kind === 'free-text'` the raw output is returned verbatim
+   * (descriptors that declare `outputValidations` on free-text are rejected
+   * at load time by `promptFileConverter`).
+   *
+   * For `output.kind === 'json'` the pipeline strips fences via
+   * `AiAssist.extractJsonText` (from `@fgv/ts-extras`), parses JSON,
+   * dispatches to the registered Converter, and runs the descriptor's
+   * typed validator chain. Per §17.2.4 the chain enforces a
+   * belt-and-suspenders kind check: the loader-side compatibility check
+   * rejected drift at descriptor load (belt — invoked from `resolve` /
+   * `describe`), and each validator additionally re-checks `value.kind`
+   * against its `appliesTo` at the point of invocation (suspenders).
+   *
+   * Free-text + `T = string` is the typical caller pattern. The unchecked
+   * `Converter`-free `as unknown as T` cast at the free-text branch IS
+   * documented in design §8 — there is no Converter to consult, and
+   * `TResponse` exists only to type the JSON pipeline.
    */
   public async resolveAndValidateOutput<T extends TResponse>(
     req: IPromptResolveRequest,
     rawOutput: string
   ): Promise<Result<T>> {
-    return (await this.resolve(req)).onSuccess((resolved) =>
-      fail<T>(
-        `prompt '${req.id}': resolveAndValidateOutput (output.kind '${resolved.descriptor.output.kind}', rawOutput length ${rawOutput.length}) is not yet implemented in the B-1 foundation (B-4 ships the output validation pipeline)`
-      )
-    );
+    return (await this.resolve(req)).onSuccess((resolved) => {
+      const output = resolved.descriptor.output;
+      if (output.kind === 'free-text') {
+        // Design §8: the library does not run output validation on
+        // free-text in v0.1; the raw output is returned verbatim. The
+        // descriptor file Converter already rejected free-text
+        // descriptors that declare `outputValidations`, so there is no
+        // validator chain to run here.
+        return succeed(rawOutput as unknown as T);
+      }
+      if (this._registry === undefined) {
+        return fail<T>(
+          `prompt '${req.id}': output.kind 'json' requires a registry; none supplied to PromptLibrary.create`
+        );
+      }
+      return runOutputValidationPipeline<TResponse, T>({
+        descriptor: resolved.descriptor,
+        contract: output,
+        registry: this._registry,
+        rawOutput,
+        substitutions: resolved.trace.mergedBindings
+      });
+    });
   }
 
   private _populateDescriptorCache(
@@ -469,8 +527,10 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
             );
           }
         }
-        this._descriptorCache.set(id, first.descriptor);
-        return succeed(first.descriptor);
+        return this._validateAgainstRegistry(first.descriptor).onSuccess(() => {
+          this._descriptorCache.set(id, first.descriptor);
+          return succeed(first.descriptor);
+        });
       });
   }
 
@@ -645,6 +705,36 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
       );
   }
 
+  private _validateAgainstRegistry(descriptor: IPromptDescriptor): Result<true> {
+    // Cache key is the descriptor's RFC 8785 canonical-JSON (NOT the
+    // prompt id). Caching by id alone would let one scope's
+    // descriptor mask a structurally-different descriptor with the
+    // same id loaded from a different scope: the first descriptor
+    // would pass the loader-side compatibility check, the cache would
+    // mark the id as validated, and a later resolve hitting a
+    // different descriptor for the same id would skip the check
+    // entirely. (`_populateDescriptorCache` enforces cross-scope
+    // structural equality only when `describe()` is called; `resolve()`
+    // skips that path.) Keying by canonical content makes the cache
+    // immune to that hole — different descriptors carry different
+    // keys; `invalidateDescriptor()` doesn't need to touch this map
+    // because any subsequent descriptor revision is automatically a
+    // cache miss. (PR #369 Copilot review.)
+    return this._descriptorCanonical(descriptor)
+      .withErrorFormat(
+        (msg) => `prompt '${descriptor.id}': failed to canonicalize descriptor for validation cache: ${msg}`
+      )
+      .onSuccess((key) => {
+        if (this._validatedRegistryKeys.has(key)) {
+          return succeed(true as const);
+        }
+        return assertOutputValidationsCompatible<TResponse>(descriptor, this._registry).onSuccess(() => {
+          this._validatedRegistryKeys.add(key);
+          return succeed(true as const);
+        });
+      });
+  }
+
   private _renderResolved(
     req: IPromptResolveRequest,
     walked: {
@@ -672,34 +762,51 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     // placeholder values for resource-bound slots are replaced with the
     // inner-resolve body.
     const finalMerged = applyResourceBindingRewrites(mergeResult.merged, resourceBindings.rewrites);
-    return this._mustacheCache
-      .getOrParse(req.id, joinedBody)
-      .onSuccess((template) =>
-        template
-          .validateAndRender(this._buildRenderContext(finalMerged))
-          .withErrorFormat((msg) => `prompt '${req.id}': ${msg}`)
-      )
-      .onSuccess((rendered) => {
-        const candidateMatches: ICandidateMatchTraceEntry[] = matches.map((m) => ({
-          candidateIndex: m.index,
-          matchType: m.matchType,
-          conditions: m.conditions
-        }));
-        const trace: IPromptResolveTrace = {
-          winningScope: walked.winningScope,
-          scopesConsulted: walked.scopesConsulted,
-          mergedBindings: finalMerged,
-          resourceBindingResolutions: resourceBindings.traceEntries,
-          safeguardFindings: mergeResult.safeguardFindings,
-          candidateMatches
-        };
-        return succeed<IResolvedPrompt>({
-          id: req.id,
-          body: rendered,
-          descriptor,
-          trace
-        });
-      });
+    // No outer `withErrorFormat` here: `applySafeguards` already formats
+    // its reject messages with `prompt '${descriptor.id}': ...`, and
+    // double-wrapping produces `prompt 'p': prompt 'p': ...` noise
+    // (Copilot review on PR #369).
+    return applySafeguards(descriptor, finalMerged, this._safetyPolicy).onSuccess((safeguardResult) =>
+      this._mustacheCache
+        .getOrParse(req.id, joinedBody)
+        .onSuccess((template) =>
+          template
+            .validateAndRender(this._buildRenderContext(finalMerged))
+            .withErrorFormat((msg) => `prompt '${req.id}': ${msg}`)
+        )
+        .onSuccess((rendered) => this._applyAntiJailbreakPreface(descriptor, rendered))
+        .onSuccess((finalBody) => {
+          const candidateMatches: ICandidateMatchTraceEntry[] = matches.map((m) => ({
+            candidateIndex: m.index,
+            matchType: m.matchType,
+            conditions: m.conditions
+          }));
+          const trace: IPromptResolveTrace = {
+            winningScope: walked.winningScope,
+            scopesConsulted: walked.scopesConsulted,
+            mergedBindings: finalMerged,
+            resourceBindingResolutions: resourceBindings.traceEntries,
+            safeguardFindings: [...mergeResult.safeguardFindings, ...safeguardResult.findings],
+            candidateMatches
+          };
+          return succeed<IResolvedPrompt>({
+            id: req.id,
+            body: finalBody,
+            descriptor,
+            trace
+          });
+        })
+    );
+  }
+
+  private _applyAntiJailbreakPreface(descriptor: IPromptDescriptor, rendered: string): Result<string> {
+    const preface = this._safetyPolicy?.antiJailbreakPreface;
+    if (preface === undefined) {
+      return succeed(rendered);
+    }
+    return preface(descriptor)
+      .withErrorFormat((msg) => `prompt '${descriptor.id}': antiJailbreakPreface failed: ${msg}`)
+      .onSuccess((prefaceText) => succeed(prefaceText === '' ? rendered : `${prefaceText}\n${rendered}`));
   }
 
   private _buildRenderContext(merged: ReadonlyMap<SlotName, IBindingTraceEntry>): Record<string, string> {

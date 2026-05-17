@@ -58,11 +58,19 @@ export class ConverterRegistry<TResponse extends { kind: string }>
         `converter '${id}': registered kind '${entry.kind}' does not match requested kind '${kind}'`
       );
     }
-    // Design-mandated narrowing per §17.2.5: the registry records the kind
-    // the producer commits to. The no-kind overload trusts the caller; the
-    // kind-verified overload guarantees the entry.kind matches before
-    // returning. Either way the chain runner's belt+suspenders check
-    // (§17.2.4) verifies value.kind at the point of use.
+    // Design-mandated narrowing per §17.2.5. Safety argument: `Converter`
+    // is covariant in its produced type (its only output channel is the
+    // value returned from `.convert`), so a `Converter<TResponse>` is
+    // assignable to `Converter<T>` whenever T extends TResponse AND the
+    // converter's runtime output actually satisfies T. The kind-verified
+    // overload confirms `entry.kind === kind` immediately above, which
+    // proves the latter (the producer committed to emitting T['kind'] at
+    // register time). The no-kind overload trusts the caller's `T`; the
+    // chain runner's belt+suspenders check (§17.2.4) re-verifies
+    // `value.kind` at the point of use so any mismatch fails loudly
+    // rather than silently. This is the single load-bearing narrow for
+    // the validator chain's end-to-end type safety; no other cast is
+    // needed downstream.
     const narrowed: Converter<T> = entry.converter as unknown as Converter<T>;
     return succeed(narrowed);
   }
