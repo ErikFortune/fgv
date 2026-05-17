@@ -588,67 +588,56 @@ function projectMatches(
     readonly matchType: 'match' | 'matchAsDefault';
   }
 
-  const orderedEntries: IProjectionEntry[] = [];
-  const collectAt = (
-    rsCandidates: ReadonlyArray<ResourceCandidate>,
-    indices: ReadonlyArray<number>,
-    matchType: 'match' | 'matchAsDefault'
-  ): Result<true> => {
-    for (const idx of indices) {
-      /* c8 ignore next 3 - defensive: invalid index would mean ts-res returned out-of-range, which would also fail in resolveResource */
-      if (idx >= rsCandidates.length) {
-        return fail(`prompt '${promptId}' scope '${scope}': invalid candidate index ${idx}`);
-      }
-      const rsCandidate = rsCandidates[idx];
-      const origIndex = materialized.candidateOriginIndex.get(rsCandidate);
-      /* c8 ignore next 5 - defensive: every built candidate is in the origin-index map by construction */
-      if (origIndex === undefined) {
-        return fail(
-          `prompt '${promptId}' scope '${scope}': internal error: built candidate not in origin-index map`
-        );
-      }
-      orderedEntries.push({
-        origIndex,
-        candidate: record.candidates[origIndex],
-        rsCandidate,
-        matchType
-      });
-    }
-    return succeed(true as const);
-  };
-
   const rsCandidates = materialized.resource.candidates;
-  // Per ts-res semantics, regular matches are strictly preferred over
-  // default matches: `resolveResource` returns the first regular match
-  // when available and only falls back to defaults when none exist.
-  // ts-prompt-assist's specificity-ascending walk applies the same
-  // preference: use the regular set if non-empty, otherwise fall back
-  // to defaults. Mixing the two would let a default partial layer
-  // before a regular terminal, which violates ts-res's match-preference
-  // contract.
-  const usingDefaults = resolution.instanceIndices.length === 0;
-  const indices = usingDefaults ? resolution.defaultInstanceIndices : resolution.instanceIndices;
-  const matchType: 'match' | 'matchAsDefault' = usingDefaults ? 'matchAsDefault' : 'match';
-  const collectResult = collectAt(rsCandidates, indices, matchType);
-  /* c8 ignore next 3 - defensive: collectAt failures require ts-res to return invalid indices or unmapped candidates */
-  if (collectResult.isFailure()) {
-    return fail(collectResult.message);
-  }
 
-  // ts-res returns priority-descending (most specific first). Design
-  // §10.2: walk specificity-ascending; collect bodies until a candidate
-  // with `isPartial !== true` is encountered (inclusive).
-  const ascending = [...orderedEntries].reverse();
+  // Walk in ts-res's natural order — `resolveDecision` returns regular
+  // matches in priority-descending order followed by default matches in
+  // priority-descending order. ts-res's `resolveAllResourceCandidates`
+  // emits the same `[...regulars, ...defaults]` sequence. We collect
+  // candidates in that order, mirroring ts-res's value-composition
+  // semantic (partials layer onto the first full base), and stop as
+  // soon as a non-partial (full) candidate is encountered. The full
+  // candidate is included in the collection — it is the base body the
+  // partials layer onto.
+  const orderedIndices: ReadonlyArray<{
+    readonly idx: number;
+    readonly matchType: 'match' | 'matchAsDefault';
+  }> = [
+    ...resolution.instanceIndices.map((idx) => ({ idx, matchType: 'match' as const })),
+    ...resolution.defaultInstanceIndices.map((idx) => ({ idx, matchType: 'matchAsDefault' as const }))
+  ];
+
   const collected: IProjectionEntry[] = [];
-  for (const entry of ascending) {
-    collected.push(entry);
-    if (entry.candidate.isPartial !== true) {
+  for (const { idx, matchType } of orderedIndices) {
+    /* c8 ignore next 3 - defensive: invalid index would require ts-res to return out-of-range, which would also fail in resolveResource */
+    if (idx >= rsCandidates.length) {
+      return fail(`prompt '${promptId}' scope '${scope}': invalid candidate index ${idx}`);
+    }
+    const rsCandidate = rsCandidates[idx];
+    const origIndex = materialized.candidateOriginIndex.get(rsCandidate);
+    /* c8 ignore next 5 - defensive: every built candidate is in the origin-index map by construction */
+    if (origIndex === undefined) {
+      return fail(
+        `prompt '${promptId}' scope '${scope}': internal error: built candidate not in origin-index map`
+      );
+    }
+    const candidate = record.candidates[origIndex];
+    collected.push({ origIndex, candidate, rsCandidate, matchType });
+    if (candidate.isPartial !== true) {
+      // Hit the full base — partials above it have been collected,
+      // stop walking.
       break;
     }
   }
 
+  // Reverse to specificity-ascending so the trace and the default
+  // `joinBodies` ('specificity-ascending') receive the full base first
+  // and the most-specific override last — matching the "later
+  // instructions take precedence" LLM reading convention.
+  const ascending = collected.reverse();
+
   return mapResults(
-    collected.map((entry) =>
+    ascending.map((entry) =>
       resolver
         .resolveConditionSet(entry.rsCandidate.conditions)
         /* c8 ignore next 4 - defensive: resolveConditionSet on an already-resolved candidate's condition set hits the cache; the failure path requires an internal ts-res error */

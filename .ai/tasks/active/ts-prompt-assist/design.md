@@ -960,15 +960,16 @@ outputValidations: [<validator-id>, ...]   # optional
 candidates:                    # required
   # conditions: full ts-res `ResourceJson.ConditionSetDecl` (sugar, record-
   # with-details, or array form).
-  # isPartial: when true, layers under any more-specific matching candidate;
-  # when false / omitted, terminates the composition chain. See §10.2.
+  # isPartial: true marks a more-specific override that layers ONTO the
+  # full base. isPartial: false / omitted marks the full base body —
+  # the walk stops at it. See §10.2.
 
-  # Base — general guidance that layers under everything:
+  # Base — full body that always applies. The walk stops here once all
+  # more-specific overrides have layered on top.
   - conditions: {}
-    isPartial: true
-    body: 'Be helpful and concise.'
+    body: 'Be helpful and concise.'      # isPartial omitted = full base
 
-  # Tone layer — applies on top of base when tone qualifier matches:
+  # Tone override — layers on top of the base when tone qualifier matches:
   - conditions: { tone: formal }
     isPartial: true
     body: 'Use formal address. Avoid contractions.'
@@ -982,16 +983,20 @@ candidates:                    # required
     isPartial: true
     body: "Use a playful, conversational register."
 
-  # Terminal regional override — does NOT layer; replaces base + tone:
+  # Regional override — also a partial; layers on top of the base when
+  # region matches.
   - conditions: { region: emea }
-    body: 'EMEA compliance addendum: ...'   # isPartial omitted = terminal
+    isPartial: true
+    body: 'EMEA compliance addendum: ...'
 
-  # Array form (equivalent to record-with-details):
+  # Array form (equivalent to record-with-details). Authoring a partial
+  # override that combines tone + region:
   - conditions:
       - qualifierName: region
         value: na
       - qualifierName: tone
         value: formal
+    isPartial: true
     body: 'NA formal addendum: ...'
 ```
 
@@ -1215,7 +1220,7 @@ candidate `isPartial` is strictly more expressive:
 | Author intent | Earlier draft | v0.1 (locked) |
 |---|---|---|
 | "Best match wins, alone." | `compositionMode: single-best` | All candidates' `isPartial` omitted / `false`. |
-| "Layer all matches together." | `compositionMode: concat-fragments` | All candidates `isPartial: true` except the terminal. |
+| "Layer all matches together." | `compositionMode: concat-fragments` | Base candidate `isPartial` omitted / `false`; every more-specific candidate `isPartial: true`. |
 | "Layer SOME variants on a base; specific overrides terminate." | **Inexpressible.** | Author marks `isPartial: true` surgically per candidate. |
 
 The third case is real (the chat-app use case Erik raised:
@@ -1225,31 +1230,56 @@ specific regional override terminates the chain"). The earlier
 prompt id, forking the descriptor, or hand-orchestrating in the
 consumer — exactly the pain the library is supposed to eliminate.
 
+**`isPartial` semantic (locked, aligned with ts-res):** `isPartial:
+true` marks a candidate as a more-specific override that layers onto
+a less-specific base. `isPartial: false` (or omitted) marks the
+**full** candidate — the base body that override partials layer
+onto. This matches ts-res's `resolveComposedResourceValue` model
+exactly: ts-res walks candidates in priority order (most-specific
+first), accumulates partial overrides, and stops at the first full
+candidate it encounters. ts-prompt-assist uses the same walk shape so
+authors don't have to reason about an inverted `isPartial` between
+the two libraries.
+
 **Semantics (locked):**
 
-1. ts-res selects matching candidates per the qualifier context.
-2. Walk those candidates in **specificity-ascending order** (least-
-   specific first). Collect bodies until a candidate with
-   `isPartial !== true` is encountered — that candidate is the
-   terminal; collection includes it and stops.
+1. ts-res selects matching candidates per the qualifier context and
+   returns them via `resolveAllResourceCandidates` in priority order:
+   most-specific (highest priority) first within the regular-match
+   set, then the default-match set (`scoreAsDefault`) appended after.
+2. Walk those candidates **in the order ts-res returned them** —
+   most-specific first. Collect bodies until a candidate with
+   `isPartial !== true` is encountered — that candidate is the full
+   base; collection includes it and stops.
 3. If all matching candidates are `isPartial: true`, the chain ends
-   at the most-specific match (no terminal needed — every fragment
+   at the least-specific match (no full base needed — every override
    participates).
-4. If only one candidate matches and it is `isPartial: true` or
-   omitted, that candidate's body is the result (no join needed).
+4. If only one candidate matches, that candidate's body is the result
+   regardless of `isPartial` (no join needed).
 5. Bodies are joined per `IPromptDescriptor.join` (default
    `{ separator: '\n\n', order: 'specificity-ascending',
-   trimTrailingWhitespace: true }`).
+   trimTrailingWhitespace: true }`). With `specificity-ascending`
+   the collected list (which is descending out of ts-res) is reversed
+   so the full base appears first and the most-specific override
+   appears last — matching the "later instructions take precedence"
+   LLM reading convention.
 6. Mustache substitution runs **once on the joined body** (consistent
    slot rendering across fragments).
 
 **Default join policy rationale.** `\n\n` is the canonical LLM
 paragraph break — fragments read as paragraphs. Specificity-ascending
-order puts general guidance first and specific overrides last,
+order puts the general base first and specific overrides last,
 matching the "later instructions take precedence" pattern most LLMs
 treat as natural. `trimTrailingWhitespace: true` defuses YAML block-
 scalar trailing-newline quirks that would otherwise produce triple-
 newline gaps.
+
+**Worked example (canonical YAML in §5.3):** with context
+`{ tone: 'formal', region: 'emea' }`, ts-res returns
+`[emea-override (partial), tone-override (partial), base (full)]`
+in priority-descending order. Walk collects emea, tone, then base
+(full → stop). Reverse for join → `base | tone | emea`. Joined body
+reads general-to-specific.
 
 ### 10.3 Chain walking is independent of intra-record candidate composition
 

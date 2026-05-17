@@ -1061,12 +1061,19 @@ describe('ts-prompt-assist foundation', () => {
       expect(result).toFailWith(/positive/);
     });
 
-    test('resolve composes partial candidates in specificity-ascending order, stops at terminal', async () => {
+    test('resolve composes partial overrides onto the full base candidate', async () => {
+      // Aligned with ts-res's value-composition semantic per design §10.2:
+      // the candidate with `isPartial` omitted/false is the full base;
+      // more-specific candidates marked `isPartial: true` are overrides
+      // that layer onto the base. ts-res returns matches in priority-
+      // descending order; the walk collects partials until the first
+      // full candidate (inclusive), then the trace + join reverse to
+      // specificity-ascending so the base appears first.
       const record: IStoredPromptRecord = buildDescriptor({
         candidates: [
-          { conditions: {}, isPartial: true, body: 'Be helpful.' },
+          { conditions: {}, body: 'Be helpful.' }, // full base — terminates the walk
           { conditions: { tone: 'formal' }, isPartial: true, body: 'Use formal address.' },
-          { conditions: { tone: 'formal', region: 'emea' }, body: 'EMEA addendum.' }
+          { conditions: { tone: 'formal', region: 'emea' }, isPartial: true, body: 'EMEA addendum.' }
         ],
         descriptor: {
           ...buildDescriptor().descriptor,
@@ -1119,17 +1126,22 @@ describe('ts-prompt-assist foundation', () => {
       });
     });
 
-    test('resolve prefers regular matches over matchAsDefault fallbacks', async () => {
-      // Mixed candidate set: one regular-match candidate plus one
-      // default-match candidate (via `scoreAsDefault`). ts-res returns
-      // both groups; the library must pick only the regular set so a
-      // default partial never layers before a regular terminal.
+    test('resolve stops at the full base when only a matchAsDefault partial would layer above', async () => {
+      // The full base is a regular match; the more-specific partial only
+      // matches as default. Per ts-res's value-composition order
+      // (regulars before defaults), the walk hits the regular full base
+      // before the default partial — so the partial never participates.
+      // This is intentional: ts-res treats default matches as strictly
+      // lower-priority than any regular match. Authors who want the
+      // partial to layer must either make it a regular match or make
+      // the base partial too.
       const record: IStoredPromptRecord = buildDescriptor({
         candidates: [
-          { conditions: {}, body: 'regular base (always matches)' },
+          { conditions: {}, body: 'regular base.' }, // full base, regular match
           {
             conditions: { tone: { value: 'formal', scoreAsDefault: 0.5 } },
-            body: 'default fallback (lower preference)'
+            isPartial: true,
+            body: 'default partial that should not layer.'
           }
         ],
         descriptor: { ...buildDescriptor().descriptor, slots: [] }
@@ -1142,9 +1154,35 @@ describe('ts-prompt-assist foundation', () => {
         qualifiers: {}
       });
       expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
-        expect(r.body).toBe('regular base (always matches)');
+        expect(r.body).toBe('regular base.');
         expect(r.trace.candidateMatches).toHaveLength(1);
         expect(r.trace.candidateMatches[0].matchType).toBe('match');
+      });
+    });
+
+    test('resolve layers a regular partial onto the full regular base', async () => {
+      // Both candidates are regular matches; the override is marked
+      // partial. Walk collects override (partial → continue), then base
+      // (full → stop). Reversed for join: base first, override last.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [
+          { conditions: {}, body: 'base body.' },
+          { conditions: { tone: 'formal' }, isPartial: true, body: 'formal override.' }
+        ],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: { tone: 'formal' }
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('base body.\n\nformal override.');
+        expect(r.trace.candidateMatches).toHaveLength(2);
+        expect(r.trace.candidateMatches[0].matchType).toBe('match');
+        expect(r.trace.candidateMatches[1].matchType).toBe('match');
       });
     });
 
