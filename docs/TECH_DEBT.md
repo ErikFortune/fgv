@@ -31,20 +31,9 @@ opportunistically when the right surface area is touched.
 
 ## P1 — Blocking
 
-*(none currently outstanding — the `ts-prompt-assist` validator-chain caller-controlled `T` cluster was reduced to P2 by the B-4 cast-removal cleanup; only the free-text-branch typed lie remains, downgraded.)*
+*(none currently outstanding — the `ts-prompt-assist` validator-chain caller-controlled `T` cluster was fully retired by the surface-tidy round, which split `resolveAndValidateOutput<T>` into `resolveJsonOutput<K>` + `resolveFreeTextOutput` and replaced the remaining caller-asserted-`T` boundary with a runtime-evidenced kind check.)*
 
 ## P2 — Fix before next major feature in affected area
-
-- **[P2 — was P1; reduced by B-4 cast-removal cleanup] `resolveAndValidateOutput<T>` free-text branch returns a typed lie.**
-  `libraries/ts-prompt-assist/src/packlets/resolve/promptLibrary.ts` returns `succeed(rawOutput as unknown as T)` on the free-text branch. With the default `TResponse = { kind: string }`, callers literally cannot supply `T = string` — they receive a `Result<{ kind: string }>` whose runtime is a string; any consumer dereferencing `.kind` on the returned value hits `undefined`. Design §8 specifies the cast and §17.2.6 says consumers shouldn't parameterize for free-text, but the type signature is still lying. (Flagged by Copilot on PR #369.)
-
-  **Why P2 now**: items (1) and (2) of the original P1 cluster — `ConverterRegistry.get<T>` no-kind overload and the pipeline-feeds-uncheck-`T`-to-`fencedStringifiedJson` hole — were resolved by the B-4 cast-removal cleanup PR. `IPromptConverterRegistry.get` is now `get<K extends TResponse['kind']>(id, kind: K): Result<Converter<Extract<TResponse, {kind: K}>>>` (kind required; no caller-asserted T; distributed-discriminated-union storage so the lookup is cast-free internally), and `runOutputValidationPipeline` uses `getKind(id).onSuccess(kind => get(id, kind))` to dispatch with runtime-verified kind. The JSON path's belt + suspenders both fire end-to-end; only the free-text path's typed lie remains.
-
-  **Trigger**: before the consumer port (agent chat application) exercises free-text output where the caller specifies a non-`string` `T`. In practice consumers usually want `Result<string>` from a free-text descriptor — so an API split is the right move.
-
-  **Scope sketch**: split the public surface. `resolveAndValidateOutput` is two operations — free-text returns `Result<string>` (no `TResponse` involvement), JSON returns `Result<Extract<TResponse, {kind: K}>>` keyed by the descriptor's declared converter kind. Either introduce overloads, or split into `resolveAndValidateJsonOutput<K>` + `resolveAndValidateFreeTextOutput`. Binding-design amendment to §8 + §17.2.6 either way.
-
-  **Reference**: PR #369 review (Copilot); B-4 cast-removal cleanup (resolves items 1+2) retained the §8 free-text cast verbatim — it's the one surviving caller-asserted-`T` boundary in the library.
 
 - **[P2] `@fgv/ts-web-extras` lint content cleanup (config landed; 126 source violations remain).**
   Local sweep (chore/comprehensive-lint-fix) added the missing `eslint.config.js` to three sibling packages (`ts-http-storage`, `ts-random`, `tools/repo-template`) which all pass clean. Adding the same config to `ts-web-extras` surfaces **126 problems (6 errors + 120 warnings)** that were hidden while the config was missing. The config addition for `ts-web-extras` is therefore being held back until the source violations are resolved; the package continues to bypass the lint gate in the meantime.

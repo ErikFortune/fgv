@@ -85,7 +85,7 @@ export interface IPromptDescriptor {
   /** Optional example pairs grouped by qualifier-condition scope. */
   readonly examples?: ReadonlyArray<IPromptExampleSet>;
   /**
-   * Ordered list of validator ids run by `resolveAndValidateOutput` after the
+   * Ordered list of validator ids run by `resolveJsonOutput` after the
    * `output.converterId` converts the raw response. Validators must be
    * registered in the library's {@link IPromptRegistry} and their `appliesTo`
    * must include the response kind produced by `output.converterId`'s

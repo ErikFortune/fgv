@@ -118,8 +118,9 @@ export interface IPromptLibraryCreateParams<TResponse extends { kind: string } =
 }
 
 /**
- * Resolve request supplied to {@link PromptLibrary.resolve} and
- * {@link PromptLibrary.resolveAndValidateOutput}.
+ * Resolve request supplied to {@link PromptLibrary.resolve},
+ * {@link PromptLibrary.resolveJsonOutput}, and
+ * {@link PromptLibrary.resolveFreeTextOutput}.
  * @public
  */
 export interface IPromptResolveRequest {
@@ -212,9 +213,9 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    * immune to a same-id-different-descriptor scenario across
    * scopes — different descriptors produce different keys; a
    * subsequent descriptor revision is automatically a cache miss.
-   * Invoked from both `describe` and `resolve` (and from
-   * `resolveAndValidateOutput` via `resolve`), so the cache amortises
-   * across all three entry points.
+   * Invoked from both `describe` and `resolve` (and indirectly from
+   * `resolveJsonOutput` / `resolveFreeTextOutput` via `resolve`), so
+   * the cache amortises across all entry points.
    */
   private readonly _validatedRegistryKeys: Set<string>;
   /**
@@ -445,67 +446,119 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   }
 
   /**
-   * Resolves and validates the output of an LLM call against the descriptor's
-   * output contract, per design §8.
+   * Resolves a prompt and validates the LLM's raw JSON output against the
+   * descriptor's `'json'` output contract.
    *
    * @remarks
-   * For `output.kind === 'free-text'` the raw output is returned verbatim
-   * (descriptors that declare `outputValidations` on free-text are rejected
-   * at load time by `promptFileConverter`).
+   * Runtime-verifies the resolved descriptor's `output.kind === 'json'`
+   * AND that `descriptor.output.converterId`'s recorded producing kind
+   * equals the supplied `expectedKind` literal. Either failure rejects
+   * with a clear error citing the prompt id plus the actual-vs-expected
+   * kinds — there is no caller-asserted `T` boundary on this method.
    *
-   * For `output.kind === 'json'` the pipeline strips fences via
-   * `AiAssist.extractJsonText` (from `@fgv/ts-extras`), parses JSON,
-   * dispatches to the registered Converter, and runs the descriptor's
-   * typed validator chain. Per §17.2.4 the chain enforces a
-   * belt-and-suspenders kind check: the loader-side compatibility check
-   * rejected drift at descriptor load (belt — invoked from `resolve` /
-   * `describe`), and each validator additionally re-checks `value.kind`
-   * against its `appliesTo` at the point of invocation (suspenders).
+   * On success, the pipeline strips fences via
+   * `AiAssist.fencedStringifiedJson` (from `@fgv/ts-extras`), parses JSON,
+   * dispatches through the registered Converter looked up by
+   * `(converterId, kind)`, and runs the descriptor's typed validator
+   * chain. Per design §17.2.4 the chain enforces a belt-and-suspenders
+   * kind check: the loader-side compatibility check rejected drift at
+   * descriptor load (belt — invoked from `resolve` / `describe`); each
+   * validator additionally re-checks `value.kind` against its `appliesTo`
+   * at the point of invocation (suspenders).
    *
-   * Free-text + `T = string` is the typical caller pattern. The unchecked
-   * `Converter`-free `as unknown as T` cast at the free-text branch IS
-   * documented in design §8 — there is no Converter to consult, and
-   * `TResponse` exists only to type the JSON pipeline.
+   * @param req - The resolve request — id, scope chain, qualifier
+   * context, and optional substitutions.
+   * @param rawOutput - The raw LLM response string.
+   * @param expectedKind - The response-union discriminator the descriptor
+   * is expected to produce. `K` is inferred from the literal argument;
+   * the return type narrows to `Extract<TResponse, \{ kind: K \}>`
+   * automatically.
+   * @returns On success, the validated response narrowed to the
+   * `TResponse` member discriminated by `K`. On failure, a `Result.fail`
+   * carrying the prompt id + stage that failed.
+   *
+   * @public
    */
-  public async resolveAndValidateOutput<T extends TResponse>(
+  public async resolveJsonOutput<K extends TResponse['kind']>(
     req: IPromptResolveRequest,
-    rawOutput: string
-  ): Promise<Result<T>> {
+    rawOutput: string,
+    expectedKind: K
+  ): Promise<Result<Extract<TResponse, { kind: K }>>> {
     return (await this.resolve(req)).onSuccess((resolved) => {
       const output = resolved.descriptor.output;
-      if (output.kind === 'free-text') {
-        // Design §8: the library does not run output validation on
-        // free-text in v0.1; the raw output is returned verbatim. The
-        // descriptor file Converter already rejected free-text
-        // descriptors that declare `outputValidations`, so there is no
-        // validator chain to run here.
-        return succeed(rawOutput as unknown as T);
+      if (output.kind !== 'json') {
+        return fail<Extract<TResponse, { kind: K }>>(
+          `prompt '${req.id}': resolveJsonOutput called on a descriptor whose output.kind is '${output.kind}' (expected 'json')`
+        );
       }
-      if (this._registry === undefined) {
-        return fail<T>(
+      const registry = this._registry;
+      if (registry === undefined) {
+        return fail<Extract<TResponse, { kind: K }>>(
           `prompt '${req.id}': output.kind 'json' requires a registry; none supplied to PromptLibrary.create`
         );
       }
-      return runOutputValidationPipeline<TResponse>({
-        descriptor: resolved.descriptor,
-        contract: output,
-        registry: this._registry,
-        rawOutput,
-        substitutions: resolved.trace.mergedBindings
-      }).onSuccess((value) => {
-        // Caller-asserted-T boundary (the only one in this library):
-        // the pipeline flows `TResponse` (the consumer's response union)
-        // intact, so this narrows the wide union to the caller's
-        // declared `T extends TResponse`. Runtime evidence: the
-        // loader-side belt (`_validateAgainstRegistry`) verified at
-        // descriptor load that the descriptor's `outputValidations[]`
-        // are `appliesTo`-compatible with the recorded converter kind;
-        // each validator that actually ran then re-checked `value.kind`
-        // against its `appliesTo` per §17.2.4 suspenders, so any
-        // value reaching this branch is structurally compatible with
-        // what the caller declared.
-        return succeed(value as T);
-      });
+      return registry.converters
+        .getKind(output.converterId)
+        .withErrorFormat((msg) => `prompt '${req.id}': output.converterId '${output.converterId}': ${msg}`)
+        .onSuccess<Extract<TResponse, { kind: K }>>((producingKind) => {
+          if (producingKind !== expectedKind) {
+            return fail(
+              `prompt '${req.id}': output.converterId '${output.converterId}' produces kind '${producingKind}'; resolveJsonOutput was called with expectedKind '${expectedKind}'`
+            );
+          }
+          return runOutputValidationPipeline<TResponse>({
+            descriptor: resolved.descriptor,
+            contract: output,
+            registry,
+            rawOutput,
+            substitutions: resolved.trace.mergedBindings
+          }).onSuccess((value) => {
+            // Localized typed narrow — NOT `as unknown as ...`. Runtime
+            // evidence: `producingKind === expectedKind` checked above
+            // means the Converter's recorded kind equals `K`. The
+            // pipeline's belt + suspenders re-verify that the runtime
+            // `value.kind` matches each validator's `appliesTo`, so a
+            // Converter that lies about its produced kind fails at the
+            // suspenders inside `runOutputValidationPipeline` before
+            // reaching here. Any value that arrives is structurally
+            // compatible with the narrowed union member.
+            return succeed(value as Extract<TResponse, { kind: K }>);
+          });
+        });
+    });
+  }
+
+  /**
+   * Resolves a prompt and returns the LLM's raw free-text output verbatim.
+   *
+   * @remarks
+   * Runtime-verifies the resolved descriptor's `output.kind === 'free-text'`.
+   * If the descriptor declares `'json'` output, rejects with a clear error
+   * citing the prompt id and actual kind — the caller is using the wrong
+   * method.
+   *
+   * Per design §8 the library does not run output validation on free-text
+   * in v0.1; the descriptor Converter already rejected free-text
+   * descriptors that declare `outputValidations`, so there is no validator
+   * chain to run here. The raw output is returned verbatim.
+   *
+   * @param req - The resolve request — id, scope chain, qualifier
+   * context, and optional substitutions.
+   * @param rawOutput - The raw LLM response string.
+   * @returns On success, `rawOutput` verbatim. On failure, a `Result.fail`
+   * carrying the prompt id + reason.
+   *
+   * @public
+   */
+  public async resolveFreeTextOutput(req: IPromptResolveRequest, rawOutput: string): Promise<Result<string>> {
+    return (await this.resolve(req)).onSuccess((resolved) => {
+      const output = resolved.descriptor.output;
+      if (output.kind !== 'free-text') {
+        return fail<string>(
+          `prompt '${req.id}': resolveFreeTextOutput called on a descriptor whose output.kind is '${output.kind}' (expected 'free-text')`
+        );
+      }
+      return succeed(rawOutput);
     });
   }
 

@@ -1116,40 +1116,64 @@ level for `_qualifiers`).
 
 ## 8. Output validation pipeline (locked)
 
-For `output.kind: 'json'`, `resolveAndValidateOutput<T>(req, rawOutput)`:
+The public API exposes **two methods** — `resolveJsonOutput<K>` for
+typed JSON output and `resolveFreeTextOutput` for raw free-text. Neither
+takes a caller-asserted `T`; the return type is runtime-evidenced
+against the descriptor's declared converter kind. (This is the
+post-surface-tidy split — see TECH_DEBT history for the rationale.)
 
-1. **Strip code fences.** Reuse
-   `@fgv/ts-extras/ai-assist`'s `extractJsonText` (per
-   `LIBRARY_CAPABILITIES.md`'s "don't reimplement fence-stripping" rule).
-   If `extractJsonText` is not yet exported from a stable location
-   suitable for cross-library consumption, phase B surfaces the gap and
-   either extends the export or briefly inlines, documenting in
-   `TECH_DEBT.md`.
-2. **`JSON.parse`.** Failure → `Result<fail>` with the prompt id and
-   first 200 characters of raw output.
-3. **Resolve the descriptor's `output.converterId`.** Failure
-   (unregistered) → `Result<fail>` with the prompt id and the missing
-   id.
-4. **Run the Converter.** Failure → `Result<fail>` with the prompt id
-   and the Converter's error chain (via `.withErrorFormat`).
-5. **Run descriptor `outputValidations[]` in order.** Each id resolves
+### 8.1 `resolveJsonOutput<K extends TResponse['kind']>(req, rawOutput, expectedKind: K): Promise<Result<Extract<TResponse, { kind: K }>>>`
+
+1. **Resolve the prompt.** Calls `resolve(req)` to obtain the
+   descriptor + trace. Failure propagates verbatim.
+2. **Verify `output.kind === 'json'`.** If the resolved descriptor's
+   output kind is `'free-text'` (or any other value), reject with
+   `prompt '<id>': resolveJsonOutput called on a descriptor whose
+   output.kind is '<actual>' (expected 'json')`. The caller is using
+   the wrong method.
+3. **Verify the registry is present.** If the library was constructed
+   without a registry, reject with the same "requires a registry"
+   message the loader-side belt uses.
+4. **Verify the descriptor's `output.converterId` produces `K`.**
+   Look up the converter's recorded producing kind via
+   `registry.converters.getKind(converterId)`; if it doesn't equal
+   `expectedKind`, reject with the prompt id + actual-vs-expected
+   kinds cited explicitly. This is the runtime-evidenced narrowing
+   that replaces the previous caller-asserted-`T` boundary.
+5. **Strip code fences + JSON-parse + dispatch through the Converter.**
+   `AiAssist.fencedStringifiedJson({ inner: converter })` from
+   `@fgv/ts-extras` handles fence stripping + `JSON.parse` + Converter
+   dispatch in one Converter. Failure → `Result<fail>` with the prompt
+   id and first 200 characters of raw output.
+6. **Run descriptor `outputValidations[]` in order.** Each id resolves
    against `registry.outputValidations`. Each validator receives the
-   current accumulator (initially the Converter output) and an
-   `IOutputValidationContext` carrying `promptId` and the resolved
-   substitution map. Successful validators return a (possibly
-   normalized) value used as the next validator's input. Failures
-   aggregate via `MessageAggregator` (per `/result-pattern`); if any
-   validator fails, the overall result is `Result<fail>` with the
-   aggregated message; if all pass, the final accumulator is the
-   typed `T`.
-6. **Return `Result<T>`.**
+   converted value and an `IOutputValidationContext` carrying
+   `promptId` and the resolved substitution map. Per §17.2.4 the
+   chain runner re-verifies `value.kind ∈ validator.appliesTo` at the
+   point of invocation (suspenders) before invoking `validate()`.
+   Failures aggregate via `MessageAggregator`.
+7. **Return `Result<Extract<TResponse, { kind: K }>>`.** The narrowing
+   at the public-return point is a localized typed narrow
+   (`value as Extract<TResponse, { kind: K }>`) — NOT an
+   `as unknown as ...` cast. Runtime evidence: the entry check at
+   step 4 verified the Converter's recorded kind equals `K`; the
+   pipeline's belt + suspenders verified the runtime `value.kind`
+   matches each validator's `appliesTo`. Any value reaching the
+   return is structurally compatible with the narrowed union member.
 
-For `output.kind: 'free-text'`: returns `rawOutput` verbatim wrapped in
-`succeed(rawOutput as unknown as T)`. The library does NOT run
-`outputValidations` for free-text in v0.1 — the loader rejects free-
-text descriptors that declare `outputValidations` with a clear error.
-(Forward-compat: when post-render free-text validators land in v0.2,
-this check relaxes; descriptors won't need to change.)
+### 8.2 `resolveFreeTextOutput(req, rawOutput): Promise<Result<string>>`
+
+1. **Resolve the prompt.** Same as above.
+2. **Verify `output.kind === 'free-text'`.** If the descriptor declares
+   `'json'`, reject with `prompt '<id>': resolveFreeTextOutput called
+   on a descriptor whose output.kind is '<actual>' (expected 'free-text')`.
+3. **Return `Result<string>` carrying `rawOutput` verbatim.** No
+   `TResponse` involvement, no Converter, no caller assertion. The
+   library does NOT run `outputValidations` for free-text in v0.1 —
+   the loader rejects free-text descriptors that declare
+   `outputValidations` with a clear error. (Forward-compat: when
+   post-render free-text validators land in v0.2, this check relaxes;
+   descriptors won't need to change.)
 
 ---
 
@@ -1159,21 +1183,25 @@ Per-call, after substitution context is built, before Mustache renders:
 
 1. **Per-slot length cap.** Slot's `maxLength` if set; else
    `safeguards.defaultMaxLength` from the descriptor if set; else the
-   safety policy's `defaultMaxLength`. Overflow rejects with:
-   `prompt '<id>': slot '<slot>' exceeds maxLength <n> (got <m>)`.
-   Recorded in `trace.safeguardFindings` with `kind: 'max-length'`,
-   `disposition: 'reject'`.
+   safety policy's `defaultMaxLength`. Overflow rejects the resolve
+   with: `prompt '<id>': slot '<slot>' exceeds maxLength <n> (got <m>)`.
+   Per the asymmetric finding flow (see below), the rejection rides the
+   `Result.fail` message; there is no `trace.safeguardFindings` entry
+   for a rejected-resolve max-length violation in v0.1.
 2. **Regex screening.** Slot values whose `source` is in
    `safetyPolicy.screenedSources` are scanned against
    `safetyPolicy.suspiciousPatterns`. Matches are collected. Per the
    policy's `onSuspicious`:
    - `'warn'`: log via `logger`, record `disposition: 'warn'` in
-     `safeguardFindings`, continue.
-   - `'reject'`: fail the resolve, record `disposition: 'reject'`.
+     `trace.safeguardFindings`, continue.
+   - `'reject'`: fail the resolve. The rejection rides the
+     `Result.fail` message (`prompt '<id>': slot '<slot>' matched
+     suspicious pattern ...`); no trace finding is emitted.
 3. **Source-aware skipping.** Slots whose `source` is NOT in
    `screenedSources` (or whose descriptor / safeguard sets
-   `skipInjectionScreening: true`) skip screening; recorded with
-   `kind: 'screening-skipped'`, `disposition: 'info'`.
+   `skipInjectionScreening: true`) skip screening; recorded in
+   `trace.safeguardFindings` with `kind: 'screening-skipped'`,
+   `disposition: 'info'`.
 4. **Anti-jailbreak framing seam.** If
    `safetyPolicy.antiJailbreakPreface` is supplied, it is called once
    with the descriptor and prepended to the rendered body (with a
@@ -1182,6 +1210,33 @@ Per-call, after substitution context is built, before Mustache renders:
 5. **Ordering.** Length cap before regex screen (cheap reject first);
    anti-jailbreak preface AFTER Mustache render (the preface text is
    not subject to substitution; it frames the rendered prompt).
+
+### 9.1 Asymmetric finding flow (v0.1)
+
+`trace.safeguardFindings` is only present on a *successfully-resolved*
+prompt — `Result.fail` does not return an `IResolvedPrompt` and
+therefore has no trace to attach findings to. v0.1 ships this
+asymmetry intentionally:
+
+- **Warn / info findings ride the trace.** `'suspicious-pattern'` under
+  `onSuspicious: 'warn'`, `'screening-skipped'`, and merge-stage
+  `'enforced-override-ignored'` findings surface in
+  `trace.safeguardFindings` on the resolved prompt.
+- **Reject findings ride the failure message.** `max-length`
+  violations and `'suspicious-pattern'` matches under
+  `onSuspicious: 'reject'` fail the resolve with the rejection cited
+  in the error message. The message carries enough context (prompt id
+  + slot name + finding kind + detail) for the consumer to diagnose
+  without a structured trace.
+
+This is the simplest shape that doesn't lie: a `Result<IResolvedPrompt>`
+return type can't carry findings on failure, and inventing a partial
+`IResolvedPrompt` for the reject path would be a typed lie of its own.
+v0.2 may revisit via `DetailedResult<IResolvedPrompt, IRejectedResolveDetail>`
+if the asymmetry hurts a consumer-port pressure-test in practice; the
+v0.2 shape would be additive (existing `Result<IResolvedPrompt>`
+consumers continue working via `.asResult`). v0.1 ships the simpler
+shape and documents the asymmetry rather than papering over it.
 
 ---
 
@@ -2148,25 +2203,39 @@ export interface IPromptConverterRegistry<TResponse extends { kind: string }> {
 validating `outputValidations[]` entries against `output.converterId`.
 The output validation pipeline chains `getKind(id).onSuccess(kind =>
 get(id, kind))` so the Converter's narrow `T` is established by
-runtime kind dispatch rather than caller assertion. The single
-caller-asserted-`T` boundary in the library is the public
-`resolveAndValidateOutput<T>(req, rawOutput)` method, where the
-pipeline-returned `TResponse` is narrowed to the caller's `T`
-backed by the §17.2.4 belt + suspenders.
+runtime kind dispatch rather than caller assertion. The public API
+exposes `resolveJsonOutput<K extends TResponse['kind']>(req, rawOutput,
+expectedKind: K): Promise<Result<Extract<TResponse, { kind: K }>>>` —
+`K` is inferred from the `expectedKind` literal; the entry-check
+verifies that the descriptor's `output.converterId` is registered to
+produce exactly `K` before the pipeline runs, so the narrowing to
+`Extract<TResponse, { kind: K }>` at the public return is
+runtime-evidenced rather than caller-asserted. There is no
+caller-asserted-`T` boundary in the library after the surface-tidy
+split — the narrowing is structurally pinned by the entry-check (the
+recorded converter kind equals `K`) plus the §17.2.4 belt + suspenders
+(every validator that actually ran re-verified `value.kind ∈ appliesTo`).
 
 #### 17.2.6 `'free-text'` interaction
 
-`output: { kind: 'free-text' }` descriptors:
+Per §8 the public API exposes a dedicated `resolveFreeTextOutput(req,
+rawOutput): Promise<Result<string>>` method for free-text descriptors.
 
-- `resolveAndValidateOutput<T>` for free-text returns the raw output
-  verbatim (per §8). No Converter, no validators in v0.1.
+- `resolveFreeTextOutput` runtime-verifies the resolved descriptor's
+  `output.kind === 'free-text'` and returns the raw output verbatim
+  as `Result<string>` — no `TResponse` involvement, no Converter, no
+  caller assertion. Calling it on a `'json'` descriptor rejects with a
+  clear error.
 - The descriptor loader continues to reject `outputValidations` on
   `'free-text'` descriptors (per §8) until v0.2 introduces post-render
   free-text validators.
-- The `TResponse` type parameter on the registry is irrelevant for
-  free-text resolves — the chain doesn't run. Consumers who only use
-  free-text never need to parameterize the registry; the default
-  `TResponse = { kind: string }` is sufficient.
+- `resolveJsonOutput<K>` is the orthogonal method for the `'json'`
+  branch. Calling it on a `'free-text'` descriptor likewise rejects
+  with a clear error citing the actual output kind. The two methods
+  do not share a `TResponse` boundary — `resolveJsonOutput<K>` flows
+  the registry's `TResponse` union through to the narrowed
+  `Extract<TResponse, { kind: K }>` return type;
+  `resolveFreeTextOutput` is `TResponse`-free.
 
 #### 17.2.7 `kind` naming — keep universally
 
