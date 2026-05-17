@@ -121,6 +121,8 @@ export interface IBindingMergeResult {
     // (undocumented)
     readonly mergedBindings: ReadonlyMap<SlotName, SlotBinding>;
     // (undocumented)
+    readonly pendingResourceBindings: ReadonlyArray<IPendingResourceBinding>;
+    // (undocumented)
     readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
 }
 
@@ -206,6 +208,14 @@ export interface IOutputValidationContext {
     readonly promptId: PromptId;
     // (undocumented)
     readonly substitutions: ReadonlyMap<SlotName, IBindingTraceEntry>;
+}
+
+// @public
+export interface IPendingResourceBinding {
+    // (undocumented)
+    readonly binding: IResourceSlotBinding;
+    // (undocumented)
+    readonly slot: SlotName;
 }
 
 // @public
