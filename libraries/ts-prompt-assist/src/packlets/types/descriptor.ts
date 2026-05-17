@@ -40,12 +40,18 @@ export interface IPromptSafeguardOverrides {
  * Locked prompt descriptor shape (design §3.9).
  *
  * @remarks
- * One descriptor per prompt id. The same id may appear in multiple scopes; the
- * library enforces cross-scope structural equality on `describe()` so a
- * descriptor revision in one scope cannot mask a different revision in
- * another. Descriptor identity travels with `id`; per-scope variation lives
- * in {@link IStoredPromptRecord.candidates} (qualifier-conditional bodies)
- * and in scope-level {@link IScopeSlotBindingsRecord} files.
+ * The design's expectation is one descriptor per prompt id — same shape
+ * across every scope where the id appears, with per-scope variation
+ * living in {@link IStoredPromptRecord.candidates} (qualifier-conditional
+ * bodies) and in scope-level {@link IScopeSlotBindingsRecord} files.
+ *
+ * The library enforces this only on `describe()`: when called, it walks
+ * every scope carrying the id and rejects mismatches via RFC 8785
+ * canonical-JSON comparison. `resolve()` does NOT cross-check — it
+ * walks the chain and uses the first record it finds. Authors who
+ * publish divergent descriptors across scopes therefore get a clean
+ * failure from `describe()` but a silent first-match win from
+ * `resolve()`.
  *
  * @public
  */

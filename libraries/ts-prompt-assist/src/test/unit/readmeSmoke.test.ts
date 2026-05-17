@@ -1,13 +1,16 @@
 // Copyright (c) 2026 Erik Fortune
 // SPDX-License-Identifier: MIT
 
-// Smoke tests that execute the README code samples verbatim. The intent
-// is not coverage (the foundation + resource-binding + output suites
-// already drive the public surface end-to-end) — it is to guarantee
-// that every code block in README.md is paste-and-run. If any snippet
-// drifts from the shipped API, this file fails to compile or to
-// resolve, surfacing the drift before a consumer reading the README
-// hits it.
+// Smoke tests that execute the README's four in-memory code samples
+// verbatim (in-memory quick start, typed JSON output, resource bindings,
+// safety policy). The on-disk YAML quick-start in the README depends on
+// `FileTree.forFilesystem()` and is covered separately by
+// `store.test.ts`. The intent is not coverage (the foundation +
+// resource-binding + output suites already drive the public surface
+// end-to-end) — it is to guarantee that the in-memory snippets remain
+// paste-and-run. If any snippet drifts from the shipped API, this file
+// fails to compile or to resolve, surfacing the drift before a consumer
+// reading the README hits it.
 
 import '@fgv/ts-utils-jest';
 import {

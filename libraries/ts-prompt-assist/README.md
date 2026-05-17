@@ -181,9 +181,15 @@ bindings:
 ```yaml
 qualifiers:
   - name: lang
-    typeName: language
+    typeName: lang
     defaultPriority: 1000
 ```
+
+The `typeName` MUST reference a qualifier type registered in the
+`QualifierTypeCollector` the consumer constructs in code (see below).
+The example uses a `LiteralQualifierType` named `lang`, but any ts-res
+qualifier type works (`LanguageQualifierType`, `TerritoryQualifierType`,
+custom types — same constraint applies).
 
 Wiring this up:
 
@@ -503,10 +509,10 @@ finding).
   ships no default content.
 
 ```typescript
-// Building on the in-memory fixture quick-start above (same `store` and
-// `qualifiers`), we add a safety policy and a screened slot. With
-// `onSuspicious: 'warn'` the regex screen surfaces findings in the
-// trace; with `'reject'` the resolve itself fails.
+// Standalone example: a screened slot + a safety policy + an
+// anti-jailbreak preface. With `onSuspicious: 'warn'` the regex screen
+// surfaces findings in the trace; with `'reject'` the resolve itself
+// fails.
 import {
   IPromptSafetyPolicy,
   IPromptStoreFixtureSeed,
