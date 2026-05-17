@@ -52,32 +52,40 @@ export function assertOutputValidationsCompatible<TResponse extends { kind: stri
     );
   }
 
-  return registry.converters
-    .getKind(contract.converterId)
-    .withErrorFormat(
-      (msg) => `prompt '${descriptor.id}': output.converterId '${contract.converterId}': ${msg}`
-    )
-    .onSuccess((producingKind) => {
-      const aggregator = new MessageAggregator();
-      for (const id of validationIds) {
-        registry.outputValidations
-          .get(id)
-          .onSuccess((validator) => {
-            const targets = appliesToList(validator);
-            if (!targets.includes(producingKind)) {
-              return fail<true>(
-                `validator '${id}' (appliesTo: ${targets.join('|')}) does not match converter '${
-                  contract.converterId
-                }' producing kind '${producingKind}'`
-              );
-            }
-            return succeed(true as const);
-          })
-          .withErrorFormat((msg) => `prompt '${descriptor.id}': validator '${id}': ${msg}`)
-          .aggregateError(aggregator);
-      }
-      return aggregator.hasMessages ? fail(aggregator.toString('; ')) : succeed(true as const);
-    });
+  return (
+    registry.converters
+      .getKind(contract.converterId)
+      // Registry-get errors already name the converter id
+      // ("converter 'X': not registered"); we only prepend the prompt
+      // id here to avoid the doubled "...output.converterId 'X':
+      // converter 'X':..." labelling Copilot flagged on PR #369.
+      .withErrorFormat((msg) => `prompt '${descriptor.id}': ${msg}`)
+      .onSuccess((producingKind) => {
+        const aggregator = new MessageAggregator();
+        for (const id of validationIds) {
+          registry.outputValidations
+            .get(id)
+            .onSuccess((validator) => {
+              const targets = appliesToList(validator);
+              if (!targets.includes(producingKind)) {
+                return fail<true>(
+                  `validator '${id}' (appliesTo: ${targets.join('|')}) does not match converter '${
+                    contract.converterId
+                  }' producing kind '${producingKind}'`
+                );
+              }
+              return succeed(true as const);
+            })
+            // Same de-duplication rule: the registry-get failure already
+            // says "validator 'X': not registered", and the mismatch
+            // branch explicitly names the validator id, so only the
+            // prompt-id prefix is added here.
+            .withErrorFormat((msg) => `prompt '${descriptor.id}': ${msg}`)
+            .aggregateError(aggregator);
+        }
+        return aggregator.hasMessages ? fail(aggregator.toString('; ')) : succeed(true as const);
+      })
+  );
 }
 
 /**
@@ -138,20 +146,27 @@ function runOneValidator<TResponse extends { kind: string }, T extends TResponse
   value: T,
   substitutions: ReadonlyMap<SlotName, IBindingTraceEntry>
 ): Result<true> {
-  return registry.outputValidations
-    .get(id)
-    .onSuccess((validator) => {
-      const targets = appliesToList(validator);
-      if (!targets.includes(value.kind)) {
-        // Suspenders per design §17.2.4: even with the loader-side belt
-        // (assertOutputValidationsCompatible) we re-check at runtime so a
-        // mid-process registry mutation or a Converter that lies about its
-        // produced kind still fails loudly here.
-        return fail<true>(`(appliesTo: ${targets.join('|')}) does not match output kind '${value.kind}'`);
-      }
-      return validator.validate(value, { promptId, substitutions });
-    })
-    .withErrorFormat((msg) => `validator '${id}': ${msg}`);
+  // The registry's `get` failure already names the validator id
+  // ("validator 'X': not registered"), so we pass it through verbatim.
+  // For mismatch and validate-fail, we explicitly prepend the validator
+  // id so the chain-runner's outer aggregation still cites which
+  // validator produced the message — without doubling with the registry
+  // path (PR #369 Copilot review).
+  return registry.outputValidations.get(id).onSuccess((validator) => {
+    const targets = appliesToList(validator);
+    if (!targets.includes(value.kind)) {
+      // Suspenders per design §17.2.4: even with the loader-side belt
+      // (assertOutputValidationsCompatible) we re-check at runtime so a
+      // mid-process registry mutation or a Converter that lies about its
+      // produced kind still fails loudly here.
+      return fail<true>(
+        `validator '${id}' (appliesTo: ${targets.join('|')}) does not match output kind '${value.kind}'`
+      );
+    }
+    return validator
+      .validate(value, { promptId, substitutions })
+      .withErrorFormat((msg) => `validator '${id}': ${msg}`);
+  });
 }
 
 function appliesToList<TResponse extends { kind: string }>(

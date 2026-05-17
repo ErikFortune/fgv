@@ -200,14 +200,18 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   private readonly _cacheListener?: Runtime.IResourceResolverCacheListener;
   private readonly _safetyPolicy?: IPromptSafetyPolicy;
   /**
-   * Set of prompt ids whose descriptor.output / outputValidations[] have
-   * already passed the loader-side compatibility check
-   * (see `assertOutputValidationsCompatible` in the `output` packlet).
-   * Cached so the check
-   * runs once per id even though it is invoked from both `describe` and
-   * `resolve` (and from `resolveAndValidateOutput` via `resolve`).
+   * Set of RFC 8785 canonical-JSON keys for descriptors that have
+   * already passed the loader-side compatibility check (see
+   * `assertOutputValidationsCompatible` in the `output` packlet).
+   * Keying by canonical content (NOT prompt id) makes the cache
+   * immune to a same-id-different-descriptor scenario across
+   * scopes — different descriptors produce different keys; a
+   * subsequent descriptor revision is automatically a cache miss.
+   * Invoked from both `describe` and `resolve` (and from
+   * `resolveAndValidateOutput` via `resolve`), so the cache amortises
+   * across all three entry points.
    */
-  private readonly _validatedRegistryIds: Set<PromptId>;
+  private readonly _validatedRegistryKeys: Set<string>;
   /**
    * Per-instance resource-binding depth limit. Exposed as public readonly
    * so B-2's recursive resource-binding resolver can pin against the
@@ -248,7 +252,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     this.logger = params.logger;
     this.resourceBindingDepthLimit = params.resourceBindingDepthLimit;
     this._safetyPolicy = params.safetyPolicy;
-    this._validatedRegistryIds = new Set();
+    this._validatedRegistryKeys = new Set();
   }
 
   /** Family-convention factory. */
@@ -702,13 +706,33 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   }
 
   private _validateAgainstRegistry(descriptor: IPromptDescriptor): Result<true> {
-    if (this._validatedRegistryIds.has(descriptor.id)) {
-      return succeed(true as const);
-    }
-    return assertOutputValidationsCompatible<TResponse>(descriptor, this._registry).onSuccess(() => {
-      this._validatedRegistryIds.add(descriptor.id);
-      return succeed(true as const);
-    });
+    // Cache key is the descriptor's RFC 8785 canonical-JSON (NOT the
+    // prompt id). Caching by id alone would let one scope's
+    // descriptor mask a structurally-different descriptor with the
+    // same id loaded from a different scope: the first descriptor
+    // would pass the loader-side compatibility check, the cache would
+    // mark the id as validated, and a later resolve hitting a
+    // different descriptor for the same id would skip the check
+    // entirely. (`_populateDescriptorCache` enforces cross-scope
+    // structural equality only when `describe()` is called; `resolve()`
+    // skips that path.) Keying by canonical content makes the cache
+    // immune to that hole — different descriptors carry different
+    // keys; `invalidateDescriptor()` doesn't need to touch this map
+    // because any subsequent descriptor revision is automatically a
+    // cache miss. (PR #369 Copilot review.)
+    return this._descriptorCanonical(descriptor)
+      .withErrorFormat(
+        (msg) => `prompt '${descriptor.id}': failed to canonicalize descriptor for validation cache: ${msg}`
+      )
+      .onSuccess((key) => {
+        if (this._validatedRegistryKeys.has(key)) {
+          return succeed(true as const);
+        }
+        return assertOutputValidationsCompatible<TResponse>(descriptor, this._registry).onSuccess(() => {
+          this._validatedRegistryKeys.add(key);
+          return succeed(true as const);
+        });
+      });
   }
 
   private _renderResolved(

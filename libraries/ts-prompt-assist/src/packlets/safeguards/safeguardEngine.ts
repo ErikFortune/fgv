@@ -82,13 +82,12 @@ export function applySafeguards(
       );
     }
     if (lengthCap !== undefined && value.length > lengthCap) {
-      const finding: ISafeguardFinding = {
-        slot: slot.name,
-        kind: 'max-length',
-        disposition: 'reject',
-        detail: `slot '${slot.name}' exceeds maxLength ${lengthCap} (got ${value.length})`
-      };
-      findings.push(finding);
+      // Design §9 #1 says the max-length finding is "recorded in
+      // trace.safeguardFindings", but a rejected resolve doesn't
+      // return a trace (no `IResolvedPrompt` to attach it to). For
+      // now we surface the finding's content in the fail message; the
+      // design-level gap (rejected-resolve findings vs trace) is
+      // tracked in docs/TECH_DEBT.md (PR #369 Copilot review).
       return fail(
         `prompt '${descriptor.id}': slot '${slot.name}' exceeds maxLength ${lengthCap} (got ${value.length})`
       );
@@ -197,8 +196,13 @@ function screenSlotValue(input: IScreenInput): IScreenOutcome {
   };
 
   if (onSuspicious === 'reject') {
+    // Design §9 #2 says the finding is recorded; in practice the
+    // rejected resolve never returns a trace, so the finding's content
+    // is surfaced in the fail message instead. The design-level
+    // "rejected-resolve findings carried on the trace" gap is tracked
+    // in docs/TECH_DEBT.md (PR #369 Copilot review).
     return {
-      findings: [finding],
+      findings: [],
       rejection: `prompt '${promptId}': slot '${slot.name}' matched suspicious pattern(s): ${matches.join(
         ', '
       )}`

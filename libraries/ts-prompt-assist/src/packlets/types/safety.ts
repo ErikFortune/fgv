@@ -48,9 +48,12 @@ export interface IPromptSafetyPolicy {
   /** Default `'warn'`. */
   readonly onSuspicious?: SuspiciousDisposition;
   /**
-   * Optional pre-render seam: consumer-supplied text injected before the
-   * resolved body. The library ships no default content. Invoked with the
-   * descriptor; consumer returns the per-surface framing.
+   * Optional post-render seam per design §9 #5: consumer-supplied text
+   * prepended (with a newline separator) to the body AFTER Mustache
+   * substitution completes. The library ships no default content.
+   * Invoked with the descriptor; consumer returns the per-surface
+   * framing. The text is NOT subject to template substitution — it
+   * frames the rendered prompt.
    */
   readonly antiJailbreakPreface?: (descriptor: IPromptDescriptor) => Result<string>;
 }

@@ -110,6 +110,19 @@ opportunistically when the right surface area is touched.
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] `ts-prompt-assist` rejected-resolve safeguard findings can't ride the trace.**
+  Design §9 #1/#2 specifies that `max-length` and `suspicious-pattern` findings "are recorded in `trace.safeguardFindings`" even when the resolve rejects. The implementation cannot: a `Result.fail` doesn't return an `IResolvedPrompt`, so there is no trace to attach to. The finding's content is surfaced in the fail message instead, and the local push that would have built up the finding is omitted (PR #369 Copilot review flagged the dead push). The contract is therefore "warn-disposition findings ride the trace; reject-disposition findings ride the fail message."
+
+  **Trigger**: when v0.2 introduces `DetailedFailure`-shaped resolve returns OR when a consumer needs structured access to rejected findings (the agent-chat consumer port might surface this).
+
+  **Scope sketch**: either (a) switch `resolve` to return `DetailedResult<IResolvedPrompt, IRejectedResolveDetail>` where `IRejectedResolveDetail` carries `partialTrace` including findings — additive, doesn't break existing `Result<IResolvedPrompt>` consumers via `.asResult`; or (b) accept the current "fail-message only" contract and amend design §9 to match. Either way is a design-level decision; don't change unilaterally.
+
+  **Not a P4**: the design wording is currently contradicted by the implementation, which is a genuine spec mismatch — not just polish.
+
+  **Reference**: PR #369 Copilot review threads at `safeguardEngine.ts:93` and `safeguardEngine.ts:203`.
+
+
+
 - **[P3] New pure-library packages must declare `"sideEffects": false` in `package.json`.**
   Every `libraries/` package whose `src/index.ts` exports only functions and types (no module-level side effects) carries `"sideEffects": false` so bundlers can tree-shake it. This was caught in PR review on `crypto-batch-2-webauthn`: `@fgv/ts-extras-webauthn` was missing the field; `@fgv/ts-web-extras-webauthn` had it. Fixed in-stream, but the gap reveals a scaffolding-checklist hole — the standard "new package" template doesn't enforce it.
 

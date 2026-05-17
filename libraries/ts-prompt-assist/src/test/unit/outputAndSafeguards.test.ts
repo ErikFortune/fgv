@@ -287,7 +287,7 @@ describe('B-4: output validation pipeline', () => {
       { registry: makeRegistry() }
     );
     const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} });
-    expect(result).toFailWith(/validator 'ghost': validator 'ghost': not registered/);
+    expect(result).toFailWith(/prompt 'p': validator 'ghost': not registered/);
   });
 
   test('loader-side reject: descriptor references unregistered converter id', async () => {
@@ -301,7 +301,7 @@ describe('B-4: output validation pipeline', () => {
       { registry: makeRegistry() }
     );
     const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} });
-    expect(result).toFailWith(/output\.converterId 'no-such': converter 'no-such': not registered/);
+    expect(result).toFailWith(/prompt 'p': converter 'no-such': not registered/);
   });
 
   test('loader-side reject also fires from describe()', async () => {
@@ -395,7 +395,7 @@ describe('B-4: output validation pipeline', () => {
       '{"any":"thing"}'
     );
     expect(result).toFailWith(
-      /validator 'classifier-only': \(appliesTo: classifier\) does not match output kind 'cited'/
+      /validator 'classifier-only' \(appliesTo: classifier\) does not match output kind 'cited'/
     );
   });
 });
