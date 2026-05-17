@@ -52,7 +52,7 @@ import {
   slotBindingConverter
 } from '../../index';
 import { ConverterRegistry, OutputValidationRegistry, SlotKindRegistry } from '../../index';
-import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
 
@@ -1244,9 +1244,41 @@ describe('ts-prompt-assist foundation', () => {
       expect(result).toSucceed();
     });
 
+    test('PromptLibrary.create rejects non-integer / non-positive resourceBindingDepthLimit', async () => {
+      const store = await buildStore({});
+      expect(
+        await PromptLibrary.create({
+          store,
+          qualifiers: TEST_QUALIFIER_COLLECTOR,
+          resourceBindingDepthLimit: 0
+        })
+      ).toFailWith(/expected a positive integer/);
+      expect(
+        await PromptLibrary.create({
+          store,
+          qualifiers: TEST_QUALIFIER_COLLECTOR,
+          resourceBindingDepthLimit: -1
+        })
+      ).toFailWith(/expected a positive integer/);
+      expect(
+        await PromptLibrary.create({
+          store,
+          qualifiers: TEST_QUALIFIER_COLLECTOR,
+          resourceBindingDepthLimit: 2.5
+        })
+      ).toFailWith(/expected a positive integer/);
+      expect(
+        await PromptLibrary.create({
+          store,
+          qualifiers: TEST_QUALIFIER_COLLECTOR,
+          resourceBindingDepthLimit: Number.NaN
+        })
+      ).toFailWith(/expected a positive integer/);
+    });
+
     test('PromptLibrary.create honors explicit logger / resourceBindingDepthLimit / qualifierTypes', async () => {
       const store = await buildStore({});
-      const noOp = new (await import('@fgv/ts-utils')).Logging.NoOpLogger();
+      const noOp = new Logging.NoOpLogger();
       const result = await PromptLibrary.create({
         store,
         qualifiers: TEST_QUALIFIER_COLLECTOR,

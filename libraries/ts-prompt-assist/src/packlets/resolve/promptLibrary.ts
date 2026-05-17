@@ -153,7 +153,21 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   private readonly _qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
   private readonly _builder: ResourceManagerBuilder;
   private readonly _materialized: Map<string, IMaterializedPrompt>;
-  private readonly _hasher: Hash.Crc32Normalizer;
+  /**
+   * Normalizer used to compute RFC 8785 canonical-JSON strings for true
+   * structural equality (vs. CRC32 hash equality, which is not collision-
+   * resistant). Used for descriptor cross-scope equality checks in
+   * `_populateDescriptorCache` and for the materialized-resource cache
+   * key.
+   */
+  private readonly _normalizer: Hash.Crc32Normalizer;
+  /**
+   * Monotonic counter feeding the synthesized ts-res resource id
+   * (`prompt_<n>`). Sequential ids guarantee no collisions across
+   * materialized prompts, so distinct records never share a ts-res
+   * resource.
+   */
+  private _nextSynthIdSerial: number;
   private readonly _cacheListener?: Runtime.IResourceResolverCacheListener;
   /**
    * Per-instance resource-binding depth limit. Exposed as public readonly
@@ -187,7 +201,8 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     this._qualifierTypes = params.qualifierTypes;
     this._builder = params.builder;
     this._materialized = new Map();
-    this._hasher = new Hash.Crc32Normalizer();
+    this._normalizer = new Hash.Crc32Normalizer();
+    this._nextSynthIdSerial = 0;
     this._cacheListener = params.cacheListener;
     this.logger = params.logger;
     this.resourceBindingDepthLimit = params.resourceBindingDepthLimit;
@@ -198,31 +213,32 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     params: IPromptLibraryCreateParams<TResponse>
   ): Promise<Result<PromptLibrary<TResponse>>> {
     return Promise.resolve(
-      buildQualifierCollector(params.qualifiers, params.qualifierTypes).onSuccess((qualifierInfo) =>
-        buildResourceTypes().onSuccess((resourceTypes) =>
-          ResourceManagerBuilder.create({
-            qualifiers: qualifierInfo.qualifiers,
-            resourceTypes
-          })
-            .withErrorFormat((msg) => `prompt library: failed to build ts-res manager: ${msg}`)
-            .onSuccess((builder) =>
-              MustacheTemplateCache.create(params.templateCacheSize).onSuccess((mustacheCache) =>
-                succeed(
-                  new PromptLibrary<TResponse>({
-                    store: params.store,
-                    registry: params.registry,
-                    mustacheCache,
-                    qualifierCollector: qualifierInfo.qualifiers,
-                    qualifierTypes: qualifierInfo.qualifierTypes,
-                    builder,
-                    cacheListener: params.cacheListener,
-                    logger: params.logger ?? new Logging.NoOpLogger(),
-                    resourceBindingDepthLimit:
-                      params.resourceBindingDepthLimit ?? DEFAULT_RESOURCE_BINDING_DEPTH_LIMIT
-                  })
+      validateResourceBindingDepthLimit(params.resourceBindingDepthLimit).onSuccess((depthLimit) =>
+        buildQualifierCollector(params.qualifiers, params.qualifierTypes).onSuccess((qualifierInfo) =>
+          buildResourceTypes().onSuccess((resourceTypes) =>
+            ResourceManagerBuilder.create({
+              qualifiers: qualifierInfo.qualifiers,
+              resourceTypes
+            })
+              .withErrorFormat((msg) => `prompt library: failed to build ts-res manager: ${msg}`)
+              .onSuccess((builder) =>
+                MustacheTemplateCache.create(params.templateCacheSize).onSuccess((mustacheCache) =>
+                  succeed(
+                    new PromptLibrary<TResponse>({
+                      store: params.store,
+                      registry: params.registry,
+                      mustacheCache,
+                      qualifierCollector: qualifierInfo.qualifiers,
+                      qualifierTypes: qualifierInfo.qualifierTypes,
+                      builder,
+                      cacheListener: params.cacheListener,
+                      logger: params.logger ?? new Logging.NoOpLogger(),
+                      resourceBindingDepthLimit: depthLimit
+                    })
+                  )
                 )
               )
-            )
+          )
         )
       )
     );
@@ -313,19 +329,25 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
       return fail(`prompt '${id}': not found in any scope`);
     }
     const first = list[0];
-    return this._hasher
-      .computeHash(first.descriptor)
-      .withErrorFormat((msg) => `prompt '${id}': failed to hash descriptor: ${msg}`)
-      .onSuccess((firstHash) => {
+    // Use RFC 8785 canonical-JSON strings (not CRC32 hashes) for the
+    // cross-scope equality check. CRC32 is not collision-resistant, so
+    // two structurally-different descriptors could share a hash and the
+    // id-only `_descriptorCache` would silently return the wrong
+    // descriptor for one of the scopes. Canonical-JSON comparison is
+    // exact: equal strings ⇔ structurally-equal values.
+    return this._normalizer
+      .canonicalize(first.descriptor)
+      .withErrorFormat((msg) => `prompt '${id}': failed to canonicalize descriptor: ${msg}`)
+      .onSuccess((firstCanonical) => {
         for (let i = 1; i < list.length; i++) {
-          const result = this._hasher
-            .computeHash(list[i].descriptor)
-            .withErrorFormat((msg) => `prompt '${id}': failed to hash descriptor: ${msg}`);
-          /* c8 ignore next 3 - defensive: Crc32Normalizer.computeHash does not fail for any descriptor shape produced by descriptorConverter */
+          const result = this._normalizer
+            .canonicalize(list[i].descriptor)
+            .withErrorFormat((msg) => `prompt '${id}': failed to canonicalize descriptor: ${msg}`);
+          /* c8 ignore next 3 - defensive: canonicalize does not fail for any descriptor shape produced by descriptorConverter */
           if (result.isFailure()) {
             return fail<IPromptDescriptor>(result.message);
           }
-          if (result.value !== firstHash) {
+          if (result.value !== firstCanonical) {
             return fail<IPromptDescriptor>(
               `prompt '${id}': descriptors at scopes '${first.scope}' and '${list[i].scope}' are not structurally equal; descriptor must be identical across all scopes that carry the id`
             );
@@ -337,16 +359,22 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   }
 
   private _materializeIfNeeded(record: IStoredPromptRecord): Result<IMaterializedPrompt> {
-    return this._hasher
-      .computeHash(record.candidates)
-      .withErrorFormat((msg) => `prompt '${record.id}' scope '${record.scope}': hash failed: ${msg}`)
-      .onSuccess((candidateHash) => {
-        const cacheKey = `${record.scope}::${record.id}::${candidateHash}`;
+    // Materialization-cache key uses RFC 8785 canonical-JSON over
+    // (scope, id, candidates). String equality of canonical-JSON is
+    // exact structural equality — no false positives from CRC32
+    // collisions across distinct records. Synth resource ids are
+    // sequential, not content-derived, so distinct records never share
+    // a ts-res resource even when their cache keys happen to share
+    // bytes.
+    return this._normalizer
+      .canonicalize({ scope: record.scope, id: record.id, candidates: record.candidates })
+      .withErrorFormat((msg) => `prompt '${record.id}' scope '${record.scope}': canonicalize failed: ${msg}`)
+      .onSuccess((cacheKey) => {
         const cached = this._materialized.get(cacheKey);
         if (cached !== undefined) {
           return succeed(cached);
         }
-        const synthId = `prompt_${candidateHash}`;
+        const synthId = `prompt_${this._nextSynthIdSerial++}`;
         return this._addCandidatesToBuilder(record, synthId).onSuccess((candidateOriginIndex) =>
           this._builder
             .getBuiltResource(synthId)
@@ -370,15 +398,26 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     record: IStoredPromptRecord,
     synthId: string
   ): Result<ReadonlyMap<ResourceCandidate, number>> {
-    // Two-phase materialization. Phase 1: validate every candidate's
-    // decl shape (synchronous, no builder mutation). Phase 2: commit
-    // the validated decls via `addLooseCandidate`. If any phase-1
-    // validation fails, the long-lived builder is left untouched, so
-    // a malformed record never pollutes future resolves of unrelated
-    // prompts. Phase-2 mid-walk failures are rare — they require an
-    // internal ts-res error after a validated decl — and re-running
-    // materialize is idempotent because `addLooseCandidate` dedupes
-    // candidates by condition-set key.
+    // Two-phase materialization. Phase 1 validates each candidate's
+    // condition-set declaration shape (no builder mutation); phase 2
+    // commits the validated decls via `addLooseCandidate` sequentially
+    // with short-circuit on failure.
+    //
+    // Phase-1 catches malformed condition-set shape, but NOT qualifier-
+    // name-not-registered errors — those surface inside
+    // `addLooseCandidate` during phase 2. A phase-2 failure on
+    // candidate N after candidates 0..N-1 already committed leaves
+    // those earlier candidates in the long-lived builder under the
+    // record's freshly-allocated synthesized id. This does not affect
+    // resolves of OTHER prompts because synthesized ids are sequential
+    // and unique per materialization (no cross-record reuse). Retries
+    // of the same malformed record are idempotent: ts-res dedupes
+    // candidates by condition-set key, so the already-committed
+    // candidates re-resolve via the existing entries and the failing
+    // candidate fails the same way as before. Full builder rollback on
+    // mid-walk failure would require a `removeCandidate` API in ts-res
+    // that v0.1 doesn't expose; the orphan-resource memory cost is
+    // bounded by the (rare) failure rate.
     return mapResults(
       record.candidates.map((candidate, index) => toLooseDecl(candidate, synthId, index))
     ).onSuccess((decls) => this._commitDecls(record, decls));
@@ -502,6 +541,16 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     });
     return ctx;
   }
+}
+
+function validateResourceBindingDepthLimit(value: number | undefined): Result<number> {
+  if (value === undefined) {
+    return succeed(DEFAULT_RESOURCE_BINDING_DEPTH_LIMIT);
+  }
+  if (!Number.isInteger(value) || value < 1) {
+    return fail(`resourceBindingDepthLimit: expected a positive integer (got ${value})`);
+  }
+  return succeed(value);
 }
 
 function buildResourceTypes(): Result<ResourceTypes.ResourceTypeCollector> {

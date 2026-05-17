@@ -87,17 +87,31 @@ const MAX_BRAND_LENGTH: number = 256;
  */
 const MUSTACHE_NAME_RE: RegExp = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-interface IBrandValidationOptions {
-  /** When set, additionally rejects the supplied substring inside the
-   *  candidate (e.g. `::` for `PromptId` to defuse the cache-key
-   *  delimiter collision in `MustacheTemplateCache`). */
+interface IBrandedIdOptions {
+  /** Optional substring the value must NOT contain. Per-brand specific —
+   *  e.g. `PromptId` rejects `'::'` to defuse the `MustacheTemplateCache`
+   *  key-delimiter collision. */
   readonly rejectSubstring?: string;
-  /** When set, the candidate must match this regular expression. Used
-   *  for `SlotName` to enforce the Mustache "name" production. */
-  readonly mustMatch?: RegExp;
+  /** Optional pattern the value must match. Per-brand specific — e.g.
+   *  `SlotName` requires the Mustache "name" production so slot keys
+   *  index a flat render context cleanly. The error message takes the
+   *  shape "&lt;brand&gt;: '&lt;value&gt;' &lt;patternDescription&gt;",
+   *  so describe the constraint inline (e.g. "is not a valid Mustache
+   *  name"). */
+  readonly mustMatch?: { readonly pattern: RegExp; readonly patternDescription: string };
 }
 
-function brandedString<T extends string>(brand: string, options?: IBrandValidationOptions): Converter<T> {
+/**
+ * Builds a `Converter` for one of the branded id types in this library.
+ * All brands share the per-brand hygiene: non-empty, length-capped,
+ * whitespace-trimmed; each brand may layer on additional constraints
+ * (e.g. `SlotName`'s Mustache-name regex; `PromptId`'s no-`::` rule)
+ * via the options bag.
+ *
+ * Not exported — the per-brand `Convert.<brand>` constants are the
+ * public surface.
+ */
+function brandedIdConverter<T extends string>(brand: string, options?: IBrandedIdOptions): Converter<T> {
   return Converters.string.map((from: string): Result<T> => {
     if (from.length === 0) {
       return fail(`${brand}: must be a non-empty string`);
@@ -108,8 +122,8 @@ function brandedString<T extends string>(brand: string, options?: IBrandValidati
     if (from !== from.trim()) {
       return fail(`${brand}: must not have leading or trailing whitespace`);
     }
-    if (options?.mustMatch !== undefined && !options.mustMatch.test(from)) {
-      return fail(`${brand}: '${from}' is not a valid Mustache name (must match ${options.mustMatch})`);
+    if (options?.mustMatch !== undefined && !options.mustMatch.pattern.test(from)) {
+      return fail(`${brand}: '${from}' ${options.mustMatch.patternDescription}`);
     }
     if (options?.rejectSubstring !== undefined && from.includes(options.rejectSubstring)) {
       return fail(`${brand}: '${from}' must not contain '${options.rejectSubstring}'`);
@@ -135,22 +149,27 @@ export const Convert: {
   /** Validates an `unknown` value as a {@link PromptId}. Rejects ids
    *  that contain `::` so the `MustacheTemplateCache` key delimiter is
    *  collision-free. */
-  promptId: brandedString<PromptId>('PromptId', { rejectSubstring: '::' }),
+  promptId: brandedIdConverter<PromptId>('PromptId', { rejectSubstring: '::' }),
   /** Validates an `unknown` value as a {@link SlotName}. Tightens to
    *  the Mustache "name" production (`[A-Za-z_][A-Za-z0-9_]*`) so slot
    *  names are stable Mustache identifiers — `'foo.bar'` would
    *  otherwise be tokenized as a section path. */
-  slotName: brandedString<SlotName>('SlotName', { mustMatch: MUSTACHE_NAME_RE }),
+  slotName: brandedIdConverter<SlotName>('SlotName', {
+    mustMatch: {
+      pattern: MUSTACHE_NAME_RE,
+      patternDescription: `is not a valid Mustache name (must match ${MUSTACHE_NAME_RE})`
+    }
+  }),
   /** Validates an `unknown` value as a {@link ResourceId}. */
-  resourceId: brandedString<ResourceId>('ResourceId'),
+  resourceId: brandedIdConverter<ResourceId>('ResourceId'),
   /** Validates an `unknown` value as a {@link ConverterId}. */
-  converterId: brandedString<ConverterId>('ConverterId'),
+  converterId: brandedIdConverter<ConverterId>('ConverterId'),
   /** Validates an `unknown` value as a {@link SerializerId}. */
-  serializerId: brandedString<SerializerId>('SerializerId'),
+  serializerId: brandedIdConverter<SerializerId>('SerializerId'),
   /** Validates an `unknown` value as a {@link ValidatorId}. */
-  validatorId: brandedString<ValidatorId>('ValidatorId'),
+  validatorId: brandedIdConverter<ValidatorId>('ValidatorId'),
   /** Validates an `unknown` value as an {@link AxisName}. */
-  axisName: brandedString<AxisName>('AxisName'),
+  axisName: brandedIdConverter<AxisName>('AxisName'),
   /** Validates an `unknown` value as a {@link ScopeKey}. */
-  scopeKey: brandedString<ScopeKey>('ScopeKey')
+  scopeKey: brandedIdConverter<ScopeKey>('ScopeKey')
 } as const;
