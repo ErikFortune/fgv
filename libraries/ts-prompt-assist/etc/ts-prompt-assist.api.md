@@ -592,8 +592,6 @@ export const promptFileConverter: Converter<IPromptFileContents>;
 // @public
 export type PromptId = Brand<string, 'PromptId'>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-prompt-assist" does not have an export "ResourceManagerBuilder"
-//
 // @public
 export class PromptLibrary<TResponse extends {
     kind: string;
@@ -608,6 +606,7 @@ export class PromptLibrary<TResponse extends {
     describe(id: PromptId): Promise<Result<IPromptDescriptor>>;
     invalidateDescriptor(id: PromptId): void;
     readonly logger: Logging.ILogger;
+    get materializedCount(): number;
     resolve(req: IPromptResolveRequest): Promise<Result<IResolvedPrompt>>;
     resolveAndValidateOutput<T extends TResponse>(req: IPromptResolveRequest, rawOutput: string): Promise<Result<T>>;
     readonly resourceBindingDepthLimit: number;

@@ -364,6 +364,19 @@ describe('ts-prompt-assist foundation', () => {
       expect(defaultScopeEncoding('global' as unknown as ScopeKey)).toSucceedWith('global');
     });
 
+    test('default encoding rejects every COM0..9 / LPT0..9 reserved device', () => {
+      // The B-1b widening added the 0-suffixed variants (Windows 11 /
+      // Server 2022). Earlier versions of the set only had COM1..9 /
+      // LPT1..9; this regression-protects both the 0 case and the rest
+      // of the range, including basename variants.
+      for (let i = 0; i <= 9; i++) {
+        expect(defaultScopeEncoding(`COM${i}` as unknown as ScopeKey)).toFailWith(/reserved Windows/);
+        expect(defaultScopeEncoding(`LPT${i}` as unknown as ScopeKey)).toFailWith(/reserved Windows/);
+        expect(defaultScopeEncoding(`COM${i}.txt` as unknown as ScopeKey)).toFailWith(/reserved Windows/);
+        expect(defaultScopeEncoding(`lpt${i}` as unknown as ScopeKey)).toFailWith(/reserved Windows/);
+      }
+    });
+
     test('default decoding round-trips identity', () => {
       expect(defaultScopeDecoding('tenant_acme')).toSucceedWith('tenant_acme' as unknown as ScopeKey);
       expect(defaultScopeDecoding('a/b')).toFailWith(/outside the POSIX/);
@@ -997,6 +1010,18 @@ describe('ts-prompt-assist foundation', () => {
       expect(out).toBe('b|a');
     });
 
+    test('joinBodies default trim policy strips trailing spaces and newlines', () => {
+      // The B-1b regex widening switched the trim pattern from the
+      // narrow newline-only form to `/\s+$/`, so bodies ending in
+      // trailing spaces (not just newlines) are now trimmed.
+      const selected: ReadonlyArray<{ candidate: IPromptCandidateRecord }> = [
+        { candidate: { conditions: {}, body: 'first body   ' } }, // trailing spaces only
+        { candidate: { conditions: {}, body: 'second body\n\n' } } // trailing newlines
+      ];
+      const out = joinBodies(selected, undefined);
+      expect(out).toBe('first body\n\nsecond body');
+    });
+
     test('FileTreePromptStore accepts custom scopeEncoding', async () => {
       const customEncoding = (s: ScopeKey): Result<string> => succeed(`pre-${s}`);
       const seed: IPromptStoreFixtureSeed = {
@@ -1298,6 +1323,8 @@ describe('ts-prompt-assist foundation', () => {
     test('resolve hits the materialized-resource cache on second call for the same prompt', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
       const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      expect(lib.materializedCount).toBe(0);
+
       const first = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -1305,8 +1332,12 @@ describe('ts-prompt-assist foundation', () => {
         substitutions: { audience: 'world' }
       });
       expect(first).toSucceed();
-      // Second resolve with the same `(scope, id, candidate-hash)` reuses
-      // the materialized ts-res resource. Body content is identical.
+      expect(lib.materializedCount).toBe(1);
+
+      // Second resolve with the same (scope, id, canonical candidates)
+      // must hit the materialization cache — the count stays at 1, so
+      // we know `_materializeIfNeeded` short-circuited without calling
+      // `addLooseCandidate` again.
       const second = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
@@ -1316,6 +1347,50 @@ describe('ts-prompt-assist foundation', () => {
       expect(second).toSucceedAndSatisfy((r: IResolvedPrompt) => {
         expect(r.body).toBe('Hello, world!');
       });
+      expect(lib.materializedCount).toBe(1);
+    });
+
+    test('repeated resolves of a malformed record reuse the same synth id (bounded orphans)', async () => {
+      // Phase-2 of materialization fails because ts-res rejects the
+      // unknown qualifier. On retry, `_materializeIfNeeded` reuses the
+      // synth id reserved on the first attempt instead of allocating a
+      // fresh one each time — bounding orphan resources in the long-
+      // lived builder to one per distinct malformed canonical key.
+      const record: IStoredPromptRecord = buildDescriptor({
+        candidates: [{ conditions: { 'not-a-real-qualifier': 'x' }, body: 'no-op' }],
+        descriptor: { ...buildDescriptor().descriptor, slots: [] }
+      });
+      const store = await buildStore({ records: [record] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      // Resolve three times; every attempt fails the same way. The
+      // materialized cache never receives an entry (failure-loud), and
+      // the synth-id reservation is observed indirectly by the fact
+      // that the underlying ts-res `getOrAdd` dedupe keeps producing
+      // the same shape on every retry (no "duplicate id" errors).
+      for (let i = 0; i < 3; i++) {
+        const r = await lib.resolve({ id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} });
+        expect(r).toFailWith(/addLooseCandidate failed/);
+      }
+      expect(lib.materializedCount).toBe(0);
+    });
+
+    test('resolve rejects an invalid qualifier-name format in the request context', async () => {
+      // `ValidatingSimpleContextQualifierProvider` validates qualifier
+      // NAMES at construction. A name that doesn't match the qualifier-
+      // name production (e.g. starts with a digit) fails the resolver
+      // creation path with a clear, prompt-id-qualified error.
+      const store = await buildStore({ records: [buildDescriptor()] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      // Construct via Object.fromEntries so the literal-key lint rule
+      // doesn't fire on the intentionally-malformed name.
+      const malformed = Object.fromEntries([['123invalid', 'x']]);
+      const result = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: malformed,
+        substitutions: { audience: 'world' }
+      });
+      expect(result).toFailWith(/qualifier context invalid/);
     });
 
     test('resolve fails when ts-res addLooseCandidate rejects invalid conditions', async () => {

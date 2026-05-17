@@ -34,8 +34,8 @@ import { joinBodies } from './candidateSelector';
 /**
  * ts-res resource type name the library synthesizes for prompt records.
  * Prompts are stored as JSON resources with shape `\{ body: string \}`;
- * the ts-res {@link ResourceTypes.JsonResourceType | JsonResourceType}
- * is appropriate.
+ * the ts-res `JsonResourceType` (from `@fgv/ts-res`'s `ResourceTypes`
+ * namespace) is appropriate.
  */
 const PROMPT_RESOURCE_TYPE_NAME: string = 'json';
 
@@ -135,8 +135,8 @@ interface IMaterializedPrompt {
  * Generic over `TResponse extends \{ kind: string \}` so the JSON output
  * pipeline (B-4) wires up without any cast.
  *
- * Holds one long-lived ts-res {@link ResourceManagerBuilder | ResourceManagerBuilder}
- * for the lifetime of the instance (per design
+ * Holds one long-lived ts-res `ResourceManagerBuilder` (imported from
+ * `@fgv/ts-res`) for the lifetime of the instance (per design
  * §15.5 Option C / §17.1). Prompt records materialize into the builder
  * on first resolve via `addLooseCandidate`; subsequent resolves reuse
  * the cached materialization and ride ts-res's intrinsic O(1)
@@ -153,6 +153,16 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   private readonly _qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
   private readonly _builder: ResourceManagerBuilder;
   private readonly _materialized: Map<string, IMaterializedPrompt>;
+  /**
+   * Synth-resource-id reservations keyed by the same canonical cache
+   * key the `_materialized` map uses. Populated BEFORE the first
+   * materialization attempt for a key and never overwritten on
+   * subsequent retries, so a malformed record that fails mid-walk reuses
+   * the same synth id on every retry. This bounds the orphan-resource
+   * count in the long-lived `_builder` to one per distinct malformed
+   * canonical key, rather than one per retry attempt.
+   */
+  private readonly _synthIdByKey: Map<string, string>;
   /**
    * Normalizer used to compute RFC 8785 canonical-JSON strings for true
    * structural equality (vs. CRC32 hash equality, which is not collision-
@@ -201,6 +211,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     this._qualifierTypes = params.qualifierTypes;
     this._builder = params.builder;
     this._materialized = new Map();
+    this._synthIdByKey = new Map();
     this._normalizer = new Hash.Crc32Normalizer();
     this._nextSynthIdSerial = 0;
     this._cacheListener = params.cacheListener;
@@ -274,6 +285,16 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    */
   public invalidateDescriptor(id: PromptId): void {
     this._descriptorCache.delete(id);
+  }
+
+  /**
+   * Number of prompt records currently materialized into the long-lived
+   * ts-res builder. Mirrors the observability surface ts-res exposes
+   * for its own caches; useful for editor surfaces and tests that need
+   * to verify materialization deduplication is working.
+   */
+  public get materializedCount(): number {
+    return this._materialized.size;
   }
 
   /**
@@ -374,7 +395,18 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
         if (cached !== undefined) {
           return succeed(cached);
         }
-        const synthId = `prompt_${this._nextSynthIdSerial++}`;
+        // Reserve (or reuse) the synth id for this cache key BEFORE
+        // attempting materialization. If the materialization fails
+        // mid-walk and the caller retries, we want the same synth id
+        // both times so ts-res's per-candidate dedup (by condition-set
+        // key) makes retries idempotent. Without the reservation, every
+        // retry would allocate a new id and leave another orphan
+        // resource in the long-lived builder.
+        let synthId = this._synthIdByKey.get(cacheKey);
+        if (synthId === undefined) {
+          synthId = `prompt_${this._nextSynthIdSerial++}`;
+          this._synthIdByKey.set(cacheKey, synthId);
+        }
         return this._addCandidatesToBuilder(record, synthId).onSuccess((candidateOriginIndex) =>
           this._builder
             .getBuiltResource(synthId)
