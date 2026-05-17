@@ -91,41 +91,55 @@ export function assertOutputValidationsCompatible<TResponse extends { kind: stri
 /**
  * Runs the locked design §8 output validation pipeline for a `'json'`
  * descriptor: fence-strip via {@link AiAssist.extractJsonText} →
- * `JSON.parse` → registered Converter (kind-verified via the no-kind
- * overload — `T extends TResponse` flows from the caller's type
- * parameter) → `outputValidations[]` chain (each validator's `appliesTo`
- * narrows by `value.kind` at runtime per §17.2.4).
+ * `JSON.parse` → registered Converter (looked up cast-free via
+ * `getKind → get(id, kind)` against the distributed-discriminated-union
+ * entry storage per §17.2.5) → `outputValidations[]` chain (each
+ * validator's `appliesTo` narrows by `value.kind` at runtime per §17.2.4).
+ *
+ * @remarks
+ * The pipeline flows `TResponse` (the consumer's response union) intact;
+ * no caller-asserted `T` enters here. The outer public API
+ * (`resolveAndValidateOutput<T>`) is the one boundary where the caller's
+ * narrower `T` re-enters the type system, accompanied by the runtime
+ * suspenders in {@link runOneValidator}.
  *
  * @internal
  */
-export function runOutputValidationPipeline<TResponse extends { kind: string }, T extends TResponse>(params: {
+export function runOutputValidationPipeline<TResponse extends { kind: string }>(params: {
   readonly descriptor: IPromptDescriptor;
   readonly contract: IJsonOutputContract;
   readonly registry: IPromptRegistry<TResponse>;
   readonly rawOutput: string;
   readonly substitutions: ReadonlyMap<SlotName, IBindingTraceEntry>;
-}): Result<T> {
+}): Result<TResponse> {
   const { descriptor, contract, registry, rawOutput, substitutions } = params;
 
   return registry.converters
-    .get<T>(contract.converterId)
+    .getKind(contract.converterId)
     .withErrorFormat(
       (msg) => `prompt '${descriptor.id}': output.converterId '${contract.converterId}': ${msg}`
     )
+    .onSuccess((kind) =>
+      registry.converters
+        .get(contract.converterId, kind)
+        .withErrorFormat(
+          (msg) => `prompt '${descriptor.id}': output.converterId '${contract.converterId}': ${msg}`
+        )
+    )
     .onSuccess((converter) =>
-      AiAssist.fencedStringifiedJson<T>({ inner: converter })
+      AiAssist.fencedStringifiedJson({ inner: converter })
         .convert(rawOutput)
         .withErrorFormat((msg) => formatPipelineError(descriptor.id, rawOutput, msg))
     )
     .onSuccess((value) => runValidatorChain(descriptor, registry, value, substitutions));
 }
 
-function runValidatorChain<TResponse extends { kind: string }, T extends TResponse>(
+function runValidatorChain<TResponse extends { kind: string }>(
   descriptor: IPromptDescriptor,
   registry: IPromptRegistry<TResponse>,
-  value: T,
+  value: TResponse,
   substitutions: ReadonlyMap<SlotName, IBindingTraceEntry>
-): Result<T> {
+): Result<TResponse> {
   const ids = descriptor.outputValidations ?? [];
   if (ids.length === 0) {
     return succeed(value);
@@ -135,15 +149,15 @@ function runValidatorChain<TResponse extends { kind: string }, T extends TRespon
     runOneValidator(descriptor.id, registry, id, value, substitutions).aggregateError(aggregator);
   }
   return aggregator.hasMessages
-    ? fail<T>(`prompt '${descriptor.id}': output validation failed: ${aggregator.toString('; ')}`)
+    ? fail<TResponse>(`prompt '${descriptor.id}': output validation failed: ${aggregator.toString('; ')}`)
     : succeed(value);
 }
 
-function runOneValidator<TResponse extends { kind: string }, T extends TResponse>(
+function runOneValidator<TResponse extends { kind: string }>(
   promptId: PromptId,
   registry: IPromptRegistry<TResponse>,
   id: ValidatorId,
-  value: T,
+  value: TResponse,
   substitutions: ReadonlyMap<SlotName, IBindingTraceEntry>
 ): Result<true> {
   // The registry's `get` failure already names the validator id

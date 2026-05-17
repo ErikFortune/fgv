@@ -2112,17 +2112,32 @@ case" defensive coding.
 The loader-side check (§17.2.4) requires `registry.converters` to
 expose the response kind for each `ConverterId`. The library cannot
 inspect a `Converter<T>`'s `T` reflectively at runtime (TypeScript
-types are erased). The registry therefore tracks the registered kind
-alongside each Converter:
+types are erased). The registry tracks the registered kind alongside
+each Converter, and uses that kind as the *primary key* of both
+register and get so the Converter type travels intact end-to-end
+without a `Converter<TResponse> -> Converter<T>` cast:
 
 ```ts
 export interface IPromptConverterRegistry<TResponse extends { kind: string }> {
-  /** Register a Converter that produces a specific TResponse member.
-   *  The `kind` parameter is the discriminator value the Converter is
-   *  guaranteed to emit. The chain runtime asserts this at first
-   *  invocation per descriptor (catches register-time lies). */
-  register<T extends TResponse>(id: ConverterId, kind: T['kind'], converter: Converter<T>): Result<ConverterId>;
-  get<T extends TResponse = TResponse>(id: ConverterId): Result<Converter<T>>;
+  /** Register a Converter that produces the `TResponse` member discriminated
+   *  by `kind`. The Converter's T is derived from `K` — no caller-asserted
+   *  generic; storage uses a distributed discriminated union over `TResponse`
+   *  so the (kind, converter) pair travels together. */
+  register<K extends TResponse['kind']>(
+    id: ConverterId,
+    kind: K,
+    converter: Converter<Extract<TResponse, { kind: K }>>
+  ): Result<ConverterId>;
+
+  /** Retrieve a registered Converter, narrowed by kind. Return type is
+   *  `Converter<Extract<TResponse, { kind: K }>>` directly — cast-free
+   *  in callers. Fails if no Converter is registered under `id`, or if
+   *  the registered Converter's recorded kind doesn't equal `kind`. */
+  get<K extends TResponse['kind']>(
+    id: ConverterId,
+    kind: K
+  ): Result<Converter<Extract<TResponse, { kind: K }>>>;
+
   /** Returns the declared response kind for a registered Converter. */
   getKind(id: ConverterId): Result<TResponse['kind']>;
   has(id: ConverterId): boolean;
@@ -2131,6 +2146,13 @@ export interface IPromptConverterRegistry<TResponse extends { kind: string }> {
 
 `getKind(id)` is what the descriptor Converter (loader) calls when
 validating `outputValidations[]` entries against `output.converterId`.
+The output validation pipeline chains `getKind(id).onSuccess(kind =>
+get(id, kind))` so the Converter's narrow `T` is established by
+runtime kind dispatch rather than caller assertion. The single
+caller-asserted-`T` boundary in the library is the public
+`resolveAndValidateOutput<T>(req, rawOutput)` method, where the
+pipeline-returned `TResponse` is narrowed to the caller's `T`
+backed by the §17.2.4 belt + suspenders.
 
 #### 17.2.6 `'free-text'` interaction
 

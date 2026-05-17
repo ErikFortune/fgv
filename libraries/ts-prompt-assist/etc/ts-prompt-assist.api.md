@@ -71,15 +71,17 @@ export class ConverterRegistry<TResponse extends {
         kind: string;
     }>(): Result<ConverterRegistry<TResponse>>;
     // (undocumented)
-    get<T extends TResponse = TResponse>(id: ConverterId): Result<Converter<T>>;
-    // (undocumented)
-    get<T extends TResponse>(id: ConverterId, kind: T['kind']): Result<Converter<T>>;
+    get<K extends TResponse['kind']>(id: ConverterId, kind: K): Result<Converter<Extract<TResponse, {
+        kind: K;
+    }>>>;
     // (undocumented)
     getKind(id: ConverterId): Result<TResponse['kind']>;
     // (undocumented)
     has(id: ConverterId): boolean;
     // (undocumented)
-    register<T extends TResponse>(id: ConverterId, kind: T['kind'], converter: Converter<T>): Result<ConverterId>;
+    register<K extends TResponse['kind']>(id: ConverterId, kind: K, converter: Converter<Extract<TResponse, {
+        kind: K;
+    }>>): Result<ConverterId>;
 }
 
 // @public
@@ -228,11 +230,14 @@ export interface IPromptCandidateRecord {
 export interface IPromptConverterRegistry<TResponse extends {
     kind: string;
 }> {
-    get<T extends TResponse = TResponse>(id: ConverterId): Result<Converter<T>>;
-    get<T extends TResponse>(id: ConverterId, kind: T['kind']): Result<Converter<T>>;
+    get<K extends TResponse['kind']>(id: ConverterId, kind: K): Result<Converter<Extract<TResponse, {
+        kind: K;
+    }>>>;
     getKind(id: ConverterId): Result<TResponse['kind']>;
     has(id: ConverterId): boolean;
-    register<T extends TResponse>(id: ConverterId, kind: T['kind'], converter: Converter<T>): Result<ConverterId>;
+    register<K extends TResponse['kind']>(id: ConverterId, kind: K, converter: Converter<Extract<TResponse, {
+        kind: K;
+    }>>): Result<ConverterId>;
 }
 
 // @public

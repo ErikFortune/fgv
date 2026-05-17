@@ -481,12 +481,25 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
           `prompt '${req.id}': output.kind 'json' requires a registry; none supplied to PromptLibrary.create`
         );
       }
-      return runOutputValidationPipeline<TResponse, T>({
+      return runOutputValidationPipeline<TResponse>({
         descriptor: resolved.descriptor,
         contract: output,
         registry: this._registry,
         rawOutput,
         substitutions: resolved.trace.mergedBindings
+      }).onSuccess((value) => {
+        // Caller-asserted-T boundary (the only one in this library):
+        // the pipeline flows `TResponse` (the consumer's response union)
+        // intact, so this narrows the wide union to the caller's
+        // declared `T extends TResponse`. Runtime evidence: the
+        // loader-side belt (`_validateAgainstRegistry`) verified at
+        // descriptor load that the descriptor's `outputValidations[]`
+        // are `appliesTo`-compatible with the recorded converter kind;
+        // each validator that actually ran then re-checked `value.kind`
+        // against its `appliesTo` per §17.2.4 suspenders, so any
+        // value reaching this branch is structurally compatible with
+        // what the caller declared.
+        return succeed(value as T);
       });
     });
   }
