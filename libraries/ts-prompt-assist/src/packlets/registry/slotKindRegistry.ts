@@ -22,6 +22,7 @@ export class SlotKindRegistry implements IPromptSlotKindRegistry {
     return succeed(new SlotKindRegistry());
   }
 
+  /** {@inheritDoc IPromptSlotKindRegistry.register} */
   public register(kind: string, serializer: ISlotSerializer): Result<string> {
     if (kind.length === 0) {
       return fail('slot kind: must be a non-empty string');
@@ -33,6 +34,7 @@ export class SlotKindRegistry implements IPromptSlotKindRegistry {
     return succeed(kind);
   }
 
+  /** {@inheritDoc IPromptSlotKindRegistry.get} */
   public get(kind: string): Result<ISlotSerializer> {
     const serializer = this._entries.get(kind);
     if (serializer === undefined) {
@@ -41,6 +43,7 @@ export class SlotKindRegistry implements IPromptSlotKindRegistry {
     return succeed(serializer);
   }
 
+  /** {@inheritDoc IPromptSlotKindRegistry.has} */
   public has(kind: string): boolean {
     return this._entries.has(kind);
   }

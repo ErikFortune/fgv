@@ -48,6 +48,7 @@ export class ConverterRegistry<TResponse extends { kind: string }>
     return succeed(new ConverterRegistry<TResponse>());
   }
 
+  /** {@inheritDoc IPromptConverterRegistry.register} */
   public register<K extends TResponse['kind']>(
     id: ConverterId,
     kind: K,
@@ -67,6 +68,7 @@ export class ConverterRegistry<TResponse extends { kind: string }>
     return succeed(id);
   }
 
+  /** {@inheritDoc IPromptConverterRegistry.get} */
   public get<K extends TResponse['kind']>(
     id: ConverterId,
     kind: K
@@ -92,6 +94,7 @@ export class ConverterRegistry<TResponse extends { kind: string }>
     return succeed(entry.converter as Converter<Extract<TResponse, { kind: K }>>);
   }
 
+  /** {@inheritDoc IPromptConverterRegistry.getKind} */
   public getKind(id: ConverterId): Result<TResponse['kind']> {
     const entry = this._entries.get(id);
     if (entry === undefined) {
@@ -100,6 +103,7 @@ export class ConverterRegistry<TResponse extends { kind: string }>
     return succeed(entry.kind);
   }
 
+  /** {@inheritDoc IPromptConverterRegistry.has} */
   public has(id: ConverterId): boolean {
     return this._entries.has(id);
   }

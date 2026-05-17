@@ -25,6 +25,7 @@ export class OutputValidationRegistry<TResponse extends { kind: string }>
     return succeed(new OutputValidationRegistry<TResponse>());
   }
 
+  /** {@inheritDoc IPromptOutputValidationRegistry.register} */
   public register(id: ValidatorId, validator: IPromptOutputValidator<TResponse>): Result<ValidatorId> {
     if (this._entries.has(id)) {
       return fail(`validator '${id}': already registered`);
@@ -33,6 +34,7 @@ export class OutputValidationRegistry<TResponse extends { kind: string }>
     return succeed(id);
   }
 
+  /** {@inheritDoc IPromptOutputValidationRegistry.get} */
   public get(id: ValidatorId): Result<IPromptOutputValidator<TResponse>> {
     const v = this._entries.get(id);
     if (v === undefined) {
@@ -41,6 +43,7 @@ export class OutputValidationRegistry<TResponse extends { kind: string }>
     return succeed(v);
   }
 
+  /** {@inheritDoc IPromptOutputValidationRegistry.has} */
   public has(id: ValidatorId): boolean {
     return this._entries.has(id);
   }

@@ -70,15 +70,11 @@ export class ConverterRegistry<TResponse extends {
     static create<TResponse extends {
         kind: string;
     }>(): Result<ConverterRegistry<TResponse>>;
-    // (undocumented)
     get<K extends TResponse['kind']>(id: ConverterId, kind: K): Result<Converter<Extract<TResponse, {
         kind: K;
     }>>>;
-    // (undocumented)
     getKind(id: ConverterId): Result<TResponse['kind']>;
-    // (undocumented)
     has(id: ConverterId): boolean;
-    // (undocumented)
     register<K extends TResponse['kind']>(id: ConverterId, kind: K, converter: Converter<Extract<TResponse, {
         kind: K;
     }>>): Result<ConverterId>;
@@ -106,13 +102,9 @@ export const EnumConvert: {
 // @public
 export class FileTreePromptStore implements IPromptStore {
     static create(params: IFileTreePromptStoreCreateParams): Promise<Result<FileTreePromptStore>>;
-    // (undocumented)
     get(scope: ScopeKey, id: PromptId): Promise<Result<IStoredPromptRecord | undefined>>;
-    // (undocumented)
     getBindings(scope: ScopeKey): Promise<Result<IScopeSlotBindingsRecord | undefined>>;
-    // (undocumented)
     getQualifierConfig(): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>>;
-    // (undocumented)
     list(filter?: IPromptStoreListFilter): Promise<Result<ReadonlyArray<IStoredPromptRecord>>>;
 }
 
@@ -128,15 +120,12 @@ export interface IBindingMergeResult {
 
 // @public
 export interface IBindingsFileContents {
-    // (undocumented)
     readonly bindings: ReadonlyMap<SlotName, SlotBinding>;
 }
 
 // @public
 export interface IBindingTraceEntry {
-    // (undocumented)
     readonly directive: SlotDirective;
-    // (undocumented)
     readonly source: BindingTraceSource;
     readonly value: string;
     readonly wasEnforced: boolean;
@@ -147,7 +136,6 @@ export interface IBindingTraceEntry {
 export interface ICandidateMatchTraceEntry {
     readonly candidateIndex: number;
     readonly conditions: ReadonlyArray<Runtime.IConditionMatchResult>;
-    // (undocumented)
     readonly matchType: 'match' | 'matchAsDefault';
 }
 
@@ -242,28 +230,17 @@ export interface IPromptConverterRegistry<TResponse extends {
 
 // @public
 export interface IPromptDescriptor {
-    // (undocumented)
     readonly description?: string;
-    // (undocumented)
     readonly examples?: ReadonlyArray<IPromptExampleSet>;
-    // (undocumented)
     readonly id: PromptId;
-    // (undocumented)
     readonly join?: IPromptJoinPolicy;
-    // (undocumented)
     readonly output: PromptOutputContract;
-    // (undocumented)
     readonly outputValidations?: ReadonlyArray<ValidatorId>;
-    // (undocumented)
     readonly qualifiers?: IPromptQualifierMetadata;
-    // (undocumented)
     readonly safeguards?: IPromptSafeguardOverrides;
-    // (undocumented)
     readonly schemaVersion: '1';
-    // (undocumented)
     readonly slots: ReadonlyArray<IPromptSlot>;
     readonly surface: string;
-    // (undocumented)
     readonly title: string;
 }
 
@@ -311,7 +288,6 @@ export interface IPromptLibraryCreateParams<TResponse extends {
     readonly registry?: IPromptRegistry<TResponse>;
     readonly resourceBindingDepthLimit?: number;
     readonly safetyPolicy?: IPromptSafetyPolicy;
-    // (undocumented)
     readonly store: IPromptStore;
     readonly templateCacheSize?: number;
 }
@@ -320,11 +296,8 @@ export interface IPromptLibraryCreateParams<TResponse extends {
 export interface IPromptOutputValidationRegistry<TResponse extends {
     kind: string;
 }> {
-    // (undocumented)
     get(id: ValidatorId): Result<IPromptOutputValidator<TResponse>>;
-    // (undocumented)
     has(id: ValidatorId): boolean;
-    // (undocumented)
     register(id: ValidatorId, validator: IPromptOutputValidator<TResponse>): Result<ValidatorId>;
 }
 
@@ -363,27 +336,18 @@ export interface IPromptRegistry<TResponse extends {
 // @public
 export interface IPromptResolveRequest {
     readonly chain: ReadonlyArray<ScopeKey>;
-    // (undocumented)
     readonly id: PromptId;
-    // (undocumented)
     readonly qualifiers: IQualifierContext;
-    // (undocumented)
     readonly substitutions?: PromptSubstitutions;
 }
 
 // @public
 export interface IPromptResolveTrace {
-    // (undocumented)
     readonly candidateMatches: ReadonlyArray<ICandidateMatchTraceEntry>;
-    // (undocumented)
     readonly mergedBindings: ReadonlyMap<SlotName, IBindingTraceEntry>;
-    // (undocumented)
     readonly resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>;
-    // (undocumented)
     readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
-    // (undocumented)
     readonly scopesConsulted: ReadonlyArray<ScopeKey>;
-    // (undocumented)
     readonly winningScope: ScopeKey;
 }
 
@@ -425,30 +389,20 @@ export interface IPromptSlot {
 
 // @public
 export interface IPromptSlotKindRegistry {
-    // (undocumented)
     get(kind: string): Result<ISlotSerializer>;
-    // (undocumented)
     has(kind: string): boolean;
-    // (undocumented)
     register(kind: string, serializer: ISlotSerializer): Result<string>;
 }
 
 // @public
 export interface IPromptStore {
-    // (undocumented)
     delete?(scope: ScopeKey, id: PromptId): Promise<Result<PromptId>>;
-    // (undocumented)
     get(scope: ScopeKey, id: PromptId): Promise<Result<IStoredPromptRecord | undefined>>;
-    // (undocumented)
     getBindings(scope: ScopeKey): Promise<Result<IScopeSlotBindingsRecord | undefined>>;
     getQualifierConfig(): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>>;
-    // (undocumented)
     list(filter?: IPromptStoreListFilter): Promise<Result<ReadonlyArray<IStoredPromptRecord>>>;
-    // (undocumented)
     put?(record: IStoredPromptRecord): Promise<Result<IStoredPromptRecord>>;
-    // (undocumented)
     putBindings?(record: IScopeSlotBindingsRecord): Promise<Result<IScopeSlotBindingsRecord>>;
-    // (undocumented)
     watch?(handler: (event: IPromptStoreEvent) => void): IDisposable;
 }
 
@@ -474,9 +428,7 @@ export interface IPromptStoreFixtureSeed {
 
 // @public
 export interface IPromptStoreListFilter {
-    // (undocumented)
     readonly id?: PromptId;
-    // (undocumented)
     readonly scope?: ScopeKey;
 }
 
@@ -491,27 +443,18 @@ export interface IQualifiersFileContents {
 
 // @public
 export interface IResolvedPrompt {
-    // (undocumented)
     readonly body: string;
-    // (undocumented)
     readonly descriptor: IPromptDescriptor;
-    // (undocumented)
     readonly id: PromptId;
-    // (undocumented)
     readonly trace: IPromptResolveTrace;
 }
 
 // @public
 export interface IResourceBindingTraceEntry {
-    // (undocumented)
     readonly depth: number;
-    // (undocumented)
     readonly innerTrace: IPromptResolveTrace;
-    // (undocumented)
     readonly resourceId: ResourceId;
-    // (undocumented)
     readonly slot: SlotName;
-    // (undocumented)
     readonly substitutionMode: ResourceSubstitutionMode;
 }
 
@@ -601,11 +544,8 @@ export class OutputValidationRegistry<TResponse extends {
     static create<TResponse extends {
         kind: string;
     }>(): Result<OutputValidationRegistry<TResponse>>;
-    // (undocumented)
     get(id: ValidatorId): Result<IPromptOutputValidator<TResponse>>;
-    // (undocumented)
     has(id: ValidatorId): boolean;
-    // (undocumented)
     register(id: ValidatorId, validator: IPromptOutputValidator<TResponse>): Result<ValidatorId>;
 }
 
@@ -710,11 +650,8 @@ export type SlotDirective = 'constraint' | 'hint' | 'prose';
 // @public
 export class SlotKindRegistry implements IPromptSlotKindRegistry {
     static create(): Result<SlotKindRegistry>;
-    // (undocumented)
     get(kind: string): Result<ISlotSerializer>;
-    // (undocumented)
     has(kind: string): boolean;
-    // (undocumented)
     register(kind: string, serializer: ISlotSerializer): Result<string>;
 }
 

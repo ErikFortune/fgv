@@ -38,21 +38,48 @@ export interface IPromptSafeguardOverrides {
 
 /**
  * Locked prompt descriptor shape (design §3.9).
+ *
+ * @remarks
+ * One descriptor per prompt id. The same id may appear in multiple scopes; the
+ * library enforces cross-scope structural equality on `describe()` so a
+ * descriptor revision in one scope cannot mask a different revision in
+ * another. Descriptor identity travels with `id`; per-scope variation lives
+ * in {@link IStoredPromptRecord.candidates} (qualifier-conditional bodies)
+ * and in scope-level {@link IScopeSlotBindingsRecord} files.
+ *
  * @public
  */
 export interface IPromptDescriptor {
+  /** Branded prompt id. Must equal the filename stem in disk-backed stores. */
   readonly id: PromptId;
+  /** Human-readable title surfaced to authoring tools. */
   readonly title: string;
+  /** Optional longer-form description for editor surfaces. */
   readonly description?: string;
+  /** Schema version. Only `'1'` is supported in v0.1. */
   readonly schemaVersion: '1';
   /** Open string narrowed by the consumer's descriptor Converter. */
   readonly surface: string;
+  /** Optional ts-res qualifier-axis hints (required / expected / disallowed). */
   readonly qualifiers?: IPromptQualifierMetadata;
+  /** Slot declarations. Each slot is referenced by `\{\{\{name\}\}\}` in candidate bodies. */
   readonly slots: ReadonlyArray<IPromptSlot>;
+  /** Output contract — `'free-text'` or `'json'` (with a registered Converter). */
   readonly output: PromptOutputContract;
+  /** Optional join policy for partial-candidate fragments. */
   readonly join?: IPromptJoinPolicy;
+  /** Optional per-descriptor safeguard overrides. */
   readonly safeguards?: IPromptSafeguardOverrides;
+  /** Optional example pairs grouped by qualifier-condition scope. */
   readonly examples?: ReadonlyArray<IPromptExampleSet>;
+  /**
+   * Ordered list of validator ids run by `resolveAndValidateOutput` after the
+   * `output.converterId` converts the raw response. Validators must be
+   * registered in the library's {@link IPromptRegistry} and their `appliesTo`
+   * must include the response kind produced by `output.converterId`'s
+   * Converter; the loader rejects descriptors that violate this contract.
+   * Only valid when `output.kind === 'json'`.
+   */
   readonly outputValidations?: ReadonlyArray<ValidatorId>;
 }
 
