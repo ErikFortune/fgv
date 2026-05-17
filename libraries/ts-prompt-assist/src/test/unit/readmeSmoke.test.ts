@@ -1,18 +1,25 @@
 // Copyright (c) 2026 Erik Fortune
 // SPDX-License-Identifier: MIT
 
-// Smoke tests that execute the README's four in-memory code samples
-// verbatim (in-memory quick start, typed JSON output, resource bindings,
-// safety policy). The on-disk YAML quick-start in the README depends on
-// `FileTree.forFilesystem()` and is covered separately by
-// `store.test.ts`. The intent is not coverage (the foundation +
-// resource-binding + output suites already drive the public surface
-// end-to-end) — it is to guarantee that the in-memory snippets remain
-// paste-and-run. If any snippet drifts from the shipped API, this file
-// fails to compile or to resolve, surfacing the drift before a consumer
+// Smoke tests that execute every README quick-start verbatim:
+//   - in-memory PromptStoreFixture (test #1)
+//   - typed JSON output validation (test #2)
+//   - resource bindings (test #3)
+//   - safety policy (test #4)
+//   - on-disk FileTreePromptStore (test #5) — exercises
+//     `FileTree.forFilesystem()` + `PromptLibrary.create` + `resolve`
+//     against the fixture under `data/test/ts-prompt-assist/basic/`.
+// The intent is not coverage (the foundation + resource-binding +
+// output suites already drive the public surface end-to-end) — it
+// is to guarantee that every README quick-start remains paste-and-run.
+// If any snippet drifts from the shipped API, this file fails to
+// compile or to resolve, surfacing the drift before a consumer
 // reading the README hits it.
 
 import '@fgv/ts-utils-jest';
+import * as path from 'path';
+import { FileTree } from '@fgv/ts-json-base';
+import { FileTreePromptStore } from '../../index';
 import {
   ConverterId,
   IOutputValidationContext,
@@ -306,5 +313,40 @@ describe('README smoke tests', () => {
     const suspicious = resolved.trace.safeguardFindings.find((f) => f.kind === 'suspicious-pattern');
     expect(suspicious).toBeDefined();
     expect(suspicious?.disposition).toBe('warn');
+  });
+
+  test('quick start — on-disk FileTreePromptStore', async () => {
+    // Mirrors the README's on-disk YAML quick-start verbatim, against
+    // the on-disk fixture under data/test/ts-prompt-assist/basic/
+    // (which already contains _qualifiers.yaml, global/greeting.yaml,
+    // and global/_bindings.yaml in the exact shape the README documents).
+    const FIXTURE_ROOT = path.resolve(__dirname, '../../../../../data/test/ts-prompt-assist/basic');
+
+    const tree = FileTree.forFilesystem().orThrow();
+    const root = tree.getDirectory(FIXTURE_ROOT).orThrow();
+    const store = (await FileTreePromptStore.create({ root })).orThrow();
+
+    // The README's `_qualifiers.yaml` declares `name: lang, typeName: lang`,
+    // matching the LiteralQualifierType the wiring code constructs below.
+    const qualifierTypes = QualifierTypes.QualifierTypeCollector.create({
+      qualifierTypes: [QualifierTypes.LiteralQualifierType.create({ name: 'lang' }).orThrow()]
+    }).orThrow();
+    const qualifiers = Qualifiers.QualifierCollector.create({
+      qualifierTypes,
+      qualifiers: [{ name: 'lang', typeName: 'lang', defaultPriority: 1000 }]
+    }).orThrow();
+
+    const library = (await PromptLibrary.create({ store, qualifiers })).orThrow();
+
+    const resolved = (
+      await library.resolve({
+        id: 'greeting' as unknown as PromptId,
+        chain: ['global' as unknown as ScopeKey],
+        qualifiers: {}
+        // No `substitutions` — the scope-level `_bindings.yaml`
+        // supplies `audience: 'world'`.
+      })
+    ).orThrow();
+    expect(resolved.body).toBe('Hello, world!');
   });
 });

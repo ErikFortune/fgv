@@ -246,7 +246,8 @@ falls back to `global/<id>.yaml`; scope-level bindings merge cross-scope
 When a descriptor's `output.kind` is `'json'`, the library can run the LLM
 response through a registered `Converter<T>` plus a chain of validators.
 The registry is parameterized by the consumer's response union, so the
-returned value is typed end-to-end with no cast at the call site.
+caller never needs to cast — the public generic `T` is a caller
+assertion (see "Two patterns avoid the wrong-member trap" below).
 
 ```typescript
 import {
@@ -352,37 +353,57 @@ const library = (
 // `AiAssist.extractJsonText` from `@fgv/ts-extras`).
 const rawOutput = '```json\n{"kind":"cited","answer":"42","citedIds":["a"]}\n```';
 
+// Caller binds T to a specific union member when the descriptor's
+// converter id is known to produce that shape. The library does not
+// runtime-check `T` against the descriptor's converter, so this is a
+// caller assertion — get it right and you get a typed `ICitedResponse`
+// in hand:
 const validated = (
   await library.resolveAndValidateOutput<ICitedResponse>(
     { id: PROMPT, chain: [SCOPE], qualifiers: {} },
     rawOutput
   )
 ).orThrow();
+console.log(validated.answer); // → "42"
+console.log(validated.citedIds); // → ["a"]
 
-// `validated` is typed as `ICitedResponse`. The library does not bind `T`
-// to the descriptor's converter id at compile time — narrow on
-// `validated.kind` if the prompt could legitimately resolve to a
-// different union member:
-if (validated.kind === 'cited') {
-  console.log(validated.answer); // → "42"
-  console.log(validated.citedIds); // → ["a"]
+// If the prompt could legitimately resolve to MORE than one response
+// shape (e.g. a generic "ask anything" prompt whose descriptor's
+// converter produces the full `Responses` union), omit the narrow type
+// argument so `T` defaults to `TResponse` and narrow on `value.kind`
+// AFTER the resolve:
+const eitherShape = (
+  await library.resolveAndValidateOutput(
+    { id: PROMPT, chain: [SCOPE], qualifiers: {} },
+    rawOutput
+  )
+).orThrow();
+if (eitherShape.kind === 'cited') {
+  // TypeScript narrows to ICitedResponse here.
+  console.log(eitherShape.answer);
+} else {
+  console.log(eitherShape.label);
 }
 ```
 
 Inside the chain, the `Converter`'s `T` flows through the registry by
-`(kind, converter)` pair without a cast — the chain runner narrows on
-`value.kind` before invoking each validator. Loader-side checks
-(invoked from `describe()` and `resolve()`) reject descriptors whose
-`outputValidations` reference validators that don't apply to the
-declared response kind; the runtime path re-checks `value.kind` against
-each validator's `appliesTo` as a safety net. The public generic
-`T extends TResponse` on `resolveAndValidateOutput<T>` is a caller
-assertion narrowing the pipeline's `TResponse` to a specific union
-member — the belt + suspenders constrain it structurally but do not
-bind it to the descriptor's converter id, so a caller can request
-`<IClassifierResponse>` for a descriptor whose converter produces
-`ICitedResponse`. Discriminate on `value.kind` (as above) when that
-matters.
+`(kind, converter)` pair — no caller-side cast required there, and the
+chain runner narrows on `value.kind` before invoking each validator.
+Loader-side checks (invoked from `describe()` and `resolve()`) reject
+descriptors whose `outputValidations` reference validators that don't
+apply to the declared response kind; the runtime path re-checks
+`value.kind` against each validator's `appliesTo` as a safety net. The
+public generic `T extends TResponse` on `resolveAndValidateOutput<T>`
+is a **caller assertion** — the belt + suspenders constrain it
+structurally but do not bind it to the descriptor's converter id, so
+nothing stops a caller from requesting `<IClassifierResponse>` for a
+descriptor whose converter produces `ICitedResponse`. (Inside the
+library, narrowing the registry result to the caller's `T` uses a
+localized cast at the public boundary — documented in the implementation,
+not user-visible.) Two patterns avoid the wrong-member trap: bind `T`
+when you know the converter id's produced shape, OR omit the type
+argument so `T` defaults to `TResponse` and discriminate on
+`value.kind` after the resolve.
 
 ---
 
