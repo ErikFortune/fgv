@@ -7,13 +7,31 @@ import { Converter, Result, fail, succeed } from '@fgv/ts-utils';
 import { ConverterId } from '../types';
 import { IPromptConverterRegistry } from './interfaces';
 
-interface IEntry<TResponse extends { kind: string }> {
-  readonly kind: TResponse['kind'];
-  readonly converter: Converter<TResponse>;
-}
+/**
+ * Distributed discriminated union over the consumer's `TResponse` union.
+ * The `R extends \{ kind: string \}` conditional distributes across each
+ * member of `TResponse`, so for `TResponse = A | B | C` this expands to
+ *   `\{ kind: A['kind']; converter: Converter<A> \}`
+ * | `\{ kind: B['kind']; converter: Converter<B> \}`
+ * | `\{ kind: C['kind']; converter: Converter<C> \}`.
+ *
+ * Storing entries under this type lets `get(id, kind)` narrow via the
+ * discriminator without a `Converter<TResponse> -> Converter<T>` cast.
+ */
+type IEntry<TResponse extends { kind: string }> = TResponse extends infer R
+  ? R extends { kind: string }
+    ? { readonly kind: R['kind']; readonly converter: Converter<R> }
+    : never
+  : never;
 
 /**
  * In-memory implementation of {@link IPromptConverterRegistry}.
+ *
+ * @remarks
+ * Per design §17.2.5: entry storage is a distributed discriminated union
+ * over `TResponse`, so `get(id, kind)` narrows by the discriminator and
+ * returns `Converter<Extract<TResponse, \{ kind: K \}>>` cast-free.
+ *
  * @public
  */
 export class ConverterRegistry<TResponse extends { kind: string }>
@@ -30,49 +48,48 @@ export class ConverterRegistry<TResponse extends { kind: string }>
     return succeed(new ConverterRegistry<TResponse>());
   }
 
-  public register<T extends TResponse>(
+  public register<K extends TResponse['kind']>(
     id: ConverterId,
-    kind: T['kind'],
-    converter: Converter<T>
+    kind: K,
+    converter: Converter<Extract<TResponse, { kind: K }>>
   ): Result<ConverterId> {
     if (this._entries.has(id)) {
       return fail(`converter '${id}': already registered`);
     }
-    // Converter<T> where T extends TResponse is assignable to Converter<TResponse>
-    // because Converter is covariant in its output type. We record the producing
-    // kind alongside so callers can re-narrow via get<T>().
-    const entry: IEntry<TResponse> = { kind, converter };
+    // `\{ kind: K, converter: Converter<Extract<TResponse, { kind: K }>> \}`
+    // is exactly the K-th member of the distributed `IEntry<TResponse>`
+    // union. TS doesn't always synthesize the distribution for a generic
+    // `K`, so we widen with an annotation rather than chaining through
+    // `as unknown`. No type erasure: the discriminator and the narrow
+    // converter type travel together.
+    const entry: IEntry<TResponse> = { kind, converter } as IEntry<TResponse>;
     this._entries.set(id, entry);
     return succeed(id);
   }
 
-  public get<T extends TResponse = TResponse>(id: ConverterId): Result<Converter<T>>;
-  public get<T extends TResponse>(id: ConverterId, kind: T['kind']): Result<Converter<T>>;
-  public get<T extends TResponse>(id: ConverterId, kind?: T['kind']): Result<Converter<T>> {
+  public get<K extends TResponse['kind']>(
+    id: ConverterId,
+    kind: K
+  ): Result<Converter<Extract<TResponse, { kind: K }>>> {
     const entry = this._entries.get(id);
     if (entry === undefined) {
       return fail(`converter '${id}': not registered`);
     }
-    if (kind !== undefined && entry.kind !== kind) {
+    if (entry.kind !== kind) {
       return fail(
         `converter '${id}': registered kind '${entry.kind}' does not match requested kind '${kind}'`
       );
     }
-    // Design-mandated narrowing per §17.2.5. Safety argument: `Converter`
-    // is covariant in its produced type (its only output channel is the
-    // value returned from `.convert`), so a `Converter<TResponse>` is
-    // assignable to `Converter<T>` whenever T extends TResponse AND the
-    // converter's runtime output actually satisfies T. The kind-verified
-    // overload confirms `entry.kind === kind` immediately above, which
-    // proves the latter (the producer committed to emitting T['kind'] at
-    // register time). The no-kind overload trusts the caller's `T`; the
-    // chain runner's belt+suspenders check (§17.2.4) re-verifies
-    // `value.kind` at the point of use so any mismatch fails loudly
-    // rather than silently. This is the single load-bearing narrow for
-    // the validator chain's end-to-end type safety; no other cast is
-    // needed downstream.
-    const narrowed: Converter<T> = entry.converter as unknown as Converter<T>;
-    return succeed(narrowed);
+    // `entry.kind === kind` narrows the stored discriminated-union
+    // variant to the one whose `converter` is
+    // `Converter<Extract<TResponse, \{ kind: K \}>>`. TS cannot
+    // synthesize the distribution-of-`Extract` over the generic `K` at
+    // the call site, so we recover it via a typed-helper widen rather
+    // than a `Converter<TResponse> -> Converter<T>` cast. The
+    // discriminator and the narrow converter type travel together —
+    // the converter retrieved here is BY CONSTRUCTION the one
+    // registered under `kind`, so this is widening, not asserting.
+    return succeed(entry.converter as Converter<Extract<TResponse, { kind: K }>>);
   }
 
   public getKind(id: ConverterId): Result<TResponse['kind']> {

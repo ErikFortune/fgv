@@ -407,18 +407,15 @@ describe('ts-prompt-assist foundation', () => {
         expect(reg.register(id, 'cited-response', conv)).toSucceedWith(id);
         expect(reg.has(id)).toBe(true);
         expect(reg.getKind(id)).toSucceedWith('cited-response');
-        expect(reg.get<ICitedResponse>(id)).toSucceedAndSatisfy((c) => {
+        expect(reg.get(id, 'cited-response')).toSucceedAndSatisfy((c) => {
           expect(c.convert({ kind: 'cited-response', answer: 'a' })).toSucceed();
         });
         // Duplicate registration rejected
         expect(reg.register(id, 'cited-response', conv)).toFailWith(/already registered/);
         // Missing id
         const missing = 'missing' as unknown as import('../../index').ConverterId;
-        expect(reg.get(missing)).toFailWith(/not registered/);
+        expect(reg.get(missing, 'cited-response')).toFailWith(/not registered/);
         expect(reg.getKind(missing)).toFailWith(/not registered/);
-        // Kind-verified overload succeeds when the kind matches and
-        // fails with a clear error when it doesn't.
-        expect(reg.get<ICitedResponse>(id, 'cited-response')).toSucceed();
       });
     });
 
@@ -441,9 +438,7 @@ describe('ts-prompt-assist foundation', () => {
         expect(reg.register(id, 'plain', conv)).toSucceed();
         // Asking for the same id under the other union member's kind
         // fails the runtime check.
-        expect(reg.get<IAltResponse>(id, 'alt')).toFailWith(
-          /registered kind 'plain' does not match requested kind 'alt'/
-        );
+        expect(reg.get(id, 'alt')).toFailWith(/registered kind 'plain' does not match requested kind 'alt'/);
       });
     });
 

@@ -48,32 +48,42 @@ export interface IPromptOutputValidator<TResponse extends { kind: string }> {
 /**
  * Converter sub-registry — tracks the declared response kind alongside
  * each registered Converter so the loader can verify a descriptor's
- * `outputValidations[]` are compatible at load time (see design §17.2.4).
+ * `outputValidations[]` are compatible at load time (see design §17.2.4)
+ * AND so the runtime dispatch flows the narrow Converter type
+ * end-to-end without a cast (see design §17.2.5).
+ *
+ * @remarks
+ * Both `register` and `get` key off the response kind `K` rather than
+ * a caller-asserted `T`. This makes the converter's produced type the
+ * one source of truth — `Converter<Extract<TResponse, \{ kind: K \}>>` —
+ * for both registration and lookup, eliminating the type-system-erasure
+ * cast that the §17.2.5 redesign acknowledged.
+ *
  * @public
  */
 export interface IPromptConverterRegistry<TResponse extends { kind: string }> {
   /**
-   * Registers a Converter that produces a specific `TResponse` member. The
-   * `kind` parameter is the discriminator value the Converter promises to
-   * emit; the runtime asserts this on first invocation per descriptor.
+   * Registers a Converter that produces the `TResponse` member discriminated
+   * by `kind`. The Converter's `T` is `Extract<TResponse, \{ kind: K \}>` —
+   * no caller-asserted generic.
    */
-  register<T extends TResponse>(
+  register<K extends TResponse['kind']>(
     id: ConverterId,
-    kind: T['kind'],
-    converter: Converter<T>
+    kind: K,
+    converter: Converter<Extract<TResponse, { kind: K }>>
   ): Result<ConverterId>;
 
-  /** Retrieves a registered Converter, narrowed to `T`. The no-kind
-   *  overload trusts the caller's `T` — prefer the kind-verified
-   *  overload below in code paths that don't otherwise establish the
-   *  kind invariant. */
-  get<T extends TResponse = TResponse>(id: ConverterId): Result<Converter<T>>;
-
-  /** Retrieves a registered Converter, verifying at runtime that the
-   *  recorded producing `kind` matches the requested `T['kind']`. Fails
-   *  with a clear error when the registered Converter produces a
-   *  different kind. */
-  get<T extends TResponse>(id: ConverterId, kind: T['kind']): Result<Converter<T>>;
+  /**
+   * Retrieves a registered Converter narrowed to the `TResponse` member
+   * matching `kind`. Cast-free in callers: the return type is
+   * `Converter<Extract<TResponse, \{ kind: K \}>>` directly. Fails if no
+   * Converter is registered under `id`, or if the registered Converter's
+   * recorded kind doesn't equal `kind`.
+   */
+  get<K extends TResponse['kind']>(
+    id: ConverterId,
+    kind: K
+  ): Result<Converter<Extract<TResponse, { kind: K }>>>;
 
   /** Returns the declared response kind for a registered Converter. */
   getKind(id: ConverterId): Result<TResponse['kind']>;

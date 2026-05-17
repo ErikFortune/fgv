@@ -139,8 +139,8 @@ async function buildLib(
 
 function makeRegistry(): PromptRegistry<Responses> {
   const reg = PromptRegistry.create<Responses>().orThrow();
-  reg.converters.register<ICitedResponse>(CITED_ID, 'cited', citedConverter).orThrow();
-  reg.converters.register<IClassifierResponse>(CLASSIFIER_ID, 'classifier', classifierConverter).orThrow();
+  reg.converters.register(CITED_ID, 'cited', citedConverter).orThrow();
+  reg.converters.register(CLASSIFIER_ID, 'classifier', classifierConverter).orThrow();
   const citedValidator: IPromptOutputValidator<Responses> = {
     appliesTo: 'cited',
     validate(value: Responses): Result<true> {
@@ -378,7 +378,7 @@ describe('B-4: output validation pipeline', () => {
       }
     );
     const LYING_ID = 'lying' as unknown as ConverterId;
-    registry.converters.register<IClassifierResponse>(LYING_ID, 'classifier', lyingConverter).orThrow();
+    registry.converters.register(LYING_ID, 'classifier', lyingConverter).orThrow();
     const classifierOnly: IPromptOutputValidator<Responses> = {
       appliesTo: 'classifier',
       validate(): Result<true> {
