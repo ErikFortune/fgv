@@ -248,9 +248,11 @@ falls back to `global/<id>.yaml`; scope-level bindings merge cross-scope
 
 When a descriptor's `output.kind` is `'json'`, the library can run the LLM
 response through a registered `Converter<T>` plus a chain of validators.
-The registry is parameterized by the consumer's response union, so the
-caller never needs to cast — the public generic `T` is a caller
-assertion (see "Two patterns avoid the wrong-member trap" below).
+The registry is parameterized by the consumer's response union; the
+public API exposes two methods — `resolveJsonOutput<K>` for typed JSON
+output and `resolveFreeTextOutput` for raw free-text — so the caller never
+needs to cast, and the return type is runtime-evidenced against the
+descriptor's declared converter kind rather than caller-asserted.
 
 ```typescript
 import {
@@ -350,63 +352,71 @@ const library = (
 
 // In a real consumer this `rawOutput` comes from the LLM call. The
 // pipeline tolerates Markdown fences and surrounding prose (via
-// `AiAssist.extractJsonText` from `@fgv/ts-extras`).
+// `AiAssist.fencedStringifiedJson` from `@fgv/ts-extras`).
 const rawOutput = '```json\n{"kind":"cited","answer":"42","citedIds":["a"]}\n```';
 
-// Caller binds T to a specific union member when the descriptor's
-// converter id is known to produce that shape. The library does not
-// runtime-check `T` against the descriptor's converter, so this is a
-// caller assertion — get it right and you get a typed `ICitedResponse`
-// in hand:
+// Caller supplies `expectedKind` as a literal — the return type
+// narrows to `Extract<Responses, { kind: 'cited' }>` automatically.
+// At runtime, `resolveJsonOutput` verifies that the descriptor's
+// `output.converterId` is actually registered to produce kind 'cited';
+// a mismatch fails loudly with the prompt id + actual-vs-expected
+// kinds. No caller-asserted T, no silent typed lie possible.
 const validated = (
-  await library.resolveAndValidateOutput<ICitedResponse>(
+  await library.resolveJsonOutput(
     { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-    rawOutput
+    rawOutput,
+    'cited'
   )
 ).orThrow();
 console.log(validated.answer); // → "42"
 console.log(validated.citedIds); // → ["a"]
-
-// If the caller doesn't want to commit to a single union member at the
-// call site (e.g. they're holding a generic handle whose descriptor
-// might be `cited` or `classifier`), omit the narrow type argument.
-// `T` defaults to `TResponse` (the full registered union), so the
-// return type is `Responses`. Note: the descriptor's `converterId`
-// still points to a single-kind converter; the runtime value is
-// single-kind. The default-`T` form just lets the caller defer the
-// narrowing to a `value.kind` discriminator AFTER the resolve:
-const eitherShape = (
-  await library.resolveAndValidateOutput(
-    { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-    rawOutput
-  )
-).orThrow();
-if (eitherShape.kind === 'cited') {
-  // TypeScript narrows to ICitedResponse here.
-  console.log(eitherShape.answer);
-} else {
-  console.log(eitherShape.label);
-}
+console.log(validated.kind); // → "cited"
 ```
 
+End-to-end, the type flow is runtime-evidenced rather than
+caller-asserted:
+
+1. **Public-API entry check** — `resolveJsonOutput` runtime-verifies the
+   descriptor's `output.kind === 'json'` and that
+   `descriptor.output.converterId`'s recorded producing kind equals the
+   supplied `expectedKind`. Either failure rejects before the pipeline
+   runs.
+2. **Loader-side belt** — at `describe()` / `resolve()` time, descriptors
+   whose `outputValidations` reference validators that don't apply to
+   the declared response kind are rejected.
+3. **Runtime suspenders** — each validator additionally re-checks
+   `value.kind` against its `appliesTo` at the point of invocation, so
+   a Converter implementation lying about its produced kind fails loudly
+   inside the chain.
+
 Inside the chain, the `Converter`'s `T` flows through the registry by
-`(kind, converter)` pair — no caller-side cast required there, and the
-chain runner narrows on `value.kind` before invoking each validator.
-Loader-side checks (invoked from `describe()` and `resolve()`) reject
-descriptors whose `outputValidations` reference validators that don't
-apply to the declared response kind; the runtime path re-checks
-`value.kind` against each validator's `appliesTo` as a safety net. The
-public generic `T extends TResponse` on `resolveAndValidateOutput<T>`
-is a **caller assertion** — the belt + suspenders constrain it
-structurally but do not bind it to the descriptor's converter id, so
-nothing stops a caller from requesting `<IClassifierResponse>` for a
-descriptor whose converter produces `ICitedResponse`. (Inside the
-library, narrowing the registry result to the caller's `T` uses a
-localized cast at the public boundary — documented in the implementation,
-not user-visible.) Two patterns avoid the wrong-member trap: bind `T`
-when you know the converter id's produced shape, OR omit the type
-argument so `T` defaults to `TResponse` and discriminate on
-`value.kind` after the resolve.
+the `(id, kind)` pair — no caller-side cast required.
+
+---
+
+## Free-text output
+
+For descriptors whose `output.kind` is `'free-text'`, use
+`resolveFreeTextOutput(req, rawOutput)`. The method runtime-verifies the
+descriptor's output kind and returns the raw output verbatim as
+`Result<string>` — no `TResponse`, no caller assertion, no Converter
+involvement. Calling it on a `'json'` descriptor rejects with a clear
+error citing the prompt id and the actual kind.
+
+```typescript
+const result = (
+  await library.resolveFreeTextOutput(
+    { id: GREETING, chain: [SCOPE], qualifiers: {} },
+    'raw LLM output here'
+  )
+).orThrow();
+console.log(result); // → "raw LLM output here"
+```
+
+v0.1 does not run any post-response validation for free-text output;
+the descriptor loader rejects free-text descriptors that declare
+`outputValidations` until v0.2 introduces post-render free-text
+validators.
 
 ---
 

@@ -39,7 +39,7 @@ export function assertOutputValidationsCompatible<TResponse extends { kind: stri
   // and no validators to check; json descriptors with an empty
   // `outputValidations[]` have nothing to compatibility-check against.
   // The "json + no validators + no registry" runtime failure lives on
-  // `resolveAndValidateOutput` itself, not the loader-side check —
+  // `resolveJsonOutput` itself, not the loader-side check —
   // this function's contract is validator-to-converter compatibility,
   // not registry presence.
   if (descriptor.output.kind !== 'json' || validationIds.length === 0) {
@@ -99,9 +99,13 @@ export function assertOutputValidationsCompatible<TResponse extends { kind: stri
  * @remarks
  * The pipeline flows `TResponse` (the consumer's response union) intact;
  * no caller-asserted `T` enters here. The outer public API
- * (`resolveAndValidateOutput<T>`) is the one boundary where the caller's
- * narrower `T` re-enters the type system, accompanied by the runtime
- * suspenders in {@link runOneValidator}.
+ * (`resolveJsonOutput<K>`) runtime-verifies the descriptor's recorded
+ * converter kind equals `K` BEFORE invoking the pipeline, so the
+ * narrowing from `TResponse` to `Extract<TResponse, { kind: K }>` at
+ * the public return is runtime-evidenced rather than caller-asserted.
+ * The runtime suspenders in {@link runOneValidator} provide the
+ * suspenders that catch a Converter implementation lying about its
+ * produced kind.
  *
  * @internal
  */

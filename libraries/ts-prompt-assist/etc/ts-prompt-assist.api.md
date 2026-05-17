@@ -571,7 +571,10 @@ export class PromptLibrary<TResponse extends {
     readonly logger: Logging.ILogger;
     get materializedCount(): number;
     resolve(req: IPromptResolveRequest): Promise<Result<IResolvedPrompt>>;
-    resolveAndValidateOutput<T extends TResponse>(req: IPromptResolveRequest, rawOutput: string): Promise<Result<T>>;
+    resolveFreeTextOutput(req: IPromptResolveRequest, rawOutput: string): Promise<Result<string>>;
+    resolveJsonOutput<K extends TResponse['kind']>(req: IPromptResolveRequest, rawOutput: string, expectedKind: K): Promise<Result<Extract<TResponse, {
+        kind: K;
+    }>>>;
     readonly resourceBindingDepthLimit: number;
 }
 

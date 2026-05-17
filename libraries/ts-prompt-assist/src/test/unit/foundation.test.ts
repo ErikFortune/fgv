@@ -899,10 +899,10 @@ describe('ts-prompt-assist foundation', () => {
       expect(await store.get(TEST_SCOPE, 'nope' as unknown as PromptId)).toSucceedWith(undefined);
     });
 
-    test('resolveAndValidateOutput returns raw output verbatim for free-text descriptors', async () => {
+    test('resolveFreeTextOutput returns raw output verbatim for free-text descriptors', async () => {
       const store = await buildStore({ records: [buildDescriptor()] });
       const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
-      const result = await lib.resolveAndValidateOutput<{ kind: string }>(
+      const result = await lib.resolveFreeTextOutput(
         {
           id: TEST_PROMPT,
           chain: [TEST_SCOPE],
@@ -911,10 +911,10 @@ describe('ts-prompt-assist foundation', () => {
         },
         'raw LLM output'
       );
-      expect(result).toSucceedWith('raw LLM output' as unknown as { kind: string });
+      expect(result).toSucceedWith('raw LLM output');
     });
 
-    test('resolveAndValidateOutput rejects json descriptors without a registry', async () => {
+    test('resolveJsonOutput rejects json descriptors without a registry', async () => {
       const jsonRecord: IStoredPromptRecord = buildDescriptor({
         descriptor: {
           ...buildDescriptor().descriptor,
@@ -928,9 +928,10 @@ describe('ts-prompt-assist foundation', () => {
       });
       const store = await buildStore({ records: [jsonRecord] });
       const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
-      const result = await lib.resolveAndValidateOutput(
+      const result = await lib.resolveJsonOutput(
         { id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} },
-        '{"answer":"x"}'
+        '{"answer":"x"}',
+        'string'
       );
       expect(result).toFailWith(/requires a registry/);
     });
@@ -1098,10 +1099,10 @@ describe('ts-prompt-assist foundation', () => {
       await store.list();
     });
 
-    test('resolveAndValidateOutput propagates resolve failures', async () => {
+    test('resolveFreeTextOutput propagates resolve failures', async () => {
       const store = await buildStore({});
       const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
-      const result = await lib.resolveAndValidateOutput(
+      const result = await lib.resolveFreeTextOutput(
         { id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} },
         'x'
       );

@@ -173,10 +173,7 @@ describe('B-4: output validation pipeline', () => {
       registry: makeRegistry()
     });
     const raw = '```json\n{"kind":"cited","answer":"42","citedIds":["a"]}\n```';
-    const result = await lib.resolveAndValidateOutput<ICitedResponse>(
-      { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      raw
-    );
+    const result = await lib.resolveJsonOutput({ id: PROMPT, chain: [SCOPE], qualifiers: {} }, raw, 'cited');
     expect(result).toSucceedAndSatisfy((value: ICitedResponse) => {
       expect(value.answer).toBe('42');
       expect(value.citedIds).toEqual(['a']);
@@ -185,9 +182,10 @@ describe('B-4: output validation pipeline', () => {
 
   test('Converter dispatch produces a typed value with no cast at the call site', async () => {
     const lib = await buildLib([buildJsonRecord({})], { registry: makeRegistry() });
-    const result = await lib.resolveAndValidateOutput<ICitedResponse>(
+    const result = await lib.resolveJsonOutput(
       { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      '{"kind":"cited","answer":"a","citedIds":["x","y"]}'
+      '{"kind":"cited","answer":"a","citedIds":["x","y"]}',
+      'cited'
     );
     expect(result).toSucceedAndSatisfy((value: ICitedResponse) => {
       expect(value.kind).toBe('cited');
@@ -197,18 +195,16 @@ describe('B-4: output validation pipeline', () => {
   test('fence-strip handles trailing prose after the JSON', async () => {
     const lib = await buildLib([buildJsonRecord({})], { registry: makeRegistry() });
     const raw = 'Here you go: {"kind":"cited","answer":"a","citedIds":["x"]} hope that helps.';
-    const result = await lib.resolveAndValidateOutput<ICitedResponse>(
-      { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      raw
-    );
+    const result = await lib.resolveJsonOutput({ id: PROMPT, chain: [SCOPE], qualifiers: {} }, raw, 'cited');
     expect(result).toSucceed();
   });
 
   test('JSON.parse failure surfaces the prompt id and a raw-output snippet', async () => {
     const lib = await buildLib([buildJsonRecord({})], { registry: makeRegistry() });
-    const result = await lib.resolveAndValidateOutput(
+    const result = await lib.resolveJsonOutput(
       { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      '{"kind":"cited","ans'
+      '{"kind":"cited","ans',
+      'cited'
     );
     expect(result).toFailWith(/prompt 'p':.*raw\[0\.\.200\]/);
   });
@@ -216,7 +212,11 @@ describe('B-4: output validation pipeline', () => {
   test('raw output longer than 200 chars is truncated in the error message', async () => {
     const lib = await buildLib([buildJsonRecord({})], { registry: makeRegistry() });
     const giant = 'x'.repeat(500);
-    const result = await lib.resolveAndValidateOutput({ id: PROMPT, chain: [SCOPE], qualifiers: {} }, giant);
+    const result = await lib.resolveJsonOutput(
+      { id: PROMPT, chain: [SCOPE], qualifiers: {} },
+      giant,
+      'cited'
+    );
     expect(result).toFailWith(/…/);
   });
 
@@ -226,9 +226,10 @@ describe('B-4: output validation pipeline', () => {
     });
     // classifier-shaped output supplied to a cited-converter descriptor:
     // Converter rejects.
-    const result = await lib.resolveAndValidateOutput(
+    const result = await lib.resolveJsonOutput(
       { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      '{"kind":"classifier","label":"hi"}'
+      '{"kind":"classifier","label":"hi"}',
+      'cited'
     );
     expect(result).toFailWith(/output validation failed/);
   });
@@ -237,23 +238,26 @@ describe('B-4: output validation pipeline', () => {
     const lib = await buildLib([buildJsonRecord({ outputValidations: [CITED_VALIDATOR_ID] })], {
       registry: makeRegistry()
     });
-    const result = await lib.resolveAndValidateOutput<ICitedResponse>(
+    const result = await lib.resolveJsonOutput(
       { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      '{"kind":"cited","answer":"a","citedIds":[]}'
+      '{"kind":"cited","answer":"a","citedIds":[]}',
+      'cited'
     );
     expect(result).toFailWith(/output validation failed: validator 'cited-ids-present': citedIds is empty/);
   });
 
-  test('missing converter id surfaces at resolveAndValidateOutput when descriptor declares no validators', async () => {
+  test('missing converter id surfaces at resolveJsonOutput when descriptor declares no validators', async () => {
     // No outputValidations[] → loader-side reject does NOT pre-check the
-    // converter (it returns early). The runtime pipeline still fails when
-    // the converter is unregistered.
+    // converter (it returns early). resolveJsonOutput's own kind-lookup
+    // step at the public-API boundary fails when the converter is
+    // unregistered (before the pipeline runs).
     const lib = await buildLib([buildJsonRecord({ converterId: 'missing' as unknown as ConverterId })], {
       registry: makeRegistry()
     });
-    const result = await lib.resolveAndValidateOutput(
+    const result = await lib.resolveJsonOutput(
       { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      '{"kind":"cited","answer":"a","citedIds":["x"]}'
+      '{"kind":"cited","answer":"a","citedIds":["x"]}',
+      'cited'
     );
     expect(result).toFailWith(/converter 'missing': not registered/);
   });
@@ -268,9 +272,10 @@ describe('B-4: output validation pipeline', () => {
       ],
       { registry: makeRegistry() }
     );
-    const result = await lib.resolveAndValidateOutput(
+    const result = await lib.resolveJsonOutput(
       { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      '{"kind":"cited","answer":"a","citedIds":["x"]}'
+      '{"kind":"cited","answer":"a","citedIds":["x"]}',
+      'cited'
     );
     expect(result).toFailWith(
       /validator 'classifier-label-shape' \(appliesTo: classifier\) does not match converter 'cited' producing kind 'cited'/
@@ -323,21 +328,24 @@ describe('B-4: output validation pipeline', () => {
     });
     expect(await lib.describe(PROMPT)).toSucceed();
     expect(await lib.describe(PROMPT)).toSucceed();
-    const resolved = await lib.resolveAndValidateOutput<ICitedResponse>(
+    const resolved = await lib.resolveJsonOutput(
       { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      '{"kind":"cited","answer":"a","citedIds":["x"]}'
+      '{"kind":"cited","answer":"a","citedIds":["x"]}',
+      'cited'
     );
     expect(resolved).toSucceed();
   });
 
-  test('json descriptor without a registry rejects with a clear error from the loader-side check', async () => {
+  test('json descriptor without a registry rejects with a clear error from resolveJsonOutput', async () => {
     // The descriptor has no outputValidations, so the loader-side check
-    // returns early — but resolveAndValidateOutput itself rejects when
-    // the registry is missing on the 'json' branch.
+    // returns early — but resolveJsonOutput itself rejects when the
+    // registry is missing on the 'json' branch (before the kind-mismatch
+    // step).
     const lib = await buildLib([buildJsonRecord({})]);
-    const result = await lib.resolveAndValidateOutput(
+    const result = await lib.resolveJsonOutput(
       { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      '{"kind":"cited","answer":"a","citedIds":["x"]}'
+      '{"kind":"cited","answer":"a","citedIds":["x"]}',
+      'cited'
     );
     expect(result).toFailWith(/requires a registry/);
   });
@@ -352,17 +360,23 @@ describe('B-4: output validation pipeline', () => {
     // To exercise the suspenders branch in `runOneValidator`, we need a
     // descriptor whose outputValidations references a validator whose
     // appliesTo does NOT include the runtime value.kind. The loader-side
-    // belt would reject this at descriptor load, so we bypass the belt
-    // by routing through `resolveAndValidateOutput` with a registry whose
-    // converter declares one kind but whose Converter actually emits a
-    // different one (Converter implementation lying about T['kind']).
+    // belt and the resolveJsonOutput entry-check would both reject any
+    // kind drift at the descriptor / API level, so we bypass them by
+    // registering a Converter that declares one kind to the registry but
+    // emits a different one at runtime (Converter implementation lying
+    // about T['kind']).
     //
-    // The Converter contract gives us this surface: we register a
-    // Converter under producing kind 'classifier' whose runtime emits
-    // ICitedResponse-shaped values. The belt sees declared kind
-    // 'classifier' matching the validator's 'classifier' appliesTo, so
-    // it passes. At runtime the Converter returns value.kind === 'cited',
-    // which doesn't match — the suspenders catch it.
+    // Setup: register a Converter under producing kind 'classifier'
+    // whose runtime emits ICitedResponse-shaped values. The descriptor's
+    // converterId points at this lying Converter; the validator's
+    // appliesTo is 'classifier'. Caller passes expectedKind 'classifier'
+    // — matching the registered kind, so the entry-check passes. The
+    // belt sees declared kind 'classifier' matching the validator's
+    // 'classifier' appliesTo, so it passes too. At runtime the Converter
+    // returns value.kind === 'cited', which doesn't match the
+    // validator's appliesTo — the suspenders inside the pipeline catch
+    // it. This is the only path that exercises the suspenders branch
+    // post-split.
     const registry = PromptRegistry.create<Responses>().orThrow();
     const lyingConverter: Converter<IClassifierResponse> = Converters.generic<IClassifierResponse>(
       (from: unknown): Result<IClassifierResponse> => {
@@ -390,13 +404,107 @@ describe('B-4: output validation pipeline', () => {
     const lib = await buildLib([buildJsonRecord({ converterId: LYING_ID, outputValidations: [ONLY_ID] })], {
       registry
     });
-    const result = await lib.resolveAndValidateOutput(
+    const result = await lib.resolveJsonOutput(
       { id: PROMPT, chain: [SCOPE], qualifiers: {} },
-      '{"any":"thing"}'
+      '{"any":"thing"}',
+      'classifier'
     );
     expect(result).toFailWith(
       /validator 'classifier-only' \(appliesTo: classifier\) does not match output kind 'cited'/
     );
+  });
+
+  test('resolveJsonOutput entry-check: expectedKind mismatch with descriptor converter kind fails loudly', async () => {
+    // The split introduces a new public-API guardrail: caller passes
+    // `expectedKind` as a literal that must match the registry-recorded
+    // producing kind for `descriptor.output.converterId`. This guards
+    // against the failure mode where a caller asserts the wrong response
+    // member — the classic "I asked for cited but the descriptor's
+    // converter produces classifier" trap that the previous
+    // caller-asserted-T API hid silently.
+    const lib = await buildLib([buildJsonRecord({ converterId: CITED_ID })], {
+      registry: makeRegistry()
+    });
+    const result = await lib.resolveJsonOutput(
+      { id: PROMPT, chain: [SCOPE], qualifiers: {} },
+      '{"kind":"cited","answer":"a","citedIds":["x"]}',
+      'classifier'
+    );
+    expect(result).toFailWith(
+      /output\.converterId 'cited' produces kind 'cited'; resolveJsonOutput was called with expectedKind 'classifier'/
+    );
+  });
+
+  test('resolveJsonOutput entry-check: descriptor with free-text output is rejected', async () => {
+    // The split also guards against calling resolveJsonOutput on a
+    // descriptor whose output.kind is 'free-text' — the caller is using
+    // the wrong method.
+    const freeTextRecord: IStoredPromptRecord = {
+      scope: SCOPE,
+      id: PROMPT,
+      descriptor: {
+        id: PROMPT,
+        title: 'p',
+        schemaVersion: '1',
+        surface: 'chat',
+        slots: [],
+        output: { kind: 'free-text' }
+      },
+      candidates: [{ conditions: {}, body: 'hello' }]
+    };
+    const lib = await buildLib([freeTextRecord], { registry: makeRegistry() });
+    const result = await lib.resolveJsonOutput(
+      { id: PROMPT, chain: [SCOPE], qualifiers: {} },
+      'hello',
+      'cited'
+    );
+    expect(result).toFailWith(
+      /resolveJsonOutput called on a descriptor whose output\.kind is 'free-text' \(expected 'json'\)/
+    );
+  });
+
+  test('resolveFreeTextOutput returns raw output verbatim for free-text descriptors', async () => {
+    const freeTextRecord: IStoredPromptRecord = {
+      scope: SCOPE,
+      id: PROMPT,
+      descriptor: {
+        id: PROMPT,
+        title: 'p',
+        schemaVersion: '1',
+        surface: 'chat',
+        slots: [],
+        output: { kind: 'free-text' }
+      },
+      candidates: [{ conditions: {}, body: 'hello' }]
+    };
+    const lib = await buildLib([freeTextRecord]);
+    const result = await lib.resolveFreeTextOutput(
+      { id: PROMPT, chain: [SCOPE], qualifiers: {} },
+      'verbatim LLM output'
+    );
+    expect(result).toSucceedWith('verbatim LLM output');
+  });
+
+  test('resolveFreeTextOutput rejects json descriptors with prompt id + actual kind cited', async () => {
+    const lib = await buildLib([buildJsonRecord({})], { registry: makeRegistry() });
+    const result = await lib.resolveFreeTextOutput(
+      { id: PROMPT, chain: [SCOPE], qualifiers: {} },
+      'anything'
+    );
+    expect(result).toFailWith(
+      /resolveFreeTextOutput called on a descriptor whose output\.kind is 'json' \(expected 'free-text'\)/
+    );
+  });
+
+  test('resolveFreeTextOutput propagates resolve failures with the prompt id', async () => {
+    // Underlying resolve fails (no prompt found); free-text-output is a
+    // thin wrapper, so the failure propagates through.
+    const lib = await buildLib([]);
+    const result = await lib.resolveFreeTextOutput(
+      { id: 'missing' as unknown as PromptId, chain: [SCOPE], qualifiers: {} },
+      'x'
+    );
+    expect(result).toFailWith(/missing/);
   });
 });
 
