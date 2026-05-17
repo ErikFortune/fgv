@@ -444,28 +444,47 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     synthId: string
   ): Result<ReadonlyMap<ResourceCandidate, number>> {
     // Two-phase materialization. Phase 1 validates each candidate's
-    // condition-set declaration shape (no builder mutation); phase 2
-    // commits the validated decls via `addLooseCandidate` sequentially
-    // with short-circuit on failure.
-    //
-    // Phase-1 catches malformed condition-set shape, but NOT qualifier-
-    // name-not-registered errors — those surface inside
-    // `addLooseCandidate` during phase 2. A phase-2 failure on
-    // candidate N after candidates 0..N-1 already committed leaves
-    // those earlier candidates in the long-lived builder under the
-    // record's freshly-allocated synthesized id. This does not affect
-    // resolves of OTHER prompts because synthesized ids are sequential
-    // and unique per materialization (no cross-record reuse). Retries
-    // of the same malformed record are idempotent: ts-res dedupes
-    // candidates by condition-set key, so the already-committed
-    // candidates re-resolve via the existing entries and the failing
-    // candidate fails the same way as before. Full builder rollback on
-    // mid-walk failure would require a `removeCandidate` API in ts-res
-    // that v0.1 doesn't expose; the orphan-resource memory cost is
-    // bounded by the (rare) failure rate.
+    // condition-set declaration shape (no builder mutation) AND every
+    // condition's qualifier name is registered in the library's
+    // qualifier collector. Phase 2 commits the pre-validated decls via
+    // `addLooseCandidate` sequentially. Together these foreclose the
+    // dominant phase-2 failure mode — unknown-qualifier errors after
+    // earlier candidates already committed — so a malformed record
+    // never leaves orphan candidates / conditions / decisions behind
+    // in the long-lived builder. (Residual mid-phase-2 failures from
+    // internal ts-res errors remain possible but rare; the synth-id
+    // reservation map keeps retries from compounding.)
     return mapResults(
-      record.candidates.map((candidate, index) => toLooseDecl(candidate, synthId, index))
+      record.candidates.map((candidate, index) =>
+        toLooseDecl(candidate, synthId, index).onSuccess((decl) =>
+          this._validateDeclQualifiers(decl, record.id, index).onSuccess(() => succeed(decl))
+        )
+      )
     ).onSuccess((decls) => this._commitDecls(record, decls));
+  }
+
+  private _validateDeclQualifiers(
+    decl: ResourceJson.Json.ILooseResourceCandidateDecl,
+    promptId: PromptId,
+    index: number
+  ): Result<true> {
+    // `toLooseDecl` ran `ResourceJson.Convert.conditionSetDecl.convert`
+    // which always returns the normalized array form, so the union
+    // type's record branch is unreachable here. Narrow with
+    // `Array.isArray` rather than asserting.
+    const conditions = decl.conditions;
+    /* c8 ignore next 3 - defensive: `ResourceJson.Convert.conditionSetDecl` always normalizes to the array form; this branch guards the union-type's record/undefined arm that callers can no longer produce here */
+    if (conditions === undefined || !Array.isArray(conditions)) {
+      return succeed(true as const);
+    }
+    for (const condition of conditions) {
+      if (!this._qualifierCollector.hasNameOrToken(condition.qualifierName)) {
+        return fail(
+          `prompt '${promptId}' candidate ${index}: unknown qualifier '${condition.qualifierName}'`
+        );
+      }
+    }
+    return succeed(true as const);
   }
 
   private _commitDecls(
@@ -479,6 +498,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
         .asResult.withErrorFormat(
           (msg) => `prompt '${record.id}' candidate ${index}: addLooseCandidate failed: ${msg}`
         );
+      /* c8 ignore next 3 - defensive: phase-1 pre-validates qualifier names against the registered collector, so `addLooseCandidate` only fails here on internal ts-res errors (which the test suite cannot reliably provoke) */
       if (addResult.isFailure()) {
         return fail(addResult.message);
       }

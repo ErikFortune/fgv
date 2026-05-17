@@ -1483,26 +1483,23 @@ describe('ts-prompt-assist foundation', () => {
       expect(lib.materializedCount).toBe(1);
     });
 
-    test('repeated resolves of a malformed record reuse the same synth id (bounded orphans)', async () => {
-      // Phase-2 of materialization fails because ts-res rejects the
-      // unknown qualifier. On retry, `_materializeIfNeeded` reuses the
-      // synth id reserved on the first attempt instead of allocating a
-      // fresh one each time — bounding orphan resources in the long-
-      // lived builder to one per distinct malformed canonical key.
+    test('repeated resolves of a malformed record fail fast without builder mutation', async () => {
+      // Phase-1 qualifier-name pre-validation catches the unknown
+      // qualifier before any candidate reaches `addLooseCandidate`, so
+      // the long-lived builder is never mutated. The synth-id reserved
+      // on first attempt persists in the reservation map (so it would
+      // be reused if phase 2 ever DID get a chance to commit), but no
+      // resources are created either way — orphan count stays at zero
+      // across N retries.
       const record: IStoredPromptRecord = buildDescriptor({
         candidates: [{ conditions: { 'not-a-real-qualifier': 'x' }, body: 'no-op' }],
         descriptor: { ...buildDescriptor().descriptor, slots: [] }
       });
       const store = await buildStore({ records: [record] });
       const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
-      // Resolve three times; every attempt fails the same way. The
-      // materialized cache never receives an entry (failure-loud), and
-      // the synth-id reservation is observed indirectly by the fact
-      // that the underlying ts-res `getOrAdd` dedupe keeps producing
-      // the same shape on every retry (no "duplicate id" errors).
       for (let i = 0; i < 3; i++) {
         const r = await lib.resolve({ id: TEST_PROMPT, chain: [TEST_SCOPE], qualifiers: {} });
-        expect(r).toFailWith(/addLooseCandidate failed/);
+        expect(r).toFailWith(/unknown qualifier 'not-a-real-qualifier'/);
       }
       expect(lib.materializedCount).toBe(0);
     });
@@ -1526,10 +1523,15 @@ describe('ts-prompt-assist foundation', () => {
       expect(result).toFailWith(/qualifier context invalid/);
     });
 
-    test('resolve fails when ts-res addLooseCandidate rejects invalid conditions', async () => {
+    test('resolve fails fast on unknown qualifier names before mutating the builder', async () => {
       // Per design §10.1 conditions delegate to ts-res's
-      // ConditionSetDecl. A condition referencing an unknown qualifier
-      // axis surfaces from addLooseCandidate at resolve time.
+      // ConditionSetDecl. The library pre-validates every condition's
+      // qualifier-name against the registered qualifier collector
+      // BEFORE phase-2 commits any candidate to the long-lived builder
+      // — so an unknown qualifier surfaces as a fast-fail with no
+      // builder mutation. (Without this guard, the failure would still
+      // happen, but earlier candidates from the same record could have
+      // already committed orphan conditions / decisions.)
       const record: IStoredPromptRecord = buildDescriptor({
         candidates: [
           {
@@ -1546,7 +1548,7 @@ describe('ts-prompt-assist foundation', () => {
         chain: [TEST_SCOPE],
         qualifiers: {}
       });
-      expect(result).toFailWith(/addLooseCandidate failed/);
+      expect(result).toFailWith(/unknown qualifier 'not-a-real-qualifier'/);
     });
 
     test('mustache render failure surfaces with prompt id', async () => {
