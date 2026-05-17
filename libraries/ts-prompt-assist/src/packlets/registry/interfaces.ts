@@ -98,8 +98,16 @@ export interface IPromptConverterRegistry<TResponse extends { kind: string }> {
  * @public
  */
 export interface IPromptSlotKindRegistry {
+  /**
+   * Registers a serializer for the given slot kind. Fails if `kind` is
+   * empty or if `kind` is already registered. `kind` is a plain string
+   * (not a branded id), so the implementation enforces non-emptiness
+   * here.
+   */
   register(kind: string, serializer: ISlotSerializer): Result<string>;
+  /** Returns the registered serializer for `kind`. Fails if not registered. */
   get(kind: string): Result<ISlotSerializer>;
+  /** True iff a serializer is registered for `kind`. */
   has(kind: string): boolean;
 }
 
@@ -108,8 +116,11 @@ export interface IPromptSlotKindRegistry {
  * @public
  */
 export interface IPromptOutputValidationRegistry<TResponse extends { kind: string }> {
+  /** Registers a validator under `id`. Fails if `id` is already registered. */
   register(id: ValidatorId, validator: IPromptOutputValidator<TResponse>): Result<ValidatorId>;
+  /** Returns the validator registered under `id`. Fails if not registered. */
   get(id: ValidatorId): Result<IPromptOutputValidator<TResponse>>;
+  /** True iff a validator is registered under `id`. */
   has(id: ValidatorId): boolean;
 }
 

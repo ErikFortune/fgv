@@ -69,6 +69,7 @@ const DEFAULT_RESOURCE_BINDING_DEPTH_LIMIT: number = 5;
  * @public
  */
 export interface IPromptLibraryCreateParams<TResponse extends { kind: string } = { kind: string }> {
+  /** Backing store. v0.1 ships `FileTreePromptStore`; consumers can implement custom adapters. */
   readonly store: IPromptStore;
   /**
    * ts-res qualifier configuration. Accepts either a pre-built
@@ -117,14 +118,18 @@ export interface IPromptLibraryCreateParams<TResponse extends { kind: string } =
 }
 
 /**
- * Resolve request.
+ * Resolve request supplied to {@link PromptLibrary.resolve} and
+ * {@link PromptLibrary.resolveAndValidateOutput}.
  * @public
  */
 export interface IPromptResolveRequest {
+  /** Prompt id to resolve. */
   readonly id: PromptId;
-  /** Most-specific to most-general. */
+  /** Scope chain — most-specific to most-general. The walker uses the first scope with a record. */
   readonly chain: ReadonlyArray<ScopeKey>;
+  /** Caller-supplied qualifier context, fed to ts-res's candidate selector. */
   readonly qualifiers: IQualifierContext;
+  /** Optional caller substitutions, applied to slots not locked by an `enforced` scope binding. */
   readonly substitutions?: PromptSubstitutions;
 }
 

@@ -16,6 +16,7 @@ import { slotBindingConverter } from './bindingConverters';
  * @public
  */
 export interface IBindingsFileContents {
+  /** Map from slot name to its bound value (literal or resource). */
   readonly bindings: ReadonlyMap<SlotName, SlotBinding>;
 }
 

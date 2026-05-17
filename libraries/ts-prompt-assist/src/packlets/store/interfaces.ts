@@ -14,7 +14,9 @@ import { IDisposable, IPromptStoreEvent } from '../types';
  * @public
  */
 export interface IPromptStoreListFilter {
+  /** Restrict to records carrying this prompt id (across all scopes). */
   readonly id?: PromptId;
+  /** Restrict to records in this scope. */
   readonly scope?: ScopeKey;
 }
 
@@ -29,8 +31,11 @@ export interface IPromptStoreListFilter {
  * @public
  */
 export interface IPromptStore {
+  /** Returns the record at `(scope, id)` or `undefined` if none exists. */
   get(scope: ScopeKey, id: PromptId): Promise<Result<IStoredPromptRecord | undefined>>;
+  /** Returns all records, optionally filtered. */
   list(filter?: IPromptStoreListFilter): Promise<Result<ReadonlyArray<IStoredPromptRecord>>>;
+  /** Returns the scope-level `_bindings.yaml` record (or `undefined` if absent). */
   getBindings(scope: ScopeKey): Promise<Result<IScopeSlotBindingsRecord | undefined>>;
   /**
    * Returns the ts-res qualifier declarations carried by the store, or
@@ -39,9 +44,13 @@ export interface IPromptStore {
    */
   getQualifierConfig(): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>>;
 
+  /** Optional write surface. v0.1 `FileTreePromptStore` leaves this undefined. */
   put?(record: IStoredPromptRecord): Promise<Result<IStoredPromptRecord>>;
+  /** Optional bindings-write surface. v0.1 `FileTreePromptStore` leaves this undefined. */
   putBindings?(record: IScopeSlotBindingsRecord): Promise<Result<IScopeSlotBindingsRecord>>;
+  /** Optional delete surface. v0.1 `FileTreePromptStore` leaves this undefined. */
   delete?(scope: ScopeKey, id: PromptId): Promise<Result<PromptId>>;
 
+  /** Optional change-notification surface (per OQ-3). No v0.1 adapter implements this. */
   watch?(handler: (event: IPromptStoreEvent) => void): IDisposable;
 }

@@ -93,6 +93,7 @@ export class FileTreePromptStore implements IPromptStore {
     return Promise.resolve(succeed(new FileTreePromptStore(params)));
   }
 
+  /** {@inheritDoc IPromptStore.get} */
   public async get(scope: ScopeKey, id: PromptId): Promise<Result<IStoredPromptRecord | undefined>> {
     return this._getScopeDirectory(scope).onSuccess((scopeDir) => {
       if (scopeDir === undefined) {
@@ -102,6 +103,7 @@ export class FileTreePromptStore implements IPromptStore {
     });
   }
 
+  /** {@inheritDoc IPromptStore.list} */
   public async list(filter?: IPromptStoreListFilter): Promise<Result<ReadonlyArray<IStoredPromptRecord>>> {
     return this._root.getChildren().onSuccess((children) => {
       const scopeDirs = children.filter((c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory');
@@ -117,6 +119,7 @@ export class FileTreePromptStore implements IPromptStore {
     });
   }
 
+  /** {@inheritDoc IPromptStore.getBindings} */
   public async getBindings(scope: ScopeKey): Promise<Result<IScopeSlotBindingsRecord | undefined>> {
     return this._getScopeDirectory(scope).onSuccess((scopeDir) => {
       if (scopeDir === undefined) {
@@ -137,6 +140,7 @@ export class FileTreePromptStore implements IPromptStore {
     });
   }
 
+  /** {@inheritDoc IPromptStore.getQualifierConfig} */
   public async getQualifierConfig(): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>> {
     return this._root.getChildren().onSuccess((children) => {
       const file = children.find(

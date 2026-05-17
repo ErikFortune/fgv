@@ -53,6 +53,10 @@ describe('FileTreePromptStore over FsTree (B-3 smoke test)', () => {
     expect(await store.getQualifierConfig()).toSucceedAndSatisfy((decls) => {
       expect(decls).toHaveLength(1);
       expect(decls?.[0].name).toBe('lang');
+      // `typeName` MUST match what the README's wiring sample constructs
+      // (a `LiteralQualifierType` named `lang`); regression-protect the
+      // fixture so a future edit can't drift it back to `language`.
+      expect(decls?.[0].typeName).toBe('lang');
     });
   });
 });
