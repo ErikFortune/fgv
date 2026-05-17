@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Hash, Result, fail, succeed } from '@fgv/ts-utils';
+import { Normalizer, Result, fail, succeed } from '@fgv/ts-utils';
 import { sanitizeJsonObject } from '@fgv/ts-json-base';
 import { Convert, PromptId, ResourceSubstitutionMode, ScopeKey, SlotName } from '../types';
 import {
@@ -60,7 +60,7 @@ export type InnerResolveFn = (
  * @internal
  */
 export function buildCycleKey(
-  normalizer: Hash.Crc32Normalizer,
+  normalizer: Normalizer,
   chain: ReadonlyArray<ScopeKey>,
   id: PromptId
 ): Result<string> {

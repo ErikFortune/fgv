@@ -1083,12 +1083,14 @@ level for `_qualifiers`).
    unless `scopeOverride` is set, and the parent's qualifier context
    unless `qualifiers` is set. The `substitutions` field follows OQ-2
    (strict replace when supplied; inherit when omitted).
-2. **Cycle detection.** Track currently-resolving
-   `(scopeChainHash, promptId)` pairs using
-   `Hash.Crc32Normalizer.computeHash` on the chain (per
-   `/value-hashing`). A cycle → fail with:
-   `prompt '<id>': cycle detected in resource binding chain: <a> → <b>
-   → ... → <a>`.
+2. **Cycle detection.** Track currently-resolving `{ chain, id }` pairs
+   using RFC 8785 canonical-JSON keys via `Normalizer.canonicalize` (the
+   base `Normalizer` from `@fgv/ts-utils`, not a hash — equal canonical-
+   JSON strings are exactly structurally-equal values, so cycle detection
+   is collision-free; consistent with the descriptor-equality and
+   materialization-cache keys used elsewhere in the library). A cycle →
+   fail with: `prompt '<id>': cycle detected in resource binding chain:
+   <a> → <b> → ... → <a>`.
 3. **Depth limit.** Configurable via
    `IPromptLibraryCreateParams.resourceBindingDepthLimit`, default `5`.
    Exceeded → fail with: `prompt '<id>': resource binding depth limit
@@ -1514,8 +1516,10 @@ The cluster integration branch is ready for promotion to `release`
 10. **100% test coverage** across statements / branches / functions /
     lines for `ts-prompt-assist` and for the new lines in ts-extras.
 11. **No `console.*`, no `node:fs`, no `any`, no `JSON.stringify`
-    structural-equality** in source or tests (Crc32Normalizer.computeHash
-    instead).
+    structural-equality** in source or tests (RFC 8785 canonical-JSON
+    via `Normalizer.canonicalize` for true structural equality;
+    `Crc32Normalizer.computeHash` only where a hash — not equality — is
+    actually needed, e.g. the Mustache template-cache key).
 12. **Result pattern end-to-end.** No exceptions out of public methods.
 13. **TSDoc on every exported symbol.** API Extractor passes.
 14. **`rushx build && rushx lint && rushx test` pass** in both
@@ -1739,15 +1743,21 @@ not per resolve.
 2. **Per-resolve flow:**
    a. Chain walker queries `IPromptStore` for `(scope, id)` records.
       Finds the winning scope's record.
-   b. Compute `key = (scope, id, Crc32Normalizer.computeHash(
-      record.candidates))`.
+   b. Compute `key = Normalizer.canonicalize({ scope, id, candidates:
+      record.candidates })` (RFC 8785 canonical-JSON — exact structural
+      equality, no hash-collision risk; the synth resource id is
+      sequential `prompt_<n>` allocated per distinct cache key, so
+      distinct records never share a ts-res resource even when keys
+      happen to share bytes).
    c. Look the key up in `PromptLibrary`'s materialized-resource map.
       On hit: skip to step (e).
    d. **Cache miss:** validate `record.candidates` via ts-res's
-      `ResourceJson` candidate-decl Converters; synthesize a ts-res
-      resource id (e.g. `<scope-encoded>/<promptId>`); add the resource
-      into the runtime via the long-lived builder; record `key` in the
-      materialized-resource map.
+      `ResourceJson` candidate-decl Converters; reserve (or reuse) a
+      sequential synth id `prompt_<n>` keyed by the canonical cache key
+      so retries of a malformed record don't accumulate orphan resources;
+      add each candidate into the runtime via the long-lived builder's
+      `addLooseCandidate`; record the materialized entry under `key` in
+      the materialized-resource map.
    e. Ask the ts-res `ResourceResolver` to resolve the synthesized id
       against the caller's qualifier context. ts-res's internal caches
       (condition / conditionSet / decision) deliver O(1) on warm

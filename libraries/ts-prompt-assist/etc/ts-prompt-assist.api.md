@@ -119,8 +119,6 @@ export interface IBindingMergeResult {
     // (undocumented)
     readonly merged: ReadonlyMap<SlotName, IBindingTraceEntry>;
     // (undocumented)
-    readonly mergedBindings: ReadonlyMap<SlotName, SlotBinding>;
-    // (undocumented)
     readonly pendingResourceBindings: ReadonlyArray<IPendingResourceBinding>;
     // (undocumented)
     readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
