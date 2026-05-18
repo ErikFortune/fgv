@@ -285,23 +285,29 @@ interesting axis) but not the chain (the boring axis).
 
 ---
 
-## F11. `Logging.NoOpLogger` is the default but the library param is `Logging.ILogger` from `@fgv/ts-utils` — not re-exported
+## F11. ~~`Logging.NoOpLogger` is the default but the library param is `Logging.ILogger` from `@fgv/ts-utils` — not re-exported~~ **RETRACTED on review**
 
 **Surface:** `IPromptLibraryCreateParams.logger`.
 
-**Friction:** if a consumer wants to wire a real logger (e.g. our app's
-`console`-backed one), they need to import `Logging` from `@fgv/ts-utils`
-directly. `ts-prompt-assist` doesn't re-export it. Minor, but every
-consumer who customises logging hits it.
+**Original framing:** consumers who want to wire a logger have to
+import `Logging` from `@fgv/ts-utils` directly because
+`ts-prompt-assist` doesn't re-export it.
 
-**Workaround used:** didn't wire a logger.
+**Why retracted:** wrong on two counts. (a) The fgv convention is the
+opposite of what I suggested — packages do not re-export from sibling
+packages; consumers import primitives from their source library. The
+"re-export for convenience" reflex is a habit from less-structured
+ecosystems and doesn't apply here. (b) "Didn't wire a logger" was a
+lazy workaround, not a real friction — adding
+`import { Logging } from '@fgv/ts-utils'` is one line. The pressure-test
+integration didn't need a custom logger; if it had, the import would
+have been trivial.
 
-**Severity:** P3 polish.
+The real "I didn't know `@fgv/ts-utils` had a logging packlet"
+discoverability concern, if it exists, is a `LIBRARY_CAPABILITIES.md`
+question, not a re-export question.
 
-**Suggested fix:** re-export `Logging.ILogger` (and `NoOpLogger`) from
-`@fgv/ts-prompt-assist` for caller convenience. Pattern: the consumer
-already depends on the library; they should not also need to learn
-the dep tree.
+**Severity:** retracted (was P3 polish).
 
 ---
 
