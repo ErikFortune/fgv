@@ -342,12 +342,19 @@ return fail(storeResult.message);
 
 **Severity:** P2 friction (ts-utils API, surfaced via ts-prompt-assist).
 
-**Suggested fix:** either (a) widen `Failure<T>`'s declared `T` to `unknown`
-on `isFailure()`'s narrowing so the early-return assigns to any
-`Result<U>`, or (b) publish a `Result.recast<U>()` helper for the
+**Suggested fix:** publish a `Result.recast<U>()` helper for the
 common "I want to propagate this failure under a different success
-type" pattern. This is a ts-utils finding triggered by ts-prompt-assist
-usage; logging it here so the orchestrator can route it.
+type" pattern — i.e. `return storeResult.recast<PromptLibrary>()`. An
+earlier draft of this finding also floated widening `Failure<T>`'s `T`
+to `unknown` on the `isFailure()`-narrowing branch; **withdrawn on
+review** — that would poison the rest of the chain, because any
+subsequent `.onFailure` / `.mapFailure` handle on a chain that touched
+the narrowed branch would unify across both branches and collapse to
+`Result<unknown>`. The explicit `.recast<U>()` shape is the only one
+that scopes the promotion to the single propagation point without
+disrupting downstream type information. This is a ts-utils finding
+triggered by ts-prompt-assist usage; logging it here so the
+orchestrator can route it.
 
 ---
 
