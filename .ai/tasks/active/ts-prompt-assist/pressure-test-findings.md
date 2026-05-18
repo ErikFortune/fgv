@@ -252,27 +252,36 @@ ergonomics win.
 
 ---
 
-## F10. No "default qualifier context" — every `resolve` must supply `qualifiers: {}` even when the prompt has no qualified candidates
+## F10. ~~No "default qualifier context" — every `resolve` must supply `qualifiers: {}` even when the prompt has no qualified candidates~~ **RETRACTED on review**
 
 **Surface:** `IPromptResolveRequest.qualifiers`.
 
-**Friction:** `qualifiers` is a required field on the request. For
-descriptors that only have an unconditional base candidate, the request
-still has to include `qualifiers: {}`. Combined with `chain` (F2), the
-"trivial" resolve is:
-```ts
-library.resolve({ id, chain: [SCOPE], qualifiers: {} });
-```
-That's ~50% boilerplate. After F2 + this, the trivial resolve would be
-`library.resolve({ id })`.
+**Original framing:** `qualifiers` is required even for descriptors
+that only have an unconditional base candidate, so the trivial resolve
+is `library.resolve({ id, chain: [SCOPE], qualifiers: {} })` — ~50%
+boilerplate.
 
-**Workaround used:** wrote it out every call.
+**Why retracted:** "no qualifiers" isn't the dominant case in the real
+world. A consumer who adopts a library specifically built around
+qualifier-conditional candidate selection is almost certainly going to
+use qualifiers — `{}` is the pressure-test artefact of "we have one
+toy axis", not a shape worth optimising for. The trivial-resolve win
+isn't worth a default that nudges consumers away from supplying real
+context.
 
-**Severity:** P3 polish.
+`chain` is the better optionality target — it really is constant per
+deployment topology in many cases — and F2 already covers that. The
+fix proposed in F10 (make `qualifiers` optional defaulting to `{}`)
+would weaken the API's "you must commit to a context" affordance for
+marginal call-site savings.
 
-**Suggested fix:** make `qualifiers` optional, defaulting to `{}`.
-Combined with F2's `defaultChain`, the dominant-case API becomes the
-nice short form.
+**Severity:** retracted (was P3 polish).
+
+**Note:** F2's `defaultChain` suggestion stands on its own. If
+`defaultChain` lands, the dominant-case API becomes
+`library.resolve({ id, qualifiers: {...} })` which is the right shape —
+the consumer is forced to think about the qualifier context (the
+interesting axis) but not the chain (the boring axis).
 
 ---
 
