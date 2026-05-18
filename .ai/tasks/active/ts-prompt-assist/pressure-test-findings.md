@@ -11,6 +11,72 @@ The integration itself is small; the value is the friction list below.
 
 ---
 
+## F15. `@fgv/ts-prompt-assist` is unusable in a browser bundle: the ts-extras browser barrel is missing the `Yaml` export
+
+**Surface:** `@fgv/ts-extras`'s `package.json` `"exports"` map + the
+browser barrel `lib/index.browser.js`, indirectly consumed by
+`@fgv/ts-prompt-assist`.
+
+**Friction:** running the pressure-test integration in `webpack-dev-server`
+crashes at module-init with:
+```
+fileTreePromptStore.js:15  Uncaught TypeError: Cannot read properties of undefined (reading 'yamlConverter')
+    at eval (fileTreePromptStore.js:15:1)
+    at ../../libraries/ts-prompt-assist/lib/packlets/store/fileTreePromptStore.js
+    ...
+    at ../../libraries/ts-prompt-assist/lib/index.js
+```
+Root cause:
+- `@fgv/ts-extras/package.json` `"exports"."."` ships split conditionals —
+  `"node"` → `./lib/index.js`, `"default"` → `./lib/index.browser.js`.
+- The Node barrel exports `Yaml`. The browser barrel
+  (`lib/index.browser.js`) does NOT — the exported namespaces are
+  `AiAssist, Converters, Crypto, CryptoUtils, Csv, Experimental, Hash,
+  Mustache, RecordJar, ZipFileTree`. No `Yaml`.
+- `@fgv/ts-prompt-assist`'s `fileTreePromptStore.js` does
+  `const ts_extras_1 = require("@fgv/ts-extras")` and at module init
+  calls `ts_extras_1.Yaml.yamlConverter(promptFileConverter)`.
+- Webpack picks the browser conditional via `"default"`, returns the
+  browser barrel, and `ts_extras_1.Yaml` is `undefined`. The yamlConverter
+  call dereferences undefined → TypeError at app load.
+
+This is not a warning, not a runtime "feature unavailable" failure —
+the library's index module THROWS at evaluation, so the app never
+mounts. **Every web consumer of `ts-prompt-assist` hits this on first
+load.** The library's own `LIBRARY_CAPABILITIES.md` entry advertises
+the browser File-System-Access File Tree as a supported
+`FileTreePromptStore` backend, so the browser path is in scope by
+design.
+
+**Workaround used:** none — surfaced, not patched. (Per pressure-test
+brief, library code changes are out of scope; file it and stop. The
+sample's chat path is still smoke-test-verified against the built
+libraries in Node — see commit message — but I can't manually verify
+the browser UI works until F15 is fixed.)
+
+**Severity:** P1 blocking.
+
+**Suggested fix:** add `Yaml` to `@fgv/ts-extras`'s browser barrel.
+The Yaml packlet itself is browser-safe (`js-yaml` is pure-JS with
+no node-only deps), so the omission appears to be an oversight
+introduced when the node/browser barrel split was added. After the
+fix lands, run the ts-prompt-assist smoke test against a browser
+bundle (the missing CI gate that would have caught this).
+
+**Adjacent risk worth a second look:** the
+`@fgv/ts-extras` browser barrel exports `ZipFileTree`, which depends
+on `yauzl`/`unzipper`-style libraries that are usually node-only.
+Whatever's wired up there is presumably browser-safe, but worth
+auditing in the same fix.
+
+**Severity-class note:** also surfaces a missing CI gate. Phase B's
+acceptance criteria included `rushx build / test / lint` per package
+but not a "browser-bundle smoke" gate. A small "webpack build of a
+hello-world that imports `@fgv/ts-prompt-assist`" in CI would have
+caught F15 before the pressure-test even started.
+
+---
+
 ## F1. `PromptLibrary.create` requires both `qualifiers` decls AND `qualifierTypes` — and the failure mode is silent in the type system
 
 **Surface:** `IPromptLibraryCreateParams` / the decl-array branch of `qualifiers`.
