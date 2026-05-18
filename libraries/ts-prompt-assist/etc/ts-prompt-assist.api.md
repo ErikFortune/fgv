@@ -64,12 +64,8 @@ export const Convert: {
 export type ConverterId = Brand<string, 'ConverterId'>;
 
 // @public
-export class ConverterRegistry<TResponse extends {
-    kind: string;
-}> implements IPromptConverterRegistry<TResponse> {
-    static create<TResponse extends {
-        kind: string;
-    }>(): Result<ConverterRegistry<TResponse>>;
+export class ConverterRegistry<TResponse extends IPromptResponseBase> implements IPromptConverterRegistry<TResponse> {
+    static create<TResponse extends IPromptResponseBase>(): Result<ConverterRegistry<TResponse>>;
     get<K extends TResponse['kind']>(id: ConverterId, kind: K): Result<Converter<Extract<TResponse, {
         kind: K;
     }>>>;
@@ -191,6 +187,14 @@ export interface ILiteralSlotBinding {
 }
 
 // @public
+export type InferQualifiers<Q extends ReadonlyArray<string | Qualifiers.IQualifierDecl>> = Q[number] extends infer E ? E extends string ? E : E extends {
+    readonly name: infer N;
+} ? N extends string ? N : never : never : never;
+
+// @public
+export type InferQualifiersFromCreate<Q extends Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl>> = Q extends ReadonlyArray<string | Qualifiers.IQualifierDecl> ? InferQualifiers<Q> : string;
+
+// @public
 export interface IOutputValidationContext {
     // (undocumented)
     readonly promptId: PromptId;
@@ -215,9 +219,7 @@ export interface IPromptCandidateRecord {
 }
 
 // @public
-export interface IPromptConverterRegistry<TResponse extends {
-    kind: string;
-}> {
+export interface IPromptConverterRegistry<TResponse extends IPromptResponseBase> {
     get<K extends TResponse['kind']>(id: ConverterId, kind: K): Result<Converter<Extract<TResponse, {
         kind: K;
     }>>>;
@@ -276,14 +278,10 @@ export interface IPromptJoinPolicy {
 }
 
 // @public
-export interface IPromptLibraryCreateParams<TResponse extends {
-    kind: string;
-} = {
-    kind: string;
-}> {
+export interface IPromptLibraryCreateParams<TResponse extends IPromptResponseBase = IPromptResponseBase, TQualifierNames extends string = string> {
     readonly cacheListener?: Runtime.IResourceResolverCacheListener;
     readonly logger?: Logging.ILogger;
-    readonly qualifiers: Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<Qualifiers.IQualifierDecl>;
+    readonly qualifiers: IPromptLibraryQualifiersInput<TQualifierNames>;
     readonly qualifierTypes?: QualifierTypes.ReadOnlyQualifierTypeCollector;
     readonly registry?: IPromptRegistry<TResponse>;
     readonly resourceBindingDepthLimit?: number;
@@ -293,19 +291,20 @@ export interface IPromptLibraryCreateParams<TResponse extends {
 }
 
 // @public
-export interface IPromptOutputValidationRegistry<TResponse extends {
-    kind: string;
-}> {
+export type IPromptLibraryQualifiersInput<TQualifierNames extends string = string> = Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<TQualifierNames | (Qualifiers.IQualifierDecl & {
+    readonly name: TQualifierNames;
+})>;
+
+// @public
+export interface IPromptOutputValidationRegistry<TResponse extends IPromptResponseBase> {
     get(id: ValidatorId): Result<IPromptOutputValidator<TResponse>>;
     has(id: ValidatorId): boolean;
     register(id: ValidatorId, validator: IPromptOutputValidator<TResponse>): Result<ValidatorId>;
 }
 
 // @public
-export interface IPromptOutputValidator<TResponse extends {
-    kind: string;
-}> {
-    readonly appliesTo: TResponse['kind'] | ReadonlyArray<TResponse['kind']>;
+export interface IPromptOutputValidator<TResponse extends IPromptResponseBase> {
+    readonly appliesTo: PromptOutputValidatorAppliesTo<TResponse>;
     validate(value: TResponse, context: IOutputValidationContext): Result<true>;
 }
 
@@ -320,11 +319,7 @@ export interface IPromptQualifierMetadata {
 }
 
 // @public
-export interface IPromptRegistry<TResponse extends {
-    kind: string;
-} = {
-    kind: string;
-}> {
+export interface IPromptRegistry<TResponse extends IPromptResponseBase = IPromptResponseBase> {
     // (undocumented)
     readonly converters: IPromptConverterRegistry<TResponse>;
     // (undocumented)
@@ -334,10 +329,10 @@ export interface IPromptRegistry<TResponse extends {
 }
 
 // @public
-export interface IPromptResolveRequest {
+export interface IPromptResolveRequest<TQualifierNames extends string = string> {
     readonly chain: ReadonlyArray<ScopeKey>;
     readonly id: PromptId;
-    readonly qualifiers: IQualifierContext;
+    readonly qualifiers: Readonly<Partial<Record<TQualifierNames, string>>>;
     readonly substitutions?: PromptSubstitutions;
 }
 
@@ -349,6 +344,11 @@ export interface IPromptResolveTrace {
     readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
     readonly scopesConsulted: ReadonlyArray<ScopeKey>;
     readonly winningScope: ScopeKey;
+}
+
+// @public
+export interface IPromptResponseBase {
+    readonly kind: string;
 }
 
 // @public
@@ -415,15 +415,32 @@ export interface IPromptStoreEvent {
 }
 
 // @public
+export type IPromptStoreFixtureDescriptor = Omit<IPromptDescriptor, 'id'> & {
+    readonly id?: PromptId;
+};
+
+// @public
 export interface IPromptStoreFixtureSeed {
     // (undocumented)
     readonly bindings?: ReadonlyArray<IScopeSlotBindingsRecord>;
     // (undocumented)
     readonly qualifiers?: ReadonlyArray<Qualifiers.IQualifierDecl>;
     // (undocumented)
-    readonly records?: ReadonlyArray<IStoredPromptRecord>;
+    readonly records?: ReadonlyArray<IPromptStoreFixtureSeedRecord>;
     readonly scopeDecoding?: (encoded: string) => Result<ScopeKey>;
     readonly scopeEncoding?: (scope: ScopeKey) => Result<string>;
+}
+
+// @public
+export interface IPromptStoreFixtureSeedRecord {
+    // (undocumented)
+    readonly candidates: ReadonlyArray<IPromptCandidateRecord>;
+    // (undocumented)
+    readonly descriptor: IPromptStoreFixtureDescriptor;
+    // (undocumented)
+    readonly id: PromptId;
+    // (undocumented)
+    readonly scope: ScopeKey;
 }
 
 // @public
@@ -433,7 +450,7 @@ export interface IPromptStoreListFilter {
 }
 
 // @public
-export type IQualifierContext = Readonly<Record<string, string>>;
+export type IQualifierContext = Readonly<Partial<Record<string, string>>>;
 
 // @public
 export interface IQualifiersFileContents {
@@ -538,12 +555,8 @@ export function normalizeSubstitutionEntry(entry: string | SlotBinding): SlotBin
 export type OutputContractKind = 'free-text' | 'json';
 
 // @public
-export class OutputValidationRegistry<TResponse extends {
-    kind: string;
-}> implements IPromptOutputValidationRegistry<TResponse> {
-    static create<TResponse extends {
-        kind: string;
-    }>(): Result<OutputValidationRegistry<TResponse>>;
+export class OutputValidationRegistry<TResponse extends IPromptResponseBase> implements IPromptOutputValidationRegistry<TResponse> {
+    static create<TResponse extends IPromptResponseBase>(): Result<OutputValidationRegistry<TResponse>>;
     get(id: ValidatorId): Result<IPromptOutputValidator<TResponse>>;
     has(id: ValidatorId): boolean;
     register(id: ValidatorId, validator: IPromptOutputValidator<TResponse>): Result<ValidatorId>;
@@ -556,23 +569,17 @@ export const promptFileConverter: Converter<IPromptFileContents>;
 export type PromptId = Brand<string, 'PromptId'>;
 
 // @public
-export class PromptLibrary<TResponse extends {
-    kind: string;
-} = {
-    kind: string;
-}> {
-    static create<TResponse extends {
-        kind: string;
-    } = {
-        kind: string;
-    }>(params: IPromptLibraryCreateParams<TResponse>): Promise<Result<PromptLibrary<TResponse>>>;
+export class PromptLibrary<TResponse extends IPromptResponseBase = IPromptResponseBase, TQualifierNames extends string = string> {
+    static create<TResponse extends IPromptResponseBase = IPromptResponseBase, const Q extends Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl> = Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl>>(params: IPromptLibraryCreateParams<TResponse, InferQualifiersFromCreate<Q>> & {
+        readonly qualifiers: Q;
+    }): Promise<Result<PromptLibrary<TResponse, InferQualifiersFromCreate<Q>>>>;
     describe(id: PromptId): Promise<Result<IPromptDescriptor>>;
     invalidateDescriptor(id: PromptId): void;
     readonly logger: Logging.ILogger;
     get materializedCount(): number;
-    resolve(req: IPromptResolveRequest): Promise<Result<IResolvedPrompt>>;
-    resolveFreeTextOutput(req: IPromptResolveRequest, rawOutput: string): Promise<Result<string>>;
-    resolveJsonOutput<K extends TResponse['kind']>(req: IPromptResolveRequest, rawOutput: string, expectedKind: K): Promise<Result<Extract<TResponse, {
+    resolve(req: IPromptResolveRequest<TQualifierNames>): Promise<Result<IResolvedPrompt>>;
+    resolveFreeTextOutput(req: IPromptResolveRequest<TQualifierNames>, rawOutput: string): Promise<Result<string>>;
+    resolveJsonOutput<K extends TResponse['kind']>(req: IPromptResolveRequest<TQualifierNames>, rawOutput: string, expectedKind: K): Promise<Result<Extract<TResponse, {
         kind: K;
     }>>>;
     readonly resourceBindingDepthLimit: number;
@@ -582,18 +589,13 @@ export class PromptLibrary<TResponse extends {
 export type PromptOutputContract = ITextOutputContract | IJsonOutputContract;
 
 // @public
-export class PromptRegistry<TResponse extends {
-    kind: string;
-} = {
-    kind: string;
-}> implements IPromptRegistry<TResponse> {
+export type PromptOutputValidatorAppliesTo<TResponse extends IPromptResponseBase> = TResponse['kind'] | ReadonlyArray<TResponse['kind']>;
+
+// @public
+export class PromptRegistry<TResponse extends IPromptResponseBase = IPromptResponseBase> implements IPromptRegistry<TResponse> {
     // (undocumented)
     readonly converters: IPromptConverterRegistry<TResponse>;
-    static create<TResponse extends {
-        kind: string;
-    } = {
-        kind: string;
-    }>(): Result<PromptRegistry<TResponse>>;
+    static create<TResponse extends IPromptResponseBase = IPromptResponseBase>(): Result<PromptRegistry<TResponse>>;
     // (undocumented)
     readonly outputValidations: IPromptOutputValidationRegistry<TResponse>;
     // (undocumented)

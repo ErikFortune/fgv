@@ -4,8 +4,8 @@
  */
 
 import { Converter, Result } from '@fgv/ts-utils';
-import { ConverterId, SlotName, ValidatorId } from '../types';
-import { IBindingTraceEntry } from '../types';
+import { ConverterId, PromptOutputValidatorAppliesTo, SlotName, ValidatorId } from '../types';
+import { IBindingTraceEntry, IPromptResponseBase } from '../types';
 import { PromptId } from '../types';
 
 /**
@@ -32,12 +32,12 @@ export interface IOutputValidationContext {
  * `validate` when `value.kind` matches `appliesTo`.
  * @public
  */
-export interface IPromptOutputValidator<TResponse extends { kind: string }> {
+export interface IPromptOutputValidator<TResponse extends IPromptResponseBase> {
   /**
    * Discriminator value(s) this validator applies to. Single string for
    * single-kind validators; readonly array for cross-kind validators.
    */
-  readonly appliesTo: TResponse['kind'] | ReadonlyArray<TResponse['kind']>;
+  readonly appliesTo: PromptOutputValidatorAppliesTo<TResponse>;
   /**
    * Validates the converted output. The chain runner only invokes this when
    * `value.kind` matches `appliesTo`; defensive code may re-check.
@@ -61,7 +61,7 @@ export interface IPromptOutputValidator<TResponse extends { kind: string }> {
  *
  * @public
  */
-export interface IPromptConverterRegistry<TResponse extends { kind: string }> {
+export interface IPromptConverterRegistry<TResponse extends IPromptResponseBase> {
   /**
    * Registers a Converter that produces the `TResponse` member discriminated
    * by `kind`. The Converter's `T` is `Extract<TResponse, \{ kind: K \}>` —
@@ -115,7 +115,7 @@ export interface IPromptSlotKindRegistry {
  * Output validation sub-registry.
  * @public
  */
-export interface IPromptOutputValidationRegistry<TResponse extends { kind: string }> {
+export interface IPromptOutputValidationRegistry<TResponse extends IPromptResponseBase> {
   /** Registers a validator under `id`. Fails if `id` is already registered. */
   register(id: ValidatorId, validator: IPromptOutputValidator<TResponse>): Result<ValidatorId>;
   /** Returns the validator registered under `id`. Fails if not registered. */
@@ -131,7 +131,7 @@ export interface IPromptOutputValidationRegistry<TResponse extends { kind: strin
  * only use free-text output.
  * @public
  */
-export interface IPromptRegistry<TResponse extends { kind: string } = { kind: string }> {
+export interface IPromptRegistry<TResponse extends IPromptResponseBase = IPromptResponseBase> {
   readonly converters: IPromptConverterRegistry<TResponse>;
   readonly slotKinds: IPromptSlotKindRegistry;
   readonly outputValidations: IPromptOutputValidationRegistry<TResponse>;

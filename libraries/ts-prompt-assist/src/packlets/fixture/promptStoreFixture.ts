@@ -7,19 +7,50 @@ import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Yaml } from '@fgv/ts-extras';
 import { Qualifiers } from '@fgv/ts-res';
-import { ScopeKey, SlotName } from '../types';
+import { PromptId, ScopeKey, SlotName } from '../types';
 import { SlotBinding } from '../types';
-import { IScopeSlotBindingsRecord, IStoredPromptRecord } from '../types';
+import { IPromptCandidateRecord, IPromptDescriptor, IScopeSlotBindingsRecord } from '../types';
 import { defaultScopeEncoding } from '../store';
 import { FileTreePromptStore } from '../store';
 import { IPromptStore } from '../store';
+
+/**
+ * Fixture-seed-only descriptor shape: `id` is optional. Per F12, on
+ * the fixture path the outer `IPromptStoreFixtureSeedRecord.id` already
+ * carries the prompt id, so the nested `descriptor.id` is redundant —
+ * the fixture defaults it from the outer id when omitted. An explicit
+ * `descriptor.id` that mismatches the outer id is rejected loudly.
+ *
+ * The on-disk-YAML schema is unchanged: the filename stem matters
+ * there, so `IPromptDescriptor.id` remains required on the
+ * loader-facing descriptor type.
+ *
+ * @public
+ */
+export type IPromptStoreFixtureDescriptor = Omit<IPromptDescriptor, 'id'> & {
+  readonly id?: PromptId;
+};
+
+/**
+ * Fixture-seed-only record shape: descriptor.id is optional and
+ * defaults to the outer record id (per F12). Other fields mirror
+ * {@link IStoredPromptRecord}.
+ *
+ * @public
+ */
+export interface IPromptStoreFixtureSeedRecord {
+  readonly scope: ScopeKey;
+  readonly id: PromptId;
+  readonly descriptor: IPromptStoreFixtureDescriptor;
+  readonly candidates: ReadonlyArray<IPromptCandidateRecord>;
+}
 
 /**
  * Seed describing the in-memory FileTree state for a test fixture.
  * @public
  */
 export interface IPromptStoreFixtureSeed {
-  readonly records?: ReadonlyArray<IStoredPromptRecord>;
+  readonly records?: ReadonlyArray<IPromptStoreFixtureSeedRecord>;
   readonly bindings?: ReadonlyArray<IScopeSlotBindingsRecord>;
   readonly qualifiers?: ReadonlyArray<Qualifiers.IQualifierDecl>;
   /**
@@ -45,9 +76,30 @@ function serializeBindingsRecord(record: IScopeSlotBindingsRecord): Result<strin
   return Yaml.yamlStringify({ bindings });
 }
 
-function serializePromptRecord(record: IStoredPromptRecord): Result<string> {
-  const { descriptor, candidates } = record;
-  return Yaml.yamlStringify({ ...descriptor, candidates });
+function serializePromptRecord(record: IPromptStoreFixtureSeedRecord): Result<string> {
+  return defaultDescriptorIdFromOuter(record).onSuccess((descriptor) =>
+    Yaml.yamlStringify({ ...descriptor, candidates: record.candidates })
+  );
+}
+
+/**
+ * Per F12: descriptor.id is optional on the fixture seed. If omitted,
+ * default from the outer record.id. If explicitly supplied and it
+ * mismatches the outer id, reject loudly — the redundancy is gone but
+ * silent inconsistency must remain impossible.
+ */
+function defaultDescriptorIdFromOuter(record: IPromptStoreFixtureSeedRecord): Result<IPromptDescriptor> {
+  const descriptor = record.descriptor;
+  if (descriptor.id === undefined) {
+    return succeed({ ...descriptor, id: record.id });
+  }
+  if (descriptor.id !== record.id) {
+    return fail(
+      `fixture: record id '${record.id}' does not match descriptor.id '${descriptor.id}'; ` +
+        `descriptor.id is optional on the fixture seed but, if supplied, must match the outer id`
+    );
+  }
+  return succeed({ ...descriptor, id: descriptor.id });
 }
 
 function serializeQualifiers(qualifiers: ReadonlyArray<Qualifiers.IQualifierDecl>): Result<string> {
@@ -112,7 +164,7 @@ function buildSeededStore(seed: IPromptStoreFixtureSeed): Promise<Result<IPrompt
 }
 
 function encodeRecords(
-  records: ReadonlyArray<IStoredPromptRecord> | undefined,
+  records: ReadonlyArray<IPromptStoreFixtureSeedRecord> | undefined,
   encode: (scope: ScopeKey) => Result<string>
 ): Result<ReadonlyArray<FileTree.IInMemoryFile>> {
   return mapResults(

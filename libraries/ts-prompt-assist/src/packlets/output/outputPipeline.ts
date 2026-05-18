@@ -9,7 +9,9 @@ import {
   IBindingTraceEntry,
   IJsonOutputContract,
   IPromptDescriptor,
+  IPromptResponseBase,
   PromptId,
+  PromptOutputValidatorAppliesTo,
   SlotName,
   ValidatorId
 } from '../types';
@@ -30,7 +32,7 @@ import { IPromptOutputValidator, IPromptRegistry } from '../registry';
  *
  * @internal
  */
-export function assertOutputValidationsCompatible<TResponse extends { kind: string }>(
+export function assertOutputValidationsCompatible<TResponse extends IPromptResponseBase>(
   descriptor: IPromptDescriptor,
   registry: IPromptRegistry<TResponse> | undefined
 ): Result<true> {
@@ -109,7 +111,7 @@ export function assertOutputValidationsCompatible<TResponse extends { kind: stri
  *
  * @internal
  */
-export function runOutputValidationPipeline<TResponse extends { kind: string }>(params: {
+export function runOutputValidationPipeline<TResponse extends IPromptResponseBase>(params: {
   readonly descriptor: IPromptDescriptor;
   readonly contract: IJsonOutputContract;
   readonly registry: IPromptRegistry<TResponse>;
@@ -138,7 +140,7 @@ export function runOutputValidationPipeline<TResponse extends { kind: string }>(
     .onSuccess((value) => runValidatorChain(descriptor, registry, value, substitutions));
 }
 
-function runValidatorChain<TResponse extends { kind: string }>(
+function runValidatorChain<TResponse extends IPromptResponseBase>(
   descriptor: IPromptDescriptor,
   registry: IPromptRegistry<TResponse>,
   value: TResponse,
@@ -157,7 +159,7 @@ function runValidatorChain<TResponse extends { kind: string }>(
     : succeed(value);
 }
 
-function runOneValidator<TResponse extends { kind: string }>(
+function runOneValidator<TResponse extends IPromptResponseBase>(
   promptId: PromptId,
   registry: IPromptRegistry<TResponse>,
   id: ValidatorId,
@@ -187,18 +189,18 @@ function runOneValidator<TResponse extends { kind: string }>(
   });
 }
 
-function appliesToList<TResponse extends { kind: string }>(
+function appliesToList<TResponse extends IPromptResponseBase>(
   validator: IPromptOutputValidator<TResponse>
 ): ReadonlyArray<TResponse['kind']> {
-  const appliesTo: TResponse['kind'] | ReadonlyArray<TResponse['kind']> = validator.appliesTo;
+  const appliesTo: PromptOutputValidatorAppliesTo<TResponse> = validator.appliesTo;
   if (isReadonlyArrayOfKind<TResponse>(appliesTo)) {
     return appliesTo;
   }
   return [appliesTo];
 }
 
-function isReadonlyArrayOfKind<TResponse extends { kind: string }>(
-  value: TResponse['kind'] | ReadonlyArray<TResponse['kind']>
+function isReadonlyArrayOfKind<TResponse extends IPromptResponseBase>(
+  value: PromptOutputValidatorAppliesTo<TResponse>
 ): value is ReadonlyArray<TResponse['kind']> {
   return Array.isArray(value);
 }

@@ -32,7 +32,7 @@ export interface IResourceBindingStackFrame {
 export interface IInnerResolveRequest {
   readonly id: PromptId;
   readonly chain: ReadonlyArray<ScopeKey>;
-  readonly qualifiers: Readonly<Record<string, string>>;
+  readonly qualifiers: Readonly<Partial<Record<string, string>>>;
   readonly substitutions: PromptSubstitutions | undefined;
 }
 
@@ -107,7 +107,7 @@ export interface IResourceBindingResolveResult {
 export async function resolvePendingResourceBindings(params: {
   readonly pending: ReadonlyArray<IPendingResourceBinding>;
   readonly outerChain: ReadonlyArray<ScopeKey>;
-  readonly outerQualifiers: Readonly<Record<string, string>>;
+  readonly outerQualifiers: Readonly<Partial<Record<string, string>>>;
   readonly outerSubstitutions: PromptSubstitutions | undefined;
   readonly outerId: PromptId;
   readonly depth: number;
@@ -159,11 +159,11 @@ export async function resolvePendingResourceBindings(params: {
 function buildInnerRequest(
   binding: IResourceSlotBinding,
   outerChain: ReadonlyArray<ScopeKey>,
-  outerQualifiers: Readonly<Record<string, string>>
+  outerQualifiers: Readonly<Partial<Record<string, string>>>
 ): Result<{
   readonly id: PromptId;
   readonly chain: ReadonlyArray<ScopeKey>;
-  readonly qualifiers: Readonly<Record<string, string>>;
+  readonly qualifiers: Readonly<Partial<Record<string, string>>>;
 }> {
   // `resourceId` is a `ResourceId` brand at the binding layer; the inner
   // resolve consumes a `PromptId` so re-validate. A resource binding that

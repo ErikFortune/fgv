@@ -134,6 +134,102 @@ console.log(formal.trace.mergedBindings.get(AUDIENCE)?.source);
 
 ---
 
+## Wiring into a React app
+
+`PromptLibrary.create` and `PromptStoreFixture.build` both return
+`Promise<Result<...>>` — there is no synchronous fixture path, by
+design (the same code constructs an `InMemoryFileTree`, an `FsTree`, a
+zip-backed tree, or the browser File-System-Access tree, and the
+async-only contract preserves that symmetry). The canonical wiring for
+a React/web consumer is a one-shot `useEffect` initialiser that gates
+the UI on the library landing.
+
+```typescript
+import { useEffect, useState } from 'react';
+import {
+  Convert,
+  IPromptResponseBase,
+  IPromptStoreFixtureSeed,
+  PromptLibrary,
+  PromptStoreFixture
+} from '@fgv/ts-prompt-assist';
+
+// Author the seed at module scope — same shape as the in-memory
+// quick-start.
+const SCOPE = Convert.scopeKey.convert('global').orThrow();
+const GREETING = Convert.promptId.convert('greeting').orThrow();
+const seed: IPromptStoreFixtureSeed = {
+  records: [
+    {
+      scope: SCOPE,
+      id: GREETING,
+      // F12: descriptor.id is optional on the fixture seed — the outer
+      // record.id is the source of truth on the fixture path.
+      descriptor: {
+        title: 'Greeting',
+        schemaVersion: '1',
+        surface: 'chat',
+        slots: [],
+        output: { kind: 'free-text' }
+      },
+      candidates: [{ conditions: {}, body: 'Hello, {{tone}} caller!' }]
+    }
+  ]
+};
+
+export function ChatPanel(): JSX.Element {
+  // TQualifierNames is inferred from the decl-array literal — `tone` is
+  // the only accepted qualifier key on the resolve request, surfacing
+  // typos at compile time (F3).
+  const [library, setLibrary] = useState<PromptLibrary<IPromptResponseBase, 'tone'> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const store = (await PromptStoreFixture.build(seed)).orThrow();
+      const lib = (
+        await PromptLibrary.create({ store, qualifiers: ['tone'] as const })
+      ).orThrow();
+      if (!cancelled) {
+        setLibrary(lib);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (library === null) {
+    return <div>Loading...</div>;
+  }
+  return <ChatInner library={library} />;
+}
+
+function ChatInner(props: { library: PromptLibrary<IPromptResponseBase, 'tone'> }): JSX.Element {
+  // The narrow `qualifiers: { tone?: string }` shape comes from F3 +
+  // F14 — the empty `{}` branch assigns thanks to the Partial widening
+  // and a misspelled axis (`tonr`) fails at compile time.
+  return <div>Library ready.</div>;
+}
+```
+
+Three things this pattern earns you:
+
+1. **`useEffect` + `cancelled` guard** — protects against the
+   in-flight build resolving after the component unmounts (the standard
+   "set state after unmount" warning); no library-side cooperation
+   needed.
+2. **Module-scope seed authoring** — the seed itself is pure data,
+   safe to instantiate at module top level. Only the
+   `PromptLibrary.create` call is async.
+3. **Typed qualifier axes** — `qualifiers: ['tone'] as const` (the
+   decl-array path of `PromptLibrary.create`) infers `TQualifierNames = 'tone'`,
+   tightening the resolve request's `qualifiers` shape. A pre-built
+   `Qualifiers.QualifierCollector` doesn't expose its axes at the type
+   level; pass `as const` decls when you want the typed benefit.
+
+---
+
 ## Quick start — on-disk YAML store
 
 `FileTreePromptStore` accepts any `FileTree.IFileTreeDirectoryItem` —

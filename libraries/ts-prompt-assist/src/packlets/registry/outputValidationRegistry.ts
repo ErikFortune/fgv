@@ -4,14 +4,14 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { ValidatorId } from '../types';
+import { IPromptResponseBase, ValidatorId } from '../types';
 import { IPromptOutputValidationRegistry, IPromptOutputValidator } from './interfaces';
 
 /**
  * In-memory implementation of {@link IPromptOutputValidationRegistry}.
  * @public
  */
-export class OutputValidationRegistry<TResponse extends { kind: string }>
+export class OutputValidationRegistry<TResponse extends IPromptResponseBase>
   implements IPromptOutputValidationRegistry<TResponse>
 {
   private readonly _entries: Map<ValidatorId, IPromptOutputValidator<TResponse>>;
@@ -21,7 +21,7 @@ export class OutputValidationRegistry<TResponse extends { kind: string }>
   }
 
   /** Family-convention factory. */
-  public static create<TResponse extends { kind: string }>(): Result<OutputValidationRegistry<TResponse>> {
+  public static create<TResponse extends IPromptResponseBase>(): Result<OutputValidationRegistry<TResponse>> {
     return succeed(new OutputValidationRegistry<TResponse>());
   }
 

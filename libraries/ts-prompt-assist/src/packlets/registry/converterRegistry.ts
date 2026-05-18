@@ -4,7 +4,7 @@
  */
 
 import { Converter, Result, fail, succeed } from '@fgv/ts-utils';
-import { ConverterId } from '../types';
+import { ConverterId, IPromptResponseBase } from '../types';
 import { IPromptConverterRegistry } from './interfaces';
 
 /**
@@ -18,8 +18,8 @@ import { IPromptConverterRegistry } from './interfaces';
  * Storing entries under this type lets `get(id, kind)` narrow via the
  * discriminator without a `Converter<TResponse> -> Converter<T>` cast.
  */
-type IEntry<TResponse extends { kind: string }> = TResponse extends infer R
-  ? R extends { kind: string }
+type IEntry<TResponse extends IPromptResponseBase> = TResponse extends infer R
+  ? R extends IPromptResponseBase
     ? { readonly kind: R['kind']; readonly converter: Converter<R> }
     : never
   : never;
@@ -34,7 +34,7 @@ type IEntry<TResponse extends { kind: string }> = TResponse extends infer R
  *
  * @public
  */
-export class ConverterRegistry<TResponse extends { kind: string }>
+export class ConverterRegistry<TResponse extends IPromptResponseBase>
   implements IPromptConverterRegistry<TResponse>
 {
   private readonly _entries: Map<ConverterId, IEntry<TResponse>>;
@@ -44,7 +44,7 @@ export class ConverterRegistry<TResponse extends { kind: string }>
   }
 
   /** Family-convention factory. */
-  public static create<TResponse extends { kind: string }>(): Result<ConverterRegistry<TResponse>> {
+  public static create<TResponse extends IPromptResponseBase>(): Result<ConverterRegistry<TResponse>> {
     return succeed(new ConverterRegistry<TResponse>());
   }
 
