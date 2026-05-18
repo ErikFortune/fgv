@@ -26,7 +26,8 @@
     "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "react": "~19.2.3",
-    "react-dom": "~19.2.3"
+    "react-dom": "~19.2.3",
+    "@fgv/ts-prompt-assist": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "~19.2.8",

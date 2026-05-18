@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import { AiAssist } from '@fgv/ts-extras';
 
+import type { ChatTone } from '../promptLibrary';
+
 export interface IChatTurn {
   readonly role: 'user' | 'assistant';
   readonly content: string;
@@ -15,6 +17,8 @@ export interface IChatPanelProps {
   readonly turns: ReadonlyArray<IChatTurn>;
   readonly error: string | undefined;
   readonly activeToolEvents: ReadonlyArray<string>;
+  readonly tone: ChatTone;
+  readonly onToneChange: (tone: ChatTone) => void;
   readonly onSend: (
     text: string,
     options: { readonly tools?: ReadonlyArray<AiAssist.AiServerToolConfig> }
@@ -24,7 +28,19 @@ export interface IChatPanelProps {
 }
 
 export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
-  const { provider, isWorking, canSubmit, turns, error, activeToolEvents, onSend, onAbort, onClear } = props;
+  const {
+    provider,
+    isWorking,
+    canSubmit,
+    turns,
+    error,
+    activeToolEvents,
+    tone,
+    onToneChange,
+    onSend,
+    onAbort,
+    onClear
+  } = props;
 
   const [input, setInput] = useState('');
   const [useWebSearch, setUseWebSearch] = useState(false);
@@ -162,6 +178,19 @@ export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
               <span>Use web search</span>
             </label>
           )}
+
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+            <span>Tone</span>
+            <select
+              value={tone}
+              onChange={(e) => onToneChange(e.target.value as ChatTone)}
+              disabled={isWorking}
+              className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="neutral">Neutral</option>
+              <option value="formal">Formal</option>
+            </select>
+          </label>
 
           {!canSubmit && <span className="text-sm text-slate-500">Enter an API key to enable chat.</span>}
         </div>
