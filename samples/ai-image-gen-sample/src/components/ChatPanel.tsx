@@ -15,6 +15,8 @@ export interface IChatPanelProps {
   readonly turns: ReadonlyArray<IChatTurn>;
   readonly error: string | undefined;
   readonly activeToolEvents: ReadonlyArray<string>;
+  readonly tone: 'base' | 'formal';
+  readonly onToneChange: (next: 'base' | 'formal') => void;
   readonly onSend: (
     text: string,
     options: { readonly tools?: ReadonlyArray<AiAssist.AiServerToolConfig> }
@@ -24,7 +26,19 @@ export interface IChatPanelProps {
 }
 
 export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
-  const { provider, isWorking, canSubmit, turns, error, activeToolEvents, onSend, onAbort, onClear } = props;
+  const {
+    provider,
+    isWorking,
+    canSubmit,
+    turns,
+    error,
+    activeToolEvents,
+    tone,
+    onToneChange,
+    onSend,
+    onAbort,
+    onClear
+  } = props;
 
   const [input, setInput] = useState('');
   const [useWebSearch, setUseWebSearch] = useState(false);
@@ -58,18 +72,32 @@ export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-slate-800">Streaming chat</h2>
-        {turns.length > 0 && (
-          <button
-            type="button"
-            onClick={onClear}
-            disabled={isWorking}
-            className="text-xs text-slate-500 hover:text-slate-700 disabled:opacity-40"
-          >
-            Clear conversation
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <label className="inline-flex items-center gap-2 text-xs text-slate-600">
+            <span className="font-medium">Tone</span>
+            <select
+              value={tone}
+              onChange={(e) => onToneChange(e.target.value === 'formal' ? 'formal' : 'base')}
+              disabled={isWorking}
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="base">Default</option>
+              <option value="formal">Formal</option>
+            </select>
+          </label>
+          {turns.length > 0 && (
+            <button
+              type="button"
+              onClick={onClear}
+              disabled={isWorking}
+              className="text-xs text-slate-500 hover:text-slate-700 disabled:opacity-40"
+            >
+              Clear conversation
+            </button>
+          )}
+        </div>
       </div>
 
       <div

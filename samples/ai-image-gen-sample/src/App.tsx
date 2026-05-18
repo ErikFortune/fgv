@@ -1,13 +1,15 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { AiAssist } from '@fgv/ts-extras';
 import { useAiAssist } from '@fgv/ts-app-shell';
+import type { PromptLibrary } from '@fgv/ts-prompt-assist';
 
 import { SettingsPanel } from './components/SettingsPanel';
 import { PromptPanel } from './components/PromptPanel';
 import { ImageResults } from './components/ImageResults';
 import { ChatPanel, type IChatTurn } from './components/ChatPanel';
 import { InMemoryKeyStore } from './inMemoryKeyStore';
+import { buildChatPromptLibrary, resolveSystemPrompt, type Tone } from './promptLibrary';
 
 type Mode = 'image' | 'chat';
 
@@ -79,6 +81,32 @@ export function App(): React.JSX.Element {
   const [chatTurns, setChatTurns] = useState<ReadonlyArray<IChatTurn>>([]);
   const [chatError, setChatError] = useState<string | undefined>(undefined);
   const [activeToolEvents, setActiveToolEvents] = useState<ReadonlyArray<string>>([]);
+  const [tone, setTone] = useState<Tone>('base');
+
+  // ts-prompt-assist library — sourcing the chat system prompt. Built
+  // once at startup via the in-memory fixture. The construction is
+  // fallible (Result<>) AND async, which forces this useEffect dance
+  // instead of a synchronous useMemo — see pressure-test finding F6.
+  const [promptLibrary, setPromptLibrary] = useState<PromptLibrary | undefined>(undefined);
+  const [promptLibraryError, setPromptLibraryError] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async (): Promise<void> => {
+      const built = await buildChatPromptLibrary();
+      if (cancelled) {
+        return;
+      }
+      if (built.isFailure()) {
+        setPromptLibraryError(built.message);
+        return;
+      }
+      setPromptLibrary(built.value);
+    })();
+    return (): void => {
+      cancelled = true;
+    };
+  }, []);
 
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
 
@@ -187,12 +215,41 @@ export function App(): React.JSX.Element {
     const assistantTurn: IChatTurn = { role: 'assistant', content: '', isStreaming: true };
     setChatTurns((prev) => [...prev, userTurn, assistantTurn]);
 
-    // System prompt is a generic helpful-assistant string; prior turns go into
-    // messagesBefore so they're sent between system and the new user message.
+    // System prompt comes from ts-prompt-assist — a base candidate +
+    // a tone=formal partial override, selected by the `tone` UI toggle.
+    // Prior turns go into messagesBefore between system and the new
+    // user message.
     const messagesBefore: AiAssist.IChatMessage[] = chatTurns
       .filter((t) => t.role === 'user' || t.role === 'assistant')
       .map((t) => ({ role: t.role, content: t.content }));
-    const prompt = new AiAssist.AiPrompt(text, 'You are a helpful assistant.');
+
+    if (promptLibrary === undefined) {
+      setChatError(promptLibraryError ?? 'Prompt library is not ready yet.');
+      setChatTurns((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (last && last.role === 'assistant' && last.content.length === 0) {
+          next.pop();
+        }
+        return next;
+      });
+      return;
+    }
+
+    const systemPromptResult = await resolveSystemPrompt(promptLibrary, tone);
+    if (systemPromptResult.isFailure()) {
+      setChatError(`Failed to resolve system prompt: ${systemPromptResult.message}`);
+      setChatTurns((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (last && last.role === 'assistant' && last.content.length === 0) {
+          next.pop();
+        }
+        return next;
+      });
+      return;
+    }
+    const prompt = new AiAssist.AiPrompt(text, systemPromptResult.value);
 
     let receivedAnyContent = false;
     let inlineError: string | undefined;
@@ -357,10 +414,12 @@ export function App(): React.JSX.Element {
           <ChatPanel
             provider={provider}
             isWorking={isWorking}
-            canSubmit={currentKey.length > 0}
+            canSubmit={currentKey.length > 0 && promptLibrary !== undefined}
             turns={chatTurns}
-            error={chatError}
+            error={chatError ?? promptLibraryError}
             activeToolEvents={activeToolEvents}
+            tone={tone}
+            onToneChange={setTone}
             onSend={handleSendChat}
             onAbort={handleAbort}
             onClear={handleClearChat}

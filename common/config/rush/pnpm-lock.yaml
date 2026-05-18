@@ -2034,6 +2034,12 @@ importers:
       '@fgv/ts-extras':
         specifier: workspace:*
         version: link:../../libraries/ts-extras
+      '@fgv/ts-prompt-assist':
+        specifier: workspace:*
+        version: link:../../libraries/ts-prompt-assist
+      '@fgv/ts-res':
+        specifier: workspace:*
+        version: link:../../libraries/ts-res
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../../libraries/ts-utils
