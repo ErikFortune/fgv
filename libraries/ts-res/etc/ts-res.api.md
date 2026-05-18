@@ -588,7 +588,7 @@ class ConditionCollector extends ValidatingCollector<Condition> {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const conditionDecl: ObjectConverter<ILooseConditionDecl, unknown>;
+const conditionDecl: ObjectConverter<IConditionDecl, unknown>;
 
 // @public
 export type ConditionIndex = Brand<number, 'ConditionIndex'>;
@@ -705,9 +705,11 @@ class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetDeclAsArray"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ConditionSetDeclAsRecord"
 //
 // @public
-type ConditionSetDecl = ConditionSetDeclAsArray | ConditionSetDeclAsRecord;
+type ConditionSetDecl<TQualifierNames extends string = string> = ConditionSetDeclAsArray<TQualifierNames> | ConditionSetDeclAsRecord<TQualifierNames>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -725,14 +727,15 @@ type ConditionSetDecl_2 = ReadonlyArray<ILooseConditionDecl>;
 const conditionSetDecl_2: ObjectConverter<IConditionSetDecl, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "ILooseConditionDecl"
 //
 // @public
-type ConditionSetDeclAsArray = ReadonlyArray<ILooseConditionDecl>;
+type ConditionSetDeclAsArray<TQualifierNames extends string = string> = ReadonlyArray<ILooseConditionDecl<TQualifierNames>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ConditionSetDeclAsRecord = Record<string, string | IChildConditionDecl>;
+type ConditionSetDeclAsRecord<TQualifierNames extends string = string> = Readonly<Partial<Record<TQualifierNames, string | IChildConditionDecl>>>;
 
 // @public
 export type ConditionSetHash = Brand<string, 'ConditionSetHash'>;
@@ -2243,11 +2246,11 @@ interface ILiteralValueHierarchyCreateParams<T extends string = string> {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ILooseConditionDecl {
+interface ILooseConditionDecl<TQualifierNames extends string = string> {
     operator?: ConditionOperator;
     priority?: number;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    qualifierName: string;
+    qualifierName: TQualifierNames;
     scoreAsDefault?: number;
     value: string;
 }

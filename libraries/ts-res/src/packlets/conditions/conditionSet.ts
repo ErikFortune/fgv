@@ -204,15 +204,24 @@ export class ConditionSet implements IValidatedConditionSetDecl {
       // ConditionSetDeclAsArray: array of ILooseConditionDecl
       conditionSetDecl = { conditions: conditionSet };
     } else {
-      // ConditionSetDeclAsRecord: Record<string, string | IChildConditionDecl>
-      const conditions = Object.entries(conditionSet).map(([qualifierName, value]) => {
+      // ConditionSetDeclAsRecord: Record<string, string | IChildConditionDecl>.
+      // The record-form type is `Readonly<Partial<Record<..., V>>>`, so
+      // `Object.entries` produces `[string, V | undefined]` — runtime
+      // `undefined` values (a key explicitly set to undefined) skip;
+      // they're semantically equivalent to omitting the key.
+      const conditions: ResourceJson.Json.ILooseConditionDecl[] = [];
+      for (const [qualifierName, value] of Object.entries(conditionSet)) {
+        /* c8 ignore next 3 - defensive: explicit-undefined-value entries skipped */
+        if (value === undefined) {
+          continue;
+        }
         if (typeof value === 'string') {
-          return { qualifierName, value };
+          conditions.push({ qualifierName, value });
           /* c8 ignore next 3 - edge case */
         } else {
-          return { qualifierName, ...value };
+          conditions.push({ qualifierName, ...value });
         }
-      });
+      }
       conditionSetDecl = { conditions };
     }
 

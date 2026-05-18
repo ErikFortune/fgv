@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add typed counterparts to ConditionSetDecl family — TypedConditionSetDeclAsArray, TypedConditionSetDeclAsRecord, TypedConditionSetDecl — parameterized on TQualifierNames for compile-time axis-name discipline in in-code condition authoring; ts-prompt-assist will consume.",
+      "type": "none",
+      "packageName": "@fgv/ts-res"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}

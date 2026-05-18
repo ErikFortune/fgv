@@ -25,13 +25,21 @@ import { ConditionOperator, ResourceValueMergeMethod } from '../common';
 
 /**
  * Non-validated loose declaration of a {@link Conditions.Condition | condition}.
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames` so consumers authoring conditions
+ * in code can opt into compile-time axis-name discipline (e.g. via a
+ * literal-string union derived from a `qualifiers: ['tone'] as const`
+ * decl-array). Defaults to `string`, so existing untyped callers
+ * compile unchanged.
+ *
  * @public
  */
-export interface ILooseConditionDecl {
+export interface ILooseConditionDecl<TQualifierNames extends string = string> {
   /**
    * The name of the {@link Qualifiers.Qualifier | qualifier} to be compared.
    */
-  qualifierName: string;
+  qualifierName: TQualifierNames;
   /**
    * The value to be compared.
    */
@@ -80,22 +88,62 @@ export interface IChildConditionDecl {
 }
 
 /**
- * Non-validated declaration of a {@link Conditions.Condition | condition}.
+ * Non-validated array-form declaration of a {@link Conditions.ConditionSet | condition set}.
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames` via {@link ILooseConditionDecl};
+ * defaults to `string` for back-compat with existing untyped callers.
+ *
  * @public
  */
-export type ConditionSetDeclAsArray = ReadonlyArray<ILooseConditionDecl>;
+export type ConditionSetDeclAsArray<TQualifierNames extends string = string> = ReadonlyArray<
+  ILooseConditionDecl<TQualifierNames>
+>;
 
 /**
- * Non-validated declaration of a {@link Conditions.Condition | condition}.
+ * Non-validated record-form declaration of a {@link Conditions.ConditionSet | condition set}.
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames` so the record keys narrow to a
+ * consumer-supplied literal-string union when typed-narrow usage is
+ * desired. `Partial` keeps each axis optional — consumers specify only
+ * the axes that matter for a given condition set.
+ *
+ * Defaults to `string`. The `Readonly<Partial<...>>` wrapping (versus
+ * the prior bare `Record<string, ...>`) is a strict type-system
+ * tightening that aligns the type with the runtime behavior — missing
+ * keys at runtime already produce `undefined`; the `Partial` makes TS
+ * aware of what's already true. No functional change.
+ *
  * @public
  */
-export type ConditionSetDeclAsRecord = Record<string, string | IChildConditionDecl>;
+export type ConditionSetDeclAsRecord<TQualifierNames extends string = string> = Readonly<
+  Partial<Record<TQualifierNames, string | IChildConditionDecl>>
+>;
 
 /**
- * Non-validated declaration of a {@link Conditions.Condition | condition}.
+ * Non-validated declaration of a {@link Conditions.ConditionSet | condition set}.
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames`; defaults to `string`. Both the
+ * array form ({@link ConditionSetDeclAsArray}) and the record form
+ * ({@link ConditionSetDeclAsRecord}) inherit the parameter, so a
+ * consumer threading a narrow `TQualifierNames` gets compile-time
+ * rejection of typo'd axis names in either form. Value-side
+ * expressivity is fully preserved — string sugar, the
+ * record-form's `IChildConditionDecl` child shape, and the array
+ * form's `ILooseConditionDecl` continue to be accepted.
+ *
+ * Immediate consumer: `@fgv/ts-prompt-assist`'s seed-authoring path
+ * (round-2 pressure-test F1 absorption). Generic enough to benefit
+ * any future ts-res consumer authoring conditions in code that wants
+ * compile-time axis-name discipline.
+ *
  * @public
  */
-export type ConditionSetDecl = ConditionSetDeclAsArray | ConditionSetDeclAsRecord;
+export type ConditionSetDecl<TQualifierNames extends string = string> =
+  | ConditionSetDeclAsArray<TQualifierNames>
+  | ConditionSetDeclAsRecord<TQualifierNames>;
 
 /**
  * Non-validated child declaration of a {@link Resources.ResourceCandidate | resource candidate}.
