@@ -6,11 +6,12 @@ Cross-cutting lessons surfaced during orchestrator sessions, parked here until e
 
 ## Status
 
-Sessions feeding this inbox: orchestrator sessions through 2026-05-11 (ai-assist cluster + doc-graduation + lint-gate codification + crypto-batch-2 substrate prep).
+Sessions feeding this inbox: orchestrator sessions through 2026-05-17 (ai-assist cluster + doc-graduation + lint-gate codification + crypto-batch-2 + ts-prompt-assist clusters).
 
 Active clusters at most recent sweep point:
-- ✅ ai-assist cluster — shipped to release in #336 (5.1.0-26 mirror to prerelease pending alpha publish)
-- 🟢 crypto-batch-2 cluster — substrate prepped (#328 + #338); four phase-A briefs ready; no agents launched yet
+- ✅ ai-assist cluster — shipped to release in #336
+- ✅ crypto-batch-2 cluster — shipped to release; lessons captured (L14–L17)
+- 🟢 ts-prompt-assist cluster — Phase B + B-5 docs merged into integration; surface-tidy round in flight; cluster close pending consumer-port pressure-test (lessons L18–L21 below)
 - 🟡 `ai-assist-thinking-events` — sequencing after thinking-config phase B landed (now satisfied); ready to commission
 
 ---
@@ -213,6 +214,83 @@ All hand-rolling what `jest.spyOn(globalThis, 'fetch').mockImplementation(...)` 
 **Codification candidate:** Either (a) fix the tests so the package's `rushx build` is green end-to-end, or (b) audit what `rushx build` actually runs vs what `rushx test` runs — if the test compile is happening at test time instead of build time, the per-stream pre-PR validation should be running `rushx test` rather than (or in addition to) `rushx build`. The CODING_STANDARDS Pre-PR Validation Checklist currently lists "rushx build / rushx lint / rushx test" but doesn't enforce that all three actually run a meaningful pass on each package. Worth confirming the test compile is part of `rushx test` and that agents are running it.
 
 **Reference:** crypto-batch-2 lint follow-up sweep (PR #354 body's "Pre-existing build issue" section); verified on `release` HEAD `b3f87159f` and `15c94adad`.
+
+---
+
+### L18. Docs accurately describe shipped behavior, not design intent
+
+**Observed:** During ts-prompt-assist B-5 (docs + handoff package PR #371), Copilot review caught two clusters of overclaims that the agent didn't catch and that the smoke-test discipline didn't surface:
+
+1. **`trace.safeguardFindings` claimed to carry reject findings** in three places (README, LIBRARY_CAPABILITIES, `trace.ts` TSDoc). The impl actually returns `Result.fail` BEFORE producing an `IResolvedPrompt` on length-cap-violation or `onSuspicious: 'reject'` paths — reject details live in the failure message, not the trace. The design's §9 envisioned trace-bound findings universally, but the B-4 round-2 review-response commit had already removed the dead `findings.push` on reject paths because those findings were unreachable. The docs documented the design's aspiration, not what shipped.
+2. **`resolveAndValidateOutput<T>` claimed end-to-end type safety** in README + LIBRARY_CAPABILITIES decision-shortcut. The caller-asserted `T` is NOT runtime-verified against the descriptor's declared converter kind (this is the surviving P2 TECH_DEBT entry the B-4 cleanup deferred). A consumer can ask `<IClassifierResponse>` for a `cited`-producing descriptor and get a typed lie. The doc claim was the design's wish, not the impl's reality.
+
+Pattern: doc-writing agents tend to document the design's intent rather than reading the code to verify what actually ships. Copilot reads code (or at least reads carefully enough to catch the mismatch); the doc-writing agent didn't.
+
+**Rule:** Doc sub-phases need an explicit "verify against shipped behavior, not design intent" guardrail. The smoke-test discipline (B-5's `readmeSmoke.test.ts`) covers code samples that run, but doesn't catch documentation claims about what the trace contains or what type guarantees hold. Need a separate doc-audit step: take each claim about a property / return shape / type guarantee and walk back to the impl to verify.
+
+**Codification candidate:**
+
+1. **Doc sub-phase brief addendum.** Explicit: "Every claim in the docs about a property's contents, a method's return type, or a type-safety guarantee must be walked back to the impl before opening the PR. Where the design and the impl diverge, document the impl — and either retire the design difference or file a tech-debt entry." Add to phase-doc brief template.
+2. **Open TECH_DEBT entries are the canary.** If the docs claim something the TECH_DEBT entries call out as unresolved, the docs are wrong by definition. Suggest a routine cross-check: list open TECH_DEBT entries against the library; ensure no doc claim contradicts an open entry's "this is broken" position.
+
+**Reference:** PR #371 Copilot review threads `r3255107593` / `r3255107608` / `r3255107640` (trace overclaim); `r3255107617` / `r3255107624` (type-safety overclaim).
+
+---
+
+### L19. Same-name-opposite-semantic between sibling libraries is a high-cost trap
+
+**Observed:** During ts-prompt-assist B-1b, the partial-candidate composition walk used `isPartial` imported from ts-res by name but inverted the semantic — design.md §10.2 had `isPartial: true` marking the BASE (full) layer in ts-prompt-assist, while ts-res's `resolveComposedResourceValue` model uses `isPartial: true` to mark the OVERRIDE that layers ONTO a base. Erik caught it during PR #364 walkthrough; the design was re-aligned with ts-res's natural semantic in a same-PR amendment (§5.3 YAML example + §10.2 algorithm rewritten). Hand-rolled "preference filter" code that had been needed to compensate for the inversion was deleted.
+
+The original failure mode: design picked a name from a sibling library and assigned it the OPPOSITE meaning. Each library's docs were internally consistent; cross-library, the same symbol meant opposite things. Authors moving between the two would compound confusion.
+
+**Rule:** When importing or reusing a name from a sibling `@fgv/*` library, the semantic must match. If the new library needs the OPPOSITE meaning (or a meaningfully-different shape), rename — don't re-mean. "Re-meaning" is a maintainability landmine that surfaces later as composition-model drift across the family.
+
+**Codification candidate:**
+
+1. **Convention doc** in `.ai/conventions/`: "Cross-library semantic alignment for shared discriminator names" — when adopting a name (`isPartial`, `kind`, `disposition`, etc.) from another library in the `@fgv/*` family, the semantic must match the source library. Cite the `isPartial` story as the worked example.
+2. **Design-phase brief addendum.** When the brief introduces a discriminator or boolean drawn from a sibling library, the brief author confirms the semantic match explicitly in the design doc (one-sentence cross-reference to the source library's definition). Catches the trap at design time, not impl time.
+
+**Reference:** `.ai/tasks/active/ts-prompt-assist/state.md` row "B-1b — design §10.2 amended; `isPartial` semantic re-aligned to ts-res" (2026-05-16); PR #364 walkthrough.
+
+---
+
+### L20. Post-merge cleanup PR is the established ship-then-tidy mechanic for cluster-internal nits
+
+**Observed:** Across the ts-prompt-assist cluster, three sub-phase merges were followed by focused orchestrator-driven cleanup PRs that landed on the integration branch within hours:
+
+- **#367** (B-2 cleanup): dead `IBindingMergeResult.mergedBindings` field removed; `Hash.Crc32Normalizer → base Normalizer` at canonical-JSON-only sites; design §7/§10/§15.5 amendments.
+- **#370** (B-4 cleanup, part 1): `ConverterRegistry.get<T>` no-kind overload removed; entry storage restructured as distributed discriminated union; pipeline reworked to `getKind → get(id, kind)` for cast-free internal dispatch.
+- **Surface-tidy round** (in flight at lessons-update time): `resolveAndValidateOutput<T>` split into `resolveJsonOutput<K>` + `resolveFreeTextOutput`; design §8 / §9 / §17.2.6 amendments; the surviving P2 TECH_DEBT entry retired.
+
+Each cleanup was small (one PR each, <12 files, <500 net additions), orchestrator-authored, and landed without ceremony. Erik's framing: *"Let's just fix things instead of carrying them forward. The bookkeeping overwhelms the cost of making the fix if we carry them forward."*
+
+Pattern is the natural complement to **sub-phase decomposition**: small sub-phases ship; the orchestrator's post-merge triage surfaces a small handful of nits / API-shape issues / inconsistencies; an orchestrator-driven cleanup PR absorbs them while the sub-phase's substantive review is fresh. Defers nothing to a future "tech debt sweep" that would lose context.
+
+**Rule:** When triaging a merged sub-phase's PR reveals small follow-ups (dead surface, type-system smells, doc/code drift, design-vs-impl gaps), the orchestrator opens a focused cleanup PR ON THE INTEGRATION BRANCH rather than queuing tech-debt entries. Threshold: items that would otherwise become TECH_DEBT entries (P3 or below) but cost <30 minutes to fix-in-place during the same review session. Tech-debt entries are reserved for items that cost more to fix than to defer.
+
+**Codification candidate:**
+
+1. **Orchestrator agent prompt addition** under § "Cluster triage shape": "Post-merge cleanup PR for sub-phase nits is the default mechanic. Open a `chore/<cluster>-<sub-phase>-cleanup` PR immediately after the sub-phase merges, scoped to items that cost more in bookkeeping than in fixes."
+2. **Convention doc** in `.ai/conventions/workflow/` if the pattern stabilizes across multiple clusters. Currently three instances in one cluster; codify after a second cluster adopts the same pattern.
+
+**Reference:** PRs #367, #370, [surface-tidy PR pending]. Erik's framing 2026-05-17.
+
+---
+
+### L21. Task-agent commissions need explicit stop-and-surface protocol for mid-flight questions
+
+**Observed:** When commissioning the ts-prompt-assist surface-tidy round via a Task subagent (rather than a separate Claude Code session), the question came up: how do questions surface? Task subagents run autonomously to a single final message — they cannot ask the orchestrator mid-flight via `AskUserQuestion`. The PR #359 retire was directly traceable to a single-agent run where the agent didn't surface scope-expansion questions and instead silently improvised; the 10 Guardrails (especially #4 no-silent-stubs) were the response.
+
+For the surface-tidy round commission, the brief was amended with an explicit "When to stop and ask" section pointing the agent at predictable sticking points (e.g. lying-Converter test redesign; design amendment language gaps) AND an explicit "final-message protocol" instructing the agent to return early with a clear "I'm stuck on X" summary rather than guessing.
+
+**Rule:** Task subagent commissions need a "stop and surface" protocol in the brief: enumerate the predictable sticking points; instruct the agent to return early with a structured final message if any fires; explicitly cap the final-message length so the orchestrator's context budget is preserved on receipt.
+
+**Codification candidate:**
+
+1. **Brief template addition** under "When to stop and ask": list the protocol explicitly. "You cannot ask the orchestrator mid-flight; this is a one-shot Task invocation. If you encounter [enumerated triggers], stop work, return early with a clear final-message summary describing the question and your recommended path."
+2. **Orchestrator agent prompt addition** under § "Commissioning via Task subagent vs separate session": short decision tree. Task subagent for well-scoped work with predictable sticking points (where the orchestrator can decide the question without escalating to user); separate session for work with high uncertainty / many user-visible decisions during the run.
+
+**Reference:** ts-prompt-assist surface-tidy round commission (in flight at lessons-update time); brief at `.ai/tasks/active/ts-prompt-assist/` references the protocol explicitly.
 
 ---
 
