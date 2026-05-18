@@ -35,6 +35,27 @@ opportunistically when the right surface area is touched.
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] `ts-prompt-assist` (and adjacent `ts-res` qualifier surface) needs an API documentation pass once the v0.1 surface settles.**
+  PR #380 review surfaced that the recently-extended `ts-prompt-assist` surface — `PromptLibrary` + `IPromptLibraryCreateParams` + `IPromptResolveRequest` + the related fixture / resource-binding / resolve-output types — carries minimal TSDoc on individual methods, parameters, and return shapes. The v0.1 surface has been moving fast (Phase B sub-phases + post-merge cleanups + surface-tidy + round-1 ergonomics absorption), so documenting heavily during churn was the right call; with v0.1 effectively settled now, the next concern is consumer-facing TSDoc quality on the public surface.
+
+  A related pattern Erik flagged in the same PR #380 review: **inline anonymous types + union types should be extracted to named `type` / `interface` declarations** so they have a single place to attach TSDoc. The library currently has a few patterns like `qualifiers: IReadOnlyQualifierCollector | ReadonlyArray<TAxes | (IQualifierDecl & { readonly name: TAxes })>` that would benefit from a named extracted type.
+
+  **Trigger**: post-round-2 pressure-test, once the consumer port (agent chat application) confirms the surface is stable. Don't run this during cluster-close — let the round-2 absorption settle first so the docs don't have to be rewritten after.
+
+  **Scope sketch**: commission a documentation-pass agent against `@fgv/ts-prompt-assist`'s public surface (and any new `@fgv/ts-res` qualifier surface from PR B). For each exported type / class / method:
+  - Audit TSDoc presence + quality (does it answer "why" not just "what"; do `@public` symbols have useful `@remarks`).
+  - Extract inline anonymous types + unions to named declarations where extraction creates a meaningful single-attach-point for documentation.
+  - Cross-link related types via `{@link}` directives.
+  - Run api-extractor; verify all `// @public` types have non-`(undocumented)` flags.
+
+  Compare quality bar to `@fgv/ts-utils`'s base packlet, which is the reference for documentation depth.
+
+  **Not a P3**: the surface is public alpha-stage and being consumed; opaque type signatures degrade the consumer-port experience materially. P2 trigger ("post-round-2 stable") puts it on a natural cadence.
+
+  **Not a P1**: no functional gap; the surface works; this is documentation polish on shipped code.
+
+  **Reference**: PR #380 (round-1 ergonomics PR C) — Erik's review surfaced both the doc gap and the inline-types pattern. Cluster spans `libraries/ts-prompt-assist` + the `ts-res` qualifier collector surface PR B extended.
+
 - **[P2] `@fgv/ts-web-extras` lint content cleanup (config landed; 126 source violations remain).**
   Local sweep (chore/comprehensive-lint-fix) added the missing `eslint.config.js` to three sibling packages (`ts-http-storage`, `ts-random`, `tools/repo-template`) which all pass clean. Adding the same config to `ts-web-extras` surfaces **126 problems (6 errors + 120 warnings)** that were hidden while the config was missing. The config addition for `ts-web-extras` is therefore being held back until the source violations are resolved; the package continues to bypass the lint gate in the meantime.
 
