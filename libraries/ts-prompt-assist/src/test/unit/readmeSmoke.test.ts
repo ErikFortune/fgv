@@ -327,6 +327,47 @@ describe('README smoke tests', () => {
     expect(suspicious?.disposition).toBe('warn');
   });
 
+  test('wiring into a React app — F9 pattern (async init + typed axes)', async () => {
+    // Mirrors the README's "Wiring into a React app" snippet. We don't
+    // actually render React (the library has no React dep at runtime);
+    // the load-bearing assertions are (a) the seed compiles with
+    // descriptor.id omitted (F12), (b) PromptLibrary.create infers
+    // TAxes from `['tone'] as const` (F3), and (c) the empty-context
+    // resolve assigns cleanly to the narrowed shape (F14).
+    const SCOPE = Convert.scopeKey.convert('global').orThrow();
+    const GREETING = Convert.promptId.convert('greeting').orThrow();
+    const seed: IPromptStoreFixtureSeed = {
+      records: [
+        {
+          scope: SCOPE,
+          id: GREETING,
+          descriptor: {
+            // descriptor.id omitted — fixture defaults from outer id (F12).
+            title: 'Greeting',
+            schemaVersion: '1',
+            surface: 'chat',
+            slots: [],
+            output: { kind: 'free-text' }
+          },
+          candidates: [{ conditions: {}, body: 'Hello caller!' }]
+        }
+      ]
+    };
+    // Simulate the useEffect initialiser body.
+    const store = (await PromptStoreFixture.build(seed)).orThrow();
+    const library = (await PromptLibrary.create({ store, qualifiers: ['tone'] as const })).orThrow();
+    // The narrow qualifiers shape: `{ tone?: string }`. The empty
+    // branch assigns thanks to F14's Partial widening.
+    const resolved = (
+      await library.resolve({
+        id: GREETING,
+        chain: [SCOPE],
+        qualifiers: {}
+      })
+    ).orThrow();
+    expect(resolved.body).toBe('Hello caller!');
+  });
+
   test('quick start — on-disk FileTreePromptStore', async () => {
     // Mirrors the README's on-disk YAML quick-start against the on-disk
     // fixture under data/test/ts-prompt-assist/basic/ (which already

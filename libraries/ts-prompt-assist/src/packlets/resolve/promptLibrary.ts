@@ -43,6 +43,39 @@ import {
 } from './resourceBindingResolver';
 
 /**
+ * Type-level helper: derive the `TAxes` string union from a mixed
+ * `(string | IQualifierDecl)[]` literal-typed array. Bare-string
+ * elements contribute their own string-literal type; decl elements
+ * contribute their `.name` literal. Falls back to `string` when the
+ * array element type is unconstrained.
+ *
+ * @public
+ */
+export type InferAxes<Q extends ReadonlyArray<string | Qualifiers.IQualifierDecl>> = Q[number] extends infer E
+  ? E extends string
+    ? E
+    : E extends { readonly name: infer N }
+    ? N extends string
+      ? N
+      : never
+    : never
+  : never;
+
+/**
+ * Type-level helper used by `PromptLibrary.create`'s decl-array
+ * inference branch. When `Q` is a `ReadonlyArray<string | IQualifierDecl>`,
+ * derives the `TAxes` union via {@link InferAxes}; when `Q` is a
+ * pre-built `IReadOnlyQualifierCollector`, the collector type does not
+ * expose its axis-name union at the type level, so `TAxes` defaults to
+ * `string`.
+ *
+ * @public
+ */
+export type InferAxesFromCreate<
+  Q extends Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl>
+> = Q extends ReadonlyArray<string | Qualifiers.IQualifierDecl> ? InferAxes<Q> : string;
+
+/**
  * ts-res resource type name the library synthesizes for prompt records.
  * Prompts are stored as JSON resources with shape `\{ body: string \}`;
  * the ts-res `JsonResourceType` (from `@fgv/ts-res`'s `ResourceTypes`
@@ -68,22 +101,41 @@ const DEFAULT_RESOURCE_BINDING_DEPTH_LIMIT: number = 5;
  *
  * @public
  */
-export interface IPromptLibraryCreateParams<TResponse extends { kind: string } = { kind: string }> {
+export interface IPromptLibraryCreateParams<
+  TResponse extends { kind: string } = { kind: string },
+  TAxes extends string = string
+> {
   /** Backing store. v0.1 ships `FileTreePromptStore`; consumers can implement custom adapters. */
   readonly store: IPromptStore;
   /**
    * ts-res qualifier configuration. Accepts either a pre-built
    * `IReadOnlyQualifierCollector` (when the consumer already maintains a
-   * ts-res qualifier set) or a declarative `IQualifierDecl[]` (the
-   * library builds the collector internally via ts-res's Converters).
-   * REQUIRED per design §4.1.
+   * ts-res qualifier set) or a mixed array of bare axis-name strings
+   * and / or `IQualifierDecl`s (the library builds the collector
+   * internally via ts-res's `Qualifiers.QualifierCollector.create`,
+   * which synthesizes `LiteralQualifierType`s for bare strings). REQUIRED
+   * per design §4.1.
+   *
+   * @remarks
+   * On the decl-array path, the `TAxes` type parameter is inferred
+   * from the array element types via the static `PromptLibrary.create`
+   * factory — e.g. `\{ qualifiers: ['language', 'tone'] \}` infers
+   * `TAxes = 'language' | 'tone'` and tightens
+   * `IPromptResolveRequest.qualifiers` accordingly. On the
+   * pre-built-collector path, `TAxes` falls back to `string`; consumers
+   * can specify it explicitly if they want the typed benefit on that
+   * path.
    */
-  readonly qualifiers: Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<Qualifiers.IQualifierDecl>;
+  readonly qualifiers:
+    | Qualifiers.IReadOnlyQualifierCollector
+    | ReadonlyArray<TAxes | (Qualifiers.IQualifierDecl & { readonly name: TAxes })>;
   /**
    * Optional ts-res qualifier-type collector. When `qualifiers` is
    * supplied as a pre-built `IReadOnlyQualifierCollector`, this is
-   * inferred from it. When `qualifiers` is supplied as decls, this
-   * must supply at least the qualifier types referenced by those decls.
+   * inferred from it. When `qualifiers` is supplied as decls and any
+   * element is an `IQualifierDecl`, `qualifierTypes` must supply the
+   * qualifier types referenced by those decls. Bare-string elements
+   * synthesize a `LiteralQualifierType` automatically.
    */
   readonly qualifierTypes?: QualifierTypes.ReadOnlyQualifierTypeCollector;
   /** Unified registry. Optional; defaults to an empty registry. */
@@ -123,13 +175,23 @@ export interface IPromptLibraryCreateParams<TResponse extends { kind: string } =
  * {@link PromptLibrary.resolveFreeTextOutput}.
  * @public
  */
-export interface IPromptResolveRequest {
+export interface IPromptResolveRequest<TAxes extends string = string> {
   /** Prompt id to resolve. */
   readonly id: PromptId;
   /** Scope chain — most-specific to most-general. The walker uses the first scope with a record. */
   readonly chain: ReadonlyArray<ScopeKey>;
-  /** Caller-supplied qualifier context, fed to ts-res's candidate selector. */
-  readonly qualifiers: IQualifierContext;
+  /**
+   * Caller-supplied qualifier context, fed to ts-res's candidate selector.
+   *
+   * @remarks
+   * Defaults to the loose shape `Readonly<Partial<Record<string, string>>>`
+   * (identical to {@link IQualifierContext}) so legacy callers compile
+   * unchanged. When `TAxes` is narrowed (typically via inference on
+   * `PromptLibrary.create` with a string-literal decl array), this
+   * narrows to `Readonly<Partial<Record<TAxes, string>>>`, surfacing
+   * misspelled qualifier-axis names at compile time.
+   */
+  readonly qualifiers: Readonly<Partial<Record<TAxes, string>>>;
   /** Optional caller substitutions, applied to slots not locked by an `enforced` scope binding. */
   readonly substitutions?: PromptSubstitutions;
 }
@@ -167,7 +229,10 @@ interface IMaterializedPrompt {
  *
  * @public
  */
-export class PromptLibrary<TResponse extends { kind: string } = { kind: string }> {
+export class PromptLibrary<
+  TResponse extends { kind: string } = { kind: string },
+  TAxes extends string = string
+> {
   private readonly _store: IPromptStore;
   private readonly _registry?: IPromptRegistry<TResponse>;
   private readonly _mustacheCache: MustacheTemplateCache;
@@ -261,10 +326,42 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
     this._validatedRegistryKeys = new Set();
   }
 
-  /** Family-convention factory. */
+  /**
+   * Family-convention factory.
+   *
+   * @remarks
+   * Two overloads:
+   *
+   * 1. **Decl-array inference**: when `qualifiers` is supplied as a
+   *    `ReadonlyArray<string | IQualifierDecl>`, `TAxes` is inferred
+   *    from the array element types. Bare-string elements contribute
+   *    their string-literal type directly; `IQualifierDecl` elements
+   *    contribute their `name` literal. A call like
+   *    `PromptLibrary.create(\{ qualifiers: ['language', 'tone'] \})`
+   *    infers `TAxes = 'language' | 'tone'` so the request side rejects
+   *    `\{ tonr: 'formal' \}` at compile time.
+   *
+   * 2. **Pre-built collector**: when `qualifiers` is a
+   *    `IReadOnlyQualifierCollector`, the collector type does not
+   *    expose its axis-name union at the type level, so `TAxes`
+   *    defaults to `string`. Consumers wanting the typed benefit on
+   *    this path can specify `TAxes` explicitly.
+   */
+  public static async create<
+    TResponse extends { kind: string } = { kind: string },
+    const Q extends
+      | Qualifiers.IReadOnlyQualifierCollector
+      | ReadonlyArray<string | Qualifiers.IQualifierDecl> =
+      | Qualifiers.IReadOnlyQualifierCollector
+      | ReadonlyArray<string | Qualifiers.IQualifierDecl>
+  >(
+    params: IPromptLibraryCreateParams<TResponse, InferAxesFromCreate<Q>> & {
+      readonly qualifiers: Q;
+    }
+  ): Promise<Result<PromptLibrary<TResponse, InferAxesFromCreate<Q>>>>;
   public static async create<TResponse extends { kind: string } = { kind: string }>(
-    params: IPromptLibraryCreateParams<TResponse>
-  ): Promise<Result<PromptLibrary<TResponse>>> {
+    params: IPromptLibraryCreateParams<TResponse, string>
+  ): Promise<Result<PromptLibrary<TResponse, string>>> {
     return Promise.resolve(
       validateResourceBindingDepthLimit(params.resourceBindingDepthLimit).onSuccess((depthLimit) =>
         buildQualifierCollector(params.qualifiers, params.qualifierTypes).onSuccess((qualifierInfo) =>
@@ -277,7 +374,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
               .onSuccess((builder) =>
                 MustacheTemplateCache.create(params.templateCacheSize).onSuccess((mustacheCache) =>
                   succeed(
-                    new PromptLibrary<TResponse>({
+                    new PromptLibrary<TResponse, string>({
                       store: params.store,
                       registry: params.registry,
                       mustacheCache,
@@ -352,12 +449,12 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    * long-lived ts-res `ResourceManagerBuilder` so materialization caches
    * hit across the recursion.
    */
-  public async resolve(req: IPromptResolveRequest): Promise<Result<IResolvedPrompt>> {
+  public async resolve(req: IPromptResolveRequest<TAxes>): Promise<Result<IResolvedPrompt>> {
     return this._resolveInternal(req, 0, []);
   }
 
   private async _resolveInternal(
-    req: IPromptResolveRequest,
+    req: IPromptResolveRequest<TAxes>,
     depth: number,
     stack: IResourceBindingStackFrame[]
   ): Promise<Result<IResolvedPrompt>> {
@@ -387,7 +484,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   }
 
   private async _resolveOnce(
-    req: IPromptResolveRequest,
+    req: IPromptResolveRequest<TAxes>,
     depth: number,
     stack: IResourceBindingStackFrame[]
   ): Promise<Result<IResolvedPrompt>> {
@@ -415,7 +512,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   }
 
   private async _resolveResourceBindings(
-    req: IPromptResolveRequest,
+    req: IPromptResolveRequest<TAxes>,
     mergeResult: IBindingMergeResult,
     depth: number,
     stack: IResourceBindingStackFrame[]
@@ -432,11 +529,19 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
       depth,
       stack,
       innerResolve: (innerReq, innerDepth, innerStack) =>
+        // The inner resolve's qualifier shape is the wider
+        // `Readonly<Partial<Record<string, string>>>` carried by the
+        // resource-binding resolver (which doesn't know `TAxes`). At
+        // the boundary back into the typed `_resolveInternal`, narrow
+        // to `Partial<Record<TAxes, string>>` — this is a structural
+        // re-typing only; ts-res's runtime resolver consumes the
+        // values as `Record<string, string>` regardless of the public
+        // `TAxes` parameter.
         this._resolveInternal(
           {
             id: innerReq.id,
             chain: innerReq.chain,
-            qualifiers: innerReq.qualifiers,
+            qualifiers: innerReq.qualifiers as Readonly<Partial<Record<TAxes, string>>>,
             substitutions: innerReq.substitutions
           },
           innerDepth,
@@ -480,7 +585,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    * @public
    */
   public async resolveJsonOutput<K extends TResponse['kind']>(
-    req: IPromptResolveRequest,
+    req: IPromptResolveRequest<TAxes>,
     rawOutput: string,
     expectedKind: K
   ): Promise<Result<Extract<TResponse, { kind: K }>>> {
@@ -550,7 +655,10 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
    *
    * @public
    */
-  public async resolveFreeTextOutput(req: IPromptResolveRequest, rawOutput: string): Promise<Result<string>> {
+  public async resolveFreeTextOutput(
+    req: IPromptResolveRequest<TAxes>,
+    rawOutput: string
+  ): Promise<Result<string>> {
     return (await this.resolve(req)).onSuccess((resolved) => {
       const output = resolved.descriptor.output;
       if (output.kind !== 'free-text') {
@@ -807,7 +915,7 @@ export class PromptLibrary<TResponse extends { kind: string } = { kind: string }
   }
 
   private _renderResolved(
-    req: IPromptResolveRequest,
+    req: IPromptResolveRequest<TAxes>,
     walked: {
       readonly record: IStoredPromptRecord;
       readonly winningScope: ScopeKey;
@@ -929,28 +1037,28 @@ function buildResourceTypes(): Result<ResourceTypes.ResourceTypeCollector> {
 }
 
 function buildQualifierCollector(
-  qualifiers: Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<Qualifiers.IQualifierDecl>,
+  qualifiers: Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl>,
   qualifierTypes?: QualifierTypes.ReadOnlyQualifierTypeCollector
 ): Result<{
   readonly qualifiers: Qualifiers.IReadOnlyQualifierCollector;
   readonly qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
 }> {
-  if (isQualifierDeclArray(qualifiers)) {
-    if (qualifierTypes === undefined) {
-      return fail(
-        'prompt library: qualifierTypes must be supplied when qualifiers are provided as declarations'
-      );
-    }
+  if (isMixedQualifierArray(qualifiers)) {
+    // Delegate the mixed-shape handling (including
+    // LiteralQualifierType synthesis for bare-string entries and the
+    // "qualifierTypes required when any decl is present" check) to
+    // ts-res's `QualifierCollector.create`, which is the canonical
+    // implementation post-PR-B.
     return Qualifiers.QualifierCollector.create({ qualifierTypes, qualifiers: [...qualifiers] })
       .withErrorFormat((msg) => `prompt library: invalid qualifier declarations: ${msg}`)
-      .onSuccess((collector) => succeed({ qualifiers: collector, qualifierTypes }));
+      .onSuccess((collector) => succeed({ qualifiers: collector, qualifierTypes: collector.qualifierTypes }));
   }
   return succeed({ qualifiers, qualifierTypes: qualifierTypes ?? qualifiers.qualifierTypes });
 }
 
-function isQualifierDeclArray(
-  value: Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<Qualifiers.IQualifierDecl>
-): value is ReadonlyArray<Qualifiers.IQualifierDecl> {
+function isMixedQualifierArray(
+  value: Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl>
+): value is ReadonlyArray<string | Qualifiers.IQualifierDecl> {
   return Array.isArray(value);
 }
 

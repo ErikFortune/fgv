@@ -191,6 +191,14 @@ export interface ILiteralSlotBinding {
 }
 
 // @public
+export type InferAxes<Q extends ReadonlyArray<string | Qualifiers.IQualifierDecl>> = Q[number] extends infer E ? E extends string ? E : E extends {
+    readonly name: infer N;
+} ? N extends string ? N : never : never : never;
+
+// @public
+export type InferAxesFromCreate<Q extends Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl>> = Q extends ReadonlyArray<string | Qualifiers.IQualifierDecl> ? InferAxes<Q> : string;
+
+// @public
 export interface IOutputValidationContext {
     // (undocumented)
     readonly promptId: PromptId;
@@ -280,10 +288,12 @@ export interface IPromptLibraryCreateParams<TResponse extends {
     kind: string;
 } = {
     kind: string;
-}> {
+}, TAxes extends string = string> {
     readonly cacheListener?: Runtime.IResourceResolverCacheListener;
     readonly logger?: Logging.ILogger;
-    readonly qualifiers: Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<Qualifiers.IQualifierDecl>;
+    readonly qualifiers: Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<TAxes | (Qualifiers.IQualifierDecl & {
+        readonly name: TAxes;
+    })>;
     readonly qualifierTypes?: QualifierTypes.ReadOnlyQualifierTypeCollector;
     readonly registry?: IPromptRegistry<TResponse>;
     readonly resourceBindingDepthLimit?: number;
@@ -334,10 +344,10 @@ export interface IPromptRegistry<TResponse extends {
 }
 
 // @public
-export interface IPromptResolveRequest {
+export interface IPromptResolveRequest<TAxes extends string = string> {
     readonly chain: ReadonlyArray<ScopeKey>;
     readonly id: PromptId;
-    readonly qualifiers: IQualifierContext;
+    readonly qualifiers: Readonly<Partial<Record<TAxes, string>>>;
     readonly substitutions?: PromptSubstitutions;
 }
 
@@ -415,15 +425,32 @@ export interface IPromptStoreEvent {
 }
 
 // @public
+export type IPromptStoreFixtureDescriptor = Omit<IPromptDescriptor, 'id'> & {
+    readonly id?: PromptId;
+};
+
+// @public
 export interface IPromptStoreFixtureSeed {
     // (undocumented)
     readonly bindings?: ReadonlyArray<IScopeSlotBindingsRecord>;
     // (undocumented)
     readonly qualifiers?: ReadonlyArray<Qualifiers.IQualifierDecl>;
     // (undocumented)
-    readonly records?: ReadonlyArray<IStoredPromptRecord>;
+    readonly records?: ReadonlyArray<IPromptStoreFixtureSeedRecord>;
     readonly scopeDecoding?: (encoded: string) => Result<ScopeKey>;
     readonly scopeEncoding?: (scope: ScopeKey) => Result<string>;
+}
+
+// @public
+export interface IPromptStoreFixtureSeedRecord {
+    // (undocumented)
+    readonly candidates: ReadonlyArray<IPromptCandidateRecord>;
+    // (undocumented)
+    readonly descriptor: IPromptStoreFixtureDescriptor;
+    // (undocumented)
+    readonly id: PromptId;
+    // (undocumented)
+    readonly scope: ScopeKey;
 }
 
 // @public
@@ -433,7 +460,7 @@ export interface IPromptStoreListFilter {
 }
 
 // @public
-export type IQualifierContext = Readonly<Record<string, string>>;
+export type IQualifierContext = Readonly<Partial<Record<string, string>>>;
 
 // @public
 export interface IQualifiersFileContents {
@@ -560,19 +587,21 @@ export class PromptLibrary<TResponse extends {
     kind: string;
 } = {
     kind: string;
-}> {
+}, TAxes extends string = string> {
     static create<TResponse extends {
         kind: string;
     } = {
         kind: string;
-    }>(params: IPromptLibraryCreateParams<TResponse>): Promise<Result<PromptLibrary<TResponse>>>;
+    }, const Q extends Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl> = Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl>>(params: IPromptLibraryCreateParams<TResponse, InferAxesFromCreate<Q>> & {
+        readonly qualifiers: Q;
+    }): Promise<Result<PromptLibrary<TResponse, InferAxesFromCreate<Q>>>>;
     describe(id: PromptId): Promise<Result<IPromptDescriptor>>;
     invalidateDescriptor(id: PromptId): void;
     readonly logger: Logging.ILogger;
     get materializedCount(): number;
-    resolve(req: IPromptResolveRequest): Promise<Result<IResolvedPrompt>>;
-    resolveFreeTextOutput(req: IPromptResolveRequest, rawOutput: string): Promise<Result<string>>;
-    resolveJsonOutput<K extends TResponse['kind']>(req: IPromptResolveRequest, rawOutput: string, expectedKind: K): Promise<Result<Extract<TResponse, {
+    resolve(req: IPromptResolveRequest<TAxes>): Promise<Result<IResolvedPrompt>>;
+    resolveFreeTextOutput(req: IPromptResolveRequest<TAxes>, rawOutput: string): Promise<Result<string>>;
+    resolveJsonOutput<K extends TResponse['kind']>(req: IPromptResolveRequest<TAxes>, rawOutput: string, expectedKind: K): Promise<Result<Extract<TResponse, {
         kind: K;
     }>>>;
     readonly resourceBindingDepthLimit: number;

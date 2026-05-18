@@ -1594,6 +1594,118 @@ describe('ts-prompt-assist foundation', () => {
       expect(result).toFailWith(/unknown qualifier 'not-a-real-qualifier'/);
     });
 
+    test('F12: fixture seed accepts a record whose descriptor omits its `id`, defaulting from the outer id', async () => {
+      // Per F12: descriptor.id is redundant on the fixture path (the
+      // outer record.id already names the prompt). The fixture defaults
+      // descriptor.id from the outer id; the loader's filename-id
+      // consistency check still holds because the encoder uses the
+      // outer id as the filename stem.
+      const base = buildDescriptor();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- intentionally destructure-and-drop the descriptor.id field
+      const { id: _droppedId, ...descriptorWithoutId } = base.descriptor;
+      const seedRecord = {
+        scope: base.scope,
+        id: base.id,
+        descriptor: descriptorWithoutId,
+        candidates: base.candidates
+      };
+      const store = await buildStore({ records: [seedRecord] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const resolved = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {},
+        substitutions: { audience: 'world' }
+      });
+      expect(resolved).toSucceedAndSatisfy((r: IResolvedPrompt) => {
+        expect(r.body).toBe('Hello, world!');
+        expect(r.descriptor.id).toBe(TEST_PROMPT);
+      });
+    });
+
+    test('F12: fixture seed rejects an explicit descriptor.id that mismatches the outer record id', async () => {
+      // Silent mismatch is impossible: if a caller supplies an explicit
+      // descriptor.id, it must match the outer id. Optionality removes
+      // the redundancy but preserves the consistency check.
+      const base = buildDescriptor();
+      const seedRecord = {
+        scope: base.scope,
+        id: base.id,
+        descriptor: { ...base.descriptor, id: 'mismatch' as unknown as PromptId },
+        candidates: base.candidates
+      };
+      const result = await PromptStoreFixture.build({ records: [seedRecord] });
+      expect(result).toFailWith(/does not match descriptor\.id/);
+    });
+
+    test('F3 + F14: PromptLibrary.create infers TAxes from a string-literal decl array', async () => {
+      // Per F3, the decl-array branch of PromptLibrary.create infers
+      // TAxes from the array element types. The narrowed library
+      // rejects an unknown axis name in the resolve request at compile
+      // time. The empty `qualifiers: {}` shape (post-F14 widening)
+      // assigns cleanly to the narrowed shape via Partial.
+      const store = await buildStore({ records: [buildDescriptor()] });
+      const lib = (
+        await PromptLibrary.create({ store, qualifiers: ['tone', 'language'] as const })
+      ).orThrow();
+
+      // Empty context — passes the Partial<Record<TAxes, string>>
+      // (post-F14) check.
+      const ok = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: {},
+        substitutions: { audience: 'world' }
+      });
+      expect(ok).toSucceed();
+
+      // Known axis — also passes.
+      const okTone = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: { tone: 'formal' },
+        substitutions: { audience: 'world' }
+      });
+      expect(okTone).toSucceed();
+
+      // Compile-time check: an unknown axis must be rejected by TS.
+      // `tonr` is a typo for `tone`; F3's whole point is that this
+      // fails at compile time, so the unknown-key form is annotated
+      // with @ts-expect-error.
+      const bad = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        // @ts-expect-error - F3: 'tonr' is not a member of the inferred TAxes union 'tone' | 'language'
+        qualifiers: { tonr: 'formal' },
+        substitutions: { audience: 'world' }
+      });
+      // Runtime: ts-res's candidate selector treats the unknown key as
+      // "no value" and falls through to the base candidate; the test
+      // doesn't care about that, the load-bearing assertion is the
+      // compile-time directive above.
+      expect(bad).toSucceed();
+    });
+
+    test('F14: empty / mixed qualifier shapes assign to IPromptResolveRequest.qualifiers without an explicit annotation', async () => {
+      // The Readonly<Partial<Record<string, string>>> widening lets the
+      // canonical "context-or-not" ternary type-check without help —
+      // pre-F14 the empty branch failed the Record<string, string> index
+      // signature.
+      const store = await buildStore({ records: [buildDescriptor()] });
+      const lib = (await PromptLibrary.create({ store, qualifiers: TEST_QUALIFIER_COLLECTOR })).orThrow();
+      const tone: 'formal' | undefined = undefined;
+      // No explicit `IQualifierContext` annotation — the ternary
+      // assigns directly thanks to F14.
+      const ctx = tone === 'formal' ? { tone } : {};
+      const r = await lib.resolve({
+        id: TEST_PROMPT,
+        chain: [TEST_SCOPE],
+        qualifiers: ctx,
+        substitutions: { audience: 'world' }
+      });
+      expect(r).toSucceed();
+    });
+
     test('mustache render failure surfaces with prompt id', async () => {
       const recordWithMissingVar = buildDescriptor({
         candidates: [{ conditions: {}, body: 'hi {{{missing}}}' }],
