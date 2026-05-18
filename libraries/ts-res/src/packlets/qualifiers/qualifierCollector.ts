@@ -25,6 +25,7 @@ import {
   captureResult,
   Collections,
   failWithDetail,
+  mapResults,
   Result,
   fail,
   succeed,
@@ -35,7 +36,11 @@ import { IQualifierDecl, IValidatedQualifierDecl } from './qualifierDecl';
 import { QualifierName } from '../common';
 import { Qualifier } from './qualifier';
 import { IQualifierDeclConvertContext, qualifierDecl, validatedQualifierDecl } from './convert';
-import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
+import {
+  LiteralQualifierType,
+  QualifierTypeCollector,
+  ReadOnlyQualifierTypeCollector
+} from '../qualifier-types';
 
 /**
  * Readonly version of {@link Qualifiers.QualifierCollector | QualifierCollector}.
@@ -63,21 +68,52 @@ export interface IReadOnlyQualifierCollector extends Collections.IReadOnlyValida
 }
 
 /**
+ * Default priority step used when synthesizing {@link Qualifiers.IQualifierDecl | declarations}
+ * from a bare axis-name string in the mixed-shape {@link Qualifiers.QualifierCollector.create | create} input.
+ * @public
+ */
+export const QUALIFIER_COLLECTOR_DEFAULT_PRIORITY_STEP: number = 100;
+
+/**
  * Parameters for creating a new {@link Qualifiers.QualifierCollector}.
  * @public
+ *
+ * @remarks
+ * `qualifiers` accepts a mixed array of bare axis-name strings and full
+ * {@link Qualifiers.IQualifierDecl | declarations}. A string element is
+ * sugar for "literal qualifier with this name"; the library synthesizes a
+ * {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType} and a
+ * declaration `{ name, typeName: name, defaultPriority: <descending> }`.
+ * Priorities for synthesized declarations follow `(arr.length - index) * step`
+ * (step = {@link Qualifiers.QUALIFIER_COLLECTOR_DEFAULT_PRIORITY_STEP | QUALIFIER_COLLECTOR_DEFAULT_PRIORITY_STEP}), so earlier
+ * elements get higher priority.
+ *
+ * `qualifierTypes` may be omitted only when every element of `qualifiers`
+ * is a string. If any element is an {@link Qualifiers.IQualifierDecl},
+ * `qualifierTypes` must be supplied and must contain the referenced
+ * {@link Qualifiers.IQualifierDecl.typeName | typeNames}.
  */
 export interface IQualifierCollectorCreateParams {
   /**
    * The {@link QualifierTypes.QualifierTypeCollector | qualifier types} used to
    * create {@link Qualifiers.Qualifier | qualifiers} from {@link Qualifiers.IQualifierDecl | declarations}.
+   *
+   * Optional only when every entry in `qualifiers` is a bare axis-name string
+   * (in which case the library synthesizes a literal qualifier type per name).
    */
-  qualifierTypes: ReadOnlyQualifierTypeCollector;
+  qualifierTypes?: ReadOnlyQualifierTypeCollector;
 
   /**
-   * Optional list of {@link Qualifiers.IQualifierDecl | declarations} for the qualifiers to add to the collection
-   * upon creation.
+   * Optional list of {@link Qualifiers.IQualifierDecl | declarations} or bare
+   * axis-name strings for the qualifiers to add to the collection on creation.
+   *
+   * @remarks
+   * A string element `'foo'` is sugar for a literal qualifier:
+   * `{ name: 'foo', typeName: 'foo', defaultPriority: <descending> }` backed by
+   * a synthesized {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType}
+   * named `'foo'`.
    */
-  qualifiers?: IQualifierDecl[];
+  qualifiers?: ReadonlyArray<string | IQualifierDecl>;
 }
 
 /**
@@ -97,10 +133,15 @@ export class QualifierCollector
 
   /**
    * Constructor for a {@link Qualifiers.QualifierCollector | QualifierCollector} object.
-   * @param params - Parameters for creating the collector.
+   * @param qualifierTypes - The {@link QualifierTypes.ReadOnlyQualifierTypeCollector | qualifier types}
+   * used to validate declarations.
+   * @param qualifiers - Optional list of fully-resolved {@link Qualifiers.IQualifierDecl | declarations}.
    * @public
    */
-  protected constructor(params: IQualifierCollectorCreateParams) {
+  protected constructor(
+    qualifierTypes: ReadOnlyQualifierTypeCollector,
+    qualifiers?: ReadonlyArray<IQualifierDecl>
+  ) {
     super({
       factory: (k, i, v) => this._qualifierFactory(k, i, v),
       converters: new Collections.KeyValueConverters({
@@ -108,18 +149,153 @@ export class QualifierCollector
         value: qualifierDecl
       })
     });
-    this.qualifierTypes = params.qualifierTypes;
+    this.qualifierTypes = qualifierTypes;
     /* c8 ignore next 1 - coverage misses the branch intermittently */
-    params.qualifiers?.forEach((q) => this.validating.add(q.name, q).orThrow());
+    qualifiers?.forEach((q) => this.validating.add(q.name, q).orThrow());
   }
 
   /**
    * Creates a new {@link Qualifiers.QualifierCollector | QualifierCollector} object.
    * @param params - {@link Qualifiers.IQualifierCollectorCreateParams | Parameters} for creating a new {@link Qualifiers.QualifierCollector | QualifierCollector}.
    * @returns `Success` with the new collector if successful, or `Failure` if not.
+   *
+   * @remarks
+   * Accepts a mixed array of bare axis-name strings and full
+   * {@link Qualifiers.IQualifierDecl | declarations}. String elements are sugar
+   * for a literal qualifier: the library synthesizes a
+   * {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType} named
+   * after the string and a declaration `{ name, typeName: name, defaultPriority }`.
+   * Synthesized priorities follow `(arr.length - index) * step` (step =
+   * {@link Qualifiers.QUALIFIER_COLLECTOR_DEFAULT_PRIORITY_STEP | QUALIFIER_COLLECTOR_DEFAULT_PRIORITY_STEP}), so earlier elements
+   * get higher priority - matching the "earlier qualifier wins when multiple
+   * match" mental model.
+   *
+   * `qualifierTypes` may be omitted only when every element of `qualifiers`
+   * is a string. If any element is a declaration, `qualifierTypes` is
+   * required (and must include the referenced typeNames); the error message
+   * names the offending typeName when it is missing.
    */
   public static create(params: IQualifierCollectorCreateParams): Result<QualifierCollector> {
-    return captureResult(() => new QualifierCollector(params));
+    return QualifierCollector._resolveCreateParams(params).onSuccess(({ qualifierTypes, qualifiers }) => {
+      return captureResult(() => new QualifierCollector(qualifierTypes, qualifiers));
+    });
+  }
+
+  /**
+   * Resolves the public {@link Qualifiers.IQualifierCollectorCreateParams | create params}
+   * into the concrete `(qualifierTypes, qualifiers)` pair the constructor expects.
+   *
+   * @remarks
+   * Walks the mixed-shape `qualifiers` array, synthesizing
+   * {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType} entries
+   * for bare-string elements. If the caller passes any declaration but omits
+   * `qualifierTypes`, fails with an error that names the offending typeName.
+   *
+   * @internal
+   */
+  private static _resolveCreateParams(params: IQualifierCollectorCreateParams): Result<{
+    qualifierTypes: ReadOnlyQualifierTypeCollector;
+    qualifiers?: ReadonlyArray<IQualifierDecl>;
+  }> {
+    const qualifiers = params.qualifiers;
+    if (qualifiers === undefined || qualifiers.length === 0) {
+      if (params.qualifierTypes === undefined) {
+        return succeed({ qualifierTypes: QualifierCollector._emptyQualifierTypes(), qualifiers: undefined });
+      }
+      return succeed({ qualifierTypes: params.qualifierTypes, qualifiers: undefined });
+    }
+
+    const stringNames = qualifiers.filter((q): q is string => typeof q === 'string');
+    const allStrings = stringNames.length === qualifiers.length;
+
+    if (!allStrings && params.qualifierTypes === undefined) {
+      const declTypeNames = qualifiers
+        .filter((q): q is IQualifierDecl => typeof q !== 'string')
+        .map((q) => q.typeName);
+      const unique = Array.from(new Set(declTypeNames));
+      return fail(
+        `qualifierTypes must be supplied when qualifiers include declarations; ` +
+          `missing types for: ${unique.map((n) => `'${n}'`).join(', ')}`
+      );
+    }
+
+    return QualifierCollector._resolveQualifierTypes(params.qualifierTypes, stringNames).onSuccess(
+      (qualifierTypes) => {
+        const decls = QualifierCollector._normalizeQualifierDecls(qualifiers);
+        return succeed({ qualifierTypes, qualifiers: decls });
+      }
+    );
+  }
+
+  /**
+   * Returns the provided {@link QualifierTypes.ReadOnlyQualifierTypeCollector | qualifier-type collector}
+   * (or synthesizes a new one) augmented with synthesized literal qualifier types for the supplied
+   * string names that are not already present.
+   *
+   * @internal
+   */
+  private static _resolveQualifierTypes(
+    provided: ReadOnlyQualifierTypeCollector | undefined,
+    stringNames: ReadonlyArray<string>
+  ): Result<ReadOnlyQualifierTypeCollector> {
+    if (stringNames.length === 0) {
+      // No bare names to synthesize. The all-decls case requires `provided` to be defined
+      // (else _resolveCreateParams would have failed before calling us); fall back to an
+      // empty type collector only as a defensive measure.
+      /* c8 ignore next 1 - defensive: unreachable when called from _resolveCreateParams */
+      return succeed(provided ?? QualifierCollector._emptyQualifierTypes());
+    }
+    return mapResults(stringNames.map((name) => LiteralQualifierType.create({ name }))).onSuccess(
+      (literalTypes) => {
+        return QualifierTypeCollector.create().onSuccess((collector) => {
+          const existingAdds: ReadonlyArray<Result<unknown>> =
+            provided !== undefined
+              ? Array.from(provided.values()).map((existing) => collector.add(existing))
+              : [];
+          const literalAdds: ReadonlyArray<Result<unknown>> = literalTypes
+            .filter((lit) => !collector.has(lit.name))
+            .map((lit) => collector.add(lit));
+          return mapResults([...existingAdds, ...literalAdds]).onSuccess(() =>
+            succeed(collector as ReadOnlyQualifierTypeCollector)
+          );
+        });
+      }
+    );
+  }
+
+  /**
+   * Normalizes a mixed `(string | IQualifierDecl)[]` into a fully-resolved
+   * `IQualifierDecl[]`, assigning descending default priorities to synthesized
+   * decls.
+   *
+   * @internal
+   */
+  private static _normalizeQualifierDecls(
+    qualifiers: ReadonlyArray<string | IQualifierDecl>
+  ): ReadonlyArray<IQualifierDecl> {
+    const step = QUALIFIER_COLLECTOR_DEFAULT_PRIORITY_STEP;
+    return qualifiers.map((q, index) => {
+      if (typeof q === 'string') {
+        return {
+          name: q,
+          typeName: q,
+          defaultPriority: (qualifiers.length - index) * step
+        };
+      }
+      return q;
+    });
+  }
+
+  /**
+   * Returns an empty {@link QualifierTypes.ReadOnlyQualifierTypeCollector | qualifier-type collector}
+   * used as a placeholder when no qualifiers are supplied and the caller omits
+   * `qualifierTypes`.
+   *
+   * @internal
+   */
+  private static _emptyQualifierTypes(): ReadOnlyQualifierTypeCollector {
+    /* c8 ignore next 1 - QualifierTypeCollector.create() is total for the empty case */
+    return QualifierTypeCollector.create().orThrow();
   }
 
   /**

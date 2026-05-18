@@ -162,6 +162,96 @@ describe('QualifierCollector class', () => {
         })
       ).toFailWith(/qualifier name.*not unique/i);
     });
+
+    test('creates an empty collector when qualifierTypes is omitted and qualifiers is undefined', () => {
+      expect(TsRes.Qualifiers.QualifierCollector.create({})).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(0);
+        expect(qc.qualifierTypes.size).toBe(0);
+      });
+    });
+
+    test('creates an empty collector when qualifierTypes is omitted and qualifiers is an empty array', () => {
+      expect(TsRes.Qualifiers.QualifierCollector.create({ qualifiers: [] })).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(0);
+        expect(qc.qualifierTypes.size).toBe(0);
+      });
+    });
+
+    test('creates an empty collector when qualifierTypes is provided and qualifiers is an empty array', () => {
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({ qualifierTypes, qualifiers: [] })
+      ).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(0);
+        expect(qc.qualifierTypes).toBe(qualifierTypes);
+      });
+    });
+
+    test('synthesizes literal qualifier types from bare string entries with descending priorities', () => {
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifiers: ['language', 'tone']
+        })
+      ).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(2);
+        const step = TsRes.Qualifiers.QUALIFIER_COLLECTOR_DEFAULT_PRIORITY_STEP;
+        expect(qc.validating.get('language')).toSucceedAndSatisfy((q) => {
+          expect(q.type.name).toBe('language');
+          expect(q.defaultPriority).toBe(2 * step);
+        });
+        expect(qc.validating.get('tone')).toSucceedAndSatisfy((q) => {
+          expect(q.type.name).toBe('tone');
+          expect(q.defaultPriority).toBe(1 * step);
+        });
+      });
+    });
+
+    test('accepts a mixed array of strings and full decls when qualifierTypes covers the decls', () => {
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifierTypes,
+          qualifiers: ['greeting', { name: 'language', typeName: 'language', defaultPriority: 500 }]
+        })
+      ).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(2);
+        const step = TsRes.Qualifiers.QUALIFIER_COLLECTOR_DEFAULT_PRIORITY_STEP;
+        expect(qc.validating.get('greeting')).toSucceedAndSatisfy((q) => {
+          expect(q.type.name).toBe('greeting');
+          expect(q.defaultPriority).toBe(2 * step);
+        });
+        expect(qc.validating.get('language')).toSucceedAndSatisfy((q) => {
+          expect(q.type.name).toBe('language');
+          expect(q.defaultPriority).toBe(500);
+        });
+      });
+    });
+
+    test('skips synthesizing a literal type when one with the same name is already supplied', () => {
+      // 'literal' qualifier type already exists in the test `qualifierTypes` collector
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifierTypes,
+          qualifiers: ['literal']
+        })
+      ).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(1);
+        expect(qc.qualifierTypes.size).toBe(qualifierTypes.size);
+        expect(qc.validating.get('literal')).toSucceedAndSatisfy((q) => {
+          expect(q.type.name).toBe('literal');
+        });
+      });
+    });
+
+    test('fails when qualifiers include declarations and qualifierTypes is omitted, naming missing typeNames', () => {
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifiers: [
+            { name: 'lang', typeName: 'language', defaultPriority: 600 },
+            { name: 'home', typeName: 'territory', defaultPriority: 700 },
+            { name: 'language', typeName: 'language', defaultPriority: 500 }
+          ]
+        })
+      ).toFailWith(/qualifierTypes must be supplied.*'language'.*'territory'/);
+    });
   });
 
   describe('validating getOrAdd method', () => {
