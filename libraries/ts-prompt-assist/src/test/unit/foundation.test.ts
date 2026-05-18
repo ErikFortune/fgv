@@ -18,8 +18,10 @@ import {
   IPromptCandidateRecord,
   IPromptFileContents,
   IPromptStore,
+  IPromptDescriptor,
   IPromptStoreFixtureSeed,
   IQualifiersFileContents,
+  buildSimpleDescriptor,
   IResolvedPrompt,
   IScopeSlotBindingsRecord,
   IStoredPromptRecord,
@@ -174,6 +176,127 @@ describe('ts-prompt-assist foundation', () => {
       expect(Convert.validatorId.convert(tooLong)).toFailWith(/exceeds maximum length/);
       expect(Convert.axisName.convert(tooLong)).toFailWith(/exceeds maximum length/);
       expect(Convert.scopeKey.convert(tooLong)).toFailWith(/exceeds maximum length/);
+    });
+  });
+
+  describe('buildSimpleDescriptor (F2)', () => {
+    test('builds a free-text chat descriptor from minimal input', () => {
+      const descriptor: IPromptDescriptor = buildSimpleDescriptor({
+        id: TEST_PROMPT,
+        title: 'Simple greeting'
+      });
+      expect(descriptor).toEqual({
+        id: TEST_PROMPT,
+        title: 'Simple greeting',
+        schemaVersion: '1',
+        surface: 'chat',
+        slots: [],
+        output: { kind: 'free-text' }
+      });
+    });
+
+    test('threads an explicit surface override through', () => {
+      const descriptor = buildSimpleDescriptor({
+        id: TEST_PROMPT,
+        title: 'Custom-surface prompt',
+        surface: 'completion'
+      });
+      expect(descriptor.surface).toBe('completion');
+      // Output remains free-text — the helper is deliberately limited to
+      // the free-text-output shape so a consumer who needs JSON output
+      // authors the full IPromptDescriptor and sets `output.converterId`
+      // explicitly.
+      expect(descriptor.output).toEqual({ kind: 'free-text' });
+    });
+
+    test('threads an optional description through', () => {
+      const descriptor = buildSimpleDescriptor({
+        id: TEST_PROMPT,
+        title: 'Documented prompt',
+        description: 'Longer-form description for editor surfaces'
+      });
+      expect(descriptor.description).toBe('Longer-form description for editor surfaces');
+    });
+  });
+
+  describe('ITypedPromptCandidateRecord (F1)', () => {
+    test('a TQualifierNames-narrowed seed compiles for the expected axis keys', () => {
+      // Smoke: the type machinery allows the expected key on the
+      // record-form conditions. The negative case ('tonr' typo) is
+      // verified by the @ts-expect-error block below.
+      const seed: IPromptStoreFixtureSeed<'tone'> = {
+        records: [
+          {
+            scope: TEST_SCOPE,
+            id: TEST_PROMPT,
+            descriptor: buildSimpleDescriptor({ id: TEST_PROMPT, title: 'typed-seed test' }),
+            candidates: [
+              { conditions: {}, body: 'base' },
+              { conditions: { tone: 'formal' }, isPartial: true, body: 'partial' }
+            ]
+          }
+        ]
+      };
+      expect(seed.records?.length).toBe(1);
+    });
+
+    test('a TQualifierNames-narrowed seed rejects a typo at compile time', () => {
+      // The @ts-expect-error directive captures F1's contract: the
+      // typo `tonr` (instead of `tone`) on the record-form conditions
+      // is a compile error when TQualifierNames is narrowed.
+      const seed: IPromptStoreFixtureSeed<'tone'> = {
+        records: [
+          {
+            scope: TEST_SCOPE,
+            id: TEST_PROMPT,
+            descriptor: buildSimpleDescriptor({ id: TEST_PROMPT, title: 'typo-rejection' }),
+            candidates: [
+              {
+                // @ts-expect-error — 'tonr' is not assignable to 'tone'
+                conditions: { tonr: 'formal' },
+                body: 'will not compile'
+              }
+            ]
+          }
+        ]
+      };
+      // Runtime shape is unchanged — the seed object still constructs;
+      // the contract is purely compile-time.
+      expect(seed.records?.length).toBe(1);
+    });
+
+    test('the default TQualifierNames = string compiles arbitrary axis keys', () => {
+      // Back-compat: unannotated seeds still accept any string key.
+      const seed: IPromptStoreFixtureSeed = {
+        records: [
+          {
+            scope: TEST_SCOPE,
+            id: TEST_PROMPT,
+            descriptor: buildSimpleDescriptor({ id: TEST_PROMPT, title: 'untyped seed' }),
+            candidates: [{ conditions: { arbitrary: 'value' }, body: 'ok' }]
+          }
+        ]
+      };
+      expect(seed.records?.length).toBe(1);
+    });
+
+    test('PromptStoreFixture.build infers TQualifierNames from a typed call', async () => {
+      // End-to-end: the typed seed builds successfully and the resulting
+      // store resolves through the runtime path unchanged.
+      const seed: IPromptStoreFixtureSeed<'tone'> = {
+        records: [
+          {
+            scope: TEST_SCOPE,
+            id: TEST_PROMPT,
+            descriptor: buildSimpleDescriptor({ id: TEST_PROMPT, title: 'inference test' }),
+            candidates: [{ conditions: {}, body: 'hi' }]
+          }
+        ],
+        qualifiers: [{ name: 'tone', typeName: 'tone', defaultPriority: 500 }]
+      };
+      const store = (await PromptStoreFixture.build<'tone'>(seed)).orThrow();
+      const got = (await store.get(TEST_SCOPE, TEST_PROMPT)).orThrow();
+      expect(got?.candidates[0].body).toBe('hi');
     });
   });
 

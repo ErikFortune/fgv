@@ -46,6 +46,9 @@ export type BindingTraceSource = 'caller-sub' | 'binding' | 'default' | 'empty';
 export function buildBindingsRecord(scope: ScopeKey, contents: IBindingsFileContents): IScopeSlotBindingsRecord;
 
 // @public
+export function buildSimpleDescriptor(params: IBuildSimpleDescriptorParams): IPromptDescriptor;
+
+// @public
 export function buildStoredPromptRecord(scope: ScopeKey, contents: IPromptFileContents): IStoredPromptRecord;
 
 // @public
@@ -126,6 +129,16 @@ export interface IBindingTraceEntry {
     readonly value: string;
     readonly wasEnforced: boolean;
     readonly winningScope?: ScopeKey;
+}
+
+// @public
+export interface IBuildSimpleDescriptorParams {
+    readonly description?: string;
+    // (undocumented)
+    readonly id: PromptId;
+    readonly surface?: string;
+    // (undocumented)
+    readonly title: string;
 }
 
 // @public
@@ -420,21 +433,21 @@ export type IPromptStoreFixtureDescriptor = Omit<IPromptDescriptor, 'id'> & {
 };
 
 // @public
-export interface IPromptStoreFixtureSeed {
+export interface IPromptStoreFixtureSeed<TQualifierNames extends string = string> {
     // (undocumented)
     readonly bindings?: ReadonlyArray<IScopeSlotBindingsRecord>;
     // (undocumented)
     readonly qualifiers?: ReadonlyArray<Qualifiers.IQualifierDecl>;
     // (undocumented)
-    readonly records?: ReadonlyArray<IPromptStoreFixtureSeedRecord>;
+    readonly records?: ReadonlyArray<IPromptStoreFixtureSeedRecord<TQualifierNames>>;
     readonly scopeDecoding?: (encoded: string) => Result<ScopeKey>;
     readonly scopeEncoding?: (scope: ScopeKey) => Result<string>;
 }
 
 // @public
-export interface IPromptStoreFixtureSeedRecord {
+export interface IPromptStoreFixtureSeedRecord<TQualifierNames extends string = string> {
     // (undocumented)
-    readonly candidates: ReadonlyArray<IPromptCandidateRecord>;
+    readonly candidates: ReadonlyArray<ITypedPromptCandidateRecord<TQualifierNames>>;
     // (undocumented)
     readonly descriptor: IPromptStoreFixtureDescriptor;
     // (undocumented)
@@ -534,6 +547,21 @@ export interface ITextOutputContract {
 }
 
 // @public
+export type ITypedConditionSetDecl<TQualifierNames extends string = string> = Readonly<Partial<Record<TQualifierNames, string | ResourceJson.Json.IChildConditionDecl>>> | ReadonlyArray<Omit<ResourceJson.Json.ILooseConditionDecl, 'qualifierName'> & {
+    readonly qualifierName: TQualifierNames;
+}>;
+
+// @public
+export interface ITypedPromptCandidateRecord<TQualifierNames extends string = string> {
+    // (undocumented)
+    readonly body: string;
+    // (undocumented)
+    readonly conditions: ITypedConditionSetDecl<TQualifierNames>;
+    // (undocumented)
+    readonly isPartial?: boolean;
+}
+
+// @public
 export function joinBodies(selected: ReadonlyArray<{
     readonly candidate: IPromptCandidateRecord;
 }>, policy: IPromptJoinPolicy | undefined): string;
@@ -607,7 +635,7 @@ export type PromptStoreEventKind = 'descriptor-changed' | 'descriptor-removed' |
 
 // @public
 export const PromptStoreFixture: {
-    build(seed: IPromptStoreFixtureSeed): Promise<Result<IPromptStore>>;
+    build<TQualifierNames extends string = string>(seed: IPromptStoreFixtureSeed<TQualifierNames>): Promise<Result<IPromptStore>>;
 };
 
 // @public
