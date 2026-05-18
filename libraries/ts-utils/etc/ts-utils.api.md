@@ -1073,6 +1073,7 @@ export class Failure<out T> implements IResult<T> {
     withErrorFormat(cb: ErrorFormatter): Result<T>;
     // Warning: (ae-incompatible-release-tags) The symbol "withFailureDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withFailureDetail<TD>(detail: TD): DetailedResult<T, TD>;
+    withType<U>(): Failure<U>;
 }
 
 // @public

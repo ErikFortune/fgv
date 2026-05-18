@@ -752,6 +752,46 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
+   * Re-types this {@link Failure | Failure<T>} as {@link Failure | Failure<U>} for
+   * propagation under a different success type.
+   * @remarks
+   * Supports the canonical Result early-return-after-`isFailure()` pattern when the
+   * outer function's success type differs from the inner Result's success type:
+   *
+   * ```ts
+   * const storeResult = await PromptStoreFixture.build(seed);
+   * if (storeResult.isFailure()) {
+   *   return storeResult.withType<PromptLibrary>();
+   * }
+   * return PromptLibrary.create({ store: storeResult.value, ... });
+   * ```
+   *
+   * Without this helper, TypeScript rejects `return storeResult` because
+   * `Failure<IPromptStore>` is invariant in `T` and not assignable to
+   * `Result<PromptLibrary>`. The workaround `return fail<U>(r.message)` is
+   * semantically equivalent but allocates a new {@link Failure} instance;
+   * `withType` returns `this` and only retypes statically.
+   *
+   * This method is sound because a {@link Failure} variant carries no `T`-shaped
+   * data — only an error message — so re-typing it as `Failure<U>` cannot
+   * misrepresent any value. The same operation is NOT exposed on {@link Success}
+   * because `Success<T>` carries `T`-shaped data and re-typing would be a lie.
+   *
+   * For `DetailedResult` propagation that preserves a typed `detail`, consider
+   * propagating the {@link DetailedFailure} directly through `onSuccess` (which
+   * already re-types the success arm) rather than reaching for `withType`.
+   *
+   * @returns This same {@link Failure} instance, statically retyped as
+   * {@link Failure | Failure<U>}.
+   * @public
+   */
+  public withType<U>(): Failure<U> {
+    // Safe by construction: Failure carries no T-shaped data, only a message.
+    // Re-typing the static T parameter cannot misrepresent any value.
+    return this as unknown as Failure<U>;
+  }
+
+  /**
    * Get a 'friendly' string representation of this object.
    * @remarks
    * The string representation of a {@link Failure} value is the error message.
