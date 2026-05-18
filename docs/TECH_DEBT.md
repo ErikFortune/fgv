@@ -79,32 +79,21 @@ opportunistically when the right surface area is touched.
   **Reference**: PR #329 review — patterns pre-existed the PR, absolved from that review.
 
 - **[P2] Cross-runtime entry-point export parity is not systematically tested.**
-  Libraries with both Node (`src/index.ts`) and browser (`src/index.browser.ts`) entry points can drift in export names without CI catching it. api-extractor runs only on the Node entry point, so a typo or rename in the browser entry slips through. Pattern has bitten the team several times; most recent instance: `@fgv/ts-extras` exported `Crypto` instead of `CryptoUtils` from `index.browser.ts`, surfacing as `CryptoUtils.Keystore undefined` in the personaility web app. Fixed with a one-off test for that specific import; no general practice.
+  Libraries with both Node (`src/index.ts`) and browser (`src/index.browser.ts`) entry points can drift in export names without CI catching it. api-extractor runs only on the Node entry point, so a typo or rename in the browser entry slips through. Pattern has bitten the team three times: `@fgv/ts-extras` exported `Crypto` instead of `CryptoUtils` (personaility web app); `@fgv/ts-extras` missed `Yaml` entirely (ts-prompt-assist sample app, fixed in #377); plus the earlier `repo-template` issue. **`@fgv/ts-extras` now has the recommended micro-test** (`src/test/unit/index.browser.test.ts` asserts every top-level name in `index.ts` is also in `index.browser.ts`); other libraries with browser entries still need it.
 
   Comprehensive per-export coverage on every library is too expensive given the API surface. The right scope is opportunistic per-library micro-tests.
 
-  **Trigger**: anytime a library's `index.browser.ts` is touched substantively (new exports added, namespace renames, refactors). Also: anytime a cross-runtime export bug is reported, expand the affected library's micro-test rather than just patching the single export.
+  **Libraries with `*.browser.ts` entries that still need the micro-test:** `ts-bcp47`, `ts-res`, `ts-web-extras`, `ts-app-shell`, `ts-res-ui-components`, `ts-json`, `ts-json-base`, `ts-sudoku-lib`, `ts-sudoku-ui`.
 
-  **Scope sketch**: a tiny test file per library — `src/test/unit/browserEntry.test.ts` (or similar) — that imports from `index.browser.ts` and asserts the top-level exported names match a minimal expected list (the major namespaces, not every symbol). Renaming a Node export then breaks the browser test if the browser entry wasn't updated in lockstep. Per-library cost: ~15 lines. No commitment to backfill across all libraries; just add when the library's browser entry is touched.
+  **Trigger**: anytime one of those libraries' `index.browser.ts` is touched substantively (new exports added, namespace renames, refactors). Also: anytime a cross-runtime export bug is reported, expand the affected library's micro-test rather than just patching the single export.
+
+  **Scope sketch**: copy the pattern from `@fgv/ts-extras/src/test/unit/index.browser.test.ts` — imports both `index.ts` and `index.browser.ts` directly via relative paths, asserts every top-level name exported from Node is also exported from browser. Browser may have additional names (e.g. back-compat aliases) but nothing Node ships may go missing on browser. Per-library cost: ~15 lines.
 
   **Not a P3**: the pattern has recurred multiple times across the team; the consumer-impact cost (production-visible undefined exports) is real. P2 trigger ("next time the browser entry is touched") puts it on a natural cadence.
 
-  **Reference**: bug reported via personaility web app integration; one-off test added in the fix PR (see `@fgv/ts-extras` browser entry).
+  **Reference**: PR #377 (ts-extras Yaml fix + micro-test pattern landed); original L13 lessons-pending entry; earlier ts-extras `Crypto` bug.
 
 ## P3 — Opportunistic cleanup
-
-- **[P3] `ts-prompt-assist` rejected-resolve safeguard findings can't ride the trace.**
-  Design §9 #1/#2 specifies that `max-length` and `suspicious-pattern` findings "are recorded in `trace.safeguardFindings`" even when the resolve rejects. The implementation cannot: a `Result.fail` doesn't return an `IResolvedPrompt`, so there is no trace to attach to. The finding's content is surfaced in the fail message instead, and the local push that would have built up the finding is omitted (PR #369 Copilot review flagged the dead push). The contract is therefore "warn-disposition findings ride the trace; reject-disposition findings ride the fail message."
-
-  **Trigger**: when v0.2 introduces `DetailedFailure`-shaped resolve returns OR when a consumer needs structured access to rejected findings (the agent-chat consumer port might surface this).
-
-  **Scope sketch**: either (a) switch `resolve` to return `DetailedResult<IResolvedPrompt, IRejectedResolveDetail>` where `IRejectedResolveDetail` carries `partialTrace` including findings — additive, doesn't break existing `Result<IResolvedPrompt>` consumers via `.asResult`; or (b) accept the current "fail-message only" contract and amend design §9 to match. Either way is a design-level decision; don't change unilaterally.
-
-  **Not a P4**: the design wording is currently contradicted by the implementation, which is a genuine spec mismatch — not just polish.
-
-  **Reference**: PR #369 Copilot review threads at `safeguardEngine.ts:93` and `safeguardEngine.ts:203`.
-
-
 
 - **[P3] New pure-library packages must declare `"sideEffects": false` in `package.json`.**
   Every `libraries/` package whose `src/index.ts` exports only functions and types (no module-level side effects) carries `"sideEffects": false` so bundlers can tree-shake it. This was caught in PR review on `crypto-batch-2-webauthn`: `@fgv/ts-extras-webauthn` was missing the field; `@fgv/ts-web-extras-webauthn` had it. Fixed in-stream, but the gap reveals a scaffolding-checklist hole — the standard "new package" template doesn't enforce it.
