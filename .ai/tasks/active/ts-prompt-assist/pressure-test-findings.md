@@ -124,29 +124,33 @@ ids, but module-level constants are not user input.
 
 ---
 
-## F5. `PromptLibrary.resolve` returns `Promise<Result<IResolvedPrompt>>` — three layers a consumer has to peel
+## F5. ~~`PromptLibrary.resolve` returns `Promise<Result<IResolvedPrompt>>` — three layers a consumer has to peel~~ **RETRACTED on review**
 
 **Surface:** `PromptLibrary.resolve`.
 
-**Friction:** a consumer that wants "just the body" writes:
-```ts
-const resolved = await library.resolve({ id, chain, qualifiers });
-if (resolved.isFailure()) { /* … */ }
-const systemPrompt = resolved.value.body;
-```
-That's three layers (Promise → Result → `{ body, trace, descriptor, id }`)
-before the body string. In the chat hot path where we don't care about
-trace, descriptor, or id, that's a lot of ceremony to get a string.
+**Original framing:** the return is `Promise<Result<IResolvedPrompt>>`, so
+a consumer that wants "just the body" has to peel three layers
+(Promise → Result → `.body`) before the string lands.
 
-**Workaround used:** kept the full peel — it's family-convention and
-the trace is useful for diagnostics. But a `resolveBody(req)` shorthand
-that returns `Promise<Result<string>>` would simplify the dominant case.
+**Why retracted:** the ts-utils async-chaining surface
+(`.thenOnSuccess` / `.thenOnFailure`, which bridge `Result<T>` into a
+fluent `AsyncResult<T>` that can be `await`ed directly) plus the plain
+`.onSuccess(r => succeed(r.body))` shape after an `await` make this a
+non-issue in practice. My own integration uses exactly that pattern in
+`promptLibrary.ts:resolveSystemPrompt` and it reads cleanly — one
+`await`, one `.onSuccess`, one `succeed`. The "three layers" framing
+was a paper complaint that didn't survive looking at the code I
+actually wrote. The async-chaining helpers are exactly the right
+ergonomics for this case.
 
-**Severity:** P3 polish.
+**Severity:** retracted (was P3 polish).
 
-**Suggested fix:** add `resolveBody(req): Promise<Result<string>>` as a
-convenience for callers who don't need the trace. The full `resolve`
-remains for diagnostic / editor surfaces.
+**Note:** the original "convenience `resolveBody()` shorthand"
+suggestion is a small marginal-win at best and not worth the surface
+expansion — the library's diagnostic story leans on the full
+`IResolvedPrompt` (trace + descriptor + id), and shaving off
+`.onSuccess(r => succeed(r.body))` doesn't justify another public
+method.
 
 ---
 
