@@ -340,13 +340,22 @@ return fail(storeResult.message);
 
 **Workaround used:** `return fail(storeResult.message)`.
 
-**Severity:** P2 friction (ts-utils API, surfaced via ts-prompt-assist).
+**Severity:** P3 polish (ts-utils API, surfaced via ts-prompt-assist).
+The workaround `return fail<U>(r.message)` is semantically equivalent
+to a recast; the only material delta is one extra allocation. Filed
+for ergonomics + the allocation, not as a functional gap.
 
-**Suggested fix:** publish a `Result.recast<U>()` helper for the
-common "I want to propagate this failure under a different success
-type" pattern — i.e. `return storeResult.recast<PromptLibrary>()`. An
-earlier draft of this finding also floated widening `Failure<T>`'s `T`
-to `unknown` on the `isFailure()`-narrowing branch; **withdrawn on
+**Suggested fix:** publish a `Result.recast<U>()` helper that returns
+the same `Failure` re-typed (implementation can be `this as unknown as
+Failure<U>`) for the "propagate this failure under a different success
+type" pattern. The win over `return fail<U>(r.message)` is one fewer
+allocation and a slightly tidier call site; for `DetailedResult` it
+would also preserve `detail` cleanly, but `ts-prompt-assist` doesn't
+return `DetailedResult` today so that motivation is forward-looking
+rather than active.
+
+An earlier draft of this finding also floated widening `Failure<T>`'s
+`T` to `unknown` on the `isFailure()`-narrowing branch; **withdrawn on
 review** — that would poison the rest of the chain, because any
 subsequent `.onFailure` / `.mapFailure` handle on a chain that touched
 the narrowed branch would unify across both branches and collapse to
