@@ -32,6 +32,7 @@ import * as Hash from './packlets/hash/index.browser';
 import * as Mustache from './packlets/mustache';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as RecordJar from './packlets/record-jar/index.browser';
+import * as Yaml from './packlets/yaml';
 import * as ZipFileTree from './packlets/zip-file-tree';
 
 import { Converters } from './packlets/conversion';
@@ -48,6 +49,7 @@ export {
   Hash,
   Mustache,
   RecordJar,
+  Yaml,
   ZipFileTree
 };
 /* c8 ignore stop */
