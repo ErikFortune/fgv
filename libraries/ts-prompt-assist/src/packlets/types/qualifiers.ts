@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { Qualifiers } from '@fgv/ts-res';
 import { AxisName } from './ids';
 
 /**
@@ -49,3 +50,33 @@ export interface IPromptQualifierMetadata {
  * @public
  */
 export type IQualifierContext = Readonly<Partial<Record<string, string>>>;
+
+/**
+ * Shape of the `qualifiers` field on {@link IPromptLibraryCreateParams}.
+ * Accepts either a pre-built ts-res `IReadOnlyQualifierCollector` (when
+ * the consumer already maintains a ts-res qualifier set) or a mixed
+ * array of bare axis-name strings and / or `IQualifierDecl`s (the
+ * library builds the collector internally via ts-res's
+ * `Qualifiers.QualifierCollector.create`, which synthesizes
+ * `LiteralQualifierType`s for bare strings).
+ *
+ * @remarks
+ * Parameterized by `TQualifierNames extends string`, the qualifier-axis
+ * string-literal union the consumer wants to enforce. On the decl-array
+ * path, `TQualifierNames` is inferred from the array element types by
+ * the static `PromptLibrary.create` factory's first overload — bare-
+ * string elements contribute their string-literal type directly;
+ * `IQualifierDecl` elements contribute their `name` literal. On the
+ * pre-built-collector path the collector type does not expose its axis-
+ * name union at the type level, so `TQualifierNames` falls back to
+ * `string` unless the consumer specifies it explicitly.
+ *
+ * Extracted as a named type so the union has a single TSDoc-attach
+ * point and consumers writing typed `IPromptLibraryCreateParams`
+ * literals can reference the qualifiers shape directly.
+ *
+ * @public
+ */
+export type IPromptLibraryQualifiersInput<TQualifierNames extends string = string> =
+  | Qualifiers.IReadOnlyQualifierCollector
+  | ReadonlyArray<TQualifierNames | (Qualifiers.IQualifierDecl & { readonly name: TQualifierNames })>;

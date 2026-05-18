@@ -4,6 +4,7 @@
  */
 
 import { Result, succeed } from '@fgv/ts-utils';
+import { IPromptResponseBase } from '../types';
 import {
   IPromptConverterRegistry,
   IPromptOutputValidationRegistry,
@@ -23,7 +24,7 @@ import { SlotKindRegistry } from './slotKindRegistry';
  *
  * @public
  */
-export class PromptRegistry<TResponse extends { kind: string } = { kind: string }>
+export class PromptRegistry<TResponse extends IPromptResponseBase = IPromptResponseBase>
   implements IPromptRegistry<TResponse>
 {
   public readonly converters: IPromptConverterRegistry<TResponse>;
@@ -45,7 +46,7 @@ export class PromptRegistry<TResponse extends { kind: string } = { kind: string 
    * populated by `.converters.register(...)` / `.slotKinds.register(...)` /
    * `.outputValidations.register(...)`.
    */
-  public static create<TResponse extends { kind: string } = { kind: string }>(): Result<
+  public static create<TResponse extends IPromptResponseBase = IPromptResponseBase>(): Result<
     PromptRegistry<TResponse>
   > {
     return ConverterRegistry.create<TResponse>().onSuccess((converters) =>

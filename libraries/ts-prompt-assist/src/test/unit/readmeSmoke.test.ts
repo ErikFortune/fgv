@@ -332,7 +332,7 @@ describe('README smoke tests', () => {
     // actually render React (the library has no React dep at runtime);
     // the load-bearing assertions are (a) the seed compiles with
     // descriptor.id omitted (F12), (b) PromptLibrary.create infers
-    // TAxes from `['tone'] as const` (F3), and (c) the empty-context
+    // TQualifierNames from `['tone'] as const` (F3), and (c) the empty-context
     // resolve assigns cleanly to the narrowed shape (F14).
     const SCOPE = Convert.scopeKey.convert('global').orThrow();
     const GREETING = Convert.promptId.convert('greeting').orThrow();

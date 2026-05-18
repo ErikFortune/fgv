@@ -1638,9 +1638,9 @@ describe('ts-prompt-assist foundation', () => {
       expect(result).toFailWith(/does not match descriptor\.id/);
     });
 
-    test('F3 + F14: PromptLibrary.create infers TAxes from a string-literal decl array', async () => {
+    test('F3 + F14: PromptLibrary.create infers TQualifierNames from a string-literal decl array', async () => {
       // Per F3, the decl-array branch of PromptLibrary.create infers
-      // TAxes from the array element types. The narrowed library
+      // TQualifierNames from the array element types. The narrowed library
       // rejects an unknown axis name in the resolve request at compile
       // time. The empty `qualifiers: {}` shape (post-F14 widening)
       // assigns cleanly to the narrowed shape via Partial.
@@ -1649,7 +1649,7 @@ describe('ts-prompt-assist foundation', () => {
         await PromptLibrary.create({ store, qualifiers: ['tone', 'language'] as const })
       ).orThrow();
 
-      // Empty context — passes the Partial<Record<TAxes, string>>
+      // Empty context — passes the Partial<Record<TQualifierNames, string>>
       // (post-F14) check.
       const ok = await lib.resolve({
         id: TEST_PROMPT,
@@ -1675,7 +1675,7 @@ describe('ts-prompt-assist foundation', () => {
       const bad = await lib.resolve({
         id: TEST_PROMPT,
         chain: [TEST_SCOPE],
-        // @ts-expect-error - F3: 'tonr' is not a member of the inferred TAxes union 'tone' | 'language'
+        // @ts-expect-error - F3: 'tonr' is not a member of the inferred TQualifierNames union 'tone' | 'language'
         qualifiers: { tonr: 'formal' },
         substitutions: { audience: 'world' }
       });

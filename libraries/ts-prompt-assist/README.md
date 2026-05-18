@@ -148,6 +148,7 @@ the UI on the library landing.
 import { useEffect, useState } from 'react';
 import {
   Convert,
+  IPromptResponseBase,
   IPromptStoreFixtureSeed,
   PromptLibrary,
   PromptStoreFixture
@@ -177,10 +178,10 @@ const seed: IPromptStoreFixtureSeed = {
 };
 
 export function ChatPanel(): JSX.Element {
-  // TAxes is inferred from the decl-array literal — `tone` is the only
-  // accepted qualifier key on the resolve request, surfacing typos at
-  // compile time (F3).
-  const [library, setLibrary] = useState<PromptLibrary<{ kind: string }, 'tone'> | null>(null);
+  // TQualifierNames is inferred from the decl-array literal — `tone` is
+  // the only accepted qualifier key on the resolve request, surfacing
+  // typos at compile time (F3).
+  const [library, setLibrary] = useState<PromptLibrary<IPromptResponseBase, 'tone'> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -204,7 +205,7 @@ export function ChatPanel(): JSX.Element {
   return <ChatInner library={library} />;
 }
 
-function ChatInner(props: { library: PromptLibrary<{ kind: string }, 'tone'> }): JSX.Element {
+function ChatInner(props: { library: PromptLibrary<IPromptResponseBase, 'tone'> }): JSX.Element {
   // The narrow `qualifiers: { tone?: string }` shape comes from F3 +
   // F14 — the empty `{}` branch assigns thanks to the Partial widening
   // and a misspelled axis (`tonr`) fails at compile time.
@@ -222,7 +223,7 @@ Three things this pattern earns you:
    safe to instantiate at module top level. Only the
    `PromptLibrary.create` call is async.
 3. **Typed qualifier axes** — `qualifiers: ['tone'] as const` (the
-   decl-array path of `PromptLibrary.create`) infers `TAxes = 'tone'`,
+   decl-array path of `PromptLibrary.create`) infers `TQualifierNames = 'tone'`,
    tightening the resolve request's `qualifiers` shape. A pre-built
    `Qualifiers.QualifierCollector` doesn't expose its axes at the type
    level; pass `as const` decls when you want the typed benefit.
