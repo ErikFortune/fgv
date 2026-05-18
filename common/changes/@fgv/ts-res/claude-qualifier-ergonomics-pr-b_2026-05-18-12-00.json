@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Qualifier ergonomics (F1 + F14): QualifierCollector.create accepts mixed `(string | IQualifierDecl)[]` with optional qualifierTypes when all entries are strings; SimpleContextQualifierProvider and ValidatingSimpleContextQualifierProvider widen `qualifierValues` to `Readonly<Partial<Record<string, ...>>>` to accept conditional `{ k: v } | {}` shapes.",
+      "type": "minor",
+      "packageName": "@fgv/ts-res"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}
