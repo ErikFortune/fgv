@@ -2456,7 +2456,6 @@ interface IPathImporterCreateParams {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IQualifierCollectorCreateParams {
@@ -3809,18 +3808,11 @@ const qualifier: Converter<Qualifier, IQualifierConvertContext>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const QUALIFIER_COLLECTOR_DEFAULT_PRIORITY_STEP: number;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
 class QualifierCollector extends ValidatingConvertingCollector<Qualifier, IQualifierDecl> implements IReadOnlyQualifierCollector {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor(qualifierTypes: ReadOnlyQualifierTypeCollector, qualifiers?: ReadonlyArray<IQualifierDecl>);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3937,7 +3929,6 @@ declare namespace Qualifiers {
         IQualifierDecl,
         IValidatedQualifierDecl,
         IReadOnlyQualifierCollector,
-        QUALIFIER_COLLECTOR_DEFAULT_PRIORITY_STEP,
         IQualifierCollectorCreateParams,
         QualifierCollector,
         IQualifierDefaultValueDecl,
@@ -5386,10 +5377,11 @@ details: string) => void;
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/import/importers/collectionImporter.ts:135:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/qualifiers/qualifierCollector.ts:192:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/qualifiers/qualifierCollector.ts:192:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/qualifiers/qualifierCollector.ts:233:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/qualifiers/qualifierCollector.ts:291:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/qualifiers/qualifierCollector.ts:215:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/qualifiers/qualifierCollector.ts:215:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-res" does not have an export "Converters"
+// src/packlets/qualifiers/qualifierCollector.ts:215:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/qualifiers/qualifierCollector.ts:265:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/qualifiers/qualifierCollector.ts:333:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resource.ts:242:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resource.ts:242:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resource.ts:265:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
