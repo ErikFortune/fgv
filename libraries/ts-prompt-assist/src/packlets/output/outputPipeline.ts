@@ -11,6 +11,7 @@ import {
   IPromptDescriptor,
   IPromptResponseBase,
   PromptId,
+  PromptOutputValidatorAppliesTo,
   SlotName,
   ValidatorId
 } from '../types';
@@ -191,7 +192,7 @@ function runOneValidator<TResponse extends IPromptResponseBase>(
 function appliesToList<TResponse extends IPromptResponseBase>(
   validator: IPromptOutputValidator<TResponse>
 ): ReadonlyArray<TResponse['kind']> {
-  const appliesTo: TResponse['kind'] | ReadonlyArray<TResponse['kind']> = validator.appliesTo;
+  const appliesTo: PromptOutputValidatorAppliesTo<TResponse> = validator.appliesTo;
   if (isReadonlyArrayOfKind<TResponse>(appliesTo)) {
     return appliesTo;
   }
@@ -199,7 +200,7 @@ function appliesToList<TResponse extends IPromptResponseBase>(
 }
 
 function isReadonlyArrayOfKind<TResponse extends IPromptResponseBase>(
-  value: TResponse['kind'] | ReadonlyArray<TResponse['kind']>
+  value: PromptOutputValidatorAppliesTo<TResponse>
 ): value is ReadonlyArray<TResponse['kind']> {
   return Array.isArray(value);
 }

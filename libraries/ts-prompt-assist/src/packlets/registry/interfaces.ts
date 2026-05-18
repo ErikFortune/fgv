@@ -4,7 +4,7 @@
  */
 
 import { Converter, Result } from '@fgv/ts-utils';
-import { ConverterId, SlotName, ValidatorId } from '../types';
+import { ConverterId, PromptOutputValidatorAppliesTo, SlotName, ValidatorId } from '../types';
 import { IBindingTraceEntry, IPromptResponseBase } from '../types';
 import { PromptId } from '../types';
 
@@ -37,7 +37,7 @@ export interface IPromptOutputValidator<TResponse extends IPromptResponseBase> {
    * Discriminator value(s) this validator applies to. Single string for
    * single-kind validators; readonly array for cross-kind validators.
    */
-  readonly appliesTo: TResponse['kind'] | ReadonlyArray<TResponse['kind']>;
+  readonly appliesTo: PromptOutputValidatorAppliesTo<TResponse>;
   /**
    * Validates the converted output. The chain runner only invokes this when
    * `value.kind` matches `appliesTo`; defensive code may re-check.

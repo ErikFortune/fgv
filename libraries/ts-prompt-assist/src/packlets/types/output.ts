@@ -55,3 +55,26 @@ export interface IPromptResponseBase {
   /** String-literal discriminator that the JSON pipeline dispatches on. */
   readonly kind: string;
 }
+
+/**
+ * Shape of the `appliesTo` field on an {@link IPromptOutputValidator} — the
+ * discriminator value(s) the validator narrows by at runtime.
+ *
+ * @remarks
+ * Single-kind validators set `appliesTo` to one of the consumer's
+ * `TResponse['kind']` literals (e.g. `'cited'`); cross-kind validators set
+ * it to a `ReadonlyArray` of literals (e.g. `['cited', 'classifier']`). The
+ * output pipeline normalizes either form to an array at runtime and skips
+ * validators whose set doesn't include `value.kind`.
+ *
+ * Extracted as a named type so the "one value or array of values" union has
+ * a single TSDoc-attach point and consumers authoring validators can
+ * reference the field shape directly. Parameterized by
+ * `TResponse extends IPromptResponseBase` so the named alias preserves the
+ * same narrowing the inline union provided.
+ *
+ * @public
+ */
+export type PromptOutputValidatorAppliesTo<TResponse extends IPromptResponseBase> =
+  | TResponse['kind']
+  | ReadonlyArray<TResponse['kind']>;

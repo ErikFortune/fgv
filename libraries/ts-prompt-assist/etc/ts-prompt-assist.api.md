@@ -304,7 +304,7 @@ export interface IPromptOutputValidationRegistry<TResponse extends IPromptRespon
 
 // @public
 export interface IPromptOutputValidator<TResponse extends IPromptResponseBase> {
-    readonly appliesTo: TResponse['kind'] | ReadonlyArray<TResponse['kind']>;
+    readonly appliesTo: PromptOutputValidatorAppliesTo<TResponse>;
     validate(value: TResponse, context: IOutputValidationContext): Result<true>;
 }
 
@@ -587,6 +587,9 @@ export class PromptLibrary<TResponse extends IPromptResponseBase = IPromptRespon
 
 // @public
 export type PromptOutputContract = ITextOutputContract | IJsonOutputContract;
+
+// @public
+export type PromptOutputValidatorAppliesTo<TResponse extends IPromptResponseBase> = TResponse['kind'] | ReadonlyArray<TResponse['kind']>;
 
 // @public
 export class PromptRegistry<TResponse extends IPromptResponseBase = IPromptResponseBase> implements IPromptRegistry<TResponse> {
