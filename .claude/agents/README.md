@@ -9,12 +9,12 @@ agents/
 ├── README.md           # This file
 ├── task-master.md      # Standalone: Complex workflow orchestration
 ├── senior-sdet.md      # Standalone: Test architecture and quality review
+├── code-reviewer.md    # Standalone + workflow: Code review (dual-mode)
 └── workflow-only/      # Sub-agents invoked only by task-master
     ├── tpm-agent.md         # Requirements analysis
     ├── senior-developer.md  # Architecture & design
     ├── ux-designer.md       # UX design
     ├── code-monkey.md       # Implementation
-    ├── code-reviewer.md     # Code review (see note below)
     ├── sdet-functional.md   # Functional testing
     ├── sdet-coverage.md     # Coverage analysis
     ├── o11y-expert.md       # Observability
@@ -36,6 +36,13 @@ Use for complex test architecture decisions:
 - Test suite quality review
 - Bug triage and analysis
 - Manual validation planning
+
+### code-reviewer
+Dual-mode agent (see its own header):
+- **Standalone**: invoke directly to review a diff or PR. Outputs human-readable findings classified by priority (P1 blocking, P2 major, P3 minor) using `CODE_REVIEW_CHECKLIST.md`.
+- **Workflow**: also invoked by task-master as a quality gate in orchestrated flows.
+
+Lives at the top level (rather than `workflow-only/`) so it can be invoked by all subagent types — including the `general-purpose` subagent that orchestrators commission for single-PR work. Per-PR Guardrail #6 in cluster briefs depends on this top-level placement.
 
 ## Workflow-Only Agents
 
