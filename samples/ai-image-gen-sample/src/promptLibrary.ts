@@ -86,6 +86,10 @@ export async function resolveChatSystemPrompt(
   const resolved = await library.resolve({
     id: CHAT_SYSTEM_PROMPT,
     chain: [SCOPE],
+    // 'neutral' sends `{}` because the base candidate has `conditions: {}`
+    // and ts-res treats a missing axis as matching the base. If a future
+    // candidate is added with `conditions: { tone: 'neutral' }`, update
+    // this to `{ tone }` so the selector can see the value.
     qualifiers: tone === 'formal' ? { tone: 'formal' } : {}
   });
   return resolved.onSuccess((r) => succeed(r.body));

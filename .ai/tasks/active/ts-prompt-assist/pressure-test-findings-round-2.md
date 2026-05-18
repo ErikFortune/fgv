@@ -140,16 +140,27 @@ each required field is a small cognitive tax.
 **Severity:** P3 polish.
 
 **Suggested fix:** on the fixture-seed path specifically (where the
-consumer is in TS, not YAML), make `slots`, `output`, and
-`schemaVersion` optional with sensible defaults (`slots: []`,
-`output: { kind: 'free-text' }`, `schemaVersion: '1'`). The on-disk
+consumer is in TS, not YAML), make `slots` and `schemaVersion` optional
+with sensible defaults (`slots: []`, `schemaVersion: '1'`). The on-disk
 YAML loader can keep its current strictness, since YAML descriptors
 are persisted artifacts that benefit from explicitness. The
 TS-authored fixture seed is short-lived in-code data; defaults are
 appropriate there.
 
+**Caveat (added on review):** `output` is load-bearing — not pure
+ceremony. `PromptLibrary.resolveJsonOutput` and `resolveFreeTextOutput`
+both runtime-verify `descriptor.output.kind` against the call path,
+so silently defaulting `output: { kind: 'free-text' }` for omitted
+fields would make `resolveFreeTextOutput` always-correct for
+unannotated prompts and silently route a consumer who intended JSON
+into the wrong dispatcher. The `output` defaulting proposal needs
+more thought than `slots` / `schemaVersion`; flagging it as deserving
+explicit design rather than a one-line shim.
+
 A complementary option: ship a `PromptDescriptor.simple({ title, body, surface? })`
-helper that returns a fully-shaped descriptor for the trivial case.
+helper that returns a fully-shaped descriptor for the trivial case —
+this keeps `output` explicit at the call site while still cutting the
+ceremony.
 
 ---
 
