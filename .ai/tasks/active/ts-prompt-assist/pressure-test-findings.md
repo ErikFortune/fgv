@@ -11,7 +11,7 @@ The integration itself is small; the value is the friction list below.
 
 ---
 
-## F15. `@fgv/ts-prompt-assist` is unusable in a browser bundle: the ts-extras browser barrel is missing the `Yaml` export
+## F15. `@fgv/ts-prompt-assist` is unusable in a browser bundle: the ts-extras browser barrel is missing the `Yaml` export **— FIXED on this branch (scope expansion)**
 
 **Surface:** `@fgv/ts-extras`'s `package.json` `"exports"` map + the
 browser barrel `lib/index.browser.js`, indirectly consumed by
@@ -48,11 +48,16 @@ the browser File-System-Access File Tree as a supported
 `FileTreePromptStore` backend, so the browser path is in scope by
 design.
 
-**Workaround used:** none — surfaced, not patched. (Per pressure-test
-brief, library code changes are out of scope; file it and stop. The
-sample's chat path is still smoke-test-verified against the built
-libraries in Node — see commit message — but I can't manually verify
-the browser UI works until F15 is fixed.)
+**Workaround used:** none — fixed at source. Per pressure-test brief,
+library changes were out of scope, but Erik authorised the scope
+expansion to unblock browser testing on this PR. The fix is one line
+in `libraries/ts-extras/src/index.browser.ts` (import + re-export
+`Yaml`); regression gate is the sample's `rushx build` (webpack
+production) which now indirectly proves browser consumption of
+`@fgv/ts-prompt-assist`. Runtime-verified via
+`require('lib/index.browser.js').Yaml.yamlConverter` → defined. See
+the separate brief at `.ai/tasks/active/ts-prompt-assist/brief-f15-ts-extras-browser-yaml.md`
+for the intended scope; that brief is now retired-in-place.
 
 **Severity:** P1 blocking.
 
