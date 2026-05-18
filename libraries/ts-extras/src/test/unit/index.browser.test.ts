@@ -22,14 +22,29 @@
 
 import '@fgv/ts-utils-jest';
 
-import * as TsExtras from '../../index.browser';
+import * as TsExtrasBrowser from '../../index.browser';
+import * as TsExtrasNode from '../../index';
 
 describe('ts-extras browser root exports', () => {
   test('should expose CryptoUtils and preserve the Crypto alias', () => {
-    expect(TsExtras.CryptoUtils).toBeDefined();
-    expect(TsExtras.Crypto).toBeDefined();
-    expect(TsExtras.CryptoUtils.KeyStore).toBeDefined();
-    expect(TsExtras.Crypto.KeyStore).toBeDefined();
-    expect(TsExtras.CryptoUtils.KeyStore).toBe(TsExtras.Crypto.KeyStore);
+    expect(TsExtrasBrowser.CryptoUtils).toBeDefined();
+    expect(TsExtrasBrowser.Crypto).toBeDefined();
+    expect(TsExtrasBrowser.CryptoUtils.KeyStore).toBeDefined();
+    expect(TsExtrasBrowser.Crypto.KeyStore).toBeDefined();
+    expect(TsExtrasBrowser.CryptoUtils.KeyStore).toBe(TsExtrasBrowser.Crypto.KeyStore);
+  });
+
+  test('browser entry exports every top-level name the Node entry exports (L13 parity)', () => {
+    // Per TECH_DEBT.md L13 ("Cross-runtime entry-point export parity"):
+    // every top-level name exported from `index.ts` MUST also be exported
+    // from `index.browser.ts`. The browser entry MAY have additional names
+    // (e.g. the `Crypto` back-compat alias), but nothing the Node entry
+    // ships may go missing on browser — that has bitten the team multiple
+    // times (most recently: `Yaml` was missing from the browser entry,
+    // surfacing only when the sample app tried to launch).
+    const nodeKeys = Object.keys(TsExtrasNode).sort();
+    const browserKeys = Object.keys(TsExtrasBrowser).sort();
+    const missingFromBrowser = nodeKeys.filter((k) => !browserKeys.includes(k));
+    expect(missingFromBrowser).toEqual([]);
   });
 });
