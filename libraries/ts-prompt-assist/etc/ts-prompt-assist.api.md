@@ -46,7 +46,10 @@ export type BindingTraceSource = 'caller-sub' | 'binding' | 'default' | 'empty';
 export function buildBindingsRecord(scope: ScopeKey, contents: IBindingsFileContents): IScopeSlotBindingsRecord;
 
 // @public
-export function buildStoredPromptRecord(scope: ScopeKey, contents: IPromptFileContents): IStoredPromptRecord;
+export function buildSimpleDescriptor(params: IBuildSimpleDescriptorParams): IPromptDescriptor;
+
+// @public
+export function buildStoredPromptRecord<TQualifierNames extends string = string>(scope: ScopeKey, contents: IPromptFileContents<TQualifierNames>): IStoredPromptRecord<TQualifierNames>;
 
 // @public
 export const Convert: {
@@ -97,7 +100,7 @@ export const EnumConvert: {
 
 // @public
 export class FileTreePromptStore implements IPromptStore {
-    static create(params: IFileTreePromptStoreCreateParams): Promise<Result<FileTreePromptStore>>;
+    static create<TQualifierNames extends string = string>(params: IFileTreePromptStoreCreateParams<TQualifierNames>): Promise<Result<FileTreePromptStore>>;
     get(scope: ScopeKey, id: PromptId): Promise<Result<IStoredPromptRecord | undefined>>;
     getBindings(scope: ScopeKey): Promise<Result<IScopeSlotBindingsRecord | undefined>>;
     getQualifierConfig(): Promise<Result<ReadonlyArray<Qualifiers.IQualifierDecl> | undefined>>;
@@ -126,6 +129,16 @@ export interface IBindingTraceEntry {
     readonly value: string;
     readonly wasEnforced: boolean;
     readonly winningScope?: ScopeKey;
+}
+
+// @public
+export interface IBuildSimpleDescriptorParams {
+    readonly description?: string;
+    // (undocumented)
+    readonly id: PromptId;
+    readonly surface?: string;
+    // (undocumented)
+    readonly title: string;
 }
 
 // @public
@@ -164,7 +177,8 @@ export interface IExpectedQualifierAxis {
 }
 
 // @public
-export interface IFileTreePromptStoreCreateParams {
+export interface IFileTreePromptStoreCreateParams<TQualifierNames extends string = string> {
+    readonly qualifierNameConverter?: Converter<TQualifierNames>;
     readonly root: FileTree.IFileTreeDirectoryItem;
     readonly scopeDecoding?: (encoded: string) => Result<ScopeKey>;
     readonly scopeEncoding?: (scope: ScopeKey) => Result<string>;
@@ -211,10 +225,10 @@ export interface IPendingResourceBinding {
 }
 
 // @public
-export interface IPromptCandidateRecord {
+export interface IPromptCandidateRecord<TQualifierNames extends string = string> {
     // (undocumented)
     readonly body: string;
-    readonly conditions: ResourceJson.Json.ConditionSetDecl;
+    readonly conditions: ResourceJson.Json.ConditionSetDecl<TQualifierNames>;
     readonly isPartial?: boolean;
 }
 
@@ -263,9 +277,9 @@ export interface IPromptExampleSet {
 }
 
 // @public
-export interface IPromptFileContents {
+export interface IPromptFileContents<TQualifierNames extends string = string> {
     // (undocumented)
-    readonly candidates: ReadonlyArray<IPromptCandidateRecord>;
+    readonly candidates: ReadonlyArray<IPromptCandidateRecord<TQualifierNames>>;
     // (undocumented)
     readonly descriptor: IPromptDescriptor;
 }
@@ -420,21 +434,22 @@ export type IPromptStoreFixtureDescriptor = Omit<IPromptDescriptor, 'id'> & {
 };
 
 // @public
-export interface IPromptStoreFixtureSeed {
+export interface IPromptStoreFixtureSeed<TQualifierNames extends string = string> {
     // (undocumented)
     readonly bindings?: ReadonlyArray<IScopeSlotBindingsRecord>;
+    readonly qualifierNameConverter?: Converter<TQualifierNames>;
     // (undocumented)
     readonly qualifiers?: ReadonlyArray<Qualifiers.IQualifierDecl>;
     // (undocumented)
-    readonly records?: ReadonlyArray<IPromptStoreFixtureSeedRecord>;
+    readonly records?: ReadonlyArray<IPromptStoreFixtureSeedRecord<TQualifierNames>>;
     readonly scopeDecoding?: (encoded: string) => Result<ScopeKey>;
     readonly scopeEncoding?: (scope: ScopeKey) => Result<string>;
 }
 
 // @public
-export interface IPromptStoreFixtureSeedRecord {
+export interface IPromptStoreFixtureSeedRecord<TQualifierNames extends string = string> {
     // (undocumented)
-    readonly candidates: ReadonlyArray<IPromptCandidateRecord>;
+    readonly candidates: ReadonlyArray<IPromptCandidateRecord<TQualifierNames>>;
     // (undocumented)
     readonly descriptor: IPromptStoreFixtureDescriptor;
     // (undocumented)
@@ -517,9 +532,9 @@ export interface ISlotSerializer {
 }
 
 // @public
-export interface IStoredPromptRecord {
+export interface IStoredPromptRecord<TQualifierNames extends string = string> {
     // (undocumented)
-    readonly candidates: ReadonlyArray<IPromptCandidateRecord>;
+    readonly candidates: ReadonlyArray<IPromptCandidateRecord<TQualifierNames>>;
     // (undocumented)
     readonly descriptor: IPromptDescriptor;
     // (undocumented)
@@ -607,7 +622,7 @@ export type PromptStoreEventKind = 'descriptor-changed' | 'descriptor-removed' |
 
 // @public
 export const PromptStoreFixture: {
-    build(seed: IPromptStoreFixtureSeed): Promise<Result<IPromptStore>>;
+    build<TQualifierNames extends string = string>(seed: IPromptStoreFixtureSeed<TQualifierNames>): Promise<Result<IPromptStore>>;
 };
 
 // @public
@@ -671,6 +686,9 @@ export const substitutionEntry: Converter<string | SlotBinding>;
 
 // @public
 export type SuspiciousDisposition = 'warn' | 'reject';
+
+// @public
+export function typedPromptFileConverter<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<IPromptFileContents<TQualifierNames>>;
 
 // @public
 export type ValidatorId = Brand<string, 'ValidatorId'>;

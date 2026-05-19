@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Converter, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { Yaml } from '@fgv/ts-extras';
 import { Qualifiers } from '@fgv/ts-res';
@@ -33,24 +33,45 @@ export type IPromptStoreFixtureDescriptor = Omit<IPromptDescriptor, 'id'> & {
 
 /**
  * Fixture-seed-only record shape: descriptor.id is optional and
- * defaults to the outer record id (per F12). Other fields mirror
- * {@link IStoredPromptRecord}.
+ * defaults to the outer record id (per F12). Candidate `conditions`
+ * keys are narrowed by `TQualifierNames` (B-3) so typo'd axis names
+ * fail at compile time when the seed is threaded through a
+ * `TQualifierNames`-typed fixture build; pair with the
+ * `qualifierNameConverter` (below) for convert-time enforcement of
+ * the same narrow on round-tripped YAML. Default
+ * `TQualifierNames = string` keeps unnarrowed seeds compiling
+ * unchanged.
+ *
+ * Other fields mirror {@link IStoredPromptRecord}.
  *
  * @public
  */
-export interface IPromptStoreFixtureSeedRecord {
+export interface IPromptStoreFixtureSeedRecord<TQualifierNames extends string = string> {
   readonly scope: ScopeKey;
   readonly id: PromptId;
   readonly descriptor: IPromptStoreFixtureDescriptor;
-  readonly candidates: ReadonlyArray<IPromptCandidateRecord>;
+  readonly candidates: ReadonlyArray<IPromptCandidateRecord<TQualifierNames>>;
 }
 
 /**
  * Seed describing the in-memory FileTree state for a test fixture.
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames extends string` (B-3). When
+ * `PromptStoreFixture.build` infers `TQualifierNames` from a typed
+ * call site (e.g. an `IPromptStoreFixtureSeed<'tone'>` annotation, or
+ * via the inferring `build<TQualifierNames>(seed)` signature), the
+ * candidates' `conditions` keys are narrowed to that union. Pair with
+ * `qualifierNameConverter` for round-trip convert-time enforcement —
+ * the build threads the Converter through to
+ * `FileTreePromptStore.create`, so a YAML round-trip carrying a typo'd
+ * axis name fails at load time. Default `TQualifierNames = string`
+ * keeps existing call sites working unchanged.
+ *
  * @public
  */
-export interface IPromptStoreFixtureSeed {
-  readonly records?: ReadonlyArray<IPromptStoreFixtureSeedRecord>;
+export interface IPromptStoreFixtureSeed<TQualifierNames extends string = string> {
+  readonly records?: ReadonlyArray<IPromptStoreFixtureSeedRecord<TQualifierNames>>;
   readonly bindings?: ReadonlyArray<IScopeSlotBindingsRecord>;
   readonly qualifiers?: ReadonlyArray<Qualifiers.IQualifierDecl>;
   /**
@@ -66,6 +87,17 @@ export interface IPromptStoreFixtureSeed {
    * `ScopeKey`s) will round-trip incorrectly.
    */
   readonly scopeDecoding?: (encoded: string) => Result<ScopeKey>;
+  /**
+   * Optional ts-res qualifier-name Converter (B-3). When supplied, the
+   * build threads it into `FileTreePromptStore.create` so the YAML
+   * loader validates each candidate's `conditions` keys at convert
+   * time against the Converter's literal-string union. A YAML record
+   * with a typo'd axis name fails at load time with a Converter-level
+   * error, mirroring the compile-time discipline the seed type already
+   * imposes when `TQualifierNames` is narrowed. When omitted, the
+   * loader keeps today's permissive default-string behavior.
+   */
+  readonly qualifierNameConverter?: Converter<TQualifierNames>;
 }
 
 function serializeBindingsRecord(record: IScopeSlotBindingsRecord): Result<string> {
@@ -76,7 +108,9 @@ function serializeBindingsRecord(record: IScopeSlotBindingsRecord): Result<strin
   return Yaml.yamlStringify({ bindings });
 }
 
-function serializePromptRecord(record: IPromptStoreFixtureSeedRecord): Result<string> {
+function serializePromptRecord<TQualifierNames extends string>(
+  record: IPromptStoreFixtureSeedRecord<TQualifierNames>
+): Result<string> {
   return defaultDescriptorIdFromOuter(record).onSuccess((descriptor) =>
     Yaml.yamlStringify({ ...descriptor, candidates: record.candidates })
   );
@@ -88,7 +122,9 @@ function serializePromptRecord(record: IPromptStoreFixtureSeedRecord): Result<st
  * mismatches the outer id, reject loudly — the redundancy is gone but
  * silent inconsistency must remain impossible.
  */
-function defaultDescriptorIdFromOuter(record: IPromptStoreFixtureSeedRecord): Result<IPromptDescriptor> {
+function defaultDescriptorIdFromOuter<TQualifierNames extends string>(
+  record: IPromptStoreFixtureSeedRecord<TQualifierNames>
+): Result<IPromptDescriptor> {
   const descriptor = record.descriptor;
   if (descriptor.id === undefined) {
     return succeed({ ...descriptor, id: record.id });
@@ -113,21 +149,40 @@ function serializeQualifiers(qualifiers: ReadonlyArray<Qualifiers.IQualifierDecl
  * `InMemoryPromptStore`; tests round-trip through the same YAML schema
  * the FsTree adapter would.
  *
+ * @remarks
+ * Generic over `TQualifierNames extends string` (B-3). Inferred from
+ * the supplied seed when the seed's `IPromptStoreFixtureSeed<...>`
+ * type parameter is narrowed at the call site — e.g.
+ * `PromptStoreFixture.build<'tone'>(seed)` or via an annotated
+ * `const seed: IPromptStoreFixtureSeed<'tone'> = { ... }`. The
+ * resulting store has the same runtime shape regardless of
+ * `TQualifierNames`; the parameter drives compile-time narrowing of
+ * candidate `conditions` keys. Convert-time enforcement is achieved
+ * by ALSO supplying `seed.qualifierNameConverter` — the build passes
+ * the Converter through to `FileTreePromptStore.create`, so a
+ * round-tripped YAML with a typo'd axis name fails at load time.
+ *
  * @public
  */
 export const PromptStoreFixture: {
-  build(seed: IPromptStoreFixtureSeed): Promise<Result<IPromptStore>>;
+  build<TQualifierNames extends string = string>(
+    seed: IPromptStoreFixtureSeed<TQualifierNames>
+  ): Promise<Result<IPromptStore>>;
 } = {
   /**
    * Builds an in-memory FileTree from the seed, then wraps it in a
    * `FileTreePromptStore`. Returns the store ready for use.
    */
-  async build(seed: IPromptStoreFixtureSeed): Promise<Result<IPromptStore>> {
+  async build<TQualifierNames extends string = string>(
+    seed: IPromptStoreFixtureSeed<TQualifierNames>
+  ): Promise<Result<IPromptStore>> {
     return buildSeededStore(seed);
   }
 } as const;
 
-function buildSeededStore(seed: IPromptStoreFixtureSeed): Promise<Result<IPromptStore>> {
+function buildSeededStore<TQualifierNames extends string>(
+  seed: IPromptStoreFixtureSeed<TQualifierNames>
+): Promise<Result<IPromptStore>> {
   const encode = seed.scopeEncoding ?? defaultScopeEncoding;
 
   // Single chained pipeline — each step runs only after the previous
@@ -159,12 +214,13 @@ function buildSeededStore(seed: IPromptStoreFixtureSeed): Promise<Result<IPrompt
   return FileTreePromptStore.create({
     root: buildResult.value,
     scopeEncoding: seed.scopeEncoding,
-    scopeDecoding: seed.scopeDecoding
+    scopeDecoding: seed.scopeDecoding,
+    qualifierNameConverter: seed.qualifierNameConverter
   });
 }
 
-function encodeRecords(
-  records: ReadonlyArray<IPromptStoreFixtureSeedRecord> | undefined,
+function encodeRecords<TQualifierNames extends string>(
+  records: ReadonlyArray<IPromptStoreFixtureSeedRecord<TQualifierNames>> | undefined,
   encode: (scope: ScopeKey) => Result<string>
 ): Result<ReadonlyArray<FileTree.IInMemoryFile>> {
   return mapResults(

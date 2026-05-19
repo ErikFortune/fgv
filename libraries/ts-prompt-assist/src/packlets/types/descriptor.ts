@@ -109,14 +109,28 @@ export interface IScopeSlotBindingsRecord {
 
 /**
  * A stored candidate within an {@link IStoredPromptRecord}.
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames extends string = string` (B-3). The
+ * `conditions` field threads the type parameter into ts-res's
+ * parameterized `ResourceJson.Json.ConditionSetDecl<TQualifierNames>`, so
+ * a consumer who threads a literal-string union (via the optional
+ * `qualifierNameConverter` on `FileTreePromptStore.create` /
+ * `PromptStoreFixture.build`) gets compile-time rejection of typo'd axis
+ * names on the record form AND convert-time rejection in the YAML loader.
+ * Default `TQualifierNames = string` keeps untyped callers compiling
+ * unchanged.
+ *
  * @public
  */
-export interface IPromptCandidateRecord {
+export interface IPromptCandidateRecord<TQualifierNames extends string = string> {
   /**
    * Full ts-res `ConditionSetDecl` (record-sugar, record-with-details, or
    * array form). Empty `\{\}` represents the unconditional base candidate.
+   * Parameterized on `TQualifierNames` so a narrowed call site gets
+   * compile-time discipline on the key set.
    */
-  readonly conditions: ResourceJson.Json.ConditionSetDecl;
+  readonly conditions: ResourceJson.Json.ConditionSetDecl<TQualifierNames>;
   /**
    * Aligned with ts-res's `resolveComposedResourceValue` semantic
    * (design §10.2): `isPartial: true` marks a more-specific override
@@ -132,11 +146,62 @@ export interface IPromptCandidateRecord {
 
 /**
  * Stored prompt record returned by the store.
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames extends string = string` (B-3); the
+ * parameter threads through `candidates` so a typed store produces
+ * narrowed records. Default `TQualifierNames = string` keeps untyped
+ * callers compiling unchanged.
+ *
  * @public
  */
-export interface IStoredPromptRecord {
+export interface IStoredPromptRecord<TQualifierNames extends string = string> {
   readonly scope: ScopeKey;
   readonly id: PromptId;
   readonly descriptor: IPromptDescriptor;
-  readonly candidates: ReadonlyArray<IPromptCandidateRecord>;
+  readonly candidates: ReadonlyArray<IPromptCandidateRecord<TQualifierNames>>;
+}
+
+/**
+ * Parameters for {@link buildSimpleDescriptor}.
+ *
+ * @public
+ */
+export interface IBuildSimpleDescriptorParams {
+  readonly id: PromptId;
+  readonly title: string;
+  /** Optional longer-form description. */
+  readonly description?: string;
+  /** Default `'chat'`. */
+  readonly surface?: string;
+}
+
+/**
+ * Builds a fully-shaped {@link IPromptDescriptor} for the trivial chat
+ * case: one body, no slots, free-text output. Cuts the boilerplate of
+ * spelling out `schemaVersion`, `slots: []`, and
+ * `output: \{ kind: 'free-text' \}` at every seed call site (per F2).
+ *
+ * @remarks
+ * Intentionally limited to the free-text-output shape. The descriptor's
+ * `output.kind` is load-bearing — `PromptLibrary.resolveJsonOutput` and
+ * `resolveFreeTextOutput` both runtime-verify it against the call
+ * path — so silently defaulting `output` for a JSON-output prompt
+ * would route the consumer into the wrong dispatcher. For JSON-output
+ * prompts, author the full {@link IPromptDescriptor} shape directly so
+ * the `output.converterId` discriminator is explicit at the call site.
+ *
+ * @public
+ */
+export function buildSimpleDescriptor(params: IBuildSimpleDescriptorParams): IPromptDescriptor {
+  const descriptor: IPromptDescriptor = {
+    id: params.id,
+    title: params.title,
+    schemaVersion: '1',
+    surface: params.surface ?? 'chat',
+    slots: [],
+    output: { kind: 'free-text' },
+    ...(params.description !== undefined ? { description: params.description } : {})
+  };
+  return descriptor;
 }

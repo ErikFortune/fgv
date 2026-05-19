@@ -156,14 +156,83 @@ const looseCandidateBodyConverter: Converter<IPromptCandidateRecord> =
   );
 
 /**
+ * Builds a `Converter<IPromptCandidateRecord<TQualifierNames>>` whose
+ * `conditions` field is validated through ts-res's parameterized
+ * `ResourceJson.Convert.typedConditionSetDecl(qc)` (B-3). The returned
+ * Converter rejects typo'd axis names at convert time when YAML carries
+ * a key not in the consumer's declared literal-string union.
+ *
+ * Keep in sync with `looseCandidateBodyConverter` above — the only
+ * difference is the `conditions` slot's Converter.
+ */
+function _typedLooseCandidateBodyConverter<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<IPromptCandidateRecord<TQualifierNames>> {
+  return Converters.object<IPromptCandidateRecord<TQualifierNames>>(
+    {
+      conditions: ResourceJson.Convert.typedConditionSetDecl(qualifierNameConverter),
+      isPartial: Converters.boolean.optional(),
+      body: Converters.string
+    },
+    { optionalFields: ['isPartial'] }
+  );
+}
+
+/**
  * Shape of a `<prompt-id>.yaml` file body: the descriptor metadata plus the
  * candidates array (scope is reconstructed by the store from the directory
  * path).
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames extends string = string` (B-3); the
+ * parameter threads through `candidates` so a typed loader produces
+ * narrowed records. Default `TQualifierNames = string` keeps untyped
+ * callers compiling unchanged.
+ *
  * @public
  */
-export interface IPromptFileContents {
+export interface IPromptFileContents<TQualifierNames extends string = string> {
   readonly descriptor: IPromptDescriptor;
-  readonly candidates: ReadonlyArray<IPromptCandidateRecord>;
+  readonly candidates: ReadonlyArray<IPromptCandidateRecord<TQualifierNames>>;
+}
+
+function _buildPromptFileContentsConverter<TQualifierNames extends string>(
+  candidateConverter: Converter<IPromptCandidateRecord<TQualifierNames>>
+): Converter<IPromptFileContents<TQualifierNames>> {
+  return Converters.generic<IPromptFileContents<TQualifierNames>>(
+    (from: unknown): Result<IPromptFileContents<TQualifierNames>> => {
+      if (typeof from !== 'object' || from === null) {
+        return fail('prompt file: expected an object');
+      }
+      // Split the prompt file into descriptor fields + candidates so the
+      // descriptor Converter never sees the `candidates` field. This keeps
+      // the file Converter robust against a future `Converters.object`
+      // strict-by-default switch and avoids the wasted re-parse of the
+      // entire object when descriptor Converters become more expensive.
+      const { candidates: rawCandidates, ...descriptorRaw } = from as {
+        readonly candidates?: unknown;
+        readonly [key: string]: unknown;
+      };
+      return descriptorConverter
+        .convert(descriptorRaw)
+        .withErrorFormat((msg) => `prompt file: invalid descriptor: ${msg}`)
+        .onSuccess((descriptor) => {
+          if (descriptor.output.kind === 'free-text' && (descriptor.outputValidations?.length ?? 0) > 0) {
+            return fail(
+              `prompt '${descriptor.id}': free-text descriptors cannot declare outputValidations in v0.1`
+            );
+          }
+          return Converters.arrayOf(candidateConverter)
+            .convert(rawCandidates)
+            .withErrorFormat((msg) => `prompt '${descriptor.id}': invalid candidates: ${msg}`)
+            .onSuccess((candidates) =>
+              mapResults(candidates.map((c, i) => scanCandidateBody(c.body, descriptor.id, i))).onSuccess(
+                () => succeed<IPromptFileContents<TQualifierNames>>({ descriptor, candidates })
+              )
+            );
+        });
+    }
+  );
 }
 
 /**
@@ -178,47 +247,44 @@ export interface IPromptFileContents {
  *
  * @public
  */
-export const promptFileConverter: Converter<IPromptFileContents> = Converters.generic<IPromptFileContents>(
-  (from: unknown): Result<IPromptFileContents> => {
-    if (typeof from !== 'object' || from === null) {
-      return fail('prompt file: expected an object');
-    }
-    // Split the prompt file into descriptor fields + candidates so the
-    // descriptor Converter never sees the `candidates` field. This keeps
-    // the file Converter robust against a future `Converters.object`
-    // strict-by-default switch and avoids the wasted re-parse of the
-    // entire object when descriptor Converters become more expensive.
-    const { candidates: rawCandidates, ...descriptorRaw } = from as {
-      readonly candidates?: unknown;
-      readonly [key: string]: unknown;
-    };
-    return descriptorConverter
-      .convert(descriptorRaw)
-      .withErrorFormat((msg) => `prompt file: invalid descriptor: ${msg}`)
-      .onSuccess((descriptor) => {
-        if (descriptor.output.kind === 'free-text' && (descriptor.outputValidations?.length ?? 0) > 0) {
-          return fail(
-            `prompt '${descriptor.id}': free-text descriptors cannot declare outputValidations in v0.1`
-          );
-        }
-        return Converters.arrayOf(looseCandidateBodyConverter)
-          .convert(rawCandidates)
-          .withErrorFormat((msg) => `prompt '${descriptor.id}': invalid candidates: ${msg}`)
-          .onSuccess((candidates) =>
-            mapResults(candidates.map((c, i) => scanCandidateBody(c.body, descriptor.id, i))).onSuccess(() =>
-              succeed<IPromptFileContents>({ descriptor, candidates })
-            )
-          );
-      });
-  }
-);
+export const promptFileConverter: Converter<IPromptFileContents> =
+  _buildPromptFileContentsConverter(looseCandidateBodyConverter);
+
+/**
+ * Typed sibling of {@link promptFileConverter} (B-3). Routes the candidate
+ * `conditions` validation through `ResourceJson.Convert.typedConditionSetDecl(qc)`
+ * so typo'd axis names fail at convert time. Returned Converter narrows
+ * its result type on `TQualifierNames`.
+ *
+ * @remarks
+ * Keep in sync with `promptFileConverter` above — both flow through
+ * `_buildPromptFileContentsConverter`, so the body validation and the
+ * `outputValidations`-on-free-text rejection cannot drift.
+ *
+ * @public
+ */
+export function typedPromptFileConverter<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<IPromptFileContents<TQualifierNames>> {
+  return _buildPromptFileContentsConverter(_typedLooseCandidateBodyConverter(qualifierNameConverter));
+}
 
 /**
  * Builds a fully-typed {@link IStoredPromptRecord} from a parsed prompt file
  * and the scope key derived from the file's directory location.
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames extends string = string` (B-3) so the
+ * narrowed file-contents type threads through to the produced stored
+ * record. Default `TQualifierNames = string` keeps untyped callers
+ * compiling unchanged.
+ *
  * @public
  */
-export function buildStoredPromptRecord(scope: ScopeKey, contents: IPromptFileContents): IStoredPromptRecord {
+export function buildStoredPromptRecord<TQualifierNames extends string = string>(
+  scope: ScopeKey,
+  contents: IPromptFileContents<TQualifierNames>
+): IStoredPromptRecord<TQualifierNames> {
   return {
     scope,
     id: contents.descriptor.id,
