@@ -130,6 +130,51 @@ green).
 
 ---
 
+## Copilot review absorption
+
+Two rounds of Copilot review threads on PR #384, all addressed:
+
+**Round 1 (3 threads — type-only imports + cast hygiene):**
+
+1. `promptLibrary.ts:13` — type-only specifiers (`IPromptResponseBase`,
+   `IPromptStoreFixtureSeed`, `Converter`, `Result`) were being
+   brought in as runtime values. Under `babel-loader` transpile-only
+   that can leak no-op named imports into the emitted JS (and break
+   under stricter bundlers). Split into `import type { ... }` blocks.
+2. `App.tsx:11` — same issue with `ChatPromptLibrary` and `ChatTone`.
+   Split into a separate `import type` line.
+3. `ChatPanel.tsx:186` — `e.target.value as ChatTone` was an
+   unchecked cast. Refactored narrow-by-construction: `ChatTone` now
+   derives from `const chatTones = ['neutral', 'formal'] as const`
+   in `promptLibrary.ts`; the same array drives the rendered
+   `<option>` set AND a `chatToneConverter = Converters.enumeratedValue<ChatTone>(...)`
+   so the handler narrows via
+   `chatToneConverter.convert(e.target.value).orDefault(tone)` — no
+   unchecked casts, and the option set and Converter-recognized set
+   stay in lockstep by construction.
+
+**Round 2 (2 threads — sample-app logic bugs):**
+
+4. `App.tsx:218` — `handleSendChat` was creating the `AbortController`
+   and assigning it to `abortControllerRef.current` BEFORE the
+   early-return guards (library-not-ready, system-prompt resolve
+   failure). On those returns, the ref held a controller for a
+   request that never started, so `onAbort` would target nothing and
+   the next send would orphan the stale controller. Moved controller
+   creation to AFTER the guards — once committed to the network call.
+5. `ChatPanel.tsx:209` — `canSubmit` now folds in `promptLibrary !== null`
+   but the disabled-state message was hardcoded to "Enter an API key
+   to enable chat." Added optional `disabledReason?: string` to
+   `IChatPanelProps` (defaults to today's message when omitted) and
+   threaded the right cause from `App.tsx` with precedence: missing
+   key first, then load failure, then still-initializing. Matches the
+   user's mental model — API key is the first thing they fill in.
+
+A single nit-class comment remained after round 2 (acknowledged as
+nit by the orchestrator); not absorbing in this PR.
+
+---
+
 ## Lint-gate + TS-check note
 
 `samples/ai-image-gen-sample/package.json` does not define a `lint`
@@ -214,20 +259,24 @@ Two minor observations worth flagging at cluster close:
 | `rush build --to @fgv/ai-image-gen-sample` clean | ✅ — 28.4s |
 | Full repo build clean | ✅ — re-ran post-rebase via the `--to` path (sample's deps already built clean on the integration head; rebase didn't perturb them) |
 | `rushx lint` clean in sample package | ✅ (vacuous — no lint script defined; see note above) |
-| Sample TS compiles with narrow `QualifierName` union end-to-end | ✅ — verified via direct `tsc --noEmit -p tsconfig.json`; a typo'd `tonr` on the seed candidate fails as `src/promptLibrary.ts(70,25): TS2353 ... 'tonr' does not exist in type 'ConditionSetDecl<"tone">'`. Webpack production build also clean (uses babel-loader, transpile-only). See "Lint-gate + TS-check note" above for why both checks matter. |
+| Sample TS compiles with narrow `QualifierName` union end-to-end | ✅ — verified via direct `tsc --noEmit -p tsconfig.json`; a typo'd `tonr` on the seed candidate fails as `src/promptLibrary.ts(67,25): TS2353 ... 'tonr' does not exist in type 'ConditionSetDecl<"tone">'` (line shifted after round-1 review-absorption refactor). Webpack production build also clean (uses babel-loader, transpile-only). See "Lint-gate + TS-check note" above for why both checks matter. |
+| Copilot review rounds absorbed | ✅ — 5 threads across 2 rounds; all addressed with build + `tsc --noEmit` clean after each round. Final state has one nit-class comment outstanding (acknowledged not absorbing per the orchestrator). |
 | F1 / F2 / F6 closure notes added to findings doc | ✅ |
 | `phase-384-result.md` written | ✅ — this file |
 | `state.md` / `docs/WORKSTREAMS.md` left for cluster-close prep | ✅ — not touched in this phase |
 
 ---
 
-## Files changed (this rebase + B-3 follow-up)
+## Files changed (this rebase + B-3 follow-up + review-rounds)
 
 | File | Change |
 |---|---|
-| `samples/ai-image-gen-sample/src/promptLibrary.ts` | Added `qualifierNames` const, `QualifierName` type, `qualifierNameConverter`; typed seed as `IPromptStoreFixtureSeed<QualifierName>`; threaded converter through the seed; used `qualifierNames` directly in `PromptLibrary.create({ qualifiers })` |
+| `samples/ai-image-gen-sample/src/promptLibrary.ts` | B-3 typed-flow: added `qualifierNames` const, `QualifierName` type, `qualifierNameConverter`; typed seed as `IPromptStoreFixtureSeed<QualifierName>`; threaded converter through the seed; used `qualifierNames` directly in `PromptLibrary.create({ qualifiers })`. Round-1 review absorption: split type-only imports into `import type` blocks; added `chatTones` const + `chatToneConverter` to narrow-by-construction. |
+| `samples/ai-image-gen-sample/src/App.tsx` | Round-1 review: split `ChatPromptLibrary` / `ChatTone` into `import type`. Round-2 review: moved `AbortController` creation past the early-return guards; wired `disabledReason` to `ChatPanel` with precedence. |
+| `samples/ai-image-gen-sample/src/components/ChatPanel.tsx` | Round-1 review: handler uses `chatToneConverter` instead of unchecked cast; `<option>`s rendered from `chatTones` array. Round-2 review: added optional `disabledReason?: string` prop. |
 | `.ai/tasks/active/ts-prompt-assist/pressure-test-findings-round-2.md` | Closure notes for F1, F2, F6 |
 | `.ai/tasks/active/ts-prompt-assist/phase-384-result.md` | New (this file) |
 
 The two pre-existing #384 commits stayed as-is during rebase; this
-phase adds new content on top via fresh commit(s).
+phase added new content on top via three fresh commits (B-3 typed-flow,
+round-1 review absorption, round-2 review absorption).
