@@ -56,6 +56,8 @@ export const conditionDecl = Converters.strictObject<IConditionDecl>({
  *
  * @public
  */
+// Keep the field list below in sync with `conditionDecl` above; the
+// duplication preserves the `ObjectConverter` return type on the default.
 export function typedConditionDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<IConditionDecl<TQualifierNames>> {
@@ -147,6 +149,9 @@ export const validatedConditionDecl = Converters.generic<
  *
  * @public
  */
+// Shares the `_validatedConditionDeclBody` helper with `validatedConditionDecl`
+// above, so the populate-object body cannot drift; only the inner condition-decl
+// converter differs.
 export function typedValidatedConditionDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<IValidatedConditionDecl, IConditionDeclConvertContext> {

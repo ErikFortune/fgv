@@ -243,6 +243,13 @@ export const importerResourceCollectionDecl: Converter<Normalized.IImporterResou
 // opt in by calling a typed sibling. Internally each typed factory composes
 // lower-level typed factories so a single `qualifierNameConverter` flows
 // end-to-end through the converter tree.
+//
+// DRIFT HAZARD: each typed sibling duplicates the field list of its untyped
+// twin (the duplication exists to preserve `ObjectConverter` return types on
+// the defaults — see phase-b2-result.md). If a field is added, removed, or
+// re-typed on an untyped converter above, the typed sibling MUST be updated
+// in lockstep. The per-pair `keep in sync with X` markers below flag each
+// pair at the call site.
 
 /**
  * Returns a `Converter` for a `Json.ILooseConditionDecl<TQualifierNames>`
@@ -250,6 +257,7 @@ export const importerResourceCollectionDecl: Converter<Normalized.IImporterResou
  *
  * @public
  */
+// Keep in sync with `looseConditionDecl` above.
 export function typedLooseConditionDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.ILooseConditionDecl<TQualifierNames>> {
@@ -299,6 +307,8 @@ function _typedConditionSetDeclFromRecord<TQualifierNames extends string>(
  *
  * @public
  */
+// Keep in sync with `conditionSetDecl` (and its two private feeder converters
+// `conditionSetDeclFromArray` / `conditionSetDeclFromRecord`) above.
 export function typedConditionSetDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.ConditionSetDecl<TQualifierNames>> {
@@ -315,6 +325,7 @@ export function typedConditionSetDecl<TQualifierNames extends string>(
  *
  * @public
  */
+// Keep in sync with `looseResourceCandidateDecl` above.
 export function typedLooseResourceCandidateDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.ILooseResourceCandidateDecl<TQualifierNames>> {
@@ -334,6 +345,7 @@ export function typedLooseResourceCandidateDecl<TQualifierNames extends string>(
  *
  * @public
  */
+// Keep in sync with `importerResourceCandidateDecl` above.
 export function typedImporterResourceCandidateDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.IImporterResourceCandidateDecl<TQualifierNames>> {
@@ -353,6 +365,7 @@ export function typedImporterResourceCandidateDecl<TQualifierNames extends strin
  *
  * @public
  */
+// Keep in sync with `childResourceCandidateDecl` above.
 export function typedChildResourceCandidateDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.IChildResourceCandidateDecl<TQualifierNames>> {
@@ -370,6 +383,7 @@ export function typedChildResourceCandidateDecl<TQualifierNames extends string>(
  *
  * @public
  */
+// Keep in sync with `looseResourceDecl` above.
 export function typedLooseResourceDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.ILooseResourceDecl<TQualifierNames>> {
@@ -386,6 +400,7 @@ export function typedLooseResourceDecl<TQualifierNames extends string>(
  *
  * @public
  */
+// Keep in sync with `childResourceDecl` above.
 export function typedChildResourceDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.IChildResourceDecl<TQualifierNames>> {
@@ -401,6 +416,7 @@ export function typedChildResourceDecl<TQualifierNames extends string>(
  *
  * @public
  */
+// Keep in sync with `containerContextDecl` above.
 export function typedContainerContextDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.IContainerContextDecl<TQualifierNames>> {
@@ -417,6 +433,7 @@ export function typedContainerContextDecl<TQualifierNames extends string>(
  *
  * @public
  */
+// Keep in sync with `resourceTreeChildNodeDecl` above.
 export function typedResourceTreeChildNodeDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.IResourceTreeChildNodeDecl<TQualifierNames>> {
@@ -441,6 +458,7 @@ export function typedResourceTreeChildNodeDecl<TQualifierNames extends string>(
  *
  * @public
  */
+// Keep in sync with `resourceTreeRootDecl` above.
 export function typedResourceTreeRootDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.IResourceTreeRootDecl<TQualifierNames>> {
@@ -457,6 +475,7 @@ export function typedResourceTreeRootDecl<TQualifierNames extends string>(
  *
  * @public
  */
+// Keep in sync with `resourceCollectionDecl` above.
 export function typedResourceCollectionDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.IResourceCollectionDecl<TQualifierNames>> {
@@ -486,6 +505,7 @@ export function typedResourceCollectionDecl<TQualifierNames extends string>(
  *
  * @public
  */
+// Keep in sync with `importerResourceCollectionDecl` above.
 export function typedImporterResourceCollectionDecl<TQualifierNames extends string>(
   qualifierNameConverter: Converter<TQualifierNames>
 ): Converter<Json.IImporterResourceCollectionDecl<TQualifierNames>> {
