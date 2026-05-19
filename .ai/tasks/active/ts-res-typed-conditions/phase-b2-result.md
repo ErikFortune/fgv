@@ -276,3 +276,26 @@ consumer might author.
 | Rush change file added | ✅ `common/changes/@fgv/ts-res/chore-ts-res-typed-conditions-b2-converter-teeth_2026-05-19-12-00.json` (type: minor) |
 | No `any` types; no manual casts | ✅ implementation contains zero `as any` / unsafe casts |
 | `phase-b2-result.md` written | ✅ this file |
+
+---
+
+## Review rounds
+
+**Round 1 (Copilot, PR #394, 2026-05-19):** single comment flagged the
+typed/untyped pair drift hazard — if a field is added/removed/re-typed on
+an untyped converter, the typed sibling could silently diverge. The
+trade-off (preserving `ObjectConverter` return types on the defaults) is
+sound, but the maintenance contract was only documented in this result
+doc, not at the call site.
+
+**Resolution:** added a `// keep in sync with X` marker line directly above
+every typed sibling export in `resource-json/convert.ts`,
+`conditions/convert/decls.ts`, and `conditions/convert/conditionSetDecls.ts`
+(16 markers total — one per typed export). Also expanded the typed-block
+preamble in `resource-json/convert.ts` with an explicit `DRIFT HAZARD`
+paragraph. The `Converters.generic`-based pairs
+(`validatedConditionDecl` / `validatedConditionSetDecl` and their typed
+siblings) reference shared `_validatedConditionDeclBody` /
+`_validatedConditionSetDeclBody` helpers, so their bodies cannot drift; the
+marker on those typed siblings calls that out explicitly. Commit
+`253c6024`. Build + lint stay clean.

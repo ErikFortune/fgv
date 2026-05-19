@@ -60,7 +60,8 @@
 | 2026-05-19 | B-1 merged | PR #391 squash-merged to integration as `c688292d3`. |
 | 2026-05-19 | B-2 sub-brief drafted | `phase-b2-brief.md` enumerates three candidate surface shapes for OQ-1 (A: context-field opt-in [lean]; B: generic Converter factory; C: generics on existing exports [reject — breaking]); OQ-2 hypothesis no-surface-change (verify); OQ-3 lean ts-res-internal cast-pressure regression test. Erik-driven phase. |
 | 2026-05-19 | B-2 design notes added | `phase-b2-design-notes.md` selects Candidate D — sibling `typed*` exports over a shared parameterized core, existing untyped exports preserved as thin wrappers. Non-breaking. |
-| 2026-05-19 | B-2 implemented | Branch `chore/ts-res-typed-conditions-b2-converter-teeth`; 16 new typed siblings (4 in `Conditions.Convert`, 12 in `ResourceJson.Convert`); `IConditionDecl` / `IConditionSetDecl` parameterized on `TQualifierNames` (additive default); cast-pressure regression tests added; api-extractor regenerated (no new unresolved-link warnings); 100% coverage; all 11 downstream consumers compile unchanged. Result: `phase-b2-result.md`. |
+| 2026-05-19 | B-2 implemented | Branch `chore/ts-res-typed-conditions-b2-converter-teeth`; 16 new typed siblings (4 in `Conditions.Convert`, 12 in `ResourceJson.Convert`); `IConditionDecl` / `IConditionSetDecl` parameterized on `TQualifierNames` (additive default); cast-pressure regression tests added; api-extractor regenerated (no new unresolved-link warnings); 100% coverage; all 11 downstream consumers compile unchanged. Result: `phase-b2-result.md`. PR #394 opened against integration. |
+| 2026-05-19 | B-2 Copilot review absorbed | Single review thread on PR #394: typed/untyped pair drift hazard. Addressed by adding `// keep in sync with X` markers next to every typed sibling and a drift-hazard preamble at the typed block in `resource-json/convert.ts`. Build + lint stay clean. Commit `253c6024` pushed. |
 
 ---
 
@@ -70,7 +71,7 @@
 |---|---|---|
 | Substrate prep | #390 | merged |
 | B-1 | #391 | merged (`c688292d3`) |
-| B-2 | TBD (pending push) | implementation complete on `chore/ts-res-typed-conditions-b2-converter-teeth`; result: `phase-b2-result.md` |
+| B-2 | #394 | open (review round 1 absorbed; awaiting merge) |
 | B-3 | TBD (task-subagent) | ready (was blocked on B-2) |
 
 ---
