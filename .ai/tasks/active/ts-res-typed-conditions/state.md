@@ -1,10 +1,14 @@
 # Stream state: `ts-res-typed-conditions`
 
-**Status:** 🟢 B-3 complete (PR pending) — stream-exit gates satisfied; awaiting PR open + merge
+**Status:** ✅ all three sub-phases complete; B-3 merge-pending (PR #395 — Copilot review clean, no comments)
 **Cluster:** `ts-prompt-assist-features` (in-cluster)
 **Integration branch:** `claude/ts-prompt-assist-features`
-**Work branch (B-3):** `claude/ts-res-typed-conditions-b3-MXEfo`
-**Last updated:** 2026-05-19 (B-3 implementation complete; PR pending)
+**Work branches:**
+- B-1: `chore/ts-res-typed-conditions-b1-cascade` (merged via #391 as `c688292d`)
+- B-2: `chore/ts-res-typed-conditions-b2-converter-teeth` (merged via #394 as `f32ba55f`)
+- B-3: `claude/ts-res-typed-conditions-b3-MXEfo` (PR #395 open; Copilot review pass; ready to merge)
+
+**Last updated:** 2026-05-19 (B-3 Copilot review clean — no comments, stream ready for cluster-close)
 
 ---
 
@@ -64,7 +68,8 @@
 | 2026-05-19 | B-2 implemented | Branch `chore/ts-res-typed-conditions-b2-converter-teeth`; 16 new typed siblings (4 in `Conditions.Convert`, 12 in `ResourceJson.Convert`); `IConditionDecl` / `IConditionSetDecl` parameterized on `TQualifierNames` (additive default); cast-pressure regression tests added; api-extractor regenerated (no new unresolved-link warnings); 100% coverage; all 11 downstream consumers compile unchanged. Result: `phase-b2-result.md`. PR #394 opened against integration. |
 | 2026-05-19 | B-2 Copilot review absorbed | Single review thread on PR #394: typed/untyped pair drift hazard. Addressed by adding `// keep in sync with X` markers next to every typed sibling and a drift-hazard preamble at the typed block in `resource-json/convert.ts`. Build + lint stay clean. Commit `253c6024` pushed. |
 | 2026-05-19 | B-2 merged | PR #394 squash-merged to integration as `f32ba55f`. |
-| 2026-05-19 | B-3 implemented | Branch `claude/ts-res-typed-conditions-b3-MXEfo`; six container types parameterized on `TQualifierNames extends string = string`; `typedPromptFileConverter<T>(qc)` exported; `qualifierNameConverter?` field added to `FileTreePromptStore.create` params and `PromptStoreFixture.build` seed; F2 + F6 from PR #385 absorbed verbatim; local sibling types from #385 dropped (B-2's canonical primitive referenced directly); 14-test cast-pressure regression file `b3TypedConditions.test.ts`; api-extractor regenerated (additive only); 100% coverage maintained; all downstream consumers compile clean. Result `phase-b3-result.md`. |
+| 2026-05-19 | B-3 implemented | Branch `claude/ts-res-typed-conditions-b3-MXEfo`; six container types parameterized on `TQualifierNames extends string = string`; `typedPromptFileConverter<T>(qc)` exported; `qualifierNameConverter?` field added to `FileTreePromptStore.create` params and `PromptStoreFixture.build` seed; F2 + F6 from PR #385 absorbed verbatim; local sibling types from #385 dropped (B-2's canonical primitive referenced directly); 14-test cast-pressure regression file `b3TypedConditions.test.ts`; api-extractor regenerated (additive only); 100% coverage maintained; all downstream consumers compile clean. Result `phase-b3-result.md`. PR #395 opened. |
+| 2026-05-19 | B-3 Copilot review pass | PR #395 review completed with no comments / no suggested changes. Check run `success`. Stream-level `result.md` written summarizing all three sub-phases. Stream artifacts ready for orchestrator migration to `.ai/tasks/completed/2026-05/ts-res-typed-conditions/` post-merge. |
 
 ---
 
