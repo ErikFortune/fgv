@@ -588,7 +588,7 @@ class ConditionCollector extends ValidatingCollector<Condition> {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const conditionDecl: ObjectConverter<ILooseConditionDecl, unknown>;
+const conditionDecl: ObjectConverter<IConditionDecl, unknown>;
 
 // @public
 export type ConditionIndex = Brand<number, 'ConditionIndex'>;
@@ -707,7 +707,7 @@ class ConditionSetCollector extends ValidatingCollector<ConditionSet> {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ConditionSetDecl = ConditionSetDeclAsArray | ConditionSetDeclAsRecord;
+type ConditionSetDecl<TQualifierNames extends string = string> = ConditionSetDeclAsArray<TQualifierNames> | ConditionSetDeclAsRecord<TQualifierNames>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -727,12 +727,12 @@ const conditionSetDecl_2: ObjectConverter<IConditionSetDecl, unknown>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ConditionSetDeclAsArray = ReadonlyArray<ILooseConditionDecl>;
+type ConditionSetDeclAsArray<TQualifierNames extends string = string> = ReadonlyArray<ILooseConditionDecl<TQualifierNames>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type ConditionSetDeclAsRecord = Record<string, string | IChildConditionDecl>;
+type ConditionSetDeclAsRecord<TQualifierNames extends string = string> = Readonly<Partial<Record<TQualifierNames, string | IChildConditionDecl>>>;
 
 // @public
 export type ConditionSetHash = Brand<string, 'ConditionSetHash'>;
@@ -1596,8 +1596,8 @@ interface IChildConditionDecl {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IChildResourceCandidateDecl {
-    readonly conditions?: ConditionSetDecl;
+interface IChildResourceCandidateDecl<TQualifierNames extends string = string> {
+    readonly conditions?: ConditionSetDecl<TQualifierNames>;
     readonly isPartial?: boolean;
     readonly json: JsonObject;
     readonly mergeMethod?: ResourceValueMergeMethod;
@@ -1616,8 +1616,8 @@ interface IChildResourceCandidateDecl_2 {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IChildResourceDecl {
-    readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl>;
+interface IChildResourceDecl<TQualifierNames extends string = string> {
+    readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl<TQualifierNames>>;
     readonly resourceTypeName: string;
 }
 
@@ -1842,11 +1842,11 @@ interface IConfigInitFactory<TConfig, T> {
 }
 
 // @public
-interface IContainerContextDecl {
+interface IContainerContextDecl<TQualifierNames extends string = string> {
     // (undocumented)
     readonly baseId?: string;
     // (undocumented)
-    readonly conditions?: ConditionSetDecl;
+    readonly conditions?: ConditionSetDecl<TQualifierNames>;
     // (undocumented)
     readonly mergeMethod?: ResourceValueMergeMethod;
 }
@@ -2120,7 +2120,7 @@ interface IImporterCreateParams {
 }
 
 // @public
-interface IImporterResourceCandidateDecl extends IChildResourceCandidateDecl {
+interface IImporterResourceCandidateDecl<TQualifierNames extends string = string> extends IChildResourceCandidateDecl<TQualifierNames> {
     readonly id?: string;
     readonly resourceTypeName?: string;
 }
@@ -2132,17 +2132,17 @@ interface IImporterResourceCandidateDecl_2 extends IChildResourceCandidateDecl_2
 }
 
 // @public
-interface IImporterResourceCollectionDecl {
+interface IImporterResourceCollectionDecl<TQualifierNames extends string = string> {
     // (undocumented)
-    readonly candidates?: ReadonlyArray<IImporterResourceCandidateDecl>;
+    readonly candidates?: ReadonlyArray<IImporterResourceCandidateDecl<TQualifierNames>>;
     // (undocumented)
-    readonly collections?: ReadonlyArray<IImporterResourceCollectionDecl>;
+    readonly collections?: ReadonlyArray<IImporterResourceCollectionDecl<TQualifierNames>>;
     // (undocumented)
-    readonly context?: IContainerContextDecl;
+    readonly context?: IContainerContextDecl<TQualifierNames>;
     // (undocumented)
     readonly metadata?: JsonObject;
     // (undocumented)
-    readonly resources?: ReadonlyArray<IImporterResourceDecl>;
+    readonly resources?: ReadonlyArray<IImporterResourceDecl<TQualifierNames>>;
 }
 
 // @public
@@ -2160,7 +2160,7 @@ interface IImporterResourceCollectionDecl_2 {
 }
 
 // @public
-type IImporterResourceDecl = ILooseResourceDecl | IChildResourceDecl;
+type IImporterResourceDecl<TQualifierNames extends string = string> = ILooseResourceDecl<TQualifierNames> | IChildResourceDecl<TQualifierNames>;
 
 // @public
 type IImporterResourceDecl_2 = ILooseResourceDecl_2 | IChildResourceDecl_2;
@@ -2243,11 +2243,11 @@ interface ILiteralValueHierarchyCreateParams<T extends string = string> {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ILooseConditionDecl {
+interface ILooseConditionDecl<TQualifierNames extends string = string> {
     operator?: ConditionOperator;
     priority?: number;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    qualifierName: string;
+    qualifierName: TQualifierNames;
     scoreAsDefault?: number;
     value: string;
 }
@@ -2255,8 +2255,8 @@ interface ILooseConditionDecl {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ILooseResourceCandidateDecl extends IChildResourceCandidateDecl {
-    readonly conditions?: ConditionSetDecl;
+interface ILooseResourceCandidateDecl<TQualifierNames extends string = string> extends IChildResourceCandidateDecl<TQualifierNames> {
+    readonly conditions?: ConditionSetDecl<TQualifierNames>;
     readonly id: string;
     readonly isPartial?: boolean;
     readonly json: JsonObject;
@@ -2279,8 +2279,8 @@ interface ILooseResourceCandidateDecl_2 extends IChildResourceCandidateDecl_2 {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface ILooseResourceDecl extends IChildResourceDecl {
-    readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl>;
+interface ILooseResourceDecl<TQualifierNames extends string = string> extends IChildResourceDecl<TQualifierNames> {
+    readonly candidates?: ReadonlyArray<IChildResourceCandidateDecl<TQualifierNames>>;
     readonly id: string;
     readonly resourceTypeName: string;
 }
@@ -2761,17 +2761,17 @@ interface IResourceCandidateValidationProperties {
 }
 
 // @public
-interface IResourceCollectionDecl {
+interface IResourceCollectionDecl<TQualifierNames extends string = string> {
     // (undocumented)
-    readonly candidates?: ReadonlyArray<ILooseResourceCandidateDecl>;
+    readonly candidates?: ReadonlyArray<ILooseResourceCandidateDecl<TQualifierNames>>;
     // (undocumented)
-    readonly collections?: ReadonlyArray<IResourceCollectionDecl>;
+    readonly collections?: ReadonlyArray<IResourceCollectionDecl<TQualifierNames>>;
     // (undocumented)
-    readonly context?: IContainerContextDecl;
+    readonly context?: IContainerContextDecl<TQualifierNames>;
     // (undocumented)
     readonly metadata?: JsonObject;
     // (undocumented)
-    readonly resources?: ReadonlyArray<ILooseResourceDecl>;
+    readonly resources?: ReadonlyArray<ILooseResourceDecl<TQualifierNames>>;
 }
 
 // @public
@@ -2913,11 +2913,11 @@ interface IResourceTreeBranchInit<T> {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IResourceTreeChildNodeDecl {
+interface IResourceTreeChildNodeDecl<TQualifierNames extends string = string> {
     // (undocumented)
-    readonly children?: Record<string, IResourceTreeChildNodeDecl>;
+    readonly children?: Record<string, IResourceTreeChildNodeDecl<TQualifierNames>>;
     // (undocumented)
-    readonly resources?: Record<string, IChildResourceDecl>;
+    readonly resources?: Record<string, IChildResourceDecl<TQualifierNames>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2939,15 +2939,15 @@ interface IResourceTreeLeafInit<T> {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IResourceTreeRootDecl extends IResourceTreeChildNodeDecl {
+interface IResourceTreeRootDecl<TQualifierNames extends string = string> extends IResourceTreeChildNodeDecl<TQualifierNames> {
     // (undocumented)
-    readonly children?: Record<string, IResourceTreeChildNodeDecl>;
+    readonly children?: Record<string, IResourceTreeChildNodeDecl<TQualifierNames>>;
     // (undocumented)
-    readonly context?: IContainerContextDecl;
+    readonly context?: IContainerContextDecl<TQualifierNames>;
     // (undocumented)
     readonly metadata?: JsonObject;
     // (undocumented)
-    readonly resources?: Record<string, IChildResourceDecl>;
+    readonly resources?: Record<string, IChildResourceDecl<TQualifierNames>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3013,10 +3013,10 @@ interface ISimpleContextQualifierProviderCreateParams {
 function isImportable(i: IImportable): i is Importable;
 
 // @public
-function isLooseResourceCandidateDecl(decl: IImporterResourceCandidateDecl): decl is ILooseResourceCandidateDecl;
+function isLooseResourceCandidateDecl<TQualifierNames extends string = string>(decl: IImporterResourceCandidateDecl<TQualifierNames>): decl is ILooseResourceCandidateDecl<TQualifierNames>;
 
 // @public
-function isLooseResourceDecl(decl: IImporterResourceDecl): decl is ILooseResourceDecl;
+function isLooseResourceDecl<TQualifierNames extends string = string>(decl: IImporterResourceDecl<TQualifierNames>): decl is ILooseResourceDecl<TQualifierNames>;
 
 // @public
 function isResourceTreeLeafInit<T>(init: ResourceTreeNodeInit<T>): init is IResourceTreeLeafInit<T>;
