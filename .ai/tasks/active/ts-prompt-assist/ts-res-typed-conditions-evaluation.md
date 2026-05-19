@@ -265,3 +265,167 @@ Do NOT file a TECH_DEBT entry for Option C based on this evaluation. The existin
 | **B — Cascade [RECOMMENDED]** | ✓ | Existing (already present) | Fixable with docstring | ✓ (all defaults) | Expand #386; one afternoon |
 | **C — Converter parameterization** | ✓ | ✓ (extended) | None | ✓ (with defaults) | New commission; 3-5 days |
 | **D — #386 + TECH_DEBT** | Partial (arbitrary stop) | Existing | Fixable with docstring | ✓ | Smallest |
+
+---
+
+## Addendum: Stress-test against the cast-temptation critique
+
+**Date:** 2026-05-19
+**Evaluating:** Erik's critique that B-without-C creates cast pressure, undermining the type-safe-validation discipline
+
+---
+
+### Q1 — Does the cast-temptation critique hold up?
+
+**Answer: Yes, with one critical precision: the cast pressure exists at the Converter OUTPUT seam, not in the consumer authoring flow. But the precision changes the severity assessment.**
+
+Walk the consumer-flow scenario in actual code:
+
+**Author side** (compile-time): a consumer writes
+```typescript
+const myCandidates: ResourceJson.Json.IChildResourceCandidateDecl = {
+  json: { ... },
+  conditions: { tone: 'formal' }  // typed as ConditionSetDecl = ConditionSetDecl<string>
+};
+```
+
+Under PR #386, `conditions` is typed as `ConditionSetDecl` (= `ConditionSetDecl<string>`, the unparameterized form) on `IChildResourceCandidateDecl` — line 208 of the PR diff: `readonly conditions?: ConditionSetDecl;`. The parameterized forms `ConditionSetDecl<TQualifierNames>` only exist on `ILooseConditionDecl`, `ConditionSetDeclAsArray`, `ConditionSetDeclAsRecord`, and `ConditionSetDecl` itself. None of the container types that hold conditions are parameterized. So the narrow type is structurally impossible to thread through `IChildResourceCandidateDecl` regardless.
+
+**Converter side** (critical point): `ResourceJson.Convert.conditionSetDecl` is typed at `convert.ts:87` as:
+```typescript
+export const conditionSetDecl: Converter<Normalized.ConditionSetDecl>
+```
+where `Normalized.ConditionSetDecl` (`normalized.ts:31`) is:
+```typescript
+export type ConditionSetDecl = ReadonlyArray<ILooseConditionDecl>;
+```
+which is `ReadonlyArray<ILooseConditionDecl<string>>` — the default, fully widened form.
+
+**The Converter cannot be parameterized** because `Converter<T>` takes a single `T` — there is no `Converter<T<TNames>>` without a separate generic factory. A consumer holding `ConditionSetDecl<'tone'>` who runs any value through `ResourceJson.Convert.conditionSetDecl` receives `Result<Normalized.ConditionSetDecl>` = `Result<ReadonlyArray<ILooseConditionDecl<string>>>`. The narrow type is gone.
+
+**What does the consumer do to re-narrow?** The only options are:
+1. Cast: `result.value as ReadonlyArray<ILooseConditionDecl<'tone'>>` — an unsafe cast, the anti-pattern the skill forbids
+2. Accept the wider type — the narrow constraint is a dead letter; they authored with narrow types that provide no downstream value
+3. Build a bespoke generic Converter — correct but absent from the library surface
+
+**Is the cast the ONLY option?** At the library's current API: yes, for any consumer who needs to preserve the narrow type through a Converter call. There is no generic overload on `conditionSetDecl` that preserves `TNames`. The type evaporates at the Converter boundary.
+
+**Is the cast pressure real?** Only if consumers actually need narrow types AFTER the Converter. If the narrow type is only useful at authoring time (writing seeds), and the Converter output feeds directly into ts-res's runtime (which doesn't care about the narrowing), then the type evaporation is benign — the narrow type served its purpose (typo-rejection during authoring) and isn't needed afterward.
+
+**Code citation:** `libraries/ts-res/src/packlets/resource-json/convert.ts:87` — `conditionSetDecl: Converter<Normalized.ConditionSetDecl>` — this is the specific line where the narrow type evaporates.
+
+---
+
+### Q2 — Is the failure mode actually as bad as Erik frames it?
+
+**Answer: Less bad than framed, but not zero — and the real problem is different from the cast scenario Erik described.**
+
+Erik's framing focuses on the round-trip: consumer holds `IResourceCollectionDecl<'tone'>`, runs JSON through `ResourceCollection.Convert.collectionDecl.convert(...)`, gets back a wider type, needs to re-narrow, inserts a cast.
+
+**But this round-trip is not the actual consumer pattern.** Reading `ts-prompt-assist`'s actual usage:
+
+1. `IPromptCandidateRecord.conditions` (`descriptor.ts:119`) is typed as `ResourceJson.Json.ConditionSetDecl` — **already unparameterized**. The narrow type is not threaded into the runtime record type at all.
+
+2. The fixture seed at `readmeSmoke.test.ts:72` writes `conditions: { tone: 'formal' }`. This is typed by structural compatibility against `ConditionSetDecl<string>` — the narrow `'tone'` is not preserved by the type system, it's just a string literal that happens to satisfy `string`.
+
+3. The authoring discipline question (F1 from round-2 findings) was specifically about a typed `IPromptStoreFixtureSeedRecord` where a consumer could get compile-time rejection of `{ txne: 'formal' }`. But `IPromptStoreFixtureSeedRecord.candidates` (`promptStoreFixture.ts:45`) is `ReadonlyArray<IPromptCandidateRecord>` — unparameterized. The narrow type cannot flow into this chain.
+
+**The actual failure mode: the typed authoring surface doesn't connect to the consumer's actual authoring type.** The narrow `ConditionSetDecl<'tone'>` is a type that exists in the library (after PR #386) but has no connection to `IPromptCandidateRecord.conditions` or `IPromptStoreFixtureSeedRecord.candidates`. The feature exists in ts-res but ts-prompt-assist can't use it without parameterizing its own record types — which requires Option B's cascade OR ts-prompt-assist's own local typed wrappers.
+
+**Quantification of round-trip frequency**: Zero in the current codebase. No consumer currently holds a narrow `ConditionSetDecl<TNames>` and feeds it through a Converter expecting to get `ConditionSetDecl<TNames>` back. The Converter output in this system feeds into ts-res's runtime (opaque to narrow types), not back to typed authoring surfaces.
+
+**Erik's cast-temptation scenario is therefore a future risk, not a present one.** But it IS a real design smell: B-only adds a type parameter whose value (typo rejection) can only be realized if the consumer authors seeds against the parameterized Decl type chain — which, in PR #386, stops at `ConditionSetDecl` and does not continue into `IChildResourceCandidateDecl`. The feature is half-implemented: the type exists, but the container types that make it useful don't thread it.
+
+---
+
+### Q3 — Is there a B-only variation that defangs the critique?
+
+**Answer: Yes. The B-variation described in the prior evaluation — cascade `TQualifierNames` through all container Decl types — is exactly the defang. But it does not require runtime-literal-set enforcement (Option C's expensive half). It only requires the type-passthrough on container interfaces (Option C's cheap half).**
+
+The prior evaluation's Option B recommendation was precisely this: cascade the parameter through `IChildResourceCandidateDecl`, `IResourceCollectionDecl`, `IResourceTreeRootDecl`, etc. This is purely additive (all defaults preserve backward compatibility). The concrete change: `IChildResourceCandidateDecl` at `json.ts:199` in the PR branch becomes:
+```typescript
+export interface IChildResourceCandidateDecl<TQualifierNames extends string = string> {
+  readonly conditions?: ConditionSetDecl<TQualifierNames>;
+  // ...
+}
+```
+
+With this cascade, a consumer can write:
+```typescript
+const typed: IChildResourceCandidateDecl<'tone'> = {
+  conditions: { txne: 'formal' }  // TS error — 'txne' not assignable to 'tone'
+};
+```
+
+The cast-temptation scenario evaporates on the authoring side: there is no need to re-narrow after a cast because the narrow type never needed to survive a Converter call — it was useful only during authoring and the author-time type is preserved end-to-end in the Decl chain.
+
+**The "type-passthrough on Converters" framing is a red herring.** Converters take `unknown` and return typed values. They cannot preserve a narrow caller-side `TNames` parameter because they don't receive one. The right answer is not parameterized Converters (which is Option C's runtime enforcement half) — it is parameterized Decl interfaces (which is B). Once the container Decls are parameterized, the authoring-time check is complete, and the Converter output (which always returns the unparameterized `Normalized.ConditionSetDecl`) feeds correctly into ts-res's runtime, which validates against the registered qualifier set regardless.
+
+**This is the B-variation that defangs the critique.** It is exactly what the prior evaluation recommended. The critique does not reveal a flaw in Option B — it reveals that PR #386 is an incomplete implementation of Option B.
+
+---
+
+### Q4 — Does the prior recommendation survive?
+
+**Answer: B is wounded — not because the critique is decisive, but because the prior evaluation didn't notice that PR #386 itself fails to deliver Option B.**
+
+**Pick: B is wounded.**
+
+The prior recommendation was Option B (cascade through the full Decl chain). That recommendation is correct in principle. The wound is this: PR #386 is not Option B. It is Option D with the seam stopping at `ConditionSetDecl`. The prior evaluation called for Option B but didn't verify that #386 already implements it. It does not.
+
+Specific code-cited evidence:
+
+- `libraries/ts-res/src/packlets/resource-json/json.ts` (PR #386 diff, line 208): `readonly conditions?: ConditionSetDecl;` — the `conditions` field on `IChildResourceCandidateDecl` is typed WITHOUT `TQualifierNames`. The parameterization stops here.
+- `libraries/ts-res/src/packlets/resource-json/json.ts` (PR #386 diff, line 347+): `IResourceCollectionDecl`, `IResourceTreeRootDecl` — both have no type parameter. The cascade recommended in Option B is absent from the actual PR.
+
+The cast-temptation critique is partially correct: with PR #386 as-is (parameterization stops at `ConditionSetDecl`), a consumer of `IChildResourceCandidateDecl` cannot express `conditions: ConditionSetDecl<'tone'>` as a typed field — the container type doesn't carry the parameter. The narrow type is useful only in the isolated `ConditionSetDecl` literal, not in any realistic authoring chain. The feature adds surface area without delivering the authoring-time benefit.
+
+However, the critique's framing — that B-without-C creates cast pressure by pairing typed author surface with Converter widening — is weaker than it appears. The cast pressure exists ONLY if consumers try to round-trip narrow types through Converters. In the actual usage pattern, Converter output feeds ts-res's runtime (which is type-agnostic to the narrow). No one is round-tripping. The cast pressure is a hypothetical failure mode, not a demonstrated one.
+
+The wound is therefore: the prior recommendation was right (B is the correct option) but the implementation it approved (PR #386) is not B. The correct disposition is to expand #386 to actually implement B, not to treat the critique as decisive against B.
+
+---
+
+### Q5 — Does the answer to Q4 change the disposition of in-flight work?
+
+**Answer: Yes — #386 should be expanded to complete the cascade before landing. #385 can stay as-is for now. #384 is unaffected.**
+
+**#386 (ts-res ConditionSetDecl parameterization):**
+Should NOT land as-is. It is a partial Option B that leaves `IChildResourceCandidateDecl`, `ILooseResourceCandidateDecl`, `IImporterResourceCandidateDecl`, `IContainerContextDecl`, `IChildResourceDecl`, `ILooseResourceDecl`, `IResourceCollectionDecl`, `IImporterResourceCollectionDecl`, and `IResourceTreeRootDecl` without the `TQualifierNames` parameter. The `Partial` widening improvement (the solid half of #386) should be preserved. The cascade additions are ~10 one-line interface changes plus api-extractor regeneration.
+
+Revised disposition: expand #386 to complete the Option B cascade, then land. The Partial widening fix is not held back — it goes in with the cascade.
+
+**#385 (ts-prompt-assist F1/F2/F6):**
+Current shape: `IPromptCandidateRecord.conditions: ResourceJson.Json.ConditionSetDecl` (unparameterized). This is correct for the runtime store record type. The typed authoring benefit (F1's typo-rejection) should apply to `IPromptStoreFixtureSeedRecord`, not to `IPromptCandidateRecord`. Once #386 completes the cascade, ts-prompt-assist can parameterize `IPromptStoreFixtureSeedRecord.candidates` (or its inner `IPromptCandidateRecord` for the fixture context) on `TAxes` using `IChildResourceCandidateDecl<TAxes>` — but this is additive and can be a follow-on in #385 or a subsequent small PR. No architectural change required; just thread `TAxes` into the fixture seed type where authoring discipline matters.
+
+The local `ITypedConditionSetDecl` in #385 (if it still exists) can be dropped once #386's cascade lands.
+
+**#384 (sample app):**
+Unaffected. Rebase onto post-#385 as before.
+
+**#387 (design options brief PR):**
+Superseded by both the prior evaluation and this addendum. Close.
+
+**#388 (if it exists — cluster-close prep):**
+Cannot proceed until #386 is expanded. Block until #386 is confirmed complete.
+
+---
+
+### Revised Final Recommendation
+
+**Option B, properly implemented, survives the critique.**
+
+The cast-temptation critique is a real signal about a real design defect — but the defect is in PR #386's incomplete cascade, not in Option B as a design strategy. The correct response to the critique is not to downgrade to Option D or withdraw to Option A — it is to complete the cascade that Option B requires.
+
+The specific defect: `IChildResourceCandidateDecl.conditions` in PR #386 is typed as `ConditionSetDecl` (unparameterized), not `ConditionSetDecl<TQualifierNames>`. This means a consumer authoring a typed seed cannot express `IChildResourceCandidateDecl<'tone'>` — the container type doesn't accept the parameter. The parameterized `ConditionSetDecl<'tone'>` type exists but is unreachable from any realistic authoring chain. That is the concrete expression of Erik's critique: the type-level feature is present at the leaf but absent from the container, making it unusable in practice.
+
+Completing the cascade fixes this without any Converter changes, without runtime enforcement complexity, and without breaking existing callers. The Converter output remains `Normalized.ConditionSetDecl` (unparameterized `string`) throughout — this is correct, because Converters produce values for ts-res's runtime, not for typed authoring surfaces. The narrow `TQualifierNames` is a compile-time authoring constraint whose value is fully delivered by the parameterized Decl chain, not by the Converters.
+
+**The prior recommendation was right. The implementation it approved was wrong. The right fix is to complete the cascade, not to change the recommendation.**
+
+**PR disposition summary:**
+- #386: expand to complete the cascade (Option B), then land
+- #385: stays current shape; add `TAxes` threading into fixture seed type as a follow-on
+- #384: rebase after #385 settles
+- #387: close as superseded
+- #388: unblock after #386 expansion confirmed
