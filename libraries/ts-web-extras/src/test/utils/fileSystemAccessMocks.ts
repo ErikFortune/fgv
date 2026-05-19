@@ -26,7 +26,7 @@ import { createMockFile } from './testHelpers';
 /**
  * Mock file data for File System Access API
  */
-export interface MockFileData {
+export interface IMockFileData {
   content: string;
   type: string;
   failOnRead?: boolean;
@@ -36,7 +36,7 @@ export interface MockFileData {
 /**
  * Options for mock directory handle
  */
-export interface MockDirectoryOptions {
+export interface IMockDirectoryOptions {
   hasWritePermission?: boolean;
   permissionError?: boolean;
   permissionStatus?: PermissionState;
@@ -52,16 +52,16 @@ export class MockFileSystemWritableFileStream {
   private readonly _onWrite: (content: string) => void;
   private readonly _failOnWrite: boolean;
 
-  constructor(onWrite: (content: string) => void, failOnWrite: boolean = false) {
+  public constructor(onWrite: (content: string) => void, failOnWrite: boolean = false) {
     this._onWrite = onWrite;
     this._failOnWrite = failOnWrite;
   }
 
-  get locked(): boolean {
+  public get locked(): boolean {
     return false;
   }
 
-  async write(data: string | BufferSource | Blob): Promise<void> {
+  public async write(data: string | BufferSource | Blob): Promise<void> {
     if (this._closed) {
       throw new Error('Stream is closed');
     }
@@ -79,26 +79,26 @@ export class MockFileSystemWritableFileStream {
     }
   }
 
-  async seek(position: number): Promise<void> {
+  public async seek(position: number): Promise<void> {
     // Mock implementation - not used in our tests
   }
 
-  async truncate(size: number): Promise<void> {
+  public async truncate(size: number): Promise<void> {
     // Mock implementation - not used in our tests
   }
 
-  async close(): Promise<void> {
+  public async close(): Promise<void> {
     if (!this._closed) {
       this._closed = true;
       this._onWrite(this._content);
     }
   }
 
-  async abort(): Promise<void> {
+  public async abort(): Promise<void> {
     this._closed = true;
   }
 
-  getWriter(): WritableStreamDefaultWriter {
+  public getWriter(): WritableStreamDefaultWriter {
     throw new Error('getWriter not implemented in mock');
   }
 }
@@ -106,7 +106,7 @@ export class MockFileSystemWritableFileStream {
 /**
  * Options for mock file handle
  */
-export interface MockFileHandleOptions {
+export interface IMockFileHandleOptions {
   hasWritePermission?: boolean;
   permissionStatus?: PermissionState;
   requestGranted?: boolean;
@@ -117,9 +117,9 @@ export interface MockFileHandleOptions {
  */
 export function createMockFileHandle(
   name: string,
-  data: MockFileData,
+  data: IMockFileData,
   onWrite?: (content: string) => void,
-  options: MockFileHandleOptions = {}
+  options: IMockFileHandleOptions = {}
 ): FileSystemFileHandle {
   let currentContent = data.content;
   const { hasWritePermission = true, permissionStatus, requestGranted = true } = options;
@@ -180,9 +180,9 @@ export function createMockFileHandle(
  * Parse file structure into nested map
  */
 function parseFileStructure(
-  files: Record<string, MockFileData>
-): Map<string, Map<string, MockFileData> | MockFileData> {
-  const root = new Map<string, Map<string, MockFileData> | MockFileData>();
+  files: Record<string, IMockFileData>
+): Map<string, Map<string, IMockFileData> | IMockFileData> {
+  const root = new Map<string, Map<string, IMockFileData> | IMockFileData>();
 
   for (const [path, data] of Object.entries(files)) {
     const parts = path.split('/').filter((p) => p.length > 0);
@@ -191,9 +191,9 @@ function parseFileStructure(
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
       if (!current.has(part)) {
-        current.set(part, new Map<string, MockFileData>());
+        current.set(part, new Map<string, IMockFileData>());
       }
-      current = current.get(part) as Map<string, MockFileData>;
+      current = current.get(part) as Map<string, IMockFileData>;
     }
 
     const filename = parts[parts.length - 1];
@@ -208,8 +208,8 @@ function parseFileStructure(
  */
 export function createMockDirectoryHandle(
   name: string,
-  files: Record<string, MockFileData>,
-  options: MockDirectoryOptions = {}
+  files: Record<string, IMockFileData>,
+  options: IMockDirectoryOptions = {}
 ): FileSystemDirectoryHandle {
   const {
     hasWritePermission = true,
@@ -232,7 +232,7 @@ export function createMockDirectoryHandle(
 
   function createSubDirectoryHandle(
     dirName: string,
-    subStructure: Map<string, Map<string, MockFileData> | MockFileData>,
+    subStructure: Map<string, Map<string, IMockFileData> | IMockFileData>,
     parentPath: string
   ): FileSystemDirectoryHandle {
     // For root directory, currentPath should be empty string
@@ -262,7 +262,7 @@ export function createMockDirectoryHandle(
         let handle = fileHandles.get(filePath);
 
         if (!handle && options?.create) {
-          const newData: MockFileData = { content: '', type: 'text/plain' };
+          const newData: IMockFileData = { content: '', type: 'text/plain' };
           files[filePath] = newData;
           handle = createMockFileHandle(fileName, newData, (content) => {
             files[filePath] = { ...newData, content };
@@ -290,7 +290,7 @@ export function createMockDirectoryHandle(
         if (!dirHandle) {
           let subDir = subStructure.get(dirName);
           if (!subDir && options?.create) {
-            subDir = new Map<string, MockFileData>();
+            subDir = new Map<string, IMockFileData>();
             subStructure.set(dirName, subDir);
           }
 

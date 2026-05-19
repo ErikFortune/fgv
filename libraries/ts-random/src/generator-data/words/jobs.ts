@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-export const jobs = [
+export const jobs: string[] = [
   'Accountant',
   'Actor',
   'Actuary',
@@ -172,4 +172,4 @@ export const jobs = [
   'Web Developer',
   'Writer',
   'Zoologist'
-];
+] as const;

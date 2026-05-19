@@ -1,0 +1,81 @@
+{
+  "name": "@fgv/ts-web-extras-argon2",
+  "version": "5.1.0",
+  "description": "Argon2id key derivation via hash-wasm (Node + browser compatible)",
+  "main": "lib/index.js",
+  "types": "dist/ts-web-extras-argon2.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "require": "./lib/index.js",
+      "types": "./dist/ts-web-extras-argon2.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "heft build --clean",
+    "clean": "heft clean",
+    "test": "heft test --clean",
+    "test-handles": "jest --runInBand --detectOpenHandles",
+    "clean-jest": "jest --clear-cache",
+    "coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
+  },
+  "sideEffects": false,
+  "keywords": [
+    "typescript",
+    "argon2",
+    "argon2id",
+    "hash-wasm",
+    "crypto",
+    "key-derivation",
+    "browser"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ErikFortune/fgv/issues"
+  },
+  "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-web-extras-argon2#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
+  },
+  "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
+    "@fgv/ts-extras": "workspace:*",
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@microsoft/api-extractor": "^7.55.2",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.14.9",
+    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/parser": "^8.52.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-promise": "^7.2.1",
+    "jest": "^29.7.0",
+    "prettier": "^3.7.4",
+    "rimraf": "^6.1.2",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "5.9.3",
+    "eslint-plugin-n": "^17.23.1",
+    "@rushstack/eslint-config": "4.6.4",
+    "@rushstack/heft": "1.2.7",
+    "@rushstack/heft-jest-plugin": "1.2.6",
+    "@rushstack/heft-node-rig": "2.11.27",
+    "@types/heft-jest": "1.0.6",
+    "eslint-plugin-tsdoc": "~0.5.2"
+  },
+  "dependencies": {
+    "hash-wasm": "~4.12.0"
+  },
+  "peerDependencies": {
+    "@fgv/ts-extras": "workspace:*",
+    "@fgv/ts-utils": "workspace:*"
+  }
+}

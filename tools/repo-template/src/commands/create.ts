@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { loadManifest, getDefaultManifestPath } from '../packlets/manifest';
 import { patchFile, IPatchOperation } from '../packlets/jsonc';
-import { renderTemplateFile, getDefaultTemplatesDir, ITemplateVars } from '../packlets/template';
+import { renderTemplateFile, ITemplateVars } from '../packlets/template';
 import { copyFile, copyPackage, exec, getGitCommit, getGitRemoteUrl } from '../packlets/fs';
 
 export interface ICreateOptions {
@@ -22,9 +22,9 @@ export interface ICreateOptions {
   gitInit: boolean;
 }
 
-const RUSH_VERSION = '5.175.1';
+const RUSH_VERSION: string = '5.175.1';
 
-const NODE_VERSION_RANGE = '>=22.22.0 <23.0.0 || >=24.15.0 <25.0.0';
+const NODE_VERSION_RANGE: string = '>=22.22.0 <23.0.0 || >=24.15.0 <25.0.0';
 
 export async function runCreate(options: ICreateOptions): Promise<void> {
   const { targetDir, repoUrl, versionPolicy, version, sourceDir, allowExisting, gitInit } = options;
@@ -38,7 +38,6 @@ export async function runCreate(options: ICreateOptions): Promise<void> {
   }
 
   const manifestPath = getDefaultManifestPath();
-  const templatesDir = getDefaultTemplatesDir();
   const manifest = loadManifest(manifestPath);
 
   console.log(`Creating new monorepo at: ${targetDir}`);

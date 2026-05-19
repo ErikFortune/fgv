@@ -25,7 +25,7 @@ import {
   DirectoryHandleStore,
   DEFAULT_DIRECTORY_HANDLE_DB,
   DEFAULT_DIRECTORY_HANDLE_STORE
-} from '../../packlets/file-tree/directoryHandleStore';
+} from '../../packlets/file-tree';
 import type { FileSystemDirectoryHandle } from '../../packlets/file-api-types';
 
 import { get, set, del, keys, createStore } from 'idb-keyval';

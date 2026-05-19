@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { Converter, Converters, succeed, Validation, Validator, Validators } from '@fgv/ts-utils';
-import { base64String, encryptionAlgorithm, keyDerivationParams } from '../converters';
+import { base64String, encryptionAlgorithm, pbkdf2KeyDerivationParams } from '../converters';
 import {
   allKeyPairAlgorithms,
   allKeyStoreSecretTypes,
@@ -220,5 +220,5 @@ export const keystoreFile: Converter<IKeyStoreFile> = Converters.object<IKeyStor
   iv: base64String,
   authTag: base64String,
   encryptedData: base64String,
-  keyDerivation: keyDerivationParams
+  keyDerivation: pbkdf2KeyDerivationParams
 });

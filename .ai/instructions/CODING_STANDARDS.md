@@ -7,6 +7,7 @@ This document defines the coding standards for this repository. All AI assistant
 - [Result Pattern](#result-pattern)
 - [Type-Safe Validation](#type-safe-validation)
 - [Error Handling](#error-handling)
+- [Extending Core Libraries Over Working Around Them](#extending-core-libraries-over-working-around-them)
 - [Code Style](#code-style)
 
 ---
@@ -473,6 +474,54 @@ return fail(`${resourceId}: Failed to load: ${underlyingError.message}`);
 return fail('Invalid index');
 return fail('Load failed');
 ```
+
+---
+
+## Extending Core Libraries Over Working Around Them
+
+**When in doubt, level up the core library instead of working around its limitations.**
+
+The repo ships a family of `@fgv/*` libraries that publish canonical primitives — `Result<T>`, `Converter`/`Validator`, `FileTree`, `MustacheTemplate`, `ICryptoProvider`, `Logger`, the collections in `ts-utils`, the resource machinery in `ts-res`, and so on. When you encounter a case where the existing primitive doesn't quite do what you need, there are two paths:
+
+1. **Work around the limitation** in your consumer code — reimplement a partial version, cast through `any`, monkey-patch a global, fork the behavior locally.
+2. **Extend the primitive** with an additive change — new option on a `create()` method, new mode flag, new sibling class, expanded interface.
+
+**Default to (2).** The repo expects this discipline of its external consumers (see `LIBRARY_CAPABILITIES.md` and the `/published-primitives-reflex` skill: "before writing utility-shaped code, check whether a primitive exists"). The same discipline applies internally — when one `@fgv/*` library hits a limitation in another `@fgv/*` library, the right move is to extend the lower library, not to layer a workaround on top.
+
+### Why this matters
+
+- **Workarounds compound.** A workaround in one consumer becomes a precedent. Future consumers copy the workaround instead of asking for the upstream extension. The primitive's surface stays artificially small; the ecosystem accumulates duplicate partial implementations.
+- **Consumers' trust depends on it.** External consumers won't trust our libraries if our own libraries don't trust each other. If `@fgv/ts-prompt-assist` hand-rolls Mustache escape logic because `@fgv/ts-extras/mustache` "didn't quite support it," that signals to external consumers that the canonical primitive isn't really canonical.
+- **Lockstep version policy makes additive extensions cheap.** Adding a new option to a `create()` method or a new sibling export ships in the same alpha as everything else. The cost of extending is small; the cost of accumulating workarounds across libraries grows over time.
+
+### What "extending" looks like (in priority order)
+
+1. **Additive option on an existing `create()` / factory method.** Default value preserves existing behavior. Example: `MustacheTemplate.create(template, { escapeStrategy?: 'html' | 'none' })` — existing callers unaffected; new callers opt into the new behavior.
+2. **Additive method on an existing class/interface.** Same compatibility property. Example: adding `sign()` / `verify()` to `ICryptoProvider` (this happened with the crypto-batch-2-misc stream).
+3. **New sibling primitive in the same packlet.** When the new behavior is structurally different enough that flagging it via an option would be misleading. Example: `PassthroughMustacheTemplate` as a sibling to `MustacheTemplate`.
+4. **New exported class/function.** When the concept is genuinely new.
+
+In all cases: the extension must preserve the existing surface (no removed/renamed/silently-changed exports unless the surface is on the "active development" list per `ACTIVE_DEVELOPMENT.md`).
+
+### When to ask first
+
+Extension scope expands a stream's PR footprint. Ask the orchestrator before extending if:
+
+- The extension would touch a library outside your stream's declared package surface (per the stream brief). Adding a packlet to scope warrants a brief amendment.
+- The extension would be **breaking** (removed/renamed exports) on a library whose surface is on the "established/stable" list per `ACTIVE_DEVELOPMENT.md`. Breaking changes on established surfaces require explicit signoff.
+- The extension is large enough that it deserves its own stream (e.g., adding a major new packlet, not just a new option on an existing class).
+
+For additive changes on the active-development surface, default to extending without asking — that's the whole point of the active surface designation.
+
+### What "working around" looks like (and why to avoid it)
+
+- Casting through `any` to bypass the type system. Almost always a sign that the primitive's type surface is missing something the consumer needs. The right move: extend the type surface, not bypass it.
+- Hand-rolled save/restore patterns for globals (`const originalX = globalThis.X; ...`) instead of using or extending a spy/mock primitive. Recently surfaced as a 23-instance contagion (see `TECH_DEBT.md`).
+- Reimplementing partial Mock shapes of canonical types (e.g., `{ isSuccess: () => true, value: x }` cast to `Result<T>`) instead of using `succeed()` / `fail()`. Recently surfaced as a 20-instance contagion in `ts-web-extras` tests.
+- Monkey-patching a primitive's behavior at runtime (mutating `Mustache.escape` globally, replacing global `fetch`, etc.) instead of using a per-instance / per-call API extension.
+- Duplicating a primitive's implementation in a consumer to add one missing feature. Almost always extending the primitive is cheaper, even after the orchestrator round-trip to expand scope.
+
+If you find yourself reaching for one of these, **stop**. Either the primitive needs extension, or you've misread what the primitive provides and there's already a way. Both outcomes are useful surfacing.
 
 ---
 

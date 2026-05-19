@@ -332,6 +332,82 @@ export class NodeCryptoProvider implements ICryptoProvider {
   }
 
   /**
+   * Signs `data` with `privateKey` using the algorithm inferred from the key.
+   * @param privateKey - A signing `CryptoKey` (`'ecdsa-p256'` or `'ed25519'`).
+   * @param data - The bytes to sign.
+   * @returns `Success` with the raw signature bytes, or `Failure` with error context.
+   */
+  public async sign(privateKey: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>> {
+    const algorithm = signAlgorithmFromKey(privateKey);
+    const result = await captureAsyncResult(() => crypto.webcrypto.subtle.sign(algorithm, privateKey, data));
+    return result
+      .withErrorFormat((e) => `sign failed: ${e}`)
+      .onSuccess((buf) => succeed(new Uint8Array(buf)));
+  }
+
+  /**
+   * Verifies a signature produced by {@link NodeCryptoProvider.sign}.
+   * @param publicKey - A verify `CryptoKey` (`'ecdsa-p256'` or `'ed25519'`).
+   * @param signature - The raw signature bytes.
+   * @param data - The original data that was signed.
+   * @returns `Success` with `true` if valid, `false` if not, or `Failure` with error context.
+   */
+  public async verify(
+    publicKey: CryptoKey,
+    signature: Uint8Array,
+    data: Uint8Array
+  ): Promise<Result<boolean>> {
+    const algorithm = signAlgorithmFromKey(publicKey);
+    const result = await captureAsyncResult(() =>
+      crypto.webcrypto.subtle.verify(algorithm, publicKey, signature, data)
+    );
+    return result.withErrorFormat((e) => `verify failed: ${e}`);
+  }
+
+  /**
+   * Compares two byte arrays in constant time using Node's native
+   * `crypto.timingSafeEqual`. Returns `false` for mismatched lengths
+   * rather than throwing (Node's native throws on length mismatch).
+   * @param a - First byte array.
+   * @param b - Second byte array.
+   * @returns `true` if lengths match and all bytes are equal, `false` otherwise.
+   */
+  public timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  }
+
+  /**
+   * Computes an HMAC-SHA256 MAC for `data` using `key`.
+   * @param key - An HMAC `CryptoKey` with `'sign'` usage.
+   * @param data - The bytes to authenticate.
+   * @returns `Success` with the 32-byte MAC, or `Failure` with error context.
+   */
+  public async hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>> {
+    const result = await captureAsyncResult(() => crypto.webcrypto.subtle.sign({ name: 'HMAC' }, key, data));
+    return result
+      .withErrorFormat((e) => `hmacSha256 failed: ${e}`)
+      .onSuccess((buf) => succeed(new Uint8Array(buf)));
+  }
+
+  /**
+   * Verifies an HMAC-SHA256 MAC in constant time.
+   * @param key - An HMAC `CryptoKey` with `'sign'` usage.
+   * @param signature - The MAC bytes to verify.
+   * @param data - The original data that was authenticated.
+   * @returns `Success` with `true` if valid, `false` if not, or `Failure` with error context.
+   */
+  public async verifyHmacSha256(
+    key: CryptoKey,
+    signature: Uint8Array,
+    data: Uint8Array
+  ): Promise<Result<boolean>> {
+    return (await this.hmacSha256(key, data))
+      .withErrorFormat((e) => `verifyHmacSha256 failed: ${e}`)
+      .onSuccess((mac) => succeed(this.timingSafeEqual(mac, signature)));
+  }
+
+  /**
    * Wraps `plaintext` for the holder of `recipientPublicKey` using
    * ECIES (ECDH P-256 + HKDF-SHA256 + AES-GCM-256). See
    * {@link CryptoUtils.ICryptoProvider.wrapBytes | ICryptoProvider.wrapBytes}.
@@ -447,6 +523,19 @@ export class NodeCryptoProvider implements ICryptoProvider {
     });
     return result.withErrorFormat((e) => `unwrapBytes failed: ${e}`);
   }
+}
+
+/**
+ * Derives the algorithm identifier needed by `crypto.subtle.sign/verify`
+ * from the key's embedded `algorithm` property. ECDSA requires an explicit
+ * `hash` parameter that is not stored on the key object itself; all other
+ * supported signing algorithms (`Ed25519`) use the key algorithm as-is.
+ */
+function signAlgorithmFromKey(key: CryptoKey): AlgorithmIdentifier | EcdsaParams {
+  if (key.algorithm.name === 'ECDSA') {
+    return { name: 'ECDSA', hash: 'SHA-256' };
+  }
+  return key.algorithm as AlgorithmIdentifier;
 }
 
 /**

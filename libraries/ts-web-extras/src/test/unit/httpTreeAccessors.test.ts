@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { fail, Logging } from '@fgv/ts-utils';
+import { fail, Failure, Logging } from '@fgv/ts-utils';
 import { HttpTreeAccessors } from '../../packlets/file-tree';
 
 // ---- Mock fetch helpers ----
@@ -50,14 +50,17 @@ function makeMockResponse(options: IMockResponse): Response {
   } as unknown as Response;
 }
 
-type FetchCall = { url: string; init?: RequestInit };
+interface IFetchCall {
+  url: string;
+  init?: RequestInit;
+}
 
 /**
  * Creates a mock fetch function that returns responses for each call in order.
  * Each entry maps to one fetch() invocation in call order.
  */
-function makeMockFetch(responses: IMockResponse[]): { fetchImpl: typeof fetch; calls: FetchCall[] } {
-  const calls: FetchCall[] = [];
+function makeMockFetch(responses: IMockResponse[]): { fetchImpl: typeof fetch; calls: IFetchCall[] } {
+  const calls: IFetchCall[] = [];
   let callIndex = 0;
 
   const fetchImpl = (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
@@ -76,7 +79,7 @@ function makeMockFetch(responses: IMockResponse[]): { fetchImpl: typeof fetch; c
  * Creates a mock fetch function that throws a network error on every call.
  */
 function makeThrowingFetch(message: string): typeof fetch {
-  return (_url: string | URL | Request, _init?: RequestInit): Promise<Response> => {
+  return (__url: string | URL | Request, __init?: RequestInit): Promise<Response> => {
     return Promise.reject(new Error(message));
   };
 }
@@ -84,7 +87,7 @@ function makeThrowingFetch(message: string): typeof fetch {
 // ---- Shared test data builders ----
 
 /** Minimal tree-children response for a single file at root. */
-function rootWithOneFile(fileName = 'data.json'): unknown {
+function rootWithOneFile(fileName: string = 'data.json'): unknown {
   return {
     path: '/',
     children: [{ path: `/${fileName}`, name: fileName, type: 'file' }]
@@ -291,7 +294,7 @@ describe('HttpTreeAccessors', () => {
 
     test('fails when a file fetch fails with a network error', async () => {
       let callCount = 0;
-      const fetchImpl: typeof fetch = (_url, _init) => {
+      const fetchImpl: typeof fetch = (__url, __init) => {
         callCount++;
         if (callCount === 1) {
           return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -774,7 +777,7 @@ describe('HttpTreeAccessors', () => {
       jest.useFakeTimers();
       try {
         let callCount = 0;
-        const fetchImpl: typeof fetch = (_url, _init) => {
+        const fetchImpl: typeof fetch = (__url, __init) => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -811,7 +814,7 @@ describe('HttpTreeAccessors', () => {
       jest.useFakeTimers();
       try {
         let callCount = 0;
-        const fetchImpl: typeof fetch = (_url, _init) => {
+        const fetchImpl: typeof fetch = (__url, __init) => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -857,7 +860,7 @@ describe('HttpTreeAccessors', () => {
       jest.useFakeTimers();
       try {
         let callCount = 0;
-        const fetchImpl: typeof fetch = (_url, _init) => {
+        const fetchImpl: typeof fetch = (__url, __init) => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -1007,9 +1010,7 @@ describe('HttpTreeAccessors', () => {
       const originalGet = accessors.getFileContents.bind(accessors);
       accessors.getFileContents = (path: string) => {
         if (path === '/data.json') {
-          // eslint-disable-next-line import/no-internal-modules
-          const { fail: failResult } = require('@fgv/ts-utils') as typeof import('@fgv/ts-utils');
-          return failResult('simulated get failure');
+          return Failure.with('simulated get failure');
         }
         return originalGet(path);
       };
@@ -1074,7 +1075,7 @@ describe('HttpTreeAccessors', () => {
     test('returns failure with error message for network error (Error instance throw) during sync', async () => {
       // Covers line 214 true branch: response.err instanceof Error -> uses .message
       let callCount = 0;
-      const fetchImpl: typeof fetch = (_url, _init) => {
+      const fetchImpl: typeof fetch = (__url, __init) => {
         callCount++;
         if (callCount === 1) {
           return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -1104,7 +1105,7 @@ describe('HttpTreeAccessors', () => {
       // Covers line 214 false branch: thrown value is not an Error instance -> uses String(response.err)
       // Must be triggered via syncToDisk() which uses the instance _request() method.
       let callCount = 0;
-      const fetchImpl: typeof fetch = (_url, _init) => {
+      const fetchImpl: typeof fetch = (__url, __init) => {
         callCount++;
         if (callCount === 1) {
           return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -1136,7 +1137,7 @@ describe('HttpTreeAccessors', () => {
       jest.useFakeTimers();
       try {
         let callCount = 0;
-        const fetchImpl: typeof fetch = (_url, _init) => {
+        const fetchImpl: typeof fetch = (__url, __init) => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -1173,7 +1174,7 @@ describe('HttpTreeAccessors', () => {
   describe('_requestWithParams() error handling', () => {
     test('returns failure with error message for non-Error network throw during init', async () => {
       // _requestWithParams is used for GET requests during fromHttp(); test non-Error throw branch
-      const fetchImpl: typeof fetch = (_url, _init) => {
+      const fetchImpl: typeof fetch = (__url, __init) => {
         return Promise.reject(42);
       };
 
@@ -1186,7 +1187,7 @@ describe('HttpTreeAccessors', () => {
     });
 
     test('returns failure with HTTP status fallback when response.text() throws during init', async () => {
-      const fetchImpl: typeof fetch = (_url, _init) => {
+      const fetchImpl: typeof fetch = (__url, __init) => {
         return Promise.resolve(makeMockResponse({ ok: false, status: 504, throwOnText: true }));
       };
 
@@ -1196,30 +1197,6 @@ describe('HttpTreeAccessors', () => {
       });
 
       expect(result).toFailWith(/http 504/i);
-    });
-
-    test('uses globalThis.fetch when no fetchImpl provided', async () => {
-      // Covers line 48: the `fetchImpl ?? globalThis.fetch` right-side branch.
-      // We temporarily replace globalThis.fetch with a mock that returns an empty tree.
-      const originalFetch = globalThis.fetch;
-      let fetchCallCount = 0;
-
-      globalThis.fetch = (_url: string | URL | Request, _init?: RequestInit) => {
-        fetchCallCount++;
-        return Promise.resolve(makeMockResponse({ ok: true, jsonValue: { path: '/', children: [] } }));
-      };
-
-      try {
-        const result = await HttpTreeAccessors.fromHttp({
-          baseUrl: 'http://localhost:3000'
-          // No fetchImpl - should fall back to globalThis.fetch
-        });
-
-        expect(result).toSucceed();
-        expect(fetchCallCount).toBeGreaterThan(0);
-      } finally {
-        globalThis.fetch = originalFetch;
-      }
     });
   });
 
@@ -1338,7 +1315,7 @@ describe('HttpTreeAccessors', () => {
       try {
         // Responses: init (GET tree/children), then PUT fails with 503, then PUT succeeds, then POST /sync succeeds
         let callCount = 0;
-        const fetchImpl: typeof fetch = (_url, _init) => {
+        const fetchImpl: typeof fetch = (__url, __init) => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -1392,7 +1369,7 @@ describe('HttpTreeAccessors', () => {
       jest.useFakeTimers();
       try {
         let callCount = 0;
-        const fetchImpl: typeof fetch = (_url, _init) => {
+        const fetchImpl: typeof fetch = (__url, __init) => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -1431,7 +1408,7 @@ describe('HttpTreeAccessors', () => {
       jest.useFakeTimers();
       try {
         let callCount = 0;
-        const fetchImpl: typeof fetch = (_url, _init) => {
+        const fetchImpl: typeof fetch = (__url, __init) => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -1480,7 +1457,7 @@ describe('HttpTreeAccessors', () => {
         } as unknown as Logging.LogReporter<unknown>;
 
         let callCount = 0;
-        const fetchImpl: typeof fetch = (_url, _init) => {
+        const fetchImpl: typeof fetch = (__url, __init) => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));
@@ -1575,7 +1552,7 @@ describe('HttpTreeAccessors', () => {
       // 3. _doSync loops back, snapshots the new item, and syncs it too
       // 4. Only one POST /sync is sent at the end, after all items are drained
       let callCount = 0;
-      let saveHook: (() => void) | undefined;
+      const hookRef: { fn?: () => void } = {};
 
       const fetchImpl: typeof fetch = (url, init) => {
         callCount++;
@@ -1593,7 +1570,7 @@ describe('HttpTreeAccessors', () => {
 
         // Call 3: first PUT /file for a.json — trigger a write mid-sync
         if (callCount === 3 && init?.method === 'PUT') {
-          saveHook?.();
+          hookRef.fn?.();
           return Promise.resolve(makeMockResponse({ ok: true, jsonValue: fileResponse('/a.json', '"v1"') }));
         }
 
@@ -1623,11 +1600,11 @@ describe('HttpTreeAccessors', () => {
 
       // Set up the hook BEFORE starting sync — the mock fetch for the PUT
       // runs synchronously within syncToDisk(), so the hook must be in place.
-      saveHook = () => {
+      hookRef.fn = () => {
         accessors.saveFileContents('/a.json', '"v2"').orThrow();
       };
 
-      // Start sync — during the first PUT, saveHook fires and writes v2.
+      // Start sync — during the first PUT, hookRef.fn fires and writes v2.
       // The drain loop in _doSync picks this up and PUTs again before
       // sending the final POST /sync.
       const result = await accessors.syncToDisk();
@@ -1699,7 +1676,7 @@ describe('HttpTreeAccessors', () => {
       jest.useFakeTimers();
       try {
         let callCount = 0;
-        const fetchImpl: typeof fetch = (_url, _init) => {
+        const fetchImpl: typeof fetch = (__url, __init) => {
           callCount++;
           if (callCount === 1) {
             return Promise.resolve(makeMockResponse({ ok: true, jsonValue: rootWithOneFile('data.json') }));

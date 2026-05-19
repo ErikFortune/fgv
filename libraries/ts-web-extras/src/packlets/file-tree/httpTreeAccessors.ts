@@ -261,7 +261,7 @@ export class HttpTreeAccessors<TCT extends string = string>
       return result;
     }
 
-    void this._runAutoSyncTask(path);
+    this._runAutoSyncTask(path).catch(() => undefined);
     return result;
   }
 
@@ -283,7 +283,7 @@ export class HttpTreeAccessors<TCT extends string = string>
     }
 
     // fire-and-log-on-failure automatic sync for immediate persistence workflow
-    void this._runAutoSyncTask(path);
+    this._runAutoSyncTask(path).catch(() => undefined);
     return result;
   }
 

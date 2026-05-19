@@ -63,6 +63,9 @@ jspm_packages/
 .idea/
 *.iml
 
+# Root-level pnpm lockfile (stray artifact from ad-hoc pnpm installs; real lockfile is common/temp/pnpm-lock.yaml)
+pnpm-lock.yaml
+
 # Rush temporary files
 common/deploy/
 deploy/

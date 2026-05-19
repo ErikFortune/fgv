@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add HpkeProvider (HPKE base mode, RFC 9180: DHKEM(X25519, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM) with sealBase/openBase/hkdf/encodeEnvelope/decodeEnvelope. Add IArgon2idProvider interface, IArgon2idParams, ARGON2ID_OWASP_MIN/PASSPHRASE presets. Convert IKeyDerivationParams to discriminated union ('pbkdf2' | 'argon2id'). Extend KeyStore with addSecretFromPasswordArgon2id and verifySecretFromPasswordArgon2id. Extend ICryptoProvider with sign/verify (Ed25519, ECDSA-P256), hmacSha256/verifyHmacSha256, and timingSafeEqual.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

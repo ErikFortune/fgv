@@ -128,10 +128,45 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `ts-prompt-assist` 🟢
+
+**Status:** 🟢 phase A (research + design) ready to start
+**Cluster:** `ts-prompt-assist-features` (integration branch `claude/ts-prompt-assist-features` off `release`)
+**Workflow shape:** design-triage-implement-refine (single-stream new-library; consumer-port pressure-test absorbed via follow-up PRs on the same integration branch)
+**Phase A artifacts:** `.ai/tasks/active/ts-prompt-assist/{brief.md, design-brief.md, state.md}` → produces `design.md`
+**Package surface (new):** `@fgv/ts-prompt-assist` (new library; placement `libraries/ts-prompt-assist/`)
+**Package surface (extended):** `@fgv/ts-extras/mustache` — additive extension to `MustacheTemplate` to support verbatim-passthrough rendering (see brief.md OQ-6). Cluster touches this packlet so `ts-prompt-assist` consumes a first-class API rather than implementing workarounds. Additive only (no removed/renamed exports), preserving the established-surface compatibility contract.
+**Library dep graph:** depends on `@fgv/ts-utils`, `@fgv/ts-res`, `@fgv/ts-extras` (`MustacheTemplate`), `@fgv/ts-json-base` (FileTree). Sits above `ts-res` in the dep graph — folding into `ts-extras` would create a cycle, hence the standalone-package decision.
+**Out-of-scope (this stream):** SQL/Mongo store adapters; editor UI; samples app; LLM-call orchestration; anti-jailbreak text content; schema-version migration; sudoku packages.
+
+**Mission.** Ship `@fgv/ts-prompt-assist` v0.1: ts-res-driven prompt resolution with Mustache substitution as a reusable capability. Consumers bring their own scope model, actor types, prompt content; the library provides the resolution machinery, type system, descriptor schema, storage abstraction, and LLM-prompt safeguards. Mental model: every consumer surface that calls an LLM with a prompt does **lookup** (qualifier-conditioned variant selection) then **compose** (Mustache substitution); the library standardizes both halves.
+
+**Binding conceptual model** (per the consumer-supplied design brief at `.ai/tasks/active/ts-prompt-assist/design-brief.md`):
+1. Lookup-then-compose
+2. Scope-chain walking with bindings (most-specific wins; `enforced` lock; caller subs override merged bindings except enforced)
+3. Open qualifier metadata (`required` / `expected` / `disallowed`, never closed enums per descriptor)
+4. Resource bindings as first-class (recursive resolve with cycle detection + depth cap; enables shared sub-prompts)
+5. Output validation library-side (strip fences → parse JSON → Converter → registered validators)
+6. Storage-agnostic via `IPromptStore`; FileTree adapter canonical for v0.1; in-memory for tests
+
+The data-structure specifics in the design brief are **proposed** — phase A locks the shape and resolves the three open questions (scope encoding flexibility, resource-binding substitution merge semantics, `watch()` semantics).
+
+**Origin.** Consumer-driven feature request. Pattern emerged from observation that two in-codebase prompt libraries had reinvented the same machinery with subtly different policies; tenant-level visual/brand-style override has no canonical home; variation prompts hit-or-miss across surfaces. Generalizing the resolution machinery gives operators one mental model.
+
+**First consumer / pressure-test plan.** The first consumer is an agent chat application that will port an existing in-codebase prompt resolution implementation to consume this library. Pressure-test surfaces API gaps; 1–2 follow-up PRs on the integration branch absorb refinements before the integration→release promotion. Possibly also a test app (modeled on `ai-assist-image-generator`) — decision deferred; could also be built **into** the image generator. Surface as a subsequent stream once v0.1 lands.
+
+**Sequencing.** Independent of `ai-assist-thinking-events`; the two streams can run in parallel. No dependencies on in-flight work as of stream commission.
+
+**Alpha target.** `5.1.0-29` or later; stream may accumulate to `6.0` depending on API-stability evidence after pressure-test. Stable cut is gated on consumer-port settling, not calendar.
+
+**Future streams (queued; not commissioned):**
+- `ts-prompt-assist-samples` — sample/test app demonstrating end-to-end usage (might be standalone OR merged into `ai-assist-image-generator`)
+- `ts-prompt-assist-editor-ui` — generic editor UX for prompt editing (decide whether to make consumer-shape-agnostic vs require consumer-side implementation; UX is complex enough that sharing would be valuable, but the consumer-specific surfaces may make full generalization impractical). See `docs/FUTURE.md`.
+
 ### `ai-assist-thinking-events` 🟡
 
-**Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands
-**Branch base:** `release` HEAD after the ai-assist cluster lands (`.ai/tasks/completed/2026-05/ai-assist-thinking-config/` and `ai-assist-image-generation/` available as reference)
+**Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands (now satisfied; ai-assist cluster shipped via #336)
+**Branch base:** `release` HEAD with `.ai/tasks/completed/2026-05/ai-assist-thinking-config/` and `ai-assist-image-generation/` available as reference
 **Package surface:** `@fgv/ts-extras/ai-assist` (streaming adapters, model.ts, apiClient.ts), `@fgv/ts-app-shell/ai-assist`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
 **Out-of-scope:** the core thinking-config architecture (already shipped via `ai-assist-thinking-config`); sudoku packages
 
@@ -142,7 +177,7 @@ substrate. Don't queue streams against them here.
 - Per-provider surfacing logic (Anthropic `thinking_delta` events; Gemini `thought: true` parts; OpenAI encrypted reasoning items if exposed)
 - Token accounting (`thinkingTokens?: number` on response)
 
-Design-triage-implement shape is likely; new public API has real consequences. Specifically: should existing `IAiStreamEvent`-handling code see thinking-delta events whether they ask for them or not (forcing all consumers to update), or are they opt-in via the per-provider config (silent for callers who don't opt in)? The opt-in default seems right; design phase confirms.
+Design-triage-implement shape is likely; new public API has real consequences.
 
 **Origin.** Carved out of `ai-assist-thinking-config` phase A v2 (D9). Required because v1's "future extension point" hand-wave didn't meet the bar of "concrete trackable followup."
 
@@ -151,6 +186,65 @@ Design-triage-implement shape is likely; new public API has real consequences. S
 ---
 
 ## Completed workstreams
+
+### `crypto-batch-2-hpke` ✅
+
+**Status:** ✅ shipped — merged in [#348](https://github.com/ErikFortune/fgv/pull/348) into `claude/crypto-batch-2-features` integration branch; phase A design in [#343](https://github.com/ErikFortune/fgv/pull/343); phase B brief in [#346](https://github.com/ErikFortune/fgv/pull/346); branch `claude/crypto-batch-2-hpke-impl-pR3QU`
+**Package surface:** `@fgv/ts-extras/crypto-utils`, `@fgv/ts-web-extras/crypto-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.**
+- `HpkeProvider` class (private constructor + static `create(subtle)` factory) implementing HPKE base mode (RFC 9180) with cipher suite DHKEM(X25519, HKDF-SHA256) + HKDF-SHA256 + AES-256-GCM
+- Public surface: `sealBase`, `openBase`, `hkdf`, `encodeEnvelope`, `decodeEnvelope`. Internal Encap/Decap/KeySchedule stay private.
+- Single implementation in `ts-extras` re-exported from `ts-web-extras` for browser callers; `CryptoUtils.HpkeProvider` namespace path works for both `moduleResolution: node` and `bundler` consumers
+- B.0 RFC verification caught a design-vs-RFC discrepancy: design.md §1 used label `"dh"` in ExtractAndExpand; RFC 9180 §4.1 specifies `"eae_prk"`. Agent stopped, surfaced, corrected (confirmed via OpenSSL happykey + multiple independent implementations)
+- Cross-runtime anchor vectors: Node-sealed ciphertext opens correctly on jsdom Web Crypto. 24 Node tests + 18 browser tests, 100% coverage.
+
+**Artifacts:** `.ai/tasks/completed/2026-05/crypto-batch-2-hpke/`
+
+### `crypto-batch-2-argon2id` ✅
+
+**Status:** ✅ shipped — merged in [#349](https://github.com/ErikFortune/fgv/pull/349) into `claude/crypto-batch-2-features` integration branch; phase A design in [#344](https://github.com/ErikFortune/fgv/pull/344); phase B brief in [#346](https://github.com/ErikFortune/fgv/pull/346); branch `claude/crypto-batch-2-argon2id-impl-bOXwM`
+**Package surface:** NEW packages `@fgv/ts-extras-argon2` (Node, wraps `argon2`) and `@fgv/ts-web-extras-argon2` (browser, wraps `hash-wasm`); model additions in `@fgv/ts-extras/crypto-utils`; `KeyStore` integration; `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.**
+- `IArgon2idProvider`, `IArgon2idParams`, `ARGON2ID_OWASP_MIN`, `ARGON2ID_PASSPHRASE` in `@fgv/ts-extras/crypto-utils/model.ts`
+- `IKeyDerivationParams` converted to discriminated union (`'pbkdf2'` | `'argon2id'`)
+- `NodeArgon2Provider` in `@fgv/ts-extras-argon2` backed by `argon2` (kelektiv v0.44.0)
+- `BrowserArgon2Provider` in `@fgv/ts-web-extras-argon2` backed by `hash-wasm` v4.12.0 — pure WASM, runs identically in Node and browsers
+- `KeyStore.addSecretFromPasswordArgon2id` and `verifySecretFromPasswordArgon2id` (explicit `IArgon2idProvider` injection — KeyStore does not hold one by default)
+- Cross-runtime byte-identical output verified: RFC 9106 §B.3 vector produces `03aab965...6d0c2e` on both providers; plus 7-case parameter sweep. 100% coverage across all three packages.
+
+**Artifacts:** `.ai/tasks/completed/2026-05/crypto-batch-2-argon2id/`
+
+### `crypto-batch-2-webauthn` ✅
+
+**Status:** ✅ shipped — merged in [#347](https://github.com/ErikFortune/fgv/pull/347) into `claude/crypto-batch-2-features` integration branch; phase A design in [#342](https://github.com/ErikFortune/fgv/pull/342); phase B brief in [#346](https://github.com/ErikFortune/fgv/pull/346); branch `claude/crypto-batch-2-webauthn-impl-6XN80`
+**Package surface:** NEW packages `@fgv/ts-extras-webauthn` (wraps `@simplewebauthn/server`) and `@fgv/ts-web-extras-webauthn` (wraps `@simplewebauthn/browser`); `common/config/rush/common-versions.json`; `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.** Result-integration boundary — six primitive functions, nothing else:
+- Server: `generateRegistrationOptions`, `verifyRegistrationResponse`, `generateAuthenticationOptions`, `verifyAuthenticationResponse`
+- Browser: `startRegistration`, `startAuthentication`
+- Each a one-line `captureAsyncResult(() => upstream(options))` over `@simplewebauthn/*` v13
+- No challenge generators, no PRF helpers, no autofill validators, no credential builders, no ceremony orchestration (four temptations explicitly considered and rejected per OQ-4)
+- Type re-exports limited to direct-signature types; `jest.mock` upstream entirely (no real WebAuthn ceremony in tests). 100% coverage in both packages.
+
+**Followup**: `integrations/` vs `libraries/` directory convention (parked to FUTURE.md); see also TECH_DEBT P3 entry on `"sideEffects": false` field consistency for new pure-library packages.
+
+**Artifacts:** `.ai/tasks/completed/2026-05/crypto-batch-2-webauthn/`
+
+### `crypto-batch-2-misc` ✅
+
+**Status:** ✅ shipped — merged in [#345](https://github.com/ErikFortune/fgv/pull/345) into `claude/crypto-batch-2-features` integration branch; branch `claude/add-crypto-provider-methods-hHMYd`
+**Package surface:** `@fgv/ts-extras/crypto-utils`, `@fgv/ts-web-extras/crypto-utils`, `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.** Five new methods on `ICryptoProvider` (and both concrete implementations):
+- `sign(privateKey, data)` / `verify(publicKey, signature, data)` — Ed25519 and ECDSA-P256, algorithm inferred from key
+- `timingSafeEqual(a, b)` — constant-time byte comparison (Node `crypto.timingSafeEqual`; browser XOR-walk accumulator)
+- `hmacSha256(key, data)` / `verifyHmacSha256(key, signature, data)` — HMAC-SHA256 MAC with constant-time verification via `timingSafeEqual`
+
+`sign`/`verify`/`timingSafeEqual` were specified in the stream brief; `hmacSha256`/`verifyHmacSha256` added during implementation per orchestrator review request (cross-repo consumer surfaced the need).
+
+**Artifacts:** `.ai/tasks/completed/2026-05/crypto-batch-2-misc/`
 
 ### `ai-assist-thinking-config` ✅
 

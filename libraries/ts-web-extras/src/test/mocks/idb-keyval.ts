@@ -1,5 +1,5 @@
-export const createStore = jest.fn(() => ({}));
-export const get = jest.fn();
-export const set = jest.fn();
-export const del = jest.fn();
-export const keys = jest.fn();
+export const createStore: jest.Mock = jest.fn(() => ({}));
+export const get: jest.Mock = jest.fn();
+export const set: jest.Mock = jest.fn();
+export const del: jest.Mock = jest.fn();
+export const keys: jest.Mock = jest.fn();

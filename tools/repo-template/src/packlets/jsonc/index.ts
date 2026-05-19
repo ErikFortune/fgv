@@ -3,9 +3,9 @@
  * Modifies JSON-with-comments files while preserving all comments and formatting.
  */
 
-import { modify, applyEdits } from 'jsonc-parser';
+import { modify, applyEdits, FormattingOptions } from 'jsonc-parser';
 
-const FORMATTING_OPTIONS = {
+const FORMATTING_OPTIONS: FormattingOptions = {
   tabSize: 2,
   insertSpaces: true,
   eol: '\n'
@@ -58,6 +58,7 @@ function escapeRegExp(str: string): string {
  * Handles `// "propertyName": value` patterns.
  */
 function uncommentProperty(source: string, propertyName: string): string {
+  /* eslint-disable-next-line @rushstack/security/no-unsafe-regexp */
   const pattern = new RegExp(`^(\\s*)\\/\\/\\s*("${escapeRegExp(propertyName)}"\\s*:.*)$`, 'm');
 
   const match = source.match(pattern);
