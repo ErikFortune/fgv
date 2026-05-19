@@ -536,4 +536,66 @@ describe('MustacheTemplate', () => {
       });
     });
   });
+
+  describe('escape option', () => {
+    const dangerous = { value: '<a href="x&y">hi</a>' };
+
+    test('defaults to HTML escape (back-compat)', () => {
+      const template = MustacheTemplate.create('{{value}}').orThrow();
+      expect(template.options.escape).toBe('html');
+      expect(template.render(dangerous)).toSucceedWith(
+        '&lt;a href&#x3D;&quot;x&amp;y&quot;&gt;hi&lt;&#x2F;a&gt;'
+      );
+    });
+
+    test('explicit html strategy matches default', () => {
+      const template = MustacheTemplate.create('{{value}}', { escape: 'html' }).orThrow();
+      expect(template.render(dangerous)).toSucceedWith(
+        '&lt;a href&#x3D;&quot;x&amp;y&quot;&gt;hi&lt;&#x2F;a&gt;'
+      );
+    });
+
+    test('"none" strategy renders the value verbatim', () => {
+      const template = MustacheTemplate.create('{{value}}', { escape: 'none' }).orThrow();
+      expect(template.options.escape).toBe('none');
+      expect(template.render(dangerous)).toSucceedWith('<a href="x&y">hi</a>');
+    });
+
+    test('"none" coerces non-string values via String()', () => {
+      const template = MustacheTemplate.create('{{value}}', { escape: 'none' }).orThrow();
+      expect(template.render({ value: 42 })).toSucceedWith('42');
+      expect(template.render({ value: true })).toSucceedWith('true');
+    });
+
+    test('custom escape function is applied to double-brace tokens', () => {
+      const template = MustacheTemplate.create('{{value}}', {
+        escape: (raw) => `[${raw.toUpperCase()}]`
+      }).orThrow();
+      expect(template.render({ value: 'abc' })).toSucceedWith('[ABC]');
+    });
+
+    test('triple-brace tokens are always unescaped regardless of strategy', () => {
+      const html = MustacheTemplate.create('{{{value}}}', { escape: 'html' }).orThrow();
+      expect(html.render(dangerous)).toSucceedWith('<a href="x&y">hi</a>');
+
+      const custom = MustacheTemplate.create('{{{value}}}', {
+        escape: (raw) => `[${raw}]`
+      }).orThrow();
+      // Verbatim — the custom escape MUST be bypassed for triple-brace.
+      expect(custom.render(dangerous)).toSucceedWith('<a href="x&y">hi</a>');
+    });
+
+    test('concurrent templates with different strategies do not interfere', () => {
+      const escaped = MustacheTemplate.create('{{value}}', { escape: 'html' }).orThrow();
+      const passthrough = MustacheTemplate.create('{{value}}', { escape: 'none' }).orThrow();
+      expect(escaped.render({ value: '<x>' })).toSucceedWith('&lt;x&gt;');
+      expect(passthrough.render({ value: '<x>' })).toSucceedWith('<x>');
+      expect(escaped.render({ value: '<y>' })).toSucceedWith('&lt;y&gt;');
+    });
+
+    test('escape strategy participates in validateAndRender', () => {
+      const template = MustacheTemplate.create('{{value}}', { escape: 'none' }).orThrow();
+      expect(template.validateAndRender({ value: '<safe>' })).toSucceedWith('<safe>');
+    });
+  });
 });

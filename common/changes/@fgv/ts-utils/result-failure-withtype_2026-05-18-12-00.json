@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Add Failure<T>.withType<U>() helper for the canonical Result early-return pattern, allowing a narrowed Failure<T> to be propagated as Failure<U> without reallocation (addresses ts-prompt-assist pressure-test finding F13).",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

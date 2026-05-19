@@ -2,6 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 
 import { AiAssist } from '@fgv/ts-extras';
 
+import { chatTones, chatToneConverter } from '../promptLibrary';
+import type { ChatTone } from '../promptLibrary';
+
+function formatToneLabel(tone: ChatTone): string {
+  return tone.charAt(0).toUpperCase() + tone.slice(1);
+}
+
 export interface IChatTurn {
   readonly role: 'user' | 'assistant';
   readonly content: string;
@@ -12,9 +19,18 @@ export interface IChatPanelProps {
   readonly provider: AiAssist.AiProviderId;
   readonly isWorking: boolean;
   readonly canSubmit: boolean;
+  /**
+   * Optional reason shown when `canSubmit` is false. Lets the parent
+   * differentiate between "no API key" and "prompt library not ready"
+   * (or any other gating condition the parent owns). Defaults to
+   * `'Enter an API key to enable chat.'` when omitted.
+   */
+  readonly disabledReason?: string;
   readonly turns: ReadonlyArray<IChatTurn>;
   readonly error: string | undefined;
   readonly activeToolEvents: ReadonlyArray<string>;
+  readonly tone: ChatTone;
+  readonly onToneChange: (tone: ChatTone) => void;
   readonly onSend: (
     text: string,
     options: { readonly tools?: ReadonlyArray<AiAssist.AiServerToolConfig> }
@@ -24,7 +40,21 @@ export interface IChatPanelProps {
 }
 
 export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
-  const { provider, isWorking, canSubmit, turns, error, activeToolEvents, onSend, onAbort, onClear } = props;
+  const {
+    provider,
+    isWorking,
+    canSubmit,
+    disabledReason,
+    turns,
+    error,
+    activeToolEvents,
+    tone,
+    onToneChange,
+    onSend,
+    onAbort,
+    onClear
+  } = props;
+  const disabledMessage = disabledReason ?? 'Enter an API key to enable chat.';
 
   const [input, setInput] = useState('');
   const [useWebSearch, setUseWebSearch] = useState(false);
@@ -163,7 +193,28 @@ export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
             </label>
           )}
 
-          {!canSubmit && <span className="text-sm text-slate-500">Enter an API key to enable chat.</span>}
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+            <span>Tone</span>
+            <select
+              value={tone}
+              // Narrow `e.target.value: string` back into `ChatTone` via the
+              // exported Converter; falls back to the current tone if the
+              // DOM string isn't a recognised option (defensive — the
+              // `<option>` set is rendered from the same `chatTones`
+              // array, so a mismatch is unreachable in normal flow).
+              onChange={(e) => onToneChange(chatToneConverter.convert(e.target.value).orDefault(tone))}
+              disabled={isWorking}
+              className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              {chatTones.map((t) => (
+                <option key={t} value={t}>
+                  {formatToneLabel(t)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {!canSubmit && <span className="text-sm text-slate-500">{disabledMessage}</span>}
         </div>
       </form>
     </section>

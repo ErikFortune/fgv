@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "B-1 Decl-tree cascade: thread `TQualifierNames extends string = string` through all 9 container Decl interfaces (`IChildResourceCandidateDecl`, `ILooseResourceCandidateDecl`, `IImporterResourceCandidateDecl`, `IContainerContextDecl`, `IChildResourceDecl`, `ILooseResourceDecl`, `IResourceCollectionDecl`, `IImporterResourceCollectionDecl`, `IResourceTreeRootDecl`) plus the leaf types (`ILooseConditionDecl`, `ConditionSetDeclAsArray`, `ConditionSetDeclAsRecord`, `ConditionSetDecl`). Carry forward `ConditionSet.getKeyFromLooseDecl` correctness fix from closed PR #386 (handles explicit-undefined record entries forced by `Partial` widening on `ConditionSetDeclAsRecord`). All defaults preserve existing untyped callers unchanged.",
+      "type": "minor",
+      "packageName": "@fgv/ts-res"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}

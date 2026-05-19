@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { AiAssist } from '@fgv/ts-extras';
 import { useAiAssist } from '@fgv/ts-app-shell';
@@ -8,6 +8,8 @@ import { PromptPanel } from './components/PromptPanel';
 import { ImageResults } from './components/ImageResults';
 import { ChatPanel, type IChatTurn } from './components/ChatPanel';
 import { InMemoryKeyStore } from './inMemoryKeyStore';
+import { createPromptLibrary, resolveChatSystemPrompt } from './promptLibrary';
+import type { ChatPromptLibrary, ChatTone } from './promptLibrary';
 
 type Mode = 'image' | 'chat';
 
@@ -79,6 +81,28 @@ export function App(): React.JSX.Element {
   const [chatTurns, setChatTurns] = useState<ReadonlyArray<IChatTurn>>([]);
   const [chatError, setChatError] = useState<string | undefined>(undefined);
   const [activeToolEvents, setActiveToolEvents] = useState<ReadonlyArray<string>>([]);
+  const [chatTone, setChatTone] = useState<ChatTone>('neutral');
+
+  // Prompt library is built once on mount via the canonical
+  // useEffect-initialiser pattern from the ts-prompt-assist README.
+  const [promptLibrary, setPromptLibrary] = useState<ChatPromptLibrary | null>(null);
+  const [promptLibraryError, setPromptLibraryError] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const result = await createPromptLibrary();
+      if (cancelled) return;
+      if (result.isFailure()) {
+        setPromptLibraryError(result.message);
+      } else {
+        setPromptLibrary(result.value);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const abortControllerRef = useRef<AbortController | undefined>(undefined);
 
@@ -180,19 +204,36 @@ export function App(): React.JSX.Element {
   ): Promise<void> => {
     setChatError(undefined);
     setActiveToolEvents([]);
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
 
     const userTurn: IChatTurn = { role: 'user', content: text };
     const assistantTurn: IChatTurn = { role: 'assistant', content: '', isStreaming: true };
     setChatTurns((prev) => [...prev, userTurn, assistantTurn]);
 
-    // System prompt is a generic helpful-assistant string; prior turns go into
-    // messagesBefore so they're sent between system and the new user message.
+    if (promptLibrary === null) {
+      setChatError(promptLibraryError ?? 'Prompt library is still initializing.');
+      setChatTurns((prev) => prev.slice(0, -2));
+      return;
+    }
+    const systemPromptResult = await resolveChatSystemPrompt(promptLibrary, chatTone);
+    if (systemPromptResult.isFailure()) {
+      setChatError(systemPromptResult.message);
+      setChatTurns((prev) => prev.slice(0, -2));
+      return;
+    }
+
+    // Create the AbortController only once we're committed to the
+    // network call — early-return paths above (library not ready,
+    // system-prompt resolve failure) would otherwise leave a stale
+    // controller in the ref and a no-op `onAbort` button enabled.
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Prior turns go into messagesBefore so they're sent between the
+    // resolved system prompt and the new user message.
     const messagesBefore: AiAssist.IChatMessage[] = chatTurns
       .filter((t) => t.role === 'user' || t.role === 'assistant')
       .map((t) => ({ role: t.role, content: t.content }));
-    const prompt = new AiAssist.AiPrompt(text, 'You are a helpful assistant.');
+    const prompt = new AiAssist.AiPrompt(text, systemPromptResult.value);
 
     let receivedAnyContent = false;
     let inlineError: string | undefined;
@@ -357,10 +398,24 @@ export function App(): React.JSX.Element {
           <ChatPanel
             provider={provider}
             isWorking={isWorking}
-            canSubmit={currentKey.length > 0}
+            canSubmit={currentKey.length > 0 && promptLibrary !== null}
+            // Order matches the user's mental model: the API-key gate
+            // is the first thing they fill in, so name that one first;
+            // once it's set, surface the prompt-library state.
+            disabledReason={
+              currentKey.length === 0
+                ? 'Enter an API key to enable chat.'
+                : promptLibraryError !== undefined
+                ? `Prompt library failed to load: ${promptLibraryError}`
+                : promptLibrary === null
+                ? 'Prompt library is still initializing…'
+                : undefined
+            }
             turns={chatTurns}
-            error={chatError}
+            error={chatError ?? promptLibraryError}
             activeToolEvents={activeToolEvents}
+            tone={chatTone}
+            onToneChange={setChatTone}
             onSend={handleSendChat}
             onAbort={handleAbort}
             onClear={handleClearChat}

@@ -21,7 +21,7 @@
  */
 
 import * as Common from '../../common';
-import { Converters, populateObject, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, populateObject, Result, fail, succeed } from '@fgv/ts-utils';
 import { IConditionDecl, IValidatedConditionDecl } from '../conditionDecls';
 import { IReadOnlyQualifierCollector } from '../../qualifiers';
 
@@ -29,6 +29,11 @@ import { IReadOnlyQualifierCollector } from '../../qualifiers';
 
 /**
  * Converter for a {@link Conditions.IConditionDecl | condition declaration}.
+ *
+ * @remarks
+ * Accepts any string as the `qualifierName`. Use `typedConditionDecl` to narrow the
+ * accepted set of qualifier names to a literal-string union.
+ *
  * @public
  */
 export const conditionDecl = Converters.strictObject<IConditionDecl>({
@@ -40,6 +45,32 @@ export const conditionDecl = Converters.strictObject<IConditionDecl>({
 });
 
 /**
+ * Returns a `Converter` for an `IConditionDecl<TQualifierNames>` narrowed on a supplied
+ * `qualifierName` converter.
+ *
+ * @remarks
+ * Pass e.g. `Converters.enumeratedValue(['tone', 'language'] as const)` to reject
+ * typo'd qualifier names at convert time and to narrow the resulting
+ * `IConditionDecl<T>` type to the same literal-string union. The default
+ * `conditionDecl` is the `Converters.string` instantiation of this shape.
+ *
+ * @public
+ */
+// Keep the field list below in sync with `conditionDecl` above; the
+// duplication preserves the `ObjectConverter` return type on the default.
+export function typedConditionDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<IConditionDecl<TQualifierNames>> {
+  return Converters.strictObject<IConditionDecl<TQualifierNames>>({
+    qualifierName: qualifierNameConverter,
+    value: Converters.string,
+    operator: Common.Convert.conditionOperator.optional(),
+    priority: Converters.number.optional(),
+    scoreAsDefault: Converters.number.optional()
+  });
+}
+
+/**
  * Conversion context to uses when converting
  * a {@link Conditions.IValidatedConditionDecl | validated condition declaration}.
  * @public
@@ -49,21 +80,16 @@ export interface IConditionDeclConvertContext {
   conditionIndex?: number;
 }
 
-/**
- * Converter which constructs a {@link Conditions.IValidatedConditionDecl | validated condition declaration}
- * from a {@link Conditions.IConditionDecl | condition declaration}, instantiating qualifiers by name
- * from a supplied {@link Conditions.Convert.IConditionDeclConvertContext | conversion context}.
- * @public
- */
-export const validatedConditionDecl = Converters.generic<
-  IValidatedConditionDecl,
-  IConditionDeclConvertContext
->((from: unknown, __self, context?: IConditionDeclConvertContext): Result<IValidatedConditionDecl> => {
+function _validatedConditionDeclBody<TQualifierNames extends string>(
+  innerConditionDecl: Converter<IConditionDecl<TQualifierNames>>,
+  from: unknown,
+  context?: IConditionDeclConvertContext
+): Result<IValidatedConditionDecl> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!context) {
     return fail('validatedConditionDecl converter requires a context');
   }
-  return conditionDecl.convert(from).onSuccess((decl) => {
+  return innerConditionDecl.convert(from).onSuccess((decl) => {
     const operator = decl.operator ?? 'matches';
     return context.qualifiers.validating.get(decl.qualifierName).onSuccess((qualifier) => {
       return populateObject<IValidatedConditionDecl>({
@@ -92,4 +118,47 @@ export const validatedConditionDecl = Converters.generic<
         .withDetail('success');
     });
   });
+}
+
+/**
+ * Converter which constructs a {@link Conditions.IValidatedConditionDecl | validated condition declaration}
+ * from a {@link Conditions.IConditionDecl | condition declaration}, instantiating qualifiers by name
+ * from a supplied {@link Conditions.Convert.IConditionDeclConvertContext | conversion context}.
+ *
+ * @remarks
+ * Accepts any string as the `qualifierName`; the collector membership check still rejects unknown
+ * names. Use `typedValidatedConditionDecl` to layer literal-string narrowing on top of the
+ * collector check.
+ *
+ * @public
+ */
+export const validatedConditionDecl = Converters.generic<
+  IValidatedConditionDecl,
+  IConditionDeclConvertContext
+>((from: unknown, __self, context?: IConditionDeclConvertContext): Result<IValidatedConditionDecl> => {
+  return _validatedConditionDeclBody(conditionDecl, from, context);
 });
+
+/**
+ * Returns a `Converter` for an `IValidatedConditionDecl` narrowed on a supplied
+ * `qualifierName` converter.
+ *
+ * @remarks
+ * The typed sibling layers literal-string narrowing on top of the existing
+ * collector-membership check performed by `validatedConditionDecl`.
+ *
+ * @public
+ */
+// Shares the `_validatedConditionDeclBody` helper with `validatedConditionDecl`
+// above, so the populate-object body cannot drift; only the inner condition-decl
+// converter differs.
+export function typedValidatedConditionDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<IValidatedConditionDecl, IConditionDeclConvertContext> {
+  const inner = typedConditionDecl(qualifierNameConverter);
+  return Converters.generic<IValidatedConditionDecl, IConditionDeclConvertContext>(
+    (from: unknown, __self, context?: IConditionDeclConvertContext): Result<IValidatedConditionDecl> => {
+      return _validatedConditionDeclBody(inner, from, context);
+    }
+  );
+}
