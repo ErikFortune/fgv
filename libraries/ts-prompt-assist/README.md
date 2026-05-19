@@ -205,11 +205,31 @@ export function ChatPanel(): JSX.Element {
   return <ChatInner library={library} />;
 }
 
+// Consumer-side type union for the qualifier values driving the UI.
+// `PromptLibrary.create({ qualifiers: ['tone'] as const })` infers the
+// axis NAME (`'tone'`); the per-axis VALUE union is a consumer concern
+// at v0.1, so author it next to the wiring and reference it from both
+// the UI control and the resolve call.
+export type ChatTone = 'neutral' | 'formal';
+
 function ChatInner(props: { library: PromptLibrary<IPromptResponseBase, 'tone'> }): JSX.Element {
   // The narrow `qualifiers: { tone?: string }` shape comes from F3 +
   // F14 — the empty `{}` branch assigns thanks to the Partial widening
   // and a misspelled axis (`tonr`) fails at compile time.
-  return <div>Library ready.</div>;
+  const [tone, setTone] = useState<ChatTone>('neutral');
+  // 'neutral' is the unconditional base candidate (no `tone` key in
+  // the resolve context); 'formal' threads the value through to ts-res
+  // so the `conditions: { tone: 'formal' }` partial layers in.
+  const qualifiers = tone === 'neutral' ? {} : { tone };
+
+  // Use `qualifiers` in your resolve call:
+  //   props.library.resolve({ id: GREETING, chain: [SCOPE], qualifiers });
+  return (
+    <select value={tone} onChange={(e) => setTone(e.target.value as ChatTone)}>
+      <option value="neutral">Neutral</option>
+      <option value="formal">Formal</option>
+    </select>
+  );
 }
 ```
 
@@ -227,6 +247,14 @@ Three things this pattern earns you:
    tightening the resolve request's `qualifiers` shape. A pre-built
    `Qualifiers.QualifierCollector` doesn't expose its axes at the type
    level; pass `as const` decls when you want the typed benefit.
+4. **Consumer-side qualifier-value enum** — the library infers axis
+   NAMES from the decl-array, but the per-axis VALUE union (e.g.
+   `ChatTone = 'neutral' | 'formal'`) is a consumer concern at v0.1.
+   Author it next to the wiring module so the UI control, the resolve
+   call's `qualifiers`, and any seed-side `conditions: { tone: 'formal' }`
+   all draw from the same source of truth. (A future story may
+   parameterize the library on per-axis value unions; see F5 in the
+   round-2 pressure-test findings.)
 
 ---
 

@@ -163,20 +163,22 @@ The data-structure specifics in the design brief are **proposed** — phase A lo
 - `ts-prompt-assist-samples` — sample/test app demonstrating end-to-end usage (might be standalone OR merged into `ai-assist-image-generator`)
 - `ts-prompt-assist-editor-ui` — generic editor UX for prompt editing (decide whether to make consumer-shape-agnostic vs require consumer-side implementation; UX is complex enough that sharing would be valuable, but the consumer-specific surfaces may make full generalization impractical). See `docs/FUTURE.md`.
 
-### `ts-res-typed-conditions` 🟢
+### `ts-res-typed-conditions` ✅
 
-**Status:** 🟢 ready to commission (Phase B-1 next)
+**Status:** ✅ all three sub-phases complete; B-3 PR pending merge
 **Cluster:** `ts-prompt-assist-features` (in-cluster; integration branch `claude/ts-prompt-assist-features`)
 **Workflow shape:** three sub-phases inside one stream (B-1 type cascade → B-2 Converter teeth → B-3 ts-prompt-assist port). Each sub-phase its own PR; same stream substrate.
-**Substrate:** `.ai/tasks/active/ts-res-typed-conditions/{brief.md, state.md}`
-**Package surface:** `@fgv/ts-res` (Decl tree in `resource-json/`; Converter pipeline in `conditions/convert/`) + `@fgv/ts-prompt-assist` (B-3 port to drop local sibling types).
+**Substrate:** `.ai/tasks/active/ts-res-typed-conditions/{brief.md, state.md, phase-b1-result.md, phase-b2-result.md, phase-b3-result.md}`
+**Package surface:** `@fgv/ts-res` (Decl tree in `resource-json/`; Converter pipeline in `conditions/convert/`) + `@fgv/ts-prompt-assist` (B-3 consumer port; references ts-res typed siblings directly).
 **Out-of-scope:** `tools/ts-res-cli`, `libraries/ts-res-ui-components`, `libraries/ts-res/src/packlets/qualifiers/` (existing `QualifierCollector` surface unchanged).
 
 **Mission.** Make ts-res honor qualifier-name semantics at both type level (Decl tree cascade) and runtime level (Converter pipeline parameterization). Replaces closed PR #386's leaf-only parameterization with the complete co-designed shape. Closes round-2 finding F1 from ts-prompt-assist pressure-test by ownership at the right layer (ts-res owns qualifier-name concept; ts-prompt-assist references rather than re-implements).
 
+**Outcome.** B-1 (#391) shipped the type-level cascade. B-2 (#394) shipped 16 typed Converter siblings preserving the existing surface. B-3 ports `@fgv/ts-prompt-assist` to consume B-2's primitives directly: six container types parameterized on `TQualifierNames extends string = string`; `typedPromptFileConverter<T>(qc)` factory; `qualifierNameConverter?` threaded into `FileTreePromptStore.create` and `PromptStoreFixture.build`; F2 (`buildSimpleDescriptor`) and F6 (README React-wiring) round-2 absorbs carried forward from closed PR #385; F1 local sibling types from #385 NOT carried forward (B-2 ships the canonical primitive). Cast-pressure regression test verifies the convert-time teeth (typed Converter rejects typo'd axis name at YAML load time, including the runtime-cast escape-hatch path).
+
 **Decision-track input (binding):** `.ai/tasks/active/ts-prompt-assist/{ts-res-typed-conditions-design.md, ts-res-typed-conditions-evaluation.md}` (the latter includes the load-bearing addendum correcting the "Option B" framing — #386 was leaf-only with no plumbing through containers; the implementing agent must thread `TQualifierNames` through container types, not just the leaf).
 
-**Sequencing.** B-3 unblocks held PRs #385 (round-2 absorb — drops local sibling types) and #384 (sample app — rebases last). Stream exit precedes cluster-close prep.
+**Sequencing.** B-3 unblocks held PRs #385 (round-2 absorb — superseded by this stream's consolidation of F1 ownership at ts-res; F2 + F6 carried forward verbatim) and #384 (sample app — rebases last onto post-B-3 HEAD). Stream exit precedes cluster-close prep.
 
 ### `ai-assist-thinking-events` 🟡
 
