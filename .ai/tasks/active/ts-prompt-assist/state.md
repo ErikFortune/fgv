@@ -199,3 +199,19 @@ Phase B sub-phase PRs (incoming): B-0b → B-5.
 ## Resume protocol
 
 Phase A agent: read `brief.md` (binding contract) + `design-brief.md` (binding input — conceptual model is locked, data shapes are proposals) + this `state.md` to resume.
+
+---
+
+## 2026-05-19 update: B+C ts-res stream commissioned
+
+PR #386 (leaf-only parameterization of `ConditionSetDecl`) closed as superseded. Design discussion (PRs #387, #388, #389) merged to integration as substrate for a new in-cluster ts-res stream `ts-res-typed-conditions` at `.ai/tasks/active/ts-res-typed-conditions/`.
+
+**Three sub-phases:**
+- B-1: Decl-tree cascade (`ts-res`, type-only, includes `getKeyFromLooseDecl` latent-bug fix carried forward from #386).
+- B-2: Converter parameterization (`ts-res`, runtime teeth; opt-in via collector-derived literal set).
+- B-3: ts-prompt-assist port (drop local `ITypedConditionSetDecl` / `ITypedPromptCandidateRecord`; reference ts-res parameterized types directly).
+
+**Cluster reshape:** B+C absorbed in-cluster per Erik's "B+C cascades into deliverables for this cluster so deferring it just creates debt" framing. Cluster-close prep deferred until B-3 lands. Held cluster PRs:
+
+- #385 (round-2 absorb F1+F2+F6): holds for B-3 port; F1 ultimately resolved via ts-res ownership, not the local-types accommodation in #385.
+- #384 (sample app + round-2 findings): rebases onto post-B-3 HEAD; lands last.
