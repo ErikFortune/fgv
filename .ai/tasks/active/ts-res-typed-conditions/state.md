@@ -75,7 +75,7 @@
 | Substrate prep | #390 | merged |
 | B-1 | #391 | merged (`c688292d3`) |
 | B-2 | #394 | merged (`f32ba55f`) |
-| B-3 | TBD (PR pending after this commit) | implementation complete on `claude/ts-res-typed-conditions-b3-MXEfo`; result + change-file + api.md regen ready |
+| B-3 | #395 | open (awaiting review) |
 
 ---
 
