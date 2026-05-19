@@ -104,6 +104,29 @@ goes through `PromptStoreFixture.build` separately from
 generic on the call site would thread the param through. Either route
 gets the win.
 
+### ✅ Resolved 2026-05-19 — `ts-res-typed-conditions` stream + sample-app demo
+
+Closed at the right layer. `@fgv/ts-res` now publishes parameterized
+Decl types (B-1, PR #391) and typed Converter siblings (B-2, PR #394);
+`@fgv/ts-prompt-assist` consumes the primitives directly (B-3, PR #395)
+by parameterizing `IPromptCandidateRecord` / `IStoredPromptRecord` /
+`IPromptStoreFixtureSeed` / `IFileTreePromptStoreCreateParams` on
+`TQualifierNames extends string = string` and threading an optional
+`qualifierNameConverter: Converter<TQualifierNames>` through
+`FileTreePromptStore.create` and `PromptStoreFixture.build`. When the
+Converter is supplied, the YAML loader rejects typo'd axis names at
+convert time via `ResourceJson.Convert.typedConditionSetDecl(qc)` — so
+even a runtime-cast escape-hatch (`as unknown as IPromptCandidateRecord<'tone'>`)
+fails at `store.get()` time.
+
+The sample app's `samples/ai-image-gen-sample/src/promptLibrary.ts`
+now demonstrates the canonical pattern: a single `const qualifierNames = ['tone'] as const`
+constant threads through (1) `qualifiers: qualifierNames` on
+`PromptLibrary.create`, (2) `IPromptStoreFixtureSeed<QualifierName>`
+on the seed annotation, and (3) `qualifierNameConverter` on the seed
+itself. A typo'd `tonr` becomes a build-time error in the sample's
+own TS build.
+
 ---
 
 ## F2. `IPromptStoreFixtureSeed.records[].descriptor.surface` and `output` and `slots` are all required for the trivial chat case
@@ -161,6 +184,18 @@ A complementary option: ship a `PromptDescriptor.simple({ title, body, surface? 
 helper that returns a fully-shaped descriptor for the trivial case —
 this keeps `output` explicit at the call site while still cutting the
 ceremony.
+
+### ✅ Resolved 2026-05-19 — `buildSimpleDescriptor` helper (B-3, PR #395)
+
+`@fgv/ts-prompt-assist` now exports `buildSimpleDescriptor({ id, title, surface?, description? })`
+which returns a fully-shaped `IPromptDescriptor` for the free-text
+chat case: `schemaVersion: '1'`, `surface: 'chat'` (overridable),
+`slots: []`, `output: { kind: 'free-text' }`. The complementary-option
+path from the original suggestion — deliberately limited to free-text
+output, keeping `output.converterId` explicit at the call site for
+JSON-output prompts (per the review caveat above). On-disk YAML
+loaders keep their existing strictness; this helper is a TS-authoring
+convenience.
 
 ---
 
@@ -286,6 +321,16 @@ consumer-side enum per qualifier axis to drive the UI."
 a "tone select" snippet that shows the consumer-side enum + the natural
 binding to the qualifier axis. Five extra lines of code, head off the
 "where does this go" question.
+
+### ✅ Resolved 2026-05-19 — README React-wiring section extended (B-3, PR #395)
+
+The README's "Wiring into a React app" section now includes the
+`ChatTone = 'neutral' | 'formal'` consumer enum, a `<select>` bound
+to it, and the natural `tone === 'neutral' ? {} : { tone }`
+qualifier-context wire-through. A fourth list-item under the
+section spells out the v0.1 convention that axis NAMES are
+library-inferred while per-axis VALUE unions are a consumer concern,
+with a forward-reference to F5. Doc gap closed.
 
 ---
 

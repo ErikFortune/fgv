@@ -10,7 +10,7 @@ import {
   PromptLibrary,
   PromptStoreFixture
 } from '@fgv/ts-prompt-assist';
-import { Result, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Result, succeed } from '@fgv/ts-utils';
 
 // ---------------------------------------------------------------------------
 // Module-scope branded ids (centralised so the `.orThrow()` verbosity
@@ -21,10 +21,30 @@ export const SCOPE = Convert.scopeKey.convert('global').orThrow();
 export const CHAT_SYSTEM_PROMPT = Convert.promptId.convert('chat-system-prompt').orThrow();
 
 // ---------------------------------------------------------------------------
+// Single source of truth for the qualifier-axis NAMES this sample uses.
+// Threads through three places (B-3):
+//   1. `qualifiers: qualifierNames` on `PromptLibrary.create` — narrows the
+//      resolve-request `qualifiers` shape (F3).
+//   2. `IPromptStoreFixtureSeed<QualifierName>` on the seed — narrows the
+//      candidate `conditions` keys at compile time (a typo'd `tonr` is a
+//      build-time error here in the sample).
+//   3. `qualifierNameConverter` on the seed — narrows the YAML loader at
+//      convert time (a runtime-cast escape-hatch typo still fails at load
+//      time).
+// ---------------------------------------------------------------------------
+
+const qualifierNames = ['tone'] as const;
+export type QualifierName = (typeof qualifierNames)[number];
+
+const qualifierNameConverter: Converter<QualifierName> = Converters.enumeratedValue<QualifierName>([
+  ...qualifierNames
+]);
+
+// ---------------------------------------------------------------------------
 // Authored prompt — base + a `tone: 'formal'` partial.
 // ---------------------------------------------------------------------------
 
-const seed: IPromptStoreFixtureSeed = {
+const seed: IPromptStoreFixtureSeed<QualifierName> = {
   records: [
     {
       scope: SCOPE,
@@ -44,22 +64,27 @@ const seed: IPromptStoreFixtureSeed = {
           body: 'You are a helpful assistant. Answer the user clearly and concisely.'
         },
         {
+          // B-3: `tone` is narrowed against `QualifierName`. A typo'd
+          // axis name (e.g. `tonr`) would fail at compile time on this
+          // seed type AND at convert time via the `qualifierNameConverter`
+          // below — closing the cast-pressure failure mode end-to-end.
           conditions: { tone: 'formal' },
           isPartial: true,
           body: 'When responding, use a formal register: complete sentences, no contractions, and a measured, professional tone.'
         }
       ]
     }
-  ]
+  ],
+  qualifierNameConverter
 };
 
 // ---------------------------------------------------------------------------
-// Typed library handle. `qualifiers: ['tone'] as const` infers
+// Typed library handle. `qualifiers: qualifierNames` infers
 // `TQualifierNames = 'tone'`, so `resolve({ qualifiers: { tonr: ... } })`
 // fails at compile time (F3).
 // ---------------------------------------------------------------------------
 
-export type ChatPromptLibrary = PromptLibrary<IPromptResponseBase, 'tone'>;
+export type ChatPromptLibrary = PromptLibrary<IPromptResponseBase, QualifierName>;
 
 export async function createPromptLibrary(): Promise<Result<ChatPromptLibrary>> {
   const storeResult = await PromptStoreFixture.build(seed);
@@ -68,7 +93,7 @@ export async function createPromptLibrary(): Promise<Result<ChatPromptLibrary>> 
   }
   return PromptLibrary.create({
     store: storeResult.value,
-    qualifiers: ['tone'] as const
+    qualifiers: qualifierNames
   });
 }
 
