@@ -83,8 +83,8 @@ _bindingDispatch.resolve = (from: unknown): Result<SlotBinding> => slotBindingCo
 export const promptSubstitutionsConverter: Converter<PromptSubstitutions> = substitutionsConverter;
 
 /**
- * Lifts caller-supplied substitution entries (bare strings or `SlotBinding`s)
- * into a uniform `ReadonlyMap<SlotName, SlotBinding>`. Bare strings expand to
+ * Normalizes a single caller-supplied substitution entry (bare string or
+ * `SlotBinding`) into a `SlotBinding`. Bare strings expand to
  * `\{ kind: 'literal', value, directive: 'prose' \}` per design §3.6.
  *
  * @public
