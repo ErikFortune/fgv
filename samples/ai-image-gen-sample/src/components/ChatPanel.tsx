@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 
 import { AiAssist } from '@fgv/ts-extras';
 
+import { chatTones, chatToneConverter } from '../promptLibrary';
 import type { ChatTone } from '../promptLibrary';
+
+function formatToneLabel(tone: ChatTone): string {
+  return tone.charAt(0).toUpperCase() + tone.slice(1);
+}
 
 export interface IChatTurn {
   readonly role: 'user' | 'assistant';
@@ -183,12 +188,20 @@ export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
             <span>Tone</span>
             <select
               value={tone}
-              onChange={(e) => onToneChange(e.target.value as ChatTone)}
+              // Narrow `e.target.value: string` back into `ChatTone` via the
+              // exported Converter; falls back to the current tone if the
+              // DOM string isn't a recognised option (defensive — the
+              // `<option>` set is rendered from the same `chatTones`
+              // array, so a mismatch is unreachable in normal flow).
+              onChange={(e) => onToneChange(chatToneConverter.convert(e.target.value).orDefault(tone))}
               disabled={isWorking}
               className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
-              <option value="neutral">Neutral</option>
-              <option value="formal">Formal</option>
+              {chatTones.map((t) => (
+                <option key={t} value={t}>
+                  {formatToneLabel(t)}
+                </option>
+              ))}
             </select>
           </label>
 

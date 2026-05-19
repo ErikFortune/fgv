@@ -3,14 +3,10 @@
 // `tone` qualifier-conditional candidate, resolved at send time via
 // `PromptLibrary.resolve`.
 
-import {
-  Convert,
-  IPromptResponseBase,
-  IPromptStoreFixtureSeed,
-  PromptLibrary,
-  PromptStoreFixture
-} from '@fgv/ts-prompt-assist';
-import { Converter, Converters, Result, succeed } from '@fgv/ts-utils';
+import { Convert, PromptLibrary, PromptStoreFixture } from '@fgv/ts-prompt-assist';
+import type { IPromptResponseBase, IPromptStoreFixtureSeed } from '@fgv/ts-prompt-assist';
+import { Converters, succeed } from '@fgv/ts-utils';
+import type { Converter, Result } from '@fgv/ts-utils';
 
 // ---------------------------------------------------------------------------
 // Module-scope branded ids (centralised so the `.orThrow()` verbosity
@@ -97,7 +93,17 @@ export async function createPromptLibrary(): Promise<Result<ChatPromptLibrary>> 
   });
 }
 
-export type ChatTone = 'neutral' | 'formal';
+// ---------------------------------------------------------------------------
+// Consumer-side qualifier-VALUE enum (per the README's React-wiring
+// section, list-item 4). The const array is the single source of truth;
+// `ChatTone` is derived from it, and `chatToneConverter` narrows
+// arbitrary DOM strings (e.g. a `<select>` `value`) back into the
+// branded union without unchecked casts.
+// ---------------------------------------------------------------------------
+
+export const chatTones = ['neutral', 'formal'] as const;
+export type ChatTone = (typeof chatTones)[number];
+export const chatToneConverter: Converter<ChatTone> = Converters.enumeratedValue<ChatTone>([...chatTones]);
 
 /**
  * Resolve the chat system prompt under the supplied tone. Returns the

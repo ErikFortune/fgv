@@ -8,7 +8,8 @@ import { PromptPanel } from './components/PromptPanel';
 import { ImageResults } from './components/ImageResults';
 import { ChatPanel, type IChatTurn } from './components/ChatPanel';
 import { InMemoryKeyStore } from './inMemoryKeyStore';
-import { ChatPromptLibrary, ChatTone, createPromptLibrary, resolveChatSystemPrompt } from './promptLibrary';
+import { createPromptLibrary, resolveChatSystemPrompt } from './promptLibrary';
+import type { ChatPromptLibrary, ChatTone } from './promptLibrary';
 
 type Mode = 'image' | 'chat';
 
