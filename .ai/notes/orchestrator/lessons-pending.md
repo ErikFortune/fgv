@@ -357,6 +357,106 @@ Both critiques landed because Erik specifically asked "where do we enforce this?
 
 ---
 
+### L26. Squash-vs-merge-commit policy should weight cluster substrate ratio
+
+**Observed:** The orchestrator role doc recommends merge-commit for cluster→release promotion ("preserves audit trail"). For `ts-prompt-assist-features`, the cluster→release promotion (#397) was squashed by Erik because the constituent-commit log was ~54% intermediate substrate (7 of 13 commits: option-space brief, evaluations, sub-briefs, substrate-prep, cluster-close-prep — none of which contained code). A merge-commit would have left a `git log libraries/ts-prompt-assist/` reader scrolling past brief/state/design-doc commits to find feature shape.
+
+The orchestrator-doc convention was probably calibrated for clusters where constituent commits skew substantive-code-heavy. Design-triage-cycle clusters with multi-round decision-tracks break that assumption.
+
+**Rule:** Promotion-PR merge-strategy choice should weight the substantive-code-vs-substrate ratio of constituent commits, not default uniformly to merge-commit. Loose rule of thumb: if substrate commits are >40% of the cluster, squash beats merge-commit on `git log` legibility. The audit trail is preserved in three other places (constituent PRs on GitHub; `state.md` history rows; the cluster `README.md` substrate) — `git log` doesn't need to be a third copy with noisier signal.
+
+**Codification candidate:** Add to `.claude/agents/orchestrator.md` § "`release` → `main` promotion" (the merge-commit guidance) and § "Post-merge bookkeeping" — name the substrate-ratio weighting explicitly. Possibly a per-cluster decision in the cluster-close prep section.
+
+**Reference:** PR #397 (`ts-prompt-assist-features` cluster→release promotion); 13 constituent commits, 7 pure substrate. Erik's framing 2026-05-19: "we have a ton of noise from intermediate artifacts."
+
+---
+
+### L27. Decision-track doc graduation needs a tighter "named downstream consumer" criterion
+
+**Observed:** During `ts-res-typed-conditions` design discussion, three decision-track docs (PRs #387 option-space brief, #388 first evaluation, #389 stress-test addendum) graduated to integration as substrate input "in case the implementing agent wanted to read the design rationale." None of the three was load-bearing for any phase brief — the implementing agents read brief.md + state.md + the design-notes (#393 lock), not the deliberation that produced the lock. The three docs contributed three of the seven substrate-commits driving the L26 squash-vs-merge-commit noise.
+
+Per `.ai/conventions/workflow/doc-graduation.md`: "Only docs with a named downstream consumer requiring a stable URL graduate to release (or to a cluster integration branch)." The orchestrator-side read of "named downstream consumer" was too soft: "implementing agent might want context" graduates the doc. The stricter read should be: implementing agent *needs* the doc to do the work (decision lock; not deliberation history).
+
+**Rule:** Decision-track deliberation docs (option-space briefs, evaluations, addenda — the "we considered A vs B vs C" artifacts) stay on `claude/orchestrator-session` by default. Only the **decision-lock** (the artifact that names the chosen path and binds the implementing agent) graduates as substrate. Implementing agent's brief on integration can include a one-line `decision rationale: see <orchestrator-session pointer>` pointer — non-gating, available if the agent wants context, doesn't add to integration's commit log.
+
+Two viable mitigations when the decision-track is short enough:
+- **Inline-quote** the key decision (option chosen + 1-2 sentence rationale) directly in the implementing PR's body. PR descriptions are GitHub-preserved forever; no file needed.
+- **Quote in state.md** the decision row. State.md graduates anyway; a sentence of rationale there is cheap.
+
+**Codification candidate:** Tighten `.ai/conventions/workflow/doc-graduation.md` § "Per-stream prep branch mechanic" to specify decision-tracks-stay-on-session-by-default. Update the orchestrator agent prompt § "Design triage cycle" to call out the deliberation-vs-lock distinction at phase B (the brief drafting moment).
+
+**Reference:** PRs #387, #388, #389 in `ts-prompt-assist-features` cluster. Erik's framing 2026-05-19: "we've been trying to tweak our processes to move documents to implementing branches and then squash them in, to reduce noise. It helps some but it isn't always straightforward to do." Sibling/companion to L26.
+
+---
+
+### L28. Fresh-agent continuity pays off across cluster sub-phases when conventions need to carry
+
+**Observed:** After `ts-prompt-assist` Phase B's mid-session retire (PR #359 / L21), the recovery model defaulted to "one agent per sub-phase, fresh-start" to bound context drift. For `ts-res-typed-conditions`, that default got challenged: a single fresh agent (in Erik's Claude Code session) shipped B-2 (#394), B-3 (#395), and the #384 sample-app rebase+update — three consecutive clean PRs without re-onboarding. Each subsequent PR carried the conventions established earlier in the same session (drift-protection `// keep in sync with X` markers, result.md discipline, scope-decision rationale embedded in PR bodies, fgv-conventions reflex).
+
+When a separate "fix-up" run was needed (B-1 review-feedback absorption), it was a new agent that had to be re-briefed on the existing parameterization decisions. The fresh agent missed an artifact-creation discipline (no result.md for the round); the orchestrator papered over by editing files directly, which then surfaced as a trust-loss with the orchestrator's own implementation hat. The continuity gap had a real cost.
+
+**Rule:** Within a single cluster's substantive implementation arc (multiple sub-phases, same domain surface), **reuse the same agent** when it has shipped clean PRs and the next sub-phase consumes the surface it just shipped. Re-onboarding costs more than the marginal context window. The previous "spawn fresh per phase" default was the right response to L21's mid-session-drift failure mode — it does NOT generalize to "always spawn fresh."
+
+When to switch agents:
+- Mid-session context drift becomes visible (signs: review-round count climbing, fix-interaction shape, agent re-discovering things established earlier).
+- The work shape shifts substantially (e.g. from library code to docs-only, or from one library to another). Same agent may carry irrelevant context.
+- After a clean retirement of work (agent's last commission was a complete shipped PR, no in-flight context to preserve).
+
+When to reuse:
+- Same domain surface, same conventions, sub-phase composes on the prior phase's surface. The agent's just-shipped output IS its best context for the next phase.
+- The agent has demonstrated quality in the cluster's review cycles already.
+
+**Codification candidate:** Add to `.claude/agents/orchestrator.md` § "Commissioning Task subagents" a short decision tree on reuse-vs-fresh. Reference L21 (when fresh-start is the right call) and this lesson (when reuse is). Both are valid; the choice is contextual.
+
+**Reference:** `ts-res-typed-conditions` sub-stream — same agent shipped #393, #394, #395, #384 cleanly. Companion to L21 (the originating mid-run-drift observation).
+
+---
+
+### L29. Cascade-completeness framing for type-cascade briefs needs to be inclusive, not enumerative
+
+**Observed:** B-1's brief listed 9 container interfaces to parameterize on `TQualifierNames`. The implementing agent threaded the parameter through all 9, but Copilot review on PR #391 caught a half-cascade on `IResourceTreeRootDecl.resources/children` — `IResourceTreeRootDecl` itself was parameterized, but its `IResourceTreeChildNodeDecl` child reference still defaulted to `string`. Same failure mode as the original PR #386 that birthed the sub-stream: type parameter declared at one node but not threaded into the field it gates.
+
+The brief's framing was "the listed 9 interfaces" — enumerative. A more inclusive framing would have been "the 9 listed interfaces AND any type-level reference that, if not threaded, lets the narrow evaporate mid-pipeline." The cascade boundary isn't "these N nodes" — it's "everything that composes."
+
+**Rule:** Type-cascade briefs should frame the in-scope surface as "the listed container types AND any type-level references that must thread the parameter for the narrow to flow end-to-end. Verify by tracing what a consumer's entry-point call types out to; if the narrow evaporates mid-pipeline, fix the link that lost it." The brief lists examples; the implementing agent traces actual flow.
+
+**Codification candidate:** Brief-template addition for any type-cascade work. Also worth a `/type-safe-validation` skill note: "When introducing a type parameter across multiple interfaces, the implementing pass MUST trace the parameter from a consumer entry point to every leaf in the data structure; a parameter that evaporates mid-trace is an incomplete cascade."
+
+**Reference:** PR #391 Round 1 Copilot finding (`IResourceTreeRootDecl.resources/children`). Same shape of bug PR #386 had at a different node — recurrence is the codification trigger.
+
+---
+
+### L30. Latent-bug bundling needs explicit PR-description disclosure from the first commit
+
+**Observed:** B-1's PR (#391) framed itself as "type-only work; no runtime behavior change." During review feedback absorption, two latent runtime fixes got bundled into the cascade work: (a) `ConditionSet.getKeyFromLooseDecl` Partial-aware undefined-skip; (b) type-guard `'id' in decl && typeof decl.id === 'string'` runtime soundness. Round 2 Copilot caught the type-guard runtime change and flagged it as a meta-finding: "you said type-only, but this is a runtime behavior change — either disclose explicitly or revert." Required updating the PR description to a "What changed — type-level" / "What changed — runtime (bundled latent-bug fixes)" split.
+
+The cost: an extra review round whose entire finding-set was about description framing, not code. Avoidable.
+
+**Rule:** When bundling latent-bug fixes into a feature PR (per the L20 ship-then-tidy mechanic), the PR description should disclose the runtime fixes explicitly in a dedicated section from the first commit — not added after a reviewer asks. "Type-only work" framing is honest only when the diff genuinely contains no runtime changes; if anything runtime-affecting gets bundled, the framing must shift.
+
+**Codification candidate:** Add to `.ai/instructions/CODE_REVIEW_CHECKLIST.md` Priority 2 (Major / Should Fix): "PR description accurately frames the change scope (type-only vs runtime-affecting; additive vs breaking). Bundled latent-bug fixes are disclosed in a dedicated section."
+
+**Reference:** PR #391 Round 2 Copilot findings (`isLooseResourceCandidateDecl` / `isLooseResourceDecl` typo'd-id soundness; meta-finding on runtime-change framing).
+
+---
+
+### L31. Copilot is a load-bearing review layer for cluster→release promotion PRs
+
+**Observed:** Across the `ts-prompt-assist-features` cluster, Copilot's automated reviews caught substantive structural findings that the implementing agents missed:
+- **PR #391:** half-cascade on `IResourceTreeRootDecl` — same failure mode as #386 (the bug the stream existed to fix).
+- **PR #391:** type-guard `'id' in decl` runtime soundness — pre-existing latent bug that the B-1 work touched (and was therefore in-scope to fix).
+- **PR #397** (cluster→release promotion): `MustacheTemplateCache.create` cap-validation gap on non-integer values; TSDoc/impl drift on `normalizeSubstitutionEntry`.
+
+The two #397 findings are the load-bearing observation: a promotion PR's per-constituent reviews don't catch unified-delta inconsistencies. Copilot's pass on the unified delta DOES catch them. That's the catch-pattern the orchestrator role doc names for the `release` → `main` sibling-sweep — Copilot is doing the same kind of work on the cluster → release promotion.
+
+**Rule:** Promotion-PR review attention should treat Copilot's pass as a load-bearing layer, not rubber-stamp. Allocate real review-cycle time for it before merging. Per L26's diminishing-returns trajectory observation, ~1-2 rounds is the sweet spot — beyond that the yield curves down.
+
+**Codification candidate:** Add to `.claude/agents/orchestrator.md` § "`release` → `main` promotion" (and the cluster → release equivalent) — explicit line: "Wait for Copilot's automated review pass before merging. The yield from a unified-delta pass is meaningfully different from per-PR reviews on the way in."
+
+**Reference:** PR #391 rounds 1-3 + PR #397's two findings. Sibling/companion to L25 (typed-but-no-runtime-teeth as a critique pattern Copilot has demonstrably caught).
+
+---
+
 ## Sweep history
 
 *(no sweeps yet — this file is being initialized at 2026-05-11)*
