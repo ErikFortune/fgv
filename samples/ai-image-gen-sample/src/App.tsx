@@ -204,8 +204,6 @@ export function App(): React.JSX.Element {
   ): Promise<void> => {
     setChatError(undefined);
     setActiveToolEvents([]);
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
 
     const userTurn: IChatTurn = { role: 'user', content: text };
     const assistantTurn: IChatTurn = { role: 'assistant', content: '', isStreaming: true };
@@ -222,6 +220,13 @@ export function App(): React.JSX.Element {
       setChatTurns((prev) => prev.slice(0, -2));
       return;
     }
+
+    // Create the AbortController only once we're committed to the
+    // network call — early-return paths above (library not ready,
+    // system-prompt resolve failure) would otherwise leave a stale
+    // controller in the ref and a no-op `onAbort` button enabled.
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     // Prior turns go into messagesBefore so they're sent between the
     // resolved system prompt and the new user message.
@@ -394,6 +399,18 @@ export function App(): React.JSX.Element {
             provider={provider}
             isWorking={isWorking}
             canSubmit={currentKey.length > 0 && promptLibrary !== null}
+            // Order matches the user's mental model: the API-key gate
+            // is the first thing they fill in, so name that one first;
+            // once it's set, surface the prompt-library state.
+            disabledReason={
+              currentKey.length === 0
+                ? 'Enter an API key to enable chat.'
+                : promptLibraryError !== undefined
+                ? `Prompt library failed to load: ${promptLibraryError}`
+                : promptLibrary === null
+                ? 'Prompt library is still initializing…'
+                : undefined
+            }
             turns={chatTurns}
             error={chatError ?? promptLibraryError}
             activeToolEvents={activeToolEvents}

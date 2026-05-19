@@ -19,6 +19,13 @@ export interface IChatPanelProps {
   readonly provider: AiAssist.AiProviderId;
   readonly isWorking: boolean;
   readonly canSubmit: boolean;
+  /**
+   * Optional reason shown when `canSubmit` is false. Lets the parent
+   * differentiate between "no API key" and "prompt library not ready"
+   * (or any other gating condition the parent owns). Defaults to
+   * `'Enter an API key to enable chat.'` when omitted.
+   */
+  readonly disabledReason?: string;
   readonly turns: ReadonlyArray<IChatTurn>;
   readonly error: string | undefined;
   readonly activeToolEvents: ReadonlyArray<string>;
@@ -37,6 +44,7 @@ export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
     provider,
     isWorking,
     canSubmit,
+    disabledReason,
     turns,
     error,
     activeToolEvents,
@@ -46,6 +54,7 @@ export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
     onAbort,
     onClear
   } = props;
+  const disabledMessage = disabledReason ?? 'Enter an API key to enable chat.';
 
   const [input, setInput] = useState('');
   const [useWebSearch, setUseWebSearch] = useState(false);
@@ -205,7 +214,7 @@ export function ChatPanel(props: IChatPanelProps): React.JSX.Element {
             </select>
           </label>
 
-          {!canSubmit && <span className="text-sm text-slate-500">Enter an API key to enable chat.</span>}
+          {!canSubmit && <span className="text-sm text-slate-500">{disabledMessage}</span>}
         </div>
       </form>
     </section>
