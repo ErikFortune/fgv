@@ -859,6 +859,50 @@ describe('Result module', () => {
         expect(new Failure('oops').toString()).toBe('oops');
       });
     });
+
+    describe('withType method', () => {
+      test('returns a failure', () => {
+        const original = fail<string>('oops');
+        const recast = original.withType<number>();
+        expect(recast.isFailure()).toBe(true);
+      });
+
+      test('preserves the original error message', () => {
+        const original = fail<string>('something went wrong');
+        const recast = original.withType<number>();
+        expect(recast).toFailWith('something went wrong');
+      });
+
+      test('returns the same Failure instance (no allocation)', () => {
+        const original = fail<string>('oops');
+        const recast = original.withType<number>();
+        expect(recast).toBe(original as unknown as Failure<number>);
+      });
+
+      test('supports the canonical early-return pattern with heterogeneous success types', () => {
+        function loadNumber(input: string): Result<number> {
+          if (input === 'bad') {
+            return fail('not a number');
+          }
+          return succeed(Number(input));
+        }
+
+        function describeNumber(input: string): Result<string> {
+          const numberResult = loadNumber(input);
+          if (numberResult.isFailure()) {
+            // The point of the test: this line must compile without
+            // recourse to `fail<string>(numberResult.message)` even though
+            // the inner Result's success type (number) differs from the
+            // outer return type (string).
+            return numberResult.withType<string>();
+          }
+          return succeed(`got ${numberResult.value}`);
+        }
+
+        expect(describeNumber('42')).toSucceedWith('got 42');
+        expect(describeNumber('bad')).toFailWith('not a number');
+      });
+    });
   });
 
   describe('detailedSuccess class', () => {

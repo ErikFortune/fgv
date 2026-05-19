@@ -25,6 +25,7 @@ export {
   IMissingVariableDetail,
   IMustacheTemplateOptions,
   IVariableRef,
+  MustacheEscapeStrategy,
   MustacheTokenType
 } from './interfaces';
 

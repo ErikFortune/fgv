@@ -1375,6 +1375,7 @@ function importPublicKeyFromMultibaseSpki(encoded: string, algorithm: KeyPairAlg
 
 // @public
 interface IMustacheTemplateOptions {
+    readonly escape?: MustacheEscapeStrategy;
     readonly includeComments?: boolean;
     readonly includePartials?: boolean;
     readonly tags?: readonly [string, string];
@@ -1884,11 +1885,15 @@ declare namespace Mustache {
         IMissingVariableDetail,
         IMustacheTemplateOptions,
         IVariableRef,
+        MustacheEscapeStrategy,
         MustacheTokenType,
         MustacheTemplate
     }
 }
 export { Mustache }
+
+// @public
+type MustacheEscapeStrategy = 'html' | 'none' | ((value: string) => string);
 
 // @public
 class MustacheTemplate {

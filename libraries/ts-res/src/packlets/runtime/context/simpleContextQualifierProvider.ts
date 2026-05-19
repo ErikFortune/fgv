@@ -43,8 +43,15 @@ export interface ISimpleContextQualifierProviderCreateParams {
 
   /**
    * Optional record of initial qualifier name-value pairs to populate the provider.
+   *
+   * @remarks
+   * Typed as `Readonly<Partial<Record<string, QualifierContextValue>>>` so a
+   * caller can naturally express conditional context construction, e.g.
+   * `tone === 'formal' ? { tone: 'formal' } : {}`. Entries whose value is
+   * `undefined` are skipped on load - semantically equivalent to omitting
+   * the key, which is how the candidate selector treats a missing key.
    */
-  qualifierValues?: Record<string, QualifierContextValue>;
+  qualifierValues?: Readonly<Partial<Record<string, QualifierContextValue>>>;
 }
 
 /**
@@ -83,6 +90,9 @@ export class SimpleContextQualifierProvider
 
     if (params.qualifierValues) {
       for (const [name, value] of Object.entries(params.qualifierValues)) {
+        if (value === undefined) {
+          continue;
+        }
         const qualifierName = Validate.toQualifierName(name).orThrow();
         this._qualifierValues.set(qualifierName, value);
       }
