@@ -294,6 +294,69 @@ For the surface-tidy round commission, the brief was amended with an explicit "W
 
 ---
 
+### L22. Briefs need an fgv-conventions pre-load to prevent agent retract-on-discovery
+
+**Observed:** The ts-prompt-assist round-1 pressure-test agent surfaced three findings that they retracted on review (F5 "three-layer peel", F10 "qualifiers required", F11 "Logging not re-exported"). Each retraction traced to "didn't know fgv conventions" rather than actual library gaps. F11 was explicit: *"the fgv convention is the opposite of what I suggested — packages do not re-export from sibling packages."* Round-2's brief carried an explicit fgv-conventions pre-load section listing the top recurring conventions (no sibling re-exports, `Converters.oneOf` over `typeof` discrimination, `.thenOnSuccess`/`.thenOnFailure` for async-chain ergonomics, branded-id pattern, etc.); round-2 had only two retractions, both self-caught on review with no orchestrator prodding.
+
+**Rule:** Pressure-test briefs (and any cold-start agent commission on an active-development surface) should include a fgv-conventions pre-load that names the conventions a typical cold-start agent doesn't intuit. The pre-load should be specific enough that the agent's "is this friction or my unfamiliarity?" filter has concrete pattern matches.
+
+**Codification status:** Confirmed working from the round-2 experimental design (L18's "docs accurately describe shipped behavior" was the other lesson the cluster surfaced). Worth codifying into the brief-template via a "fgv-conventions pre-load" section recipe. Currently lives only as a section in the ts-prompt-assist round-2 commission prompt; not yet generalized to the orchestrator agent prompt or a convention doc.
+
+**Reference:** ts-prompt-assist cluster, round-1 vs round-2 pressure-test commissions; `.ai/tasks/active/ts-prompt-assist/pressure-test-findings-round-2.md` retractions (F4 + F7) self-caught without prompting.
+
+---
+
+### L23. Concurrent Task subagents need `isolation: "worktree"` or they collide
+
+**Observed:** During the ts-prompt-assist cluster, PRs A (ts-utils withType) and B (ts-res qualifier ergonomics) were launched as concurrent Task subagents using `subagent_type: "general-purpose"` without `isolation`. PR A's agent reported mid-flight worktree collision with PR B's agent — they were ping-ponging the working-tree branch via `git checkout`, and PR A's agent recovered its own work via auto-stash but discarded what it believed was stale ts-res content (which was actually PR B's in-flight work). PR B's branch state survived only because PR B was still running and rebuilt the work after PR A pushed. Lucky outcome; explicitly noted.
+
+Subsequent Task subagent commissions (PR C, the absorb agent, etc.) used `isolation: "worktree"` and had no further collisions.
+
+**Rule:** Concurrent Task subagent commissions MUST use `isolation: "worktree"` to prevent working-tree collisions. Single-agent commissions can omit isolation safely, but for any orchestration pattern that launches multiple agents in parallel, isolation is load-bearing.
+
+**Codification candidate:** Orchestrator-agent prompt addition under § "Commissioning Task subagents": default to `isolation: "worktree"` for safety; only omit when single-commission and the orchestrator is not doing other work concurrently. Also worth a `/workstream-brief` skill note if it ever returns brief recipes that include Task-subagent launch lines.
+
+**Reference:** ts-prompt-assist cluster PRs A (#375) + B (#376) launch interleaving (orchestrator session 2026-05-17).
+
+---
+
+### L24. Subagent agent-discovery scope and subagent tool inventory are independent gates
+
+**Observed:** Across multiple ts-prompt-assist cluster commissions, Task subagents reported `code-reviewer` unavailable despite the agent being defined in the repo's `.claude/agents/` tree. Root cause investigation showed the agent lived under `.claude/agents/workflow-only/`, which was outside subagent agent-discovery scope. Fix landed as #381 (promote code-reviewer to top-level).
+
+After #381 + #383 (merge release into integration to absorb the discovery fix on the cluster's working branch), a follow-on subagent commission STILL reported code-reviewer unavailable. Different root cause: the general-purpose subagent's tool inventory doesn't include the `Agent` tool, so it cannot spawn other subagents (code-reviewer included), regardless of where code-reviewer lives in the discovery tree.
+
+The two gates are independent:
+1. **Discovery** — does the spawning agent know `code-reviewer` exists? Fixed by file location.
+2. **Tool inventory** — does the spawning agent have the `Agent` tool to actually invoke another subagent? Determined by the spawning agent's own definition / harness.
+
+#381 fixed gate (1) but gate (2) remains for any subagent commissioned via the `Agent` tool with `subagent_type: "general-purpose"`. Practical implication: Guardrail #6 ("code-reviewer mandatory before opening a PR") cannot be enforced from inside a `general-purpose` Task subagent; the inline-CODE_REVIEW_CHECKLIST.md self-review pattern is the documented fallback for that path.
+
+**Rule:** Briefs commissioning work via `general-purpose` Task subagents should explicitly call out the inline-checklist self-review fallback for Guardrail #6 rather than mandating code-reviewer invocation. Brief language should be "invoke code-reviewer if available; otherwise apply inline CODE_REVIEW_CHECKLIST.md self-review and flag the substitution."
+
+**Codification candidate:** Orchestrator-agent prompt addition under § "Commissioning Task subagents": clarify that Guardrail #6 substitution is expected for `general-purpose` commissions. Possibly request a different subagent_type (e.g. task-master) for work where real code-reviewer invocation is load-bearing — though task-master adds orchestration overhead that's wasteful for focused single-PR commissions.
+
+**Reference:** Multiple ts-prompt-assist cluster Task subagent reports of "code-reviewer agent not available in this environment" (cluster commissions through 2026-05-18); #381 fix only addressed discovery, not invocation.
+
+---
+
+### L25. "Typed but no runtime teeth" is a real critique pattern worth catching at review time
+
+**Observed:** PR #386 (parameterize ts-res's `ConditionSetDecl` family on `TQualifierNames`) added compile-time type-narrowing on the axis-name keys but did not thread the narrowing through ts-res's validation pipeline. Erik's review caught two related critiques:
+
+1. **Incomplete seam.** Parameterization stopped at `ConditionSetDecl` because ts-prompt-assist's specific scenario didn't need it to cascade further. To a fresh ts-res reader, that boundary is arbitrary.
+2. **No runtime teeth.** A typed-narrow seed gets typo-rejection at the TS layer when authored in code, but a JSON load via the Converter pipeline accepts the loose shape. The compile-time guarantee evaporates the moment data enters the library through any untyped path.
+
+Both critiques landed because Erik specifically asked "where do we enforce this?" The PR's design discussion had focused on TS expressivity (how to write the generic correctly) without surfacing the meta-question of what the generic actually enforces.
+
+**Rule:** When proposing a type-level addition that narrows a previously-wide shape, the brief / PR description should explicitly answer: *what enforces this at the boundaries it crosses?* If the answer is "TypeScript at the call site," call that out plainly — don't let "typed shape" imply "validated shape." A type-system-only narrow is a real consumer-facing improvement at the in-code authoring boundary, but it's not a primitive-level guarantee, and a reviewer can be forgiven for not catching the distinction unless the framing is explicit.
+
+**Codification candidate:** A line in the design-phase brief template (or in the canonical type-safe-validation skill) under "introducing a generic parameter": *"State explicitly what the narrowing actually validates. Compile-time-only narrows can be honest and useful; uncritical 'now it's typed' framing risks the type-without-teeth critique."* The PR template's "what changes" section should explicitly delineate compile-time guarantees from runtime guarantees when both could plausibly be inferred from the change shape.
+
+**Reference:** PR #386 review (Erik 2026-05-18); design-options brief at `.ai/tasks/active/ts-prompt-assist/ts-res-typed-conditions-design.md`; companion to L18 (docs accurately describe shipped behavior).
+
+---
+
 ## Sweep history
 
 *(no sweeps yet — this file is being initialized at 2026-05-11)*
