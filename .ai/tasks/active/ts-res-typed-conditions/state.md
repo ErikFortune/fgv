@@ -3,7 +3,7 @@
 **Status:** 🟢 ready to commission — substrate prep in flight
 **Cluster:** `ts-prompt-assist-features` (in-cluster)
 **Integration branch:** `claude/ts-prompt-assist-features`
-**Last updated:** 2026-05-19 (orchestrator — B-1 review-feedback absorbed; ready for merge)
+**Last updated:** 2026-05-19 (orchestrator — B-1 merged; B-2 sub-brief drafted)
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| B-1 — Decl-tree cascade (`ts-res`, type-only) | ✅ complete | PR #391 in review; all 9 container interfaces + leaf types parameterized; `getKeyFromLooseDecl` fix ported; 100% coverage; downstream consumers compile unchanged |
-| B-2 — Converter parameterization (`ts-res`, runtime teeth) | 🟢 ready | blocked on B-1 merge; surface-design questions to resolve in sub-brief (OQ-1); opt-in parameterization; default-string back-compat preserved |
+| B-1 — Decl-tree cascade (`ts-res`, type-only) | ✅ merged | PR #391 merged 2026-05-19; final list parameterized = 17 items (containers + tree child node + type guards + union alias); `getKeyFromLooseDecl` + type-guard soundness fixes bundled; api-extractor regenerated; 100% coverage; downstream consumers compile unchanged |
+| B-2 — Converter parameterization (`ts-res`, runtime teeth) | 🟢 ready (Erik-driven) | Sub-brief: `phase-b2-brief.md`; OQ-1 candidate shapes A/B/C enumerated (lean A); OQ-2 hypothesis = no `QualifierCollector` surface change (verify before commit); OQ-3 lean = ts-res-internal regression test |
 | B-3 — `ts-prompt-assist` port (consumer) | ⏸ blocked on B-2 | Drop local `ITypedConditionSetDecl` / `ITypedPromptCandidateRecord`; reference ts-res parameterized types directly |
 
 ---
@@ -57,6 +57,8 @@
 | 2026-05-19 | PR #386 closed | Superseded; latent-bug `Partial` widening fix carried forward into B-1 scope |
 | 2026-05-19 | B-1 commissioned + completed | Branch `chore/ts-res-typed-conditions-b1-cascade`; all 9 container interfaces + leaf types parameterized; `getKeyFromLooseDecl` fix ported; api-extractor regenerated; 100% coverage; downstream consumers compile unchanged; PR opened |
 | 2026-05-19 | B-1 review rounds absorbed | Round 1: cascade-incompleteness on `IResourceTreeRootDecl` (added `IResourceTreeChildNodeDecl` parameterization; root now extends child node); three api-extractor `@link` warnings replaced with backtick refs; missing `@fgv/ts-utils-jest` test import added; state.md artifact accuracy. Round 2: type-guard runtime soundness on `isLooseResourceCandidateDecl` / `isLooseResourceDecl` (`'id' in decl` → `'id' in decl && typeof decl.id === 'string'`). Round 3: PR description updated to explicitly disclose the two runtime fixes (no code change). All gates re-passed. |
+| 2026-05-19 | B-1 merged | PR #391 squash-merged to integration as `c688292d3`. |
+| 2026-05-19 | B-2 sub-brief drafted | `phase-b2-brief.md` enumerates three candidate surface shapes for OQ-1 (A: context-field opt-in [lean]; B: generic Converter factory; C: generics on existing exports [reject — breaking]); OQ-2 hypothesis no-surface-change (verify); OQ-3 lean ts-res-internal cast-pressure regression test. Erik-driven phase. |
 
 ---
 
@@ -65,9 +67,9 @@
 | Phase | PR | Status |
 |---|---|---|
 | Substrate prep | #390 | merged |
-| B-1 | #391 (branch: `chore/ts-res-typed-conditions-b1-cascade`) | in review |
-| B-2 | TBD | not yet commissioned |
-| B-3 | TBD | not yet commissioned |
+| B-1 | #391 | merged (`c688292d3`) |
+| B-2 | TBD (Erik-driven) | sub-brief ready (`phase-b2-brief.md`) |
+| B-3 | TBD (task-subagent) | blocked on B-2 |
 
 ---
 
