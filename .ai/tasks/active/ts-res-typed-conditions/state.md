@@ -12,8 +12,8 @@
 | Phase | Status | Notes |
 |-------|--------|-------|
 | B-1 — Decl-tree cascade (`ts-res`, type-only) | ✅ merged | PR #391 merged 2026-05-19; final list parameterized = 17 items (containers + tree child node + type guards + union alias); `getKeyFromLooseDecl` + type-guard soundness fixes bundled; api-extractor regenerated; 100% coverage; downstream consumers compile unchanged |
-| B-2 — Converter parameterization (`ts-res`, runtime teeth) | 🟢 ready (Erik-driven) | Sub-brief: `phase-b2-brief.md`; OQ-1 candidate shapes A/B/C enumerated (lean A); OQ-2 hypothesis = no `QualifierCollector` surface change (verify before commit); OQ-3 lean = ts-res-internal regression test |
-| B-3 — `ts-prompt-assist` port (consumer) | ⏸ blocked on B-2 | Drop local `ITypedConditionSetDecl` / `ITypedPromptCandidateRecord`; reference ts-res parameterized types directly |
+| B-2 — Converter parameterization (`ts-res`, runtime teeth) | ✅ complete (PR pending) | Branch `chore/ts-res-typed-conditions-b2-converter-teeth`; Candidate D shipped (sibling `typed*` exports over a shared core, existing untyped exports preserved); OQ-2 verified empirically — no `QualifierCollector` surface change; cast-pressure regression tests in `conditions/typedConvert.test.ts` and `resource-json/typedConvert.test.ts`; api-extractor unresolved-link warnings = baseline 849 (no new); all 11 downstream consumers compile unchanged; 100% coverage; result doc at `phase-b2-result.md` |
+| B-3 — `ts-prompt-assist` port (consumer) | 🟢 ready | Drop local `ITypedConditionSetDecl` / `ITypedPromptCandidateRecord`; reference ts-res parameterized types directly; thread `qualifierNameConverter` into `FileTreePromptStore.create` and `PromptStoreFixture.build`; see open questions for B-3 in `phase-b2-result.md` |
 
 ---
 
@@ -59,6 +59,9 @@
 | 2026-05-19 | B-1 review rounds absorbed | Round 1: cascade-incompleteness on `IResourceTreeRootDecl` (added `IResourceTreeChildNodeDecl` parameterization; root now extends child node); three api-extractor `@link` warnings replaced with backtick refs; missing `@fgv/ts-utils-jest` test import added; state.md artifact accuracy. Round 2: type-guard runtime soundness on `isLooseResourceCandidateDecl` / `isLooseResourceDecl` (`'id' in decl` → `'id' in decl && typeof decl.id === 'string'`). Round 3: PR description updated to explicitly disclose the two runtime fixes (no code change). All gates re-passed. |
 | 2026-05-19 | B-1 merged | PR #391 squash-merged to integration as `c688292d3`. |
 | 2026-05-19 | B-2 sub-brief drafted | `phase-b2-brief.md` enumerates three candidate surface shapes for OQ-1 (A: context-field opt-in [lean]; B: generic Converter factory; C: generics on existing exports [reject — breaking]); OQ-2 hypothesis no-surface-change (verify); OQ-3 lean ts-res-internal cast-pressure regression test. Erik-driven phase. |
+| 2026-05-19 | B-2 design notes added | `phase-b2-design-notes.md` selects Candidate D — sibling `typed*` exports over a shared parameterized core, existing untyped exports preserved as thin wrappers. Non-breaking. |
+| 2026-05-19 | B-2 implemented | Branch `chore/ts-res-typed-conditions-b2-converter-teeth`; 16 new typed siblings (4 in `Conditions.Convert`, 12 in `ResourceJson.Convert`); `IConditionDecl` / `IConditionSetDecl` parameterized on `TQualifierNames` (additive default); cast-pressure regression tests added; api-extractor regenerated (no new unresolved-link warnings); 100% coverage; all 11 downstream consumers compile unchanged. Result: `phase-b2-result.md`. PR #394 opened against integration. |
+| 2026-05-19 | B-2 Copilot review absorbed | Single review thread on PR #394: typed/untyped pair drift hazard. Addressed by adding `// keep in sync with X` markers next to every typed sibling and a drift-hazard preamble at the typed block in `resource-json/convert.ts`. Build + lint stay clean. Commit `253c6024` pushed. |
 
 ---
 
@@ -68,8 +71,8 @@
 |---|---|---|
 | Substrate prep | #390 | merged |
 | B-1 | #391 | merged (`c688292d3`) |
-| B-2 | TBD (Erik-driven) | sub-brief ready (`phase-b2-brief.md`) |
-| B-3 | TBD (task-subagent) | blocked on B-2 |
+| B-2 | #394 | open (review round 1 absorbed; awaiting merge) |
+| B-3 | TBD (task-subagent) | ready (was blocked on B-2) |
 
 ---
 

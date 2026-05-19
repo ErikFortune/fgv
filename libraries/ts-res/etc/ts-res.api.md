@@ -722,7 +722,7 @@ type ConditionSetDecl_2 = ReadonlyArray<ILooseConditionDecl>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const conditionSetDecl_2: ObjectConverter<IConditionSetDecl, unknown>;
+const conditionSetDecl_2: ObjectConverter<IConditionSetDecl<string>, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1028,9 +1028,13 @@ declare namespace Convert_10 {
 
 declare namespace Convert_11 {
     export {
+        typedConditionDecl,
+        typedValidatedConditionDecl,
         conditionDecl,
         IConditionDeclConvertContext,
         validatedConditionDecl,
+        typedConditionSetDecl_2 as typedConditionSetDecl,
+        typedValidatedConditionSetDecl,
         conditionSetDecl_2 as conditionSetDecl,
         IConditionSetDeclConvertContext,
         validatedConditionSetDecl
@@ -1109,6 +1113,18 @@ declare namespace Convert_6 {
 
 declare namespace Convert_7 {
     export {
+        typedLooseConditionDecl,
+        typedConditionSetDecl,
+        typedLooseResourceCandidateDecl,
+        typedImporterResourceCandidateDecl,
+        typedChildResourceCandidateDecl,
+        typedLooseResourceDecl,
+        typedChildResourceDecl,
+        typedContainerContextDecl,
+        typedResourceTreeChildNodeDecl,
+        typedResourceTreeRootDecl,
+        typedResourceCollectionDecl,
+        typedImporterResourceCollectionDecl,
         looseConditionDecl,
         childConditionDecl,
         conditionSetDecl,
@@ -1769,7 +1785,7 @@ interface IConditionCollectorCreateParams {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-type IConditionDecl = ResourceJson.Json.ILooseConditionDecl;
+type IConditionDecl<TQualifierNames extends string = string> = ResourceJson.Json.ILooseConditionDecl<TQualifierNames>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1804,9 +1820,9 @@ interface IConditionSetCollectorCreateParams {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IConditionSetDecl {
+interface IConditionSetDecl<TQualifierNames extends string = string> {
     // (undocumented)
-    conditions: IConditionDecl[];
+    conditions: IConditionDecl<TQualifierNames>[];
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -5139,6 +5155,54 @@ function toResourceTypeIndex(index: number): Result<ResourceTypeIndex>;
 
 // @public
 function toResourceTypeName(name: string): Result<ResourceTypeName>;
+
+// @public
+function typedChildResourceCandidateDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.IChildResourceCandidateDecl<TQualifierNames>>;
+
+// @public
+function typedChildResourceDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.IChildResourceDecl<TQualifierNames>>;
+
+// @public
+function typedConditionDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<IConditionDecl<TQualifierNames>>;
+
+// @public
+function typedConditionSetDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.ConditionSetDecl<TQualifierNames>>;
+
+// @public
+function typedConditionSetDecl_2<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<IConditionSetDecl<TQualifierNames>>;
+
+// @public
+function typedContainerContextDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.IContainerContextDecl<TQualifierNames>>;
+
+// @public
+function typedImporterResourceCandidateDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.IImporterResourceCandidateDecl<TQualifierNames>>;
+
+// @public
+function typedImporterResourceCollectionDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.IImporterResourceCollectionDecl<TQualifierNames>>;
+
+// @public
+function typedLooseConditionDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.ILooseConditionDecl<TQualifierNames>>;
+
+// @public
+function typedLooseResourceCandidateDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.ILooseResourceCandidateDecl<TQualifierNames>>;
+
+// @public
+function typedLooseResourceDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.ILooseResourceDecl<TQualifierNames>>;
+
+// @public
+function typedResourceCollectionDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.IResourceCollectionDecl<TQualifierNames>>;
+
+// @public
+function typedResourceTreeChildNodeDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.IResourceTreeChildNodeDecl<TQualifierNames>>;
+
+// @public
+function typedResourceTreeRootDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<Json.IResourceTreeRootDecl<TQualifierNames>>;
+
+// @public
+function typedValidatedConditionDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<IValidatedConditionDecl, IConditionDeclConvertContext>;
+
+// @public
+function typedValidatedConditionSetDecl<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<IValidatedConditionSetDecl, IConditionSetDeclConvertContext>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
