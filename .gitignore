@@ -81,3 +81,4 @@ lib/
 dist/
 temp/
 .claude/scheduled_tasks.lock
+.claude/worktrees/
