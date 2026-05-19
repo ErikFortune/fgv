@@ -128,58 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `ts-prompt-assist` 🟢
-
-**Status:** 🟢 phase A (research + design) ready to start
-**Cluster:** `ts-prompt-assist-features` (integration branch `claude/ts-prompt-assist-features` off `release`)
-**Workflow shape:** design-triage-implement-refine (single-stream new-library; consumer-port pressure-test absorbed via follow-up PRs on the same integration branch)
-**Phase A artifacts:** `.ai/tasks/active/ts-prompt-assist/{brief.md, design-brief.md, state.md}` → produces `design.md`
-**Package surface (new):** `@fgv/ts-prompt-assist` (new library; placement `libraries/ts-prompt-assist/`)
-**Package surface (extended):** `@fgv/ts-extras/mustache` — additive extension to `MustacheTemplate` to support verbatim-passthrough rendering (see brief.md OQ-6). Cluster touches this packlet so `ts-prompt-assist` consumes a first-class API rather than implementing workarounds. Additive only (no removed/renamed exports), preserving the established-surface compatibility contract.
-**Library dep graph:** depends on `@fgv/ts-utils`, `@fgv/ts-res`, `@fgv/ts-extras` (`MustacheTemplate`), `@fgv/ts-json-base` (FileTree). Sits above `ts-res` in the dep graph — folding into `ts-extras` would create a cycle, hence the standalone-package decision.
-**Out-of-scope (this stream):** SQL/Mongo store adapters; editor UI; samples app; LLM-call orchestration; anti-jailbreak text content; schema-version migration; sudoku packages.
-
-**Mission.** Ship `@fgv/ts-prompt-assist` v0.1: ts-res-driven prompt resolution with Mustache substitution as a reusable capability. Consumers bring their own scope model, actor types, prompt content; the library provides the resolution machinery, type system, descriptor schema, storage abstraction, and LLM-prompt safeguards. Mental model: every consumer surface that calls an LLM with a prompt does **lookup** (qualifier-conditioned variant selection) then **compose** (Mustache substitution); the library standardizes both halves.
-
-**Binding conceptual model** (per the consumer-supplied design brief at `.ai/tasks/active/ts-prompt-assist/design-brief.md`):
-1. Lookup-then-compose
-2. Scope-chain walking with bindings (most-specific wins; `enforced` lock; caller subs override merged bindings except enforced)
-3. Open qualifier metadata (`required` / `expected` / `disallowed`, never closed enums per descriptor)
-4. Resource bindings as first-class (recursive resolve with cycle detection + depth cap; enables shared sub-prompts)
-5. Output validation library-side (strip fences → parse JSON → Converter → registered validators)
-6. Storage-agnostic via `IPromptStore`; FileTree adapter canonical for v0.1; in-memory for tests
-
-The data-structure specifics in the design brief are **proposed** — phase A locks the shape and resolves the three open questions (scope encoding flexibility, resource-binding substitution merge semantics, `watch()` semantics).
-
-**Origin.** Consumer-driven feature request. Pattern emerged from observation that two in-codebase prompt libraries had reinvented the same machinery with subtly different policies; tenant-level visual/brand-style override has no canonical home; variation prompts hit-or-miss across surfaces. Generalizing the resolution machinery gives operators one mental model.
-
-**First consumer / pressure-test plan.** The first consumer is an agent chat application that will port an existing in-codebase prompt resolution implementation to consume this library. Pressure-test surfaces API gaps; 1–2 follow-up PRs on the integration branch absorb refinements before the integration→release promotion. Possibly also a test app (modeled on `ai-assist-image-generator`) — decision deferred; could also be built **into** the image generator. Surface as a subsequent stream once v0.1 lands.
-
-**Sequencing.** Independent of `ai-assist-thinking-events`; the two streams can run in parallel. No dependencies on in-flight work as of stream commission.
-
-**Alpha target.** `5.1.0-29` or later; stream may accumulate to `6.0` depending on API-stability evidence after pressure-test. Stable cut is gated on consumer-port settling, not calendar.
-
-**Future streams (queued; not commissioned):**
-- `ts-prompt-assist-samples` — sample/test app demonstrating end-to-end usage (might be standalone OR merged into `ai-assist-image-generator`)
-- `ts-prompt-assist-editor-ui` — generic editor UX for prompt editing (decide whether to make consumer-shape-agnostic vs require consumer-side implementation; UX is complex enough that sharing would be valuable, but the consumer-specific surfaces may make full generalization impractical). See `docs/FUTURE.md`.
-
-### `ts-res-typed-conditions` ✅
-
-**Status:** ✅ all three sub-phases complete; B-3 PR pending merge
-**Cluster:** `ts-prompt-assist-features` (in-cluster; integration branch `claude/ts-prompt-assist-features`)
-**Workflow shape:** three sub-phases inside one stream (B-1 type cascade → B-2 Converter teeth → B-3 ts-prompt-assist port). Each sub-phase its own PR; same stream substrate.
-**Substrate:** `.ai/tasks/active/ts-res-typed-conditions/{brief.md, state.md, phase-b1-result.md, phase-b2-result.md, phase-b3-result.md}`
-**Package surface:** `@fgv/ts-res` (Decl tree in `resource-json/`; Converter pipeline in `conditions/convert/`) + `@fgv/ts-prompt-assist` (B-3 consumer port; references ts-res typed siblings directly).
-**Out-of-scope:** `tools/ts-res-cli`, `libraries/ts-res-ui-components`, `libraries/ts-res/src/packlets/qualifiers/` (existing `QualifierCollector` surface unchanged).
-
-**Mission.** Make ts-res honor qualifier-name semantics at both type level (Decl tree cascade) and runtime level (Converter pipeline parameterization). Replaces closed PR #386's leaf-only parameterization with the complete co-designed shape. Closes round-2 finding F1 from ts-prompt-assist pressure-test by ownership at the right layer (ts-res owns qualifier-name concept; ts-prompt-assist references rather than re-implements).
-
-**Outcome.** B-1 (#391) shipped the type-level cascade. B-2 (#394) shipped 16 typed Converter siblings preserving the existing surface. B-3 ports `@fgv/ts-prompt-assist` to consume B-2's primitives directly: six container types parameterized on `TQualifierNames extends string = string`; `typedPromptFileConverter<T>(qc)` factory; `qualifierNameConverter?` threaded into `FileTreePromptStore.create` and `PromptStoreFixture.build`; F2 (`buildSimpleDescriptor`) and F6 (README React-wiring) round-2 absorbs carried forward from closed PR #385; F1 local sibling types from #385 NOT carried forward (B-2 ships the canonical primitive). Cast-pressure regression test verifies the convert-time teeth (typed Converter rejects typo'd axis name at YAML load time, including the runtime-cast escape-hatch path).
-
-**Decision-track input (binding):** `.ai/tasks/active/ts-prompt-assist/{ts-res-typed-conditions-design.md, ts-res-typed-conditions-evaluation.md}` (the latter includes the load-bearing addendum correcting the "Option B" framing — #386 was leaf-only with no plumbing through containers; the implementing agent must thread `TQualifierNames` through container types, not just the leaf).
-
-**Sequencing.** B-3 unblocks held PRs #385 (round-2 absorb — superseded by this stream's consolidation of F1 ownership at ts-res; F2 + F6 carried forward verbatim) and #384 (sample app — rebases last onto post-B-3 HEAD). Stream exit precedes cluster-close prep.
-
 ### `ai-assist-thinking-events` 🟡
 
 **Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands (now satisfied; ai-assist cluster shipped via #336)
@@ -203,6 +151,45 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `ts-prompt-assist-features` ✅ (cluster)
+
+**Status:** ✅ shipped — cluster integration branch `claude/ts-prompt-assist-features` ready for promotion to `release`
+**Cluster scope:** `@fgv/ts-prompt-assist` v0.1 (new library) + `@fgv/ts-extras/mustache` additive extension + `@fgv/ts-res` typed-conditions support (sub-stream below) + sample-app demonstration in `samples/ai-image-gen-sample`
+**Sub-stream:** [`ts-res-typed-conditions`](#ts-res-typed-conditions-) (below)
+
+**What shipped.**
+- `PromptLibrary.create` factory; `resolve` (lookup-then-compose), `resolveJsonOutput<K>` (runtime-evidenced kind dispatch), `resolveFreeTextOutput`, `describe` (cross-scope structural-equality check).
+- `IPromptStore` storage abstraction (read-only at v0.1); `FileTreePromptStore` canonical adapter; `PromptStoreFixture.build(seed)` canonical in-memory test/demo fixture.
+- `PromptRegistry<TResponse>` with three typed sub-registries (`converters` / `slotKinds` / `outputValidations`).
+- `IPromptSafetyPolicy` — length cap, suspicious-pattern screen with `lastIndex` reset, slot-source allowlist, `onSuspicious: 'warn' | 'reject'`, consumer-supplied `antiJailbreakPreface` seam.
+- `buildSimpleDescriptor` helper for trivial free-text chat case (JSON-output paths still use full `IPromptDescriptor` to preserve `output.kind` dispatch).
+- Resource bindings as first-class with RFC 8785 canonical-JSON cycle detection + depth cap.
+- `MustacheTemplate.create(template, { escape: 'none' | 'html' | callback })` additive extension on `@fgv/ts-extras`.
+
+**Decomposition history.** Phase A (#357 design lock) + Phase B (#358 brief) opened the cluster. PR #359's single-agent Phase B attempt retired after mid-run context drift produced ~35 reviewer-flagged issues; rescoped into sub-phase commissions (B-0a / B-0b / B-1a / B-1b / B-2 / B-3 / B-4 / B-5) per `brief-phase-b.md`. All sub-phases landed clean under the decomposed discipline. Orchestrator-driven post-merge cleanup PRs (#367, #370) absorbed sub-phase nits per the cluster's ship-then-tidy mechanic. Surface-tidy round (#372) split `resolveAndValidateOutput<T>` into `resolveJsonOutput<K>` + `resolveFreeTextOutput`, replacing the last caller-asserted-`T` boundary with a runtime-evidenced kind check.
+
+**Pressure-test refinement.** Round 1 (#373 held; findings cherry-picked via #374) — 14 findings; ergonomics absorbed via #375 (`withType()`) + #376 (mixed-shape `QualifierCollector` + `IQualifierContext` Partial-widen) + #377 (ts-extras Yaml browser export bug + L13 cross-runtime micro-test) + #380 (F3 + F9 + F12 + F14 ergonomics). Round 2 (#384) — fresh sample-app integration "materially smoother than round-1"; F1/F2/F6 absorbed via the `ts-res-typed-conditions` sub-stream (sample updated to demonstrate the typed flow end-to-end).
+
+**Artifacts:** [`.ai/tasks/completed/2026-05/ts-prompt-assist/`](../.ai/tasks/completed/2026-05/ts-prompt-assist/) (root README plus full design / brief / state / findings / phase-result docs).
+
+**Followup streams (queued in `docs/FUTURE.md`):** `ts-prompt-assist-samples`, `ts-prompt-assist-editor-ui`, typed qualifier VALUES (round-2 F5).
+
+### `ts-res-typed-conditions` ✅
+
+**Status:** ✅ shipped — three sub-phases merged into `claude/ts-prompt-assist-features` (sub-stream of the `ts-prompt-assist-features` cluster above)
+**Package surface:** `@fgv/ts-res` (`resource-json/` Decl tree + `conditions/convert/` Converter pipeline) + `@fgv/ts-prompt-assist` (B-3 consumer port)
+
+**What shipped.**
+- **B-1 (#391)** — Decl-tree type cascade. 17 types in `resource-json/json.ts` + `conditions/` parameterized on `TQualifierNames extends string = string` with default-string back-compat. Two latent fixes (`getKeyFromLooseDecl` undefined-handling; type-guard `'id' in decl && typeof decl.id === 'string'` runtime soundness) carried forward from closed PR #386.
+- **B-2 (#394)** — Sibling `typed*` Converter exports over a shared parameterized core. 16 typed siblings (4 in `Conditions.Convert`, 12 in `ResourceJson.Convert`); existing untyped exports preserved at signature and behavior level. Drift-protection markers (`// keep in sync with X`) inline. `IConditionDecl` / `IConditionSetDecl` parameterized.
+- **B-3 (#395)** — `@fgv/ts-prompt-assist` consumer port. 6 container types parameterized; `typedPromptFileConverter<T>(qc)` factory; `qualifierNameConverter?` threaded into `FileTreePromptStore.create` and `PromptStoreFixture.build`. F2 (`buildSimpleDescriptor`) and F6 (README React-wiring) absorbed from closed PR #385; F1's local sibling types obsoleted by the ts-res-layer ownership.
+
+**Sample-app demo (#384).** `samples/ai-image-gen-sample/src/promptLibrary.ts` wires a typed `qualifierNameConverter` for `'tone'`; the round-2 pressure-test integration now demonstrates the cluster's deliverable end-to-end.
+
+**Decision-track.** PR #386 (leaf-only parameterization) closed superseded after a senior-developer stress-test addendum (#389) caught the structural correction: #386 had no plumbing through container types, so the narrow couldn't reach the leaf from any realistic authoring chain. Option D (sibling `typed*` exports over a shared core) chosen as the non-breaking shape that preserves existing call sites. Full design-track at [`ts-res-typed-conditions-design.md`](../.ai/tasks/completed/2026-05/ts-prompt-assist/ts-res-typed-conditions-design.md) + [evaluation.md](../.ai/tasks/completed/2026-05/ts-prompt-assist/ts-res-typed-conditions-evaluation.md).
+
+**Artifacts:** [`.ai/tasks/completed/2026-05/ts-res-typed-conditions/`](../.ai/tasks/completed/2026-05/ts-res-typed-conditions/) (brief, design notes, all three phase-result docs, polished README).
 
 ### `crypto-batch-2-hpke` ✅
 
