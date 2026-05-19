@@ -479,7 +479,11 @@ describe('ts-prompt-assist foundation', () => {
 
   describe('MustacheTemplateCache', () => {
     test('rejects non-positive cap', () => {
-      expect(MustacheTemplateCache.create(0)).toFailWith(/positive/);
+      expect(MustacheTemplateCache.create(0)).toFailWith(/positive integer/);
+    });
+
+    test('rejects non-integer cap', () => {
+      expect(MustacheTemplateCache.create(1.5)).toFailWith(/positive integer/);
     });
 
     test('caches parsed templates and evicts on capacity', () => {

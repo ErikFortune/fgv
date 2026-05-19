@@ -31,8 +31,8 @@ export class MustacheTemplateCache {
 
   /** Family-convention factory. */
   public static create(cap: number = DEFAULT_CAP): Result<MustacheTemplateCache> {
-    if (cap <= 0) {
-      return fail(`templateCacheSize: must be positive (got ${cap})`);
+    if (!Number.isInteger(cap) || cap <= 0) {
+      return fail(`templateCacheSize: must be a positive integer (got ${cap})`);
     }
     return succeed(new MustacheTemplateCache(cap, new Hash.Crc32Normalizer()));
   }
