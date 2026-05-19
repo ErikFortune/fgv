@@ -20,20 +20,42 @@
  * SOFTWARE.
  */
 
-import { Converters, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { IConditionSetDecl, IValidatedConditionSetDecl } from '../conditionSetDecls';
-import { conditionDecl } from './decls';
+import { conditionDecl, typedConditionDecl } from './decls';
 import { ConditionCollector } from '../conditionCollector';
 
 /* eslint-disable @rushstack/typedef-var */
 
 /**
  * Converter which converts to a {@link Conditions.IConditionSetDecl | condition set declaration}.
+ *
+ * @remarks
+ * Accepts any string as the qualifier name of each contained condition. Use
+ * `typedConditionSetDecl` to narrow the accepted set of qualifier names to a literal-string union.
+ *
  * @public
  */
 export const conditionSetDecl = Converters.strictObject<IConditionSetDecl>({
   conditions: Converters.arrayOf(conditionDecl)
 });
+
+/**
+ * Returns a `Converter` for an `IConditionSetDecl<TQualifierNames>` narrowed on a supplied
+ * `qualifierName` converter.
+ *
+ * @remarks
+ * Each contained condition is converted via `typedConditionDecl(qualifierNameConverter)`.
+ *
+ * @public
+ */
+export function typedConditionSetDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<IConditionSetDecl<TQualifierNames>> {
+  return Converters.strictObject<IConditionSetDecl<TQualifierNames>>({
+    conditions: Converters.arrayOf(typedConditionDecl(qualifierNameConverter))
+  });
+}
 
 /**
  * Context for converting a {@link Conditions.IConditionSetDecl | condition set declaration}
@@ -45,22 +67,17 @@ export interface IConditionSetDeclConvertContext {
   conditionSetIndex?: number;
 }
 
-/**
- * Converter which constructs a {@link Conditions.IValidatedConditionSetDecl | validated condition set declaration}
- * from a {@link Conditions.IConditionSetDecl | condition set declaration}, instantiating qualifiers by name
- * from a supplied {@link Conditions.Convert.IConditionSetDeclConvertContext | conversion context}.
- * @public
- */
-export const validatedConditionSetDecl = Converters.generic<
-  IValidatedConditionSetDecl,
-  IConditionSetDeclConvertContext
->((from: unknown, __self, context?: IConditionSetDeclConvertContext): Result<IValidatedConditionSetDecl> => {
+function _validatedConditionSetDeclBody<TQualifierNames extends string>(
+  innerConditionSetDecl: Converter<IConditionSetDecl<TQualifierNames>>,
+  from: unknown,
+  context?: IConditionSetDeclConvertContext
+): Result<IValidatedConditionSetDecl> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!context) {
     return fail('validatedConditionSetDecl converter requires a context');
   }
 
-  return conditionSetDecl.convert(from).onSuccess((decl) => {
+  return innerConditionSetDecl.convert(from).onSuccess((decl) => {
     return mapResults(
       decl.conditions.map((condition) => context.conditions.validating.getOrAdd(condition))
     ).onSuccess((conditions) => {
@@ -69,4 +86,43 @@ export const validatedConditionSetDecl = Converters.generic<
       return succeed({ conditions, index });
     });
   });
+}
+
+/**
+ * Converter which constructs a {@link Conditions.IValidatedConditionSetDecl | validated condition set declaration}
+ * from a {@link Conditions.IConditionSetDecl | condition set declaration}, instantiating qualifiers by name
+ * from a supplied {@link Conditions.Convert.IConditionSetDeclConvertContext | conversion context}.
+ *
+ * @remarks
+ * Accepts any string as the qualifier name. Use `typedValidatedConditionSetDecl` to layer
+ * literal-string narrowing on top of the collector-membership check.
+ *
+ * @public
+ */
+export const validatedConditionSetDecl = Converters.generic<
+  IValidatedConditionSetDecl,
+  IConditionSetDeclConvertContext
+>((from: unknown, __self, context?: IConditionSetDeclConvertContext): Result<IValidatedConditionSetDecl> => {
+  return _validatedConditionSetDeclBody(conditionSetDecl, from, context);
 });
+
+/**
+ * Returns a `Converter` for an `IValidatedConditionSetDecl` narrowed on a supplied
+ * `qualifierName` converter.
+ *
+ * @public
+ */
+export function typedValidatedConditionSetDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<IValidatedConditionSetDecl, IConditionSetDeclConvertContext> {
+  const inner = typedConditionSetDecl(qualifierNameConverter);
+  return Converters.generic<IValidatedConditionSetDecl, IConditionSetDeclConvertContext>(
+    (
+      from: unknown,
+      __self,
+      context?: IConditionSetDeclConvertContext
+    ): Result<IValidatedConditionSetDecl> => {
+      return _validatedConditionSetDeclBody(inner, from, context);
+    }
+  );
+}
