@@ -25,5 +25,6 @@ export * from './mapResults';
 export * from './messageAggregator';
 export { Normalizer } from './normalize';
 export * from './result';
+export * from './shouldNotFail';
 export * from './utils';
 export * from './uuid';
