@@ -134,6 +134,13 @@ describe('shouldNotFail method', () => {
       // substring match on the raw frame line collides with the file name.
       expect(firstFrame).not.toMatch(/\bat\s+\S*shouldNotFail/);
       expect(firstFrame).not.toMatch(/^\s*\S*shouldNotFail@/);
+      // The stack header should carry the formatted message — V8 materializes
+      // `.stack` lazily, so if the implementation set `.message` AFTER the
+      // first read of `.stack`, the cached header would still say "Error" with
+      // no message attached. Asserting the formatted label here pins that
+      // regression.
+      expect(lines[0]).toMatch(/STACK/);
+      expect(lines[0]).toMatch(/stack-check/);
     });
 
     test('frameDepth=0 produces no captured frame and falls back to label-only format', () => {

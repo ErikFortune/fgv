@@ -693,17 +693,26 @@ export class Failure<out T> implements IResult<T> {
    * {@inheritDoc IResult.shouldNotFail}
    */
   public shouldNotFail(label?: string, frameDepth: number = 1): never {
-    // Build a single Error whose .stack we capture with shouldNotFail elided
-    // (V8) or whose default stack we parse manually (WebKit). Reusing this
-    // single Error instance preserves the elided stack on the thrown error —
-    // a separate `new Error(message)` would discard the captureStackTrace work
-    // and re-anchor the stack inside shouldNotFail itself.
-    const err = new Error();
+    // Parse a probe Error's stack to identify the caller frame for message
+    // composition. We must NOT reuse this probe as the thrown Error: in V8,
+    // `.stack` is materialized lazily on first access (which happens below in
+    // `_findShouldNotFailFrame`), and once materialized the cached stack
+    // header carries whatever message was set at that moment. Mutating
+    // `.message` afterwards does not refresh the cached `.stack` header.
+    const probe = new Error();
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(probe, this.shouldNotFail);
+    }
+    const frame = _findShouldNotFailFrame(probe.stack, frameDepth);
+    const message = _formatShouldNotFailMessage(this._message, label, frame);
+    // Build the final Error with the formatted message and re-elide
+    // `shouldNotFail` from its stack, so the thrown error's `.stack` shows
+    // both the formatted message in its header and the caller as its top
+    // frame.
+    const err = new Error(message);
     if (typeof Error.captureStackTrace === 'function') {
       Error.captureStackTrace(err, this.shouldNotFail);
     }
-    const frame = _findShouldNotFailFrame(err.stack, frameDepth);
-    err.message = _formatShouldNotFailMessage(this._message, label, frame);
     throw err;
   }
 
