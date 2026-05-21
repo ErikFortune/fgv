@@ -109,6 +109,33 @@ describe('shouldNotFail method', () => {
       expect(msg).not.toMatch(/depth2InnerWrapper/);
     });
 
+    test('thrown error preserves the elided stack — top frame is the caller, not shouldNotFail', () => {
+      function namedCallerForStackInspection(): number {
+        return fail<number>('stack-check').shouldNotFail('STACK');
+      }
+      let stack: string | undefined;
+      try {
+        namedCallerForStackInspection();
+      } catch (e) {
+        if (e instanceof Error) {
+          stack = e.stack;
+        }
+      }
+      expect(stack).toBeDefined();
+      const lines = (stack ?? '').split('\n');
+      // Find the first frame line (V8 prefixes lines other than the header with
+      // "    at "; WebKit uses "<fn>@<file>"). That first frame should be the
+      // named caller above — NOT Failure.shouldNotFail.
+      const firstFrame = lines.find((l) => /^\s*at\s|@/.test(l));
+      expect(firstFrame).toBeDefined();
+      expect(firstFrame).toMatch(/namedCallerForStackInspection/);
+      // Negative assertion has to target the function-name segment only —
+      // the test file's own path contains 'shouldNotFail', so a naive
+      // substring match on the raw frame line collides with the file name.
+      expect(firstFrame).not.toMatch(/\bat\s+\S*shouldNotFail/);
+      expect(firstFrame).not.toMatch(/^\s*\S*shouldNotFail@/);
+    });
+
     test('frameDepth=0 produces no captured frame and falls back to label-only format', () => {
       let msg = '';
       try {

@@ -693,12 +693,18 @@ export class Failure<out T> implements IResult<T> {
    * {@inheritDoc IResult.shouldNotFail}
    */
   public shouldNotFail(label?: string, frameDepth: number = 1): never {
+    // Build a single Error whose .stack we capture with shouldNotFail elided
+    // (V8) or whose default stack we parse manually (WebKit). Reusing this
+    // single Error instance preserves the elided stack on the thrown error —
+    // a separate `new Error(message)` would discard the captureStackTrace work
+    // and re-anchor the stack inside shouldNotFail itself.
     const err = new Error();
     if (typeof Error.captureStackTrace === 'function') {
       Error.captureStackTrace(err, this.shouldNotFail);
     }
     const frame = _findShouldNotFailFrame(err.stack, frameDepth);
-    throw new Error(_formatShouldNotFailMessage(this._message, label, frame));
+    err.message = _formatShouldNotFailMessage(this._message, label, frame);
+    throw err;
   }
 
   /**
