@@ -278,6 +278,43 @@ export interface IResult<T> {
   orThrow(cb: ErrorFormatter): T;
 
   /**
+   * Asserts at the call site that this {@link IResult | result} MUST be a success.
+   * Returns the value on success; on failure, throws an `Error` whose message
+   * is composed from the original failure message and the captured call-site
+   * location (file, line, and where useful function name).
+   *
+   * @remarks
+   * Use for declaration-time / setup-time invariants — module-level `const`
+   * initializers, static class properties, static initialization blocks, and
+   * test fixtures — where a failure indicates a coding bug that should
+   * surface at the call site rather than propagate as a `Result`. For chains
+   * where the throw is intentional control flow, prefer {@link IResult.orThrow | orThrow}.
+   *
+   * On V8 (Node + Chromium) `Error.captureStackTrace` is used to elide
+   * `shouldNotFail` itself from the captured stack so the parsed frame is
+   * the user's call site directly. On WebKit (where `captureStackTrace` is
+   * unavailable) the stack is parsed manually and frames mentioning
+   * `shouldNotFail` are filtered out. Function names and exact line numbers
+   * depend on source-map availability in the runtime.
+   *
+   * Error message format (depending on whether a label and a usable function
+   * name are available):
+   * - both: `<label> (at <fn> in <file>:<line>): <original>`
+   * - label only: `<label> (at <file>:<line>): <original>`
+   * - fn only: `<fn> at <file>:<line>: <original>`
+   * - neither: `<file>:<line>: <original>`
+   *
+   * @param label - Optional human-meaningful identifier (e.g. the constant
+   * name) prefixed to the error message.
+   * @param frameDepth - Optional 1-indexed depth into the caller stack.
+   * Default `1` (immediate caller). Library authors wrapping `shouldNotFail`
+   * inside their own helper pass `2` to attribute to their caller.
+   * @returns The result value, if the operation was successful.
+   * @throws `Error` if the result was a failure.
+   */
+  shouldNotFail(label?: string, frameDepth?: number): T;
+
+  /**
    * Gets the value associated with a successful {@link IResult | result},
    * or a default value if the corresponding operation failed.
    * @param dflt - The value to be returned if the operation failed.
@@ -463,6 +500,13 @@ export class Success<out T> implements IResult<T> {
   }
 
   /**
+   * {@inheritDoc IResult.shouldNotFail}
+   */
+  public shouldNotFail(__label?: string, __frameDepth?: number): T {
+    return this._value;
+  }
+
+  /**
    * {@inheritDoc IResult.orDefault}
    */
   public orDefault(dflt: T): T;
@@ -641,6 +685,18 @@ export class Failure<out T> implements IResult<T> {
       }
     }
     throw new Error(this._message);
+  }
+
+  /**
+   * {@inheritDoc IResult.shouldNotFail}
+   */
+  public shouldNotFail(label?: string, frameDepth: number = 1): never {
+    const err = new Error();
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(err, this.shouldNotFail);
+    }
+    const frame = _findShouldNotFailFrame(err.stack, frameDepth);
+    throw new Error(_formatShouldNotFailMessage(this._message, label, frame));
   }
 
   /**
@@ -1220,6 +1276,126 @@ export function _errorMessage(err: unknown): string {
     return err.message;
   }
   return String(err);
+}
+
+/**
+ * Parsed stack-frame information used by {@link IResult.shouldNotFail | shouldNotFail}.
+ * All fields are optional — runtimes that don't expose stack traces produce
+ * an empty frame and the call site is omitted from the message.
+ * @internal
+ */
+export interface _IShouldNotFailFrame {
+  fn?: string;
+  file?: string;
+  line?: number;
+}
+
+/**
+ * Parses a single stack-trace line in either V8 or WebKit format.
+ *
+ * V8: `    at <fn> (<file>:<line>:<col>)` or `    at <file>:<line>:<col>`
+ * WebKit: `<fn>@<file>:<line>:<col>` or `@<file>:<line>:<col>`
+ * @internal
+ */
+export function _parseStackFrame(line: string): _IShouldNotFailFrame {
+  const trimmed = line.trim();
+  const v8WithFn = /^at\s+(.+?)\s+\((.+):(\d+):\d+\)$/.exec(trimmed);
+  if (v8WithFn) {
+    return { fn: v8WithFn[1], file: v8WithFn[2], line: Number(v8WithFn[3]) };
+  }
+  const v8NoFn = /^at\s+(.+):(\d+):\d+$/.exec(trimmed);
+  if (v8NoFn) {
+    return { file: v8NoFn[1], line: Number(v8NoFn[2]) };
+  }
+  const webkit = /^(.*?)@(.+):(\d+):\d+$/.exec(trimmed);
+  if (webkit) {
+    return { fn: webkit[1] === '' ? undefined : webkit[1], file: webkit[2], line: Number(webkit[3]) };
+  }
+  return {};
+}
+
+/**
+ * Finds the caller frame at the supplied depth in a stack string.
+ *
+ * Filters out frames whose source line mentions `shouldNotFail` (covers both
+ * the V8 path — where `Error.captureStackTrace` should have done this already
+ * but the extra filter is harmless — and the WebKit fallback path where
+ * `captureStackTrace` is unavailable). `frameDepth` is 1-indexed: `1` selects
+ * the immediate caller.
+ * @internal
+ */
+export function _findShouldNotFailFrame(stack: string | undefined, frameDepth: number): _IShouldNotFailFrame {
+  if (!stack) {
+    return {};
+  }
+  const userFrames: _IShouldNotFailFrame[] = [];
+  for (const line of stack.split('\n')) {
+    if (!/^\s*at\s|@/.test(line)) {
+      continue;
+    }
+    const parsed = _parseStackFrame(line);
+    if (parsed.file === undefined && parsed.fn === undefined) {
+      continue;
+    }
+    // Filter by parsed function name, NOT raw line — the file path may itself
+    // contain 'shouldNotFail' (e.g. consumer test files) and must not be filtered.
+    if (parsed.fn !== undefined && parsed.fn.includes('shouldNotFail')) {
+      continue;
+    }
+    userFrames.push(parsed);
+  }
+  return userFrames[frameDepth - 1] ?? {};
+}
+
+/**
+ * Normalizes a function name from a stack frame, returning `undefined` when
+ * the name is empty or one of the well-known anonymous-IIFE noise patterns
+ * (typically emitted by V8 for module-top-level code).
+ * @internal
+ */
+export function _normalizeShouldNotFailFnName(fn: string | undefined): string | undefined {
+  if (fn === undefined || fn === '' || fn === '<anonymous>' || fn === 'Object.<anonymous>') {
+    return undefined;
+  }
+  return fn;
+}
+
+/**
+ * Composes the error message thrown by {@link IResult.shouldNotFail | shouldNotFail}
+ * from the captured frame and optional label.
+ * @internal
+ */
+export function _formatShouldNotFailMessage(
+  originalMessage: string,
+  label: string | undefined,
+  frame: _IShouldNotFailFrame
+): string {
+  const fn = _normalizeShouldNotFailFnName(frame.fn);
+  const fileLoc =
+    frame.file !== undefined && frame.line !== undefined ? `${frame.file}:${frame.line}` : undefined;
+
+  if (label !== undefined) {
+    if (fn !== undefined && fileLoc !== undefined) {
+      return `${label} (at ${fn} in ${fileLoc}): ${originalMessage}`;
+    }
+    if (fileLoc !== undefined) {
+      return `${label} (at ${fileLoc}): ${originalMessage}`;
+    }
+    if (fn !== undefined) {
+      return `${label} (at ${fn}): ${originalMessage}`;
+    }
+    return `${label}: ${originalMessage}`;
+  }
+  if (fn !== undefined && fileLoc !== undefined) {
+    return `${fn} at ${fileLoc}: ${originalMessage}`;
+  }
+  if (fileLoc !== undefined) {
+    return `${fileLoc}: ${originalMessage}`;
+  }
+  if (fn !== undefined) {
+    return `${fn}: ${originalMessage}`;
+  }
+  return originalMessage;
 }
 
 /**

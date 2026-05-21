@@ -34,11 +34,61 @@ function parseJson(text: string): Result<unknown> {
 
 | Method | Use when |
 |--------|---------|
-| `.orThrow()` | **Setup / initialization only** — constructors, `beforeEach`, top-level boot |
+| `.shouldNotFail(label?)` | **Declaration-time invariants** — module-top-level `const`, static initializers, test fixtures. Auto-captures the call site. |
+| `.orThrow()` | **Setup chains where the throw is intentional control flow** — factory `create()` bodies that wrap and re-throw, `beforeEach` chained on previous `Result<T>` steps |
 | `.orDefault(value)` | Safe fallback to a constant |
 | `.orDefaultLazy(() => …)` | Fallback is expensive to compute |
 
-Never `.orThrow()` in business logic — return a `Result<T>` instead.
+Never `.shouldNotFail()` or `.orThrow()` in business logic — return a `Result<T>` instead.
+
+## Declaration-time fallible work
+
+For module-top-level `const`s, static class property initializers, static
+initialization blocks, and test fixtures, prefer `.shouldNotFail()` over
+`.orThrow()`:
+
+```typescript
+// GOOD — call site, file, line, and label show up in the thrown error
+const CONST_THING: Thing = Converters.thing('thing').shouldNotFail('CONST_THING');
+
+class MyClass {
+  public static readonly defaults = Converters.config(rawDefaults)
+    .shouldNotFail('MyClass.defaults');
+}
+
+// In test fixtures:
+beforeAll(() => {
+  fixture = loadFixture('basic').shouldNotFail('basic fixture');
+});
+
+// AVOID — original message has no indication WHICH constant failed, and
+// the stack trace points at internal Converter/Result machinery rather than
+// the declaration site.
+const CONST_THING: Thing = Converters.thing('thing').orThrow();
+
+// AVOID — equivalent but verbose and intent-obscuring.
+const CONST_THING: Thing = Converters.thing('thing')
+  .withErrorFormat((msg) => `CONST_THING declaration: ${msg}`)
+  .orThrow();
+```
+
+`.shouldNotFail()`:
+
+- Captures the caller frame via `Error.captureStackTrace` on V8 (Node + Chromium)
+  and a manual stack-frame walk on WebKit.
+- Composes an error message: `<label> (at <fn> in <file>:<line>): <original>`
+  (with sensible fallbacks when the label or function name is unavailable).
+- Function names and exact line numbers depend on source-map availability in
+  the runtime — fgv's Heft + ts-jest configs load them, so test failures show
+  `.ts` paths.
+- Takes an optional `frameDepth` for library authors wrapping `shouldNotFail`
+  in their own helpers (`frameDepth: 2` to attribute to the wrapper's caller).
+
+Keep `.orThrow()` for chains where the throw is intentional control flow —
+e.g. a `static create()` factory that runs several Result steps and re-throws
+on the way out. The point of `.shouldNotFail()` is the declaration site
+attribution, which is wasted in a multi-step chain that's already wrapping its
+errors via `.withErrorFormat`.
 
 ## Chaining vs intermediate variables
 
