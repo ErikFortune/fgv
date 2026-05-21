@@ -2,7 +2,7 @@
 
 **Stream ID:** result-should-not-fail
 **Bucket:** 2026-05
-**PR:** _(filled in on PR open)_
+**PR:** [#400](https://github.com/ErikFortune/fgv/pull/400)
 **Branch:** `claude/implement-should-not-fail-R6KET`
 **Target:** `release` (single-PR feature; no integration branch)
 **Workflow shape:** single-PR feature
@@ -43,7 +43,7 @@ Pure-additive. No removed/renamed exports. `.orThrow()` unchanged.
 
 ## Lessons / surprises
 
-See `phase-result.md` — the two non-obvious findings were:
+See `phase-result.md` for the full list. The non-obvious findings were:
 
 1. **Filter on parsed `fn` field, not raw line text.** The test file itself
    is named `shouldNotFail.test.ts`, which collides with a naïve
@@ -54,6 +54,14 @@ See `phase-result.md` — the two non-obvious findings were:
    must wrap the call in a named local function and assert on that function's
    name. The same pattern doubles as the `frameDepth: 2` test (named outer
    caller → named inner wrapper).
+
+3. **Don't throw a fresh `Error(message)` after `captureStackTrace`** — it
+   discards the elided stack. And don't fix that by reading `.stack` then
+   assigning `.message`: V8 materializes `.stack` lazily on first access and
+   caches the header with whatever message was set at read time. The final
+   shape is a two-Error pattern: a probe to find the caller frame, then a
+   final `Error(formattedMessage)` with its own `captureStackTrace` call.
+   Both regressions surfaced via post-PR-open review and are pinned by tests.
 
 ## Artifacts
 

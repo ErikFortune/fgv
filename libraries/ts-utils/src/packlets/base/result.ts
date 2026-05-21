@@ -295,9 +295,14 @@ export interface IResult<T> {
    * On V8 (Node + Chromium) `Error.captureStackTrace` is used to elide
    * `shouldNotFail` itself from the captured stack so the parsed frame is
    * the user's call site directly. On WebKit (where `captureStackTrace` is
-   * unavailable) the stack is parsed manually and frames mentioning
-   * `shouldNotFail` are filtered out. Function names and exact line numbers
-   * depend on source-map availability in the runtime.
+   * unavailable) the stack is parsed manually and frames whose **parsed
+   * function name** contains `shouldNotFail` are filtered out — the raw
+   * stack-line text (including the file path) is deliberately NOT inspected,
+   * so consumer files named after `shouldNotFail` are not collateral damage.
+   * Function names and exact line numbers depend on source-map availability
+   * in the runtime. When no caller frame is recoverable (e.g. `frameDepth`
+   * out of range, or `frameDepth: 0`) the message falls back to the
+   * label-only form (or the bare original message when no label is given).
    *
    * Error message format (depending on whether a label and a usable function
    * name are available):

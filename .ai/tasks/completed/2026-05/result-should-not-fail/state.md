@@ -1,6 +1,6 @@
 # Stream State: result-should-not-fail
 
-**Status:** ✅ complete — implementation committed and pushed; PR ready to open
+**Status:** ✅ complete — PR [#400](https://github.com/ErikFortune/fgv/pull/400) opened against `release`, review feedback addressed across three follow-up commits, awaiting merge
 **Branch:** `claude/implement-should-not-fail-R6KET` (cloud-agent harness suffix on `feat/result-should-not-fail`)
 **Target:** `release`
 **Last updated:** 2026-05-21 (implementing agent)
@@ -60,6 +60,19 @@ guard with `typeof Error.captureStackTrace === 'function'` for WebKit/Safari
 where it is undefined.
 
 ---
+
+## Review follow-up (post-PR-open)
+
+Three follow-up commits on the same branch addressed review feedback from `@ErikFortune` and `@copilot-pull-request-reviewer`:
+
+| Commit | Scope |
+|---|---|
+| `774a384d` | Extract `@internal` helpers into a sibling `shouldNotFail.ts` (Erik). Update `_findShouldNotFailFrame` JSDoc to say "parsed function name only, never raw line text" (copilot). Drop the ambiguous `{@link IResult.orThrow}` link — `orThrow` is overloaded and the link triggered `ae-unresolved-link` warnings (copilot). Replace 5× `e as Error` unsafe casts in tests with `_errorMessage(e)`; replace the `Error.captureStackTrace = undefined` cast with `Reflect.set` (copilot). |
+| `6a2a3291` | **Real bug:** previous code captured a `shouldNotFail`-elided stack on a temp `Error` but threw a fresh `new Error(message)`, discarding the elided stack so the thrown `.stack` still pointed inside `shouldNotFail` (copilot). First-pass fix: reuse the same `Error` and assign `.message`. Added a regression test on the top frame. |
+| `16a4d337` | **Real bug surfaced by the first-pass fix:** V8 materializes `.stack` lazily on first access and caches it with the message that was set at that moment. The `.message =` assignment after the stack read left the cached header reading `Error` with no message attached (copilot). Final shape: use a **probe** `Error` to find the frame, then build the **final** `Error(formattedMessage)` and call `captureStackTrace` on it. Strengthened the regression test to assert `lines[0]` carries the label and original message. |
+| `<final>` | Tighten the public `shouldNotFail` JSDoc — clarify the WebKit fallback filters on the **parsed function name** (never raw line text) and document the no-frame-recoverable fallback (`frameDepth: 0` / out of range → label-only message) (copilot). |
+
+Test count after follow-up: 32 tests, 100% coverage on both `result.ts` and `shouldNotFail.ts`. `rushx fixlint` → build → lint → test all clean after each follow-up commit.
 
 ## Acceptance gates
 

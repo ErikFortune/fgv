@@ -43,6 +43,24 @@ shouldNotFail(label?: string, frameDepth: number = 1): T
    output shows `.ts` paths and line numbers. Documented as a JSDoc caveat —
    the same code in a browser without source maps emits `.js` paths.
 
+4. **First-pass implementation discarded the elided stack on the thrown error**
+   (review feedback). The original code captured a `shouldNotFail`-elided
+   stack on a temp `Error`, parsed it, then threw a *fresh* `new Error(message)`
+   — losing the elided stack so the thrown `.stack` still pointed inside
+   `Failure.shouldNotFail`. First fix (reuse the same `Error` and assign
+   `.message`) surfaced a *second* V8-specific issue: `.stack` is materialized
+   lazily on first read and cached with the message that was set at that
+   moment. Reading `.stack` to find the frame caches `Error\n    at ...`; the
+   subsequent `.message =` assignment doesn't refresh the cached header.
+   **Final shape:** use a **probe** `Error` (with `captureStackTrace`) purely
+   to identify the caller frame and compose the message, then construct the
+   **final** `Error(formattedMessage)` and call `captureStackTrace` again on
+   that instance. The thrown `.stack` now carries both the formatted message
+   in its header and the elided caller frame at the top. Two regression tests
+   pin this — one asserts the top frame is the named caller (not
+   `Failure.shouldNotFail`); the other asserts the stack header contains the
+   label and the original failure message.
+
 ## Final message format (worked examples)
 
 | Inputs | Output |
