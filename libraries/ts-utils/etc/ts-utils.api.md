@@ -1062,7 +1062,6 @@ export class Failure<out T> implements IResult<T> {
     // (undocumented)
     orThrow(cb: ErrorFormatter): never;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Failure<T>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
     shouldNotFail(label?: string, frameDepth?: number): never;
     readonly success: false;
     thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
@@ -1654,7 +1653,6 @@ export interface IResult<T> {
     orThrow(logger?: IResultLogger): T;
     orThrow(cb: ErrorFormatter): T;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Result<T>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
     shouldNotFail(label?: string, frameDepth?: number): T;
     readonly success: boolean;
     thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
@@ -2688,7 +2686,6 @@ export class Success<out T> implements IResult<T> {
     // (undocumented)
     orThrow(cb: ErrorFormatter): T;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Success<T>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "orThrow" has more than one declaration; you need to add a TSDoc member reference selector
     shouldNotFail(__label?: string, __frameDepth?: number): T;
     readonly success: true;
     thenOnFailure(__: AsyncFailureContinuation<T>): AsyncResult<T>;

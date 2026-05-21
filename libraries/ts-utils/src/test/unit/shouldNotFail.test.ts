@@ -24,6 +24,7 @@ import 'jest-extended';
 import '../helpers/jest';
 
 import {
+  _errorMessage,
   _findShouldNotFailFrame,
   _formatShouldNotFailMessage,
   _parseStackFrame,
@@ -59,20 +60,20 @@ describe('shouldNotFail method', () => {
       function namedCallSiteForStackCapture(): number {
         return fail<number>('boom').shouldNotFail();
       }
-      let caught: Error | undefined;
+      let msg: string | undefined;
       try {
         namedCallSiteForStackCapture();
       } catch (e) {
-        caught = e as Error;
+        msg = _errorMessage(e);
       }
-      expect(caught).toBeDefined();
+      expect(msg).toBeDefined();
       // The captured call site should be the named wrapper above. Jest-circus runs
       // each test body via a microtask (Promise.then), which drops the test arrow
       // from V8's synchronous call stack — so we attribute to a named local
       // function inside the test body instead of the test arrow itself.
-      expect(caught!.message).toMatch(/namedCallSiteForStackCapture/);
-      expect(caught!.message).toMatch(/shouldNotFail\.test\.(?:ts|js):\d+/);
-      expect(caught!.message).toMatch(/boom/);
+      expect(msg).toMatch(/namedCallSiteForStackCapture/);
+      expect(msg).toMatch(/shouldNotFail\.test\.(?:ts|js):\d+/);
+      expect(msg).toMatch(/boom/);
     });
 
     test('with both label and call site uses the "<label> (at <fn> in <file>:<line>)" format', () => {
@@ -83,7 +84,7 @@ describe('shouldNotFail method', () => {
       try {
         labeledCallSite();
       } catch (e) {
-        msg = (e as Error).message;
+        msg = _errorMessage(e);
       }
       expect(msg).toMatch(/^LABEL \(at labeledCallSite in .*shouldNotFail\.test\.(?:ts|js):\d+\): inner$/);
     });
@@ -99,7 +100,7 @@ describe('shouldNotFail method', () => {
       try {
         depth2OuterCaller();
       } catch (e) {
-        msg = (e as Error).message;
+        msg = _errorMessage(e);
       }
       expect(msg).toMatch(/THROUGH_WRAPPER/);
       expect(msg).toMatch(/wrapped-boom/);
@@ -113,7 +114,7 @@ describe('shouldNotFail method', () => {
       try {
         fail<number>('x').shouldNotFail('NO_FRAME', 0);
       } catch (e) {
-        msg = (e as Error).message;
+        msg = _errorMessage(e);
       }
       expect(msg).toBe('NO_FRAME: x');
     });
@@ -279,12 +280,12 @@ describe('shouldNotFail method', () => {
 
     test('still produces a useful message when Error.captureStackTrace is unavailable', () => {
       // Simulate WebKit by removing captureStackTrace.
-      (Error as { captureStackTrace?: typeof Error.captureStackTrace }).captureStackTrace = undefined;
+      Reflect.set(Error, 'captureStackTrace', undefined);
       let msg = '';
       try {
         fail<number>('webkit-boom').shouldNotFail('WK');
       } catch (e) {
-        msg = (e as Error).message;
+        msg = _errorMessage(e);
       }
       expect(msg).toMatch(/WK.*webkit-boom/);
     });
