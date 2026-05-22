@@ -352,6 +352,9 @@ importers:
       '@fgv/ts-json-base':
         specifier: workspace:*
         version: link:../ts-json-base
+      '@types/luxon':
+        specifier: ^3.7.1
+        version: 3.7.1
       fflate:
         specifier: ~0.8.2
         version: 0.8.2
@@ -410,9 +413,6 @@ importers:
       '@types/js-yaml':
         specifier: ~4.0.9
         version: 4.0.9
-      '@types/luxon':
-        specifier: ^3.7.1
-        version: 3.7.1
       '@types/mustache':
         specifier: ^4.2.5
         version: 4.2.6

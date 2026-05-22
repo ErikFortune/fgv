@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Move @types/luxon from devDependencies to dependencies. The rolled-up public .d.ts references `DateTime` from luxon; consumers without their own @types/luxon dev-dep were getting a TS7016 implicit-any on import. As a transitive runtime dep, @types/luxon now installs automatically alongside the runtime luxon dep.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
