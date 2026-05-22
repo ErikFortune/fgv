@@ -43,16 +43,7 @@ Arguments against: every consumer's scope hierarchy is bespoke; editor screens t
 
 ## Samples app for `@fgv/ts-prompt-assist`
 
-The `ts-prompt-assist` v0.1 stream ships only the library + test collateral. A samples app would demonstrate end-to-end usage: a small consumer with a scope hierarchy, a handful of YAML descriptors, scope-level bindings, qualifier axes, resource-binding fragments, output validation. Two shapes considered:
-
-1. **Standalone samples app** (modeled on `ai-assist-image-generator`) — a small CLI or web app under `apps/` that exercises the library against a fixture FileTree.
-2. **Folded into `ai-assist-image-generator`** — extend the existing image-generator surface to also exercise prompt-assist for the image-generation prompts themselves. Cross-pollinates the two libraries.
-
-**Why deferred**: v0.1 hasn't shipped yet; consumer pressure-test is the primary validator. Samples app earns its keep once the library API has stabilized and we want a clean reference for new consumers to learn from.
-
-**Dependencies**: `ts-prompt-assist` v0.1 shipped; consumer port settled enough that the API is unlikely to churn out from under the samples.
-
-**Reference**: `.ai/tasks/active/ts-prompt-assist/brief.md` (stream commission discussion).
+**Status: superseded by `samples/testbed` (2026-05-22).** Absorbed into the general-purpose `samples/testbed` sample-browser being built under the `local-ai-exploration` cluster. The testbed will demonstrate `@fgv/ts-prompt-assist` scenarios alongside scenarios for other fgv capabilities (ai-assist, ts-res, bcp-47, crypto, etc.) — one general showcase that grows scenarios over time beats two parallel demo apps. See `.ai/tasks/active/local-ai-exploration/brief.md`.
 
 ---
 

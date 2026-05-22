@@ -128,6 +128,32 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `local-ai-exploration` 🟢
+
+**Status:** 🟢 substrate prep in flight; B-1 ready to commission after merge
+**Integration branch:** `local-ai-exploration` (off `release`)
+**Workflow shape:** design-triage-implement-refine cluster with outcome gate at B-3
+**Substrate:** `.ai/tasks/active/local-ai-exploration/{brief.md, state.md}`
+**Package surface (new):**
+- `samples/testbed/` — long-lived sample-browser app, web + CLI, web-first
+- `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` — Result-integration boundary over `@huggingface/transformers` (provisional; may be discarded at B-4b if the experiment shows the facade doesn't earn its keep)
+
+**Mission.** Two intertwined goals: (1) build a long-lived sample browser app at `samples/testbed/` as the canonical home for fgv-capability demonstration scenarios; (2) use that testbed to evaluate whether a Result-shaped facade over `@huggingface/transformers` earns its keep, with an explicit done-or-discard decision gate at B-3 exit.
+
+**Decision-track input (binding):** `.ai/notes/orchestrator/research/local-models-incorporation.md` (merged via #402) recommends Option 2 with timing "next slot, not urgent." This cluster takes the slot and runs the experiment.
+
+**Sub-phase shape:**
+- B-1 scaffold (testbed + facade package skeletons)
+- B-2 facade primitives (5-8 ops mirroring `@fgv/ts-extras-webauthn` discipline)
+- B-3 first scenario (local classifier → `IPromptSafetyPolicy` backend)
+- B-3 exit gate (done-or-discard decision per criteria locked in brief)
+- B-4a (ship the facade) OR B-4b (pivot scenario to native)
+- Cluster close (promotion `local-ai-exploration` → `release`)
+
+**Out-of-scope (this cluster):** porting `samples/ai-image-gen-sample` scenarios into the testbed (P3 tech debt, queued); editor UX (queued); LLM-call orchestration beyond existing ai-assist; sidecar/HTTP local LLM path (separate small chore opportunity).
+
+**Origin.** Erik's question 2026-05-22: "ai-assist is all about communicating with distant LLMs for pretty meaty tasks. But in the real world, smaller models like classifiers and recognizers often run locally. How does that work and is it something we could/should incorporate?" Research note answered the framing; this cluster runs the experiment.
+
 ### `ai-assist-thinking-events` 🟡
 
 **Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands (now satisfied; ai-assist cluster shipped via #336)
