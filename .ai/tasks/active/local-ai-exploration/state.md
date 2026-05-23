@@ -1,0 +1,81 @@
+# Stream state: `local-ai-exploration`
+
+**Status:** 🟢 ready to commission — substrate prep in flight
+**Integration branch:** `local-ai-exploration` (off `release`)
+**Last updated:** 2026-05-22 (orchestrator — substrate prep)
+
+---
+
+## Phase status
+
+| Phase | Status | Notes |
+|---|---|---|
+| Research | ✅ complete | Local-model incorporation analysis at `.ai/notes/orchestrator/research/local-models-incorporation.md`. Recommendation: Option 2 (Result-shaped facade over `@huggingface/transformers`). Erik merged via #402 onto this branch. |
+| B-1 — Scaffold | 🟢 ready (next) | testbed package + facade package skeletons (provisional). Empty but compilable. |
+| B-2 — Facade primitives | ⏸ blocked on B-1 | 5-8 ops mirroring WebAuthn discipline. |
+| B-3 — First scenario (local classifier → IPromptSafetyPolicy) | ⏸ blocked on B-2 | Done-or-discard gate at exit. |
+| B-4a or B-4b — Ship or pivot | ⏸ blocked on B-3 exit | Decided per B-3 evaluation. |
+| Cluster close | ⏸ blocked on B-4 outcome | Promotion `local-ai-exploration` → `release`. |
+
+---
+
+## Decisions log (orchestrator, substrate prep)
+
+| Decision | Rationale |
+|---|---|
+| Build testbed + facade together; outcome-gated at B-3 | Erik (2026-05-22): "build the proposed AI surface; create a multi-scenario AI sample app; iterate until we're either happy with the code shape or decide to abandon it." Done-or-discard criteria locked at B-3 exit. |
+| Testbed name: `samples/testbed` (not `samples/ai-sample`) | Erik (2026-05-22): "we might want to take 'ai' out of the name so we can use it for other fgv capabilities." Long-lived showcase app for all fgv capabilities, not AI-specific. |
+| Web-first, CLI-secondary | Erik (2026-05-22): "prioritize web — the existing image samples are much harder to understand and work with via CLI." Some scenarios web-only by design (interactive React); CLI for batch-style or testable-from-pipeline. |
+| Sample-browser UX framing | Erik (2026-05-22): "we probably want to think of the web UX as a sample browser and make sure the UX is prepared for that." Sidebar list + main area + collapsible (default-collapsed) message panel. |
+| Manual scenario registration (no auto-discovery) | Erik (2026-05-22): "manual. dependencies etc already mandate changes for most consumers, so one more registration is not a barrier." |
+| 100% coverage on testbed code | Repo standard; samples worth copying need to be trustworthy. Entry points (`cli.ts`, `web/index.tsx`) may be `c8 ignore`-d as orchestration glue. |
+| Absorb `ts-prompt-assist-samples` FUTURE entry into testbed | Erik (2026-05-22) confirmed in design discussion. One general showcase that grows scenarios over time > two parallel demo apps. |
+| Port existing `ai-image-gen-sample` scenarios → P3 tech debt | Erik (2026-05-22): "we should probably add tech debt to port the ai image scenarios over as well." Not in cluster scope; queued for after testbed is established. |
+| Data pipeline = chocolate-lab pattern (checked-in generated TS) | Recon confirmed chocolate-lab's `data/published/<category>/*.yaml` → `scripts/build-library-data.js` → `src/packlets/built-in/builtInData.generated.ts` (checked in). Same shape; `rushx build:data` manual invocation. |
+| KeyStore on web = `FileApiTreeAccessors.createFromLocalStorage` (existing ts-web-extras primitive) | Confirmed in chocolate-lab recon; primitive already exists. No new fgv extension required. Local helpers (`loadKeystoreFromTree`, etc.) stay app-local per chocolate-lab pattern. |
+| First scenario: local classifier → `IPromptSafetyPolicy` backend | Simpler than RAG/routing scenarios; one model + one integration seam; concentrates on facade-to-ts-prompt-assist composition; abandons fast if facade reads wrong. |
+| Tenet: gap-then-fix (preferred) OR workaround-with-tracked-workitem | Erik (2026-05-22) — load-bearing for the testbed-as-forcing-function role. Workaround comments tagged `// TESTBED-WORKAROUND:` (greppable). Tracked items go to `docs/TECH_DEBT.md` or `docs/FUTURE.md`. |
+
+---
+
+## Open questions
+
+### To resolve at sub-phase brief-authoring time
+
+| ID | Question | Phase |
+|---|---|---|
+| OQ-1 | Exact facade surface (5-8 ops): naming, signature, browser vs Node behavior differences | B-2 sub-brief |
+| OQ-2 | Whether `loadPipeline` returns an opaque type or a thin Result-wrapped reference to the upstream `Pipeline` | B-2 sub-brief |
+| OQ-3 | Whether the testbed's web shell should support keyboard shortcuts for scenario navigation (ts-app-shell `keyboard` packlet is available) | B-1 sub-brief |
+| OQ-4 | Whether to land a second scenario type at B-4a to confirm facade survives across model types (likely yes if shipping) | B-3 exit gate |
+
+### Deferred (not this cluster's concern)
+
+| ID | Question | Where it lives |
+|---|---|---|
+| F-1 | Port `samples/ai-image-gen-sample` scenarios into testbed | `docs/TECH_DEBT.md` (this cluster files the entry) |
+| F-2 | Editor UX as a separate `ts-prompt-assist-editor-ui` stream | `docs/FUTURE.md` (already queued; unchanged) |
+| F-3 | Sidecar/HTTP local LLM path (Ollama/LM Studio via existing ai-assist baseUrl) | Documentable independent of this cluster (research note surprise #1); flagged for a separate small chore PR if Erik wants |
+
+---
+
+## History
+
+| Date | Event | Notes |
+|---|---|---|
+| 2026-05-19 | Research note authored | `.ai/notes/orchestrator/research/local-models-incorporation.md` via #402; recommended Option 2 with timing "next slot, not urgent." |
+| 2026-05-22 | Erik merged research to `local-ai-exploration` branch; commissioned the build-and-evaluate journey | "Build the proposed AI surface; create multi-scenario sample app; iterate until happy or abandon." |
+| 2026-05-22 | Substrate prep | Brief + state + WORKSTREAMS + FUTURE absorbs + TECH_DEBT entry for ai-image port. This PR. |
+
+---
+
+## PRs
+
+| Phase | PR | Status |
+|---|---|---|
+| Research | #402 | merged to `local-ai-exploration` |
+| Substrate prep | (this PR) | open |
+| B-1 | TBD | not yet commissioned |
+| B-2 | TBD | not yet commissioned |
+| B-3 | TBD | not yet commissioned |
+| B-4a/b | TBD | gated on B-3 exit |

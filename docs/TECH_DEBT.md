@@ -116,6 +116,19 @@ opportunistically when the right surface area is touched.
 
 ## P3 — Opportunistic cleanup
 
+- **[P3] Port `samples/ai-image-gen-sample` scenarios into `samples/testbed`.**
+  The new general-purpose `samples/testbed` sample-browser (commissioned via `local-ai-exploration` cluster, 2026-05-22) is the canonical home for fgv-capability scenarios going forward. The existing `samples/ai-image-gen-sample` predates the testbed and has its own webpack pipeline + scenario shapes; its content (image generation against multiple providers, prompt-assist round-2 demo, etc.) should be ported into the testbed once the testbed shell is established.
+
+  **Trigger**: after `local-ai-exploration` cluster ships and the testbed has at least 2-3 native scenarios proving the shell + scenario contract are stable.
+
+  **Scope sketch**: port each `ai-image-gen-sample` scenario as a testbed `IScenario` web impl. Pull data from the existing sample's fixture pattern into the testbed's `data/` pipeline. Decide whether to retire `samples/ai-image-gen-sample` entirely (lean: retire — one canonical sample app, not two) or keep it as a "minimal sample skeleton" reference for consumers who want a single-purpose app shape.
+
+  **Not a P1**: existing sample works as-is; consumer-visible behavior unchanged either way.
+
+  **Not a P2**: the testbed has to land + stabilize before the port has a real target. P3 reflects "do this once the testbed earns the right to absorb."
+
+  **Reference**: `local-ai-exploration` cluster brief at `.ai/tasks/active/local-ai-exploration/brief.md`; Erik 2026-05-22 ("we should probably add tech debt to port the ai image scenarios over as well").
+
 - **[P3] New pure-library packages must declare `"sideEffects": false` in `package.json`.**
   Every `libraries/` package whose `src/index.ts` exports only functions and types (no module-level side effects) carries `"sideEffects": false` so bundlers can tree-shake it. This was caught in PR review on `crypto-batch-2-webauthn`: `@fgv/ts-extras-webauthn` was missing the field; `@fgv/ts-web-extras-webauthn` had it. Fixed in-stream, but the gap reveals a scaffolding-checklist hole — the standard "new package" template doesn't enforce it.
 
