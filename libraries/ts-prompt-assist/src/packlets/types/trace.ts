@@ -43,16 +43,25 @@ export interface IBindingTraceEntry {
 }
 
 /**
- * Discriminator of the safeguard finding kind. The v0.1 surface enumerates
- * the four kinds the library can emit; only `'enforced-override-ignored'` is
- * produced by B-1's foundation. The remaining kinds wire up in B-4.
+ * Built-in safeguard finding kinds the library itself emits. `'max-length'`
+ * and `'suspicious-pattern'` describe rejections / matches; `'screening-skipped'`
+ * and `'enforced-override-ignored'` are informational. Custom screeners may
+ * emit additional kinds — see {@link SafeguardFindingKind}.
  * @public
  */
-export type SafeguardFindingKind =
+export type BuiltInFindingKind =
   | 'max-length'
   | 'suspicious-pattern'
   | 'screening-skipped'
   | 'enforced-override-ignored';
+
+/**
+ * Discriminator of a safeguard finding kind. Built-in kinds (see
+ * {@link BuiltInFindingKind}) preserve autocomplete; the `string & {}` branch
+ * lets custom {@link IScreener} implementations emit arbitrary kinds.
+ * @public
+ */
+export type SafeguardFindingKind = BuiltInFindingKind | (string & {});
 
 /**
  * Disposition of a safeguard finding.
@@ -69,6 +78,13 @@ export interface ISafeguardFinding {
   readonly kind: SafeguardFindingKind;
   readonly disposition: SafeguardDisposition;
   readonly detail: string;
+  /**
+   * Optional structured per-finding data — e.g. a classifier's per-label
+   * scores — that would otherwise have to be stringified into `detail`.
+   */
+  readonly metadata?: Readonly<Record<string, unknown>>;
+  /** Name of the emitting {@link IScreener}, when the finding came from one. */
+  readonly screener?: string;
 }
 
 /**
@@ -127,12 +143,13 @@ export interface IPromptResolveTrace {
   /** One entry per resource-binding slot, with the inner resolve's full trace. */
   readonly resourceBindingResolutions: ReadonlyArray<IResourceBindingTraceEntry>;
   /**
-   * Warn / info safeguard findings: `'suspicious-pattern'` matches under
-   * `onSuspicious: 'warn'`, `'screening-skipped'`, and
-   * `'enforced-override-ignored'`. Reject paths (length-cap violations,
-   * `'suspicious-pattern'` matches under `onSuspicious: 'reject'`) fail
-   * the resolve before an `IResolvedPrompt` is constructed, so their
-   * details surface in the failure message rather than here.
+   * Warn / info safeguard findings: screener findings whose `disposition`
+   * is `'warn'` or `'info'` (e.g. `'suspicious-pattern'` warnings,
+   * `'screening-skipped'`) plus `'enforced-override-ignored'` from the
+   * binding merge. Reject paths (length-cap violations, any finding with
+   * `disposition: 'reject'`, or a screener returning `fail()`) fail the
+   * resolve before an `IResolvedPrompt` is constructed, so their details
+   * surface in the failure message rather than here.
    */
   readonly safeguardFindings: ReadonlyArray<ISafeguardFinding>;
   /** Per-candidate match details, specificity-ascending. */

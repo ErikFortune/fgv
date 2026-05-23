@@ -154,6 +154,19 @@ substrate. Don't queue streams against them here.
 
 **Origin.** Erik's question 2026-05-22: "ai-assist is all about communicating with distant LLMs for pretty meaty tasks. But in the real world, smaller models like classifiers and recognizers often run locally. How does that work and is it something we could/should incorporate?" Research note answered the framing; this cluster runs the experiment.
 
+### `prompt-assist-screeners` 🟢
+
+**Status:** 🟢 ready to commission (substrate prep in flight)
+**Branch base:** `release`
+**Workflow shape:** single-PR breaking-change feature
+**Substrate:** `.ai/tasks/active/prompt-assist-screeners/{brief.md, state.md}`
+**Package surface:** `@fgv/ts-prompt-assist` (safety packlet) + `.ai/instructions/LIBRARY_CAPABILITIES.md` + in-repo consumers of the dropped fields
+**Out-of-scope:** the local-classifier screener itself (B-3 of `local-ai-exploration`); LLM-based screening; screener caching; parallel execution; whole-prompt/post-render screening hook.
+
+**Mission.** Replace `@fgv/ts-prompt-assist`'s regex-only / sync / closed-kind safety pipeline with a pluggable `IScreener` model. Consumers wire arbitrary screening logic (async ML classifiers, network calls, custom rule engines) into prompt resolution. Breaking change; no compat shims. The existing regex screener becomes a built-in `createPatternScreener` factory; `IPromptSafetyPolicy.screeners` replaces `suspiciousPatterns`/`screenedSources`/`onSuspicious`; `applySafeguards` becomes async; findings carry per-finding disposition + optional structured metadata; finding kinds open via `string & {}`.
+
+**Origin / dependency.** Upstream gap-fix for `local-ai-exploration` B-3 (local classifier → `IPromptSafetyPolicy` backend), which can't be built against today's surface. Per the gap-then-fix tenet, fix the primitive here first → ship to `release` → `local-ai-exploration` absorbs (merge `release` → integration) before B-3. Runs parallel to `local-ai-exploration` B-2 (independent surfaces). Independent of the local-ai experiment's outcome — benefits any consumer wanting custom screeners.
+
 ### `ai-assist-thinking-events` 🟡
 
 **Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands (now satisfied; ai-assist cluster shipped via #336)
