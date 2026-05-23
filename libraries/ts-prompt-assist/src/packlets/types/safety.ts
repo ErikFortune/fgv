@@ -36,8 +36,10 @@ export interface IScreenerContext {
  * A pluggable, per-slot-value, pre-render safety screener.
  *
  * @remarks
- * `screen` is invoked once per non-empty slot value during a resolve, before
- * the Mustache render. It returns zero, one, or many {@link ISafeguardFinding}s
+ * `screen` is invoked once per merged slot value — one that resolved to a
+ * binding, default, or caller substitution (the empty fallback is skipped) —
+ * during a resolve, before the Mustache render. The value may itself be an
+ * empty string. It returns zero, one, or many {@link ISafeguardFinding}s
  * (an empty array signals no concerns). The signature is always async so ML
  * classifiers and remote-call screeners compose uniformly; a synchronous
  * screener simply returns a resolved promise. A returned `Result.fail`
@@ -75,9 +77,9 @@ export interface IPromptSafetyPolicy {
    */
   readonly defaultMaxLength?: number;
   /**
-   * Screeners run against each non-empty slot value (post-binding,
-   * pre-render), sequentially in declaration order. See {@link IScreener}.
-   * Use {@link createPatternScreener} for regex-based injection screening.
+   * Screeners run against each merged slot value (post-binding, pre-render),
+   * sequentially in declaration order. See {@link IScreener}. Use
+   * {@link createPatternScreener} for regex-based injection screening.
    */
   readonly screeners?: ReadonlyArray<IScreener>;
   /**

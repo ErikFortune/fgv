@@ -15,7 +15,11 @@ export interface IPatternScreenerOptions {
   readonly name?: string;
   /** Regex patterns tested against each screened slot value. */
   readonly patterns: ReadonlyArray<RegExp>;
-  /** Disposition emitted on a pattern match (`'warn'` surfaces a finding; `'reject'` fails the resolve). */
+  /**
+   * Disposition carried by the `'suspicious-pattern'` finding on a match.
+   * `'reject'` fails the resolve; `'warn'` / `'info'` surface the finding on
+   * `trace.safeguardFindings` without failing.
+   */
   readonly onMatch: SafeguardDisposition;
   /**
    * Optional slot-source allowlist. When provided, a slot whose `source` is

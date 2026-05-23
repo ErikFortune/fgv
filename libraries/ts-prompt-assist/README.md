@@ -663,7 +663,7 @@ discarded this way.
 - **`defaultMaxLength`** — fallback length cap applied when neither
   `slot.maxLength` nor `descriptor.safeguards.defaultMaxLength` is set.
 - **`screeners`** — an ordered list of `IScreener`s run against each
-  non-empty slot value (post-binding, pre-render). Screeners run
+  merged slot value (post-binding, pre-render). Screeners run
   sequentially in declaration order; each returns a `Result` of zero or
   more `ISafeguardFinding`s. A finding with `disposition: 'reject'` (or a
   screener returning `fail()`) fails the resolve and short-circuits the

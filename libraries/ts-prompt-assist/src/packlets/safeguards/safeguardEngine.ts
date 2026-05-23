@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
 import {
   IBindingTraceEntry,
   IPromptDescriptor,
@@ -62,6 +62,9 @@ export async function applySafeguards(
   for (const slot of descriptor.slots) {
     const entry = merged.get(slot.name);
     if (entry === undefined || entry.source === 'empty') {
+      // Skip the empty fallback (no binding / default / caller substitution).
+      // A merged value that is an empty *string* is still screened — a screener
+      // may legitimately want to flag blank content — matching prior behavior.
       continue;
     }
     const value = entry.value;
@@ -119,7 +122,10 @@ async function runScreeners(
 ): Promise<string | undefined> {
   for (const screener of screeners) {
     // Sequential by design: deterministic traces and reject short-circuit.
-    const result = await screener.screen(ctx);
+    // `screen` is consumer-implemented, so a thrown error or rejected promise
+    // is captured here and folded into the same failure path as an explicit
+    // `fail()` (the trailing `.onSuccess` flattens the captured nested Result).
+    const result = (await captureAsyncResult(() => screener.screen(ctx))).onSuccess((inner) => inner);
     if (result.isFailure()) {
       return `prompt '${promptId}': screener '${screener.name}' failed on slot '${ctx.slot.name}': ${result.message}`;
     }

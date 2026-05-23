@@ -1045,6 +1045,25 @@ describe('B-4: input safeguards', () => {
     expect(result).toFailWith(/screener 'broken' failed on slot 'topic': classifier offline/);
   });
 
+  test('a screener that throws / rejects is captured as a resolve failure with context', async () => {
+    const record = buildFreeTextRecord({
+      slots: [{ name: 'topic', source: 'untrusted' }],
+      body: '{{{topic}}}'
+    });
+    const thrower: IScreener = {
+      name: 'thrower',
+      screen: (): Promise<Result<ReadonlyArray<ISafeguardFinding>>> => Promise.reject(new Error('boom'))
+    };
+    const lib = await buildLib([record], { safetyPolicy: { screeners: [thrower] } });
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'hello' }
+    });
+    expect(result).toFailWith(/screener 'thrower' failed on slot 'topic':.*boom/);
+  });
+
   test('a reject finding short-circuits subsequent screeners', async () => {
     const record = buildFreeTextRecord({
       slots: [{ name: 'topic', source: 'untrusted' }],
