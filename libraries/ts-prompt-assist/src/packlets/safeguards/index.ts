@@ -4,3 +4,4 @@
  */
 
 export * from './safeguardEngine';
+export * from './patternScreener';
