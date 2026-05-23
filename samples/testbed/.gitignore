@@ -1,0 +1,6 @@
+lib/
+dist/
+dist-web/
+node_modules/
+temp/
+*.log

@@ -612,6 +612,26 @@
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries", "browser"]
+    },
+    {
+      "packageName": "@fgv/ts-extras-transformers",
+      "projectFolder": "libraries/ts-extras-transformers",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-web-extras-transformers",
+      "projectFolder": "libraries/ts-web-extras-transformers",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "browser"]
+    },
+    {
+      "packageName": "@fgv/testbed",
+      "projectFolder": "samples/testbed",
+      "shouldPublish": false,
+      "tags": ["samples", "react", "ui", "cli"]
     }
   ]
 }
