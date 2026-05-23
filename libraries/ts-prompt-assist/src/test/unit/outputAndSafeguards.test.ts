@@ -999,7 +999,8 @@ describe('B-4: input safeguards', () => {
     const delayed: IScreener = {
       name: 'delayed',
       screen: async (ctx: IScreenerContext): Promise<Result<ReadonlyArray<ISafeguardFinding>>> => {
-        await new Promise((resolve) => setTimeout(resolve, 5));
+        // Deterministic async boundary (microtask) — no wall-clock dependency.
+        await Promise.resolve();
         return succeed([
           {
             slot: ctx.slot.name,
@@ -1091,7 +1092,7 @@ describe('B-4: input safeguards', () => {
       qualifiers: {},
       substitutions: { topic: 'hello' }
     });
-    expect(result).toFailWith(/screener 'rejecter' rejected slot 'topic': hard block/);
+    expect(result).toFailWith(/screener 'rejecter' rejected: hard block/);
     expect(secondRan).toBe(false);
   });
 
@@ -1138,7 +1139,7 @@ describe('B-4: input safeguards', () => {
       qualifiers: {},
       substitutions: { topic: 'hello' }
     });
-    expect(rejectResult).toFailWith(/rejected slot 'topic': reason-1; reason-2/);
+    expect(rejectResult).toFailWith(/rejected: reason-1; reason-2/);
   });
 
   test('a screener may preserve its own explicit screener attribution', async () => {

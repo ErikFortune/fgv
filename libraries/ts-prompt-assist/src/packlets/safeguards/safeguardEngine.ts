@@ -132,7 +132,11 @@ async function runScreeners(
     const emitted = result.value.map((f) => ({ ...f, screener: f.screener ?? screener.name }));
     const rejects = emitted.filter((f) => f.disposition === 'reject');
     if (rejects.length > 0) {
-      return `prompt '${promptId}': screener '${screener.name}' rejected slot '${ctx.slot.name}': ${rejects
+      // The slot name is omitted from this prefix: built-in finding details
+      // (e.g. createPatternScreener) already carry `slot '<name>': ...`, so
+      // re-adding it here would read redundantly. The screener name + each
+      // finding's detail provide the attribution.
+      return `prompt '${promptId}': screener '${screener.name}' rejected: ${rejects
         .map((f) => f.detail)
         .join('; ')}`;
     }
