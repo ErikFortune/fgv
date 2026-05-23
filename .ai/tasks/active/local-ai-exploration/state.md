@@ -1,8 +1,8 @@
 # Stream state: `local-ai-exploration`
 
-**Status:** 🟢 ready to commission — substrate prep in flight
+**Status:** 🟡 B-1 complete; B-2 ready to commission
 **Integration branch:** `local-ai-exploration` (off `release`)
-**Last updated:** 2026-05-22 (orchestrator — substrate prep)
+**Last updated:** 2026-05-23 (B-1 implementing agent — scaffold complete)
 
 ---
 
@@ -11,8 +11,8 @@
 | Phase | Status | Notes |
 |---|---|---|
 | Research | ✅ complete | Local-model incorporation analysis at `.ai/notes/orchestrator/research/local-models-incorporation.md`. Recommendation: Option 2 (Result-shaped facade over `@huggingface/transformers`). Erik merged via #402 onto this branch. |
-| B-1 — Scaffold | 🟢 ready (next) | testbed package + facade package skeletons (provisional). Empty but compilable. |
-| B-2 — Facade primitives | ⏸ blocked on B-1 | 5-8 ops mirroring WebAuthn discipline. |
+| B-1 — Scaffold | ✅ complete | PR #404. Three new packages registered, all gates green, 100% coverage on testbed. See `phase-b1-result.md`. |
+| B-2 — Facade primitives | 🟢 ready (next) | 5-8 ops mirroring WebAuthn discipline. OQ-1 / OQ-2 carried into B-2 sub-brief (see open questions). |
 | B-3 — First scenario (local classifier → IPromptSafetyPolicy) | ⏸ blocked on B-2 | Done-or-discard gate at exit. |
 | B-4a or B-4b — Ship or pivot | ⏸ blocked on B-3 exit | Decided per B-3 evaluation. |
 | Cluster close | ⏸ blocked on B-4 outcome | Promotion `local-ai-exploration` → `release`. |
@@ -35,6 +35,9 @@
 | KeyStore on web = `FileApiTreeAccessors.createFromLocalStorage` (existing ts-web-extras primitive) | Confirmed in chocolate-lab recon; primitive already exists. No new fgv extension required. Local helpers (`loadKeystoreFromTree`, etc.) stay app-local per chocolate-lab pattern. |
 | First scenario: local classifier → `IPromptSafetyPolicy` backend | Simpler than RAG/routing scenarios; one model + one integration seam; concentrates on facade-to-ts-prompt-assist composition; abandons fast if facade reads wrong. |
 | Tenet: gap-then-fix (preferred) OR workaround-with-tracked-workitem | Erik (2026-05-22) — load-bearing for the testbed-as-forcing-function role. Workaround comments tagged `// TESTBED-WORKAROUND:` (greppable). Tracked items go to `docs/TECH_DEBT.md` or `docs/FUTURE.md`. |
+| Testbed rig: Heft dual-rig + webpack hybrid | B-1 implementing agent (2026-05-23) — `samples/ai-image-gen-sample` (named reference) uses webpack-only with no tests, incompatible with the 100%-coverage gate. Adopted `@fgv/heft-dual-rig` (same as `libraries/ts-app-shell`) so heft owns compile/lint/test/api-extractor and a sibling `webpack.config.js` builds the browser bundle. |
+| c8-ignore scope: entry points + generated artifact only | B-1 implementing agent (2026-05-23) — `web/index.tsx` and the `if (require.main === module)` tail of `cli.ts` (orchestration glue with rationale comments), plus `src/generated/` (auto-generated). Everything else at 100% across all four metrics. |
+| src layout: brief's nested form (web/ + cli.ts + shell/ + scenarios/ + generated/) | B-1 implementing agent (2026-05-23) — cleaner web/CLI separation than the flat `src/main.tsx` form `ai-image-gen-sample` uses. |
 
 ---
 
@@ -65,7 +68,8 @@
 |---|---|---|
 | 2026-05-19 | Research note authored | `.ai/notes/orchestrator/research/local-models-incorporation.md` via #402; recommended Option 2 with timing "next slot, not urgent." |
 | 2026-05-22 | Erik merged research to `local-ai-exploration` branch; commissioned the build-and-evaluate journey | "Build the proposed AI surface; create multi-scenario sample app; iterate until happy or abandon." |
-| 2026-05-22 | Substrate prep | Brief + state + WORKSTREAMS + FUTURE absorbs + TECH_DEBT entry for ai-image port. This PR. |
+| 2026-05-22 | Substrate prep | Brief + state + WORKSTREAMS + FUTURE absorbs + TECH_DEBT entry for ai-image port. PR #403. |
+| 2026-05-23 | B-1 scaffold complete | Three new packages (`@fgv/testbed`, `@fgv/ts-extras-transformers`, `@fgv/ts-web-extras-transformers`) scaffolded empty-but-compilable. Rig + c8-scope + src-layout decisions locked via AskUserQuestion pre-scaffold. 100% coverage on testbed. PR #404. See `phase-b1-result.md` for scaffolding surprises carried into B-2. |
 
 ---
 
@@ -74,8 +78,8 @@
 | Phase | PR | Status |
 |---|---|---|
 | Research | #402 | merged to `local-ai-exploration` |
-| Substrate prep | (this PR) | open |
-| B-1 | TBD | not yet commissioned |
-| B-2 | TBD | not yet commissioned |
+| Substrate prep | #403 | merged to `local-ai-exploration` |
+| B-1 | #404 | open, targeting `local-ai-exploration` |
+| B-2 | TBD | ready to commission |
 | B-3 | TBD | not yet commissioned |
 | B-4a/b | TBD | gated on B-3 exit |
