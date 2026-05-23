@@ -522,12 +522,12 @@ export class PromptLibrary<
           succeed({ walked, mergeResult, rb } as const)
         )
       )
-      .onSuccess(({ walked, mergeResult, rb }) =>
+      .thenOnSuccess(async ({ walked, mergeResult, rb }) =>
         this._materializeIfNeeded(walked.record)
           .onSuccess((materialized) =>
             this._resolveCandidates(walked.winningScope, req.id, walked.record, materialized, req.qualifiers)
           )
-          .onSuccess((matches) => this._renderResolved(req, walked, mergeResult, matches, rb))
+          .thenOnSuccess(async (matches) => this._renderResolved(req, walked, mergeResult, matches, rb))
       );
   }
 
@@ -920,7 +920,7 @@ export class PromptLibrary<
       });
   }
 
-  private _renderResolved(
+  private async _renderResolved(
     req: IPromptResolveRequest<string>,
     walked: {
       readonly record: IStoredPromptRecord;
@@ -938,7 +938,7 @@ export class PromptLibrary<
       readonly conditions: ReadonlyArray<Runtime.IConditionMatchResult>;
     }>,
     resourceBindings: IResourceBindingResolveResult
-  ): Result<IResolvedPrompt> {
+  ): Promise<Result<IResolvedPrompt>> {
     const descriptor = walked.record.descriptor;
     const selected = matches.map(({ candidate, index }) => ({ candidate, index }));
     const joinedBody = joinBodies(selected, descriptor.join);
@@ -951,7 +951,7 @@ export class PromptLibrary<
     // its reject messages with `prompt '${descriptor.id}': ...`, and
     // double-wrapping produces `prompt 'p': prompt 'p': ...` noise
     // (Copilot review on PR #369).
-    return applySafeguards(descriptor, finalMerged, this._safetyPolicy).onSuccess((safeguardResult) =>
+    return (await applySafeguards(descriptor, finalMerged, this._safetyPolicy)).onSuccess((safeguardResult) =>
       this._mustacheCache
         .getOrParse(req.id, joinedBody)
         .onSuccess((template) =>
