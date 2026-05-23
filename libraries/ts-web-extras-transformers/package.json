@@ -47,7 +47,9 @@
     "url": "https://github.com/ErikFortune/fgv.git"
   },
   "sideEffects": false,
-  "dependencies": {},
+  "dependencies": {
+    "@huggingface/transformers": "~4.2.0"
+  },
   "devDependencies": {
     "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils": "workspace:*",

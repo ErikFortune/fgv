@@ -1,8 +1,8 @@
 # Stream state: `local-ai-exploration`
 
-**Status:** 🟡 B-1 complete; B-2 ready to commission
+**Status:** 🟡 B-2 complete; B-3 ready to commission
 **Integration branch:** `local-ai-exploration` (off `release`)
-**Last updated:** 2026-05-23 (B-1 implementing agent — scaffold complete)
+**Last updated:** 2026-05-23 (B-2 implementing agent — facade primitives complete)
 
 ---
 
@@ -12,8 +12,8 @@
 |---|---|---|
 | Research | ✅ complete | Local-model incorporation analysis at `.ai/notes/orchestrator/research/local-models-incorporation.md`. Recommendation: Option 2 (Result-shaped facade over `@huggingface/transformers`). Erik merged via #402 onto this branch. |
 | B-1 — Scaffold | ✅ complete | PR #404. Three new packages registered, all gates green, 100% coverage on testbed. See `phase-b1-result.md`. |
-| B-2 — Facade primitives | 🟢 ready (next) | 5-8 ops mirroring WebAuthn discipline. OQ-1 / OQ-2 carried into B-2 sub-brief (see open questions). |
-| B-3 — First scenario (local classifier → IPromptSafetyPolicy) | ⏸ blocked on B-2 | Done-or-discard gate at exit. |
+| B-2 — Facade primitives | ✅ complete | PR #TBD. `loadPipeline` + `classify` shipped. `embed` + `generate` deferred. 100% coverage both packages. See `phase-b2-result.md`. |
+| B-3 — First scenario (local classifier → IPromptSafetyPolicy) | 🟢 ready (next) | Done-or-discard gate at exit. |
 | B-4a or B-4b — Ship or pivot | ⏸ blocked on B-3 exit | Decided per B-3 evaluation. |
 | Cluster close | ⏸ blocked on B-4 outcome | Promotion `local-ai-exploration` → `release`. |
 
@@ -70,6 +70,7 @@
 | 2026-05-22 | Erik merged research to `local-ai-exploration` branch; commissioned the build-and-evaluate journey | "Build the proposed AI surface; create multi-scenario sample app; iterate until happy or abandon." |
 | 2026-05-22 | Substrate prep | Brief + state + WORKSTREAMS + FUTURE absorbs + TECH_DEBT entry for ai-image port. PR #403. |
 | 2026-05-23 | B-1 scaffold complete | Three new packages (`@fgv/testbed`, `@fgv/ts-extras-transformers`, `@fgv/ts-web-extras-transformers`) scaffolded empty-but-compilable. Rig + c8-scope + src-layout decisions locked via AskUserQuestion pre-scaffold. 100% coverage on testbed. PR #404. See `phase-b1-result.md` for scaffolding surprises carried into B-2. |
+| 2026-05-23 | B-2 facade primitives complete | `loadPipeline` + `classify` implemented in both transformers packages. `embed` + `generate` deferred. 100% coverage (13 tests each). `@huggingface/transformers` added as runtime dep. `skipLibCheck` required for upstream type-def issues. See `phase-b2-result.md`. |
 
 ---
 
@@ -80,6 +81,6 @@
 | Research | #402 | merged to `local-ai-exploration` |
 | Substrate prep | #403 | merged to `local-ai-exploration` |
 | B-1 | #404 | open, targeting `local-ai-exploration` |
-| B-2 | TBD | ready to commission |
+| B-2 | TBD (claude/fervent-hamilton-iuqXX) | open, targeting local-ai-exploration |
 | B-3 | TBD | not yet commissioned |
 | B-4a/b | TBD | gated on B-3 exit |
