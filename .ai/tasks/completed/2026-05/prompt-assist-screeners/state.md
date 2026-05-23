@@ -43,7 +43,8 @@
 | Date | Event | Notes |
 |---|---|---|
 | 2026-05-22 | Stream requested + specced | Erik supplied a near-complete brief (goal / problem / required shape / acceptance / out-of-scope) + the locked `IScreener` / `IScreenerContext` interface. |
-| 2026-05-22 | Substrate prep | brief.md + state.md + WORKSTREAMS entry. This PR. |
+| 2026-05-22 | Substrate prep | brief.md + state.md + WORKSTREAMS entry. |
+| 2026-05-23 | Implementation landed | All seven required changes; 100% coverage; PR #407 opened onto `release`. Two rounds of Copilot review addressed (screener boundary + message/doc/test polish). See `result.md`. |
 
 ---
 
@@ -51,5 +52,5 @@
 
 | Phase | PR | Status |
 |---|---|---|
-| Substrate prep | (this PR) | open |
-| Implementation | TBD | not yet commissioned |
+| Substrate prep | #406 | merged |
+| Implementation | [#407](https://github.com/ErikFortune/fgv/pull/407) | open — awaiting merge to `release` |

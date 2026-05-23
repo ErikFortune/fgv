@@ -2,7 +2,7 @@
 
 **Status:** ✅ complete — implementation landed
 **Branch:** `claude/kind-fermat-sn50P`
-**PR target:** `release` (single-PR breaking feature)
+**PR:** [#407](https://github.com/ErikFortune/fgv/pull/407) → `release` (single-PR breaking feature)
 **Change file:** `common/changes/@fgv/ts-prompt-assist/prompt-assist-screeners_2026-05-23-00-00.json` (`type: major`)
 
 ---
@@ -96,7 +96,7 @@ Whole-prompt / post-render screening remains out of scope (a separate future mec
 | `rushx build` (@fgv/ts-prompt-assist) | ✅ clean |
 | `rushx lint` (separate gate) | ✅ clean |
 | `rushx fixlint` run before final commit | ✅ |
-| `rushx test` — 100% coverage all 4 metrics | ✅ (187 tests; safeguards packlet 100%) |
+| `rushx test` — 100% coverage all 4 metrics | ✅ (189 tests; safeguards packlet 100%) |
 | Existing pattern-screener tests pass against `createPatternScreener` | ✅ |
 | New tests (multi-screener ordering; async/delayed; `fail()` propagation; reject short-circuit; multi-finding) | ✅ |
 | api-extractor regenerated | ✅ `etc/ts-prompt-assist.api.md` |
@@ -104,6 +104,28 @@ Whole-prompt / post-render screening remains out of scope (a separate future mec
 | `LIBRARY_CAPABILITIES.md` prompt-assist entry rewritten | ✅ |
 | In-repo consumers of dropped fields updated (tests, README) | ✅ (no `samples/`; no downstream package consumers) |
 | No `any`; no unsafe casts; no `Result<void>` | ✅ |
+
+---
+
+## Post-review hardening (PR #407 Copilot review, 2 rounds)
+
+- **Screener boundary** — `runScreeners` now wraps `screener.screen(ctx)` in
+  `captureAsyncResult`, so a consumer screener that throws or returns a rejected
+  promise becomes a contextual `Result.fail` (`screener '<name>' failed on slot
+  '<slot>': …`) on the same path as an explicit `fail()`, rather than escaping the
+  Result pipeline. Covered by a throw/reject test.
+- **Reject message** — the engine's rejection message dropped its `slot '<name>'`
+  prefix; built-in finding details already carry `slot '<name>': …`, so the slot now
+  appears once (`prompt '<id>': screener '<name>' rejected: <detail>; …`).
+- **Empty-string values** — kept today's behavior (a merged slot value that is an
+  empty *string* is still screened — a screener may legitimately flag blank content)
+  and corrected the misleading "non-empty slot value" wording in the docs to "merged
+  slot value". The Copilot thread suggesting a `value.length === 0` skip was left open
+  intentionally (behavior change beyond the brief's "reproduce today's behavior").
+- **`onMatch` doc** — `createPatternScreener.onMatch` doc now states it carries any
+  `SafeguardDisposition` (incl. `'info'`), matching its type.
+- **Test determinism** — replaced a wall-clock `setTimeout` in the async-screener test
+  with a microtask boundary (`await Promise.resolve()`).
 
 ---
 
