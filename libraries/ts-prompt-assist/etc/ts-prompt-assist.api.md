@@ -52,6 +52,9 @@ export function buildSimpleDescriptor(params: IBuildSimpleDescriptorParams): IPr
 export function buildStoredPromptRecord<TQualifierNames extends string = string>(scope: ScopeKey, contents: IPromptFileContents<TQualifierNames>): IStoredPromptRecord<TQualifierNames>;
 
 // @public
+export type BuiltInFindingKind = 'max-length' | 'suspicious-pattern' | 'screening-skipped' | 'enforced-override-ignored';
+
+// @public
 export const Convert: {
     readonly promptId: Converter<PromptId>;
     readonly slotName: Converter<SlotName>;
@@ -78,6 +81,9 @@ export class ConverterRegistry<TResponse extends IPromptResponseBase> implements
         kind: K;
     }>>): Result<ConverterId>;
 }
+
+// @public
+export function createPatternScreener(options: IPatternScreenerOptions): IScreener;
 
 // @public
 export function defaultScopeDecoding(encoded: string): Result<ScopeKey>;
@@ -214,6 +220,14 @@ export interface IOutputValidationContext {
     readonly promptId: PromptId;
     // (undocumented)
     readonly substitutions: ReadonlyMap<SlotName, IBindingTraceEntry>;
+}
+
+// @public
+export interface IPatternScreenerOptions {
+    readonly name?: string;
+    readonly onMatch: SafeguardDisposition;
+    readonly patterns: ReadonlyArray<RegExp>;
+    readonly screenedSources?: ReadonlyArray<string>;
 }
 
 // @public
@@ -377,9 +391,7 @@ export interface IPromptSafeguardOverrides {
 export interface IPromptSafetyPolicy {
     readonly antiJailbreakPreface?: (descriptor: IPromptDescriptor) => Result<string>;
     readonly defaultMaxLength?: number;
-    readonly onSuspicious?: SuspiciousDisposition;
-    readonly screenedSources?: ReadonlyArray<string>;
-    readonly suspiciousPatterns?: ReadonlyArray<RegExp>;
+    readonly screeners?: ReadonlyArray<IScreener>;
 }
 
 // @public
@@ -513,6 +525,8 @@ export interface ISafeguardFinding {
     readonly disposition: SafeguardDisposition;
     // (undocumented)
     readonly kind: SafeguardFindingKind;
+    readonly metadata?: Readonly<Record<string, unknown>>;
+    readonly screener?: string;
     // (undocumented)
     readonly slot: SlotName;
 }
@@ -523,6 +537,20 @@ export interface IScopeSlotBindingsRecord {
     readonly bindings: ReadonlyMap<SlotName, SlotBinding>;
     // (undocumented)
     readonly scope: ScopeKey;
+}
+
+// @public
+export interface IScreener {
+    readonly name: string;
+    readonly screen: (ctx: IScreenerContext) => Promise<Result<ReadonlyArray<ISafeguardFinding>>>;
+}
+
+// @public
+export interface IScreenerContext {
+    readonly promptId: PromptId;
+    readonly slot: IPromptSlot;
+    readonly source?: string;
+    readonly value: string;
 }
 
 // @public
@@ -644,7 +672,7 @@ export type ResourceSubstitutionMode = 'replace' | 'inherit';
 export type SafeguardDisposition = 'warn' | 'reject' | 'info';
 
 // @public
-export type SafeguardFindingKind = 'max-length' | 'suspicious-pattern' | 'screening-skipped' | 'enforced-override-ignored';
+export type SafeguardFindingKind = BuiltInFindingKind | (string & {});
 
 // @public
 export function scanCandidateBody(body: string, promptId: PromptId, candidateIndex: number): Result<true>;
@@ -683,9 +711,6 @@ export type SlotWritability = 'any-scope' | 'schema-only' | 'system-only';
 
 // @public
 export const substitutionEntry: Converter<string | SlotBinding>;
-
-// @public
-export type SuspiciousDisposition = 'warn' | 'reject';
 
 // @public
 export function typedPromptFileConverter<TQualifierNames extends string>(qualifierNameConverter: Converter<TQualifierNames>): Converter<IPromptFileContents<TQualifierNames>>;

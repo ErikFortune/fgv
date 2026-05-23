@@ -1,8 +1,8 @@
 # Stream state: `prompt-assist-screeners`
 
-**Status:** 🟢 ready to commission — substrate prep in flight
+**Status:** ✅ complete — implementation landed (see `result.md`)
 **Branch base:** `release`
-**Last updated:** 2026-05-22 (orchestrator — substrate prep)
+**Last updated:** 2026-05-23 (implementation complete)
 
 ---
 

@@ -8,7 +8,8 @@ import {
   IBindingTraceEntry,
   IPromptDescriptor,
   IPromptSafetyPolicy,
-  IPromptSlot,
+  IScreener,
+  IScreenerContext,
   ISafeguardFinding,
   SlotName
 } from '../types';
@@ -16,9 +17,9 @@ import {
 /**
  * Outcome of running the per-resolve safeguard pipeline. Findings collected
  * here are appended to the trace's `safeguardFindings`. A `reject`-disposition
- * finding bubbles up as an overall `Result.fail` from
- * {@link applySafeguards} so the resolve never returns a body that violates
- * a hard policy.
+ * finding (or a screener returning `fail()`) bubbles up as an overall
+ * `Result.fail` from {@link applySafeguards} so the resolve never returns a
+ * body that violates a hard policy.
  *
  * @internal
  */
@@ -27,38 +28,36 @@ export interface ISafeguardResult {
 }
 
 /**
- * Applies per-slot length cap, regex screen, and source-aware skipping per
- * design §9. Runs against the merged binding map AFTER substitution context
- * is built and BEFORE the Mustache render.
+ * Applies the per-slot length cap then runs the policy's screeners against the
+ * merged binding map AFTER substitution context is built and BEFORE the
+ * Mustache render.
  *
  * @remarks
  * - Length cap precedence: slot.maxLength → descriptor.safeguards.defaultMaxLength →
- *   policy.defaultMaxLength → none.
- * - Regex screen: each pattern's `lastIndex` is reset to 0 before every
- *   `.test()` so stateful (`g` / `y`) flag regexes don't leak state across
- *   slots (PR #359 retrospective bug).
- * - Source-aware skipping: a slot whose `source` is declared but is NOT in
- *   `policy.screenedSources` (or whose descriptor sets
- *   `safeguards.skipInjectionScreening: true`) is skipped with a
- *   `'screening-skipped'` info finding. Slots with no `source` declared are
- *   silently not screened (no finding — there is nothing to skip).
- * - Length-cap violations always reject the resolve.
- * - Regex-screen matches honor the policy's `onSuspicious` (default `'warn'`).
+ *   policy.defaultMaxLength → none. Length-cap violations always reject.
+ * - `descriptor.safeguards.skipInjectionScreening: true` skips all screeners
+ *   for the descriptor, emitting a `'screening-skipped'` info finding per slot
+ *   that declares a `source`. Source-aware skipping for a single screener is
+ *   the screener's own concern (see {@link createPatternScreener}).
+ * - Screeners run sequentially in declaration order. The first finding with
+ *   `disposition: 'reject'` short-circuits the remaining screeners (and the
+ *   rest of the slots) and fails the resolve. A screener returning `fail()`
+ *   (an operational failure, not a finding) likewise fails the resolve with
+ *   context.
+ * - `'warn'` / `'info'` findings accumulate and surface in the trace.
  *
  * @internal
  */
-export function applySafeguards(
+export async function applySafeguards(
   descriptor: IPromptDescriptor,
   merged: ReadonlyMap<SlotName, IBindingTraceEntry>,
   policy: IPromptSafetyPolicy | undefined
-): Result<ISafeguardResult> {
+): Promise<Result<ISafeguardResult>> {
   const findings: ISafeguardFinding[] = [];
   const descriptorDefaultMaxLength = descriptor.safeguards?.defaultMaxLength;
   const skipScreening = descriptor.safeguards?.skipInjectionScreening === true;
   const policyDefaultMaxLength = policy?.defaultMaxLength;
-  const screenedSources = policy?.screenedSources ?? [];
-  const patterns = policy?.suspiciousPatterns ?? [];
-  const onSuspicious = policy?.onSuspicious ?? 'warn';
+  const screeners = policy?.screeners ?? [];
 
   for (const slot of descriptor.slots) {
     const entry = merged.get(slot.name);
@@ -69,144 +68,75 @@ export function applySafeguards(
 
     const lengthCap = slot.maxLength ?? descriptorDefaultMaxLength ?? policyDefaultMaxLength;
     if (lengthCap !== undefined && !isFiniteNonNegativeInteger(lengthCap)) {
-      // Length caps are plain `number` on `IPromptSlot.maxLength`,
-      // `IPromptSafeguardOverrides.defaultMaxLength`, and
-      // `IPromptSafetyPolicy.defaultMaxLength`, so `NaN` and negative
-      // values are syntactically valid but semantically incoherent
-      // (`value.length > NaN` is `false` — silently disables the cap;
-      // negative caps reject every non-empty value). Reject loudly at
-      // apply time so the misconfiguration surfaces with the prompt id
-      // and slot name attached (Copilot review on PR #369).
+      // Length caps are plain `number`, so `NaN` and negative values are
+      // syntactically valid but semantically incoherent (`value.length > NaN`
+      // is `false` — silently disables the cap; negative caps reject every
+      // non-empty value). Reject loudly so the misconfiguration surfaces with
+      // the prompt id and slot name attached.
       return fail(
         `prompt '${descriptor.id}': slot '${slot.name}': maxLength must be a finite non-negative integer (got ${lengthCap})`
       );
     }
     if (lengthCap !== undefined && value.length > lengthCap) {
-      // Design §9 #1 says the max-length finding is "recorded in
-      // trace.safeguardFindings", but a rejected resolve doesn't
-      // return a trace (no `IResolvedPrompt` to attach it to). For
-      // now we surface the finding's content in the fail message; the
-      // design-level gap (rejected-resolve findings vs trace) is
-      // tracked in docs/TECH_DEBT.md (PR #369 Copilot review).
       return fail(
         `prompt '${descriptor.id}': slot '${slot.name}' exceeds maxLength ${lengthCap} (got ${value.length})`
       );
     }
 
-    const screenResult = screenSlotValue({
-      slot,
-      value,
-      patterns,
-      screenedSources,
-      skipScreening,
-      onSuspicious,
-      promptId: descriptor.id
-    });
-    findings.push(...screenResult.findings);
-    if (screenResult.rejection !== undefined) {
-      return fail(screenResult.rejection);
+    if (skipScreening) {
+      if (slot.source !== undefined) {
+        findings.push({
+          slot: slot.name,
+          kind: 'screening-skipped',
+          disposition: 'info',
+          detail: `slot '${slot.name}': screening skipped (descriptor.safeguards.skipInjectionScreening)`
+        });
+      }
+      continue;
+    }
+
+    const ctx: IScreenerContext = { slot, source: slot.source, promptId: descriptor.id, value };
+    const rejection = await runScreeners(screeners, ctx, descriptor.id, findings);
+    if (rejection !== undefined) {
+      return fail(rejection);
     }
   }
 
   return succeed({ findings });
 }
 
-interface IScreenInput {
-  readonly slot: IPromptSlot;
-  readonly value: string;
-  readonly patterns: ReadonlyArray<RegExp>;
-  readonly screenedSources: ReadonlyArray<string>;
-  readonly skipScreening: boolean;
-  readonly onSuspicious: 'warn' | 'reject';
-  readonly promptId: IPromptDescriptor['id'];
+/**
+ * Runs the screeners sequentially for one slot value, appending warn/info
+ * findings to `findings`. Returns a rejection message (to fail the resolve) on
+ * the first reject-disposition finding or screener `fail()`, or `undefined`
+ * when all screeners pass.
+ */
+async function runScreeners(
+  screeners: ReadonlyArray<IScreener>,
+  ctx: IScreenerContext,
+  promptId: PromptIdLike,
+  findings: ISafeguardFinding[]
+): Promise<string | undefined> {
+  for (const screener of screeners) {
+    // Sequential by design: deterministic traces and reject short-circuit.
+    const result = await screener.screen(ctx);
+    if (result.isFailure()) {
+      return `prompt '${promptId}': screener '${screener.name}' failed on slot '${ctx.slot.name}': ${result.message}`;
+    }
+    const emitted = result.value.map((f) => ({ ...f, screener: f.screener ?? screener.name }));
+    const rejects = emitted.filter((f) => f.disposition === 'reject');
+    if (rejects.length > 0) {
+      return `prompt '${promptId}': screener '${screener.name}' rejected slot '${ctx.slot.name}': ${rejects
+        .map((f) => f.detail)
+        .join('; ')}`;
+    }
+    findings.push(...emitted);
+  }
+  return undefined;
 }
 
-interface IScreenOutcome {
-  readonly findings: ReadonlyArray<ISafeguardFinding>;
-  readonly rejection?: string;
-}
+type PromptIdLike = IPromptDescriptor['id'];
 
 function isFiniteNonNegativeInteger(n: number): boolean {
   return Number.isInteger(n) && n >= 0;
-}
-
-function screenSlotValue(input: IScreenInput): IScreenOutcome {
-  const { slot, value, patterns, screenedSources, skipScreening, onSuspicious, promptId } = input;
-
-  if (slot.source === undefined) {
-    return { findings: [] };
-  }
-
-  // Descriptor-level override takes priority over policy-level source
-  // gating: a descriptor that opts out via `skipInjectionScreening`
-  // bypasses screening regardless of whether the slot's source is in
-  // `policy.screenedSources`. The two branches each emit a
-  // `'screening-skipped'` info finding with a distinguishable `detail`
-  // string so consumers can tell which gate fired.
-  if (skipScreening) {
-    return {
-      findings: [
-        {
-          slot: slot.name,
-          kind: 'screening-skipped',
-          disposition: 'info',
-          detail: `slot '${slot.name}': screening skipped (descriptor.safeguards.skipInjectionScreening)`
-        }
-      ]
-    };
-  }
-
-  if (!screenedSources.includes(slot.source)) {
-    return {
-      findings: [
-        {
-          slot: slot.name,
-          kind: 'screening-skipped',
-          disposition: 'info',
-          detail: `slot '${slot.name}': source '${slot.source}' is not in safetyPolicy.screenedSources`
-        }
-      ]
-    };
-  }
-
-  if (patterns.length === 0) {
-    return { findings: [] };
-  }
-
-  const matches: string[] = [];
-  for (const pattern of patterns) {
-    // Reset `lastIndex` so stateful (`g` / `y`) flag regexes don't carry
-    // state from a previous slot's value. This was a real bug in the
-    // PR #359 retrospective.
-    pattern.lastIndex = 0;
-    if (pattern.test(value)) {
-      matches.push(pattern.toString());
-    }
-  }
-
-  if (matches.length === 0) {
-    return { findings: [] };
-  }
-
-  const finding: ISafeguardFinding = {
-    slot: slot.name,
-    kind: 'suspicious-pattern',
-    disposition: onSuspicious === 'reject' ? 'reject' : 'warn',
-    detail: `slot '${slot.name}': matched suspicious pattern(s): ${matches.join(', ')}`
-  };
-
-  if (onSuspicious === 'reject') {
-    // Design §9 #2 says the finding is recorded; in practice the
-    // rejected resolve never returns a trace, so the finding's content
-    // is surfaced in the fail message instead. The design-level
-    // "rejected-resolve findings carried on the trace" gap is tracked
-    // in docs/TECH_DEBT.md (PR #369 Copilot review).
-    return {
-      findings: [],
-      rejection: `prompt '${promptId}': slot '${slot.name}' matched suspicious pattern(s): ${matches.join(
-        ', '
-      )}`
-    };
-  }
-  return { findings: [finding] };
 }
