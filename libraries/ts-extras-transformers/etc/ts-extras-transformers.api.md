@@ -4,7 +4,31 @@
 
 ```ts
 
+import { AllTasks } from '@huggingface/transformers';
+import { FeatureExtractionPipeline } from '@huggingface/transformers';
+import { pipeline } from '@huggingface/transformers';
+import { PipelineType } from '@huggingface/transformers';
+import { PretrainedModelOptions } from '@huggingface/transformers';
+import { Result } from '@fgv/ts-utils';
+import { TextClassificationOutput } from '@huggingface/transformers';
+import { TextClassificationPipeline } from '@huggingface/transformers';
+
+export { AllTasks }
+
 // @public
-export const PROVISIONAL_SCAFFOLD: 'local-ai-exploration:B-1';
+export function classify(classifier: TextClassificationPipeline, text: string, options?: Parameters<TextClassificationPipeline>[1]): Promise<Result<TextClassificationOutput>>;
+
+export { FeatureExtractionPipeline }
+
+// @public
+export function loadPipeline<T extends PipelineType>(task: T, model?: string, options?: Parameters<typeof pipeline>[2]): Promise<Result<AllTasks[T]>>;
+
+export { PipelineType }
+
+export { PretrainedModelOptions }
+
+export { TextClassificationOutput }
+
+export { TextClassificationPipeline }
 
 ```

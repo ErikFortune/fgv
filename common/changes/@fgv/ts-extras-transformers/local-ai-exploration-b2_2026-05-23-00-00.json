@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-transformers",
+      "comment": "B-2: implement loadPipeline and classify primitives — Result-shaped facade over @huggingface/transformers for Node consumers. Adds @huggingface/transformers as a runtime dependency. Includes skipLibCheck for upstream type-definition issues.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-transformers",
+  "email": "noreply@anthropic.com"
+}
