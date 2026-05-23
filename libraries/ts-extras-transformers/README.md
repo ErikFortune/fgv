@@ -6,7 +6,6 @@ for Node-side consumers. The companion package
 browser consumers.
 
 **Status:** provisional — done-or-discard gate at B-3 exit of the `local-ai-exploration` cluster.
-See `brief.md` for the cluster contract.
 
 ---
 
@@ -32,7 +31,7 @@ These items were considered and explicitly deferred — use `@huggingface/transf
 - Request batching
 - Pipeline dispose semantics
 
-## Six primitives. Nothing else.
+## Two primitives. Nothing else.
 
 | Function | Return | Wraps |
 |---|---|---|
@@ -52,6 +51,7 @@ These items were considered and explicitly deferred — use `@huggingface/transf
 
 ```typescript
 import { loadPipeline, classify } from '@fgv/ts-extras-transformers';
+import { fail, succeed } from '@fgv/ts-utils';
 
 // Load a sentiment-analysis model (wraps @huggingface/transformers pipeline()).
 // The pipeline object is the upstream AllTasks['text-classification'] instance.
@@ -79,8 +79,6 @@ if (result.isSuccess()) {
 const allLabels = await classify(classifier, 'I love transformers!', { top_k: null });
 
 // Compose naturally in a Result chain:
-import { captureAsyncResult } from '@fgv/ts-utils';
-
 const screenedResult = await loadPipeline('text-classification', modelId)
   .then(r => r.onSuccess(async (pipe) => classify(pipe, userInput)))
   .then(r => r.onSuccess(labels => {

@@ -106,6 +106,10 @@ We pass options as `Parameters<typeof _pipeline>[2]` to preserve the exact upstr
 re-declaring it. This is the correct zero-opinion approach: consumers get the full upstream API
 surface, including any options the upstream adds in future versions.
 
+### onnxruntime pre-release versions in the lockfile
+
+`@huggingface/transformers@4.2.0` transitively pulls in `onnxruntime-node` and `onnxruntime-web` at dev-versioned patch releases (e.g. `*-dev.*`). These are upstream's own version pins — we cannot change them without forking `@huggingface/transformers` itself. The dev-versioned transitives are accepted as-is: upstream's runtime behaviour is unaffected, and the versions are deterministically pinned in the Rush shrinkwrap.
+
 ### `classify` output normalisation is modest but necessary
 
 The upstream `TextClassificationPipeline` has an overloaded call signature:

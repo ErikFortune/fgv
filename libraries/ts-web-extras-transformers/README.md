@@ -6,7 +6,6 @@ for browser consumers. The companion package
 Node consumers.
 
 **Status:** provisional — done-or-discard gate at B-3 exit of the `local-ai-exploration` cluster.
-See `brief.md` for the cluster contract.
 
 ---
 

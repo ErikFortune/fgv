@@ -75,6 +75,25 @@ export async function loadPipeline<T extends PipelineType>(
 }
 
 /**
+ * Normalises the upstream pipeline's output to a flat `TextClassificationOutput`.
+ *
+ * The upstream `TextClassificationPipeline` has an overloaded call signature: a single-string
+ * input returns `TextClassificationOutput` (flat array), while a string-array input returns
+ * `TextClassificationOutput[]` (array-of-arrays). Since `classify` always passes a single
+ * string, the flat-array path is the live path. The nested-array branch is defensive and
+ * ensures consumers always receive a flat array even if the upstream type union leaks through.
+ */
+function flattenIfNeeded(
+  result: TextClassificationOutput | TextClassificationOutput[]
+): TextClassificationOutput {
+  if (Array.isArray(result) && result.length > 0 && !Array.isArray(result[0])) {
+    return result as TextClassificationOutput;
+  }
+  // Defensive: if somehow an array-of-arrays came back, flatten one level.
+  return (result as unknown as TextClassificationOutput[]).flat();
+}
+
+/**
  * Result-integration wrapper that invokes a `TextClassificationPipeline` on a single text input.
  * Returns the classification results as a flat `TextClassificationOutput` (array of
  * `{ label: string; score: number }` entries).
@@ -102,13 +121,6 @@ export async function classify(
 ): Promise<Result<TextClassificationOutput>> {
   return captureAsyncResult(async () => {
     const result = await classifier(text, options);
-    // The upstream pipeline returns TextClassificationOutput when given a single string.
-    // The type union exists because the overload also accepts string[]. We normalise here
-    // so consumers always receive a flat array.
-    if (Array.isArray(result) && result.length > 0 && !Array.isArray(result[0])) {
-      return result as TextClassificationOutput;
-    }
-    // Defensive: if somehow an array-of-arrays came back, flatten one level.
-    return (result as unknown as TextClassificationOutput[]).flat();
+    return flattenIfNeeded(result);
   });
 }
