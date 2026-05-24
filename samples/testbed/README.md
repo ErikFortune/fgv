@@ -1,7 +1,7 @@
 # @fgv/testbed
 
-**Status:** B-1 scaffold (empty shell, no scenarios yet) — see
-`.ai/tasks/active/local-ai-exploration/brief.md` for the cluster contract.
+**Status:** shipping — two scenarios live (`local-classifier-safety`, `local-embedding-search`); the sample-browser shell + scenario contract are established and grow over time. See
+`.ai/tasks/completed/2026-05/local-ai-exploration/brief.md` for the cluster contract.
 
 Long-lived sample browser app + companion CLI showcasing fgv capabilities. Scenarios are
 first-class entities: a scenario module declares metadata (id, title, category, tags), an

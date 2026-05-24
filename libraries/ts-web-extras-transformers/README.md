@@ -5,7 +5,7 @@ for browser consumers. The companion package
 [`@fgv/ts-extras-transformers`](../ts-extras-transformers) provides the same surface for
 Node consumers.
 
-**Status:** provisional — done-or-discard gate at B-3 exit of the `local-ai-exploration` cluster.
+**Status:** shipped — the `local-ai-exploration` done-or-discard gate decided to ship this facade.
 
 ---
 

@@ -18,7 +18,7 @@
     }
   },
   "scripts": {
-    "build": "NODE_OPTIONS=--disable-warning=DEP0040 heft test --clean",
+    "build": "NODE_OPTIONS=--disable-warning=DEP0040 heft build --clean",
     "clean": "heft clean",
     "test": "NODE_OPTIONS=--disable-warning=DEP0040 heft test --clean",
     "test-handles": "NODE_OPTIONS=--disable-warning=DEP0040 jest --runInBand --detectOpenHandles",

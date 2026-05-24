@@ -127,17 +127,6 @@ opportunistically when the right surface area is touched.
 
   **Not a P2**: the testbed has to land + stabilize before the port has a real target. P3 reflects "do this once the testbed earns the right to absorb."
 
-- **[P3] Resolve the stale/dead testbed manual mock `samples/testbed/__mocks__/@fgv/ts-extras-transformers.js`.**
-  Surfaced by the `local-ai-exploration` promotion sibling-sweep (#410). The manual mock only exports `loadPipeline` + `classify` — it was never updated for B-4a's `classifyAll` / `embed`. The testbed tests pass via `jest.mock('@fgv/ts-extras-transformers')`; it's unclear whether the manual mock is actually picked up (post-Heft-compile, tests run from `lib/`, so the source-root `__mocks__` may be ignored and Jest may be auto-mocking instead). There is also no symmetric `__mocks__` for the web facade.
-
-  **Trigger**: next time the testbed test infra or transformers facades are touched.
-
-  **Scope sketch**: determine empirically whether the manual mock is loaded (temporarily break it and see if tests fail). If dead → delete it (and confirm 100% coverage holds). If live → sync it to the full facade surface (`classifyAll` + `embed`) and add the symmetric web-facade `__mocks__`. Either way, remove the asymmetry.
-
-  **Not a P2**: tests pass and coverage is 100%; this is dead-or-misleading-code hygiene, not a correctness issue. Investigating delete-vs-sync at promotion time would have risked destabilizing a green promotion branch for no functional gain.
-
-  **Reference**: PR #410 sibling-sweep; B-4a (#409).
-
   **Reference**: `local-ai-exploration` cluster brief at `.ai/tasks/active/local-ai-exploration/brief.md`; Erik 2026-05-22 ("we should probably add tech debt to port the ai image scenarios over as well").
 
 - **[P3] New pure-library packages must declare `"sideEffects": false` in `package.json`.**
@@ -164,13 +153,4 @@ opportunistically when the right surface area is touched.
 
 ## P4 — Doc / minor consistency
 
-- **[P4] Align the `build` script across the two transformers facades.**
-  Surfaced by the `local-ai-exploration` promotion sibling-sweep (#410). `libraries/ts-web-extras-transformers/package.json` has `"build": "...heft test --clean"` (runs the test suite as its build) while `libraries/ts-extras-transformers/package.json` has `"build": "heft build --clean"`. A B-1 scaffolding artifact. Not broken — `heft build` works directly, and `rush test` runs each package's separate `test` script regardless — but `rushx build` on the web package redundantly runs tests, which is surprising.
-
-  **Trigger**: next time either facade's `package.json` is touched.
-
-  **Scope sketch**: change the web package's `"build"` to `"NODE_OPTIONS=... heft build --clean"` to match the node package. Re-run `rushx build` + `rushx test` on the web package to confirm.
-
-  **Not a P3**: zero functional impact; purely a script-consistency nit.
-
-  **Reference**: PR #410 sibling-sweep.
+*(None.)*
