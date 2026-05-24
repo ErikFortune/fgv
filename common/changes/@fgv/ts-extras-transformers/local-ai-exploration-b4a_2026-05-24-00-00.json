@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-transformers",
+      "comment": "B-4a: add classifyAll (top_k: null convenience wrapper) and embed (FeatureExtractionPipeline Result wrapper returning Tensor) to the Node facade.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-transformers",
+  "email": "noreply@anthropic.com"
+}

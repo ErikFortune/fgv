@@ -1,8 +1,9 @@
 # Stream state: `local-ai-exploration`
 
-**Status:** 🟢 B-3 complete; awaiting orchestrator done-or-discard gate
+**Status:** 🟢 B-4a complete (PR open); cluster-close (promotion) next
 **Integration branch:** `local-ai-exploration` (off `release`)
-**Last updated:** 2026-05-24 (B-3 implementing agent — first scenario complete)
+**B-4a work branch:** `claude/local-ai-exploration-b4a`
+**Last updated:** 2026-05-24 (orchestrator — B-4a review rounds addressed; ready to merge)
 
 ---
 
@@ -13,9 +14,11 @@
 | Research | ✅ complete | Local-model incorporation analysis at `.ai/notes/orchestrator/research/local-models-incorporation.md`. Recommendation: Option 2 (Result-shaped facade over `@huggingface/transformers`). Erik merged via #402 onto this branch. |
 | B-1 — Scaffold | ✅ complete | PR #404. Three new packages registered, all gates green, 100% coverage on testbed. See `phase-b1-result.md`. |
 | B-2 — Facade primitives | ✅ complete | PR #405. `loadPipeline` + `classify` shipped. `embed` + `generate` deferred. 100% coverage both packages. See `phase-b2-result.md`. |
-| B-3 — First scenario (local classifier → IPromptSafetyPolicy) | ✅ complete | PR #408 (open, targeting local-ai-exploration). 100% coverage, all gates green. Done-or-discard gate ready for orchestrator. See `phase-b3-result.md`. |
-| B-4a or B-4b — Ship or pivot | ⏸ blocked on B-3 exit | Decided per B-3 evaluation. |
-| Cluster close | ⏸ blocked on B-4 outcome | Promotion `local-ai-exploration` → `release`. |
+| B-3 — First scenario (local classifier → IPromptSafetyPolicy) | ✅ merged | PR #408 (merged → local-ai-exploration as `d85a462e`). 100% coverage; web/Node facade split + `@fgv/ts-web-extras-transformers` `exports` packaging fix landed via review. See `phase-b3-result.md`. |
+| **B-3 exit gate** | ✅ **SHIP** | All three done-or-discard criteria positive (facade cleaner than raw `pipeline()`; boundary survived a real composition; Result/screener composition natural). Hardened under review (dual-target facade pattern). Decision: ship → B-4a. See `phase-b4a-brief.md`. |
+| B-4a — Ship the facade | ✅ complete (PR open) | `embed` + `classifyAll()` in both facades; `local-embedding-search` scenario (OQ-4 ✅ — boundary survived the embedding model type); B-3 switched to `classifyAll()`; `LIBRARY_CAPABILITIES.md` entries. Full `rush build` + `build:web` green; facades 23 tests each, testbed 111 tests, all 100%. See `phase-b4a-result.md`. |
+| ~~B-4b — Pivot to native~~ | ⬛ not taken | Gate decided ship; pivot path discarded. |
+| Cluster close | 🟢 next | Promotion `local-ai-exploration` → `release` once B-4a PR merges. |
 
 ---
 
@@ -38,6 +41,10 @@
 | Testbed rig: Heft dual-rig + webpack hybrid | B-1 implementing agent (2026-05-23) — `samples/ai-image-gen-sample` (named reference) uses webpack-only with no tests, incompatible with the 100%-coverage gate. Adopted `@fgv/heft-dual-rig` (same as `libraries/ts-app-shell`) so heft owns compile/lint/test/api-extractor and a sibling `webpack.config.js` builds the browser bundle. |
 | c8-ignore scope: entry points + generated artifact only | B-1 implementing agent (2026-05-23) — `web/index.tsx` and the `if (require.main === module)` tail of `cli.ts` (orchestration glue with rationale comments), plus `src/generated/` (auto-generated). Everything else at 100% across all four metrics. |
 | src layout: brief's nested form (web/ + cli.ts + shell/ + scenarios/ + generated/) | B-1 implementing agent (2026-05-23) — cleaner web/CLI separation than the flat `src/main.tsx` form `ai-image-gen-sample` uses. |
+| **Done-or-discard gate → SHIP (B-4a)** | Orchestrator (2026-05-24) post-#408-merge. All three criteria positive; B-3 review additionally hardened the facade story (web/Node split via `webpackIgnore`, facade-agnostic screener, packaging-bug fix). No pivot signal. |
+| Dual-target scenario pattern (canonical) | Established in B-3 review: screener/core stays facade-agnostic (injected fn + type-only imports); web path imports the browser facade; CLI path loads the Node facade via `import(/* webpackIgnore: true */ ...)`. B-4a's embedding scenario MUST follow this pattern. |
+| B-4a second scenario = embedding/semantic-search (OQ-4 resolved) | Erik (2026-05-24): exercise a different model *type* (feature-extraction/embeddings, not another classifier) — strongest "boundary survives" evidence. Pulls the deferred `embed` primitive forward. |
+| B-4a adds `classifyAll()` to both facades | Erik (2026-05-24): bake `top_k: null` into the signature so the all-labels path is type-evident (the B-3 gap). B-3 classifier scenario should switch to it. |
 
 ---
 
@@ -50,7 +57,7 @@
 | OQ-1 | Exact facade surface (5-8 ops): naming, signature, browser vs Node behavior differences | B-2 sub-brief |
 | OQ-2 | Whether `loadPipeline` returns an opaque type or a thin Result-wrapped reference to the upstream `Pipeline` | B-2 sub-brief |
 | OQ-3 | Whether the testbed's web shell should support keyboard shortcuts for scenario navigation (ts-app-shell `keyboard` packlet is available) | B-1 sub-brief |
-| OQ-4 | Whether to land a second scenario type at B-4a to confirm facade survives across model types (likely yes if shipping) | B-3 exit gate |
+| ~~OQ-4~~ | ✅ Resolved (2026-05-24): yes — B-4a lands an **embedding/semantic-search** scenario (different model type) to confirm the boundary survives. See decisions log. | ~~B-3 exit gate~~ |
 
 ### Deferred (not this cluster's concern)
 
@@ -71,6 +78,9 @@
 | 2026-05-22 | Substrate prep | Brief + state + WORKSTREAMS + FUTURE absorbs + TECH_DEBT entry for ai-image port. PR #403. |
 | 2026-05-23 | B-1 scaffold complete | Three new packages (`@fgv/testbed`, `@fgv/ts-extras-transformers`, `@fgv/ts-web-extras-transformers`) scaffolded empty-but-compilable. Rig + c8-scope + src-layout decisions locked via AskUserQuestion pre-scaffold. 100% coverage on testbed. PR #404. See `phase-b1-result.md` for scaffolding surprises carried into B-2. |
 | 2026-05-23 | B-2 facade primitives complete | `loadPipeline` + `classify` implemented in both transformers packages. `embed` + `generate` deferred. 100% coverage (13 tests each). `@huggingface/transformers` added as runtime dep. `skipLibCheck` required for upstream type-def issues. See `phase-b2-result.md`. |
+| 2026-05-24 | B-3 merged (#408) + gate decided | First scenario merged as `d85a462e`. Review drove the web/Node facade split, a facade-agnostic screener core, and a packaging-bug fix in `@fgv/ts-web-extras-transformers` (`exports` browser target). Done-or-discard gate → **SHIP**. B-4a commissioned. |
+| 2026-05-24 | B-4a implemented | `embed` + `classifyAll()` shipped in both facades (23 tests each, 100%); `local-embedding-search` scenario added + B-3 switched to `classifyAll()` (testbed 111 tests, 100%, `build:web` clean); `LIBRARY_CAPABILITIES.md` entries; full `rush build` green. Two implementing agents (facade primitives; scenario) + orchestrator (caps doc, gates). OQ-4 answered yes. See `phase-b4a-result.md`. |
+| 2026-05-24 | B-4a review (#409) | Three review rounds (Copilot + Erik) addressed on-branch: Result chaining, doc-accuracy corrections, definitive `c8 ignore` rationales, honest test-mock typing. Gates re-run green each round. Erik to merge. See `phase-b4a-result.md` § Review. |
 
 ---
 
@@ -80,7 +90,7 @@
 |---|---|---|
 | Research | #402 | merged to `local-ai-exploration` |
 | Substrate prep | #403 | merged to `local-ai-exploration` |
-| B-1 | #404 | open, targeting `local-ai-exploration` |
-| B-2 | #405 (claude/fervent-hamilton-iuqXX) | open, targeting local-ai-exploration |
-| B-3 | #408 (claude/fervent-hamilton-iuqXX) | open, targeting `local-ai-exploration` |
-| B-4a/b | TBD | gated on B-3 exit |
+| B-1 | #404 | merged to `local-ai-exploration` |
+| B-2 | #405 | merged to `local-ai-exploration` |
+| B-3 | #408 | ✅ merged to `local-ai-exploration` (`d85a462e`) |
+| B-4a | (PR pending) | open on `claude/local-ai-exploration-b4a` → `local-ai-exploration` |

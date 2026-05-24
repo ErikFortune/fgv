@@ -11,9 +11,10 @@
 
 import type { IScenario } from '../shell';
 import { localClassifierSafetyScenario } from './localClassifierSafety';
+import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
 
 /**
  * All scenarios surfaced by the testbed shell (web sidebar + CLI list).
  * @public
  */
-export const scenarios: readonly IScenario[] = [localClassifierSafetyScenario];
+export const scenarios: readonly IScenario[] = [localClassifierSafetyScenario, localEmbeddingSearchScenario];

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/testbed",
+      "comment": "B-4a: add local-embedding-search scenario (sentence embeddings → cosine-similarity ranking over a fixed corpus via Xenova/all-MiniLM-L6-v2); switch B-3 classifier screener to use classifyAll (top_k: null baked in). 100% coverage all 4 metrics.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/testbed",
+  "email": "noreply@anthropic.com"
+}
