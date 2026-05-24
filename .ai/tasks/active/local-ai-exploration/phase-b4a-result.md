@@ -53,3 +53,11 @@ This confirms the pattern is teachable/repeatable — the second scenario cost f
 
 - Promote `local-ai-exploration` → `release` (cluster-close PR cluster).
 - Possible follow-on (not scheduled): `embedVector()` convenience returning `Result<number[]>` if a second embedding consumer appears.
+
+## Review (PR #409)
+
+Three rounds of Copilot + Erik review, all addressed on-branch (gates re-run green each round):
+- **Result chaining (Erik):** `embedText`, `searchCorpus`, and `handleSearch` refactored from imperative `isFailure()` checks to `withErrorFormat`/`thenOnSuccess`/`onSuccess`/`onFailure` chains.
+- **Doc accuracy (Copilot):** corrected the cosine-range claim (cosine ∈ [−1, 1]; L2 normalization doesn't force [0, 1]) and the sibling element-range claim in the adapter; fixed a stale "sequentially" comment (concurrent `Promise.all`); updated the classifier header-doc example to `classifyAll`.
+- **Coverage annotations (Copilot):** reworded two `c8 ignore` rationales to be definitive (the `?? 'none'` fallback; the `.catch` that is unreachable because `loadPipeline` returns `Result.fail` rather than rejecting).
+- **Test mock (Copilot):** `makeMockTensor.tolist()` typed `number[][]` to reflect the real pooled shape.

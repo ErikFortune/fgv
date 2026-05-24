@@ -3,7 +3,7 @@
 **Status:** 🟢 B-4a complete (PR open); cluster-close (promotion) next
 **Integration branch:** `local-ai-exploration` (off `release`)
 **B-4a work branch:** `claude/local-ai-exploration-b4a`
-**Last updated:** 2026-05-24 (orchestrator — B-4a implemented, embedding scenario + classifyAll/embed shipped)
+**Last updated:** 2026-05-24 (orchestrator — B-4a review rounds addressed; ready to merge)
 
 ---
 
@@ -80,6 +80,7 @@
 | 2026-05-23 | B-2 facade primitives complete | `loadPipeline` + `classify` implemented in both transformers packages. `embed` + `generate` deferred. 100% coverage (13 tests each). `@huggingface/transformers` added as runtime dep. `skipLibCheck` required for upstream type-def issues. See `phase-b2-result.md`. |
 | 2026-05-24 | B-3 merged (#408) + gate decided | First scenario merged as `d85a462e`. Review drove the web/Node facade split, a facade-agnostic screener core, and a packaging-bug fix in `@fgv/ts-web-extras-transformers` (`exports` browser target). Done-or-discard gate → **SHIP**. B-4a commissioned. |
 | 2026-05-24 | B-4a implemented | `embed` + `classifyAll()` shipped in both facades (23 tests each, 100%); `local-embedding-search` scenario added + B-3 switched to `classifyAll()` (testbed 111 tests, 100%, `build:web` clean); `LIBRARY_CAPABILITIES.md` entries; full `rush build` green. Two implementing agents (facade primitives; scenario) + orchestrator (caps doc, gates). OQ-4 answered yes. See `phase-b4a-result.md`. |
+| 2026-05-24 | B-4a review (#409) | Three review rounds (Copilot + Erik) addressed on-branch: Result chaining, doc-accuracy corrections, definitive `c8 ignore` rationales, honest test-mock typing. Gates re-run green each round. Erik to merge. See `phase-b4a-result.md` § Review. |
 
 ---
 

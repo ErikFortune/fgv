@@ -140,7 +140,7 @@ function LocalEmbeddingSearchComponent({
         setExtractor(pipeResult.value);
         setIsLoading(false);
       })
-      /* c8 ignore next 5 - catch only fires if the then-chain throws synchronously (not from a rejected promise); not reachable in tests */
+      /* c8 ignore next 5 - unreachable: the promise never rejects — loadPipeline returns Result.fail rather than throwing, the cached path is Promise.resolve(succeed(...)), and the .then handler only sets state */
       .catch((err: unknown) => {
         if (mounted) {
           context.logger.error(`Unexpected error loading model: ${String(err)}`);
