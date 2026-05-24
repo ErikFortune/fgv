@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/testbed",
+      "comment": "New package. Scaffolded as phase B-1 of the local-ai-exploration cluster. Empty but compilable: heft + webpack dual setup, IScenario contract types, secretResolver B-1 stub, empty scenario registry, chocolate-lab-pattern data pipeline, web shell composing @fgv/ts-app-shell primitives, CLI shell printing the empty-registry banner. Long-lived showcase app that grows scenarios over time.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/testbed",
+  "email": "noreply@anthropic.com"
+}

@@ -1,0 +1,8 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`@fgv/testbed scenario registry registry exposes the expected scenario ids (snapshot) 1`] = `
+Array [
+  "local-classifier-safety",
+  "local-embedding-search",
+]
+`;

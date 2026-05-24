@@ -1,0 +1,16 @@
+{
+  "extends": "@rushstack/heft-node-rig/profiles/default/config/jest.config.json",
+  "testEnvironment": "jsdom",
+  "coverageThreshold": {
+    "global": {
+      "branches": 100,
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
+    }
+  },
+  "coveragePathIgnorePatterns": ["/node_modules/", "<rootDir>/lib/web/index.js", "<rootDir>/lib/generated/"],
+  "collectCoverage": true,
+  "coverageReporters": ["text", "lcov", "html"],
+  "setupFilesAfterEnv": ["<rootDir>/config/jest.setup.js"]
+}

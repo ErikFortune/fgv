@@ -164,6 +164,30 @@ For anything not in the table above, **use `@simplewebauthn/server` or `@simplew
 
 ---
 
+### `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` — local transformers (HuggingFace) Result boundary
+
+[libraries/ts-extras-transformers](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras-transformers)
+[libraries/ts-web-extras-transformers](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras-transformers)
+
+**A Result-integration boundary over `@huggingface/transformers` (transformers.js) for running models locally — not an opinionated ML helper.** Like the WebAuthn pair, these add exactly one thing: thin `captureAsyncResult` wrappers that convert the upstream throw-on-failure calls into `Promise<Result<T>>`, with **no opinionated orchestration** (no pipeline cache, no model-download management, no device/quantization policy). The two packages expose an **identical surface**; pick the package at the composition root — Node uses the native ONNX backend, browser uses the WASM/WebGPU backend.
+
+| Package | Function | Return |
+|---|---|---|
+| both | `loadPipeline(task, model?, options?)` | `Promise<Result<AllTasks[T]>>` (the upstream pipeline instance) |
+| both | `classify(classifier, text, options?)` | `Promise<Result<TextClassificationOutput>>` (upstream default / top label unless `options.top_k` set) |
+| both | `classifyAll(classifier, text, options?)` | `Promise<Result<TextClassificationOutput>>` — forces `top_k: null`, so the **full per-label vector** is returned; use when you compare every label against thresholds |
+| both | `embed(extractor, text, options?)` | `Promise<Result<Tensor>>` — raw upstream `Tensor`, no pooling/normalisation applied (pass `{ pooling: 'mean', normalize: true }` via `options` for a sentence vector; extract a JS array with the Tensor's `.tolist()`) |
+
+`Tensor`, `TextClassificationPipeline`, `TextClassificationOutput`, `FeatureExtractionPipeline`, `AllTasks`, `PipelineType` are re-exported from both packages. Get an extractor via `loadPipeline('feature-extraction', modelId)`, a classifier via `loadPipeline('text-classification', modelId)`.
+
+**Explicitly NOT in scope:** pipeline cache / lifecycle / dispose, model registry or download management, GPU/CPU/WebGPU device-selection policy, quantization selection, embedding-store integration, classifier label allowlists, request batching, IndexedDB cache configuration. `generate` (text generation) is deferred until a concrete consumer needs it. For any of these, use `@huggingface/transformers` directly with `captureAsyncResult`.
+
+**Consuming from a dual web/CLI bundle (load-bearing pattern):** when one module is reachable from a browser bundle, keep your reusable core **facade-agnostic** — take the facade function (`classify`/`classifyAll`/`embed`) as an injected parameter and import facade types as `import type` only (erased, so no runtime facade enters the bundle). Import the **browser** facade on the web path; load the **Node** facade on the CLI path via `import(/* webpackIgnore: true */ '@fgv/ts-extras-transformers')` so its node-native deps never reach the browser graph. Validate the browser bundle with the real bundler (`webpack`/etc.) — type-check + jsdom tests do not exercise it. The `samples/testbed` `local-classifier-safety` and `local-embedding-search` scenarios are the reference consumers.
+
+**Upstream:** `@huggingface/transformers` `~4.2.0` (a **peer dependency** of both packages — bring your own; `skipLibCheck` is required for its type definitions).
+
+---
+
 ## Cross-runtime interfaces
 
 Several core abstractions are defined once and have separate Node and browser implementations. Code against the interface; pick the implementation at the composition root.
@@ -175,6 +199,7 @@ Several core abstractions are defined once and have separate Node and browser im
 | Hash normalizer | `Md5Normalizer` (`ts-extras/hash`), `Crc32Normalizer` (`ts-utils/hash`) | `Md5Normalizer.browser` (`ts-extras/hash`), `BrowserHashProvider` (`ts-web-extras/crypto-utils`) | `Crc32Normalizer` is pure JS and runs everywhere. |
 | `IEncryptionProvider` (`@fgv/ts-extras/crypto-utils`) | `KeyStore`, `DirectEncryptionProvider` | same (back with `BrowserCryptoProvider`) | The provider is runtime-agnostic; only the underlying `ICryptoProvider` differs. |
 | `IArgon2idProvider` (`@fgv/ts-extras/crypto-utils`) | `NodeArgon2Provider` (`ts-extras-argon2`) | `BrowserArgon2Provider` (`ts-web-extras-argon2`) | Pure-WASM browser impl is byte-identical to Node impl for same inputs. |
+| Local transformers facade (`loadPipeline`/`classify`/`classifyAll`/`embed`) | `@fgv/ts-extras-transformers` (native ONNX) | `@fgv/ts-web-extras-transformers` (WASM/WebGPU) | Identical surface; thin `Result` boundary over `@huggingface/transformers`. In a browser bundle keep the core facade-agnostic and load the Node side via `webpackIgnore` dynamic import. |
 
 ---
 
@@ -215,6 +240,7 @@ Several core abstractions are defined once and have separate Node and browser im
 - **Generating images from an LLM provider?** → `AiAssist.callProviderImageGeneration({ descriptor, apiKey, params })` from `@fgv/ts-extras/ai-assist`. Use `callProxiedImageGeneration(proxyUrl, ...)` to route through a proxy when direct browser calls are CORS-restricted. Pass top-level options (`size`, `quality`, `seed`, `count`) and a `models` array for provider-specific config blocks.
 - **Declaring image generation capability on a provider?** → Add `imageGeneration: IAiImageModelCapability[]` to `IAiProviderDescriptor`. Each capability entry carries `format` (`'openai-images' | 'xai-images' | 'xai-images-edits' | 'gemini-imagen' | 'gemini-image-out'`), `modelPrefix`, and optional flags like `acceptsImageReferenceInput`, `defaultOutputMimeType`, `outputParamStyle`, `supportsQualityParam`, `maxCount`.
 - **Enabling extended thinking / reasoning on LLM completions?** → Pass `thinking: IThinkingConfig` to `callProviderCompletion` or `callProviderCompletionStream`. `IThinkingConfig` supports a cross-provider generic `effort?: 'low' | 'medium' | 'high'` shorthand and an optional `providers[]` array for per-provider config blocks. Provider-specific types: `IAnthropicThinkingConfig` (effort), `IOpenAiThinkingConfig` (effort, including `'none'` to re-enable temperature), `IGeminiThinkingConfig` (thinkingBudget integer), `IXAiThinkingConfig` (effort). Model-specific and `'other'` escape-hatch blocks let you override for individual models without affecting others. Merge precedence: generic effort → provider-generic blocks → model-specific/other blocks (later declaration wins within a tier). **Temperature + thinking conflicts**: Anthropic and OpenAI (non-`'none'` effort) and xAI return `Result.fail`; Gemini accepts both. Thinking content is discarded in this phase; caller-visible thinking-event surfacing is the scope of the followup stream `ai-assist-thinking-events`. Unknown/unsupported providers silently ignore the `thinking` field.
+- **Running a HuggingFace model locally (text classification / embeddings) with a Result boundary?** → `loadPipeline` + `classify` / `classifyAll` / `embed` from `@fgv/ts-extras-transformers` (Node) or `@fgv/ts-web-extras-transformers` (browser). Thin `Result`-wrapped facade over `@huggingface/transformers` — no caching/device/quantization policy (use the upstream lib directly for that). Use `classifyAll` when you need the full per-label vector (it bakes in `top_k: null`); `embed` returns the raw `Tensor` (pass `{ pooling: 'mean', normalize: true }` for a sentence vector). **In a browser bundle, keep your core facade-agnostic (inject the fn, type-only imports) and load the Node facade only via `import(/* webpackIgnore: true */ ...)` on the CLI path** — see the `samples/testbed` `local-classifier-safety` / `local-embedding-search` scenarios.
 - **Parsing / comparing language tags?** → `@fgv/ts-bcp47`.
 - **Context-conditional resources?** → `@fgv/ts-res`.
 - **Authoring, versioning, or resolving LLM prompts that need to vary on context (tenant / language / tone / region) or compose partial fragments?** → `PromptLibrary.create` from `@fgv/ts-prompt-assist`. One YAML file per `(scope, prompt-id)` carries the descriptor + ts-res-conditional candidates; scope-level `_bindings.yaml` supplies slot bindings; root-level `_qualifiers.yaml` (optional) carries the qualifier config. `PromptLibrary.resolve` chain-walks scopes, runs ts-res candidate selection, merges bindings, renders via Mustache with `escape: 'none'`, and returns body + full `IPromptResolveTrace`. **Do not roll your own LLM-prompt loader / renderer; the verbatim Mustache + double-brace rejection are load-bearing.**
