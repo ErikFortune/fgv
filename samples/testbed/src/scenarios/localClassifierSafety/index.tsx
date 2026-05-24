@@ -39,6 +39,7 @@ import type { Result } from '@fgv/ts-utils';
 import { loadPipeline } from '@fgv/ts-extras-transformers';
 import type { TextClassificationPipeline } from '@fgv/ts-extras-transformers';
 import {
+  Convert,
   PromptLibrary,
   PromptStoreFixture,
   type IPromptResolveTrace,
@@ -69,10 +70,17 @@ import type {
 /** HuggingFace Hub model id for the transformers.js-compatible ONNX export of toxic-bert. */
 const MODEL_ID: string = 'Xenova/toxic-bert';
 
-/** Scenario id, scope key, and prompt id used throughout the fixture. */
-const SCENARIO_SCOPE: ScopeKey = 'classifier-safety' as unknown as ScopeKey;
-const SCENARIO_PROMPT_ID: PromptId = 'user-message' as unknown as PromptId;
-const USER_TEXT_SLOT: SlotName = 'user_text' as unknown as SlotName;
+// Scenario id, scope key, and prompt id used throughout the fixture. Built via
+// the ts-prompt-assist brand Converters (not raw casts) so a literal that ever
+// violated the brand constraints — e.g. a slot name that isn't a valid mustache
+// name, or a prompt id containing '::' — would fail loudly at module load.
+const SCENARIO_SCOPE: ScopeKey = Convert.scopeKey
+  .convert('classifier-safety')
+  .shouldNotFail('SCENARIO_SCOPE');
+const SCENARIO_PROMPT_ID: PromptId = Convert.promptId
+  .convert('user-message')
+  .shouldNotFail('SCENARIO_PROMPT_ID');
+const USER_TEXT_SLOT: SlotName = Convert.slotName.convert('user_text').shouldNotFail('USER_TEXT_SLOT');
 
 // ---------------------------------------------------------------------------
 // Fixture prompt record
@@ -107,7 +115,7 @@ async function buildPromptLibrary(
           ],
           output: { kind: 'free-text' }
         },
-        candidates: [{ conditions: {}, body: '{{{user_text}}}' }]
+        candidates: [{ conditions: {}, body: `{{{${USER_TEXT_SLOT}}}}` }]
       }
     ]
   });

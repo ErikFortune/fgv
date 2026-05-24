@@ -1,9 +1,12 @@
 import { scenarios } from '../../scenarios';
 
 describe('@fgv/testbed scenario registry', () => {
-  test('has the expected number of scenarios at B-3 (one scenario registered)', () => {
+  test('registry exposes the expected scenario ids (snapshot)', () => {
     expect(Array.isArray(scenarios)).toBe(true);
-    expect(scenarios.length).toBe(1);
+    // Snapshot the id set rather than asserting an exact count: this fails loudly
+    // when the registry changes but is trivially repaired with `--updateSnapshot`
+    // when the change is expected (e.g. a new scenario landing).
+    expect(scenarios.map((s) => s.id)).toMatchSnapshot();
   });
 
   test('contains the local-classifier-safety scenario', () => {

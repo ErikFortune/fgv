@@ -15,7 +15,7 @@
 import { Result, fail, succeed } from '@fgv/ts-utils';
 import type { TextClassificationPipeline, TextClassificationOutput } from '@fgv/ts-extras-transformers';
 import { classify } from '@fgv/ts-extras-transformers';
-import type { ISafeguardFinding, IScreener, IScreenerContext } from '@fgv/ts-prompt-assist';
+import type { ISafeguardFinding, IScreener, IScreenerContext, SlotName } from '@fgv/ts-prompt-assist';
 
 /**
  * Per-label threshold configuration. Both bands are optional.
@@ -102,21 +102,22 @@ export function interpretLabel(
 
 /**
  * Aggregate per-label findings from a `TextClassificationOutput` by comparing
- * each label's score against the threshold map. Returns the first `'reject'`
- * finding if any label crosses the reject threshold, or the first `'warn'`
- * finding if any label crosses a warn threshold, or an empty array if all
- * labels are clean.
+ * each label's score against the threshold map. Returns a single aggregated
+ * finding for the highest-severity tier any label breaches: one `'reject'`
+ * finding summarizing every reject-crossing label if any label crosses its
+ * reject threshold, else one `'warn'` finding summarizing every warn-crossing
+ * label, else an empty array when all labels are clean.
  *
- * The brief specifies returning **one** finding (the highest-severity
- * triggering label), not one per label — per-label scores are placed in
- * `metadata` for full observability.
+ * Per the brief this collapses to **one** finding (not one per label); the
+ * breaching labels are summarized in `detail` and all per-label scores are
+ * placed in `metadata` for full observability.
  *
  * @public
  */
 export function interpretClassification(
   output: TextClassificationOutput,
   thresholds: ClassifierThresholdMap,
-  slotName: string,
+  slotName: SlotName,
   screenerName: string
 ): ReadonlyArray<ISafeguardFinding> {
   if (output.length === 0) {
@@ -146,7 +147,7 @@ export function interpretClassification(
     const detail = `slot '${slotName}': classifier rejected on label(s): ${rejectLabels.join(', ')}`;
     return [
       {
-        slot: slotName as ISafeguardFinding['slot'],
+        slot: slotName,
         kind: 'classifier-verdict',
         disposition: 'reject',
         detail,
@@ -160,7 +161,7 @@ export function interpretClassification(
     const detail = `slot '${slotName}': classifier warned on label(s): ${warnLabels.join(', ')}`;
     return [
       {
-        slot: slotName as ISafeguardFinding['slot'],
+        slot: slotName,
         kind: 'classifier-verdict',
         disposition: 'warn',
         detail,
@@ -236,7 +237,7 @@ export function createClassifierScreener(options: IClassifierScreenerOptions): I
       if (classifyResult.isFailure()) {
         return fail(`${name}: classify failed for slot '${ctx.slot.name}': ${classifyResult.message}`);
       }
-      return succeed(interpretClassification(classifyResult.value, thresholds, String(ctx.slot.name), name));
+      return succeed(interpretClassification(classifyResult.value, thresholds, ctx.slot.name, name));
     }
   };
 }

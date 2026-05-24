@@ -16,7 +16,7 @@ import '@fgv/ts-utils-jest';
 import { fail, succeed } from '@fgv/ts-utils';
 import * as transformers from '@fgv/ts-extras-transformers';
 import type { TextClassificationOutput, TextClassificationPipeline } from '@fgv/ts-extras-transformers';
-import type { ISafeguardFinding, IScreenerContext, IPromptSlot } from '@fgv/ts-prompt-assist';
+import type { ISafeguardFinding, IScreenerContext, IPromptSlot, SlotName } from '@fgv/ts-prompt-assist';
 import type { IScenarioContext } from '../../../shell';
 
 // ---------------------------------------------------------------------------
@@ -186,7 +186,7 @@ describe('interpretLabel', () => {
 
 describe('interpretClassification', () => {
   const thresholds: ClassifierThresholdMap = DEFAULT_TOXIC_BERT_THRESHOLDS;
-  const SLOT: string = 'user_text';
+  const SLOT: SlotName = 'user_text' as unknown as SlotName;
   const SCREENER: string = 'test-screener';
 
   test('returns empty array for a clean output', () => {
@@ -281,10 +281,11 @@ describe('interpretClassification', () => {
   });
 
   test('uses the provided slot name in the finding', () => {
+    const customSlot: SlotName = 'my_custom_slot' as unknown as SlotName;
     const result: ReadonlyArray<ISafeguardFinding> = interpretClassification(
       SINGLE_LABEL_TOXIC,
       thresholds,
-      'my_custom_slot',
+      customSlot,
       SCREENER
     );
     expect(result[0]!.slot).toBe('my_custom_slot');
