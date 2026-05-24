@@ -1,9 +1,8 @@
 # Stream state: `local-ai-exploration`
 
-**Status:** 🟢 B-5 complete (manual pass ✅); PR #411 ready to merge → re-promotion next
+**Status:** ✅ cluster complete — B-1…B-5 merged (incl. #411); promotion PR → `release` open
 **Integration branch:** `local-ai-exploration` (off `release`)
-**B-5 work branch:** `claude/local-ai-exploration-b5-shell`
-**Last updated:** 2026-05-24 (orchestrator — B-5 manual pass complete; ready to merge #411 then re-promote)
+**Last updated:** 2026-05-24 (orchestrator — #411 merged; cluster-close: artifacts finalized, re-promotion PR up)
 
 ---
 

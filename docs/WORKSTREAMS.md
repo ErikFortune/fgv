@@ -128,33 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `local-ai-exploration` 🔵
-
-**Status:** 🔵 B-1…B-4a merged; reopened for **B-5** (shell + CLI scenario integration) before re-promotion to `release`. First promotion (#410) was closed as premature.
-**Integration branch:** `local-ai-exploration` (off `release`)
-**Workflow shape:** design-triage-implement-refine cluster with outcome gate at B-3
-**Substrate:** `.ai/tasks/active/local-ai-exploration/{brief.md, state.md}`
-**Package surface (new):**
-- `samples/testbed/` — long-lived sample-browser app, web + CLI, web-first
-- `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` — Result-integration boundary over `@huggingface/transformers` (provisional; may be discarded at B-4b if the experiment shows the facade doesn't earn its keep)
-
-**Mission.** Two intertwined goals: (1) build a long-lived sample browser app at `samples/testbed/` as the canonical home for fgv-capability demonstration scenarios; (2) use that testbed to evaluate whether a Result-shaped facade over `@huggingface/transformers` earns its keep, with an explicit done-or-discard decision gate at B-3 exit.
-
-**Decision-track input (binding):** `.ai/notes/orchestrator/research/local-models-incorporation.md` (merged via #402) recommends Option 2 with timing "next slot, not urgent." This cluster takes the slot and runs the experiment.
-
-**Sub-phase shape:**
-- B-1 scaffold (testbed + facade package skeletons)
-- B-2 facade primitives (5-8 ops mirroring `@fgv/ts-extras-webauthn` discipline)
-- B-3 first scenario (local classifier → `IPromptSafetyPolicy` backend)
-- B-3 exit gate (done-or-discard decision per criteria locked in brief)
-- B-4a (ship the facade) OR B-4b (pivot scenario to native) — **B-4a taken; gate decided SHIP**
-- B-5 (shell + CLI scenario integration) — added after #410 review caught the B-1 shell/CLI never being wired to run scenarios
-- Cluster close (promotion `local-ai-exploration` → `release`)
-
-**Out-of-scope (this cluster):** porting `samples/ai-image-gen-sample` scenarios into the testbed (P3 tech debt, queued); editor UX (queued); LLM-call orchestration beyond existing ai-assist; sidecar/HTTP local LLM path (separate small chore opportunity).
-
-**Origin.** Erik's question 2026-05-22: "ai-assist is all about communicating with distant LLMs for pretty meaty tasks. But in the real world, smaller models like classifiers and recognizers often run locally. How does that work and is it something we could/should incorporate?" Research note answered the framing; this cluster runs the experiment.
-
 ### `prompt-assist-screeners` 🟢
 
 **Status:** 🟢 ready to commission (substrate prep in flight)
@@ -191,6 +164,23 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `local-ai-exploration` ✅ (cluster)
+
+**Status:** ✅ shipped — all sub-phases (B-1…B-5) merged into integration branch `local-ai-exploration`; promotion PR `local-ai-exploration` → `release` open (see PRs in the artifacts). (First promotion #410 was closed as premature — reopened for B-5, then re-promoted.)
+**Integration branch:** `local-ai-exploration` (off `release`)
+**Package surface (new):**
+- `samples/testbed/` — long-lived sample-browser app (web + CLI), themed (light/dark), with two working scenarios: `local-classifier-safety`, `local-embedding-search`.
+- `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` — Result-integration boundary over `@huggingface/transformers` (`loadPipeline`, `classify`, `classifyAll`, `embed`; `generate` deferred).
+- `@fgv/ts-app-shell` — gained a default light/dark theme (54-token CSS-var system + Tailwind preset) as a gap-fix; the testbed was its first visual consumer.
+
+**Outcome.** The B-3 done-or-discard gate decided **SHIP**: the facade read cleaner than raw `pipeline()`, survived a real composition (classifier → `ts-prompt-assist` screener), and B-4a confirmed it survives a second model type (embedder). B-5 wired the shell/CLI to actually run scenarios and, via gap-then-fix, gave ts-app-shell a shippable theme. The dual-target consumption pattern (facade-agnostic core; browser facade on web / Node facade via `webpackIgnore` on CLI) proved repeatable. `LIBRARY_CAPABILITIES.md` entries added.
+
+**Sub-phases (all merged to `local-ai-exploration`):** research #402 · substrate #403 · B-1 #404 · B-2 #405 · B-3 #408 · B-4a #409 · B-5 (shell+CLI + ts-app-shell theme + styling) #411.
+
+**Follow-ups (deferred / tracked):** `generate` primitive + a local text-generation scenario; port `samples/ai-image-gen-sample` scenarios into the testbed (P3 tech debt); optional Heroicons theme-toggle icon; palette retuning (CSS-var overridable); a "remaining gaps → which yield real value" review thread.
+
+**Artifacts:** [`.ai/tasks/completed/2026-05/local-ai-exploration/`](../.ai/tasks/completed/2026-05/local-ai-exploration/) (brief, all phase briefs/results, state).
 
 ### `ts-prompt-assist-features` ✅ (cluster)
 
