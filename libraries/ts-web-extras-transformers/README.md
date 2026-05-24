@@ -38,19 +38,20 @@ These items were considered and explicitly deferred — use `@huggingface/transf
 - Pipeline dispose semantics
 - IndexedDB cache configuration
 
-## Two primitives. Nothing else.
+## Four primitives. Nothing else.
 
 | Function | Return | Wraps |
 |---|---|---|
 | `loadPipeline(task, model?, options?)` | `Promise<Result<AllTasks[T]>>` | `pipeline()` |
 | `classify(pipeline, text, options?)` | `Promise<Result<TextClassificationOutput>>` | `TextClassificationPipeline` call |
+| `classifyAll(pipeline, text, options?)` | `Promise<Result<TextClassificationOutput>>` | `classify` with `top_k: null` forced |
+| `embed(extractor, text, options?)` | `Promise<Result<Tensor>>` | `FeatureExtractionPipeline` call |
 
-**Deferred (not in scope at B-2):**
+**Deferred (not in scope):**
 
 | Function | Rationale |
 |---|---|
-| `embed(pipeline, text, options?)` | No concrete B-3 consumer use case; feature-extraction returns `Tensor`, not `Float32Array` — normalisation adds opinions the boundary should not take. Add at B-4a if B-3 surfaces an embedding scenario. |
-| `generate(pipeline, text, options?)` | No concrete B-3 consumer use case; text-generation output shape is more complex (single/batch/chat variants). Defer until a scenario exercises it. |
+| `generate(pipeline, text, options?)` | No concrete consumer use case; text-generation output shape is more complex (single/batch/chat variants). Defer until a scenario exercises it. |
 
 ---
 

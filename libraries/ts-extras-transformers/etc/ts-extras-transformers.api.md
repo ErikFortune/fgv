@@ -10,6 +10,7 @@ import { pipeline } from '@huggingface/transformers';
 import { PipelineType } from '@huggingface/transformers';
 import { PretrainedModelOptions } from '@huggingface/transformers';
 import { Result } from '@fgv/ts-utils';
+import { Tensor } from '@huggingface/transformers';
 import { TextClassificationOutput } from '@huggingface/transformers';
 import { TextClassificationPipeline } from '@huggingface/transformers';
 
@@ -17,6 +18,12 @@ export { AllTasks }
 
 // @public
 export function classify(classifier: TextClassificationPipeline, text: string, options?: Parameters<TextClassificationPipeline>[1]): Promise<Result<TextClassificationOutput>>;
+
+// @public
+export function classifyAll(classifier: TextClassificationPipeline, text: string, options?: Parameters<TextClassificationPipeline>[1]): Promise<Result<TextClassificationOutput>>;
+
+// @public
+export function embed(extractor: FeatureExtractionPipeline, text: string | string[], options?: Parameters<FeatureExtractionPipeline['_call']>[1]): Promise<Result<Tensor>>;
 
 export { FeatureExtractionPipeline }
 
@@ -26,6 +33,8 @@ export function loadPipeline<T extends PipelineType>(task: T, model?: string, op
 export { PipelineType }
 
 export { PretrainedModelOptions }
+
+export { Tensor }
 
 export { TextClassificationOutput }
 

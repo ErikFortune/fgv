@@ -6,9 +6,9 @@
  * mirroring the discipline established by `@fgv/ts-extras-webauthn`: one-line `captureAsyncResult`
  * wrappers around upstream primitives with **no opinionated orchestration** above the boundary.
  *
- * **In scope:** `loadPipeline`, `classify` — the minimal surface needed by the B-3 local-classifier
- * scenario. `embed` and `generate` are explicitly deferred until a concrete consumer use case
- * surfaces (see `phase-b2-result.md`).
+ * **In scope:** `loadPipeline`, `classify`, `classifyAll`, `embed` — the surface needed by the
+ * B-3/B-4a local-classifier and embedding scenarios. `generate` is explicitly deferred until a
+ * concrete consumer use case surfaces (see `phase-b2-result.md`).
  *
  * **Explicitly NOT in scope:**
  * - Pipeline cache / lifecycle management
@@ -31,6 +31,7 @@ import {
   type TextClassificationPipeline,
   type TextClassificationOutput,
   type FeatureExtractionPipeline,
+  type Tensor,
   type AllTasks,
   type PipelineType
 } from '@huggingface/transformers';
@@ -40,6 +41,7 @@ export type {
   TextClassificationPipeline,
   TextClassificationOutput,
   FeatureExtractionPipeline,
+  Tensor,
   AllTasks,
   PipelineType
 };
@@ -123,4 +125,55 @@ export async function classify(
     const result = await classifier(text, options);
     return flattenIfNeeded(result);
   });
+}
+
+/**
+ * Convenience wrapper over `classify` that forces `top_k: null` so the full per-label vector
+ * is returned for every call. Callers no longer need to remember to pass `{ top_k: null }`.
+ *
+ * Any caller-supplied options are honoured except `top_k`, which is always overridden to `null`.
+ *
+ * Returns `Promise<Result<TextClassificationOutput>>`; upstream errors are captured as `Failure`
+ * with the original message.
+ *
+ * @param classifier - A `TextClassificationPipeline` obtained from `loadPipeline`.
+ * @param text - The text to classify.
+ * @param options - Optional upstream classification options. `top_k` is always set to `null`
+ *   regardless of any value supplied here.
+ *
+ * @see https://huggingface.co/docs/transformers.js
+ * @public
+ */
+export async function classifyAll(
+  classifier: TextClassificationPipeline,
+  text: string,
+  options?: Parameters<TextClassificationPipeline>[1]
+): Promise<Result<TextClassificationOutput>> {
+  return classify(classifier, text, { ...options, top_k: null });
+}
+
+/**
+ * Result-integration wrapper that invokes a `FeatureExtractionPipeline` on a text input.
+ * Returns the upstream `Tensor` Result-wrapped — no pooling, normalisation, or reshaping is
+ * applied. Callers receive the raw output and are responsible for any downstream processing.
+ *
+ * Callers should retrieve the extractor via `loadPipeline('feature-extraction', modelId)`.
+ *
+ * Returns `Promise<Result<Tensor>>`; upstream errors (inference failures, tokenisation errors)
+ * are captured as `Failure` with the original message.
+ *
+ * @param extractor - A `FeatureExtractionPipeline` obtained from `loadPipeline`.
+ * @param text - The text (or texts) to embed.
+ * @param options - Optional upstream feature-extraction options (e.g. `pooling`, `normalize`).
+ *   Passed through verbatim to the pipeline call.
+ *
+ * @see https://huggingface.co/docs/transformers.js
+ * @public
+ */
+export async function embed(
+  extractor: FeatureExtractionPipeline,
+  text: string | string[],
+  options?: Parameters<FeatureExtractionPipeline['_call']>[1]
+): Promise<Result<Tensor>> {
+  return captureAsyncResult(() => extractor(text, options));
 }
