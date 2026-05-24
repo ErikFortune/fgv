@@ -14,8 +14,8 @@ import React from 'react';
 import { render, screen, within, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { fail, succeed, type Result } from '@fgv/ts-utils';
 
-import { App, TestbedShell } from '../../../web/App';
-import { MessagesProvider, ResponsiveProvider } from '@fgv/ts-app-shell';
+import { App, TestbedShell, ThemeToggle } from '../../../web/App';
+import { MessagesProvider, ResponsiveProvider, ThemeProvider } from '@fgv/ts-app-shell';
 import type { IScenario, IScenarioContext, IWebScenarioImpl } from '../../../shell';
 
 // ---------------------------------------------------------------------------
@@ -24,9 +24,11 @@ import type { IScenario, IScenarioContext, IWebScenarioImpl } from '../../../she
 
 function renderInProviders(node: React.ReactElement): ReturnType<typeof render> {
   return render(
-    <ResponsiveProvider>
-      <MessagesProvider>{node}</MessagesProvider>
-    </ResponsiveProvider>
+    <ThemeProvider>
+      <ResponsiveProvider>
+        <MessagesProvider>{node}</MessagesProvider>
+      </ResponsiveProvider>
+    </ThemeProvider>
   );
 }
 
@@ -147,6 +149,70 @@ describe('App (testbed web shell)', () => {
     const host = await screen.findByTestId('testbed-scenario-host');
     expect(within(host).getByText('Sample B')).not.toBeNull();
     expect(within(host).getByText('A second synthetic scenario.')).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ThemeToggle
+// ---------------------------------------------------------------------------
+
+describe('ThemeToggle', () => {
+  beforeEach(() => {
+    window.history.replaceState(null, '', '#');
+  });
+  afterEach(cleanup);
+
+  test('renders with data-testid="testbed-theme-toggle"', () => {
+    render(
+      <ThemeProvider>
+        <ThemeToggle />
+      </ThemeProvider>
+    );
+    expect(screen.getByTestId('testbed-theme-toggle')).not.toBeNull();
+  });
+
+  test('starts in light mode (shows dark-mode icon)', () => {
+    render(
+      <ThemeProvider initialTheme="light">
+        <ThemeToggle />
+      </ThemeProvider>
+    );
+    const btn = screen.getByTestId('testbed-theme-toggle');
+    expect(btn.textContent).toBe('☾');
+    expect(btn.getAttribute('aria-label')).toBe('Switch to dark mode');
+  });
+
+  test('clicking the toggle switches from light to dark', () => {
+    render(
+      <ThemeProvider initialTheme="light">
+        <ThemeToggle />
+      </ThemeProvider>
+    );
+    const btn = screen.getByTestId('testbed-theme-toggle');
+    fireEvent.click(btn);
+    expect(btn.textContent).toBe('☀');
+    expect(btn.getAttribute('aria-label')).toBe('Switch to light mode');
+  });
+
+  test('clicking the toggle switches from dark to light', () => {
+    render(
+      <ThemeProvider initialTheme="dark">
+        <ThemeToggle />
+      </ThemeProvider>
+    );
+    const btn = screen.getByTestId('testbed-theme-toggle');
+    // Starts in dark mode — shows sun icon
+    expect(btn.textContent).toBe('☀');
+    fireEvent.click(btn);
+    // Back to light mode — shows moon icon
+    expect(btn.textContent).toBe('☾');
+    expect(btn.getAttribute('aria-label')).toBe('Switch to dark mode');
+  });
+
+  test('top bar contains the theme toggle in the full shell', () => {
+    renderInProviders(<TestbedShell scenarios={[]} />);
+    const topBar = screen.getByTestId('testbed-top-bar');
+    expect(within(topBar).getByTestId('testbed-theme-toggle')).not.toBeNull();
   });
 });
 

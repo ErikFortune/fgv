@@ -276,43 +276,57 @@ function LocalClassifierSafetyComponent({
 
   if (isLoading) {
     return (
-      <div data-testid="classifier-loading">
+      <div data-testid="classifier-loading" className="py-4 text-center text-secondary">
         <p>Loading model {MODEL_ID}…</p>
       </div>
     );
   }
 
   return (
-    <div data-testid="classifier-scenario">
-      <div data-testid="classifier-input-area">
-        <label htmlFor="classifier-input">Text to screen:</label>
+    <div data-testid="classifier-scenario" className="space-y-4">
+      <div data-testid="classifier-input-area" className="space-y-2">
+        <label htmlFor="classifier-input" className="block text-sm font-medium text-secondary">
+          Text to screen:
+        </label>
         <textarea
           id="classifier-input"
           data-testid="classifier-input"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           rows={4}
-          cols={60}
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-primary placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
         />
-        <button data-testid="classifier-run-btn" onClick={handleScreen} disabled={lib === null}>
+        <button
+          data-testid="classifier-run-btn"
+          onClick={handleScreen}
+          disabled={lib === null}
+          className="rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50"
+        >
           Screen text
         </button>
       </div>
       {result !== null && (
-        <div data-testid="classifier-result">
+        <div data-testid="classifier-result" className="rounded-md border">
           {result.error !== undefined ? (
-            <div data-testid="classifier-error">
-              <strong>Rejected:</strong> {result.error}
+            <div
+              data-testid="classifier-error"
+              className="border-status-error-border bg-status-error-bg p-4 text-sm text-status-error-text"
+            >
+              <strong className="font-semibold text-status-error-strong">Rejected:</strong> {result.error}
             </div>
           ) : (
-            <div data-testid="classifier-allowed">
-              <strong>Rendered body:</strong> {result.body}
+            <div data-testid="classifier-allowed" className="border-border bg-surface p-4 text-sm">
+              <p className="mb-2 text-secondary">
+                <strong className="font-medium text-primary">Rendered body:</strong> {result.body}
+              </p>
               {result.findings.length === 0 ? (
-                <p data-testid="classifier-verdict-clean">✓ Content passed all checks.</p>
+                <p data-testid="classifier-verdict-clean" className="text-status-success-text">
+                  ✓ Content passed all checks.
+                </p>
               ) : (
-                <ul data-testid="classifier-findings">
+                <ul data-testid="classifier-findings" className="space-y-1">
                   {result.findings.map((f, i) => (
-                    <li key={i} data-testid={`classifier-finding-${i}`}>
+                    <li key={i} data-testid={`classifier-finding-${i}`} className="text-status-warning-text">
                       [{f.disposition.toUpperCase()}] {f.detail}
                     </li>
                   ))}

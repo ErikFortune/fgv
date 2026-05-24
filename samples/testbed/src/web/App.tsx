@@ -21,8 +21,10 @@ import {
   MessagesProvider,
   ResponsiveProvider,
   StatusBar,
+  ThemeProvider,
   useLogReporter,
   useMessages,
+  useTheme,
   useUrlSync,
   type IUrlSyncConfig
 } from '@fgv/ts-app-shell';
@@ -79,6 +81,37 @@ function makeUrlSyncConfig(allScenarios: readonly IScenario[]): IUrlSyncConfig<M
 export interface ITestbedShellProps {
   /** Override the scenario registry (used by tests). Defaults to the production list. */
   readonly scenarios?: readonly IScenario[];
+}
+
+// ---------------------------------------------------------------------------
+// Theme toggle button
+// ---------------------------------------------------------------------------
+
+/**
+ * A small icon button in the top bar that cycles between light and dark themes.
+ * Uses {@link useTheme} from ts-app-shell and has a stable `data-testid`.
+ * @public
+ */
+export function ThemeToggle(): React.ReactElement {
+  const { isDark, setTheme } = useTheme();
+  const label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+
+  const handleClick = useCallback(() => {
+    setTheme(isDark ? 'light' : 'dark');
+  }, [isDark, setTheme]);
+
+  return (
+    <button
+      type="button"
+      data-testid="testbed-theme-toggle"
+      onClick={handleClick}
+      aria-label={label}
+      title={label}
+      className="ml-auto rounded p-1.5 text-sm text-secondary hover:bg-hover focus:outline-none focus:ring-2 focus:ring-focus-ring transition-colors"
+    >
+      {isDark ? '☀' : '☾'}
+    </button>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -141,7 +174,7 @@ function ScenarioHost({
   // Render the appropriate state.
   if (lifecycle.kind === 'loading') {
     return (
-      <div data-testid="testbed-scenario-loading">
+      <div data-testid="testbed-scenario-loading" className="p-4 text-secondary">
         <p>Loading scenario…</p>
       </div>
     );
@@ -149,9 +182,13 @@ function ScenarioHost({
 
   if (lifecycle.kind === 'error') {
     return (
-      <div data-testid="testbed-scenario-error">
-        <p>
-          <strong>Failed to initialize scenario:</strong> {lifecycle.message}
+      <div
+        data-testid="testbed-scenario-error"
+        className="m-4 rounded-md border border-status-error-border bg-status-error-bg p-4"
+      >
+        <p className="text-status-error-text">
+          <strong className="text-status-error-strong">Failed to initialize scenario:</strong>{' '}
+          {lifecycle.message}
         </p>
       </div>
     );
@@ -159,9 +196,14 @@ function ScenarioHost({
 
   if (lifecycle.kind === 'no-web') {
     return (
-      <div data-testid="testbed-scenario-no-web">
-        <p>This scenario has no web interface. Run it from the CLI with:</p>
-        <pre>node bin/testbed.js --scenario {scenario.id}</pre>
+      <div
+        data-testid="testbed-scenario-no-web"
+        className="m-4 rounded-md border border-border bg-surface-raised p-4"
+      >
+        <p className="text-secondary">This scenario has no web interface. Run it from the CLI with:</p>
+        <pre className="mt-2 rounded bg-surface-alt px-3 py-2 font-mono text-sm text-muted">
+          node bin/testbed.js --scenario {scenario.id}
+        </pre>
       </div>
     );
   }
@@ -218,16 +260,25 @@ export function TestbedShell(props: ITestbedShellProps = {}): React.ReactElement
   }, []);
 
   return (
-    <div className="testbed-shell" data-testid="testbed-shell">
-      <header className="testbed-top-bar" data-testid="testbed-top-bar">
-        <h1>fgv testbed</h1>
+    <div className="testbed-shell bg-surface text-primary" data-testid="testbed-shell">
+      <header
+        className="testbed-top-bar flex h-12 items-center gap-3 border-b border-border bg-brand-secondary px-4 shadow-sm"
+        data-testid="testbed-top-bar"
+      >
+        <h1 className="text-base font-semibold tracking-tight text-white">fgv testbed</h1>
+        <ThemeToggle />
       </header>
       <div className="testbed-body">
-        <aside className="testbed-sidebar" data-testid="testbed-sidebar">
+        <aside
+          className="testbed-sidebar w-56 border-r border-border bg-surface-alt"
+          data-testid="testbed-sidebar"
+        >
           {allScenarios.length === 0 ? (
-            <p data-testid="testbed-sidebar-empty">No scenarios registered yet.</p>
+            <p className="p-4 text-sm text-muted" data-testid="testbed-sidebar-empty">
+              No scenarios registered yet.
+            </p>
           ) : (
-            <ul data-testid="testbed-sidebar-list">
+            <ul className="py-2" data-testid="testbed-sidebar-list">
               {allScenarios.map((s) => (
                 <li key={s.id}>
                   <button
@@ -235,7 +286,11 @@ export function TestbedShell(props: ITestbedShellProps = {}): React.ReactElement
                     data-testid={`testbed-sidebar-btn-${s.id}`}
                     onClick={() => handleSelectScenario(s.id)}
                     aria-current={s.id === activeScenarioId ? 'page' : undefined}
-                    className={s.id === activeScenarioId ? 'selected' : undefined}
+                    className={
+                      s.id === activeScenarioId
+                        ? 'selected w-full border-l-2 border-selected-border bg-selected px-4 py-2 text-left text-sm font-medium text-brand-primary'
+                        : 'w-full border-l-2 border-transparent px-4 py-2 text-left text-sm text-secondary hover:bg-hover hover:text-primary'
+                    }
                   >
                     {s.title}
                   </button>
@@ -244,24 +299,29 @@ export function TestbedShell(props: ITestbedShellProps = {}): React.ReactElement
             </ul>
           )}
         </aside>
-        <main className="testbed-main" data-testid="testbed-main">
+        <main className="testbed-main p-6" data-testid="testbed-main">
           {activeScenario ? (
             <div data-testid="testbed-scenario-host">
-              <h2>{activeScenario.title}</h2>
-              <p>{activeScenario.description}</p>
-              <ScenarioHost key={activeScenario.id} scenario={activeScenario} context={scenarioContext} />
+              <h2 className="mb-1 text-xl font-semibold text-primary">{activeScenario.title}</h2>
+              <p className="mb-4 text-sm text-secondary">{activeScenario.description}</p>
+              <div className="rounded-lg border border-border bg-surface-raised p-4">
+                <ScenarioHost key={activeScenario.id} scenario={activeScenario} context={scenarioContext} />
+              </div>
             </div>
           ) : (
-            <div data-testid="testbed-empty-state">
+            <div data-testid="testbed-empty-state" className="text-secondary">
               <p>
                 The testbed is running but no scenarios are registered yet. Drop a scenario module under{' '}
-                <code>src/scenarios/</code> to get started.
+                <code className="rounded bg-surface-alt px-1 text-sm">src/scenarios/</code> to get started.
               </p>
             </div>
           )}
         </main>
       </div>
-      <footer className="testbed-status-bar" data-testid="testbed-status-bar">
+      <footer
+        className="testbed-status-bar border-t border-border bg-surface-raised"
+        data-testid="testbed-status-bar"
+      >
         <StatusBar messages={messages} onClear={clearMessages} />
       </footer>
     </div>
@@ -269,16 +329,18 @@ export function TestbedShell(props: ITestbedShellProps = {}): React.ReactElement
 }
 
 /**
- * Top-level testbed web app. Provides the responsive + messages contexts and mounts the
- * inner shell with the production scenario registry.
+ * Top-level testbed web app. Provides the theme, responsive + messages contexts and mounts
+ * the inner shell with the production scenario registry.
  * @public
  */
 export function App(): React.ReactElement {
   return (
-    <ResponsiveProvider>
-      <MessagesProvider>
-        <TestbedShell />
-      </MessagesProvider>
-    </ResponsiveProvider>
+    <ThemeProvider>
+      <ResponsiveProvider>
+        <MessagesProvider>
+          <TestbedShell />
+        </MessagesProvider>
+      </ResponsiveProvider>
+    </ThemeProvider>
   );
 }
