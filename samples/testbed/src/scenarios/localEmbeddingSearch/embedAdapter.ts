@@ -73,19 +73,17 @@ export async function embedText(
   text: string,
   embedFn: EmbedFn
 ): Promise<Result<number[]>> {
-  const tensorResult = await embedFn(extractor, text, { pooling: 'mean', normalize: true });
-  if (tensorResult.isFailure()) {
-    return fail(`embed failed for text "${text.slice(0, 40)}…": ${tensorResult.message}`);
-  }
-
-  // tolist() is typed as any[] by the upstream library. The [1, D] Tensor produced
-  // by pooling: 'mean' on a single string returns [[...D floats...]]. The cast to
-  // number[][] is safe given the known output shape.
-  const nested = tensorResult.value.tolist() as number[][];
-  /* c8 ignore next 3 - defensive: tolist() on a valid pooled Tensor always returns a non-empty nested array */
-  if (nested.length === 0 || nested[0] === undefined || nested[0].length === 0) {
-    return fail(`embed produced an empty Tensor for text "${text.slice(0, 40)}…"`);
-  }
-
-  return succeed(nested[0]);
+  return (await embedFn(extractor, text, { pooling: 'mean', normalize: true }))
+    .withErrorFormat((message) => `embed failed for text "${text.slice(0, 40)}…": ${message}`)
+    .onSuccess((tensor) => {
+      // tolist() is typed as any[] by the upstream library. The [1, D] Tensor produced
+      // by pooling: 'mean' on a single string returns [[...D floats...]]. The cast to
+      // number[][] is safe given the known output shape.
+      const nested = tensor.tolist() as number[][];
+      /* c8 ignore next 3 - defensive: tolist() on a valid pooled Tensor always returns a non-empty nested array */
+      if (nested.length === 0 || nested[0] === undefined || nested[0].length === 0) {
+        return fail(`embed produced an empty Tensor for text "${text.slice(0, 40)}…"`);
+      }
+      return succeed(nested[0]);
+    });
 }

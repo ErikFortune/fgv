@@ -75,28 +75,20 @@ async function searchCorpus(
   embedFn: EmbedFn,
   query: string
 ): Promise<Result<readonly IRankedResult[]>> {
-  // Embed query
-  const queryVecResult = await embedText(extractor, query, embedFn);
-  if (queryVecResult.isFailure()) {
-    return fail(`query embedding failed: ${queryVecResult.message}`);
-  }
-
-  // Embed all corpus texts sequentially (small corpus — parallelism adds noise)
-  const corpusEmbedResults = await Promise.all(
-    CORPUS_TEXTS.map(async (text) => embedText(extractor, text, embedFn))
-  );
-
-  const corpusResult = mapResults(corpusEmbedResults);
-  if (corpusResult.isFailure()) {
-    return fail(`corpus embedding failed: ${corpusResult.message}`);
-  }
-
-  const corpus: ICorpusEntry[] = CORPUS_TEXTS.map((text, i) => ({
-    text,
-    vec: corpusResult.value[i]!
-  }));
-
-  return rankBySimilarity(queryVecResult.value, corpus);
+  return (await embedText(extractor, query, embedFn))
+    .withErrorFormat((message) => `query embedding failed: ${message}`)
+    .thenOnSuccess(async (queryVec) => {
+      // Embed all corpus texts concurrently (small fixed corpus).
+      const corpusEmbedResults = await Promise.all(
+        CORPUS_TEXTS.map((text) => embedText(extractor, text, embedFn))
+      );
+      return mapResults(corpusEmbedResults)
+        .withErrorFormat((message) => `corpus embedding failed: ${message}`)
+        .onSuccess((vecs) => {
+          const corpus: ICorpusEntry[] = CORPUS_TEXTS.map((text, i) => ({ text, vec: vecs[i]! }));
+          return rankBySimilarity(queryVec, corpus);
+        });
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -165,16 +157,18 @@ function LocalEmbeddingSearchComponent({
       return;
     }
 
-    const rankResult = await searchCorpus(extractor, embed, queryText);
-
-    if (rankResult.isFailure()) {
-      setSearchState({ query: queryText, results: [], error: rankResult.message });
-      context.logger.error(`Search failed: ${rankResult.message}`);
-    } else {
-      setSearchState({ query: queryText, results: rankResult.value });
-      /* c8 ignore next 1 - ?? 'none' only fires for an empty ranked list; CORPUS_TEXTS is always non-empty */
-      context.logger.info(`Search complete. Top result: "${rankResult.value[0]?.text ?? 'none'}"`);
-    }
+    (await searchCorpus(extractor, embed, queryText))
+      .onSuccess((results) => {
+        setSearchState({ query: queryText, results });
+        /* c8 ignore next 1 - ?? 'none' only fires for an empty ranked list; CORPUS_TEXTS is always non-empty */
+        context.logger.info(`Search complete. Top result: "${results[0]?.text ?? 'none'}"`);
+        return succeed(results);
+      })
+      .onFailure((message) => {
+        setSearchState({ query: queryText, results: [], error: message });
+        context.logger.error(`Search failed: ${message}`);
+        return fail(message);
+      });
   }, [extractor, queryText, context.logger]);
 
   if (isLoading) {

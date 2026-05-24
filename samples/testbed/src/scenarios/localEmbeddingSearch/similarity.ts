@@ -39,9 +39,10 @@ export interface IRankedResult {
  * Returns `Result.fail` when the vectors have different dimensions or when either
  * vector has zero magnitude (preventing division by zero).
  *
- * Scores range from −1 (opposite direction) to 1 (identical direction). Normalized
- * sentence embeddings from `all-MiniLM-L6-v2` always land in [0, 1] because the
- * model's output vectors point into the positive orthant after normalization.
+ * Scores range from −1 (opposite direction) through 0 (orthogonal) to 1 (identical
+ * direction). L2-normalized sentence embeddings do not constrain the sign — related
+ * text tends to score positive in practice, but negative scores are possible and are
+ * not excluded by normalization.
  *
  * @public
  */
