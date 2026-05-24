@@ -1,7 +1,7 @@
 {
   "name": "@fgv/testbed",
   "version": "1.0.0",
-  "description": "Sample browser app + CLI showcasing fgv capabilities across scenarios. Long-lived; grows over time. See .ai/tasks/active/local-ai-exploration/brief.md for the cluster context.",
+  "description": "Sample browser app + CLI showcasing fgv capabilities across scenarios. Long-lived; grows over time. See .ai/tasks/active/local-ai-exploration/ for the cluster context.",
   "private": true,
   "main": "lib/cli.js",
   "bin": {

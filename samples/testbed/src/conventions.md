@@ -13,7 +13,7 @@ House style for `samples/testbed`. Scenario authors should read this once before
 
 3. **Documentation in code.** Explain the *why* of subtle fgv-primitive choices in comments. Sample code should READ as exemplary — not as a tutorial transcript.
 
-4. **100% test coverage.** Entry points (`src/cli.ts`, `src/web/index.tsx`, anything under `src/generated/`) are `c8 ignore`-d via `config/jest.config.json`'s `coveragePathIgnorePatterns`. Everything else (shell helpers, `App.tsx`, every scenario) gets full coverage.
+4. **100% test coverage.** `config/jest.config.json`'s `coveragePathIgnorePatterns` excludes `lib/web/index.js` and `lib/generated/` from coverage collection. The CLI entry point (`src/cli.ts`) is compiled into neither; its orchestration tail (`if (require.main === module) …`) carries an inline `/* c8 ignore start … stop */` directive rather than a path-ignore. Everything else — `App.tsx`, shell helpers, every scenario file — is fully covered.
 
 ## Greppable workaround marker
 
