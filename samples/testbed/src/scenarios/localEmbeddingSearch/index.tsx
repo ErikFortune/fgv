@@ -137,7 +137,9 @@ function LocalEmbeddingSearchComponent({
           return;
         }
         context.logger.info(`Model ${MODEL_ID} loaded.`);
-        setExtractor(pipeResult.value);
+        // The pipeline is itself a callable object; pass it via the updater form so
+        // React stores it instead of invoking it as a functional state updater.
+        setExtractor(() => pipeResult.value);
         setIsLoading(false);
       })
       /* c8 ignore next 5 - unreachable: the promise never rejects — loadPipeline returns Result.fail rather than throwing, the cached path is Promise.resolve(succeed(...)), and the .then handler only sets state */

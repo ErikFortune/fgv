@@ -320,6 +320,30 @@ describe('LocalEmbeddingSearchComponent', () => {
     expect(screen.getByTestId('embedding-search-btn')).not.toBeNull();
   });
 
+  test('regression: stores the callable pipeline without invoking it (functional-updater guard)', async () => {
+    // The real FeatureExtractionPipeline is a callable object. `setExtractor` must use the
+    // updater form (`() => pipeline`); otherwise React invokes the pipeline as a functional
+    // state updater (passing the previous state) — which in the browser ran the tokenizer with
+    // a null input ("text may not be null or undefined") and left the wrong value in state.
+    const callableExtractor = jest.fn(() => {
+      throw new Error('pipeline must not be invoked as a state updater');
+    }) as unknown as FeatureExtractionPipeline;
+    mockWebLoadPipeline.mockResolvedValue(succeed(callableExtractor));
+    mockWebEmbed.mockResolvedValue(succeed(makeMockTensor(VEC_A)));
+
+    render(React.createElement(localEmbeddingSearchScenario.web!.component, { context: makeScenarioCtx() }));
+
+    await waitFor(() => screen.getByTestId('embedding-scenario'));
+    // The component stores the pipeline and only hands it to `embed` — it never calls it itself.
+    expect(callableExtractor).not.toHaveBeenCalled();
+
+    // And the stored value is the pipeline: a search passes it straight through to `embed`.
+    fireEvent.change(screen.getByTestId('embedding-query'), { target: { value: 'hello' } });
+    fireEvent.click(screen.getByTestId('embedding-search-btn'));
+    await waitFor(() => expect(mockWebEmbed).toHaveBeenCalled());
+    expect(mockWebEmbed.mock.calls[0][0]).toBe(callableExtractor);
+  });
+
   test('shows non-loading state (extractor=null) when loadPipeline fails', async () => {
     mockWebLoadPipeline.mockResolvedValue(fail('model not found'));
 
