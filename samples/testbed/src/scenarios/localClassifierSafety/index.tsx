@@ -22,7 +22,7 @@
  *
  * The screener body in `classifierScreener.ts` reduces to:
  * ```typescript
- * const result = await classify(pipeline, ctx.value, { top_k: null });
+ * const result = await classifyAll(pipeline, ctx.value); // classifyAll bakes in top_k: null
  * ```
  * vs. the raw equivalent:
  * ```typescript

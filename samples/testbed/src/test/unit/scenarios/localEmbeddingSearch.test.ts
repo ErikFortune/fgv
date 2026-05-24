@@ -64,8 +64,9 @@ const DUMMY_EXTRACTOR = {} as FeatureExtractionPipeline;
  * emitted by `embed(text, { pooling: 'mean', normalize: true })` for a single string.
  */
 function makeMockTensor(vec: number[]): Tensor {
+  // tolist() on a pooled single-string embedding returns number[][] ([[...vec...]]).
   return {
-    tolist: () => [vec] as unknown as number[]
+    tolist: (): number[][] => [vec]
   } as unknown as Tensor;
 }
 

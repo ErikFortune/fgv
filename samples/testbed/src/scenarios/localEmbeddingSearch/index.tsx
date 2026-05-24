@@ -160,7 +160,7 @@ function LocalEmbeddingSearchComponent({
     (await searchCorpus(extractor, embed, queryText))
       .onSuccess((results) => {
         setSearchState({ query: queryText, results });
-        /* c8 ignore next 1 - ?? 'none' only fires for an empty ranked list; CORPUS_TEXTS is always non-empty */
+        /* c8 ignore next 1 - the 'none' fallback is unreachable: a successful ranking over the non-empty CORPUS_TEXTS always has a top entry */
         context.logger.info(`Search complete. Top result: "${results[0]?.text ?? 'none'}"`);
         return succeed(results);
       })
