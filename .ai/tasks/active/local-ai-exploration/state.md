@@ -82,5 +82,5 @@
 | Substrate prep | #403 | merged to `local-ai-exploration` |
 | B-1 | #404 | open, targeting `local-ai-exploration` |
 | B-2 | #405 (claude/fervent-hamilton-iuqXX) | open, targeting local-ai-exploration |
-| B-3 | TBD (open, targeting local-ai-exploration) | open, targeting `local-ai-exploration` |
+| B-3 | branch `claude/fervent-hamilton-iuqXX` (pushed; PR creation pending) | open, targeting `local-ai-exploration` |
 | B-4a/b | TBD | gated on B-3 exit |
