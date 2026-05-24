@@ -9,12 +9,18 @@
  * @packageDocumentation
  */
 
-// jest.mock must precede all imports (hoist-jest-mock rule).
+// jest.mock must precede all imports (hoist-jest-mock rule). Both facades are mocked:
+// the Node facade backs the CLI path (loaded via dynamic import in `cli.run`), the
+// browser facade backs the web component + `web.initialize`.
 jest.mock('@fgv/ts-extras-transformers');
+jest.mock('@fgv/ts-web-extras-transformers');
 
 import '@fgv/ts-utils-jest';
+import React from 'react';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { fail, succeed } from '@fgv/ts-utils';
 import * as transformers from '@fgv/ts-extras-transformers';
+import * as webTransformers from '@fgv/ts-web-extras-transformers';
 import type { TextClassificationOutput, TextClassificationPipeline } from '@fgv/ts-extras-transformers';
 import type { ISafeguardFinding, IScreenerContext, IPromptSlot, SlotName } from '@fgv/ts-prompt-assist';
 import type { IScenarioContext } from '../../../shell';
@@ -32,7 +38,8 @@ import {
   MODEL_ID,
   SCENARIO_SCOPE,
   SCENARIO_PROMPT_ID,
-  USER_TEXT_SLOT
+  USER_TEXT_SLOT,
+  localClassifierSafetyScenario
 } from '../../../scenarios/localClassifierSafety';
 import type { ClassifierThresholdMap } from '../../../scenarios/localClassifierSafety';
 
@@ -40,8 +47,15 @@ import type { ClassifierThresholdMap } from '../../../scenarios/localClassifierS
 // Convenience accessors for the mocked functions
 // ---------------------------------------------------------------------------
 
+// Node facade (drives the CLI path via dynamic import; also injected as the
+// screener's `classify` in the facade-agnostic core tests — its concrete origin
+// is irrelevant there, it is just a correctly-typed stub).
 const mockClassify = jest.mocked(transformers.classify);
 const mockLoadPipeline = jest.mocked(transformers.loadPipeline);
+
+// Browser facade (drives the web component + web.initialize).
+const mockWebClassify = jest.mocked(webTransformers.classify);
+const mockWebLoadPipeline = jest.mocked(webTransformers.loadPipeline);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -118,6 +132,204 @@ function makeScenarioCtx(): IScenarioContext {
     dataTree: {} as IScenarioContext['dataTree']
   };
 }
+
+// ---------------------------------------------------------------------------
+// LocalClassifierSafetyComponent (web component tests)
+// NOTE: This describe block must come FIRST so that _cachedPipeline is still
+// undefined when the uncached-path tests run. The cached-path test calls
+// web.initialize() to populate _cachedPipeline, and then any subsequent render
+// reuses it without calling loadPipeline again.
+// ---------------------------------------------------------------------------
+
+describe('LocalClassifierSafetyComponent', () => {
+  beforeEach(() => {
+    mockWebLoadPipeline.mockReset();
+    mockWebClassify.mockReset();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  test('shows loading state on initial render before pipeline resolves', async () => {
+    // Hold the pipeline promise open so we see the loading state
+    let resolvePipeline!: (v: unknown) => void;
+    mockWebLoadPipeline.mockReturnValue(
+      new Promise<unknown>((resolve) => {
+        resolvePipeline = resolve;
+      }) as ReturnType<typeof mockWebLoadPipeline>
+    );
+
+    render(React.createElement(localClassifierSafetyScenario.web!.component, { context: makeScenarioCtx() }));
+
+    expect(screen.getByTestId('classifier-loading')).not.toBeNull();
+
+    // Resolve to avoid open handles
+    resolvePipeline(succeed(DUMMY_PIPELINE));
+    await waitFor(() => screen.getByTestId('classifier-scenario'));
+  });
+
+  test('unmount guard: component unmounted before pipeline resolves does not set state', async () => {
+    // Hold the pipeline promise pending so we can unmount first
+    let resolvePipeline!: (v: unknown) => void;
+    mockWebLoadPipeline.mockReturnValue(
+      new Promise<unknown>((resolve) => {
+        resolvePipeline = resolve;
+      }) as ReturnType<typeof mockWebLoadPipeline>
+    );
+
+    const { unmount } = render(
+      React.createElement(localClassifierSafetyScenario.web!.component, { context: makeScenarioCtx() })
+    );
+
+    // Unmount while the pipeline promise is still pending
+    unmount();
+
+    // Now resolve — the !mounted guard prevents any setState from running
+    resolvePipeline(succeed(DUMMY_PIPELINE));
+    // Give the microtask queue a tick to flush
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // No assertion needed — the test passes if no "can't perform state update on unmounted" error fires
+  });
+
+  test('uncached path: calls loadPipeline and renders the scenario UI after success', async () => {
+    // _cachedPipeline is undefined here (first component test before initialize)
+    mockWebLoadPipeline.mockResolvedValue(succeed(DUMMY_PIPELINE));
+
+    render(React.createElement(localClassifierSafetyScenario.web!.component, { context: makeScenarioCtx() }));
+
+    await waitFor(() => screen.getByTestId('classifier-scenario'));
+    expect(mockWebLoadPipeline).toHaveBeenCalledWith('text-classification', MODEL_ID);
+    expect(screen.getByTestId('classifier-run-btn')).not.toBeNull();
+  });
+
+  test('shows non-loading state (lib=null) when loadPipeline fails', async () => {
+    mockWebLoadPipeline.mockResolvedValue(fail('model not found'));
+
+    const ctx = makeScenarioCtx();
+    render(React.createElement(localClassifierSafetyScenario.web!.component, { context: ctx }));
+
+    await waitFor(() => screen.getByTestId('classifier-scenario'));
+    expect(
+      (ctx.logger.error as jest.Mock).mock.calls.some((c: unknown[]) =>
+        String(c[0]).includes('model not found')
+      )
+    ).toBe(true);
+    // Button should be disabled because lib === null
+    expect((screen.getByTestId('classifier-run-btn') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  test('handleScreen: returns early when lib is null (loadPipeline failed)', async () => {
+    mockWebLoadPipeline.mockResolvedValue(fail('no model'));
+
+    render(React.createElement(localClassifierSafetyScenario.web!.component, { context: makeScenarioCtx() }));
+
+    await waitFor(() => screen.getByTestId('classifier-scenario'));
+
+    const input = screen.getByTestId('classifier-input') as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: 'hello' } });
+    fireEvent.click(screen.getByTestId('classifier-run-btn'));
+
+    // No result div — handleScreen returned early
+    expect(screen.queryByTestId('classifier-result')).toBeNull();
+  });
+
+  test('handleScreen: returns early when input is empty', async () => {
+    mockWebLoadPipeline.mockResolvedValue(succeed(DUMMY_PIPELINE));
+    mockWebClassify.mockResolvedValue(succeed(CLEAN_OUTPUT));
+
+    render(React.createElement(localClassifierSafetyScenario.web!.component, { context: makeScenarioCtx() }));
+
+    await waitFor(() => screen.getByTestId('classifier-scenario'));
+
+    // Do NOT type anything — input is empty
+    fireEvent.click(screen.getByTestId('classifier-run-btn'));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.queryByTestId('classifier-result')).toBeNull();
+  });
+
+  test('shows clean verdict after a successful resolve with no findings', async () => {
+    mockWebLoadPipeline.mockResolvedValue(succeed(DUMMY_PIPELINE));
+    mockWebClassify.mockResolvedValue(succeed(CLEAN_OUTPUT));
+
+    const ctx = makeScenarioCtx();
+    render(React.createElement(localClassifierSafetyScenario.web!.component, { context: ctx }));
+
+    await waitFor(() => screen.getByTestId('classifier-scenario'));
+
+    const input = screen.getByTestId('classifier-input') as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: 'hello world' } });
+    fireEvent.click(screen.getByTestId('classifier-run-btn'));
+
+    await waitFor(() => screen.getByTestId('classifier-result'));
+    expect(screen.getByTestId('classifier-allowed')).not.toBeNull();
+    expect(screen.getByTestId('classifier-verdict-clean')).not.toBeNull();
+    expect(
+      (ctx.logger.info as jest.Mock).mock.calls.some((c: unknown[]) =>
+        String(c[0]).includes('passed all checks')
+      )
+    ).toBe(true);
+  });
+
+  test('shows findings list after a successful resolve with warn findings', async () => {
+    mockWebLoadPipeline.mockResolvedValue(succeed(DUMMY_PIPELINE));
+    mockWebClassify.mockResolvedValue(succeed(WARN_ONLY_OUTPUT));
+
+    const ctx = makeScenarioCtx();
+    render(React.createElement(localClassifierSafetyScenario.web!.component, { context: ctx }));
+
+    await waitFor(() => screen.getByTestId('classifier-scenario'));
+
+    const input = screen.getByTestId('classifier-input') as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: 'mildly bad text' } });
+    fireEvent.click(screen.getByTestId('classifier-run-btn'));
+
+    await waitFor(() => screen.getByTestId('classifier-result'));
+    expect(screen.getByTestId('classifier-allowed')).not.toBeNull();
+    expect(screen.getByTestId('classifier-findings')).not.toBeNull();
+    expect(
+      (ctx.logger.warn as jest.Mock).mock.calls.some((c: unknown[]) => String(c[0]).includes('Warnings'))
+    ).toBe(true);
+  });
+
+  test('shows error div when resolve fails (reject disposition)', async () => {
+    mockWebLoadPipeline.mockResolvedValue(succeed(DUMMY_PIPELINE));
+    mockWebClassify.mockResolvedValue(succeed(SINGLE_LABEL_TOXIC));
+
+    const ctx = makeScenarioCtx();
+    render(React.createElement(localClassifierSafetyScenario.web!.component, { context: ctx }));
+
+    await waitFor(() => screen.getByTestId('classifier-scenario'));
+
+    const input = screen.getByTestId('classifier-input') as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: 'toxic text' } });
+    fireEvent.click(screen.getByTestId('classifier-run-btn'));
+
+    await waitFor(() => screen.getByTestId('classifier-result'));
+    expect(screen.getByTestId('classifier-error')).not.toBeNull();
+    expect(
+      (ctx.logger.warn as jest.Mock).mock.calls.some((c: unknown[]) =>
+        String(c[0]).includes('Resolve failed')
+      )
+    ).toBe(true);
+  });
+
+  test('cached path: after initialize(), component does not call loadPipeline again', async () => {
+    // Populate _cachedPipeline by calling initialize()
+    mockWebLoadPipeline.mockResolvedValue(succeed(DUMMY_PIPELINE));
+    await localClassifierSafetyScenario.web!.initialize!(makeScenarioCtx());
+
+    // Reset so we can detect if it's called again
+    mockWebLoadPipeline.mockReset();
+    mockWebClassify.mockResolvedValue(succeed(CLEAN_OUTPUT));
+
+    render(React.createElement(localClassifierSafetyScenario.web!.component, { context: makeScenarioCtx() }));
+
+    await waitFor(() => screen.getByTestId('classifier-scenario'));
+    expect(mockWebLoadPipeline).not.toHaveBeenCalled();
+  });
+});
 
 // ---------------------------------------------------------------------------
 // interpretLabel
@@ -304,6 +516,7 @@ describe('createClassifierScreener', () => {
   test('default name is "local-classifier-screener"', () => {
     const screener = createClassifierScreener({
       pipeline: DUMMY_PIPELINE,
+      classify: mockClassify,
       thresholds: DEFAULT_TOXIC_BERT_THRESHOLDS
     });
     expect(screener.name).toBe('local-classifier-screener');
@@ -312,6 +525,7 @@ describe('createClassifierScreener', () => {
   test('uses the provided name', () => {
     const screener = createClassifierScreener({
       pipeline: DUMMY_PIPELINE,
+      classify: mockClassify,
       thresholds: DEFAULT_TOXIC_BERT_THRESHOLDS,
       name: 'my-screener'
     });
@@ -322,6 +536,7 @@ describe('createClassifierScreener', () => {
     mockClassify.mockResolvedValue(succeed(CLEAN_OUTPUT));
     const screener = createClassifierScreener({
       pipeline: DUMMY_PIPELINE,
+      classify: mockClassify,
       thresholds: DEFAULT_TOXIC_BERT_THRESHOLDS
     });
     await screener.screen(makeCtx('hello'));
@@ -332,6 +547,7 @@ describe('createClassifierScreener', () => {
     mockClassify.mockResolvedValue(succeed(CLEAN_OUTPUT));
     const screener = createClassifierScreener({
       pipeline: DUMMY_PIPELINE,
+      classify: mockClassify,
       thresholds: DEFAULT_TOXIC_BERT_THRESHOLDS
     });
     const result = await screener.screen(makeCtx('hello'));
@@ -344,6 +560,7 @@ describe('createClassifierScreener', () => {
     mockClassify.mockResolvedValue(succeed(SINGLE_LABEL_TOXIC));
     const screener = createClassifierScreener({
       pipeline: DUMMY_PIPELINE,
+      classify: mockClassify,
       thresholds: DEFAULT_TOXIC_BERT_THRESHOLDS
     });
     const result = await screener.screen(makeCtx('bad text'));
@@ -358,6 +575,7 @@ describe('createClassifierScreener', () => {
     mockClassify.mockResolvedValue(succeed(WARN_ONLY_OUTPUT));
     const screener = createClassifierScreener({
       pipeline: DUMMY_PIPELINE,
+      classify: mockClassify,
       thresholds: DEFAULT_TOXIC_BERT_THRESHOLDS
     });
     const result = await screener.screen(makeCtx('mildly bad text'));
@@ -371,6 +589,7 @@ describe('createClassifierScreener', () => {
     mockClassify.mockResolvedValue(fail('model inference error'));
     const screener = createClassifierScreener({
       pipeline: DUMMY_PIPELINE,
+      classify: mockClassify,
       thresholds: DEFAULT_TOXIC_BERT_THRESHOLDS,
       name: 'test-screener'
     });
@@ -382,6 +601,7 @@ describe('createClassifierScreener', () => {
     mockClassify.mockResolvedValue(succeed([]));
     const screener = createClassifierScreener({
       pipeline: DUMMY_PIPELINE,
+      classify: mockClassify,
       thresholds: DEFAULT_TOXIC_BERT_THRESHOLDS
     });
     const result = await screener.screen(makeCtx('empty model output'));
@@ -394,6 +614,7 @@ describe('createClassifierScreener', () => {
     mockClassify.mockResolvedValue(succeed(MULTI_LABEL_TOXIC));
     const screener = createClassifierScreener({
       pipeline: DUMMY_PIPELINE,
+      classify: mockClassify,
       thresholds: DEFAULT_TOXIC_BERT_THRESHOLDS
     });
     const result = await screener.screen(makeCtx('very bad text'));
@@ -407,6 +628,7 @@ describe('createClassifierScreener', () => {
     mockClassify.mockResolvedValue(succeed(SINGLE_LABEL_TOXIC));
     const screener = createClassifierScreener({
       pipeline: DUMMY_PIPELINE,
+      classify: mockClassify,
       thresholds: DEFAULT_TOXIC_BERT_THRESHOLDS,
       name: 'named-screener'
     });
@@ -427,13 +649,15 @@ describe('buildPromptLibrary + PromptLibrary.resolve (mocked classify)', () => {
   });
 
   test('builds a PromptLibrary successfully', async () => {
-    const result = await buildPromptLibrary(DUMMY_PIPELINE, DEFAULT_TOXIC_BERT_THRESHOLDS);
+    const result = await buildPromptLibrary(DUMMY_PIPELINE, mockClassify, DEFAULT_TOXIC_BERT_THRESHOLDS);
     expect(result).toSucceed();
   });
 
   test('resolve succeeds for clean text', async () => {
     mockClassify.mockResolvedValue(succeed(CLEAN_OUTPUT));
-    const lib = (await buildPromptLibrary(DUMMY_PIPELINE, DEFAULT_TOXIC_BERT_THRESHOLDS)).orThrow();
+    const lib = (
+      await buildPromptLibrary(DUMMY_PIPELINE, mockClassify, DEFAULT_TOXIC_BERT_THRESHOLDS)
+    ).orThrow();
     const result = await lib.resolve({
       id: SCENARIO_PROMPT_ID,
       chain: [SCENARIO_SCOPE],
@@ -448,7 +672,9 @@ describe('buildPromptLibrary + PromptLibrary.resolve (mocked classify)', () => {
 
   test('resolve surfaces warn findings in trace.safeguardFindings', async () => {
     mockClassify.mockResolvedValue(succeed(WARN_ONLY_OUTPUT));
-    const lib = (await buildPromptLibrary(DUMMY_PIPELINE, DEFAULT_TOXIC_BERT_THRESHOLDS)).orThrow();
+    const lib = (
+      await buildPromptLibrary(DUMMY_PIPELINE, mockClassify, DEFAULT_TOXIC_BERT_THRESHOLDS)
+    ).orThrow();
     const result = await lib.resolve({
       id: SCENARIO_PROMPT_ID,
       chain: [SCENARIO_SCOPE],
@@ -463,7 +689,9 @@ describe('buildPromptLibrary + PromptLibrary.resolve (mocked classify)', () => {
 
   test('resolve fails with a reject finding for toxic text', async () => {
     mockClassify.mockResolvedValue(succeed(SINGLE_LABEL_TOXIC));
-    const lib = (await buildPromptLibrary(DUMMY_PIPELINE, DEFAULT_TOXIC_BERT_THRESHOLDS)).orThrow();
+    const lib = (
+      await buildPromptLibrary(DUMMY_PIPELINE, mockClassify, DEFAULT_TOXIC_BERT_THRESHOLDS)
+    ).orThrow();
     const result = await lib.resolve({
       id: SCENARIO_PROMPT_ID,
       chain: [SCENARIO_SCOPE],
@@ -475,7 +703,9 @@ describe('buildPromptLibrary + PromptLibrary.resolve (mocked classify)', () => {
 
   test('resolve fails when classify returns an error', async () => {
     mockClassify.mockResolvedValue(fail('inference error'));
-    const lib = (await buildPromptLibrary(DUMMY_PIPELINE, DEFAULT_TOXIC_BERT_THRESHOLDS)).orThrow();
+    const lib = (
+      await buildPromptLibrary(DUMMY_PIPELINE, mockClassify, DEFAULT_TOXIC_BERT_THRESHOLDS)
+    ).orThrow();
     const result = await lib.resolve({
       id: SCENARIO_PROMPT_ID,
       chain: [SCENARIO_SCOPE],
@@ -516,8 +746,6 @@ describe('scenario constants', () => {
 // IScenario shape (imported from the registry to confirm registration)
 // ---------------------------------------------------------------------------
 
-import { localClassifierSafetyScenario } from '../../../scenarios/localClassifierSafety';
-
 describe('localClassifierSafetyScenario (IScenario shape)', () => {
   test('has the expected id', () => {
     expect(localClassifierSafetyScenario.id).toBe('local-classifier-safety');
@@ -552,19 +780,19 @@ describe('localClassifierSafetyScenario (IScenario shape)', () => {
 
 describe('web impl: initialize()', () => {
   beforeEach(() => {
-    mockLoadPipeline.mockReset();
-    mockClassify.mockReset();
+    mockWebLoadPipeline.mockReset();
+    mockWebClassify.mockReset();
   });
 
   test('initialize succeeds when loadPipeline succeeds', async () => {
-    mockLoadPipeline.mockResolvedValue(succeed(DUMMY_PIPELINE));
+    mockWebLoadPipeline.mockResolvedValue(succeed(DUMMY_PIPELINE));
     const ctx: IScenarioContext = makeScenarioCtx();
     const result = await localClassifierSafetyScenario.web!.initialize!(ctx);
     expect(result).toSucceedWith(true);
   });
 
   test('initialize fails when loadPipeline fails', async () => {
-    mockLoadPipeline.mockResolvedValue(fail('network error'));
+    mockWebLoadPipeline.mockResolvedValue(fail('network error'));
     const ctx: IScenarioContext = makeScenarioCtx();
     const result = await localClassifierSafetyScenario.web!.initialize!(ctx);
     expect(result).toFailWith(/network error/i);

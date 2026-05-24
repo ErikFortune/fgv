@@ -13,9 +13,27 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import type { TextClassificationPipeline, TextClassificationOutput } from '@fgv/ts-extras-transformers';
-import { classify } from '@fgv/ts-extras-transformers';
+// Type-only imports (erased at compile time, so they pull no runtime facade into
+// the web bundle). Both `@fgv/ts-extras-transformers` (Node) and
+// `@fgv/ts-web-extras-transformers` (browser) re-export these identical upstream
+// types; the screener stays facade-agnostic by taking `classify` as an injected
+// function rather than importing one facade's runtime binding.
+import type { TextClassificationPipeline, TextClassificationOutput } from '@fgv/ts-web-extras-transformers';
 import type { ISafeguardFinding, IScreener, IScreenerContext, SlotName } from '@fgv/ts-prompt-assist';
+
+/**
+ * The `classify` operation as exposed by either transformers facade
+ * (`@fgv/ts-extras-transformers` for Node, `@fgv/ts-web-extras-transformers` for
+ * the browser). Injected into {@link createClassifierScreener} so the screener
+ * core depends on neither concrete facade.
+ *
+ * @public
+ */
+export type ClassifyFn = (
+  classifier: TextClassificationPipeline,
+  text: string,
+  options?: Parameters<TextClassificationPipeline>[1]
+) => Promise<Result<TextClassificationOutput>>;
 
 /**
  * Per-label threshold configuration. Both bands are optional.
@@ -180,11 +198,17 @@ export function interpretClassification(
  */
 export interface IClassifierScreenerOptions {
   /**
-   * Pre-loaded `TextClassificationPipeline` obtained via
+   * Pre-loaded `TextClassificationPipeline` obtained via the active facade's
    * `loadPipeline('text-classification', modelId)`. The screener holds this
    * reference for its lifetime; the caller is responsible for lifecycle.
    */
   readonly pipeline: TextClassificationPipeline;
+  /**
+   * The `classify` function from the active facade — `@fgv/ts-web-extras-transformers`
+   * on the browser, `@fgv/ts-extras-transformers` in Node. Injected (rather than
+   * imported) so this core never statically references a runtime facade.
+   */
+  readonly classify: ClassifyFn;
   /**
    * Per-label threshold map. See {@link DEFAULT_TOXIC_BERT_THRESHOLDS} for
    * the `Xenova/toxic-bert` defaults.
@@ -227,7 +251,7 @@ export interface IClassifierScreenerOptions {
  * @public
  */
 export function createClassifierScreener(options: IClassifierScreenerOptions): IScreener {
-  const { pipeline, thresholds } = options;
+  const { pipeline, classify, thresholds } = options;
   const name = options.name ?? 'local-classifier-screener';
 
   return {

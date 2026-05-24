@@ -11,8 +11,8 @@
         "require": "./lib/index.js"
       },
       "default": {
-        "import": "./lib/index.browser.js",
-        "require": "./lib/index.browser.js"
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
       },
       "types": "./dist/ts-web-extras-transformers.d.ts"
     }

@@ -2290,6 +2290,9 @@ importers:
       '@fgv/ts-web-extras':
         specifier: workspace:*
         version: link:../../libraries/ts-web-extras
+      '@fgv/ts-web-extras-transformers':
+        specifier: workspace:*
+        version: link:../../libraries/ts-web-extras-transformers
       react:
         specifier: ~19.2.3
         version: 19.2.6

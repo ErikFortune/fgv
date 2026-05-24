@@ -1,19 +1,22 @@
 /**
  * B-3 scenario: local toxicity classifier wired as an `IPromptSafetyPolicy` screener.
  *
- * This scenario is the **done-or-discard forcing function** for the `@fgv/ts-extras-transformers`
- * facade. It wires a `Xenova/toxic-bert` text-classification pipeline into a `PromptLibrary`'s
+ * This scenario is the **done-or-discard forcing function** for the transformers facades.
+ * It wires a `Xenova/toxic-bert` text-classification pipeline into a `PromptLibrary`'s
  * safety policy as an `IScreener`, demonstrating the full facade → ts-prompt-assist composition.
  *
  * ## Architecture
  *
- * The implementation splits across two units to satisfy the brief's testability requirement:
+ * The implementation splits across units to satisfy both the testability requirement
+ * and the dual web/CLI target:
  *
  * - `classifierScreener.ts` — pure, React-free interpretation logic + screener factory.
- *   Fully unit-tested by mocking `@fgv/ts-extras-transformers`'s `classify` function.
+ *   Facade-agnostic: it takes `classify` as an injected {@link ClassifyFn} and uses only
+ *   type-only facade imports, so it pulls no runtime facade into the web bundle.
  * - `index.tsx` (this file) — web and CLI implementations, both thin shells over the
- *   tested core. The React component accepts the `context: IScenarioContext` prop
- *   prescribed by the `IWebScenarioImpl` contract.
+ *   tested core. The web path imports the browser facade (`@fgv/ts-web-extras-transformers`);
+ *   the CLI path loads the Node facade (`@fgv/ts-extras-transformers`) via a `webpackIgnore`
+ *   dynamic import so the node-native deps never reach the browser bundle.
  *
  * ## Facade evaluation notes (for `phase-b3-result.md`)
  *
@@ -36,8 +39,12 @@
 import React, { useState, useCallback } from 'react';
 import { fail, succeed } from '@fgv/ts-utils';
 import type { Result } from '@fgv/ts-utils';
-import { loadPipeline } from '@fgv/ts-extras-transformers';
-import type { TextClassificationPipeline } from '@fgv/ts-extras-transformers';
+// The web component runs in the browser bundle, so it uses the browser facade
+// (WASM ONNX + Web Crypto — no node-native deps). The CLI path uses the Node
+// facade, but loads it via a `webpackIgnore` dynamic import (see `cliImpl.run`)
+// so it never enters the web bundle's static graph.
+import { loadPipeline, classify } from '@fgv/ts-web-extras-transformers';
+import type { TextClassificationPipeline } from '@fgv/ts-web-extras-transformers';
 import {
   Convert,
   PromptLibrary,
@@ -58,6 +65,7 @@ import {
 } from './classifierScreener';
 import type {
   ClassifierThresholdMap,
+  ClassifyFn,
   IClassifierScreenerOptions,
   ILabelThreshold,
   LabelVerdict
@@ -95,6 +103,7 @@ const USER_TEXT_SLOT: SlotName = Convert.slotName.convert('user_text').shouldNot
  */
 async function buildPromptLibrary(
   pipeline: TextClassificationPipeline,
+  classifyFn: ClassifyFn,
   thresholds: ClassifierThresholdMap
 ): Promise<Result<PromptLibrary>> {
   const store = await PromptStoreFixture.build({
@@ -128,6 +137,7 @@ async function buildPromptLibrary(
         screeners: [
           createClassifierScreener({
             pipeline,
+            classify: classifyFn,
             thresholds,
             name: 'local-toxic-bert-screener'
           })
@@ -165,14 +175,7 @@ interface IResolveResult {
  *
  * Accepts user-supplied text, resolves it through the `PromptLibrary` (which runs
  * the classifier screener), and displays the verdict + per-label scores.
- *
- * @remarks
- * The component body is excluded from coverage with `c8 ignore` because this project's
- * heft-jest configuration resolves `testEnvironment` to `jest-environment-node` (the
- * heft-jest-plugin default), making jsdom unavailable. All meaningful logic lives in
- * the fully-tested `classifierScreener.ts` and `buildPromptLibrary` units.
  */
-/* c8 ignore start - React component: testEnvironment=node (heft default), jsdom unavailable; all logic in tested core */
 function LocalClassifierSafetyComponent({
   context
 }: {
@@ -203,10 +206,12 @@ function LocalClassifierSafetyComponent({
           setIsLoading(false);
           return;
         }
-        const libResult = await buildPromptLibrary(pipeResult.value, DEFAULT_TOXIC_BERT_THRESHOLDS);
+        const libResult = await buildPromptLibrary(pipeResult.value, classify, DEFAULT_TOXIC_BERT_THRESHOLDS);
+        /* c8 ignore next 3 - unmount guard after buildPromptLibrary: requires precise timing (unmount between loadPipeline resolve and buildPromptLibrary resolve) which is not deterministic in jsdom */
         if (!mounted) {
           return;
         }
+        /* c8 ignore next 5 - buildPromptLibrary fails only if PromptStoreFixture/PromptLibrary.create has a bug; not reachable via mocked pipeline tests (same rationale as CLI path line 383) */
         if (libResult.isFailure()) {
           context.logger.error(`Failed to build PromptLibrary: ${libResult.message}`);
           setIsLoading(false);
@@ -216,6 +221,7 @@ function LocalClassifierSafetyComponent({
         setLib(libResult.value);
         setIsLoading(false);
       })
+      /* c8 ignore next 5 - catch only fires if the then-chain throws synchronously (not from a rejected promise, since mocked loadPipeline returns a resolved Promise<Result>); not reachable in tests */
       .catch((err: unknown) => {
         if (mounted) {
           context.logger.error(`Unexpected error loading model: ${String(err)}`);
@@ -315,7 +321,6 @@ function LocalClassifierSafetyComponent({
     </div>
   );
 }
-/* c8 ignore stop */
 
 // ---------------------------------------------------------------------------
 // Web impl (IWebScenarioImpl)
@@ -363,12 +368,21 @@ const cliImpl: ICliScenarioImpl = {
    */
   async run(context: IScenarioContext): Promise<Result<string>> {
     context.logger.info(`Loading model ${MODEL_ID} for batch demo…`);
-    const pipeResult = await loadPipeline('text-classification', MODEL_ID);
+    // Load the Node facade lazily and opaquely to webpack: the `webpackIgnore`
+    // magic comment keeps `@fgv/ts-extras-transformers` (and its node-native ONNX
+    // deps) out of the browser bundle's static graph, while Node resolves it
+    // normally at CLI runtime.
+    const nodeFacade = await import(/* webpackIgnore: true */ '@fgv/ts-extras-transformers');
+    const pipeResult = await nodeFacade.loadPipeline('text-classification', MODEL_ID);
     if (pipeResult.isFailure()) {
       return fail(pipeResult.message);
     }
 
-    const libResult = await buildPromptLibrary(pipeResult.value, DEFAULT_TOXIC_BERT_THRESHOLDS);
+    const libResult = await buildPromptLibrary(
+      pipeResult.value,
+      nodeFacade.classify,
+      DEFAULT_TOXIC_BERT_THRESHOLDS
+    );
     /* c8 ignore next 3 - buildPromptLibrary fails only if PromptStoreFixture/PromptLibrary.create has a bug; not reachable via mocked loadPipeline tests */
     if (libResult.isFailure()) {
       return fail(libResult.message);
@@ -443,4 +457,4 @@ export {
   SCENARIO_PROMPT_ID,
   USER_TEXT_SLOT
 };
-export type { IClassifierScreenerOptions, ILabelThreshold, ClassifierThresholdMap, LabelVerdict };
+export type { ClassifyFn, IClassifierScreenerOptions, ILabelThreshold, ClassifierThresholdMap, LabelVerdict };

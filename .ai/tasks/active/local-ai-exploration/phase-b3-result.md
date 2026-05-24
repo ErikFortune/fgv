@@ -72,9 +72,24 @@ The `IScreener` contract (`screen(ctx: IScreenerContext): Promise<Result<Readonl
 
 **`@huggingface/transformers` upstream type errors.** The package's type definitions have errors under strict TypeScript (`TS2307`, `TS2416`, `TS2304` for internal types). Fixed by adding `"skipLibCheck": true` to `samples/testbed/tsconfig.json`. No functional impact; this is a known upstream issue with the TS-native transformer types.
 
-**jsdom unavailable in heft-jest.** The `heft-jest-plugin` resolves `testEnvironment` to `jest-environment-node` by default, ignoring the `jest.config.json` `testEnvironment: "jsdom"` setting. The React component render paths are therefore untestable in this setup. Covered with `/* c8 ignore start/stop */` with rationale — the component is a thin shell, all logic is in tested pure units. The `App.test.tsx` tests continue to pass because they test the `TestbedShell` (already-compiled JS in `lib/`) and React is node-compatible for basic rendering.
+**jsdom IS available (initial claim was wrong — corrected in review).** An earlier draft of this result claimed `heft-jest` forced `testEnvironment: node`, making the React component untestable, and blanket-`c8 ignore`-d the whole component. That was incorrect: jsdom works (see `App.test.tsx`, which renders components via `@testing-library/react`), and `conventions.md` §4 requires scenario components to be covered. The blanket ignore + false rationale were removed; the component is now fully tested via `@testing-library/react` (mocking the browser facade), with three **narrow** `c8 ignore` directives remaining on genuinely-defensive lines (second unmount guard, `buildPromptLibrary` internal-failure branch, and the `.catch` that only fires on a synchronous throw) — each with an honest rationale.
 
-**`jest.mock` must be the very first statement.** The `@rushstack/hoist-jest-mock` rule enforced this strictly — `jest.mock('@fgv/ts-extras-transformers')` must precede all `import` statements. Required restructuring the test file and adding a manual `__mocks__/` entry so the mock is registered before any transitive import of `@huggingface/transformers`.
+**`jest.mock` must be the very first statement.** The `@rushstack/hoist-jest-mock` rule enforced this strictly — `jest.mock(...)` must precede all `import` statements. Both facades are mocked at the top: `@fgv/ts-extras-transformers` (Node, for the CLI path) and `@fgv/ts-web-extras-transformers` (browser, for the component + `web.initialize`).
+
+---
+
+## Review follow-ups (Copilot + owner review on PR #408)
+
+The review drove three substantive changes beyond the small fixes (branded-id Converters, slot-derived body, `SlotName` propagation, docstring, registry snapshot):
+
+1. **Web vs Node facade split (was: both paths imported the Node facade into a browser bundle).** The testbed bundles for the browser (webpack), so importing `@fgv/ts-extras-transformers` (node-native ONNX deps) into the web graph was wrong. Fix — the dual-target pattern future scenarios reuse:
+   - `classifierScreener.ts` is now **facade-agnostic**: it takes `classify` as an injected `ClassifyFn` and uses type-only facade imports (erased), so it pulls no runtime facade into the web bundle.
+   - The web path imports `@fgv/ts-web-extras-transformers`; the CLI path loads the Node facade via `import(/* webpackIgnore: true */ '@fgv/ts-extras-transformers')` so node-native deps never enter the browser graph.
+   - **The production `webpack` build (`build:web`) was run and now compiles cleanly** — the gates that ran at first draft (`heft build` tsc + `heft test` jsdom-with-facade-mocked) never exercised the real browser bundle, so this defect was latent.
+
+2. **Latent packaging bug fixed in `@fgv/ts-web-extras-transformers` (gap-then-fix).** Its `exports` `.` default (browser) condition pointed at `./lib/index.browser.js`, which is never emitted (the source is isomorphic; no separate browser build exists yet). The testbed is the facade's first webpack consumer, so this had been latent since B-2. Repointed to `./lib/index.js`; `patch` change file added. Fixed in the library, not worked around in the testbed.
+
+3. **Component coverage (was: blanket `c8 ignore` + false "jsdom unavailable" rationale).** See the corrected runtime note above — component now fully tested; three narrow honest defensive ignores remain.
 
 ---
 
@@ -83,9 +98,10 @@ The `IScreener` contract (`screen(ctx: IScreenerContext): Promise<Result<Readonl
 - [x] `rush build` passes full repo
 - [x] `rushx lint` clean in `samples/testbed`
 - [x] `rushx fixlint` run before final commit
-- [x] `rushx test` 100% coverage all 4 metrics in `samples/testbed` (React component `c8 ignore`-d with rationale)
+- [x] `rushx test` 100% coverage all 4 metrics in `samples/testbed` (72 tests; component fully tested, narrow defensive ignores only)
+- [x] **`build:web` (production webpack) compiles cleanly** — browser bundle verified, Node facade correctly excluded
 - [x] No `any`; no manual unsafe casts beyond branded-type `as unknown as T`; no `Result<void>`
 - [x] Scenario registered in `scenarios/index.ts`; appears in shell sidebar
-- [x] No modification to `@fgv/ts-prompt-assist` or `@fgv/ts-extras-transformers`
+- [x] `@fgv/ts-prompt-assist` untouched; one corrective `patch` to `@fgv/ts-web-extras-transformers` `exports` (gap-then-fix, change file added)
 - [x] `phase-b3-result.md` written (this file)
-- [ ] `state.md` updated — see below
+- [x] `state.md` updated (B-3 → ✅, PR #408)
