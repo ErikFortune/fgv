@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras-transformers",
+      "comment": "Fix broken package exports: the '.' default (browser) condition pointed at ./lib/index.browser.js, which is never emitted (the source is isomorphic and there is no separate browser build yet). Repointed it to ./lib/index.js so webpack/bundler consumers can resolve the package. Surfaced by the testbed, the facade's first webpack consumer.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras-transformers",
+  "email": "noreply@anthropic.com"
+}

@@ -3,6 +3,7 @@
   "compilerOptions": {
     "jsx": "react",
     "types": ["heft-jest", "node"],
-    "lib": ["es2018", "DOM"]
+    "lib": ["es2018", "DOM"],
+    "skipLibCheck": true
   }
 }

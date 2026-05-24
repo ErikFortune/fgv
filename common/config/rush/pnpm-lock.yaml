@@ -572,10 +572,6 @@ importers:
         version: 5.9.3
 
   ../../libraries/ts-extras-transformers:
-    dependencies:
-      '@huggingface/transformers':
-        specifier: ~4.2.0
-        version: 4.2.0
     devDependencies:
       '@fgv/heft-dual-rig':
         specifier: workspace:*
@@ -586,6 +582,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@huggingface/transformers':
+        specifier: ~4.2.0
+        version: 4.2.0
       '@microsoft/api-extractor':
         specifier: ^7.55.2
         version: 7.58.7(@types/node@20.19.41)
@@ -2000,10 +1999,6 @@ importers:
         version: 5.9.3
 
   ../../libraries/ts-web-extras-transformers:
-    dependencies:
-      '@huggingface/transformers':
-        specifier: ~4.2.0
-        version: 4.2.0
     devDependencies:
       '@fgv/heft-dual-rig':
         specifier: workspace:*
@@ -2014,6 +2009,9 @@ importers:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
+      '@huggingface/transformers':
+        specifier: ~4.2.0
+        version: 4.2.0
       '@microsoft/api-extractor':
         specifier: ^7.55.2
         version: 7.58.7(@types/node@20.19.41)
@@ -2277,15 +2275,24 @@ importers:
       '@fgv/ts-extras':
         specifier: workspace:*
         version: link:../../libraries/ts-extras
+      '@fgv/ts-extras-transformers':
+        specifier: workspace:*
+        version: link:../../libraries/ts-extras-transformers
       '@fgv/ts-json-base':
         specifier: workspace:*
         version: link:../../libraries/ts-json-base
+      '@fgv/ts-prompt-assist':
+        specifier: workspace:*
+        version: link:../../libraries/ts-prompt-assist
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../../libraries/ts-utils
       '@fgv/ts-web-extras':
         specifier: workspace:*
         version: link:../../libraries/ts-web-extras
+      '@fgv/ts-web-extras-transformers':
+        specifier: workspace:*
+        version: link:../../libraries/ts-web-extras-transformers
       react:
         specifier: ~19.2.3
         version: 19.2.6

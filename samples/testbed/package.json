@@ -41,7 +41,10 @@
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-web-extras": "workspace:*",
     "react": "~19.2.3",
-    "react-dom": "~19.2.3"
+    "react-dom": "~19.2.3",
+    "@fgv/ts-prompt-assist": "workspace:*",
+    "@fgv/ts-extras-transformers": "workspace:*",
+    "@fgv/ts-web-extras-transformers": "workspace:*"
   },
   "devDependencies": {
     "@babel/core": "~7.29.0",
