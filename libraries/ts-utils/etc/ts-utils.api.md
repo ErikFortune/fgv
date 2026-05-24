@@ -1062,6 +1062,7 @@ export class Failure<out T> implements IResult<T> {
     // (undocumented)
     orThrow(cb: ErrorFormatter): never;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Failure<T>;
+    shouldNotFail(label?: string, frameDepth?: number): never;
     readonly success: false;
     thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
     thenOnSuccess<TN>(__: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
@@ -1118,8 +1119,14 @@ type FieldValidators<T, TC = unknown> = {
     [key in keyof T]: Validator<T[key], TC>;
 };
 
+// @internal
+export function _findShouldNotFailFrame(stack: string | undefined, frameDepth: number): _IShouldNotFailFrame;
+
 // @public
 export function firstSuccess<T>(results: Iterable<Result<T> | DeferredResult<T>>): Result<T>;
+
+// @internal
+export function _formatShouldNotFailMessage(originalMessage: string, label: string | undefined, frame: _IShouldNotFailFrame): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1646,6 +1653,7 @@ export interface IResult<T> {
     orThrow(logger?: IResultLogger): T;
     orThrow(cb: ErrorFormatter): T;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Result<T>;
+    shouldNotFail(label?: string, frameDepth?: number): T;
     readonly success: boolean;
     thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
     thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
@@ -1752,6 +1760,16 @@ export function isDeferredResult<T>(result: Result<T> | DeferredResult<T>): resu
 //
 // @public
 function isDetailLogger(logger: ILogger): logger is IDetailLogger;
+
+// @internal
+export interface _IShouldNotFailFrame {
+    // (undocumented)
+    file?: string;
+    // (undocumented)
+    fn?: string;
+    // (undocumented)
+    line?: number;
+}
 
 // @public
 function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = unknown>(value: TI | TO): value is TI;
@@ -2048,6 +2066,9 @@ export class Normalizer {
     normalizeLiteral<T>(from: T): Result<T>;
 }
 
+// @internal
+export function _normalizeShouldNotFailFnName(fn: string | undefined): string | undefined;
+
 // @public
 const number: Converter<number, unknown>;
 
@@ -2282,6 +2303,9 @@ export function optionalRecordToPossiblyEmptyMap<TS, TD, TK extends string = str
 
 // @public
 const optionalString: Converter<string | undefined, unknown>;
+
+// @internal
+export function _parseStackFrame(line: string): _IShouldNotFailFrame;
 
 // @public
 export function pick<T extends object, K extends keyof T>(from: T, include: K[]): Pick<T, K>;
@@ -2662,6 +2686,7 @@ export class Success<out T> implements IResult<T> {
     // (undocumented)
     orThrow(cb: ErrorFormatter): T;
     report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Success<T>;
+    shouldNotFail(__label?: string, __frameDepth?: number): T;
     readonly success: true;
     thenOnFailure(__: AsyncFailureContinuation<T>): AsyncResult<T>;
     thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;

@@ -128,6 +128,19 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `prompt-assist-screeners` 🟢
+
+**Status:** 🟢 ready to commission (substrate prep in flight)
+**Branch base:** `release`
+**Workflow shape:** single-PR breaking-change feature
+**Substrate:** `.ai/tasks/active/prompt-assist-screeners/{brief.md, state.md}`
+**Package surface:** `@fgv/ts-prompt-assist` (safety packlet) + `.ai/instructions/LIBRARY_CAPABILITIES.md` + in-repo consumers of the dropped fields
+**Out-of-scope:** the local-classifier screener itself (B-3 of `local-ai-exploration`); LLM-based screening; screener caching; parallel execution; whole-prompt/post-render screening hook.
+
+**Mission.** Replace `@fgv/ts-prompt-assist`'s regex-only / sync / closed-kind safety pipeline with a pluggable `IScreener` model. Consumers wire arbitrary screening logic (async ML classifiers, network calls, custom rule engines) into prompt resolution. Breaking change; no compat shims. The existing regex screener becomes a built-in `createPatternScreener` factory; `IPromptSafetyPolicy.screeners` replaces `suspiciousPatterns`/`screenedSources`/`onSuspicious`; `applySafeguards` becomes async; findings carry per-finding disposition + optional structured metadata; finding kinds open via `string & {}`.
+
+**Origin / dependency.** Upstream gap-fix for `local-ai-exploration` B-3 (local classifier → `IPromptSafetyPolicy` backend), which can't be built against today's surface. Per the gap-then-fix tenet, fix the primitive here first → ship to `release` → `local-ai-exploration` absorbs (merge `release` → integration) before B-3. Runs parallel to `local-ai-exploration` B-2 (independent surfaces). Independent of the local-ai experiment's outcome — benefits any consumer wanting custom screeners.
+
 ### `ai-assist-thinking-events` 🟡
 
 **Status:** 🟡 ready; sequencing after `ai-assist-thinking-config` phase B lands (now satisfied; ai-assist cluster shipped via #336)
@@ -151,6 +164,23 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `local-ai-exploration` ✅ (cluster)
+
+**Status:** ✅ shipped — all sub-phases (B-1…B-5) merged into integration branch `local-ai-exploration`; promotion PR `local-ai-exploration` → `release` open (see PRs in the artifacts). (First promotion #410 was closed as premature — reopened for B-5, then re-promoted.)
+**Integration branch:** `local-ai-exploration` (off `release`)
+**Package surface (new):**
+- `samples/testbed/` — long-lived sample-browser app (web + CLI), themed (light/dark), with two working scenarios: `local-classifier-safety`, `local-embedding-search`.
+- `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` — Result-integration boundary over `@huggingface/transformers` (`loadPipeline`, `classify`, `classifyAll`, `embed`; `generate` deferred).
+- `@fgv/ts-app-shell` — gained a default light/dark theme (54-token CSS-var system + Tailwind preset) as a gap-fix; the testbed was its first visual consumer.
+
+**Outcome.** The B-3 done-or-discard gate decided **SHIP**: the facade read cleaner than raw `pipeline()`, survived a real composition (classifier → `ts-prompt-assist` screener), and B-4a confirmed it survives a second model type (embedder). B-5 wired the shell/CLI to actually run scenarios and, via gap-then-fix, gave ts-app-shell a shippable theme. The dual-target consumption pattern (facade-agnostic core; browser facade on web / Node facade via `webpackIgnore` on CLI) proved repeatable. `LIBRARY_CAPABILITIES.md` entries added.
+
+**Sub-phases (all merged to `local-ai-exploration`):** research #402 · substrate #403 · B-1 #404 · B-2 #405 · B-3 #408 · B-4a #409 · B-5 (shell+CLI + ts-app-shell theme + styling) #411.
+
+**Follow-ups (deferred / tracked):** `generate` primitive + a local text-generation scenario; port `samples/ai-image-gen-sample` scenarios into the testbed (P3 tech debt); optional Heroicons theme-toggle icon; palette retuning (CSS-var overridable); a "remaining gaps → which yield real value" review thread.
+
+**Artifacts:** [`.ai/tasks/completed/2026-05/local-ai-exploration/`](../.ai/tasks/completed/2026-05/local-ai-exploration/) (brief, all phase briefs/results, state).
 
 ### `ts-prompt-assist-features` ✅ (cluster)
 

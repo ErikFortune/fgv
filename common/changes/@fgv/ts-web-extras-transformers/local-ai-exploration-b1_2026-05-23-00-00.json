@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras-transformers",
+      "comment": "New package (provisional). Browser-side B-1 scaffold of the Result-integration boundary over @huggingface/transformers, mirroring the @fgv/ts-web-extras-webauthn discipline. Empty surface at B-1 (exports a PROVISIONAL_SCAFFOLD sentinel); primitives populated in B-2. May be discarded entirely at the B-3 done-or-discard gate.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras-transformers",
+  "email": "noreply@anthropic.com"
+}

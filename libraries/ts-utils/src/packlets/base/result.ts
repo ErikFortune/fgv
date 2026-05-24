@@ -20,6 +20,8 @@
  * SOFTWARE.
  */
 
+import { _findShouldNotFailFrame, _formatShouldNotFailMessage } from './shouldNotFail';
+
 /**
  * Represents the {@link IResult | result} of some operation or sequence of operations.
  * @remarks
@@ -278,6 +280,48 @@ export interface IResult<T> {
   orThrow(cb: ErrorFormatter): T;
 
   /**
+   * Asserts at the call site that this {@link IResult | result} MUST be a success.
+   * Returns the value on success; on failure, throws an `Error` whose message
+   * is composed from the original failure message and the captured call-site
+   * location (file, line, and where useful function name).
+   *
+   * @remarks
+   * Use for declaration-time / setup-time invariants — module-level `const`
+   * initializers, static class properties, static initialization blocks, and
+   * test fixtures — where a failure indicates a coding bug that should
+   * surface at the call site rather than propagate as a `Result`. For chains
+   * where the throw is intentional control flow, prefer `orThrow`.
+   *
+   * On V8 (Node + Chromium) `Error.captureStackTrace` is used to elide
+   * `shouldNotFail` itself from the captured stack so the parsed frame is
+   * the user's call site directly. On WebKit (where `captureStackTrace` is
+   * unavailable) the stack is parsed manually and frames whose **parsed
+   * function name** contains `shouldNotFail` are filtered out — the raw
+   * stack-line text (including the file path) is deliberately NOT inspected,
+   * so consumer files named after `shouldNotFail` are not collateral damage.
+   * Function names and exact line numbers depend on source-map availability
+   * in the runtime. When no caller frame is recoverable (e.g. `frameDepth`
+   * out of range, or `frameDepth: 0`) the message falls back to the
+   * label-only form (or the bare original message when no label is given).
+   *
+   * Error message format (depending on whether a label and a usable function
+   * name are available):
+   * - both: `<label> (at <fn> in <file>:<line>): <original>`
+   * - label only: `<label> (at <file>:<line>): <original>`
+   * - fn only: `<fn> at <file>:<line>: <original>`
+   * - neither: `<file>:<line>: <original>`
+   *
+   * @param label - Optional human-meaningful identifier (e.g. the constant
+   * name) prefixed to the error message.
+   * @param frameDepth - Optional 1-indexed depth into the caller stack.
+   * Default `1` (immediate caller). Library authors wrapping `shouldNotFail`
+   * inside their own helper pass `2` to attribute to their caller.
+   * @returns The result value, if the operation was successful.
+   * @throws `Error` if the result was a failure.
+   */
+  shouldNotFail(label?: string, frameDepth?: number): T;
+
+  /**
    * Gets the value associated with a successful {@link IResult | result},
    * or a default value if the corresponding operation failed.
    * @param dflt - The value to be returned if the operation failed.
@@ -463,6 +507,13 @@ export class Success<out T> implements IResult<T> {
   }
 
   /**
+   * {@inheritDoc IResult.shouldNotFail}
+   */
+  public shouldNotFail(__label?: string, __frameDepth?: number): T {
+    return this._value;
+  }
+
+  /**
    * {@inheritDoc IResult.orDefault}
    */
   public orDefault(dflt: T): T;
@@ -641,6 +692,33 @@ export class Failure<out T> implements IResult<T> {
       }
     }
     throw new Error(this._message);
+  }
+
+  /**
+   * {@inheritDoc IResult.shouldNotFail}
+   */
+  public shouldNotFail(label?: string, frameDepth: number = 1): never {
+    // Parse a probe Error's stack to identify the caller frame for message
+    // composition. We must NOT reuse this probe as the thrown Error: in V8,
+    // `.stack` is materialized lazily on first access (which happens below in
+    // `_findShouldNotFailFrame`), and once materialized the cached stack
+    // header carries whatever message was set at that moment. Mutating
+    // `.message` afterwards does not refresh the cached `.stack` header.
+    const probe = new Error();
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(probe, this.shouldNotFail);
+    }
+    const frame = _findShouldNotFailFrame(probe.stack, frameDepth);
+    const message = _formatShouldNotFailMessage(this._message, label, frame);
+    // Build the final Error with the formatted message and re-elide
+    // `shouldNotFail` from its stack, so the thrown error's `.stack` shows
+    // both the formatted message in its header and the caller as its top
+    // frame.
+    const err = new Error(message);
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(err, this.shouldNotFail);
+    }
+    throw err;
   }
 
   /**

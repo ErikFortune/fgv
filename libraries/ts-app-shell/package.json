@@ -12,7 +12,9 @@
     "fixlint": "eslint src --ext .ts,.tsx --fix",
     "coverage": "jest --coverage"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "keywords": [
     "typescript",
     "react",
@@ -73,7 +75,9 @@
         "require": "./lib/index.browser.js"
       },
       "types": "lib/index.d.ts"
-    }
+    },
+    "./tailwind-preset": "./tailwind-preset.cjs",
+    "./theme.css": "./lib/styles/theme.css"
   },
   "repository": {
     "type": "git",

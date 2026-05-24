@@ -8,6 +8,9 @@ import {
   IPromptSafetyPolicy,
   IPromptStore,
   IPromptStoreFixtureSeed,
+  IScreener,
+  IScreenerContext,
+  ISafeguardFinding,
   IStoredPromptRecord,
   PromptId,
   PromptLibrary,
@@ -16,7 +19,8 @@ import {
   ScopeKey,
   SlotBinding,
   SlotName,
-  ValidatorId
+  ValidatorId,
+  createPatternScreener
 } from '../../index';
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
@@ -556,14 +560,15 @@ describe('B-4: input safeguards', () => {
     expect(result).toFailWith(/exceeds maxLength 2/);
   });
 
-  test('regex screen warns when source is screened and pattern matches, default disposition warn', async () => {
+  test('pattern screener warns when source is screened and pattern matches', async () => {
     const record = buildFreeTextRecord({
       slots: [{ name: 'topic', source: 'untrusted' }],
       body: '{{{topic}}}'
     });
     const policy: IPromptSafetyPolicy = {
-      screenedSources: ['untrusted'],
-      suspiciousPatterns: [/jailbreak/i]
+      screeners: [
+        createPatternScreener({ patterns: [/jailbreak/i], onMatch: 'warn', screenedSources: ['untrusted'] })
+      ]
     };
     const lib = await buildLib([record], { safetyPolicy: policy });
     const result = await lib.resolve({
@@ -579,15 +584,15 @@ describe('B-4: input safeguards', () => {
     });
   });
 
-  test('regex screen rejects when policy.onSuspicious is "reject"', async () => {
+  test('pattern screener rejects when onMatch is "reject"', async () => {
     const record = buildFreeTextRecord({
       slots: [{ name: 'topic', source: 'untrusted' }],
       body: '{{{topic}}}'
     });
     const policy: IPromptSafetyPolicy = {
-      screenedSources: ['untrusted'],
-      suspiciousPatterns: [/jailbreak/i],
-      onSuspicious: 'reject'
+      screeners: [
+        createPatternScreener({ patterns: [/jailbreak/i], onMatch: 'reject', screenedSources: ['untrusted'] })
+      ]
     };
     const lib = await buildLib([record], { safetyPolicy: policy });
     const result = await lib.resolve({
@@ -613,8 +618,9 @@ describe('B-4: input safeguards', () => {
     });
     const stateful = /jailbreak/g;
     const policy: IPromptSafetyPolicy = {
-      screenedSources: ['untrusted'],
-      suspiciousPatterns: [stateful]
+      screeners: [
+        createPatternScreener({ patterns: [stateful], onMatch: 'warn', screenedSources: ['untrusted'] })
+      ]
     };
     const lib = await buildLib([record], { safetyPolicy: policy });
     const result = await lib.resolve({
@@ -630,14 +636,15 @@ describe('B-4: input safeguards', () => {
     });
   });
 
-  test('regex screen produces no findings when patterns are present but none match', async () => {
+  test('pattern screener produces no findings when patterns are present but none match', async () => {
     const record = buildFreeTextRecord({
       slots: [{ name: 'topic', source: 'untrusted' }],
       body: '{{{topic}}}'
     });
     const policy: IPromptSafetyPolicy = {
-      screenedSources: ['untrusted'],
-      suspiciousPatterns: [/jailbreak/i]
+      screeners: [
+        createPatternScreener({ patterns: [/jailbreak/i], onMatch: 'warn', screenedSources: ['untrusted'] })
+      ]
     };
     const lib = await buildLib([record], { safetyPolicy: policy });
     const result = await lib.resolve({
@@ -651,12 +658,14 @@ describe('B-4: input safeguards', () => {
     });
   });
 
-  test('regex screen short-circuits when no patterns are configured', async () => {
+  test('pattern screener short-circuits when no patterns are configured', async () => {
     const record = buildFreeTextRecord({
       slots: [{ name: 'topic', source: 'untrusted' }],
       body: '{{{topic}}}'
     });
-    const policy: IPromptSafetyPolicy = { screenedSources: ['untrusted'] };
+    const policy: IPromptSafetyPolicy = {
+      screeners: [createPatternScreener({ patterns: [], onMatch: 'warn', screenedSources: ['untrusted'] })]
+    };
     const lib = await buildLib([record], { safetyPolicy: policy });
     const result = await lib.resolve({
       id: PROMPT,
@@ -669,14 +678,13 @@ describe('B-4: input safeguards', () => {
     });
   });
 
-  test('source-aware skipping: slot.source not in screenedSources emits screening-skipped info', async () => {
+  test('source-aware skipping: slot.source not in screener screenedSources emits screening-skipped info', async () => {
     const record = buildFreeTextRecord({
       slots: [{ name: 'topic', source: 'system' }],
       body: '{{{topic}}}'
     });
     const policy: IPromptSafetyPolicy = {
-      screenedSources: ['untrusted'],
-      suspiciousPatterns: [/x/]
+      screeners: [createPatternScreener({ patterns: [/x/], onMatch: 'warn', screenedSources: ['untrusted'] })]
     };
     const lib = await buildLib([record], { safetyPolicy: policy });
     const result = await lib.resolve({
@@ -689,7 +697,8 @@ describe('B-4: input safeguards', () => {
       const findings = r.trace.safeguardFindings.filter((f) => f.kind === 'screening-skipped');
       expect(findings).toHaveLength(1);
       expect(findings[0].disposition).toBe('info');
-      expect(findings[0].detail).toMatch(/not in safetyPolicy\.screenedSources/);
+      expect(findings[0].detail).toMatch(/is not in screener 'pattern-screener' screenedSources/);
+      expect(findings[0].screener).toBe('pattern-screener');
     });
   });
 
@@ -700,8 +709,7 @@ describe('B-4: input safeguards', () => {
       safeguards: { skipInjectionScreening: true }
     });
     const policy: IPromptSafetyPolicy = {
-      screenedSources: ['untrusted'],
-      suspiciousPatterns: [/x/]
+      screeners: [createPatternScreener({ patterns: [/x/], onMatch: 'warn', screenedSources: ['untrusted'] })]
     };
     const lib = await buildLib([record], { safetyPolicy: policy });
     const result = await lib.resolve({
@@ -723,8 +731,7 @@ describe('B-4: input safeguards', () => {
       body: '{{{topic}}}'
     });
     const policy: IPromptSafetyPolicy = {
-      screenedSources: ['untrusted'],
-      suspiciousPatterns: [/x/]
+      screeners: [createPatternScreener({ patterns: [/x/], onMatch: 'warn', screenedSources: ['untrusted'] })]
     };
     const lib = await buildLib([record], { safetyPolicy: policy });
     const result = await lib.resolve({
@@ -779,9 +786,9 @@ describe('B-4: input safeguards', () => {
       body: '{{{topic}}}'
     });
     const policy: IPromptSafetyPolicy = {
-      screenedSources: ['untrusted'],
-      suspiciousPatterns: [/.*/],
-      onSuspicious: 'reject'
+      screeners: [
+        createPatternScreener({ patterns: [/.*/], onMatch: 'reject', screenedSources: ['untrusted'] })
+      ]
     };
     const lib = await buildLib([record], { safetyPolicy: policy });
     const result = await lib.resolve({
@@ -850,8 +857,13 @@ describe('B-4: input safeguards', () => {
         store,
         qualifiers: TEST_QUALIFIER_COLLECTOR,
         safetyPolicy: {
-          screenedSources: ['untrusted'],
-          suspiciousPatterns: [/jailbreak/]
+          screeners: [
+            createPatternScreener({
+              patterns: [/jailbreak/],
+              onMatch: 'warn',
+              screenedSources: ['untrusted']
+            })
+          ]
         }
       })
     ).orThrow();
@@ -915,5 +927,278 @@ describe('B-4: input safeguards', () => {
       substitutions: { topic: 'ab' }
     });
     expect(r3).toFailWith(/maxLength must be a finite non-negative integer \(got 3\.5\)/);
+  });
+
+  test('pattern screener with no screenedSources screens every sourced slot value', async () => {
+    const record = buildFreeTextRecord({
+      slots: [{ name: 'topic', source: 'anything' }],
+      body: '{{{topic}}}'
+    });
+    const policy: IPromptSafetyPolicy = {
+      screeners: [createPatternScreener({ patterns: [/jailbreak/i], onMatch: 'warn' })]
+    };
+    const lib = await buildLib([record], { safetyPolicy: policy });
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'please JAILBREAK' }
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const findings = r.trace.safeguardFindings.filter((f) => f.kind === 'suspicious-pattern');
+      expect(findings).toHaveLength(1);
+      expect(findings[0].screener).toBe('pattern-screener');
+    });
+  });
+
+  test('multiple screeners run sequentially in declaration order with per-screener attribution', async () => {
+    const record = buildFreeTextRecord({
+      slots: [{ name: 'topic', source: 'untrusted' }],
+      body: '{{{topic}}}'
+    });
+    const order: string[] = [];
+    const screenerA: IScreener = {
+      name: 'screener-a',
+      screen: (ctx: IScreenerContext): Promise<Result<ReadonlyArray<ISafeguardFinding>>> => {
+        order.push('a');
+        return Promise.resolve(
+          succeed([{ slot: ctx.slot.name, kind: 'custom-a', disposition: 'warn', detail: 'from a' }])
+        );
+      }
+    };
+    const screenerB: IScreener = {
+      name: 'screener-b',
+      screen: (ctx: IScreenerContext): Promise<Result<ReadonlyArray<ISafeguardFinding>>> => {
+        order.push('b');
+        return Promise.resolve(
+          succeed([{ slot: ctx.slot.name, kind: 'custom-b', disposition: 'info', detail: 'from b' }])
+        );
+      }
+    };
+    const lib = await buildLib([record], { safetyPolicy: { screeners: [screenerA, screenerB] } });
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'hello' }
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(order).toEqual(['a', 'b']);
+      expect(r.trace.safeguardFindings.map((f) => [f.kind, f.screener])).toEqual([
+        ['custom-a', 'screener-a'],
+        ['custom-b', 'screener-b']
+      ]);
+    });
+  });
+
+  test('async screener with a delayed Result is awaited', async () => {
+    const record = buildFreeTextRecord({
+      slots: [{ name: 'topic', source: 'untrusted' }],
+      body: '{{{topic}}}'
+    });
+    const delayed: IScreener = {
+      name: 'delayed',
+      screen: async (ctx: IScreenerContext): Promise<Result<ReadonlyArray<ISafeguardFinding>>> => {
+        // Deterministic async boundary (microtask) — no wall-clock dependency.
+        await Promise.resolve();
+        return succeed([
+          {
+            slot: ctx.slot.name,
+            kind: 'classified',
+            disposition: 'warn',
+            detail: 'delayed finding',
+            metadata: { score: 0.9 }
+          }
+        ]);
+      }
+    };
+    const lib = await buildLib([record], { safetyPolicy: { screeners: [delayed] } });
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'hello' }
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.trace.safeguardFindings).toHaveLength(1);
+      expect(r.trace.safeguardFindings[0].metadata).toEqual({ score: 0.9 });
+      expect(r.trace.safeguardFindings[0].screener).toBe('delayed');
+    });
+  });
+
+  test('a screener returning fail() propagates as a resolve failure with context', async () => {
+    const record = buildFreeTextRecord({
+      slots: [{ name: 'topic', source: 'untrusted' }],
+      body: '{{{topic}}}'
+    });
+    const broken: IScreener = {
+      name: 'broken',
+      screen: (): Promise<Result<ReadonlyArray<ISafeguardFinding>>> =>
+        Promise.resolve(fail('classifier offline'))
+    };
+    const lib = await buildLib([record], { safetyPolicy: { screeners: [broken] } });
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'hello' }
+    });
+    expect(result).toFailWith(/screener 'broken' failed on slot 'topic': classifier offline/);
+  });
+
+  test('a screener that throws / rejects is captured as a resolve failure with context', async () => {
+    const record = buildFreeTextRecord({
+      slots: [{ name: 'topic', source: 'untrusted' }],
+      body: '{{{topic}}}'
+    });
+    const thrower: IScreener = {
+      name: 'thrower',
+      screen: (): Promise<Result<ReadonlyArray<ISafeguardFinding>>> => Promise.reject(new Error('boom'))
+    };
+    const lib = await buildLib([record], { safetyPolicy: { screeners: [thrower] } });
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'hello' }
+    });
+    expect(result).toFailWith(/screener 'thrower' failed on slot 'topic':.*boom/);
+  });
+
+  test('a reject finding short-circuits subsequent screeners', async () => {
+    const record = buildFreeTextRecord({
+      slots: [{ name: 'topic', source: 'untrusted' }],
+      body: '{{{topic}}}'
+    });
+    let secondRan = false;
+    const rejecter: IScreener = {
+      name: 'rejecter',
+      screen: (ctx: IScreenerContext): Promise<Result<ReadonlyArray<ISafeguardFinding>>> =>
+        Promise.resolve(
+          succeed([{ slot: ctx.slot.name, kind: 'blocked', disposition: 'reject', detail: 'hard block' }])
+        )
+    };
+    const second: IScreener = {
+      name: 'second',
+      screen: (): Promise<Result<ReadonlyArray<ISafeguardFinding>>> => {
+        secondRan = true;
+        return Promise.resolve(succeed([]));
+      }
+    };
+    const lib = await buildLib([record], { safetyPolicy: { screeners: [rejecter, second] } });
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'hello' }
+    });
+    expect(result).toFailWith(/screener 'rejecter' rejected: hard block/);
+    expect(secondRan).toBe(false);
+  });
+
+  test('a single screener can emit multiple findings (combined reject detail)', async () => {
+    const warnRecord = buildFreeTextRecord({
+      slots: [{ name: 'topic', source: 'untrusted' }],
+      body: '{{{topic}}}'
+    });
+    const multiWarn: IScreener = {
+      name: 'multi',
+      screen: (ctx: IScreenerContext): Promise<Result<ReadonlyArray<ISafeguardFinding>>> =>
+        Promise.resolve(
+          succeed([
+            { slot: ctx.slot.name, kind: 'finding-1', disposition: 'warn', detail: 'first' },
+            { slot: ctx.slot.name, kind: 'finding-2', disposition: 'info', detail: 'second' }
+          ])
+        )
+    };
+    const warnLib = await buildLib([warnRecord], { safetyPolicy: { screeners: [multiWarn] } });
+    const warnResult = await warnLib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'hello' }
+    });
+    expect(warnResult).toSucceedAndSatisfy((r) => {
+      expect(r.trace.safeguardFindings.map((f) => f.kind)).toEqual(['finding-1', 'finding-2']);
+    });
+
+    const multiReject: IScreener = {
+      name: 'multi',
+      screen: (ctx: IScreenerContext): Promise<Result<ReadonlyArray<ISafeguardFinding>>> =>
+        Promise.resolve(
+          succeed([
+            { slot: ctx.slot.name, kind: 'r1', disposition: 'reject', detail: 'reason-1' },
+            { slot: ctx.slot.name, kind: 'r2', disposition: 'reject', detail: 'reason-2' }
+          ])
+        )
+    };
+    const rejectLib = await buildLib([warnRecord], { safetyPolicy: { screeners: [multiReject] } });
+    const rejectResult = await rejectLib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'hello' }
+    });
+    expect(rejectResult).toFailWith(/rejected: reason-1; reason-2/);
+  });
+
+  test('a screener may preserve its own explicit screener attribution', async () => {
+    const record = buildFreeTextRecord({
+      slots: [{ name: 'topic', source: 'untrusted' }],
+      body: '{{{topic}}}'
+    });
+    const wrapper: IScreener = {
+      name: 'wrapper',
+      screen: (ctx: IScreenerContext): Promise<Result<ReadonlyArray<ISafeguardFinding>>> =>
+        Promise.resolve(
+          succeed([
+            {
+              slot: ctx.slot.name,
+              kind: 'inner',
+              disposition: 'warn',
+              detail: 'd',
+              screener: 'inner-screener'
+            }
+          ])
+        )
+    };
+    const lib = await buildLib([record], { safetyPolicy: { screeners: [wrapper] } });
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'hello' }
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      expect(r.trace.safeguardFindings[0].screener).toBe('inner-screener');
+    });
+  });
+
+  test('createPatternScreener accepts a custom name for attribution', async () => {
+    const record = buildFreeTextRecord({
+      slots: [{ name: 'topic', source: 'untrusted' }],
+      body: '{{{topic}}}'
+    });
+    const policy: IPromptSafetyPolicy = {
+      screeners: [
+        createPatternScreener({
+          name: 'injection-guard',
+          patterns: [/jailbreak/i],
+          onMatch: 'warn',
+          screenedSources: ['untrusted']
+        })
+      ]
+    };
+    const lib = await buildLib([record], { safetyPolicy: policy });
+    const result = await lib.resolve({
+      id: PROMPT,
+      chain: [SCOPE],
+      qualifiers: {},
+      substitutions: { topic: 'jailbreak' }
+    });
+    expect(result).toSucceedAndSatisfy((r) => {
+      const finding = r.trace.safeguardFindings.find((f) => f.kind === 'suspicious-pattern');
+      expect(finding?.screener).toBe('injection-guard');
+    });
   });
 });
