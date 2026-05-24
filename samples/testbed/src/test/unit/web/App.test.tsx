@@ -1,3 +1,8 @@
+// @fgv/ts-extras-transformers imports @huggingface/transformers which uses Node-native
+// modules incompatible with jsdom. Mock it here so the App component (which transitively
+// imports the classifier scenario) can render in the test environment.
+jest.mock('@fgv/ts-extras-transformers');
+
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 

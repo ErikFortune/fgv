@@ -1,8 +1,8 @@
 # Stream state: `local-ai-exploration`
 
-**Status:** 🟡 B-2 complete; B-3 ready to commission
+**Status:** 🟢 B-3 complete; awaiting orchestrator done-or-discard gate
 **Integration branch:** `local-ai-exploration` (off `release`)
-**Last updated:** 2026-05-23 (B-2 implementing agent — facade primitives complete)
+**Last updated:** 2026-05-24 (B-3 implementing agent — first scenario complete)
 
 ---
 
@@ -13,7 +13,7 @@
 | Research | ✅ complete | Local-model incorporation analysis at `.ai/notes/orchestrator/research/local-models-incorporation.md`. Recommendation: Option 2 (Result-shaped facade over `@huggingface/transformers`). Erik merged via #402 onto this branch. |
 | B-1 — Scaffold | ✅ complete | PR #404. Three new packages registered, all gates green, 100% coverage on testbed. See `phase-b1-result.md`. |
 | B-2 — Facade primitives | ✅ complete | PR #405. `loadPipeline` + `classify` shipped. `embed` + `generate` deferred. 100% coverage both packages. See `phase-b2-result.md`. |
-| B-3 — First scenario (local classifier → IPromptSafetyPolicy) | 🟢 ready (next) | Done-or-discard gate at exit. |
+| B-3 — First scenario (local classifier → IPromptSafetyPolicy) | ✅ complete | PR TBD (open, targeting local-ai-exploration). 100% coverage, all gates green. Done-or-discard gate ready for orchestrator. See `phase-b3-result.md`. |
 | B-4a or B-4b — Ship or pivot | ⏸ blocked on B-3 exit | Decided per B-3 evaluation. |
 | Cluster close | ⏸ blocked on B-4 outcome | Promotion `local-ai-exploration` → `release`. |
 
@@ -82,5 +82,5 @@
 | Substrate prep | #403 | merged to `local-ai-exploration` |
 | B-1 | #404 | open, targeting `local-ai-exploration` |
 | B-2 | #405 (claude/fervent-hamilton-iuqXX) | open, targeting local-ai-exploration |
-| B-3 | TBD | not yet commissioned |
+| B-3 | TBD (open, targeting local-ai-exploration) | open, targeting `local-ai-exploration` |
 | B-4a/b | TBD | gated on B-3 exit |

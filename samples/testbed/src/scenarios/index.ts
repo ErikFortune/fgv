@@ -10,10 +10,10 @@
  */
 
 import type { IScenario } from '../shell';
+import { localClassifierSafetyScenario } from './localClassifierSafety';
 
 /**
- * All scenarios surfaced by the testbed shell (web sidebar + CLI list). Empty at B-1; the
- * first scenario (local-classifier-as-IPromptSafetyPolicy backend) lands in B-3.
+ * All scenarios surfaced by the testbed shell (web sidebar + CLI list).
  * @public
  */
-export const scenarios: readonly IScenario[] = [];
+export const scenarios: readonly IScenario[] = [localClassifierSafetyScenario];
