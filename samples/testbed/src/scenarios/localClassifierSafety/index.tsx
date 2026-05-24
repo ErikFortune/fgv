@@ -43,7 +43,7 @@ import type { Result } from '@fgv/ts-utils';
 // (WASM ONNX + Web Crypto — no node-native deps). The CLI path uses the Node
 // facade, but loads it via a `webpackIgnore` dynamic import (see `cliImpl.run`)
 // so it never enters the web bundle's static graph.
-import { loadPipeline, classify } from '@fgv/ts-web-extras-transformers';
+import { loadPipeline, classifyAll } from '@fgv/ts-web-extras-transformers';
 import type { TextClassificationPipeline } from '@fgv/ts-web-extras-transformers';
 import {
   Convert,
@@ -206,7 +206,11 @@ function LocalClassifierSafetyComponent({
           setIsLoading(false);
           return;
         }
-        const libResult = await buildPromptLibrary(pipeResult.value, classify, DEFAULT_TOXIC_BERT_THRESHOLDS);
+        const libResult = await buildPromptLibrary(
+          pipeResult.value,
+          classifyAll,
+          DEFAULT_TOXIC_BERT_THRESHOLDS
+        );
         /* c8 ignore next 3 - unmount guard after buildPromptLibrary: requires precise timing (unmount between loadPipeline resolve and buildPromptLibrary resolve) which is not deterministic in jsdom */
         if (!mounted) {
           return;
@@ -380,7 +384,7 @@ const cliImpl: ICliScenarioImpl = {
 
     const libResult = await buildPromptLibrary(
       pipeResult.value,
-      nodeFacade.classify,
+      nodeFacade.classifyAll,
       DEFAULT_TOXIC_BERT_THRESHOLDS
     );
     /* c8 ignore next 3 - buildPromptLibrary fails only if PromptStoreFixture/PromptLibrary.create has a bug; not reachable via mocked loadPipeline tests */

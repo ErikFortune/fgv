@@ -22,10 +22,13 @@ import type { TextClassificationPipeline, TextClassificationOutput } from '@fgv/
 import type { ISafeguardFinding, IScreener, IScreenerContext, SlotName } from '@fgv/ts-prompt-assist';
 
 /**
- * The `classify` operation as exposed by either transformers facade
+ * The `classifyAll` operation as exposed by either transformers facade
  * (`@fgv/ts-extras-transformers` for Node, `@fgv/ts-web-extras-transformers` for
  * the browser). Injected into {@link createClassifierScreener} so the screener
  * core depends on neither concrete facade.
+ *
+ * `classifyAll` always returns the full per-label vector (it bakes in `top_k: null`)
+ * so callers do not need to pass `{ top_k: null }` explicitly.
  *
  * @public
  */
@@ -204,9 +207,10 @@ export interface IClassifierScreenerOptions {
    */
   readonly pipeline: TextClassificationPipeline;
   /**
-   * The `classify` function from the active facade — `@fgv/ts-web-extras-transformers`
+   * The `classifyAll` function from the active facade — `@fgv/ts-web-extras-transformers`
    * on the browser, `@fgv/ts-extras-transformers` in Node. Injected (rather than
    * imported) so this core never statically references a runtime facade.
+   * `classifyAll` bakes in `top_k: null` so callers do not need to pass it.
    */
   readonly classify: ClassifyFn;
   /**
@@ -231,8 +235,9 @@ export interface IClassifierScreenerOptions {
  * Mirrors the structure of `createPatternScreener` from `@fgv/ts-prompt-assist`
  * — the canonical built-in screener shape. Key behaviours:
  *
- * - `classify` is called with `{ top_k: null }` to retrieve the full label
- *   vector — this is required for per-label threshold comparison.
+ * - `classify` (expected to be `classifyAll` from the active facade) returns the
+ *   full per-label vector without the caller needing to pass `{ top_k: null }` —
+ *   `classifyAll` bakes that in so per-label threshold comparison always works.
  * - A `classify` failure propagates as `Result.fail()` (operational failure,
  *   not a safeguard finding) per the `IScreener` contract.
  * - An empty `TextClassificationOutput` returns `[]` (no finding).
@@ -242,7 +247,7 @@ export interface IClassifierScreenerOptions {
  * **Facade evaluation note:** the screener body reduces to three lines of
  * fgv-idiomatic chain:
  * ```
- * classify(pipeline, ctx.value, { top_k: null })
+ * classify(pipeline, ctx.value)
  *   .thenOnSuccess(...interpretClassification...)
  * ```
  * vs. the equivalent captureAsyncResult + flattenIfNeeded inline would be
@@ -257,7 +262,7 @@ export function createClassifierScreener(options: IClassifierScreenerOptions): I
   return {
     name,
     screen: async (ctx: IScreenerContext): Promise<Result<ReadonlyArray<ISafeguardFinding>>> => {
-      const classifyResult = await classify(pipeline, ctx.value, { top_k: null });
+      const classifyResult = await classify(pipeline, ctx.value);
       if (classifyResult.isFailure()) {
         return fail(`${name}: classify failed for slot '${ctx.slot.name}': ${classifyResult.message}`);
       }

@@ -14,4 +14,10 @@ describe('@fgv/testbed scenario registry', () => {
     expect(found).toBeDefined();
     expect(found?.category).toBe('ai');
   });
+
+  test('contains the local-embedding-search scenario', () => {
+    const found = scenarios.find((s) => s.id === 'local-embedding-search');
+    expect(found).toBeDefined();
+    expect(found?.category).toBe('ai');
+  });
 });
