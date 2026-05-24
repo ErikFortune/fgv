@@ -36,6 +36,8 @@ Active clusters at most recent sweep point:
 
 **Codification candidate:** Brief template language: "Work branch: `<stem>` (or harness-auto-suffix; document the actual name in state.md)". Already in current briefs informally; codify as a kickoff-prompt-shape convention item.
 
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § Kickoff prompt checklist (branch-stem item)
+
 ---
 
 ### L3. Cloud-agent harness auto-opens draft PRs that need explicit closure
@@ -45,6 +47,8 @@ Active clusters at most recent sweep point:
 **Rule:** As part of post-merge bookkeeping when an orchestrator prep PR supersedes an agent draft PR: close the agent's draft with a "superseded by #N" comment.
 
 **Codification candidate:** Add to `.claude/agents/orchestrator.md` § Post-merge bookkeeping: "Close any superseded cloud-agent draft PRs with a one-line supersession comment naming the merging PR."
+
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § Post-merge bookkeeping
 
 ---
 
@@ -109,6 +113,8 @@ Active clusters at most recent sweep point:
 **Observed:** Emerged during Q3 debate for WebAuthn (crypto-batch-2). When fgv wants to expose functionality from a well-maintained upstream library (`@simplewebauthn/*`), the right shape is a thin Result-integration boundary — convert thrown exceptions to `Result<T>`, no opinion baked in beyond that. Same architectural shape as `@fgv/ts-utils-jest`'s relationship to Jest. Avoids breadth/opinion/maintenance burden of comprehensive wrapping.
 
 **Codification candidate:** Worth a convention doc once one or two more "integration package" cases exist for comparison. Plus the parking-lot question about top-level `integrations/` directory vs piling into `libraries/`. Deferred to post-WebAuthn-stream triage.
+
+**Codification status: GRADUATED 2026-05-24** → `.ai/instructions/LIBRARY_CAPABILITIES.md` § Result-integration boundary — package shape convention
 
 ---
 
@@ -235,6 +241,8 @@ Pattern: doc-writing agents tend to document the design's intent rather than rea
 
 **Reference:** PR #371 Copilot review threads `r3255107593` / `r3255107608` / `r3255107640` (trace overclaim); `r3255107617` / `r3255107624` (type-safety overclaim).
 
+**Codification status: GRADUATED 2026-05-24** → `.ai/instructions/CODE_REVIEW_CHECKLIST.md` § Priority 2 (combined with L30 as "PR description and docs accurately frame the change")
+
 ---
 
 ### L19. Same-name-opposite-semantic between sibling libraries is a high-cost trap
@@ -275,6 +283,8 @@ Pattern is the natural complement to **sub-phase decomposition**: small sub-phas
 
 **Reference:** PRs #367, #370, [surface-tidy PR pending]. Erik's framing 2026-05-17.
 
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § Commissioning Task subagents (Common operations)
+
 ---
 
 ### L21. Task-agent commissions need explicit stop-and-surface protocol for mid-flight questions
@@ -292,6 +302,8 @@ For the surface-tidy round commission, the brief was amended with an explicit "W
 
 **Reference:** ts-prompt-assist surface-tidy round commission (in flight at lessons-update time); brief at `.ai/tasks/active/ts-prompt-assist/` references the protocol explicitly.
 
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § Commissioning Task subagents → Stop-and-surface protocol
+
 ---
 
 ### L22. Briefs need an fgv-conventions pre-load to prevent agent retract-on-discovery
@@ -303,6 +315,8 @@ For the surface-tidy round commission, the brief was amended with an explicit "W
 **Codification status:** Confirmed working from the round-2 experimental design (L18's "docs accurately describe shipped behavior" was the other lesson the cluster surfaced). Worth codifying into the brief-template via a "fgv-conventions pre-load" section recipe. Currently lives only as a section in the ts-prompt-assist round-2 commission prompt; not yet generalized to the orchestrator agent prompt or a convention doc.
 
 **Reference:** ts-prompt-assist cluster, round-1 vs round-2 pressure-test commissions; `.ai/tasks/active/ts-prompt-assist/pressure-test-findings-round-2.md` retractions (F4 + F7) self-caught without prompting.
+
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § Commissioning Task subagents → fgv-conventions pre-load (kickoff prompt checklist)
 
 ---
 
@@ -317,6 +331,8 @@ Subsequent Task subagent commissions (PR C, the absorb agent, etc.) used `isolat
 **Codification candidate:** Orchestrator-agent prompt addition under § "Commissioning Task subagents": default to `isolation: "worktree"` for safety; only omit when single-commission and the orchestrator is not doing other work concurrently. Also worth a `/workstream-brief` skill note if it ever returns brief recipes that include Task-subagent launch lines.
 
 **Reference:** ts-prompt-assist cluster PRs A (#375) + B (#376) launch interleaving (orchestrator session 2026-05-17).
+
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § Commissioning Task subagents → Worktree isolation
 
 ---
 
@@ -337,6 +353,8 @@ The two gates are independent:
 **Codification candidate:** Orchestrator-agent prompt addition under § "Commissioning Task subagents": clarify that Guardrail #6 substitution is expected for `general-purpose` commissions. Possibly request a different subagent_type (e.g. task-master) for work where real code-reviewer invocation is load-bearing — though task-master adds orchestration overhead that's wasteful for focused single-PR commissions.
 
 **Reference:** Multiple ts-prompt-assist cluster Task subagent reports of "code-reviewer agent not available in this environment" (cluster commissions through 2026-05-18); #381 fix only addressed discovery, not invocation.
+
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § Commissioning Task subagents → Discovery scope vs tool inventory are independent gates
 
 ---
 
@@ -368,6 +386,8 @@ The orchestrator-doc convention was probably calibrated for clusters where const
 **Codification candidate:** Add to `.claude/agents/orchestrator.md` § "`release` → `main` promotion" (the merge-commit guidance) and § "Post-merge bookkeeping" — name the substrate-ratio weighting explicitly. Possibly a per-cluster decision in the cluster-close prep section.
 
 **Reference:** PR #397 (`ts-prompt-assist-features` cluster→release promotion); 13 constituent commits, 7 pure substrate. Erik's framing 2026-05-19: "we have a ton of noise from intermediate artifacts."
+
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § `release` → `main` promotion (combined with L35)
 
 ---
 
@@ -410,6 +430,8 @@ When to reuse:
 
 **Reference:** `ts-res-typed-conditions` sub-stream — same agent shipped #393, #394, #395, #384 cleanly. Companion to L21 (the originating mid-run-drift observation).
 
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § Commissioning Task subagents → Reuse-vs-fresh decision
+
 ---
 
 ### L29. Cascade-completeness framing for type-cascade briefs needs to be inclusive, not enumerative
@@ -438,6 +460,8 @@ The cost: an extra review round whose entire finding-set was about description f
 
 **Reference:** PR #391 Round 2 Copilot findings (`isLooseResourceCandidateDecl` / `isLooseResourceDecl` typo'd-id soundness; meta-finding on runtime-change framing).
 
+**Codification status: GRADUATED 2026-05-24** → `.ai/instructions/CODE_REVIEW_CHECKLIST.md` § Priority 2 (combined with L18 as "PR description and docs accurately frame the change")
+
 ---
 
 ### L31. Copilot is a load-bearing review layer for cluster→release promotion PRs
@@ -454,6 +478,8 @@ The two #397 findings are the load-bearing observation: a promotion PR's per-con
 **Codification candidate:** Add to `.claude/agents/orchestrator.md` § "`release` → `main` promotion" (and the cluster → release equivalent) — explicit line: "Wait for Copilot's automated review pass before merging. The yield from a unified-delta pass is meaningfully different from per-PR reviews on the way in."
 
 **Reference:** PR #391 rounds 1-3 + PR #397's two findings. Sibling/companion to L25 (typed-but-no-runtime-teeth as a critique pattern Copilot has demonstrably caught).
+
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § Reviewing an agent PR before merge / bundling
 
 ---
 
@@ -507,6 +533,8 @@ The key property: the gap-fix is a clean library improvement that *any* consumer
 
 **Reference:** `prompt-assist-screeners` stream (#406 substrate, #407 implementation) ran parallel to `local-ai-exploration` B-2; absorbed before B-3.
 
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § Common operations → Parallel gap-fix stream
+
 ---
 
 ### L35. L26 (squash-vs-merge-commit weights substrate ratio) confirmed on a second cluster
@@ -519,10 +547,36 @@ Two clusters, two opposite-but-correct merge-strategy choices, both driven by th
 
 **Reference:** `ts-prompt-assist-features` cluster (squashed, #397) vs `local-ai-exploration` cluster (merge-commit, #412). L26 is the originating observation.
 
+**Codification status: GRADUATED 2026-05-24** → `.claude/agents/orchestrator.md` § `release` → `main` promotion (combined with L26)
+
 ---
 
 ## Sweep history
 
-*(no sweeps yet — this file is being initialized at 2026-05-11)*
+### Sweep 2026-05-24 — Lessons codification batch
 
-When this file or accumulated peer notes get swept to release: append entry here with date, sweep PR link, and which items graduated to durable form (convention / skill / agent-prompt) vs aged out.
+**PR:** `chore/lessons-codification-2026-05` (branch pushed to origin; PR to `release` — see branch for PR number once opened)
+
+**Graduated (15 lessons):**
+
+| Lesson | Destination |
+|---|---|
+| L2 | `.claude/agents/orchestrator.md` § Kickoff prompt checklist (branch-stem item) |
+| L3 | `.claude/agents/orchestrator.md` § Post-merge bookkeeping |
+| L10 | `.ai/instructions/LIBRARY_CAPABILITIES.md` § Result-integration boundary — package shape convention |
+| L18 | `.ai/instructions/CODE_REVIEW_CHECKLIST.md` § Priority 2 (combined with L30) |
+| L20 | `.claude/agents/orchestrator.md` § Common operations → Post-merge cleanup PR |
+| L21 | `.claude/agents/orchestrator.md` § Commissioning Task subagents → Stop-and-surface protocol |
+| L22 | `.claude/agents/orchestrator.md` § Kickoff prompt checklist (fgv-conventions pre-load item) |
+| L23 | `.claude/agents/orchestrator.md` § Commissioning Task subagents → Worktree isolation |
+| L24 | `.claude/agents/orchestrator.md` § Commissioning Task subagents → Discovery scope vs tool inventory |
+| L26 | `.claude/agents/orchestrator.md` § `release` → `main` promotion (combined with L35) |
+| L28 | `.claude/agents/orchestrator.md` § Commissioning Task subagents → Reuse-vs-fresh decision |
+| L30 | `.ai/instructions/CODE_REVIEW_CHECKLIST.md` § Priority 2 (combined with L18) |
+| L31 | `.claude/agents/orchestrator.md` § Reviewing an agent PR before merge / bundling |
+| L34 | `.claude/agents/orchestrator.md` § Common operations → Parallel gap-fix stream |
+| L35 | `.claude/agents/orchestrator.md` § `release` → `main` promotion (combined with L26) |
+
+**Staying pending (single-instance / needs-infra / awaiting-recurrence):**
+
+L1, L4, L6, L9, L14, L15, L16, L17, L19, L25, L27, L29, L32, L33 — single-instance or awaiting a second confirming instance, needs-infra (CI fix, scaffolding checklist), or pattern not yet stable enough to codify.
