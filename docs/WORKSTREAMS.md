@@ -167,7 +167,7 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ### `local-ai-exploration` ✅ (cluster)
 
-**Status:** ✅ shipped — all sub-phases merged into integration branch `local-ai-exploration`; promotion PR `local-ai-exploration` → `release` open (see PRs below).
+**Status:** ✅ shipped — all sub-phases merged into integration branch `local-ai-exploration`; promotion PR `local-ai-exploration` → `release` open ([#410](https://github.com/ErikFortune/fgv/pull/410), merge-commit method).
 **Integration branch:** `local-ai-exploration` (off `release`)
 **Package surface (new):**
 - `samples/testbed/` — long-lived sample-browser app (web + CLI); two scenarios shipped: `local-classifier-safety`, `local-embedding-search`.
