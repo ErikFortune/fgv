@@ -457,6 +457,70 @@ The two #397 findings are the load-bearing observation: a promotion PR's per-con
 
 ---
 
+### L32. The testbed-as-forcing-function design produces real upstream contributions — the gap-then-fix tenet earns its keep at scale
+
+**Observed:** The `local-ai-exploration` cluster built `samples/testbed` as a long-lived sample-browser with an explicit gap-then-fix tenet: "if a scenario discovers a missing fgv capability, extend/fix fgv first (preferred) rather than working around in the sample." Across one cluster, the tenet produced **two real upstream library contributions** rather than sample-local workarounds:
+
+1. **Pluggable safety screeners in `@fgv/ts-prompt-assist`** (#407) — the B-3 classifier scenario needed a custom async screener; today's regex-only/sync/closed-kind `IPromptSafetyPolicy` couldn't host it. Fixed upstream as its own parallel stream (`prompt-assist-screeners`), shipped to release, absorbed before B-3.
+2. **Light/dark theme in `@fgv/ts-app-shell`** (#411) — the testbed was the shell's first visual consumer; the theme work (54-token CSS-var system + Tailwind preset) went into ts-app-shell as an additive gap-then-fix rather than being hand-rolled in the sample.
+
+The tenet's value isn't theoretical: a sample app held to "fix the primitive, don't work around it" becomes a forcing function that surfaces real consumer-facing gaps in the libraries it exercises. The cost (a scenario blocks until the upstream fix lands) is the point — it routes the fix to where every consumer benefits.
+
+**Rule:** Sample/testbed apps that showcase a library family should carry an explicit gap-then-fix tenet. The discipline converts "the sample needed X" friction into upstream library improvements. Worth designing sample apps as deliberate forcing functions, not just demonstrators.
+
+**Codification candidate:** A convention doc for sample-app design (`samples/` house rules) once a second testbed-shaped app exists. Currently one instance (`samples/testbed`); codify when the pattern recurs or when the `ai-image-gen-sample` port lands and we can compare.
+
+**Reference:** `local-ai-exploration` cluster (#412 promotion). Two upstream contributions: #407 (ts-prompt-assist screeners), #411 (ts-app-shell theme). The cluster brief's gap-then-fix tenet at `.ai/tasks/completed/2026-05/local-ai-exploration/brief.md`.
+
+---
+
+### L33. Done-or-discard experiment gate is a reusable pattern for "should we build this primitive?" questions
+
+**Observed:** The `local-ai-exploration` cluster's central question was "does a Result-shaped facade over `@huggingface/transformers` earn its keep, or could consumers trivially write it themselves?" Rather than deciding upfront, the cluster built the facade AND a consuming scenario, with an **explicit done-or-discard gate at B-3 exit** — criteria locked *before* the experiment ran:
+- Does the facade let scenario code read meaningfully cleaner than `pipeline()` direct?
+- Does the boundary survive when a second scenario pulls in a different model type?
+- Does Result composition with the rest of fgv feel natural?
+
+The gate resolved on **SHIP** with evidence: B-4a confirmed survival across a second model type (classifier → embedding). Had it failed, the pre-committed fallback was "pivot the scenario to consume the upstream library natively, keep the sample, discard the facade." Either outcome was a clean, pre-defined exit — no sunk-cost ambiguity.
+
+**Rule:** When the question is "should fgv build this primitive?" and the answer depends on how the primitive *feels* in real consumer code, structure it as an experiment with a done-or-discard gate: lock ship/abandon criteria before building, build the primitive AND a real consumer of it, evaluate against the criteria at a defined gate, execute the pre-committed branch. Avoids both "build it because we started" sunk-cost and "never build it because we can't decide."
+
+**Codification candidate:** Add to `.claude/agents/orchestrator.md` § "Workflow shapes" as a variant of `design-triage-implement` — "experiment-with-gate" for primitive-justification questions. The `local-ai-exploration` cluster is the worked example.
+
+**Reference:** `local-ai-exploration` B-3 done-or-discard gate; cluster brief criteria; #412 promotion (resolved SHIP).
+
+---
+
+### L34. Parallel upstream gap-fix stream — fix the primitive as its own stream alongside the consuming work
+
+**Observed:** The `local-ai-exploration` B-3 scenario needed pluggable screeners in `ts-prompt-assist`. Rather than blocking the whole cluster or building the screener inside the testbed, the gap-fix was commissioned as **its own parallel stream** (`prompt-assist-screeners`) off `release`:
+- Ran **parallel to B-2** (transformers facade) — independent surfaces, no collision.
+- Shipped to `release` on its own merit (breaking change, own changelog, own review).
+- Was **absorbed into the cluster** via `merge release → local-ai-exploration` before B-3 consumed it.
+- Stands independent of the cluster's outcome — if the facade had been discarded at B-3, the screener improvement still ships.
+
+The key property: the gap-fix is a clean library improvement that *any* consumer benefits from, so it shouldn't be entangled with the experimental cluster's uncertainty. Decoupling it into a parallel stream off release (rather than folding into the cluster integration branch) protected it.
+
+**Rule:** When a cluster's gap-then-fix surfaces an improvement that benefits consumers beyond the cluster, commission it as a parallel stream off `release` (not folded into the cluster integration branch), ship it on its own merit, and absorb it into the cluster via `merge release → integration` before the consuming phase. Decouples the clean library improvement from the experimental work's outcome.
+
+**Codification candidate:** Orchestrator-agent prompt addition under § "Common operations" — "Parallel gap-fix stream" mechanic. Sibling to the existing "merge release into integration to absorb" pattern (used as #383 in the ts-prompt-assist cluster).
+
+**Reference:** `prompt-assist-screeners` stream (#406 substrate, #407 implementation) ran parallel to `local-ai-exploration` B-2; absorbed before B-3.
+
+---
+
+### L35. L26 (squash-vs-merge-commit weights substrate ratio) confirmed on a second cluster
+
+**Observed:** L26 proposed that promotion-PR merge strategy should weight the cluster's substantive-code-vs-substrate ratio rather than defaulting uniformly to merge-commit. The `ts-prompt-assist-features` cluster was squashed (it was ~54% substrate commits). The `local-ai-exploration` cluster (#412) was **merge-committed** — and correctly so: it's substantive-code-heavy (two new library packages + a full sample app + a ts-app-shell theme; ~9900 additions across 98 files of mostly real code). The promotion PR explicitly called out "merge with a merge-commit, NOT squash (preserves the constituent-PR audit trail)."
+
+Two clusters, two opposite-but-correct merge-strategy choices, both driven by the substrate ratio. L26's rule is proving out across instances.
+
+**Codification candidate:** L26 was the proposal; this is the second confirming data point. Approaching codification-worthy — fold L26 + L35 into a single orchestrator-agent-prompt line under § "`release` → `main` promotion" / cluster-close: "Choose merge strategy by substrate ratio: squash a substrate-heavy cluster (>~40% non-code commits) for `git log` legibility; merge-commit a code-heavy cluster to preserve the constituent-PR audit trail." Promote on the next codification batch.
+
+**Reference:** `ts-prompt-assist-features` cluster (squashed, #397) vs `local-ai-exploration` cluster (merge-commit, #412). L26 is the originating observation.
+
+---
+
 ## Sweep history
 
 *(no sweeps yet — this file is being initialized at 2026-05-11)*
