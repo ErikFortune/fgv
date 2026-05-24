@@ -1,9 +1,9 @@
 # Stream state: `local-ai-exploration`
 
-**Status:** 🟢 B-4a complete (PR open); cluster-close (promotion) next
+**Status:** 🔵 B-4a merged; cluster reopened for **B-5** (shell + CLI scenario integration) before re-promotion
 **Integration branch:** `local-ai-exploration` (off `release`)
-**B-4a work branch:** `claude/local-ai-exploration-b4a`
-**Last updated:** 2026-05-24 (orchestrator — B-4a review rounds addressed; ready to merge)
+**B-5 work branch:** `claude/local-ai-exploration-b5-shell`
+**Last updated:** 2026-05-24 (orchestrator — #409 merged; first cluster-close (#410) closed pending B-5; B-5 commissioned)
 
 ---
 
@@ -16,8 +16,10 @@
 | B-2 — Facade primitives | ✅ complete | PR #405. `loadPipeline` + `classify` shipped. `embed` + `generate` deferred. 100% coverage both packages. See `phase-b2-result.md`. |
 | B-3 — First scenario (local classifier → IPromptSafetyPolicy) | ✅ merged | PR #408 (merged → local-ai-exploration as `d85a462e`). 100% coverage; web/Node facade split + `@fgv/ts-web-extras-transformers` `exports` packaging fix landed via review. See `phase-b3-result.md`. |
 | **B-3 exit gate** | ✅ **SHIP** | All three done-or-discard criteria positive (facade cleaner than raw `pipeline()`; boundary survived a real composition; Result/screener composition natural). Hardened under review (dual-target facade pattern). Decision: ship → B-4a. See `phase-b4a-brief.md`. |
-| B-4a — Ship the facade | ✅ complete (PR open) | `embed` + `classifyAll()` in both facades; `local-embedding-search` scenario (OQ-4 ✅ — boundary survived the embedding model type); B-3 switched to `classifyAll()`; `LIBRARY_CAPABILITIES.md` entries. Full `rush build` + `build:web` green; facades 23 tests each, testbed 111 tests, all 100%. See `phase-b4a-result.md`. |
+| B-4a — Ship the facade | ✅ merged | PR #409. `embed` + `classifyAll()` in both facades; `local-embedding-search` scenario (OQ-4 ✅); B-3 switched to `classifyAll()`; `LIBRARY_CAPABILITIES.md` entries. See `phase-b4a-result.md`. |
 | ~~B-4b — Pivot to native~~ | ⬛ not taken | Gate decided ship; pivot path discarded. |
+| B-5 — Shell + CLI scenario integration | 🔵 in progress | Surfaced by the #410 promotion review: the B-1 shell/CLI were never wired to run the registered scenarios. Wire web (clickable sidebar + mount `web.component` + `initialize`/loading/error) and CLI (`--scenario` dispatch); fold in the #410 doc/consistency fixes; **maintainer manual test pass** required. Branch `claude/local-ai-exploration-b5-shell`. See `phase-b5-brief.md`. |
+| Cluster close (1st attempt) | ⬛ closed (#410) | Premature — promotion opened before B-5; closed and superseded. Buffer never advanced by its finalization commits. Re-promote after B-5. |
 | Cluster close | 🟢 next | Promotion `local-ai-exploration` → `release` once B-4a PR merges. |
 
 ---
