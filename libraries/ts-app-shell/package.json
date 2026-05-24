@@ -73,7 +73,9 @@
         "require": "./lib/index.browser.js"
       },
       "types": "lib/index.d.ts"
-    }
+    },
+    "./tailwind-preset": "./tailwind-preset.cjs",
+    "./theme.css": "./lib/styles/theme.css"
   },
   "repository": {
     "type": "git",
