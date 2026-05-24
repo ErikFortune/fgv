@@ -184,7 +184,7 @@ For anything not in the table above, **use `@simplewebauthn/server` or `@simplew
 
 **Consuming from a dual web/CLI bundle (load-bearing pattern):** when one module is reachable from a browser bundle, keep your reusable core **facade-agnostic** — take the facade function (`classify`/`classifyAll`/`embed`) as an injected parameter and import facade types as `import type` only (erased, so no runtime facade enters the bundle). Import the **browser** facade on the web path; load the **Node** facade on the CLI path via `import(/* webpackIgnore: true */ '@fgv/ts-extras-transformers')` so its node-native deps never reach the browser graph. Validate the browser bundle with the real bundler (`webpack`/etc.) — type-check + jsdom tests do not exercise it. The `samples/testbed` `local-classifier-safety` and `local-embedding-search` scenarios are the reference consumers.
 
-**Upstream:** `@huggingface/transformers` `~4.2.0` (a runtime dep of both packages; `skipLibCheck` is required for its type definitions).
+**Upstream:** `@huggingface/transformers` `~4.2.0` (a **peer dependency** of both packages — bring your own; `skipLibCheck` is required for its type definitions).
 
 ---
 

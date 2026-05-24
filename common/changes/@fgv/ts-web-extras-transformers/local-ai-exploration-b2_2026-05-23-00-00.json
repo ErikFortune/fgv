@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-web-extras-transformers",
-      "comment": "B-2: implement loadPipeline and classify primitives — Result-shaped facade over @huggingface/transformers for browser consumers. Adds @huggingface/transformers as a runtime dependency. Includes skipLibCheck for upstream type-definition issues.",
+      "comment": "B-2: implement loadPipeline and classify primitives — Result-shaped facade over @huggingface/transformers for browser consumers. Declares @huggingface/transformers as a peer dependency (bring your own). Includes skipLibCheck for upstream type-definition issues.",
       "type": "minor"
     }
   ],
