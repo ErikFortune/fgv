@@ -11,7 +11,7 @@
  *   const appShellPreset = require('@fgv/ts-app-shell/tailwind-preset');
  *   module.exports = {
  *     presets: [appShellPreset],
- *     content: ['./src/**\/*.{ts,tsx}', './node_modules/@fgv/ts-app-shell/src/**\/*.tsx'],
+ *     content: ['./src/**\/*.{ts,tsx}', './node_modules/@fgv/ts-app-shell/lib/**\/*.{js,jsx}'],
  *     // ...your config
  *   };
  *

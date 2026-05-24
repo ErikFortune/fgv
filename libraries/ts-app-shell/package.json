@@ -12,7 +12,9 @@
     "fixlint": "eslint src --ext .ts,.tsx --fix",
     "coverage": "jest --coverage"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "keywords": [
     "typescript",
     "react",

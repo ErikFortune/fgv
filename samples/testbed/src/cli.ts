@@ -5,7 +5,7 @@
  * @packageDocumentation
  */
 
-import { Logging } from '@fgv/ts-utils';
+import { Logging, type MessageLogLevel, type Success, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { dataFiles } from './generated/dataFileTree';
@@ -40,14 +40,33 @@ export interface ITestbedCliOptions {
 // ---------------------------------------------------------------------------
 
 /**
- * Build an `IScenarioContext` for the CLI. The logger writes to stderr via a custom
- * {@link Logging.ILogger} that delegates `_log` calls to the injected stderr stream.
+ * A {@link Logging.LoggerBase} subclass that writes all logged messages to a given
+ * writable stream (intended for stderr). Used by {@link buildCliContext} so that
+ * scenario diagnostic output goes to `streams.stderr` rather than the Node console,
+ * keeping `streams.stdout` clean for the structured summary `runTestbedCli` prints.
+ */
+class StreamLogger extends Logging.LoggerBase {
+  private readonly _stream: { write(chunk: string): unknown };
+
+  public constructor(stream: { write(chunk: string): unknown }, level: Logging.ReporterLogLevel = 'info') {
+    super(level);
+    this._stream = stream;
+  }
+
+  protected _log(message: string, __level: MessageLogLevel): Success<string | undefined> {
+    this._stream.write(message + '\n');
+    return succeed(message);
+  }
+}
+
+/**
+ * Build an `IScenarioContext` for the CLI. The logger writes to `streams.stderr` via a
+ * {@link StreamLogger} subclass of {@link Logging.LoggerBase}, which delegates `_log`
+ * calls to the injected stderr stream, keeping stdout clean for the structured summary.
  * keyStore is undefined (secret resolution is env-var-only on the CLI).
  */
 function buildCliContext(streams: ITestbedCliStreams): IScenarioContext {
-  // ConsoleLogger writes to the Node console. CLI diagnostic output going to console
-  // is idiomatic — the `streams` injection is for structured stdout output, not logs.
-  const logger = new Logging.LogReporter<unknown>({ logger: new Logging.ConsoleLogger('info') });
+  const logger = new Logging.LogReporter<unknown>({ logger: new StreamLogger(streams.stderr) });
 
   // orThrow() is intentional — builds from a statically-known list; failure means a broken build artifact.
   const dataTree: FileTree.FileTree = FileTree.inMemory([...dataFiles]).orThrow();

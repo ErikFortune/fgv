@@ -397,4 +397,46 @@ describe('ScenarioHost — initialize lifecycle', () => {
     expect(errorEl.textContent).toContain('init failed for fail-test');
     expect(screen.queryByTestId('testbed-scenario-loading')).toBeNull();
   });
+
+  test('remains in loading state when initialize resolves succeed(false)', async () => {
+    // succeed(false) means "not ready yet" — ScenarioHost must stay in the loading state
+    // and must NOT mount the web component.
+    let resolveInitFn: () => void = () => undefined;
+    const initPromise = new Promise<void>((resolve) => {
+      resolveInitFn = resolve;
+    });
+
+    const component = ({ context }: { context: IScenarioContext }): React.ReactElement => (
+      <div data-testid="false-init-component" data-ctx-defined={String(context !== undefined)} />
+    );
+    const initialize = async (context: IScenarioContext): Promise<Result<boolean>> => {
+      // context is required by the interface; log to avoid unused-var lint error
+      context.logger.info('false-init: initializing');
+      await initPromise;
+      return succeed(false);
+    };
+
+    const scenario: IScenario = {
+      id: 'false-init-test',
+      title: 'False Init Test',
+      description: 'desc',
+      category: 'general',
+      tags: ['test'],
+      web: { component, initialize }
+    };
+
+    renderInProviders(<TestbedShell scenarios={[scenario]} />);
+
+    // While pending: loading indicator visible, component not mounted.
+    expect(screen.getByTestId('testbed-scenario-loading')).not.toBeNull();
+    expect(screen.queryByTestId('false-init-component')).toBeNull();
+
+    // Resolve with succeed(false): should still show loading, not mount the component.
+    resolveInitFn();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(screen.getByTestId('testbed-scenario-loading')).not.toBeNull();
+    expect(screen.queryByTestId('false-init-component')).toBeNull();
+    expect(screen.queryByTestId('testbed-scenario-error')).toBeNull();
+  });
 });

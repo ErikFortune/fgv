@@ -155,9 +155,10 @@ function ScenarioHost({
         }
         if (result.isFailure()) {
           setLifecycle({ kind: 'error', message: result.message });
-        } else {
+        } else if (result.value === true) {
           setLifecycle({ kind: 'ready' });
         }
+        // succeed(false) means "not ready yet" — remain in loading state.
       })
       /* c8 ignore next 5 - initialize() returns Promise<Result>; it never rejects in practice (failures become Result.fail). Guard is defensive. */
       .catch((err: unknown) => {

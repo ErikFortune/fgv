@@ -26,7 +26,7 @@ rushx dev
 # or: webpack serve --mode development
 ```
 
-Then open http://localhost:8080 (or the port shown in the output).
+Then open http://localhost:3004 (or the port shown in the output).
 
 ### Web click-through checklist
 
@@ -127,10 +127,10 @@ Expected:
 ```
 heft build --clean   → no errors, no warnings
 eslint src           → zero problems
-heft test --clean    → 130 tests pass, 100% all four coverage metrics
+heft test --clean    → 137 tests pass, 100% all four coverage metrics
 webpack --mode production → compiled; @fgv/ts-extras-transformers only appears as webpackIgnore string literal
 ```
 
 ---
 
-**Status:** Automated gates PASS. Maintainer manual pass PENDING.
+**Status:** Automated gates PASS. Maintainer manual pass COMPLETE (both scenarios verified in light + dark).

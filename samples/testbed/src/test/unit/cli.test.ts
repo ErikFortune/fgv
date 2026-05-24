@@ -63,6 +63,9 @@ function makeCliScenario(id: string, title: string, runResult: 'succeed' | 'fail
   };
 }
 
+// We need React for createElement in the web-only scenario stub.
+import React from 'react';
+
 /** A scenario with only a web impl (no CLI impl). */
 const WEB_ONLY_SCENARIO: IScenario = {
   id: 'web-only',
@@ -71,12 +74,9 @@ const WEB_ONLY_SCENARIO: IScenario = {
   category: 'general',
   tags: ['test'],
   web: {
-    component: () => null as unknown as React.ReactElement
+    component: () => React.createElement('div')
   }
 };
-
-// We need React type for the web-only scenario component type above.
-import type React from 'react';
 
 // ---------------------------------------------------------------------------
 // --help / -h
@@ -164,7 +164,8 @@ describe('runTestbedCli --scenario', () => {
     });
     expect(code).toBe(0);
     expect(streams.stdout.output.join('')).toContain('my-id summary');
-    expect(streams.stderr.output).toHaveLength(0);
+    // The scenario stub calls context.logger.info which now routes to stderr (Fix 4).
+    expect(streams.stderr.output.join('')).toContain('running my-id');
   });
 
   test('exits 1 and writes to stderr when scenario run returns failure', async () => {

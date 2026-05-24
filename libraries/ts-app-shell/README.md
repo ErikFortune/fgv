@@ -36,7 +36,7 @@ module.exports = {
   // Make sure Tailwind scans the package's components for class names:
   content: [
     './src/**/*.{ts,tsx}',
-    './node_modules/@fgv/ts-app-shell/src/**/*.tsx',
+    './node_modules/@fgv/ts-app-shell/lib/**/*.{js,jsx}',
   ],
   // ...rest of your config
 };
