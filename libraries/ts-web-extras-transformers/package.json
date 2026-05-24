@@ -1,7 +1,7 @@
 {
   "name": "@fgv/ts-web-extras-transformers",
   "version": "5.1.0",
-  "description": "Result-integration boundary over @huggingface/transformers for browser consumers (provisional; populated in B-2 of the local-ai-exploration cluster)",
+  "description": "Result-integration boundary over @huggingface/transformers for browser consumers (loadPipeline, classify, classifyAll, embed)",
   "main": "lib/index.js",
   "types": "dist/ts-web-extras-transformers.d.ts",
   "exports": {
@@ -18,7 +18,7 @@
     }
   },
   "scripts": {
-    "build": "NODE_OPTIONS=--disable-warning=DEP0040 heft test --clean",
+    "build": "NODE_OPTIONS=--disable-warning=DEP0040 heft build --clean",
     "clean": "heft clean",
     "test": "NODE_OPTIONS=--disable-warning=DEP0040 heft test --clean",
     "test-handles": "NODE_OPTIONS=--disable-warning=DEP0040 jest --runInBand --detectOpenHandles",

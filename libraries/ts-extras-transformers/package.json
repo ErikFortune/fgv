@@ -1,7 +1,7 @@
 {
   "name": "@fgv/ts-extras-transformers",
   "version": "5.1.0",
-  "description": "Result-integration boundary over @huggingface/transformers (provisional; populated in B-2 of the local-ai-exploration cluster)",
+  "description": "Result-integration boundary over @huggingface/transformers for Node consumers (loadPipeline, classify, classifyAll, embed)",
   "main": "lib/index.js",
   "types": "dist/ts-extras-transformers.d.ts",
   "exports": {

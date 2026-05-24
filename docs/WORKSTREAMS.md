@@ -128,9 +128,9 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `local-ai-exploration` 🟢
+### `local-ai-exploration` 🔵
 
-**Status:** 🟢 substrate prep in flight; B-1 ready to commission after merge
+**Status:** 🔵 B-1…B-4a merged; reopened for **B-5** (shell + CLI scenario integration) before re-promotion to `release`. First promotion (#410) was closed as premature.
 **Integration branch:** `local-ai-exploration` (off `release`)
 **Workflow shape:** design-triage-implement-refine cluster with outcome gate at B-3
 **Substrate:** `.ai/tasks/active/local-ai-exploration/{brief.md, state.md}`
@@ -147,7 +147,8 @@ substrate. Don't queue streams against them here.
 - B-2 facade primitives (5-8 ops mirroring `@fgv/ts-extras-webauthn` discipline)
 - B-3 first scenario (local classifier → `IPromptSafetyPolicy` backend)
 - B-3 exit gate (done-or-discard decision per criteria locked in brief)
-- B-4a (ship the facade) OR B-4b (pivot scenario to native)
+- B-4a (ship the facade) OR B-4b (pivot scenario to native) — **B-4a taken; gate decided SHIP**
+- B-5 (shell + CLI scenario integration) — added after #410 review caught the B-1 shell/CLI never being wired to run scenarios
 - Cluster close (promotion `local-ai-exploration` → `release`)
 
 **Out-of-scope (this cluster):** porting `samples/ai-image-gen-sample` scenarios into the testbed (P3 tech debt, queued); editor UX (queued); LLM-call orchestration beyond existing ai-assist; sidecar/HTTP local LLM path (separate small chore opportunity).

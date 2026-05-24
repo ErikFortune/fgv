@@ -4,6 +4,7 @@
  */
 
 /* c8 ignore start - entry-point orchestration glue per testbed conventions */
+import './index.css';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 

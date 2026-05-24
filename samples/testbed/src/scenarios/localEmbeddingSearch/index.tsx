@@ -137,7 +137,9 @@ function LocalEmbeddingSearchComponent({
           return;
         }
         context.logger.info(`Model ${MODEL_ID} loaded.`);
-        setExtractor(pipeResult.value);
+        // The pipeline is itself a callable object; pass it via the updater form so
+        // React stores it instead of invoking it as a functional state updater.
+        setExtractor(() => pipeResult.value);
         setIsLoading(false);
       })
       /* c8 ignore next 5 - unreachable: the promise never rejects — loadPipeline returns Result.fail rather than throwing, the cached path is Promise.resolve(succeed(...)), and the .then handler only sets state */
@@ -173,38 +175,63 @@ function LocalEmbeddingSearchComponent({
 
   if (isLoading) {
     return (
-      <div data-testid="embedding-loading">
+      <div data-testid="embedding-loading" className="py-4 text-center text-secondary">
         <p>Loading model {MODEL_ID}…</p>
       </div>
     );
   }
 
   return (
-    <div data-testid="embedding-scenario">
-      <div data-testid="embedding-input-area">
-        <label htmlFor="embedding-query">Search query:</label>
-        <input
-          id="embedding-query"
-          data-testid="embedding-query"
-          type="text"
-          value={queryText}
-          onChange={(e) => setQueryText(e.target.value)}
-        />
-        <button data-testid="embedding-search-btn" onClick={handleSearch} disabled={extractor === null}>
+    <div data-testid="embedding-scenario" className="space-y-4">
+      <div data-testid="embedding-input-area" className="flex items-end gap-2">
+        <div className="flex-1 space-y-1">
+          <label htmlFor="embedding-query" className="block text-sm font-medium text-secondary">
+            Search query:
+          </label>
+          <input
+            id="embedding-query"
+            data-testid="embedding-query"
+            type="text"
+            value={queryText}
+            onChange={(e) => setQueryText(e.target.value)}
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-primary placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+          />
+        </div>
+        <button
+          data-testid="embedding-search-btn"
+          onClick={handleSearch}
+          disabled={extractor === null}
+          className="rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50"
+        >
           Search
         </button>
       </div>
       {searchState !== null && (
         <div data-testid="embedding-results">
           {searchState.error !== undefined ? (
-            <div data-testid="embedding-error">{searchState.error}</div>
+            <div
+              data-testid="embedding-error"
+              className="rounded-md border border-status-error-border bg-status-error-bg p-4 text-sm text-status-error-text"
+            >
+              {searchState.error}
+            </div>
           ) : (
-            <ol data-testid="embedding-ranked-list">
+            <ol data-testid="embedding-ranked-list" className="divide-y divide-border-subtle">
               {searchState.results.map((r, i) => (
-                <li key={i} data-testid={`embedding-result-${i}`}>
-                  <span data-testid={`embedding-score-${i}`}>{r.score.toFixed(4)}</span>
-                  {' — '}
-                  <span data-testid={`embedding-text-${i}`}>{r.text}</span>
+                <li
+                  key={i}
+                  data-testid={`embedding-result-${i}`}
+                  className="flex items-baseline gap-3 py-2 text-sm"
+                >
+                  <span
+                    data-testid={`embedding-score-${i}`}
+                    className="w-16 shrink-0 font-mono text-xs text-brand-primary"
+                  >
+                    {r.score.toFixed(4)}
+                  </span>
+                  <span data-testid={`embedding-text-${i}`} className="text-primary">
+                    {r.text}
+                  </span>
                 </li>
               ))}
             </ol>

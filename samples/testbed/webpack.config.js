@@ -41,10 +41,26 @@ module.exports = (env, argv) => {
         title: 'fgv testbed'
       })
     ],
+    // @huggingface/transformers (transformers.web.js) uses a standalone `import.meta`
+    // for environment detection. webpack 5 can't statically analyze it and emits a
+    // "Critical dependency: 'import.meta' ..." warning, replacing the expression with
+    // `{}` (the library falls back correctly). The warning is benign; scope it out so it
+    // doesn't surface as a dev-server overlay. Keep the scope narrow so real warnings show.
+    ignoreWarnings: [
+      {
+        module: /@huggingface[/\\]transformers/,
+        message: /Critical dependency: 'import\.meta'/
+      }
+    ],
     devServer: {
       port: 3004,
       hot: true,
-      open: true
+      open: true,
+      // Show real errors as a full-screen overlay, but not warnings (the benign
+      // transformers.js import.meta warning would otherwise read as a startup error).
+      client: {
+        overlay: { errors: true, warnings: false }
+      }
     }
   };
 };

@@ -1,7 +1,7 @@
 # @fgv/testbed
 
-**Status:** B-1 scaffold (empty shell, no scenarios yet) — see
-`.ai/tasks/active/local-ai-exploration/brief.md` for the cluster contract.
+**Status:** Active — two scenarios shipped (B-3 local-classifier-safety, B-4a local-embedding-search);
+shell wired to run them (B-5). See `.ai/tasks/active/local-ai-exploration/brief.md` for the cluster contract.
 
 Long-lived sample browser app + companion CLI showcasing fgv capabilities. Scenarios are
 first-class entities: a scenario module declares metadata (id, title, category, tags), an
@@ -58,11 +58,17 @@ bin/
   testbed.js             # CLI shim invoked by package.json `bin`
 ```
 
+## Scenarios
+
+| id | Title | Surfaces |
+|----|-------|---------|
+| `local-classifier-safety` | Local Classifier Safety | web, cli |
+| `local-embedding-search` | Local Embedding Search | web, cli |
+
 ## Cluster context
 
-This package was scaffolded as phase B-1 of the `local-ai-exploration` orchestrator cluster.
-Phase B-2 populates the companion `@fgv/ts-extras-transformers` /
-`@fgv/ts-web-extras-transformers` packages; phase B-3 lands the first scenario (a local
-classifier wired as an `IPromptSafetyPolicy` backend) and runs the done-or-discard gate on
-the facade. The testbed itself is not gated on that outcome — it keeps growing scenarios
-over time.
+This package is part of the `local-ai-exploration` orchestrator cluster.
+Phase B-1 scaffolded the shell; B-2 populated the transformer facades;
+B-3 added the classifier-safety scenario; B-4a added the embedding-search scenario;
+B-5 wired the shell and CLI to actually run them.
+The testbed keeps growing scenarios over time.
