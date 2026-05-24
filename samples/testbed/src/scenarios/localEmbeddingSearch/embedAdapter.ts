@@ -26,7 +26,7 @@
  * bounded cast to `number[][]` is required to access the inner array; this is
  * safe because:
  *  - `pooling: 'mean'` reduces the token dimension → one row per input.
- *  - `normalize: true` keeps elements in [−1, 1] (in practice [0, 1] for MiniLM).
+ *  - `normalize: true` scales the vector to unit length; element values stay in [−1, 1] (and may be negative).
  *  - The outer list length equals the number of input strings (1 here).
  *
  * @packageDocumentation
