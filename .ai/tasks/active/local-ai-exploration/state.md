@@ -1,9 +1,9 @@
 # Stream state: `local-ai-exploration`
 
-**Status:** 🟢 B-3 merged; done-or-discard gate → **SHIP**; B-4a in progress
+**Status:** 🟢 B-4a complete (PR open); cluster-close (promotion) next
 **Integration branch:** `local-ai-exploration` (off `release`)
 **B-4a work branch:** `claude/local-ai-exploration-b4a`
-**Last updated:** 2026-05-24 (orchestrator — gate decided, B-4a commissioned)
+**Last updated:** 2026-05-24 (orchestrator — B-4a implemented, embedding scenario + classifyAll/embed shipped)
 
 ---
 
@@ -16,9 +16,9 @@
 | B-2 — Facade primitives | ✅ complete | PR #405. `loadPipeline` + `classify` shipped. `embed` + `generate` deferred. 100% coverage both packages. See `phase-b2-result.md`. |
 | B-3 — First scenario (local classifier → IPromptSafetyPolicy) | ✅ merged | PR #408 (merged → local-ai-exploration as `d85a462e`). 100% coverage; web/Node facade split + `@fgv/ts-web-extras-transformers` `exports` packaging fix landed via review. See `phase-b3-result.md`. |
 | **B-3 exit gate** | ✅ **SHIP** | All three done-or-discard criteria positive (facade cleaner than raw `pipeline()`; boundary survived a real composition; Result/screener composition natural). Hardened under review (dual-target facade pattern). Decision: ship → B-4a. See `phase-b4a-brief.md`. |
-| B-4a — Ship the facade | 🟢 in progress | Branch `claude/local-ai-exploration-b4a`. Scope: `embed` + `classifyAll()` in both facades; embedding/semantic-search scenario (OQ-4 second model type); `LIBRARY_CAPABILITIES.md` entries; promotion-ready. See `phase-b4a-brief.md`. |
+| B-4a — Ship the facade | ✅ complete (PR open) | `embed` + `classifyAll()` in both facades; `local-embedding-search` scenario (OQ-4 ✅ — boundary survived the embedding model type); B-3 switched to `classifyAll()`; `LIBRARY_CAPABILITIES.md` entries. Full `rush build` + `build:web` green; facades 23 tests each, testbed 111 tests, all 100%. See `phase-b4a-result.md`. |
 | ~~B-4b — Pivot to native~~ | ⬛ not taken | Gate decided ship; pivot path discarded. |
-| Cluster close | ⏸ blocked on B-4a | Promotion `local-ai-exploration` → `release`. |
+| Cluster close | 🟢 next | Promotion `local-ai-exploration` → `release` once B-4a PR merges. |
 
 ---
 
@@ -79,6 +79,7 @@
 | 2026-05-23 | B-1 scaffold complete | Three new packages (`@fgv/testbed`, `@fgv/ts-extras-transformers`, `@fgv/ts-web-extras-transformers`) scaffolded empty-but-compilable. Rig + c8-scope + src-layout decisions locked via AskUserQuestion pre-scaffold. 100% coverage on testbed. PR #404. See `phase-b1-result.md` for scaffolding surprises carried into B-2. |
 | 2026-05-23 | B-2 facade primitives complete | `loadPipeline` + `classify` implemented in both transformers packages. `embed` + `generate` deferred. 100% coverage (13 tests each). `@huggingface/transformers` added as runtime dep. `skipLibCheck` required for upstream type-def issues. See `phase-b2-result.md`. |
 | 2026-05-24 | B-3 merged (#408) + gate decided | First scenario merged as `d85a462e`. Review drove the web/Node facade split, a facade-agnostic screener core, and a packaging-bug fix in `@fgv/ts-web-extras-transformers` (`exports` browser target). Done-or-discard gate → **SHIP**. B-4a commissioned. |
+| 2026-05-24 | B-4a implemented | `embed` + `classifyAll()` shipped in both facades (23 tests each, 100%); `local-embedding-search` scenario added + B-3 switched to `classifyAll()` (testbed 111 tests, 100%, `build:web` clean); `LIBRARY_CAPABILITIES.md` entries; full `rush build` green. Two implementing agents (facade primitives; scenario) + orchestrator (caps doc, gates). OQ-4 answered yes. See `phase-b4a-result.md`. |
 
 ---
 
@@ -91,4 +92,4 @@
 | B-1 | #404 | merged to `local-ai-exploration` |
 | B-2 | #405 | merged to `local-ai-exploration` |
 | B-3 | #408 | ✅ merged to `local-ai-exploration` (`d85a462e`) |
-| B-4a | TBD | in progress on `claude/local-ai-exploration-b4a` |
+| B-4a | (PR pending) | open on `claude/local-ai-exploration-b4a` → `local-ai-exploration` |
