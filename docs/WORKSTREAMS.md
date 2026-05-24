@@ -128,32 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `local-ai-exploration` 🟢
-
-**Status:** 🟢 substrate prep in flight; B-1 ready to commission after merge
-**Integration branch:** `local-ai-exploration` (off `release`)
-**Workflow shape:** design-triage-implement-refine cluster with outcome gate at B-3
-**Substrate:** `.ai/tasks/active/local-ai-exploration/{brief.md, state.md}`
-**Package surface (new):**
-- `samples/testbed/` — long-lived sample-browser app, web + CLI, web-first
-- `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` — Result-integration boundary over `@huggingface/transformers` (provisional; may be discarded at B-4b if the experiment shows the facade doesn't earn its keep)
-
-**Mission.** Two intertwined goals: (1) build a long-lived sample browser app at `samples/testbed/` as the canonical home for fgv-capability demonstration scenarios; (2) use that testbed to evaluate whether a Result-shaped facade over `@huggingface/transformers` earns its keep, with an explicit done-or-discard decision gate at B-3 exit.
-
-**Decision-track input (binding):** `.ai/notes/orchestrator/research/local-models-incorporation.md` (merged via #402) recommends Option 2 with timing "next slot, not urgent." This cluster takes the slot and runs the experiment.
-
-**Sub-phase shape:**
-- B-1 scaffold (testbed + facade package skeletons)
-- B-2 facade primitives (5-8 ops mirroring `@fgv/ts-extras-webauthn` discipline)
-- B-3 first scenario (local classifier → `IPromptSafetyPolicy` backend)
-- B-3 exit gate (done-or-discard decision per criteria locked in brief)
-- B-4a (ship the facade) OR B-4b (pivot scenario to native)
-- Cluster close (promotion `local-ai-exploration` → `release`)
-
-**Out-of-scope (this cluster):** porting `samples/ai-image-gen-sample` scenarios into the testbed (P3 tech debt, queued); editor UX (queued); LLM-call orchestration beyond existing ai-assist; sidecar/HTTP local LLM path (separate small chore opportunity).
-
-**Origin.** Erik's question 2026-05-22: "ai-assist is all about communicating with distant LLMs for pretty meaty tasks. But in the real world, smaller models like classifiers and recognizers often run locally. How does that work and is it something we could/should incorporate?" Research note answered the framing; this cluster runs the experiment.
-
 ### `prompt-assist-screeners` 🟢
 
 **Status:** 🟢 ready to commission (substrate prep in flight)
@@ -190,6 +164,22 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `local-ai-exploration` ✅ (cluster)
+
+**Status:** ✅ shipped — all sub-phases merged into integration branch `local-ai-exploration`; promotion PR `local-ai-exploration` → `release` open (see PRs below).
+**Integration branch:** `local-ai-exploration` (off `release`)
+**Package surface (new):**
+- `samples/testbed/` — long-lived sample-browser app (web + CLI); two scenarios shipped: `local-classifier-safety`, `local-embedding-search`.
+- `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` — Result-integration boundary over `@huggingface/transformers` (`loadPipeline`, `classify`, `classifyAll`, `embed`; `generate` deferred).
+
+**Outcome.** The done-or-discard gate at B-3 exit decided **SHIP**: the facade read cleaner than raw `pipeline()`, survived a real composition (classifier → `ts-prompt-assist` screener seam), and B-4a confirmed it survives a second model type (embedder). The dual-target consumption pattern (facade-agnostic core + browser facade on web / Node facade via `webpackIgnore` on CLI) proved repeatable. `LIBRARY_CAPABILITIES.md` entries added.
+
+**Sub-phases (all merged to `local-ai-exploration`):** research #402 · substrate #403 · B-1 scaffold #404 · B-2 facade primitives #405 · B-3 classifier scenario #408 · B-4a ship (embed + classifyAll + embedding scenario) #409.
+
+**Follow-ups (deferred):** `generate` primitive + a local text-generation scenario (gap-then-fix when wanted); port `samples/ai-image-gen-sample` scenarios into the testbed (P3 tech debt); a "remaining gaps → which yield real value" review thread (Erik, post-merge).
+
+**Artifacts:** [`.ai/tasks/completed/2026-05/local-ai-exploration/`](../.ai/tasks/completed/2026-05/local-ai-exploration/) (brief, all phase briefs/results, state).
 
 ### `ts-prompt-assist-features` ✅ (cluster)
 

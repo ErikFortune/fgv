@@ -1,9 +1,8 @@
 # Stream state: `local-ai-exploration`
 
-**Status:** 🟢 B-4a complete (PR open); cluster-close (promotion) next
+**Status:** ✅ cluster complete — all sub-phases merged to `local-ai-exploration`; promotion PR → `release` open
 **Integration branch:** `local-ai-exploration` (off `release`)
-**B-4a work branch:** `claude/local-ai-exploration-b4a`
-**Last updated:** 2026-05-24 (orchestrator — B-4a review rounds addressed; ready to merge)
+**Last updated:** 2026-05-24 (orchestrator — #409 merged; cluster-close: artifacts finalized, promotion PR up)
 
 ---
 
