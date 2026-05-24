@@ -188,6 +188,18 @@ For anything not in the table above, **use `@simplewebauthn/server` or `@simplew
 
 ---
 
+### Result-integration boundary — package shape convention
+
+When fgv wants to expose functionality from a well-maintained upstream library without baking in opinion or maintenance burden, the right shape is a thin **Result-integration boundary**: convert thrown exceptions / rejected promises into `Result<T>`, expose ~5–8 primitive operations, and enumerate explicitly what is NOT in scope. No opinionated orchestration beyond the conversion.
+
+Reference instances in this file:
+- **`@fgv/ts-extras-webauthn` + `@fgv/ts-web-extras-webauthn`** — six primitives wrapping `@simplewebauthn/*`; ceremony orchestration, challenge management, and credential storage are explicitly out of scope.
+- **`@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers`** — four primitives wrapping `@huggingface/transformers`; pipeline cache, model registry, device/quantization policy are explicitly out of scope.
+
+Both pairs have an explicit "NOT in scope" enumeration — that list is load-bearing. A new integration-boundary package should carry the same shape: thin conversion + explicit not-in-scope list + no opinion added. See the WebAuthn pair's README as the prose template.
+
+---
+
 ## Cross-runtime interfaces
 
 Several core abstractions are defined once and have separate Node and browser implementations. Code against the interface; pick the implementation at the composition root.
