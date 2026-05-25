@@ -90,7 +90,8 @@ Before advancing the workflow (merging the PR, bundling it into a cluster-close 
 
 1. **Call `mcp__github__pull_request_read` with `method: get_check_runs`.** Refuse to advance if any check is `conclusion: failure`. This catches lint failures, test failures, or coverage-gate breaks that the agent may have missed in their local run. Lint is a particular hot spot — `rushx build` does NOT transitively run lint in this monorepo, so an agent's "build passes" claim doesn't cover it.
 2. **If CI is red**: send back to the agent with the failing check's URL. The fix is the agent's, not the orchestrator's (unless the lint failure is one-line-mechanical and the agent has otherwise wrapped up the stream).
-3. **Once CI is green**: proceed with the merge / bundling / promotion as planned.
+3. **Wait for Copilot's automated review pass before merging.** The yield from a unified-delta pass is meaningfully different from per-PR reviews on the way in — it has caught real structural findings: half-cascades, runtime-soundness gaps, TSDoc/impl drift. Allocate ~1–2 rounds; beyond that the yield curves down.
+4. **Once CI is green and Copilot's pass is addressed**: proceed with the merge / bundling / promotion as planned.
 
 This is a hard precondition because once a failed-CI commit is in the integration branch, unwinding (revert, re-prep, re-promote) is painful. Pre-merge gating is the cheap path.
 
@@ -100,8 +101,17 @@ This is a hard precondition because once a failed-CI commit is in the integratio
 2. Run a stale-marker scan (`.ai/conventions/workflow/stale-marker-scan.md`): anything in the ledger now stale?
 3. Drain stream followups (`.ai/conventions/workflow/inbox-and-drain.md`) — route each to FUTURE / TECH_DEBT / next chore batch / next stream.
 4. Triage any surfaced lessons (`.ai/conventions/workflow/lessons-codification-triage.md`).
+5. Close any superseded cloud-agent draft PRs with a one-line "superseded by #N" comment.
 
 `.ai/BASELINE.md` is **not** bumped on stream merge — only on `release` → `main` promotion.
+
+### Post-merge cleanup PR
+
+When triaging a merged sub-phase surfaces small follow-ups — dead surface, type-system smells, doc/code drift, design-vs-impl gaps — open a focused `chore/<cluster>-<subphase>-cleanup` PR on the integration branch immediately rather than queuing tech-debt entries. Threshold: items that would otherwise become P3-or-below TECH_DEBT entries but cost <30 minutes to fix in-place during the same review session. Tech-debt entries are reserved for items that cost more to fix than to defer. This is the natural complement to sub-phase decomposition: small sub-phases ship; the orchestrator's post-merge triage absorbs nits while the review is fresh.
+
+### Parallel gap-fix stream
+
+When a cluster's gap-then-fix surfaces an improvement that benefits consumers beyond the cluster, commission it as a parallel stream off `release` — not folded into the cluster integration branch. Ship it on its own merit and absorb it into the cluster via `merge release → integration` before the consuming phase. This decouples the clean library improvement from the experimental cluster's uncertainty: if the cluster is discarded, the upstream fix still ships. Sibling to the existing "merge release into integration to absorb" pattern.
 
 ### Chore batch assembly
 
@@ -143,12 +153,36 @@ A release event, not a routine operation — the delta is typically too large fo
 1. Confirm CI green on `release`; tests + coverage gates pass.
 2. Confirm generated docs are caught up (api-extractor / `update generated docs` PRs current).
 3. Run a sibling-sweep as a fresh agent against the unified delta — catches fix-interaction findings that escaped per-PR review. Critical findings only get inline fixes; everything else routes to followups.
-4. Open PR `release` → `main`, merge with merge-commit (preserves audit trail).
+4. Choose merge strategy by the cluster's substantive-code-vs-substrate ratio: **squash** a substrate-heavy cluster (>~40% of commits are non-code — briefs, state docs, design docs, substrate-prep) for `git log` legibility; **merge-commit** a code-heavy cluster to preserve the constituent-PR audit trail. The audit trail is available in constituent PRs on GitHub and in `state.md`/`README.md` — `git log` doesn't need to be a noisier copy of it.
 5. Bump `.ai/BASELINE.md` to the new `main` HEAD with the lockstep version published (or "pre-publish" if promotion precedes the next publish event).
 
 See `.ai/conventions/workflow/branch-buffer-and-promotion.md`.
 
 Note: `prerelease` mirrors `release` immediately (with version/changelog deltas only) and is the alpha-publish source. Alpha cuts are independent of promotion — alphas can ship from `release`-as-mirrored-to-`prerelease` long before any `release` → `main` promotion. Stability-via-consumption is the gate on promotion, not alpha cadence.
+
+## Commissioning Task subagents
+
+### Stop-and-surface protocol
+
+Task subagents run one-shot to a single final message — they cannot ask mid-flight. Briefs must enumerate predictable sticking points and instruct the agent to return early with a structured ≤300-word final message if any fire, rather than guessing. The structured return should name: the sticking point, what the agent needs to unblock, and the current state of work (what shipped, what's in-flight).
+
+### Worktree isolation
+
+Concurrent Task subagent commissions **MUST** use `isolation: "worktree"` to prevent working-tree collisions. Single-commission, no-concurrent-work runs can omit it — but if there is any possibility the orchestrator will be doing other work in the repo concurrently, default to `isolation: "worktree"`. A working-tree collision loses in-flight work.
+
+### Discovery scope vs tool inventory are independent gates
+
+Agent discovery (whether a subagent can see `code-reviewer` in the `.claude/agents/` tree) and tool inventory (whether the spawning agent has the `Agent` tool to invoke a subagent) are independent gates. A `general-purpose` subagent cannot spawn `code-reviewer` regardless of where code-reviewer lives in the repo — it lacks the `Agent` tool. Briefs commissioning via `general-purpose` should specify the inline-CODE_REVIEW_CHECKLIST self-review as the Guardrail #6 fallback: "invoke code-reviewer if available; otherwise apply inline CODE_REVIEW_CHECKLIST.md self-review and flag the substitution."
+
+### Reuse-vs-fresh decision
+
+Within a cluster's implementation arc (same domain surface, sub-phase composes on prior), **reuse the same agent** when it has shipped clean PRs — re-onboarding costs more than the marginal context window. Switch to a fresh agent when:
+
+- Mid-session context drift is visible: review-round count climbing, fix-interaction shape, agent re-discovering things established earlier in the session.
+- The work shape shifts substantially (e.g. from library code to docs-only, or from one library to another).
+- After a clean retirement — the agent's last commission was a complete shipped PR with no in-flight context to preserve.
+
+Context-budget arithmetic (remaining context vs remaining work estimate) is a hard switch signal regardless of the above heuristics.
 
 ## Kickoff prompt checklist
 
@@ -165,8 +199,10 @@ Every kickoff prompt (stream or chore-batch) must include:
 - [ ] Acceptance criteria (exit gates) — **must include `rushx build`, `rushx lint`, AND `rushx test` per `.ai/instructions/CODING_STANDARDS.md` § Pre-PR Validation Checklist. Lint is NOT transitively run by build; it's a separate gate that has repeatedly escaped acceptance criteria when only build+test were listed.**
 - [ ] Required exit artifact (`result.md` shape)
 - [ ] Resume protocol (read brief + state.md)
+- [ ] Branch stem (not exact name): state the desired stem and instruct the agent to record the actual harness-auto-suffixed branch name in `state.md` as its first checkpoint write. Do not specify an exact branch name — the cloud-agent harness appends a random suffix.
 - [ ] Branch + PR posture
 - [ ] Pre-PR `rushx fixlint` run noted as an implementer-aid (catches the mechanical class of lint errors automatically)
+- [ ] **fgv-conventions pre-load** for cold-start agents on an active-development surface: name the recurring conventions a typical cold-start agent doesn't intuit — no sibling re-exports; `Converters.oneOf` over `typeof` discrimination; `.thenOnSuccess`/`.thenOnFailure` for async chaining; branded-id pattern; no `Result<void>`. Confirmed to reduce retract-on-discovery in pressure-test rounds.
 
 ## Artifact substrate
 
