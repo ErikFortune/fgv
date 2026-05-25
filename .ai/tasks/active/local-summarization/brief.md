@@ -124,7 +124,9 @@ personaility runs summarization on the **backend in Node**. So:
 
 ## Branch + PR posture
 
+- **Integration branch:** `local-summarization` (off `release`). Substrate-prep, the implementation PR, and any review-round fixups all land here.
 - **Work branch stem:** `feat/local-summarization` (harness may suffix).
-- **PR target:** `release` (single-PR feature; facade is already shipped on release; no integration branch).
+- **PR target:** `local-summarization` (integration branch), NOT `release` directly.
 - **PR title:** `feat(transformers): add summarize primitive + local-summarization testbed scenario`
 - **PR body:** the `summarize` signature; the CLI scenario; the local-vs-cloud decision framing (local cheap/fast, cloud for quality); pre-PR gate checklist; explicit "third facade task type — more evidence the facade earns its keep."
+- **Close:** when the implementation lands and gates pass, **squash-merge `local-summarization` → `release`** as a single clean commit (keeps `release` history uncluttered — substrate + impl + fixups collapse to one commit for this small additive feature). Migrate substrate to `completed/` as part of the implementation PR before the squash.

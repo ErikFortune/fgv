@@ -24,6 +24,7 @@
 | Local as cheap/fast path; cloud (ai-assist) stays for quality | Erik (2026-05-24): personaility summarizes in cloud via ai-assist today, but it's overkill (slow + expensive) for simple cases. Local is the next obvious step for those. Cloud remains for long/complex docs. |
 | No local-vs-cloud routing orchestrator in the scenario | When to escalate to cloud is application logic, not facade or sample concern (testbed's "no complicated sample-only behavior a consumer would also need" tenet). Doc-comment note is the right depth. |
 | Model size non-issue | Backend Node → ~300MB model is a one-time server-side cache, not a browser-download UX concern. |
+| Integration branch `local-summarization` + squash to release | Erik (2026-05-24): use an integration branch and squash to release to keep release history clean. Substrate + impl + fixups (3-4 commits for one small additive feature) collapse to a single release commit. L26/L35 reasoning applied proactively — code-light enough that the per-PR commits would be noise on release. |
 
 ---
 
