@@ -79,8 +79,9 @@ describe('localSummarization cli impl: run()', () => {
   });
 
   test('run fails when the summarizer returns no output', async () => {
+    const emptyOutput: SummarizationOutput = [];
     mockLoadPipeline.mockResolvedValue(succeed(DUMMY_SUMMARIZER));
-    mockSummarize.mockResolvedValue(succeed([] as SummarizationOutput));
+    mockSummarize.mockResolvedValue(succeed(emptyOutput));
 
     const result = await localSummarizationScenario.cli!.run(makeScenarioCtx());
     expect(result).toFailWith(/no output/i);

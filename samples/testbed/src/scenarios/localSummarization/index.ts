@@ -52,39 +52,33 @@ const cliImpl: ICliScenarioImpl = {
     // bundle. The `webpackIgnore` magic comment is load-bearing (this module is in the web graph).
     const nodeFacade = await import(/* webpackIgnore: true */ '@fgv/ts-extras-transformers');
 
-    const pipeResult = await nodeFacade.loadPipeline('summarization', MODEL_ID);
-    if (pipeResult.isFailure()) {
-      return fail(pipeResult.message);
-    }
+    return (await nodeFacade.loadPipeline('summarization', MODEL_ID))
+      .thenOnSuccess((summarizer) =>
+        nodeFacade.summarize(summarizer, SAMPLE_TRANSCRIPT, { min_length: 25, max_length: 90 })
+      )
+      .onSuccess((output): Result<string> => {
+        const first = output[0];
+        if (first === undefined) {
+          return fail('summarization produced no output');
+        }
+        context.logger.info('Summarization complete.');
+        const summary = first.summary_text;
 
-    const summaryResult = await nodeFacade.summarize(pipeResult.value, SAMPLE_TRANSCRIPT, {
-      min_length: 25,
-      max_length: 90
-    });
-    if (summaryResult.isFailure()) {
-      return fail(summaryResult.message);
-    }
+        // local-vs-cloud framing at "printed note" depth — NOT a routing engine. When to escalate
+        // to a frontier model (e.g. cloud summarization via @fgv/ts-extras/ai-assist) is the
+        // consumer's policy, not the sample's: this just observes the compaction achieved locally.
+        const ratio = Math.round((summary.length / SAMPLE_TRANSCRIPT.length) * 100);
+        const note =
+          `Local summary via ${MODEL_ID}: ${SAMPLE_TRANSCRIPT.length} → ${summary.length} chars (${ratio}%). ` +
+          'Local is the cheap/fast path for simple/medium inputs; escalate long/complex docs to cloud ' +
+          'summarization (@fgv/ts-extras/ai-assist) where quality matters.';
 
-    const first = summaryResult.value[0];
-    if (first === undefined) {
-      return fail('summarization produced no output');
-    }
-    const summary = first.summary_text;
-    context.logger.info('Summarization complete.');
-
-    // local-vs-cloud framing at "printed note" depth — NOT a routing engine. When to escalate to a
-    // frontier model (e.g. cloud summarization via @fgv/ts-extras/ai-assist) is the consumer's
-    // policy, not the sample's: this just observes the compaction it achieved locally.
-    const ratio = Math.round((summary.length / SAMPLE_TRANSCRIPT.length) * 100);
-    const note =
-      `Local summary via ${MODEL_ID}: ${SAMPLE_TRANSCRIPT.length} → ${summary.length} chars (${ratio}%). ` +
-      'Local is the cheap/fast path for simple/medium inputs; escalate long/complex docs to cloud ' +
-      'summarization (@fgv/ts-extras/ai-assist) where quality matters.';
-
-    return succeed(
-      `local-summarization demo\n\nInput: a ${SAMPLE_TRANSCRIPT.length}-char multi-turn transcript.\n\n` +
-        `Summary:\n${summary}\n\n${note}`
-    );
+        return succeed(
+          `local-summarization demo\n\nInput: a ${SAMPLE_TRANSCRIPT.length}-char multi-turn transcript.\n\n` +
+            `Summary:\n${summary}\n\n${note}`
+        );
+      })
+      .withErrorFormat((msg) => `local-summarization: ${msg}`);
   }
 };
 
