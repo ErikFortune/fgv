@@ -128,19 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `local-summarization` 🟢
-
-**Status:** 🟢 ready to commission (substrate prep in flight)
-**Branch base:** `release`
-**Workflow shape:** single-PR additive feature
-**Substrate:** `.ai/tasks/active/local-summarization/{brief.md, state.md}`
-**Package surface:** `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` (add `summarize`) + `samples/testbed` (CLI scenario) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
-**Out-of-scope:** web summarization scenario; local-vs-cloud routing orchestrator (application concern); the deferred general `generate` primitive; ai-assist cloud-summarization changes.
-
-**Mission.** Add a local text-summarization primitive (`summarize`) to the transformers facade shipped by `local-ai-exploration`, plus a CLI testbed scenario. Third facade task type (`classify` → `embed` → `summarize`). Consumer-driven: personaility summarizes in cloud via `@fgv/ts-extras/ai-assist` today, but cloud is slow + expensive for simple cases — local is the cheap/fast path; cloud stays for quality on long/complex docs. Runs backend-Node (model size is a server-side cache, not a browser UX concern; scenario is CLI).
-
-**Origin.** Consumer-driven (personaility short-list). Stability-via-consumption: a real consumer's concrete pain (cloud overkill for simple summaries) justifies growing the facade. More evidence the facade earns its keep.
-
 ### `prompt-assist-screeners` 🟢
 
 **Status:** 🟢 ready to commission (substrate prep in flight)
@@ -177,6 +164,18 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `local-summarization` ✅
+
+**Status:** ✅ implementation complete — PR open on integration branch `local-summarization`; orchestrator squash-merges → `release`.
+**Branch base:** `release` (integration branch `local-summarization`)
+**Package surface:** `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` (added `summarize`) + `samples/testbed` (CLI scenario) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.** `summarize(summarizer, text, options?) → Promise<Result<SummarizationOutput>>` in both facades (surface parity; thin `captureAsyncResult` boundary over the `summarization` pipeline) + a CLI-only `local-summarization` testbed scenario (`Xenova/distilbart-cnn-6-6`; surfaces via the shell's `no-web` path). Third facade task type (`classify` → `embed` → `summarize`). Consumer-driven: local is the cheap/fast path; cloud (ai-assist) stays for quality on long/complex docs.
+
+**Outcome.** `loadPipeline` task-typing needed no extension; no unsafe cast. Facades 28 tests each @ 100%; testbed 143 @ 100%; full `rush build` + `build:web` green; `minor` change files; api reports regenerated.
+
+**Artifacts:** [`.ai/tasks/completed/2026-05/local-summarization/`](../.ai/tasks/completed/2026-05/local-summarization/) (brief, state, result, README).
 
 ### `local-ai-exploration` ✅ (cluster)
 

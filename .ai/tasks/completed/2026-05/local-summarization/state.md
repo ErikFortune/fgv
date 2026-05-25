@@ -1,8 +1,9 @@
 # Stream state: `local-summarization`
 
-**Status:** 🟢 ready to commission — substrate prep in flight
-**Branch base:** `release`
-**Last updated:** 2026-05-24 (orchestrator — substrate prep)
+**Status:** ✅ implementation complete — PR open on integration branch
+**Branch base:** `release` (integration branch `local-summarization`)
+**Work branch:** `feat/local-summarization`
+**Last updated:** 2026-05-24 (implementing agent — `summarize` + CLI scenario shipped; gates green)
 
 ---
 
@@ -10,7 +11,7 @@
 
 | Phase | Status | Notes |
 |---|---|---|
-| Implementation | 🟢 ready | Single-PR additive: `summarize` primitive in both facade packages + CLI testbed scenario. Design locked in brief. |
+| Implementation | ✅ complete | `summarize` in both facade packages (28 tests each, 100%); `local-summarization` CLI scenario in testbed (143 tests, 100%); LIBRARY_CAPABILITIES updated; `minor` change files. `rush build` + `build:web` green; api reports regenerated. See `result.md`. |
 
 ---
 
