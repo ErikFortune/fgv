@@ -37,10 +37,11 @@ summarize(
 
 ### CLI testbed scenario: `local-summarization`
 
-- **CLI runtime only** (no `web` impl). Mirrors personaility's backend-Node reality and avoids pulling a ~300MB summarization model into a browser bundle.
-- Loads a summarization pipeline (distilbart-cnn class — pick a small, well-known summarization model), summarizes input text, prints the summary + a one-line note on the local-vs-cloud decision (when to escalate to ai-assist).
-- Demonstrates the LOCAL primitive cleanly. **Do NOT build a local-vs-cloud routing orchestrator** — the decision of when to escalate to cloud is application logic, not facade or sample concern (per the testbed's gap-then-fix / "no complicated sample-only behavior a consumer would also need" tenet). A doc-comment noting "escalate to ai-assist for long/complex docs" is the right depth; a built dual-path router is not.
-- Registers in `samples/testbed/src/scenarios/index.ts`; category `ai`; tags `['local-ai', 'summarization', 'ts-extras-transformers']`.
+**Shape the scenario as a thoughtful consumer would — you have latitude here.** The testbed's purpose is to *see what real consumer code naturally looks like*, so this section is guidance, not a spec to implement literally. Use your judgment on structure, input, and presentation. Two firm guardrails and the rest is yours:
+
+- **Firm: CLI runtime** (no `web` impl). Mirrors personaility's backend-Node reality and avoids pulling a ~300MB summarization model into a browser bundle. This one's load-bearing — the scenario should demonstrate the runtime the consumer actually uses.
+- **Firm (tenet, not micromanagement): don't build complicated sample-only behavior a real consumer would also need.** A full local-vs-cloud *routing engine* is application logic, not facade or sample concern — if the local-vs-cloud framing is worth showing, surface it at whatever depth reads naturally (a comment, a printed note, a simple length check), but the escalation *policy* belongs to the consumer, not the sample.
+- **Your latitude:** what text it summarizes, how it presents the result, whether/how it frames the local-vs-cloud decision, the model choice (a small well-known summarization model — distilbart-cnn class is a reasonable default), tags/category, internal structure. Match the existing scenarios' registration pattern; otherwise build it the way a real consumer would and we'll learn from the shape.
 
 ### LIBRARY_CAPABILITIES update
 
