@@ -14,9 +14,9 @@
  * discipline: separate entry points preserve tree-shaking and allow divergence at B-4a if
  * browser-specific options surface (e.g. WebGPU device hints, IndexedDB cache configuration).
  *
- * **In scope:** `loadPipeline`, `classify`, `classifyAll`, `embed` — the surface needed by the
- * B-3/B-4a local-classifier and embedding scenarios. `generate` is explicitly deferred until a
- * concrete consumer use case surfaces (see `phase-b2-result.md`).
+ * **In scope:** `loadPipeline`, `classify`, `classifyAll`, `embed`, `summarize` — the task types
+ * exercised by real consumers so far. The general `generate` primitive is explicitly deferred
+ * until a concrete consumer use case surfaces (summarization is its own task-specific primitive).
  *
  * **Explicitly NOT in scope:**
  * - Pipeline cache / lifecycle management
@@ -40,6 +40,8 @@ import {
   type TextClassificationPipeline,
   type TextClassificationOutput,
   type FeatureExtractionPipeline,
+  type SummarizationPipeline,
+  type SummarizationOutput,
   type Tensor,
   type AllTasks,
   type PipelineType
@@ -50,6 +52,8 @@ export type {
   TextClassificationPipeline,
   TextClassificationOutput,
   FeatureExtractionPipeline,
+  SummarizationPipeline,
+  SummarizationOutput,
   Tensor,
   AllTasks,
   PipelineType
@@ -195,4 +199,35 @@ export async function embed(
   options?: Parameters<FeatureExtractionPipeline['_call']>[1]
 ): Promise<Result<Tensor>> {
   return captureAsyncResult(() => extractor(text, options));
+}
+
+/**
+ * Result-integration wrapper that invokes a `SummarizationPipeline` on a single text input for
+ * browser consumers.
+ *
+ * Returns the upstream `SummarizationOutput` Result-wrapped (an array of `{ summary_text }`
+ * entries; one for a single-string input).
+ *
+ * Callers should retrieve the summarizer via `loadPipeline('summarization', modelId)` — e.g.
+ * `Xenova/distilbart-cnn-6-6`. This facade applies no opinionated orchestration (no length policy,
+ * no local-vs-cloud routing) — `options` are passed through verbatim and the caller owns any
+ * escalation decision.
+ *
+ * Returns `Promise<Result<SummarizationOutput>>`; upstream errors (inference failures, tokenisation
+ * errors) are captured as `Failure` with the original message.
+ *
+ * @param summarizer - A `SummarizationPipeline` obtained from `loadPipeline`.
+ * @param text - The text to summarize.
+ * @param options - Optional upstream summarization options (e.g. `min_length`, `max_length`,
+ *   `max_new_tokens`). Passed through verbatim to the pipeline call.
+ *
+ * @see https://huggingface.co/docs/transformers.js
+ * @public
+ */
+export async function summarize(
+  summarizer: SummarizationPipeline,
+  text: string,
+  options?: Parameters<SummarizationPipeline>[1]
+): Promise<Result<SummarizationOutput>> {
+  return captureAsyncResult(() => summarizer(text, options));
 }
