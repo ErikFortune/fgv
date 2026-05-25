@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-transformers",
+      "comment": "Add summarize primitive — a Result-wrapped boundary over the @huggingface/transformers summarization pipeline (third task type after classify/embed). Returns Promise<Result<SummarizationOutput>>.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-transformers",
+  "email": "noreply@anthropic.com"
+}

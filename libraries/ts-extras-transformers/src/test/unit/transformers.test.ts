@@ -7,9 +7,12 @@ import {
   classify,
   classifyAll,
   embed,
+  summarize,
   type TextClassificationPipeline,
   type TextClassificationOutput,
   type FeatureExtractionPipeline,
+  type SummarizationPipeline,
+  type SummarizationOutput,
   type Tensor,
   type AllTasks
 } from '../../index';
@@ -262,6 +265,56 @@ describe('embed', () => {
     mockExtractor.mockRejectedValueOnce(new Error('Tokenisation failed: input too long'));
 
     const result = await embed(mockExtractor, 'bad input');
+    expect(result).toFailWith(/tokenisation failed/i);
+  });
+});
+
+// ─── summarize ──────────────────────────────────────────────────────────────────
+
+describe('summarize', () => {
+  let mockSummarizer: jest.MockedFunction<SummarizationPipeline>;
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockSummarizer = jest.fn() as unknown as jest.MockedFunction<SummarizationPipeline>;
+  });
+
+  test('returns Success wrapping SummarizationOutput on success', async () => {
+    const mockOutput: SummarizationOutput = [{ summary_text: 'A short summary.' }];
+    mockSummarizer.mockResolvedValueOnce(mockOutput);
+
+    const result = await summarize(mockSummarizer, 'A long article that needs summarizing.');
+    expect(result).toSucceedWith(mockOutput);
+  });
+
+  test('passes text to the upstream summarizer', async () => {
+    const mockOutput: SummarizationOutput = [{ summary_text: 'Summary.' }];
+    mockSummarizer.mockResolvedValueOnce(mockOutput);
+
+    await summarize(mockSummarizer, 'some long document');
+    expect(mockSummarizer).toHaveBeenCalledWith('some long document', undefined);
+  });
+
+  test('passes options through to the upstream summarizer', async () => {
+    const mockOutput: SummarizationOutput = [{ summary_text: 'Bounded summary.' }];
+    mockSummarizer.mockResolvedValueOnce(mockOutput);
+
+    const opts = { min_length: 10, max_length: 50 };
+    await summarize(mockSummarizer, 'a document', opts);
+    expect(mockSummarizer).toHaveBeenCalledWith('a document', opts);
+  });
+
+  test('returns Failure capturing upstream inference error', async () => {
+    mockSummarizer.mockRejectedValueOnce(new Error('Inference session error: out of memory'));
+
+    const result = await summarize(mockSummarizer, 'some text');
+    expect(result).toFailWith(/inference session error/i);
+  });
+
+  test('returns Failure capturing upstream tokenisation error', async () => {
+    mockSummarizer.mockRejectedValueOnce(new Error('Tokenisation failed: input too long'));
+
+    const result = await summarize(mockSummarizer, 'bad input');
     expect(result).toFailWith(/tokenisation failed/i);
   });
 });

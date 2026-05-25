@@ -165,6 +165,18 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ## Completed workstreams
 
+### `local-summarization` ✅
+
+**Status:** ✅ shipped to `release` (integration branch `local-summarization` squash-merged).
+**Branch base:** `release` (integration branch `local-summarization`)
+**Package surface:** `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` (added `summarize`) + `samples/testbed` (CLI scenario) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.** `summarize(summarizer, text, options?) → Promise<Result<SummarizationOutput>>` in both facades (surface parity; thin `captureAsyncResult` boundary over the `summarization` pipeline) + a CLI-only `local-summarization` testbed scenario (`Xenova/distilbart-cnn-6-6`; surfaces via the shell's `no-web` path). Third facade task type (`classify` → `embed` → `summarize`). Consumer-driven: local is the cheap/fast path; cloud (ai-assist) stays for quality on long/complex docs.
+
+**Outcome.** `loadPipeline` task-typing needed no extension; no unsafe cast. Facades 28 tests each @ 100%; testbed 143 @ 100%; full `rush build` + `build:web` green; `minor` change files; api reports regenerated.
+
+**Artifacts:** [`.ai/tasks/completed/2026-05/local-summarization/`](../.ai/tasks/completed/2026-05/local-summarization/) (brief, state, result, README).
+
 ### `local-ai-exploration` ✅ (cluster)
 
 **Status:** ✅ shipped — all sub-phases (B-1…B-5) merged into integration branch `local-ai-exploration`; promotion PR `local-ai-exploration` → `release` open (see PRs in the artifacts). (First promotion #410 was closed as premature — reopened for B-5, then re-promoted.)

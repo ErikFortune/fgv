@@ -10,6 +10,8 @@ import { pipeline } from '@huggingface/transformers';
 import { PipelineType } from '@huggingface/transformers';
 import { PretrainedModelOptions } from '@huggingface/transformers';
 import { Result } from '@fgv/ts-utils';
+import { SummarizationOutput } from '@huggingface/transformers';
+import { SummarizationPipeline } from '@huggingface/transformers';
 import { Tensor } from '@huggingface/transformers';
 import { TextClassificationOutput } from '@huggingface/transformers';
 import { TextClassificationPipeline } from '@huggingface/transformers';
@@ -33,6 +35,13 @@ export function loadPipeline<T extends PipelineType>(task: T, model?: string, op
 export { PipelineType }
 
 export { PretrainedModelOptions }
+
+export { SummarizationOutput }
+
+export { SummarizationPipeline }
+
+// @public
+export function summarize(summarizer: SummarizationPipeline, text: string, options?: Parameters<SummarizationPipeline>[1]): Promise<Result<SummarizationOutput>>;
 
 export { Tensor }
 
