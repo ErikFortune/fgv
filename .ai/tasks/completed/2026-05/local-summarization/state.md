@@ -1,9 +1,9 @@
 # Stream state: `local-summarization`
 
-**Status:** ✅ implementation complete — PR open on integration branch
+**Status:** ✅ shipped to `release`
 **Branch base:** `release` (integration branch `local-summarization`)
 **Work branch:** `feat/local-summarization`
-**Last updated:** 2026-05-24 (implementing agent — `summarize` + CLI scenario shipped; gates green)
+**Last updated:** 2026-05-24 (implementing agent — `summarize` + CLI scenario shipped; promoted to `release`)
 
 ---
 
@@ -40,7 +40,9 @@ Consumer-driven (personaility). Currently summarizing in cloud via `@fgv/ts-extr
 | Date | Event | Notes |
 |---|---|---|
 | 2026-05-24 | Stream requested | Erik floated local summarization as a candidate (personaility short-list). Confirmed: cloud-via-ai-assist today, overkill for simple cases; local is next step; backend-Node runtime. |
-| 2026-05-24 | Substrate prep | brief.md + state.md + WORKSTREAMS entry. This PR. |
+| 2026-05-24 | Substrate prep | brief.md + state.md + WORKSTREAMS entry. PR #414. |
+| 2026-05-24 | Implementation | `summarize` (both facades) + CLI scenario + caps + change files. PR #415 → integration branch. `run()` chained per code-review. |
+| 2026-05-24 | Promotion | Integration branch `local-summarization` squash-merged → `release`. |
 
 ---
 
@@ -48,5 +50,6 @@ Consumer-driven (personaility). Currently summarizing in cloud via `@fgv/ts-extr
 
 | Phase | PR | Status |
 |---|---|---|
-| Substrate prep | (this PR) | open |
-| Implementation | TBD | not yet commissioned |
+| Substrate prep | #414 | merged to integration branch |
+| Implementation | #415 | merged to integration branch |
+| Promotion | (squash) | `local-summarization` → `release` |

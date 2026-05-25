@@ -167,7 +167,7 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ### `local-summarization` ✅
 
-**Status:** ✅ implementation complete — PR open on integration branch `local-summarization`; orchestrator squash-merges → `release`.
+**Status:** ✅ shipped to `release` (integration branch `local-summarization` squash-merged).
 **Branch base:** `release` (integration branch `local-summarization`)
 **Package surface:** `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` (added `summarize`) + `samples/testbed` (CLI scenario) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
 
