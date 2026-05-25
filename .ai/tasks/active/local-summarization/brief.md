@@ -40,8 +40,9 @@ summarize(
 **Shape the scenario as a thoughtful consumer would — you have latitude here.** The testbed's purpose is to *see what real consumer code naturally looks like*, so this section is guidance, not a spec to implement literally. Use your judgment on structure, input, and presentation. Two firm guardrails and the rest is yours:
 
 - **Firm: CLI runtime** (no `web` impl). Mirrors personaility's backend-Node reality and avoids pulling a ~300MB summarization model into a browser bundle. This one's load-bearing — the scenario should demonstrate the runtime the consumer actually uses.
+- **Firm: realistic-length input.** Summarize a realistic multi-turn transcript or paragraph-scale document, NOT a toy sentence. The forcing-function payoff of this scenario is eyeballing summary quality-for-recall — that's only observable on realistic input. A one-sentence demo proves the wiring but hides the thing we actually want to evaluate (is local summarization good enough for personaility's simple-case use). Pin the input at a scale where quality is visible.
 - **Firm (tenet, not micromanagement): don't build complicated sample-only behavior a real consumer would also need.** A full local-vs-cloud *routing engine* is application logic, not facade or sample concern — if the local-vs-cloud framing is worth showing, surface it at whatever depth reads naturally (a comment, a printed note, a simple length check), but the escalation *policy* belongs to the consumer, not the sample.
-- **Your latitude:** what text it summarizes, how it presents the result, whether/how it frames the local-vs-cloud decision, the model choice (a small well-known summarization model — distilbart-cnn class is a reasonable default), tags/category, internal structure. Match the existing scenarios' registration pattern; otherwise build it the way a real consumer would and we'll learn from the shape.
+- **Your latitude:** how it presents the result, whether/how it frames the local-vs-cloud decision, the model choice (a small well-known summarization model — distilbart-cnn class is a reasonable default), tags/category, internal structure. Match the existing scenarios' registration pattern; otherwise build it the way a real consumer would and we'll learn from the shape.
 
 ### LIBRARY_CAPABILITIES update
 
@@ -87,7 +88,7 @@ personaility runs summarization on the **backend in Node**. So:
 - [ ] api-extractor regenerated in both facade packages.
 - [ ] Rush change files (`minor`) for touched packages.
 - [ ] LIBRARY_CAPABILITIES updated (facade entries + decision shortcut).
-- [ ] No `any`; no manual casts beyond `@ts-expect-error`; no `Result<void>`.
+- [ ] No `any`; no unsafe casts; no `Result<void>`. (`summarize`'s `[{ summary_text }]` output is cleaner than `embed`'s `.tolist()`, so likely no cast at all.)
 - [ ] `result.md` written; substrate migrated to `.ai/tasks/completed/<YYYY-MM>/local-summarization/` with polished README as part of the PR.
 
 ## Required reading
@@ -111,7 +112,7 @@ personaility runs summarization on the **backend in Node**. So:
 
 - The `@huggingface/transformers` summarization pipeline output shape differs materially from `classify`/`embed` in a way that complicates the facade signature — surface before improvising.
 - The summarization model the scenario picks is impractically large even for Node tests (mock should avoid any real download; if the scenario itself can't run without a multi-hundred-MB download in the test env, the scenario test should mock or skip the actual inference and assert wiring).
-- Adding `summarize` surfaces a gap in the existing facade structure (e.g. `loadPipeline`'s task-type typing doesn't cleanly extend to `'summarization'`) — surface; that's a facade-design question.
+- Adding `summarize` surfaces a gap in the existing facade structure (e.g. `loadPipeline`'s task-type typing doesn't cleanly extend to `'summarization'`) — surface; that's a facade-design question. **This will almost certainly be fine:** `'summarization'` should already be in the upstream `PipelineType` union `loadPipeline` is generic over (same as `'text-classification'` / `'feature-extraction'`). If it's not, it's a small real facade-typing extension — surface it rather than casting around it.
 
 ## fgv-conventions pre-load (per L22)
 
