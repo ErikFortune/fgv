@@ -145,6 +145,10 @@ These issues should be fixed unless there's a documented reason.
   }
   ```
 
+- [ ] **PR description and docs accurately frame the change**
+  - Scope framing is accurate: "type-only" vs runtime-affecting; additive vs breaking. Bundled latent-bug fixes are disclosed in a dedicated section from the first commit, not added after a reviewer asks.
+  - TSDoc and inline doc claims about a property's contents, a method's return shape, or a type-safety guarantee are walked back to the implementation before merge — document what ships, not design intent. If an open TECH_DEBT entry calls something unresolved, and a doc claims it's resolved, the doc is wrong.
+
 - [ ] **No duplicate/boilerplate code that could be extracted**
 - [ ] **Follows existing patterns in the codebase**
 

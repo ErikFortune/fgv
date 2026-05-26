@@ -4,5 +4,6 @@ exports[`@fgv/testbed scenario registry registry exposes the expected scenario i
 Array [
   "local-classifier-safety",
   "local-embedding-search",
+  "local-summarization",
 ]
 `;

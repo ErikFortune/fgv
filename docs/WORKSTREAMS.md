@@ -128,6 +128,19 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `logging-observability` 🟢
+
+**Status:** ✅ implementation complete — PR #418 review satisfied; ready to squash → `release`
+**Integration branch:** `logging-observability` (off `release`) → squash to `release` at close
+**Workflow shape:** single implementation PR onto integration branch
+**Substrate:** `.ai/tasks/completed/2026-05/logging-observability/{brief.md, state.md, result.md, README.md}`
+**Package surface:** `@fgv/ts-utils` logging packlet (`LoggerBase` additive `_logStructured` hook + `RetainingLogger` + `MultiLogger` + `ILogRecord`) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Out-of-scope:** changing the existing `_log` seam / `InMemoryLogger`; `IDetailLogger` fan-out; template-substitution formatting; the consumer's log-query endpoint + display (consumer side; `ts-app-shell` messages packlet covers display).
+
+**Mission.** Add two observability primitives to `@fgv/ts-utils`'s `logging` packlet (consumer request from personaility): `RetainingLogger` (bounded most-recent-N structured-record ring with severity + since-cursor query API) and `MultiLogger` (fan-out one log call to N children, each with its own threshold — feeds both `ConsoleLogger` and a retainer from one pinned `ILogger`). Plus the enabler: an additive `LoggerBase._logStructured` hook (default no-op) that exposes the structured `(level, formatted, message, params)` to retaining subclasses without breaking the existing `_log` seam.
+
+**Origin.** Cross-repo handoff (`.ai/notes/cross-repo-handoffs/logging-observability-2026-05.md`). Extend-the-primitive: general logging infra, not consumer-specific. `@fgv/ts-utils` established surface → additive-only, 100% coverage. Soft-blocker for a downstream observability stream. Q5 (record shape) resolved to structured via the `_logStructured` hook — see brief.
+
 ### `prompt-assist-screeners` 🟢
 
 **Status:** 🟢 ready to commission (substrate prep in flight)
@@ -164,6 +177,18 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `local-summarization` ✅
+
+**Status:** ✅ shipped to `release` (integration branch `local-summarization` squash-merged).
+**Branch base:** `release` (integration branch `local-summarization`)
+**Package surface:** `@fgv/ts-extras-transformers` + `@fgv/ts-web-extras-transformers` (added `summarize`) + `samples/testbed` (CLI scenario) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**What shipped.** `summarize(summarizer, text, options?) → Promise<Result<SummarizationOutput>>` in both facades (surface parity; thin `captureAsyncResult` boundary over the `summarization` pipeline) + a CLI-only `local-summarization` testbed scenario (`Xenova/distilbart-cnn-6-6`; surfaces via the shell's `no-web` path). Third facade task type (`classify` → `embed` → `summarize`). Consumer-driven: local is the cheap/fast path; cloud (ai-assist) stays for quality on long/complex docs.
+
+**Outcome.** `loadPipeline` task-typing needed no extension; no unsafe cast. Facades 28 tests each @ 100%; testbed 143 @ 100%; full `rush build` + `build:web` green; `minor` change files; api reports regenerated.
+
+**Artifacts:** [`.ai/tasks/completed/2026-05/local-summarization/`](../.ai/tasks/completed/2026-05/local-summarization/) (brief, state, result, README).
 
 ### `local-ai-exploration` ✅ (cluster)
 
