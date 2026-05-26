@@ -130,7 +130,7 @@ substrate. Don't queue streams against them here.
 
 ### `logging-observability` 🟢
 
-**Status:** ✅ implementation complete — PR open on integration branch (orchestrator squash → `release` at close)
+**Status:** ✅ implementation complete — PR #418 review satisfied; ready to squash → `release`
 **Integration branch:** `logging-observability` (off `release`) → squash to `release` at close
 **Workflow shape:** single implementation PR onto integration branch
 **Substrate:** `.ai/tasks/completed/2026-05/logging-observability/{brief.md, state.md, result.md, README.md}`
