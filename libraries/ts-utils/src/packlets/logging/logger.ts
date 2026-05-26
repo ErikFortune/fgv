@@ -265,6 +265,7 @@ export abstract class LoggerBase implements IDetailLogger {
   ): Success<string | undefined> {
     if (shouldLog(level, this.logLevel)) {
       const formatted = this._format(message, ...parameters);
+      this._logStructured(level, formatted, message, parameters);
       return this._log(formatted, level);
     }
     return this._suppressLog(level, message, ...parameters);
@@ -283,6 +284,27 @@ export abstract class LoggerBase implements IDetailLogger {
     const strings = filtered.map((m) => stringifyLogValue(m));
     const joined = strings.join('');
     return joined;
+  }
+
+  /**
+   * Inner hook called for logged messages alongside {@link Logging.LoggerBase._log | _log},
+   * exposing the structured `(level, formatted, message, parameters)` form before it is
+   * collapsed to the formatted string. The default implementation is a no-op; subclasses
+   * that need to retain structured records (e.g. {@link Logging.RetainingLogger | RetainingLogger})
+   * override this. Fired only in the `shouldLog` branch, so suppressed messages never reach it.
+   * @param __level - The {@link MessageLogLevel | level} of the message.
+   * @param __formatted - The formatted message (same string passed to `_log`).
+   * @param __message - The raw message argument before formatting.
+   * @param __parameters - The raw parameter arguments before formatting.
+   * @public
+   */
+  protected _logStructured(
+    __level: MessageLogLevel,
+    __formatted: string,
+    __message?: unknown,
+    __parameters?: readonly unknown[]
+  ): void {
+    /* no-op; subclasses that retain structured records override this */
   }
 
   /**

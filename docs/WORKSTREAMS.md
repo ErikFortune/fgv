@@ -130,10 +130,10 @@ substrate. Don't queue streams against them here.
 
 ### `logging-observability` 🟢
 
-**Status:** 🟢 ready to commission (substrate prep in flight)
+**Status:** ✅ implementation complete — PR open on integration branch (orchestrator squash → `release` at close)
 **Integration branch:** `logging-observability` (off `release`) → squash to `release` at close
 **Workflow shape:** single implementation PR onto integration branch
-**Substrate:** `.ai/tasks/active/logging-observability/{brief.md, state.md}`
+**Substrate:** `.ai/tasks/completed/2026-05/logging-observability/{brief.md, state.md, result.md, README.md}`
 **Package surface:** `@fgv/ts-utils` logging packlet (`LoggerBase` additive `_logStructured` hook + `RetainingLogger` + `MultiLogger` + `ILogRecord`) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
 **Out-of-scope:** changing the existing `_log` seam / `InMemoryLogger`; `IDetailLogger` fan-out; template-substitution formatting; the consumer's log-query endpoint + display (consumer side; `ts-app-shell` messages packlet covers display).
 

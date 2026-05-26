@@ -1425,6 +1425,16 @@ interface IDetailLogger extends ILogger {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IGetRecordsOptions {
+    readonly limit?: number;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly minLevel?: ReporterLogLevel;
+    readonly sinceSeq?: number;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IKeyValueConverterConstructorParams<TK extends string = string, TV = unknown> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     key: Validator<TK, unknown> | Converter<TK, unknown> | ConverterFunc<TK, unknown>;
@@ -1440,6 +1450,16 @@ interface ILogger {
     log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
     readonly logLevel: ReporterLogLevel;
     warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
+
+// @public
+interface ILogRecord {
+    readonly args?: readonly unknown[];
+    readonly level: MessageLogLevel;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly message: string;
+    readonly seq: number;
+    readonly timestamp: number;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1903,6 +1923,9 @@ abstract class LoggerBase implements IDetailLogger {
     log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
     protected abstract _log(message: string, level: MessageLogLevel): Success<string | undefined>;
     logLevel: ReporterLogLevel;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected _logStructured(__level: MessageLogLevel, __formatted: string, __message?: unknown, __parameters?: readonly unknown[]): void;
     protected _suppressLog(__level: MessageLogLevel, __message?: unknown, ...__parameters: unknown[]): Success<undefined>;
     warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
     warnWithDetail(message: string, detail: unknown): Success<string | undefined>;
@@ -1924,7 +1947,11 @@ declare namespace Logging {
         LogValueFormatter,
         LogMessageFormatter,
         ILogReporterCreateParams,
-        LogReporter
+        LogReporter,
+        MultiLogger,
+        ILogRecord,
+        IGetRecordsOptions,
+        RetainingLogger
     }
 }
 export { Logging }
@@ -2040,6 +2067,36 @@ export class MessageAggregator implements IMessageAggregator {
 
 // @public
 export type MessageLogLevel = 'quiet' | 'detail' | 'info' | 'warning' | 'error';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class MultiLogger implements ILogger {
+    constructor(loggers: ReadonlyArray<ILogger>);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    error(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    info(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    get logLevel(): ReporterLogLevel;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2548,6 +2605,29 @@ export type ResultMapValueType<TCollection extends {
 // @beta
 export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class RetainingLogger extends LoggerBase {
+    constructor(logLevel?: ReporterLogLevel, maxRecords?: number, now?: () => number);
+    clear(): void;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getRecords(options?: IGetRecordsOptions): ReadonlyArray<ILogRecord>;
+    get lastSeq(): number;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal (undocumented)
+    protected _log(message: string, __level: MessageLogLevel): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal (undocumented)
+    protected _logStructured(level: MessageLogLevel, formatted: string, message: unknown, parameters: readonly unknown[]): void;
+    get records(): ReadonlyArray<ILogRecord>;
+}
+
 // @public
 function shouldLog(message: MessageLogLevel, reporter: ReporterLogLevel): boolean;
 
@@ -2973,6 +3053,10 @@ const value: typeof literal;
 
 // @public
 export function valuesForRecord<TK extends string, TV>(obj: Record<TK, TV>): TV[];
+
+// Warnings were encountered during analysis:
+//
+// src/packlets/logging/retainingLogger.ts:112:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 
