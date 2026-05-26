@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras-transformers",
-  "version": "5.1.0-30",
+  "version": "5.1.0-31",
   "description": "Result-integration boundary over @huggingface/transformers for Node consumers (loadPipeline, classify, classifyAll, embed)",
   "main": "lib/index.js",
   "types": "dist/ts-extras-transformers.d.ts",
