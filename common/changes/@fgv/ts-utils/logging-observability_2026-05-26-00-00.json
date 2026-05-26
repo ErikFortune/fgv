@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Add observability primitives to the logging packlet: RetainingLogger (bounded most-recent-N ring of structured ILogRecord with min-severity / since-cursor / limit-tail query API), MultiLogger (fans calls out to N child loggers with independent thresholds), and an additive LoggerBase._logStructured hook (default no-op) that exposes the structured (level, formatted, message, parameters) form to subclasses that retain records.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

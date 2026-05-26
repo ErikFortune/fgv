@@ -1,8 +1,8 @@
 # Stream state: `logging-observability`
 
-**Status:** 🟢 ready to commission — substrate prep in flight
+**Status:** ✅ implementation complete — PR #418 review satisfied; ready to squash → `release`
 **Integration branch:** `logging-observability` (off `release`)
-**Last updated:** 2026-05-25 (orchestrator — substrate prep)
+**Last updated:** 2026-05-26 (implementing agent — implementation + review round)
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Phase | Status | Notes |
 |---|---|---|
-| Implementation | 🟢 ready | Single-PR additive feature. Design fully locked in brief (incl. Q5). |
+| Implementation | ✅ complete | Single-PR additive feature. `_logStructured` hook + `RetainingLogger` + `MultiLogger`. Gates green; new files 100% coverage. See `result.md`. |
 
 ---
 
@@ -42,6 +42,8 @@ Requesting orchestrator leaned "capture structured, cheap on day one." fgv orche
 |---|---|---|
 | 2026-05-25 | Cross-repo request received | personaility orchestrator → fgv orchestrator; archived at `.ai/notes/cross-repo-handoffs/logging-observability-2026-05.md`. |
 | 2026-05-25 | Substrate prep + design adjudication | Q1–Q5 dispositions; `_logStructured` hook design; integration branch + brief + state + WORKSTREAMS entry. This PR. |
+| 2026-05-26 | Implementation | `_logStructured` hook + `RetainingLogger` + `MultiLogger` + `ILogRecord`; tests (incl. subclass-unaffected); api report; `minor` change file; LIBRARY_CAPABILITIES. Gates green. Substrate migrated to `completed/2026-05/`. |
+| 2026-05-26 | PR review round | Copilot review: reworked `RetainingLogger` to a true O(1) circular buffer (benchmark-driven — `shift()` cliffed above ~10k records); `MultiLogger` defensive `[...loggers]` copy; `maxRecords` capacity normalization (clamp, no throw — locked constructor preserved); declined the unqualified-`{@link}` suggestion (packlet-wide convention). Gates re-verified green; review satisfied. |
 
 ---
 
@@ -49,5 +51,5 @@ Requesting orchestrator leaned "capture structured, cheap on day one." fgv orche
 
 | Phase | PR | Status |
 |---|---|---|
-| Substrate prep | (this PR) | open → integration branch |
-| Implementation | TBD | not yet commissioned |
+| Substrate prep | #417 | merged → integration branch |
+| Implementation | #418 | open → integration branch (review satisfied; ready to squash → `release`) |

@@ -23,3 +23,5 @@
 export * from './bootLogger';
 export * from './logger';
 export * from './logReporter';
+export * from './multiLogger';
+export * from './retainingLogger';
