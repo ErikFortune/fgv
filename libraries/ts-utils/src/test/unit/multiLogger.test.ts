@@ -113,6 +113,22 @@ describe('MultiLogger', () => {
     });
   });
 
+  describe('child set stability', () => {
+    test('is unaffected by mutation of the array passed to the constructor', () => {
+      const stable = new InMemoryLogger('all');
+      const loggers = [stable];
+      const multi = new MultiLogger(loggers);
+
+      // Mutate the caller's array after construction.
+      const intruder = new InMemoryLogger('all');
+      loggers.push(intruder);
+
+      multi.info('hello');
+      expect(stable.logged).toEqual(['hello']);
+      expect(intruder.logged).toEqual([]);
+    });
+  });
+
   describe('canonical composition', () => {
     test('feeds a console-style logger and a retaining buffer with independent thresholds', () => {
       const stdout = new InMemoryLogger('info');

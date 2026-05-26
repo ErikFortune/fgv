@@ -62,7 +62,7 @@ export class MultiLogger implements ILogger {
    * @param loggers - The child loggers to fan calls out to.
    */
   public constructor(loggers: ReadonlyArray<ILogger>) {
-    this._loggers = loggers;
+    this._loggers = [...loggers];
   }
 
   /**

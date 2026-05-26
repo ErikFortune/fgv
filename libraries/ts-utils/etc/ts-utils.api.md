@@ -3056,7 +3056,7 @@ export function valuesForRecord<TK extends string, TV>(obj: Record<TK, TV>): TV[
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/logging/retainingLogger.ts:112:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/logging/retainingLogger.ts:127:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

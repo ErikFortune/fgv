@@ -41,6 +41,10 @@ export interface ILogRecord {
 - **`MultiLogger.logLevel` (most-verbose)** computed cleanly via a materialized `verbosityRank: Record<ReporterLogLevel, number>` (`silent < error < warning < info < detail < all`) — the `shouldLog` ordering made explicit and exhaustively type-checked over the closed union. No surprises; empty-children case returns `'silent'`.
 - **`RetainingLogger._logStructured` override takes `message`/`parameters` as required** (not optional like the base no-op). `LoggerBase.log` always passes the rest array, so the optional `?? []` fallback was dead code (uncovered branch). TS method bivariance accepts the narrowed override, eliminating the branch and reaching 100% honestly — no coverage directive needed.
 
+## Post-review: true O(1) ring buffer
+
+PR review (Copilot) flagged that the initial `Array.prototype.shift()` eviction is O(n) per log once the buffer fills. Benchmarked it: at the default `maxRecords=1000` it's ~230 ns/log (negligible), but there's a hard cliff above ~10k — ~356 µs/log at 100k, ~3.5 ms/log at 1M (V8's fast-shift pointer-bump path gives way to a full O(n) memmove, cache-miss-bound at scale). Since this is a *retention* primitive that invites large buffers, the cliff was a real footgun. Reworked `RetainingLogger` to a genuine circular buffer (fixed-capacity backing array + `_head` index + `_count`, lazy growth, in-place overwrite) — O(1) eviction at any capacity, no `shift()`. Public surface unchanged; observable behavior (oldest-first, seq stability across eviction) identical. The ring requires a positive-integer capacity, so `maxRecords` is normalized in the constructor (`Number.isFinite && >= 1 ? Math.floor : 1`) without changing the signature or throwing. Also applied the defensive `[...loggers]` copy in `MultiLogger` (review). Declined the unqualified-`{@link}` suggestion — the qualified `Logging.*` form is the packlet-wide convention (396 pre-existing `ae-unresolved-link` baseline).
+
 ## Gate evidence
 
 - `rush build` (full repo) — clean; api-extractor regenerated `etc/ts-utils.api.md`.

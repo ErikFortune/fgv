@@ -211,4 +211,55 @@ describe('RetainingLogger', () => {
       expect(logger.lastSeq).toBe(3);
     });
   });
+
+  describe('ring buffer (O(1) eviction)', () => {
+    test('wraps correctly under sustained logging well past capacity', () => {
+      const logger = new RetainingLogger('all', 3);
+      for (let i = 1; i <= 10; i++) {
+        logger.info(`m${i}`);
+      }
+      // Only the last 3 survive, oldest-first, with their original sequence numbers.
+      expect(logger.records.map((r) => r.message)).toEqual(['m8', 'm9', 'm10']);
+      expect(logger.records.map((r) => r.seq)).toEqual([8, 9, 10]);
+      expect(logger.lastSeq).toBe(10);
+    });
+
+    test('clear resets the ring so it refills from empty without re-numbering', () => {
+      const logger = new RetainingLogger('all', 3);
+      logger.info('a');
+      logger.info('b');
+      logger.info('c');
+      logger.info('d'); // wrapped once
+      logger.clear();
+
+      logger.info('e');
+      logger.info('f');
+      expect(logger.records.map((r) => r.message)).toEqual(['e', 'f']);
+      expect(logger.records.map((r) => r.seq)).toEqual([5, 6]);
+    });
+  });
+
+  describe('capacity normalization', () => {
+    test('clamps a sub-1 maxRecords to a capacity of 1', () => {
+      const logger = new RetainingLogger('all', 0);
+      logger.info('a');
+      logger.info('b');
+      expect(logger.records.map((r) => r.message)).toEqual(['b']);
+    });
+
+    test('clamps a non-finite maxRecords to a capacity of 1', () => {
+      const logger = new RetainingLogger('all', Number.POSITIVE_INFINITY);
+      logger.info('a');
+      logger.info('b');
+      expect(logger.records.map((r) => r.message)).toEqual(['b']);
+    });
+
+    test('floors a fractional maxRecords', () => {
+      const logger = new RetainingLogger('all', 2.9);
+      logger.info('a');
+      logger.info('b');
+      logger.info('c');
+      expect(logger.records.map((r) => r.message)).toEqual(['b', 'c']);
+    });
+  });
 });
