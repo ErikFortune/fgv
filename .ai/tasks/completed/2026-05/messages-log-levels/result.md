@@ -89,8 +89,9 @@ are set explicitly via `addMessage('info', text, { severity: 'success' })`.
 
 ## Amendment — StatusBar UX (§1–§3)
 
-Landed as a second PR onto the same `messages-log-levels` integration branch (post-#421;
-squashes to `release` together). Addresses personaility's S17 StatusBar feedback.
+Landed as [PR #422](https://github.com/ErikFortune/fgv/pull/422) onto the same
+`messages-log-levels` integration branch (post-#421; squashes to `release` together).
+Addresses personaility's S17 StatusBar feedback.
 
 - **§1 bounded expanded height.** New `maxExpandedHeight?: string` prop (default `'40vh'`)
   bounds the expanded panel on **both** layouts via an inline `style={{ maxHeight }}`. The

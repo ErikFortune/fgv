@@ -4,8 +4,10 @@
 **Bucket:** 2026-05
 **Integration branch:** `messages-log-levels` (off `release`) → squash to `release` at close
 **Work branch:** `claude/gracious-pasteur-Gpr4c`
-**PR:** [#421](https://github.com/ErikFortune/fgv/pull/421) — `feat(ts-app-shell)!: align messages packlet to ts-utils log levels (breaking)` (onto `messages-log-levels`)
-**Change type:** `major` (`@fgv/ts-app-shell`)
+**PRs (onto `messages-log-levels`):**
+- §4 log-level alignment — [#421](https://github.com/ErikFortune/fgv/pull/421) `feat(ts-app-shell)!: align messages packlet to ts-utils log levels (breaking)` (merged)
+- §1–§3 StatusBar UX — [#422](https://github.com/ErikFortune/fgv/pull/422) `feat(ts-app-shell): StatusBar UX — bounded expanded height, dismiss control, collapsed-by-default`
+**Change type:** `major` (`@fgv/ts-app-shell`) — `major` (§4) + `minor` sibling (§1–§3 props)
 
 ## What shipped
 
