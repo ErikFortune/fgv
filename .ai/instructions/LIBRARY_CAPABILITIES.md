@@ -104,6 +104,8 @@ Reusable React shell components: top bar, sidebar, column cascade, modal, keyboa
 
 Create messages level-first: **`createMessage(level, text, options?)`** / **`addMessage(level, text, options?)`** where `options?: ICreateMessageOptions` carries `{ severity?, action? }`. The **`MessagesLogger`** / **`useLogReporter`** bridge implements the ts-utils `ILogger`/`LogReporter` interface and sets `level` straight through from the log call (lossless — `RetainingLogger` levels map 1:1), leaving `severity` undefined so display styling is derived. `DEFAULT_TOAST_CONFIG` stays keyed by the styling `MessageSeverity`. **Import `MessageLogLevel`/`ReporterLogLevel`/`shouldLog` from `@fgv/ts-utils`** — the messages packlet does not re-export them.
 
+**`StatusBar` layout props.** The collapsible log panel takes **`maxExpandedHeight?: string`** (CSS length, default `'40vh'`) — the expanded panel is bounded to this height on both desktop and mobile, with the message list scrolling within the bound while the header/filter controls stay fixed; the mobile expanded view is an in-flow bounded sheet (with a dimming backdrop for tap-to-dismiss), not a `fixed inset-0` viewport takeover. **`defaultExpanded?: boolean`** (default `false`) controls expanded-on-mount. A discoverable collapse control (`✕`) sits in the expanded header on both layouts.
+
 ---
 
 ## Specialized utilities

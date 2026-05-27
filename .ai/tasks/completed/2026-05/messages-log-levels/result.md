@@ -84,3 +84,41 @@ record half. A consumer wiring a `RetainingLogger` (or any ts-utils `ILogger`) t
 `MessagesLogger`/`useLogReporter` gets lossless level fidelity in the panel, filterable down
 to `detail`. Consumers map their own display enum from `IMessage.level`; `'success'` toasts
 are set explicitly via `addMessage('info', text, { severity: 'success' })`.
+
+---
+
+## Amendment — StatusBar UX (§1–§3)
+
+Landed as [PR #423](https://github.com/ErikFortune/fgv/pull/423) onto the same
+`messages-log-levels` integration branch (post-#421; squashes to `release` together).
+Addresses personaility's S17 StatusBar feedback. (Work branch `feat/messages-statusbar-ux`;
+the earlier #422 was abandoned because it reused #421's merged branch name, which routed
+pushes to the closed PR.)
+
+- **§1 bounded expanded height.** New `maxExpandedHeight?: string` prop (default `'40vh'`)
+  bounds the expanded panel on **both** layouts via an inline `style={{ maxHeight }}`. The
+  panel is a `flex flex-col`; the header/filter controls are `shrink-0` and the message list
+  is `flex-1 min-h-0 overflow-y-auto`, so the list scrolls within the bound while controls
+  stay fixed. The mobile expanded view is now an **in-flow bounded sheet** (`relative z-50`,
+  with the dimming `fixed inset-0` backdrop retained for tap-to-dismiss) — no longer a
+  `fixed inset-x-0 … max-h-[70vh]` panel that escapes consumer layout.
+- **§2 discoverable dismiss.** A labelled `✕` collapse control (`XMarkIcon`,
+  `aria-label="Collapse log panel"`) sits in the `shrink-0` expanded header on both layouts,
+  so §1's bounding keeps it reachable. The mobile backdrop tap is retained.
+- **§3 collapsed-by-default.** New `defaultExpanded?: boolean` (default `false`). The sole
+  in-repo consumer (`samples/testbed`) passes neither new prop and relied on the existing
+  always-collapsed-on-mount behaviour, so default-false is a no-op for it — no breakage.
+
+**Mobile bounded-sheet rework.** Went cleanly. The only `fixed` element is now the backdrop;
+the sheet itself is in document flow (`relative z-50 bg-surface shadow-xl rounded-t-lg`),
+painting above the `z-40` backdrop within the StatusBar's stacking context. Positioning of
+the StatusBar container itself remains the consumer's responsibility (the point of removing
+the `fixed` panel). No conflict surfaced with the testbed chrome; flag to personaility S17 if
+their chrome relied on the old fixed-overlay z-ordering of the *panel* (the backdrop overlay
+behaviour is unchanged).
+
+**Tests / gates.** `StatusBar.test.tsx` grew to 28 tests (added §1 bound + custom height +
+list-scroll + mobile-in-flow; §2 close-control dismiss on both layouts; §3 default-collapsed +
+expanded-on-mount). Messages packlet stays **100% on all four metrics**. `rush build` clean
+across all downstream consumers; `rushx lint` clean; `rushx fixlint` run. Change file extended
+with a `minor` sibling entry; LIBRARY_CAPABILITIES updated with the new `StatusBar` props.

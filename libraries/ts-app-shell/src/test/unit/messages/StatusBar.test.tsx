@@ -42,6 +42,8 @@ function renderBar(options?: {
   onClear?: () => void;
   layout?: LayoutMode;
   initialFilterLevel?: Logging.ReporterLogLevel;
+  maxExpandedHeight?: string;
+  defaultExpanded?: boolean;
 }): HTMLElement {
   const { container } = render(
     <ResponsiveProvider forceLayoutMode={options?.layout ?? 'full'}>
@@ -49,10 +51,21 @@ function renderBar(options?: {
         messages={options?.messages ?? sample}
         onClear={options?.onClear ?? jest.fn()}
         initialFilterLevel={options?.initialFilterLevel}
+        maxExpandedHeight={options?.maxExpandedHeight}
+        defaultExpanded={options?.defaultExpanded}
       />
     </ResponsiveProvider>
   );
   return container;
+}
+
+/** Returns the expanded panel element (the flex-column wrapper holding header + list). */
+function expandedPanel(container: HTMLElement): HTMLElement {
+  const panel = container.querySelector<HTMLElement>('div.flex.flex-col');
+  if (panel === null) {
+    throw new Error('expected an expanded panel');
+  }
+  return panel;
 }
 
 /** Clicks the collapsed bar toggle (the first button) to expand the panel. */
@@ -261,6 +274,80 @@ describe('StatusBar', () => {
       const container = renderBar();
       expand(container);
       expect(within(container).getByText(/^6 messages$/)).not.toBeNull();
+    });
+  });
+
+  describe('§1 bounded expanded height', () => {
+    test('bounds the expanded panel to the default 40vh on desktop', () => {
+      const container = renderBar();
+      expand(container);
+      expect(expandedPanel(container).style.maxHeight).toBe('40vh');
+    });
+
+    test('honors a custom maxExpandedHeight on both layouts', () => {
+      const desktop = renderBar({ maxExpandedHeight: '320px' });
+      expand(desktop);
+      expect(expandedPanel(desktop).style.maxHeight).toBe('320px');
+
+      cleanup();
+
+      const mobile = renderBar({ layout: 'mobile', maxExpandedHeight: '50vh' });
+      expand(mobile);
+      expect(expandedPanel(mobile).style.maxHeight).toBe('50vh');
+    });
+
+    test('the message list scrolls within the bound while the panel is a flex column', () => {
+      const container = renderBar();
+      expand(container);
+      const panel = expandedPanel(container);
+      // Panel is a flex column so the shrink-0 header stays fixed and the list flexes.
+      expect(panel.className).toContain('flex-col');
+      const list = panel.querySelector('.overflow-y-auto');
+      expect(list).not.toBeNull();
+      expect((list as HTMLElement).className).toContain('flex-1');
+      expect((list as HTMLElement).className).toContain('min-h-0');
+    });
+
+    test('mobile expanded view is an in-flow bounded sheet, not a fixed-inset-0 takeover', () => {
+      const container = renderBar({ layout: 'mobile' });
+      expand(container);
+      const panel = expandedPanel(container);
+      // The sheet itself is in document flow (relative), bounded by maxHeight — only the
+      // backdrop is fixed. The panel must not escape consumer layout via `fixed`/`inset-0`.
+      expect(panel.className).toContain('relative');
+      expect(panel.className).not.toContain('fixed');
+      expect(panel.className).not.toContain('inset-0');
+      expect(panel.style.maxHeight).toBe('40vh');
+    });
+  });
+
+  describe('§2 discoverable dismiss', () => {
+    test('exposes a labelled collapse control on the expanded header that dismisses the panel', () => {
+      const container = renderBar();
+      expand(container);
+      expect(screen.getByText('info-msg')).not.toBeNull();
+
+      fireEvent.click(screen.getByLabelText('Collapse log panel'));
+      expect(screen.queryByText('info-msg')).toBeNull();
+    });
+
+    test('the collapse control lives in the fixed header on mobile too', () => {
+      const container = renderBar({ layout: 'mobile' });
+      expand(container);
+      fireEvent.click(screen.getByLabelText('Collapse log panel'));
+      expect(screen.queryByText('info-msg')).toBeNull();
+    });
+  });
+
+  describe('§3 collapsed-by-default', () => {
+    test('mounts collapsed by default (no panel content visible)', () => {
+      renderBar();
+      expect(screen.queryByText('info-msg')).toBeNull();
+    });
+
+    test('mounts expanded when defaultExpanded is set', () => {
+      renderBar({ defaultExpanded: true });
+      expect(screen.getByText('info-msg')).not.toBeNull();
     });
   });
 });
