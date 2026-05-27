@@ -22,7 +22,9 @@
 
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 
-import { createMessage, IMessage, IMessageAction, MessageSeverity } from './model';
+import { type MessageLogLevel } from '@fgv/ts-utils';
+
+import { createMessage, ICreateMessageOptions, IMessage } from './model';
 
 // ============================================================================
 // Context Value
@@ -35,8 +37,11 @@ import { createMessage, IMessage, IMessageAction, MessageSeverity } from './mode
 export interface IMessagesContextValue {
   /** All messages in the stream (newest last) */
   readonly messages: ReadonlyArray<IMessage>;
-  /** Add a message to the stream */
-  readonly addMessage: (severity: MessageSeverity, text: string, action?: IMessageAction) => IMessage;
+  /**
+   * Add a message to the stream. The `level` drives filtering; pass `options.severity`
+   * only to override display styling (e.g. `'success'`).
+   */
+  readonly addMessage: (level: MessageLogLevel, text: string, options?: ICreateMessageOptions) => IMessage;
   /** Dismiss a specific message (removes from toast display, keeps in log) */
   readonly dismissMessage: (id: string) => void;
   /** Clear all messages */
@@ -78,8 +83,8 @@ export function MessagesProvider(props: IMessagesProviderProps): React.ReactElem
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
   const addMessage = useCallback(
-    (severity: MessageSeverity, text: string, action?: IMessageAction): IMessage => {
-      const msg = createMessage(severity, text, action);
+    (level: MessageLogLevel, text: string, options?: ICreateMessageOptions): IMessage => {
+      const msg = createMessage(level, text, options);
       setMessages((prev) => {
         const next = [...prev, msg];
         return next.length > maxMessages ? next.slice(next.length - maxMessages) : next;

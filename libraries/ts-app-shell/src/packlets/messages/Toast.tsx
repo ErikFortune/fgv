@@ -22,7 +22,7 @@
 
 import React, { useEffect } from 'react';
 
-import { DEFAULT_TOAST_CONFIG, IMessage, MessageSeverity } from './model';
+import { DEFAULT_TOAST_CONFIG, deriveSeverityFromLevel, IMessage, MessageSeverity } from './model';
 import { useResponsive } from '../responsive';
 
 // ============================================================================
@@ -55,7 +55,8 @@ export interface IToastItemProps {
  */
 export function ToastItem(props: IToastItemProps): React.ReactElement {
   const { message, onDismiss } = props;
-  const config = DEFAULT_TOAST_CONFIG[message.severity];
+  const severity = message.severity ?? deriveSeverityFromLevel(message.level);
+  const config = DEFAULT_TOAST_CONFIG[severity];
   const { layoutMode } = useResponsive();
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export function ToastItem(props: IToastItemProps): React.ReactElement {
     <div
       className={`flex items-start gap-3 px-4 py-3 rounded-lg border shadow-lg ${
         layoutMode === 'mobile' ? 'w-full' : 'max-w-sm'
-      } ${SEVERITY_STYLES[message.severity]}`}
+      } ${SEVERITY_STYLES[severity]}`}
       role="alert"
     >
       <div className="flex-1 text-sm line-clamp-4" title={message.text}>

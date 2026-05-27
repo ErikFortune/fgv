@@ -130,10 +130,10 @@ substrate. Don't queue streams against them here.
 
 ### `messages-log-levels` 🟢
 
-**Status:** 🟢 ready to commission (substrate prep in flight)
+**Status:** ✅ implementation complete — PR open onto `messages-log-levels`; ready to squash → `release`
 **Integration branch:** `messages-log-levels` (off `release`) → squash to `release` at close
 **Workflow shape:** single implementation PR onto integration branch
-**Substrate:** `.ai/tasks/active/messages-log-levels/{brief.md, state.md}`
+**Substrate:** `.ai/tasks/completed/2026-05/messages-log-levels/{brief.md, state.md, result.md, README.md}`
 **Package surface:** `@fgv/ts-app-shell` `messages` packlet + `.ai/instructions/LIBRARY_CAPABILITIES.md`
 **Out-of-scope:** ts-utils log-level types (consumed as-is; no `'success'` added there); the shipped `RetainingLogger`/`MultiLogger`; non-messages ts-app-shell packlets.
 
