@@ -128,6 +128,19 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `messages-log-levels` 🟢
+
+**Status:** ✅ implementation complete — PR open onto `messages-log-levels`; ready to squash → `release`
+**Integration branch:** `messages-log-levels` (off `release`) → squash to `release` at close
+**Workflow shape:** single implementation PR onto integration branch
+**Substrate:** `.ai/tasks/completed/2026-05/messages-log-levels/{brief.md, state.md, result.md, README.md}`
+**Package surface:** `@fgv/ts-app-shell` `messages` packlet + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Out-of-scope:** ts-utils log-level types (consumed as-is; no `'success'` added there); the shipped `RetainingLogger`/`MultiLogger`; non-messages ts-app-shell packlets.
+
+**Mission.** Align the `messages` packlet's filter to `@fgv/ts-utils`'s canonical `MessageLogLevel`/`ReporterLogLevel` so the panel can filter at logger granularity — making the `RetainingLogger` → panel bridge lossless. Current `MessageSeverity` filter lacks `detail`/`quiet` (coarser than the logger) and conflates verbosity-filter with display-styling. Fix (fork a): two axes — `IMessage.level: MessageLogLevel` drives filtering (`shouldLog`-based threshold); `severity?: MessageSeverity` (incl. `'success'`) is styling-only, defaulting via a level→severity derivation. Breaking on the messages packlet — cheap, ts-app-shell is active-dev.
+
+**Origin.** Gap in the observability journey (same as `logging-observability`): `RetainingLogger` retains rich levels server-side; this completes the display half. Cross-library semantic alignment (L19 family). Soft-blocker for personaility's client-side observability.
+
 ### `logging-observability` 🟢
 
 **Status:** ✅ implementation complete — PR #418 review satisfied; ready to squash → `release`
