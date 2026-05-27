@@ -1,8 +1,8 @@
 # Stream state: `messages-log-levels`
 
-**Status:** 🟢 ready to commission — substrate prep in flight
+**Status:** ✅ implementation complete — §4 merged (#421), §1–§3 open (#423); ready to squash → `release`
 **Integration branch:** `messages-log-levels` (off `release`)
-**Last updated:** 2026-05-26 (orchestrator — substrate prep)
+**Last updated:** 2026-05-27 (implementation — §4 + §1–§3 landed)
 
 ---
 
@@ -10,7 +10,8 @@
 
 | Phase | Status | Notes |
 |---|---|---|
-| Implementation | 🟢 ready | Single-PR breaking-change feature on ts-app-shell messages packlet. Design (fork a) locked in brief. |
+| Implementation — §4 log-level alignment | ✅ merged | Breaking change on the messages packlet. Two-axis model (`level` filter + `severity` styling). Merged via #421 into the integration branch. |
+| Implementation — §1–§3 StatusBar UX | ✅ complete (PR open) | Bounded `maxExpandedHeight`, in-flow mobile sheet, discoverable close control, `defaultExpanded`. PR #423 onto the integration branch. |
 
 ---
 
@@ -37,7 +38,9 @@ Gap identified by Erik (2026-05-26) during the observability journey — the sam
 | Date | Event | Notes |
 |---|---|---|
 | 2026-05-26 | Gap identified + adjudicated | Erik flagged the messages-packlet/ts-utils log-level divergence. Grounded against `MessageSeverity` (`info`/`success`/`warning`/`error`) vs `MessageLogLevel`/`ReporterLogLevel`. Fork (a) chosen. |
-| 2026-05-26 | Substrate prep | brief + state + WORKSTREAMS entry. This PR. |
+| 2026-05-26 | Substrate prep | brief + state + WORKSTREAMS entry. PR #420. |
+| 2026-05-27 | §4 implementation merged | Two-axis log-level alignment + tests (messages packlet 100%). PR #421 → integration branch. |
+| 2026-05-27 | §1–§3 amendment | StatusBar UX (bounded height, mobile in-flow sheet, close control, `defaultExpanded`) from personaility S17 feedback. PR #423 → integration branch (supersedes abandoned #422). |
 
 ---
 
@@ -45,5 +48,6 @@ Gap identified by Erik (2026-05-26) during the observability journey — the sam
 
 | Phase | PR | Status |
 |---|---|---|
-| Substrate prep | (this PR) | open → integration branch |
-| Implementation | TBD | not yet commissioned |
+| Substrate prep | #420 | merged → integration branch |
+| §4 implementation | #421 | merged → integration branch |
+| §1–§3 StatusBar UX | #423 | open → integration branch (supersedes abandoned #422) |
