@@ -1,21 +1,27 @@
-# Stream brief: `messages-log-levels`
+# Stream brief: `messages-log-levels` — ts-app-shell messages packlet S17 consumer feedback
 
 **Status:** 🟢 ready to commission
 **Integration branch:** `messages-log-levels` (off `release`) → squash to `release` at close
 **Workflow shape:** single implementation PR onto integration branch
-**Package surface:** `@fgv/ts-app-shell` `messages` packlet + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Package surface:** `@fgv/ts-app-shell` `messages` packlet (`model.ts` + `StatusBar.tsx` + filter/bridge) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Scope note:** slug is `messages-log-levels` (the load-bearing finding + soft-blocker), but this stream carries the **full S17 consumer-feedback batch** — log-level alignment (§4) AND StatusBar UX fixes (§1–§3). All four touch the messages packlet (most touch `StatusBar.tsx`), so one stream avoids file-collision.
 
 ---
 
 ## Mission
 
-Align `@fgv/ts-app-shell`'s `messages` packlet to `@fgv/ts-utils`'s canonical log-level vocabulary so the message panel can filter at the same granularity a ts-utils logger records — making the `RetainingLogger` → panel bridge lossless. The display half of the observability story should speak the same vocabulary as the record half.
+Absorb personaility's S17 consumer feedback on the `@fgv/ts-app-shell` `messages` packlet (`StatusBar` used as an owner-only in-app observability panel at `5.1.0-31`). Two work clusters:
 
-**The gap.** The `messages` packlet defines its own `MessageSeverity = 'info' | 'success' | 'warning' | 'error'` and filters on it. That's two orthogonal concerns conflated into one weak enum:
-- It **lacks `detail`/`quiet`** — so a logger logging at `detail` can't be represented or filtered at the panel; the panel filter is coarser than the logger's `shouldLog`. The `RetainingLogger` (shipped 2026-05-26 in `5.1.0-31`) retains rich levels, but the display half throws that granularity away.
-- It **has `success`** — a legitimate UI styling affordance (a green "saved!" toast) with no log-level analog; set explicitly by consumers, never from a logger bridge.
+- **§4 — log-level vocabulary alignment** (the original driver): align the message/filter vocabulary to `@fgv/ts-utils`'s canonical log levels so the panel can filter at logger granularity — making the `RetainingLogger` → panel bridge lossless.
+- **§1–§3 — StatusBar UX fixes**: bound the expanded-view height (so it stops taking over the viewport and the list actually scrolls), make dismiss discoverable, and default to collapsed.
 
-**Origin.** Gap identified during the observability journey (same journey as `logging-observability`). `ts-app-shell` is on the **active-development** list (new library, no consumers outside this repo) → breaking changes to the messages packlet are explicitly cheap. Classic cross-library semantic alignment: one canonical level vocabulary, not a parallel weaker one (L19 family).
+**§4 — the gap.** The `messages` packlet defines its own `MessageSeverity = 'info' | 'success' | 'warning' | 'error'` and filters on it, but `StatusBar.initialFilterLevel` is a ts-utils `ReporterLogLevel` (`all|detail|info|warning|error|silent`). Two ends of the filter disagree inside ts-app-shell: the filter advertises `detail`, but **no `IMessage` can ever be `detail`** (the severity type can't represent it). Net effects personaility hit:
+- A log-feed consumer mapping `MessageLogLevel → MessageSeverity` is forced to collapse `quiet`/`detail` into `info` — not a choice, it's what the type allows.
+- `initialFilterLevel: 'info'` is therefore a **no-op** (info is already the floor) and can't hide `detail` chatter. personaility tried to filter its `GET /logs` poll noise through the panel; it couldn't, so it suppressed the access log server-side instead.
+
+Two orthogonal concerns are conflated in `MessageSeverity`: verbosity (filter) + display styling (where `success` lives).
+
+**Origin.** personaility S17 use of `StatusBar` as an owner-only observability panel (bottom-of-chrome, fed by `useMessages()` + a 5s `GET /logs` poll). Same observability journey as `logging-observability` (server half). `ts-app-shell` is **active-development** (new library, no external consumers) → breaking the messages packlet is cheap. Cross-library semantic alignment (L19 family).
 
 ---
 
@@ -59,6 +65,30 @@ export type MessageSeverity = 'info' | 'success' | 'warning' | 'error';   // unc
 createMessage(level: MessageLogLevel, text: string, options?: { severity?: MessageSeverity; action?: IMessageAction }): IMessage
 ```
 
+**Filter becomes meaningful:** with messages carrying `level`, `StatusBar.initialFilterLevel` (a `ReporterLogLevel`) stops being a no-op — `initialFilterLevel: 'info'` now actually hides `detail`/`quiet` chatter (the personaility GET /logs poll-noise case). Verify a test covers "filter at `info` hides `detail` messages."
+
+---
+
+## StatusBar UX fixes (§1–§3) — locked
+
+These rework `StatusBar.tsx`'s expanded view. §1 is the highest-value fix per personaility.
+
+### §1 — bounded expanded height (the takeover fix)
+
+Today the expanded view takes over the viewport with no consumer lever:
+- **Mobile** (`isMobile`): expanded view is `fixed inset-0 z-40` — full-viewport. `position: fixed` escapes any parent, so a consumer can't cap it by wrapping `<StatusBar>`.
+- **Desktop:** expanded panel has no height cap. The list region is `flex-1 overflow-y-auto` and toolbar/header are `shrink-0` (correct "fixed header + scrolling list" structure) — but it only scrolls if the panel is height-bounded, and it isn't, so the list grows until it fills the viewport. Wrapping externally in `maxHeight + overflow:auto` scrolls the *whole* component (carrying the `shrink-0` header/close-control out of view) — personaility tried this and reverted it.
+
+**Fix:** add a prop-configurable max height (`maxExpandedHeight?: string`, default `~40vh`) applied to the expanded panel on **both** layouts, so the existing `flex-1 overflow-y-auto` list scrolls **within** the bounded panel while header/controls stay fixed. On mobile this means the expanded view becomes a bounded bottom-sheet (capped at `maxExpandedHeight`), NOT a `fixed inset-0` full takeover — so it no longer escapes consumer layout. This single fix resolves the takeover, makes the list scroll, AND keeps controls reachable.
+
+### §2 — discoverable dismiss
+
+Closing the expanded panel is non-obvious: mobile has a backdrop `onClick` (not discoverable); desktop's collapse affordance wasn't obvious. **Fix:** add a visible close/collapse control (explicit ✕ or chevron) on the expanded panel header, on **both** layouts, in addition to the backdrop tap. It lives in the `shrink-0` header so the §1 fix keeps it always reachable.
+
+### §3 — collapsed-by-default (minor)
+
+An always-mounted observability surface suits quiet/collapsed-by-default, expanding on an explicit control. **Fix:** default to collapsed. This is a behavior change — expose it as a prop (`defaultExpanded?: boolean`, default `false`) so a consumer can opt back into expanded-on-mount. Surface if the current default-expanded is relied on anywhere in-repo.
+
 ---
 
 ## In-scope
@@ -83,15 +113,24 @@ createMessage(level: MessageLogLevel, text: string, options?: { severity?: Messa
 
 ## Acceptance criteria
 
+**§4 — log-level alignment:**
 - [ ] `IMessage.level: MessageLogLevel` drives filtering; `severity` is styling-only + optional, defaulting via `deriveSeverityFromLevel`.
-- [ ] Panel filter threshold is a `ReporterLogLevel`; filter predicate uses `shouldLog`. Panel can filter at `detail` granularity (the core gap fix).
+- [ ] Panel filter threshold is a `ReporterLogLevel`; filter predicate uses `shouldLog`. Panel filters at `detail` granularity (the core gap fix); a test covers "filter at `info` hides `detail` messages" (the personaility poll-noise case — `initialFilterLevel` no longer a no-op).
 - [ ] `MessagesLogger` / `useLogReporter` bridge sets `level` straight through (lossless from a ts-utils logger); `severity` derived for styling.
 - [ ] `'success'` preserved as an explicit styling severity (UI-originated messages).
+
+**§1–§3 — StatusBar UX:**
+- [ ] `maxExpandedHeight?: string` prop (~40vh default); expanded panel bounded on BOTH layouts; the `flex-1 overflow-y-auto` list scrolls within the bounded panel; header/controls (`shrink-0`) stay fixed. Mobile expanded view is a bounded sheet, not `fixed inset-0` full takeover.
+- [ ] Visible close/collapse control (✕ or chevron) on the expanded header, both layouts, in the fixed header region.
+- [ ] `defaultExpanded?: boolean` (default `false` — collapsed-by-default); consumer can opt into expanded-on-mount.
+- [ ] Tests cover: bounded-height list scroll, close control dismisses, default-collapsed mount, expanded-on-mount via prop.
+
+**Both:**
 - [ ] `rush build` full repo clean; `rushx lint` clean (separate gate); `rushx fixlint` before final commit.
-- [ ] `rushx test` 100% coverage all 4 metrics in `@fgv/ts-app-shell`. Cover: filter at each level incl. `detail`; `shouldLog`-based threshold; `deriveSeverityFromLevel` mapping; logger-bridge sets level losslessly; explicit `success` styling; toast config by derived/explicit severity.
+- [ ] `rushx test` 100% coverage all 4 metrics in `@fgv/ts-app-shell`. (§4 coverage: filter at each level incl. `detail`; `shouldLog` threshold; `deriveSeverityFromLevel`; lossless bridge; explicit `success`; toast config. §1–§3 coverage: above.)
 - [ ] api-extractor regenerated; rush change file `major`.
 - [ ] All in-repo consumers updated (`samples/`, fixtures); `rush build` proves it.
-- [ ] LIBRARY_CAPABILITIES updated.
+- [ ] LIBRARY_CAPABILITIES updated (two-axis level/severity model + the new StatusBar props).
 - [ ] No `any`; no unsafe casts; no `Result<void>`.
 - [ ] `result.md` written; substrate migrated to `.ai/tasks/completed/2026-05/messages-log-levels/` with polished README, in the implementation PR (before the squash).
 

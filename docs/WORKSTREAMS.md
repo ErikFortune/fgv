@@ -134,12 +134,12 @@ substrate. Don't queue streams against them here.
 **Integration branch:** `messages-log-levels` (off `release`) → squash to `release` at close
 **Workflow shape:** single implementation PR onto integration branch
 **Substrate:** `.ai/tasks/active/messages-log-levels/{brief.md, state.md}`
-**Package surface:** `@fgv/ts-app-shell` `messages` packlet + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Package surface:** `@fgv/ts-app-shell` `messages` packlet (`model.ts` + `StatusBar.tsx` + filter/bridge) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
 **Out-of-scope:** ts-utils log-level types (consumed as-is; no `'success'` added there); the shipped `RetainingLogger`/`MultiLogger`; non-messages ts-app-shell packlets.
 
-**Mission.** Align the `messages` packlet's filter to `@fgv/ts-utils`'s canonical `MessageLogLevel`/`ReporterLogLevel` so the panel can filter at logger granularity — making the `RetainingLogger` → panel bridge lossless. Current `MessageSeverity` filter lacks `detail`/`quiet` (coarser than the logger) and conflates verbosity-filter with display-styling. Fix (fork a): two axes — `IMessage.level: MessageLogLevel` drives filtering (`shouldLog`-based threshold); `severity?: MessageSeverity` (incl. `'success'`) is styling-only, defaulting via a level→severity derivation. Breaking on the messages packlet — cheap, ts-app-shell is active-dev.
+**Mission.** Absorb personaility's S17 consumer feedback on the `messages` packlet (StatusBar used as an owner-only observability panel). Two clusters: **§4 log-level alignment** — message/filter vocabulary aligns to ts-utils `MessageLogLevel`/`ReporterLogLevel` (fork a: `IMessage.level` filter axis + `severity` styling-only incl. `'success'`); the current `MessageSeverity` filter lacks `detail`/`quiet` so `initialFilterLevel` is a no-op (personaility couldn't filter poll noise). **§1–§3 StatusBar UX** — `maxExpandedHeight` prop so the expanded view stops taking over the viewport and the list scrolls (highest-value fix); discoverable ✕/chevron dismiss on both layouts; `defaultExpanded?` (collapsed-by-default). Breaking on the messages packlet — cheap, ts-app-shell is active-dev. (Slug is `messages-log-levels` but scope is the full S17 batch — all four touch the packlet, most touch `StatusBar.tsx`, so one stream avoids file-collision.)
 
-**Origin.** Gap in the observability journey (same as `logging-observability`): `RetainingLogger` retains rich levels server-side; this completes the display half. Cross-library semantic alignment (L19 family). Soft-blocker for personaility's client-side observability.
+**Origin.** personaility S17 observability-panel feedback. Same journey as `logging-observability` (server half = `RetainingLogger`; this completes the display half). Cross-library semantic alignment (L19 family). Soft-blocker for personaility's client-side observability filtering.
 
 ### `logging-observability` 🟢
 

@@ -23,6 +23,8 @@
 | Don't add `'success'` to ts-utils `MessageLogLevel` | `'success'` is a UI styling affordance, not a log level. Keep it on the ts-app-shell display axis; ts-utils canonical vocabulary stays clean. |
 | Breaking change OK (active-dev) | ts-app-shell is on the ACTIVE_DEVELOPMENT list (new library, no consumers outside this repo). No compat shims; update in-repo consumers in the same PR. `major` rush change. |
 | Integration branch + squash to release | Clean-history preference (same as logging-observability / local-summarization). |
+| Scope expanded to full S17 feedback batch (§1–§4) | personaility's full investigation (2026-05-26) surfaced 3 StatusBar UX findings (§1 viewport-takeover/no-scroll, §2 non-discoverable dismiss, §3 collapsed-by-default) alongside §4 (the log-level mismatch). All four touch the messages packlet; §4 + §1–§3 both edit `StatusBar.tsx`, so separate streams would collide. Folded into one stream. §1 (`maxExpandedHeight`) is the highest-value fix per personaility. Slug stays `messages-log-levels` (load-bearing finding + soft-blocker) to avoid rename churn on the pushed branch; mission/title broadened for discoverability. |
+| §4 sharpened by the investigation | Concrete repro: `initialFilterLevel: 'info'` is a no-op today (can't hide `detail` chatter because no `IMessage` can be `detail`); personaility had to suppress GET /logs poll noise server-side. The fork-(a) design makes `initialFilterLevel` meaningful. personaility's own suggested root fix matches fork (a). |
 
 ---
 
