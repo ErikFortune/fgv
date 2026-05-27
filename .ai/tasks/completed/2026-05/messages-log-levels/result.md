@@ -1,6 +1,7 @@
 # result: `messages-log-levels`
 
 **Outcome:** ✅ complete — single breaking-change PR on `@fgv/ts-app-shell` `messages` packlet.
+**PR:** [#421](https://github.com/ErikFortune/fgv/pull/421) onto `messages-log-levels`.
 **Integration branch:** `messages-log-levels` (work branch `claude/gracious-pasteur-Gpr4c`).
 **Date:** 2026-05-27
 

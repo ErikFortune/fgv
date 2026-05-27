@@ -4,7 +4,7 @@
 **Bucket:** 2026-05
 **Integration branch:** `messages-log-levels` (off `release`) → squash to `release` at close
 **Work branch:** `claude/gracious-pasteur-Gpr4c`
-**PR:** see implementation PR onto `messages-log-levels` — `feat(ts-app-shell)!: align messages packlet to ts-utils log levels (breaking)`
+**PR:** [#421](https://github.com/ErikFortune/fgv/pull/421) — `feat(ts-app-shell)!: align messages packlet to ts-utils log levels (breaking)` (onto `messages-log-levels`)
 **Change type:** `major` (`@fgv/ts-app-shell`)
 
 ## What shipped
