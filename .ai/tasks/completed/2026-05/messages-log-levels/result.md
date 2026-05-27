@@ -59,6 +59,10 @@ the styling `MessageSeverity`.
 
 ## Notes / deviations
 
+- **Copilot review (PR #421) resolved.** Two test-only nits: an implicitly-`any` `let returned;`
+  intermediate (now typed `ReturnType<IMessagesContextValue['addMessage']> | undefined`) and a
+  `querySelector('button') as HTMLButtonElement` cast that masked `null` (now a null-check matching
+  the `expand()` helper). No production-code changes; coverage stayed 100%.
 - **No api-extractor regen.** Unlike `ts-res-ui-components`, `ts-app-shell` has **no
   `config/api-extractor.json` and no `etc/*.api.md`** — api-extractor is not wired up for
   this library, so there was nothing to regenerate. (The brief listed it as in-scope on the

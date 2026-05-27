@@ -43,7 +43,7 @@ describe('MessagesContext', () => {
   test('addMessage appends a message carrying the supplied level and returns it', () => {
     const { result } = renderMessages();
 
-    let returned;
+    let returned: ReturnType<IMessagesContextValue['addMessage']> | undefined;
     act(() => {
       returned = result.current.addMessage('warning', 'low disk');
     });

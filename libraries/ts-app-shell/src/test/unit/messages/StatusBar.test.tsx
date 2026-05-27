@@ -95,7 +95,10 @@ describe('StatusBar', () => {
     test('counts by effective severity (derived level + explicit success)', () => {
       // info-msg (derived info) + success-msg (explicit success) + warn + error + quiet/detail (derived info)
       const container = renderBar();
-      const toggle = container.querySelector('button') as HTMLButtonElement;
+      const toggle = container.querySelector('button');
+      if (toggle === null) {
+        throw new Error('expected a collapsed toggle button');
+      }
       // info bucket: quiet, detail, info → 3; success → 1; warning → 1; error → 1
       expect(toggle.textContent).toContain('3');
       expect(toggle.textContent).toContain('1');
