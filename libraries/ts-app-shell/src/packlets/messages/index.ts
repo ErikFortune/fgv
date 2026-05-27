@@ -7,8 +7,10 @@ export {
   type MessageSeverity,
   type IMessage,
   type IMessageAction,
+  type ICreateMessageOptions,
   type IToastConfig,
   DEFAULT_TOAST_CONFIG,
+  deriveSeverityFromLevel,
   createMessage,
   generateMessageId
 } from './model';

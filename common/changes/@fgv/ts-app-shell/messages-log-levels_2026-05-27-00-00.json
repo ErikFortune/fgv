@@ -1,0 +1,16 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: align the messages packlet to ts-utils canonical log levels. IMessage now carries a required `level: MessageLogLevel` (filter axis) and an optional `severity?: MessageSeverity` (styling axis); `createMessage`/`addMessage` are level-first with an options bag. The status-bar filter threshold is a ReporterLogLevel applied via `shouldLog`, so the panel can filter at `detail` granularity, and the logger bridge sets `level` losslessly. Added `deriveSeverityFromLevel` and `ICreateMessageOptions`.",
+      "type": "major",
+      "packageName": "@fgv/ts-app-shell"
+    },
+    {
+      "comment": "StatusBar UX: add `maxExpandedHeight?` (CSS length, default '40vh') bounding the expanded panel on both layouts with the message list scrolling within the bound; add a discoverable collapse control on the expanded header (both layouts); add `defaultExpanded?` (default false). The mobile expanded view is now an in-flow bounded sheet rather than a `fixed inset-0` viewport takeover.",
+      "type": "minor",
+      "packageName": "@fgv/ts-app-shell"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell",
+  "email": "ErikFortune@outlook.com"
+}

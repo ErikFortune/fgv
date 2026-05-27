@@ -25,15 +25,42 @@
  * @packageDocumentation
  */
 
+import { type MessageLogLevel } from '@fgv/ts-utils';
+
 // ============================================================================
 // Message Severity
 // ============================================================================
 
 /**
- * Severity levels for messages.
+ * Display styling levels for messages — drives color, icon, and toast behavior.
+ *
+ * This is the styling axis, orthogonal to the {@link @fgv/ts-utils#MessageLogLevel | log level}
+ * filter axis on {@link IMessage.level}. `'success'` lives here (a UI affordance with no
+ * log-level analog) and is only ever set explicitly — never derived from a logger bridge.
  * @public
  */
 export type MessageSeverity = 'info' | 'success' | 'warning' | 'error';
+
+/**
+ * Derives a display {@link MessageSeverity} from a canonical
+ * {@link @fgv/ts-utils#MessageLogLevel | log level}, used when a message carries no explicit
+ * `severity` styling override. `'success'` is never derived — it is a UI-only affordance.
+ * @param level - The canonical log level.
+ * @returns The styling severity to use for display.
+ * @public
+ */
+export function deriveSeverityFromLevel(level: MessageLogLevel): MessageSeverity {
+  switch (level) {
+    case 'warning':
+      return 'warning';
+    case 'error':
+      return 'error';
+    case 'quiet':
+    case 'detail':
+    case 'info':
+      return 'info';
+  }
+}
 
 // ============================================================================
 // Message
@@ -46,8 +73,17 @@ export type MessageSeverity = 'info' | 'success' | 'warning' | 'error';
 export interface IMessage {
   /** Unique message ID */
   readonly id: string;
-  /** Message severity */
-  readonly severity: MessageSeverity;
+  /**
+   * Canonical {@link @fgv/ts-utils#MessageLogLevel | log level} — drives FILTERING.
+   * Set losslessly from a ts-utils logger when a message originates from the logger bridge.
+   */
+  readonly level: MessageLogLevel;
+  /**
+   * Display styling override (color / icon / toast). Optional; when absent, styling is
+   * derived from {@link IMessage.level} via {@link deriveSeverityFromLevel}. `'success'`
+   * lives here — set explicitly for UI-originated messages, never from a logger bridge.
+   */
+  readonly severity?: MessageSeverity;
   /** Message text */
   readonly text: string;
   /** Timestamp (ms since epoch) */
@@ -106,15 +142,40 @@ export function generateMessageId(): string {
 }
 
 /**
- * Creates a new message.
+ * Options for {@link createMessage} (and `addMessage`).
  * @public
  */
-export function createMessage(severity: MessageSeverity, text: string, action?: IMessageAction): IMessage {
+export interface ICreateMessageOptions {
+  /**
+   * Explicit display styling override. Omit to derive styling from the level via
+   * {@link deriveSeverityFromLevel}. Set to `'success'` for UI-originated success messages.
+   */
+  readonly severity?: MessageSeverity;
+  /** Optional action (e.g., a link or callback). */
+  readonly action?: IMessageAction;
+}
+
+/**
+ * Creates a new message at the given canonical {@link @fgv/ts-utils#MessageLogLevel | log level}.
+ * The level drives filtering; pass `options.severity` only to override display styling
+ * (e.g. `'success'`).
+ * @param level - The canonical log level (filter axis).
+ * @param text - The message text.
+ * @param options - Optional styling severity and action.
+ * @returns The created message.
+ * @public
+ */
+export function createMessage(
+  level: MessageLogLevel,
+  text: string,
+  options?: ICreateMessageOptions
+): IMessage {
   return {
     id: generateMessageId(),
-    severity,
+    level,
+    severity: options?.severity,
     text,
     timestamp: Date.now(),
-    action
+    action: options?.action
   };
 }

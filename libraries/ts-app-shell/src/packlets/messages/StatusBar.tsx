@@ -22,11 +22,16 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { Logging, type MessageLogLevel } from '@fgv/ts-utils';
-import { FunnelIcon, DocumentDuplicateIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { Logging } from '@fgv/ts-utils';
+import {
+  FunnelIcon,
+  DocumentDuplicateIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 import { CheckIcon } from '@heroicons/react/24/solid';
 
-import { IMessage, MessageSeverity } from './model';
+import { deriveSeverityFromLevel, IMessage, MessageSeverity } from './model';
 import { useResponsive } from '../responsive';
 
 // ============================================================================
@@ -59,18 +64,25 @@ const LOG_ROW_COLORS: Record<MessageSeverity, string> = {
 // ============================================================================
 
 /**
- * Maps MessageSeverity to MessageLogLevel for shouldLog filtering.
- * 'success' is treated as 'info' since it doesn't exist in the log level hierarchy.
+ * Effective display severity for a message: its explicit `severity` styling override,
+ * or the severity derived from its canonical log level.
  */
-function severityToLogLevel(severity: MessageSeverity): MessageLogLevel {
-  return severity === 'success' ? 'info' : severity;
+function effectiveSeverity(message: IMessage): MessageSeverity {
+  return message.severity ?? deriveSeverityFromLevel(message.level);
 }
 
 /**
  * Filter choices exposed in the UI, mapping labels to ReporterLogLevel values.
+ *
+ * The full log-level granularity is exposed (the core gap fix): `Detail+` lets the panel
+ * filter at the same granularity a ts-utils logger records, including `detail` messages
+ * that the previous severity-based filter could not represent. `All` additionally surfaces
+ * `quiet`-level messages (per {@link @fgv/ts-utils#Logging.shouldLog | shouldLog} semantics,
+ * `quiet` is only visible under the `all` threshold).
  */
 const FILTER_LEVELS: ReadonlyArray<{ readonly label: string; readonly level: Logging.ReporterLogLevel }> = [
   { label: 'All', level: 'all' },
+  { label: 'Detail+', level: 'detail' },
   { label: 'Info+', level: 'info' },
   { label: 'Warn+', level: 'warning' },
   { label: 'Error', level: 'error' }
@@ -89,20 +101,35 @@ export interface IStatusBarProps {
   readonly onClear: () => void;
   /** Initial filter level for the log panel. Defaults to 'all'. */
   readonly initialFilterLevel?: Logging.ReporterLogLevel;
+  /**
+   * Maximum height of the expanded panel as a CSS length (e.g. `'40vh'`, `'320px'`).
+   * The panel is bounded to this height on both desktop and mobile; the message list
+   * scrolls within the bound while the header and filter controls stay fixed. Defaults to `'40vh'`.
+   */
+  readonly maxExpandedHeight?: string;
+  /** Whether the panel is expanded on mount. Defaults to `false` (collapsed). */
+  readonly defaultExpanded?: boolean;
 }
 
 /**
  * Collapsible status bar / log panel at the bottom of the application.
  *
  * Collapsed: shows severity counts.
- * Expanded: filterable, searchable, copyable log of all messages.
+ * Expanded: filterable, searchable, copyable log of all messages, bounded to
+ * {@link IStatusBarProps.maxExpandedHeight} with the list scrolling within the bound.
  * @public
  */
 export function StatusBar(props: IStatusBarProps): React.ReactElement {
-  const { messages, onClear, initialFilterLevel } = props;
+  const {
+    messages,
+    onClear,
+    initialFilterLevel,
+    maxExpandedHeight = '40vh',
+    defaultExpanded = false
+  } = props;
   const { layoutMode } = useResponsive();
   const isMobile = layoutMode === 'mobile';
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [showFilters, setShowFilters] = useState(false);
   const [filterLevel, setFilterLevel] = useState<Logging.ReporterLogLevel>(initialFilterLevel ?? 'all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,14 +138,14 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
   const counts = useMemo(() => {
     const result: Record<MessageSeverity, number> = { info: 0, success: 0, warning: 0, error: 0 };
     for (const msg of messages) {
-      result[msg.severity]++;
+      result[effectiveSeverity(msg)]++;
     }
     return result;
   }, [messages]);
 
   const filteredMessages = useMemo(() => {
     return messages.filter((msg) => {
-      const passesLevel = Logging.shouldLog(severityToLogLevel(msg.severity), filterLevel);
+      const passesLevel = Logging.shouldLog(msg.level, filterLevel);
       const passesSearch = searchTerm === '' || msg.text.toLowerCase().includes(searchTerm.toLowerCase());
       return passesLevel && passesSearch;
     });
@@ -142,7 +169,7 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
 
   const copyAllFiltered = useCallback((): void => {
     const text = filteredMessages
-      .map((msg) => `[${msg.severity.toUpperCase()}] ${formatTime(msg.timestamp)} - ${msg.text}`)
+      .map((msg) => `[${msg.level.toUpperCase()}] ${formatTime(msg.timestamp)} - ${msg.text}`)
       .join('\n');
     copyToClipboard(text, '__all__');
   }, [filteredMessages, formatTime, copyToClipboard]);
@@ -168,18 +195,23 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
         <span className="text-muted">{expanded ? '\u25BC' : '\u25B2'}</span>
       </button>
 
-      {/* Expanded log — fixed slide-up sheet on mobile, inline on desktop */}
+      {/* Expanded log — bounded bottom-sheet on mobile, bounded inline panel on desktop.
+          The panel stays in document flow on both layouts (no `fixed` takeover); the mobile
+          backdrop is the only fixed element, dimming the rest and supporting tap-to-dismiss. */}
       {expanded && (
         <>
           {isMobile && (
-            <div className="fixed inset-0 z-40 bg-backdrop" onClick={(): void => setExpanded(false)} />
+            <div
+              className="fixed inset-0 z-40 bg-backdrop"
+              onClick={(): void => setExpanded(false)}
+              aria-hidden="true"
+            />
           )}
           <div
-            className={
-              isMobile
-                ? 'fixed inset-x-0 bottom-8 z-50 flex flex-col bg-surface border-t border-border shadow-xl rounded-t-lg max-h-[70vh]'
-                : 'border-t border-border-subtle'
-            }
+            className={`flex flex-col border-t border-border-subtle ${
+              isMobile ? 'relative z-50 bg-surface shadow-xl rounded-t-lg' : ''
+            }`}
+            style={{ maxHeight: maxExpandedHeight }}
           >
             {/* Header toolbar */}
             <div className="flex items-center justify-between px-4 py-1 bg-surface-alt border-b border-border-subtle shrink-0">
@@ -211,6 +243,14 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                 </button>
                 <button onClick={onClear} className="text-xs text-muted hover:text-secondary ml-1">
                   Clear
+                </button>
+                <button
+                  onClick={(): void => setExpanded(false)}
+                  className="p-1 rounded hover:bg-surface-raised ml-1"
+                  title="Collapse log panel"
+                  aria-label="Collapse log panel"
+                >
+                  <XMarkIcon className="h-3.5 w-3.5 text-muted" />
                 </button>
               </div>
             </div>
@@ -258,42 +298,43 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
               </div>
             )}
 
-            {/* Message list */}
-            <div className={`overflow-y-auto ${isMobile ? 'flex-1' : 'max-h-48'}`}>
+            {/* Message list — scrolls within the bounded panel; header/filters stay fixed */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
               {filteredMessages.length === 0 ? (
                 <div className="px-4 py-3 text-xs text-muted text-center">
                   {isFiltered ? 'No messages match the current filter' : 'No messages'}
                 </div>
               ) : (
-                filteredMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`group flex items-start gap-2 px-4 py-1.5 text-xs border-b border-border-subtle ${
-                      LOG_ROW_COLORS[msg.severity]
-                    }`}
-                  >
-                    <span className={`shrink-0 ${SEVERITY_COLORS[msg.severity]}`}>
-                      {SEVERITY_ICONS[msg.severity]}
-                    </span>
-                    <span className="flex-1 text-secondary">{msg.text}</span>
-                    <button
-                      onClick={(): void => copyToClipboard(msg.text, msg.id)}
-                      className={`shrink-0 p-0.5 rounded transition-colors ${
-                        copySuccessId === msg.id
-                          ? 'opacity-100 bg-status-success-surface'
-                          : 'opacity-0 group-hover:opacity-100 hover:bg-surface-raised'
-                      }`}
-                      title={copySuccessId === msg.id ? 'Copied!' : 'Copy message'}
+                filteredMessages.map((msg) => {
+                  const severity = effectiveSeverity(msg);
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`group flex items-start gap-2 px-4 py-1.5 text-xs border-b border-border-subtle ${LOG_ROW_COLORS[severity]}`}
                     >
-                      {copySuccessId === msg.id ? (
-                        <CheckIcon className="h-3 w-3 text-status-success-icon" />
-                      ) : (
-                        <DocumentDuplicateIcon className="h-3 w-3 text-muted" />
-                      )}
-                    </button>
-                    <span className="shrink-0 text-muted">{formatTime(msg.timestamp)}</span>
-                  </div>
-                ))
+                      <span className={`shrink-0 ${SEVERITY_COLORS[severity]}`}>
+                        {SEVERITY_ICONS[severity]}
+                      </span>
+                      <span className="flex-1 text-secondary">{msg.text}</span>
+                      <button
+                        onClick={(): void => copyToClipboard(msg.text, msg.id)}
+                        className={`shrink-0 p-0.5 rounded transition-colors ${
+                          copySuccessId === msg.id
+                            ? 'opacity-100 bg-status-success-surface'
+                            : 'opacity-0 group-hover:opacity-100 hover:bg-surface-raised'
+                        }`}
+                        title={copySuccessId === msg.id ? 'Copied!' : 'Copy message'}
+                      >
+                        {copySuccessId === msg.id ? (
+                          <CheckIcon className="h-3 w-3 text-status-success-icon" />
+                        ) : (
+                          <DocumentDuplicateIcon className="h-3 w-3 text-muted" />
+                        )}
+                      </button>
+                      <span className="shrink-0 text-muted">{formatTime(msg.timestamp)}</span>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
