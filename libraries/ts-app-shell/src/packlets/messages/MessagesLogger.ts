@@ -31,32 +31,8 @@
 
 import { Logging, type MessageLogLevel, Success, succeed } from '@fgv/ts-utils';
 
-import { type IMessageAction, type MessageSeverity } from './model';
+import { type IMessageAction } from './model';
 import { type IMessagesContextValue } from './MessagesContext';
-
-// ============================================================================
-// Level Mapping
-// ============================================================================
-
-/**
- * Maps ts-utils MessageLogLevel to our MessageSeverity.
- * `detail` maps to `'info'` (shown when logLevel is 'detail' or 'all').
- * `quiet` is always suppressed (only shown when reporter level is 'all', handled upstream).
- * @internal
- */
-function mapLogLevel(level: MessageLogLevel): MessageSeverity | undefined {
-  switch (level) {
-    case 'detail':
-    case 'info':
-      return 'info';
-    case 'warning':
-      return 'warning';
-    case 'error':
-      return 'error';
-    case 'quiet':
-      return undefined;
-  }
-}
 
 // ============================================================================
 // MessagesLogger
@@ -102,18 +78,19 @@ export class MessagesLogger extends Logging.LoggerBase {
   }
 
   /**
-   * Routes a formatted log message into the MessagesContext.
+   * Routes a formatted log message into the MessagesContext, setting the message `level`
+   * straight through from the log call (lossless). Display styling `severity` is left
+   * undefined so it is derived from the level for display.
+   *
+   * Suppression by threshold is handled upstream by {@link @fgv/ts-utils#Logging.LoggerBase | LoggerBase}
+   * (`shouldLog` against `logLevel`) before this method is invoked.
    * @param message - The formatted message string
-   * @param level - The log level
-   * @returns Success with the message if it was logged, or Success with undefined if suppressed
+   * @param level - The {@link @fgv/ts-utils#MessageLogLevel | log level}
+   * @returns Success with the message that was logged
    * @internal
    */
   protected _log(message: string, level: MessageLogLevel): Success<string | undefined> {
-    const severity = mapLogLevel(level);
-    if (severity !== undefined) {
-      this._addMessage(severity, message, this._defaultAction);
-      return succeed(message);
-    }
-    return succeed(undefined);
+    this._addMessage(level, message, { action: this._defaultAction });
+    return succeed(message);
   }
 }

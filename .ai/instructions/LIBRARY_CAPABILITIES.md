@@ -91,6 +91,21 @@ ts-res-driven prompt authoring, organisation, and resolution for LLM workflows. 
 
 ---
 
+## Application shells (React)
+
+### `@fgv/ts-app-shell` — shared React app-shell primitives
+[libraries/ts-app-shell](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-app-shell)
+
+Reusable React shell components: top bar, sidebar, column cascade, modal, keyboard registry, responsive layout, theme, drop-zone, and the **`messages` packlet** (toast + collapsible log panel + observability bridge).
+
+**Messages — two-axis model.** A message separates the **filter axis** from the **display axis**:
+- **`IMessage.level: MessageLogLevel`** (`'quiet'|'detail'|'info'|'warning'|'error'`, from `@fgv/ts-utils`) — the canonical log level, and the **only** thing filtering keys off. The status-bar filter threshold is a `ReporterLogLevel` and the predicate is `Logging.shouldLog(message.level, threshold)`, so the panel filters at the same granularity a ts-utils logger records — including `detail`. (`quiet` is only visible under the `all` threshold, per `shouldLog` semantics.)
+- **`IMessage.severity?: MessageSeverity`** (`'info'|'success'|'warning'|'error'`) — an optional **styling-only** override (color / icon / toast). When absent, styling is derived from the level via **`deriveSeverityFromLevel(level)`** (`quiet`/`detail`/`info`→`'info'`, `warning`→`'warning'`, `error`→`'error'`). `'success'` is a UI affordance with no log-level analog — it lives only on this axis and is **never** derived; set it explicitly (e.g. a green "saved!" toast).
+
+Create messages level-first: **`createMessage(level, text, options?)`** / **`addMessage(level, text, options?)`** where `options?: ICreateMessageOptions` carries `{ severity?, action? }`. The **`MessagesLogger`** / **`useLogReporter`** bridge implements the ts-utils `ILogger`/`LogReporter` interface and sets `level` straight through from the log call (lossless — `RetainingLogger` levels map 1:1), leaving `severity` undefined so display styling is derived. `DEFAULT_TOAST_CONFIG` stays keyed by the styling `MessageSeverity`. **Import `MessageLogLevel`/`ReporterLogLevel`/`shouldLog` from `@fgv/ts-utils`** — the messages packlet does not re-export them.
+
+---
+
 ## Specialized utilities
 
 ### `@fgv/ts-extras` — Node-flavored extras

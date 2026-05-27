@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "BREAKING: align the messages packlet to ts-utils canonical log levels. IMessage now carries a required `level: MessageLogLevel` (filter axis) and an optional `severity?: MessageSeverity` (styling axis); `createMessage`/`addMessage` are level-first with an options bag. The status-bar filter threshold is a ReporterLogLevel applied via `shouldLog`, so the panel can filter at `detail` granularity, and the logger bridge sets `level` losslessly. Added `deriveSeverityFromLevel` and `ICreateMessageOptions`.",
+      "type": "major",
+      "packageName": "@fgv/ts-app-shell"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell",
+  "email": "ErikFortune@outlook.com"
+}

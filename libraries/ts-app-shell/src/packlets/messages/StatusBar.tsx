@@ -22,11 +22,11 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { Logging, type MessageLogLevel } from '@fgv/ts-utils';
+import { Logging } from '@fgv/ts-utils';
 import { FunnelIcon, DocumentDuplicateIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { CheckIcon } from '@heroicons/react/24/solid';
 
-import { IMessage, MessageSeverity } from './model';
+import { deriveSeverityFromLevel, IMessage, MessageSeverity } from './model';
 import { useResponsive } from '../responsive';
 
 // ============================================================================
@@ -59,18 +59,25 @@ const LOG_ROW_COLORS: Record<MessageSeverity, string> = {
 // ============================================================================
 
 /**
- * Maps MessageSeverity to MessageLogLevel for shouldLog filtering.
- * 'success' is treated as 'info' since it doesn't exist in the log level hierarchy.
+ * Effective display severity for a message: its explicit `severity` styling override,
+ * or the severity derived from its canonical log level.
  */
-function severityToLogLevel(severity: MessageSeverity): MessageLogLevel {
-  return severity === 'success' ? 'info' : severity;
+function effectiveSeverity(message: IMessage): MessageSeverity {
+  return message.severity ?? deriveSeverityFromLevel(message.level);
 }
 
 /**
  * Filter choices exposed in the UI, mapping labels to ReporterLogLevel values.
+ *
+ * The full log-level granularity is exposed (the core gap fix): `Detail+` lets the panel
+ * filter at the same granularity a ts-utils logger records, including `detail` messages
+ * that the previous severity-based filter could not represent. `All` additionally surfaces
+ * `quiet`-level messages (per {@link @fgv/ts-utils#Logging.shouldLog | shouldLog} semantics,
+ * `quiet` is only visible under the `all` threshold).
  */
 const FILTER_LEVELS: ReadonlyArray<{ readonly label: string; readonly level: Logging.ReporterLogLevel }> = [
   { label: 'All', level: 'all' },
+  { label: 'Detail+', level: 'detail' },
   { label: 'Info+', level: 'info' },
   { label: 'Warn+', level: 'warning' },
   { label: 'Error', level: 'error' }
@@ -111,14 +118,14 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
   const counts = useMemo(() => {
     const result: Record<MessageSeverity, number> = { info: 0, success: 0, warning: 0, error: 0 };
     for (const msg of messages) {
-      result[msg.severity]++;
+      result[effectiveSeverity(msg)]++;
     }
     return result;
   }, [messages]);
 
   const filteredMessages = useMemo(() => {
     return messages.filter((msg) => {
-      const passesLevel = Logging.shouldLog(severityToLogLevel(msg.severity), filterLevel);
+      const passesLevel = Logging.shouldLog(msg.level, filterLevel);
       const passesSearch = searchTerm === '' || msg.text.toLowerCase().includes(searchTerm.toLowerCase());
       return passesLevel && passesSearch;
     });
@@ -142,7 +149,7 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
 
   const copyAllFiltered = useCallback((): void => {
     const text = filteredMessages
-      .map((msg) => `[${msg.severity.toUpperCase()}] ${formatTime(msg.timestamp)} - ${msg.text}`)
+      .map((msg) => `[${msg.level.toUpperCase()}] ${formatTime(msg.timestamp)} - ${msg.text}`)
       .join('\n');
     copyToClipboard(text, '__all__');
   }, [filteredMessages, formatTime, copyToClipboard]);
@@ -265,35 +272,36 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                   {isFiltered ? 'No messages match the current filter' : 'No messages'}
                 </div>
               ) : (
-                filteredMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`group flex items-start gap-2 px-4 py-1.5 text-xs border-b border-border-subtle ${
-                      LOG_ROW_COLORS[msg.severity]
-                    }`}
-                  >
-                    <span className={`shrink-0 ${SEVERITY_COLORS[msg.severity]}`}>
-                      {SEVERITY_ICONS[msg.severity]}
-                    </span>
-                    <span className="flex-1 text-secondary">{msg.text}</span>
-                    <button
-                      onClick={(): void => copyToClipboard(msg.text, msg.id)}
-                      className={`shrink-0 p-0.5 rounded transition-colors ${
-                        copySuccessId === msg.id
-                          ? 'opacity-100 bg-status-success-surface'
-                          : 'opacity-0 group-hover:opacity-100 hover:bg-surface-raised'
-                      }`}
-                      title={copySuccessId === msg.id ? 'Copied!' : 'Copy message'}
+                filteredMessages.map((msg) => {
+                  const severity = effectiveSeverity(msg);
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`group flex items-start gap-2 px-4 py-1.5 text-xs border-b border-border-subtle ${LOG_ROW_COLORS[severity]}`}
                     >
-                      {copySuccessId === msg.id ? (
-                        <CheckIcon className="h-3 w-3 text-status-success-icon" />
-                      ) : (
-                        <DocumentDuplicateIcon className="h-3 w-3 text-muted" />
-                      )}
-                    </button>
-                    <span className="shrink-0 text-muted">{formatTime(msg.timestamp)}</span>
-                  </div>
-                ))
+                      <span className={`shrink-0 ${SEVERITY_COLORS[severity]}`}>
+                        {SEVERITY_ICONS[severity]}
+                      </span>
+                      <span className="flex-1 text-secondary">{msg.text}</span>
+                      <button
+                        onClick={(): void => copyToClipboard(msg.text, msg.id)}
+                        className={`shrink-0 p-0.5 rounded transition-colors ${
+                          copySuccessId === msg.id
+                            ? 'opacity-100 bg-status-success-surface'
+                            : 'opacity-0 group-hover:opacity-100 hover:bg-surface-raised'
+                        }`}
+                        title={copySuccessId === msg.id ? 'Copied!' : 'Copy message'}
+                      >
+                        {copySuccessId === msg.id ? (
+                          <CheckIcon className="h-3 w-3 text-status-success-icon" />
+                        ) : (
+                          <DocumentDuplicateIcon className="h-3 w-3 text-muted" />
+                        )}
+                      </button>
+                      <span className="shrink-0 text-muted">{formatTime(msg.timestamp)}</span>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
