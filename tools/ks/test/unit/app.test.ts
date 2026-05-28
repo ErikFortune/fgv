@@ -199,6 +199,7 @@ describe('KsCli export command', () => {
   const openKeystoreMock = jest.mocked(openKeystore);
   const saveKeystoreFileMock = jest.mocked(saveKeystoreFile);
   const copyTextToClipboardMock = jest.mocked(copyTextToClipboard);
+  const promptHiddenMock = jest.mocked(promptHidden);
   const originalFgvPassword = process.env.FGV_KS_PASSWORD;
   const originalKsPassword = process.env.KS_PASSWORD;
   let consoleLogSpy: jest.SpyInstance;
@@ -209,7 +210,9 @@ describe('KsCli export command', () => {
     listSecrets: jest.fn(() => succeed(Object.keys(secrets))),
     getApiKey: jest.fn((name: string) =>
       secrets[name] !== undefined ? succeed(secrets[name]) : fail(`Secret '${name}' not found`)
-    )
+    ),
+    importApiKey: jest.fn(() => Promise.resolve(succeed({ entry: {}, replaced: false }))),
+    save: jest.fn(() => Promise.resolve(succeed({ format: 'keystore-v1' })))
   });
 
   beforeEach(() => {
@@ -219,7 +222,9 @@ describe('KsCli export command', () => {
     openKeystoreMock.mockReset();
     saveKeystoreFileMock.mockReset();
     copyTextToClipboardMock.mockReset();
+    promptHiddenMock.mockReset();
     copyTextToClipboardMock.mockResolvedValue(succeed('copied'));
+    saveKeystoreFileMock.mockReturnValue(succeed('/mock/keystore'));
 
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -338,5 +343,36 @@ describe('KsCli export command', () => {
 
     expect(copyTextToClipboardMock).toHaveBeenCalledWith("export X='aGVsbG8='");
     expect(consoleLogSpy).not.toHaveBeenCalled();
+  });
+
+  test('persists the raw unencoded prompted value with --persist-missing + non-text encoding', async () => {
+    const keystore = makeKeystore({}) as {
+      importApiKey: jest.Mock;
+      save: jest.Mock;
+    };
+    openKeystoreMock.mockResolvedValue(
+      succeed({
+        path: '/mock/keystore',
+        keystore: keystore as never
+      })
+    );
+    promptHiddenMock.mockResolvedValue(succeed('raw-secret'));
+
+    await new KsCli().run([
+      'node',
+      'ks',
+      'export',
+      '--template-string',
+      'export X={{missing}}',
+      '--encoding',
+      'base64',
+      '--persist-missing'
+    ]);
+
+    // Template substitution sees the encoded value.
+    expect(consoleLogSpy).toHaveBeenCalledWith("export X='cmF3LXNlY3JldA=='");
+    // But the keystore receives the raw, unencoded value — never the base64 form.
+    expect(keystore.importApiKey).toHaveBeenCalledWith('missing', 'raw-secret', { replace: true });
+    expect(keystore.importApiKey).not.toHaveBeenCalledWith('missing', 'cmF3LXNlY3JldA==', expect.anything());
   });
 });

@@ -24,7 +24,7 @@ import {
   saveKeystoreFile,
   storeSecret
 } from './keystore';
-import { encodeSecret, Encoding, ENCODINGS, parseEncoding } from './encoding';
+import { DEFAULT_ENCODING, encodeSecret, Encoding, ENCODINGS, parseEncoding } from './encoding';
 import { extractTemplateVariables, renderShellTemplate, shellQuote } from './template';
 
 interface IKeystoreCommandOptions {
@@ -66,6 +66,10 @@ interface IPasswordChangeOptions extends IKeystoreCommandOptions {
 
 function stripTrailingNewline(value: string): string {
   return value.replace(/\r?\n$/, '');
+}
+
+function addEncodingOption(command: Command, description: string): Command {
+  return command.option(`--encoding <${ENCODINGS.join('|')}>`, description, DEFAULT_ENCODING);
 }
 
 function hasExplicitPasswordSource(options: IKeystoreCommandOptions | IPasswordChangeOptions): boolean {
@@ -410,20 +414,16 @@ export class KsCli {
         }
       });
 
-    this._program
+    const getCommand = this._program
       .command('get <name>')
       .description('Read a secret from the keystore')
       .option('--keystore <path>', 'Keystore file path', defaultKeystorePath())
       .option('--password-env <name>', 'Environment variable to read the password from')
       .option('--password-file <path>', 'Read the password from a file')
       .option('--password-stdin', 'Read the password from stdin', false)
-      .option('--clipboard', 'Copy the secret to the clipboard', false)
-      .option(
-        `--encoding <${ENCODINGS.join('|')}>`,
-        'Encode the secret value before output (default: text)',
-        'text'
-      )
-      .action(async (name: string, options: IGetCommandOptions) => {
+      .option('--clipboard', 'Copy the secret to the clipboard', false);
+    addEncodingOption(getCommand, 'Encode the secret value before output (default: text)').action(
+      async (name: string, options: IGetCommandOptions) => {
         const encoding = parseEncoding(options.encoding);
         if (encoding.isFailure()) {
           console.error(`Error: ${encoding.message}`);
@@ -454,7 +454,8 @@ export class KsCli {
         }
 
         console.log(encoded);
-      });
+      }
+    );
 
     this._program
       .command('list')
@@ -502,7 +503,7 @@ export class KsCli {
         }
       });
 
-    this._program
+    const exportCommand = this._program
       .command('export')
       .description('Render a shell template using secrets from the keystore')
       .option('--keystore <path>', 'Keystore file path', defaultKeystorePath())
@@ -512,86 +513,84 @@ export class KsCli {
       .option('--template-file <path>', 'Read the shell template from a file')
       .option('--template-string <text>', 'Use the supplied shell template string')
       .option('--clipboard', 'Copy the rendered output to the clipboard', false)
-      .option('--persist-missing', 'Persist prompted secrets back to the keystore', false)
-      .option(
-        `--encoding <${ENCODINGS.join('|')}>`,
-        'Encode each secret value before template substitution (default: text)',
-        'text'
-      )
-      .action(async (options: IExportCommandOptions) => {
-        const encoding = parseEncoding(options.encoding);
-        if (encoding.isFailure()) {
-          console.error(`Error: ${encoding.message}`);
-          process.exit(1);
-        }
+      .option('--persist-missing', 'Persist prompted secrets back to the keystore', false);
+    addEncodingOption(
+      exportCommand,
+      'Encode each secret value before template substitution (default: text)'
+    ).action(async (options: IExportCommandOptions) => {
+      const encoding = parseEncoding(options.encoding);
+      if (encoding.isFailure()) {
+        console.error(`Error: ${encoding.message}`);
+        process.exit(1);
+      }
 
-        const password = await resolvePassword(options, 'Keystore password');
-        if (password.isFailure()) {
-          console.error(`Error: ${password.message}`);
-          process.exit(1);
-        }
+      const password = await resolvePassword(options, 'Keystore password');
+      if (password.isFailure()) {
+        console.error(`Error: ${password.message}`);
+        process.exit(1);
+      }
 
-        const template = await readTemplate(options);
-        if (template.isFailure()) {
-          console.error(`Error: ${template.message}`);
-          process.exit(1);
-        }
+      const template = await readTemplate(options);
+      if (template.isFailure()) {
+        console.error(`Error: ${template.message}`);
+        process.exit(1);
+      }
 
-        const opened = await openKeystore(options.keystore, password.value);
-        if (opened.isFailure()) {
-          console.error(`Error: ${opened.message}`);
-          process.exit(1);
-        }
+      const opened = await openKeystore(options.keystore, password.value);
+      if (opened.isFailure()) {
+        console.error(`Error: ${opened.message}`);
+        process.exit(1);
+      }
 
-        const contextResult = await collectTemplateContext(
-          opened.value.keystore,
-          template.value,
-          encoding.value
-        );
-        if (contextResult.isFailure()) {
-          console.error(`Error: ${contextResult.message}`);
-          process.exit(1);
-        }
+      const contextResult = await collectTemplateContext(
+        opened.value.keystore,
+        template.value,
+        encoding.value
+      );
+      if (contextResult.isFailure()) {
+        console.error(`Error: ${contextResult.message}`);
+        process.exit(1);
+      }
 
-        const rendered = renderShellTemplate(template.value, contextResult.value.context);
-        if (rendered.isFailure()) {
-          console.error(`Error: ${rendered.message}`);
-          process.exit(1);
-        }
+      const rendered = renderShellTemplate(template.value, contextResult.value.context);
+      if (rendered.isFailure()) {
+        console.error(`Error: ${rendered.message}`);
+        process.exit(1);
+      }
 
-        if (options.persistMissing && contextResult.value.missing.length > 0) {
-          for (const [name, value] of contextResult.value.missing) {
-            const stored = await opened.value.keystore.importApiKey(name, value, { replace: true });
-            if (stored.isFailure()) {
-              console.error(`Error: Failed to persist missing secret '${name}': ${stored.message}`);
-              process.exit(1);
-            }
-          }
-
-          const saved = await opened.value.keystore.save(password.value);
-          if (saved.isFailure()) {
-            console.error(`Error: ${saved.message}`);
-            process.exit(1);
-          }
-
-          const persisted = await saveKeystoreFile(opened.value.path, saved.value);
-          if (persisted.isFailure()) {
-            console.error(`Error: ${persisted.message}`);
+      if (options.persistMissing && contextResult.value.missing.length > 0) {
+        for (const [name, value] of contextResult.value.missing) {
+          const stored = await opened.value.keystore.importApiKey(name, value, { replace: true });
+          if (stored.isFailure()) {
+            console.error(`Error: Failed to persist missing secret '${name}': ${stored.message}`);
             process.exit(1);
           }
         }
 
-        if (options.clipboard) {
-          const copied = await copyTextToClipboard(rendered.value);
-          if (copied.isFailure()) {
-            console.error(`Error: ${copied.message}`);
-            process.exit(1);
-          }
-          return;
+        const saved = await opened.value.keystore.save(password.value);
+        if (saved.isFailure()) {
+          console.error(`Error: ${saved.message}`);
+          process.exit(1);
         }
 
-        console.log(rendered.value);
-      });
+        const persisted = await saveKeystoreFile(opened.value.path, saved.value);
+        if (persisted.isFailure()) {
+          console.error(`Error: ${persisted.message}`);
+          process.exit(1);
+        }
+      }
+
+      if (options.clipboard) {
+        const copied = await copyTextToClipboard(rendered.value);
+        if (copied.isFailure()) {
+          console.error(`Error: ${copied.message}`);
+          process.exit(1);
+        }
+        return;
+      }
+
+      console.log(rendered.value);
+    });
 
     this._program
       .command('session')
