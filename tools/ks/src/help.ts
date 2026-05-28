@@ -61,6 +61,7 @@ Options:
   --template-string <text>  Use an inline shell template string
   --persist-missing         Save prompted secrets back to the keystore
   --clipboard               Copy the rendered output to the clipboard
+  --encoding <text|base64|hex>  Encode each secret before template substitution (default: text)
 
 Missing secrets referenced by the template are prompted interactively.
 Rendered values are shell-quoted before output.

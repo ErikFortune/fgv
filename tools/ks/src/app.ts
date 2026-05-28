@@ -24,6 +24,7 @@ import {
   saveKeystoreFile,
   storeSecret
 } from './keystore';
+import { encodeSecret, Encoding, ENCODINGS, parseEncoding } from './encoding';
 import { extractTemplateVariables, renderShellTemplate, shellQuote } from './template';
 
 interface IKeystoreCommandOptions {
@@ -46,6 +47,7 @@ interface IPutCommandOptions extends IKeystoreCommandOptions, ISecretValueOption
 
 interface IGetCommandOptions extends IKeystoreCommandOptions {
   clipboard?: boolean;
+  encoding?: string;
 }
 
 interface IExportCommandOptions extends IKeystoreCommandOptions {
@@ -53,6 +55,7 @@ interface IExportCommandOptions extends IKeystoreCommandOptions {
   templateString?: string;
   clipboard?: boolean;
   persistMissing?: boolean;
+  encoding?: string;
 }
 
 interface IPasswordChangeOptions extends IKeystoreCommandOptions {
@@ -236,7 +239,8 @@ interface ITemplateContextResult {
 
 async function collectTemplateContext(
   keystore: CryptoUtils.KeyStore.KeyStore,
-  template: string
+  template: string,
+  encoding: Encoding
 ): Promise<Result<ITemplateContextResult>> {
   const variablesResult = extractTemplateVariables(template);
   if (variablesResult.isFailure()) {
@@ -255,7 +259,7 @@ async function collectTemplateContext(
   for (const variable of variablesResult.value) {
     const secretResult = keystore.getApiKey(variable);
     if (secretResult.isSuccess()) {
-      context[variable] = secretResult.value;
+      context[variable] = encodeSecret(secretResult.value, encoding);
       continue;
     }
 
@@ -268,7 +272,7 @@ async function collectTemplateContext(
       return fail(promptResult.message);
     }
 
-    context[variable] = promptResult.value;
+    context[variable] = encodeSecret(promptResult.value, encoding);
     missing.push([variable, promptResult.value]);
   }
 
@@ -414,7 +418,18 @@ export class KsCli {
       .option('--password-file <path>', 'Read the password from a file')
       .option('--password-stdin', 'Read the password from stdin', false)
       .option('--clipboard', 'Copy the secret to the clipboard', false)
+      .option(
+        `--encoding <${ENCODINGS.join('|')}>`,
+        'Encode the secret value before output (default: text)',
+        'text'
+      )
       .action(async (name: string, options: IGetCommandOptions) => {
+        const encoding = parseEncoding(options.encoding);
+        if (encoding.isFailure()) {
+          console.error(`Error: ${encoding.message}`);
+          process.exit(1);
+        }
+
         const password = await resolvePassword(options, 'Keystore password');
         if (password.isFailure()) {
           console.error(`Error: ${password.message}`);
@@ -427,8 +442,10 @@ export class KsCli {
           process.exit(1);
         }
 
+        const encoded = encodeSecret(secret.value, encoding.value);
+
         if (options.clipboard) {
-          const copied = await copyTextToClipboard(secret.value);
+          const copied = await copyTextToClipboard(encoded);
           if (copied.isFailure()) {
             console.error(`Error: ${copied.message}`);
             process.exit(1);
@@ -436,7 +453,7 @@ export class KsCli {
           return;
         }
 
-        console.log(secret.value);
+        console.log(encoded);
       });
 
     this._program
@@ -496,7 +513,18 @@ export class KsCli {
       .option('--template-string <text>', 'Use the supplied shell template string')
       .option('--clipboard', 'Copy the rendered output to the clipboard', false)
       .option('--persist-missing', 'Persist prompted secrets back to the keystore', false)
+      .option(
+        `--encoding <${ENCODINGS.join('|')}>`,
+        'Encode each secret value before template substitution (default: text)',
+        'text'
+      )
       .action(async (options: IExportCommandOptions) => {
+        const encoding = parseEncoding(options.encoding);
+        if (encoding.isFailure()) {
+          console.error(`Error: ${encoding.message}`);
+          process.exit(1);
+        }
+
         const password = await resolvePassword(options, 'Keystore password');
         if (password.isFailure()) {
           console.error(`Error: ${password.message}`);
@@ -515,7 +543,11 @@ export class KsCli {
           process.exit(1);
         }
 
-        const contextResult = await collectTemplateContext(opened.value.keystore, template.value);
+        const contextResult = await collectTemplateContext(
+          opened.value.keystore,
+          template.value,
+          encoding.value
+        );
         if (contextResult.isFailure()) {
           console.error(`Error: ${contextResult.message}`);
           process.exit(1);
