@@ -33,3 +33,9 @@ export { Converters };
 
 // Key store class
 export { KeyStore } from './keyStore';
+
+// Private-key storage implementations
+export {
+  EncryptedFilePrivateKeyStorage,
+  IEncryptedFilePrivateKeyStorageCreateParams
+} from './encryptedFilePrivateKeyStorage';

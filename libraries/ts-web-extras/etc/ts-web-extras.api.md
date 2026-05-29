@@ -59,7 +59,9 @@ declare namespace CryptoUtils {
         IHpkeSealResult,
         BrowserHashProvider,
         createBrowserCryptoProvider,
-        BrowserCryptoProvider
+        BrowserCryptoProvider,
+        IIdbPrivateKeyStorageCreateParams,
+        IdbPrivateKeyStorage
     }
 }
 export { CryptoUtils }
@@ -266,6 +268,20 @@ export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InM
     syncToDisk(): Promise<Result<void>>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class IdbPrivateKeyStorage implements CryptoUtils_2.KeyStore.IPrivateKeyStorage {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "IdbPrivateKeyStorage"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "IIdbPrivateKeyStorageCreateParams"
+    static create(params?: IIdbPrivateKeyStorageCreateParams): Result<IdbPrivateKeyStorage>;
+    delete(id: string): Promise<Result<string>>;
+    list(): Promise<Result<readonly string[]>>;
+    load(id: string): Promise<Result<CryptoKey>>;
+    store(id: string, key: CryptoKey): Promise<Result<string>>;
+    readonly supportsNonExtractable: true;
+}
+
 // @public
 export interface IDirectoryHandleTreeInitializer {
     // (undocumented)
@@ -339,6 +355,15 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
     readonly namespace?: string;
     // (undocumented)
     readonly userId?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "IdbPrivateKeyStorage"
+//
+// @public
+interface IIdbPrivateKeyStorageCreateParams {
+    readonly databaseName?: string;
+    readonly indexedDB?: IDBFactory;
+    readonly storeName?: string;
 }
 
 // @public

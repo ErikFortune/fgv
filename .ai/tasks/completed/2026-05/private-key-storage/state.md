@@ -1,8 +1,9 @@
 # Stream state: `private-key-storage`
 
-**Status:** 🟢 ready to commission — substrate prep in flight
+**Status:** ✅ implemented — gates green, ready for squash to `release`
 **Integration branch:** `private-key-storage` (off `release`)
-**Last updated:** 2026-05-28 (orchestrator — substrate prep)
+**Work branch:** `claude/epic-hawking-4FMka` → PR targets `private-key-storage`
+**Last updated:** 2026-05-29 (implementation complete)
 
 ---
 
@@ -10,7 +11,7 @@
 
 | Phase | Status | Notes |
 |---|---|---|
-| Implementation | 🟢 ready | Single-PR feature; both impls + JSDoc fix + tests + capabilities doc together. |
+| Implementation | ✅ done | Both impls + JSDoc fix + tests + capabilities doc + `minor` rush change files. Full `rush build` clean; `rushx lint` clean both packages; 100% coverage on both new files. See `result.md` for signature deltas, id-sanitization (reject), delete-missing (fail, consistent), and the `fake-indexeddb` / `structuredClone` test notes. |
 
 ---
 

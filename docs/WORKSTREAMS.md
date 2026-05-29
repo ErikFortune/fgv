@@ -128,12 +128,12 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `private-key-storage` 🟢
+### `private-key-storage` ✅
 
-**Status:** 🟢 ready to commission (substrate prep in flight)
+**Status:** ✅ implemented — gates green; ready for squash to `release`
 **Integration branch:** `private-key-storage` (off `release`) → squash to `release` at close
 **Workflow shape:** single implementation PR onto integration branch (both impls together)
-**Substrate:** `.ai/tasks/active/private-key-storage/{brief.md, state.md}`
+**Substrate:** `.ai/tasks/completed/2026-05/private-key-storage/{brief.md, state.md, result.md, README.md}`
 **Package surface:** `@fgv/ts-extras/crypto-utils` (encrypted-file impl, Node) + `@fgv/ts-web-extras/crypto-utils` (IndexedDB impl, browser) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
 **Out-of-scope:** changes to the `IPrivateKeyStorage` interface, to `KeyStore.addKeyPair` semantics, or to `@fgv/ts-chocolate`. Multi-process/multi-tab concurrency (single-process/single-tab assumption; documented limit). Password-derivation helper for the file impl's encryption key (consumer concern).
 
