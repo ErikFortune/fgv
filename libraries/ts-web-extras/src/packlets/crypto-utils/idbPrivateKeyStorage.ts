@@ -202,14 +202,32 @@ export class IdbPrivateKeyStorage implements CryptoUtils.KeyStore.IPrivateKeySto
     if (dbResult.isFailure()) {
       return fail(dbResult.message);
     }
-    const txnResult = captureResult(() =>
-      dbResult.value.transaction(this._storeName, mode).objectStore(this._storeName)
-    );
+    const txnResult = captureResult(() => dbResult.value.transaction(this._storeName, mode));
     /* c8 ignore next 3 - transaction creation only throws if the store was deleted out from under us */
     if (txnResult.isFailure()) {
       return fail(txnResult.message);
     }
-    return op(txnResult.value);
+    const transaction = txnResult.value;
+
+    // For writes, a successful request is not durable until the transaction
+    // commits (oncomplete); it can still abort afterwards. Attach the completion
+    // listener BEFORE issuing the request so no event is missed, and wait for it
+    // before reporting success. Reads need no such wait.
+    const completion = mode === 'readwrite' ? this._awaitCompletion(transaction) : undefined;
+
+    const opResult = await op(transaction.objectStore(this._storeName));
+    /* c8 ignore next 3 - defensive: the request itself only fails on an IndexedDB environment fault */
+    if (opResult.isFailure()) {
+      return opResult;
+    }
+    if (completion !== undefined) {
+      const commitResult = await completion;
+      /* c8 ignore next 3 - defensive: a transaction abort after a successful request requires an IndexedDB environment fault */
+      if (commitResult.isFailure()) {
+        return fail(commitResult.message);
+      }
+    }
+    return opResult;
   }
 
   private async _request<T>(request: IDBRequest<T>): Promise<Result<T>> {
@@ -219,6 +237,20 @@ export class IdbPrivateKeyStorage implements CryptoUtils.KeyStore.IPrivateKeySto
           request.onsuccess = (): void => resolve(request.result);
           /* c8 ignore next 2 - defensive: per-request errors require a corrupted IndexedDB environment */
           request.onerror = (): void => reject(request.error ?? new Error('IndexedDB request failed'));
+        })
+    );
+  }
+
+  private async _awaitCompletion(transaction: IDBTransaction): Promise<Result<true>> {
+    return captureAsyncResult<true>(
+      () =>
+        new Promise<true>((resolve, reject) => {
+          transaction.oncomplete = (): void => resolve(true);
+          /* c8 ignore next 4 - defensive: abort/error after a successful write requires an IndexedDB environment fault */
+          transaction.onabort = (): void =>
+            reject(transaction.error ?? new Error('IndexedDB transaction aborted'));
+          transaction.onerror = (): void =>
+            reject(transaction.error ?? new Error('IndexedDB transaction error'));
         })
     );
   }

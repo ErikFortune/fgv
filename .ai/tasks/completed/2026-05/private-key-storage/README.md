@@ -9,7 +9,7 @@ shipping the two backends the JSDoc promised but never delivered, plus the JSDoc
   `CryptoKey` objects directly, `supportsNonExtractable: true`.
 - JSDoc on `IPrivateKeyStorage` now points at the real impls (removed `@fgv/ts-chocolate`).
 
-Origin: cross-repo gap surfaced 2026-05-28 by a personaility agent —
+Origin: cross-repo gap surfaced 2026-05-28 by a hardback agent —
 `KeyStore.addKeyPair` failed with `'No private key storage configured'` because ts-extras
 shipped only the interface.
 

@@ -28,7 +28,7 @@ import {
   Result,
   succeed
 } from '@fgv/ts-utils';
-import { FileTree, JsonValue } from '@fgv/ts-json-base';
+import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { createEncryptedFile, tryDecryptFile } from '../encryptedFile';
 import { keyPairAlgorithmParams } from '../keyPairAlgorithmParams';
 import { ICryptoProvider, KeyPairAlgorithm } from '../model';
@@ -139,7 +139,9 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
     cryptoProvider: ICryptoProvider
   ) {
     this._directory = directory;
-    this._encryptionKey = encryptionKey;
+    // Clone so the instance holds an immutable snapshot — callers that later
+    // reuse or zero their buffer must not be able to mutate our key.
+    this._encryptionKey = Uint8Array.from(encryptionKey);
     this._cryptoProvider = cryptoProvider;
   }
 
@@ -197,13 +199,13 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
       return fail(`failed to serialize private key '${id}': ${serializeResult.message}`);
     }
 
-    const envelope: IStoredPrivateKeyEnvelope = {
+    const envelope: JsonObject = {
       algorithm: algorithmResult.value,
       jwk: serializeResult.value
     };
 
     const encryptResult = await createEncryptedFile({
-      content: envelope as unknown as JsonValue,
+      content: envelope,
       secretName: id,
       key: this._encryptionKey,
       cryptoProvider: this._cryptoProvider
@@ -213,9 +215,13 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
       return fail(`failed to encrypt private key '${id}': ${encryptResult.message}`);
     }
 
-    return this._writeFile(fileNameResult.value, encryptResult.value as unknown as JsonValue).onSuccess(() =>
-      succeed(id)
-    );
+    const fileTextResult = captureResult(() => JSON.stringify(encryptResult.value));
+    /* c8 ignore next 3 - JSON.stringify of the plain IEncryptedFile record does not throw */
+    if (fileTextResult.isFailure()) {
+      return fail(`failed to serialize encrypted file for '${id}': ${fileTextResult.message}`);
+    }
+
+    return this._writeFile(fileNameResult.value, fileTextResult.value).onSuccess(() => succeed(id));
   }
 
   /**
@@ -337,22 +343,20 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
     });
   }
 
-  private _writeFile(fileName: string, content: JsonValue): Result<JsonValue> {
+  private _writeFile(fileName: string, text: string): Result<string> {
     return this._findFile(fileName).onSuccess((existing) => {
       if (existing !== undefined) {
         /* c8 ignore next 3 - defensive: file items from read-only adapters lack mutation methods */
         if (!FileTree.isMutableFileItem(existing)) {
           return fail(`${existing.absolutePath}: not mutable`);
         }
-        return existing.setContents(content);
+        return existing.setRawContents(text);
       }
       /* c8 ignore next 3 - defensive: directory items from read-only adapters lack mutation methods */
       if (!FileTree.isMutableDirectoryItem(this._directory)) {
         return fail(`${this._directory.absolutePath}: not mutable`);
       }
-      return this._directory
-        .createChildFile(fileName, JSON.stringify(content))
-        .onSuccess(() => succeed(content));
+      return this._directory.createChildFile(fileName, text).onSuccess(() => succeed(text));
     });
   }
 

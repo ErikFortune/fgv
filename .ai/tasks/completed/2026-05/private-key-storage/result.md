@@ -77,6 +77,6 @@ The jsdom test environment lacks `structuredClone` (which `fake-indexeddb` uses)
 
 ---
 
-## Cross-repo handoff-back (personaility)
+## Cross-repo handoff-back (hardback)
 
-The gap personaility surfaced (`KeyStore.addKeyPair` → `'No private key storage configured'`) is closed: ship `EncryptedFilePrivateKeyStorage` (Node) or `IdbPrivateKeyStorage` (browser) as the `privateKeyStorage` backend in the next alpha. Both land additively on the established ts-extras crypto surface — no interface or `addKeyPair` semantic changes.
+The gap hardback surfaced (`KeyStore.addKeyPair` → `'No private key storage configured'`) is closed: ship `EncryptedFilePrivateKeyStorage` (Node) or `IdbPrivateKeyStorage` (browser) as the `privateKeyStorage` backend in the next alpha. Both land additively on the established ts-extras crypto surface — no interface or `addKeyPair` semantic changes.

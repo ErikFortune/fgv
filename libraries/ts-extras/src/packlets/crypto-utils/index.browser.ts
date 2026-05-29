@@ -36,8 +36,9 @@ export {
   GCM_IV_SIZE
 } from './constants';
 
-// KeyStore namespace
-import * as KeyStore from './keystore';
+// KeyStore namespace (browser-safe barrel — omits the Node-only
+// EncryptedFilePrivateKeyStorage so the browser entry stays free of node:crypto)
+import * as KeyStore from './keystore/index.browser';
 export { KeyStore };
 
 // Converters namespace

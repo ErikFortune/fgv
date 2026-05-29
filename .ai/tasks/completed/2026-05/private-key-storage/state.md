@@ -33,7 +33,7 @@
 
 ## Origin
 
-Cross-repo gap surfaced 2026-05-28 by a personaility agent investigating agent/hub private-key persistence: `KeyStore.addKeyPair` fails with `'No private key storage configured'` unless a backend is supplied, and ts-extras ships only the interface. The `IPrivateKeyStorage` JSDoc claims impls live in `@fgv/ts-web-extras` (false — no IDB impl ships) and `@fgv/ts-chocolate` (not in this monorepo). Textbook L18 (docs describe design intent, not shipped behavior). Erik confirmed the gap and commissioned this stream to close it.
+Cross-repo gap surfaced 2026-05-28 by a hardback agent investigating agent/hub private-key persistence: `KeyStore.addKeyPair` fails with `'No private key storage configured'` unless a backend is supplied, and ts-extras ships only the interface. The `IPrivateKeyStorage` JSDoc claims impls live in `@fgv/ts-web-extras` (false — no IDB impl ships) and `@fgv/ts-chocolate` (not in this monorepo). Textbook L18 (docs describe design intent, not shipped behavior). Erik confirmed the gap and commissioned this stream to close it.
 
 ---
 
@@ -41,7 +41,7 @@ Cross-repo gap surfaced 2026-05-28 by a personaility agent investigating agent/h
 
 | Date | Event | Notes |
 |---|---|---|
-| 2026-05-28 | Gap verified against code | personaility agent's claim confirmed: ts-extras has interface only; `addKeyPair` requires a backend; `ts-web-extras` ships no IDB impl; `@fgv/ts-chocolate` not in this monorepo. |
+| 2026-05-28 | Gap verified against code | hardback agent's claim confirmed: ts-extras has interface only; `addKeyPair` requires a backend; `ts-web-extras` ships no IDB impl; `@fgv/ts-chocolate` not in this monorepo. |
 | 2026-05-28 | Stream commissioned + substrate prep | brief + state + WORKSTREAMS + integration branch + substrate PR. |
 
 ---

@@ -139,6 +139,22 @@ describe('EncryptedFilePrivateKeyStorage', () => {
       expect(await provider.verify(first.publicKey, signature, data)).toSucceedWith(false);
     });
 
+    test('snapshots the encryption key (caller mutation does not affect stored keys)', async () => {
+      const encryptionKey = makeKey();
+      const storage = makeStorage(encryptionKey);
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      await storage.store('snap', pair.privateKey);
+
+      // Zero the caller's buffer after construction + store; the instance must
+      // still decrypt using its own immutable snapshot.
+      encryptionKey.fill(0);
+
+      const loaded = (await storage.load('snap')).orThrow();
+      const data = encoder.encode('snapshot');
+      const signature = (await provider.sign(loaded, data)).orThrow();
+      expect(await provider.verify(pair.publicKey, signature, data)).toSucceedWith(true);
+    });
+
     test('round-trips against a real filesystem directory', async () => {
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fgv-pks-'));
       try {

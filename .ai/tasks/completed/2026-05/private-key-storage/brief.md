@@ -14,7 +14,7 @@ Close the long-standing `IPrivateKeyStorage` implementation gap in the published
 - **`IdbPrivateKeyStorage`** in `@fgv/ts-web-extras/crypto-utils` — IndexedDB-backed; stores `CryptoKey` objects directly; `supportsNonExtractable: true`.
 - **`EncryptedFilePrivateKeyStorage`** (name TBD) in `@fgv/ts-extras/crypto-utils` — directory-on-disk; one file per stored key; AES-256-GCM-encrypted JWK content; `supportsNonExtractable: false` (Node `CryptoKey` round-trips via JWK).
 
-**Origin.** Cross-repo gap surfaced 2026-05-28 by a personaility agent: `KeyStore.addKeyPair` fails with `'No private key storage configured'` unless the consumer supplies an `IPrivateKeyStorage` backend, and ts-extras ships only the interface. The JSDoc on `privateKeyStorage.ts:25-27` claims impls live in `@fgv/ts-web-extras` and `@fgv/ts-chocolate` — neither is true today. Textbook L18 (docs describe design intent, not shipped behavior); textbook gap-then-fix (consumer "would have rolled their own"; we ship in fgv so every consumer benefits + the JSDoc becomes accurate).
+**Origin.** Cross-repo gap surfaced 2026-05-28 by a hardback agent: `KeyStore.addKeyPair` fails with `'No private key storage configured'` unless the consumer supplies an `IPrivateKeyStorage` backend, and ts-extras ships only the interface. The JSDoc on `privateKeyStorage.ts:25-27` claims impls live in `@fgv/ts-web-extras` and `@fgv/ts-chocolate` — neither is true today. Textbook L18 (docs describe design intent, not shipped behavior); textbook gap-then-fix (consumer "would have rolled their own"; we ship in fgv so every consumer benefits + the JSDoc becomes accurate).
 
 **Status of the gap today (verified against code):**
 - `libraries/ts-extras/src/packlets/crypto-utils/keystore/privateKeyStorage.ts` — interface-only.
@@ -174,4 +174,4 @@ Remove the now-incorrect `@fgv/ts-chocolate` reference (chocolate-lab's consumer
 
 ## Downstream
 
-After ship: handoff-back note appended to the logging-observability cross-repo reply (`.ai/notes/cross-repo-handoffs/...`) noting the IPKS impls landed in the next alpha — closes the gap personaility surfaced.
+After ship: handoff-back note appended to the logging-observability cross-repo reply (`.ai/notes/cross-repo-handoffs/...`) noting the IPKS impls landed in the next alpha — closes the gap hardback surfaced.
