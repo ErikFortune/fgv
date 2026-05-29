@@ -128,6 +128,19 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `ts-app-shell-styling-hardening` 🟢
+
+**Status:** 🟢 ready to commission — substrate prep in flight
+**Integration branch:** `ts-app-shell-styling-hardening` (off `release`) → squash to `release` at close
+**Workflow shape:** single implementation PR onto integration branch
+**Substrate:** `.ai/tasks/active/ts-app-shell-styling-hardening/{brief.md, state.md}`
+**Package surface:** `@fgv/ts-app-shell` `messages` packlet (icon SVGs + `MessagesContextProvider`) + README setup section + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Out-of-scope:** pre-compiled CSS as a second distribution channel; other ts-app-shell packlets (sidebar, column-cascade, modal) unless an equally-catastrophic site surfaces; full README rewrite; personaility-side `tailwind.config.js` fix (handled separately by Erik forwarding the README pointer).
+
+**Mission.** Harden `@fgv/ts-app-shell` against the most common consumer misconfiguration — forgetting to add `'./node_modules/@fgv/ts-app-shell/lib/**/*.{js,jsx}'` to their Tailwind `content` array. Today that produces invisible icon buttons + viewport-overflowing positioned overlays because Tailwind tree-shakes every geometry utility used inside the package while theme tokens still resolve (consumer uses them in their own source). Two layers: (1) defensive inline `style={{ width, height, position, ... }}` on the catastrophically-sized icons/overlays in the `messages` packlet, so the worst symptoms don't manifest; (2) a one-shot probe in `MessagesContextProvider` that measures an `h-3.5` test element on mount, and if it's 0px tall calls `addMessage('warning', ..., { action: { href: '<README#Setup>' } })` to surface a clickable in-panel diagnostic. Plus targeted README nudges (top-of-doc "Required setup" callout, stable `## Setup` anchor, troubleshooting section).
+
+**Origin.** Cross-repo debug 2026-05-29: personaility on `@fgv/ts-app-shell@5.1.0-32` reported "no filter button visible." DOM proved classes present without CSS; clicking near them surfaced a giant magnifying-glass overlay. Root cause: missing `content` path entry on consumer side. README is correct but easy to miss; failure mode is silent and catastrophic enough to warrant defensive measures in the package. Personaility currently blocked on `private-key-storage` so this can ship in the same alpha — no rush to land standalone.
+
 ### `messages-log-levels` 🟢
 
 **Status:** ✅ implementation complete — PR open onto `messages-log-levels`; ready to squash → `release`
