@@ -3,9 +3,10 @@
 Closed the `IPrivateKeyStorage` implementation gap in the published fgv packages by
 shipping the two backends the JSDoc promised but never delivered, plus the JSDoc fix.
 
-- **`EncryptedFilePrivateKeyStorage`** (`@fgv/ts-extras/crypto-utils`) — directory-on-disk,
-  one AES-256-GCM-encrypted JWK file per key, FileTree I/O, `supportsNonExtractable: false`.
-- **`IdbPrivateKeyStorage`** (`@fgv/ts-web-extras/crypto-utils`) — IndexedDB, stores
+- **`EncryptedFilePrivateKeyStorage`** (`CryptoUtils.KeyStore` from `@fgv/ts-extras`) —
+  directory-on-disk, one AES-256-GCM-encrypted JWK file per key, FileTree I/O,
+  `supportsNonExtractable: false`.
+- **`IdbPrivateKeyStorage`** (`CryptoUtils` from `@fgv/ts-web-extras`) — IndexedDB, stores
   `CryptoKey` objects directly, `supportsNonExtractable: true`.
 - JSDoc on `IPrivateKeyStorage` now points at the real impls (removed `@fgv/ts-chocolate`).
 

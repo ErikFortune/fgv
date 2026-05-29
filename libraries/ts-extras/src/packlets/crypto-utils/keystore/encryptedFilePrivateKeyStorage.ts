@@ -33,7 +33,7 @@ import { createEncryptedFile, tryDecryptFile } from '../encryptedFile';
 import { keyPairAlgorithmParams } from '../keyPairAlgorithmParams';
 import { ICryptoProvider, KeyPairAlgorithm } from '../model';
 import * as Constants from '../constants';
-import { keyPairAlgorithm } from './converters';
+import { jsonWebKeyShape, keyPairAlgorithm } from './converters';
 import { IPrivateKeyStorage } from './privateKeyStorage';
 
 /**
@@ -361,10 +361,10 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
   }
 
   private async _importPrivateKey(envelope: IStoredPrivateKeyEnvelope): Promise<Result<CryptoKey>> {
-    const jwkResult = captureResult(() => JSON.parse(envelope.jwk) as JsonWebKey).withErrorFormat(
-      (msg) => `malformed JWK: ${msg}`
-    );
-    /* c8 ignore next 3 - JWK text we wrote ourselves as authenticated ciphertext does not fail JSON.parse */
+    const jwkResult = captureResult(() => JSON.parse(envelope.jwk) as unknown)
+      .withErrorFormat((msg) => `malformed JWK: ${msg}`)
+      .onSuccess((parsed) => jsonWebKeyShape.validate(parsed));
+    /* c8 ignore next 3 - JWK text we wrote ourselves as authenticated ciphertext is well-formed */
     if (jwkResult.isFailure()) {
       return fail(jwkResult.message);
     }
