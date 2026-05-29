@@ -167,6 +167,34 @@ describe('IdbPrivateKeyStorage', () => {
         expect(loaded.algorithm.name).toBe('Ed25519');
       });
     });
+
+    test('adds a missing object store to a pre-existing database via version bump', async () => {
+      const factory = new IDBFactory();
+      const databaseName = 'shared-db';
+      const key = await makeSigningKey();
+
+      // First instance creates the database with the default store name.
+      const first = IdbPrivateKeyStorage.create({ indexedDB: factory, databaseName }).orThrow();
+      await first.store('a', key);
+
+      // Second instance targets the SAME database but a DIFFERENT store name.
+      // The store does not exist yet at the current version; opening must bump
+      // the version to create it rather than failing later writes.
+      const second = IdbPrivateKeyStorage.create({
+        indexedDB: factory,
+        databaseName,
+        storeName: 'otherKeys'
+      }).orThrow();
+      expect(await second.store('b', key)).toSucceedWith('b');
+      expect(await second.load('b')).toSucceed();
+      // The two stores are independent.
+      expect(await second.load('a')).toFailWith(/key not found/);
+      expect(await second.list()).toSucceedWith(['b']);
+
+      // The original store is intact after the version bump.
+      const firstAgain = IdbPrivateKeyStorage.create({ indexedDB: factory, databaseName }).orThrow();
+      expect(await firstAgain.load('a')).toSucceed();
+    });
   });
 
   describe('KeyStore integration', () => {

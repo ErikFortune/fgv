@@ -34,8 +34,7 @@
       "default": {
         "import": "./lib/packlets/crypto-utils/keystore/index.browser.js",
         "require": "./lib/packlets/crypto-utils/keystore/index.browser.js"
-      },
-      "types": "./dist/ts-extras.d.ts"
+      }
     },
     "./hash": {
       "node": {

@@ -50,13 +50,6 @@ const DEFAULT_DATABASE_NAME: string = 'fgv-keystore-private-keys';
 const DEFAULT_STORE_NAME: string = 'privateKeys';
 
 /**
- * Current IndexedDB schema version. The IndexedDB database version *is* the
- * schema version; future migrations bump this and extend the `onupgradeneeded`
- * switch additively.
- */
-const SCHEMA_VERSION: number = 1;
-
-/**
  * {@link CryptoUtils.KeyStore.IPrivateKeyStorage | IPrivateKeyStorage}
  * implementation backed by IndexedDB. Stores `CryptoKey` objects directly via
  * IndexedDB's structured-clone serialization — no JWK round-trip — so it works
@@ -172,25 +165,61 @@ export class IdbPrivateKeyStorage implements CryptoUtils.KeyStore.IPrivateKeySto
     if (this._db !== undefined) {
       return succeed(this._db);
     }
-    const openResult = await captureAsyncResult<IDBDatabase>(
+    const firstOpen = await this._open(undefined);
+    /* c8 ignore next 3 - defensive: database open only fails on a corrupted/blocked IndexedDB environment */
+    if (firstOpen.isFailure()) {
+      return firstOpen;
+    }
+    // The object store is created in `onupgradeneeded`, which only fires when
+    // the version changes. If a database at this name already existed at the
+    // current version but without our store (e.g. a different `storeName` than
+    // a prior instance used), the store is absent. Re-open at the next version
+    // to add it via a version-bump upgrade rather than failing later writes
+    // with NotFoundError.
+    let db = firstOpen.value;
+    if (!db.objectStoreNames.contains(this._storeName)) {
+      const nextVersion = db.version + 1;
+      db.close();
+      const reopen = await this._open(nextVersion);
+      /* c8 ignore next 3 - defensive: the version-bump re-open only fails on an IndexedDB environment fault */
+      if (reopen.isFailure()) {
+        return reopen;
+      }
+      db = reopen.value;
+    }
+    this._db = db;
+    return succeed(db);
+  }
+
+  private async _open(version: number | undefined): Promise<Result<IDBDatabase>> {
+    return captureAsyncResult<IDBDatabase>(
       () =>
         new Promise<IDBDatabase>((resolve, reject) => {
-          const request = this._factory.open(this._databaseName, SCHEMA_VERSION);
+          const request =
+            version === undefined
+              ? this._factory.open(this._databaseName)
+              : this._factory.open(this._databaseName, version);
           request.onupgradeneeded = (): void => {
-            // Schema v1: create the private-keys object store. Future schema
-            // versions bump SCHEMA_VERSION and switch on the upgrade event's
-            // oldVersion to apply additive migrations from here.
-            request.result.createObjectStore(this._storeName);
+            // Create our object store if absent. This fires on initial creation
+            // and on the version bump used to add a store to an existing
+            // database; future schema migrations extend this hook additively.
+            if (!request.result.objectStoreNames.contains(this._storeName)) {
+              request.result.createObjectStore(this._storeName);
+            }
           };
-          request.onsuccess = (): void => resolve(request.result);
+          request.onsuccess = (): void => {
+            const db = request.result;
+            // If another connection (e.g. a sibling instance adding a store via
+            // version bump, or another tab) needs to upgrade, close this one so
+            // we don't block it. Single-tab use is the documented assumption;
+            // this just prevents a deadlock when several instances share a db.
+            db.onversionchange = (): void => db.close();
+            resolve(db);
+          };
           /* c8 ignore next 2 - defensive: open errors require a corrupted/blocked IndexedDB environment */
           request.onerror = (): void => reject(request.error ?? new Error('IndexedDB open failed'));
         })
     );
-    return openResult.onSuccess((db) => {
-      this._db = db;
-      return succeed(db);
-    });
   }
 
   private async _withStore<T>(

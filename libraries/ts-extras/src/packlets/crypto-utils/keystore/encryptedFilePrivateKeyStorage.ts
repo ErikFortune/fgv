@@ -67,9 +67,10 @@ export interface IEncryptedFilePrivateKeyStorageCreateParams {
    * Optional {@link FileTree.IFileTreeDirectoryItem | FileTree directory}
    * override. When supplied it is used as the storage directory directly and
    * {@link IEncryptedFilePrivateKeyStorageCreateParams.directory} is ignored —
-   * pass an in-memory tree for tests, or a zip/browser-backed tree for other
-   * environments. When omitted, a mutable `FsTree` rooted at `directory` is
-   * used.
+   * pass an in-memory tree for tests, or another Node-compatible backend. When
+   * omitted, a mutable `FsTree` rooted at `directory` is used. (This backend is
+   * Node-only — it round-trips keys through `node:crypto` — so a browser file
+   * tree is not a supported target.)
    */
   readonly tree?: FileTree.IFileTreeDirectoryItem;
 }
@@ -114,8 +115,13 @@ const FILE_SUFFIX: string = '.json';
  * keystore generates extractable keys when a backend reports `false` here.
  *
  * I/O goes through the {@link FileTree.FileTree | FileTree} abstraction (default
- * `FsTree`), so the same implementation works against an in-memory tree (tests),
- * a zip-backed tree, or a browser file tree.
+ * `FsTree`), so the same implementation works against an in-memory tree (tests)
+ * or any other Node-compatible backend.
+ *
+ * This backend is **Node-only**: it round-trips private keys through
+ * `node:crypto` (`crypto.webcrypto.subtle`), so it is intentionally excluded
+ * from the browser entry point. Browser consumers should use
+ * `IdbPrivateKeyStorage` from `@fgv/ts-web-extras` instead.
  *
  * Single-process assumption: there is no inter-process locking. Concurrent
  * writers to the same directory may race.
