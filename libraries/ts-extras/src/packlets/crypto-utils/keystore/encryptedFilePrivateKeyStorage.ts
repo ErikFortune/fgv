@@ -95,15 +95,6 @@ const envelopeConverter: Converter<IStoredPrivateKeyEnvelope> = Converters.objec
 // `crypto.subtle.importKey` requires when re-importing a private JWK.
 const PUBLIC_ONLY_USAGES: ReadonlyArray<KeyUsage> = ['verify', 'encrypt', 'wrapKey'];
 
-// Reverse map from a WebCrypto algorithm name to the public KeyPairAlgorithm.
-const ALGORITHM_BY_WEBCRYPTO_NAME: Readonly<Record<string, KeyPairAlgorithm>> = {
-  ECDSA: 'ecdsa-p256',
-  ECDH: 'ecdh-p256',
-  'RSA-OAEP': 'rsa-oaep-2048',
-  Ed25519: 'ed25519',
-  X25519: 'x25519'
-};
-
 // Safe-filename id production. The keystore mints UUIDv4 handles, which match;
 // arbitrary consumer-supplied ids that could escape the storage directory are
 // rejected rather than silently mangled.
@@ -190,6 +181,9 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
     const algorithmResult = this._algorithmOf(key);
     if (algorithmResult.isFailure()) {
       return fail(`failed to store private key '${id}': ${algorithmResult.message}`);
+    }
+    if (key.type !== 'private') {
+      return fail(`failed to store private key '${id}': expected a private key, got '${key.type}'`);
     }
 
     const jwkResult = await captureAsyncResult(() => crypto.webcrypto.subtle.exportKey('jwk', key));
@@ -308,12 +302,32 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
   }
 
   private _algorithmOf(key: CryptoKey): Result<KeyPairAlgorithm> {
-    const name = key.algorithm.name;
-    const algorithm = ALGORITHM_BY_WEBCRYPTO_NAME[name];
-    if (algorithm === undefined) {
-      return fail(`unsupported key algorithm '${name}'`);
+    const alg = key.algorithm;
+    switch (alg.name) {
+      case 'ECDSA':
+      case 'ECDH': {
+        const curve = (alg as EcKeyAlgorithm).namedCurve;
+        if (curve !== 'P-256') {
+          return fail(`unsupported ${alg.name} curve '${curve}' (only P-256 is supported)`);
+        }
+        return succeed(alg.name === 'ECDSA' ? 'ecdsa-p256' : 'ecdh-p256');
+      }
+      case 'RSA-OAEP': {
+        // Only the hash affects the JWK re-import params, so it is the field
+        // that must match; the modulus length is recovered from the key data.
+        const hash = (alg as RsaHashedKeyAlgorithm).hash.name;
+        if (hash !== 'SHA-256') {
+          return fail(`unsupported RSA-OAEP hash '${hash}' (only SHA-256 is supported)`);
+        }
+        return succeed('rsa-oaep-2048');
+      }
+      case 'Ed25519':
+        return succeed('ed25519');
+      case 'X25519':
+        return succeed('x25519');
+      default:
+        return fail(`unsupported key algorithm '${alg.name}'`);
     }
-    return succeed(algorithm);
   }
 
   private _findFile(fileName: string): Result<FileTree.IFileTreeFileItem | undefined> {

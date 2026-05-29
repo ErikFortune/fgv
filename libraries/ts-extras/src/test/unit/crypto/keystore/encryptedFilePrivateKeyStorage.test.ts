@@ -171,6 +171,38 @@ describe('EncryptedFilePrivateKeyStorage', () => {
       expect(await storage.store('aes', aesKey)).toFailWith(/unsupported key algorithm 'AES-GCM'/);
     });
 
+    test('rejects a public key (contract is private keys only)', async () => {
+      const storage = makeStorage();
+      const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      expect(await storage.store('pub', pair.publicKey)).toFailWith(/expected a private key, got 'public'/);
+    });
+
+    test('rejects an ECDSA key on an unsupported curve', async () => {
+      const storage = makeStorage();
+      const pair = await crypto.webcrypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-384' }, true, [
+        'sign',
+        'verify'
+      ]);
+      expect(await storage.store('p384', pair.privateKey)).toFailWith(/unsupported ECDSA curve 'P-384'/);
+    });
+
+    test('rejects an RSA-OAEP key with an unsupported hash', async () => {
+      const storage = makeStorage();
+      const pair = await crypto.webcrypto.subtle.generateKey(
+        {
+          name: 'RSA-OAEP',
+          modulusLength: 2048,
+          publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+          hash: 'SHA-512'
+        },
+        true,
+        ['encrypt', 'decrypt']
+      );
+      expect(await storage.store('rsa512', pair.privateKey)).toFailWith(
+        /unsupported RSA-OAEP hash 'SHA-512'/
+      );
+    });
+
     test.each([['../evil'], ['a/b'], ['.'], ['..'], [''], ['has space']])(
       'rejects unsafe id %p',
       async (id) => {

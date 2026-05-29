@@ -117,6 +117,9 @@ export class IdbPrivateKeyStorage implements CryptoUtils.KeyStore.IPrivateKeySto
    * @param key - The private `CryptoKey` to persist.
    */
   public async store(id: string, key: CryptoKey): Promise<Result<string>> {
+    if (key.type !== 'private') {
+      return fail(`failed to store private key '${id}': expected a private key, got '${key.type}'`);
+    }
     return (await this._withStore('readwrite', (store) => this._request(store.put(key, id))))
       .withErrorFormat((msg) => `failed to store private key '${id}': ${msg}`)
       .onSuccess(() => succeed(id));

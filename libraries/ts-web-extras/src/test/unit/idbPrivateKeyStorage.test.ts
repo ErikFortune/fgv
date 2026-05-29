@@ -102,6 +102,14 @@ describe('IdbPrivateKeyStorage', () => {
     });
   });
 
+  describe('store', () => {
+    test('rejects a public key (contract is private keys only)', async () => {
+      const storage = makeStorage();
+      const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      expect(await storage.store('pub', pair.publicKey)).toFailWith(/expected a private key, got 'public'/);
+    });
+  });
+
   describe('load', () => {
     test('fails for a missing id', async () => {
       const storage = makeStorage();
