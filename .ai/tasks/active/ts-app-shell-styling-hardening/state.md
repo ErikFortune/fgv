@@ -1,0 +1,53 @@
+# Stream state: `ts-app-shell-styling-hardening`
+
+**Status:** 🟢 ready to commission — substrate prep in flight
+**Integration branch:** `ts-app-shell-styling-hardening` (off `release`)
+**Last updated:** 2026-05-29 (orchestrator — substrate prep)
+
+---
+
+## Phase status
+
+| Phase | Status | Notes |
+|---|---|---|
+| Implementation | 🟢 ready | Single-PR feature; Layers 1 + 2 + 3 land together. |
+
+---
+
+## Decisions log
+
+| Decision | Rationale |
+|---|---|
+| Two-layer hardening (defensive geometry + self-diagnosing probe), not pre-compiled-CSS alternative | The Tailwind preset + theme.css distribution is correct and complete (shipped via #411). The bug is consumer misconfiguration of `content` paths. Hardening the failure mode is cheaper and more durable than adding a second distribution channel. |
+| Layer 1 scope = only catastrophically-sized icons/overlays | The whole point of the Tailwind preset is consumers run Tailwind. Inline-styling everything defeats that. Only the icons whose Tailwind absence produces invisible/off-screen-sized output (the actual personaility symptoms) get defensive geometry. |
+| Layer 2 probe always-on, not dev-only | A misconfigured *production* build is exactly when nobody is watching the console. The in-app message is the only signal that lands. Cost is one DOM measurement on mount. |
+| Layer 2 uses the canonical messages API (`addMessage('warning', ..., { action: { ..., href } })`) | Reuses the post-#424 two-axis model; severity styling derives from `'warning'` level automatically; `action.href` gives the integrator a one-click path to the README setup section. |
+| Layer 3 = targeted README nudges, not a rewrite | README is correct today; problem is discoverability. A top-of-document callout + stable `## Setup` anchor + troubleshooting section close the gap. |
+| Integration branch + squash to release | Clean release history (same posture as `private-key-storage`, `logging-observability`, `messages-log-levels`, `local-summarization`). |
+| Out of scope: pre-compiled CSS as a second distribution channel | Considered and rejected — failure mode is consumer-config gap, not missing distribution. If a future non-Tailwind consumer materializes that's a separate (heavier) discussion. |
+
+---
+
+## Origin
+
+Cross-repo debug session 2026-05-29. Erik on personaility browser at `@fgv/ts-utils@5.1.0-32` reported "no filter button visible" on the `StatusBar` messages panel. DOM inspection confirmed `class="h-3.5 w-3.5 text-muted"` SVGs present but unsized; clicking near them surfaced a viewport-overflowing magnifying-glass overlay (search input's `absolute`-positioned icon, unstyled). Diagnosis: personaility's `tailwind.config.js` is missing `'./node_modules/@fgv/ts-app-shell/lib/**/*.{js,jsx}'` in its `content` array, so Tailwind tree-shakes every geometry utility used inside ts-app-shell while keeping the theme tokens (because personaility uses those in its own source). README is correct; failure mode is silent and misleading enough to warrant defensive measures in the package itself.
+
+Personaility is currently blocked on `private-key-storage` so these changes can ship in the same alpha — no rush to land standalone.
+
+---
+
+## History
+
+| Date | Event | Notes |
+|---|---|---|
+| 2026-05-29 | Bug surfaced + diagnosed against live DOM | personaility @ 5.1.0-32; F12 inspection confirmed classes-present-but-unstyled root cause. |
+| 2026-05-29 | Stream commissioned + substrate prep | brief + state + WORKSTREAMS + integration branch + substrate PR. |
+
+---
+
+## PRs
+
+| Phase | PR | Status |
+|---|---|---|
+| Substrate prep | (this PR) | open → integration branch |
+| Implementation | TBD | not yet commissioned |
