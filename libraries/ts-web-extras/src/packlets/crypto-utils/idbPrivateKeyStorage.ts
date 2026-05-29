@@ -251,7 +251,17 @@ export class IdbPrivateKeyStorage implements CryptoUtils.KeyStore.IPrivateKeySto
     // before reporting success. Reads need no such wait.
     const completion = mode === 'readwrite' ? this._awaitCompletion(transaction) : undefined;
 
-    const opResult = await op(transaction.objectStore(this._storeName));
+    // `op` builds and issues the IDB request synchronously (e.g. `store.put`),
+    // which can throw before any Promise is created — DataCloneError on a
+    // non-cloneable value, or a transaction-state DOMException. Run it inside a
+    // capture boundary so those surface as Failure rather than a rejection,
+    // preserving the Result contract.
+    const opOuter = await captureAsyncResult(() => op(transaction.objectStore(this._storeName)));
+    /* c8 ignore next 3 - defensive: synchronous IDB throws (e.g. DataCloneError) are unreachable for the typed public surface (private CryptoKeys clone; reads pass a string id), but the capture preserves the Result contract */
+    if (opOuter.isFailure()) {
+      return fail(opOuter.message);
+    }
+    const opResult = opOuter.value;
     /* c8 ignore next 3 - defensive: the request itself only fails on an IndexedDB environment fault */
     if (opResult.isFailure()) {
       return opResult;
