@@ -49,9 +49,16 @@ describe('ts-extras package exports', () => {
       import: './lib/packlets/crypto-utils/index.browser.js',
       require: './lib/packlets/crypto-utils/index.browser.js'
     });
-    expect(keystoreExport).toMatchObject({
+    // The keystore subpath splits the same way as ./crypto: Node gets the full
+    // barrel (with the node:crypto-backed EncryptedFilePrivateKeyStorage), the
+    // browser/default condition gets the browser-safe barrel.
+    expect(keystoreExport.node).toMatchObject({
       import: './lib/packlets/crypto-utils/keystore/index.js',
       require: './lib/packlets/crypto-utils/keystore/index.js'
+    });
+    expect(keystoreExport.default).toMatchObject({
+      import: './lib/packlets/crypto-utils/keystore/index.browser.js',
+      require: './lib/packlets/crypto-utils/keystore/index.browser.js'
     });
   });
 });
