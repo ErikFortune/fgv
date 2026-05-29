@@ -173,13 +173,16 @@ describe('IdbPrivateKeyStorage', () => {
       const databaseName = 'shared-db';
       const key = await makeSigningKey();
 
-      // First instance creates the database with the default store name.
+      // First instance creates the database with the default store name, then
+      // does a read so it holds an open cached connection.
       const first = IdbPrivateKeyStorage.create({ indexedDB: factory, databaseName }).orThrow();
       await first.store('a', key);
+      expect(await first.load('a')).toSucceed();
 
       // Second instance targets the SAME database but a DIFFERENT store name.
       // The store does not exist yet at the current version; opening must bump
-      // the version to create it rather than failing later writes.
+      // the version to create it rather than failing later writes. The version
+      // bump fires onversionchange on `first`'s held connection.
       const second = IdbPrivateKeyStorage.create({
         indexedDB: factory,
         databaseName,
@@ -190,6 +193,11 @@ describe('IdbPrivateKeyStorage', () => {
       // The two stores are independent.
       expect(await second.load('a')).toFailWith(/key not found/);
       expect(await second.list()).toSucceedWith(['b']);
+
+      // Reusing `first` after its connection was closed for the version bump
+      // must transparently reopen (it cleared its stale cached handle) rather
+      // than failing against the closed connection.
+      expect(await first.load('a')).toSucceed();
 
       // The original store is intact after the version bump.
       const firstAgain = IdbPrivateKeyStorage.create({ indexedDB: factory, databaseName }).orThrow();

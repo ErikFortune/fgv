@@ -10,23 +10,23 @@
 
 Closed the `IPrivateKeyStorage` implementation gap by shipping both backends the JSDoc promised but didn't deliver, plus the JSDoc fix.
 
-### `EncryptedFilePrivateKeyStorage` (`@fgv/ts-extras/crypto-utils`)
+### `EncryptedFilePrivateKeyStorage` (`CryptoUtils.KeyStore` from `@fgv/ts-extras`)
 
 `libraries/ts-extras/src/packlets/crypto-utils/keystore/encryptedFilePrivateKeyStorage.ts`
 
 - `create({ directory, encryptionKey, cryptoProvider, tree? }): Result<EncryptedFilePrivateKeyStorage>`.
 - `supportsNonExtractable: false` — private keys round-trip via `crypto.subtle.exportKey('jwk', ...)` / `importKey('jwk', ...)`, which requires `extractable: true` keys (the keystore generates them accordingly).
 - One file per key (`<id>.json`); content is an AES-256-GCM-encrypted envelope `{ algorithm, jwk }` produced via the existing `createEncryptedFile` / `tryDecryptFile` primitives. The key's `KeyPairAlgorithm` is derived from `key.algorithm.name` at store time and stored so the right import params are used on load.
-- I/O through `FileTree` (default `FsTree` via `forFilesystem`, overridable with `tree` for in-memory/zip/browser).
+- I/O through `FileTree` (default `FsTree` via `forFilesystem`, overridable with `tree` for in-memory tests or other Node-compatible backends). **Node-only** — round-trips keys through `node:crypto`, so it is excluded from the browser barrel; browser consumers use `IdbPrivateKeyStorage`.
 - Private-key import usages are derived by filtering the algorithm's keypair usages down to the private-applicable set (drops `verify`/`encrypt`/`wrapKey`).
 
-### `IdbPrivateKeyStorage` (`@fgv/ts-web-extras/crypto-utils`)
+### `IdbPrivateKeyStorage` (`CryptoUtils` from `@fgv/ts-web-extras`)
 
 `libraries/ts-web-extras/src/packlets/crypto-utils/idbPrivateKeyStorage.ts`
 
 - `create({ databaseName?, storeName?, indexedDB? }): Result<IdbPrivateKeyStorage>` (defaults `'fgv-keystore-private-keys'` / `'privateKeys'`).
 - `supportsNonExtractable: true` — stores `CryptoKey` objects directly via IndexedDB structured-clone; no JWK round-trip.
-- Lazy DB open (cached connection) + versioned schema (`SCHEMA_VERSION = 1`); the `onupgradeneeded` hook is the additive-migration seam. Per-call transactions.
+- Lazy DB open (cached connection); the object store is created in the `onupgradeneeded` hook (the additive-migration seam). A custom `storeName` against a pre-existing database triggers a version-bump re-open to add the store. Per-call transactions; readwrite ops await `oncomplete` for durability.
 
 ### JSDoc fix
 

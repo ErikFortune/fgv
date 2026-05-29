@@ -211,9 +211,16 @@ export class IdbPrivateKeyStorage implements CryptoUtils.KeyStore.IPrivateKeySto
             const db = request.result;
             // If another connection (e.g. a sibling instance adding a store via
             // version bump, or another tab) needs to upgrade, close this one so
-            // we don't block it. Single-tab use is the documented assumption;
-            // this just prevents a deadlock when several instances share a db.
-            db.onversionchange = (): void => db.close();
+            // we don't block it. Clear the cached handle first so the next
+            // operation reopens rather than reusing the now-closed connection.
+            // Single-tab use is the documented assumption; this just prevents a
+            // deadlock when several instances share a db.
+            db.onversionchange = (): void => {
+              if (this._db === db) {
+                this._db = undefined;
+              }
+              db.close();
+            };
             resolve(db);
           };
           /* c8 ignore next 2 - defensive: open errors require a corrupted/blocked IndexedDB environment */
