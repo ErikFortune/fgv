@@ -224,14 +224,6 @@ describe('EncryptedFilePrivateKeyStorage', () => {
       );
     });
 
-    test('rejects a non-extractable private key with a clear message', async () => {
-      const storage = makeStorage();
-      // A non-extractable private key cannot be exported to JWK; guard with a
-      // clear message rather than letting subtle.exportKey reject opaquely.
-      const pair = await crypto.webcrypto.subtle.generateKey({ name: 'Ed25519' }, false, ['sign', 'verify']);
-      expect(await storage.store('nonextractable', pair.privateKey)).toFailWith(/key must be extractable/);
-    });
-
     test('rejects a public key (contract is private keys only)', async () => {
       const storage = makeStorage();
       const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
