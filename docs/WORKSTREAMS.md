@@ -128,19 +128,6 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
-### `capture-async-result-upgrade` 🟢
-
-**Status:** 🟢 ready to commission — substrate prep in flight
-**Integration branch:** `capture-async-result-upgrade` (off `release`) → squash to `release` at close
-**Workflow shape:** single implementation PR onto integration branch
-**Substrate:** `.ai/tasks/active/capture-async-result-upgrade/{brief.md, state.md}`
-**Package surface:** `@fgv/ts-utils` (`base/result.ts` + tests + api-extractor report) + monorepo-wide verify sweep
-**Out-of-scope:** other `@fgv/ts-utils/base` chain-seam changes; `captureResult` sync sibling; exhaustive call-site refactor (only opportunistic, mechanical cleanups in-scope); behavioral changes (resolved `Result<T>` after `await` must be byte-identical).
-
-**Mission.** Change `captureAsyncResult<T>` to return `AsyncResult<T>` instead of `Promise<Result<T>>` so callers can fluently chain `.onSuccess` / `.thenOnSuccess` / `.withErrorFormat` off the result without seeding a synthetic `succeed(x).thenOnSuccess(() => captureAsyncResult(...))` chain. `AsyncResult<T>` is already `@public` and `PromiseLike<Result<T>>` — all 86 monorepo call sites continue to compile and behave identically because every existing usage is `await captureAsyncResult(...)` (zero `.then`/`.catch`/`.finally` chains on the return). Opportunistic call-site cleanups (5–15 sites at most) included; not an exhaustive refactor.
-
-**Origin.** Surfaced in `.ai/tasks/completed/2026-05/private-key-storage/result.md` Follow-ups (chain seam in `_encryptAndWrite`); routed to `docs/TECH_DEBT.md` P3 in PR #430; commissioned ahead of the -33 publish so it lands in the same alpha as `ts-app-shell-styling-hardening`. `@fgv/ts-utils` is established surface — additive in practice, but the lockstep policy makes the monorepo-wide rebuild+test sweep the gating cost.
-
 ### `private-key-storage` ✅
 
 **Status:** ✅ implemented + reviewed (PR #427, gates green) — ready for squash to `release`
@@ -216,6 +203,18 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `capture-async-result-upgrade` ✅
+
+**Status:** ✅ implementation merged to integration branch (PR #433); cluster-close PR open
+**Integration branch:** `capture-async-result-upgrade` (off `release`) → squash to `release` at close
+**Workflow shape:** single implementation PR onto integration branch
+**Substrate:** `.ai/tasks/completed/2026-05/capture-async-result-upgrade/{brief.md, state.md, README.md}`
+**Package surface:** `@fgv/ts-utils` (`base/result.ts` — `captureAsyncResult`, `AsyncSuccessContinuation`, `AsyncFailureContinuation`, `AsyncResult` constructor + tests + api-extractor report); opportunistic call-site cleanups in `@fgv/ts-extras` and `@fgv/ts-prompt-assist`.
+
+**Mission.** Made `AsyncResult<T>` the canonical chainable shape across the async-Result API via three coordinated additive surface changes: (1) `captureAsyncResult<T>` returns `AsyncResult<T>` instead of `Promise<Result<T>>`; (2) `AsyncSuccessContinuation` / `AsyncFailureContinuation` widened to accept `PromiseLike<Result<...>>` so the chaining slots accept what the factory produces (brief amendment surfaced mid-stream); (3) `AsyncResult` constructor parameter widened to `PromiseLike<Result<T>>` so the chaining methods can pass the widened callback return through without re-wrapping (natural cascade from delta 2). Strictly additive at every call site — all 86 monorepo call sites compile unchanged because `AsyncResult` is `PromiseLike<Result<T>>`, every existing `(value) => Promise<Result<TN>>` callback satisfies `(value) => PromiseLike<Result<TN>>`, and every existing `new AsyncResult(somePromise)` still satisfies `PromiseLike`. Three opportunistic call-site cleanups under the 15-site budget; full-repo `rush build` + `rush test` sweep green (modulo one unrelated pre-existing `mutableFsTree` root-uid test failure routed to TECH_DEBT P4).
+
+**Origin.** Surfaced in `.ai/tasks/completed/2026-05/private-key-storage/result.md` Follow-ups (chain seam in `_encryptAndWrite`); commissioned ahead of the -33 publish so the cleanup lands in the same alpha as `ts-app-shell-styling-hardening`. Mid-stream brief amendment for delta 2 demonstrated the cascade-completeness pattern (L29) in action.
 
 ### `local-summarization` ✅
 
