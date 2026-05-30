@@ -1,8 +1,8 @@
 # Stream state: `capture-async-result-upgrade`
 
-**Status:** 🟢 ready to commission — substrate prep in flight
+**Status:** 🟢 implementation complete — PR #433 open onto integration branch
 **Integration branch:** `capture-async-result-upgrade` (off `release`)
-**Last updated:** 2026-05-30 (orchestrator — substrate prep)
+**Last updated:** 2026-05-30 (implementation + Copilot-review pass)
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Phase | Status | Notes |
 |---|---|---|
-| Implementation | 🟢 ready | Single-PR change; signature flip + verify sweep + opportunistic call-site cleanups. |
+| Implementation | ✅ complete | PR #433 open onto integration branch. Signature flip + continuation/ctor widening + 3 opportunistic call-site cleanups; full monorepo verify sweep green (modulo unrelated pre-existing `mutableFsTree` root-uid failure). code-reviewer + Copilot review passes resolved. |
 
 ---
 
@@ -30,6 +30,7 @@
 | Out of scope: other `@fgv/ts-utils/base` chain-seam changes | If `captureResult`/other helpers have the same pattern, surface as follow-ups. Don't bundle. |
 | Single PR onto integration branch + squash to release | Standard posture for `@fgv/ts-utils` changes (established surface; clean release history). Same as `private-key-storage`, `logging-observability`, `messages-log-levels`. |
 | Mandatory `code-reviewer` run on final diff | Per L32 (lessons-pending, surfaced from PR #427's six-round Copilot loop). This stream is exactly the focused-diff shape where pre-PR `code-reviewer` shines. |
+| **Brief amendment 2026-05-30 — widen `AsyncSuccessContinuation` / `AsyncFailureContinuation` to `PromiseLike<Result<...>>`** | Surfaced by the implementing agent during the verify sweep. Concrete site: `encryptedFilePrivateKeyStorage._importPrivateKey` needed an `async (jwk) =>` coercion wrapper to pass a `captureAsyncResult` return through the old `Promise<Result<...>>` continuation slot. The continuation aliases are the consumer half of the contract this stream is changing on the producer side; updating only the producer leaves the API self-hostile. Cascade-completeness reasoning. Strictly additive — every existing `Promise<Result<TN>>`-returning callback still satisfies `PromiseLike<Result<TN>>`; zero call-site type-error risk. Implementation-neutral — `thenOnSuccess` / `thenOnFailure` bodies already `await` the callback. PR scope expanded from one function + tests + api-extractor to one function + two type aliases + tests + api-extractor + revert of any `async (x) =>` coercion wrappers introduced or surfaced. |
 
 ---
 
@@ -48,6 +49,7 @@ Surfaced in `.ai/tasks/completed/2026-05/private-key-storage/result.md` Follow-u
 | 2026-05-29 | Surfaced in `private-key-storage` result.md | Concrete chain-seam in `_encryptAndWrite`. |
 | 2026-05-30 | Routed to `docs/TECH_DEBT.md` P3 | Cluster-close PR #430. |
 | 2026-05-30 | Stream commissioned + substrate prep | brief + state + WORKSTREAMS + integration branch + substrate PR. |
+| 2026-05-30 | Brief amended — widen async continuation type aliases | Implementing agent surfaced the producer/consumer asymmetry; widened scope to include `AsyncSuccessContinuation` / `AsyncFailureContinuation` parameter-type widening to `PromiseLike<Result<...>>`. See decisions-log row for full reasoning. |
 | 2026-05-30 | Implementation complete | Signature flip + opportunistic refactor of `_encryptAndWrite` chain seam + `safeguardEngine` `.onSuccess` parenthesization + `async`-wrap of `_importPrivateKey` callback. Full `rush build` + `rush test` green monorepo-wide (one unrelated pre-existing `mutableFsTree` permission-denied test fails on `release` too — root-uid container bypasses `chmod` read-only enforcement). ts-utils + ts-extras + ts-prompt-assist lint clean; ts-utils coverage 100%. api-extractor report regenerated; minor rush change file added. TECH_DEBT P3 entry retired. |
 | 2026-05-30 | API-shape widening layered on (orchestrator-approved mid-stream) | Widened `AsyncSuccessContinuation`/`AsyncFailureContinuation` to accept `Promise<Result<...>> \| AsyncResult<...>` and `AsyncResult`'s constructor to accept `PromiseLike<Result<T>>`. Lets `.thenOnSuccess((x) => captureAsyncResult(...))` typecheck directly — reverted the temporary `async (jwk) =>` wrapper in `_importPrivateKey`. Strictly additive at every call site; api-extractor report regenerated to include all three widenings. Full `rush build` + `rush test` re-run green (same unrelated `mutableFsTree` permission-denied failure). |
 | 2026-05-30 | Continuation types simplified to `PromiseLike<Result<TN>>` | Dropped the redundant enumerated union (`AsyncResult` already implements `PromiseLike`); the continuation surface now speaks one shape consistent with the `PromiseLike` constructor widening. Input-only change — `thenOnSuccess`/`thenOnFailure` still return `AsyncResult<TN>`, chaining preserved. api-extractor report regenerated; ts-utils lint clean + 100% coverage; full `rush build` green, `rush test` re-run (same unrelated `mutableFsTree` failure). |
@@ -58,5 +60,5 @@ Surfaced in `.ai/tasks/completed/2026-05/private-key-storage/result.md` Follow-u
 
 | Phase | PR | Status |
 |---|---|---|
-| Substrate prep | (this PR) | open → integration branch |
-| Implementation | TBD | not yet commissioned |
+| Substrate prep | #431 | merged → integration branch |
+| Implementation | #433 | open → integration branch |

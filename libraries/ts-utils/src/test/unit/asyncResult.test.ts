@@ -500,7 +500,8 @@ describe('AsyncResult module', () => {
 
     test('return value can be passed directly to thenOnSuccess without an async wrapper', async () => {
       // Exercises the AsyncSuccessContinuation widening: the callback returns
-      // an AsyncResult (not a Promise), which the wider union accepts.
+      // an AsyncResult (not a Promise), which the PromiseLike<Result<TN>>
+      // parameter type accepts (AsyncResult implements PromiseLike).
       const result = await succeed(21).thenOnSuccess((value) => captureAsyncResult(async () => value * 2));
       expect(result).toSucceedWith(42);
     });
