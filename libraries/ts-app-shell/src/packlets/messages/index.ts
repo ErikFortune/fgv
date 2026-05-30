@@ -7,6 +7,8 @@ export {
   type MessageSeverity,
   type IMessage,
   type IMessageAction,
+  type IMessageHrefAction,
+  type IMessageCallbackAction,
   type ICreateMessageOptions,
   type IToastConfig,
   DEFAULT_TOAST_CONFIG,
@@ -19,6 +21,10 @@ export {
   type IMessagesContextValue,
   type IMessagesProviderProps,
   MessagesProvider,
+  TAILWIND_PROBE_CLASS,
+  TAILWIND_PROBE_HEIGHT_PX,
+  TAILWIND_PROBE_MESSAGE_TEXT,
+  TAILWIND_SETUP_DOCS_URL,
   useMessages
 } from './MessagesContext';
 
