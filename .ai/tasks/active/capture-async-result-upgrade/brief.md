@@ -77,17 +77,49 @@ A handful of call sites currently exhibit the chain-seam-awkwardness pattern thi
 
 ### api-extractor
 
-`libraries/ts-utils/etc/ts-utils.api.md` will regenerate to reflect the new return type. Commit the regenerated report.
+`libraries/ts-utils/etc/ts-utils.api.md` will regenerate to reflect the new return type **and** the widened continuation parameter types (see "Brief amendment" below). Commit the regenerated report.
+
+### Brief amendment 2026-05-30 — widen `AsyncSuccessContinuation` / `AsyncFailureContinuation`
+
+**Surfaced by the implementing agent during the verify sweep.** With `captureAsyncResult` now returning `AsyncResult<T>` (which is `PromiseLike<Result<T>>`, not `Promise<Result<T>>`), the existing continuation type aliases refuse direct passing of a `captureAsyncResult` return value to `.thenOnSuccess` / `.thenOnFailure`:
+
+```ts
+// Today
+export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>>;
+export type AsyncFailureContinuation<T>     = (message: string) => Promise<Result<T>>;
+```
+
+Concrete breakage observed at `encryptedFilePrivateKeyStorage._importPrivateKey`: `.thenOnSuccess((jwk) => captureAsyncResult(...))` no longer satisfies the slot, forcing an `async (jwk) =>` coercion wrapper to round-trip through `Awaited<>`. That wrapper is a smell — it's exactly the chain-seam awkwardness this stream exists to eliminate.
+
+**In scope (added to this stream):** widen both continuation aliases to `PromiseLike<Result<...>>`:
+
+```ts
+export type AsyncSuccessContinuation<T, TN> = (value: T) => PromiseLike<Result<TN>>;
+export type AsyncFailureContinuation<T>     = (message: string) => PromiseLike<Result<T>>;
+```
+
+This is:
+- **Strictly additive at every call site.** Every existing `(value) => Promise<Result<TN>>` callback continues to satisfy `(value) => PromiseLike<Result<TN>>`. Zero call-site type-error risk.
+- **Implementation-neutral.** The `thenOnSuccess` / `thenOnFailure` bodies already `await` the callback, and `await` works on `PromiseLike` unchanged. No body changes.
+- **Cascade-completeness (lessons-pending L29-shaped reasoning).** The continuation aliases are the *consumer* half of the same contract this stream is changing on the *producer* side. Updating one without the other leaves the API self-hostile — "here's the canonical chainable async-Result, but you can't pass it to the chaining method." The "no other helpers" guardrail was about not bundling unrelated cleanups; these aren't unrelated.
+
+**Required follow-through:** after the type widening lands, sweep call sites for now-removable `async (x) =>` coercion wrappers that existed to round-trip a `captureAsyncResult` return through the old `Promise<Result<...>>` slot. The `_importPrivateKey` site is the known one. Any others surface during the monorepo verify sweep. Count those reverts against the opportunistic-cleanup tally — they're in the "I caused this, I'm cleaning it up" sense, not the "found unrelated chain-seam awkwardness" sense.
+
+**Rush change file expanded** to describe both deltas as the additive surface change.
 
 ### Rush change file
 
-Add a `minor` rush change file for `@fgv/ts-utils` describing the additive return-type change ("`captureAsyncResult` now returns `AsyncResult<T>` instead of `Promise<Result<T>>`; existing `await` call sites unaffected since `AsyncResult` implements `PromiseLike<Result<T>>`; new chainable surface for callers that want to keep the chain unbroken").
+Add a `minor` rush change file for `@fgv/ts-utils` describing the additive surface deltas:
+
+> `captureAsyncResult` now returns `AsyncResult<T>` instead of `Promise<Result<T>>`; `AsyncSuccessContinuation` / `AsyncFailureContinuation` widened from `Promise<Result<...>>` to `PromiseLike<Result<...>>`. Existing `await captureAsyncResult(...)` call sites unaffected (`AsyncResult` implements `PromiseLike<Result<T>>`); existing continuation callbacks unaffected (every `Promise<Result<TN>>` is a `PromiseLike<Result<TN>>`). New chainable surface for callers that want to keep the chain unbroken.
 
 ---
 
 ## Acceptance criteria
 
 - [ ] `captureAsyncResult` signature changed to return `AsyncResult<T>`; behavioral guarantees above preserved.
+- [ ] `AsyncSuccessContinuation<T, TN>` and `AsyncFailureContinuation<T>` widened to return `PromiseLike<Result<...>>` (per the 2026-05-30 brief amendment). Body of `thenOnSuccess` / `thenOnFailure` unchanged.
+- [ ] Any `async (x) =>` coercion wrappers added during the stream (or discovered during the sweep) to round-trip a `captureAsyncResult` return through the old `Promise<Result<...>>` slot have been reverted now that the slot accepts `PromiseLike`.
 - [ ] **`rush build` passes across the entire monorepo** — load-bearing sweep; the whole point is verifying the additive return-type change doesn't break any of the 86 call sites.
 - [ ] **`rushx test` passes in every package that consumes `captureAsyncResult`** — this is the real compatibility evidence. Coverage stays at 100% in `ts-utils`.
 - [ ] **`rushx lint` passes** in `libraries/ts-utils` (load-bearing — not transitively run by build).

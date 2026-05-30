@@ -24,6 +24,7 @@
 | Out of scope: other `@fgv/ts-utils/base` chain-seam changes | If `captureResult`/other helpers have the same pattern, surface as follow-ups. Don't bundle. |
 | Single PR onto integration branch + squash to release | Standard posture for `@fgv/ts-utils` changes (established surface; clean release history). Same as `private-key-storage`, `logging-observability`, `messages-log-levels`. |
 | Mandatory `code-reviewer` run on final diff | Per L32 (lessons-pending, surfaced from PR #427's six-round Copilot loop). This stream is exactly the focused-diff shape where pre-PR `code-reviewer` shines. |
+| **Brief amendment 2026-05-30 — widen `AsyncSuccessContinuation` / `AsyncFailureContinuation` to `PromiseLike<Result<...>>`** | Surfaced by the implementing agent during the verify sweep. Concrete site: `encryptedFilePrivateKeyStorage._importPrivateKey` needed an `async (jwk) =>` coercion wrapper to pass a `captureAsyncResult` return through the old `Promise<Result<...>>` continuation slot. The continuation aliases are the consumer half of the contract this stream is changing on the producer side; updating only the producer leaves the API self-hostile. Cascade-completeness reasoning. Strictly additive — every existing `Promise<Result<TN>>`-returning callback still satisfies `PromiseLike<Result<TN>>`; zero call-site type-error risk. Implementation-neutral — `thenOnSuccess` / `thenOnFailure` bodies already `await` the callback. PR scope expanded from one function + tests + api-extractor to one function + two type aliases + tests + api-extractor + revert of any `async (x) =>` coercion wrappers introduced or surfaced. |
 
 ---
 
@@ -42,6 +43,7 @@ Surfaced in `.ai/tasks/completed/2026-05/private-key-storage/result.md` Follow-u
 | 2026-05-29 | Surfaced in `private-key-storage` result.md | Concrete chain-seam in `_encryptAndWrite`. |
 | 2026-05-30 | Routed to `docs/TECH_DEBT.md` P3 | Cluster-close PR #430. |
 | 2026-05-30 | Stream commissioned + substrate prep | brief + state + WORKSTREAMS + integration branch + substrate PR. |
+| 2026-05-30 | Brief amended — widen async continuation type aliases | Implementing agent surfaced the producer/consumer asymmetry; widened scope to include `AsyncSuccessContinuation` / `AsyncFailureContinuation` parameter-type widening to `PromiseLike<Result<...>>`. See decisions-log row for full reasoning. |
 
 ---
 
