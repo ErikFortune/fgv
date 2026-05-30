@@ -130,7 +130,7 @@ substrate. Don't queue streams against them here.
 
 ### `private-key-storage` ✅
 
-**Status:** ✅ implemented — gates green; ready for squash to `release`
+**Status:** ✅ implemented + reviewed (PR #427, gates green) — ready for squash to `release`
 **Integration branch:** `private-key-storage` (off `release`) → squash to `release` at close
 **Workflow shape:** single implementation PR onto integration branch (both impls together)
 **Substrate:** `.ai/tasks/completed/2026-05/private-key-storage/{brief.md, state.md, result.md, README.md}`

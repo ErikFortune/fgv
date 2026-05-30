@@ -285,15 +285,16 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
       .thenOnSuccess((k) => captureAsyncResult(() => crypto.webcrypto.subtle.exportKey('jwk', k)))
       .withErrorFormat((msg) => `failed to export private key '${id}' to JWK: ${msg}`)
       .onSuccess<JsonObject>((jwk) => succeed({ algorithm, jwk: JSON.stringify(jwk) }))
-      .thenOnSuccess((envelope) =>
-        createEncryptedFile({
-          content: envelope,
-          secretName: id,
-          key: this._encryptionKey,
-          cryptoProvider: this._cryptoProvider
-        })
+      .thenOnSuccess(async (envelope) =>
+        (
+          await createEncryptedFile({
+            content: envelope,
+            secretName: id,
+            key: this._encryptionKey,
+            cryptoProvider: this._cryptoProvider
+          })
+        ).withErrorFormat((msg) => `failed to encrypt private key '${id}': ${msg}`)
       )
-      .withErrorFormat((msg) => `failed to encrypt private key '${id}': ${msg}`)
       .onSuccess((encrypted) => this._writeFile(fileName, JSON.stringify(encrypted)))
       .onSuccess(() => succeed(id));
   }
@@ -371,7 +372,7 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
    * Parses and shape-validates the stored JWK, then re-imports it as a private
    * `CryptoKey` for the envelope's algorithm. The WebCrypto JWK-import algorithm
    * descriptor is shared between public and private keys for every supported
-   * algorithm, so {@link CryptoUtils.IKeyPairAlgorithmParams.importPublicKey} is reused here;
+   * algorithm, so `IKeyPairAlgorithmParams.importPublicKey` is reused here;
    * the public/private distinction is carried by the requested `usages`.
    */
   private async _importPrivateKey(
