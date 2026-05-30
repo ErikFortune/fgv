@@ -356,6 +356,14 @@ describe('StatusBar', () => {
       expect(copyAll?.style.height).toBe('14px');
     });
 
+    test('search wrapper carries inline position:relative so absolute children have a containing block', () => {
+      const container = renderBar();
+      expand(container);
+      openFilters();
+      const wrapper = screen.getByPlaceholderText('Search messages...').parentElement;
+      expect((wrapper as HTMLElement).style.position).toBe('relative');
+    });
+
     test('search overlay icon renders with absolute positioning inline (avoids viewport overflow)', () => {
       const container = renderBar();
       expand(container);

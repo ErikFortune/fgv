@@ -281,8 +281,10 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                   ))}
                 </div>
 
-                {/* Search input */}
-                <div className="relative flex-1">
+                {/* Search input — `position: relative` inline so the absolutely-positioned
+                    icon + clear-button fallbacks have a containing block even when Tailwind's
+                    `relative` utility is absent. */}
+                <div className="relative flex-1" style={{ position: 'relative' }}>
                   <MagnifyingGlassIcon
                     className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted"
                     style={{
