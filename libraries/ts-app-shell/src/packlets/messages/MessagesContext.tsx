@@ -137,7 +137,6 @@ export function MessagesProvider(props: IMessagesProviderProps): React.ReactElem
     if (probeHasRun.current) {
       return;
     }
-    probeHasRun.current = true;
 
     const probe: HTMLDivElement = document.createElement('div');
     probe.className = 'h-3.5';
@@ -148,6 +147,10 @@ export function MessagesProvider(props: IMessagesProviderProps): React.ReactElem
     document.body.appendChild(probe);
 
     const frameId: number = requestAnimationFrame(() => {
+      // Mark the guard only once the measurement has actually run; otherwise a
+      // StrictMode cleanup-before-rAF would leave `probeHasRun = true` and the
+      // second setup would short-circuit, suppressing the diagnostic entirely.
+      probeHasRun.current = true;
       const height: number = probe.getBoundingClientRect().height;
       probe.remove();
       if (height === 0) {

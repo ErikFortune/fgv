@@ -236,6 +236,35 @@ describe('MessagesContext', () => {
       }
     });
 
+    test('still fires under React.StrictMode (cleanup-before-rAF must not poison the guard)', () => {
+      const raf = installSyncRaf();
+      try {
+        let captured: IMessagesContextValue | undefined;
+        function Capture(): null {
+          captured = useMessages();
+          return null;
+        }
+        render(
+          <React.StrictMode>
+            <MessagesProvider>
+              <Capture />
+            </MessagesProvider>
+          </React.StrictMode>
+        );
+        act(() => {
+          raf.flush();
+        });
+        // StrictMode runs setup → cleanup → setup on mount. The first cleanup cancels the
+        // scheduled rAF before measurement; if the guard had been set eagerly the second
+        // setup would short-circuit and the diagnostic would never run. Exactly one warning
+        // must land.
+        expect(captured?.messages).toHaveLength(1);
+        expect(captured?.messages[0].level).toBe('warning');
+      } finally {
+        raf.restore();
+      }
+    });
+
     test('cancels the scheduled measurement and removes the probe element on unmount', () => {
       const raf = installSyncRaf();
       try {

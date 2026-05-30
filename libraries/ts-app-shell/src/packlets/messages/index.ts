@@ -7,6 +7,8 @@ export {
   type MessageSeverity,
   type IMessage,
   type IMessageAction,
+  type IMessageHrefAction,
+  type IMessageCallbackAction,
   type ICreateMessageOptions,
   type IToastConfig,
   DEFAULT_TOAST_CONFIG,

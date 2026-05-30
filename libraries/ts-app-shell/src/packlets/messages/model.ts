@@ -93,23 +93,41 @@ export interface IMessage {
 }
 
 /**
- * An actionable element attached to a message (e.g., "Go to Session" link or
- * "Open setup docs" external link).
- *
- * Exactly one of {@link IMessageAction.href} or {@link IMessageAction.onAction}
- * must be set. When `href` is set, renderers display the action as an external
- * link (opens in a new tab with `noopener noreferrer`); when `onAction` is set,
- * renderers display a button that invokes the callback.
+ * An actionable element attached to a message rendered as an external link.
+ * Renderers display this as an `<a>` that opens in a new tab with
+ * `noopener noreferrer`.
  * @public
  */
-export interface IMessageAction {
+export interface IMessageHrefAction {
   /** Action label */
   readonly label: string;
-  /** External URL to open when the action is clicked. Mutually exclusive with `onAction`. */
-  readonly href?: string;
-  /** Callback when the action is triggered. Mutually exclusive with `href`. */
-  readonly onAction?: () => void;
+  /** External URL to open when the action is clicked. */
+  readonly href: string;
+  readonly onAction?: undefined;
 }
+
+/**
+ * An actionable element attached to a message rendered as a callback button.
+ * Renderers display this as a `<button>` that invokes {@link IMessageCallbackAction.onAction}.
+ * @public
+ */
+export interface IMessageCallbackAction {
+  /** Action label */
+  readonly label: string;
+  /** Callback when the action is triggered. */
+  readonly onAction: () => void;
+  readonly href?: undefined;
+}
+
+/**
+ * An actionable element attached to a message — either an external link
+ * ({@link IMessageHrefAction}) or a callback ({@link IMessageCallbackAction}).
+ * The discriminated-union shape makes "exactly one of `href` or `onAction`"
+ * an enforced contract at type-check time, so callers cannot accidentally
+ * supply both or neither.
+ * @public
+ */
+export type IMessageAction = IMessageHrefAction | IMessageCallbackAction;
 
 // ============================================================================
 // Toast Configuration
