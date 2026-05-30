@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * Key store module for password-protected secret management.
+ * Key store module for password-protected secret management (browser version).
  * @packageDocumentation
  */
 
@@ -34,8 +34,7 @@ export { Converters };
 // Key store class
 export { KeyStore } from './keyStore';
 
-// Private-key storage implementations
-export {
-  EncryptedFilePrivateKeyStorage,
-  IEncryptedFilePrivateKeyStorageCreateParams
-} from './encryptedFilePrivateKeyStorage';
+// Note: EncryptedFilePrivateKeyStorage is Node-only — it uses `node:crypto`
+// (via `crypto.webcrypto.subtle`) for the private-key JWK round-trip — so it is
+// intentionally NOT exported in the browser entry. Use `IdbPrivateKeyStorage`
+// from `@fgv/ts-web-extras` for browser private-key storage.

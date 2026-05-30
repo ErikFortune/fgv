@@ -27,6 +27,7 @@
 
 export * from './browserHashProvider';
 export * from './browserCryptoProvider';
+export * from './idbPrivateKeyStorage';
 
 // HpkeProvider re-export: implementation lives in @fgv/ts-extras CryptoUtils packlet;
 // re-exported here so browser callers can import from @fgv/ts-web-extras for this primitive.

@@ -22,9 +22,12 @@ import { Result } from '@fgv/ts-utils';
 
 /**
  * Pluggable backend that persists raw asymmetric private keys outside of the
- * encrypted keystore vault. Concrete implementations live in platform-specific
- * packages (e.g. an IndexedDB-backed implementation in `@fgv/ts-web-extras` or
- * an encrypted-file implementation in `@fgv/ts-chocolate`).
+ * encrypted keystore vault. Concrete implementations:
+ * - {@link CryptoUtils.KeyStore.EncryptedFilePrivateKeyStorage} in
+ *   `@fgv/ts-extras` — directory-on-disk, AES-256-GCM-encrypted JWK per key
+ *   (Node; `supportsNonExtractable: false`).
+ * - `IdbPrivateKeyStorage` in `@fgv/ts-web-extras` — IndexedDB-backed, stores
+ *   `CryptoKey` objects directly (browser; `supportsNonExtractable: true`).
  *
  * The keystore writes storage-first: a private key is always stored here
  * before the corresponding public-key vault entry is committed. Conversely,
