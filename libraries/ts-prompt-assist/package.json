@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-prompt-assist",
-  "version": "5.1.0-32",
+  "version": "5.1.0-33",
   "description": "ts-res-driven prompt resolution with Mustache substitution",
   "main": "lib/index.js",
   "types": "dist/ts-prompt-assist.d.ts",
