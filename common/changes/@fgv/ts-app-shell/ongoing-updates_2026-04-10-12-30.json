@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "Add configurable label on sidebar collection item",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell"
+}

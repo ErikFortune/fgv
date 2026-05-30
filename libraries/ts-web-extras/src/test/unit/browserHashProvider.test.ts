@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { BrowserHashProvider } from '../../packlets/crypto';
+import { BrowserHashProvider } from '../../packlets/crypto-utils';
 
 describe('BrowserHashProvider', () => {
   describe('hashString', () => {

@@ -1,0 +1,32 @@
+[Home](../README.md) > [Condition](./Condition.md) > canMatchPartialContext
+
+## Condition.canMatchPartialContext() method
+
+Determines if this condition can match the supplied context, even if the context is partial.
+
+Returns true if:
+- The qualifier specified in the condition is not present in the context
+- The qualifier is present and matches the condition
+
+Returns false if:
+- The qualifier is present in the context and does not match the condition
+
+**Signature:**
+
+```typescript
+canMatchPartialContext(context: IValidatedContextDecl, options?: IContextMatchOptions): boolean;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context</td><td>IValidatedContextDecl</td><td>The context to match against.</td></tr>
+<tr><td>options</td><td>IContextMatchOptions</td><td>Options to use when matching the context.</td></tr>
+</tbody></table>
+
+**Returns:**
+
+boolean
+
+`true` if the condition can match the (possibly partial) context, `false` otherwise.

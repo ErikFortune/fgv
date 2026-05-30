@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-http-storage",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-http-storage"
+}

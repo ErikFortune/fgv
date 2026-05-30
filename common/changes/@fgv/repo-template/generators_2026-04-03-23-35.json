@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/repo-template",
+      "comment": "enable typedocs by default",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/repo-template"
+}

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "comment": "Introduce @fgv/ts-prompt-assist v0.1 — ts-res-driven prompt resolution. `PromptLibrary.create` / `resolve` / `describe` / `resolveJsonOutput<K>` / `resolveFreeTextOutput` over a `FileTreePromptStore` (read-only at v0.1; works against FsTree / in-memory / zip / browser FSA), with chain-walked scopes, ts-res-conditional candidate selection, partial-fragment composition, cross-scope binding merge honouring `enforced` locks, recursive resource bindings with RFC 8785 cycle-detection + depth cap, Mustache rendering via `escape: 'none'`, full `IPromptResolveTrace`, typed JSON output validation pipeline parameterized by the consumer's response union (runtime-evidenced kind check at the public-API entry — no caller-asserted-`T` boundary anywhere), free-text output via a dedicated `resolveFreeTextOutput` returning `Result<string>`, and an `IPromptSafetyPolicy` covering length caps, regex screen, source-aware skipping, and a post-render anti-jailbreak preface seam. `PromptStoreFixture.build` is the canonical in-memory test fixture (no standalone InMemoryPromptStore). README + LIBRARY_CAPABILITIES entries shipped.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist"
+}

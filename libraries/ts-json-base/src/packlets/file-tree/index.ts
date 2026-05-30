@@ -25,6 +25,7 @@ export * from './fileTreeAccessors';
 export * from './fileTree';
 export * from './directoryItem';
 export * from './fileItem';
+export * from './filterSpec';
 
 // Export tree-shakeable helpers (filesystem ones will be shaken out if not used)
 export * from './fileTreeHelpers';

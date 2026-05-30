@@ -1,0 +1,195 @@
+/**
+ * CLI entry point — sets up commander with create, sync, and patch subcommands.
+ */
+
+import { Command } from 'commander';
+import { detectSourceDir } from './packlets/fs';
+import { runCreate } from './commands/create';
+import { runSync } from './commands/sync';
+import { runPatch, parsePatchArgs } from './commands/patch';
+import {
+  runInitLibrary,
+  resolveFgvDepVersion,
+  RigType,
+  CategoryType,
+  DepChannelType
+} from './commands/init-library';
+import { runLink, runUnlink, runUpdateFgvVersions } from './commands/link';
+
+export class RepoTemplateCli {
+  private readonly _program: Command;
+
+  public constructor() {
+    this._program = new Command();
+    this._setupCommands();
+  }
+
+  public async run(argv: string[]): Promise<void> {
+    await this._program.parseAsync(argv);
+  }
+
+  private _setupCommands(): void {
+    this._program
+      .name('repo-template')
+      .description('Create and maintain fgv-derived Rush monorepos')
+      .version('5.1.0');
+
+    // ── create ──
+    this._program
+      .command('create')
+      .description('Stamp out a new fgv-derived Rush monorepo using rush init + JSONC patching')
+      .requiredOption('-t, --target-dir <path>', 'Directory to create the new repo in')
+      .requiredOption('-u, --repo-url <url>', 'GitHub repository URL')
+      .option('-p, --version-policy <name>', 'Version policy name', 'default')
+      .option('--initial-version <ver>', 'Initial version', '0.1.0')
+      .option('-s, --source-dir <path>', 'Source repo for shared files (auto-detected if in fgv repo)')
+      .option('--allow-existing', 'Allow target directory to already exist', false)
+      .option('--no-git-init', 'Skip git init and initial commit')
+      .action(async (opts) => {
+        const sourceDir = opts.sourceDir ?? this._resolveSourceDir();
+        await runCreate({
+          targetDir: opts.targetDir,
+          repoUrl: opts.repoUrl,
+          versionPolicy: opts.versionPolicy,
+          version: opts.initialVersion,
+          sourceDir,
+          allowExisting: opts.allowExisting,
+          gitInit: opts.gitInit
+        });
+      });
+
+    // ── sync ──
+    this._program
+      .command('sync')
+      .description('Sync shared files from the fgv source repo to a consumer repo')
+      .requiredOption('-t, --target-dir <path>', 'Consumer repo to update')
+      .option('-s, --source-dir <path>', 'Source repo (auto-detected if in fgv repo)')
+      .option('-n, --dry-run', 'Show what would change without modifying files', false)
+      .action(async (opts) => {
+        const sourceDir = opts.sourceDir ?? this._resolveSourceDir();
+        await runSync({
+          targetDir: opts.targetDir,
+          sourceDir,
+          dryRun: opts.dryRun
+        });
+      });
+
+    // ── init-library ──
+    this._program
+      .command('init-library')
+      .description('Scaffold a new library package within an existing Rush monorepo')
+      .requiredOption('-n, --name <name>', 'Package name (e.g. "ts-my-lib" — auto-prefixed with @fgv/)')
+      .option('-d, --description <text>', 'Package description', '')
+      .option('-r, --rig <type>', 'Heft rig: dual (default), node, or browser', 'dual')
+      .option(
+        '-c, --category <type>',
+        'Category folder: libraries (default), tools, apps, services',
+        'libraries'
+      )
+      .option('--repo-dir <path>', 'Rush monorepo root (default: cwd)', process.cwd())
+      .option('-p, --version-policy <name>', 'Version policy name', 'default')
+      .option('--initial-version <ver>', 'Initial version', '0.1.0')
+      .option(
+        '--fgv-dep-version <ver>',
+        'Explicit version spec for @fgv/* deps (auto-detected if omitted: "workspace:*" in fgv, derived from repo-template version in consumers)'
+      )
+      .option(
+        '--fgv-dep-channel <channel>',
+        'Channel for auto-detected @fgv/* dep version: alpha, release, or auto (default: auto — infers from repo-template build)',
+        'auto'
+      )
+      .action(async (opts) => {
+        const repoDir = opts.repoDir as string;
+        const fgvDepVersion =
+          opts.fgvDepVersion ?? resolveFgvDepVersion(repoDir, opts.fgvDepChannel as DepChannelType);
+        await runInitLibrary({
+          name: opts.name,
+          description: opts.description,
+          rig: opts.rig as RigType,
+          category: opts.category as CategoryType,
+          repoDir,
+          versionPolicy: opts.versionPolicy,
+          version: opts.initialVersion,
+          fgvDepVersion
+        });
+      });
+
+    // ── link ──
+    this._program
+      .command('link')
+      .description('Link to a local fgv worktree for cross-repo development')
+      .requiredOption('--fgv-dir <path>', 'Path to the local fgv worktree')
+      .option('--repo-dir <path>', 'Consumer Rush repo root (default: cwd)', process.cwd())
+      .action(async (opts) => {
+        await runLink({
+          fgvDir: opts.fgvDir,
+          repoDir: opts.repoDir
+        });
+      });
+
+    // ── unlink ──
+    this._program
+      .command('unlink')
+      .description('Switch back from local fgv worktree to published npm packages')
+      .option('--repo-dir <path>', 'Consumer Rush repo root (default: cwd)', process.cwd())
+      .option('--fgv-version <spec>', 'Also bump @fgv/* deps to this version spec')
+      .action(async (opts) => {
+        await runUnlink({
+          repoDir: opts.repoDir,
+          version: opts.fgvVersion
+        });
+      });
+
+    // ── update-fgv-versions ──
+    this._program
+      .command('update-fgv-versions')
+      .description('Bump @fgv/* dependency version specs across all projects')
+      .option('--repo-dir <path>', 'Consumer Rush repo root (default: cwd)', process.cwd())
+      .option(
+        '--fgv-version <spec>',
+        'Version spec to set (e.g. "~5.2.0"). If omitted, queries npm for latest.'
+      )
+      .action(async (opts) => {
+        await runUpdateFgvVersions({
+          repoDir: opts.repoDir,
+          version: opts.fgvVersion
+        });
+      });
+
+    // ── patch ──
+    this._program
+      .command('patch <file>')
+      .description('Apply targeted edits to a JSONC config file while preserving comments')
+      .allowUnknownOption(true)
+      .helpOption(false)
+      .action(async (file, __opts, cmd) => {
+        // Actually, commander passes remaining args differently. Let's get them from process.argv
+        const allArgs = process.argv;
+        const patchIdx = allArgs.indexOf('patch');
+        const fileIdx = patchIdx + 1;
+        const opArgs = allArgs.slice(fileIdx + 1);
+
+        const operations = parsePatchArgs(opArgs);
+        if (operations.length === 0) {
+          console.error('No operations specified. Use --set, --uncomment, --add-to-array, etc.');
+          process.exit(1);
+        }
+        await runPatch({ file, operations });
+      });
+  }
+
+  /**
+   * Auto-detect the fgv source directory by walking up from the current working directory.
+   */
+  private _resolveSourceDir(): string {
+    const detected = detectSourceDir(process.cwd());
+    if (!detected) {
+      console.error(
+        'ERROR: Could not auto-detect fgv source repo. ' +
+          'Please specify --source-dir or run from within the fgv repository.'
+      );
+      process.exit(1);
+    }
+    return detected;
+  }
+}

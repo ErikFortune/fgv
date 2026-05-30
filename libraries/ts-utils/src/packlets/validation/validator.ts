@@ -154,4 +154,12 @@ export interface Validator<T, TC = unknown> {
    * @returns A new {@link Validation.Validator | Validator}.
    */
   withFormattedError(formatter: ValidationErrorFormatter<TC>): Validator<T, TC>;
+
+  /**
+   * Chains this validator with another of the same type, to be attempted if this
+   * validator fails.
+   * @param other - The other {@link Validation.Validator | Validator} to be attempted
+   * if this one fails.
+   */
+  or(other: Validator<T, TC>): Validator<T, TC>;
 }

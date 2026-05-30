@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Add IdbPrivateKeyStorage, an IndexedDB-backed IPrivateKeyStorage backend that stores CryptoKey objects directly (supportsNonExtractable: true)",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}

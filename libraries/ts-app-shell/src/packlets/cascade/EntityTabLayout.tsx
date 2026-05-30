@@ -1,0 +1,204 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * EntityTabLayout — shared layout for entity tab content with list + cascade + collapse-on-focus.
+ * @packageDocumentation
+ */
+
+import React from 'react';
+
+import { CascadeContainer, type ICascadeColumn } from './CascadeContainer';
+import { useResponsive } from '../responsive';
+import { ComparisonView, type IComparisonColumn } from './ComparisonView';
+
+// ============================================================================
+// EntityTabLayout Props
+// ============================================================================
+
+/**
+ * Props for the EntityTabLayout component.
+ * @public
+ */
+export interface IEntityTabLayoutProps {
+  /** The entity list content (rendered in the collapsible left panel) */
+  readonly list: React.ReactNode;
+  /** Cascade columns to display (empty array = no cascade) */
+  readonly cascadeColumns: ReadonlyArray<ICascadeColumn>;
+  /** Callback to pop the cascade back to a specific depth (0 = clear all) */
+  readonly onPopTo: (depth: number) => void;
+  /** Whether the entity list is currently collapsed */
+  readonly listCollapsed: boolean;
+  /** Callback to collapse the entity list (fired when user clicks inside cascade) */
+  readonly onListCollapse: () => void;
+  /** Whether compare mode is active */
+  readonly compareMode?: boolean;
+  /** Columns for the comparison view (when compare mode is active with 2+ selections) */
+  readonly comparisonColumns?: ReadonlyArray<IComparisonColumn>;
+  /** Whether the comparison view is actively showing (user explicitly triggered) */
+  readonly showingComparison?: boolean;
+  /** Callback to exit the comparison view (back to selection list) */
+  readonly onExitComparison?: () => void;
+  /** Columns for variation comparison (when comparing variations of a single recipe) */
+  readonly variationCompareColumns?: ReadonlyArray<IComparisonColumn>;
+  /** Callback to exit variation comparison mode */
+  readonly onExitVariationCompare?: () => void;
+}
+
+// ============================================================================
+// EntityTabLayout Component
+// ============================================================================
+
+/**
+ * Shared layout for entity tab content.
+ *
+ * Renders an entity list on the left and a cascade container on the right.
+ * The list stays expanded while browsing (selecting items in the list).
+ * It collapses when the user clicks inside the cascade detail pane,
+ * signaling they are focused on the detail rather than browsing.
+ *
+ * @public
+ */
+export function EntityTabLayout(props: IEntityTabLayoutProps): React.ReactElement {
+  const { list, cascadeColumns, onPopTo, listCollapsed, onListCollapse, compareMode, comparisonColumns } =
+    props;
+
+  const variationCompareColumns = props.variationCompareColumns;
+  const onExitVariationCompare = props.onExitVariationCompare;
+  const showingComparison = props.showingComparison ?? false;
+  const onExitComparison = props.onExitComparison;
+  const { layoutMode } = useResponsive();
+
+  const isVariationCompare = variationCompareColumns !== undefined && variationCompareColumns.length >= 2;
+  const showComparison =
+    !isVariationCompare &&
+    showingComparison &&
+    comparisonColumns !== undefined &&
+    comparisonColumns.length >= 2;
+  const showCascade = !compareMode && !isVariationCompare && !showComparison && cascadeColumns.length > 0;
+  const hasCascadeOrCompare = cascadeColumns.length > 0 || showComparison;
+
+  // Variation compare banner — shared between mobile and desktop
+  const variationCompareBanner = isVariationCompare && onExitVariationCompare && (
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-status-warning-bg border-b border-status-warning-border shrink-0">
+      <span className="text-xs text-status-warning-text">
+        Comparing {variationCompareColumns.length} variations
+      </span>
+      <button
+        onClick={onExitVariationCompare}
+        className="px-2 py-0.5 text-xs rounded border border-status-warning-border text-status-warning-text hover:bg-status-warning-surface transition-colors"
+      >
+        Exit
+      </button>
+    </div>
+  );
+
+  // Mobile: show one pane at a time — list or cascade/comparison full-screen
+  if (layoutMode === 'mobile') {
+    const hasCascadeContent = showCascade || showComparison || isVariationCompare;
+
+    return (
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {variationCompareBanner}
+        {hasCascadeContent ? (
+          <>
+            {showCascade && <CascadeContainer columns={cascadeColumns} onPopTo={onPopTo} />}
+            {showComparison && (
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-status-info-bg border-b border-status-info-border shrink-0">
+                  <span className="text-xs text-status-info-text">
+                    Comparing {comparisonColumns.length} items
+                  </span>
+                  {onExitComparison && (
+                    <button
+                      onClick={onExitComparison}
+                      className="px-2 py-0.5 text-xs rounded border border-status-info-border text-status-info-text hover:bg-status-info-surface transition-colors"
+                    >
+                      ← Back to list
+                    </button>
+                  )}
+                </div>
+                <ComparisonView columns={comparisonColumns} />
+              </div>
+            )}
+            {isVariationCompare && <ComparisonView columns={variationCompareColumns} />}
+          </>
+        ) : (
+          <div className="flex flex-col flex-1 overflow-hidden">{list}</div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop/compact: side-by-side list and cascade
+  return (
+    <div className="flex flex-col flex-1 overflow-hidden">
+      {variationCompareBanner}
+
+      {/* Main content area */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Entity list — proportional width when cascade is showing, full width when browsing */}
+        <div
+          className={`flex flex-col overflow-hidden transition-all ${
+            isVariationCompare || showComparison
+              ? 'w-0 min-w-0'
+              : listCollapsed
+              ? 'w-0 min-w-0'
+              : hasCascadeOrCompare
+              ? 'w-1/4 max-w-xs shrink-0 border-r border-border'
+              : 'w-full max-w-sm shrink-0 border-r border-border'
+          }`}
+        >
+          {list}
+        </div>
+
+        {/* Cascade columns (normal mode) */}
+        {showCascade && (
+          <CascadeContainer columns={cascadeColumns} onPopTo={onPopTo} onFocus={onListCollapse} />
+        )}
+
+        {/* Entity comparison view (compare mode — explicitly triggered) */}
+        {showComparison && (
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-status-info-bg border-b border-status-info-border shrink-0">
+              <span className="text-xs text-status-info-text">
+                Comparing {comparisonColumns.length} items
+              </span>
+              {onExitComparison && (
+                <button
+                  onClick={onExitComparison}
+                  className="px-2 py-0.5 text-xs rounded border border-status-info-border text-status-info-text hover:bg-status-info-surface transition-colors"
+                >
+                  ← Back to list
+                </button>
+              )}
+            </div>
+            <ComparisonView columns={comparisonColumns} />
+          </div>
+        )}
+
+        {/* Variation comparison view */}
+        {isVariationCompare && <ComparisonView columns={variationCompareColumns} />}
+      </div>
+    </div>
+  );
+}

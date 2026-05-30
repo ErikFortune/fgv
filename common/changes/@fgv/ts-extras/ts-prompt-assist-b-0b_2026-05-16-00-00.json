@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add additive `escape?: 'html' | 'none' | ((value: string) => string)` option to `MustacheTemplate.create` for verbatim-passthrough and custom escape strategies (LLM-prompt rendering and other non-HTML targets). Implementation uses a per-instance `Mustache.Writer` with a resolved escape function; no mutation of the global `Mustache.escape`. Default `'html'` preserves existing behavior. `extractJsonText` confirmed as a stable public export from the `ai-assist` packlet.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

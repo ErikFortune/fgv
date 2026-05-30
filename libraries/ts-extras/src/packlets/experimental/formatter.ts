@@ -66,7 +66,7 @@ export class FormattableBase {
   }
 
   /**
-   * {@inheritdoc Experimental.Formattable.format}
+   * {@inheritDoc Experimental.Formattable.format}
    */
   public format(template: string): Result<string> {
     return captureResult(() => Mustache.render(template, this));

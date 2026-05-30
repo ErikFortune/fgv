@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Add Converters.stringifiedJson(inner?) — parses a JSON string with an optional inner Converter<T> or Validator<T>",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

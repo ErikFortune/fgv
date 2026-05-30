@@ -155,7 +155,7 @@ export const jsonValue: Validator<JsonValue, IJsonValidatorContext> = new Valida
 });
 
 /**
- * A {@link Validation.Classes.StringValidator | StringValidator} which validates a string in place.
+ * A `StringValidator` which validates a string in place.
  * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
  * @public
  */
@@ -163,18 +163,16 @@ export const string: Validation.Classes.StringValidator<string, IJsonValidatorCo
   new Validation.Classes.StringValidator<string, IJsonValidatorContext>();
 
 /**
- * A {@link Validation.Classes.NumberValidator | NumberValidator} which validates a number in place.
+ * A `NumberValidator` which validates a number in place.
  * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
  * @public
  */
-export const number: Validator<number, IJsonValidatorContext> = new Validation.Classes.NumberValidator<
-  number,
-  IJsonValidatorContext
->();
+export const number: Validation.Classes.NumberValidator<number, IJsonValidatorContext> =
+  new Validation.Classes.NumberValidator<number, IJsonValidatorContext>();
 
 /**
- * A {@link Validation.Classes.BooleanValidator | BooleanValidator} which validates a boolean in place.
- * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
+ * A `BooleanValidator` which validates a boolean in place.
+ * Accepts `IJsonValidatorContext` but ignores it.
  * @public
  */
 export const boolean: Validator<boolean, IJsonValidatorContext> =
@@ -182,7 +180,7 @@ export const boolean: Validator<boolean, IJsonValidatorContext> =
 
 /**
  * Helper to create a validator for a literal value.
- * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
+ * Accepts `IJsonValidatorContext` but ignores it.
  * Mirrors the behavior of `@fgv/ts-utils`.
  * @public
  */
@@ -195,17 +193,17 @@ export function literal<T>(value: T): Validator<T, IJsonValidatorContext> {
 }
 
 /**
- * Helper function to create a {@link Validator | Validator} which validates `unknown` to one of a set of
+ * Helper function to create a `Validator` which validates `unknown` to one of a set of
  * supplied enumerated values. Anything else fails.
  *
  * @remarks
- * This JSON variant accepts an {@link Validators.IJsonValidatorContext | IJsonValidatorContext} OR
+ * This JSON variant accepts an `IJsonValidatorContext` OR
  * a `ReadonlyArray<T>` as its validation context. If the context is an array, it is used to override the
  * allowed values for that validation; otherwise, the original `values` supplied at creation time are used.
  *
  * @param values - Array of allowed values.
  * @param message - Optional custom failure message.
- * @returns A new {@link Validator | Validator} returning `<T>`.
+ * @returns A new `Validator` returning `<T>`.
  * @public
  */
 export function enumeratedValue<T>(

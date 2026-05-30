@@ -47,7 +47,7 @@ export interface GenericValidatorConstructorParams<T, TC> {
  */
 export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   /**
-   * {@inheritdoc Validation.Validator.traits}
+   * {@inheritDoc Validation.Validator.traits}
    */
   public readonly traits: ValidatorTraits;
 
@@ -75,21 +75,21 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.isOptional}
+   * {@inheritDoc Validation.Validator.isOptional}
    */
   public get isOptional(): boolean {
     return this.traits.isOptional;
   }
 
   /**
-   * {@inheritdoc Validation.Validator.brand}
+   * {@inheritDoc Validation.Validator.brand}
    */
   public get brand(): string | undefined {
     return this.traits.brand;
   }
 
   /**
-   * {@inheritdoc Validation.Validator.validate}
+   * {@inheritDoc Validation.Validator.validate}
    */
   public validate(from: unknown, context?: TC): Result<T> {
     const result = this._validator(from, this._context(context), this);
@@ -100,7 +100,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.convert}
+   * {@inheritDoc Validation.Validator.convert}
    */
   public convert(from: unknown, context?: TC): Result<T> {
     const result = this._validator(from, this._context(context), this);
@@ -111,21 +111,21 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.validateOptional}
+   * {@inheritDoc Validation.Validator.validateOptional}
    */
   public validateOptional(from: unknown, context?: TC): Result<T | undefined> {
     return from === undefined ? succeed(undefined) : this.validate(from, context);
   }
 
   /**
-   * {@inheritdoc Validation.Validator.guard}
+   * {@inheritDoc Validation.Validator.guard}
    */
   public guard(from: unknown, context?: TC): from is T {
     return this._validator(from, this._context(context), this) === true;
   }
 
   /**
-   * {@inheritdoc Validation.Validator.optional}
+   * {@inheritDoc Validation.Validator.optional}
    */
   public optional(): Validator<T | undefined, TC> {
     return new GenericValidator({
@@ -137,7 +137,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.withConstraint}
+   * {@inheritDoc Validation.Validator.withConstraint}
    */
   public withConstraint(constraint: Constraint<T>, trait?: ConstraintTrait): Validator<T, TC> {
     trait = trait ?? { type: 'function' };
@@ -160,7 +160,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.brand}
+   * {@inheritDoc Validation.Validator.brand}
    */
   public withBrand<B extends string>(brand: B): Validator<Brand<T, B>, TC> {
     if (this.brand) {
@@ -176,7 +176,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.withFormattedError}
+   * {@inheritDoc Validation.Validator.withFormattedError}
    */
   public withFormattedError(formatter: ValidationErrorFormatter<TC>): Validator<T, TC> {
     return new GenericValidator<T, TC>({
@@ -188,6 +188,21 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
         /* c8 ignore next - defense in depth */
         const message = result === false ? undefined : result.message;
         return fail(formatter(from, message, this._context(context)));
+      }
+    });
+  }
+
+  /**
+   * {@inheritDoc Validation.Validator.or}
+   */
+  public or(other: Validator<T, TC>): Validator<T, TC> {
+    return new GenericValidator<T, TC>({
+      validator: (from: unknown, context?: TC, __self?: Validator<T, TC>): boolean | Failure<T> => {
+        if (this._validator(from, this._context(context), this) === true) {
+          return true;
+        }
+        const otherResult = other.validate(from, this._context(context));
+        return otherResult.isSuccess() ? true : otherResult;
       }
     });
   }

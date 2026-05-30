@@ -20,6 +20,8 @@
  * SOFTWARE.
  */
 
+import { _findShouldNotFailFrame, _formatShouldNotFailMessage } from './shouldNotFail';
+
 /**
  * Represents the {@link IResult | result} of some operation or sequence of operations.
  * @remarks
@@ -66,6 +68,23 @@ export type FailureContinuation<T> = (message: string) => Result<T>;
 export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
 
 /**
+ * Type inference to determine the result type of an {@link IResult}.
+ * @beta
+ */
+export type IResultValueType<T> = T extends IResult<infer TV> ? TV : never;
+
+/**
+ * Type inference to determine the value type returned from a result-map style
+ * `get` method.
+ * @remarks
+ * Useful for extracting collection entry types from maps whose `get` method
+ * returns an {@link IResult}.
+ * @beta
+ */
+export type ResultMapValueType<TCollection extends { get: (...args: readonly unknown[]) => unknown }> =
+  Exclude<IResultValueType<ReturnType<TCollection['get']>>, undefined>;
+
+/**
  * Formats an error message.
  * @param message - The error message to be formatted.
  * @param detail - An optional detail to be included in the formatted message.
@@ -74,7 +93,7 @@ export type ResultValueType<T> = T extends Result<infer TV> ? TV : never;
 export type ErrorFormatter<TD = unknown> = (message: string, detail?: TD) => string;
 
 /**
- * Simple logger interface used by {@link IResult.(orThrow:1) | orThrow(logger)} and {@link IResult.(orThrow:2) | orThrow(formatter)}.
+ * Simple logger interface used by {@link IResult.orThrow | orThrow(logger)} and {@link IResult.orThrow | orThrow(formatter)}.
  * @public
  */
 export interface IResultLogger<TD = unknown> {
@@ -122,7 +141,9 @@ export interface IResultReportOptions<TD = unknown> {
  * @public
  */
 export interface IResultReporter<T, TD = unknown> {
+  /** Reports a successful result at the specified log level. */
   reportSuccess(level: MessageLogLevel, value: T, detail?: TD, message?: ErrorFormatter<TD>): void;
+  /** Reports a failed result at the specified log level. */
   reportFailure(level: MessageLogLevel, message: string, detail?: TD): void;
 }
 
@@ -218,7 +239,7 @@ export interface IResult<T> {
    * error will also be reported.
    * @returns The return value, if the operation was successful.
    * @throws The error message if the operation failed.
-   * @deprecated Use {@link IResult.(orThrow:1) | orThrow(logger)} or {@link IResult.(orThrow:2) | orThrow(formatter)} instead.
+   * @deprecated Use {@link IResult.orThrow | orThrow(logger)} or {@link IResult.orThrow | orThrow(formatter)} instead.
    */
   getValueOrThrow(logger?: IResultLogger): T;
 
@@ -233,7 +254,7 @@ export interface IResult<T> {
    *
    * @returns The return value, if the operation was successful.  Returns
    * the supplied default value or `undefined` if no default is supplied.
-   * @deprecated Use {@link IResult.(orDefault:1) | orDefault(T)} or {@link IResult.(orDefault:2) | orDefault()} instead.
+   * @deprecated Use {@link IResult.orDefault | orDefault(T)} or {@link IResult.orDefault | orDefault()} instead.
    */
   getValueOrDefault(dflt?: T): T | undefined;
 
@@ -257,6 +278,48 @@ export interface IResult<T> {
    * {@label formatter}
    */
   orThrow(cb: ErrorFormatter): T;
+
+  /**
+   * Asserts at the call site that this {@link IResult | result} MUST be a success.
+   * Returns the value on success; on failure, throws an `Error` whose message
+   * is composed from the original failure message and the captured call-site
+   * location (file, line, and where useful function name).
+   *
+   * @remarks
+   * Use for declaration-time / setup-time invariants — module-level `const`
+   * initializers, static class properties, static initialization blocks, and
+   * test fixtures — where a failure indicates a coding bug that should
+   * surface at the call site rather than propagate as a `Result`. For chains
+   * where the throw is intentional control flow, prefer `orThrow`.
+   *
+   * On V8 (Node + Chromium) `Error.captureStackTrace` is used to elide
+   * `shouldNotFail` itself from the captured stack so the parsed frame is
+   * the user's call site directly. On WebKit (where `captureStackTrace` is
+   * unavailable) the stack is parsed manually and frames whose **parsed
+   * function name** contains `shouldNotFail` are filtered out — the raw
+   * stack-line text (including the file path) is deliberately NOT inspected,
+   * so consumer files named after `shouldNotFail` are not collateral damage.
+   * Function names and exact line numbers depend on source-map availability
+   * in the runtime. When no caller frame is recoverable (e.g. `frameDepth`
+   * out of range, or `frameDepth: 0`) the message falls back to the
+   * label-only form (or the bare original message when no label is given).
+   *
+   * Error message format (depending on whether a label and a usable function
+   * name are available):
+   * - both: `<label> (at <fn> in <file>:<line>): <original>`
+   * - label only: `<label> (at <file>:<line>): <original>`
+   * - fn only: `<fn> at <file>:<line>: <original>`
+   * - neither: `<file>:<line>: <original>`
+   *
+   * @param label - Optional human-meaningful identifier (e.g. the constant
+   * name) prefixed to the error message.
+   * @param frameDepth - Optional 1-indexed depth into the caller stack.
+   * Default `1` (immediate caller). Library authors wrapping `shouldNotFail`
+   * inside their own helper pass `2` to attribute to their caller.
+   * @returns The result value, if the operation was successful.
+   * @throws `Error` if the result was a failure.
+   */
+  shouldNotFail(label?: string, frameDepth?: number): T;
 
   /**
    * Gets the value associated with a successful {@link IResult | result},
@@ -303,6 +366,32 @@ export interface IResult<T> {
    * was successful, propagates the result value from the successful event.
    */
   onFailure(cb: FailureContinuation<T>): Result<T>;
+
+  /**
+   * Calls a supplied {@link AsyncSuccessContinuation | async success continuation} if
+   * the operation was a success, bridging into an {@link AsyncResult} chain.
+   * @remarks
+   * If the async callback rejects, the rejection is caught and converted
+   * to a {@link Failure}.
+   * @param cb - The {@link AsyncSuccessContinuation | async success continuation} to
+   * be called in the event of success.
+   * @returns An {@link AsyncResult} wrapping the async continuation result, or
+   * propagating the error message from this failure.
+   */
+  thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
+
+  /**
+   * Calls a supplied {@link AsyncFailureContinuation | async failure continuation} if
+   * the operation failed, bridging into an {@link AsyncResult} chain.
+   * @remarks
+   * If the async callback rejects, the rejection is caught and converted
+   * to a {@link Failure}.
+   * @param cb - The {@link AsyncFailureContinuation | async failure continuation} to
+   * be called in the event of failure.
+   * @returns An {@link AsyncResult} wrapping the async continuation result, or
+   * propagating the success value from this result.
+   */
+  thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T>;
 
   /**
    * Calls a supplied {@link ErrorFormatter | error formatter} if
@@ -361,7 +450,7 @@ export interface IResult<T> {
  */
 export class Success<out T> implements IResult<T> {
   /**
-   * {@inheritdoc IResult.success}
+   * {@inheritDoc IResult.success}
    */
   public readonly success: true = true;
 
@@ -391,26 +480,26 @@ export class Success<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.isSuccess}
+   * {@inheritDoc IResult.isSuccess}
    */
   public isSuccess(): this is Success<T> {
     return true;
   }
 
   /**
-   * {@inheritdoc IResult.isFailure}
+   * {@inheritDoc IResult.isFailure}
    */
   public isFailure(): this is Failure<T> {
     return false;
   }
 
   /**
-   * {@inheritdoc IResult.(orThrow:1)}
+   * {@inheritDoc IResult.orThrow}
    */
   public orThrow(logger?: IResultLogger): T;
 
   /**
-   * {@inheritdoc IResult.(orThrow:2)}
+   * {@inheritDoc IResult.orThrow}
    */
   public orThrow(cb: ErrorFormatter): T;
   public orThrow(__logger?: IResultLogger | ErrorFormatter): T {
@@ -418,11 +507,18 @@ export class Success<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.(orDefault:1)}
+   * {@inheritDoc IResult.shouldNotFail}
+   */
+  public shouldNotFail(__label?: string, __frameDepth?: number): T {
+    return this._value;
+  }
+
+  /**
+   * {@inheritDoc IResult.orDefault}
    */
   public orDefault(dflt: T): T;
   /**
-   * {@inheritdoc IResult.(orDefault:2)}
+   * {@inheritDoc IResult.orDefault}
    */
   public orDefault(): T | undefined;
   public orDefault(dflt?: T): T | undefined {
@@ -430,65 +526,86 @@ export class Success<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.getValueOrThrow}
-   * @deprecated Use {@link Success.(orThrow:1) | orThrow(logger)} or {@link Success.(orThrow:2) | orThrow(formatter)} instead.
+   * {@inheritDoc IResult.getValueOrThrow}
+   * @deprecated Use {@link Success.orThrow | orThrow(logger)} or {@link Success.orThrow | orThrow(formatter)} instead.
    */
   public getValueOrThrow(__logger?: IResultLogger): T {
     return this._value;
   }
 
   /**
-   * {@inheritdoc IResult.getValueOrDefault}
-   * @deprecated Use {@link Success.(orDefault:1) | orDefault(T)} or {@link Success.(orDefault:2) | orDefault()} instead.
+   * {@inheritDoc IResult.getValueOrDefault}
+   * @deprecated Use {@link Success.orDefault | orDefault(T)} or {@link Success.orDefault | orDefault()} instead.
    */
   public getValueOrDefault(dflt?: T): T | undefined {
     return this._value ?? dflt;
   }
 
   /**
-   * {@inheritdoc IResult.onSuccess}
+   * {@inheritDoc IResult.onSuccess}
    */
   public onSuccess<TN>(cb: SuccessContinuation<T, TN>): Result<TN> {
     return cb(this._value);
   }
 
   /**
-   * {@inheritdoc IResult.onFailure}
+   * {@inheritDoc IResult.onFailure}
    */
   public onFailure(__: FailureContinuation<T>): Result<T> {
     return this;
   }
 
   /**
-   * {@inheritdoc IResult.withErrorFormat}
+   * {@inheritDoc IResult.thenOnSuccess}
+   */
+  public thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return new AsyncResult(cb(this._value));
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return AsyncResult.from(fail<TN>(_errorMessage(err)));
+    }
+  }
+
+  /**
+   * {@inheritDoc IResult.thenOnFailure}
+   */
+  public thenOnFailure(__: AsyncFailureContinuation<T>): AsyncResult<T> {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    return AsyncResult.from(this);
+  }
+
+  /**
+   * {@inheritDoc IResult.withErrorFormat}
    */
   public withErrorFormat(__cb: ErrorFormatter): Result<T> {
     return this;
   }
 
   /**
-   * {@inheritdoc IResult.withFailureDetail}
+   * {@inheritDoc IResult.withFailureDetail}
    */
   public withFailureDetail<TD>(__detail: TD): DetailedResult<T, TD> {
     return succeedWithDetail(this._value);
   }
 
   /**
-   * {@inheritdoc IResult.withDetail}
+   * {@inheritDoc IResult.withDetail}
    */
   public withDetail<TD>(detail: TD, successDetail?: TD): DetailedResult<T, TD> {
     return succeedWithDetail(this._value, successDetail ?? detail);
   }
 
   /**
-   * {@inheritdoc IResult.aggregateError}
+   * {@inheritDoc IResult.aggregateError}
    */
   public aggregateError(__errors: IMessageAggregator, __formatter?: ErrorFormatter): this {
     return this;
   }
 
   /**
-   * {@inheritdoc IResult.report}
+   * {@inheritDoc IResult.report}
    */
   public report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Success<T> {
     const successOptions =
@@ -515,7 +632,7 @@ export class Success<out T> implements IResult<T> {
  */
 export class Failure<out T> implements IResult<T> {
   /**
-   * {@inheritdoc IResult.success}
+   * {@inheritDoc IResult.success}
    */
   public readonly success: false = false;
   /**
@@ -544,26 +661,26 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.isSuccess}
+   * {@inheritDoc IResult.isSuccess}
    */
   public isSuccess(): this is Success<T> {
     return false;
   }
 
   /**
-   * {@inheritdoc IResult.isFailure}
+   * {@inheritDoc IResult.isFailure}
    */
   public isFailure(): this is Failure<T> {
     return true;
   }
 
   /**
-   * {@inheritdoc IResult.(orThrow:1)}
+   * {@inheritDoc IResult.orThrow}
    */
   public orThrow(logger?: IResultLogger): never;
 
   /**
-   * {@inheritdoc IResult.(orThrow:2)}
+   * {@inheritDoc IResult.orThrow}
    */
   public orThrow(cb: ErrorFormatter): never;
   public orThrow(logOrFormat?: IResultLogger | ErrorFormatter): never {
@@ -578,11 +695,38 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.(orDefault:1)}
+   * {@inheritDoc IResult.shouldNotFail}
+   */
+  public shouldNotFail(label?: string, frameDepth: number = 1): never {
+    // Parse a probe Error's stack to identify the caller frame for message
+    // composition. We must NOT reuse this probe as the thrown Error: in V8,
+    // `.stack` is materialized lazily on first access (which happens below in
+    // `_findShouldNotFailFrame`), and once materialized the cached stack
+    // header carries whatever message was set at that moment. Mutating
+    // `.message` afterwards does not refresh the cached `.stack` header.
+    const probe = new Error();
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(probe, this.shouldNotFail);
+    }
+    const frame = _findShouldNotFailFrame(probe.stack, frameDepth);
+    const message = _formatShouldNotFailMessage(this._message, label, frame);
+    // Build the final Error with the formatted message and re-elide
+    // `shouldNotFail` from its stack, so the thrown error's `.stack` shows
+    // both the formatted message in its header and the caller as its top
+    // frame.
+    const err = new Error(message);
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(err, this.shouldNotFail);
+    }
+    throw err;
+  }
+
+  /**
+   * {@inheritDoc IResult.orDefault}
    */
   public orDefault(dflt: T): T;
   /**
-   * {@inheritdoc IResult.(orDefault:2)}
+   * {@inheritDoc IResult.orDefault}
    */
   public orDefault(): T | undefined;
   public orDefault(dflt?: T): T | undefined {
@@ -590,8 +734,8 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.getValueOrThrow}
-   * @deprecated Use {@link Failure.(orThrow:1) | orThrow(logger)} or {@link Failure.(orThrow:2) | orThrow(formatter)} instead.
+   * {@inheritDoc IResult.getValueOrThrow}
+   * @deprecated Use {@link Failure.orThrow | orThrow(logger)} or {@link Failure.orThrow | orThrow(formatter)} instead.
    */
   public getValueOrThrow(logger?: IResultLogger): never {
     if (logger !== undefined) {
@@ -601,50 +745,71 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.getValueOrDefault}
-   * @deprecated Use {@link Failure.(orDefault:1) | orDefault(T)} or {@link Failure.(orDefault:2) | orDefault()} instead.
+   * {@inheritDoc IResult.getValueOrDefault}
+   * @deprecated Use {@link Failure.orDefault | orDefault(T)} or {@link Failure.orDefault | orDefault()} instead.
    */
   public getValueOrDefault(dflt?: T): T | undefined {
     return dflt;
   }
 
   /**
-   * {@inheritdoc IResult.onSuccess}
+   * {@inheritDoc IResult.onSuccess}
    */
   public onSuccess<TN>(__: SuccessContinuation<T, TN>): Result<TN> {
     return new Failure(this._message);
   }
 
   /**
-   * {@inheritdoc IResult.onFailure}
+   * {@inheritDoc IResult.onFailure}
    */
   public onFailure(cb: FailureContinuation<T>): Result<T> {
     return cb(this._message);
   }
 
   /**
-   * {@inheritdoc IResult.withErrorFormat}
+   * {@inheritDoc IResult.thenOnSuccess}
+   */
+  public thenOnSuccess<TN>(__: AsyncSuccessContinuation<T, TN>): AsyncResult<TN> {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    return AsyncResult.from(fail<TN>(this._message));
+  }
+
+  /**
+   * {@inheritDoc IResult.thenOnFailure}
+   */
+  public thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return new AsyncResult(cb(this._message));
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return AsyncResult.from(fail<T>(_errorMessage(err)));
+    }
+  }
+
+  /**
+   * {@inheritDoc IResult.withErrorFormat}
    */
   public withErrorFormat(cb: ErrorFormatter): Result<T> {
     return fail(cb(this._message));
   }
 
   /**
-   * {@inheritdoc IResult.withFailureDetail}
+   * {@inheritDoc IResult.withFailureDetail}
    */
   public withFailureDetail<TD>(detail: TD): DetailedResult<T, TD> {
     return failWithDetail(this._message, detail);
   }
 
   /**
-   * {@inheritdoc IResult.withDetail}
+   * {@inheritDoc IResult.withDetail}
    */
   public withDetail<TD>(detail: TD, __successDetail?: TD): DetailedResult<T, TD> {
     return failWithDetail(this._message, detail);
   }
 
   /**
-   * {@inheritdoc IResult.aggregateError}
+   * {@inheritDoc IResult.aggregateError}
    */
   public aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this {
     const message = formatter ? formatter(this._message) : this._message;
@@ -653,7 +818,7 @@ export class Failure<out T> implements IResult<T> {
   }
 
   /**
-   * {@inheritdoc IResult.report}
+   * {@inheritDoc IResult.report}
    */
   public report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Failure<T> {
     const failureOptions =
@@ -662,6 +827,46 @@ export class Failure<out T> implements IResult<T> {
     const message = failureOptions.message?.(this._message) ?? this._message;
     reporter?.reportFailure(level, message);
     return this;
+  }
+
+  /**
+   * Re-types this {@link Failure | Failure<T>} as {@link Failure | Failure<U>} for
+   * propagation under a different success type.
+   * @remarks
+   * Supports the canonical Result early-return-after-`isFailure()` pattern when the
+   * outer function's success type differs from the inner Result's success type:
+   *
+   * ```ts
+   * const storeResult = await PromptStoreFixture.build(seed);
+   * if (storeResult.isFailure()) {
+   *   return storeResult.withType<PromptLibrary>();
+   * }
+   * return PromptLibrary.create({ store: storeResult.value, ... });
+   * ```
+   *
+   * Without this helper, TypeScript rejects `return storeResult` because
+   * `Failure<IPromptStore>` is invariant in `T` and not assignable to
+   * `Result<PromptLibrary>`. The workaround `return fail<U>(r.message)` is
+   * semantically equivalent but allocates a new {@link Failure} instance;
+   * `withType` returns `this` and only retypes statically.
+   *
+   * This method is sound because a {@link Failure} variant carries no `T`-shaped
+   * data — only an error message — so re-typing it as `Failure<U>` cannot
+   * misrepresent any value. The same operation is NOT exposed on {@link Success}
+   * because `Success<T>` carries `T`-shaped data and re-typing would be a lie.
+   *
+   * For `DetailedResult` propagation that preserves a typed `detail`, consider
+   * propagating the {@link DetailedFailure} directly through `onSuccess` (which
+   * already re-types the success arm) rather than reaching for `withType`.
+   *
+   * @returns This same {@link Failure} instance, statically retyped as
+   * {@link Failure | Failure<U>}.
+   * @public
+   */
+  public withType<U>(): Failure<U> {
+    // Safe by construction: Failure carries no T-shaped data, only a message.
+    // Re-typing the static T parameter cannot misrepresent any value.
+    return this as unknown as Failure<U>;
   }
 
   /**
@@ -698,7 +903,7 @@ export function succeed<T>(value: T): Success<T> {
 }
 
 /**
- * {@inheritdoc succeed}
+ * {@inheritDoc succeed}
  * @public
  */
 export function succeeds<T>(value: T): Success<T> {
@@ -718,7 +923,7 @@ export function fail<T>(message: string): Failure<T> {
 }
 
 /**
- * {@inheritdoc fail}
+ * {@inheritDoc fail}
  * @public
  */
 export function fails<T>(message: string): Failure<T> {
@@ -814,7 +1019,7 @@ export class DetailedSuccess<out T, out TD> extends Success<T> {
    * Propagates this {@link DetailedSuccess}.
    * @remarks
    * Failure does not mutate return type so we can return this event directly.
-   * @param _cb - {@link DetailedFailureContinuation | Failure callback} to be called
+   * @param __cb - {@link DetailedFailureContinuation | Failure callback} to be called
    * on a {@link DetailedResult} in case of failure (ignored).
    * @returns `this`
    */
@@ -823,14 +1028,14 @@ export class DetailedSuccess<out T, out TD> extends Success<T> {
   }
 
   /**
-   * {@inheritdoc Success.withErrorFormat}
+   * {@inheritDoc Success.withErrorFormat}
    */
   public withErrorFormat(cb: ErrorFormatter): DetailedResult<T, TD> {
     return this;
   }
 
   /**
-   * {@inheritdoc IResult.report}
+   * {@inheritDoc IResult.report}
    */
   public report(
     reporter?: IResultReporter<T, unknown>,
@@ -907,7 +1112,7 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
    * @remarks
    * Mutates the success type as the success callback would have, but does not
    * call the success callback.
-   * @param _cb - {@link DetailedSuccessContinuation | Success callback} to be called
+   * @param __cb - {@link DetailedSuccessContinuation | Success callback} to be called
    * on a {@link DetailedResult} in case of success (ignored).
    * @returns A new {@link DetailedFailure | DetailedFailure<TN, TD>} which contains
    * the error message and detail from this one.
@@ -927,14 +1132,14 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
   }
 
   /**
-   * {@inheritdoc IResult.withErrorFormat}
+   * {@inheritDoc IResult.withErrorFormat}
    */
   public withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD> {
     return failWithDetail(cb(this._message, this._detail), this._detail);
   }
 
   /**
-   * {@inheritdoc IResult.aggregateError}
+   * {@inheritDoc IResult.aggregateError}
    */
   public aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter<TD>): this {
     const message = formatter ? formatter(this._message, this._detail) : this._message;
@@ -943,7 +1148,7 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
   }
 
   /**
-   * {@inheritdoc IResult.report}
+   * {@inheritDoc IResult.report}
    */
   public report(
     reporter?: IResultReporter<T, unknown>,
@@ -996,10 +1201,16 @@ export class DetailedFailure<out T, out TD> extends Failure<T> {
 }
 
 /**
- * Type inference to determine the result type `T` of a {@link DetailedResult | DetailedResult<T, TD>}.
+ * Represents a result with additional detail.
  * @beta
  */
 export type DetailedResult<T, TD> = DetailedSuccess<T, TD> | DetailedFailure<T, TD>;
+
+/**
+ * Type inference to determine the result type `T` of a {@link DetailedResult | DetailedResult<T, TD>}.
+ * @beta
+ */
+export type DetailedResultValueType<T> = T extends DetailedResult<infer TV, unknown> ? TV : never;
 
 /**
  * Type inference to determine the detail type `TD` of a {@link DetailedResult | DetailedResult<T, TD>}.
@@ -1025,7 +1236,7 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 }
 
 /**
- * {@inheritdoc succeedWithDetail}
+ * {@inheritDoc succeedWithDetail}
  * @public
  */
 export function succeedsWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD> {
@@ -1048,7 +1259,7 @@ export function failWithDetail<T, TD>(message: string, detail?: TD): DetailedFai
 }
 
 /**
- * {@inheritdoc failWithDetail}
+ * {@inheritDoc failWithDetail}
  * @public
  */
 export function failsWithDetail<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD> {
@@ -1077,18 +1288,266 @@ export function propagateWithDetail<T, TD>(
 }
 
 /**
+ * Extracts a message string from an unknown thrown/rejected value.
+ * @param err - The caught error value.
+ * @returns The error message string.
+ * @internal
+ */
+export function _errorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return String(err);
+}
+
+/**
  * Wraps a function which might throw to convert exception results
  * to {@link Failure}.
  * @param func - The function to be captured.
  * @returns Returns {@link Success} with a value of type `<T>` on
  * success , or {@link Failure} with the thrown error message if
- * `func` throws an `Error`.
+ * `func` throws an `Error` or string.
  * @public
  */
 export function captureResult<T>(func: () => T): Result<T> {
   try {
     return succeed(func());
   } catch (err) {
-    return fail((err as Error).message);
+    return fail(_errorMessage(err));
+  }
+}
+
+/**
+ * Async continuation callback to be called in the event that a
+ * {@link Result} is successful, returning a `PromiseLike` of a new
+ * {@link Result}.
+ * @remarks
+ * Typed as `PromiseLike<Result<TN>>` rather than `Promise<Result<TN>>` so
+ * callers can return the result of {@link captureAsyncResult} (which is an
+ * {@link AsyncResult}, itself a `PromiseLike<Result<TN>>`) directly from a
+ * `thenOnSuccess` callback without an `async` wrapper to coerce the
+ * contextual return type back through `Awaited<>`. The continuation result
+ * is always wrapped into an {@link AsyncResult}, so chaining is unaffected.
+ * @public
+ */
+export type AsyncSuccessContinuation<T, TN> = (value: T) => PromiseLike<Result<TN>>;
+
+/**
+ * Async continuation callback to be called in the event that a
+ * {@link Result} fails, returning a `PromiseLike` of a new {@link Result}.
+ * @remarks
+ * See {@link AsyncSuccessContinuation} for the rationale behind accepting
+ * any `PromiseLike<Result<T>>` rather than only a `Promise<Result<T>>`.
+ * @public
+ */
+export type AsyncFailureContinuation<T> = (message: string) => PromiseLike<Result<T>>;
+
+/**
+ * Wraps a `Promise` of a {@link Result} to enable fluent chaining of both
+ * synchronous and asynchronous operations.
+ *
+ * @remarks
+ * `AsyncResult<T>` implements `PromiseLike` so it can be directly `await`ed.
+ * Use the `thenOnSuccess` and `thenOnFailure` methods on {@link Result} to bridge
+ * from synchronous to asynchronous result chains.
+ *
+ * @example
+ * ```typescript
+ * const result: Result<Final> = await parseInput(input)
+ *   .thenOnSuccess(async (parsed) => fetchData(parsed))
+ *   .onSuccess((data) => transform(data))
+ *   .thenOnSuccess(async (transformed) => saveData(transformed))
+ *   .withErrorFormat((msg) => `pipeline failed: ${msg}`);
+ * ```
+ *
+ * @public
+ */
+export class AsyncResult<T> implements PromiseLike<Result<T>> {
+  private readonly _promise: Promise<Result<T>>;
+
+  /**
+   * Constructs an {@link AsyncResult} wrapping the supplied promise (or any
+   * `PromiseLike` that resolves to a {@link Result}, such as another
+   * {@link AsyncResult}).
+   * @remarks
+   * If the supplied promise rejects, the rejection is caught and converted
+   * to a {@link Failure}, ensuring that awaiting an {@link AsyncResult} always
+   * yields a {@link Result}.
+   * @param promise - A `Promise` (or `PromiseLike`) that resolves to a
+   * {@link Result}.
+   */
+  public constructor(promise: PromiseLike<Result<T>>) {
+    this._promise = Promise.resolve(promise).catch((err: unknown) => fail<T>(_errorMessage(err)));
+  }
+
+  /**
+   * Calls a supplied {@link SuccessContinuation | success continuation} if
+   * the wrapped result is successful.
+   * @param cb - The synchronous {@link SuccessContinuation | success continuation}
+   * to be called in the event of success.
+   * @returns A new {@link AsyncResult} wrapping the continuation result.
+   */
+  public onSuccess<TN>(cb: SuccessContinuation<T, TN>): AsyncResult<TN> {
+    return new AsyncResult(this._promise.then((r) => r.onSuccess(cb)));
+  }
+
+  /**
+   * Calls a supplied {@link AsyncSuccessContinuation | async success continuation} if
+   * the wrapped result is successful.
+   * @remarks
+   * Both synchronous throws and async rejections from the callback are caught
+   * and converted to a {@link Failure}.
+   * @param cb - The {@link AsyncSuccessContinuation | async success continuation}
+   * to be called in the event of success.
+   * @returns A new {@link AsyncResult} wrapping the async continuation result.
+   */
+  public thenOnSuccess<TN>(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN> {
+    return new AsyncResult(
+      this._promise.then(async (r) => {
+        if (r.isFailure()) {
+          return fail<TN>(r.message);
+        }
+        try {
+          return await cb(r.value);
+        } catch (err: unknown) {
+          return fail<TN>(_errorMessage(err));
+        }
+      })
+    );
+  }
+
+  /**
+   * Calls a supplied {@link FailureContinuation | failure continuation} if
+   * the wrapped result is a failure.
+   * @param cb - The synchronous {@link FailureContinuation | failure continuation}
+   * to be called in the event of failure.
+   * @returns A new {@link AsyncResult} wrapping the continuation result.
+   */
+  public onFailure(cb: FailureContinuation<T>): AsyncResult<T> {
+    return new AsyncResult(this._promise.then((r) => r.onFailure(cb)));
+  }
+
+  /**
+   * Calls a supplied {@link AsyncFailureContinuation | async failure continuation} if
+   * the wrapped result is a failure.
+   * @remarks
+   * Both synchronous throws and async rejections from the callback are caught
+   * and converted to a {@link Failure}.
+   * @param cb - The {@link AsyncFailureContinuation | async failure continuation}
+   * to be called in the event of failure.
+   * @returns A new {@link AsyncResult} wrapping the async continuation result.
+   */
+  public thenOnFailure(cb: AsyncFailureContinuation<T>): AsyncResult<T> {
+    return new AsyncResult(
+      this._promise.then(async (r) => {
+        if (r.isSuccess()) {
+          return r;
+        }
+        try {
+          return await cb(r.message);
+        } catch (err: unknown) {
+          return fail<T>(_errorMessage(err));
+        }
+      })
+    );
+  }
+
+  /**
+   * Calls a supplied {@link ErrorFormatter | error formatter} if
+   * the wrapped result is a failure.
+   * @param cb - The {@link ErrorFormatter | error formatter} to
+   * be called in the event of failure.
+   * @returns A new {@link AsyncResult} with the formatted error message,
+   * or the original success result.
+   */
+  public withErrorFormat(cb: ErrorFormatter): AsyncResult<T> {
+    return new AsyncResult(this._promise.then((r) => r.withErrorFormat(cb)));
+  }
+
+  /**
+   * Propagates the wrapped result, appending any error message to the
+   * supplied errors aggregator.
+   * @param errors - {@link IMessageAggregator | Error aggregator} in which
+   * errors will be aggregated.
+   * @param formatter - An optional {@link ErrorFormatter | error formatter}
+   * to be used to format the error message.
+   * @returns A new {@link AsyncResult} wrapping the result after aggregation.
+   */
+  public aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): AsyncResult<T> {
+    return new AsyncResult(
+      this._promise.then((r) => {
+        r.aggregateError(errors, formatter);
+        return r;
+      })
+    );
+  }
+
+  /**
+   * Reports the wrapped result to the supplied reporter.
+   * @param reporter - The {@link IResultReporter | reporter} to which the result
+   * will be reported.
+   * @param options - The {@link IResultReportOptions | options} for reporting the result.
+   * @returns A new {@link AsyncResult} wrapping the result after reporting.
+   */
+  public report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): AsyncResult<T> {
+    return new AsyncResult(
+      this._promise.then((r) => {
+        r.report(reporter, options);
+        return r;
+      })
+    );
+  }
+
+  /**
+   * Implementation of `PromiseLike.then` enabling `await` on {@link AsyncResult}.
+   * @param onfulfilled - Callback invoked when the promise resolves.
+   * @param onrejected - Callback invoked when the promise rejects.
+   * @returns A `Promise` resolving to the callback result.
+   */
+  /* eslint-disable @rushstack/no-new-null */
+  public then<TResult1 = Result<T>, TResult2 = never>(
+    onfulfilled?: ((value: Result<T>) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+  ): Promise<TResult1 | TResult2> {
+    /* eslint-enable @rushstack/no-new-null */
+    return this._promise.then(onfulfilled, onrejected);
+  }
+
+  /**
+   * Creates an {@link AsyncResult} from a {@link Result}.
+   * @param result - The {@link Result} to wrap.
+   * @returns A new {@link AsyncResult} wrapping the supplied result.
+   */
+  public static from<T>(result: Result<T>): AsyncResult<T> {
+    return new AsyncResult(Promise.resolve(result));
+  }
+}
+
+/**
+ * Wraps an async function which might throw to convert exception results
+ * to {@link Failure}.
+ * @remarks
+ * Returns an {@link AsyncResult} so callers can fluently chain
+ * (`.onSuccess` / `.thenOnSuccess` / `.withErrorFormat`) directly off the
+ * captured result. Because {@link AsyncResult} implements
+ * `PromiseLike<Result<T>>`, existing `await captureAsyncResult(...)` call
+ * sites continue to work unchanged and yield the same {@link Result}.
+ *
+ * Synchronous throws from `func` (before it returns its `Promise`), promise
+ * rejections, and successful resolutions are all funneled through the
+ * returned {@link AsyncResult}, which resolves to a {@link Failure} for the
+ * throw/reject cases and a {@link Success} wrapping the resolved value
+ * otherwise.
+ * @param func - The async function to be captured.
+ * @returns An {@link AsyncResult} resolving to {@link Success} with a value
+ * of type `<T>` on success, or {@link Failure} with the thrown error message
+ * if `func` throws or rejects.
+ * @public
+ */
+export function captureAsyncResult<T>(func: () => Promise<T>): AsyncResult<T> {
+  try {
+    return new AsyncResult(func().then((value) => succeed(value)));
+  } catch (err: unknown) {
+    return AsyncResult.from(fail<T>(_errorMessage(err)));
   }
 }

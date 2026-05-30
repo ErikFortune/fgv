@@ -64,7 +64,7 @@ export class PuzzleCollection {
 
   /**
    * Creates a new puzzle from a JSON file.
-   * @param path - path to the JSON file to be loaded.
+   * @param file - file item to be loaded.
    * @returns `Success` with the resulting {@link PuzzleCollection | PuzzleCollection}
    * or `Failure` with details if an error occurs.
    */

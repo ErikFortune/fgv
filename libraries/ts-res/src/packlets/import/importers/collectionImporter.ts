@@ -42,7 +42,7 @@ import { ImportContext } from '../importContext';
  */
 export class CollectionImporter implements IImporter {
   /**
-   * {@inheritdoc Import.Importers.IImporter.types}
+   * {@inheritDoc Import.Importers.IImporter.types}
    */
   public readonly types: string[] = ['resourceCollection', 'resourceTree'];
 
@@ -61,7 +61,7 @@ export class CollectionImporter implements IImporter {
   }
 
   /**
-   * {@inheritdoc Import.Importers.IImporter.import}
+   * {@inheritDoc Import.Importers.IImporter.import}
    */
   public import(
     item: IImportable,

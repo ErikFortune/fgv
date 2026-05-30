@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Re-export HpkeProvider (HPKE base mode, RFC 9180) from CryptoUtils namespace for browser consumers. Add sign/verify, hmacSha256/verifyHmacSha256, and timingSafeEqual to BrowserCryptoProvider matching the ICryptoProvider extension in @fgv/ts-extras.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

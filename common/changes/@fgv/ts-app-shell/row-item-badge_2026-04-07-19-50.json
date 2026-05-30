@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "Add an optional badge to collection row item",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell"
+}

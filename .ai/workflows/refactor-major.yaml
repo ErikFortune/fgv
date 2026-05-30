@@ -1,0 +1,140 @@
+# Major Refactoring Workflow
+# Used for significant code refactoring that maintains existing behavior
+
+name: 'refactor_major'
+description: 'Systematic refactoring workflow ensuring behavior preservation'
+
+triggers:
+  - task_type: 'refactor'
+  - complexity: ['moderate', 'complex']
+  - scope: 'multiple_files_or_packages'
+
+phases:
+  - phase: requirements_confirmation
+    agent: tpm-agent
+    mode: workflow
+    required: true
+    type: gate
+    dependencies: []
+    description: 'Confirm refactoring scope and behavior preservation requirements'
+
+  - phase: requirements_analysis
+    agent: tpm-agent
+    mode: workflow
+    required: true
+    dependencies: [requirements_confirmation]
+    max_iterations: 1
+    description: 'Document what must NOT change during refactoring'
+
+  - phase: design
+    agent: senior-developer
+    mode: workflow
+    required: true
+    dependencies: [requirements_analysis]
+    max_iterations: 2
+    description: 'Plan refactoring approach with backward compatibility'
+
+  - phase: pre_refactor_tests
+    agent: sdet-functional
+    mode: workflow
+    required: true
+    dependencies: [requirements_analysis]
+    can_run_in_parallel: [design]
+    description: 'Create comprehensive tests to lock in current behavior'
+
+  - phase: implementation
+    agent: code-monkey
+    mode: workflow
+    required: true
+    dependencies: [design, pre_refactor_tests]
+    max_iterations: 3
+    description: 'Perform refactoring while maintaining test compatibility'
+
+  - phase: review
+    agent: code-reviewer
+    mode: workflow
+    required: true
+    dependencies: [implementation]
+    max_iterations: 2
+    description: 'Review refactoring for correctness and improvement'
+
+  - phase: behavior_validation
+    agent: sdet-functional
+    mode: workflow
+    required: true
+    dependencies: [implementation]
+    description: 'Validate that all existing behavior is preserved'
+
+  - phase: coverage_analysis
+    agent: sdet-coverage
+    mode: workflow
+    required: true
+    dependencies: [behavior_validation]
+    description: 'Ensure coverage is maintained or improved'
+
+  - phase: test_architecture_review
+    agent: senior-sdet
+    mode: workflow
+    required: false # Optional for refactoring
+    dependencies: [behavior_validation]
+    condition: 'if_test_changes_significant'
+    description: 'Review test organization improvements during refactoring'
+
+success_criteria:
+  - all_existing_tests_pass: true
+  - behavior_preserved: true
+  - code_quality_improved: true
+  - no_regressions: true
+  - coverage_maintained_or_improved: true
+
+escalation_rules:
+  - trigger: 'behavior_change_detected'
+    action: 'immediate_escalation'
+  - trigger: 'test_failures_after_refactor'
+    action: 'halt_and_escalate'
+
+quality_gates:
+  after_requirements_analysis:
+    - preservation_requirements_clear: true
+    - success_criteria_defined: true
+
+  after_design:
+    - refactoring_plan_safe: true
+    - backward_compatibility_ensured: true
+
+  after_pre_refactor_tests:
+    - comprehensive_behavior_coverage: true
+    - all_tests_passing: true
+
+  after_implementation:
+    - all_pre_refactor_tests_still_pass: true
+    - builds_successfully: true
+
+  after_review:
+    - refactoring_improves_code_quality: true
+    - no_behavior_changes_introduced: true
+
+  after_behavior_validation:
+    - existing_behavior_confirmed: true
+    - no_regression_detected: true
+
+special_considerations:
+  migration_strategy:
+    required: true
+    must_include:
+      - data_migration_plan: 'if_applicable'
+      - api_deprecation_timeline: 'if_applicable'
+      - rollback_procedure: true
+
+  testing_strategy:
+    pre_refactor_test_lock_in: true
+    behavior_preservation_tests: true
+    performance_regression_tests: true
+
+  documentation:
+    refactoring_rationale: true
+    breaking_changes: 'none_allowed'
+    migration_guide: 'if_api_changes'
+
+estimated_duration: '4-8 hours'
+risk_level: 'medium'

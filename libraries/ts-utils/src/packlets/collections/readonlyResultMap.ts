@@ -57,37 +57,48 @@ export type ResultMapForEachCb<TK extends string = string, TE = unknown> = (
  */
 export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
   /**
-   * {@inheritdoc Collections.ResultMap.size}
+   * Returns the number of entries in the map.
    */
   readonly size: number;
 
   /**
-   * {@inheritdoc Collections.ResultMap.entries}
+   * Returns an iterator over the map entries.
+   * @returns An iterator over the map entries.
    */
   entries(): IterableIterator<KeyValueEntry<TK, TV>>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.forEach}
+   * Calls a function for each entry in the map.
+   * @param cb - The function to call for each entry.
+   * @param arg - An optional argument to pass to the callback.
    */
   forEach(cb: ResultMapForEachCb, arg?: unknown): void;
 
   /**
-   * {@inheritdoc Collections.ResultMap.get}
+   * Gets a value from the map.
+   * @param key - The key to retrieve.
+   * @returns `Success` with the value and detail `exists` if the key was found,
+   * `Failure` with detail `not-found` if the key was not found or with detail
+   * `invalid-key` if the key is invalid.
    */
   get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * Returns `true` if the map contains a key.
+   * @param key - The key to check.
+   * @returns `true` if the key exists, `false` otherwise.
    */
   has(key: TK): boolean;
 
   /**
-   * {@inheritdoc Collections.ResultMap.keys}
+   * Returns an iterator over the map keys.
+   * @returns An iterator over the map keys.
    */
   keys(): IterableIterator<TK>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.values}
+   * Returns an iterator over the map values.
+   * @returns An iterator over the map values.
    */
   values(): IterableIterator<TV>;
 

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "Add default theme: CSS custom-property tokens (light + dark) and Tailwind preset covering all semantic tokens used by the package's visual components.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell",
+  "email": "noreply@anthropic.com"
+}

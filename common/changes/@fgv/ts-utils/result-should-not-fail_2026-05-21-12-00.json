@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Add Result<T>.shouldNotFail(label?, frameDepth?) for declaration-time invariants. Returns the value on success; on failure throws an Error composed from the original message and the captured call site (V8 Error.captureStackTrace with a WebKit stack-parsing fallback). Replaces the .orThrow() + .withErrorFormat() boilerplate at module-level const declarations, static initializers, and test fixtures.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

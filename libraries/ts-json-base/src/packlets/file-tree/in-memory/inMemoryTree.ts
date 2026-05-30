@@ -20,11 +20,26 @@
  * SOFTWARE.
  */
 
-import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
+import {
+  captureResult,
+  DetailedResult,
+  fail,
+  failWithDetail,
+  Result,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
 import { DirectoryItem } from '../directoryItem';
 import { FileItem } from '../fileItem';
-import { FileTreeItem, IFileTreeAccessors, IFileTreeInitParams } from '../fileTreeAccessors';
+import {
+  FileTreeItem,
+  IFileTreeInitParams,
+  IFilterSpec,
+  IMutableFileTreeAccessors,
+  SaveDetail
+} from '../fileTreeAccessors';
 import { InMemoryDirectory, InMemoryFile, TreeBuilder } from './treeBuilder';
+import { isPathMutable } from '../filterSpec';
 
 /**
  * Represents a single file in an in-memory {@link FileTree | file tree}.
@@ -48,13 +63,109 @@ export interface IInMemoryFile<TCT extends string = string> {
 }
 
 /**
- * Implementation of {@link FileTree.IFileTreeAccessors} that uses an in-memory
- * tree to access files and directories.
+ * A mutable in-memory file that allows updating contents.
+ * @internal
+ */
+class MutableInMemoryFile<TCT extends string = string> {
+  public readonly absolutePath: string;
+  public readonly contentType?: TCT;
+  private _contents: unknown;
+
+  public constructor(absolutePath: string, contents: unknown, contentType?: TCT) {
+    this.absolutePath = absolutePath;
+    this._contents = contents;
+    this.contentType = contentType;
+  }
+
+  public get contents(): unknown {
+    return this._contents;
+  }
+
+  public setContents(contents: unknown): void {
+    this._contents = contents;
+  }
+}
+
+/**
+ * A mutable in-memory directory that creates mutable files.
+ * @internal
+ */
+class MutableInMemoryDirectory<TCT extends string = string> {
+  public readonly absolutePath: string;
+  protected _children: Map<string, MutableInMemoryDirectory<TCT> | MutableInMemoryFile<TCT>>;
+
+  /* c8 ignore next 3 - internal getter used by tree traversal */
+  public get children(): ReadonlyMap<string, MutableInMemoryDirectory<TCT> | MutableInMemoryFile<TCT>> {
+    return this._children;
+  }
+
+  public constructor(absolutePath: string) {
+    this.absolutePath = absolutePath;
+    this._children = new Map();
+  }
+
+  public getChildPath(name: string): string {
+    if (this.absolutePath === '/') {
+      return `/${name}`;
+    }
+    return [this.absolutePath, name].join('/');
+  }
+
+  public addFile(name: string, contents: unknown, contentType?: TCT): Result<MutableInMemoryFile<TCT>> {
+    /* c8 ignore next 3 - defensive: duplicate detection during construction */
+    if (this._children.has(name)) {
+      return fail(`${name}: already exists`);
+    }
+    const child = new MutableInMemoryFile<TCT>(this.getChildPath(name), contents, contentType);
+    this._children.set(name, child);
+    return succeed(child);
+  }
+
+  public getOrAddDirectory(name: string): Result<MutableInMemoryDirectory<TCT>> {
+    const existing = this._children.get(name);
+    if (existing) {
+      if (existing instanceof MutableInMemoryDirectory) {
+        return succeed(existing);
+      }
+      return fail(`${name}: not a directory`);
+    }
+    const child = new MutableInMemoryDirectory<TCT>(this.getChildPath(name));
+    this._children.set(name, child);
+    return succeed(child);
+  }
+
+  public updateOrAddFile(
+    name: string,
+    contents: unknown,
+    contentType?: TCT
+  ): Result<MutableInMemoryFile<TCT>> {
+    const existing = this._children.get(name);
+    if (existing) {
+      if (existing instanceof MutableInMemoryFile) {
+        existing.setContents(contents);
+        return succeed(existing);
+      }
+      return fail(`${name}: not a file`);
+    }
+    return this.addFile(name, contents, contentType);
+  }
+
+  public removeChild(name: string): boolean {
+    return this._children.delete(name);
+  }
+}
+
+/**
+ * Implementation of {@link FileTree.IMutableFileTreeAccessors} that uses an in-memory
+ * tree to access and modify files and directories.
  * @public
  */
-export class InMemoryTreeAccessors<TCT extends string = string> implements IFileTreeAccessors<TCT> {
+export class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFileTreeAccessors<TCT> {
   private readonly _tree: TreeBuilder<TCT>;
   private readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
+  private readonly _mutable: boolean | IFilterSpec;
+  private readonly _mutableByPath: Map<string, MutableInMemoryDirectory<TCT> | MutableInMemoryFile<TCT>>;
+  private readonly _mutableRoot: MutableInMemoryDirectory<TCT>;
 
   /**
    * Protected constructor for derived classes.
@@ -65,9 +176,18 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
   protected constructor(files: IInMemoryFile<TCT>[], params?: IFileTreeInitParams<TCT>) {
     this._tree = TreeBuilder.create<TCT>(params?.prefix).orThrow();
     this._inferContentType = params?.inferContentType ?? FileItem.defaultInferContentType;
+    this._mutable = params?.mutable ?? false;
+    this._mutableByPath = new Map();
+    const prefix = params?.prefix ?? '/';
+    this._mutableRoot = new MutableInMemoryDirectory<TCT>(
+      prefix.endsWith('/') ? prefix.slice(0, -1) || '/' : prefix
+    );
+    this._mutableByPath.set(this._mutableRoot.absolutePath, this._mutableRoot);
+
     for (const file of files) {
       const contentType = file.contentType ?? this._inferContentType(file.path).orDefault();
       this._tree.addFile(file.path, file.contents, contentType).orThrow();
+      this._addMutableFile(file.path, file.contents, contentType);
     }
   }
 
@@ -109,7 +229,9 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.resolveAbsolutePath}
+   * Resolves paths to an absolute path.
+   * @param paths - Paths to resolve.
+   * @returns The resolved absolute path.
    */
   public resolveAbsolutePath(...paths: string[]): string {
     const parts = paths[0].startsWith('/') ? paths : [this._tree.prefix, ...paths];
@@ -118,7 +240,9 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getExtension}
+   * Gets the extension of a path.
+   * @param path - Path to get the extension of.
+   * @returns The extension of the path.
    */
   public getExtension(path: string): string {
     const parts = path.split('.');
@@ -129,7 +253,10 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getBaseName}
+   * Gets the base name of a path.
+   * @param path - Path to get the base name of.
+   * @param suffix - Optional suffix to remove from the base name.
+   * @returns The base name of the path.
    */
   public getBaseName(path: string, suffix?: string): string {
     /* c8 ignore next 1 - ?? is defense in depth should never happen */
@@ -141,14 +268,19 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.joinPaths}
+   * Joins paths together.
+   * @param paths - Paths to join.
+   * @returns The joined paths.
    */
   public joinPaths(...paths: string[]): string {
-    return paths.join('/');
+    const joined = paths.flatMap((p) => p.split('/').filter((s) => s.length > 0)).join('/');
+    return paths[0]?.startsWith('/') ? `/${joined}` : joined;
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getItem}
+   * Gets an item from the file tree.
+   * @param itemPath - Path of the item to get.
+   * @returns The item if it exists.
    */
   public getItem(itemPath: string): Result<FileTreeItem<TCT>> {
     const existing = this._tree.byAbsolutePath.get(itemPath);
@@ -163,27 +295,30 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContents}
+   * Gets the contents of a file in the file tree.
+   * @param path - Absolute path of the file.
+   * @returns The contents of the file.
    */
   public getFileContents(path: string): Result<string> {
-    const item = this._tree.byAbsolutePath.get(path);
+    const absolutePath = this.resolveAbsolutePath(path);
+    const item = this._mutableByPath.get(absolutePath);
     if (item === undefined) {
-      return fail(`${path}: not found`);
+      return fail(`${absolutePath}: not found`);
     }
-    /* c8 ignore next 3 - local coverage is 100% but build coverage has intermittent issues */
-    if (!(item instanceof InMemoryFile)) {
-      return fail(`${path}: not a file`);
+    if (!(item instanceof MutableInMemoryFile)) {
+      return fail(`${absolutePath}: not a file`);
     }
-    // if the body is a string we don't want to add quotes
     if (typeof item.contents === 'string') {
       return succeed(item.contents);
     }
-    /* c8 ignore next 2 - local coverage is 100% but build coverage has intermittent issues */
     return captureResult(() => JSON.stringify(item.contents));
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContentType}
+   * Gets the content type of a file in the file tree.
+   * @param path - Absolute path of the file.
+   * @param provided - Optional supplied content type.
+   * @returns The content type of the file.
    */
   public getFileContentType(path: string, provided?: string): Result<TCT | undefined> {
     // If provided contentType is given, use it directly (highest priority)
@@ -208,7 +343,9 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getChildren}
+   * Gets the children of a directory in the file tree.
+   * @param path - Path of the directory.
+   * @returns The children of the directory.
    */
   public getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>> {
     const item = this._tree.byAbsolutePath.get(path);
@@ -229,6 +366,234 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
         }
       }
       return children;
+    });
+  }
+
+  private _addMutableFile(
+    path: string,
+    contents: unknown,
+    contentType?: TCT
+  ): Result<MutableInMemoryFile<TCT>> {
+    const absolutePath = this.resolveAbsolutePath(path);
+    const parts = absolutePath.split('/').filter((p) => p.length > 0);
+    /* c8 ignore next 3 - defensive: invalid path detection */
+    if (parts.length === 0) {
+      return fail(`${absolutePath}: invalid file path`);
+    }
+
+    let dir: MutableInMemoryDirectory<TCT> = this._mutableRoot;
+    while (parts.length > 1) {
+      const part = parts.shift()!;
+      const result = dir.getOrAddDirectory(part);
+      /* c8 ignore next 3 - defensive: directory conflict during construction */
+      if (result.isFailure()) {
+        return fail(result.message);
+      }
+      dir = result.value as MutableInMemoryDirectory<TCT>;
+      if (!this._mutableByPath.has(dir.absolutePath)) {
+        this._mutableByPath.set(dir.absolutePath, dir);
+      }
+    }
+
+    return dir.addFile(parts[0], contents, contentType).onSuccess((file) => {
+      this._mutableByPath.set(file.absolutePath, file as MutableInMemoryFile<TCT>);
+      return succeed(file as MutableInMemoryFile<TCT>);
+    });
+  }
+
+  /**
+   * Creates a directory at the given path, including any missing parent directories.
+   * @param dirPath - The path of the directory to create.
+   * @returns `Success` with the absolute path if created, or `Failure` with an error message.
+   */
+  public createDirectory(dirPath: string): Result<string> {
+    const absolutePath = this.resolveAbsolutePath(dirPath);
+
+    // Check if mutability is disabled
+    if (this._mutable === false) {
+      return fail(`${absolutePath}: mutability is disabled`);
+    }
+
+    // Add to the TreeBuilder (read layer)
+    const treeResult = this._tree.addDirectory(absolutePath);
+    /* c8 ignore next 3 - defensive: read layer failure would indicate internal inconsistency */
+    if (treeResult.isFailure()) {
+      return fail(treeResult.message);
+    }
+
+    // Add to the mutable layer
+    const parts = absolutePath.split('/').filter((p) => p.length > 0);
+    let dir: MutableInMemoryDirectory<TCT> = this._mutableRoot;
+    for (const part of parts) {
+      const result = dir.getOrAddDirectory(part);
+      /* c8 ignore next 3 - defensive: mutable layer should match read layer state */
+      if (result.isFailure()) {
+        return fail(result.message);
+      }
+      dir = result.value as MutableInMemoryDirectory<TCT>;
+      if (!this._mutableByPath.has(dir.absolutePath)) {
+        this._mutableByPath.set(dir.absolutePath, dir);
+      }
+    }
+
+    return succeed(absolutePath);
+  }
+
+  /**
+   * Checks if a file at the given path can be saved.
+   * @param path - The path to check.
+   * @returns `DetailedSuccess` with {@link FileTree.SaveCapability} if the file can be saved,
+   * or `DetailedFailure` with {@link FileTree.SaveFailureReason} if it cannot.
+   */
+  public fileIsMutable(path: string): DetailedResult<boolean, SaveDetail> {
+    const absolutePath = this.resolveAbsolutePath(path);
+
+    // Check if mutability is disabled
+    if (this._mutable === false) {
+      return failWithDetail(`${absolutePath}: mutability is disabled`, 'not-mutable');
+    }
+
+    // Check if path is excluded by filter
+    if (!isPathMutable(absolutePath, this._mutable)) {
+      return failWithDetail(`${absolutePath}: path is excluded by filter`, 'path-excluded');
+    }
+
+    return succeedWithDetail(true, 'transient');
+  }
+
+  /**
+   * Deletes a file at the given path.
+   * @param path - The path of the file to delete.
+   * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
+   */
+  public deleteFile(path: string): Result<boolean> {
+    const absolutePath = this.resolveAbsolutePath(path);
+    const parts = absolutePath.split('/').filter((p) => p.length > 0);
+    if (parts.length === 0) {
+      return fail(`${absolutePath}: invalid file path`);
+    }
+
+    const fileName = parts.pop()!;
+
+    // Navigate to parent directory
+    let dir: MutableInMemoryDirectory<TCT> = this._mutableRoot;
+    for (const part of parts) {
+      const child = dir.children.get(part);
+      if (!child || !(child instanceof MutableInMemoryDirectory)) {
+        return fail(`${absolutePath}: parent directory not found`);
+      }
+      dir = child;
+    }
+
+    if (!dir.removeChild(fileName)) {
+      return fail(`${absolutePath}: file not found`);
+    }
+
+    // Also remove from the read layer's directory children and path index
+    const parentPath = parts.length === 0 ? '/' : '/' + parts.join('/');
+    const readParent = this._tree.byAbsolutePath.get(parentPath);
+    if (readParent instanceof InMemoryDirectory) {
+      readParent.removeChild(fileName);
+    }
+    this._tree.byAbsolutePath.delete(absolutePath);
+    this._mutableByPath.delete(absolutePath);
+
+    return succeed(true);
+  }
+
+  /**
+   * Deletes a directory at the given path.
+   * The directory must be empty or the operation will fail.
+   * @param path - The path of the directory to delete.
+   * @returns `Success` with `true` if the directory was deleted, or `Failure` with an error message.
+   */
+  public deleteDirectory(path: string): Result<boolean> {
+    const absolutePath = this.resolveAbsolutePath(path);
+    const parts = absolutePath.split('/').filter((p) => p.length > 0);
+    if (parts.length === 0) {
+      return fail(`${absolutePath}: invalid directory path`);
+    }
+
+    const dirName = parts.pop()!;
+
+    // Navigate to parent directory
+    let parentDir: MutableInMemoryDirectory<TCT> = this._mutableRoot;
+    for (const part of parts) {
+      const child = parentDir.children.get(part);
+      if (!child || !(child instanceof MutableInMemoryDirectory)) {
+        return fail(`${absolutePath}: parent directory not found`);
+      }
+      parentDir = child;
+    }
+
+    // Verify target is a directory
+    const target = parentDir.children.get(dirName);
+    if (!target || !(target instanceof MutableInMemoryDirectory)) {
+      return fail(`${absolutePath}: not a directory`);
+    }
+
+    // Check non-empty
+    if (target.children.size > 0) {
+      return fail(`${absolutePath}: directory is not empty`);
+    }
+
+    parentDir.removeChild(dirName);
+
+    // Also remove from the read layer
+    /* c8 ignore next 1 - defensive: branch for top-level directory deletion */
+    const readParentPath = parts.length === 0 ? '/' : '/' + parts.join('/');
+    const readParent = this._tree.byAbsolutePath.get(readParentPath);
+    if (readParent instanceof InMemoryDirectory) {
+      readParent.removeChild(dirName);
+    }
+    this._tree.byAbsolutePath.delete(absolutePath);
+    this._mutableByPath.delete(absolutePath);
+
+    return succeed(true);
+  }
+
+  /**
+   * Saves the contents to a file at the given path.
+   * @param path - The path of the file to save.
+   * @param contents - The string contents to save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
+   */
+  public saveFileContents(path: string, contents: string): Result<string> {
+    const isMutable = this.fileIsMutable(path);
+    if (isMutable.isFailure()) {
+      return fail(isMutable.message);
+    }
+
+    const absolutePath = this.resolveAbsolutePath(path);
+    const parts = absolutePath.split('/').filter((p) => p.length > 0);
+    if (parts.length === 0) {
+      return fail(`${absolutePath}: invalid file path`);
+    }
+
+    // Navigate to parent directory, creating directories as needed
+    let dir: MutableInMemoryDirectory<TCT> = this._mutableRoot;
+    while (parts.length > 1) {
+      const part = parts.shift()!;
+      const result = dir.getOrAddDirectory(part);
+      if (result.isFailure()) {
+        return fail(result.message);
+      }
+      dir = result.value as MutableInMemoryDirectory<TCT>;
+      if (!this._mutableByPath.has(dir.absolutePath)) {
+        this._mutableByPath.set(dir.absolutePath, dir);
+      }
+    }
+
+    // Update or add the file in the mutable layer
+    return dir.updateOrAddFile(parts[0], contents).onSuccess((file) => {
+      this._mutableByPath.set(file.absolutePath, file as MutableInMemoryFile<TCT>);
+
+      // Also register in the read layer so getItem/getChildren can find it
+      if (!this._tree.byAbsolutePath.has(file.absolutePath)) {
+        this._tree.addFile(file.absolutePath, contents);
+      }
+
+      return succeed(contents);
     });
   }
 }

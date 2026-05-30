@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "comment": "B-3 typed-converter consumer port (final phase of the ts-res-typed-conditions stream): `IPromptCandidateRecord`, `IStoredPromptRecord`, `IPromptFileContents`, `IPromptStoreFixtureSeed`, `IPromptStoreFixtureSeedRecord`, and `IFileTreePromptStoreCreateParams` are now parameterized on `TQualifierNames extends string = string` (additive default — existing callers compile unchanged). `FileTreePromptStore.create` and `PromptStoreFixture.build` accept an optional `qualifierNameConverter: Converter<TQualifierNames>`; when supplied, the YAML loader validates each candidate's `conditions` keys (record form) or `qualifierName` fields (array form) against the Converter's literal-string union via ts-res's `ResourceJson.Convert.typedConditionSetDecl(qc)` (shipped by phase B-2). A typo'd axis name fails at convert time with a regex-matchable error; when omitted, today's permissive default-string behavior is preserved. New `typedPromptFileConverter<T>(qc)` factory exported as the typed sibling of `promptFileConverter`. Round-2 finding F2 absorbed: new `buildSimpleDescriptor({ id, title, surface?, description? })` helper returns a fully-shaped `IPromptDescriptor` for the trivial free-text chat case (deliberately not generalized to JSON-output prompts — the `output.kind` discriminator stays explicit at the call site). Round-2 finding F6 absorbed: README React-wiring section extended with a `ChatTone` consumer enum, a `<select>` bound to it, and a fourth list-item spelling out the v0.1 axis-NAMES-inferred / axis-VALUES-consumer-concern convention. No removed/renamed exports; `etc/ts-prompt-assist.api.md` regenerated.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist"
+}

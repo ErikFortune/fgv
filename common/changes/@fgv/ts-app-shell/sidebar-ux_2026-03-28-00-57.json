@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "Improve sidebar collection presentation",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell"
+}

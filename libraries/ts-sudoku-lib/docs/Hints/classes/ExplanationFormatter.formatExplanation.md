@@ -1,0 +1,26 @@
+[Home](../../README.md) > [Hints](../README.md) > [ExplanationFormatter](./ExplanationFormatter.md) > formatExplanation
+
+## ExplanationFormatter.formatExplanation() method
+
+Formats a hint explanation as a readable string.
+
+**Signature:**
+
+```typescript
+static formatExplanation(explanation: IHintExplanation, includeSteps: boolean, includeTips: boolean): string;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>explanation</td><td>IHintExplanation</td><td>The explanation to format</td></tr>
+<tr><td>includeSteps</td><td>boolean</td><td>Whether to include step-by-step instructions</td></tr>
+<tr><td>includeTips</td><td>boolean</td><td>Whether to include tips</td></tr>
+</tbody></table>
+
+**Returns:**
+
+string
+
+Formatted explanation string

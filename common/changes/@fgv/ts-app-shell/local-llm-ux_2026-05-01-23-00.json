@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "useAiAssist: skip the keystore check for providers with needsSecret: false (ollama, openai-compat) so they show as available without an API key, and forward the per-provider endpoint override through generateDirect, generateImages, listModels, and streamDirect to ts-extras.",
+      "type": "none",
+      "packageName": "@fgv/ts-app-shell"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell",
+  "email": "noreply@anthropic.com"
+}

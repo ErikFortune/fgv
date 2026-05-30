@@ -1,0 +1,11 @@
+[Home](../../README.md) > [AiAssist](../README.md) > AiProviderId
+
+# Type Alias: AiProviderId
+
+All known AI provider identifiers.
+
+## Type
+
+```typescript
+type AiProviderId = "copy-paste" | "xai-grok" | "openai" | "openai-compat" | "anthropic" | "google-gemini" | "groq" | "mistral" | "ollama"
+```

@@ -1,0 +1,9 @@
+[Home](../../README.md) > [Validate](../README.md) > scriptSubtag
+
+# Variable: scriptSubtag
+
+
+
+## Type
+
+`RegExpValidationHelpers<ScriptSubtag, unknown>`

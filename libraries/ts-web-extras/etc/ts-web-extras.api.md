@@ -4,17 +4,89 @@
 
 ```ts
 
+import { CryptoUtils as CryptoUtils_2 } from '@fgv/ts-extras';
+import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { Uuid } from '@fgv/ts-utils';
 
 // @public
-export class BrowserHashProvider {
+class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(cryptoApi?: Crypto);
+    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<CryptoUtils_2.IEncryptionResult>>;
+    exportPublicKeyJwk(publicKey: CryptoKey): Promise<Result<JsonWebKey>>;
+    exportPublicKeySpki(publicKey: CryptoKey): Promise<Result<Uint8Array>>;
+    fromBase64(base64: string): Result<Uint8Array>;
+    generateKey(): Promise<Result<Uint8Array>>;
+    generateKeyPair(algorithm: CryptoUtils_2.KeyPairAlgorithm, extractable: boolean): Promise<Result<CryptoKeyPair>>;
+    generateRandomBytes(length: number): Result<Uint8Array>;
+    generateUuid(): Result<Uuid>;
+    hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    importPublicKeyJwk(jwk: JsonWebKey, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+    importPublicKeySpki(spkiBytes: Uint8Array, algorithm: CryptoUtils_2.KeyPairAlgorithm): Promise<Result<CryptoKey>>;
+    sha256(data: string): Promise<Result<string>>;
+    sign(privateKey: CryptoKey, data: Uint8Array): Promise<Result<Uint8Array>>;
+    timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean;
+    toBase64(data: Uint8Array): string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    unwrapBytes(wrapped: CryptoUtils_2.IWrappedBytes, recipientPrivateKey: CryptoKey, options: CryptoUtils_2.IWrapBytesOptions): Promise<Result<Uint8Array>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "BrowserCryptoProvider"
+    verify(publicKey: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
+    verifyHmacSha256(key: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<Result<boolean>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    wrapBytes(plaintext: Uint8Array, recipientPublicKey: CryptoKey, options: CryptoUtils_2.IWrapBytesOptions): Promise<Result<CryptoUtils_2.IWrappedBytes>>;
+}
+
+// @public
+class BrowserHashProvider {
     static hashParts(parts: string[], algorithm?: string, separator?: string): Promise<Result<string>>;
     static hashString(data: string, algorithm?: string): Promise<Result<string>>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
+
+declare namespace CryptoUtils {
+    export {
+        HpkeProvider,
+        IHpkeSealResult,
+        BrowserHashProvider,
+        createBrowserCryptoProvider,
+        BrowserCryptoProvider,
+        IIdbPrivateKeyStorageCreateParams,
+        IdbPrivateKeyStorage
+    }
+}
+export { CryptoUtils }
+
+// @public
+export const DEFAULT_DIRECTORY_HANDLE_DB: string;
+
+// @public
+export const DEFAULT_DIRECTORY_HANDLE_STORE: string;
+
 // @public
 const defaultFileApiTreeInitParams: FileTree.IFileTreeInitParams<string>;
+
+// @public
+export class DirectoryHandleStore {
+    constructor(dbName?: string, storeName?: string);
+    getAll(): Promise<Result<Array<{
+        label: string;
+        handle: FileSystemDirectoryHandle_2;
+    }>>>;
+    getAllLabels(): Promise<Result<string[]>>;
+    load(label: string): Promise<Result<FileSystemDirectoryHandle_2 | undefined>>;
+    remove(label: string): Promise<Result<void>>;
+    save(label: string, handle: FileSystemDirectoryHandle_2): Promise<Result<void>>;
+}
 
 // @public
 export function exportAsJson(data: unknown, filename: string): void;
@@ -32,8 +104,12 @@ function extractFileListMetadata(fileList: FileList): Array<IFileMetadata>;
 function extractFileMetadata(file: File): IFileMetadata;
 
 // @public
-export class FileApiTreeAccessors<TCT extends string = string> {
+export class FileApiTreeAccessors {
     static create<TCT extends string = string>(initializers: TreeInitializer[], params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+    static createFromHttp<TCT extends string = string>(params: IHttpTreeParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+    static createFromLocalStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<FileTree.FileTree<TCT>>;
+    static createPersistent<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+    static createPersistentFromFile<TCT extends string = string>(fileHandle: FileSystemFileHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static extractFileMetadata(file: File): IFileMetadata;
     static fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static fromFileList<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
@@ -46,6 +122,19 @@ export interface FilePickerAcceptType {
     accept: Record<string, string | string[]>;
     // (undocumented)
     description?: string;
+}
+
+// @public
+export class FileSystemAccessTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+    protected constructor(files: FileTree.IInMemoryFile<TCT>[], rootDir: FileSystemDirectoryHandle_2, handles: Map<string, FileSystemFileHandle_2>, params: IFileSystemAccessTreeParams<TCT> | undefined, hasWritePermission: boolean);
+    deleteFile(path: string): Result<boolean>;
+    fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
+    static fromDirectoryHandle<TCT extends string = string>(dirHandle: FileSystemDirectoryHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileSystemAccessTreeAccessors<TCT>>>;
+    static fromFileHandle<TCT extends string = string>(fileHandle: FileSystemFileHandle_2, params?: IFileSystemAccessTreeParams<TCT>): Promise<Result<FileSystemAccessTreeAccessors<TCT>>>;
+    getDirtyPaths(): string[];
+    isDirty(): boolean;
+    saveFileContents(path: string, contents: string): Result<string>;
+    syncToDisk(): Promise<Result<void>>;
 }
 
 // @public
@@ -162,6 +251,37 @@ function fromFileList(fileList: FileList, params?: FileTree.IFileTreeInitParams<
 // @public
 function getOriginalFile(fileList: FileList, path: string): Result<File>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const HpkeProvider: typeof CryptoUtils_2.HpkeProvider;
+
+// @public
+export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+    // (undocumented)
+    deleteFile(path: string): Result<boolean>;
+    fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
+    static fromHttp<TCT extends string = string>(params: IHttpTreeParams<TCT>): Promise<Result<HttpTreeAccessors<TCT>>>;
+    getDirtyPaths(): string[];
+    isDirty(): boolean;
+    saveFileContents(path: string, contents: string): Result<string>;
+    syncToDisk(): Promise<Result<void>>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class IdbPrivateKeyStorage implements CryptoUtils_2.KeyStore.IPrivateKeyStorage {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params?: IIdbPrivateKeyStorageCreateParams): Result<IdbPrivateKeyStorage>;
+    delete(id: string): Promise<Result<string>>;
+    list(): Promise<Result<readonly string[]>>;
+    load(id: string): Promise<Result<CryptoKey>>;
+    store(id: string, key: CryptoKey): Promise<Result<string>>;
+    readonly supportsNonExtractable: true;
+}
+
 // @public
 export interface IDirectoryHandleTreeInitializer {
     // (undocumented)
@@ -201,6 +321,14 @@ export interface IFileMetadata {
 }
 
 // @public
+export interface IFileSystemAccessTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {
+    autoSync?: boolean;
+    filePath?: string;
+    logger?: Logging.LogReporter<unknown>;
+    requireWritePermission?: boolean;
+}
+
+// @public
 export interface IFsAccessApis {
     // (undocumented)
     showDirectoryPicker(options?: ShowDirectoryPickerOptions): Promise<FileSystemDirectoryHandle_2>;
@@ -208,6 +336,41 @@ export interface IFsAccessApis {
     showOpenFilePicker(options?: ShowOpenFilePickerOptions): Promise<FileSystemFileHandle_2[]>;
     // (undocumented)
     showSaveFilePicker(options?: ShowSaveFilePickerOptions): Promise<FileSystemFileHandle_2>;
+}
+
+// @public
+type IHpkeSealResult = CryptoUtils_2.IHpkeSealResult;
+
+// @public
+export interface IHttpTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {
+    // (undocumented)
+    readonly autoSync?: boolean;
+    // (undocumented)
+    readonly baseUrl: string;
+    // (undocumented)
+    readonly fetchImpl?: typeof fetch;
+    // (undocumented)
+    readonly logger?: Logging.LogReporter<unknown>;
+    // (undocumented)
+    readonly namespace?: string;
+    // (undocumented)
+    readonly userId?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IIdbPrivateKeyStorageCreateParams {
+    readonly databaseName?: string;
+    readonly indexedDB?: IDBFactory;
+    readonly storeName?: string;
+}
+
+// @public
+export interface ILocalStorageTreeParams<TCT extends string = string> extends FileTree.IFileTreeInitParams<TCT> {
+    autoSync?: boolean;
+    pathToKeyMap: Record<string, string>;
+    storage?: Storage;
 }
 
 // @public
@@ -234,6 +397,17 @@ export interface IUrlConfigOptions {
     resourceTypes?: string;
     zipFile?: string;
     zipPath?: string;
+}
+
+// @public
+export class LocalStorageTreeAccessors<TCT extends string = string> extends FileTree.InMemoryTreeAccessors<TCT> implements FileTree.IPersistentFileTreeAccessors<TCT> {
+    deleteFile(path: string): Result<boolean>;
+    fileIsMutable(path: string): DetailedResult<boolean, FileTree.SaveDetail>;
+    static fromStorage<TCT extends string = string>(params: ILocalStorageTreeParams<TCT>): Result<LocalStorageTreeAccessors<TCT>>;
+    getDirtyPaths(): string[];
+    isDirty(): boolean;
+    saveFileContents(path: string, contents: string): Result<string>;
+    syncToDisk(): Promise<Result<void>>;
 }
 
 // @public

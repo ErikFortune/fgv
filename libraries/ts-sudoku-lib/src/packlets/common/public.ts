@@ -84,7 +84,7 @@ export interface ICell {
   readonly col: number;
 
   /**
-   * All of the {@Link ICage | cages} to which this cell belongs.
+   * All of the {@link ICage | cages} to which this cell belongs.
    */
   readonly cages: readonly ICage[];
 

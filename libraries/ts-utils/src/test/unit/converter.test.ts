@@ -540,4 +540,82 @@ describe('BaseConverter class', () => {
       expect(converter.convert('not a number')).toSucceedWith(-1);
     });
   });
+
+  describe('or method', () => {
+    test('returns value from first converter if it succeeds', () => {
+      const combined = stringConverter.or(numberConverter as unknown as Converter<string>);
+      expect(combined.convert('hello')).toSucceedWith('hello');
+    });
+
+    test('tries second converter if first fails', () => {
+      // A converter that accepts either strings or numbers as strings
+      const stringOrNumber = stringConverter.or(
+        new BaseConverter<string>((from: unknown) => {
+          return typeof from === 'number' ? succeed(String(from)) : fail('not a number');
+        })
+      );
+
+      expect(stringOrNumber.convert('hello')).toSucceedWith('hello');
+      expect(stringOrNumber.convert(42)).toSucceedWith('42');
+    });
+
+    test('fails with second converter error if both fail', () => {
+      const failingConverter1 = new BaseConverter<string>((from: unknown) => {
+        return fail('first converter failed');
+      });
+      const failingConverter2 = new BaseConverter<string>((from: unknown) => {
+        return fail('second converter failed');
+      });
+
+      const combined = failingConverter1.or(failingConverter2);
+      expect(combined.convert('anything')).toFailWith('second converter failed');
+    });
+
+    test('passes context to both converters', () => {
+      const contextConverter1 = new BaseConverter<string, ITestContext>(
+        (from: unknown, __self: Converter<string, ITestContext>, context?: ITestContext) => {
+          if (context?.value === 'use-first') {
+            return succeed(`first: ${from}`);
+          }
+          return fail('first rejected');
+        }
+      );
+
+      const contextConverter2 = new BaseConverter<string, ITestContext>(
+        (from: unknown, __self: Converter<string, ITestContext>, context?: ITestContext) => {
+          if (context?.value === 'use-second') {
+            return succeed(`second: ${from}`);
+          }
+          return fail('second rejected');
+        }
+      );
+
+      const combined = contextConverter1.or(contextConverter2);
+
+      expect(combined.convert('test', { value: 'use-first' })).toSucceedWith('first: test');
+      expect(combined.convert('test', { value: 'use-second' })).toSucceedWith('second: test');
+      expect(combined.convert('test', { value: 'use-neither' })).toFailWith('second rejected');
+    });
+
+    test('can chain multiple or calls', () => {
+      const stringOnly = new BaseConverter<string>((from: unknown) => {
+        return typeof from === 'string' ? succeed(from) : fail('not a string');
+      });
+
+      const numberAsString = new BaseConverter<string>((from: unknown) => {
+        return typeof from === 'number' ? succeed(String(from)) : fail('not a number');
+      });
+
+      const booleanAsString = new BaseConverter<string>((from: unknown) => {
+        return typeof from === 'boolean' ? succeed(String(from)) : fail('not a boolean');
+      });
+
+      const combined = stringOnly.or(numberAsString).or(booleanAsString);
+
+      expect(combined.convert('hello')).toSucceedWith('hello');
+      expect(combined.convert(42)).toSucceedWith('42');
+      expect(combined.convert(true)).toSucceedWith('true');
+      expect(combined.convert({})).toFailWith('not a boolean');
+    });
+  });
 });

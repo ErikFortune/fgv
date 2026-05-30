@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "update generated docs",
+      "type": "none",
+      "packageName": "@fgv/ts-bcp47"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47",
+  "email": "ErikFortune@outlook.com"
+}

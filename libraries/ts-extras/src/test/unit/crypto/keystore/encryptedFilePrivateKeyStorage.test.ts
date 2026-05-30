@@ -1,0 +1,446 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+import '@fgv/ts-utils-jest';
+
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import * as crypto from 'crypto';
+import { FileTree } from '@fgv/ts-json-base';
+import * as CryptoUtils from '../../../../packlets/crypto-utils';
+
+const EncryptedFilePrivateKeyStorage = CryptoUtils.KeyStore.EncryptedFilePrivateKeyStorage;
+const createEncryptedFile = CryptoUtils.createEncryptedFile;
+const provider = CryptoUtils.nodeCryptoProvider;
+const encoder = new TextEncoder();
+const testPassword = 'test-password-123';
+
+function makeKey(): Uint8Array {
+  return provider.generateRandomBytes(32).orThrow();
+}
+
+function makeTree(): FileTree.IFileTreeDirectoryItem {
+  return FileTree.inMemory([], { mutable: true })
+    .onSuccess((tree) => tree.getDirectory('/'))
+    .orThrow();
+}
+
+function makeStorage(
+  encryptionKey: Uint8Array = makeKey(),
+  tree: FileTree.IFileTreeDirectoryItem = makeTree()
+): CryptoUtils.KeyStore.EncryptedFilePrivateKeyStorage {
+  return EncryptedFilePrivateKeyStorage.create({
+    directory: '/keys',
+    encryptionKey,
+    cryptoProvider: provider,
+    tree
+  }).orThrow();
+}
+
+describe('EncryptedFilePrivateKeyStorage', () => {
+  describe('create', () => {
+    test('fails when the encryption key is not 32 bytes', () => {
+      expect(
+        EncryptedFilePrivateKeyStorage.create({
+          directory: '/keys',
+          encryptionKey: new Uint8Array(16),
+          cryptoProvider: provider,
+          tree: makeTree()
+        })
+      ).toFailWith(/must be 32 bytes, got 16/);
+    });
+
+    test('succeeds with a supplied tree', () => {
+      expect(
+        EncryptedFilePrivateKeyStorage.create({
+          directory: '/keys',
+          encryptionKey: makeKey(),
+          cryptoProvider: provider,
+          tree: makeTree()
+        })
+      ).toSucceed();
+    });
+
+    test('fails when the filesystem directory cannot be opened', () => {
+      expect(
+        EncryptedFilePrivateKeyStorage.create({
+          directory: path.join(os.tmpdir(), 'fgv-does-not-exist-xyz', 'nope'),
+          encryptionKey: makeKey(),
+          cryptoProvider: provider
+        })
+      ).toFailWith(/failed to open/i);
+    });
+  });
+
+  describe('store/load round-trip', () => {
+    test('signs and verifies with an ecdsa-p256 key loaded from disk', async () => {
+      const storage = makeStorage();
+      const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      expect(await storage.store('signing', pair.privateKey)).toSucceedWith('signing');
+
+      const loaded = (await storage.load('signing')).orThrow();
+      const data = encoder.encode('hello');
+      const signature = (await provider.sign(loaded, data)).orThrow();
+      expect(await provider.verify(pair.publicKey, signature, data)).toSucceedWith(true);
+    });
+
+    test('signs and verifies with an ed25519 key loaded from disk', async () => {
+      const storage = makeStorage();
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      await storage.store('ed', pair.privateKey);
+
+      const loaded = (await storage.load('ed')).orThrow();
+      const data = encoder.encode('payload');
+      const signature = (await provider.sign(loaded, data)).orThrow();
+      expect(await provider.verify(pair.publicKey, signature, data)).toSucceedWith(true);
+    });
+
+    test.each([['rsa-oaep-2048'], ['ecdh-p256'], ['x25519']] as const)(
+      'round-trips a %s private key',
+      async (algorithm) => {
+        const storage = makeStorage();
+        const pair = (await provider.generateKeyPair(algorithm, true)).orThrow();
+        await storage.store('k', pair.privateKey);
+        expect(await storage.load('k')).toSucceedAndSatisfy((loaded) => {
+          expect(loaded.type).toBe('private');
+        });
+      }
+    );
+
+    test('round-trips a private key created with a narrower usage set than the algorithm default', async () => {
+      const storage = makeStorage();
+      // An ECDH private key created with only `deriveBits` (the algorithm default
+      // is `deriveKey` + `deriveBits`). Its exported JWK carries
+      // `key_ops: ['deriveBits']`, and re-importing with the algorithm-wide
+      // usages would be rejected by WebCrypto — load must request only the
+      // operations the stored key actually carries.
+      const pair = await crypto.webcrypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
+        'deriveBits'
+      ]);
+      expect(await storage.store('narrow', pair.privateKey)).toSucceedWith('narrow');
+      expect(await storage.load('narrow')).toSucceedAndSatisfy((loaded) => {
+        expect(loaded.type).toBe('private');
+        expect(loaded.usages).toEqual(['deriveBits']);
+      });
+    });
+
+    test('overwrites an existing entry on a second store', async () => {
+      const storage = makeStorage();
+      const first = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      const second = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      await storage.store('dup', first.privateKey);
+      await storage.store('dup', second.privateKey);
+
+      const loaded = (await storage.load('dup')).orThrow();
+      const data = encoder.encode('x');
+      const signature = (await provider.sign(loaded, data)).orThrow();
+      expect(await provider.verify(second.publicKey, signature, data)).toSucceedWith(true);
+      expect(await provider.verify(first.publicKey, signature, data)).toSucceedWith(false);
+    });
+
+    test('snapshots the encryption key (caller mutation does not affect stored keys)', async () => {
+      const encryptionKey = makeKey();
+      const storage = makeStorage(encryptionKey);
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      await storage.store('snap', pair.privateKey);
+
+      // Zero the caller's buffer after construction + store; the instance must
+      // still decrypt using its own immutable snapshot.
+      encryptionKey.fill(0);
+
+      const loaded = (await storage.load('snap')).orThrow();
+      const data = encoder.encode('snapshot');
+      const signature = (await provider.sign(loaded, data)).orThrow();
+      expect(await provider.verify(pair.publicKey, signature, data)).toSucceedWith(true);
+    });
+
+    test('round-trips against a real filesystem directory', async () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fgv-pks-'));
+      try {
+        const storage = EncryptedFilePrivateKeyStorage.create({
+          directory: dir,
+          encryptionKey: makeKey(),
+          cryptoProvider: provider
+        }).orThrow();
+        const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+        await storage.store('fskey', pair.privateKey);
+
+        expect(fs.readdirSync(dir)).toContain('fskey.json');
+        const loaded = (await storage.load('fskey')).orThrow();
+        const data = encoder.encode('fs');
+        const signature = (await provider.sign(loaded, data)).orThrow();
+        expect(await provider.verify(pair.publicKey, signature, data)).toSucceedWith(true);
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('store failures', () => {
+    test('rejects a non-private key (e.g. a symmetric AES key) before checking the algorithm', async () => {
+      const storage = makeStorage();
+      const aesKey = await crypto.webcrypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
+        'encrypt',
+        'decrypt'
+      ]);
+      expect(await storage.store('aes', aesKey)).toFailWith(/expected a private key, got 'secret'/);
+    });
+
+    test('rejects a private key whose algorithm is not a supported keypair algorithm', async () => {
+      const storage = makeStorage();
+      // RSA-PSS produces a `private` key (so it passes the type guard) but is not
+      // one of the algorithms this backend supports, exercising the algorithm
+      // default branch.
+      const pair = await crypto.webcrypto.subtle.generateKey(
+        {
+          name: 'RSA-PSS',
+          modulusLength: 2048,
+          publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+          hash: 'SHA-256'
+        },
+        true,
+        ['sign', 'verify']
+      );
+      expect(await storage.store('rsapss', pair.privateKey)).toFailWith(
+        /unsupported key algorithm 'RSA-PSS'/
+      );
+    });
+
+    test('rejects a public key (contract is private keys only)', async () => {
+      const storage = makeStorage();
+      const pair = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();
+      expect(await storage.store('pub', pair.publicKey)).toFailWith(/expected a private key, got 'public'/);
+    });
+
+    test('rejects an ECDSA key on an unsupported curve', async () => {
+      const storage = makeStorage();
+      const pair = await crypto.webcrypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-384' }, true, [
+        'sign',
+        'verify'
+      ]);
+      expect(await storage.store('p384', pair.privateKey)).toFailWith(/unsupported ECDSA curve 'P-384'/);
+    });
+
+    test('rejects an RSA-OAEP key with an unsupported hash', async () => {
+      const storage = makeStorage();
+      const pair = await crypto.webcrypto.subtle.generateKey(
+        {
+          name: 'RSA-OAEP',
+          modulusLength: 2048,
+          publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+          hash: 'SHA-512'
+        },
+        true,
+        ['encrypt', 'decrypt']
+      );
+      expect(await storage.store('rsa512', pair.privateKey)).toFailWith(
+        /unsupported RSA-OAEP hash 'SHA-512'/
+      );
+    });
+
+    test.each([['../evil'], ['a/b'], ['.'], ['..'], [''], ['has space']])(
+      'rejects unsafe id %p',
+      async (id) => {
+        const storage = makeStorage();
+        const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+        expect(await storage.store(id, pair.privateKey)).toFailWith(/invalid storage id/);
+      }
+    );
+
+    test('fails to export a non-extractable key to JWK', async () => {
+      const storage = makeStorage();
+      const pair = (await provider.generateKeyPair('ed25519', false)).orThrow();
+      expect(await storage.store('k', pair.privateKey)).toFailWith(/failed to export private key 'k' to JWK/);
+    });
+
+    test('store fails when the backing tree rejects writes', async () => {
+      const storage = makeStorage(
+        makeKey(),
+        FileTree.inMemory([])
+          .onSuccess((t) => t.getDirectory('/'))
+          .orThrow()
+      );
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      expect(await storage.store('k', pair.privateKey)).toFailWith(/mutab/i);
+    });
+  });
+
+  describe('load failures', () => {
+    test('fails for a missing id', async () => {
+      const storage = makeStorage();
+      expect(await storage.load('nope')).toFailWith(/key not found: 'nope'/);
+    });
+
+    test('rejects an unsafe id', async () => {
+      const storage = makeStorage();
+      expect(await storage.load('../evil')).toFailWith(/invalid storage id/);
+    });
+
+    test('fails when the file is not an encrypted-file envelope', async () => {
+      const tree = makeTree();
+      const storage = makeStorage(makeKey(), tree);
+      (tree as FileTree.IMutableFileTreeDirectoryItem)
+        .createChildFile('corrupt.json', JSON.stringify({ not: 'an encrypted file' }))
+        .orThrow();
+      expect(await storage.load('corrupt')).toFailWith(/failed to decrypt private key 'corrupt'/);
+    });
+
+    test('fails to decrypt when the encryption key is wrong', async () => {
+      const tree = makeTree();
+      const writer = makeStorage(makeKey(), tree);
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      await writer.store('k', pair.privateKey);
+
+      const reader = makeStorage(makeKey(), tree);
+      expect(await reader.load('k')).toFailWith(/failed to decrypt/i);
+    });
+
+    test('fails when the decrypted envelope has an unknown algorithm', async () => {
+      const key = makeKey();
+      const tree = makeTree();
+      const storage = makeStorage(key, tree);
+      const badEnvelope = (
+        await createEncryptedFile({
+          content: { algorithm: 'not-an-algorithm', jwk: '{}' },
+          secretName: 'bad',
+          key,
+          cryptoProvider: provider
+        })
+      ).orThrow();
+      (tree as FileTree.IMutableFileTreeDirectoryItem)
+        .createChildFile('bad.json', JSON.stringify(badEnvelope))
+        .orThrow();
+
+      expect(await storage.load('bad')).toFailWith(/failed to decrypt.*not-an-algorithm|invalid enumerated/i);
+    });
+
+    test('fails when the decrypted JWK cannot be imported', async () => {
+      const key = makeKey();
+      const tree = makeTree();
+      const storage = makeStorage(key, tree);
+      const badEnvelope = (
+        await createEncryptedFile({
+          content: { algorithm: 'ecdsa-p256', jwk: '{}' },
+          secretName: 'badkey',
+          key,
+          cryptoProvider: provider
+        })
+      ).orThrow();
+      (tree as FileTree.IMutableFileTreeDirectoryItem)
+        .createChildFile('badkey.json', JSON.stringify(badEnvelope))
+        .orThrow();
+
+      expect(await storage.load('badkey')).toFailWith(/failed to import private key/i);
+    });
+
+    test('loads a stored key whose JWK omits key_ops (falls back to algorithm usages)', async () => {
+      const key = makeKey();
+      const tree = makeTree();
+      const storage = makeStorage(key, tree);
+      // Export a real Ed25519 private key, then strip `key_ops` so the import
+      // path exercises the fallback to the algorithm's private usages rather
+      // than intersecting with the (now absent) recorded operations.
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      const jwk = await crypto.webcrypto.subtle.exportKey('jwk', pair.privateKey);
+      delete jwk.key_ops;
+      const envelope = (
+        await createEncryptedFile({
+          content: { algorithm: 'ed25519', jwk: JSON.stringify(jwk) },
+          secretName: 'nokeyops',
+          key,
+          cryptoProvider: provider
+        })
+      ).orThrow();
+      (tree as FileTree.IMutableFileTreeDirectoryItem)
+        .createChildFile('nokeyops.json', JSON.stringify(envelope))
+        .orThrow();
+
+      expect(await storage.load('nokeyops')).toSucceedAndSatisfy((loaded) => {
+        expect(loaded.type).toBe('private');
+      });
+    });
+  });
+
+  describe('delete', () => {
+    test('deletes a stored key and removes it from the listing', async () => {
+      const storage = makeStorage();
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      await storage.store('a', pair.privateKey);
+      await storage.store('b', pair.privateKey);
+
+      expect(await storage.delete('a')).toSucceedWith('a');
+      expect(await storage.list()).toSucceedWith(['b']);
+      expect(await storage.load('a')).toFailWith(/key not found/);
+    });
+
+    test('fails for a missing id', async () => {
+      const storage = makeStorage();
+      expect(await storage.delete('nope')).toFailWith(/key not found: 'nope'/);
+    });
+
+    test('rejects an unsafe id', async () => {
+      const storage = makeStorage();
+      expect(await storage.delete('../evil')).toFailWith(/invalid storage id/);
+    });
+  });
+
+  describe('list', () => {
+    test('returns an empty array for a fresh store', async () => {
+      const storage = makeStorage();
+      expect(await storage.list()).toSucceedWith([]);
+    });
+
+    test('reflects stores and deletes', async () => {
+      const storage = makeStorage();
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      await storage.store('one', pair.privateKey);
+      await storage.store('two', pair.privateKey);
+      await storage.store('three', pair.privateKey);
+      await storage.delete('two');
+
+      expect(await storage.list()).toSucceedAndSatisfy((ids) => {
+        expect([...ids].sort()).toEqual(['one', 'three']);
+      });
+    });
+  });
+
+  describe('KeyStore integration', () => {
+    test('drives addKeyPair → getKeyPair → sign/verify end-to-end', async () => {
+      const storage = makeStorage();
+      const keystore = CryptoUtils.KeyStore.KeyStore.create({
+        cryptoProvider: provider,
+        privateKeyStorage: storage
+      }).orThrow();
+      await keystore.initialize(testPassword);
+
+      const added = (await keystore.addKeyPair('signing', { algorithm: 'ecdsa-p256' })).orThrow();
+      expect(storage.supportsNonExtractable).toBe(false);
+
+      const loaded = (await keystore.getKeyPair('signing')).orThrow();
+      const data = encoder.encode('integration');
+      const signature = (await provider.sign(loaded.privateKey, data)).orThrow();
+      expect(await provider.verify(loaded.publicKey, signature, data)).toSucceedWith(true);
+
+      // The minted storage id is a UUID handle, present in the backend listing.
+      expect(await storage.list()).toSucceedWith([added.entry.id]);
+    });
+  });
+});

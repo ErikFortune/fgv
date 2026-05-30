@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras-webauthn",
+      "comment": "New package. Result-integration boundary over @simplewebauthn/browser v13+. Exports two primitives (startRegistration, startAuthentication) — each a one-line captureAsyncResult wrapper. No abstraction beyond the boundary.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras-webauthn",
+  "email": "noreply@anthropic.com"
+}

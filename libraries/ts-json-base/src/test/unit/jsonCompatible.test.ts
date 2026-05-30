@@ -25,19 +25,23 @@ import '@fgv/ts-utils-jest';
 import { JsonCompatibleType, JsonValue, sanitizeJsonObject } from '../../packlets/json';
 import { Brand, succeed, Result } from '@fgv/ts-utils';
 
+// Define a reusable MapOf class using the JsonCompatible constraint.
+// Defined at module level to avoid Babel issues with generic default type parameters inside describe blocks.
+class MapOf<T, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> extends Map<string, TV> {
+  public constructor() {
+    super();
+  }
+
+  public override set(key: string, value: TV): this {
+    return super.set(key, value);
+  }
+}
+
+// Type alias with generic default - also defined at module level for the same reason.
+type JsonMap<T, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> = Map<string, TV>;
+
 describe('jsonCompatible from json/common module', () => {
   describe('JsonCompatible type', () => {
-    // Define a reusable MapOf class using the JsonCompatible constraint
-    class MapOf<T, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> extends Map<string, TV> {
-      public constructor() {
-        super();
-      }
-
-      public override set(key: string, value: TV): this {
-        return super.set(key, value);
-      }
-    }
-
     describe('fully compatible types', () => {
       interface ISimpleCompatible {
         name: string;
@@ -1472,7 +1476,6 @@ describe('jsonCompatible from json/common module', () => {
   });
 
   test('Collection behavior with JsonCompatible', () => {
-    type JsonMap<T, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> = Map<string, TV>;
     interface IJsonThing {
       a: string;
       b: number;

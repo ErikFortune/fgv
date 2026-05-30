@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "Add an optional badge to the tab control",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell"
+}

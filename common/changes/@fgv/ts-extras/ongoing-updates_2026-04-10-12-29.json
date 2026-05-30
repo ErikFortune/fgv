@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "add sha256 to crypto provider, yaml export",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

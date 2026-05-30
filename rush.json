@@ -15,7 +15,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.162.0",
+  "rushVersion": "5.175.1",
   /**
    * The next field selects which package manager should be installed and determines its version.
    * Rush installs its own local copy of the package manager to ensure that your build process
@@ -24,7 +24,7 @@
    * Specify one of: "pnpmVersion", "npmVersion", or "yarnVersion".  See the Rush documentation
    * for details about these alternatives.
    */
-  "pnpmVersion": "8.15.9",
+  "pnpmVersion": "9.15.9",
   // "npmVersion": "6.14.15",
   // "yarnVersion": "1.9.4",
   /**
@@ -38,7 +38,7 @@
    * LTS schedule: https://nodejs.org/en/about/releases/
    * LTS versions: https://nodejs.org/en/download/releases/
    */
-  "nodeSupportedVersionRange": ">=14.15.0 <15.0.0 || >=16.13.0 <17.0.0 || >=18.15.0 <19.0.0 || >=20.18.0 <21.0.0 || >=22.22.0 <23.0.0",
+  "nodeSupportedVersionRange": ">=22.22.0 <23.0.0 || >=24.15.0 <25.0.0",
   /**
    * If the version check above fails, Rush will display a message showing the current
    * node version and the supported version range. You can use this setting to provide
@@ -417,8 +417,36 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-extras-argon2",
+      "projectFolder": "libraries/ts-extras-argon2",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "projectFolder": "libraries/ts-prompt-assist",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-web-extras",
       "projectFolder": "libraries/ts-web-extras",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-web-extras-argon2",
+      "projectFolder": "libraries/ts-web-extras-argon2",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-http-storage",
+      "projectFolder": "libraries/ts-http-storage",
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries"]
@@ -480,6 +508,12 @@
       "tags": ["libraries", "test", "jest"]
     },
     {
+      "packageName": "@fgv/ks",
+      "projectFolder": "tools/ks",
+      "shouldPublish": false,
+      "tags": ["tools", "cli"]
+    },
+    {
       "packageName": "@fgv/ts-res-cli",
       "projectFolder": "tools/ts-res-cli",
       "shouldPublish": true,
@@ -509,7 +543,8 @@
     {
       "packageName": "@fgv/heft-dual-rig",
       "projectFolder": "rigs/heft-dual-rig",
-      "shouldPublish": false,
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
       "tags": ["tools", "rig"]
     },
     {
@@ -523,6 +558,80 @@
       "projectFolder": "apps/ts-utils-browser-test",
       "shouldPublish": false,
       "tags": ["apps", "tests", "vite"]
+    },
+    {
+      "packageName": "@fgv/ai-image-gen-sample",
+      "projectFolder": "samples/ai-image-gen-sample",
+      "shouldPublish": false,
+      "tags": ["samples", "ai", "react", "ui"]
+    },
+    {
+      "packageName": "@fgv/typedoc-compact-theme",
+      "projectFolder": "plugins/typedoc-compact-theme",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["plugins", "typedoc"]
+    },
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "projectFolder": "libraries/ts-app-shell",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "ui", "react"]
+    },
+    {
+      "packageName": "@fgv/repo-template",
+      "projectFolder": "tools/repo-template",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["tools", "template"]
+    },
+    {
+      "packageName": "@fgv/ts-res-tutorial",
+      "projectFolder": "tools/ts-res-tutorial",
+      "shouldPublish": false,
+      "tags": ["tools", "tutorial", "sample"]
+    },
+    {
+      "packageName": "@fgv/ts-random",
+      "projectFolder": "libraries/ts-random",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-extras-webauthn",
+      "projectFolder": "libraries/ts-extras-webauthn",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-web-extras-webauthn",
+      "projectFolder": "libraries/ts-web-extras-webauthn",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "browser"]
+    },
+    {
+      "packageName": "@fgv/ts-extras-transformers",
+      "projectFolder": "libraries/ts-extras-transformers",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-web-extras-transformers",
+      "projectFolder": "libraries/ts-web-extras-transformers",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "browser"]
+    },
+    {
+      "packageName": "@fgv/testbed",
+      "projectFolder": "samples/testbed",
+      "shouldPublish": false,
+      "tags": ["samples", "react", "ui", "cli"]
     }
   ]
 }

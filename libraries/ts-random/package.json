@@ -1,0 +1,49 @@
+{
+  "name": "@fgv/ts-random",
+  "version": "5.1.0",
+  "description": "",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "heft build --clean",
+    "clean": "heft clean",
+    "test": "heft test --clean",
+    "coverage": "heft test --coverage --no-cache",
+    "build-docs": "typedoc --options ./config/typedoc.json",
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-json-base": "workspace:*"
+  },
+  "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
+    "@rushstack/heft": "1.2.7",
+    "@rushstack/heft-node-rig": "2.11.27",
+    "@fgv/ts-utils-jest": "workspace:*",
+    "@types/heft-jest": "1.0.6",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.14.9",
+    "typescript": "5.9.3",
+    "@rushstack/eslint-config": "4.6.4",
+    "eslint": "^9.39.2",
+    "typedoc": "~0.28.16",
+    "@fgv/typedoc-compact-theme": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
+  },
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    }
+  }
+}

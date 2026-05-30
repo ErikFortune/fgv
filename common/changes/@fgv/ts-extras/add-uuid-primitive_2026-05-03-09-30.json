@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add ICryptoProvider.generateUuid() with NodeCryptoProvider implementation; delegates to the @fgv/ts-utils primitive and provides a deterministic-override seam for test stubs.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

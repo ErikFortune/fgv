@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "fix package.json error",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}

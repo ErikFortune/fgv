@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "update generated docs",
+      "type": "none",
+      "packageName": "@fgv/ts-http-storage"
+    }
+  ],
+  "packageName": "@fgv/ts-http-storage",
+  "email": "ErikFortune@outlook.com"
+}

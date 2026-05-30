@@ -402,4 +402,32 @@ describe('GenericDefaultingConverter', () => {
       expect(converter.convert(10)).toSucceedWith(genericDefault);
     });
   });
+
+  describe('or method', () => {
+    const genericDefault = 'generic default';
+    const converter = new GenericDefaultingConverter(Converters.string, genericDefault);
+
+    test('returns itself since defaulting converters never fail', () => {
+      const otherConverter = new BaseConverter<string>((from: unknown) => {
+        return typeof from === 'number' ? succeed(String(from)) : fail('not a number');
+      });
+
+      const result = converter.or(otherConverter);
+      expect(result).toBe(converter);
+    });
+
+    test('still uses default value when conversion fails', () => {
+      const otherConverter = new BaseConverter<string>((from: unknown) => {
+        return succeed('from other');
+      });
+
+      const result = converter.or(otherConverter);
+
+      // Success case - original value
+      expect(result.convert('a string')).toSucceedWith('a string');
+
+      // Failure case - uses default, never tries other converter
+      expect(result.convert(123)).toSucceedWith(genericDefault);
+    });
+  });
 });

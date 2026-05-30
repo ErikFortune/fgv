@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "silence DEP0040 punycode warnings in jest scripts (transitively from jsdom@20 in jest-environment-jsdom@29)",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras"
+}

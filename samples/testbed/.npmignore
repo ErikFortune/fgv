@@ -1,0 +1,7 @@
+src/
+scripts/
+config/
+data/
+public/
+dist-web/
+*.log
