@@ -128,6 +128,19 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `private-key-storage` ✅
+
+**Status:** ✅ implemented + reviewed (PR #427, gates green) — ready for squash to `release`
+**Integration branch:** `private-key-storage` (off `release`) → squash to `release` at close
+**Workflow shape:** single implementation PR onto integration branch (both impls together)
+**Substrate:** `.ai/tasks/completed/2026-05/private-key-storage/{brief.md, state.md, result.md, README.md}`
+**Package surface:** `@fgv/ts-extras/crypto-utils` (encrypted-file impl, Node) + `@fgv/ts-web-extras/crypto-utils` (IndexedDB impl, browser) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Out-of-scope:** changes to the `IPrivateKeyStorage` interface, to `KeyStore.addKeyPair` semantics, or to `@fgv/ts-chocolate`. Multi-process/multi-tab concurrency (single-process/single-tab assumption; documented limit). Password-derivation helper for the file impl's encryption key (consumer concern).
+
+**Mission.** Ship the two `IPrivateKeyStorage` implementations the existing JSDoc promises but doesn't deliver: `IdbPrivateKeyStorage` in `@fgv/ts-web-extras/crypto-utils` (IndexedDB, `supportsNonExtractable: true`) and `EncryptedFilePrivateKeyStorage` in `@fgv/ts-extras/crypto-utils` (directory-on-disk, AES-256-GCM-encrypted JWK content, FileTree I/O, `supportsNonExtractable: false`). Both satisfy the interface verbatim — additive, no interface changes. Also fixes the JSDoc that points at non-existent impls (textbook L18). Closes the gap hardback's agent surfaced when `KeyStore.addKeyPair` failed with `'No private key storage configured'`.
+
+**Origin.** Cross-repo gap surfaced 2026-05-28 (hardback agent investigating agent/hub private-key persistence). ts-extras crypto surface is **established** → additive only. Gap-then-fix: every `KeyStore.addKeyPair` consumer currently rolls their own backend or skips the feature; we ship in fgv so consumers benefit + the JSDoc becomes accurate.
+
 ### `messages-log-levels` 🟢
 
 **Status:** ✅ implementation complete — PR open onto `messages-log-levels`; ready to squash → `release`

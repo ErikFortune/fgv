@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Add EncryptedFilePrivateKeyStorage, a directory-on-disk IPrivateKeyStorage backend (AES-256-GCM-encrypted JWK per key, FileTree I/O); fix IPrivateKeyStorage JSDoc to point at the real shipping impls",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

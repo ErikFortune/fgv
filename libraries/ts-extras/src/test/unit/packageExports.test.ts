@@ -29,9 +29,10 @@ interface IExportsMap {
   readonly [key: string]: unknown;
 }
 
+const projectRoot = path.resolve(__dirname, '../../..');
+
 function getPackageJson(): IExportsMap {
-  const packagePath = path.resolve(__dirname, '../../../package.json');
-  return JSON.parse(fs.readFileSync(packagePath, 'utf8')) as IExportsMap;
+  return JSON.parse(fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf8')) as IExportsMap;
 }
 
 describe('ts-extras package exports', () => {
@@ -49,9 +50,50 @@ describe('ts-extras package exports', () => {
       import: './lib/packlets/crypto-utils/index.browser.js',
       require: './lib/packlets/crypto-utils/index.browser.js'
     });
-    expect(keystoreExport).toMatchObject({
+    // The keystore subpath splits the same way as ./crypto: Node gets the full
+    // barrel (with the node:crypto-backed EncryptedFilePrivateKeyStorage), the
+    // browser/default condition gets the browser-safe barrel.
+    expect(keystoreExport.node).toMatchObject({
       import: './lib/packlets/crypto-utils/keystore/index.js',
       require: './lib/packlets/crypto-utils/keystore/index.js'
     });
+    expect(keystoreExport.default).toMatchObject({
+      import: './lib/packlets/crypto-utils/keystore/index.browser.js',
+      require: './lib/packlets/crypto-utils/keystore/index.browser.js'
+    });
+  });
+
+  // Guards the recurring failure mode: a per-condition (node/browser) JS split
+  // MUST NOT pin a single top-level `types` to the package-wide rollup, or
+  // browser TypeScript consumers see the Node-only export that the browser JS
+  // entry does not provide. Mirroring ./crypto (no `types` field) lets the
+  // resolver pick the co-located .d.ts next to whichever JS condition resolved.
+  test('condition-split crypto subpaths omit a top-level types rollup', () => {
+    const exportsMap = getPackageJson().exports as IExportsMap;
+    for (const subpath of ['./crypto', './crypto/keystore']) {
+      const entry = exportsMap[subpath] as IExportsMap;
+      expect(entry.node).toBeDefined();
+      expect(entry.default).toBeDefined();
+      // A top-level `types` here would resolve identically for node and browser,
+      // re-introducing the JS/types mismatch. Per-condition co-located d.ts is
+      // the contract.
+      expect(entry.types).toBeUndefined();
+    }
+  });
+
+  test('keystore barrel declarations match their JS condition (browser omits the Node-only export)', () => {
+    const nodeDts = fs.readFileSync(
+      path.join(projectRoot, 'lib/packlets/crypto-utils/keystore/index.d.ts'),
+      'utf8'
+    );
+    const browserDts = fs.readFileSync(
+      path.join(projectRoot, 'lib/packlets/crypto-utils/keystore/index.browser.d.ts'),
+      'utf8'
+    );
+    // The Node barrel re-exports the node:crypto-backed storage; the browser
+    // barrel must not, so the .d.ts the browser condition resolves matches the
+    // browser .js (which also omits it).
+    expect(nodeDts).toMatch(/EncryptedFilePrivateKeyStorage/);
+    expect(browserDts).not.toMatch(/EncryptedFilePrivateKeyStorage/);
   });
 });

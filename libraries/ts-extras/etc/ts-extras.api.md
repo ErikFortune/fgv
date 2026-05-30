@@ -503,6 +503,22 @@ type EncryptedFileFormat = typeof Constants.ENCRYPTED_FILE_FORMAT;
 // @public
 const encryptedFileFormat: Converter<EncryptedFileFormat>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+//
+// @public
+class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IEncryptedFilePrivateKeyStorageCreateParams): Result<EncryptedFilePrivateKeyStorage>;
+    delete(id: string): Promise<Result<string>>;
+    list(): Promise<Result<readonly string[]>>;
+    load(id: string): Promise<Result<CryptoKey>>;
+    store(id: string, key: CryptoKey): Promise<Result<string>>;
+    readonly supportsNonExtractable: false;
+}
+
 // @public
 type EncryptionAlgorithm = typeof Constants.DEFAULT_ALGORITHM;
 
@@ -1051,6 +1067,20 @@ interface IEncryptedFile<TMetadata = JsonValue> {
     readonly secretName: string;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IEncryptedFilePrivateKeyStorageCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly cryptoProvider: ICryptoProvider;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly directory: string;
+    readonly encryptionKey: Uint8Array;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly tree?: FileTree.IFileTreeDirectoryItem;
+}
+
 // @public
 interface IEncryptionConfig {
     readonly cryptoProvider: ICryptoProvider;
@@ -1430,6 +1460,7 @@ interface IPbkdf2KeyDerivationParams {
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IPrivateKeyStorage {
@@ -1680,6 +1711,8 @@ declare namespace KeyStore {
     export {
         Converters_2 as Converters,
         KeyStore_2 as KeyStore,
+        EncryptedFilePrivateKeyStorage,
+        IEncryptedFilePrivateKeyStorageCreateParams,
         isKeyStoreFile,
         allKeyPairAlgorithms,
         KeyPairAlgorithm,
