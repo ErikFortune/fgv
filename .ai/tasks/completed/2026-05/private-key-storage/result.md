@@ -80,3 +80,52 @@ The jsdom test environment lacks `structuredClone` (which `fake-indexeddb` uses)
 ## Cross-repo handoff-back (hardback)
 
 The gap hardback surfaced (`KeyStore.addKeyPair` → `'No private key storage configured'`) is closed: ship `EncryptedFilePrivateKeyStorage` (Node) or `IdbPrivateKeyStorage` (browser) as the `privateKeyStorage` backend in the next alpha. Both land additively on the established ts-extras crypto surface — no interface or `addKeyPair` semantic changes.
+
+---
+
+## Follow-ups (for orchestrator triage)
+
+### TECH_DEBT candidate: `captureAsyncResult` should return `AsyncResult<T>`, not `Promise<Result<T>>`
+
+`captureAsyncResult` (in `@fgv/ts-utils`, `base/result.ts`) currently returns a bare
+`Promise<Result<T>>`. Its sibling `AsyncResult<T>` is already `@public`, in the api
+surface, implements `PromiseLike<Result<T>>`, and is the canonical chainable async-Result
+type. Because the factory hands back a plain Promise, callers cannot fluently chain
+(`.onSuccess`/`.thenOnSuccess`/`.withErrorFormat`) off a `captureAsyncResult(...)` result —
+they must `await` and re-wrap, or seed an awkward `succeed(x).thenOnSuccess(() =>
+captureAsyncResult(...))`. This stream hit it in
+`encryptedFilePrivateKeyStorage._encryptAndWrite` (the `succeed(key).thenOnSuccess(...)`
+seed) and a few other spots.
+
+- **Proposed change:** `captureAsyncResult<T>(func): AsyncResult<T>` (wrap the existing
+  internal promise in `new AsyncResult(...)`).
+- **Compatibility:** type-compatible with all existing `await captureAsyncResult(...)`
+  call sites (`AsyncResult` is `PromiseLike<Result<T>>`, so `await` still yields
+  `Result<T>`). Additive/cleanup for the chained call sites.
+- **Blast radius / why deferred:** `@fgv/ts-utils` is the foundational, **established**
+  (non-active-dev) surface; ~66 call sites monorepo-wide; lockstep versioning ripples to
+  every package. Per `ACTIVE_DEVELOPMENT.md` this is "handle with care / ask first" — it
+  deserves its own focused PR with a full-repo rebuild+test sweep, not a rider on a crypto
+  feature PR. Surfaced here rather than acted on.
+
+### Process improvement: make "code-reviewer run + resolution" a required PR-description gate
+
+This stream ran `rush build`/`lint`/`test` green and pushed before the first review, then
+absorbed **six rounds** of Copilot review comments (browser-barrel `node:crypto` leak; the
+`./crypto/keystore` types/JS mismatch; unchecked JWK cast; IDB durability /
+version-bump-on-missing-store / stale-cached-handle chain; synchronous-IDB-throw capture;
+several doc-accuracy drifts). After all that, a single **`code-reviewer` agent** pass on the
+final diff surfaced a coherent, well-prioritized set of findings — the imperative-block
+density (chaining refactor), the `key.type`-before-`_algorithmOf` ordering, the
+`importPublicKey`-for-private-key doc-accuracy gap, and the resolvable api-extractor link
+warnings — most of which are exactly the repo-pattern/edge-case classes the agent is built
+for, and several of which would have pre-empted Copilot rounds had it run **before** the
+first push.
+
+**Recommendation:** add **"evidence of code-reviewer run and resolution"** as a required
+item in the PR-description gate for future features (alongside the existing build/lint/test
+acceptance criteria in `CODING_STANDARDS.md`). Running the `code-reviewer` agent on the diff
+*before* opening the PR (and again before requesting external/Copilot re-review) converts
+multi-round external ping-pong into a single internal pass — cheaper for everyone and keeps
+the PR converging instead of oscillating. Concretely: a checklist line such as
+`- [ ] code-reviewer agent run on final diff; findings resolved or dispositioned (link/summary in PR description)`.
