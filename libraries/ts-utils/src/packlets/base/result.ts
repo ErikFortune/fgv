@@ -1319,27 +1319,28 @@ export function captureResult<T>(func: () => T): Result<T> {
 
 /**
  * Async continuation callback to be called in the event that a
- * {@link Result} is successful, returning either a `Promise` of a new
- * {@link Result} or an {@link AsyncResult} of the new value type.
+ * {@link Result} is successful, returning a `PromiseLike` of a new
+ * {@link Result}.
  * @remarks
- * Accepting both shapes lets callers return the result of
- * {@link captureAsyncResult} (which is an {@link AsyncResult}) directly from
- * a `thenOnSuccess` callback without an `async` wrapper to coerce the
- * contextual return type back through `Awaited<>`.
+ * Typed as `PromiseLike<Result<TN>>` rather than `Promise<Result<TN>>` so
+ * callers can return the result of {@link captureAsyncResult} (which is an
+ * {@link AsyncResult}, itself a `PromiseLike<Result<TN>>`) directly from a
+ * `thenOnSuccess` callback without an `async` wrapper to coerce the
+ * contextual return type back through `Awaited<>`. The continuation result
+ * is always wrapped into an {@link AsyncResult}, so chaining is unaffected.
  * @public
  */
-export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>> | AsyncResult<TN>;
+export type AsyncSuccessContinuation<T, TN> = (value: T) => PromiseLike<Result<TN>>;
 
 /**
  * Async continuation callback to be called in the event that a
- * {@link Result} fails, returning either a `Promise` of a new {@link Result}
- * or an {@link AsyncResult} of the value type.
+ * {@link Result} fails, returning a `PromiseLike` of a new {@link Result}.
  * @remarks
  * See {@link AsyncSuccessContinuation} for the rationale behind accepting
- * both shapes.
+ * any `PromiseLike<Result<T>>` rather than only a `Promise<Result<T>>`.
  * @public
  */
-export type AsyncFailureContinuation<T> = (message: string) => Promise<Result<T>> | AsyncResult<T>;
+export type AsyncFailureContinuation<T> = (message: string) => PromiseLike<Result<T>>;
 
 /**
  * Wraps a `Promise` of a {@link Result} to enable fluent chaining of both
