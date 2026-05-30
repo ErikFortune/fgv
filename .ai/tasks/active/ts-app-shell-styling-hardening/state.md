@@ -42,6 +42,7 @@ Personaility is currently blocked on `private-key-storage` so these changes can 
 |---|---|---|
 | 2026-05-29 | Bug surfaced + diagnosed against live DOM | personaility @ 5.1.0-32; F12 inspection confirmed classes-present-but-unstyled root cause. |
 | 2026-05-29 | Stream commissioned + substrate prep | brief + state + WORKSTREAMS + integration branch + substrate PR. |
+| 2026-05-30 | Implementation complete | Layers 1 (defensive inline geometry on messages packlet icons/overlays), 2 (one-shot Tailwind content-path probe in `MessagesProvider` — emits a `'warning'` message linking to the README setup anchor when `h-3.5` measures 0), and 3 (top-of-document required-setup callout + stable `## Setup` anchor + troubleshooting section in README) landed together. Extended `IMessageAction` additively with optional `href` so the probe message renders as an external link in `ToastItem`. `LIBRARY_CAPABILITIES.md` `@fgv/ts-app-shell` entry notes the self-diagnosing setup. Per-package gates green: `rushx build`, `rushx fixlint`, `rushx lint`, `rushx test` (100% coverage on `messages` packlet). |
 
 ---
 

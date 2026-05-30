@@ -339,6 +339,80 @@ describe('StatusBar', () => {
     });
   });
 
+  describe('defensive geometry (Layer 1)', () => {
+    test('header toolbar icons render with inline 14px width/height (Tailwind-absent fallback)', () => {
+      const container = renderBar();
+      expand(container);
+      const funnel = screen.getByTitle('Filter messages').querySelector('svg');
+      expect(funnel?.style.width).toBe('14px');
+      expect(funnel?.style.height).toBe('14px');
+
+      const close = screen.getByLabelText('Collapse log panel').querySelector('svg');
+      expect(close?.style.width).toBe('14px');
+      expect(close?.style.height).toBe('14px');
+
+      const copyAll = screen.getByTitle('Copy filtered messages').querySelector('svg');
+      expect(copyAll?.style.width).toBe('14px');
+      expect(copyAll?.style.height).toBe('14px');
+    });
+
+    test('search overlay icon renders with absolute positioning inline (avoids viewport overflow)', () => {
+      const container = renderBar();
+      expand(container);
+      openFilters();
+      const search = screen.getByPlaceholderText('Search messages...').parentElement?.querySelector('svg');
+      expect(search?.style.position).toBe('absolute');
+      expect(search?.style.left).toBe('8px');
+      expect(search?.style.top).toBe('50%');
+      expect(search?.style.transform).toBe('translateY(-50%)');
+      expect(search?.style.width).toBe('14px');
+      expect(search?.style.height).toBe('14px');
+    });
+
+    test('per-row copy icon renders with inline 12px width/height', () => {
+      const container = renderBar({ messages: [createMessage('info', 'copy-me')] });
+      expand(container);
+      const copyBtn = screen.getByTitle('Copy message');
+      const svg = copyBtn.querySelector('svg');
+      expect(svg?.style.width).toBe('12px');
+      expect(svg?.style.height).toBe('12px');
+    });
+
+    test('rendering the copied affordance keeps the inline geometry on the success icons', () => {
+      const writeText = jest.fn().mockResolvedValue(undefined);
+      setupClipboard(writeText);
+      const container = renderBar({ messages: [createMessage('info', 'copy-me')] });
+      expand(container);
+      fireEvent.click(screen.getByTitle('Copy message'));
+
+      return waitFor(() => {
+        const check = screen.getByTitle('Copied!').querySelector('svg');
+        expect(check?.style.width).toBe('12px');
+        expect(check?.style.height).toBe('12px');
+      }).then(() => {
+        fireEvent.click(screen.getByTitle('Copy filtered messages'));
+        return waitFor(() => {
+          const headerCheck = screen.getAllByTitle('Copied!')[0].querySelector('svg');
+          expect(headerCheck?.style.width).toBe('14px');
+          expect(headerCheck?.style.height).toBe('14px');
+        });
+      });
+    });
+
+    test('search clear button carries inline absolute positioning', () => {
+      const container = renderBar();
+      expand(container);
+      openFilters();
+      const input = screen.getByPlaceholderText('Search messages...');
+      fireEvent.change(input, { target: { value: 'x' } });
+      const clear = screen.getByLabelText('Clear search') as HTMLElement;
+      expect(clear.style.position).toBe('absolute');
+      expect(clear.style.right).toBe('8px');
+      expect(clear.style.top).toBe('50%');
+      expect(clear.style.transform).toBe('translateY(-50%)');
+    });
+  });
+
   describe('§3 collapsed-by-default', () => {
     test('mounts collapsed by default (no panel content visible)', () => {
       renderBar();

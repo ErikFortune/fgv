@@ -2,6 +2,29 @@
 
 Shared React UI primitives for application shells in the `@fgv` monorepo.
 
+> ⚠️ **Required setup** — this package ships its components as Tailwind-classed JSX. You
+> must add the `@fgv/ts-app-shell` content path to your Tailwind config, or icons and
+> overlays in the messages panel and other primitives will render unsized (invisible
+> buttons, viewport-overflowing absolute overlays). See [Setup](#setup) below; the
+> `MessagesProvider` self-diagnoses this configuration gap on mount and surfaces a
+> warning message linking back here.
+
+## Setup
+
+See the [Theming](#theming) section for the canonical setup steps:
+
+1. Add the Tailwind preset and include `./node_modules/@fgv/ts-app-shell/lib/**/*.{js,jsx}`
+   in your `content` array.
+2. Import `@fgv/ts-app-shell/theme.css` once in your application entry point.
+
+## Troubleshooting
+
+**Icons in the messages panel are invisible or oversized, or you see an
+"@fgv/ts-app-shell styles are not fully loaded" warning message.** Your Tailwind config
+is missing the `@fgv/ts-app-shell` content path. See [Setup](#setup) above and make sure
+`./node_modules/@fgv/ts-app-shell/lib/**/*.{js,jsx}` appears in your `tailwind.config.js`
+`content` array.
+
 ## Features
 
 - **Column Cascade** — Master-detail drill-down with horizontal scrolling, breadcrumb navigation, and min-width columns

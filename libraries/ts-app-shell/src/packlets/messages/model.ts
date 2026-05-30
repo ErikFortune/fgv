@@ -93,14 +93,22 @@ export interface IMessage {
 }
 
 /**
- * An actionable element attached to a message (e.g., "Go to Session" link).
+ * An actionable element attached to a message (e.g., "Go to Session" link or
+ * "Open setup docs" external link).
+ *
+ * Exactly one of {@link IMessageAction.href} or {@link IMessageAction.onAction}
+ * must be set. When `href` is set, renderers display the action as an external
+ * link (opens in a new tab with `noopener noreferrer`); when `onAction` is set,
+ * renderers display a button that invokes the callback.
  * @public
  */
 export interface IMessageAction {
   /** Action label */
   readonly label: string;
-  /** Callback when the action is triggered */
-  readonly onAction: () => void;
+  /** External URL to open when the action is clicked. Mutually exclusive with `onAction`. */
+  readonly href?: string;
+  /** Callback when the action is triggered. Mutually exclusive with `href`. */
+  readonly onAction?: () => void;
 }
 
 // ============================================================================
