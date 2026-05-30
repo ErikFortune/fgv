@@ -226,7 +226,7 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                   className={`p-1 rounded hover:bg-surface-raised ${showFilters ? 'bg-surface-raised' : ''}`}
                   title="Filter messages"
                 >
-                  <FunnelIcon className="h-3.5 w-3.5 text-muted" />
+                  <FunnelIcon className="h-3.5 w-3.5 text-muted" style={{ width: 14, height: 14 }} />
                 </button>
                 <button
                   onClick={copyAllFiltered}
@@ -236,9 +236,15 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                   title={copySuccessId === '__all__' ? 'Copied!' : 'Copy filtered messages'}
                 >
                   {copySuccessId === '__all__' ? (
-                    <CheckIcon className="h-3.5 w-3.5 text-status-success-icon" />
+                    <CheckIcon
+                      className="h-3.5 w-3.5 text-status-success-icon"
+                      style={{ width: 14, height: 14 }}
+                    />
                   ) : (
-                    <DocumentDuplicateIcon className="h-3.5 w-3.5 text-muted" />
+                    <DocumentDuplicateIcon
+                      className="h-3.5 w-3.5 text-muted"
+                      style={{ width: 14, height: 14 }}
+                    />
                   )}
                 </button>
                 <button onClick={onClear} className="text-xs text-muted hover:text-secondary ml-1">
@@ -250,7 +256,7 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                   title="Collapse log panel"
                   aria-label="Collapse log panel"
                 >
-                  <XMarkIcon className="h-3.5 w-3.5 text-muted" />
+                  <XMarkIcon className="h-3.5 w-3.5 text-muted" style={{ width: 14, height: 14 }} />
                 </button>
               </div>
             </div>
@@ -275,9 +281,21 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                   ))}
                 </div>
 
-                {/* Search input */}
-                <div className="relative flex-1">
-                  <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted" />
+                {/* Search input — `position: relative` inline so the absolutely-positioned
+                    icon + clear-button fallbacks have a containing block even when Tailwind's
+                    `relative` utility is absent. */}
+                <div className="relative flex-1" style={{ position: 'relative' }}>
+                  <MagnifyingGlassIcon
+                    className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted"
+                    style={{
+                      position: 'absolute',
+                      left: 8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 14,
+                      height: 14
+                    }}
+                  />
                   <input
                     type="text"
                     placeholder="Search messages..."
@@ -289,6 +307,12 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                     <button
                       onClick={(): void => setSearchTerm('')}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary text-xs"
+                      style={{
+                        position: 'absolute',
+                        right: 8,
+                        top: '50%',
+                        transform: 'translateY(-50%)'
+                      }}
                       aria-label="Clear search"
                     >
                       &times;
@@ -326,9 +350,15 @@ export function StatusBar(props: IStatusBarProps): React.ReactElement {
                         title={copySuccessId === msg.id ? 'Copied!' : 'Copy message'}
                       >
                         {copySuccessId === msg.id ? (
-                          <CheckIcon className="h-3 w-3 text-status-success-icon" />
+                          <CheckIcon
+                            className="h-3 w-3 text-status-success-icon"
+                            style={{ width: 12, height: 12 }}
+                          />
                         ) : (
-                          <DocumentDuplicateIcon className="h-3 w-3 text-muted" />
+                          <DocumentDuplicateIcon
+                            className="h-3 w-3 text-muted"
+                            style={{ width: 12, height: 12 }}
+                          />
                         )}
                       </button>
                       <span className="shrink-0 text-muted">{formatTime(msg.timestamp)}</span>

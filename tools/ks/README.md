@@ -56,3 +56,16 @@ eval "$(ks session --var FGV_KS_PASSWORD)"
 ```bash
 ks export --template-string 'export XAI_API_KEY={{xai}}' --clipboard
 ```
+
+### Encode secrets for binary-safe display or piping
+
+`ks get` and `ks export` accept `--encoding <text|base64|hex>`. The default
+(`text`) preserves the existing behavior; `base64` (RFC 4648, padded) and
+`hex` (lowercase) emit the UTF-8 bytes of the secret in the chosen
+encoding, which is useful for piping secrets that may contain control
+characters or for keeping keys opaque in shell history.
+
+```bash
+ks get my-key --encoding base64
+ks export --template-string 'export TOKEN={{my-key}}' --encoding hex
+```

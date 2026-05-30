@@ -82,6 +82,21 @@ describe('Toast', () => {
       }
     });
 
+    test('renders an href action as an external link with safe rel attributes', () => {
+      renderToast(
+        createMessage('warning', 'check the docs', {
+          action: { label: 'Open docs', href: 'https://example.com/setup' }
+        }),
+        jest.fn()
+      );
+      const link = screen.getByText('Open docs') as HTMLAnchorElement;
+      expect(link.tagName).toBe('A');
+      expect(link.href).toBe('https://example.com/setup');
+      expect(link.target).toBe('_blank');
+      expect(link.rel).toContain('noopener');
+      expect(link.rel).toContain('noreferrer');
+    });
+
     test('renders and triggers an attached action', () => {
       const onAction = jest.fn();
       renderToast(createMessage('error', 'failed', { action: { label: 'Retry', onAction } }), jest.fn());

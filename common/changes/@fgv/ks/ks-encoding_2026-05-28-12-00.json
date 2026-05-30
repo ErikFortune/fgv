@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ks",
+      "comment": "Add --encoding <text|base64|hex> to ks get and ks export for binary-safe display and pipe-friendly output (default text preserves existing behavior)",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ks"
+}

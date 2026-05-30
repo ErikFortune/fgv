@@ -153,4 +153,14 @@ opportunistically when the right surface area is touched.
 
 ## P4 — Doc / minor consistency
 
-*(None.)*
+- **[P4] `mutableFsTree` `permission-denied for read-only file` test fails when the test container runs as root.**
+  `@fgv/ts-json-base` `mutableFsTree` suite — one test expects `chmod`-based read-only enforcement to block a write. When the test container runs as root (the default in the cloud-agent harness), `chmod` is advisory; the kernel lets root write read-only files regardless. Reproduces on the `release` baseline; **not a regression** from any recent stream. Surfaced (and explicitly dispositioned as unrelated) during the `capture-async-result-upgrade` full-repo `rush test` sweep (PR #433).
+
+  **Trigger**: opportunistic — next time the `mutableFsTree` test surface is open, or when CI logs become a meaningful nuisance.
+
+  **Scope sketch**: gate the assertion on `process.getuid?.() !== 0` (skip the read-only-enforcement check under root); or rewrite the assertion to use a `FileTree` adapter capability check rather than relying on `chmod` semantics. Single-test scope; behavior of the production code is fine.
+
+  **Not a P3**: no shipped-behavior impact and no functional regression; this is a sandbox-specific test-environment quirk.
+
+  **Reference**: PR #433 (`capture-async-result-upgrade`) full-repo `rush test` sweep; reproduced on `release` baseline.
+

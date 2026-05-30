@@ -78,14 +78,24 @@ export function ToastItem(props: IToastItemProps): React.ReactElement {
         {message.text}
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        {message.action && (
-          <button
-            onClick={message.action.onAction}
-            className="text-sm font-medium underline hover:no-underline"
-          >
-            {message.action.label}
-          </button>
-        )}
+        {message.action &&
+          (message.action.href !== undefined ? (
+            <a
+              href={message.action.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium underline hover:no-underline"
+            >
+              {message.action.label}
+            </a>
+          ) : (
+            <button
+              onClick={message.action.onAction}
+              className="text-sm font-medium underline hover:no-underline"
+            >
+              {message.action.label}
+            </button>
+          ))}
         <button
           onClick={(): void => onDismiss(message.id)}
           className="text-current opacity-50 hover:opacity-100"

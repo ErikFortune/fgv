@@ -128,6 +128,19 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `private-key-storage` ✅
+
+**Status:** ✅ implemented + reviewed (PR #427, gates green) — ready for squash to `release`
+**Integration branch:** `private-key-storage` (off `release`) → squash to `release` at close
+**Workflow shape:** single implementation PR onto integration branch (both impls together)
+**Substrate:** `.ai/tasks/completed/2026-05/private-key-storage/{brief.md, state.md, result.md, README.md}`
+**Package surface:** `@fgv/ts-extras/crypto-utils` (encrypted-file impl, Node) + `@fgv/ts-web-extras/crypto-utils` (IndexedDB impl, browser) + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+**Out-of-scope:** changes to the `IPrivateKeyStorage` interface, to `KeyStore.addKeyPair` semantics, or to `@fgv/ts-chocolate`. Multi-process/multi-tab concurrency (single-process/single-tab assumption; documented limit). Password-derivation helper for the file impl's encryption key (consumer concern).
+
+**Mission.** Ship the two `IPrivateKeyStorage` implementations the existing JSDoc promises but doesn't deliver: `IdbPrivateKeyStorage` in `@fgv/ts-web-extras/crypto-utils` (IndexedDB, `supportsNonExtractable: true`) and `EncryptedFilePrivateKeyStorage` in `@fgv/ts-extras/crypto-utils` (directory-on-disk, AES-256-GCM-encrypted JWK content, FileTree I/O, `supportsNonExtractable: false`). Both satisfy the interface verbatim — additive, no interface changes. Also fixes the JSDoc that points at non-existent impls (textbook L18). Closes the gap hardback's agent surfaced when `KeyStore.addKeyPair` failed with `'No private key storage configured'`.
+
+**Origin.** Cross-repo gap surfaced 2026-05-28 (hardback agent investigating agent/hub private-key persistence). ts-extras crypto surface is **established** → additive only. Gap-then-fix: every `KeyStore.addKeyPair` consumer currently rolls their own backend or skips the feature; we ship in fgv so consumers benefit + the JSDoc becomes accurate.
+
 ### `messages-log-levels` 🟢
 
 **Status:** ✅ implementation complete — PR open onto `messages-log-levels`; ready to squash → `release`
@@ -190,6 +203,30 @@ Design-triage-implement shape is likely; new public API has real consequences.
 ---
 
 ## Completed workstreams
+
+### `capture-async-result-upgrade` ✅
+
+**Status:** ✅ implementation merged to integration branch (PR #433); cluster-close PR #434 open
+**Integration branch:** `capture-async-result-upgrade` (off `release`) → squash to `release` at close
+**Workflow shape:** single implementation PR onto integration branch
+**Substrate:** `.ai/tasks/completed/2026-05/capture-async-result-upgrade/{brief.md, state.md, README.md}`
+**Package surface:** `@fgv/ts-utils` (`base/result.ts` — `captureAsyncResult`, `AsyncSuccessContinuation`, `AsyncFailureContinuation`, `AsyncResult` constructor + tests + api-extractor report); opportunistic call-site cleanups in `@fgv/ts-extras` and `@fgv/ts-prompt-assist`.
+
+**Mission.** Made `AsyncResult<T>` the canonical chainable shape across the async-Result API via three coordinated additive surface changes: (1) `captureAsyncResult<T>` returns `AsyncResult<T>` instead of `Promise<Result<T>>`; (2) `AsyncSuccessContinuation` / `AsyncFailureContinuation` widened to accept `PromiseLike<Result<...>>` so the chaining slots accept what the factory produces (brief amendment surfaced mid-stream); (3) `AsyncResult` constructor parameter widened to `PromiseLike<Result<T>>` so the chaining methods can pass the widened callback return through without re-wrapping (natural cascade from delta 2). Strictly additive at every call site — all 86 monorepo call sites compile unchanged because `AsyncResult` is `PromiseLike<Result<T>>`, every existing `(value) => Promise<Result<TN>>` callback satisfies `(value) => PromiseLike<Result<TN>>`, and every existing `new AsyncResult(somePromise)` still satisfies `PromiseLike`. Three opportunistic call-site cleanups under the 15-site budget; full-repo `rush build` + `rush test` sweep green (modulo one unrelated pre-existing `mutableFsTree` root-uid test failure routed to TECH_DEBT P4).
+
+**Origin.** Surfaced in `.ai/tasks/completed/2026-05/private-key-storage/result.md` Follow-ups (chain seam in `_encryptAndWrite`); commissioned ahead of the -33 publish so the cleanup lands in the same alpha as `ts-app-shell-styling-hardening`. Mid-stream brief amendment for delta 2 demonstrated the cascade-completeness pattern (L29) in action.
+
+### `ts-app-shell-styling-hardening` ✅
+
+**Status:** ✅ shipped to `release` via PR #432 (squash of integration branch).
+**Integration branch:** `ts-app-shell-styling-hardening` (off `release`) → squashed to `release` at close
+**Workflow shape:** single implementation PR onto integration branch
+**Substrate:** `.ai/tasks/completed/2026-05/ts-app-shell-styling-hardening/{brief.md, state.md, README.md}`
+**Package surface:** `@fgv/ts-app-shell` `messages` packlet (icon SVGs + `MessagesProvider` + `IMessageAction` discriminated union + `ToastItem`) + README setup section + `.ai/instructions/LIBRARY_CAPABILITIES.md`
+
+**Mission.** Hardened `@fgv/ts-app-shell` against the most common consumer misconfiguration — forgetting to add `'./node_modules/@fgv/ts-app-shell/lib/**/*.{js,jsx}'` to the Tailwind `content` array. Three layers: (1) defensive inline geometry on catastrophic-failure icon SVGs and absolutely-positioned overlays in the `messages` packlet (including inline `position: relative` on the search wrapper — caught in review); (2) self-diagnosing probe in `MessagesProvider` using a sentinel arbitrary-value Tailwind utility (`h-[7.3215px]`, uniquely-named so it can only be generated by Tailwind scanning ts-app-shell's built JS — also caught in review, replacing the original `h-3.5` probe that could be masked by consumer-side usage); (3) targeted README nudges (top-of-doc Required-setup callout, stable `## Setup` anchor, troubleshooting section). `IMessageAction` refactored to a discriminated union (`IMessageHrefAction | IMessageCallbackAction`) so "exactly one of `href` or `onAction`" is enforced at the type level.
+
+**Origin.** Cross-repo debug 2026-05-29: personaility on `@fgv/ts-app-shell@5.1.0-32` reported "no filter button visible" — DOM proved Tailwind geometry classes present without CSS, root cause was missing `content` path entry. README was correct but easy to miss; failure mode silent and catastrophic enough to warrant in-package defenses.
 
 ### `local-summarization` ✅
 

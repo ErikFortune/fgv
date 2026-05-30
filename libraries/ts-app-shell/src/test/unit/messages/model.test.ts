@@ -71,7 +71,7 @@ describe('messages/model', () => {
       const onAction = jest.fn();
       const msg = createMessage('error', 'failed', { action: { label: 'Retry', onAction } });
       expect(msg.action?.label).toBe('Retry');
-      msg.action?.onAction();
+      msg.action?.onAction?.();
       expect(onAction).toHaveBeenCalledTimes(1);
     });
 
