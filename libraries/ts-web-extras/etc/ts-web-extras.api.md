@@ -272,8 +272,8 @@ export class HttpTreeAccessors<TCT extends string = string> extends FileTree.InM
 //
 // @public
 class IdbPrivateKeyStorage implements CryptoUtils_2.KeyStore.IPrivateKeyStorage {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "IdbPrivateKeyStorage"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "IIdbPrivateKeyStorageCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IIdbPrivateKeyStorageCreateParams): Result<IdbPrivateKeyStorage>;
     delete(id: string): Promise<Result<string>>;
     list(): Promise<Result<readonly string[]>>;
@@ -357,7 +357,7 @@ export interface IHttpTreeParams<TCT extends string = string> extends FileTree.I
     readonly userId?: string;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "IdbPrivateKeyStorage"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IIdbPrivateKeyStorageCreateParams {

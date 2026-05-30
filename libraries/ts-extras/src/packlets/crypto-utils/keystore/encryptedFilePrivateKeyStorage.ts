@@ -43,7 +43,7 @@ import { IPrivateKeyStorage } from './privateKeyStorage';
 export interface IEncryptedFilePrivateKeyStorageCreateParams {
   /**
    * Filesystem path to the directory that holds the encrypted private-key
-   * files. Used only when {@link IEncryptedFilePrivateKeyStorageCreateParams.tree}
+   * files. Used only when {@link CryptoUtils.KeyStore.IEncryptedFilePrivateKeyStorageCreateParams.tree}
    * is omitted (the default `FsTree` backing). The directory must already
    * exist.
    */
@@ -66,7 +66,7 @@ export interface IEncryptedFilePrivateKeyStorageCreateParams {
   /**
    * Optional {@link FileTree.IFileTreeDirectoryItem | FileTree directory}
    * override. When supplied it is used as the storage directory directly and
-   * {@link IEncryptedFilePrivateKeyStorageCreateParams.directory} is ignored —
+   * {@link CryptoUtils.KeyStore.IEncryptedFilePrivateKeyStorageCreateParams.directory} is ignored —
    * pass an in-memory tree for tests, or another Node-compatible backend. When
    * omitted, a mutable `FsTree` rooted at `directory` is used. (This backend is
    * Node-only — it round-trips keys through `node:crypto` — so a browser file
@@ -153,7 +153,7 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
 
   /**
    * Creates a new {@link CryptoUtils.KeyStore.EncryptedFilePrivateKeyStorage}.
-   * @param params - {@link IEncryptedFilePrivateKeyStorageCreateParams}.
+   * @param params - {@link CryptoUtils.KeyStore.IEncryptedFilePrivateKeyStorageCreateParams}.
    * @returns `Success` with the new instance, or `Failure` if the encryption
    * key is the wrong size or the storage directory cannot be opened.
    */
@@ -182,52 +182,9 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
    * @param key - The extractable private `CryptoKey` to persist.
    */
   public async store(id: string, key: CryptoKey): Promise<Result<string>> {
-    const fileNameResult = this._fileNameFor(id);
-    if (fileNameResult.isFailure()) {
-      return fail(fileNameResult.message);
-    }
-    const algorithmResult = this._algorithmOf(key);
-    if (algorithmResult.isFailure()) {
-      return fail(`failed to store private key '${id}': ${algorithmResult.message}`);
-    }
-    if (key.type !== 'private') {
-      return fail(`failed to store private key '${id}': expected a private key, got '${key.type}'`);
-    }
-
-    const jwkResult = await captureAsyncResult(() => crypto.webcrypto.subtle.exportKey('jwk', key));
-    if (jwkResult.isFailure()) {
-      return fail(`failed to export private key '${id}' to JWK: ${jwkResult.message}`);
-    }
-
-    const serializeResult = captureResult(() => JSON.stringify(jwkResult.value));
-    /* c8 ignore next 3 - JSON.stringify of a WebCrypto JWK record does not throw */
-    if (serializeResult.isFailure()) {
-      return fail(`failed to serialize private key '${id}': ${serializeResult.message}`);
-    }
-
-    const envelope: JsonObject = {
-      algorithm: algorithmResult.value,
-      jwk: serializeResult.value
-    };
-
-    const encryptResult = await createEncryptedFile({
-      content: envelope,
-      secretName: id,
-      key: this._encryptionKey,
-      cryptoProvider: this._cryptoProvider
-    });
-    /* c8 ignore next 3 - defensive: createEncryptedFile only fails on a provider encrypt error, covered in provider tests */
-    if (encryptResult.isFailure()) {
-      return fail(`failed to encrypt private key '${id}': ${encryptResult.message}`);
-    }
-
-    const fileTextResult = captureResult(() => JSON.stringify(encryptResult.value));
-    /* c8 ignore next 3 - JSON.stringify of the plain IEncryptedFile record does not throw */
-    if (fileTextResult.isFailure()) {
-      return fail(`failed to serialize encrypted file for '${id}': ${fileTextResult.message}`);
-    }
-
-    return this._writeFile(fileNameResult.value, fileTextResult.value).onSuccess(() => succeed(id));
+    return this._validateKeyToStore(id, key).thenOnSuccess(({ fileName, algorithm }) =>
+      this._encryptAndWrite(algorithm, key, id, fileName)
+    );
   }
 
   /**
@@ -236,33 +193,13 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
    * @param id - Storage handle.
    */
   public async load(id: string): Promise<Result<CryptoKey>> {
-    const fileResult = this._fileNameFor(id).onSuccess((fileName) => this._findFile(fileName));
-    if (fileResult.isFailure()) {
-      return fail(fileResult.message);
-    }
-    if (fileResult.value === undefined) {
-      return fail(`key not found: '${id}'`);
-    }
-
-    const jsonResult = fileResult.value.getContents();
-    /* c8 ignore next 3 - defensive: getContents only fails on an unreadable/unparseable file on disk */
-    if (jsonResult.isFailure()) {
-      return fail(`failed to read private key '${id}': ${jsonResult.message}`);
-    }
-
-    const decryptResult = await tryDecryptFile(jsonResult.value, this._encryptionKey, this._cryptoProvider);
-    if (decryptResult.isFailure()) {
-      return fail(`failed to decrypt private key '${id}': ${decryptResult.message}`);
-    }
-
-    const envelopeResult = envelopeConverter.convert(decryptResult.value);
-    if (envelopeResult.isFailure()) {
-      return fail(`failed to decrypt private key '${id}': ${envelopeResult.message}`);
-    }
-
-    return (await this._importPrivateKey(envelopeResult.value)).withErrorFormat(
-      (msg) => `failed to import private key '${id}': ${msg}`
-    );
+    return this._fileNameFor(id)
+      .onSuccess((fileName) => this._findFile(fileName))
+      .onSuccess((file) =>
+        file === undefined ? fail<FileTree.IFileTreeFileItem>(`key not found: '${id}'`) : succeed(file)
+      )
+      .thenOnSuccess((file) => this._decryptEnvelope(file, id))
+      .thenOnSuccess((envelope) => this._importPrivateKey(envelope, id));
   }
 
   /**
@@ -311,6 +248,54 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
       return fail(`invalid storage id '${id}': must match ${SAFE_ID.source}`);
     }
     return succeed(`${id}${FILE_SUFFIX}`);
+  }
+
+  /**
+   * Validates the synchronous preconditions for a store: the id is filename-safe,
+   * the key is actually a private key, and its algorithm is one we support.
+   * Returns the resolved filename and algorithm so the async pipeline can run
+   * without re-deriving them.
+   */
+  private _validateKeyToStore(
+    id: string,
+    key: CryptoKey
+  ): Result<{ fileName: string; algorithm: KeyPairAlgorithm }> {
+    return this._fileNameFor(id).onSuccess((fileName) => {
+      if (key.type !== 'private') {
+        return fail(`failed to store private key '${id}': expected a private key, got '${key.type}'`);
+      }
+      return this._algorithmOf(key)
+        .withErrorFormat((msg) => `failed to store private key '${id}': ${msg}`)
+        .onSuccess((algorithm) => succeed({ fileName, algorithm }));
+    });
+  }
+
+  /**
+   * Exports `key` to JWK, wraps it in the stored envelope, encrypts it with
+   * AES-256-GCM, and writes the resulting file as serialized JSON to `fileName`.
+   * Returns the stored `id` on success.
+   */
+  private async _encryptAndWrite(
+    algorithm: KeyPairAlgorithm,
+    key: CryptoKey,
+    id: string,
+    fileName: string
+  ): Promise<Result<string>> {
+    return succeed(key)
+      .thenOnSuccess((k) => captureAsyncResult(() => crypto.webcrypto.subtle.exportKey('jwk', k)))
+      .withErrorFormat((msg) => `failed to export private key '${id}' to JWK: ${msg}`)
+      .onSuccess<JsonObject>((jwk) => succeed({ algorithm, jwk: JSON.stringify(jwk) }))
+      .thenOnSuccess((envelope) =>
+        createEncryptedFile({
+          content: envelope,
+          secretName: id,
+          key: this._encryptionKey,
+          cryptoProvider: this._cryptoProvider
+        })
+      )
+      .withErrorFormat((msg) => `failed to encrypt private key '${id}': ${msg}`)
+      .onSuccess((encrypted) => this._writeFile(fileName, JSON.stringify(encrypted)))
+      .onSuccess(() => succeed(id));
   }
 
   private _algorithmOf(key: CryptoKey): Result<KeyPairAlgorithm> {
@@ -366,18 +351,44 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
     });
   }
 
-  private async _importPrivateKey(envelope: IStoredPrivateKeyEnvelope): Promise<Result<CryptoKey>> {
-    const jwkResult = captureResult(() => JSON.parse(envelope.jwk) as unknown)
-      .withErrorFormat((msg) => `malformed JWK: ${msg}`)
-      .onSuccess((parsed) => jsonWebKeyShape.validate(parsed));
-    /* c8 ignore next 3 - JWK text we wrote ourselves as authenticated ciphertext is well-formed */
-    if (jwkResult.isFailure()) {
-      return fail(jwkResult.message);
-    }
+  /**
+   * Reads `file`, decrypts the AES-256-GCM envelope, and validates it into the
+   * typed `IStoredPrivateKeyEnvelope`. Read, decrypt, and shape failures
+   * all surface as a decrypt failure for `id`.
+   */
+  private async _decryptEnvelope(
+    file: FileTree.IFileTreeFileItem,
+    id: string
+  ): Promise<Result<IStoredPrivateKeyEnvelope>> {
+    return file
+      .getContents()
+      .thenOnSuccess((json) => tryDecryptFile(json, this._encryptionKey, this._cryptoProvider))
+      .onSuccess((decrypted) => envelopeConverter.convert(decrypted))
+      .withErrorFormat((msg) => `failed to decrypt private key '${id}': ${msg}`);
+  }
+
+  /**
+   * Parses and shape-validates the stored JWK, then re-imports it as a private
+   * `CryptoKey` for the envelope's algorithm. The WebCrypto JWK-import algorithm
+   * descriptor is shared between public and private keys for every supported
+   * algorithm, so {@link CryptoUtils.IKeyPairAlgorithmParams.importPublicKey} is reused here;
+   * the public/private distinction is carried by the JWK's own `key_ops` and the
+   * filtered `usages`.
+   */
+  private async _importPrivateKey(
+    envelope: IStoredPrivateKeyEnvelope,
+    id: string
+  ): Promise<Result<CryptoKey>> {
     const params = keyPairAlgorithmParams[envelope.algorithm];
     const usages = params.keyPairUsages.filter((usage) => !PUBLIC_ONLY_USAGES.includes(usage));
-    return captureAsyncResult(() =>
-      crypto.webcrypto.subtle.importKey('jwk', jwkResult.value, params.importPublicKey, true, [...usages])
-    );
+    return captureResult(() => JSON.parse(envelope.jwk) as unknown)
+      .onSuccess((parsed) => jsonWebKeyShape.validate(parsed))
+      .withErrorFormat((msg) => `malformed JWK: ${msg}`)
+      .thenOnSuccess((jwk) =>
+        captureAsyncResult(() =>
+          crypto.webcrypto.subtle.importKey('jwk', jwk, params.importPublicKey, true, [...usages])
+        )
+      )
+      .withErrorFormat((msg) => `failed to import private key '${id}': ${msg}`);
   }
 }

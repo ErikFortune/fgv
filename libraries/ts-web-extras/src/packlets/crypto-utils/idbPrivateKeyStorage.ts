@@ -24,7 +24,7 @@ import { captureAsyncResult, captureResult, fail, Result, succeed } from '@fgv/t
 import { CryptoUtils } from '@fgv/ts-extras';
 
 /**
- * Parameters for {@link IdbPrivateKeyStorage.create}.
+ * Parameters for {@link CryptoUtils.IdbPrivateKeyStorage.create}.
  * @public
  */
 export interface IIdbPrivateKeyStorageCreateParams {
@@ -85,8 +85,8 @@ export class IdbPrivateKeyStorage implements CryptoUtils.KeyStore.IPrivateKeySto
   }
 
   /**
-   * Creates a new {@link IdbPrivateKeyStorage}.
-   * @param params - Optional {@link IIdbPrivateKeyStorageCreateParams}.
+   * Creates a new {@link CryptoUtils.IdbPrivateKeyStorage}.
+   * @param params - Optional {@link CryptoUtils.IIdbPrivateKeyStorageCreateParams}.
    * @returns `Success` with the new instance, or `Failure` if no IndexedDB
    * factory is available.
    */

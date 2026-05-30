@@ -178,13 +178,33 @@ describe('EncryptedFilePrivateKeyStorage', () => {
   });
 
   describe('store failures', () => {
-    test('rejects a key whose algorithm is not an asymmetric keypair algorithm', async () => {
+    test('rejects a non-private key (e.g. a symmetric AES key) before checking the algorithm', async () => {
       const storage = makeStorage();
       const aesKey = await crypto.webcrypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
         'encrypt',
         'decrypt'
       ]);
-      expect(await storage.store('aes', aesKey)).toFailWith(/unsupported key algorithm 'AES-GCM'/);
+      expect(await storage.store('aes', aesKey)).toFailWith(/expected a private key, got 'secret'/);
+    });
+
+    test('rejects a private key whose algorithm is not a supported keypair algorithm', async () => {
+      const storage = makeStorage();
+      // RSA-PSS produces a `private` key (so it passes the type guard) but is not
+      // one of the algorithms this backend supports, exercising the algorithm
+      // default branch.
+      const pair = await crypto.webcrypto.subtle.generateKey(
+        {
+          name: 'RSA-PSS',
+          modulusLength: 2048,
+          publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+          hash: 'SHA-256'
+        },
+        true,
+        ['sign', 'verify']
+      );
+      expect(await storage.store('rsapss', pair.privateKey)).toFailWith(
+        /unsupported key algorithm 'RSA-PSS'/
+      );
     });
 
     test('rejects a public key (contract is private keys only)', async () => {

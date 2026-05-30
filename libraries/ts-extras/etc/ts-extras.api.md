@@ -510,7 +510,7 @@ const encryptedFileFormat: Converter<EncryptedFileFormat>;
 // @public
 class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptedFilePrivateKeyStorageCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params: IEncryptedFilePrivateKeyStorageCreateParams): Result<EncryptedFilePrivateKeyStorage>;
     delete(id: string): Promise<Result<string>>;
     list(): Promise<Result<readonly string[]>>;
@@ -1073,11 +1073,11 @@ interface IEncryptedFile<TMetadata = JsonValue> {
 interface IEncryptedFilePrivateKeyStorageCreateParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly cryptoProvider: ICryptoProvider;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptedFilePrivateKeyStorageCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly directory: string;
     readonly encryptionKey: Uint8Array;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "FileTree"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IEncryptedFilePrivateKeyStorageCreateParams"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly tree?: FileTree.IFileTreeDirectoryItem;
 }
 
@@ -2221,6 +2221,7 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
 
 // Warnings were encountered during analysis:
 //
+// src/packlets/crypto-utils/keystore/encryptedFilePrivateKeyStorage.ts:378:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/crypto-utils/keystore/keyStore.ts:1463:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/crypto-utils/keystore/keyStore.ts:1502:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
