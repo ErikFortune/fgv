@@ -457,6 +457,18 @@ The two #397 findings are the load-bearing observation: a promotion PR's per-con
 
 ---
 
+### L32. `code-reviewer` agent run on the final diff should be a pre-PR gate, not a post-Copilot followup
+
+**Observed:** `private-key-storage` (PR #427) ran build/lint/test green and pushed before any review pass, then absorbed **six rounds** of Copilot review comments — browser-barrel `node:crypto` leak; `./crypto/keystore` types/JS mismatch; unchecked JWK cast; IDB durability + version-bump + stale-handle chain; synchronous-IDB-throw capture; several doc-accuracy drifts. After all six rounds, a single internal `code-reviewer` agent pass on the final diff surfaced a coherent, well-prioritized set of additional findings (imperative-block density / chaining refactor, `key.type`-before-`_algorithmOf` ordering, `importPublicKey`-for-private-key doc-accuracy gap, resolvable api-extractor link warnings) — most of which were exactly the repo-pattern + edge-case classes the agent is built for, and several of which would have pre-empted Copilot rounds had the agent run **before** the first push.
+
+**Rule:** Implementing-agent acceptance criteria should require **"evidence of `code-reviewer` agent run + resolution on the final diff before opening the PR"** as a standard gate alongside the existing `rushx build`/`lint`/`test` gates in `CODING_STANDARDS.md`. Running the internal reviewer up-front converts multi-round external Copilot ping-pong into a single internal pass — cheaper for everyone and keeps the PR converging instead of oscillating.
+
+**Codification candidate:** Add to `.ai/instructions/CODING_STANDARDS.md` § "Pre-PR Validation Checklist" — a new bullet: "`code-reviewer` agent run on the final diff; findings resolved or dispositioned (link/summary in PR description)." Mirror it in the standard implementing-agent kickoff prompt shape (`.ai/conventions/workflow/kickoff-prompt-shape.md`) so every brief inherits it without per-stream copy-paste. The PR-description checklist line: `- [ ] code-reviewer agent run on final diff; findings resolved or dispositioned`.
+
+**Reference:** `.ai/tasks/completed/2026-05/private-key-storage/result.md` Follow-ups § "Process improvement"; PR #427's six Copilot rounds + final code-reviewer pass.
+
+---
+
 ## Sweep history
 
 *(no sweeps yet — this file is being initialized at 2026-05-11)*
