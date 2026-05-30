@@ -1319,17 +1319,27 @@ export function captureResult<T>(func: () => T): Result<T> {
 
 /**
  * Async continuation callback to be called in the event that a
- * {@link Result} is successful, returning a `Promise` of a new {@link Result}.
+ * {@link Result} is successful, returning either a `Promise` of a new
+ * {@link Result} or an {@link AsyncResult} of the new value type.
+ * @remarks
+ * Accepting both shapes lets callers return the result of
+ * {@link captureAsyncResult} (which is an {@link AsyncResult}) directly from
+ * a `thenOnSuccess` callback without an `async` wrapper to coerce the
+ * contextual return type back through `Awaited<>`.
  * @public
  */
-export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>>;
+export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>> | AsyncResult<TN>;
 
 /**
  * Async continuation callback to be called in the event that a
- * {@link Result} fails, returning a `Promise` of a new {@link Result}.
+ * {@link Result} fails, returning either a `Promise` of a new {@link Result}
+ * or an {@link AsyncResult} of the value type.
+ * @remarks
+ * See {@link AsyncSuccessContinuation} for the rationale behind accepting
+ * both shapes.
  * @public
  */
-export type AsyncFailureContinuation<T> = (message: string) => Promise<Result<T>>;
+export type AsyncFailureContinuation<T> = (message: string) => Promise<Result<T>> | AsyncResult<T>;
 
 /**
  * Wraps a `Promise` of a {@link Result} to enable fluent chaining of both
@@ -1355,15 +1365,18 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
   private readonly _promise: Promise<Result<T>>;
 
   /**
-   * Constructs an {@link AsyncResult} wrapping the supplied promise.
+   * Constructs an {@link AsyncResult} wrapping the supplied promise (or any
+   * `PromiseLike` that resolves to a {@link Result}, such as another
+   * {@link AsyncResult}).
    * @remarks
    * If the supplied promise rejects, the rejection is caught and converted
    * to a {@link Failure}, ensuring that awaiting an {@link AsyncResult} always
    * yields a {@link Result}.
-   * @param promise - A `Promise` that resolves to a {@link Result}.
+   * @param promise - A `Promise` (or `PromiseLike`) that resolves to a
+   * {@link Result}.
    */
-  public constructor(promise: Promise<Result<T>>) {
-    this._promise = promise.catch((err: unknown) => fail<T>(_errorMessage(err)));
+  public constructor(promise: PromiseLike<Result<T>>) {
+    this._promise = Promise.resolve(promise).catch((err: unknown) => fail<T>(_errorMessage(err)));
   }
 
   /**

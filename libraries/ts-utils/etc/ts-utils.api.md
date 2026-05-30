@@ -173,11 +173,11 @@ interface ArrayValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
 function asValidator<T, TC = unknown>(converterOrValidator: Converter<T, TC> | Validator<T, TC>): Validator<T, TC>;
 
 // @public
-export type AsyncFailureContinuation<T> = (message: string) => Promise<Result<T>>;
+export type AsyncFailureContinuation<T> = (message: string) => Promise<Result<T>> | AsyncResult<T>;
 
 // @public
 export class AsyncResult<T> implements PromiseLike<Result<T>> {
-    constructor(promise: Promise<Result<T>>);
+    constructor(promise: PromiseLike<Result<T>>);
     aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): AsyncResult<T>;
     static from<T>(result: Result<T>): AsyncResult<T>;
     onFailure(cb: FailureContinuation<T>): AsyncResult<T>;
@@ -190,7 +190,7 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
 }
 
 // @public
-export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>>;
+export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>> | AsyncResult<TN>;
 
 declare namespace Base {
     export {

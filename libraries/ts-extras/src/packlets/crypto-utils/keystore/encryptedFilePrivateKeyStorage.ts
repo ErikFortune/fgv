@@ -382,7 +382,7 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
     return captureResult(() => JSON.parse(envelope.jwk) as unknown)
       .onSuccess((parsed) => jsonWebKeyShape.validate(parsed))
       .withErrorFormat((msg) => `malformed JWK: ${msg}`)
-      .thenOnSuccess(async (jwk) =>
+      .thenOnSuccess((jwk) =>
         captureAsyncResult(() =>
           crypto.webcrypto.subtle.importKey(
             'jwk',
