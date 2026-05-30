@@ -1,8 +1,8 @@
 # Stream state: `ts-app-shell-styling-hardening`
 
-**Status:** 🟢 ready to commission — substrate prep in flight
+**Status:** 🟢 implementation complete — PR #429 awaiting merge to integration branch
 **Integration branch:** `ts-app-shell-styling-hardening` (off `release`)
-**Last updated:** 2026-05-29 (orchestrator — substrate prep)
+**Last updated:** 2026-05-30 (implementation agent — PR #429 polish complete)
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Phase | Status | Notes |
 |---|---|---|
-| Implementation | 🟢 ready | Single-PR feature; Layers 1 + 2 + 3 land together. |
+| Implementation | 🟢 complete | Layers 1 + 2 + 3 shipped on PR #429; four review rounds with the Copilot reviewer addressed. Substrate left under `active/` per brief; orchestrator moves to `completed/2026-05/` after squashing integration → release. |
 
 ---
 
@@ -51,5 +51,5 @@ Personaility is currently blocked on `private-key-storage` so these changes can 
 
 | Phase | PR | Status |
 |---|---|---|
-| Substrate prep | (this PR) | open → integration branch |
-| Implementation | TBD | not yet commissioned |
+| Substrate prep | (preceding PR) | merged → integration branch |
+| Implementation | #429 | open → integration branch (`ts-app-shell-styling-hardening`) |
