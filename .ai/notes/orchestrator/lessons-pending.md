@@ -6,13 +6,15 @@ Cross-cutting lessons surfaced during orchestrator sessions, parked here until e
 
 ## Status
 
-Sessions feeding this inbox: orchestrator sessions through 2026-05-17 (ai-assist cluster + doc-graduation + lint-gate codification + crypto-batch-2 + ts-prompt-assist clusters).
+Sessions feeding this inbox: orchestrator sessions through 2026-05-30 (ai-assist cluster + doc-graduation + lint-gate codification + crypto-batch-2 + ts-prompt-assist clusters + the 2026-05 alpha cycle of single-stream features ending in -33).
 
 Active clusters at most recent sweep point:
 - ✅ ai-assist cluster — shipped to release in #336
 - ✅ crypto-batch-2 cluster — shipped to release; lessons captured (L14–L17)
 - 🟢 ts-prompt-assist cluster — Phase B + B-5 docs merged into integration; surface-tidy round in flight; cluster close pending consumer-port pressure-test (lessons L18–L21 below)
 - 🟡 `ai-assist-thinking-events` — sequencing after thinking-config phase B landed (now satisfied); ready to commission
+
+Last sweep: 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified. See sweep history at end of file.
 
 ---
 
@@ -440,56 +442,19 @@ The cost: an extra review round whose entire finding-set was about description f
 
 ---
 
-### L31. Copilot is a load-bearing review layer for cluster→release promotion PRs
-
-**Observed:** Across the `ts-prompt-assist-features` cluster, Copilot's automated reviews caught substantive structural findings that the implementing agents missed:
-- **PR #391:** half-cascade on `IResourceTreeRootDecl` — same failure mode as #386 (the bug the stream existed to fix).
-- **PR #391:** type-guard `'id' in decl` runtime soundness — pre-existing latent bug that the B-1 work touched (and was therefore in-scope to fix).
-- **PR #397** (cluster→release promotion): `MustacheTemplateCache.create` cap-validation gap on non-integer values; TSDoc/impl drift on `normalizeSubstitutionEntry`.
-
-The two #397 findings are the load-bearing observation: a promotion PR's per-constituent reviews don't catch unified-delta inconsistencies. Copilot's pass on the unified delta DOES catch them. That's the catch-pattern the orchestrator role doc names for the `release` → `main` sibling-sweep — Copilot is doing the same kind of work on the cluster → release promotion.
-
-**Rule:** Promotion-PR review attention should treat Copilot's pass as a load-bearing layer, not rubber-stamp. Allocate real review-cycle time for it before merging. Per L26's diminishing-returns trajectory observation, ~1-2 rounds is the sweet spot — beyond that the yield curves down.
-
-**Codification candidate:** Add to `.claude/agents/orchestrator.md` § "`release` → `main` promotion" (and the cluster → release equivalent) — explicit line: "Wait for Copilot's automated review pass before merging. The yield from a unified-delta pass is meaningfully different from per-PR reviews on the way in."
-
-**Reference:** PR #391 rounds 1-3 + PR #397's two findings. Sibling/companion to L25 (typed-but-no-runtime-teeth as a critique pattern Copilot has demonstrably caught).
-
----
-
-### L32. `code-reviewer` agent run on the final diff should be a pre-PR gate, not a post-Copilot followup
-
-**Observed:** `private-key-storage` (PR #427) ran build/lint/test green and pushed before any review pass, then absorbed **six rounds** of Copilot review comments — browser-barrel `node:crypto` leak; `./crypto/keystore` types/JS mismatch; unchecked JWK cast; IDB durability + version-bump + stale-handle chain; synchronous-IDB-throw capture; several doc-accuracy drifts. After all six rounds, a single internal `code-reviewer` agent pass on the final diff surfaced a coherent, well-prioritized set of additional findings (imperative-block density / chaining refactor, `key.type`-before-`_algorithmOf` ordering, `importPublicKey`-for-private-key doc-accuracy gap, resolvable api-extractor link warnings) — most of which were exactly the repo-pattern + edge-case classes the agent is built for, and several of which would have pre-empted Copilot rounds had the agent run **before** the first push.
-
-**Rule:** Implementing-agent acceptance criteria should require **"evidence of `code-reviewer` agent run + resolution on the final diff before opening the PR"** as a standard gate alongside the existing `rushx build`/`lint`/`test` gates in `CODING_STANDARDS.md`. Running the internal reviewer up-front converts multi-round external Copilot ping-pong into a single internal pass — cheaper for everyone and keeps the PR converging instead of oscillating.
-
-**Codification candidate:** Add to `.ai/instructions/CODING_STANDARDS.md` § "Pre-PR Validation Checklist" — a new bullet: "`code-reviewer` agent run on the final diff; findings resolved or dispositioned (link/summary in PR description)." Mirror it in the standard implementing-agent kickoff prompt shape (`.ai/conventions/workflow/kickoff-prompt-shape.md`) so every brief inherits it without per-stream copy-paste. The PR-description checklist line: `- [ ] code-reviewer agent run on final diff; findings resolved or dispositioned`.
-
-**Reference:** `.ai/tasks/completed/2026-05/private-key-storage/result.md` Follow-ups § "Process improvement"; PR #427's six Copilot rounds + final code-reviewer pass.
-
----
-
-### L33. Implementing agents should drive the Copilot review loop themselves — request on first complete commit, re-request each round as long as Copilot adds value, cap at 10
-
-**Observed:** Across multiple recent streams, the Copilot review loop has been driven ad-hoc: sometimes the agent waits for the orchestrator/user to request a review, sometimes Copilot runs once and stops without anyone re-requesting after a follow-up commit, sometimes the loop runs indefinitely past the point of diminishing returns. L31 captured Copilot's value as a load-bearing review layer; L32 codified the pre-PR `code-reviewer` agent gate to front-load findings. Both leave the post-push Copilot loop unowned. The implementing agent has the closest read on whether each round is still surfacing substantive findings vs. nitpicking, so the loop should be theirs to drive.
-
-**Rule:** Implementing-agent acceptance criteria should require:
-
-1. **Request Copilot review on the first complete commit** (when the agent considers the PR ready — i.e. all gates green, all in-scope work done, after the pre-PR `code-reviewer` pass per L32).
-2. **Re-request Copilot review after each round** of resolved comments, for as long as the agent believes Copilot is adding substantive value (surfacing real findings, not nitpicks or repetition).
-3. **Cap at 10 rounds total.** Most streams will converge well before this; the cap exists to prevent runaway loops on PRs where Copilot is finding ever-smaller issues.
-4. **Stop conditions: diminishing returns OR 10-round cap.** When either fires, the agent stops requesting reviews and surfaces the stop to the user (orchestrator or Erik) with a one-line note: "stopping the Copilot loop after N rounds because [diminishing returns / 10-round cap]; latest round's findings resolved / dispositioned."
-
-The "agent judges diminishing returns" step is the load-bearing one. Agents have full diff + commit history context and are well-positioned to call this. The cap is a safety net, not the expected stop point.
-
-**Codification candidate:** Add to `.ai/instructions/CODING_STANDARDS.md` § "Pre-PR Validation Checklist" (or a sibling "Review-loop discipline" section) — a numbered procedure for the Copilot loop with the cap and stop conditions named explicitly. Mirror in `.ai/conventions/workflow/kickoff-prompt-shape.md` so every brief inherits it. PR-description checklist line: `- [ ] Copilot review loop driven by implementer; stopped at <N> rounds on [diminishing returns / cap]`.
-
-**Reference:** Erik's guidance 2026-05-30 after the L31 + L32 framing settled. The triad — pre-PR `code-reviewer` (L32) + agent-driven Copilot loop with cap and stop conditions (L33) + orchestrator-side gating of CI green and Copilot review presence on promotion PRs (L31) — covers the review-stack end-to-end.
-
----
-
 ## Sweep history
 
-*(no sweeps yet — this file is being initialized at 2026-05-11)*
+### 2026-05-30 — Review-loop discipline triad (L31, L32, L33) codified
+
+**PR:** `chore/codify-review-loop-discipline` (cluster-close batch).
+
+**Graduated:**
+- **L31. Copilot is a load-bearing review layer for cluster→release promotion PRs** → already codified in `.claude/agents/orchestrator.md` § "Reviewing an agent PR before merge / bundling" step 3. Sweep acknowledgement only; no new content needed. (Reference at codification: PR #391 rounds 1-3 + PR #397's two findings.)
+- **L32. `code-reviewer` agent run on the final diff should be a pre-PR gate, not a post-Copilot followup** → codified in `.ai/instructions/CODING_STANDARDS.md` § "Review-loop discipline" Layer 1, with a corresponding PR-description checklist item in § "Pre-PR Validation Checklist". Mirrored in `.ai/conventions/workflow/kickoff-prompt-shape.md` § "What both shapes share" so every brief inherits it. (Reference at codification: `private-key-storage` PR #427's six Copilot rounds.)
+- **L33. Implementing agents should drive the Copilot review loop themselves — request on first complete commit, re-request each round as long as Copilot adds value, cap at 10** → codified in `.ai/instructions/CODING_STANDARDS.md` § "Review-loop discipline" Layer 2, with a corresponding PR-description checklist item. Mirrored in `.ai/conventions/workflow/kickoff-prompt-shape.md`. (Reference at codification: Erik's guidance 2026-05-30.)
+
+Together the three form the durable form of the review-loop stack: Layer 1 (internal pre-push) + Layer 2 (external loop with cap) + Layer 3 (orchestrator gating on promotion). Future implementing-agent briefs inherit Layers 1 and 2 from the kickoff-prompt-shape; future orchestrator sessions inherit Layer 3 from the agent prompt.
+
+---
 
 When this file or accumulated peer notes get swept to release: append entry here with date, sweep PR link, and which items graduated to durable form (convention / skill / agent-prompt) vs aged out.

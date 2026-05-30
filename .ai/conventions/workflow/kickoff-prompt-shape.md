@@ -89,6 +89,21 @@ The interleaved shape:
   with their trigger conditions, not just listed.
 - **Resume protocol.** How to resume from `state.md` if the session
   crosses a context boundary.
+- **Review-loop discipline inherited from `CODING_STANDARDS.md`
+  § "Review-loop discipline".** Every kickoff implicitly requires:
+  - **Layer 1** — `code-reviewer` agent on the final diff before
+    opening the PR; findings resolved or dispositioned with a
+    summary in the PR description.
+  - **Layer 2** — agent-driven Copilot loop: request on the first
+    complete commit; re-request after each round as long as
+    Copilot is adding substantive value; cap at 10 rounds; stop
+    on diminishing returns OR cap and surface the stop with a
+    one-line reason.
+  - Both are part of the standard PR-description gate
+    (`code-reviewer` summary + Copilot-loop status line) — kickoffs
+    don't need to re-state the rules, but they should remind the
+    worker that the discipline is mandatory and reference the
+    `CODING_STANDARDS.md` section.
 
 ## Anti-patterns
 

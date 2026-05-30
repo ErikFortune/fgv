@@ -588,8 +588,10 @@ Every stream's acceptance criteria list must include:
 - [ ] `rushx test` passes with 100% coverage in every modified package
 - [ ] **`rushx fixlint` was run before the final commit** *(catches the mechanical class)*
 - [ ] No `any` types; all fallible operations return `Result<T>`
+- [ ] **`code-reviewer` agent run on the final diff; findings resolved or dispositioned** *(see "Review-loop discipline" below)*
+- [ ] **Copilot review loop driven by implementer; stopped on diminishing returns or 10-round cap** *(see "Review-loop discipline" below)*
 
-The bolded items above are the gap recently codified — multiple recent streams had lint failures escape into PR-open state, blocking cluster merges.
+The bolded items above are the gap recently codified — multiple recent streams had lint failures escape into PR-open state, blocking cluster merges, and multi-round Copilot ping-pong on PRs that hadn't been internally reviewed first.
 
 ### Why this gate is load-bearing
 
@@ -600,3 +602,54 @@ The local cost of running lint is ~5-10 seconds per package. The downstream cost
 ### For orchestrators
 
 When reviewing an implementing agent's PR before merge (or before bundling into a cluster-close prep), call `mcp__github__pull_request_read` with `method: get_check_runs` and refuse to advance the workflow if any check is `conclusion: failure`. Do this **before** opening downstream prep/promotion PRs — once a failed-CI commit is in the integration branch, unwinding is painful.
+
+---
+
+## Review-loop discipline
+
+PR review is a three-layer stack:
+
+1. **Internal pre-push pass** — implementing agent runs the `code-reviewer` agent on the final diff *before* the first push.
+2. **External post-push loop** — implementing agent drives Copilot's automated review on the open PR, capped and managed.
+3. **Orchestrator gating** — orchestrator confirms CI green + Copilot pass addressed before advancing the workflow.
+
+Each layer has a different purpose; skipping any one compounds cost into the next. Layer 2 in particular bloats into 5-6 ad-hoc rounds when layer 1 hasn't run, because the internal reviewer catches the repo-pattern class of finding that Copilot would otherwise surface piecemeal.
+
+### Layer 1 — `code-reviewer` agent on the final diff (pre-PR)
+
+**Before opening the PR**, run the `code-reviewer` agent on the final diff. Resolve or disposition every finding:
+
+- **P1** findings (CI-blocking — `any` types, Result-pattern violations, manual type checks with unsafe casts): must be fixed.
+- **P2** findings (should-fix — chaining over intermediate variables, missing error context, missed cascade): fix or explicitly disposition (e.g. "intentional; would need a separate refactor").
+- **P3** findings (advisory — style, naming consistency): apply or note.
+
+Summarize the run in the PR description: which findings were found at which priority, what was resolved, what was dispositioned with reasoning. This is part of the standard PR-description gate — not a freeform addendum.
+
+**Why this matters.** A `private-key-storage` style six-round Copilot loop (PR #427) is almost always evidence that layer 1 was skipped. The internal reviewer is built for repo-pattern + edge-case classes (browser-barrel `node:crypto` leaks, types/JS mismatches, JWK cast safety, IDB durability chains, doc-accuracy drift) — exactly what Copilot catches one-at-a-time over several rounds. A single internal pass up front converts multi-round external ping-pong into one round.
+
+### Layer 2 — Copilot review loop, agent-driven with cap
+
+After the first complete commit (gates green, layer-1 findings resolved), the implementing agent **drives** the Copilot loop:
+
+1. **Request Copilot review on the first complete commit** — when the PR is ready, the agent considers it ready, and layer 1 has been run.
+2. **Re-request Copilot review after each round** of resolved comments, for as long as the agent believes Copilot is adding **substantive value** (real findings, not nitpicks or repetition).
+3. **Cap at 10 rounds total.** Most PRs converge well before this; the cap is a safety net to prevent runaway loops.
+4. **Stop conditions: diminishing returns OR cap.** When either fires, the agent stops requesting reviews and surfaces the stop to the orchestrator (or to the user, if no orchestrator is in the loop) with a one-line note: "stopping the Copilot loop after N rounds because [diminishing returns / 10-round cap]; latest round's findings resolved or dispositioned."
+
+The "agent judges diminishing returns" step is load-bearing: agents have full diff + commit-history context and are well-positioned to call when each round is still surfacing substantive findings vs. surfacing ever-smaller issues. The cap exists as a safety net, not the expected stop point.
+
+Include in the PR description: `Copilot review loop driven by implementer; stopped at <N> rounds on [diminishing returns / cap]`.
+
+### Layer 3 — Orchestrator gating (already codified in `.claude/agents/orchestrator.md`)
+
+When reviewing an implementing agent's PR before merge or bundling, the orchestrator:
+
+1. Calls `mcp__github__pull_request_read` with `method: get_check_runs` and refuses to advance if any check is `conclusion: failure`.
+2. Waits for Copilot's automated review pass before merging — the unified-delta pass catches structural findings that per-PR reviews miss (half-cascades, runtime-soundness gaps, TSDoc/impl drift). Allocate ~1–2 rounds at this layer; yield curves down beyond that.
+3. Once CI is green and Copilot's pass is addressed, advances the workflow.
+
+This layer doesn't replace layers 1 and 2 — it audits that they ran and catches the unified-delta class of finding that only emerges when constituent PRs are bundled.
+
+### Why the cap matters
+
+A 10-round cap on layer 2 is the safety net against runaway loops on PRs where Copilot finds ever-smaller issues. The expected stop is the **diminishing-returns judgment**, which fires earlier — typically after 2–4 rounds on a well-prepared PR. If a PR is running into round 5+, that's a signal worth surfacing to the orchestrator: either layer 1 wasn't run thoroughly, or the change is genuinely large enough to warrant the rounds, or Copilot is in nitpick territory and the agent should call diminishing returns.
