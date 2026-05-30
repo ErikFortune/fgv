@@ -252,9 +252,10 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
 
   /**
    * Validates the synchronous preconditions for a store: the id is filename-safe,
-   * the key is actually a private key, and its algorithm is one we support.
-   * Returns the resolved filename and algorithm so the async pipeline can run
-   * without re-deriving them.
+   * the key is a private key, it is extractable (persistence round-trips via
+   * JWK export), and its algorithm is one we support. Returns the resolved
+   * filename and algorithm so the async pipeline can run without re-deriving
+   * them.
    */
   private _validateKeyToStore(
     id: string,
@@ -263,6 +264,14 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
     return this._fileNameFor(id).onSuccess((fileName) => {
       if (key.type !== 'private') {
         return fail(`failed to store private key '${id}': expected a private key, got '${key.type}'`);
+      }
+      // Persistence round-trips through `subtle.exportKey('jwk', ...)`, which
+      // rejects with an opaque `InvalidAccessError` for non-extractable keys.
+      // Guard explicitly so the contract (and failure) is clear. The keystore
+      // generates extractable keys for this backend (supportsNonExtractable is
+      // false), so this only bites direct callers.
+      if (!key.extractable) {
+        return fail(`failed to store private key '${id}': key must be extractable`);
       }
       return this._algorithmOf(key)
         .withErrorFormat((msg) => `failed to store private key '${id}': ${msg}`)
