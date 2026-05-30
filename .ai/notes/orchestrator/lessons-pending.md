@@ -469,6 +469,25 @@ The two #397 findings are the load-bearing observation: a promotion PR's per-con
 
 ---
 
+### L33. Implementing agents should drive the Copilot review loop themselves — request on first complete commit, re-request each round as long as Copilot adds value, cap at 10
+
+**Observed:** Across multiple recent streams, the Copilot review loop has been driven ad-hoc: sometimes the agent waits for the orchestrator/user to request a review, sometimes Copilot runs once and stops without anyone re-requesting after a follow-up commit, sometimes the loop runs indefinitely past the point of diminishing returns. L31 captured Copilot's value as a load-bearing review layer; L32 codified the pre-PR `code-reviewer` agent gate to front-load findings. Both leave the post-push Copilot loop unowned. The implementing agent has the closest read on whether each round is still surfacing substantive findings vs. nitpicking, so the loop should be theirs to drive.
+
+**Rule:** Implementing-agent acceptance criteria should require:
+
+1. **Request Copilot review on the first complete commit** (when the agent considers the PR ready — i.e. all gates green, all in-scope work done, after the pre-PR `code-reviewer` pass per L32).
+2. **Re-request Copilot review after each round** of resolved comments, for as long as the agent believes Copilot is adding substantive value (surfacing real findings, not nitpicks or repetition).
+3. **Cap at 10 rounds total.** Most streams will converge well before this; the cap exists to prevent runaway loops on PRs where Copilot is finding ever-smaller issues.
+4. **Stop conditions: diminishing returns OR 10-round cap.** When either fires, the agent stops requesting reviews and surfaces the stop to the user (orchestrator or Erik) with a one-line note: "stopping the Copilot loop after N rounds because [diminishing returns / 10-round cap]; latest round's findings resolved / dispositioned."
+
+The "agent judges diminishing returns" step is the load-bearing one. Agents have full diff + commit history context and are well-positioned to call this. The cap is a safety net, not the expected stop point.
+
+**Codification candidate:** Add to `.ai/instructions/CODING_STANDARDS.md` § "Pre-PR Validation Checklist" (or a sibling "Review-loop discipline" section) — a numbered procedure for the Copilot loop with the cap and stop conditions named explicitly. Mirror in `.ai/conventions/workflow/kickoff-prompt-shape.md` so every brief inherits it. PR-description checklist line: `- [ ] Copilot review loop driven by implementer; stopped at <N> rounds on [diminishing returns / cap]`.
+
+**Reference:** Erik's guidance 2026-05-30 after the L31 + L32 framing settled. The triad — pre-PR `code-reviewer` (L32) + agent-driven Copilot loop with cap and stop conditions (L33) + orchestrator-side gating of CI green and Copilot review presence on promotion PRs (L31) — covers the review-stack end-to-end.
+
+---
+
 ## Sweep history
 
 *(no sweeps yet — this file is being initialized at 2026-05-11)*

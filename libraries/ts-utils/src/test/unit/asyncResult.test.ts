@@ -485,5 +485,33 @@ describe('AsyncResult module', () => {
       const result = await captureAsyncResult(() => Promise.reject(42));
       expect(result).toFailWith(/42/);
     });
+
+    test('captures synchronous throws from func before it returns a promise', async () => {
+      const result = await captureAsyncResult<number>(() => {
+        throw new Error('sync throw');
+      });
+      expect(result).toFailWith(/sync throw/);
+    });
+
+    test('returns a chainable AsyncResult that supports .onSuccess off the factory', async () => {
+      const result = await captureAsyncResult(async () => 21).onSuccess((value) => succeed(value * 2));
+      expect(result).toSucceedWith(42);
+    });
+
+    test('return value can be passed directly to thenOnSuccess without an async wrapper', async () => {
+      // Exercises the AsyncSuccessContinuation widening: the callback returns
+      // an AsyncResult (not a Promise), which the PromiseLike<Result<TN>>
+      // parameter type accepts (AsyncResult implements PromiseLike).
+      const result = await succeed(21).thenOnSuccess((value) => captureAsyncResult(async () => value * 2));
+      expect(result).toSucceedWith(42);
+    });
+
+    test('return value can be passed directly to thenOnFailure without an async wrapper', async () => {
+      // Exercises the AsyncFailureContinuation widening.
+      const result = await fail<number>('boom').thenOnFailure((msg) =>
+        captureAsyncResult(async () => msg.length)
+      );
+      expect(result).toSucceedWith(4);
+    });
   });
 });

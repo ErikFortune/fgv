@@ -1319,17 +1319,28 @@ export function captureResult<T>(func: () => T): Result<T> {
 
 /**
  * Async continuation callback to be called in the event that a
- * {@link Result} is successful, returning a `Promise` of a new {@link Result}.
+ * {@link Result} is successful, returning a `PromiseLike` of a new
+ * {@link Result}.
+ * @remarks
+ * Typed as `PromiseLike<Result<TN>>` rather than `Promise<Result<TN>>` so
+ * callers can return the result of {@link captureAsyncResult} (which is an
+ * {@link AsyncResult}, itself a `PromiseLike<Result<TN>>`) directly from a
+ * `thenOnSuccess` callback without an `async` wrapper to coerce the
+ * contextual return type back through `Awaited<>`. The continuation result
+ * is always wrapped into an {@link AsyncResult}, so chaining is unaffected.
  * @public
  */
-export type AsyncSuccessContinuation<T, TN> = (value: T) => Promise<Result<TN>>;
+export type AsyncSuccessContinuation<T, TN> = (value: T) => PromiseLike<Result<TN>>;
 
 /**
  * Async continuation callback to be called in the event that a
- * {@link Result} fails, returning a `Promise` of a new {@link Result}.
+ * {@link Result} fails, returning a `PromiseLike` of a new {@link Result}.
+ * @remarks
+ * See {@link AsyncSuccessContinuation} for the rationale behind accepting
+ * any `PromiseLike<Result<T>>` rather than only a `Promise<Result<T>>`.
  * @public
  */
-export type AsyncFailureContinuation<T> = (message: string) => Promise<Result<T>>;
+export type AsyncFailureContinuation<T> = (message: string) => PromiseLike<Result<T>>;
 
 /**
  * Wraps a `Promise` of a {@link Result} to enable fluent chaining of both
@@ -1355,15 +1366,18 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
   private readonly _promise: Promise<Result<T>>;
 
   /**
-   * Constructs an {@link AsyncResult} wrapping the supplied promise.
+   * Constructs an {@link AsyncResult} wrapping the supplied promise (or any
+   * `PromiseLike` that resolves to a {@link Result}, such as another
+   * {@link AsyncResult}).
    * @remarks
    * If the supplied promise rejects, the rejection is caught and converted
    * to a {@link Failure}, ensuring that awaiting an {@link AsyncResult} always
    * yields a {@link Result}.
-   * @param promise - A `Promise` that resolves to a {@link Result}.
+   * @param promise - A `Promise` (or `PromiseLike`) that resolves to a
+   * {@link Result}.
    */
-  public constructor(promise: Promise<Result<T>>) {
-    this._promise = promise.catch((err: unknown) => fail<T>(_errorMessage(err)));
+  public constructor(promise: PromiseLike<Result<T>>) {
+    this._promise = Promise.resolve(promise).catch((err: unknown) => fail<T>(_errorMessage(err)));
   }
 
   /**
@@ -1512,15 +1526,28 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
 /**
  * Wraps an async function which might throw to convert exception results
  * to {@link Failure}.
+ * @remarks
+ * Returns an {@link AsyncResult} so callers can fluently chain
+ * (`.onSuccess` / `.thenOnSuccess` / `.withErrorFormat`) directly off the
+ * captured result. Because {@link AsyncResult} implements
+ * `PromiseLike<Result<T>>`, existing `await captureAsyncResult(...)` call
+ * sites continue to work unchanged and yield the same {@link Result}.
+ *
+ * Synchronous throws from `func` (before it returns its `Promise`), promise
+ * rejections, and successful resolutions are all funneled through the
+ * returned {@link AsyncResult}, which resolves to a {@link Failure} for the
+ * throw/reject cases and a {@link Success} wrapping the resolved value
+ * otherwise.
  * @param func - The async function to be captured.
- * @returns Returns a `Promise` of {@link Success} with a value of type `<T>` on
- * success, or {@link Failure} with the thrown error message if `func` throws or rejects.
+ * @returns An {@link AsyncResult} resolving to {@link Success} with a value
+ * of type `<T>` on success, or {@link Failure} with the thrown error message
+ * if `func` throws or rejects.
  * @public
  */
-export async function captureAsyncResult<T>(func: () => Promise<T>): Promise<Result<T>> {
+export function captureAsyncResult<T>(func: () => Promise<T>): AsyncResult<T> {
   try {
-    return succeed(await func());
+    return new AsyncResult(func().then((value) => succeed(value)));
   } catch (err: unknown) {
-    return fail(_errorMessage(err));
+    return AsyncResult.from(fail<T>(_errorMessage(err)));
   }
 }

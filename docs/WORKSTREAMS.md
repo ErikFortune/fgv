@@ -204,10 +204,22 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ## Completed workstreams
 
+### `capture-async-result-upgrade` ✅
+
+**Status:** ✅ implementation merged to integration branch (PR #433); cluster-close PR #434 open
+**Integration branch:** `capture-async-result-upgrade` (off `release`) → squash to `release` at close
+**Workflow shape:** single implementation PR onto integration branch
+**Substrate:** `.ai/tasks/completed/2026-05/capture-async-result-upgrade/{brief.md, state.md, README.md}`
+**Package surface:** `@fgv/ts-utils` (`base/result.ts` — `captureAsyncResult`, `AsyncSuccessContinuation`, `AsyncFailureContinuation`, `AsyncResult` constructor + tests + api-extractor report); opportunistic call-site cleanups in `@fgv/ts-extras` and `@fgv/ts-prompt-assist`.
+
+**Mission.** Made `AsyncResult<T>` the canonical chainable shape across the async-Result API via three coordinated additive surface changes: (1) `captureAsyncResult<T>` returns `AsyncResult<T>` instead of `Promise<Result<T>>`; (2) `AsyncSuccessContinuation` / `AsyncFailureContinuation` widened to accept `PromiseLike<Result<...>>` so the chaining slots accept what the factory produces (brief amendment surfaced mid-stream); (3) `AsyncResult` constructor parameter widened to `PromiseLike<Result<T>>` so the chaining methods can pass the widened callback return through without re-wrapping (natural cascade from delta 2). Strictly additive at every call site — all 86 monorepo call sites compile unchanged because `AsyncResult` is `PromiseLike<Result<T>>`, every existing `(value) => Promise<Result<TN>>` callback satisfies `(value) => PromiseLike<Result<TN>>`, and every existing `new AsyncResult(somePromise)` still satisfies `PromiseLike`. Three opportunistic call-site cleanups under the 15-site budget; full-repo `rush build` + `rush test` sweep green (modulo one unrelated pre-existing `mutableFsTree` root-uid test failure routed to TECH_DEBT P4).
+
+**Origin.** Surfaced in `.ai/tasks/completed/2026-05/private-key-storage/result.md` Follow-ups (chain seam in `_encryptAndWrite`); commissioned ahead of the -33 publish so the cleanup lands in the same alpha as `ts-app-shell-styling-hardening`. Mid-stream brief amendment for delta 2 demonstrated the cascade-completeness pattern (L29) in action.
+
 ### `ts-app-shell-styling-hardening` ✅
 
-**Status:** ✅ implementation merged to integration branch (PR #429); cluster-close PR open
-**Integration branch:** `ts-app-shell-styling-hardening` (off `release`) → squash to `release` at close
+**Status:** ✅ shipped to `release` via PR #432 (squash of integration branch).
+**Integration branch:** `ts-app-shell-styling-hardening` (off `release`) → squashed to `release` at close
 **Workflow shape:** single implementation PR onto integration branch
 **Substrate:** `.ai/tasks/completed/2026-05/ts-app-shell-styling-hardening/{brief.md, state.md, README.md}`
 **Package surface:** `@fgv/ts-app-shell` `messages` packlet (icon SVGs + `MessagesProvider` + `IMessageAction` discriminated union + `ToastItem`) + README setup section + `.ai/instructions/LIBRARY_CAPABILITIES.md`
