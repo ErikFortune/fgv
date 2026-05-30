@@ -497,5 +497,20 @@ describe('AsyncResult module', () => {
       const result = await captureAsyncResult(async () => 21).onSuccess((value) => succeed(value * 2));
       expect(result).toSucceedWith(42);
     });
+
+    test('return value can be passed directly to thenOnSuccess without an async wrapper', async () => {
+      // Exercises the AsyncSuccessContinuation widening: the callback returns
+      // an AsyncResult (not a Promise), which the wider union accepts.
+      const result = await succeed(21).thenOnSuccess((value) => captureAsyncResult(async () => value * 2));
+      expect(result).toSucceedWith(42);
+    });
+
+    test('return value can be passed directly to thenOnFailure without an async wrapper', async () => {
+      // Exercises the AsyncFailureContinuation widening.
+      const result = await fail<number>('boom').thenOnFailure((msg) =>
+        captureAsyncResult(async () => msg.length)
+      );
+      expect(result).toSucceedWith(4);
+    });
   });
 });
