@@ -350,6 +350,33 @@ describe('EncryptedFilePrivateKeyStorage', () => {
 
       expect(await storage.load('badkey')).toFailWith(/failed to import private key/i);
     });
+
+    test('loads a stored key whose JWK omits key_ops (falls back to algorithm usages)', async () => {
+      const key = makeKey();
+      const tree = makeTree();
+      const storage = makeStorage(key, tree);
+      // Export a real Ed25519 private key, then strip `key_ops` so the import
+      // path exercises the fallback to the algorithm's private usages rather
+      // than intersecting with the (now absent) recorded operations.
+      const pair = (await provider.generateKeyPair('ed25519', true)).orThrow();
+      const jwk = await crypto.webcrypto.subtle.exportKey('jwk', pair.privateKey);
+      delete jwk.key_ops;
+      const envelope = (
+        await createEncryptedFile({
+          content: { algorithm: 'ed25519', jwk: JSON.stringify(jwk) },
+          secretName: 'nokeyops',
+          key,
+          cryptoProvider: provider
+        })
+      ).orThrow();
+      (tree as FileTree.IMutableFileTreeDirectoryItem)
+        .createChildFile('nokeyops.json', JSON.stringify(envelope))
+        .orThrow();
+
+      expect(await storage.load('nokeyops')).toSucceedAndSatisfy((loaded) => {
+        expect(loaded.type).toBe('private');
+      });
+    });
   });
 
   describe('delete', () => {
