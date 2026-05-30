@@ -23,7 +23,12 @@
 import React from 'react';
 import { act, cleanup, render, renderHook } from '@testing-library/react';
 
-import { type IMessagesContextValue, MessagesProvider, useMessages } from '../../../packlets/messages';
+import {
+  type IMessagesContextValue,
+  MessagesProvider,
+  TAILWIND_PROBE_CLASS,
+  useMessages
+} from '../../../packlets/messages';
 
 /**
  * Replaces `requestAnimationFrame` with a synchronous flushable queue. Tests can call the
@@ -67,13 +72,13 @@ function installSyncRaf(): { flush: () => void; restore: () => void } {
 
 /**
  * Stubs `getBoundingClientRect` on `HTMLElement.prototype` to return the supplied height
- * for elements that carry the `h-3.5` class — simulating a correctly-configured Tailwind
- * build (jsdom does not run layout, so a stylesheet alone is not observable).
+ * for elements that carry the sentinel probe class — simulating a correctly-configured
+ * Tailwind build (jsdom does not run layout, so a stylesheet alone is not observable).
  */
-function installH35Sizing(height: number): { restore: () => void } {
+function installProbeSizing(height: number): { restore: () => void } {
   const original = HTMLElement.prototype.getBoundingClientRect;
   const replacement = function (this: HTMLElement): DOMRect {
-    const sized = this.classList.contains('h-3.5');
+    const sized = this.classList.contains(TAILWIND_PROBE_CLASS);
     return {
       x: 0,
       y: 0,
@@ -163,7 +168,7 @@ describe('MessagesContext', () => {
   });
 
   describe('Tailwind content-path probe', () => {
-    test('emits one warning message with the setup-docs href when h-3.5 measures 0', () => {
+    test('emits one warning message with the setup-docs href when the probe measures 0', () => {
       const raf = installSyncRaf();
       try {
         const { result } = renderMessages();
@@ -186,9 +191,9 @@ describe('MessagesContext', () => {
       }
     });
 
-    test('emits no message when h-3.5 sizes the probe (Tailwind correctly configured)', () => {
+    test('emits no message when the sentinel class sizes the probe (Tailwind correctly configured)', () => {
       const raf = installSyncRaf();
-      const sizing = installH35Sizing(14);
+      const sizing = installProbeSizing(14);
       try {
         const { result } = renderMessages();
         act(() => {
@@ -269,8 +274,11 @@ describe('MessagesContext', () => {
       const raf = installSyncRaf();
       try {
         const { result, unmount } = renderHook(() => useMessages(), { wrapper: wrapper() });
-        const probeBeforeUnmount = document.querySelector('div.h-3\\.5');
-        expect(probeBeforeUnmount).not.toBeNull();
+        const findProbe = (): Element | undefined =>
+          Array.from(document.body.children).find(
+            (el) => el.tagName === 'DIV' && el.className === TAILWIND_PROBE_CLASS
+          );
+        expect(findProbe()).not.toBeUndefined();
 
         unmount();
 
@@ -280,7 +288,7 @@ describe('MessagesContext', () => {
           raf.flush();
         });
         expect(result.current.messages).toHaveLength(0);
-        expect(document.querySelector('div.h-3\\.5')).toBeNull();
+        expect(findProbe()).toBeUndefined();
       } finally {
         raf.restore();
       }
