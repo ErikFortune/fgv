@@ -1512,15 +1512,28 @@ export class AsyncResult<T> implements PromiseLike<Result<T>> {
 /**
  * Wraps an async function which might throw to convert exception results
  * to {@link Failure}.
+ * @remarks
+ * Returns an {@link AsyncResult} so callers can fluently chain
+ * (`.onSuccess` / `.thenOnSuccess` / `.withErrorFormat`) directly off the
+ * captured result. Because {@link AsyncResult} implements
+ * `PromiseLike<Result<T>>`, existing `await captureAsyncResult(...)` call
+ * sites continue to work unchanged and yield the same {@link Result}.
+ *
+ * Synchronous throws from `func` (before it returns its `Promise`), promise
+ * rejections, and successful resolutions are all funneled through the
+ * returned {@link AsyncResult}, which resolves to a {@link Failure} for the
+ * throw/reject cases and a {@link Success} wrapping the resolved value
+ * otherwise.
  * @param func - The async function to be captured.
- * @returns Returns a `Promise` of {@link Success} with a value of type `<T>` on
- * success, or {@link Failure} with the thrown error message if `func` throws or rejects.
+ * @returns An {@link AsyncResult} resolving to {@link Success} with a value
+ * of type `<T>` on success, or {@link Failure} with the thrown error message
+ * if `func` throws or rejects.
  * @public
  */
-export async function captureAsyncResult<T>(func: () => Promise<T>): Promise<Result<T>> {
+export function captureAsyncResult<T>(func: () => Promise<T>): AsyncResult<T> {
   try {
-    return succeed(await func());
+    return new AsyncResult(func().then((value) => succeed(value)));
   } catch (err: unknown) {
-    return fail(_errorMessage(err));
+    return AsyncResult.from(fail<T>(_errorMessage(err)));
   }
 }

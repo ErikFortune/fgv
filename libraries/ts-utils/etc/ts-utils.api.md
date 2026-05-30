@@ -344,7 +344,7 @@ class CacheInvalidatingResultMapWrapper<TK extends string, TSRC, TTARGET, TSRCMA
 }
 
 // @public
-export function captureAsyncResult<T>(func: () => Promise<T>): Promise<Result<T>>;
+export function captureAsyncResult<T>(func: () => Promise<T>): AsyncResult<T>;
 
 // @public
 export function captureResult<T>(func: () => T): Result<T>;

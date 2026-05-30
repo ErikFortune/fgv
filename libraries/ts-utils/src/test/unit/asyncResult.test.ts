@@ -485,5 +485,17 @@ describe('AsyncResult module', () => {
       const result = await captureAsyncResult(() => Promise.reject(42));
       expect(result).toFailWith(/42/);
     });
+
+    test('captures synchronous throws from func before it returns a promise', async () => {
+      const result = await captureAsyncResult<number>(() => {
+        throw new Error('sync throw');
+      });
+      expect(result).toFailWith(/sync throw/);
+    });
+
+    test('returns a chainable AsyncResult that supports .onSuccess off the factory', async () => {
+      const result = await captureAsyncResult(async () => 21).onSuccess((value) => succeed(value * 2));
+      expect(result).toSucceedWith(42);
+    });
   });
 });

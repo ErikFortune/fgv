@@ -125,7 +125,7 @@ async function runScreeners(
     // `screen` is consumer-implemented, so a thrown error or rejected promise
     // is captured here and folded into the same failure path as an explicit
     // `fail()` (the trailing `.onSuccess` flattens the captured nested Result).
-    const result = (await captureAsyncResult(() => screener.screen(ctx))).onSuccess((inner) => inner);
+    const result = await captureAsyncResult(() => screener.screen(ctx)).onSuccess((inner) => inner);
     if (result.isFailure()) {
       return `prompt '${promptId}': screener '${screener.name}' failed on slot '${ctx.slot.name}': ${result.message}`;
     }
