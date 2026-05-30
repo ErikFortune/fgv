@@ -151,17 +151,6 @@ opportunistically when the right surface area is touched.
 
   **Reference**: PR #329 review — pattern pre-existed the PR, absolved from that review.
 
-- **[P3] `captureAsyncResult` should return `AsyncResult<T>`, not `Promise<Result<T>>`.**
-  `libraries/ts-utils/src/packlets/base/result.ts`. The factory hands back a bare `Promise<Result<T>>`, but its sibling `AsyncResult<T>` is already `@public`, in the API surface, implements `PromiseLike<Result<T>>`, and is the canonical chainable async-Result type. Because the factory returns a plain Promise, callers can't fluently chain (`.onSuccess` / `.thenOnSuccess` / `.withErrorFormat`) off a `captureAsyncResult(...)` result — they must `await` and re-wrap, or seed an awkward `succeed(x).thenOnSuccess(() => captureAsyncResult(...))`. Surfaced concretely in `private-key-storage` (`encryptedFilePrivateKeyStorage._encryptAndWrite` and several other spots).
-
-  **Trigger**: next focused refactor pass on `ts-utils` `base/result.ts`, or when a stream wants to clean up multiple `captureAsyncResult` chain-seam awkwardnesses at once.
-
-  **Scope sketch**: change `captureAsyncResult<T>(func)` to return `AsyncResult<T>` by wrapping the existing internal promise in `new AsyncResult(...)`. Type-compatible with all existing `await captureAsyncResult(...)` call sites (`AsyncResult` is `PromiseLike<Result<T>>`, so `await` still yields `Result<T>`). Additive/cleanup for the chained call sites. ~66 call sites monorepo-wide — sweep + full-repo rebuild+test for the lockstep blast radius.
-
-  **Not a P2**: `@fgv/ts-utils` is the foundational, **established** (non-active-dev) surface — per `ACTIVE_DEVELOPMENT.md` this is "handle with care / ask first," deserves its own focused PR with full-repo sweep, not a rider on an unrelated feature. Functional impact is "callers have to await + re-wrap," not a regression.
-
-  **Reference**: `.ai/tasks/completed/2026-05/private-key-storage/result.md` Follow-ups section; PR #427.
-
 ## P4 — Doc / minor consistency
 
 *(None.)*

@@ -281,8 +281,7 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
     id: string,
     fileName: string
   ): Promise<Result<string>> {
-    return succeed(key)
-      .thenOnSuccess((k) => captureAsyncResult(() => crypto.webcrypto.subtle.exportKey('jwk', k)))
+    return captureAsyncResult(() => crypto.webcrypto.subtle.exportKey('jwk', key))
       .withErrorFormat((msg) => `failed to export private key '${id}' to JWK: ${msg}`)
       .onSuccess<JsonObject>((jwk) => succeed({ algorithm, jwk: JSON.stringify(jwk) }))
       .thenOnSuccess(async (envelope) =>
