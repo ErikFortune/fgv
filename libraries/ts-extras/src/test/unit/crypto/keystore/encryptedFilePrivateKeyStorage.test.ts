@@ -125,6 +125,23 @@ describe('EncryptedFilePrivateKeyStorage', () => {
       }
     );
 
+    test('round-trips a private key created with a narrower usage set than the algorithm default', async () => {
+      const storage = makeStorage();
+      // An ECDH private key created with only `deriveBits` (the algorithm default
+      // is `deriveKey` + `deriveBits`). Its exported JWK carries
+      // `key_ops: ['deriveBits']`, and re-importing with the algorithm-wide
+      // usages would be rejected by WebCrypto — load must request only the
+      // operations the stored key actually carries.
+      const pair = await crypto.webcrypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
+        'deriveBits'
+      ]);
+      expect(await storage.store('narrow', pair.privateKey)).toSucceedWith('narrow');
+      expect(await storage.load('narrow')).toSucceedAndSatisfy((loaded) => {
+        expect(loaded.type).toBe('private');
+        expect(loaded.usages).toEqual(['deriveBits']);
+      });
+    });
+
     test('overwrites an existing entry on a second store', async () => {
       const storage = makeStorage();
       const first = (await provider.generateKeyPair('ecdsa-p256', true)).orThrow();

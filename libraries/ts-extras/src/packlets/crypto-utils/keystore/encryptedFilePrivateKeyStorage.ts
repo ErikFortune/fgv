@@ -30,7 +30,7 @@ import {
 } from '@fgv/ts-utils';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { createEncryptedFile, tryDecryptFile } from '../encryptedFile';
-import { keyPairAlgorithmParams } from '../keyPairAlgorithmParams';
+import { IKeyPairAlgorithmParams, keyPairAlgorithmParams } from '../keyPairAlgorithmParams';
 import { ICryptoProvider, KeyPairAlgorithm } from '../model';
 import * as Constants from '../constants';
 import { jsonWebKeyShape, keyPairAlgorithm } from './converters';
@@ -252,10 +252,9 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
 
   /**
    * Validates the synchronous preconditions for a store: the id is filename-safe,
-   * the key is a private key, it is extractable (persistence round-trips via
-   * JWK export), and its algorithm is one we support. Returns the resolved
-   * filename and algorithm so the async pipeline can run without re-deriving
-   * them.
+   * the key is actually a private key, and its algorithm is one we support.
+   * Returns the resolved filename and algorithm so the async pipeline can run
+   * without re-deriving them.
    */
   private _validateKeyToStore(
     id: string,
@@ -264,14 +263,6 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
     return this._fileNameFor(id).onSuccess((fileName) => {
       if (key.type !== 'private') {
         return fail(`failed to store private key '${id}': expected a private key, got '${key.type}'`);
-      }
-      // Persistence round-trips through `subtle.exportKey('jwk', ...)`, which
-      // rejects with an opaque `InvalidAccessError` for non-extractable keys.
-      // Guard explicitly so the contract (and failure) is clear. The keystore
-      // generates extractable keys for this backend (supportsNonExtractable is
-      // false), so this only bites direct callers.
-      if (!key.extractable) {
-        return fail(`failed to store private key '${id}': key must be extractable`);
       }
       return this._algorithmOf(key)
         .withErrorFormat((msg) => `failed to store private key '${id}': ${msg}`)
@@ -381,23 +372,46 @@ export class EncryptedFilePrivateKeyStorage implements IPrivateKeyStorage {
    * `CryptoKey` for the envelope's algorithm. The WebCrypto JWK-import algorithm
    * descriptor is shared between public and private keys for every supported
    * algorithm, so {@link CryptoUtils.IKeyPairAlgorithmParams.importPublicKey} is reused here;
-   * the public/private distinction is carried by the JWK's own `key_ops` and the
-   * filtered `usages`.
+   * the public/private distinction is carried by the requested `usages`.
    */
   private async _importPrivateKey(
     envelope: IStoredPrivateKeyEnvelope,
     id: string
   ): Promise<Result<CryptoKey>> {
     const params = keyPairAlgorithmParams[envelope.algorithm];
-    const usages = params.keyPairUsages.filter((usage) => !PUBLIC_ONLY_USAGES.includes(usage));
     return captureResult(() => JSON.parse(envelope.jwk) as unknown)
       .onSuccess((parsed) => jsonWebKeyShape.validate(parsed))
       .withErrorFormat((msg) => `malformed JWK: ${msg}`)
       .thenOnSuccess((jwk) =>
         captureAsyncResult(() =>
-          crypto.webcrypto.subtle.importKey('jwk', jwk, params.importPublicKey, true, [...usages])
+          crypto.webcrypto.subtle.importKey(
+            'jwk',
+            jwk,
+            params.importPublicKey,
+            true,
+            this._importUsagesFor(jwk, params)
+          )
         )
       )
       .withErrorFormat((msg) => `failed to import private key '${id}': ${msg}`);
+  }
+
+  /**
+   * Computes the key usages to request when re-importing a stored private key.
+   * WebCrypto rejects `importKey` if the requested usages include operations
+   * absent from the JWK's `key_ops`, so a key originally created with a narrower
+   * usage set than the algorithm default (e.g. an ECDH key with only
+   * `deriveBits`) would fail to load against the algorithm-wide defaults.
+   * Intersect the algorithm's private usages with the JWK's recorded `key_ops`
+   * so we request exactly the operations the stored key actually supports;
+   * fall back to the algorithm's private usages when `key_ops` is absent.
+   */
+  private _importUsagesFor(jwk: JsonWebKey, params: IKeyPairAlgorithmParams): KeyUsage[] {
+    const privateUsages = params.keyPairUsages.filter((usage) => !PUBLIC_ONLY_USAGES.includes(usage));
+    const keyOps = jwk.key_ops;
+    if (keyOps === undefined) {
+      return [...privateUsages];
+    }
+    return privateUsages.filter((usage) => keyOps.includes(usage));
   }
 }
