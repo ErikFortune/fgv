@@ -1,8 +1,8 @@
 # Stream state: `ai-assist-client-tools`
 
-**Status:** 🔵 Phase A in flight (design exploration; no code)
+**Status:** 🟡 Phase A complete — awaiting Erik review
 **Workflow shape:** design-triage-implement
-**Last updated:** 2026-05-30 (orchestrator — substrate prep + Phase A commission)
+**Last updated:** 2026-06-02 (senior-developer agent — Phase A design complete)
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Phase | Status | Notes |
 |---|---|---|
-| A — design exploration | 🔵 in flight | Senior-developer agent commissioned; output is `design.md`. |
+| A — design exploration | ✅ complete | `design.md` written; awaiting Erik review before Phase B commission. |
 | B — triage | ⏸ not yet commissioned | Erik reviews Phase A design first. |
 | C — implementation (layer 1 — harness tools) | ⏸ not yet commissioned | Sprint-window decision after Phase B. |
 | Layer 2 — MCP | ⏸ deferred | Sprint+1 or later; Phase A names the seam but doesn't sub-phase it. |
@@ -25,8 +25,13 @@
 | Two sequenced layers: harness tools first, MCP later | Harness tools are the near-term consumer requirement (personaility memory tool); MCP is longer-term and structurally additive on top of harness tools if Phase A designs the seam correctly. Sequencing keeps the first layer shippable. |
 | Phase A senior-developer agent run, foreground design output | The work is architectural-design-shaped: cross-provider API survey + native-surface sketch + sub-phase sizing. senior-developer is the canonical fit. Output is `design.md`, not a code PR. |
 | Phase A is design only — no code changes | Keeps the artifact reviewable in one read; Erik decides on Phase B/C before any code lands. |
-| MCP as a separate `@fgv/ts-extras-mcp` Result-integration boundary package (working assumption — Phase A confirms or refutes) | Per the integration-boundary convention emerging from `crypto-batch-2-webauthn` / `local-ai-exploration-transformers`. MCP wraps an upstream client SDK; the boundary is the whole product. |
-| No agentic-orchestration framework | The consumer drives the conversation loop; ai-assist makes the tool-use round-trip safe and ergonomic. Out of scope for this stream. |
+| MCP as a separate `@fgv/ts-extras-mcp` Result-integration boundary package (working assumption — Phase A confirms) | Per the integration-boundary convention. Phase A design confirms: the seam is `IAiClientTool`; MCP adds a new package that converts MCP tool descriptors to `IAiClientTool[]` without touching ts-extras. |
+| No agentic-orchestration framework | The consumer drives the conversation loop; ai-assist makes the tool-use round-trip safe and ergonomic. Recommendation: `executeClientToolTurn` helper returns `{events, nextTurn}` — consumer drives the outer loop. |
+| Per-call client tools (not registered) | Matches existing server-tool pattern; lifecycle simplicity; MCP brings its own registration concept via discovery. |
+| JSON Schema as parameter source-of-truth | Consumers author it directly; it's the wire format providers expect; no Converter→Schema generation step needed. |
+| New `IAiStreamEventWithClientTools` union (not extending `IAiStreamEvent`) | Additive; existing callers with exhaustive switches don't break; consumers opt in when using client tools. |
+| Seam is `IAiClientTool` (config + callback pair) | Layer 1 consumers construct directly; layer 2 (MCP) converts MCP tool descriptors to `IAiClientTool[]`. Same streaming/round-trip plumbing serves both. |
+| Anthropic thinking + tools B4 flag | Material unknown: Anthropic may require thinking blocks in round-trip history. Must be verified empirically in Phase C before finalizing continuation builder. See design.md §2.7 and §4.4. |
 
 ---
 
@@ -44,6 +49,7 @@ Phase A commissioned as research+design now so the sizing exists before Erik com
 |---|---|---|
 | 2026-05-30 | FUTURE.md entry added; substrate prepped | brief.md + state.md + design-doc target named. |
 | 2026-05-30 | Phase A senior-developer agent commissioned | Design doc target: `.ai/tasks/active/ai-assist-client-tools/design.md`. |
+| 2026-06-02 | Phase A design complete | design.md written. Covers §§1–5: cross-provider survey, fgv-native surface sketch, harness/MCP split, Phase C sizing, recommendation. Key open item: Anthropic thinking + tools round-trip empirical verification (B4). |
 
 ---
 
@@ -51,7 +57,6 @@ Phase A commissioned as research+design now so the sizing exists before Erik com
 
 | Phase | PR | Status |
 |---|---|---|
-| Substrate prep | (this PR) | open → release |
-| Phase A design | n/a — design.md is the artifact | agent in flight |
+| Substrate prep + Phase A design | draft PR → release | design.md complete; PR opened for Erik review |
 | Phase B triage | TBD | not yet commissioned |
 | Phase C implementation | TBD | not yet commissioned |
