@@ -2,7 +2,7 @@
 
 **Status:** 🟡 Phase A complete — awaiting Erik review
 **Workflow shape:** design-triage-implement
-**Last updated:** 2026-06-02 (senior-developer agent — Phase A design complete)
+**Last updated:** 2026-06-02 (senior-developer agent — Phase A design amended per Erik review)
 
 ---
 
@@ -29,7 +29,7 @@
 | No agentic-orchestration framework | The consumer drives the conversation loop; ai-assist makes the tool-use round-trip safe and ergonomic. Recommendation: `executeClientToolTurn` helper returns `{events, nextTurn}` — consumer drives the outer loop. |
 | Per-call client tools (not registered) | Matches existing server-tool pattern; lifecycle simplicity; MCP brings its own registration concept via discovery. |
 | JSON Schema as parameter source-of-truth | Consumers author it directly; it's the wire format providers expect; no Converter→Schema generation step needed. |
-| New `IAiStreamEventWithClientTools` union (not extending `IAiStreamEvent`) | Additive; existing callers with exhaustive switches don't break; consumers opt in when using client tools. |
+| Extend `IAiStreamEvent` directly with tool-use variants (override 2026-06-02) | Erik: we own all consumers and update exhaustive switches in lockstep; the cleaner shape beats backwards-compat ergonomics. `IAiStreamEventWithClientTools` dropped. |
 | Seam is `IAiClientTool` (config + callback pair) | Layer 1 consumers construct directly; layer 2 (MCP) converts MCP tool descriptors to `IAiClientTool[]`. Same streaming/round-trip plumbing serves both. |
 | Anthropic thinking + tools B4 flag | Material unknown: Anthropic may require thinking blocks in round-trip history. Must be verified empirically in Phase C before finalizing continuation builder. See design.md §2.7 and §4.4. |
 
@@ -50,6 +50,7 @@ Phase A commissioned as research+design now so the sizing exists before Erik com
 | 2026-05-30 | FUTURE.md entry added; substrate prepped | brief.md + state.md + design-doc target named. |
 | 2026-05-30 | Phase A senior-developer agent commissioned | Design doc target: `.ai/tasks/active/ai-assist-client-tools/design.md`. |
 | 2026-06-02 | Phase A design complete | design.md written. Covers §§1–5: cross-provider survey, fgv-native surface sketch, harness/MCP split, Phase C sizing, recommendation. Key open item: Anthropic thinking + tools round-trip empirical verification (B4). |
+| 2026-06-02 | Phase A design amended per Erik review | Dropped `IAiStreamEventWithClientTools` union (extending `IAiStreamEvent` directly); added §2.X consumer-driven vs ai-assist-driven loop examples with layering confirmation. JSON-Schema-Converter alignment spike commissioned separately. |
 
 ---
 

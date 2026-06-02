@@ -4,7 +4,7 @@
 **Phase:** A — design exploration  
 **Date:** 2026-06-02  
 **Author:** senior-developer agent  
-**Status:** Complete — awaiting Erik review
+**Status:** Complete — Phase A design amended per Erik review (2026-06-02)
 
 ---
 
@@ -388,12 +388,16 @@ Recommendation: **consumer-authored JSON Schema only** (not generated from Conve
 
 ### 2.2 Streaming event types
 
+**Override (2026-06-02):** Erik: _"We own all consumers and can change them, so let's just extend `IAiStreamEvent`."_ The three new client-tool variants are added directly to `IAiStreamEvent`; exhaustive switches in existing consumers are updated in lockstep. The `IAiStreamEventWithClientTools` union is dropped.
+
 ```typescript
 /**
  * The model has decided to call a client-defined tool and is beginning
  * to emit arguments. Emitted once per tool call when we have the name.
+ *
+ * Added directly to IAiStreamEvent (no separate extended union).
  */
-export interface IAiStreamClientToolCallStart {
+export interface IAiStreamToolUseStart {
   readonly type: 'client-tool-call-start';
   /** Tool name as declared in IAiClientToolConfig.name */
   readonly toolName: string;
@@ -409,8 +413,10 @@ export interface IAiStreamClientToolCallStart {
  * At this point the consumer knows the complete argument set.
  * The round-trip orchestrator waits for all 'client-tool-call-done'
  * events before executing callbacks.
+ *
+ * Added directly to IAiStreamEvent (no separate extended union).
  */
-export interface IAiStreamClientToolCallDone {
+export interface IAiStreamToolUseDelta {
   readonly type: 'client-tool-call-done';
   readonly toolName: string;
   readonly callId?: string;
@@ -423,8 +429,10 @@ export interface IAiStreamClientToolCallDone {
  * received a result. Surfaced for observability (e.g. a UI can show
  * "tool executed" indicators). Not emitted by the provider — emitted
  * by the round-trip loop itself.
+ *
+ * Added directly to IAiStreamEvent (no separate extended union).
  */
-export interface IAiStreamClientToolResult {
+export interface IAiStreamToolUseComplete {
   readonly type: 'client-tool-result';
   readonly toolName: string;
   readonly callId?: string;
@@ -435,15 +443,17 @@ export interface IAiStreamClientToolResult {
 }
 
 /**
- * Extended discriminated union including client-tool events.
- * Extends IAiStreamEvent with client-tool call/result events.
+ * IAiStreamEvent is extended directly with the three client-tool variants.
+ * We own all consumers and update exhaustive switches in lockstep.
+ *
+ * (Sketch — actual union definition lives in model.ts and is extended here.)
  */
-export type IAiStreamEventWithClientTools =
+export type IAiStreamEvent =
   | IAiStreamTextDelta
   | IAiStreamToolEvent          // server tool events (existing)
-  | IAiStreamClientToolCallStart
-  | IAiStreamClientToolCallDone
-  | IAiStreamClientToolResult
+  | IAiStreamToolUseStart       // new: client tool call starting
+  | IAiStreamToolUseDelta       // new: client tool call complete (arguments ready)
+  | IAiStreamToolUseComplete    // new: client tool result (callback executed)
   | IAiStreamDone
   | IAiStreamError;
 ```
@@ -499,7 +509,7 @@ export interface IAiClientToolRoundTrip {
    * content before/after tool calls, and client-tool-* events.
    * Consumers iterate this to drive UI.
    */
-  readonly events: AsyncIterable<IAiStreamEventWithClientTools>;
+  readonly events: AsyncIterable<IAiStreamEvent>;
 
   /**
    * Promise that resolves when the turn's event stream is exhausted.
@@ -545,6 +555,141 @@ export interface IAiClientToolCallSummary {
 **Alternative rejected: hide the loop entirely in a `runWithClientTools()` function.** This would require the consumer to pass a complete conversation controller to ai-assist, inverting the ownership. Per the brief's explicit constraint: "the consumer drives the conversation loop; ai-assist makes the tool-use round-trip safe and ergonomic."
 
 **Alternative rejected: return only raw events and force consumers to build their own continuation.** This is ergonomic for advanced consumers but inconvenient for the common case (personaility's memory tool). The `nextTurn` promise bridges the gap — consumers who want manual control can ignore it; consumers who want the ergonomic path use it.
+
+---
+
+### 2.X Consumer-driven vs ai-assist-driven loop: layered approach
+
+This section provides concrete pseudo-code examples for both loop ownership modes and confirms they layer — a consumer-driven Phase C implementation is the foundation that a future ai-assist-driven helper wraps without breaking changes.
+
+#### Example A — Consumer-driven loop (layer 1, ships in Phase C)
+
+```typescript
+// Define the memory tool
+const memoryTool: IAiClientTool = {
+  config: {
+    type: 'client_tool',
+    name: 'recall_memory',
+    description: 'Recall stored context for the current user',
+    parametersSchema: {
+      type: 'object',
+      properties: { query: { type: 'string', description: 'What to recall' } },
+      required: ['query']
+    }
+  },
+  // Consumer owns the callback — ai-assist invokes it, consumer implements it
+  callback: async (_name, args) =>
+    captureAsyncResult(() => memoryStore.recall((args as { query: string }).query))
+};
+
+// Consumer drives the outer loop
+let conversationHistory: ReadonlyArray<IChatMessage> = [];
+let roundTrips = 0;
+const MAX_ROUND_TRIPS = 5;
+
+while (roundTrips < MAX_ROUND_TRIPS) {
+  // Consumer calls the per-turn helper — one streaming request per iteration
+  const turn = await executeClientToolTurn({
+    descriptor,
+    apiKey,
+    prompt: buildPrompt(userMessage),
+    messagesBefore: conversationHistory,  // accumulated from prior turns
+    clientTools: [memoryTool]
+  });
+
+  // Consumer iterates the event stream for this turn — drives UI, logging, etc.
+  // Consumer is responsible for: collecting events, error-handling mid-stream,
+  // deciding whether to abort early
+  for await (const event of turn.events) {
+    if (event.type === 'text-delta') updateUI(event.delta);
+    if (event.type === 'client-tool-call-start') showToolSpinner(event.toolName);
+    if (event.type === 'client-tool-result') logToolExecution(event.toolName, event.result, event.isError);
+    if (event.type === 'done') finalizeUI(event.fullText);
+    if (event.type === 'error') handleError(event.message);  // consumer decides: abort? retry?
+  }
+
+  // Consumer awaits the turn's outcome — was a continuation needed?
+  // Consumer is responsible for: inspecting the result, deciding whether to loop,
+  // feeding messages back, enforcing their own stopping policy
+  const turnResult = await turn.nextTurn;
+  if (turnResult.isFailure()) {
+    handlePipelineError(turnResult.message);
+    break;
+  }
+  if (!turnResult.value.continuation) {
+    break;  // Model produced a final response — consumer exits the loop
+  }
+
+  // Consumer prepends the continuation messages for the next turn
+  // Consumer is responsible for: accumulation, history management
+  conversationHistory = [...conversationHistory, ...turnResult.value.continuation.messages];
+  roundTrips++;
+}
+// Note: the consumer drives every aspect of loop control, accumulation, and policy.
+// This is intentionally verbose — the consumer has maximum visibility and control.
+```
+
+#### Example B — ai-assist-driven loop (additive, ships in a follow-on stream)
+
+```typescript
+// Same memory tool definition — identical IAiClientTool, no changes
+const memoryTool: IAiClientTool = {
+  config: {
+    type: 'client_tool',
+    name: 'recall_memory',
+    description: 'Recall stored context for the current user',
+    parametersSchema: {
+      type: 'object',
+      properties: { query: { type: 'string', description: 'What to recall' } },
+      required: ['query']
+    }
+  },
+  callback: async (_name, args) =>
+    captureAsyncResult(() => memoryStore.recall((args as { query: string }).query))
+};
+
+// Higher-level helper drives the loop internally — consumer gets the final turn only
+// Helper signature (design question for the follow-on stream — names and knobs are illustrative):
+//
+//   function runToolUseConversation(params: {
+//     descriptor: IAiProviderDescriptor;
+//     apiKey: string;
+//     prompt: string;
+//     clientTools: ReadonlyArray<IAiClientTool>;
+//     maxRoundTrips?: number;         // cap on iterations (default 10)
+//     onTurnEvent?: (event: IAiStreamEvent) => void;  // optional: observe mid-stream events
+//     // design questions for Phase B: tool-call timeout, per-tool retry policy, etc.
+//   }): Promise<Result<IToolUseConversationResult>>;
+
+const result = await runToolUseConversation({
+  descriptor,
+  apiKey,
+  prompt: buildPrompt(userMessage),
+  clientTools: [memoryTool],
+  maxRoundTrips: 5,
+  onTurnEvent: (event) => {
+    if (event.type === 'text-delta') updateUI(event.delta);
+    if (event.type === 'client-tool-result') logToolExecution(event.toolName, event.result, event.isError);
+  }
+});
+
+if (result.isSuccess()) {
+  finalizeUI(result.value.finalText);
+} else {
+  handleError(result.message);  // hit max iterations, tool failure, provider error
+}
+// The helper internally runs Example A's loop. Consumer sees only the final outcome.
+```
+
+#### Layering confirmation
+
+**Phase C (layer 1) ships Example A only.** The `executeClientToolTurn` primitive — the per-turn helper returning `{ events, nextTurn }` — is the deliverable. Consumers drive the outer loop themselves, with full visibility and control over each turn.
+
+**A follow-on stream adds Example B.** The higher-level `runToolUseConversation` helper (or equivalent name, to be decided in that stream's Phase B) wraps `executeClientToolTurn` internally. It drives Example A's loop with a standard stopping policy and an optional event observer. This is a **new export** — no changes to `executeClientToolTurn`, `IAiClientTool`, the event types, or the continuation builder.
+
+**The primitives are the same at both layers.** Example B's helper uses `executeClientToolTurn`, `IAiClientTool`, `IAiStreamEvent`, and `IAiClientToolContinuation` internally — the same types the consumer uses directly in Example A. No parallel implementation; no abstraction bypass.
+
+**Consumers who want maximum control stay on Example A.** Consumers who want the ergonomic fire-and-forget path adopt Example B when it ships. Both coexist; neither removes the other. The layering is confirmed: **start with a consumer-driven loop, add an ai-assist-driven helper in a later stream, no breaking change.**
 
 ---
 
@@ -617,22 +762,23 @@ The round-trip helper yields `{ type: 'error', message: 'client tool round-trip 
 
 **The Anthropic constraint is load-bearing.** When `thinking` is active and the Anthropic adapter accumulates a streaming response for round-trip purposes, it must preserve any `thinking`-type content blocks in addition to `text` and `tool_use` blocks. The reconstructed assistant message for the follow-up must include the thinking block. Failing to include it produces an Anthropic API error.
 
-**Streaming surface:** Thinking events (from the future `ai-assist-thinking-events` stream) and client-tool-call events can both appear in the same stream. The union type `IAiStreamEventWithClientTools` should be designed so that when thinking events are added, the union extends naturally:
+**Streaming surface:** Thinking events (from the future `ai-assist-thinking-events` stream) and client-tool-call events can both appear in the same stream. Because we now extend `IAiStreamEvent` directly (override 2026-06-02), thinking events will similarly be added as new variants of `IAiStreamEvent` — the union grows in lockstep with each stream that adds new event types, and all consumers' exhaustive switches are updated together:
 
 ```typescript
-// Future-compatible extension point:
-export type IAiStreamEventWithClientTools =
+// IAiStreamEvent after client-tool variants land (Phase C) and thinking variants
+// are added by the future ai-assist-thinking-events stream:
+export type IAiStreamEvent =
   | IAiStreamTextDelta
-  | IAiStreamToolEvent
-  | IAiStreamClientToolCallStart
-  | IAiStreamClientToolCallDone
-  | IAiStreamClientToolResult
-  // | IAiStreamThinkingDelta    ← added by thinking-events stream
+  | IAiStreamToolEvent          // server tool events (existing)
+  | IAiStreamToolUseStart       // client tool call starting
+  | IAiStreamToolUseDelta       // client tool call complete (arguments ready)
+  | IAiStreamToolUseComplete    // client tool result (callback executed)
+  // | IAiStreamThinkingDelta   ← added by thinking-events stream; exhaustive switches updated then
   | IAiStreamDone
   | IAiStreamError;
 ```
 
-The thinking-events stream can add its event type to the union without changing the client-tool consumer.
+The thinking-events stream adds its event type directly to `IAiStreamEvent` and updates consumer exhaustive switches in that stream's PR — same lockstep discipline.
 
 ---
 
@@ -748,7 +894,7 @@ Following the Result-integration-boundary convention:
 | # | Question | Clear answer? | Options |
 |---|---|---|---|
 | B1 | **Event type naming**: `client-tool-call-start` / `client-tool-call-done` / `client-tool-result` vs alternative naming? | No strong alternative — recommend as-is | |
-| B2 | **`IAiStreamEventWithClientTools` as a new type vs extending `IAiStreamEvent`?** | **50/50** — extending breaks callers with exhaustive switches; new type is additive but requires callers to opt into the extended union. Recommendation: new extended type that callers opt into. | Extend `IAiStreamEvent` (breaking) vs new `IAiStreamEventWithClientTools` (additive, opt-in) |
+| B2 | **Extend `IAiStreamEvent` directly vs additive `IAiStreamEventWithClientTools` union?** | **Resolved (2026-06-02)** — Erik: "We own all consumers and can change them." Extend `IAiStreamEvent` directly; update exhaustive switches in lockstep. `IAiStreamEventWithClientTools` is dropped. | n/a — decided |
 | B3 | **Round-trip helper API shape**: `executeClientToolRoundTrip()` returning `{events, nextTurn}` vs alternative? | Clear recommendation in §2.3, but Erik should confirm the ergonomics match personaility's mental model | |
 | B4 | **Anthropic thinking + tools**: in Phase C, does personaility's use case require thinking + tools simultaneously? If yes, the Anthropic adapter must accumulate thinking blocks for the round-trip continuation. This is non-trivial extra work. | Erik decides based on personaility's roadmap | Yes (add thinking block accumulation) vs No (defer to later) |
 | B5 | **`maxRoundTrips` default**: 10? Less? | Advisory — 10 is reasonable for a memory tool | |
@@ -763,10 +909,11 @@ Following the Result-integration-boundary convention:
 **Sub-phases:**
 
 **C1: Types + converters + toolFormat adapters (2–3 days, 1 implementer)**
-- New types in `model.ts`: `IAiClientToolConfig`, `IAiClientTool`, `AiClientToolCallback`, `IAiStreamClientToolCallStart`, `IAiStreamClientToolCallDone`, `IAiStreamClientToolResult`, `IAiStreamEventWithClientTools`, `IAiClientToolTurnResult`, `IAiClientToolContinuation`
+- New types in `model.ts`: `IAiClientToolConfig`, `IAiClientTool`, `AiClientToolCallback`, `IAiStreamToolUseStart`, `IAiStreamToolUseDelta`, `IAiStreamToolUseComplete`, `IAiClientToolTurnResult`, `IAiClientToolContinuation`; extend `IAiStreamEvent` union with the three new variants
 - New converter in `converters.ts`: `aiClientToolConfig` (validates name, description, parametersSchema is a `JsonObject`)
 - Extensions to `toolFormats.ts`: `toAnthropicTools`, `toGeminiTools`, `toResponsesApiTools` each extended to handle `IAiClientToolConfig` entries
-- Blast radius: `model.ts` (modify), `converters.ts` (modify), `toolFormats.ts` (modify), `converters.test.ts` (modify), `toolFormats.test.ts` (modify) — 5 files
+- **Exhaustive-switch updates:** Because `IAiStreamEvent` is widened directly (override 2026-06-02), every consumer file that has an exhaustive switch over `IAiStreamEvent` must be updated to handle the three new variants. Current known switch sites: `streamingClient.ts` and any test harness files that switch on event type. The implementer must grep for `IAiStreamEvent` consumers before closing C1. Each additional consumer file adds to the blast radius.
+- Blast radius: `model.ts` (modify), `converters.ts` (modify), `toolFormats.ts` (modify), `converters.test.ts` (modify), `toolFormats.test.ts` (modify), + N consumer files with exhaustive switches — **~5 + N files** (N to be confirmed by implementer grep in Phase C)
 
 **C2: Streaming adapter extensions for client tool events (3–4 days, 1 implementer)**
 - `anthropic.ts`: handle `content_block_start` with `type === 'tool_use'` (not `server_tool_use`); accumulate `input_json_delta` deltas; emit `client-tool-call-start` on block start, `client-tool-call-done` on block stop
@@ -787,7 +934,7 @@ Following the Result-integration-boundary convention:
 - Update `LIBRARY_CAPABILITIES.md` ai-assist entry with client-tool surface
 - Blast radius: `streamingClient.ts` (modify), `samples/testbed` (new scenario file), `LIBRARY_CAPABILITIES.md` (modify) — 3 files
 
-**Total layer 1 blast radius:** ~16 files across `libraries/ts-extras` (ai-assist packlet) and `samples/testbed`. No new packages created for layer 1.
+**Total layer 1 blast radius:** ~16 files across `libraries/ts-extras` (ai-assist packlet) and `samples/testbed`, plus N additional consumer files that have exhaustive switches over `IAiStreamEvent` (implementer grep required in Phase C). No new packages created for layer 1.
 
 ---
 
@@ -878,11 +1025,11 @@ if (result.isSuccess() && result.value.continuation) {
 
 | Sub-phase | Work | Files |
 |---|---|---|
-| C1 | Types + converters + toolFormat adapters | 5 files |
+| C1 | Types + converters + toolFormat adapters + exhaustive-switch updates | ~5 + N files (N = IAiStreamEvent switch sites) |
 | C2 | Streaming adapter extensions | 6 files |
 | C3 | Round-trip continuation builder | 2 files |
 | C4 | Integration + testbed | 3 files |
-| **Total** | | **~16 files** |
+| **Total** | | **~16 + N files** (N = IAiStreamEvent switch sites) |
 
 ---
 
@@ -892,14 +1039,13 @@ if (result.isSuccess() && result.value.continuation) {
 
 1. **Per-call client tools (not registered)** — matches the existing server-tool pattern; lifecycle simplicity; MCP brings its own registration concept
 2. **JSON Schema as the parameter source-of-truth** — no Converter generation; consumers author it directly; it's the wire format the providers expect
-3. **New `IAiStreamEventWithClientTools` union (not extending `IAiStreamEvent`)** — additive; existing callers with exhaustive switches don't break; consumers opt into the richer union when they use client tools
+3. **Extend `IAiStreamEvent` directly** — Erik override (2026-06-02): we own all consumers and update exhaustive switches in lockstep; the cleaner single-union shape beats the additive opt-in ergonomics
 4. **Consumer drives the outer loop; `executeClientToolTurn` as a helper** — follows the brief's constraint; personaility gets ergonomics without ai-assist becoming an agentic framework
 5. **`IAiClientTool` as the seam** — MCP adds a new package that converts MCP tool descriptors to `IAiClientTool[]`; the core library is untouched
 
 **Alternatives Erik should consider:**
 
-- **Extend `IAiStreamEvent` directly (breaking change):** If Erik is confident no existing callers have exhaustive switches on the event type union, this is simpler. The ai-assist surface is declared active-development, so breaking changes are acceptable.
-- **`tool_call` mode where ai-assist handles the entire conversation loop:** Would simplify consumer code further but violates the "no agentic framework" constraint from the brief. Consider only if personaility's mental model strongly prefers a fully opaque loop.
+- **`tool_call` mode where ai-assist handles the entire conversation loop:** Would simplify consumer code further but violates the "no agentic framework" constraint from the brief. Consider only if personaility's mental model strongly prefers a fully opaque loop. (See §2.X Example B — this becomes available in a follow-on stream without requiring a breaking change to Phase C's primitives.)
 - **Defer xAI empirical verification to Phase C:** §1.4 asserts xAI Responses API is OpenAI-compatible for client tools, doc-derived. If this proves wrong in Phase C testing, the adapter extension for xAI may need a separate path.
 
 **One known stop-and-surface item:**
