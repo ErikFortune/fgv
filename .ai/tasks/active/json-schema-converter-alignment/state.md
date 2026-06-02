@@ -1,8 +1,8 @@
 # Spike state: `json-schema-converter-alignment`
 
-**Status:** 🔵 phase-2 sub-spike in flight — schema-derives-T feasibility; phase-1 Direction A recommendation retracted (AJV-style off the table)
-**Workflow shape:** parallel research spike (now with a phase-2 follow-up)
-**Last updated:** 2026-06-02 (orchestrator — phase-2 spike commissioned)
+**Status:** 🟢 phase-2 complete — verdict: **feasible**; alignment stream commission pending Erik review
+**Workflow shape:** parallel research spike (phase-2 sub-spike complete)
+**Last updated:** 2026-06-02 (senior-developer — phase-2 feasibility verdict delivered)
 
 ---
 
@@ -11,8 +11,8 @@
 | Phase | Status | Notes |
 |---|---|---|
 | Phase 1 — Research | 🟢 complete | `research.md` delivered. Initial recommendation Direction A (AJV-style) **retracted** by Erik review 2026-06-02 (assertion ≠ verification). |
-| Phase 2 — Feasibility sub-spike (schema-derives-T) | 🔵 in flight | Brief at `derives-t-feasibility-brief.md`; agent run for verdict on TypeBox-style approach in the LLM-tool subset. Output: `derives-t-feasibility.md`. |
-| Follow-on alignment stream (conditional) | ⏸ depends on phase-2 verdict | If feasible: commission alignment stream with schema-derives-T as the target. If infeasible: confirm status-quo Direction C with the drift-detection test pattern from `research.md` §3.3; no follow-on. |
+| Phase 2 — Feasibility sub-spike (schema-derives-T) | 🟢 complete | Verdict: **feasible**. Output at `derives-t-feasibility.md`. Phantom-tag pattern tractable for 7-factory LLM subset; `Converter<T>` surface needs no retrofit; ~505 lines impl + ~620 lines tests; single new packlet in `ts-json-base`. |
+| Follow-on alignment stream (conditional) | ⏸ pending Erik review | Phase-2 verdict is feasible. If Erik accepts: commission `json-schema-derives-T` alignment stream against `ts-json-base`. If rejected: confirm status-quo Direction C with the drift-detection test pattern from `research.md` §3.3. |
 
 ---
 
@@ -31,6 +31,7 @@
 | AJV-style consumer-supplied `T` is OFF THE TABLE (Erik review 2026-06-02) | "Type assertion via `.toConverter()` doesn't give us any greater protection against drift than just decoupling schema and the converter entirely — just the illusion of greater protection, which is arguably worse." Wasted authoring work + false sense of safety. The only alignment direction worth shipping is schema-derives-T (verify, not assert). |
 | Direction B (Converter → Schema) is OFF THE TABLE for an additional reason (Erik review 2026-06-02) | Beyond the blast radius (~6 combinators in ts-utils/conversion), B would fail at the MCP boundary: MCP tools arrive as schema descriptors with no Converter to generate from. The path doesn't extend. |
 | Phase-2 sub-spike commissioned: `json-schema-derives-t-feasibility` | TypeBox-style schema-derives-T is the only remaining direction. Phase-2 spike tests feasibility for the LLM-tool subset against the existing fgv Converter surface. If feasible: ai-assist-client-tools Phase B/C holds for it. If infeasible: fallback is status-quo Direction C (drift-detection test pattern per research.md §3.3). Brief at `.ai/tasks/active/json-schema-converter-alignment/derives-t-feasibility-brief.md`. |
+| Phase-2 verdict: schema-derives-T is **feasible** for the LLM-tool subset (2026-06-02) | Phantom-tag pattern (unique-symbol `[_phantom]` + `Static<S> = S['static']` property access) is tractable with 7 factories: `string`, `number`, `integer`, `boolean`, `enumOf`, `optional`, `array`, `object`. The `ObjectStatic<P>` mapped type (`OptionalKeys` + `RequiredKeys` split + intersection) resolves correctly with no depth-accumulation penalty at ≤3 nesting levels. `Converter<T>` surface needs no retrofit — the adapter composes existing `Converters.object`, `Converters.arrayOf`, etc. via a recursive switch on `_type`. Wire-format emission (`toJson`) and MCP parse (`fromJson` returning `ILlmSchema<JsonObject>`) are both straightforward. Scope: ~505 lines impl + ~620 lines tests, single new packlet in `ts-json-base`, no existing surface changes. Sequencing: Phase B of ai-assist-client-tools unblocked; Phase C can hold for or absorb the alignment stream. See `derives-t-feasibility.md` for full analysis. |
 
 ---
 
@@ -50,6 +51,7 @@ Spike runs in parallel with Phase B of `ai-assist-client-tools`; output may info
 | 2026-06-02 | Research complete | `research.md` delivered (~440 lines). Recommendation: Direction A (Schema → Converter) — small additive new packlet in `ts-json-base`, ~300–500 lines impl + ~300–400 lines tests, no surface change to existing exports. Direction B rejected (would require reflection retrofit across ts-utils combinators — broad blast radius). Direction C (status quo) viable but loses at scale (10+ tools). Sequencing: lands as **independent follow-on stream after `ai-assist-client-tools` Phase C is in `release`**, not as a Phase-C blocker. OSS verification: AJV (`ajv.compile<T>`), Zod v4 (`z.toJSONSchema` ✓, `fromJSONSchema` still open as #5233), TypeBox (schema IS the runtime rep). One advisory item surfaced: `Converters.number` accepts numeric strings — design decision deferred to follow-on stream. |
 | 2026-06-02 | Erik review of `research.md` retracted AJV-style Direction A | AJV-style consumer-supplied `T` provides illusion of safety without verification (same drift risk as decoupled schema/converter, plus wasted authoring work). Direction B also re-confirmed off the table — fails at MCP boundary where tools arrive as schema. Only remaining path is schema-derives-T (TypeBox-style). Phase-2 sub-spike commissioned to test feasibility for the LLM-tool subset. ai-assist-client-tools Phase B/C tentatively holds for the outcome. |
 | 2026-06-02 | Phase-2 sub-spike commissioned: `json-schema-derives-t-feasibility` | Substrate at `.ai/tasks/active/json-schema-converter-alignment/derives-t-feasibility-brief.md`; agent run to produce `derives-t-feasibility.md`. Erik reviews verdict; orchestrator commissions alignment stream (if feasible) or confirms status-quo Direction C (if infeasible). |
+| 2026-06-02 | Phase-2 sub-spike complete — verdict: **feasible** | `derives-t-feasibility.md` delivered. Parts A, B, C answered. Phantom-tag mechanism tractable for 7-factory LLM subset; no Converter retrofit required; scope ~505+620 lines, single new `ts-json-base` packlet. `parametersSchema: JsonObject` in `IAiClientToolConfig` unchanged — consumers call `toJson(schema)` explicitly. MCP boundary: `fromJson` returns `ILlmSchema<JsonObject>` (opaque `T`); no phantom reconstruction attempted. Sequencing: Phase B unblocked; Phase C can absorb or await alignment stream. Erik reviews verdict before follow-on commission. |
 
 ---
 
