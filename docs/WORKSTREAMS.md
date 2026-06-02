@@ -128,6 +128,30 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `json-schema-derives-t` 🟢
+
+**Status:** 🟢 ready to commission — substrate prep in flight
+**Integration branch:** `json-schema-derives-t` (off `release`, sitting on top of `chore/json-schema-derives-t-spike-prep` so the phase-1 + phase-2 spike substrate rides into release in the same squash) → squash to `release` at close
+**Workflow shape:** single implementation PR onto integration branch
+**Substrate:** `.ai/tasks/active/json-schema-derives-t/{brief.md, state.md}`; design source-of-truth at `.ai/tasks/active/json-schema-converter-alignment/{research.md, derives-t-feasibility.md}`
+**Package surface:** new packlet in `@fgv/ts-json-base` (`json-schema-builder` working name; agent picks final). No surface change to existing exports.
+**Out-of-scope:** `ai-assist-client-tools` Phase B/C (held for this stream to land); JSON Schema features beyond the LLM-tool subset (`$ref`, `oneOf`/`anyOf`/`allOf`, `pattern`, custom formats); TypeBox-style full combinator parity; a typed `fromJsonWithT<T>` for MCP-discovered schemas (deferred per feasibility doc).
+
+**Mission.** Ship the **schema-derives-T** alignment capability in `@fgv/ts-json-base`: 7 factory functions that build a typed JSON Schema value (`string` / `number` / `integer` / `boolean` / `enumOf` / `array` / `optional` / `object`), a `Static<S>` type-level extractor, a runtime adapter (`toConverter`) that materializes the schema into a fgv `Converter<Static<S>>`, a JSON-format emitter (`toJson`), and an MCP-boundary parse entry point (`fromJson` returning `Result<ILlmSchema<JsonObject>>`). Consumer authors a single typed schema value; `T` is mechanically derived (`type X = Static<typeof Schema>`) — no place for the consumer to assert. ~505 lines impl + ~620 lines tests per the phase-2 feasibility spike; no retrofit anywhere — adapter composes existing `Converters.*` primitives.
+
+**Origin.** Two spike phases under `json-schema-converter-alignment` retired AJV-style consumer-supplied `T` (assertion ≠ verification; false sense of safety) and Direction B (Converter → Schema; fails at MCP boundary). Phase-2 sub-spike confirmed schema-derives-T tractable for the LLM-tool subset. Erik picked the sequencing option that lands the alignment work first, then ai-assist-client-tools Phase B/C adopts it for verify-not-assert end-to-end. Sprint window holds for this.
+
+### `ai-assist-client-tools` 🟡 (held)
+
+**Status:** 🟡 Phase A complete (PR #436); **Phase B/C held** pending `json-schema-derives-t` stream landing
+**Workflow shape:** design-triage-implement
+**Substrate:** `.ai/tasks/active/ai-assist-client-tools/{brief.md, state.md, design.md}`
+**Package surface:** `@fgv/ts-extras/ai-assist` (model types, converters, registry, apiClient, streaming adapters, toolFormats) + `LIBRARY_CAPABILITIES.md`; layer 2 (MCP) is sprint+1 in a separate `@fgv/ts-extras-mcp` Result-integration-boundary package.
+
+**Mission.** Add client-defined tool support (function calling) to `@fgv/ts-extras/ai-assist` in two sequenced layers: layer 1 harness-supplied tools, layer 2 MCP (later). Phase A design landed; Phase B (triage) is held for `json-schema-derives-t` to ship so Phase C adopts the typed-schema authoring from day one (consumer gets verify-not-assert end-to-end; no two-step migration).
+
+**Origin.** 2026-05-30 conversation — personaility roadmap moves into agentic territory; client-tool support is "one sprint out." Phase A spike confirmed `IAiClientTool` as the seam that admits both layer-1 (harness) and layer-2 (MCP). Erik's review of the spike triggered the JSON-Schema / Converter alignment spike, which produced the `json-schema-derives-t` stream that this stream now holds for.
+
 ### `private-key-storage` ✅
 
 **Status:** ✅ implemented + reviewed (PR #427, gates green) — ready for squash to `release`
