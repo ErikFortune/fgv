@@ -59,9 +59,10 @@ const _SUPPORTED_TYPES: ReadonlySet<string> = new Set([
 // ---------------------------------------------------------------------------
 
 /**
- * Extracts an optional `description` string. Non-string or absent values succeed as `undefined`.
- * Because `description` carries no validation semantics it is treated as a pure annotation;
- * a non-string description is silently ignored (returns `undefined`) rather than failing.
+ * Extracts an optional `description` string. Absent values succeed as `undefined`.
+ * When present, `description` must be a string — a non-string value (e.g. a number or object)
+ * produces a descriptive failure. Pure annotations with no validation semantics are accepted;
+ * non-string values that cannot be used as a description are rejected with a clear error.
  */
 const _descriptionField: Converter<string | undefined> = Converters.optionalField(
   'description',
@@ -280,7 +281,11 @@ function _convertEnum(
   // L1: reject conflicting `type`. For enum nodes, `jsonSchemaConverter`'s union-type pre-flight
   // is skipped (the `!('enum' in raw)` gate). Validate here instead.
   const typeResult = _typeOptionalField.convert(from);
-  if (typeResult.isSuccess() && typeResult.value !== undefined && typeResult.value !== 'string') {
+  if (typeResult.isFailure()) {
+    // e.g. type: 123 — the field exists but is not a string.
+    return fail(`${path}: enum schema 'type' field must be a string or absent`);
+  }
+  if (typeResult.value !== undefined && typeResult.value !== 'string') {
     return fail(
       `${path}: enum schema declares conflicting 'type' '${typeResult.value}' (must be 'string' or absent)`
     );

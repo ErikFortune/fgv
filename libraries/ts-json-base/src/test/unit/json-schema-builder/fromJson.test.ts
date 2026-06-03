@@ -151,6 +151,13 @@ describe('JsonSchema.fromJson', () => {
       });
     });
 
+    test('rejects an enum schema with a non-string type field (R3-L6)', () => {
+      // type: 123 is not a string — _typeOptionalField.convert() fails; the failure must propagate.
+      expect(JsonSchema.fromJson({ type: 123, enum: ['a'] } as unknown as JsonObject)).toFailWith(
+        /enum schema 'type' field must be a string or absent/i
+      );
+    });
+
     test('rejects a missing or unknown type', () => {
       expect(JsonSchema.fromJson({})).toFailWith(/unsupported or missing 'type'/i);
       expect(JsonSchema.fromJson({ type: 'date' })).toFailWith(/unsupported or missing 'type'/i);

@@ -21,9 +21,12 @@
  */
 
 /**
- * Tests schema-validator behavior via `schema.validate(input)`. Schema nodes ARE Validators
- * (ISchemaValidator<T> extends Validator<T>); no `toConverter` step is required or available.
- * Covers all leaf, numeric, array, object, and optional-wrapper validation semantics.
+ * Tests schema-validator behavior via `schema.validate(input)` and `schema.convert(input)`.
+ * Schema nodes ARE Validators (ISchemaValidator<T> extends Validator<T>); both validate() and
+ * convert() route through the same underlying logic to ensure correctness when schemas are used
+ * as field validators inside Converters.object / Converters.arrayOf (which call convert()) and
+ * when called directly (which call validate()). Covers all leaf, numeric, array, object, and
+ * optional-wrapper validation and conversion semantics.
  */
 import '@fgv/ts-utils-jest';
 import { JsonSchema } from '../../..';
@@ -146,6 +149,62 @@ describe('JsonSchema schema validation (schema IS a Validator)', () => {
       expect(schema.validate('hello')).toSucceedWith('hello');
       expect(schema.validate(undefined)).toSucceedWith(undefined);
       expect(schema.validate(42)).toFailWith(/not a string/i);
+    });
+  });
+
+  describe('validator/converter symmetry (R3-L1..L4 regression tests)', () => {
+    test('non-strict number nested in object rejects non-numeric strings (R3-L1)', () => {
+      const schema = JsonSchema.object({ n: JsonSchema.number({ strict: false }) });
+      // Must FAIL — previously the placeholder convert() accepted any value typed as number.
+      expect(schema.validate({ n: 'nope' })).toFailWith(/not a number/i);
+    });
+
+    test('non-strict number nested in object coerces numeric strings (R3-L1)', () => {
+      const schema = JsonSchema.object({ n: JsonSchema.number({ strict: false }) });
+      // Must SUCCEED with coerced value 42, not the string '42'.
+      expect(schema.validate({ n: '42' })).toSucceedWith({ n: 42 });
+    });
+
+    test('nested object honours additionalProperties: false even when nested (R3-L2)', () => {
+      const schema = JsonSchema.object({
+        inner: JsonSchema.object({ x: JsonSchema.string() }, { additionalProperties: false })
+      });
+      // Must FAIL — previously the nested object's placeholder convert() accepted any object.
+      expect(schema.validate({ inner: { x: 'ok', extra: 'fail' } })).toFailWith(/extra/i);
+      // Valid case must still succeed.
+      expect(schema.validate({ inner: { x: 'ok' } })).toSucceedWith({ inner: { x: 'ok' } });
+    });
+
+    test('array of non-strict numbers coerces string elements (R3-L3)', () => {
+      const schema = JsonSchema.array(JsonSchema.number({ strict: false }));
+      // Must SUCCEED with coerced values [42, 17], not strings.
+      expect(schema.validate(['42', '17'])).toSucceedWith([42, 17]);
+      // Non-numeric strings must still fail.
+      expect(schema.validate(['nope'])).toFailWith(/not a number/i);
+    });
+
+    test('optional wrapping a non-strict number preserves coercion (R3-L4)', () => {
+      const schema = JsonSchema.object({ n: JsonSchema.optional(JsonSchema.number({ strict: false })) });
+      // Must SUCCEED with coerced value { n: 42 }, not { n: '42' }.
+      expect(schema.validate({ n: '42' })).toSucceedWith({ n: 42 });
+      // Non-numeric strings must still fail even when wrapped in optional.
+      expect(schema.validate({ n: 'nope' })).toFailWith(/not a number/i);
+      // Absent optional field must succeed.
+      expect(schema.validate({})).toSucceedAndSatisfy((v) => {
+        expect(v).toEqual({});
+      });
+    });
+
+    test('schema nodes expose working convert() in addition to validate()', () => {
+      // Exercises convert() directly so coverage tools see both methods.
+      // Non-strict number.
+      const numSchema = JsonSchema.number({ strict: false });
+      expect(numSchema.convert('99')).toSucceedWith(99);
+      expect(numSchema.convert('nope')).toFailWith(/not a number/i);
+      // Strict number (separate branch).
+      const strictSchema = JsonSchema.number();
+      expect(strictSchema.convert(7)).toSucceedWith(7);
+      expect(strictSchema.convert('7')).toFailWith(/invalid number/i);
     });
   });
 });
