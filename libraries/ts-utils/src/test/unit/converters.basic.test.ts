@@ -23,7 +23,7 @@
 import '../helpers/jest';
 
 import { Validation } from '../../index';
-import { omit, Result, succeed } from '../../packlets/base';
+import { fail, omit, Result, succeed } from '../../packlets/base';
 import { Converters, FieldConverters } from '../../packlets/conversion';
 
 describe('Basic converters', () => {
@@ -1378,6 +1378,106 @@ describe('Basic converters', () => {
         /not a discriminated object/i
       );
       expect(thing.convert(null)).toFailWith(/not a discriminated object/i);
+    });
+
+    test('invokes a validator arm via its convert method', () => {
+      const stValidator = Validation.Validators.object<IStringThing>({
+        which: Validation.Validators.isA(
+          'string thing',
+          (v: unknown): v is 'string thing' => v === 'string thing'
+        ),
+        property: Validation.Validators.string
+      });
+      const thingWithValidator = Converters.discriminatedObject<IStringThing, 'string thing'>('which', {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'string thing': stValidator
+      });
+      const st: IStringThing = { which: 'string thing', property: 'hello' };
+      expect(thingWithValidator.convert(st)).toSucceedWith(st);
+    });
+
+    describe('recursive discriminated-union via self', () => {
+      interface ITreeNode {
+        type: 'leaf' | 'branch';
+        value?: number;
+        left?: ITreeNode;
+        right?: ITreeNode;
+      }
+
+      const leafConverter = Converters.object<ITreeNode>({
+        type: Converters.enumeratedValue<'leaf'>(['leaf']),
+        value: Converters.number
+      });
+
+      // Branch arm uses self to recurse into children via the outer discriminatedObject converter.
+      const treeConverter = Converters.discriminatedObject<ITreeNode>('type', {
+        leaf: leafConverter,
+        branch: Converters.generic<ITreeNode>((from, self) => {
+          if (typeof from !== 'object' || Array.isArray(from) || from === null) {
+            return fail('not an object');
+          }
+          const obj = from as Record<string, unknown>;
+          return self
+            .convert(obj.left)
+            .onSuccess((left) =>
+              self
+                .convert(obj.right)
+                .onSuccess((right) => succeed<ITreeNode>({ type: 'branch', left, right }))
+            );
+        })
+      });
+
+      test('self is defined and is the outer discriminatedObject converter', () => {
+        let capturedSelf: unknown;
+        const capturingConverter = Converters.discriminatedObject<ITreeNode>('type', {
+          leaf: leafConverter,
+          branch: Converters.generic<ITreeNode>((from, self) => {
+            capturedSelf = self;
+            return succeed({ type: 'branch' as const });
+          })
+        });
+        capturingConverter.convert({ type: 'branch' });
+        expect(capturedSelf).toBe(capturingConverter);
+      });
+
+      test('recursive converter resolves leaf nodes', () => {
+        expect(treeConverter.convert({ type: 'leaf', value: 42 })).toSucceedWith({
+          type: 'leaf',
+          value: 42
+        });
+      });
+
+      test('recursive converter resolves nested branch nodes', () => {
+        const tree = {
+          type: 'branch',
+          left: { type: 'leaf', value: 1 },
+          right: { type: 'leaf', value: 2 }
+        };
+        expect(treeConverter.convert(tree)).toSucceedAndSatisfy((node) => {
+          expect(node.type).toBe('branch');
+          expect(node.left).toEqual({ type: 'leaf', value: 1 });
+          expect(node.right).toEqual({ type: 'leaf', value: 2 });
+        });
+      });
+
+      test('recursive converter resolves deeply nested branch nodes', () => {
+        const tree = {
+          type: 'branch',
+          left: {
+            type: 'branch',
+            left: { type: 'leaf', value: 10 },
+            right: { type: 'leaf', value: 20 }
+          },
+          right: { type: 'leaf', value: 30 }
+        };
+        expect(treeConverter.convert(tree)).toSucceedAndSatisfy((node) => {
+          expect(node.type).toBe('branch');
+          expect(node.left?.type).toBe('branch');
+          expect(node.left?.left).toEqual({ type: 'leaf', value: 10 });
+          expect(node.left?.right).toEqual({ type: 'leaf', value: 20 });
+          expect(node.right).toEqual({ type: 'leaf', value: 30 });
+        });
+      });
     });
   });
 

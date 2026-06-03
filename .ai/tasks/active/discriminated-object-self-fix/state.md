@@ -1,7 +1,7 @@
 # Stream state: `discriminated-object-self-fix`
 
-**Status:** 🟢 ready to commission
-**Last updated:** 2026-06-03 (orchestrator — substrate prep)
+**Status:** 🟢 implementation complete
+**Last updated:** 2026-06-03 (implementation agent)
 
 ---
 
@@ -22,6 +22,10 @@
 | Additive overload on `BaseConverter.convert` (and `Validator.validate` if needed) | Lets `discriminatedObject` pass the outer `self` to arms without changing existing call-site behavior. Default `selfOverride ?? this` preserves current semantics for callers that don't opt in. |
 | `json-schema-derives-t` (PR #441) revision waits for this | Out of scope for this stream. Once this lands on release, the integration branch `json-schema-derives-t` merges release, and the revision agent picks up the fixed primitive. |
 | `code-reviewer` + agent-driven Copilot review loop required | Per L32 + L33; small-focused-diff is the canonical case. |
+| `ValidatorBase.validate` did NOT need a `selfOverride` parameter (implementation finding) | `ValidatorBase.validate` already passes `self` correctly via the `GenericValidator._validator(from, context, this)` call pattern — the `self` is always the validator itself. `Validator.validate` is not called from `discriminatedObject` (only `.convert()` is). The `Validator.convert` method does not need `selfOverride` either: in `discriminatedObject`, when an arm is a `Validator`, we call `arm.convert(from, context)` without `self` (since validators are in-place and don't support the outer-converter recursion pattern). Converter arms — the recursive case — use `arm.convert(from, context, self)` via the new `BaseConverter.convert` overload. |
+| `BaseConverter.convert` exact signature: `convert(from: unknown, context?: TC, selfOverride?: Converter<T, TC>): Result<T>` | Third parameter defaults to `undefined`; implementation uses `selfOverride ?? this` as the `self` passed to `_converter`. Strictly additive — existing two-parameter call sites are unaffected. |
+| `Converter` interface `convert` updated to include `selfOverride?: Converter<T, TC>` | Required for TypeScript to allow three-argument calls to `arm.convert(from, context, self)` when `arm` is typed as `Converter<T, TC>`. Since the third parameter is optional, all existing call sites remain valid. |
+| `discriminatedObject` body: discriminate between Converter and Validator arms | `isValidator(arm)` check at call site: validators get `arm.convert(from, context)` (no self); converters get `arm.convert(from, context, self)`. This is type-safe and avoids needing to change the `Validator.convert` interface. The recursive-via-self pattern is a converter-arm pattern; validator arms have no need to recurse through the outer dispatcher. |
 
 ---
 
@@ -36,6 +40,7 @@ PR #441 review (2026-06-03) surfaced the procedural `_parseNode` switch inside `
 | Date | Event | Notes |
 |---|---|---|
 | 2026-06-03 | Stream commissioned + substrate prepped | brief.md + state.md; implementation agent to follow. |
+| 2026-06-03 | Implementation complete | Three-part fix: `Converter` interface + `BaseConverter.convert` gain optional `selfOverride`; `discriminatedObject` body rewritten to thread `self` and `context` to per-arm calls; validator/converter arms discriminated at call site. Recursive-tree test added; all existing tests pass; `basicConverters.ts` + `baseConverter.ts` + `converter.ts` at 100% coverage. `minor` change file created. PR pending. |
 
 ---
 
