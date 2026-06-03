@@ -935,7 +935,7 @@ function optional<S extends ISchemaValidator<unknown>>(schema: S): ISchemaValida
 //
 // @public
 type OptionalKeys<P extends ILlmProperties> = {
-    [K in keyof P]: P[K] extends ISchemaValidator<infer U> ? undefined extends U ? K : never : never;
+    [K in keyof P]: P[K] extends ISchemaValidator<infer U> ? (undefined extends U ? K : never) : never;
 }[keyof P];
 
 // @public
