@@ -897,6 +897,9 @@ export type DiscriminatedObjectConverters<T, TD extends string = string, TC = un
  *
  * If the source is not an object, the discriminator property is missing, or the discriminator has
  * a value not present in the converters, conversion fails and returns {@link Failure | Failure} with more information.
+ *
+ * The `self` reference of the outer converter is threaded through to per-arm converter invocations,
+ * enabling recursive discriminated-union parsers where arms recurse via `self`.
  * @param discriminatorProp - Name of the property used to discriminate types.
  * @param converters - {@link Converters.DiscriminatedObjectConverters | String-keyed record of converters and validators}
  * to invoke, where each key corresponds to a value of the discriminator property.
@@ -907,7 +910,7 @@ export function discriminatedObject<T, TD extends string = string, TC = unknown>
   discriminatorProp: string,
   converters: DiscriminatedObjectConverters<T, TD>
 ): Converter<T, TC> {
-  return new BaseConverter((from: unknown) => {
+  return new BaseConverter<T, TC>((from: unknown, self: Converter<T, TC>, context?: TC) => {
     if (typeof from !== 'object' || Array.isArray(from) || from === null) {
       return fail(`Not a discriminated object: "${JSON.stringify(from)}"`);
     }
@@ -916,10 +919,15 @@ export function discriminatedObject<T, TD extends string = string, TC = unknown>
     }
 
     const discriminatorValue = from[discriminatorProp] as TD;
-    const converter = converters[discriminatorValue];
-    if (converter === undefined) {
+    const arm = converters[discriminatorValue];
+    if (arm === undefined) {
       return fail(`No converter for discriminator ${discriminatorProp}="${discriminatorValue}"`);
     }
-    return converter.convert(from);
+    // Thread the outer self and context through to the arm so that recursive
+    // discriminated-union parsers can reach the outer dispatcher via self.
+    if (isValidator(arm)) {
+      return arm.convert(from, context);
+    }
+    return arm.convert(from, context, self);
   });
 }

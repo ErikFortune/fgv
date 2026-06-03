@@ -208,7 +208,7 @@ class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
     protected _brand?: string;
     // @internal (undocumented)
     protected _context(supplied?: TC): TC | undefined;
-    convert(from: unknown, context?: TC): Result<T>;
+    convert(from: unknown, context?: TC, selfOverride?: Converter<T, TC>): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     // @internal (undocumented)
     protected readonly _defaultContext?: TC;
@@ -705,7 +705,7 @@ type ConvertedToType<TCONV> = Infer<TCONV>;
 // @public
 export interface Converter<T, TC = unknown> extends ConverterTraits {
     readonly brand?: string;
-    convert(from: unknown, context?: TC): Result<T>;
+    convert(from: unknown, context?: TC, selfOverride?: Converter<T, TC>): Result<T>;
     convertOptional(from: unknown, context?: TC, onError?: OnError): Result<T | undefined>;
     readonly isOptional: boolean;
     map<T2>(mapper: (from: T, context?: TC) => Result<T2>): Converter<T2, TC>;
