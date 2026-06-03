@@ -133,11 +133,14 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
    * @param from - The `unknown` to be converted
    * @param context - An optional conversion context of type `<TC>` to be used in
    * the conversion.
+   * @param selfOverride - An optional override for the `self` reference passed to the
+   * converter function, enabling outer converters (e.g. discriminated-object) to thread
+   * themselves through to per-arm converters for recursive parsing.
    * @returns A {@link Result} with a {@link Success} and a value on success or an
    * {@link Failure} with a a message on failure.
    */
-  public convert(from: unknown, context?: TC): Result<T> {
-    return this._converter(from, this, context ?? this._defaultContext);
+  public convert(from: unknown, context?: TC, selfOverride?: Converter<T, TC>): Result<T> {
+    return this._converter(from, selfOverride ?? this, context ?? this._defaultContext);
   }
 
   /**

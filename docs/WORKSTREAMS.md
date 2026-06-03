@@ -128,6 +128,18 @@ substrate. Don't queue streams against them here.
 
 ## Active workstreams
 
+### `discriminated-object-self-fix` 🟢
+
+**Status:** 🟢 ready to commission — substrate prepped
+**Workflow shape:** single implementation PR direct to `release` (small focused fix on established surface)
+**Substrate:** `.ai/tasks/active/discriminated-object-self-fix/{brief.md, state.md}`
+**Package surface:** `@fgv/ts-utils` — `conversion/basicConverters.ts` (`discriminatedObject`), possibly `conversion/baseConverter.ts` + `validation/validatorBase.ts` for the matching additive overloads
+**Out-of-scope:** `json-schema-derives-t` revision (PR #441 — waits for this to land); other Converter combinators (already thread `self` correctly); `discriminatedObject` API redesign.
+
+**Mission.** `Converters.discriminatedObject` drops `self` (and `context`) at per-arm dispatch — every other Converter combinator threads `self` correctly, this is the outlier. The omission breaks recursive discriminated-union parsers because arms can't reach the outer dispatcher. Fix: per-arm `convert` invocation passes the outer `self` (additive overload on `BaseConverter.convert` and symmetric `Validator.validate`). Existing callers unaffected; new recursive-parser cases opt in.
+
+**Origin.** Surfaced during `json-schema-derives-t` (PR #441) review — the `_parseNode` switch in `fromJson` is exactly the procedural-inspection anti-pattern fgv forbids; correct shape is `Converters.discriminatedObject('type', { array: ..., object: ..., ... })` where arms recurse to the outer for nested schemas. Erik's call (2026-06-03): "that's just a bug in the discriminatedObject. Let's just fix it (in a separate PR) instead of creating debt, carrying debt and then clearing debt." Lands before the json-schema-derives-t revision resumes.
+
 ### `private-key-storage` ✅
 
 **Status:** ✅ implemented + reviewed (PR #427, gates green) — ready for squash to `release`
