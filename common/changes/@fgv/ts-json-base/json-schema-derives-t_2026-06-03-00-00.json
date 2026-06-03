@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Add the `json-schema-builder` packlet (exported as the `JsonSchema` namespace): typed JSON Schema for the LLM-tool subset. Seven factories (`string`, `number`, `integer`, `boolean`, `enumOf`, `array`, `object`) plus the `optional` modifier carry a phantom static type so `JsonSchema.Static<typeof schema>` derives the TypeScript type automatically (no caller-supplied `T`). `toConverter` composes existing `@fgv/ts-utils` `Converters.*` into a `Converter<Static<S>>`; `toJson` emits the draft-07 wire schema; `fromJson` parses a raw `JsonObject` (e.g. an MCP-discovered schema) into an opaque `ILlmSchema<JsonObject>`, failing on out-of-subset structural keywords. Strictly additive — no existing export changed.",
+      "type": "minor",
+      "packageName": "@fgv/ts-json-base"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "ErikFortune@outlook.com"
+}
