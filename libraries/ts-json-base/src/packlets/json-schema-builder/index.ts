@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Erik Fortune
+ * Copyright (c) 2026 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,17 @@
  * SOFTWARE.
  */
 
-import * as Converters from './packlets/converters';
-import * as FileTree from './packlets/file-tree';
-import * as JsonCompatible from './packlets/json-compatible';
-import * as JsonFile from './packlets/json-file';
-import * as JsonSchema from './packlets/json-schema-builder';
-import * as Validators from './packlets/validators';
-
-export * from './packlets/json';
-export { Converters, FileTree, JsonCompatible, JsonFile, JsonSchema, Validators };
+/**
+ * Typed JSON Schema for the LLM-tool subset: author a schema with the factories, derive its
+ * static TypeScript type with {@link Static}, and call `schema.validate(input)` directly or
+ * emit the wire JSON Schema with `schema.toJson()` — all from the single declaration.
+ *
+ * @remarks
+ * Surface change from the first-pass implementation:
+ * - `toConverter(schema)` removed — schemas ARE Validators; call `schema.validate(input)`.
+ * - `toJson(schema)` removed — call `schema.toJson()` instead.
+ * - `fromJson(json)` returns `ISchemaValidator<JsonValue>` (honest supertype — a runtime-parsed schema may validate strings, numbers, booleans, arrays, or objects, not just objects).
+ */
+export * from './types';
+export * from './factories';
+export * from './fromJson';
