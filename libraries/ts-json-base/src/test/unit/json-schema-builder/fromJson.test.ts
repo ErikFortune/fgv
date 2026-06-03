@@ -176,6 +176,20 @@ describe('JsonSchema.fromJson', () => {
       ).toFailWith(/schema-valued 'additionalProperties' is not supported/i);
     });
 
+    test('rejects a required key with no matching property schema', () => {
+      expect(
+        JsonSchema.fromJson({
+          type: 'object',
+          properties: { a: { type: 'string' } },
+          required: ['a', 'b']
+        })
+      ).toFailWith(/#: 'required' key 'b' has no matching entry in 'properties'/i);
+      // also when there is no properties block at all
+      expect(JsonSchema.fromJson({ type: 'object', required: ['x'] })).toFailWith(
+        /'required' key 'x' has no matching entry/i
+      );
+    });
+
     test('reports the path of a nested out-of-subset feature', () => {
       const raw: JsonObject = {
         type: 'object',

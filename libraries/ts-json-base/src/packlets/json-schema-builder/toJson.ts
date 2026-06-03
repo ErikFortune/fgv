@@ -39,6 +39,10 @@ import {
  * `required` array, which is the correct JSON Schema representation of optionality. The result is a
  * `JsonObject` suitable for an LLM provider's function/tool `parameters` field.
  *
+ * An unrecognized `_type` discriminant (only reachable when a node is hand-constructed via an unsafe
+ * cast, since `SchemaNodeType` is a closed union) emits an empty object `{}` rather than throwing —
+ * an unconstrained schema. Schema values from the factories or {@link fromJson} never hit this path.
+ *
  * @param schema - A typed schema value produced by the factories (or by {@link fromJson}).
  * @returns The JSON Schema object describing `schema`.
  * @public
@@ -66,6 +70,7 @@ export function toJson(schema: ILlmSchema<unknown>): JsonObject {
     case 'object':
       return _objectToJson(schema as ILlmObjectSchema<ILlmProperties>);
     default:
+      // Unreachable for factory- or fromJson-produced nodes (closed `SchemaNodeType`). See @remarks.
       return {};
   }
 }

@@ -1067,6 +1067,7 @@ function stringifiedJson<T>(inner: Converter<T> | Validator<T>): Converter<T>;
 function toConverter<S extends ILlmSchema<unknown>>(schema: S): Result<Converter<Static<S>>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "fromJson"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "fromJson"
 //
 // @public
 function toJson(schema: ILlmSchema<unknown>): JsonObject;

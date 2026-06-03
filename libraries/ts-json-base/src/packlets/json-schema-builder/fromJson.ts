@@ -164,6 +164,16 @@ function _parseObject(
   );
   const propEntries = isJsonObject(rawProps) ? Object.entries(rawProps) : [];
 
+  // Reject `required` keys with no matching property schema. JSON Schema permits this, but for the
+  // LLM-tool subset it is almost always a mistake — and silently dropping the key would emit a
+  // schema looser than the input declared (the "required" field would vanish entirely).
+  const declared = new Set(propEntries.map(([key]) => key));
+  for (const key of requiredSet) {
+    if (!declared.has(key)) {
+      return fail(`${path}: 'required' key '${key}' has no matching entry in 'properties'`);
+    }
+  }
+
   return mapResults(
     propEntries.map(([key, child]) =>
       _parseNode(child, `${path}/properties/${key}`).onSuccess((node) =>

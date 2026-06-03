@@ -114,6 +114,10 @@ function _buildObjectConverter<P extends ILlmProperties>(
   return mapResults(entries.map(([key, prop]) => _buildField(key, prop))).onSuccess((built) => {
     const fields: Record<string, Converter<unknown>> = {};
     const optionalKeys: string[] = [];
+    // An optional property is marked two ways: its converter already carries the `isOptional` trait
+    // (the `optional` arm applies `.optional()`), AND its key is listed in `optionalFields` here.
+    // `ObjectConverter` treats either as sufficient, so this is belt-and-suspenders, not a bug —
+    // `optionalFields` keeps the optionality explicit at the object level independent of the trait.
     for (const { key, optional, converter } of built) {
       fields[key] = converter;
       if (optional) {
