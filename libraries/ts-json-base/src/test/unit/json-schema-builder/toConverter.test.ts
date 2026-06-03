@@ -20,119 +20,108 @@
  * SOFTWARE.
  */
 
+/**
+ * Validates schema-validator behavior. Schema nodes ARE Validators — consumers call
+ * schema.validate(input) directly. This test suite covers the same cases as the previous
+ * toConverter test suite, rewritten to use the Validator interface.
+ */
 import '@fgv/ts-utils-jest';
 import { JsonSchema } from '../../..';
 
-describe('JsonSchema.toConverter', () => {
-  describe('leaf converters', () => {
+describe('JsonSchema schema validation (schema IS a Validator)', () => {
+  describe('leaf validators', () => {
     test('string accepts strings and rejects non-strings', () => {
-      const converter = JsonSchema.toConverter(JsonSchema.string()).orThrow();
-      expect(converter.convert('hello')).toSucceedWith('hello');
-      expect(converter.convert(42)).toFailWith(/not a string/i);
+      const schema = JsonSchema.string();
+      expect(schema.validate('hello')).toSucceedWith('hello');
+      expect(schema.validate(42)).toFailWith(/not a string/i);
     });
 
     test('boolean accepts booleans and rejects non-booleans', () => {
-      const converter = JsonSchema.toConverter(JsonSchema.boolean()).orThrow();
-      expect(converter.convert(true)).toSucceedWith(true);
-      expect(converter.convert(false)).toSucceedWith(false);
-      expect(converter.convert('nope')).toFailWith(/not a boolean/i);
+      const schema = JsonSchema.boolean();
+      expect(schema.validate(true)).toSucceedWith(true);
+      expect(schema.validate(false)).toSucceedWith(false);
+      expect(schema.validate('nope')).toFailWith(/not a boolean/i);
     });
 
     test('enum accepts listed values and rejects others', () => {
-      const converter = JsonSchema.toConverter(JsonSchema.enumOf(['run', 'stop'] as const)).orThrow();
-      expect(converter.convert('run')).toSucceedWith('run');
-      expect(converter.convert('stop')).toSucceedWith('stop');
-      expect(converter.convert('pause')).toFailWith(/invalid enumerated value/i);
+      const schema = JsonSchema.enumOf(['run', 'stop'] as const);
+      expect(schema.validate('run')).toSucceedWith('run');
+      expect(schema.validate('stop')).toSucceedWith('stop');
+      expect(schema.validate('pause')).toFailWith(/invalid enumerated value/i);
     });
   });
 
-  describe('numeric converters', () => {
+  describe('numeric validators', () => {
     test('strict number (default) rejects numeric strings', () => {
-      const converter = JsonSchema.toConverter(JsonSchema.number()).orThrow();
-      expect(converter.convert(3.14)).toSucceedWith(3.14);
-      expect(converter.convert('42')).toFailWith(/invalid number/i);
-      expect(converter.convert(Number.NaN)).toFailWith(/invalid number/i);
+      const schema = JsonSchema.number();
+      expect(schema.validate(3.14)).toSucceedWith(3.14);
+      expect(schema.validate('42')).toFailWith(/invalid number/i);
+      expect(schema.validate(Number.NaN)).toFailWith(/invalid number/i);
     });
 
     test('non-strict number coerces numeric strings', () => {
-      const converter = JsonSchema.toConverter(JsonSchema.number({ strict: false })).orThrow();
-      expect(converter.convert(7)).toSucceedWith(7);
-      expect(converter.convert('42')).toSucceedWith(42);
-      expect(converter.convert('nope')).toFailWith(/not a number/i);
+      const schema = JsonSchema.number({ strict: false });
+      expect(schema.validate(7)).toSucceedWith(7);
+      expect(schema.validate('42')).toSucceedWith(42);
+      expect(schema.validate('nope')).toFailWith(/not a number/i);
     });
 
     test('strict integer rejects non-integers and numeric strings', () => {
-      const converter = JsonSchema.toConverter(JsonSchema.integer()).orThrow();
-      expect(converter.convert(5)).toSucceedWith(5);
-      expect(converter.convert(5.5)).toFailWith(/invalid integer/i);
-      expect(converter.convert('5')).toFailWith(/invalid integer/i);
+      const schema = JsonSchema.integer();
+      expect(schema.validate(5)).toSucceedWith(5);
+      expect(schema.validate(5.5)).toFailWith(/invalid integer/i);
+      expect(schema.validate('5')).toFailWith(/invalid integer/i);
     });
 
     test('non-strict integer coerces numeric strings but still requires whole numbers', () => {
-      const converter = JsonSchema.toConverter(JsonSchema.integer({ strict: false })).orThrow();
-      expect(converter.convert(5)).toSucceedWith(5);
-      expect(converter.convert('5')).toSucceedWith(5);
-      expect(converter.convert(5.5)).toFailWith(/not an integer/i);
-      expect(converter.convert('5.5')).toFailWith(/not an integer/i);
+      const schema = JsonSchema.integer({ strict: false });
+      expect(schema.validate(5)).toSucceedWith(5);
+      expect(schema.validate('5')).toSucceedWith(5);
+      expect(schema.validate(5.5)).toFailWith(/not an integer/i);
+      expect(schema.validate('5.5')).toFailWith(/not an integer/i);
     });
   });
 
-  describe('array converters', () => {
+  describe('array validators', () => {
     test('array of strings', () => {
-      const converter = JsonSchema.toConverter(JsonSchema.array(JsonSchema.string())).orThrow();
-      expect(converter.convert(['a', 'b'])).toSucceedWith(['a', 'b']);
-      expect(converter.convert(['a', 3])).toFailWith(/not a string/i);
-      expect(converter.convert('not-an-array')).toFailWith(/not an array/i);
+      const schema = JsonSchema.array(JsonSchema.string());
+      expect(schema.validate(['a', 'b'])).toSucceedWith(['a', 'b']);
+      expect(schema.validate(['a', 3])).toFailWith(/not a string/i);
+      expect(schema.validate('not-an-array')).toFailWith(/not an array/i);
     });
 
     test('array of objects', () => {
       const schema = JsonSchema.array(JsonSchema.object({ id: JsonSchema.integer() }));
-      const converter = JsonSchema.toConverter(schema).orThrow();
-      expect(converter.convert([{ id: 1 }, { id: 2 }])).toSucceedWith([{ id: 1 }, { id: 2 }]);
-    });
-
-    test('propagates failure from an unsupported element schema', () => {
-      const bad = JsonSchema.array({ _type: 'bogus' } as unknown as JsonSchema.ILlmSchema<unknown>);
-      expect(JsonSchema.toConverter(bad)).toFailWith(/unsupported schema type: bogus/i);
+      expect(schema.validate([{ id: 1 }, { id: 2 }])).toSucceedWith([{ id: 1 }, { id: 2 }]);
     });
   });
 
-  describe('object converters', () => {
+  describe('object validators', () => {
     test('required and optional fields with the strict default', () => {
       const schema = JsonSchema.object({
         query: JsonSchema.string(),
         limit: JsonSchema.optional(JsonSchema.integer())
       });
-      const converter = JsonSchema.toConverter(schema).orThrow();
 
-      expect(converter.convert({ query: 'a', limit: 3 })).toSucceedWith({ query: 'a', limit: 3 });
+      expect(schema.validate({ query: 'a', limit: 3 })).toSucceedWith({ query: 'a', limit: 3 });
       // optional field may be omitted
-      expect(converter.convert({ query: 'a' })).toSucceedAndSatisfy((value) => {
+      expect(schema.validate({ query: 'a' })).toSucceedAndSatisfy((value) => {
         expect(value).toEqual({ query: 'a' });
       });
       // required field missing
-      expect(converter.convert({ limit: 3 })).toFail();
+      expect(schema.validate({ limit: 3 })).toFail();
       // strict default rejects unknown fields
-      expect(converter.convert({ query: 'a', sneaky: 1 })).toFailWith(/sneaky/i);
+      expect(schema.validate({ query: 'a', sneaky: 1 })).toFailWith(/sneaky/i);
     });
 
     test('additionalProperties: true ignores unknown fields', () => {
       const schema = JsonSchema.object({ query: JsonSchema.string() }, { additionalProperties: true });
-      const converter = JsonSchema.toConverter(schema).orThrow();
-      expect(converter.convert({ query: 'a', extra: 99 })).toSucceedWith({ query: 'a' });
+      expect(schema.validate({ query: 'a', extra: 99 })).toSucceedWith({ query: 'a' });
     });
 
-    test('carries description into the object converter', () => {
+    test('carries description into the object validator', () => {
       const schema = JsonSchema.object({ id: JsonSchema.string() }, { description: 'an id holder' });
-      expect(JsonSchema.toConverter(schema)).toSucceed();
-    });
-
-    test('field-level failure is reported with the property name', () => {
-      const schema = JsonSchema.object({
-        good: JsonSchema.string(),
-        bad: { _type: 'bogus' } as unknown as JsonSchema.ILlmSchema<unknown>
-      });
-      expect(JsonSchema.toConverter(schema)).toFailWith(/bad: unsupported schema type: bogus/i);
+      expect(schema.validate({ id: 'abc' })).toSucceedWith({ id: 'abc' });
     });
 
     test('nested object round-trip', () => {
@@ -143,19 +132,20 @@ describe('JsonSchema.toConverter', () => {
           tags: JsonSchema.array(JsonSchema.string())
         })
       });
-      const converter = JsonSchema.toConverter(schema).orThrow();
       const value = { action: 'run' as const, config: { timeout: 30, tags: ['x'] } };
-      expect(converter.convert(value)).toSucceedWith(value);
-      expect(converter.convert({ action: 'run', config: { tags: [] } })).toSucceedAndSatisfy((v) => {
+      expect(schema.validate(value)).toSucceedWith(value);
+      expect(schema.validate({ action: 'run', config: { tags: [] } })).toSucceedAndSatisfy((v) => {
         expect(v).toEqual({ action: 'run', config: { tags: [] } });
       });
     });
   });
 
-  describe('unsupported nodes', () => {
-    test('fails for an unknown _type discriminant', () => {
-      const bad = { _type: 'weird' } as unknown as JsonSchema.ILlmSchema<unknown>;
-      expect(JsonSchema.toConverter(bad)).toFailWith(/unsupported schema type: weird/i);
+  describe('optional wrapper', () => {
+    test('optional validates present and absent values', () => {
+      const schema = JsonSchema.optional(JsonSchema.string());
+      expect(schema.validate('hello')).toSucceedWith('hello');
+      expect(schema.validate(undefined)).toSucceedWith(undefined);
+      expect(schema.validate(42)).toFailWith(/not a string/i);
     });
   });
 });

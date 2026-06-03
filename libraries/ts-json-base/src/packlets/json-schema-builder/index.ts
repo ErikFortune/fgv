@@ -21,12 +21,16 @@
  */
 
 /**
- * Typed JSON Schema for the LLM-tool subset: author a schema with the factories, derive its static
- * TypeScript type with {@link Static}, and emit a runtime {@link toConverter | Converter} or the
- * wire {@link toJson | JSON Schema} from the single declaration.
+ * Typed JSON Schema for the LLM-tool subset: author a schema with the factories, derive its
+ * static TypeScript type with {@link Static}, and call `schema.validate(input)` directly or
+ * emit the wire JSON Schema with `schema.toJson()` — all from the single declaration.
+ *
+ * @remarks
+ * Surface change from the first-pass implementation:
+ * - `toConverter(schema)` removed — schemas ARE Validators; call `schema.validate(input)`.
+ * - `toJson(schema)` removed — call `schema.toJson()` instead.
+ * - `fromJson(json)` returns `ISchemaValidator<JsonObject>` (unchanged from first pass).
  */
 export * from './types';
 export * from './factories';
-export * from './toConverter';
-export * from './toJson';
 export * from './fromJson';

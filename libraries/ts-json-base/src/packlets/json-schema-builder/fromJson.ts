@@ -20,20 +20,16 @@
  * SOFTWARE.
  */
 
-import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
-import { JsonObject, JsonValue, isJsonObject } from '../json';
+import { Converter, Converters, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { JsonObject } from '../json';
 import { array, boolean, enumOf, integer, number, object, optional, string } from './factories';
-import { ILlmProperties, ILlmSchema } from './types';
+import { ILlmProperties, ISchemaValidator } from './types';
 
 /**
  * Compositional / assertive keywords outside the LLM-tool subset. Their presence cannot be honored
- * faithfully, so {@link fromJson} fails rather than silently producing a looser converter.
- *
- * @remarks
- * The structural keywords (`$ref`, `oneOf`, `anyOf`, `allOf`, `not`, `if`, `then`, `else`) change
- * composition; `pattern` is an always-assertive string constraint. Pure annotations (`title`,
- * `default`, `examples`, draft-07 `format`, a spurious `description` on any node) are intentionally
- * ignored — they carry no validation semantics in this subset.
+ * faithfully — silently dropping them would produce a converter looser than the schema describes.
+ * Pure annotations (`title`, `default`, `examples`, draft-07 `format`, `description`) carry no
+ * validation semantics and are intentionally ignored.
  */
 const FORBIDDEN_KEYWORDS: readonly string[] = [
   '$ref',
@@ -47,106 +43,67 @@ const FORBIDDEN_KEYWORDS: readonly string[] = [
   'pattern'
 ];
 
+/** The type values we can dispatch to; used for early error detection. */
+const _SUPPORTED_TYPES: ReadonlySet<string> = new Set([
+  'string',
+  'number',
+  'integer',
+  'boolean',
+  'array',
+  'object'
+]);
+
 /**
- * Parses a raw JSON Schema object (e.g. one discovered at an MCP tool boundary) into a typed schema
- * value within the LLM-tool subset.
- *
- * @remarks
- * Because the static type cannot be recovered from a runtime value, every node is pinned to the
- * opaque phantom `JsonObject` — the honest type when a schema arrives at runtime. The result can be
- * passed to {@link toConverter} (yielding a `Converter<JsonObject>` that performs real runtime
- * validation) or {@link toJson} (re-emitting the normalized wire form). Consumers who need a
- * narrower static type must author the schema via the factories.
- *
- * Out-of-subset features fail loudly with a path (see {@link FORBIDDEN_KEYWORDS}); harmless
- * annotations are passed through.
- *
- * @param json - The raw JSON Schema object to parse.
- * @returns `Success` with the parsed schema, or `Failure` describing the first out-of-subset feature.
- * @public
+ * Extracts `{ description? }` from a raw schema object.
+ * Non-string description values are silently dropped (treated as absent),
+ * consistent with the treatment of other harmless annotations.
  */
-export function fromJson(json: JsonObject): Result<ILlmSchema<JsonObject>> {
-  // The parser works in terms of `ILlmSchema<unknown>` (every factory result is assignable to it).
-  // At the boundary the root is pinned to the opaque `JsonObject` phantom — the only honest static
-  // type for a schema reconstructed from runtime data (see feasibility doc §A.8).
-  return _parseNode(json, '#').onSuccess((node) => succeed(node as unknown as ILlmSchema<JsonObject>));
+function _extractDescription(raw: Record<string, unknown>): { description?: string } {
+  const desc = raw.description;
+  return typeof desc === 'string' ? { description: desc } : {};
 }
 
-function _parseNode(raw: JsonValue, path: string): Result<ILlmSchema<unknown>> {
-  if (!isJsonObject(raw)) {
-    return fail(`${path}: expected a JSON Schema object`);
-  }
+// ---------------------------------------------------------------------------
+// Private helpers — defined as function declarations so they are hoisted and
+// can be referenced by jsonSchemaConverter before their textual position.
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks for forbidden keywords in a raw schema object (already validated as non-null object).
+ * Returns `succeed(true)` if clean; returns a `Failure` if a forbidden keyword is found.
+ */
+function _checkForbidden(raw: Record<string, unknown>): Result<true> {
   for (const keyword of FORBIDDEN_KEYWORDS) {
     if (keyword in raw) {
-      return fail(`${path}: unsupported JSON Schema keyword '${keyword}'`);
+      return fail(`unsupported JSON Schema keyword '${keyword}'`);
     }
   }
-  const opts = typeof raw.description === 'string' ? { description: raw.description } : undefined;
-
-  if ('enum' in raw) {
-    return _parseEnum(raw.enum, path, opts);
-  }
-
-  const type = raw.type;
-  if (Array.isArray(type)) {
-    return fail(`${path}: union 'type' arrays are not supported`);
-  }
-  switch (type) {
-    case 'string':
-      return succeed(string(opts));
-    case 'number':
-      return succeed(number(opts));
-    case 'integer':
-      return succeed(integer(opts));
-    case 'boolean':
-      return succeed(boolean(opts));
-    case 'array':
-      return _parseArray(raw, path, opts);
-    case 'object':
-      return _parseObject(raw, path, opts);
-    default:
-      return fail(`${path}: unsupported or missing 'type' (${JSON.stringify(type)})`);
-  }
+  return succeed(true as const);
 }
 
-function _parseEnum(
-  values: JsonValue,
+function _parseEnumBody(
+  values: unknown,
   path: string,
-  opts?: { description: string }
-): Result<ILlmSchema<unknown>> {
+  raw: Record<string, unknown>
+): Result<ISchemaValidator<JsonObject>> {
   if (!Array.isArray(values) || values.length === 0) {
     return fail(`${path}: 'enum' must be a non-empty array`);
   }
   if (!values.every((v): v is string => typeof v === 'string')) {
     return fail(`${path}: only string 'enum' values are supported`);
   }
-  return succeed(enumOf(values, opts));
+  return succeed(enumOf(values, _extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>);
 }
 
-function _parseArray(
-  raw: JsonObject,
-  path: string,
-  opts?: { description: string }
-): Result<ILlmSchema<unknown>> {
-  const items = raw.items;
-  if (items === undefined) {
-    return fail(`${path}: 'array' requires an 'items' schema`);
-  }
-  if (Array.isArray(items)) {
-    return fail(`${path}: tuple-form 'items' arrays are not supported`);
-  }
-  return _parseNode(items, `${path}/items`).onSuccess((inner) => succeed(array(inner, opts)));
-}
-
-function _parseObject(
-  raw: JsonObject,
-  path: string,
-  opts?: { description: string }
-): Result<ILlmSchema<unknown>> {
+function _parseObjectBody(raw: Record<string, unknown>, path: string): Result<ISchemaValidator<JsonObject>> {
   const rawProps = raw.properties;
-  if (rawProps !== undefined && !isJsonObject(rawProps)) {
+  if (
+    rawProps !== undefined &&
+    (typeof rawProps !== 'object' || Array.isArray(rawProps) || rawProps === null)
+  ) {
     return fail(`${path}: 'properties' must be an object`);
   }
+
   const rawRequired = raw.required;
   if (
     rawRequired !== undefined &&
@@ -154,20 +111,20 @@ function _parseObject(
   ) {
     return fail(`${path}: 'required' must be an array of strings`);
   }
+
   const additionalProperties = raw.additionalProperties;
   if (additionalProperties !== undefined && typeof additionalProperties !== 'boolean') {
     return fail(`${path}: schema-valued 'additionalProperties' is not supported`);
   }
 
-  const requiredSet = new Set<string>(
-    Array.isArray(rawRequired) ? rawRequired.filter((r): r is string => typeof r === 'string') : []
-  );
-  const propEntries = isJsonObject(rawProps) ? Object.entries(rawProps) : [];
+  const requiredSet = new Set<string>(Array.isArray(rawRequired) ? (rawRequired as string[]) : []);
+  const propEntries: [string, unknown][] =
+    rawProps !== null && typeof rawProps === 'object' && !Array.isArray(rawProps)
+      ? Object.entries(rawProps as Record<string, unknown>)
+      : [];
 
-  // Reject `required` keys with no matching property schema. JSON Schema permits this, but for the
-  // LLM-tool subset it is almost always a mistake — and silently dropping the key would emit a
-  // schema looser than the input declared (the "required" field would vanish entirely).
-  const declared = new Set(propEntries.map(([key]) => key));
+  // Reject `required` keys with no matching property schema.
+  const declared = new Set(propEntries.map(([k]) => k));
   for (const key of requiredSet) {
     if (!declared.has(key)) {
       return fail(`${path}: 'required' key '${key}' has no matching entry in 'properties'`);
@@ -176,9 +133,12 @@ function _parseObject(
 
   return mapResults(
     propEntries.map(([key, child]) =>
-      _parseNode(child, `${path}/properties/${key}`).onSuccess((node) =>
-        succeed([key, requiredSet.has(key) ? node : optional(node)] as const)
-      )
+      // Forward reference to jsonSchemaConverter: safe because this lambda executes only
+      // after the module is fully initialized (at parse time, not at module load).
+      jsonSchemaConverter // eslint-disable-line @typescript-eslint/no-use-before-define
+        .convert(child)
+        .withErrorFormat((msg) => `${path}/properties/${key}: ${msg}`)
+        .onSuccess((node) => succeed([key, requiredSet.has(key) ? node : optional(node)] as const))
     )
   ).onSuccess((built) => {
     const properties: ILlmProperties = {};
@@ -187,11 +147,179 @@ function _parseObject(
     }
     return succeed(
       object(properties, {
-        // JSON Schema's default (absent `additionalProperties`) permits extra fields; only an
-        // explicit `false` produces a strict object.
+        // JSON Schema's default (absent additionalProperties) permits extra fields;
+        // only an explicit `false` produces a strict validator.
         additionalProperties: additionalProperties !== false,
-        ...opts
-      })
+        ..._extractDescription(raw)
+      }) as unknown as ISchemaValidator<JsonObject>
     );
   });
+}
+
+// ---------------------------------------------------------------------------
+// Per-arm converters (hoisted function declarations → no forward-reference issue).
+// Each arm is reached only after the pre-flight checks in jsonSchemaConverter pass,
+// so inputs are guaranteed to be non-null, non-array objects with no forbidden keywords
+// and a valid (or enum) type tag.
+// ---------------------------------------------------------------------------
+
+/** String arm: `{ type: 'string', description? }` */
+function _convertString(from: unknown): Result<ISchemaValidator<JsonObject>> {
+  const raw = from as Record<string, unknown>;
+  return succeed(string(_extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>);
+}
+
+/** Number arm */
+function _convertNumber(from: unknown): Result<ISchemaValidator<JsonObject>> {
+  const raw = from as Record<string, unknown>;
+  return succeed(number(_extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>);
+}
+
+/** Integer arm */
+function _convertInteger(from: unknown): Result<ISchemaValidator<JsonObject>> {
+  const raw = from as Record<string, unknown>;
+  return succeed(integer(_extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>);
+}
+
+/** Boolean arm */
+function _convertBoolean(from: unknown): Result<ISchemaValidator<JsonObject>> {
+  const raw = from as Record<string, unknown>;
+  return succeed(boolean(_extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>);
+}
+
+/**
+ * Array arm — recurses for the `items` sub-schema via `jsonSchemaConverter`.
+ * Forward-references `jsonSchemaConverter` by name, which is safe because this function
+ * body only executes at parse-time (after the module is fully initialized).
+ */
+function _convertArray(from: unknown): Result<ISchemaValidator<JsonObject>> {
+  // Pre-flight in jsonSchemaConverter guarantees `from` is a non-null, non-array object.
+  const raw = from as Record<string, unknown>;
+  const items = raw.items;
+  if (items === undefined) {
+    return fail(`'array' requires an 'items' schema`);
+  }
+  if (Array.isArray(items)) {
+    return fail(`tuple-form 'items' arrays are not supported`);
+  }
+  return jsonSchemaConverter // eslint-disable-line @typescript-eslint/no-use-before-define
+    .convert(items)
+    .withErrorFormat((msg) => `#/items: ${msg}`)
+    .onSuccess((inner) =>
+      succeed(array(inner, _extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>)
+    );
+}
+
+/**
+ * Object arm — recurses for each property value via `jsonSchemaConverter`.
+ */
+function _convertObject(from: unknown): Result<ISchemaValidator<JsonObject>> {
+  // Pre-flight in jsonSchemaConverter guarantees `from` is a non-null, non-array object.
+  const raw = from as Record<string, unknown>;
+  return _parseObjectBody(raw, '#');
+}
+
+/** Enum arm — handles `{ enum: [...] }` inputs (no `type` discriminator). */
+function _convertEnum(from: unknown): Result<ISchemaValidator<JsonObject>> {
+  // Pre-flight in jsonSchemaConverter guarantees `from` is a non-null, non-array object.
+  const raw = from as Record<string, unknown>;
+  if (!('enum' in raw)) {
+    return fail('no enum field');
+  }
+  return _parseEnumBody(raw.enum, '#', raw);
+}
+
+// ---------------------------------------------------------------------------
+// Arm converter instances (built once, referenced by jsonSchemaConverter's dispatch).
+// Defined AFTER the function declarations above (no forward-reference issue).
+// ---------------------------------------------------------------------------
+
+const _stringArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertString);
+const _numberArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertNumber);
+const _integerArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertInteger);
+const _booleanArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertBoolean);
+const _arrayArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertArray);
+const _objectArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertObject);
+const _enumArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertEnum);
+
+// ---------------------------------------------------------------------------
+// Top-level dispatch: oneOf([enum, discriminatedObject]).
+// Built once and reused by jsonSchemaConverter's generic callback.
+// ---------------------------------------------------------------------------
+const _dispatchConverter: Converter<ISchemaValidator<JsonObject>> = Converters.oneOf([
+  _enumArm,
+  Converters.discriminatedObject<ISchemaValidator<JsonObject>>('type', {
+    string: _stringArm,
+    number: _numberArm,
+    integer: _integerArm,
+    boolean: _booleanArm,
+    array: _arrayArm,
+    object: _objectArm
+  })
+]);
+
+/**
+ * The main converter. Parses a raw JSON Schema object into a typed
+ * {@link ISchemaValidator | schema validator} for the LLM-tool subset.
+ *
+ * @remarks
+ * Performs pre-flight checks (non-object root, union type arrays, forbidden keywords,
+ * unknown types) before dispatching to the per-type arm converters.
+ *
+ * Array and object arms reference `jsonSchemaConverter` by name from inside function
+ * declarations (hoisted). By the time any arm is called at runtime, `jsonSchemaConverter`
+ * is fully initialized, so recursive sub-schema calls also go through the pre-flight checks
+ * and produce meaningful error messages.
+ *
+ * @public
+ */
+export const jsonSchemaConverter: Converter<ISchemaValidator<JsonObject>> = Converters.generic(
+  (from: unknown): Result<ISchemaValidator<JsonObject>> => {
+    // Guard: root must be a non-array object.
+    if (typeof from !== 'object' || Array.isArray(from) || from === null) {
+      return fail('expected a JSON Schema object');
+    }
+    const raw = from as Record<string, unknown>;
+
+    // Union type arrays: give a better error than discriminatedObject's generic message.
+    if (Array.isArray(raw.type)) {
+      return fail(`union 'type' arrays are not supported`);
+    }
+
+    // Forbidden keywords: check before dispatching so inputs with no `type` (e.g. just
+    // `{ $ref: '...' }`) get a specific error rather than a generic "no matching converter".
+    const forbidden = _checkForbidden(raw);
+    if (forbidden.isFailure()) {
+      return fail(forbidden.message);
+    }
+
+    // Missing/unknown type (not enum): give a better error than a generic "no matching converter".
+    if (!('enum' in raw) && (typeof raw.type !== 'string' || !_SUPPORTED_TYPES.has(raw.type))) {
+      return fail(`unsupported or missing 'type'`);
+    }
+
+    return _dispatchConverter.convert(from);
+  }
+);
+
+/**
+ * Parses a raw JSON Schema object (e.g. one discovered at an MCP tool boundary) into a typed schema
+ * value within the LLM-tool subset.
+ *
+ * @remarks
+ * Because the static type cannot be recovered from a runtime value, every node is pinned to the
+ * opaque phantom `JsonObject` — the honest type when a schema arrives at runtime. The result is an
+ * {@link ISchemaValidator | ISchemaValidator<JsonObject>} whose `validate()` method performs real
+ * runtime validation; the derived static type is the opaque `JsonObject`.
+ *
+ * Consumers who need a narrower derived type must author the schema via the factories.
+ *
+ * Out-of-subset features fail loudly (see `FORBIDDEN_KEYWORDS`); harmless annotations are ignored.
+ *
+ * @param json - The raw JSON Schema object to parse.
+ * @returns `Success` with the parsed schema, or `Failure` describing the first out-of-subset feature.
+ * @public
+ */
+export function fromJson(json: JsonObject): Result<ISchemaValidator<JsonObject>> {
+  return jsonSchemaConverter.convert(json);
 }

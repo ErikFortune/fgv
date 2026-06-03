@@ -36,7 +36,7 @@ describe('JsonSchema.fromJson', () => {
       ];
       for (const raw of cases) {
         expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
-          expect(JsonSchema.toJson(schema)).toEqual(normalizeEnum(raw));
+          expect(schema.toJson()).toEqual(normalizeEnum(raw));
         });
       }
     });
@@ -44,9 +44,9 @@ describe('JsonSchema.fromJson', () => {
     test('parses an array schema', () => {
       const raw: JsonObject = { type: 'array', items: { type: 'string' } };
       expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
-        expect(JsonSchema.toJson(schema)).toEqual(raw);
-        // fromJson yields an opaque Converter<JsonObject>; the runtime value is a JsonArray.
-        expect(JsonSchema.toConverter(schema).orThrow().convert(['x'])).toSucceedAndSatisfy((v) => {
+        expect(schema.toJson()).toEqual(raw);
+        // fromJson yields an ISchemaValidator<JsonObject>; validate() works at runtime.
+        expect(schema.validate(['x'])).toSucceedAndSatisfy((v) => {
           expect(v).toEqual(['x']);
         });
       });
@@ -63,12 +63,11 @@ describe('JsonSchema.fromJson', () => {
         additionalProperties: false
       };
       expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
-        expect(JsonSchema.toJson(schema)).toEqual(raw);
-        const converter = JsonSchema.toConverter(schema).orThrow();
-        expect(converter.convert({ query: 'a' })).toSucceedWith({ query: 'a' });
-        expect(converter.convert({ query: 'a', limit: 2 })).toSucceedWith({ query: 'a', limit: 2 });
+        expect(schema.toJson()).toEqual(raw);
+        expect(schema.validate({ query: 'a' })).toSucceedWith({ query: 'a' });
+        expect(schema.validate({ query: 'a', limit: 2 })).toSucceedWith({ query: 'a', limit: 2 });
         // strict because additionalProperties: false
-        expect(converter.convert({ query: 'a', extra: 1 })).toFailWith(/extra/i);
+        expect(schema.validate({ query: 'a', extra: 1 })).toFailWith(/extra/i);
       });
     });
 
@@ -79,35 +78,33 @@ describe('JsonSchema.fromJson', () => {
         required: ['query']
       };
       expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
-        const converter = JsonSchema.toConverter(schema).orThrow();
-        expect(converter.convert({ query: 'a', extra: 1 })).toSucceedWith({ query: 'a' });
+        expect(schema.validate({ query: 'a', extra: 1 })).toSucceedWith({ query: 'a' });
       });
     });
 
     test('object with no properties and no required', () => {
       const raw: JsonObject = { type: 'object' };
       expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
-        expect(JsonSchema.toConverter(schema).orThrow().convert({})).toSucceedWith({});
+        expect(schema.validate({})).toSucceedWith({});
       });
     });
 
     test('ignores harmless annotations (format, title, default) without failing', () => {
       const raw: JsonObject = { type: 'string', format: 'date-time', title: 'When', default: 'now' };
       expect(JsonSchema.fromJson(raw)).toSucceedAndSatisfy((schema) => {
-        expect(JsonSchema.toJson(schema)).toEqual({ type: 'string' });
+        expect(schema.toJson()).toEqual({ type: 'string' });
       });
     });
 
-    test('a parsed schema validates at runtime as Converter<JsonObject>', () => {
+    test('a parsed schema validates at runtime as ISchemaValidator<JsonObject>', () => {
       const raw: JsonObject = {
         type: 'object',
         properties: { id: { type: 'string' } },
         required: ['id']
       };
       const schema = JsonSchema.fromJson(raw).orThrow();
-      const converter = JsonSchema.toConverter(schema).orThrow();
-      expect(converter.convert({ id: 'abc' })).toSucceedWith({ id: 'abc' });
-      expect(converter.convert({})).toFail();
+      expect(schema.validate({ id: 'abc' })).toSucceedWith({ id: 'abc' });
+      expect(schema.validate({})).toFail();
     });
   });
 

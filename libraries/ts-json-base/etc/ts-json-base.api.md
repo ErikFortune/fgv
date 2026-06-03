@@ -28,11 +28,11 @@ type AnyFileTreeDirectoryItem<TCT extends string = string> = IFileTreeDirectoryI
 type AnyFileTreeFileItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IMutableFileTreeFileItem<TCT>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaOptions"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmArraySchema"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Static"
 //
 // @public
-function array<S extends ILlmSchema<unknown>>(items: S, opts?: ISchemaOptions): ILlmArraySchema<S>;
+function array<S extends ISchemaValidator<unknown>>(items: S, opts?: ISchemaOptions): ISchemaValidator<Static<S>[]>;
 
 // @public
 type ArrayConverter<T, TC = unknown> = Converter<JsonCompatibleType<T>[], TC>;
@@ -59,11 +59,11 @@ type ArrayValidator<T, TC = unknown> = Validation.Classes.ArrayValidator<JsonCom
 const boolean: Converter<boolean, IJsonConverterContext>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaOptions"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmBooleanSchema"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Static"
 //
 // @public
-function boolean_2(opts?: ISchemaOptions): ILlmBooleanSchema;
+function boolean_2(opts?: ISchemaOptions): ISchemaValidator<boolean>;
 
 // @public
 const boolean_3: Validator<boolean, IJsonValidatorContext>;
@@ -188,11 +188,11 @@ function enumeratedValue<T>(values: ReadonlyArray<T>, message?: string): Convert
 function enumeratedValue_2<T>(values: ReadonlyArray<T>, message?: string): Validator<T, IJsonValidatorContext | ReadonlyArray<T>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaOptions"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmEnumSchema"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Static"
 //
 // @public
-function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ILlmEnumSchema<T>;
+function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T>;
 
 // @public
 class FileItem<TCT extends string = string> implements IMutableFileTreeFileItem<TCT> {
@@ -323,12 +323,10 @@ function forFilesystem<TCT extends string = string>(prefix?: string): Result<Fil
 // @public
 function forFilesystem<TCT extends string = string>(params?: IFileTreeInitParams<TCT>): Result<FileTree_2<TCT>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "toConverter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "toJson"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "FORBIDDEN_KEYWORDS"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 //
 // @public
-function fromJson(json: JsonObject): Result<ILlmSchema<JsonObject>>;
+function fromJson(json: JsonObject): Result<ISchemaValidator<JsonObject>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -464,83 +462,50 @@ interface IJsonValidatorContext {
     ignoreUndefinedProperties?: boolean;
 }
 
-// @public
-interface ILlmArraySchema<S extends ILlmSchema<unknown>> extends ILlmSchema<Array<Static<S>>> {
-    // (undocumented)
-    readonly _items: S;
-    // (undocumented)
-    readonly _type: 'array';
-}
-
-// @public
-interface ILlmBooleanSchema extends ILlmSchema<boolean> {
-    // (undocumented)
-    readonly _type: 'boolean';
-}
-
-// @public
-interface ILlmEnumSchema<T extends string> extends ILlmSchema<T> {
-    // (undocumented)
-    readonly enum: ReadonlyArray<T>;
-    // (undocumented)
-    readonly _type: 'enum';
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "toConverter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "number"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "integer"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 //
-// @public
-interface ILlmNumberSchema extends ILlmSchema<number> {
-    // (undocumented)
-    readonly strict: boolean;
-    // (undocumented)
-    readonly _type: 'number' | 'integer';
-}
+// @public @deprecated
+type ILlmArraySchema<S extends ISchemaValidator<unknown>> = ISchemaValidator<Static<S>[]>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
+//
+// @public @deprecated
+type ILlmBooleanSchema = ISchemaValidator<boolean>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
+//
+// @public @deprecated
+type ILlmEnumSchema<T extends string> = ISchemaValidator<T>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
+//
+// @public @deprecated
+type ILlmNumberSchema = ISchemaValidator<number>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
+//
+// @public @deprecated
+type ILlmObjectSchema<P extends ILlmProperties> = ISchemaValidator<ObjectStatic<P>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
+//
+// @public @deprecated
+type ILlmOptional<S extends ISchemaValidator<unknown>> = ISchemaValidator<Static<S> | undefined>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "object"
 //
 // @public
-interface ILlmObjectSchema<P extends ILlmProperties> extends ILlmSchema<ObjectStatic<P>> {
-    // (undocumented)
-    readonly additionalProperties: boolean;
-    // (undocumented)
-    readonly _properties: P;
-    // (undocumented)
-    readonly _type: 'object';
-}
+type ILlmProperties = Record<string, ISchemaValidator<unknown>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmObjectSchema"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 //
-// @public
-interface ILlmOptional<S extends ILlmSchema<unknown>> extends ILlmSchema<Static<S> | undefined> {
-    // (undocumented)
-    readonly _schema: S;
-    // (undocumented)
-    readonly _type: 'optional';
-}
+// @public @deprecated (undocumented)
+type ILlmSchema<T> = ISchemaValidator<T>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "object"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 //
-// @public
-type ILlmProperties = Record<string, ILlmSchema<unknown>>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Static"
-//
-// @public
-interface ILlmSchema<T> {
-    readonly __staticType?: T;
-    readonly description?: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "toConverter"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "toJson"
-    readonly _type: SchemaNodeType;
-}
-
-// @public
-interface ILlmStringSchema extends ILlmSchema<string> {
-    // (undocumented)
-    readonly _type: 'string';
-}
+// @public @deprecated
+type ILlmStringSchema = ISchemaValidator<string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -623,11 +588,11 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "INumberSchemaOptions"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmNumberSchema"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Static"
 //
 // @public
-function integer(opts?: INumberSchemaOptions): ILlmNumberSchema;
+function integer(opts?: INumberSchemaOptions): ISchemaValidator<number>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "number"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "integer"
@@ -660,6 +625,18 @@ interface IReadDirectoryItem<T> {
 // @public
 interface ISchemaOptions {
     description?: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "toJson"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Static"
+//
+// @public
+interface ISchemaValidator<T> extends Validator<T> {
+    readonly __staticType?: T;
+    readonly description?: string;
+    toJson(): JsonObject;
+    readonly _type: SchemaNodeType;
 }
 
 // @public
@@ -827,20 +804,21 @@ type JsonReviver = (key: string, value: JsonValue) => JsonValue;
 declare namespace JsonSchema {
     export {
         SchemaNodeType,
-        ILlmSchema,
+        ISchemaValidator,
         Static,
+        ILlmProperties,
+        OptionalKeys,
+        RequiredKeys,
+        OptionalPropertyStatic,
+        Simplify,
+        ObjectStatic,
+        ILlmSchema,
         ILlmStringSchema,
         ILlmNumberSchema,
         ILlmBooleanSchema,
         ILlmEnumSchema,
         ILlmOptional,
         ILlmArraySchema,
-        ILlmProperties,
-        OptionalKeys,
-        RequiredKeys,
-        Simplify,
-        OptionalPropertyStatic,
-        ObjectStatic,
         ILlmObjectSchema,
         string_2 as string,
         number_2 as number,
@@ -853,12 +831,16 @@ declare namespace JsonSchema {
         ISchemaOptions,
         INumberSchemaOptions,
         IObjectSchemaOptions,
-        toConverter,
-        toJson,
-        fromJson
+        fromJson,
+        jsonSchemaConverter
     }
 }
 export { JsonSchema }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
+//
+// @public
+const jsonSchemaConverter: Converter<ISchemaValidator<JsonObject>>;
 
 // @public
 class JsonTreeHelper {
@@ -898,11 +880,11 @@ type MutableFileTreeItem<TCT extends string = string> = IMutableFileTreeFileItem
 const number: Converter<number, IJsonConverterContext>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "INumberSchemaOptions"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmNumberSchema"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Static"
 //
 // @public
-function number_2(opts?: INumberSchemaOptions): ILlmNumberSchema;
+function number_2(opts?: INumberSchemaOptions): ISchemaValidator<number>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -923,11 +905,11 @@ function object_2<T, TC = unknown>(properties: Validation.Classes.FieldValidator
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "optional"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IObjectSchemaOptions"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmObjectSchema"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Static"
 //
 // @public
-function object_3<P extends ILlmProperties>(properties: P, opts?: IObjectSchemaOptions): ILlmObjectSchema<P>;
+function object_3<P extends ILlmProperties>(properties: P, opts?: IObjectSchemaOptions): ISchemaValidator<ObjectStatic<P>>;
 
 // @public
 type ObjectConverter<T, TC = unknown> = ObjectConverter_2<JsonCompatibleType<T>, TC>;
@@ -943,21 +925,21 @@ type ObjectStatic<P extends ILlmProperties> = Simplify<{
 type ObjectValidator<T, TC = unknown> = Validation.Classes.ObjectValidator<JsonCompatibleType<T>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "object"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmOptional"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Static"
 //
 // @public
-function optional<S extends ILlmSchema<unknown>>(schema: S): ILlmOptional<S>;
+function optional<S extends ISchemaValidator<unknown>>(schema: S): ISchemaValidator<Static<S> | undefined>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmOptional"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "optional"
 //
 // @public
 type OptionalKeys<P extends ILlmProperties> = {
-    [K in keyof P]: P[K] extends ILlmOptional<ILlmSchema<unknown>> ? K : never;
+    [K in keyof P]: P[K] extends ISchemaValidator<infer U> ? undefined extends U ? K : never : never;
 }[keyof P];
 
 // @public
-type OptionalPropertyStatic<O> = O extends ILlmOptional<infer S> ? Static<S> : never;
+type OptionalPropertyStatic<V> = V extends ISchemaValidator<infer U> ? Exclude<U, undefined> : never;
 
 // @public
 export function pickJsonObject(src: JsonObject, path: string): Result<JsonObject>;
@@ -991,8 +973,6 @@ function recordOf_2<T, TC = unknown, TK extends string = string>(validateElement
 // @public
 type RecordValidator<T, TC = unknown, TK extends string = string> = Validation.Validator<Record<TK, JsonCompatibleType<T>>, TC>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmOptional"
-//
 // @public
 type RequiredKeys<P extends ILlmProperties> = Exclude<keyof P, OptionalKeys<P>>;
 
@@ -1011,9 +991,7 @@ type SaveDetail = SaveCapability | SaveFailureReason;
 // @public
 type SaveFailureReason = 'not-supported' | 'read-only' | 'not-mutable' | 'path-excluded' | 'permission-denied';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmSchema"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "toConverter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "toJson"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 //
 // @public
 type SchemaNodeType = 'string' | 'number' | 'integer' | 'boolean' | 'enum' | 'optional' | 'array' | 'object';
@@ -1023,12 +1001,10 @@ type Simplify<T> = {
     [K in keyof T]: T[K];
 } & {};
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmSchema"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "toConverter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "toJson"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 //
 // @public
-type Static<S extends ILlmSchema<unknown>> = S extends ILlmSchema<infer T> ? T : never;
+type Static<S extends ISchemaValidator<unknown>> = S extends ISchemaValidator<infer T> ? T : never;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1040,11 +1016,11 @@ function strictObject<T, TC = unknown>(properties: Conversion.FieldConverters<Js
 const string: StringConverter<string, IJsonConverterContext>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaOptions"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ILlmStringSchema"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Static"
 //
 // @public
-function string_2(opts?: ISchemaOptions): ILlmStringSchema;
+function string_2(opts?: ISchemaOptions): ISchemaValidator<string>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1058,19 +1034,6 @@ function stringifiedJson(): Converter<JsonValue>;
 
 // @public
 function stringifiedJson<T>(inner: Converter<T> | Validator<T>): Converter<T>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "string"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "object"
-//
-// @public
-function toConverter<S extends ILlmSchema<unknown>>(schema: S): Result<Converter<Static<S>>>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "fromJson"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "fromJson"
-//
-// @public
-function toJson(schema: ILlmSchema<unknown>): JsonObject;
 
 // @public
 type Validator_2<T, TC = unknown> = Validator<JsonCompatibleType<T>, TC>;

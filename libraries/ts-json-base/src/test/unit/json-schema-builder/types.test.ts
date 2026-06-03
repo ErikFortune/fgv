@@ -44,7 +44,7 @@ describe('JsonSchema phantom types', () => {
   test('Static<S> derives enum unions', () => {
     const schema = JsonSchema.enumOf(['run', 'stop'] as const);
     assertExact<JsonSchema.Static<typeof schema>, 'run' | 'stop'>(true);
-    expect(schema.enum).toEqual(['run', 'stop']);
+    expect((schema as unknown as { enum: ReadonlyArray<string> }).enum).toEqual(['run', 'stop']);
   });
 
   test('Static<S> derives array element types', () => {

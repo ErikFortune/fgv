@@ -23,83 +23,89 @@
 import '@fgv/ts-utils-jest';
 import { JsonSchema } from '../../..';
 
+/** Helpers to access implementation-detail fields on schema instances via unknown cast. */
+function asImpl<T>(schema: unknown): T {
+  return schema as unknown as T;
+}
+
 describe('JsonSchema factories', () => {
   describe('leaf factories', () => {
-    test('string', () => {
-      expect(JsonSchema.string()).toEqual({ _type: 'string' });
-      expect(JsonSchema.string({ description: 'name' })).toEqual({
-        _type: 'string',
-        description: 'name'
-      });
+    test('string carries _type and optional description', () => {
+      expect(JsonSchema.string()._type).toBe('string');
+      expect(JsonSchema.string().description).toBeUndefined();
+      expect(JsonSchema.string({ description: 'name' }).description).toBe('name');
     });
 
-    test('boolean', () => {
-      expect(JsonSchema.boolean()).toEqual({ _type: 'boolean' });
-      expect(JsonSchema.boolean({ description: 'flag' })).toEqual({
-        _type: 'boolean',
-        description: 'flag'
-      });
+    test('boolean carries _type and optional description', () => {
+      expect(JsonSchema.boolean()._type).toBe('boolean');
+      expect(JsonSchema.boolean().description).toBeUndefined();
+      expect(JsonSchema.boolean({ description: 'flag' }).description).toBe('flag');
     });
 
-    test('number defaults to strict', () => {
-      expect(JsonSchema.number()).toEqual({ _type: 'number', strict: true });
-      expect(JsonSchema.number({ strict: false })).toEqual({ _type: 'number', strict: false });
-      expect(JsonSchema.number({ description: 'qty' })).toEqual({
-        _type: 'number',
-        strict: true,
-        description: 'qty'
-      });
+    test('number defaults to strict, carries optional description', () => {
+      const n = JsonSchema.number();
+      expect(n._type).toBe('number');
+      expect(asImpl<{ strict: boolean }>(n).strict).toBe(true);
+
+      const nonStrict = JsonSchema.number({ strict: false });
+      expect(asImpl<{ strict: boolean }>(nonStrict).strict).toBe(false);
+
+      const withDesc = JsonSchema.number({ description: 'qty' });
+      expect(asImpl<{ strict: boolean }>(withDesc).strict).toBe(true);
+      expect(withDesc.description).toBe('qty');
     });
 
     test('integer defaults to strict', () => {
-      expect(JsonSchema.integer()).toEqual({ _type: 'integer', strict: true });
-      expect(JsonSchema.integer({ strict: false })).toEqual({ _type: 'integer', strict: false });
+      const i = JsonSchema.integer();
+      expect(i._type).toBe('integer');
+      expect(asImpl<{ strict: boolean }>(i).strict).toBe(true);
+
+      const nonStrict = JsonSchema.integer({ strict: false });
+      expect(asImpl<{ strict: boolean }>(nonStrict).strict).toBe(false);
     });
 
-    test('enumOf', () => {
-      expect(JsonSchema.enumOf(['a', 'b'] as const)).toEqual({ _type: 'enum', enum: ['a', 'b'] });
-      expect(JsonSchema.enumOf(['a'] as const, { description: 'choices' })).toEqual({
-        _type: 'enum',
-        enum: ['a'],
-        description: 'choices'
-      });
+    test('enumOf carries _type and enum values', () => {
+      const e = JsonSchema.enumOf(['a', 'b'] as const);
+      expect(e._type).toBe('enum');
+      expect(asImpl<{ enum: ReadonlyArray<string> }>(e).enum).toEqual(['a', 'b']);
+
+      const withDesc = JsonSchema.enumOf(['a'] as const, { description: 'choices' });
+      expect(asImpl<{ enum: ReadonlyArray<string> }>(withDesc).enum).toEqual(['a']);
+      expect(withDesc.description).toBe('choices');
     });
   });
 
   describe('composite factories', () => {
-    test('optional wraps the inner schema', () => {
+    test('optional wraps the inner schema and is transparent at JSON Schema level', () => {
       const inner = JsonSchema.integer();
-      expect(JsonSchema.optional(inner)).toEqual({ _type: 'optional', _schema: inner });
+      const opt = JsonSchema.optional(inner);
+      expect(opt._type).toBe('optional');
+      expect(asImpl<{ _schema: JsonSchema.ISchemaValidator<number> }>(opt)._schema).toBe(inner);
     });
 
-    test('array carries items and optional description', () => {
+    test('array carries _type, _items, and optional description', () => {
       const items = JsonSchema.string();
-      expect(JsonSchema.array(items)).toEqual({ _type: 'array', _items: items });
-      expect(JsonSchema.array(items, { description: 'list' })).toEqual({
-        _type: 'array',
-        _items: items,
-        description: 'list'
-      });
+      const arr = JsonSchema.array(items);
+      expect(arr._type).toBe('array');
+      expect(asImpl<{ _items: JsonSchema.ISchemaValidator<string> }>(arr)._items).toBe(items);
+
+      const withDesc = JsonSchema.array(items, { description: 'list' });
+      expect(withDesc._type).toBe('array');
+      expect(withDesc.description).toBe('list');
     });
 
     test('object defaults additionalProperties to false', () => {
       const properties = { id: JsonSchema.string() };
-      expect(JsonSchema.object(properties)).toEqual({
-        _type: 'object',
-        _properties: properties,
-        additionalProperties: false
-      });
-      expect(JsonSchema.object(properties, { additionalProperties: true })).toEqual({
-        _type: 'object',
-        _properties: properties,
-        additionalProperties: true
-      });
-      expect(JsonSchema.object(properties, { description: 'thing' })).toEqual({
-        _type: 'object',
-        _properties: properties,
-        additionalProperties: false,
-        description: 'thing'
-      });
+      const obj = JsonSchema.object(properties);
+      expect(obj._type).toBe('object');
+      expect(asImpl<{ additionalProperties: boolean }>(obj).additionalProperties).toBe(false);
+
+      const lenient = JsonSchema.object(properties, { additionalProperties: true });
+      expect(asImpl<{ additionalProperties: boolean }>(lenient).additionalProperties).toBe(true);
+
+      const withDesc = JsonSchema.object(properties, { description: 'thing' });
+      expect(asImpl<{ additionalProperties: boolean }>(withDesc).additionalProperties).toBe(false);
+      expect(withDesc.description).toBe('thing');
     });
   });
 
@@ -130,8 +136,8 @@ describe('JsonSchema factories', () => {
       expect(explicit.query).toBe('a');
       expect(explicit.limit).toBeUndefined();
 
-      // The derived converter accepts the same value.
-      expect(JsonSchema.toConverter(schema).orThrow().convert(value)).toSucceedWith(value);
+      // Schema IS a Validator — call validate() directly.
+      expect(schema.validate(value)).toSucceedWith(value);
     });
   });
 });
