@@ -58,3 +58,25 @@ The question: does the pattern deserve its own top-level directory (e.g. `integr
 **Dependencies**: at least one more Result-integration-boundary package landing; or a concrete consumer-side ergonomics complaint about discoverability of these packages.
 
 **Reference**: `.ai/tasks/completed/2026-05/crypto-batch-2-webauthn/` (OQ-1 + followups section); cluster-close PR.
+
+---
+
+## Client-defined tools for `@fgv/ts-extras/ai-assist` (function calling + MCP)
+
+Today ai-assist supports **server-side tools only, and only `web_search`** (`AiServerToolType = 'web_search'` is a single-value union; provider toolFormat adapters switch on `case 'web_search'` only). No client-supplied tool schemas, no `tool_use` / `tool_result` round-trips, no parallel-tool-call orchestration, no MCP-style or function-calling protocols. Personaility's near-term roadmap moves into agentic territory (memory tool, harness-supplied capabilities) that needs this surface.
+
+**Two layers, sequenced:**
+
+1. **Harness-supplied tools (first requirement, near-term).** Consumer (e.g. personaility) defines tool schemas in their code, supplies callbacks, and ai-assist orchestrates the model's tool-call → consumer-callback → tool-result round-trip. Canonical example: a memory tool the agent calls to recall/store user-specific context. The shape: `AiClientToolConfig` (name + description + JSON Schema for params), tool-call / tool-result event types on the streaming surface, per-provider toolFormat adapters (different shape than server tools), and a round-trip loop pattern the consumer drives.
+
+2. **MCP tools (longer term).** Same conceptual surface, but the tool catalog comes from one or more MCP servers the consumer connects to. Adds: MCP client transport, tool discovery, schema introspection, lifecycle management. Likely a separate consumer-facing API that lowers into the same internal client-tool plumbing.
+
+**Composition with thinking-mode.** Thinking-config and tools should compose cleanly — both are options-bag fields today, riding the same call paths. The provider matrix needs verification (OpenAI Responses, Anthropic, Gemini, xAI all advertise function calling, but per-provider quirks around thinking + tools differ). Phase A research output should name the matrix.
+
+**Phase A — design exploration in flight (2026-05-30).** `.ai/tasks/active/ai-assist-client-tools/brief.md` commissioned to senior-developer + general-purpose research pair: cross-provider API survey, fgv-native client-tool surface sketch, harness-tool vs MCP separation analysis, sizing for phase B/C. Output is a design doc Erik reviews before committing to implementation.
+
+**Why deferred (to a sprint, not indefinite)**: client-tool support is a real piece of work — touches the streaming surface across four providers, introduces a new conversation-loop pattern, and likely needs its own `LIBRARY_CAPABILITIES.md` entry. Erik wants it in the next sprint; this entry exists to name the work and point at the design substrate while the sprint window settles.
+
+**Dependencies**: phase A design doc landed and reviewed; sprint-window commitment.
+
+**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/active/ai-assist-client-tools/`.
