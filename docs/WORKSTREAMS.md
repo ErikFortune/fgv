@@ -204,6 +204,17 @@ Design-triage-implement shape is likely; new public API has real consequences.
 
 ## Completed workstreams
 
+### `json-schema-derives-t` ✅
+
+**Status:** ✅ shipped via PR #441 to integration branch `json-schema-derives-t`; cluster-close PR open
+**Workflow shape:** alignment stream (single-PR new packlet on integration branch + cluster-close squash to release)
+**Substrate:** `.ai/tasks/completed/2026-06/json-schema-derives-t/{state.md, README.md}` + `.ai/tasks/completed/2026-06/json-schema-converter-alignment/{brief.md, state.md, research.md, derives-t-feasibility-brief.md, derives-t-feasibility.md, README.md}` (alignment spike rides with this stream's squash)
+**Package surface:** `@fgv/ts-json-base` (new `json-schema-builder` packlet, consumer-facing `JsonSchema` namespace) — ~505 lines impl + ~620 lines tests; no surface change to existing exports.
+
+**Mission.** Typed JSON Schema with derived static types for the LLM-tool subset. **Schema IS the validator.** Each factory returns an `ISchemaValidator<T>` that extends `Validator<T>`, carries the phantom `static: T` for `Static<typeof schema>` extraction, and exposes `validate()` / `convert()` / `toJson()` as methods. `fromJson(rawJsonObject)` parses incoming JSON Schema (e.g. from MCP) into an `ISchemaValidator<JsonValue>` via `Converters.discriminatedObject` with arms recursing through `self` (enabled by PR #442's discriminatedObject self-fix). Consumer authors a single typed value and gets verified-not-asserted type safety end-to-end.
+
+**Origin.** Surfaced during `ai-assist-client-tools` Phase A review: a consumer authoring both JSON Schema (wire) and Converter/Validator (runtime) over the same shape is error-prone. Two-phase spike (`json-schema-converter-alignment`) tested feasibility; phase-1 broad survey + phase-2 schema-derives-T feasibility verdict, both shipped as substrate artifacts. Erik chose Option 1 (commission alignment now, hold ai-assist-client-tools Phase B/C). Four Copilot review rounds + structural pivots; round 3 surfaced a load-bearing validator/convert symmetry bug; loop converged on diminishing returns at round 4 (4 of 10 used per L33).
+
 ### `discriminated-object-self-fix` ✅
 
 **Status:** ✅ shipped to `release` via PR #442 (2026-06-03).
