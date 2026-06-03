@@ -21,9 +21,9 @@
  */
 
 /**
- * Validates schema-validator behavior. Schema nodes ARE Validators — consumers call
- * schema.validate(input) directly. This test suite covers the same cases as the previous
- * toConverter test suite, rewritten to use the Validator interface.
+ * Tests schema-validator behavior via `schema.validate(input)`. Schema nodes ARE Validators
+ * (ISchemaValidator<T> extends Validator<T>); no `toConverter` step is required or available.
+ * Covers all leaf, numeric, array, object, and optional-wrapper validation semantics.
  */
 import '@fgv/ts-utils-jest';
 import { JsonSchema } from '../../..';

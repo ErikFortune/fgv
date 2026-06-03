@@ -45,7 +45,7 @@ export interface ISchemaOptions {
 }
 
 /**
- * Options for the {@link number} and {@link integer} factories.
+ * Options for the `number` and `integer` factories.
  * @public
  */
 export interface INumberSchemaOptions extends ISchemaOptions {
@@ -58,7 +58,7 @@ export interface INumberSchemaOptions extends ISchemaOptions {
 }
 
 /**
- * Options for the {@link object} factory.
+ * Options for the `object` factory.
  * @public
  */
 export interface IObjectSchemaOptions extends ISchemaOptions {
@@ -88,7 +88,7 @@ function _toValidatorReturn<T>(result: Result<T>): boolean | Failure<T> {
 
 /**
  * Abstract base class for all schema validator nodes. Extends GenericValidator so
- * each schema value IS a Validator<T> and also carries toJson() and _type.
+ * each schema value IS a `Validator<T>` and also carries `toJson()` and `_type`.
  * @internal
  */
 abstract class SchemaValidatorBase<T>
@@ -227,14 +227,15 @@ class OptionalSchemaValidator<S extends ISchemaValidator<unknown>> extends Schem
       if (from === undefined) {
         return true;
       }
-      // inner.validate returns Result<Static<S>>; for the ValidatorFunc contract, a successful
-      // Result must map to `true` (in-place) and a failure maps to Failure<T>.
-      // We delegate via the Validator interface which handles the boolean/Failure return.
+      // Chain the inner validate result: success → true (in-place); failure → Failure<T>.
+      // `Failure` carries only a message string — T is a phantom. The single `as` cast
+      // narrows the phantom type parameter only (no structural change); this is materially
+      // different from the double-cast anti-pattern (`result as unknown as T`).
       const result = inner.validate(from);
       if (result.isSuccess()) {
         return true;
       }
-      return result as unknown as Failure<Static<S> | undefined>;
+      return result as Failure<Static<S> | undefined>;
     });
     this._schema = inner;
   }
@@ -315,7 +316,7 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
 // ---------------------------------------------------------------------------
 
 /**
- * Builds a `Converter\<ObjectStatic\<P\>\>` for object nodes using `Converters.object`.
+ * Builds a `Converter<ObjectStatic<P>>` for object nodes using `Converters.object`.
  * Uses a Converter (not Validator) so that extra properties are stripped from the result —
  * Validators are in-place and would pass unrecognized fields through unchanged.
  * Optional properties are tracked and listed in `optionalFields`.
@@ -353,8 +354,8 @@ function _descriptionField(schema: ISchemaValidator<unknown>): { description?: s
 
 /**
  * Creates a schema node for a JSON `string`.
- * @param opts - Optional {@link ISchemaOptions | description}.
- * @returns A {@link ISchemaValidator} whose {@link Static} type is `string`.
+ * @param opts - Optional description.
+ * @returns An `ISchemaValidator` whose `Static` type is `string`.
  * @public
  */
 export function string(opts?: ISchemaOptions): ISchemaValidator<string> {
@@ -363,8 +364,8 @@ export function string(opts?: ISchemaOptions): ISchemaValidator<string> {
 
 /**
  * Creates a schema node for a JSON `number`.
- * @param opts - Optional {@link INumberSchemaOptions | description and strict mode}.
- * @returns A {@link ISchemaValidator} whose {@link Static} type is `number`.
+ * @param opts - Optional description and strict mode (see `INumberSchemaOptions`).
+ * @returns An `ISchemaValidator` whose `Static` type is `number`.
  * @public
  */
 export function number(opts?: INumberSchemaOptions): ISchemaValidator<number> {
@@ -373,8 +374,8 @@ export function number(opts?: INumberSchemaOptions): ISchemaValidator<number> {
 
 /**
  * Creates a schema node for a JSON `integer`.
- * @param opts - Optional {@link INumberSchemaOptions | description and strict mode}.
- * @returns A {@link ISchemaValidator} (tagged `integer`) whose {@link Static} type is `number`.
+ * @param opts - Optional description and strict mode (see `INumberSchemaOptions`).
+ * @returns An `ISchemaValidator` (tagged `integer`) whose `Static` type is `number`.
  * @public
  */
 export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number> {
@@ -383,8 +384,8 @@ export function integer(opts?: INumberSchemaOptions): ISchemaValidator<number> {
 
 /**
  * Creates a schema node for a JSON `boolean`.
- * @param opts - Optional {@link ISchemaOptions | description}.
- * @returns A {@link ISchemaValidator} whose {@link Static} type is `boolean`.
+ * @param opts - Optional description.
+ * @returns An `ISchemaValidator` whose `Static` type is `boolean`.
  * @public
  */
 export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean> {
@@ -394,8 +395,8 @@ export function boolean(opts?: ISchemaOptions): ISchemaValidator<boolean> {
 /**
  * Creates a schema node for a closed set of string literals.
  * @param values - The allowed string values.
- * @param opts - Optional {@link ISchemaOptions | description}.
- * @returns A {@link ISchemaValidator} whose {@link Static} type is the union of `values`.
+ * @param opts - Optional description.
+ * @returns An `ISchemaValidator` whose `Static` type is the union of `values`.
  * @public
  */
 export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOptions): ISchemaValidator<T> {
@@ -403,9 +404,9 @@ export function enumOf<T extends string>(values: readonly T[], opts?: ISchemaOpt
 }
 
 /**
- * Marks a property schema as optional within an {@link object} schema.
+ * Marks a property schema as optional within an `object` schema.
  * @param schema - The inner schema to make optional.
- * @returns An {@link ISchemaValidator} whose {@link Static} type is `Static<S> | undefined`.
+ * @returns An `ISchemaValidator` whose `Static` type is `Static<S> | undefined`.
  * @public
  */
 export function optional<S extends ISchemaValidator<unknown>>(
@@ -417,8 +418,8 @@ export function optional<S extends ISchemaValidator<unknown>>(
 /**
  * Creates a schema node for a JSON `array` whose elements all match `items`.
  * @param items - The schema applied to every element.
- * @param opts - Optional {@link ISchemaOptions | description}.
- * @returns An {@link ISchemaValidator} whose {@link Static} type is `Array<Static<S>>`.
+ * @param opts - Optional description.
+ * @returns An `ISchemaValidator` whose `Static` type is `Array<Static<S>>`.
  * @public
  */
 export function array<S extends ISchemaValidator<unknown>>(
@@ -431,9 +432,9 @@ export function array<S extends ISchemaValidator<unknown>>(
 /**
  * Creates a schema node for a JSON `object` with a fixed set of typed properties.
  * @param properties - A record mapping property names to their schemas. Wrap a property with
- * {@link optional} to make it optional.
- * @param opts - Optional {@link IObjectSchemaOptions | description and additionalProperties}.
- * @returns An {@link ISchemaValidator} whose {@link Static} type derives the required/optional split.
+ * `optional` to make it optional.
+ * @param opts - Optional description and `additionalProperties` flag.
+ * @returns An `ISchemaValidator` whose `Static` type derives the required/optional split.
  * @public
  */
 export function object<P extends ILlmProperties>(

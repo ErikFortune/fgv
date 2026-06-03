@@ -24,7 +24,7 @@ import { Validator } from '@fgv/ts-utils';
 import { JsonObject } from '../json';
 
 /**
- * Discriminant tag carried by every {@link ISchemaValidator | schema node}.
+ * Discriminant tag carried by every schema node.
  * @public
  */
 export type SchemaNodeType =
@@ -39,13 +39,13 @@ export type SchemaNodeType =
 
 /**
  * A typed JSON Schema node for the LLM-tool subset. Every value returned by the
- * schema factories implements this interface — it IS a {@link Validator} and also
- * carries a {@link toJson} method for wire-format emission.
+ * schema factories implements this interface — it IS a `Validator<T>` and also
+ * carries a `toJson()` method for wire-format emission.
  *
  * @remarks
  * The `__staticType` property is a phantom: it exists only in the type system to carry
  * the derived static type `T` and is never assigned at runtime (declared optional so
- * factory return values need not populate it). {@link Static} reads this slot to recover
+ * factory return values need not populate it). `Static<S>` reads this slot to recover
  * `T` from a schema value without requiring a user-supplied type assertion. A plain
  * optional property is used rather than a module-private `unique symbol` because this is
  * a published package surface — a private-symbol-keyed property cannot be named in the
@@ -76,7 +76,7 @@ export interface ISchemaValidator<T> extends Validator<T> {
 }
 
 /**
- * Recover the derived static type `T` from a {@link ISchemaValidator | schema value}.
+ * Recover the derived static type `T` from a schema value.
  *
  * @remarks
  * `Static<typeof MySchema>` resolves to the TypeScript type that `schema.validate()` produces
@@ -87,13 +87,13 @@ export interface ISchemaValidator<T> extends Validator<T> {
 export type Static<S extends ISchemaValidator<unknown>> = S extends ISchemaValidator<infer T> ? T : never;
 
 /**
- * A record of property schemas, as accepted by {@link object}.
+ * A record of property schemas, as accepted by the `object` factory.
  * @public
  */
 export type ILlmProperties = Record<string, ISchemaValidator<unknown>>;
 
 /**
- * The keys of `P` whose schemas are optional (wrapped with {@link optional}).
+ * The keys of `P` whose schemas are optional (wrapped with the `optional` modifier).
  * @public
  */
 export type OptionalKeys<P extends ILlmProperties> = {
@@ -135,56 +135,56 @@ export type ObjectStatic<P extends ILlmProperties> = Simplify<
 // ---------------------------------------------------------------------------
 
 /**
- * @deprecated Use {@link ISchemaValidator} instead.
+ * @deprecated Use `ISchemaValidator` instead.
  * @public
  */
 export type ILlmSchema<T> = ISchemaValidator<T>;
 
 /**
  * Schema node for a JSON `string`.
- * @deprecated Use {@link ISchemaValidator} instead.
+ * @deprecated Use `ISchemaValidator` instead.
  * @public
  */
 export type ILlmStringSchema = ISchemaValidator<string>;
 
 /**
  * Schema node for a JSON `number` or `integer`.
- * @deprecated Use {@link ISchemaValidator} instead.
+ * @deprecated Use `ISchemaValidator` instead.
  * @public
  */
 export type ILlmNumberSchema = ISchemaValidator<number>;
 
 /**
  * Schema node for a JSON `boolean`.
- * @deprecated Use {@link ISchemaValidator} instead.
+ * @deprecated Use `ISchemaValidator` instead.
  * @public
  */
 export type ILlmBooleanSchema = ISchemaValidator<boolean>;
 
 /**
  * Schema node for a closed set of string literals (`enum`).
- * @deprecated Use {@link ISchemaValidator} instead.
+ * @deprecated Use `ISchemaValidator` instead.
  * @public
  */
 export type ILlmEnumSchema<T extends string> = ISchemaValidator<T>;
 
 /**
  * Wrapper marking a property as optional within an object schema.
- * @deprecated Use {@link ISchemaValidator} instead.
+ * @deprecated Use `ISchemaValidator` instead.
  * @public
  */
 export type ILlmOptional<S extends ISchemaValidator<unknown>> = ISchemaValidator<Static<S> | undefined>;
 
 /**
  * Schema node for a JSON `array`.
- * @deprecated Use {@link ISchemaValidator} instead.
+ * @deprecated Use `ISchemaValidator` instead.
  * @public
  */
 export type ILlmArraySchema<S extends ISchemaValidator<unknown>> = ISchemaValidator<Static<S>[]>;
 
 /**
  * Schema node for a JSON `object`.
- * @deprecated Use {@link ISchemaValidator} instead.
+ * @deprecated Use `ISchemaValidator` instead.
  * @public
  */
 export type ILlmObjectSchema<P extends ILlmProperties> = ISchemaValidator<ObjectStatic<P>>;

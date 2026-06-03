@@ -135,17 +135,33 @@ describe('JsonSchema.fromJson', () => {
       );
     });
 
+    test('rejects an enum schema with a conflicting type (L1)', () => {
+      // type: 'integer' conflicts with enum semantics (only 'string' or absent is valid)
+      expect(JsonSchema.fromJson({ type: 'integer', enum: ['a'] } as unknown as JsonObject)).toFailWith(
+        /enum schema declares conflicting 'type'/i
+      );
+      // type: 'boolean' also conflicts
+      expect(JsonSchema.fromJson({ type: 'boolean', enum: ['x', 'y'] } as unknown as JsonObject)).toFailWith(
+        /enum schema declares conflicting 'type'/i
+      );
+      // type: 'string' is acceptable (the wire form emits type: 'string' anyway)
+      expect(JsonSchema.fromJson({ type: 'string', enum: ['a', 'b'] })).toSucceedAndSatisfy((schema) => {
+        expect(schema.validate('a')).toSucceedWith('a');
+        expect(schema.validate('c')).toFail();
+      });
+    });
+
     test('rejects a missing or unknown type', () => {
       expect(JsonSchema.fromJson({})).toFailWith(/unsupported or missing 'type'/i);
       expect(JsonSchema.fromJson({ type: 'date' })).toFailWith(/unsupported or missing 'type'/i);
     });
 
     test('rejects non-string and empty enums', () => {
-      expect(JsonSchema.fromJson({ enum: [1, 2] })).toFailWith(/only string 'enum' values/i);
+      // [1, 2] — items fail Converters.string, error includes "Not a string"
+      expect(JsonSchema.fromJson({ enum: [1, 2] })).toFailWith(/not a string/i);
       expect(JsonSchema.fromJson({ enum: [] })).toFailWith(/'enum' must be a non-empty array/i);
-      expect(JsonSchema.fromJson({ enum: 'a' } as unknown as JsonObject)).toFailWith(
-        /'enum' must be a non-empty array/i
-      );
+      // 'a' is not an array — Converters.arrayOf fails with "Not an array"
+      expect(JsonSchema.fromJson({ enum: 'a' } as unknown as JsonObject)).toFailWith(/not an array/i);
     });
 
     test('rejects an array without items and tuple-form items', () => {
@@ -229,7 +245,7 @@ describe('JsonSchema.fromJson', () => {
         type: 'array',
         items: { enum: [] }
       };
-      expect(JsonSchema.fromJson(raw)).toFailWith(/#\/items: 'enum' must be a non-empty array/i);
+      expect(JsonSchema.fromJson(raw)).toFailWith(/#\/items:.*'enum' must be a non-empty array/i);
     });
   });
 });
