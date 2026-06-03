@@ -29,7 +29,7 @@
  * Surface change from the first-pass implementation:
  * - `toConverter(schema)` removed — schemas ARE Validators; call `schema.validate(input)`.
  * - `toJson(schema)` removed — call `schema.toJson()` instead.
- * - `fromJson(json)` returns `ISchemaValidator<JsonObject>` (unchanged from first pass).
+ * - `fromJson(json)` returns `ISchemaValidator<JsonValue>` (honest supertype — a runtime-parsed schema may validate strings, numbers, booleans, arrays, or objects, not just objects).
  */
 export * from './types';
 export * from './factories';
