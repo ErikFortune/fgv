@@ -4,7 +4,7 @@
 **Phase:** A — design exploration  
 **Date:** 2026-06-02  
 **Author:** senior-developer agent  
-**Status:** Complete — Phase A design amended per Erik review (2026-06-02)
+**Status:** Complete — Phase A design amended per Erik review (2026-06-02); updated for typed-schema authoring (json-schema-derives-t shipped, 2026-06-03)
 
 ---
 
@@ -320,47 +320,56 @@ The fgv-native abstraction must accommodate:
 ### 2.1 Core types
 
 ```typescript
+import { ISchemaValidator, JsonSchema, Static } from '@fgv/ts-json-base';
+
 // ============================================================================
 // Client tool config (consumer-authored)
 // ============================================================================
 
 /**
  * A client-defined tool the consumer supplies for the model to call.
- * Name + description go to the model as-is; parametersSchema is a JSON Schema
- * object describing the expected arguments.
+ * Name + description go to the model as-is.
+ *
+ * parametersSchema is a typed schema from JsonSchema.object(...) etc.
+ * The schema IS the validator — call parametersSchema.validate(args) to
+ * produce Result<TParams>. Call parametersSchema.toJson() to emit the
+ * raw JSON Schema for the LLM provider's wire format.
+ *
+ * TParams is derived automatically via Static<typeof schema> — no consumer
+ * assertion needed (verify-not-assert end-to-end).
  */
-export interface IAiClientToolConfig {
+export interface IAiClientToolConfig<TParams = unknown> {
   readonly type: 'client_tool';
   readonly name: string;
   readonly description: string;
   /**
-   * JSON Schema describing the tool's parameters.
-   * Must be a JSON Schema object (type: "object") at the root.
-   * Passed directly to provider toolFormat adapters with per-provider
-   * field renaming (parameters → input_schema for Anthropic).
-   * The consumer authors this; ai-assist does not generate it.
+   * Typed schema (ISchemaValidator<TParams>) from JsonSchema.object(...).
+   * - parametersSchema.toJson() → raw JSON Schema for the LLM provider wire format.
+   *   Called by toAnthropicTools / toGeminiTools / toResponsesApiTools at
+   *   the provider-format-adapter site — the wire format is an emitted
+   *   byproduct, not authored.
+   * - parametersSchema.validate(args) → Result<TParams> for verifying the
+   *   model's returned arguments in the round-trip helper before handing
+   *   typed args to the execute callback.
+   *
+   * Must be an object schema (JsonSchema.object({...})) at the root.
    */
-  readonly parametersSchema: JsonObject;
+  readonly parametersSchema: ISchemaValidator<TParams>;
 }
 
 /**
- * Callback invoked when the model calls a client-defined tool.
- * Returns the result as a string (JSON or plain text, provider-agnostic).
- * Result<string> allows the callback to surface tool execution failures
- * back to the round-trip orchestrator.
- */
-export type AiClientToolCallback = (
-  toolName: string,
-  args: JsonObject
-) => Promise<Result<string>>;
-
-/**
- * A client tool paired with its execution callback.
+ * A client tool paired with its typed execute callback.
  * Passed per-call alongside IAiClientToolConfig.
+ *
+ * TParams is the typed parameter shape derived from the schema —
+ * Static<typeof mySchema> from @fgv/ts-json-base.
+ *
+ * The execute callback receives already-validated, typed args — no
+ * hand-validation needed and no Converter duplication.
  */
-export interface IAiClientTool {
-  readonly config: IAiClientToolConfig;
-  readonly callback: AiClientToolCallback;
+export interface IAiClientTool<TParams = unknown> {
+  readonly config: IAiClientToolConfig<TParams>;
+  readonly execute: (args: TParams) => Promise<Result<unknown>>;
 }
 
 // ============================================================================
@@ -370,19 +379,63 @@ export interface IAiClientTool {
 /**
  * Union of all tool configs (server-side + client-defined).
  * Discriminated on `type`.
+ * IAiClientToolConfig uses unknown TParams at the union level — the concrete
+ * TParams is preserved on each IAiClientTool instance.
  */
 export type AiToolConfig = AiServerToolConfig | IAiClientToolConfig;
 ```
 
-**JSON Schema vs Converter/Validator:**
+**Typed schema authoring (not raw JsonObject):**
 
-Recommendation: **consumer-authored JSON Schema only** (not generated from Converter). Rationale:
-- Converters are designed for conversion at runtime; JSON Schema is the lingua franca of LLM tool APIs
-- Generating JSON Schema from a `Converter<T>` would require a reflection step that doesn't exist in the library
-- The consumer already knows the tool's parameter structure; writing JSON Schema is not burdensome for simple tool configs (memory tool: one string field)
-- If the consumer wants to validate the model's returned arguments before passing to the callback, they can define a Converter separately — ai-assist converts the raw JSON string to `JsonObject` but the consumer validates it
+`parametersSchema` is an `ISchemaValidator<TParams>` from `@fgv/ts-json-base`'s `JsonSchema` namespace (shipped to release via PR #444, 2026-06-03). The consumer authors the schema once using `JsonSchema.object(...)` factories; `TParams` is derived automatically via `Static<typeof schema>` — no place for the consumer to assert `T`, no drift between wire schema and runtime validation. The wire format (`parametersSchema.toJson()`) is an emitted byproduct, not hand-authored.
 
-**No separate type for the arguments object:** The adapter parses `arguments` as `JsonObject`. The consumer's callback receives `JsonObject` and can validate as needed.
+**Before vs. after consumer ergonomics:**
+
+```typescript
+// Before (the rejected JsonObject path):
+const memoryTool: IAiClientTool = {
+  config: {
+    type: 'client_tool',
+    name: 'recall_memory',
+    description: 'Recall stored user context',
+    parametersSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] }
+  },
+  // args is unknown — consumer must hand-validate with a separate Converter
+  execute: async (_name, args) => {
+    const validated = memoryConverter.convert(args).orThrow(); // Converter duplicates the schema
+    return succeed(await memoryStore.recall((validated as { query: string }).query));
+  }
+};
+
+// After (typed schema authoring):
+const MemoryArgs = JsonSchema.object({ query: JsonSchema.string() });
+type MemoryArgs = Static<typeof MemoryArgs>;  // { query: string }
+
+const memoryTool: IAiClientTool<MemoryArgs> = {
+  config: {
+    type: 'client_tool',
+    name: 'recall_memory',
+    description: 'Recall stored user context',
+    parametersSchema: MemoryArgs   // same object validates args AND emits wire JSON Schema
+  },
+  execute: async (args) => {
+    // args is typed { query: string }; no hand-validation; no separate Converter
+    return succeed(await memoryStore.recall(args.query));
+  }
+};
+```
+
+**Runtime arg validation in the round-trip helper:**
+
+When the model emits `tool_use` with raw arguments, the round-trip helper calls `config.parametersSchema.validate(rawArgs)` to produce `Result<TParams>` before passing typed args to `execute`. This is verify-not-assert end-to-end from day one of Phase C — the schema IS the validator; no separate Converter needed.
+
+**Wire format emission:**
+
+`toAnthropicTools`, `toGeminiTools`, and `toResponsesApiTools` call `config.parametersSchema.toJson()` at the adapter site to produce the raw JSON Schema for each provider. The per-provider field renaming (`parameters` vs `input_schema` vs `function_declarations`) is internal adapter plumbing unchanged from the previous design.
+
+**MCP path (layer 2 / Sprint+1):**
+
+MCP-discovered tools arrive as raw JSON Schema objects from MCP servers. `JsonSchema.fromJson(rawJsonObject)` (from `@fgv/ts-json-base`) parses them into `ISchemaValidator<JsonValue>` — opaque static type because MCP can't tell us `TParams`. MCP tools therefore produce `IAiClientTool<JsonValue>` instances with `parametersSchema: ISchemaValidator<JsonValue>`. Same `validate()` / `toJson()` surface — uniform handling regardless of whether the tool was consumer-authored or MCP-discovered. No changes to the core streaming or round-trip logic when MCP is added.
 
 ---
 
@@ -565,21 +618,26 @@ This section provides concrete pseudo-code examples for both loop ownership mode
 #### Example A — Consumer-driven loop (layer 1, ships in Phase C)
 
 ```typescript
-// Define the memory tool
-const memoryTool: IAiClientTool = {
+import { JsonSchema, Static } from '@fgv/ts-json-base';
+
+// Define the typed schema once — same object validates args AND emits wire JSON Schema
+const MemoryArgs = JsonSchema.object({
+  query: JsonSchema.string()
+  // Note: JsonSchema.string() does not accept a 'description' option at v0.1;
+  // description is on the IAiClientToolConfig.description field (tool-level).
+});
+type MemoryArgs = Static<typeof MemoryArgs>;  // { query: string }
+
+// Define the memory tool — TParams is derived from the schema, not asserted
+const memoryTool: IAiClientTool<MemoryArgs> = {
   config: {
     type: 'client_tool',
     name: 'recall_memory',
     description: 'Recall stored context for the current user',
-    parametersSchema: {
-      type: 'object',
-      properties: { query: { type: 'string', description: 'What to recall' } },
-      required: ['query']
-    }
+    parametersSchema: MemoryArgs
   },
-  // Consumer owns the callback — ai-assist invokes it, consumer implements it
-  callback: async (_name, args) =>
-    captureAsyncResult(() => memoryStore.recall((args as { query: string }).query))
+  // args is typed { query: string } — no hand-validation needed
+  execute: async (args) => captureAsyncResult(() => memoryStore.recall(args.query))
 };
 
 // Consumer drives the outer loop
@@ -632,20 +690,16 @@ while (roundTrips < MAX_ROUND_TRIPS) {
 #### Example B — ai-assist-driven loop (additive, ships in a follow-on stream)
 
 ```typescript
-// Same memory tool definition — identical IAiClientTool, no changes
-const memoryTool: IAiClientTool = {
+// Same memory tool definition — identical IAiClientTool<MemoryArgs>, no changes
+// (MemoryArgs and memoryTool defined exactly as in Example A above)
+const memoryTool: IAiClientTool<MemoryArgs> = {
   config: {
     type: 'client_tool',
     name: 'recall_memory',
     description: 'Recall stored context for the current user',
-    parametersSchema: {
-      type: 'object',
-      properties: { query: { type: 'string', description: 'What to recall' } },
-      required: ['query']
-    }
+    parametersSchema: MemoryArgs
   },
-  callback: async (_name, args) =>
-    captureAsyncResult(() => memoryStore.recall((args as { query: string }).query))
+  execute: async (args) => captureAsyncResult(() => memoryStore.recall(args.query))
 };
 
 // Higher-level helper drives the loop internally — consumer gets the final turn only
@@ -723,11 +777,13 @@ export function toGeminiTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray
 export function toResponsesApiTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray<JsonObject>;
 ```
 
-For `toGeminiTools`: server tools produce `{ google_search: {} }`; client tools accumulate into `{ function_declarations: [...] }` — a single entry in the output array collecting all client tools.
+For `toGeminiTools`: server tools produce `{ google_search: {} }`; client tools accumulate into `{ function_declarations: [...] }` — a single entry in the output array collecting all client tools. Each function declaration includes `parameters: config.parametersSchema.toJson()`.
 
-For `toAnthropicTools`: server tools produce `{ type: "web_search_20250305", name: "web_search", ... }`; client tools produce `{ name, description, input_schema: parametersSchema }` (no `type` discriminator per Anthropic's API).
+For `toAnthropicTools`: server tools produce `{ type: "web_search_20250305", name: "web_search", ... }`; client tools produce `{ name, description, input_schema: config.parametersSchema.toJson() }` (no `type` discriminator per Anthropic's API).
 
-For `toResponsesApiTools`: server tools produce `{ type: "web_search" }`; client tools produce `{ type: "function", name, description, parameters: parametersSchema }`.
+For `toResponsesApiTools`: server tools produce `{ type: "web_search" }`; client tools produce `{ type: "function", name, description, parameters: config.parametersSchema.toJson() }`.
+
+In all three adapters, the wire format is emitted via `.toJson()` at the adapter site — not hand-authored by the consumer.
 
 ---
 
@@ -788,9 +844,8 @@ The thinking-events stream adds its event type directly to `IAiStreamEvent` and 
 
 | Piece | Layer 1 (harness tools) | Shared internal | Layer 2 (MCP) |
 |---|---|---|---|
-| `IAiClientToolConfig` type | owner | via ts-extras | referenced |
-| `IAiClientTool` (config + callback) | owner | | |
-| `AiClientToolCallback` type | owner | | |
+| `IAiClientToolConfig<TParams>` type | owner | via ts-extras | referenced |
+| `IAiClientTool<TParams>` (config + typed execute) | owner | | |
 | `IAiStreamClientToolCallStart/Done/Result` event types | owner | | |
 | `toResponsesApiTools` extension for client tools | owner | | |
 | `toAnthropicTools` extension | owner | | |
@@ -801,59 +856,73 @@ The thinking-events stream adds its event type directly to `IAiStreamEvent` and 
 | `maxRoundTrips` guard | owner | | |
 | MCP client transport (stdio, SSE, HTTP) | | | owner |
 | MCP tool discovery / listing | | | owner |
-| MCP tool schema introspection → `IAiClientToolConfig` | | | owner |
+| MCP tool schema introspection → `IAiClientToolConfig` via `JsonSchema.fromJson` | | | owner |
 | MCP session lifecycle | | | owner |
 | MCP error propagation boundary | | | owner |
-| `IAiClientToolConfig` as shared type | | ✓ (in ts-extras) | imports |
-| `AiClientToolCallback` signature | | ✓ (in ts-extras) | imports |
+| `IAiClientToolConfig<TParams>` as shared type | | ✓ (in ts-extras) | imports |
+| `ISchemaValidator<T>` (from `@fgv/ts-json-base`) | | ✓ (shared dep) | imports |
 | Event types for streaming | | ✓ (in ts-extras) | imports |
 
 ---
 
 ### 3.2 Where the seam lives
 
-**The seam is `IAiClientTool`: a config + callback pair.**
+**The seam is `IAiClientTool<TParams>`: a typed config + execute callback pair.**
 
-Layer 1 consumers construct `IAiClientTool` directly:
+Layer 1 consumers construct `IAiClientTool<TParams>` directly with typed schemas:
 ```typescript
-const memoryTool: IAiClientTool = {
+import { JsonSchema, Static } from '@fgv/ts-json-base';
+
+const MemoryArgs = JsonSchema.object({ query: JsonSchema.string() });
+type MemoryArgs = Static<typeof MemoryArgs>;  // { query: string }
+
+const memoryTool: IAiClientTool<MemoryArgs> = {
   config: {
     type: 'client_tool',
     name: 'recall_memory',
     description: '...',
-    parametersSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] }
+    parametersSchema: MemoryArgs  // typed; toJson() emits wire schema; validate() validates args
   },
-  callback: async (name, args) => {
-    const query = (args as { query: string }).query;
-    return succeed(await memoryStore.recall(query));
+  execute: async (args) => {
+    // args is typed MemoryArgs = { query: string }; no cast needed
+    return succeed(await memoryStore.recall(args.query));
   }
 };
 ```
 
-Layer 2 (MCP) constructs `IAiClientTool[]` from MCP server discovery:
+Layer 2 (MCP) constructs `IAiClientTool<JsonValue>[]` from MCP server discovery.
+MCP-discovered tools arrive as raw JSON Schema; `JsonSchema.fromJson` parses them into
+`ISchemaValidator<JsonValue>` (opaque static type — MCP can't tell us `TParams`).
+Both layers produce `IAiClientTool[]` and pass to the same `clientTools` parameter:
 ```typescript
 // Inside @fgv/ts-extras-mcp:
 function mcpToolsToAiClientTools(
   session: IMcpSession,
   toolList: MCPTool[]
-): ReadonlyArray<IAiClientTool> {
-  return toolList.map((tool) => ({
-    config: {
-      type: 'client_tool',
-      name: tool.name,
-      description: tool.description,
-      parametersSchema: tool.inputSchema
-    },
-    callback: async (name, args) => {
-      return session.callTool(name, args);
-    }
-  }));
+): ReadonlyArray<IAiClientTool<JsonValue>> {
+  return toolList.map((tool) => {
+    // JsonSchema.fromJson returns Result<ISchemaValidator<JsonValue>> — handle error
+    const schema = JsonSchema.fromJson(tool.inputSchema).orThrow(); // setup context
+    return {
+      config: {
+        type: 'client_tool',
+        name: tool.name,
+        description: tool.description,
+        parametersSchema: schema  // ISchemaValidator<JsonValue> — same interface, opaque T
+      },
+      execute: async (args) => session.callTool(tool.name, args)
+    };
+  });
 }
 ```
 
-Both layers produce `IAiClientTool[]` and pass it to the same `clientTools` parameter on the streaming params. No changes to the core streaming or round-trip logic are required when MCP is added.
+Both layers produce `ReadonlyArray<IAiClientTool>` and pass it to the same `clientTools` parameter on the streaming params. No changes to the core streaming or round-trip logic are required when MCP is added — the plumbing treats all tools identically regardless of whether `TParams` is a precise type or `JsonValue`.
 
-**The seam is designed to be additive.** Layer 2 is a new package (`@fgv/ts-extras-mcp`) that imports `IAiClientTool` and `AiClientToolCallback` from `ts-extras/ai-assist` and implements the MCP-specific plumbing. No changes to `ts-extras` are required when layer 2 ships.
+**The typed-vs-opaque story at the seam:**
+- Consumer-authored tools: `IAiClientTool<Static<typeof schema>>` — typed; `execute` receives typed args; round-trip helper calls `parametersSchema.validate(rawArgs)` to produce `Result<TParams>`.
+- MCP-discovered tools: `IAiClientTool<JsonValue>` — opaque; `execute` receives `JsonValue`; same `parametersSchema.validate(rawArgs)` call still works (returns `Result<JsonValue>`). The MCP consumer's execute callback owns further narrowing if needed.
+
+**The seam is designed to be additive.** Layer 2 is a new package (`@fgv/ts-extras-mcp`) that imports `IAiClientTool` and `ISchemaValidator` from `ts-extras/ai-assist` and `ts-json-base` respectively, and implements the MCP-specific plumbing. No changes to `ts-extras` are required when layer 2 ships.
 
 ---
 
@@ -877,11 +946,11 @@ Following the Result-integration-boundary convention:
 | `createHttpSseTransport(url, opts?)` | `Result<IMcpTransport>` |
 
 **Shared types that must live in `ts-extras/ai-assist`** (to avoid a dependency inversion):
-- `IAiClientToolConfig`
-- `IAiClientTool`
-- `AiClientToolCallback`
+- `IAiClientToolConfig<TParams>`
+- `IAiClientTool<TParams>`
 
-`@fgv/ts-extras-mcp` imports these from `@fgv/ts-extras` (workspace dep) and the consumer imports both independently.
+`ISchemaValidator<T>` lives in `@fgv/ts-json-base` (already a workspace dep of `ts-extras`).
+`@fgv/ts-extras-mcp` imports `IAiClientTool` from `@fgv/ts-extras` and `JsonSchema.fromJson` from `@fgv/ts-json-base`; the consumer imports both independently.
 
 **Explicitly NOT in scope for `@fgv/ts-extras-mcp`:** MCP server orchestration, process spawning beyond transport setup, tool result validation, schema conversion beyond basic JSON Schema passthrough, credential management for MCP servers.
 
@@ -909,9 +978,9 @@ Following the Result-integration-boundary convention:
 **Sub-phases:**
 
 **C1: Types + converters + toolFormat adapters (2–3 days, 1 implementer)**
-- New types in `model.ts`: `IAiClientToolConfig`, `IAiClientTool`, `AiClientToolCallback`, `IAiStreamToolUseStart`, `IAiStreamToolUseDelta`, `IAiStreamToolUseComplete`, `IAiClientToolTurnResult`, `IAiClientToolContinuation`; extend `IAiStreamEvent` union with the three new variants
-- New converter in `converters.ts`: `aiClientToolConfig` (validates name, description, parametersSchema is a `JsonObject`)
-- Extensions to `toolFormats.ts`: `toAnthropicTools`, `toGeminiTools`, `toResponsesApiTools` each extended to handle `IAiClientToolConfig` entries
+- New types in `model.ts`: `IAiClientToolConfig<TParams>`, `IAiClientTool<TParams>`, `IAiStreamToolUseStart`, `IAiStreamToolUseDelta`, `IAiStreamToolUseComplete`, `IAiClientToolTurnResult`, `IAiClientToolContinuation`; extend `IAiStreamEvent` union with the three new variants. Note: `AiClientToolCallback` is replaced by the typed `execute` field on `IAiClientTool<TParams>` — no separate callback type.
+- Converter in `converters.ts`: `aiClientToolConfig` validates name, description, and that `parametersSchema` is an `ISchemaValidator` (i.e. has `.validate()`, `.convert()`, `.toJson()` methods) — no hand-rolled JSON Schema object inspection. The typed-schema path means the converter validates the presence of the schema object, not its internal JSON Schema structure; structural validation happened when the consumer called `JsonSchema.object(...)`.
+- Extensions to `toolFormats.ts`: `toAnthropicTools`, `toGeminiTools`, `toResponsesApiTools` each extended to handle `IAiClientToolConfig` entries, calling `config.parametersSchema.toJson()` at the adapter site to produce the wire-format JSON Schema. No manual JSON Schema construction in the adapter code.
 - **Exhaustive-switch updates:** Because `IAiStreamEvent` is widened directly (override 2026-06-02), every consumer file that has an exhaustive switch over `IAiStreamEvent` must be updated to handle the three new variants. Current known switch sites: `streamingClient.ts` and any test harness files that switch on event type. The implementer must grep for `IAiStreamEvent` consumers before closing C1. Each additional consumer file adds to the blast radius.
 - Blast radius: `model.ts` (modify), `converters.ts` (modify), `toolFormats.ts` (modify), `converters.test.ts` (modify), `toolFormats.test.ts` (modify), + N consumer files with exhaustive switches — **~5 + N files** (N to be confirmed by implementer grep in Phase C)
 
@@ -925,7 +994,7 @@ Following the Result-integration-boundary convention:
 **C3: Round-trip continuation builder (2 days, 1 implementer)**
 - New file: `clientToolContinuationBuilder.ts` (or integrated into a new `streamingAdapters/clientTools.ts`)
 - Per-provider continuation message construction: Anthropic assistant turn (text + thinking blocks [if B4=yes] + tool_use blocks) + user turn (tool_result blocks); OpenAI input items (function_call + function_call_output); Gemini model turn (functionCall) + user turn (functionResponse)
-- `executeClientToolTurn()` helper function — orchestrates: accumulate events, invoke callbacks via `captureAsyncResult`, build continuation, return `{events, nextTurn}` pair
+- `executeClientToolTurn()` helper function — orchestrates: accumulate events, call `config.parametersSchema.validate(rawArgs)` to produce `Result<TParams>`, invoke `execute(typedArgs)` callback, build continuation, return `{events, nextTurn}` pair. The typed-schema path means no separate Converter step — the schema is the validator.
 - Blast radius: 1 new file + 1 new test file — 2 files
 
 **C4: Integration + testbed scenario (2 days, 1 implementer)**
@@ -934,7 +1003,9 @@ Following the Result-integration-boundary convention:
 - Update `LIBRARY_CAPABILITIES.md` ai-assist entry with client-tool surface
 - Blast radius: `streamingClient.ts` (modify), `samples/testbed` (new scenario file), `LIBRARY_CAPABILITIES.md` (modify) — 3 files
 
-**Total layer 1 blast radius:** ~16 files across `libraries/ts-extras` (ai-assist packlet) and `samples/testbed`, plus N additional consumer files that have exhaustive switches over `IAiStreamEvent` (implementer grep required in Phase C). No new packages created for layer 1.
+**Total layer 1 blast radius:** ~14–15 files across `libraries/ts-extras` (ai-assist packlet) and `samples/testbed`, plus N additional consumer files that have exhaustive switches over `IAiStreamEvent` (implementer grep required in Phase C). No new packages created for layer 1.
+
+**Scope reduction vs. the JsonObject path:** Typed-schema authoring drops the round-trip helper's "consumer must supply a separate Converter for arg validation" code path (the schema IS the validator). It also drops the `AiClientToolCallback` type (replaced by the typed `execute` field). The consumer's per-tool code gets shorter by eliminating Converter duplication. Net change: ~1–2 fewer files vs. the previous ~16-file estimate, with simpler per-tool consumer code.
 
 ---
 
@@ -976,19 +1047,21 @@ Following the Result-integration-boundary convention:
 **Surface sketch (one code block):**
 
 ```typescript
-// Consumer usage — memory tool with harness tools
-const memoryTool: IAiClientTool = {
+import { JsonSchema, Static } from '@fgv/ts-json-base';
+
+// Consumer usage — memory tool with typed-schema authoring
+const MemoryArgs = JsonSchema.object({ query: JsonSchema.string() });
+type MemoryArgs = Static<typeof MemoryArgs>;  // { query: string }
+
+const memoryTool: IAiClientTool<MemoryArgs> = {
   config: {
     type: 'client_tool',
     name: 'recall_memory',
     description: 'Recall stored context for the current user',
-    parametersSchema: {
-      type: 'object',
-      properties: { query: { type: 'string', description: 'What to recall' } },
-      required: ['query']
-    }
+    parametersSchema: MemoryArgs   // toJson() → wire schema; validate() → Result<MemoryArgs>
   },
-  callback: async (_name, args) => captureAsyncResult(() => memoryStore.recall((args as { query: string }).query))
+  execute: async (args) => captureAsyncResult(() => memoryStore.recall(args.query))
+  // args is typed { query: string } — no hand-validation, no Converter duplication
 };
 
 // Per-turn call — consumer drives the loop
@@ -1025,11 +1098,11 @@ if (result.isSuccess() && result.value.continuation) {
 
 | Sub-phase | Work | Files |
 |---|---|---|
-| C1 | Types + converters + toolFormat adapters + exhaustive-switch updates | ~5 + N files (N = IAiStreamEvent switch sites) |
+| C1 | Types (`IAiClientToolConfig<TParams>`, `IAiClientTool<TParams>`) + converters (schema-validator presence check) + toolFormat adapters (`.toJson()` call) + exhaustive-switch updates | ~5 + N files (N = IAiStreamEvent switch sites) |
 | C2 | Streaming adapter extensions | 6 files |
-| C3 | Round-trip continuation builder | 2 files |
+| C3 | Round-trip helper (`parametersSchema.validate(rawArgs)` → typed execute) | 2 files |
 | C4 | Integration + testbed | 3 files |
-| **Total** | | **~16 + N files** (N = IAiStreamEvent switch sites) |
+| **Total** | | **~14–15 + N files** (N = IAiStreamEvent switch sites; ~1–2 fewer than JsonObject path) |
 
 ---
 
@@ -1038,7 +1111,7 @@ if (result.isSuccess() && result.value.continuation) {
 **What I recommend and why:**
 
 1. **Per-call client tools (not registered)** — matches the existing server-tool pattern; lifecycle simplicity; MCP brings its own registration concept
-2. **JSON Schema as the parameter source-of-truth** — no Converter generation; consumers author it directly; it's the wire format the providers expect
+2. **Typed schema authoring via `JsonSchema.object(...)` as the parameter source-of-truth** — `parametersSchema: ISchemaValidator<TParams>` (from `@fgv/ts-json-base`); `TParams` derived via `Static<typeof schema>`; `parametersSchema.toJson()` emits the wire format; `parametersSchema.validate(args)` validates model-returned args in the round-trip helper; verify-not-assert end-to-end from day one of Phase C. Shipped to release via PR #444 (`json-schema-derives-t`, 2026-06-03)
 3. **Extend `IAiStreamEvent` directly** — Erik override (2026-06-02): we own all consumers and update exhaustive switches in lockstep; the cleaner single-union shape beats the additive opt-in ergonomics
 4. **Consumer drives the outer loop; `executeClientToolTurn` as a helper** — follows the brief's constraint; personaility gets ergonomics without ai-assist becoming an agentic framework
 5. **`IAiClientTool` as the seam** — MCP adds a new package that converts MCP tool descriptors to `IAiClientTool[]`; the core library is untouched
