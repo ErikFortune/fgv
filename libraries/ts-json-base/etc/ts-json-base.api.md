@@ -840,7 +840,7 @@ export { JsonSchema }
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "ISchemaValidator"
 //
 // @public
-const jsonSchemaConverter: Converter<ISchemaValidator<JsonObject>>;
+const jsonSchemaConverter: Converter<ISchemaValidator<JsonObject>, string>;
 
 // @public
 class JsonTreeHelper {

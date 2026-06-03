@@ -202,6 +202,35 @@ describe('JsonSchema.fromJson', () => {
       const raw: JsonObject = { type: 'array', items: { type: 'mystery' } };
       expect(JsonSchema.fromJson(raw)).toFailWith(/#\/items: unsupported or missing 'type'/i);
     });
+
+    test('reports the full nested path for a malformed required at two levels deep', () => {
+      // The outer object has a 'config' property that is itself an object.
+      // The inner object has a 'required' key ('missing') with no matching property schema.
+      // The error path must name the nested node, not always '#'.
+      const raw: JsonObject = {
+        type: 'object',
+        properties: {
+          config: {
+            type: 'object',
+            properties: { name: { type: 'string' } },
+            required: ['name', 'missing']
+          }
+        },
+        required: ['config']
+      };
+      expect(JsonSchema.fromJson(raw)).toFailWith(
+        /#\/properties\/config: 'required' key 'missing' has no matching entry in 'properties'/i
+      );
+    });
+
+    test('reports the path of a malformed enum inside an array items schema', () => {
+      // An empty enum inside an array's items schema: path should be #/items.
+      const raw: JsonObject = {
+        type: 'array',
+        items: { enum: [] }
+      };
+      expect(JsonSchema.fromJson(raw)).toFailWith(/#\/items: 'enum' must be a non-empty array/i);
+    });
   });
 });
 

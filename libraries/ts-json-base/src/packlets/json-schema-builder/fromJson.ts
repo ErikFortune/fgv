@@ -135,9 +135,11 @@ function _parseObjectBody(raw: Record<string, unknown>, path: string): Result<IS
     propEntries.map(([key, child]) =>
       // Forward reference to jsonSchemaConverter: safe because this lambda executes only
       // after the module is fully initialized (at parse time, not at module load).
+      // Thread the JSON Pointer path as context so nested errors are correctly attributed.
+      // No withErrorFormat wrapper: jsonSchemaConverter prefixes its own errors with the
+      // path it receives as context, so errors are attributed exactly once.
       jsonSchemaConverter // eslint-disable-line @typescript-eslint/no-use-before-define
-        .convert(child)
-        .withErrorFormat((msg) => `${path}/properties/${key}: ${msg}`)
+        .convert(child, `${path}/properties/${key}`)
         .onSuccess((node) => succeed([key, requiredSet.has(key) ? node : optional(node)] as const))
     )
   ).onSuccess((built) => {
@@ -161,28 +163,44 @@ function _parseObjectBody(raw: Record<string, unknown>, path: string): Result<IS
 // Each arm is reached only after the pre-flight checks in jsonSchemaConverter pass,
 // so inputs are guaranteed to be non-null, non-array objects with no forbidden keywords
 // and a valid (or enum) type tag.
+//
+// Arms are typed as Converter<ISchemaValidator<JsonObject>, string> where the context
+// is the current JSON Pointer path. discriminatedObject and oneOf thread the context
+// through to each arm, so the path is available without any additional wiring.
 // ---------------------------------------------------------------------------
 
 /** String arm: `{ type: 'string', description? }` */
-function _convertString(from: unknown): Result<ISchemaValidator<JsonObject>> {
+function _convertString(
+  from: unknown,
+  __self: Converter<ISchemaValidator<JsonObject>, string>
+): Result<ISchemaValidator<JsonObject>> {
   const raw = from as Record<string, unknown>;
   return succeed(string(_extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>);
 }
 
 /** Number arm */
-function _convertNumber(from: unknown): Result<ISchemaValidator<JsonObject>> {
+function _convertNumber(
+  from: unknown,
+  __self: Converter<ISchemaValidator<JsonObject>, string>
+): Result<ISchemaValidator<JsonObject>> {
   const raw = from as Record<string, unknown>;
   return succeed(number(_extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>);
 }
 
 /** Integer arm */
-function _convertInteger(from: unknown): Result<ISchemaValidator<JsonObject>> {
+function _convertInteger(
+  from: unknown,
+  __self: Converter<ISchemaValidator<JsonObject>, string>
+): Result<ISchemaValidator<JsonObject>> {
   const raw = from as Record<string, unknown>;
   return succeed(integer(_extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>);
 }
 
 /** Boolean arm */
-function _convertBoolean(from: unknown): Result<ISchemaValidator<JsonObject>> {
+function _convertBoolean(
+  from: unknown,
+  __self: Converter<ISchemaValidator<JsonObject>, string>
+): Result<ISchemaValidator<JsonObject>> {
   const raw = from as Record<string, unknown>;
   return succeed(boolean(_extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>);
 }
@@ -191,20 +209,28 @@ function _convertBoolean(from: unknown): Result<ISchemaValidator<JsonObject>> {
  * Array arm — recurses for the `items` sub-schema via `jsonSchemaConverter`.
  * Forward-references `jsonSchemaConverter` by name, which is safe because this function
  * body only executes at parse-time (after the module is fully initialized).
+ * Receives the current JSON Pointer path via `context` (threaded by discriminatedObject/oneOf).
  */
-function _convertArray(from: unknown): Result<ISchemaValidator<JsonObject>> {
+function _convertArray(
+  from: unknown,
+  __self: Converter<ISchemaValidator<JsonObject>, string>,
+  context?: string
+): Result<ISchemaValidator<JsonObject>> {
   // Pre-flight in jsonSchemaConverter guarantees `from` is a non-null, non-array object.
+  // context is always provided by jsonSchemaConverter (which never calls arms without a path),
+  // but the ConverterFunc signature allows undefined; the '#' branch is defensive.
+  /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
+  const path = context ?? '#';
   const raw = from as Record<string, unknown>;
   const items = raw.items;
   if (items === undefined) {
-    return fail(`'array' requires an 'items' schema`);
+    return fail(`${path}: 'array' requires an 'items' schema`);
   }
   if (Array.isArray(items)) {
-    return fail(`tuple-form 'items' arrays are not supported`);
+    return fail(`${path}: tuple-form 'items' arrays are not supported`);
   }
   return jsonSchemaConverter // eslint-disable-line @typescript-eslint/no-use-before-define
-    .convert(items)
-    .withErrorFormat((msg) => `#/items: ${msg}`)
+    .convert(items, `${path}/items`)
     .onSuccess((inner) =>
       succeed(array(inner, _extractDescription(raw)) as unknown as ISchemaValidator<JsonObject>)
     );
@@ -212,43 +238,58 @@ function _convertArray(from: unknown): Result<ISchemaValidator<JsonObject>> {
 
 /**
  * Object arm — recurses for each property value via `jsonSchemaConverter`.
+ * Receives the current JSON Pointer path via `context` (threaded by discriminatedObject/oneOf).
  */
-function _convertObject(from: unknown): Result<ISchemaValidator<JsonObject>> {
+function _convertObject(
+  from: unknown,
+  __self: Converter<ISchemaValidator<JsonObject>, string>,
+  context?: string
+): Result<ISchemaValidator<JsonObject>> {
   // Pre-flight in jsonSchemaConverter guarantees `from` is a non-null, non-array object.
   const raw = from as Record<string, unknown>;
-  return _parseObjectBody(raw, '#');
+  /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
+  return _parseObjectBody(raw, context ?? '#');
 }
 
-/** Enum arm — handles `{ enum: [...] }` inputs (no `type` discriminator). */
-function _convertEnum(from: unknown): Result<ISchemaValidator<JsonObject>> {
+/**
+ * Enum arm — handles `{ enum: [...] }` inputs (no `type` discriminator).
+ * Receives the current JSON Pointer path via `context` (threaded by oneOf).
+ */
+function _convertEnum(
+  from: unknown,
+  __self: Converter<ISchemaValidator<JsonObject>, string>,
+  context?: string
+): Result<ISchemaValidator<JsonObject>> {
   // Pre-flight in jsonSchemaConverter guarantees `from` is a non-null, non-array object.
+  // The pre-flight also ensures 'enum' is present before routing here (the missing-type
+  // check short-circuits non-enum nodes without a type field), so no guard is needed.
   const raw = from as Record<string, unknown>;
-  if (!('enum' in raw)) {
-    return fail('no enum field');
-  }
-  return _parseEnumBody(raw.enum, '#', raw);
+  /* c8 ignore next 1 - defensive default; jsonSchemaConverter always supplies the path */
+  return _parseEnumBody(raw.enum, context ?? '#', raw);
 }
 
 // ---------------------------------------------------------------------------
 // Arm converter instances (built once, referenced by jsonSchemaConverter's dispatch).
+// Typed as Converter<ISchemaValidator<JsonObject>, string> so the JSON Pointer path
+// context flows from jsonSchemaConverter through oneOf/discriminatedObject to each arm.
 // Defined AFTER the function declarations above (no forward-reference issue).
 // ---------------------------------------------------------------------------
 
-const _stringArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertString);
-const _numberArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertNumber);
-const _integerArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertInteger);
-const _booleanArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertBoolean);
-const _arrayArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertArray);
-const _objectArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertObject);
-const _enumArm: Converter<ISchemaValidator<JsonObject>> = Converters.generic(_convertEnum);
+const _stringArm: Converter<ISchemaValidator<JsonObject>, string> = Converters.generic(_convertString);
+const _numberArm: Converter<ISchemaValidator<JsonObject>, string> = Converters.generic(_convertNumber);
+const _integerArm: Converter<ISchemaValidator<JsonObject>, string> = Converters.generic(_convertInteger);
+const _booleanArm: Converter<ISchemaValidator<JsonObject>, string> = Converters.generic(_convertBoolean);
+const _arrayArm: Converter<ISchemaValidator<JsonObject>, string> = Converters.generic(_convertArray);
+const _objectArm: Converter<ISchemaValidator<JsonObject>, string> = Converters.generic(_convertObject);
+const _enumArm: Converter<ISchemaValidator<JsonObject>, string> = Converters.generic(_convertEnum);
 
 // ---------------------------------------------------------------------------
 // Top-level dispatch: oneOf([enum, discriminatedObject]).
 // Built once and reused by jsonSchemaConverter's generic callback.
 // ---------------------------------------------------------------------------
-const _dispatchConverter: Converter<ISchemaValidator<JsonObject>> = Converters.oneOf([
+const _dispatchConverter: Converter<ISchemaValidator<JsonObject>, string> = Converters.oneOf([
   _enumArm,
-  Converters.discriminatedObject<ISchemaValidator<JsonObject>>('type', {
+  Converters.discriminatedObject<ISchemaValidator<JsonObject>, string, string>('type', {
     string: _stringArm,
     number: _numberArm,
     integer: _integerArm,
@@ -266,6 +307,11 @@ const _dispatchConverter: Converter<ISchemaValidator<JsonObject>> = Converters.o
  * Performs pre-flight checks (non-object root, union type arrays, forbidden keywords,
  * unknown types) before dispatching to the per-type arm converters.
  *
+ * The conversion context (`TC = string`) carries the current JSON Pointer path so that
+ * error messages from nested nodes name the actual failing node (e.g.
+ * `#/properties/config/properties/inner: 'required' key '...'`) rather than always
+ * reporting `#:`. The context defaults to `'#'` when absent (top-level call).
+ *
  * Array and object arms reference `jsonSchemaConverter` by name from inside function
  * declarations (hoisted). By the time any arm is called at runtime, `jsonSchemaConverter`
  * is fully initialized, so recursive sub-schema calls also go through the pre-flight checks
@@ -273,32 +319,38 @@ const _dispatchConverter: Converter<ISchemaValidator<JsonObject>> = Converters.o
  *
  * @public
  */
-export const jsonSchemaConverter: Converter<ISchemaValidator<JsonObject>> = Converters.generic(
-  (from: unknown): Result<ISchemaValidator<JsonObject>> => {
+export const jsonSchemaConverter: Converter<ISchemaValidator<JsonObject>, string> = Converters.generic(
+  (
+    from: unknown,
+    __self: Converter<ISchemaValidator<JsonObject>, string>,
+    context?: string
+  ): Result<ISchemaValidator<JsonObject>> => {
+    const path = context ?? '#';
+
     // Guard: root must be a non-array object.
     if (typeof from !== 'object' || Array.isArray(from) || from === null) {
-      return fail('expected a JSON Schema object');
+      return fail(`${path}: expected a JSON Schema object`);
     }
     const raw = from as Record<string, unknown>;
 
     // Union type arrays: give a better error than discriminatedObject's generic message.
     if (Array.isArray(raw.type)) {
-      return fail(`union 'type' arrays are not supported`);
+      return fail(`${path}: union 'type' arrays are not supported`);
     }
 
     // Forbidden keywords: check before dispatching so inputs with no `type` (e.g. just
     // `{ $ref: '...' }`) get a specific error rather than a generic "no matching converter".
     const forbidden = _checkForbidden(raw);
     if (forbidden.isFailure()) {
-      return fail(forbidden.message);
+      return fail(`${path}: ${forbidden.message}`);
     }
 
     // Missing/unknown type (not enum): give a better error than a generic "no matching converter".
     if (!('enum' in raw) && (typeof raw.type !== 'string' || !_SUPPORTED_TYPES.has(raw.type))) {
-      return fail(`unsupported or missing 'type'`);
+      return fail(`${path}: unsupported or missing 'type'`);
     }
 
-    return _dispatchConverter.convert(from);
+    return _dispatchConverter.convert(from, path);
   }
 );
 

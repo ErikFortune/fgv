@@ -276,6 +276,7 @@ class ObjectSchemaValidator<P extends ILlmProperties> extends SchemaValidatorBas
     const additionalProperties = opts?.additionalProperties === true;
     const converter = _buildObjectConverter(properties, additionalProperties);
     // ValidatorFunc placeholder — validate() is overridden below to use the converter.
+    /* c8 ignore next 1 - placeholder ValidatorFunc; validate() override always intercepts */
     super('object', (__from: unknown): boolean | Failure<ObjectStatic<P>> => true, opts?.description);
     this._properties = properties;
     this.additionalProperties = additionalProperties;
