@@ -1,8 +1,8 @@
 # Stream state: `ai-assist-client-tools`
 
-**Status:** 🟢 Phase A complete + amended for typed-schema authoring (`json-schema-derives-t` shipped); **ready for Phase B commission**
+**Status:** 🔵 Phase B in flight — decisions surfaced to Erik; B4 contingent on personaility roadmap
 **Workflow shape:** design-triage-implement
-**Last updated:** 2026-06-03 (senior-developer agent — hold lifted; design.md updated for typed-schema authoring; Phase B ready to commission)
+**Last updated:** 2026-06-03 (orchestrator — Phase B substrate + decision-surface)
 
 ---
 
@@ -11,7 +11,7 @@
 | Phase | Status | Notes |
 |---|---|---|
 | A — design exploration | ✅ complete | `design.md` written and amended per Erik review (extend `IAiStreamEvent` directly; §2.X consumer-driven vs ai-assist-driven loop examples + layering); updated 2026-06-03 to swap `parametersSchema: JsonObject` → `ISchemaValidator<TParams>` (typed-schema authoring). PR #436 carries the amended design. |
-| B — triage | ▶ READY | **Hold lifted.** `json-schema-derives-t` shipped to release via PR #444 (2026-06-03). Phase B commissions against the updated design.md that locks typed-schema authoring for `IAiClientToolConfig.parametersSchema`. |
+| B — triage | 🔵 in flight | Phase B substrate at `phase-b-brief.md`. Six open questions (B1-B6); five have clear recommendations from Phase A; B4 (Anthropic thinking + tools) is conditional on personaility's near-term roadmap and may require a focused empirical spike. Decisions surfaced to Erik. |
 | C — implementation (layer 1 — harness tools) | ⏸ pending Phase B | Unlocked downstream of Phase A amendment; phases in after Phase B triage closes. |
 | Layer 2 — MCP | ⏸ deferred | Sprint+1 or later; Phase A names the seam but doesn't sub-phase it. Layer 2 uses `JsonSchema.fromJson` for MCP-discovered tools → `IAiClientTool<JsonValue>`. |
 
