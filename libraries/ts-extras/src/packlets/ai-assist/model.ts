@@ -1136,7 +1136,9 @@ export type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4';
  */
 export interface IAnthropicThinkingConfig {
   /**
-   * Anthropic effort level. Maps 1:1 to `output_config.effort` on the wire.
+   * Anthropic effort level. The emit-site converts to `thinking.budget_tokens`
+   * (the integer budget the Anthropic API requires). Mapping policy: low = 2048,
+   * medium = 8192, high = 24000, max = 32000.
    * - 'low' | 'medium' | 'high': all thinking-capable models
    * - 'max': Opus 4.6 only
    */

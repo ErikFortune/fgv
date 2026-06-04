@@ -54,6 +54,7 @@ import {
   resolveModel
 } from './model';
 import {
+  anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
   mergeThinkingConfig,
   providerDiscriminatorForId,
@@ -625,8 +626,10 @@ async function callAnthropicCompletion(
   };
 
   if (resolvedThinking?.anthropicEffort !== undefined) {
-    body.thinking = { type: 'enabled' };
-    body.output_config = { effort: resolvedThinking.anthropicEffort };
+    body.thinking = {
+      type: 'enabled',
+      budget_tokens: anthropicEffortToBudgetTokens(resolvedThinking.anthropicEffort)
+    };
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);

@@ -38,7 +38,7 @@ import { buildAnthropicMessages } from '../chatRequestBuilders';
 import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toAnthropicTools } from '../toolFormats';
-import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
 
 // ============================================================================
@@ -437,8 +437,10 @@ export async function callAnthropicStream(
     stream: true
   };
   if (resolvedThinking?.anthropicEffort !== undefined) {
-    body.thinking = { type: 'enabled' };
-    body.output_config = { effort: resolvedThinking.anthropicEffort };
+    body.thinking = {
+      type: 'enabled',
+      budget_tokens: anthropicEffortToBudgetTokens(resolvedThinking.anthropicEffort)
+    };
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
