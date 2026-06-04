@@ -59,7 +59,14 @@ export interface IPromptObservationBase {
   readonly contentHash: string;
   /** Milliseconds since epoch when `PromptLibrary` produced the record. */
   readonly timestamp: number;
-  /** Wall-clock duration of the observed call, in milliseconds. */
+  /**
+   * Wall-clock milliseconds from the start of the observed call until this
+   * record was built — i.e. the resolve (or output round-trip) computation
+   * itself. It does NOT include the time spent dispatching this record to
+   * observers, so for awaited observers the end-to-end `resolve()` /
+   * `resolveJsonOutput()` / `resolveFreeTextOutput()` latency is slightly
+   * larger than `durationMs`.
+   */
   readonly durationMs: number;
   /** The prompt id from the request. */
   readonly promptId: PromptId;

@@ -78,4 +78,5 @@ Targets the existing integration branch `ts-prompt-assist-observability`. Agent 
 - [x] coverage closure: `@fgv/ts-utils` 1594 tests, `RetainingRingBuffer` 100%; `@fgv/ts-prompt-assist` 226 tests, observe + promptLibrary.ts 100% (all metrics)
 - [x] LIBRARY_CAPABILITIES.md updates (both libraries)
 - [x] `rushx build` / `rushx lint` (clean) / `rushx test` (100%) / `rushx fixlint` — both libraries
-- [ ] PR onto integration branch
+- [x] PR onto integration branch — **#456**
+- [x] Copilot review loop (implementer-driven): **stopped at round 2 on diminishing returns.** Round 1 = 10 substantive comments (contentHash doc/impl drift, additive-default invariant, flaky-timing tests), all resolved. Round 2 = 1 doc-clarification nitpick (`durationMs` semantics), resolved. No round 3 requested.
