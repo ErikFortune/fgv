@@ -1155,6 +1155,82 @@ describe('executeClientToolTurn', () => {
     });
   });
 
+  describe('tool result serialization failures', () => {
+    test('emits isError result event when tool returns a circular structure', async () => {
+      mockSseResponse(anthropicToolUseSse('toolu_01', 'recall_memory', '{"query":"x"}'));
+
+      interface ICircularValue {
+        self?: ICircularValue;
+      }
+      const circular: ICircularValue = {};
+      circular.self = circular;
+
+      const tool: IAiClientTool = {
+        config: {
+          type: 'client_tool',
+          name: 'recall_memory',
+          description: 'Recall stored context',
+          parametersSchema: recallSchema
+        },
+        execute: async () => succeed(circular)
+      };
+
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [tool],
+        model: 'claude-sonnet-4-6'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      const events = await collect(result.value.events);
+      const resultEvent = events.find((e) => e.type === 'client-tool-result');
+      expect(resultEvent).toBeDefined();
+      if (resultEvent?.type === 'client-tool-result') {
+        expect(resultEvent.isError).toBe(true);
+        expect(resultEvent.toolName).toBe('recall_memory');
+        expect(resultEvent.result).toMatch(/failed to serialize tool result/i);
+        expect(resultEvent.result).toMatch(/recall_memory/);
+      }
+    });
+
+    test('emits isError result event when tool returns undefined (JSON.stringify produces undefined)', async () => {
+      mockSseResponse(anthropicToolUseSse('toolu_01', 'recall_memory', '{"query":"x"}'));
+
+      const tool: IAiClientTool = {
+        config: {
+          type: 'client_tool',
+          name: 'recall_memory',
+          description: 'Recall stored context',
+          parametersSchema: recallSchema
+        },
+        execute: async () => succeed(undefined)
+      };
+
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [tool],
+        model: 'claude-sonnet-4-6'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      const events = await collect(result.value.events);
+      const resultEvent = events.find((e) => e.type === 'client-tool-result');
+      expect(resultEvent).toBeDefined();
+      if (resultEvent?.type === 'client-tool-result') {
+        expect(resultEvent.isError).toBe(true);
+        expect(resultEvent.toolName).toBe('recall_memory');
+        expect(resultEvent.result).toMatch(/non-serializable value/i);
+        expect(resultEvent.result).toMatch(/recall_memory/);
+      }
+    });
+  });
+
   describe('duplicate client tool name', () => {
     test('returns Result.fail immediately when two tools share the same name', () => {
       const tool = makeMemoryTool(async () => 'irrelevant');

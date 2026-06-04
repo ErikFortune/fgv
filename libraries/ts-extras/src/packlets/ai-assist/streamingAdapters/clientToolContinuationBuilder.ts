@@ -581,7 +581,42 @@ export function executeClientToolTurn(
           continue;
         }
 
-        const resultStr = JSON.stringify(executionResult.value);
+        // JSON.stringify can throw (circular references) or return undefined
+        // (e.g. for a bare `undefined` value, or a value of type `function`).
+        // Either outcome violates the client-tool-result event contract, so
+        // emit an isError result with diagnostic context instead.
+        let resultStr: string;
+        try {
+          const stringified = JSON.stringify(executionResult.value);
+          if (stringified === undefined) {
+            const errMsg = `${toolName} (callId=${callId}): tool returned a non-serializable value (JSON.stringify produced undefined)`;
+            const resultEvent: IAiStreamEvent = {
+              type: 'client-tool-result',
+              toolName,
+              callId,
+              result: errMsg,
+              isError: true
+            };
+            yield resultEvent;
+            toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
+            continue;
+          }
+          resultStr = stringified;
+        } catch (e) {
+          const errMsg = `${toolName} (callId=${callId}): failed to serialize tool result: ${
+            (e as Error).message
+          }`;
+          const resultEvent: IAiStreamEvent = {
+            type: 'client-tool-result',
+            toolName,
+            callId,
+            result: errMsg,
+            isError: true
+          };
+          yield resultEvent;
+          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
+          continue;
+        }
         const resultEvent: IAiStreamEvent = {
           type: 'client-tool-result',
           toolName,
