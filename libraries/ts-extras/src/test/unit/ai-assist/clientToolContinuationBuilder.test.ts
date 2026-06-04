@@ -1155,6 +1155,23 @@ describe('executeClientToolTurn', () => {
     });
   });
 
+  describe('duplicate client tool name', () => {
+    test('returns Result.fail immediately when two tools share the same name', () => {
+      const tool = makeMemoryTool(async () => 'irrelevant');
+      const duplicate = makeMemoryTool(async () => 'also irrelevant');
+
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [tool, duplicate] as IAiClientTool[],
+        model: 'claude-sonnet-4-6'
+      });
+
+      expect(result).toFailWith(/duplicate client tool name.*recall_memory/i);
+    });
+  });
+
   describe('explicit temperature', () => {
     test('passes explicit temperature to the underlying adapter (covers temperature ?? default branch)', async () => {
       mockSseResponse(anthropicDoneSse());

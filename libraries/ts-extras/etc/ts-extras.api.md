@@ -157,6 +157,7 @@ declare namespace AiAssist {
         IGenerateJsonCompletionParams,
         IGenerateJsonCompletionResult,
         JsonPromptHint,
+        anthropicEffortToBudgetTokens,
         IResolvedThinkingConfig
     }
 }
@@ -260,6 +261,9 @@ const allModelSpecKeys: ReadonlyArray<ModelSpecKey>;
 
 // @public
 const allProviderIds: ReadonlyArray<AiProviderId>;
+
+// @public
+function anthropicEffortToBudgetTokens(effort: NonNullable<IAnthropicThinkingConfig['effort']>): number;
 
 // @public
 type AnthropicThinkingModelNames = 'claude-sonnet-4-5' | 'claude-sonnet-4-6' | 'claude-opus-4-6' | 'claude-opus-4-7';

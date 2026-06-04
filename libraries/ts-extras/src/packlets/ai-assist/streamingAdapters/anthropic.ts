@@ -362,8 +362,12 @@ async function* translateAnthropicStream(
           let args: JsonObject;
           try {
             /* c8 ignore next 1 - defensive: argsBuffer || '{}' empty-string branch unreachable in tests */
-            args = JSON.parse(block.argsBuffer || '{}') as JsonObject;
-            /* c8 ignore start - defensive: malformed tool args default to empty object */
+            const parsed = JSON.parse(block.argsBuffer || '{}') as unknown;
+            /* c8 ignore start - defensive: non-object/malformed parse defaults to empty object */
+            args =
+              parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+                ? (parsed as JsonObject)
+                : {};
           } catch {
             args = {};
           }

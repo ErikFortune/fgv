@@ -262,8 +262,12 @@ async function* translateOpenAiResponsesStream(
             call.argsBuffer = canonicalArgs;
             let args: JsonObject;
             try {
-              args = JSON.parse(canonicalArgs) as JsonObject;
-              /* c8 ignore start - defensive: malformed args default to empty object */
+              const parsed = JSON.parse(canonicalArgs) as unknown;
+              /* c8 ignore start - defensive: non-object/malformed parse defaults to empty object */
+              args =
+                parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+                  ? (parsed as JsonObject)
+                  : {};
             } catch {
               args = {};
             }

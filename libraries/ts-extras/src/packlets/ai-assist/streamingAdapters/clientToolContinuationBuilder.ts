@@ -312,9 +312,10 @@ export interface IExecuteClientToolTurnParams {
    * message. Used to supply the output of {@link AiAssist.IAiClientToolContinuation}'s
    * `messages` field from a prior turn back to the provider in the follow-up request.
    *
-   * These messages are injected verbatim (no role/content normalization) so
-   * that complex provider-specific content — such as Anthropic thinking blocks
-   * and `tool_result` arrays — survive the round-trip without truncation.
+   * Each message is projected to `{ role, content }` — fields beyond `role` and
+   * `content` are dropped, and entries missing either field are skipped. This is
+   * sufficient for Anthropic thinking blocks and `tool_result` arrays, which
+   * carry all meaningful content in those two fields.
    */
   readonly continuationMessages?: ReadonlyArray<JsonObject>;
   /** Temperature (default: 0.7). */
@@ -396,8 +397,13 @@ export function executeClientToolTurn(
   } = params;
 
   // Build a lookup map of client tools by name for fast access.
+  // Fail fast on duplicate names — silently overwriting would cause one tool
+  // to shadow another with no observable signal.
   const toolsByName = new Map<string, IAiClientTool>();
   for (const tool of clientTools) {
+    if (toolsByName.has(tool.config.name)) {
+      return fail(`executeClientToolTurn: duplicate client tool name '${tool.config.name}'`);
+    }
     toolsByName.set(tool.config.name, tool);
   }
 
@@ -543,7 +549,7 @@ export function executeClientToolTurn(
 
         const validationResult = tool.config.parametersSchema.validate(args);
         if (validationResult.isFailure()) {
-          const errMsg = validationResult.message;
+          const errMsg = `${toolName} (callId=${callId}): ${validationResult.message}`;
           const resultEvent: IAiStreamEvent = {
             type: 'client-tool-result',
             toolName,
@@ -562,7 +568,7 @@ export function executeClientToolTurn(
           : executeResult;
 
         if (executionResult.isFailure()) {
-          const errMsg = executionResult.message;
+          const errMsg = `${toolName} (callId=${callId}): ${executionResult.message}`;
           const resultEvent: IAiStreamEvent = {
             type: 'client-tool-result',
             toolName,

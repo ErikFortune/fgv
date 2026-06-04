@@ -160,4 +160,4 @@ export {
   type JsonPromptHint
 } from './jsonCompletion';
 
-export { type IResolvedThinkingConfig } from './thinkingOptionsResolver';
+export { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from './thinkingOptionsResolver';

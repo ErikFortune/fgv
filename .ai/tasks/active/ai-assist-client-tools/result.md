@@ -74,13 +74,21 @@ Initial pass findings (P1/P2) and their resolutions are documented in `.ai/tasks
 
 ## Live testbed run
 
-`ANTHROPIC_API_KEY` was not present in the session environment. Live testbed run not performed.
+Verified end-to-end against the live Anthropic API on 2026-06-04 (after the
+fixes from PRs #448 / #449 / direct-pushed model alias landed). All empirical
+gates PASSED:
 
-The testbed scenario is functionally verified via unit tests (mock streaming, request-body verification). To run live:
+- Live API round-trip completed without HTTP 400
+- Thinking-block signature preserved (server accepted continuation — E5)
+- Client tool (`recall_memory`) invoked and executed
+- Server tool (`web_search`) events emitted
+- Server + client tool coexistence verified in same request
+
+Reproduction:
 
 ```bash
 cd samples/testbed
-ANTHROPIC_API_KEY=<key> rushx run -- anthropicClientTools
+ANTHROPIC_API_KEY=<key> rushx run -- anthropic-client-tools
 ```
 
 ---
