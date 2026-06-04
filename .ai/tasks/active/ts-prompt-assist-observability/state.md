@@ -58,4 +58,16 @@ Targets the existing integration branch `ts-prompt-assist-observability`. Agent 
 
 ## Follow-up findings filed
 
-(empty so far)
+- `findings/inbox/2026-06-04-ring-buffer-seq-authority.md` — Phase C refinement of the Phase A buffer sketch: `RetainingRingBuffer<T>` ships as a **pure seq-ring** (caller mints seq+timestamp); `PromptLibrary` owns the single seq authority. Forced by OQ-5 `linkedResolveSeq` cross-store consistency under multi-observer fan-out. Also the minimal-blast-radius shape for the `retaining-logger-ring-buffer-refactor` fast-follow. **Read this before the fast-follow.**
+
+## Phase C progress (implementation in flight)
+
+- [x] `RetainingRingBuffer<T>` in `@fgv/ts-utils` collections packlet; 25 unit tests; 100% on the file
+- [x] `observe` packlet in `@fgv/ts-prompt-assist`: `IPromptObserver`, `IPromptObservationRecord` union, `IPromptObservationQuery`, `PromptObservationStore`
+- [x] additive `observers?` on `IPromptLibraryCreateParams`; `_observe` fan-out at the three public boundaries
+- [x] OQ-3 awaited-default + fire-and-forget opt-in (per-observer `fireAndForget` flag) — tested both directions
+- [x] build + lint clean in both libraries; 224 ts-prompt-assist tests green
+- [ ] `code-reviewer` pass on cumulative diff (running) → disposition findings
+- [ ] coverage closure to 100% in both libraries (AFTER code-reviewer)
+- [ ] LIBRARY_CAPABILITIES.md updates (both libraries)
+- [ ] PR onto integration branch
