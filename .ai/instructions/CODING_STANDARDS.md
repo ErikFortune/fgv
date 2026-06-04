@@ -627,6 +627,8 @@ Summarize the run in the PR description: which findings were found at which prio
 
 **Why this matters.** A `private-key-storage` style six-round Copilot loop (PR #427) is almost always evidence that layer 1 was skipped. The internal reviewer is built for repo-pattern + edge-case classes (browser-barrel `node:crypto` leaks, types/JS mismatches, JWK cast safety, IDB durability chains, doc-accuracy drift) — exactly what Copilot catches one-at-a-time over several rounds. A single internal pass up front converts multi-round external ping-pong into one round.
 
+**Run `code-reviewer` BEFORE chasing 100% measured coverage (load-bearing within layer 1).** The internal layer-1 sequence is: scenario-driven tests (positive, negative, edge cases) → `code-reviewer` pass → coverage-gap closure. The trigger for running `code-reviewer` is the moment you're about to run `rushx coverage` with the intent to identify and close gaps — coverage-chasing is the trigger, not the stream cadence (mid-stream or final-prep, same rule applies). Reversing the order produces imperative tests that should have been declarative, `c8 ignore` directives that should have been refactors, and branches that should not have existed. See `.ai/instructions/TESTING_GUIDELINES.md` § "Coverage Gap Resolution" for the full sequence and the concrete failure mode this prevents.
+
 ### Layer 2 — Copilot review loop, agent-driven with cap
 
 After the first complete commit (gates green, layer-1 findings resolved), the implementing agent **drives** the Copilot loop:
@@ -653,3 +655,15 @@ This layer doesn't replace layers 1 and 2 — it audits that they ran and catche
 ### Why the cap matters
 
 A 10-round cap on layer 2 is the safety net against runaway loops on PRs where Copilot finds ever-smaller issues. The expected stop is the **diminishing-returns judgment**, which fires earlier — typically after 2–4 rounds on a well-prepared PR. If a PR is running into round 5+, that's a signal worth surfacing to the orchestrator: either layer 1 wasn't run thoroughly, or the change is genuinely large enough to warrant the rounds, or Copilot is in nitpick territory and the agent should call diminishing returns.
+
+### Round count is not the signal — substantive value per round is
+
+A common implementer mistake: stopping the Copilot loop at round 3 because "three rounds feels like enough" when round 3 surfaced a substantive structural finding. Round count is a safety net, not a stop criterion. The correct stop signal is **the finding profile of the most recent round** — was it substantive (real correctness or anti-pattern issues) or nitpicky (style, doc-drift, advisory observations)?
+
+Concrete patterns from observed loops:
+
+- **Round 3 surfaces a load-bearing structural bug** (e.g. a validator/convert symmetry hole invisible to top-level tests but real when nested) → don't stop; commission round 4 because the system clearly still has substance to surface. If round 4 then surfaces only doc-drift and judgment calls, *that* is the diminishing-returns signal.
+- **Round 2 surfaces only "missed an `ae-unresolved-link` warning" and "rename test file header"** → stop now; the loop is in nitpick territory regardless of round count.
+- **Round 5+ on a PR that has been mostly nitpicks since round 3** → stop and surface to the orchestrator with the diagnosis ("rounds 3–5 produced only doc and naming items; treating as diminishing returns at round N").
+
+The orchestrator handles edge cases: PRs that legitimately need 5+ rounds (large surface, novel patterns), PRs that should have stopped at 2 (one substantive round + one cleanup), PRs that hit the 10-round cap (those almost always indicate layer 1 was skipped or the PR is too large for the loop and should be decomposed). Implementing agents should call the stop and surface the reasoning; the orchestrator decides whether to push back or accept.

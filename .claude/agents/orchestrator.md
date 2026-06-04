@@ -84,6 +84,18 @@ Compose following the interleaved-per-item shape from `.ai/conventions/workflow/
 2. Verify phase B (bundle drop) is clean before drafting the kickoff.
 3. Hold the phase-C completion gate: present all four triage outputs to the user for sign-off before launching phase D. Gate is real — the user may surface a change.
 
+**Integration-branch posture (load-bearing).** Multi-phase streams (design-triage-implement) ship **all phases on a single integration branch**, cluster-close-squashed to `release` as one feature commit when the implementation phase completes. Phase A design.md, Phase B triage outputs, Phase C implementation, plus any sub-stream housekeeping all ride on the same integration branch. Phase A design does NOT land on `release` as its own commit — the design is substrate that informs the implementation, not a shipping artifact in itself.
+
+Sequencing in practice:
+
+1. Create integration branch `<stream-id>` off `release` HEAD as soon as Phase A is commissioned (or retarget Phase A's PR base from `release` to integration once the integration branch is created).
+2. Phase A design PR merges onto integration. Status flips to "Phase A complete; Phase B ready to commission."
+3. Phase B triage PR merges onto integration. Status flips to "Phase B complete; Phase C ready to commission."
+4. Phase C implementation PR(s) merge onto integration. Cluster-close PR opens (integration → release) with substrate housekeeping (move active → completed, polished README) bundled.
+5. User squash-merges cluster-close PR to release.
+
+Net: one feature commit per multi-phase stream on `release`, regardless of how many phase PRs it took to get there.
+
 ### Reviewing an agent PR before merge / bundling
 
 Before advancing the workflow (merging the PR, bundling it into a cluster-close prep, opening the cluster→release promotion PR):
@@ -91,7 +103,8 @@ Before advancing the workflow (merging the PR, bundling it into a cluster-close 
 1. **Call `mcp__github__pull_request_read` with `method: get_check_runs`.** Refuse to advance if any check is `conclusion: failure`. This catches lint failures, test failures, or coverage-gate breaks that the agent may have missed in their local run. Lint is a particular hot spot — `rushx build` does NOT transitively run lint in this monorepo, so an agent's "build passes" claim doesn't cover it.
 2. **If CI is red**: send back to the agent with the failing check's URL. The fix is the agent's, not the orchestrator's (unless the lint failure is one-line-mechanical and the agent has otherwise wrapped up the stream).
 3. **Wait for Copilot's automated review pass before merging.** The yield from a unified-delta pass is meaningfully different from per-PR reviews on the way in — it has caught real structural findings: half-cascades, runtime-soundness gaps, TSDoc/impl drift. Allocate ~1–2 rounds; beyond that the yield curves down.
-4. **Once CI is green and Copilot's pass is addressed**: proceed with the merge / bundling / promotion as planned.
+4. **Verify the artifact migration is in the PR.** Per `artifact-protocol.md`, the migration from `.ai/tasks/active/<id>/` to `.ai/tasks/completed/<bucket>/<id>/` (plus the polished `README.md`) **must ship in the same PR as the cluster-close code** — not a follow-up PR. Before merging the promotion PR, confirm the diff includes the rename of every active-substrate file plus the new `README.md`. If it doesn't, send the cluster back to add it; do NOT merge planning to do the migration later. Splitting the migration into a follow-up PR is a known failure mode that costs a churn round on git history and creates a window where `active/<id>/` is stale.
+5. **Once CI is green, Copilot's pass is addressed, and the artifact migration is present**: proceed with the merge / bundling / promotion as planned.
 
 This is a hard precondition because once a failed-CI commit is in the integration branch, unwinding (revert, re-prep, re-promote) is painful. Pre-merge gating is the cheap path.
 
@@ -104,6 +117,17 @@ This is a hard precondition because once a failed-CI commit is in the integratio
 5. Close any superseded cloud-agent draft PRs with a one-line "superseded by #N" comment.
 
 `.ai/BASELINE.md` is **not** bumped on stream merge — only on `release` → `main` promotion.
+
+### Substrate housekeeping posture
+
+Substrate housekeeping (move `.ai/tasks/active/<id>/` → `.ai/tasks/completed/<YYYY-MM>/<id>/`, write polished `README.md`, flip `docs/WORKSTREAMS.md` entry from active to completed) is **never** a standalone PR onto `release`. Two acceptable patterns:
+
+- **Integration-branch streams.** Housekeeping rides on the integration branch and squashes to `release` as part of the cluster-close PR. The cluster-close commit body mentions all included streams (including any cherry-picked housekeeping from sibling streams that landed direct-to-release).
+- **Direct-to-release streams.** Housekeeping is **bundled into the implementation PR itself**. The implementation PR commit includes the substrate move + README + WORKSTREAMS flip. One commit, one merge, one squash.
+
+Standalone housekeeping PRs onto `release` (e.g. "chore: substrate move for `<stream>`") are noise. If a housekeeping commit was accidentally created on its own branch and the implementation already landed direct-to-release, cherry-pick the housekeeping onto whichever integration branch is currently open and close the standalone PR; the housekeeping rides into release with that integration branch's squash instead.
+
+This is the noise-reduction directive — `release`'s commit history should show one commit per stream, not one commit per stream + N housekeeping commits.
 
 ### Post-merge cleanup PR
 
