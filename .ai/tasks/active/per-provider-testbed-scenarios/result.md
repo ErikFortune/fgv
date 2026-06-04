@@ -3,7 +3,7 @@
 **Stream:** `per-provider-testbed-scenarios`
 **Work branch:** `claude/magical-newton-S53ZO` (forked off integration branch `per-provider-testbed-scenarios`)
 **Completed:** 2026-06-04
-**Status:** **BLOCKED** — scenarios complete & local gates green, but the continuation-acceptance gate for OpenAI/Gemini/xAI is blocked by a `@fgv/ts-extras/ai-assist` library gap (continuation round-trip is wired for Anthropic only). Per Erik's call (2026-06-04), the scenarios stay exactly as briefed and the stream pauses pending a queued library fix. Live-API verification is also gapped (no provider keys in the agent environment). See `findings/inbox/2026-06-04-continuation-roundtrip-anthropic-only.md`.
+**Status:** scenarios complete; local gates green; the continuation-acceptance library blocker is **RESOLVED**. The `@fgv/ts-extras/ai-assist` fix landed via PR #454 (squash `38d6dc02e`) on the integration branch; this PR rebased onto it with **no scenario edits** and re-confirmed green gates (build / lint / test 100%). The continuation gate is now wired on all four providers. **Only remaining gap: live-API execution** (no provider keys in the agent environment — user-side completion). See `findings/inbox/2026-06-04-continuation-roundtrip-anthropic-only.md` (now closed).
 
 ---
 
@@ -34,14 +34,14 @@ Legend: **PASS** = verified locally; **GAPPED** = requires a live `<PROVIDER>_AP
 |---|---|---|---|
 | Live API round-trip without HTTP 4xx | GAPPED | GAPPED | GAPPED |
 | Client tool invoked and executed | GAPPED (wired) | GAPPED (wired) | GAPPED (wired) |
-| Continuation round-trip accepted | **BLOCKED** (library gap) | **BLOCKED** (library gap) | **BLOCKED** (library gap) |
+| Continuation round-trip accepted | GAPPED (wired via #454) | GAPPED (wired via #454) | GAPPED (wired via #454) |
 | Continuation BUILT (provider-format messages) | GAPPED (wired) | GAPPED (wired) | GAPPED (wired) |
 | Thinking/reasoning enabled (indirect) | GAPPED (wired) | GAPPED (wired) | GAPPED (wired) |
 | Server tool events emitted | GAPPED (wired; Responses API emits `tool-event`s) | **N/A** (Gemini grounding never yields `tool-event`s by design) | GAPPED (wired; Responses API emits `tool-event`s) |
 | Server + client tool coexistence | GAPPED (wired) | GAPPED (wired; grounding + client tool in request) | GAPPED (wired) |
 | Missing-key diagnostic path | **PASS** | **PASS** | **PASS** |
 
-> **BLOCKER (continuation-acceptance gate).** `AiAssist.executeClientToolTurn` forwards `continuationMessages` only to the Anthropic adapter — `callOpenAiResponsesStream` and `callGeminiStream` have no such parameter (verified at `openaiResponses.ts:318`, `gemini.ts:210` vs `anthropic.ts:427`). So the OpenAI/Gemini/xAI scenarios' second turn does not actually round-trip the reconstructed tool items, and the "continuation accepted" gate cannot be validated for those three providers. This is a documented Phase-C library limitation (continuation round-trip was scoped Anthropic-only; see the prior stream's `ai-assist-client-tools` finding). Per Erik's decision the scenarios are **left exactly as briefed** — the library must catch up, not the testbed. The fix is being queued as a separate `@fgv/ts-extras/ai-assist` stream; this stream resumes once it lands. Full detail: `findings/inbox/2026-06-04-continuation-roundtrip-anthropic-only.md`.
+> **Continuation-acceptance gate — blocker RESOLVED.** Previously `AiAssist.executeClientToolTurn` forwarded `continuationMessages` only to the Anthropic adapter. PR #454 (`ai-assist-cross-provider-continuation`, squash `38d6dc02e` on the integration branch) extended `callOpenAiResponsesStream` (`openaiResponses.ts:324`) and `callGeminiStream` (`gemini.ts:217`) with the optional `continuationMessages` parameter threaded to `rawTail`, and armed the `openai`/`gemini` cases of the `executeClientToolTurn` switch (`clientToolContinuationBuilder.ts:465`/`478`); xAI inherits via `apiFormat: 'openai'`. This PR rebased onto `38d6dc02` with **no scenario edits** — the scenarios, left in their final correct form, now exercise the fixed library path. The gate is therefore **wired on all four providers**; it remains GAPPED only on live-API credentials. Full detail: `findings/inbox/2026-06-04-continuation-roundtrip-anthropic-only.md` (closed).
 
 The missing-key diagnostic path was verified by running each scenario through the testbed CLI with no key set:
 

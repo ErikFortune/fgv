@@ -3,7 +3,7 @@
 **Date:** 2026-06-04
 **Surfaced by:** `per-provider-testbed-scenarios` stream — Copilot review round 2 on PR #453
 **Library:** `@fgv/ts-extras/ai-assist`
-**Disposition:** BLOCKED — Erik's call (2026-06-04): scenarios stay exactly as briefed (do not alter scenario behavior, do not drop the continuation call); the library gap is the blocker. Erik will work with the orchestrator to queue a `@fgv/ts-extras/ai-assist` fix in a separate stream; this stream pauses until that lands, then resumes to validate the continuation gate live.
+**Disposition:** RESOLVED — the library blocker landed on the `per-provider-testbed-scenarios` integration branch via PR #454 (`ai-assist-cross-provider-continuation`), squash commit `38d6dc02e`. `executeClientToolTurn` now forwards `continuationMessages` through `rawTail` to all three adapters (verified: `clientToolContinuationBuilder.ts` switch arms anthropic/openai/gemini; `openaiResponses.ts:324` and `gemini.ts:217` now accept `continuationMessages` → `rawTail`). This PR (#453) rebased onto `38d6dc02` with no conflicts and **no scenario edits** — the scenarios were left in their final correct form per Erik's earlier call, so they now light up against the post-fix library. Local gates re-confirmed green after rebase (build / lint / test 100%). The continuation-acceptance gate is now **wired on all four providers**; the only remaining gap is live-API execution (no provider keys in the agent env — user-side completion).
 
 ---
 
@@ -42,10 +42,19 @@ Additive, no breaking change:
 
 This is the same shape the prior finding anticipated ("a future provider can adopt it without a builder-signature change").
 
-## Disposition (decided)
+## Resolution (2026-06-04)
 
-**The scenarios stay exactly as briefed.** Erik's direction (2026-06-04): do not change scenario behavior, do not drop the second `executeClientToolTurn` continuation call, do not relabel gates. The brief is the brief — the scenarios are written assuming the library forwards `continuationMessages` for every provider, which is the correct end-state. The library not yet doing so for OpenAI/Gemini/xAI is the **blocker**, not something the testbed should paper over.
+The "scenarios stay exactly as briefed" call paid off exactly as intended. The library fix landed independently as PR #454 and merged to the integration branch (`38d6dc02e`); rebasing this PR onto it required **zero scenario edits** — the scenarios that were written assuming cross-provider continuation now exercise the real, fixed library path.
 
-**Action:** this stream **pauses** here. Erik will work with the orchestrator to queue a `@fgv/ts-extras/ai-assist` fix (the additive extension sketched above) in a separate stream. Once that lands and this branch rebases onto it, the OpenAI/Gemini/xAI scenarios will validate the continuation-acceptance gate live with no scenario edits required.
+What landed in #454 (the additive extension sketched above, in full):
+1. `callOpenAiResponsesStream` (`openaiResponses.ts:324`) and `callGeminiStream` (`gemini.ts:217`) gained the optional `continuationMessages?: ReadonlyArray<JsonObject>` parameter, threaded to the builder's `rawTail`.
+2. The `executeClientToolTurn` provider switch (`clientToolContinuationBuilder.ts`) now forwards `continuationMessages` in the `openai` and `gemini` cases (line 465 / 478), matching the anthropic case (451).
+3. xAI inherits the fix via `apiFormat: 'openai'` routing.
 
-Until then, a live run of these three scenarios would either re-run the original prompt on the second turn (continuation silently dropped) or — once the library is fixed — genuinely round-trip. The scenarios are intentionally left in their final, correct form so they light up the moment the library catches up.
+Post-rebase state of this PR:
+- `rush build --to @fgv/testbed` — green (rebuilds patched `ts-extras`)
+- `rushx lint` (testbed) — green
+- `rushx test` (testbed) — green, 100% coverage
+- Missing-key CLI diagnostics for all three scenarios — still fire correctly
+
+The continuation-acceptance gate is now **wired on all four providers**. The only outstanding gate is live-API execution, which remains gapped solely on credentials (no provider keys in the agent environment) — see `result.md` for the user-side run commands. This finding is closed.
