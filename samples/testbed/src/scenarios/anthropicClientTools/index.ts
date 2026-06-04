@@ -124,7 +124,7 @@ const memoryTool: AiAssist.IAiClientTool = {
 
 /** The user question that exercises memory recall and (optionally) web search. */
 const USER_QUESTION: string =
-  'What display mode do I prefer? ' + 'Also, what is the latest stable version of TypeScript as of today?';
+  'What display mode do I prefer? Also, what is the latest stable version of TypeScript as of today?';
 
 /** System prompt that instructs the model to use both the memory and web search tools. */
 const SYSTEM_PROMPT: string =
