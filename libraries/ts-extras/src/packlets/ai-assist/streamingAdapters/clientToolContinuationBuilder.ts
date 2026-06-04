@@ -295,7 +295,7 @@ export function buildGeminiContinuation(
 // ============================================================================
 
 /**
- * Parameters for {@link executeClientToolTurn}.
+ * Parameters for {@link AiAssist.executeClientToolTurn}.
  * @public
  */
 export interface IExecuteClientToolTurnParams {
@@ -309,8 +309,8 @@ export interface IExecuteClientToolTurnParams {
   readonly messagesBefore?: ReadonlyArray<IChatMessage>;
   /**
    * Provider-specific continuation messages to append after the prompt's user
-   * message. Used to supply the output of {@link IAiClientToolContinuation.messages}
-   * from a prior turn back to the provider in the follow-up request.
+   * message. Used to supply the output of {@link AiAssist.IAiClientToolContinuation}'s
+   * `messages` field from a prior turn back to the provider in the follow-up request.
    *
    * These messages are injected verbatim (no role/content normalization) so
    * that complex provider-specific content — such as Anthropic thinking blocks
@@ -334,7 +334,7 @@ export interface IExecuteClientToolTurnParams {
 }
 
 /**
- * Return value of {@link executeClientToolTurn}.
+ * Return value of {@link AiAssist.executeClientToolTurn}.
  * @public
  */
 export interface IExecuteClientToolTurnResult {
@@ -346,7 +346,7 @@ export interface IExecuteClientToolTurnResult {
   readonly events: AsyncIterable<IAiStreamEvent>;
   /**
    * Resolves when the stream terminates. On success, carries the
-   * {@link IAiClientToolTurnResult} with the optional continuation for the
+   * {@link AiAssist.IAiClientToolTurnResult} with the optional continuation for the
    * next round. On failure, carries the error message.
    */
   readonly nextTurn: Promise<Result<IAiClientToolTurnResult>>;

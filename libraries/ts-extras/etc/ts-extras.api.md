@@ -172,7 +172,7 @@ const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
 // @public
 const aiAssistSettings: Converter<IAiAssistSettings>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiClientToolConfig"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const aiClientToolConfig: Converter<IAiClientToolConfig>;
@@ -1191,33 +1191,31 @@ interface IEncryptionResult {
     readonly iv: Uint8Array;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "executeClientToolTurn"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IExecuteClientToolTurnParams {
     readonly apiKey: string;
     readonly clientTools: ReadonlyArray<IAiClientTool>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiClientToolContinuation"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly continuationMessages?: ReadonlyArray<JsonObject>;
     readonly descriptor: IAiProviderDescriptor;
     readonly logger?: Logging.ILogger;
     readonly messagesBefore?: ReadonlyArray<IChatMessage>;
     readonly model?: string;
     readonly prompt: AiPrompt;
-    // Warning: (ae-incompatible-release-tags) The symbol "resolvedThinking" is marked as @public, but its signature references "IResolvedThinkingConfig" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "resolvedThinking" is marked as @public, but its signature references "IResolvedThinkingConfig" which is marked as @internal
     readonly resolvedThinking?: IResolvedThinkingConfig;
     readonly signal?: AbortSignal;
     readonly temperature?: number;
     readonly tools?: ReadonlyArray<AiServerToolConfig>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "executeClientToolTurn"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IExecuteClientToolTurnResult {
     readonly events: AsyncIterable<IAiStreamEvent>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiClientToolTurnResult"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly nextTurn: Promise<Result<IAiClientToolTurnResult>>;
 }
 
@@ -1608,7 +1606,6 @@ interface IProviderCompletionParams {
 // @public
 interface IProviderCompletionStreamParams {
     readonly apiKey: string;
-    readonly clientTools?: ReadonlyArray<IAiClientTool>;
     readonly descriptor: IAiProviderDescriptor;
     readonly endpoint?: string;
     readonly logger?: Logging.ILogger;
@@ -1691,7 +1688,7 @@ interface IResolvedImageOptions {
     readonly style?: string;
 }
 
-// @internal
+// @public
 interface IResolvedThinkingConfig {
     readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
     readonly geminiThinkingBudget?: number;

@@ -31,7 +31,6 @@ import { fail, type Logging, Result, succeed, type Validator } from '@fgv/ts-uti
 import {
   AiPrompt,
   type AiServerToolConfig,
-  type IAiClientTool,
   type IAiProviderDescriptor,
   type IChatMessage,
   type IThinkingConfig,
@@ -67,12 +66,6 @@ export interface IProviderCompletionStreamParams {
   readonly logger?: Logging.ILogger;
   /** Server-side tools to include in the request. */
   readonly tools?: ReadonlyArray<AiServerToolConfig>;
-  /**
-   * Client-defined (harness-supplied) tools to include in the request.
-   * These are function-calling tools whose `execute` callbacks are invoked
-   * by the round-trip helper (`executeClientToolTurn`) when the model calls them.
-   */
-  readonly clientTools?: ReadonlyArray<IAiClientTool>;
   /** Optional abort signal for cancelling the in-flight stream. */
   readonly signal?: AbortSignal;
   /**

@@ -72,7 +72,11 @@ export function providerDiscriminatorForId(providerId: string): ThinkingProvider
 /**
  * Resolved thinking wire parameters for a specific provider, after merging
  * all applicable config blocks. Ready for provider-specific wire encoding.
- * @internal
+ *
+ * Callers that pre-resolve thinking config outside of the standard streaming
+ * helpers (e.g. `executeClientToolTurn`) accept this type via the
+ * `resolvedThinking` parameter and pass it directly to the adapter layer.
+ * @public
  */
 export interface IResolvedThinkingConfig {
   /** Anthropic: output_config.effort value */

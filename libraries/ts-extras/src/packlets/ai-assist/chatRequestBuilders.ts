@@ -27,8 +27,31 @@
  */
 
 import type { JsonObject } from '@fgv/ts-json-base';
+import { type Converter, Converters } from '@fgv/ts-utils';
 
 import { AiPrompt, type IAiImageAttachment, type IChatMessage, toDataUrl } from './model';
+
+/**
+ * Converter for a rawTail message entry. Narrows a `JsonObject` to
+ * `{ role: string; content: string | unknown[] }` at runtime using the
+ * Converter pattern. Entries that fail validation are silently skipped — the
+ * surrounding function is infallible, and a malformed continuation message is
+ * better omitted than transmitted verbatim.
+ * @internal
+ */
+const rawTailMessageConverter: Converter<{ role: string; content: string | unknown[] }> = Converters.object<{
+  role: string;
+  content: string | unknown[];
+}>(
+  {
+    role: Converters.string,
+    content: Converters.oneOf<string | unknown[]>([
+      Converters.string,
+      Converters.isA('array', (v): v is unknown[] => Array.isArray(v))
+    ])
+  },
+  { strict: false }
+);
 
 /**
  * Optional head/tail messages to weave around the prompt's user message.
@@ -198,10 +221,13 @@ export function buildAnthropicMessages(
       }
     }
   }
-  /* c8 ignore next 5 - options?.rawTail optional-chain short-circuit (options=undefined) not reached in unit tests */
+  /* c8 ignore next 7 - options?.rawTail optional-chain short-circuit (options=undefined) not reached in unit tests */
   if (options?.rawTail) {
     for (const msg of options.rawTail) {
-      messages.push(msg as unknown as { role: string; content: string | unknown[] });
+      const converted = rawTailMessageConverter.convert(msg);
+      if (converted.isSuccess()) {
+        messages.push(converted.value);
+      }
     }
   }
   return messages;

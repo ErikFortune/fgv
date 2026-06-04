@@ -254,10 +254,15 @@ async function* translateOpenAiResponsesStream(
         if (callId !== undefined) {
           const call = functionCallMap.get(callId);
           if (call) {
+            /* c8 ignore next 1 - defensive: payload?.arguments null branch unreachable after validation */
+            const canonicalArgs = payload?.arguments ?? '{}';
+            // Sync the accumulation entry with the canonical arguments from the .done event.
+            // Delta events may carry partial/empty payloads; the .done event carries the
+            // authoritative final arguments string used by the continuation builder.
+            call.argsBuffer = canonicalArgs;
             let args: JsonObject;
             try {
-              /* c8 ignore next 1 - defensive: payload?.arguments null branch unreachable after validation */
-              args = JSON.parse(payload?.arguments ?? '{}') as JsonObject;
+              args = JSON.parse(canonicalArgs) as JsonObject;
               /* c8 ignore start - defensive: malformed args default to empty object */
             } catch {
               args = {};

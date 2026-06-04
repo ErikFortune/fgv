@@ -28,7 +28,7 @@
 import '@fgv/ts-utils-jest';
 
 import { AiAssist } from '../../..';
-import type { JsonObject } from '@fgv/ts-json-base';
+import type { JsonArray, JsonObject } from '@fgv/ts-json-base';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import type { IAccumulatedBlock } from '../../../packlets/ai-assist/streamingAdapters/anthropic';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -774,14 +774,14 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
         content: [
           { type: 'thinking', thinking: 'thought', signature: 'sig' },
           { type: 'tool_use', id: 'call_1', name: 'recall_memory', input: { key: 'display-mode' } }
-        ] as unknown as JsonObject
+        ] as JsonArray
       },
       {
         role: 'user',
         content: [
           // eslint-disable-next-line @typescript-eslint/naming-convention
           { type: 'tool_result', tool_use_id: 'call_1', content: 'dark mode' }
-        ] as unknown as JsonObject
+        ] as JsonArray
       }
     ];
 
@@ -1064,8 +1064,67 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     const entry = callMap.get('fc_buf');
     expect(entry).toBeDefined();
     expect(entry?.name).toBe('buffered_tool');
-    // argsBuffer contains all delta chunks concatenated
+    // argsBuffer reflects the canonical .done arguments, not merely the concatenated deltas
     expect(entry?.argsBuffer).toBe('{"a":"b"}');
+  });
+
+  test('.done event canonical arguments override partial/empty delta buffer in argsBuffer', async () => {
+    // Scenario: no delta events arrive (or deltas are empty) but the .done event carries the
+    // full argument string. The continuation builder must use the .done-supplied arguments,
+    // not the (empty) accumulated delta buffer.
+    const callMap = new Map<string, IAccumulatedFunctionCall>();
+
+    // Construct an SSE stream with NO delta chunks but a full .done arguments payload.
+    const sseChunks: string[] = [
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: { type: 'function_call', id: 'fc_nodelta', call_id: 'fc_nodelta', name: 'nodelta_tool' }
+      })}\n\n`,
+      // No function_call_arguments.delta events — provider delivered nothing before .done
+      `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
+        call_id: 'fc_nodelta',
+        arguments: '{"answer":42}'
+      })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const { callOpenAiResponsesStream } = await import(
+      '../../../packlets/ai-assist/streamingAdapters/openaiResponses'
+    );
+
+    const streamConfig = {
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4o',
+      apiKey: 'sk-test'
+    };
+
+    const streamResult = await callOpenAiResponsesStream(
+      streamConfig,
+      TEST_PROMPT,
+      [{ type: 'web_search' }],
+      undefined,
+      0.5,
+      undefined,
+      undefined,
+      undefined,
+      callMap
+    );
+
+    expect(streamResult).toSucceed();
+    if (!streamResult.isSuccess()) return;
+    const emitted = await collect(streamResult.value);
+
+    // The client-tool-call-done event must carry the .done-supplied args, not empty object
+    const done = emitted.find((e) => e.type === 'client-tool-call-done') as
+      | AiAssist.IAiStreamToolUseDelta
+      | undefined;
+    expect(done?.toolName).toBe('nodelta_tool');
+    expect(done?.args).toEqual({ answer: 42 });
+
+    // The continuation builder entry must also reflect the .done arguments
+    const entry = callMap.get('fc_nodelta');
+    expect(entry).toBeDefined();
+    expect(entry?.argsBuffer).toBe('{"answer":42}');
   });
 });
 
