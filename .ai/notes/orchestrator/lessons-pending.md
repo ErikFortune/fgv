@@ -469,6 +469,16 @@ Together the three form the durable form of the review-loop stack: Layer 1 (inte
 
 Together the three form a workflow-posture triad complementing the review-loop discipline triad (L31/L32/L33). The review-loop triad governs *how* PRs converge to mergeable state; the workflow-posture triad governs *what shape the merge takes* — single commits per stream, integration branches for multi-phase work, no noise on release.
 
+### 2026-06-04 — L37 codified (review-loop-layer-1 sequencing)
+
+**PR:** rolled into `chore/codify-l34-l35-l36` (PR #445) alongside the L34/L35/L36 triad. Erik's call (2026-06-04): co-located codification — L37 is a structural refinement of the same layer-1 review discipline.
+
+**Graduated:**
+
+- **L37. `code-reviewer` runs BEFORE 100%-measured-coverage closure, not after.** The Phase C (`ai-assist-client-tools`) implementer landed `c8 ignore` directives on the `rawTail` branch in `chatRequestBuilders.ts` because the branch was "only exercised by live continuation scenarios" — defensible in isolation but evidence of the failure mode: the implementer chased 100% measured coverage before any internal review. Erik: "whenever the implementer decides to hit 100% measured coverage, it should first do a code-reviewer pass." Coverage-chasing is the trigger; mid-stream or final-prep, same rule. Code-reviewer catches the class of finding where imperative tests should be Result-chain tests, `c8 ignore` directives mask refactor opportunities, and surface complexity should be simplified — eliminating gaps that would otherwise need closure. Reversing the order locks those artifacts in. → codified in `.ai/instructions/TESTING_GUIDELINES.md` § "Coverage Gap Resolution" with a new "Run `code-reviewer` BEFORE chasing 100% measured coverage" subsection at the top, naming the three-step sequence (scenario tests → code-reviewer → coverage gaps) and three concrete classes of finding the order prevents. Cross-referenced from `.ai/instructions/CODING_STANDARDS.md` § "Review-loop discipline" layer-1 subsection with a load-bearing callout. (Reference: Phase C C4 c8 ignores on rawTail; Erik's framing on 2026-06-04.)
+
+L37 complements L31/L32/L33 (which govern layer-1's place in the broader review stack) and L34 (which governs layer-2 stop signals). The full layer-1 sequence is now: scenario-driven tests → `code-reviewer` pass → coverage-gap closure → all gates pass → open PR. L37 sharpens the second step's position relative to the third.
+
 ---
 
 When this file or accumulated peer notes get swept to release: append entry here with date, sweep PR link, and which items graduated to durable form (convention / skill / agent-prompt) vs aged out.
