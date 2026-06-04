@@ -10,6 +10,7 @@
  */
 
 import type { IScenario } from '../shell';
+import { anthropicClientToolsScenario } from './anthropicClientTools';
 import { localClassifierSafetyScenario } from './localClassifierSafety';
 import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
 import { localSummarizationScenario } from './localSummarization';
@@ -19,6 +20,7 @@ import { localSummarizationScenario } from './localSummarization';
  * @public
  */
 export const scenarios: readonly IScenario[] = [
+  anthropicClientToolsScenario,
   localClassifierSafetyScenario,
   localEmbeddingSearchScenario,
   localSummarizationScenario

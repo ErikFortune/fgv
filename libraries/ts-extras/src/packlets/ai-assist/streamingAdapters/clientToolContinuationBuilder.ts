@@ -301,6 +301,16 @@ export interface IExecuteClientToolTurnParams {
   readonly prompt: AiPrompt;
   /** Prior conversation history (excluding the current turn). */
   readonly messagesBefore?: ReadonlyArray<IChatMessage>;
+  /**
+   * Provider-specific continuation messages to append after the prompt's user
+   * message. Used to supply the output of {@link IAiClientToolContinuation.messages}
+   * from a prior turn back to the provider in the follow-up request.
+   *
+   * These messages are injected verbatim (no role/content normalization) so
+   * that complex provider-specific content — such as Anthropic thinking blocks
+   * and `tool_result` arrays — survive the round-trip without truncation.
+   */
+  readonly continuationMessages?: ReadonlyArray<JsonObject>;
   /** Temperature (default: 0.7). */
   readonly temperature?: number;
   /** Server-side tools to include. */
@@ -369,6 +379,7 @@ export function executeClientToolTurn(
     apiKey,
     prompt,
     messagesBefore,
+    continuationMessages,
     temperature,
     tools,
     clientTools,
@@ -412,7 +423,8 @@ export function executeClientToolTurn(
           logger,
           signal,
           resolvedThinking,
-          anthropicBuffer
+          anthropicBuffer,
+          continuationMessages
         );
       case 'openai':
         return callOpenAiResponsesStream(

@@ -28,6 +28,7 @@
 import '@fgv/ts-utils-jest';
 
 import { AiAssist } from '../../..';
+import type { JsonObject } from '@fgv/ts-json-base';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import type { IAccumulatedBlock } from '../../../packlets/ai-assist/streamingAdapters/anthropic';
 // eslint-disable-next-line @rushstack/packlets/mechanics
@@ -761,6 +762,105 @@ describe('Anthropic streaming adapter — C2 client tool extensions', () => {
     expect(types).toContain('client-tool-call-done');
     expect(types).toContain('text-delta');
     expect(types[types.length - 1]).toBe('done');
+  });
+
+  test('appends continuationMessages as rawTail after the prompt user message (C4)', async () => {
+    // Verify that continuation messages (complex JsonObject[] with thinking blocks) are
+    // appended to the messages array AFTER the user message, not before. This is the C4
+    // addition that enables the multi-turn continuation scenario.
+    const continuationMessages: ReadonlyArray<JsonObject> = [
+      {
+        role: 'assistant',
+        content: [
+          { type: 'thinking', thinking: 'thought', signature: 'sig' },
+          { type: 'tool_use', id: 'call_1', name: 'recall_memory', input: { key: 'display-mode' } }
+        ] as unknown as JsonObject
+      },
+      {
+        role: 'user',
+        content: [
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          { type: 'tool_result', tool_use_id: 'call_1', content: 'dark mode' }
+        ] as unknown as JsonObject
+      }
+    ];
+
+    let capturedBody: Record<string, unknown> | undefined;
+    const encoder = new TextEncoder();
+    (global.fetch as jest.Mock).mockImplementation((...args: unknown[]) => {
+      const init = args[1] as RequestInit;
+      capturedBody = JSON.parse(init.body as string) as Record<string, unknown>;
+      const body = new ReadableStream<Uint8Array>({
+        start(controller: ReadableStreamDefaultController<Uint8Array>): void {
+          // Minimal valid Anthropic SSE stream.
+          controller.enqueue(
+            encoder.encode(
+              'event: content_block_start\ndata: ' +
+                JSON.stringify({ index: 0, content_block: { type: 'text' } }) +
+                '\n\n'
+            )
+          );
+          controller.enqueue(
+            encoder.encode(
+              'event: content_block_delta\ndata: ' +
+                JSON.stringify({
+                  index: 0,
+                  delta: { type: 'text_delta', text: 'follow-up answer' }
+                }) +
+                '\n\n'
+            )
+          );
+          controller.enqueue(
+            encoder.encode('event: content_block_stop\ndata: ' + JSON.stringify({ index: 0 }) + '\n\n')
+          );
+          controller.enqueue(encoder.encode('event: message_stop\ndata: ' + JSON.stringify({}) + '\n\n'));
+          controller.close();
+        }
+      });
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        body,
+        text: jest.fn().mockResolvedValue(''),
+        headers: new Map([['content-type', 'text/event-stream']])
+      });
+    });
+
+    const { callAnthropicStream } = await import('../../../packlets/ai-assist/streamingAdapters/anthropic');
+
+    const streamConfig = {
+      baseUrl: 'https://api.anthropic.com/v1',
+      model: 'claude-3-7-sonnet-20250219',
+      apiKey: 'sk-test'
+    };
+
+    const streamResult = await callAnthropicStream(
+      streamConfig,
+      TEST_PROMPT,
+      undefined,
+      0.5,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      continuationMessages
+    );
+
+    expect(streamResult).toSucceed();
+    if (!streamResult.isSuccess()) return;
+    await collect(streamResult.value);
+
+    // Verify the continuation messages appear AFTER the user message in the request body.
+    expect(capturedBody).toBeDefined();
+    const messages = capturedBody?.messages as Array<{ role: string; content: unknown }>;
+    expect(messages).toBeDefined();
+
+    // messages should be: [{ role: 'user', content: 'hello' }, ...continuationMessages]
+    expect(messages[0].role).toBe('user');
+    expect(messages[1].role).toBe('assistant');
+    expect(messages[2].role).toBe('user');
+    expect(messages).toHaveLength(3);
   });
 });
 

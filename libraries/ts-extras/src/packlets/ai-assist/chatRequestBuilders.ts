@@ -26,6 +26,8 @@
  * @packageDocumentation
  */
 
+import type { JsonObject } from '@fgv/ts-json-base';
+
 import { AiPrompt, type IAiImageAttachment, type IChatMessage, toDataUrl } from './model';
 
 /**
@@ -44,6 +46,16 @@ export interface IBuildMessagesOptions {
    * + correction turns for the JSON-validation retry loop).
    */
   readonly tail?: ReadonlyArray<IChatMessage>;
+  /**
+   * Raw JSON objects appended after the prompt's user message. Used to
+   * inject provider-specific continuation messages (e.g. Anthropic assistant
+   * turns with thinking blocks) that cannot be expressed as plain
+   * {@link IChatMessage} objects.
+   *
+   * Each element is pushed as-is into the messages array without further
+   * transformation. Takes precedence over (and is appended after) `tail`.
+   */
+  readonly rawTail?: ReadonlyArray<JsonObject>;
 }
 
 /**
@@ -184,6 +196,12 @@ export function buildAnthropicMessages(
       if (msg.role !== 'system') {
         messages.push({ role: msg.role, content: msg.content });
       }
+    }
+  }
+  /* c8 ignore next 5 - rawTail branch: only exercised by live continuation scenarios */
+  if (options?.rawTail) {
+    for (const msg of options.rawTail) {
+      messages.push(msg as unknown as { role: string; content: string | unknown[] });
     }
   }
   return messages;

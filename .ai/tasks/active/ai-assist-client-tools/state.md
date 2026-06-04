@@ -1,8 +1,8 @@
 # Stream state: `ai-assist-client-tools`
 
-**Status:** 🟢 Phase C in flight — C1 implementation in progress (branch: chore/ai-assist-client-tools-phase-c-impl)
+**Status:** 🟢 Phase C complete — C1–C4 implemented; PR open against `ai-assist-client-tools` (branch: chore/ai-assist-client-tools-phase-c-impl)
 **Workflow shape:** design-triage-implement
-**Last updated:** 2026-06-04 (Code Monkey agent — Phase C C1 implementation)
+**Last updated:** 2026-06-04 (Code Monkey agent — Phase C C1–C4 implementation)
 
 ---
 
@@ -12,7 +12,7 @@
 |---|---|---|
 | A — design exploration | ✅ complete | `design.md` written and amended per Erik review (extend `IAiStreamEvent` directly; §2.X consumer-driven vs ai-assist-driven loop examples + layering); updated 2026-06-03 to swap `parametersSchema: JsonObject` → `ISchemaValidator<TParams>` (typed-schema authoring). PR #436 carries the amended design. |
 | B — triage | ✅ complete | All six decisions locked (PR #446). B4 spike findings documented in `b4-spike-findings.md`. |
-| C — implementation (layer 1 — harness tools) | 🟢 in flight | branch: `chore/ai-assist-client-tools-phase-c-impl`. C1 started 2026-06-04. |
+| C — implementation (layer 1 — harness tools) | ✅ complete | branch: `chore/ai-assist-client-tools-phase-c-impl`. C1–C4 implemented 2026-06-04. PR open. |
 | Layer 2 — MCP | ⏸ deferred | Sprint+1 or later; Phase A names the seam but doesn't sub-phase it. Layer 2 uses `JsonSchema.fromJson` for MCP-discovered tools → `IAiClientTool<JsonValue>`. |
 
 ---
@@ -48,6 +48,7 @@ Phase A commissioned as research+design now so the sizing exists before Erik com
 
 | Date | Event | Notes |
 |---|---|---|
+| 2026-06-04 | Phase C C1–C4 implemented | C1: model types + `IAiClientTool`, `IAiClientToolConfig`, `IAiClientToolContinuation`, `IAiStreamToolEvent` variants. C2: Anthropic adapter updated — tool-use streaming, client tool dispatching, continuation builder. C3: `executeClientToolTurn` harness — returns `{ events: AsyncIterable<IAiStreamEvent>, nextTurn: Promise<Result<IAiClientToolTurnResult>> }`. C4: packlet re-exports, B-6 testbed scenario (Anthropic + thinking + memory client tool + web_search server tool), `continuationMessages` parameter added to `IExecuteClientToolTurnParams` (design gap fixed: continuation wire messages are `ReadonlyArray<JsonObject>` not `IChatMessage[]`), `rawTail` added to `IBuildMessagesOptions` in `chatRequestBuilders.ts`, `LIBRARY_CAPABILITIES.md` extended, state.md updated. All gates green (build/lint/test/coverage). |
 | 2026-05-30 | FUTURE.md entry added; substrate prepped | brief.md + state.md + design-doc target named. |
 | 2026-05-30 | Phase A senior-developer agent commissioned | Design doc target: `.ai/tasks/active/ai-assist-client-tools/design.md`. |
 | 2026-06-02 | Phase A design complete | design.md written. Covers §§1–5: cross-provider survey, fgv-native surface sketch, harness/MCP split, Phase C sizing, recommendation. Key open item: Anthropic thinking + tools round-trip empirical verification (B4). |
@@ -63,4 +64,4 @@ Phase A commissioned as research+design now so the sizing exists before Erik com
 |---|---|---|
 | Substrate prep + Phase A design | draft PR → release | design.md complete; PR opened for Erik review |
 | Phase B triage | TBD | not yet commissioned |
-| Phase C implementation | TBD | not yet commissioned |
+| Phase C implementation | open | `chore/ai-assist-client-tools-phase-c-impl` → `ai-assist-client-tools` |

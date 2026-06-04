@@ -419,10 +419,14 @@ export async function callAnthropicStream(
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
-  accumulationBuffer?: Map<number, IAccumulatedBlock>
+  accumulationBuffer?: Map<number, IAccumulatedBlock>,
+  continuationMessages?: ReadonlyArray<JsonObject>
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/messages`;
-  const messages = buildAnthropicMessages(prompt, { head: messagesBefore });
+  const messages = buildAnthropicMessages(prompt, {
+    head: messagesBefore,
+    rawTail: continuationMessages
+  });
   // When thinking is active, temperature is rejected by Anthropic (validated upstream).
   const body: Record<string, unknown> = {
     model: config.model,

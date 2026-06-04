@@ -123,7 +123,10 @@ export {
 export {
   callProviderCompletionStream,
   callProxiedCompletionStream,
-  type IProviderCompletionStreamParams
+  type IProviderCompletionStreamParams,
+  executeClientToolTurn,
+  type IExecuteClientToolTurnParams,
+  type IExecuteClientToolTurnResult
 } from './streamingClient';
 
 export {
@@ -156,3 +159,5 @@ export {
   type IGenerateJsonCompletionResult,
   type JsonPromptHint
 } from './jsonCompletion';
+
+export { type IResolvedThinkingConfig } from './thinkingOptionsResolver';
