@@ -39,6 +39,11 @@ Phase A sub-decisions (recommendations; Phase B locks the headline):
 - **Q4:** Schema-aware `query(criteria)` echoing `getRecords` (sinceSeq / limit) plus prompt axes (promptId, scope, qualifiers partial-match, outputKind, outcome, safeguard disposition) compiling down to the `RetainingRingBuffer<T>` predicate.
 - **Semantics:** observer-error swallow reuses the **existing** injected `this.logger`; storage-layer privacy = default store is most-permissive, redaction is a consumer observer/store substitution.
 
+### Orchestrator locks (Erik, 2026-06-04, on PR #455 review)
+
+- **Q1 / OQ-6 LOCKED:** hybrid C-minimal + D accepted. Phase C ships the generic `RetainingRingBuffer<T>` in `@fgv/ts-utils` + the schema-aware `PromptObservationStore` in `@fgv/ts-prompt-assist`.
+- **RetainingLogger composition deferred (agreed):** Phase C does **not** refactor `RetainingLogger` to compose `RetainingRingBuffer<T>` — keeps Phase C's blast radius additive. **This is a committed fast-follow, not a parking-lot item** — schedule it to follow Phase C quickly so the two ring implementations don't diverge.
+
 ---
 
 ## Follow-up findings filed
