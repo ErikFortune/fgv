@@ -47,6 +47,29 @@ export { callProxiedCompletionStream } from './streamingAdapters/proxy';
 export type { IProviderCompletionStreamParams } from './streamingAdapters/common';
 
 /**
+ * Re-export `executeClientToolTurn` from the continuation builder so callers
+ * can import it directly from the streaming-client surface.
+ *
+ * @remarks
+ * **Why `clientTools` does not flow through `callProviderCompletionStream`:**
+ * Client tools require a stateful per-stream accumulation buffer (for thinking
+ * blocks, tool-use args, Gemini functionCall accumulation) that is owned by the
+ * continuation builder's execution context. Passing `clientTools` through the
+ * generic `callProviderCompletionStream` entry would require the caller to manage
+ * the accumulation buffer externally. `executeClientToolTurn` is therefore the
+ * canonical (and only) call path for client tools in Phase C. Callers that need
+ * both server tools and client tools in the same request should use
+ * `executeClientToolTurn` with both `tools` (server) and `clientTools` present;
+ * `callProviderCompletionStream` is for server-tools-only or no-tools requests.
+ */
+/* c8 ignore next 5 - barrel re-export; function is covered by clientToolContinuationBuilder tests */
+export {
+  executeClientToolTurn,
+  type IExecuteClientToolTurnParams,
+  type IExecuteClientToolTurnResult
+} from './streamingAdapters/clientToolContinuationBuilder';
+
+/**
  * Calls the appropriate streaming chat completion API for a given provider.
  *
  * @remarks

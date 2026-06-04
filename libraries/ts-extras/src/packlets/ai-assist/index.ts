@@ -9,7 +9,13 @@ export {
   type AiProviderId,
   type AiServerToolType,
   type AiServerToolConfig,
+  type AiToolConfig,
   type IAiWebSearchToolConfig,
+  type IAiClientToolConfig,
+  type IAiClientTool,
+  type IAiClientToolCallSummary,
+  type IAiClientToolContinuation,
+  type IAiClientToolTurnResult,
   type IAiToolEnablement,
   type IAiCompletionResponse,
   type IChatMessage,
@@ -57,6 +63,9 @@ export {
   type IAiStreamEvent,
   type IAiStreamTextDelta,
   type IAiStreamToolEvent,
+  type IAiStreamToolUseStart,
+  type IAiStreamToolUseDelta,
+  type IAiStreamToolUseComplete,
   type IAiStreamDone,
   type IAiStreamError,
   type ModelSpec,
@@ -114,7 +123,10 @@ export {
 export {
   callProviderCompletionStream,
   callProxiedCompletionStream,
-  type IProviderCompletionStreamParams
+  type IProviderCompletionStreamParams,
+  executeClientToolTurn,
+  type IExecuteClientToolTurnParams,
+  type IExecuteClientToolTurnResult
 } from './streamingClient';
 
 export {
@@ -122,6 +134,7 @@ export {
   aiServerToolType,
   aiWebSearchToolConfig,
   aiServerToolConfig,
+  aiClientToolConfig,
   aiToolEnablement,
   aiAssistProviderConfig,
   aiAssistSettings,
@@ -146,3 +159,5 @@ export {
   type IGenerateJsonCompletionResult,
   type JsonPromptHint
 } from './jsonCompletion';
+
+export { type IResolvedThinkingConfig } from './thinkingOptionsResolver';

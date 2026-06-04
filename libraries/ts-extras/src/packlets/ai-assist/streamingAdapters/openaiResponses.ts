@@ -24,18 +24,36 @@
  * Completions doesn't support tool progress events, but the Responses API
  * does.
  *
+ * Client-defined tools (`function_call` type) are accumulated per call ID
+ * and emitted as `client-tool-call-done` events when complete.
+ *
  * @packageDocumentation
  */
 
 import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildMessages, buildOpenAiResponsesUserContent } from '../chatRequestBuilders';
 import { bearerAuthHeader } from '../endpoint';
-import { AiPrompt, type AiServerToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
+import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toResponsesApiTools } from '../toolFormats';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
+
+// ============================================================================
+// Accumulated call state (internal — used by C3 continuation builder)
+// ============================================================================
+
+/**
+ * Accumulated state for a single function_call in the OpenAI Responses API stream.
+ * @internal
+ */
+export interface IAccumulatedFunctionCall {
+  readonly id: string;
+  readonly name: string;
+  argsBuffer: string;
+}
 
 // ============================================================================
 // Event payload shapes
@@ -43,7 +61,6 @@ import { IStreamApiConfig, openSseConnection, validateEventPayload } from './com
 
 /**
  * Payload of a `response.output_text.delta` SSE event.
- *
  * @internal
  */
 interface IResponsesDeltaPayload {
@@ -51,9 +68,40 @@ interface IResponsesDeltaPayload {
 }
 
 /**
- * Payload of a `response.completed` SSE event. `status === 'incomplete'`
- * signals the stream was cut short (max output tokens, etc.).
- *
+ * Payload of a `response.output_item.added` SSE event.
+ * @internal
+ */
+interface IResponsesOutputItemAddedPayload {
+  readonly item: {
+    readonly type?: string;
+    readonly id?: string;
+    readonly name?: string;
+    readonly call_id?: string;
+  };
+}
+
+/**
+ * Payload of a `response.function_call_arguments.delta` SSE event.
+ * @internal
+ */
+interface IResponsesFunctionCallArgsDeltaPayload {
+  readonly item_id?: string;
+  readonly call_id?: string;
+  readonly delta: string;
+}
+
+/**
+ * Payload of a `response.function_call_arguments.done` SSE event.
+ * @internal
+ */
+interface IResponsesFunctionCallArgsDonePayload {
+  readonly item_id?: string;
+  readonly call_id?: string;
+  readonly arguments: string;
+}
+
+/**
+ * Payload of a `response.completed` SSE event.
  * @internal
  */
 interface IResponsesCompletedPayload {
@@ -61,9 +109,7 @@ interface IResponsesCompletedPayload {
 }
 
 /**
- * Payload of a `response.failed` or `error` SSE event. Both shapes appear
- * in the wild — sometimes `error.message`, sometimes a top-level `message`.
- *
+ * Payload of a `response.failed` or `error` SSE event.
  * @internal
  */
 interface IResponsesErrorPayload {
@@ -74,6 +120,44 @@ interface IResponsesErrorPayload {
 const responsesDeltaPayload: Validator<IResponsesDeltaPayload> = Validators.object<IResponsesDeltaPayload>({
   delta: Validators.string
 });
+
+const responsesOutputItemInner: Validator<{
+  type?: string;
+  id?: string;
+  name?: string;
+  call_id?: string;
+}> = Validators.object<{ type?: string; id?: string; name?: string; call_id?: string }>(
+  {
+    type: Validators.string.optional(),
+    id: Validators.string.optional(),
+    name: Validators.string.optional(),
+    call_id: Validators.string.optional()
+  },
+  { options: { optionalFields: ['type', 'id', 'name', 'call_id'] } }
+);
+
+const responsesOutputItemAddedPayload: Validator<IResponsesOutputItemAddedPayload> =
+  Validators.object<IResponsesOutputItemAddedPayload>({ item: responsesOutputItemInner });
+
+const responsesFunctionCallArgsDeltaPayload: Validator<IResponsesFunctionCallArgsDeltaPayload> =
+  Validators.object<IResponsesFunctionCallArgsDeltaPayload>(
+    {
+      item_id: Validators.string.optional(),
+      call_id: Validators.string.optional(),
+      delta: Validators.string
+    },
+    { options: { optionalFields: ['item_id', 'call_id'] } }
+  );
+
+const responsesFunctionCallArgsDonePayload: Validator<IResponsesFunctionCallArgsDonePayload> =
+  Validators.object<IResponsesFunctionCallArgsDonePayload>(
+    {
+      item_id: Validators.string.optional(),
+      call_id: Validators.string.optional(),
+      arguments: Validators.string
+    },
+    { options: { optionalFields: ['item_id', 'call_id'] } }
+  );
 
 const responsesCompletedPayload: Validator<IResponsesCompletedPayload> =
   Validators.object<IResponsesCompletedPayload>({
@@ -103,9 +187,16 @@ const responsesErrorPayload: Validator<IResponsesErrorPayload> = Validators.obje
 /**
  * Translates an OpenAI Responses API SSE stream into unified events.
  *
+ * Maintains a per-call-ID accumulation map for client-defined function calls.
+ * The map is exposed via the passed-in `functionCallMap` parameter for the
+ * C3 continuation builder to read after the stream completes.
+ *
  * @internal
  */
-async function* translateOpenAiResponsesStream(response: Response): AsyncGenerator<IAiStreamEvent> {
+async function* translateOpenAiResponsesStream(
+  response: Response,
+  functionCallMap: Map<string, IAccumulatedFunctionCall>
+): AsyncGenerator<IAiStreamEvent> {
   let fullText = '';
   let truncated = false;
   let completed = false;
@@ -127,6 +218,59 @@ async function* translateOpenAiResponsesStream(response: Response): AsyncGenerat
         yield { type: 'tool-event', toolType: 'web_search', phase: 'started' };
       } else if (eventName === 'response.web_search_call.completed') {
         yield { type: 'tool-event', toolType: 'web_search', phase: 'completed' };
+      } else if (eventName === 'response.output_item.added') {
+        const payload = validateEventPayload(
+          parseSseEventJson(message.data),
+          responsesOutputItemAddedPayload
+        );
+        /* c8 ignore next 1 - defensive: payload null branch unreachable after validation */
+        const item = payload?.item;
+        /* c8 ignore next 1 - defensive: falsy call_id/name branches are protocol violations */
+        if (item?.type === 'function_call' && item.call_id && item.name) {
+          functionCallMap.set(item.call_id, { id: item.call_id, name: item.name, argsBuffer: '' });
+          yield { type: 'client-tool-call-start', toolName: item.name, callId: item.call_id };
+        }
+      } else if (eventName === 'response.function_call_arguments.delta') {
+        const payload = validateEventPayload(
+          parseSseEventJson(message.data),
+          responsesFunctionCallArgsDeltaPayload
+        );
+        /* c8 ignore next 1 - defensive: payload null branch unreachable after validation */
+        const callId = payload?.call_id;
+        if (callId !== undefined) {
+          const call = functionCallMap.get(callId);
+          /* c8 ignore next 1 - defensive: call and delta always present in valid stream */
+          if (call && typeof payload?.delta === 'string') {
+            call.argsBuffer += payload.delta;
+          }
+        }
+      } else if (eventName === 'response.function_call_arguments.done') {
+        const payload = validateEventPayload(
+          parseSseEventJson(message.data),
+          responsesFunctionCallArgsDonePayload
+        );
+        /* c8 ignore next 1 - defensive: payload null branch unreachable after validation */
+        const callId = payload?.call_id;
+        if (callId !== undefined) {
+          const call = functionCallMap.get(callId);
+          if (call) {
+            /* c8 ignore next 1 - defensive: payload?.arguments null branch unreachable after validation */
+            const canonicalArgs = payload?.arguments ?? '{}';
+            // Sync the accumulation entry with the canonical arguments from the .done event.
+            // Delta events may carry partial/empty payloads; the .done event carries the
+            // authoritative final arguments string used by the continuation builder.
+            call.argsBuffer = canonicalArgs;
+            let args: JsonObject;
+            try {
+              args = JSON.parse(canonicalArgs) as JsonObject;
+              /* c8 ignore start - defensive: malformed args default to empty object */
+            } catch {
+              args = {};
+            }
+            /* c8 ignore stop */
+            yield { type: 'client-tool-call-done', toolName: call.name, callId, args };
+          }
+        }
       } else if (eventName === 'response.completed') {
         const payload = validateEventPayload(parseSseEventJson(message.data), responsesCompletedPayload);
         /* c8 ignore next 1 - defensive: payload?.response null branch unreachable after validation */
@@ -166,12 +310,13 @@ async function* translateOpenAiResponsesStream(response: Response): AsyncGenerat
 export async function callOpenAiResponsesStream(
   config: IStreamApiConfig,
   prompt: AiPrompt,
-  tools: ReadonlyArray<AiServerToolConfig>,
+  tools: ReadonlyArray<AiToolConfig>,
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
-  resolvedThinking?: IResolvedThinkingConfig
+  resolvedThinking?: IResolvedThinkingConfig,
+  functionCallMap?: Map<string, IAccumulatedFunctionCall>
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
@@ -199,6 +344,7 @@ export async function callOpenAiResponsesStream(
   logger?.info(
     `OpenAI Responses streaming: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`
   );
+  const callMap = functionCallMap ?? new Map<string, IAccumulatedFunctionCall>();
   const conn = await openSseConnection(url, headers, body, logger, signal);
-  return conn.onSuccess((response) => succeed(translateOpenAiResponsesStream(response)));
+  return conn.onSuccess((response) => succeed(translateOpenAiResponsesStream(response, callMap)));
 }

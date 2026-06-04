@@ -26,7 +26,32 @@
  * @packageDocumentation
  */
 
+import type { JsonObject } from '@fgv/ts-json-base';
+import { type Converter, Converters } from '@fgv/ts-utils';
+
 import { AiPrompt, type IAiImageAttachment, type IChatMessage, toDataUrl } from './model';
+
+/**
+ * Converter for a rawTail message entry. Narrows a `JsonObject` to
+ * `{ role: string; content: string | unknown[] }` at runtime using the
+ * Converter pattern. Entries that fail validation are silently skipped — the
+ * surrounding function is infallible, and a malformed continuation message is
+ * better omitted than transmitted verbatim.
+ * @internal
+ */
+const rawTailMessageConverter: Converter<{ role: string; content: string | unknown[] }> = Converters.object<{
+  role: string;
+  content: string | unknown[];
+}>(
+  {
+    role: Converters.string,
+    content: Converters.oneOf<string | unknown[]>([
+      Converters.string,
+      Converters.isA('array', (v): v is unknown[] => Array.isArray(v))
+    ])
+  },
+  { strict: false }
+);
 
 /**
  * Optional head/tail messages to weave around the prompt's user message.
@@ -44,6 +69,19 @@ export interface IBuildMessagesOptions {
    * + correction turns for the JSON-validation retry loop).
    */
   readonly tail?: ReadonlyArray<IChatMessage>;
+  /**
+   * Raw JSON objects appended after the prompt's user message. Used to
+   * inject provider-specific continuation messages (e.g. Anthropic assistant
+   * turns with thinking blocks) that cannot be expressed as plain
+   * {@link IChatMessage} objects.
+   *
+   * Each element is validated against a `{ role: string, content: string | unknown[] }`
+   * shape and projected to those two fields; any additional fields on the input
+   * are dropped. Entries that fail the shape check are silently skipped (the
+   * caller is responsible for supplying well-formed continuation messages).
+   * Takes precedence over (and is appended after) `tail`.
+   */
+  readonly rawTail?: ReadonlyArray<JsonObject>;
 }
 
 /**
@@ -183,6 +221,15 @@ export function buildAnthropicMessages(
     for (const msg of options.tail) {
       if (msg.role !== 'system') {
         messages.push({ role: msg.role, content: msg.content });
+      }
+    }
+  }
+  /* c8 ignore next 7 - options?.rawTail optional-chain short-circuit (options=undefined) not reached in unit tests */
+  if (options?.rawTail) {
+    for (const msg of options.rawTail) {
+      const converted = rawTailMessageConverter.convert(msg);
+      if (converted.isSuccess()) {
+        messages.push(converted.value);
       }
     }
   }

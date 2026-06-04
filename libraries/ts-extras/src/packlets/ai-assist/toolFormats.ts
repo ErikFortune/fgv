@@ -27,6 +27,8 @@ import { type JsonObject } from '@fgv/ts-json-base';
 
 import {
   type AiServerToolConfig,
+  type AiToolConfig,
+  type IAiClientToolConfig,
   type IAiProviderDescriptor,
   type IAiToolEnablement,
   type IAiWebSearchToolConfig
@@ -100,20 +102,35 @@ function webSearchToResponsesApi(config: IAiWebSearchToolConfig): JsonObject {
 }
 
 /**
+ * Formats a client tool config for the xAI/OpenAI Responses API.
+ * @internal
+ */
+function clientToolToResponsesApi(config: IAiClientToolConfig): JsonObject {
+  return {
+    type: 'function',
+    name: config.name,
+    description: config.description,
+    parameters: config.parametersSchema.toJson()
+  } as JsonObject;
+}
+
+/**
  * Formats tool configs for the xAI/OpenAI Responses API.
- * @param tools - The resolved tool configs
+ * @param tools - The resolved tool configs (server-side and/or client-defined)
  * @returns Provider-native tool objects for the `tools` request field
  * @public
  */
-export function toResponsesApiTools(tools: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<JsonObject> {
+export function toResponsesApiTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray<JsonObject> {
   return tools.map((t) => {
     switch (t.type) {
       case 'web_search':
         return webSearchToResponsesApi(t);
+      case 'client_tool':
+        return clientToolToResponsesApi(t);
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
-        const _exhaustive: never = t.type;
-        return { type: String(_exhaustive) } as JsonObject;
+        const _exhaustive: never = t;
+        return { type: String((_exhaustive as AiToolConfig).type) } as JsonObject;
       }
     }
   });
@@ -147,20 +164,35 @@ function webSearchToAnthropic(config: IAiWebSearchToolConfig): JsonObject {
 }
 
 /**
+ * Formats a client tool config for the Anthropic Messages API.
+ * Note: Anthropic client tools have no `type` field (unlike server tools).
+ * @internal
+ */
+function clientToolToAnthropic(config: IAiClientToolConfig): JsonObject {
+  return {
+    name: config.name,
+    description: config.description,
+    input_schema: config.parametersSchema.toJson()
+  } as JsonObject;
+}
+
+/**
  * Formats tool configs for the Anthropic Messages API.
- * @param tools - The resolved tool configs
+ * @param tools - The resolved tool configs (server-side and/or client-defined)
  * @returns Provider-native tool objects for the `tools` request field
  * @public
  */
-export function toAnthropicTools(tools: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<JsonObject> {
+export function toAnthropicTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray<JsonObject> {
   return tools.map((t) => {
     switch (t.type) {
       case 'web_search':
         return webSearchToAnthropic(t);
+      case 'client_tool':
+        return clientToolToAnthropic(t);
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
-        const _exhaustive: never = t.type;
-        return { type: String(_exhaustive) } as JsonObject;
+        const _exhaustive: never = t;
+        return { type: String((_exhaustive as AiToolConfig).type) } as JsonObject;
       }
     }
   });
@@ -172,25 +204,41 @@ export function toAnthropicTools(tools: ReadonlyArray<AiServerToolConfig>): Read
 
 /**
  * Formats tool configs for the Gemini generateContent API.
- * Gemini uses `google_search` for search grounding — no per-tool config options.
- * @param tools - The resolved tool configs
+ *
+ * @remarks
+ * Gemini uses `google_search` for search grounding (no per-tool config).
+ * Client-defined tools are accumulated into a single `function_declarations` entry.
+ *
+ * @param tools - The resolved tool configs (server-side and/or client-defined)
  * @returns Provider-native tool objects for the `tools` request field
  * @public
  */
-export function toGeminiTools(tools: ReadonlyArray<AiServerToolConfig>): ReadonlyArray<JsonObject> {
+export function toGeminiTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray<JsonObject> {
   const result: JsonObject[] = [];
+  const functionDeclarations: JsonObject[] = [];
 
   for (const t of tools) {
     switch (t.type) {
       case 'web_search':
         result.push({ google_search: {} } as JsonObject);
         break;
+      case 'client_tool':
+        functionDeclarations.push({
+          name: t.name,
+          description: t.description,
+          parameters: t.parametersSchema.toJson()
+        } as JsonObject);
+        break;
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
-        const _exhaustive: never = t.type;
-        result.push({ type: String(_exhaustive) } as JsonObject);
+        const _exhaustive: never = t;
+        result.push({ type: String((_exhaustive as AiToolConfig).type) } as JsonObject);
       }
     }
+  }
+
+  if (functionDeclarations.length > 0) {
+    result.push({ function_declarations: functionDeclarations } as JsonObject);
   }
 
   return result;

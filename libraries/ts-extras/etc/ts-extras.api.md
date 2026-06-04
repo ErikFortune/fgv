@@ -10,6 +10,7 @@ import { DateTime } from 'luxon';
 import { FileTree } from '@fgv/ts-json-base';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
+import { JsonSchema } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
@@ -29,7 +30,13 @@ declare namespace AiAssist {
         AiProviderId,
         AiServerToolType,
         AiServerToolConfig,
+        AiToolConfig,
         IAiWebSearchToolConfig,
+        IAiClientToolConfig,
+        IAiClientTool,
+        IAiClientToolCallSummary,
+        IAiClientToolContinuation,
+        IAiClientToolTurnResult,
         IAiToolEnablement,
         IAiCompletionResponse,
         IChatMessage,
@@ -77,6 +84,9 @@ declare namespace AiAssist {
         IAiStreamEvent,
         IAiStreamTextDelta,
         IAiStreamToolEvent,
+        IAiStreamToolUseStart,
+        IAiStreamToolUseDelta,
+        IAiStreamToolUseComplete,
         IAiStreamDone,
         IAiStreamError,
         ModelSpec,
@@ -123,10 +133,14 @@ declare namespace AiAssist {
         callProviderCompletionStream,
         callProxiedCompletionStream,
         IProviderCompletionStreamParams,
+        executeClientToolTurn,
+        IExecuteClientToolTurnParams,
+        IExecuteClientToolTurnResult,
         aiProviderId,
         aiServerToolType,
         aiWebSearchToolConfig,
         aiServerToolConfig,
+        aiClientToolConfig,
         aiToolEnablement,
         aiAssistProviderConfig,
         aiAssistSettings,
@@ -142,7 +156,8 @@ declare namespace AiAssist {
         SMART_JSON_PROMPT_HINT,
         IGenerateJsonCompletionParams,
         IGenerateJsonCompletionResult,
-        JsonPromptHint
+        JsonPromptHint,
+        IResolvedThinkingConfig
     }
 }
 export { AiAssist }
@@ -156,6 +171,11 @@ const aiAssistProviderConfig: Converter<IAiAssistProviderConfig>;
 //
 // @public
 const aiAssistSettings: Converter<IAiAssistSettings>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const aiClientToolConfig: Converter<IAiClientToolConfig>;
 
 // @public
 type AiImageApiFormat = 'openai-images' | 'gemini-imagen' | 'xai-images' | 'xai-images-edits' | 'gemini-image-out';
@@ -207,6 +227,9 @@ const aiServerToolType: Converter<AiServerToolType>;
 
 // @public
 type AiThinkingMode = 'optional' | 'required' | 'unsupported';
+
+// @public
+type AiToolConfig = AiServerToolConfig | IAiClientToolConfig;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "IAiToolEnablement"
 //
@@ -527,6 +550,9 @@ type EncryptionAlgorithm = typeof Constants.DEFAULT_ALGORITHM;
 // @public
 const encryptionAlgorithm: Converter<EncryptionAlgorithm>;
 
+// @public
+function executeClientToolTurn(params: IExecuteClientToolTurnParams): Result<IExecuteClientToolTurnResult>;
+
 declare namespace Experimental {
     export {
         ExtendedArray,
@@ -758,6 +784,42 @@ interface IAiAssistSettings {
 }
 
 // @public
+interface IAiClientTool<TParams = unknown> {
+    readonly config: IAiClientToolConfig<TParams>;
+    readonly execute: (args: TParams) => Promise<Result<unknown>>;
+}
+
+// @public
+interface IAiClientToolCallSummary {
+    readonly args: JsonObject;
+    readonly callId?: string;
+    readonly isError: boolean;
+    readonly result: string;
+    readonly toolName: string;
+}
+
+// @public
+interface IAiClientToolConfig<TParams = unknown> {
+    readonly description: string;
+    readonly name: string;
+    readonly parametersSchema: JsonSchema.ISchemaValidator<TParams>;
+    readonly type: 'client_tool';
+}
+
+// @public
+interface IAiClientToolContinuation {
+    readonly messages: ReadonlyArray<JsonObject>;
+    readonly toolCallsSummary: ReadonlyArray<IAiClientToolCallSummary>;
+}
+
+// @public
+interface IAiClientToolTurnResult {
+    readonly continuation: IAiClientToolContinuation | undefined;
+    readonly fullText: string;
+    readonly truncated: boolean;
+}
+
+// @public
 interface IAiCompletionResponse {
     readonly content: string;
     readonly truncated: boolean;
@@ -883,7 +945,7 @@ interface IAiStreamError {
 }
 
 // @public
-type IAiStreamEvent = IAiStreamTextDelta | IAiStreamToolEvent | IAiStreamDone | IAiStreamError;
+type IAiStreamEvent = IAiStreamTextDelta | IAiStreamToolEvent | IAiStreamToolUseStart | IAiStreamToolUseDelta | IAiStreamToolUseComplete | IAiStreamDone | IAiStreamError;
 
 // @public
 interface IAiStreamTextDelta {
@@ -899,6 +961,33 @@ interface IAiStreamToolEvent {
     readonly toolType: AiServerToolType;
     // (undocumented)
     readonly type: 'tool-event';
+}
+
+// @public
+interface IAiStreamToolUseComplete {
+    readonly callId?: string;
+    readonly isError: boolean;
+    readonly result: string;
+    readonly toolName: string;
+    // (undocumented)
+    readonly type: 'client-tool-result';
+}
+
+// @public
+interface IAiStreamToolUseDelta {
+    readonly args: JsonObject;
+    readonly callId?: string;
+    readonly toolName: string;
+    // (undocumented)
+    readonly type: 'client-tool-call-done';
+}
+
+// @public
+interface IAiStreamToolUseStart {
+    readonly callId?: string;
+    readonly toolName: string;
+    // (undocumented)
+    readonly type: 'client-tool-call-start';
 }
 
 // @public
@@ -1100,6 +1189,34 @@ interface IEncryptionResult {
     readonly authTag: Uint8Array;
     readonly encryptedData: Uint8Array;
     readonly iv: Uint8Array;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IExecuteClientToolTurnParams {
+    readonly apiKey: string;
+    readonly clientTools: ReadonlyArray<IAiClientTool>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly continuationMessages?: ReadonlyArray<JsonObject>;
+    readonly descriptor: IAiProviderDescriptor;
+    readonly logger?: Logging.ILogger;
+    readonly messagesBefore?: ReadonlyArray<IChatMessage>;
+    readonly model?: string;
+    readonly prompt: AiPrompt;
+    readonly resolvedThinking?: IResolvedThinkingConfig;
+    readonly signal?: AbortSignal;
+    readonly temperature?: number;
+    readonly tools?: ReadonlyArray<AiServerToolConfig>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IExecuteClientToolTurnResult {
+    readonly events: AsyncIterable<IAiStreamEvent>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly nextTurn: Promise<Result<IAiClientToolTurnResult>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1569,6 +1686,15 @@ interface IResolvedImageOptions {
     readonly size?: string;
     // (undocumented)
     readonly style?: string;
+}
+
+// @public
+interface IResolvedThinkingConfig {
+    readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
+    readonly geminiThinkingBudget?: number;
+    readonly openAiEffort?: IOpenAiThinkingConfig['effort'];
+    readonly otherParams?: JsonObject;
+    readonly xaiEffort?: IXAiThinkingConfig['effort'];
 }
 
 // @public
