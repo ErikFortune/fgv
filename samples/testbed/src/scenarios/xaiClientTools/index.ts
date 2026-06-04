@@ -26,7 +26,7 @@
  * the OpenAI scenario exercises, but against xAI's endpoint and model. It exercises the
  * complete client-tool round-trip on a live xAI call with:
  *
- * - Thinking enabled (`reasoning_effort`) — xAI's analog of Anthropic's extended thinking.
+ * - Thinking enabled (`reasoning.effort`) — xAI's analog of Anthropic's extended thinking.
  *   Verifies that a reasoning-enabled request round-trips and that the continuation
  *   (reconstructed turn + function-call output) is accepted.
  * - A **memory tool** (client-defined, harness-executed) that recalls a stored preference,
@@ -42,7 +42,7 @@
  *   `recall_memory`; the harness executes it and the args validate via `JsonSchema`.
  * - **Continuation round-trip works:** the reconstructed turn + function-call output is
  *   accepted on the follow-up request.
- * - **Reasoning present:** reasoning is enabled (`reasoning_effort=low`). The current adapter
+ * - **Reasoning present:** reasoning is enabled (`reasoning.effort=low`). The current adapter
  *   discards reasoning content, so this gate is verified indirectly by a successful round-trip
  *   with reasoning enabled — the same posture the Anthropic scenario takes for thinking.
  * - **Server tool events emitted:** the Responses API emits web_search progress SSE events,
@@ -170,8 +170,8 @@ const cliImpl: ICliScenarioImpl = {
 
     // Use the version-pinned `grok-4.3` alias — a reasoning-capable model that the Responses
     // API accepts directly. Pinning major.minor avoids the dated-snapshot deprecation trap
-    // while staying off the moving `*-latest` target. (The adapter omits `reasoning_effort`
-    // only for the bare `grok-4` id; `grok-4.3` receives the effort field.)
+    // while staying off the moving `*-latest` target. (The adapter omits the Responses-API
+    // `reasoning.effort` field only for the bare `grok-4` id; `grok-4.3` receives it.)
     const model = 'grok-4.3';
 
     // Construct the resolved thinking config directly. xaiEffort: 'low' maps to
