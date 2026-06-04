@@ -166,7 +166,7 @@ async function* translateGeminiStream(
           if (typeof part.text === 'string' && part.text.length > 0) {
             fullText += part.text;
             yield { type: 'text-delta', delta: part.text };
-            /* c8 ignore next 1 - defensive: functionCall?.name null branch handled by text/empty filter above */
+            /* c8 ignore next 1 - defensive: functionCall parts without a `name` are silently dropped (cannot construct a continuation builder entry without one) */
           } else if (part.functionCall?.name) {
             const { name, args } = part.functionCall;
             /* c8 ignore next 1 - defensive: Gemini always sends args; {} fallback unreachable in practice */

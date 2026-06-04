@@ -87,10 +87,11 @@ const memoryToolSchema: JsonSchema.ISchemaValidator<IMemoryToolArgs> = JsonSchem
 /**
  * Memory tool config (used for wire-format emission to the provider).
  *
- * Typed as `IAiClientToolConfig` (i.e. `IAiClientToolConfig<unknown>`) so it
- * is directly assignable to `ReadonlyArray<IAiClientTool>` in
- * `IExecuteClientToolTurnParams.clientTools`. The typed `memoryToolSchema` is
- * used for args validation inside `execute` to keep type safety.
+ * Typed as `IAiClientToolConfig` (i.e. `IAiClientToolConfig<unknown>`) — the
+ * config is paired with `execute` below to form the full `memoryTool`, which
+ * is what gets passed into `IExecuteClientToolTurnParams.clientTools`. The
+ * typed `memoryToolSchema` is used for args validation inside `execute` to
+ * keep type safety.
  */
 const memoryToolConfig: AiAssist.IAiClientToolConfig = {
   type: 'client_tool',

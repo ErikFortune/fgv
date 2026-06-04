@@ -75,8 +75,11 @@ export interface IBuildMessagesOptions {
    * turns with thinking blocks) that cannot be expressed as plain
    * {@link IChatMessage} objects.
    *
-   * Each element is pushed as-is into the messages array without further
-   * transformation. Takes precedence over (and is appended after) `tail`.
+   * Each element is validated against a `{ role: string, content: string | unknown[] }`
+   * shape and projected to those two fields; any additional fields on the input
+   * are dropped. Entries that fail the shape check are silently skipped (the
+   * caller is responsible for supplying well-formed continuation messages).
+   * Takes precedence over (and is appended after) `tail`.
    */
   readonly rawTail?: ReadonlyArray<JsonObject>;
 }
