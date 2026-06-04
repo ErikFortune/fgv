@@ -190,14 +190,35 @@ rushx test --test-path-pattern=filename.test
 
 ## Coverage Gap Resolution
 
+### Run `code-reviewer` BEFORE chasing 100% measured coverage (load-bearing)
+
+When you have scenario-driven tests in place (positive, negative, edge cases) and you're about to start the final pass that closes the remaining coverage gaps to hit 100%, **stop and run the `code-reviewer` agent on the current diff first**. Only then run `rushx coverage` and resolve the remaining gaps.
+
+The sequence within layer 1 (pre-PR prep) is:
+
+1. **Scenario-driven tests** — positive, negative, edge cases derived from the component's intended behavior. Do not chase line coverage at this stage.
+2. **`code-reviewer` agent on the current diff** — surfaces missed Result-chaining opportunities, imperative test patterns that should be declarative, and design simplifications that eliminate the lines that would otherwise need coverage closure.
+3. **Coverage-gap analysis** — `rushx coverage`, categorize, resolve per the Systematic Process below.
+
+**Why this order matters.** Chasing 100% measured coverage first creates artifacts that the code-reviewer would have eliminated upstream:
+
+- **Imperative tests where Result-chain tests would do.** Coverage-gap closure often produces tests that drive each branch with `if (result.isFailure())` / `expect(...).toBe(...)` rather than `expect(...).toSucceedAndSatisfy(...)` / `expect(...).toFailWith(...)`. The Result-pattern matchers from `@fgv/ts-utils-jest` are declarative and read against the intent; imperative shapes mask the intent. Code-reviewer catches this class of finding readily, but only if the imperative tests haven't already been written, reviewed locally, and committed.
+- **`c8 ignore` directives that mask refactor opportunities.** A `c8 ignore` on a branch that "only fires under live conditions" is sometimes legitimate (defensive code, external-runtime-only paths) and sometimes evidence that the implementation has a branch the design didn't need — a `?? undefined` where chaining would have eliminated the need, a `try/catch` that should have been a `captureResult`, an `if` that's redundant because the caller's type already excluded the case. Code-reviewer flags these as design simplifications; once applied, the gap that needed `c8 ignore` is gone.
+- **Surface complexity that should have been simplified.** When the test writer asks "how do I cover this branch?" the implicit assumption is the branch is intentional. Code-reviewer asks "should this branch exist?" — and the answer is sometimes no. Eliminating a branch eliminates the test for it and the directive that would have masked it.
+
+**Trigger:** the moment you're about to run `rushx coverage` with the intent to identify and close gaps to reach 100%, do `code-reviewer` first. This applies whether the trigger comes mid-stream (end of a sub-phase) or at the layer-1 final-prep pass — coverage-chasing is the trigger, not the stream cadence.
+
+**Concrete failure mode this prevents.** The Phase C (`ai-assist-client-tools`) C4 work landed `c8 ignore` directives on the `rawTail` branch in `chatRequestBuilders.ts` because that branch "is only exercised by live continuation scenarios" — the implementer reasonably concluded the branch was untestable in unit scope and added the directive to hit 100%. A `code-reviewer` pass before the coverage closure would likely have surfaced one of: (a) the branch could be exercised by a fixture-based test, (b) the `rawTail` design could have absorbed the empty-array case at the builder layer so the branch became unreachable rather than untested, or (c) the directive is genuinely warranted but with a sharper justification ("live continuation scenarios verify wire correctness; unit-level signature validation is the server's gate, not the builder's"). All three outcomes are useful; the post-coverage placement loses the option entirely.
+
 ### Systematic Process
 
-1. **Analyze**: Run `rushx coverage` to identify uncovered lines
-2. **Categorize** each gap:
+1. **Code-reviewer pass complete** (per the sequence above) — the diff being analyzed for coverage is the post-review diff, not the pre-review diff.
+2. **Analyze**: Run `rushx coverage` to identify uncovered lines.
+3. **Categorize** each gap:
    - **Business Logic** (HIGH): Core functionality - must test
    - **Validation Logic** (MEDIUM): Input validation - usually testable
    - **Defensive Coding** (LOW): Internal consistency checks - may need directive
-3. **Resolve** in priority order:
+4. **Resolve** in priority order:
    - Test business logic gaps first
    - Test validation logic gaps second
    - Add `c8 ignore` for truly unreachable defensive code

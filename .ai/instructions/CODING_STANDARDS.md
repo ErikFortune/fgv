@@ -627,6 +627,8 @@ Summarize the run in the PR description: which findings were found at which prio
 
 **Why this matters.** A `private-key-storage` style six-round Copilot loop (PR #427) is almost always evidence that layer 1 was skipped. The internal reviewer is built for repo-pattern + edge-case classes (browser-barrel `node:crypto` leaks, types/JS mismatches, JWK cast safety, IDB durability chains, doc-accuracy drift) — exactly what Copilot catches one-at-a-time over several rounds. A single internal pass up front converts multi-round external ping-pong into one round.
 
+**Run `code-reviewer` BEFORE chasing 100% measured coverage (load-bearing within layer 1).** The internal layer-1 sequence is: scenario-driven tests (positive, negative, edge cases) → `code-reviewer` pass → coverage-gap closure. The trigger for running `code-reviewer` is the moment you're about to run `rushx coverage` with the intent to identify and close gaps — coverage-chasing is the trigger, not the stream cadence (mid-stream or final-prep, same rule applies). Reversing the order produces imperative tests that should have been declarative, `c8 ignore` directives that should have been refactors, and branches that should not have existed. See `.ai/instructions/TESTING_GUIDELINES.md` § "Coverage Gap Resolution" for the full sequence and the concrete failure mode this prevents.
+
 ### Layer 2 — Copilot review loop, agent-driven with cap
 
 After the first complete commit (gates green, layer-1 findings resolved), the implementing agent **drives** the Copilot loop:

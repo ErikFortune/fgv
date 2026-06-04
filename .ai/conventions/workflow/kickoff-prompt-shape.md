@@ -109,6 +109,17 @@ The interleaved shape:
     is *not* a stop signal; round 2 surfacing only nitpicks *is*.
     Implementing agents call the stop based on the most recent
     round's finding profile, not on a round-count threshold.
+  - **`code-reviewer` runs BEFORE 100%-coverage closure (layer 1
+    internal sequencing).** The layer-1 sequence is: scenario-driven
+    tests (positive, negative, edge) → `code-reviewer` pass →
+    coverage-gap closure → all gates pass → open PR. Coverage-
+    chasing is the trigger for the `code-reviewer` pass, whether
+    mid-stream or final-prep. Reversing the order locks in
+    imperative tests that should be Result-chain tests, `c8 ignore`
+    directives that mask refactor opportunities, and surface
+    complexity that should have been simplified. See
+    `TESTING_GUIDELINES.md` § "Coverage Gap Resolution" for the
+    full sequence.
 - **PR base for multi-phase streams targets an integration branch,
   not `release`.** Stream kickoffs for design-triage-implement
   workflows should instruct the implementing agent to base their
