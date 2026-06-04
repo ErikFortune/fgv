@@ -3,7 +3,7 @@
 **Stream:** `per-provider-testbed-scenarios`
 **Integration branch:** `per-provider-testbed-scenarios`
 **Work branch:** `claude/magical-newton-S53ZO`
-**Status:** implementation complete — local gates green; live-API verification gapped (no keys in agent env)
+**Status:** BLOCKED (2026-06-04) — scenarios complete & local gates green, but the continuation-acceptance gate for OpenAI/Gemini/xAI is blocked by a `@fgv/ts-extras/ai-assist` library gap (continuation round-trip is Anthropic-only). Per Erik's call, scenarios stay as briefed; awaiting a queued library fix before live verification. See `findings/inbox/2026-06-04-continuation-roundtrip-anthropic-only.md`. Live-API verification also gapped (no keys in agent env).
 
 ---
 
@@ -52,11 +52,13 @@
 1. **Model aliases (version-pinned, not dated, not `*-latest`):**
    - OpenAI: `gpt-5.1` — reasoning-capable; the registry default `gpt-4o` is NOT reasoning-capable, so the scenario pins a reasoning model explicitly for the thinking gate.
    - Gemini: `gemini-2.5-flash` — thinking-capable.
-   - xAI: `grok-4.3` — reasoning-capable. The adapter omits `reasoning_effort` only for the bare `grok-4` id; `grok-4.3` receives the effort field.
+   - xAI: `grok-4.3` — reasoning-capable. The Responses-API adapter omits the `reasoning.effort` field only for the bare `grok-4` id; `grok-4.3` receives it.
 
 2. **Thinking config translation:** `openAiEffort: 'low'` / `geminiThinkingBudget: 1024` / `xaiEffort: 'low'`, all passed via `IResolvedThinkingConfig` to `executeClientToolTurn` (same posture as the anthropic template's `anthropicEffort: 'low'`).
 
-3. **"Thinking content present in stream" gate** is verified **indirectly** (thinking/reasoning enabled + successful round-trip + accepted continuation), because the current ai-assist adapters discard thinking content — caller-visible thinking events are the separate `ai-assist-thinking-events` followup stream. This matches the anthropic template, which verifies thinking via signature-preserving continuation acceptance rather than a stream event.
+3. **"Thinking content present in stream" gate** is verified **indirectly** (thinking/reasoning enabled + successful first-turn round-trip), because the current ai-assist adapters discard thinking content — caller-visible thinking events are the separate `ai-assist-thinking-events` followup stream. This matches the anthropic template's posture. Note: the anthropic template additionally leans on *continuation acceptance* (signature round-trip) for its thinking gate; for OpenAI/Gemini/xAI that continuation acceptance is currently blocked (decision 6), so their thinking gate rests on the first-turn round-trip alone until the library fix lands.
+
+6. **BLOCKER — continuation round-trip is Anthropic-only (decided: scenarios unchanged, wait for library fix).** `executeClientToolTurn` forwards `continuationMessages` only to the Anthropic adapter; `callOpenAiResponsesStream` / `callGeminiStream` have no such parameter (verified). So the OpenAI/Gemini/xAI scenarios' second-turn continuation does not actually round-trip the reconstructed tool items — the continuation-acceptance gate cannot be validated for those three until the library extends (a documented Phase-C limitation, see the prior stream's finding). Per Erik's call, the scenarios are left **exactly as briefed** (the continuation call stays; no gate relabeling) — the library is the thing that must catch up, not the testbed. Erik is queuing a `@fgv/ts-extras/ai-assist` fix with the orchestrator; this stream pauses until it lands. Finding: `findings/inbox/2026-06-04-continuation-roundtrip-anthropic-only.md`.
 
 4. **Gemini server-tool-event divergence:** Gemini's `web_search` is Google Search grounding, which `gemini.ts` documents as **never yielding `tool-event`s** (grounding metadata rides on text chunks). The Gemini scenario therefore marks the "Server tool events emitted" gate **N/A** in its summary rather than asserting a PASS. Server+client coexistence is still exercised at the request layer (grounding + client tool in the same request).
 
@@ -66,4 +68,4 @@
 
 ## Follow-up findings filed
 
-(none — no `@fgv/ts-extras/ai-assist` library bugs surfaced during scenario authoring; the library wiring for all three providers was already present via `executeClientToolTurn`'s `apiFormat` switch. Live-API runs may still surface wire-shape bugs of the PR #448/#449 class — that is precisely what the verification-gapped live runs are for.)
+- **`2026-06-04-continuation-roundtrip-anthropic-only.md`** (BLOCKER) — `executeClientToolTurn` forwards `continuationMessages` to the Anthropic adapter only; the OpenAI/Gemini/xAI continuation-acceptance gate cannot be validated until the library extends. Surfaced by Copilot review round 2 on PR #453; confirmed against the library source. Erik is queuing the library fix; this stream pauses. **This is the safety-net working as designed** — exactly the PR #448/#449 class of wire-shape gap these scenarios exist to catch, caught here by review before a live run.
