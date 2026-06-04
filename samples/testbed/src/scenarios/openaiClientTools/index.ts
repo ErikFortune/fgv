@@ -301,16 +301,45 @@ const cliImpl: ICliScenarioImpl = {
     context.logger.info('=== FINAL RESPONSE ===');
     context.logger.info(finalResponse.slice(0, 500) + (finalResponse.length > 500 ? '...' : ''));
 
-    // Build the summary output.
+    // Build the summary output. The verdict is COMPUTED, never hardcoded: a live round-trip
+    // that returns HTTP 200 but yields no visible answer and no client-tool call has NOT
+    // verified anything — reporting it as PASS is a false positive. The two load-bearing
+    // signals come straight off the turn outcome:
+    //   - `firstTurnOutcome.truncated` — true when the response completed with
+    //     status `incomplete` (e.g. a reasoning model exhausted its output-token budget
+    //     before emitting the visible message).
+    //   - `finalResponse` — the accumulated assistant text (empty if the model produced none).
     const toolCallsSummary = firstTurnOutcome.continuation?.toolCallsSummary ?? [];
+    const truncated = firstTurnOutcome.truncated;
+    const hasResponseText = finalResponse.trim().length > 0;
+    const continuationPresent = firstTurnOutcome.continuation !== undefined;
+
+    // Minimum bar for a genuine PASS: the model produced a final textual answer and the
+    // response was not truncated. Client/server tool invocation is model-dependent and
+    // reported informationally (SKIP when not triggered) rather than failing the run.
+    const pass = hasResponseText && !truncated;
+
+    const diagnosis = truncated
+      ? 'DIAGNOSIS: response completed with status "incomplete" (truncated) — the reasoning ' +
+        'model likely exhausted its output-token budget before emitting the visible answer. ' +
+        'Retry with a higher max_output_tokens via resolvedThinking.otherParams ' +
+        '({ openAiEffort: "low", otherParams: { max_output_tokens: <N> } }).'
+      : !hasResponseText
+      ? 'DIAGNOSIS: the stream completed normally but the model produced no visible text and ' +
+        'no client-tool call. The HTTP round-trip succeeded but no answer was generated — ' +
+        'this is a real behavior gap, not a harness PASS.'
+      : '';
 
     const summaryLines = [
-      'openai-client-tools scenario: PASS',
+      `openai-client-tools scenario: ${pass ? 'PASS' : 'FAIL'}`,
       '',
       `Model: ${model}`,
       'Reasoning: enabled (effort=low)',
       `Client tools invoked: ${clientToolCallCount}`,
       `Server tool events: ${serverToolEventCount}`,
+      `Continuation present: ${String(continuationPresent)}`,
+      `Response truncated (status=incomplete): ${String(truncated)}`,
+      `Final response length: ${finalResponse.length} chars`,
       `Tool calls summary (${toolCallsSummary.length}):`,
       ...toolCallsSummary.map(
         (s) =>
@@ -319,9 +348,15 @@ const cliImpl: ICliScenarioImpl = {
           ` → isError=${String(s.isError)}`
       ),
       '',
-      'Empirical gates verified:',
+      'Empirical gates:',
       '  [PASS] Live API round-trip completed without HTTP 4xx',
-      '  [PASS] Reasoning enabled (server accepted reasoning-enabled request + continuation)',
+      `  [${hasResponseText ? 'PASS' : 'FAIL'}] Model produced a final response (${
+        finalResponse.length
+      } chars)`,
+      `  [${!truncated ? 'PASS' : 'FAIL'}] Response completed without truncation (status != incomplete)`,
+      `  [${continuationPresent ? 'PASS' : 'SKIP'}] Continuation round-trip${
+        continuationPresent ? ' accepted' : ': no client-tool call this run, so no continuation'
+      }`,
       `  [${clientToolCallCount > 0 ? 'PASS' : 'SKIP'}] Client tool (recall_memory) invoked: ${
         clientToolCallCount > 0 ? 'YES' : 'not triggered in this run'
       }`,
@@ -329,12 +364,15 @@ const cliImpl: ICliScenarioImpl = {
         serverToolEventCount > 0 ? 'YES' : 'not triggered in this run'
       }`,
       '  [PASS] Server + client tool coexistence: both tool types present in request',
+      ...(diagnosis ? ['', diagnosis] : []),
       '',
       'Final response (first 300 chars):',
       finalResponse.slice(0, 300) + (finalResponse.length > 300 ? '...' : '')
     ];
 
-    return succeed(summaryLines.join('\n'));
+    const summary = summaryLines.join('\n');
+    // Surface a genuine failure to the CLI rather than masking it behind succeed().
+    return pass ? succeed(summary) : fail(summary);
   }
 };
 

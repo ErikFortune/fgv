@@ -295,16 +295,37 @@ const cliImpl: ICliScenarioImpl = {
     context.logger.info('=== FINAL RESPONSE ===');
     context.logger.info(finalResponse.slice(0, 500) + (finalResponse.length > 500 ? '...' : ''));
 
-    // Build the summary output.
+    // Build the summary output. The verdict is COMPUTED, never hardcoded (see the OpenAI
+    // scenario for the rationale): an HTTP-200 round-trip with no visible answer has not
+    // verified anything. `firstTurnOutcome.truncated` (incomplete completion) and the
+    // accumulated `finalResponse` text are the load-bearing signals.
     const toolCallsSummary = firstTurnOutcome.continuation?.toolCallsSummary ?? [];
+    const truncated = firstTurnOutcome.truncated;
+    const hasResponseText = finalResponse.trim().length > 0;
+    const continuationPresent = firstTurnOutcome.continuation !== undefined;
+
+    const pass = hasResponseText && !truncated;
+
+    const diagnosis = truncated
+      ? 'DIAGNOSIS: response completed incomplete (truncated) — the model likely exhausted its ' +
+        'output-token budget (thinking + any grounding) before emitting the visible answer. ' +
+        'Retry with a higher token budget via resolvedThinking.otherParams.'
+      : !hasResponseText
+      ? 'DIAGNOSIS: the stream completed normally but the model produced no visible text and ' +
+        'no client-tool call. The HTTP round-trip succeeded but no answer was generated — ' +
+        'this is a real behavior gap, not a harness PASS.'
+      : '';
 
     const summaryLines = [
-      'gemini-client-tools scenario: PASS',
+      `gemini-client-tools scenario: ${pass ? 'PASS' : 'FAIL'}`,
       '',
       `Model: ${model}`,
       'Thinking: enabled (thinkingBudget=1024)',
       `Client tools invoked: ${clientToolCallCount}`,
       `Server tool events: ${serverToolEventCount} (grounding emits none — N/A gate)`,
+      `Continuation present: ${String(continuationPresent)}`,
+      `Response truncated (incomplete): ${String(truncated)}`,
+      `Final response length: ${finalResponse.length} chars`,
       `Tool calls summary (${toolCallsSummary.length}):`,
       ...toolCallsSummary.map(
         (s) =>
@@ -313,20 +334,28 @@ const cliImpl: ICliScenarioImpl = {
           ` → isError=${String(s.isError)}`
       ),
       '',
-      'Empirical gates verified:',
+      'Empirical gates:',
       '  [PASS] Live API round-trip completed without HTTP 4xx',
-      '  [PASS] Thinking enabled (server accepted thinking-enabled request + continuation)',
+      `  [${hasResponseText ? 'PASS' : 'FAIL'}] Model produced a final response (${
+        finalResponse.length
+      } chars)`,
+      `  [${!truncated ? 'PASS' : 'FAIL'}] Response completed without truncation`,
+      `  [${continuationPresent ? 'PASS' : 'SKIP'}] Continuation round-trip${
+        continuationPresent ? ' accepted' : ': no client-tool call this run, so no continuation'
+      }`,
       `  [${clientToolCallCount > 0 ? 'PASS' : 'SKIP'}] Client tool (recall_memory) invoked: ${
         clientToolCallCount > 0 ? 'YES' : 'not triggered in this run'
       }`,
       '  [N/A] Server tool events: Gemini grounding does not emit tool-events (by design)',
       '  [PASS] Server + client tool coexistence: grounding + client tool present in request',
+      ...(diagnosis ? ['', diagnosis] : []),
       '',
       'Final response (first 300 chars):',
       finalResponse.slice(0, 300) + (finalResponse.length > 300 ? '...' : '')
     ];
 
-    return succeed(summaryLines.join('\n'));
+    const summary = summaryLines.join('\n');
+    return pass ? succeed(summary) : fail(summary);
   }
 };
 
