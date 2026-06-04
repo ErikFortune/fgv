@@ -2,50 +2,60 @@
 
 **Stream:** `ts-prompt-assist-observability`
 **Integration branch:** `ts-prompt-assist-observability`
-**Status:** Phase A complete; Phase B ready to commission
+**Status:** Phase B complete; Phase C ready to commission (2026-06-04)
 
 ---
 
-## Phase A — design spike (complete)
+## Phase A — design spike — COMPLETE
 
-- [x] Read `RetainingLogger` + `MultiLogger` + `LoggerBase` source (load-bearing for Q1)
-- [x] Read `PromptLibrary` + `IPromptResolveTrace` source (load-bearing for Q2/Q3)
-- [x] Q1 — RetainingLogger fit: answer + rejection rationale for 3 unchosen options
-- [x] Q2 — hook firing surface: sketch wiring point(s) with code references
-- [x] Q3 — `IPromptObservationRecord` field list
-- [x] Q4 — filter axis API
-- [x] Critical semantics (observer-error swallow + storage-layer privacy) in proposed interface
-- [x] Open questions for Phase B named
-- [x] `design.md` complete
-- [x] `state.md` flipped to "Phase A complete; Phase B ready to commission"
+PR #455 merged 2026-06-04 (squash `9794da60c`). Output: `design.md` answering Q1/Q2/Q3/Q4 + 8 OQs + a resolved hook-ordering note.
 
-## Phase B — design triage (pending Phase A)
+Headline: **hybrid C-minimal + D** — `RetainingRingBuffer<T>` in `@fgv/ts-utils` + schema-aware `PromptObservationStore` in `@fgv/ts-prompt-assist`. Falsifiability cleared by an existing second consumer (`RetainingLogger` itself).
 
-(not yet commissioned)
+## Phase B — triage — COMPLETE
 
-## Phase C — implementation (pending Phase B lock)
+Triage doc: `.ai/tasks/active/ts-prompt-assist-observability/phase-b-triage.md`. All eight OQs locked at the Phase A leans (no divergences). `RetainingLogger` refactor to compose the new buffer **deferred out of Phase C** to preserve additive scope; committed as a separate stream — see below.
 
-(not yet commissioned)
+## Phase C — implementation — READY TO COMMISSION
+
+Targets the existing integration branch `ts-prompt-assist-observability`. Agent forks a new work branch off integration. PR targets integration.
+
+- [ ] Read the merged `design.md` and `phase-b-triage.md` on the integration branch
+- [ ] `RetainingRingBuffer<T>` lands in `@fgv/ts-utils`
+- [ ] `IPromptObserver`, `IPromptObservationRecord` (`phase`-discriminated union), `IPromptObservationQuery`, `PromptObservationStore` land in `@fgv/ts-prompt-assist`
+- [ ] DI wiring: additive `observers?: ReadonlyArray<IPromptObserver>` on `IPromptLibraryCreateParams`
+- [ ] Hook fires at the three public method boundaries (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`); never inside `_resolveInternal`
+- [ ] OQ-3: async + awaited default + fire-and-forget opt-in; **documented + tested** (slow-observer test asserting `resolve()` returns before observer completes in fire-and-forget mode)
+- [ ] Privacy posture documented in TSDoc
+- [ ] `code-reviewer` agent runs BEFORE 100%-coverage closure (L37)
+- [ ] Gates green: build / lint clean / 100% coverage in both libraries
+- [ ] LIBRARY_CAPABILITIES.md updated for both `@fgv/ts-utils` and `@fgv/ts-prompt-assist`
+- [ ] Artifact migration in the cluster-close PR (per PR #452 codification)
+
+## Companion stream — committed, not parking-lot
+
+`.ai/tasks/active/retaining-logger-ring-buffer-refactor/brief.md` — sibling brief committed on this integration branch (lands on `release` when the cluster closes). Commission immediately after the observability cluster closes. Brings `RetainingLogger` onto the new buffer, retiring the duplicated ring.
 
 ---
 
-## Decisions made
+## Decisions made (Phase A → Phase B)
 
-Phase A sub-decisions (recommendations; Phase B locks the headline):
-
-- **Q1 (headline, for Phase B):** Recommend **C-minimal + D hybrid** — extract the proven ring/seq/since-cursor machinery as a generic `RetainingRingBuffer<T>` in `@fgv/ts-utils`, and build a schema-aware `PromptObservationStore` (Option D) in `@fgv/ts-prompt-assist` that composes it. Reject pure-A / pure-B (log-funnel: untyped `args[0]`, no prompt-axis filter) and full-C (generic `RetainingObserver<T>` with a generic filter API — over-abstraction across unknown record types). Falsifiability: the ring extraction has an **existing** second consumer (`RetainingLogger` itself can compose it), not a speculative one.
-- **Q2:** Hook fires at the **public method boundary** (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`), never inside `_resolveInternal` — so resource-binding inner resolves (depth > 0) roll up under the outer record's `trace.resourceBindingResolutions[].innerTrace`, no separate fire.
-- **Q3:** `IPromptObservationRecord` is a `phase`-discriminated union (resolve-observation vs output-observation); `seq` + `contentHash` side-by-side; failure records carry error-only in v0.1 (no partial trace threaded out today — Phase B option).
-- **Q4:** Schema-aware `query(criteria)` echoing `getRecords` (sinceSeq / limit) plus prompt axes (promptId, scope, qualifiers partial-match, outputKind, outcome, safeguard disposition) compiling down to the `RetainingRingBuffer<T>` predicate.
-- **Semantics:** observer-error swallow reuses the **existing** injected `this.logger`; storage-layer privacy = default store is most-permissive, redaction is a consumer observer/store substitution.
-
-### Orchestrator locks (Erik, 2026-06-04, on PR #455 review)
-
-- **Q1 / OQ-6 LOCKED:** hybrid C-minimal + D accepted. Phase C ships the generic `RetainingRingBuffer<T>` in `@fgv/ts-utils` + the schema-aware `PromptObservationStore` in `@fgv/ts-prompt-assist`.
-- **RetainingLogger composition deferred (agreed):** Phase C does **not** refactor `RetainingLogger` to compose `RetainingRingBuffer<T>` — keeps Phase C's blast radius additive. **This is a committed fast-follow, not a parking-lot item** — schedule it to follow Phase C quickly so the two ring implementations don't diverge.
+| Decision | Source |
+|---|---|
+| Hybrid C-minimal + D for the storage substrate | OQ-6 (locked Phase A; reconfirmed Phase B) |
+| `seq` + `contentHash` side-by-side on every record | OQ-1 |
+| Observer error → `this.logger.warn` (no new param) | OQ-2 |
+| Async, awaited default; fire-and-forget opt-in | OQ-3 |
+| v0.1 failure records error-only (no partial trace) | OQ-4 |
+| Two cross-linked records via `linkedResolveSeq` | OQ-5 |
+| No standalone `MultiPromptObserver` class for v0.1 | OQ-7 |
+| Output record references body via `linkedResolveSeq`, not duplicate | OQ-8 |
+| `PromptObservationStore` IS the `IPromptObserver` (observe + query on one class) | Phase A design |
+| Hook fires at public method boundary only; inner resolves roll up under outer trace | Phase A design |
+| `RetainingLogger` refactor deferred out of Phase C to a committed fast-follow | Phase B triage + OQ-6 amendment |
 
 ---
 
 ## Follow-up findings filed
 
-(empty — agent files findings in `findings/inbox/<YYYY-MM-DD>-<topic>.md`)
+(empty so far)
