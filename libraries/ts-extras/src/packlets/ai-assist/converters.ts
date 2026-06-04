@@ -23,7 +23,8 @@
  * @packageDocumentation
  */
 
-import { type Converter, Converters } from '@fgv/ts-utils';
+import { type Converter, Converters, fail, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { type JsonSchema } from '@fgv/ts-json-base';
 
 import {
   type AiProviderId,
@@ -31,6 +32,7 @@ import {
   type AiServerToolType,
   type IAiAssistProviderConfig,
   type IAiAssistSettings,
+  type IAiClientToolConfig,
   type IAiToolEnablement,
   type IAiWebSearchToolConfig,
   type ModelSpec,
@@ -87,6 +89,64 @@ export const aiServerToolConfig: Converter<AiServerToolConfig> =
   Converters.discriminatedObject<AiServerToolConfig>('type', {
     web_search: aiWebSearchToolConfig
   });
+
+// ============================================================================
+// Client-Defined Tool Converters
+// ============================================================================
+
+/**
+ * Validator for the `parametersSchema` field of a client tool config.
+ * Checks that the value is a non-null object exposing both `validate` and `toJson`
+ * as callable functions — the runtime presence check for {@link JsonSchema.ISchemaValidator}.
+ * Does not inspect the inner JSON Schema structure.
+ * @internal
+ */
+const parametersSchemaValidator: Validator<JsonSchema.ISchemaValidator<unknown>> = Validators.isA<
+  JsonSchema.ISchemaValidator<unknown>
+>(
+  'ISchemaValidator (must expose .validate() and .toJson())',
+  (v): v is JsonSchema.ISchemaValidator<unknown> =>
+    v !== null &&
+    v !== undefined &&
+    typeof v === 'object' &&
+    typeof (v as Record<string, unknown>)['validate'] === 'function' &&
+    typeof (v as Record<string, unknown>)['toJson'] === 'function'
+);
+
+/**
+ * Converter for {@link IAiClientToolConfig}. Validates the wrapper shape: `type`,
+ * `name`, `description`, and the presence of a usable `parametersSchema`.
+ * Does not inspect the inner JSON Schema structure — `JsonSchema.object(...)` already
+ * guarantees the schema is valid.
+ * @public
+ */
+export const aiClientToolConfig: Converter<IAiClientToolConfig> = Converters.generic<IAiClientToolConfig>(
+  (from: unknown) => {
+    if (from === null || from === undefined || typeof from !== 'object') {
+      return fail('expected object for IAiClientToolConfig');
+    }
+    const obj = from as Record<string, unknown>;
+    if (obj['type'] !== 'client_tool') {
+      return fail(`expected type 'client_tool', got ${String(obj['type'])}`);
+    }
+    if (typeof obj['name'] !== 'string' || obj['name'].length === 0) {
+      return fail('IAiClientToolConfig: name must be a non-empty string');
+    }
+    if (typeof obj['description'] !== 'string') {
+      return fail('IAiClientToolConfig: description must be a string');
+    }
+    const schemaResult = parametersSchemaValidator.validate(obj['parametersSchema']);
+    if (schemaResult.isFailure()) {
+      return fail(`IAiClientToolConfig: parametersSchema ${schemaResult.message}`);
+    }
+    return succeed({
+      type: 'client_tool',
+      name: obj['name'],
+      description: obj['description'],
+      parametersSchema: schemaResult.value
+    } as IAiClientToolConfig);
+  }
+);
 
 /**
  * Converter for {@link IAiToolEnablement}.

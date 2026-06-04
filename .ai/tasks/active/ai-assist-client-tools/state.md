@@ -1,8 +1,8 @@
 # Stream state: `ai-assist-client-tools`
 
-**Status:** 🔵 Phase B in flight — decisions surfaced to Erik; B4 contingent on personaility roadmap
+**Status:** 🟢 Phase C in flight — C1 implementation in progress (branch: chore/ai-assist-client-tools-phase-c-impl)
 **Workflow shape:** design-triage-implement
-**Last updated:** 2026-06-03 (orchestrator — Phase B substrate + decision-surface)
+**Last updated:** 2026-06-04 (Code Monkey agent — Phase C C1 implementation)
 
 ---
 
@@ -11,8 +11,8 @@
 | Phase | Status | Notes |
 |---|---|---|
 | A — design exploration | ✅ complete | `design.md` written and amended per Erik review (extend `IAiStreamEvent` directly; §2.X consumer-driven vs ai-assist-driven loop examples + layering); updated 2026-06-03 to swap `parametersSchema: JsonObject` → `ISchemaValidator<TParams>` (typed-schema authoring). PR #436 carries the amended design. |
-| B — triage | 🔵 in flight | Phase B substrate at `phase-b-brief.md`. Six open questions (B1-B6); five have clear recommendations from Phase A; B4 (Anthropic thinking + tools) is conditional on personaility's near-term roadmap and may require a focused empirical spike. Decisions surfaced to Erik. |
-| C — implementation (layer 1 — harness tools) | ⏸ pending Phase B | Unlocked downstream of Phase A amendment; phases in after Phase B triage closes. |
+| B — triage | ✅ complete | All six decisions locked (PR #446). B4 spike findings documented in `b4-spike-findings.md`. |
+| C — implementation (layer 1 — harness tools) | 🟢 in flight | branch: `chore/ai-assist-client-tools-phase-c-impl`. C1 started 2026-06-04. |
 | Layer 2 — MCP | ⏸ deferred | Sprint+1 or later; Phase A names the seam but doesn't sub-phase it. Layer 2 uses `JsonSchema.fromJson` for MCP-discovered tools → `IAiClientTool<JsonValue>`. |
 
 ---
