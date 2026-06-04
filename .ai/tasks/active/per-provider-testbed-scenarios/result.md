@@ -79,9 +79,15 @@ Each should print `... scenario: PASS` with the per-gate breakdown. Per the FUTU
 
 ## `code-reviewer` pass
 
-Run on the cumulative diff before any coverage closure (coverage was satisfied by exclusion, not by forcing tests — so there was no imperative-test / `c8 ignore` class to pre-empt). Findings and dispositions:
+Run on the cumulative diff before any coverage closure (coverage was satisfied by exclusion, not by forcing tests — so there was no imperative-test / `c8 ignore` class to pre-empt).
 
-> _(populated from the code-reviewer agent run; see commit for any resolved items.)_
+**Recommendation: Approved — no blocking P1 issues.**
+
+- **P1 (CRITICAL):** none. No `any`, no manual type checks with unsafe casts, no double casts; Result pattern used correctly (sync `executeClientToolTurn` result checked before destructure; `nextTurn` promise awaited + checked); `execute(args: unknown)` validated via `memoryToolSchema.validate` per the `IAiClientTool` contract.
+- **P2 (MAJOR):** none requiring change. The reviewer confirmed-correct: `'xai-grok'` descriptor id (registry L229), `gpt-5.1` satisfies the `gpt-5.*` thinking capability, `grok-4.3` receives `reasoning.effort` (adapter suppresses only the bare `grok-4` id, `openaiResponses.ts:330`), the Gemini `tool-event` N/A divergence is correct and documented at every layer (JSDoc, inline, logging, summary), the snapshot order matches the `scenarios` array, and the coverage-exclusion regex is correct and minimal.
+- **P3 (ADVISORY):** `MEMORY_STORE` / `memoryTool` / `USER_QUESTION` / `SYSTEM_PROMPT` are duplicated across the four scenarios — **intentional** (template-mirrored; brief says resist over-abstraction; a shared helper would fall under the same coverage exclusion anyway). The Gemini `SYSTEM_PROMPT` divergence ("Google Search" vs "`web_search` tool") is the correct adaptation. `gpt-5.1` may need occasional maintenance on model deprecation — expected for live CLI scenarios.
+
+**Disposition:** No code changes required. The one PR-description callout the reviewer flagged — that the `[a-zA-Z]+ClientTools/` exclusion also covers the pre-existing `anthropicClientTools/` (previously coverage-collected at ~46%) — is intentional and already documented here and in `state.md` (decision 5).
 
 ---
 
