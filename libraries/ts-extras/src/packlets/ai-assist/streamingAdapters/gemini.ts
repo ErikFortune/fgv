@@ -24,10 +24,14 @@
  * enabled — grounding metadata arrives attached to text chunks — so this
  * adapter never yields `tool-event`s.
  *
+ * Client-defined tools (`functionCall` parts) are emitted as
+ * `client-tool-call-done` immediately (no delta accumulation needed for Gemini).
+ *
  * @packageDocumentation
  */
 
 import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 
 import { buildGeminiContents } from '../chatRequestBuilders';
 import { AiPrompt, type AiServerToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
@@ -37,24 +41,36 @@ import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
 
 // ============================================================================
+// Accumulated call state (internal — used by C3 continuation builder)
+// ============================================================================
+
+/**
+ * An accumulated function call from a Gemini stream. Gemini does not assign
+ * call IDs; correlation is by tool name. Arguments arrive complete in the
+ * `functionCall` part (no delta accumulation).
+ * @internal
+ */
+export interface IAccumulatedGeminiFunctionCall {
+  readonly name: string;
+  readonly args: JsonObject;
+}
+
+// ============================================================================
 // Event payload shapes
 // ============================================================================
 
 /**
- * One `parts[]` element in a Gemini streaming chunk. Only `text` parts are
- * surfaced — non-text parts (e.g. function calls, inline data) are ignored.
- *
+ * One `parts[]` element in a Gemini streaming chunk. Text parts and
+ * functionCall parts are both surfaced.
  * @internal
  */
 interface IGeminiStreamPart {
   readonly text?: string;
+  readonly functionCall?: { readonly name?: string; readonly args?: JsonObject };
 }
 
 /**
- * One `candidates[]` element in a Gemini streaming chunk. Both `content` and
- * `finishReason` are optional — text arrives in intermediate chunks,
- * finishReason in the terminal chunk.
- *
+ * One `candidates[]` element in a Gemini streaming chunk.
  * @internal
  */
 interface IGeminiStreamCandidate {
@@ -64,16 +80,34 @@ interface IGeminiStreamCandidate {
 
 /**
  * One streaming chunk from `streamGenerateContent?alt=sse`.
- *
  * @internal
  */
 interface IGeminiStreamChunk {
   readonly candidates: ReadonlyArray<IGeminiStreamCandidate>;
 }
 
+const jsonObjectValidator: Validator<JsonObject> = Validators.isA<JsonObject>(
+  'JsonObject',
+  (v): v is JsonObject => isJsonObject(v)
+);
+
+const geminiFunctionCallInner: Validator<{ name?: string; args?: JsonObject }> = Validators.object<{
+  name?: string;
+  args?: JsonObject;
+}>(
+  {
+    name: Validators.string.optional(),
+    args: jsonObjectValidator.optional()
+  },
+  { options: { optionalFields: ['name', 'args'] } }
+);
+
 const geminiStreamPart: Validator<IGeminiStreamPart> = Validators.object<IGeminiStreamPart>(
-  { text: Validators.string.optional() },
-  { options: { optionalFields: ['text'] } }
+  {
+    text: Validators.string.optional(),
+    functionCall: geminiFunctionCallInner.optional()
+  },
+  { options: { optionalFields: ['text', 'functionCall'] } }
 );
 
 const geminiStreamContent: Validator<{ parts?: ReadonlyArray<IGeminiStreamPart> }> = Validators.object<{
@@ -101,7 +135,10 @@ const geminiStreamChunk: Validator<IGeminiStreamChunk> = Validators.object<IGemi
  *
  * @internal
  */
-async function* translateGeminiStream(response: Response): AsyncGenerator<IAiStreamEvent> {
+async function* translateGeminiStream(
+  response: Response,
+  functionCalls: IAccumulatedGeminiFunctionCall[]
+): AsyncGenerator<IAiStreamEvent> {
   let fullText = '';
   let truncated = false;
   let receivedFinishReason = false;
@@ -129,6 +166,13 @@ async function* translateGeminiStream(response: Response): AsyncGenerator<IAiStr
           if (typeof part.text === 'string' && part.text.length > 0) {
             fullText += part.text;
             yield { type: 'text-delta', delta: part.text };
+            /* c8 ignore next 1 - defensive: functionCall?.name null branch handled by text/empty filter above */
+          } else if (part.functionCall?.name) {
+            const { name, args } = part.functionCall;
+            /* c8 ignore next 1 - defensive: Gemini always sends args; {} fallback unreachable in practice */
+            const callArgs = args ?? {};
+            functionCalls.push({ name, args: callArgs });
+            yield { type: 'client-tool-call-done', toolName: name, args: callArgs };
           }
         }
       }
@@ -168,7 +212,8 @@ export async function callGeminiStream(
   tools: ReadonlyArray<AiServerToolConfig> | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
-  resolvedThinking?: IResolvedThinkingConfig
+  resolvedThinking?: IResolvedThinkingConfig,
+  functionCalls?: IAccumulatedGeminiFunctionCall[]
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/models/${config.model}:streamGenerateContent?alt=sse`;
   const contents = buildGeminiContents(prompt, { head: messagesBefore });
@@ -194,6 +239,7 @@ export async function callGeminiStream(
     const toolTypes = tools && tools.length > 0 ? tools.map((t) => t.type).join(',') : 'none';
     logger.info(`Gemini streaming: model=${config.model}, tools=${toolTypes}`);
   }
+  const calls = functionCalls ?? [];
   const conn = await openSseConnection(url, headers, body, logger, signal);
-  return conn.onSuccess((response) => succeed(translateGeminiStream(response)));
+  return conn.onSuccess((response) => succeed(translateGeminiStream(response, calls)));
 }

@@ -101,6 +101,7 @@ describe('aiClientToolConfig', () => {
     });
 
     test('rejects missing type field', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { type: _type, ...noType } = validConfig;
       expect(aiClientToolConfig.convert(noType)).toFailWith(/expected type 'client_tool'/i);
     });
@@ -121,6 +122,7 @@ describe('aiClientToolConfig', () => {
     });
 
     test('rejects missing description', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { description: _desc, ...noDesc } = validConfig;
       expect(aiClientToolConfig.convert(noDesc)).toFailWith(/description must be a string/i);
     });
@@ -131,6 +133,7 @@ describe('aiClientToolConfig', () => {
     });
 
     test('rejects missing parametersSchema', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { parametersSchema: _s, ...noSchema } = validConfig;
       expect(aiClientToolConfig.convert(noSchema)).toFailWith(/parametersSchema/i);
     });
