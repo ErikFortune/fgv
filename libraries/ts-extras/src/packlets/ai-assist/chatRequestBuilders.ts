@@ -198,7 +198,7 @@ export function buildAnthropicMessages(
       }
     }
   }
-  /* c8 ignore next 5 - rawTail branch: only exercised by live continuation scenarios */
+  /* c8 ignore next 5 - options?.rawTail optional-chain short-circuit (options=undefined) not reached in unit tests */
   if (options?.rawTail) {
     for (const msg of options.rawTail) {
       messages.push(msg as unknown as { role: string; content: string | unknown[] });

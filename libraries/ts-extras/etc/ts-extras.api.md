@@ -1202,7 +1202,7 @@ interface IExecuteClientToolTurnParams {
     readonly descriptor: IAiProviderDescriptor;
     readonly logger?: Logging.ILogger;
     readonly messagesBefore?: ReadonlyArray<IChatMessage>;
-    readonly model: string;
+    readonly model?: string;
     readonly prompt: AiPrompt;
     // Warning: (ae-incompatible-release-tags) The symbol "resolvedThinking" is marked as @public, but its signature references "IResolvedThinkingConfig" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "resolvedThinking" is marked as @public, but its signature references "IResolvedThinkingConfig" which is marked as @internal

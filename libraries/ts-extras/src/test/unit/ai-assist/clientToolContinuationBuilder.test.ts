@@ -655,6 +655,181 @@ describe('executeClientToolTurn', () => {
 
   // --------------------------------------------------------------------------
 
+  // Helper: mock fetch to capture the request body and immediately return a
+  // minimal well-formed SSE response that closes the stream cleanly.
+  function mockFetchCapturingBody(
+    onCapture: (body: Record<string, unknown>) => void,
+    sseLine: string = 'event: message_stop\ndata: {}\n\n'
+  ): void {
+    const encoder = new TextEncoder();
+    (global.fetch as jest.Mock).mockImplementation((...args: unknown[]) => {
+      const init = args[1] as RequestInit;
+      onCapture(JSON.parse(init.body as string) as Record<string, unknown>);
+      const body = new ReadableStream<Uint8Array>({
+        start(controller: ReadableStreamDefaultController<Uint8Array>): void {
+          controller.enqueue(encoder.encode(sseLine));
+          controller.close();
+        }
+      });
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        body,
+        text: jest.fn().mockResolvedValue(''),
+        headers: new Map([['content-type', 'text/event-stream']])
+      });
+    });
+  }
+
+  // ============================================================================
+  // P1-1 regression: client tools must reach the provider in the request body
+  // ============================================================================
+
+  describe('client tools reach the provider (P1-1 regression)', () => {
+    test('Anthropic: request body tools array contains input_schema entry for client tool', async () => {
+      let capturedBody: Record<string, unknown> | undefined;
+      mockFetchCapturingBody((b) => {
+        capturedBody = b;
+      });
+
+      const tool = makeMemoryTool(async () => 'irrelevant');
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [tool] as IAiClientTool[],
+        model: 'claude-sonnet-4-6'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+
+      // The Anthropic wire format for a client tool is { name, description, input_schema }
+      expect(capturedBody).toBeDefined();
+      const tools = capturedBody?.tools as unknown[] | undefined;
+      expect(tools).toBeDefined();
+      const clientToolEntry = (tools ?? []).find(
+        (t) => (t as Record<string, unknown>).name === 'recall_memory'
+      );
+      expect(clientToolEntry).toBeDefined();
+      expect((clientToolEntry as Record<string, unknown>).input_schema).toBeDefined();
+      expect((clientToolEntry as Record<string, unknown>).description).toBe('Recall stored context');
+    });
+
+    test('Anthropic: server tools and client tools coexist in request body', async () => {
+      let capturedBody: Record<string, unknown> | undefined;
+      mockFetchCapturingBody((b) => {
+        capturedBody = b;
+      });
+
+      const tool = makeMemoryTool(async () => 'irrelevant');
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        tools: [{ type: 'web_search' }],
+        clientTools: [tool] as IAiClientTool[],
+        model: 'claude-sonnet-4-6'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+
+      // Both the server tool (type: 'web_search_20250305') and the client tool must be present.
+      expect(capturedBody).toBeDefined();
+      const tools = capturedBody?.tools as unknown[] | undefined;
+      expect(tools).toBeDefined();
+      expect((tools ?? []).length).toBeGreaterThanOrEqual(2);
+      const hasWebSearch = (tools ?? []).some(
+        (t) => (t as Record<string, unknown>).type === 'web_search_20250305'
+      );
+      const hasClientTool = (tools ?? []).some(
+        (t) => (t as Record<string, unknown>).name === 'recall_memory'
+      );
+      expect(hasWebSearch).toBe(true);
+      expect(hasClientTool).toBe(true);
+    });
+
+    test('OpenAI: request body tools array contains function entry for client tool', async () => {
+      let capturedBody: Record<string, unknown> | undefined;
+      mockFetchCapturingBody((b) => {
+        capturedBody = b;
+      }, `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`);
+
+      const tool = makeMemoryTool(async () => 'irrelevant');
+      const result = executeClientToolTurn({
+        descriptor: makeOpenAiDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [tool] as IAiClientTool[],
+        model: 'gpt-4o'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+
+      // The OpenAI/Responses API wire format for a client tool is { type: 'function', name, description, parameters }
+      expect(capturedBody).toBeDefined();
+      const tools = capturedBody?.tools as unknown[] | undefined;
+      expect(tools).toBeDefined();
+      const clientToolEntry = (tools ?? []).find(
+        (t) =>
+          (t as Record<string, unknown>).type === 'function' &&
+          (t as Record<string, unknown>).name === 'recall_memory'
+      );
+      expect(clientToolEntry).toBeDefined();
+      expect((clientToolEntry as Record<string, unknown>).description).toBe('Recall stored context');
+      expect((clientToolEntry as Record<string, unknown>).parameters).toBeDefined();
+    });
+
+    test('Gemini: request body tools contain functionDeclarations entry for client tool', async () => {
+      let capturedBody: Record<string, unknown> | undefined;
+      mockFetchCapturingBody(
+        (b) => {
+          capturedBody = b;
+        },
+        `data: ${JSON.stringify({
+          candidates: [{ content: { parts: [{ text: '' }] }, finishReason: 'STOP' }]
+        })}\n\n`
+      );
+
+      const tool = makeMemoryTool(async () => 'irrelevant');
+      const result = executeClientToolTurn({
+        descriptor: makeGeminiDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [tool] as IAiClientTool[],
+        model: 'gemini-2.5-flash'
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+
+      // Gemini groups client tools under { function_declarations: [...] }
+      expect(capturedBody).toBeDefined();
+      const tools = capturedBody?.tools as unknown[] | undefined;
+      expect(tools).toBeDefined();
+      const functionDeclarationsEntry = (tools ?? []).find(
+        (t) => (t as Record<string, unknown>).function_declarations !== undefined
+      );
+      expect(functionDeclarationsEntry).toBeDefined();
+      const functionDeclarations = (functionDeclarationsEntry as Record<string, unknown>)
+        .function_declarations as unknown[];
+      expect(functionDeclarations).toBeDefined();
+      const memoryDecl = functionDeclarations.find(
+        (d) => (d as Record<string, unknown>).name === 'recall_memory'
+      );
+      expect(memoryDecl).toBeDefined();
+      expect((memoryDecl as Record<string, unknown>).description).toBe('Recall stored context');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+
   describe('happy-path round-trip (Anthropic)', () => {
     test('executes memory tool and resolves nextTurn with continuation', async () => {
       mockSseResponse(anthropicToolUseSse('toolu_01', 'recall_memory', '{"query":"user prefs"}'));
@@ -690,6 +865,46 @@ describe('executeClientToolTurn', () => {
         expect(r.continuation?.toolCallsSummary[0].toolName).toBe('recall_memory');
         expect(r.continuation?.toolCallsSummary[0].isError).toBe(false);
       });
+    });
+  });
+
+  describe('model optional — falls back to descriptor.defaultModel when omitted', () => {
+    test('uses descriptor.defaultModel when model is not supplied', async () => {
+      // P2-5: model is optional; when absent, resolveModel(descriptor.defaultModel) is used.
+      let capturedBody: Record<string, unknown> | undefined;
+      const encoder = new TextEncoder();
+      (global.fetch as jest.Mock).mockImplementation((...args: unknown[]) => {
+        const init = args[1] as RequestInit;
+        capturedBody = JSON.parse(init.body as string) as Record<string, unknown>;
+        const body = new ReadableStream<Uint8Array>({
+          start(controller: ReadableStreamDefaultController<Uint8Array>): void {
+            controller.enqueue(encoder.encode('event: message_stop\ndata: {}\n\n'));
+            controller.close();
+          }
+        });
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          body,
+          text: jest.fn().mockResolvedValue(''),
+          headers: new Map([['content-type', 'text/event-stream']])
+        });
+      });
+
+      const result = executeClientToolTurn({
+        descriptor: makeAnthropicDescriptor(),
+        apiKey: 'test-key',
+        prompt: testPrompt,
+        clientTools: [] as IAiClientTool[]
+        // model is intentionally omitted
+      });
+      expect(result).toSucceed();
+      if (result.isFailure()) return;
+
+      await collect(result.value.events);
+
+      // The default model for the Anthropic descriptor is 'claude-sonnet-4-6'
+      expect(capturedBody?.model).toBe('claude-sonnet-4-6');
     });
   });
 

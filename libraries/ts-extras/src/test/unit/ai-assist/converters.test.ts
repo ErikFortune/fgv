@@ -84,26 +84,26 @@ describe('aiClientToolConfig', () => {
 
   describe('failure cases', () => {
     test('rejects null input', () => {
-      expect(aiClientToolConfig.convert(null)).toFailWith(/expected object/i);
+      expect(aiClientToolConfig.convert(null)).toFail();
     });
 
     test('rejects undefined input', () => {
-      expect(aiClientToolConfig.convert(undefined)).toFailWith(/expected object/i);
+      expect(aiClientToolConfig.convert(undefined)).toFail();
     });
 
     test('rejects non-object input', () => {
-      expect(aiClientToolConfig.convert('not-an-object')).toFailWith(/expected object/i);
+      expect(aiClientToolConfig.convert('not-an-object')).toFail();
     });
 
     test('rejects wrong type field', () => {
       const bad = { ...validConfig, type: 'server_tool' };
-      expect(aiClientToolConfig.convert(bad)).toFailWith(/expected type 'client_tool'/i);
+      expect(aiClientToolConfig.convert(bad)).toFailWith(/invalid enumerated value/i);
     });
 
     test('rejects missing type field', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { type: _type, ...noType } = validConfig;
-      expect(aiClientToolConfig.convert(noType)).toFailWith(/expected type 'client_tool'/i);
+      expect(aiClientToolConfig.convert(noType)).toFailWith(/type/i);
     });
 
     test('rejects empty name', () => {
@@ -113,18 +113,18 @@ describe('aiClientToolConfig', () => {
 
     test('rejects non-string name', () => {
       const bad = { ...validConfig, name: 42 };
-      expect(aiClientToolConfig.convert(bad)).toFailWith(/name must be a non-empty string/i);
+      expect(aiClientToolConfig.convert(bad)).toFailWith(/name/i);
     });
 
     test('rejects non-string description', () => {
       const bad = { ...validConfig, description: 123 };
-      expect(aiClientToolConfig.convert(bad)).toFailWith(/description must be a string/i);
+      expect(aiClientToolConfig.convert(bad)).toFailWith(/description/i);
     });
 
     test('rejects missing description', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { description: _desc, ...noDesc } = validConfig;
-      expect(aiClientToolConfig.convert(noDesc)).toFailWith(/description must be a string/i);
+      expect(aiClientToolConfig.convert(noDesc)).toFailWith(/description/i);
     });
 
     test('rejects null parametersSchema', () => {

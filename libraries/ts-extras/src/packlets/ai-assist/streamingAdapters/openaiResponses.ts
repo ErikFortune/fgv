@@ -35,7 +35,7 @@ import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildMessages, buildOpenAiResponsesUserContent } from '../chatRequestBuilders';
 import { bearerAuthHeader } from '../endpoint';
-import { AiPrompt, type AiServerToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
+import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toResponsesApiTools } from '../toolFormats';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
@@ -305,7 +305,7 @@ async function* translateOpenAiResponsesStream(
 export async function callOpenAiResponsesStream(
   config: IStreamApiConfig,
   prompt: AiPrompt,
-  tools: ReadonlyArray<AiServerToolConfig>,
+  tools: ReadonlyArray<AiToolConfig>,
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
   logger?: Logging.ILogger,

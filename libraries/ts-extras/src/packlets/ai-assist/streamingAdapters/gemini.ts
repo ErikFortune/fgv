@@ -34,7 +34,7 @@ import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/
 import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 
 import { buildGeminiContents } from '../chatRequestBuilders';
-import { AiPrompt, type AiServerToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
+import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toGeminiTools } from '../toolFormats';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
@@ -209,7 +209,7 @@ export async function callGeminiStream(
   prompt: AiPrompt,
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
-  tools: ReadonlyArray<AiServerToolConfig> | undefined,
+  tools: ReadonlyArray<AiToolConfig> | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,

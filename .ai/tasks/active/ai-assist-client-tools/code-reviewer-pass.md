@@ -320,3 +320,45 @@ Three Priority 1 items require resolution:
 3. **P1-3 (double-cast / structural lie):** Replace `assistantContent as unknown as JsonObject`
    (and Gemini equivalents) with properly typed `JsonArray`-based constructions. Remove the
    `Record<string, unknown> as JsonObject` cast on the `block` variable.
+
+---
+
+## Second pass (post-fix)
+
+Reviewed by: Code Monkey (implementer self-review)
+Date: 2026-06-04
+Diff: same branch after all P1/P2 fixes applied
+
+### Summary of fixes applied
+
+| Finding | Resolution |
+|---|---|
+| P1-1: client tools never sent to provider | `executeClientToolTurn` now computes `effectiveTools = [...(tools ?? []), ...clientTools.map(t => t.config)]` and passes it to all three adapters. All three `call*Stream` signatures widened to `ReadonlyArray<AiToolConfig>`. Four request-body verification tests added (Anthropic client-only, Anthropic server+client coexistence, OpenAI, Gemini). |
+| P1-2: `Converters.generic` with manual type checks | Replaced with `Converters.object<IAiClientToolConfig>` using `Converters.enumeratedValue`, `Converters.string.withConstraint`, and `parametersSchemaValidator`. |
+| P1-3: double-cast `as unknown as JsonObject` on arrays | Changed `assistantContent`, `modelParts`, `userParts` from `JsonObject[]` to `JsonArray`. Removed all double-casts. |
+| P2-1: `result.md` event-type naming inaccurate | `result.md` rewritten with correct event type discriminators (`client-tool-call-start`, `client-tool-call-done`, `client-tool-result`) and correct `IAiClientToolTurnResult` structure. |
+| P2-2: `LIBRARY_CAPABILITIES.md` `execute` return type | Fixed `Result<string>` → `Result<unknown>` in the capabilities doc. |
+| P2-5: `model: string` should be optional | Changed to `readonly model?: string`; `resolvedModel = model ?? resolveModel(descriptor.defaultModel)`. Model-optional test added to cover the fallback branch. |
+| P2-6: `c8 ignore` on `rawTail` accuracy | Re-added with accurate justification: the main `rawTail` path is covered; the `options?.rawTail` optional-chain short-circuit when `options` is `undefined` is not reached in unit tests. |
+
+### Priority 1
+
+No new P1 findings.
+
+- `Converters.object` pattern is correct — no `any`, no manual type checking, no unsafe casts.
+- `AiToolConfig` widening is complete and consistent across all three adapters and `executeClientToolTurn`.
+- `JsonArray` usage is correct for array content fields — no remaining double-casts.
+
+### Priority 2
+
+No new P2 findings.
+
+- `model?: string` implemented correctly with `resolveModel` fallback.
+- `c8 ignore` comment is accurate and well-justified.
+- All continuation builders use the `Result` pattern throughout.
+
+### Priority 3
+
+No P3 advisory findings.
+
+**Second pass recommendation: Approved — no new findings.**

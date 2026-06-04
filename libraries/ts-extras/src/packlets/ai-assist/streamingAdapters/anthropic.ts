@@ -35,7 +35,7 @@ import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/
 import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildAnthropicMessages } from '../chatRequestBuilders';
-import { AiPrompt, type AiServerToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
+import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toAnthropicTools } from '../toolFormats';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
@@ -415,7 +415,7 @@ export async function callAnthropicStream(
   prompt: AiPrompt,
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
-  tools: ReadonlyArray<AiServerToolConfig> | undefined,
+  tools: ReadonlyArray<AiToolConfig> | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,

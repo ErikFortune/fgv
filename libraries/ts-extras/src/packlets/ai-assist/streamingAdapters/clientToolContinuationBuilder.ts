@@ -37,17 +37,19 @@
  */
 
 import { captureAsyncResult, fail, type Logging, Result, succeed } from '@fgv/ts-utils';
-import { type JsonObject } from '@fgv/ts-json-base';
+import { type JsonArray, type JsonObject } from '@fgv/ts-json-base';
 
 import {
   type AiPrompt,
   type AiServerToolConfig,
+  type AiToolConfig,
   type IAiClientTool,
   type IAiClientToolContinuation,
   type IAiClientToolTurnResult,
   type IAiStreamEvent,
   type IChatMessage,
-  type IAiProviderDescriptor
+  type IAiProviderDescriptor,
+  resolveModel
 } from '../model';
 import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { type IAccumulatedBlock } from './anthropic';
@@ -100,7 +102,7 @@ export function buildAnthropicContinuation(
   // Reconstruct the assistant turn from the ordered accumulation buffer.
   // Sort by buffer key (SSE index) to restore original stream order.
   const sortedKeys = Array.from(accBuffer.keys()).sort((a, b) => a - b);
-  const assistantContent: JsonObject[] = [];
+  const assistantContent: JsonArray = [];
 
   for (const key of sortedKeys) {
     const block = accBuffer.get(key);
@@ -141,26 +143,26 @@ export function buildAnthropicContinuation(
   }
 
   // Build user turn with tool_result blocks for each tool call.
-  const userContent: JsonObject[] = toolResults.map((r) => {
-    const block: Record<string, unknown> = {
+  const userContent: JsonArray = toolResults.map((r): JsonObject => {
+    const block: JsonObject = {
       type: 'tool_result',
       // eslint-disable-next-line @typescript-eslint/naming-convention
       tool_use_id: r.callId ?? r.toolName,
       content: r.result
     };
     if (r.isError) {
-      block.is_error = true;
+      return { ...block, is_error: true };
     }
-    return block as JsonObject;
+    return block;
   });
 
   const assistantMessage: JsonObject = {
     role: 'assistant',
-    content: assistantContent as unknown as JsonObject
+    content: assistantContent
   };
   const userMessage: JsonObject = {
     role: 'user',
-    content: userContent as unknown as JsonObject
+    content: userContent
   };
 
   return {
@@ -244,32 +246,36 @@ export function buildGeminiContinuation(
   toolResults: IToolCallResult[]
 ): IAiClientToolContinuation {
   // Model turn: functionCall parts for each call.
-  const modelParts: JsonObject[] = calls.map((call) => ({
-    functionCall: {
-      name: call.name,
-      args: call.args
-    }
-  }));
+  const modelParts: JsonArray = calls.map(
+    (call): JsonObject => ({
+      functionCall: {
+        name: call.name,
+        args: call.args
+      }
+    })
+  );
 
   // User turn: functionResponse parts for each executed result.
   // Correlation is by name since Gemini has no call IDs.
-  const userParts: JsonObject[] = toolResults.map((r) => ({
-    functionResponse: {
-      name: r.toolName,
-      response: {
-        content: r.result,
-        ...(r.isError ? { error: true } : {})
+  const userParts: JsonArray = toolResults.map(
+    (r): JsonObject => ({
+      functionResponse: {
+        name: r.toolName,
+        response: {
+          content: r.result,
+          ...(r.isError ? { error: true } : {})
+        }
       }
-    }
-  }));
+    })
+  );
 
   const modelMessage: JsonObject = {
     role: 'model',
-    parts: modelParts as unknown as JsonObject
+    parts: modelParts
   };
   const userMessage: JsonObject = {
     role: 'user',
-    parts: userParts as unknown as JsonObject
+    parts: userParts
   };
 
   return {
@@ -323,8 +329,8 @@ export interface IExecuteClientToolTurnParams {
   readonly logger?: Logging.ILogger;
   /** Optional resolved thinking config (pre-resolved by the caller). */
   readonly resolvedThinking?: IResolvedThinkingConfig;
-  /** Resolved model string (pre-resolved by the caller). */
-  readonly model: string;
+  /** Resolved model string (pre-resolved by the caller). When omitted, uses the descriptor's default model. */
+  readonly model?: string;
 }
 
 /**
@@ -395,11 +401,18 @@ export function executeClientToolTurn(
     toolsByName.set(tool.config.name, tool);
   }
 
+  // Merge server tools and client tool configs into a single array for the provider.
+  // This is the fix for P1-1: client tools were never sent to the provider because
+  // the adapters only received `tools` (server tools). Both must be coexist per design §2.5.
+  const effectiveTools: ReadonlyArray<AiToolConfig> | undefined =
+    clientTools.length > 0 ? [...(tools ?? []), ...clientTools.map((t) => t.config)] : tools;
+
   const effectiveTemperature = temperature ?? 0.7;
+  const resolvedModel = model ?? resolveModel(descriptor.defaultModel);
   const config: IStreamApiConfig = {
     baseUrl: descriptor.baseUrl,
     apiKey,
-    model
+    model: resolvedModel
   };
 
   // Accumulation buffers — populated by the adapter, read by the builder.
@@ -419,7 +432,7 @@ export function executeClientToolTurn(
           prompt,
           messagesBefore,
           effectiveTemperature,
-          tools,
+          effectiveTools,
           logger,
           signal,
           resolvedThinking,
@@ -431,7 +444,7 @@ export function executeClientToolTurn(
           config,
           prompt,
           /* c8 ignore next 1 - defensive: openai path requires tools; empty array fallback unreachable in practice */
-          tools ?? [],
+          effectiveTools ?? [],
           messagesBefore,
           effectiveTemperature,
           logger,
@@ -445,7 +458,7 @@ export function executeClientToolTurn(
           prompt,
           messagesBefore,
           effectiveTemperature,
-          tools,
+          effectiveTools,
           logger,
           signal,
           resolvedThinking,

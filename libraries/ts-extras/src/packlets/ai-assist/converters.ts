@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { type Converter, Converters, fail, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { type Converter, Converters, type Validator, Validators } from '@fgv/ts-utils';
 import { type JsonSchema } from '@fgv/ts-json-base';
 
 import {
@@ -120,33 +120,14 @@ const parametersSchemaValidator: Validator<JsonSchema.ISchemaValidator<unknown>>
  * guarantees the schema is valid.
  * @public
  */
-export const aiClientToolConfig: Converter<IAiClientToolConfig> = Converters.generic<IAiClientToolConfig>(
-  (from: unknown) => {
-    if (from === null || from === undefined || typeof from !== 'object') {
-      return fail('expected object for IAiClientToolConfig');
-    }
-    const obj = from as Record<string, unknown>;
-    if (obj.type !== 'client_tool') {
-      return fail(`expected type 'client_tool', got ${String(obj.type)}`);
-    }
-    if (typeof obj.name !== 'string' || obj.name.length === 0) {
-      return fail('IAiClientToolConfig: name must be a non-empty string');
-    }
-    if (typeof obj.description !== 'string') {
-      return fail('IAiClientToolConfig: description must be a string');
-    }
-    const schemaResult = parametersSchemaValidator.validate(obj.parametersSchema);
-    if (schemaResult.isFailure()) {
-      return fail(`IAiClientToolConfig: parametersSchema ${schemaResult.message}`);
-    }
-    return succeed({
-      type: 'client_tool',
-      name: obj.name,
-      description: obj.description,
-      parametersSchema: schemaResult.value
-    } as IAiClientToolConfig);
-  }
-);
+export const aiClientToolConfig: Converter<IAiClientToolConfig> = Converters.object<IAiClientToolConfig>({
+  type: Converters.enumeratedValue<'client_tool'>(['client_tool']),
+  name: Converters.string.withConstraint((s) => s.length > 0, {
+    description: 'name must be a non-empty string'
+  }),
+  description: Converters.string,
+  parametersSchema: parametersSchemaValidator
+});
 
 /**
  * Converter for {@link IAiToolEnablement}.
