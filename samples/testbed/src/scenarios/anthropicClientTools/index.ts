@@ -163,8 +163,12 @@ const cliImpl: ICliScenarioImpl = {
     // Build the prompt.
     const prompt = new AiAssist.AiPrompt(USER_QUESTION, SYSTEM_PROMPT);
 
-    // Use claude-sonnet-4-6 with thinking enabled (low effort to limit latency).
-    const model = 'claude-sonnet-4-6-20251022';
+    // Use the version-pinned `claude-sonnet-4-6` alias — points to the current
+    // 4.6 dated snapshot without coupling to a specific date. Predictable
+    // (major.minor fixed; explicit migrations when bumping) and avoids the
+    // snapshot-deprecation trap of hardcoded dated identifiers. Per the latest
+    // Anthropic SDK, this alias is accepted directly (no '-latest' suffix).
+    const model = 'claude-sonnet-4-6';
 
     // Construct the resolved thinking config directly (IResolvedThinkingConfig is the output
     // of mergeThinkingConfig; we bypass the full IThinkingConfig pipeline here for simplicity).
