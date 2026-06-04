@@ -1138,10 +1138,10 @@ export class PromptLibrary<
    */
   private async _safeObserve(observer: IPromptObserver, record: IPromptObservationRecord): Promise<void> {
     try {
-      (await observer.observe(record)).onFailure((message) => {
-        this.logger.warn(`prompt '${record.promptId}': observer failed (swallowed): ${message}`);
-        return fail(message);
-      });
+      const observed = await observer.observe(record);
+      if (observed.isFailure()) {
+        this.logger.warn(`prompt '${record.promptId}': observer failed (swallowed): ${observed.message}`);
+      }
     } catch (error) {
       this.logger.warn(`prompt '${record.promptId}': observer threw (swallowed): ${String(error)}`);
     }

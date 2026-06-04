@@ -67,7 +67,15 @@ Targets the existing integration branch `ts-prompt-assist-observability`. Agent 
 - [x] additive `observers?` on `IPromptLibraryCreateParams`; `_observe` fan-out at the three public boundaries
 - [x] OQ-3 awaited-default + fire-and-forget opt-in (per-observer `fireAndForget` flag) — tested both directions
 - [x] build + lint clean in both libraries; 224 ts-prompt-assist tests green
-- [ ] `code-reviewer` pass on cumulative diff (running) → disposition findings
-- [ ] coverage closure to 100% in both libraries (AFTER code-reviewer)
-- [ ] LIBRARY_CAPABILITIES.md updates (both libraries)
+- [x] `code-reviewer` pass on cumulative diff — 0 P1, 3 P2, 3 P3:
+  - P2-1 (swallow airtight): verified correct, no change.
+  - P2-2 (2 new `ae-unresolved-link` warnings): **fixed** — promoted `IRetainedRecord` / `IRetainingRingBufferCreateParams` / `IRetainingRingBufferQuery` to top-level exports; warnings cleared.
+  - P2-3 (`_observationNow` no test seam): accepted — intentional (single additive field); reviewer confirmed no coverage gap.
+  - P3-1 (`onFailure` returning `fail` misleading): **applied** — `_safeObserve` now uses `isFailure()`.
+  - P3-2 (`IPromptObservationStoreCreateParams` placement): accepted — matches `IPromptLibraryCreateParams` (co-located with its class).
+  - P3-3 (member-level `@link`): accepted — pre-existing API Extractor limitation.
+  - Coverage rec (mixed awaited+fire-and-forget test): **added**.
+- [x] coverage closure: `@fgv/ts-utils` 1594 tests, `RetainingRingBuffer` 100%; `@fgv/ts-prompt-assist` 226 tests, observe + promptLibrary.ts 100% (all metrics)
+- [x] LIBRARY_CAPABILITIES.md updates (both libraries)
+- [x] `rushx build` / `rushx lint` (clean) / `rushx test` (100%) / `rushx fixlint` — both libraries
 - [ ] PR onto integration branch

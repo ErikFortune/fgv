@@ -293,6 +293,34 @@ describe('PromptLibrary observability wiring', () => {
       expect(hashes[0]).toBe(hashes[1]);
       expect(hashes[0]).not.toBe(hashes[2]);
     });
+
+    test('records caller substitutions on the observation (and in the contentHash)', async () => {
+      const withSlot: IStoredPromptRecord = {
+        scope: SCOPE,
+        id: PROMPT,
+        descriptor: {
+          id: PROMPT,
+          title: 'p',
+          schemaVersion: '1',
+          surface: 'chat',
+          slots: [{ name: 'topic' as unknown as SlotName, description: 'topic' }],
+          output: { kind: 'free-text' }
+        },
+        candidates: [{ conditions: {}, body: 'about {{{topic}}}' }]
+      };
+      const store = PromptObservationStore.create().orThrow();
+      const lib = await buildLib([withSlot], { observers: [store] });
+      const result = await lib.resolve({
+        id: PROMPT,
+        chain: [SCOPE],
+        qualifiers: {},
+        substitutions: { topic: 'cats' }
+      });
+      expect(result).toSucceedAndSatisfy((r) => expect(r.body).toBe('about cats'));
+      const [record] = store.query();
+      expect(record.substitutions).toEqual({ topic: 'cats' });
+      expect(record.contentHash).not.toBe('');
+    });
   });
 
   describe('observer-error isolation (MultiLogger-shaped)', () => {
@@ -340,6 +368,25 @@ describe('PromptLibrary observability wiring', () => {
       // the observer completes afterward.
       await delay(90);
       expect(slow.observed).toHaveLength(1);
+    });
+
+    test('mixes awaited and fire-and-forget observers in one resolve', async () => {
+      const awaited = new SlowObserver(50);
+      const detached = new SlowObserver(200, true);
+      const lib = await buildLib([freeTextRecord()], { observers: [awaited, detached] });
+      const startedAt = Date.now();
+      const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} });
+      const elapsed = Date.now() - startedAt;
+      expect(result).toSucceed();
+      // resolve() waited for the awaited observer (~50ms) but NOT the much
+      // slower detached one (~200ms): it completed and the detached is pending.
+      expect(elapsed).toBeGreaterThanOrEqual(40);
+      expect(elapsed).toBeLessThan(150);
+      expect(awaited.observed).toHaveLength(1);
+      expect(detached.observed).toHaveLength(0);
+      // the detached observer completes afterward.
+      await delay(220);
+      expect(detached.observed).toHaveLength(1);
     });
   });
 

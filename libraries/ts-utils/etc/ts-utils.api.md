@@ -1766,17 +1766,17 @@ export interface IResultReportOptions<TD = unknown> {
 export type IResultValueType<T> = T extends IResult<infer TV> ? TV : never;
 
 // @public
-interface IRetainedRecord {
+export interface IRetainedRecord {
     readonly seq: number;
 }
 
 // @public
-interface IRetainingRingBufferCreateParams {
+export interface IRetainingRingBufferCreateParams {
     readonly maxRecords?: number;
 }
 
 // @public
-interface IRetainingRingBufferQuery<T extends IRetainedRecord> {
+export interface IRetainingRingBufferQuery<T extends IRetainedRecord> {
     readonly filter?: (record: T) => boolean;
     readonly limit?: number;
     readonly sinceSeq?: number;
@@ -2653,12 +2653,10 @@ class RetainingLogger extends LoggerBase {
 //
 // @public
 export class RetainingRingBuffer<T extends IRetainedRecord> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IRetainingRingBufferCreateParams"
     constructor(params?: IRetainingRingBufferCreateParams);
     clear(): void;
     get lastSeq(): number;
     push(record: T): T;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IRetainingRingBufferQuery"
     query(query?: IRetainingRingBufferQuery<T>): ReadonlyArray<T>;
     get records(): ReadonlyArray<T>;
     get size(): number;
