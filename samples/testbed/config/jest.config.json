@@ -9,7 +9,12 @@
       "statements": 100
     }
   },
-  "coveragePathIgnorePatterns": ["/node_modules/", "<rootDir>/lib/web/index.js", "<rootDir>/lib/generated/"],
+  "coveragePathIgnorePatterns": [
+    "/node_modules/",
+    "<rootDir>/lib/web/index.js",
+    "<rootDir>/lib/generated/",
+    "<rootDir>/lib/scenarios/[a-zA-Z]+ClientTools/"
+  ],
   "collectCoverage": true,
   "coverageReporters": ["text", "lcov", "html"],
   "setupFilesAfterEnv": ["<rootDir>/config/jest.setup.js"]
