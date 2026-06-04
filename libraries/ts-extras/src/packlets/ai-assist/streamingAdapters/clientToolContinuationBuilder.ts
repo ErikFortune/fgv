@@ -1,0 +1,606 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Per-provider continuation message builders and the `executeClientToolTurn`
+ * helper for orchestrating a single client-tool round-trip.
+ *
+ * Each provider requires a different wire format for the follow-up request:
+ * - **Anthropic**: assistant turn reconstructed from the ordered accumulation
+ *   buffer (thinking / redacted_thinking / text / tool_use in original stream
+ *   order) + user turn with `tool_result` blocks. When thinking is active, the
+ *   follow-up request must NOT set `tool_choice: { type: 'any' }` or
+ *   `tool_choice: { type: 'tool', ... }` (E3 / §5.4 of b4-spike-findings).
+ * - **OpenAI / xAI Responses API**: `function_call` input items +
+ *   `function_call_output` input items.
+ * - **Gemini**: model turn with `functionCall` parts + user turn with
+ *   `functionResponse` parts (correlation by tool name).
+ *
+ * @packageDocumentation
+ */
+
+import { captureAsyncResult, fail, type Logging, Result, succeed } from '@fgv/ts-utils';
+import { type JsonObject } from '@fgv/ts-json-base';
+
+import {
+  type AiPrompt,
+  type AiServerToolConfig,
+  type IAiClientTool,
+  type IAiClientToolContinuation,
+  type IAiClientToolTurnResult,
+  type IAiStreamEvent,
+  type IChatMessage,
+  type IAiProviderDescriptor
+} from '../model';
+import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import { type IAccumulatedBlock } from './anthropic';
+import { type IAccumulatedFunctionCall } from './openaiResponses';
+import { type IAccumulatedGeminiFunctionCall } from './gemini';
+import { callAnthropicStream } from './anthropic';
+import { callOpenAiResponsesStream } from './openaiResponses';
+import { callGeminiStream } from './gemini';
+import { type IStreamApiConfig } from './common';
+
+// ============================================================================
+// Tool-result accumulation (internal)
+// ============================================================================
+
+/**
+ * Accumulated result for a single tool call, collected during stream iteration.
+ * @internal
+ */
+interface IToolCallResult {
+  readonly toolName: string;
+  readonly callId?: string;
+  readonly args: JsonObject;
+  readonly result: string;
+  readonly isError: boolean;
+}
+
+// ============================================================================
+// Anthropic continuation builder
+// ============================================================================
+
+/**
+ * Builds the Anthropic follow-up messages for a client-tool round-trip.
+ *
+ * Reconstructs the assistant turn from the ordered accumulation buffer
+ * (all block types in original stream order) and appends a user turn
+ * with `tool_result` blocks for each executed tool call.
+ *
+ * **Constraint (E3):** The returned continuation does NOT include a forced
+ * `tool_choice` field. When thinking is active, Anthropic rejects
+ * `tool_choice: { type: 'any' }` and `tool_choice: { type: 'tool', ... }`
+ * with an HTTP 400 error. Only `tool_choice: { type: 'auto' }` (the default,
+ * i.e. omitted) is compatible with extended thinking.
+ *
+ * @internal
+ */
+export function buildAnthropicContinuation(
+  accBuffer: Map<number, IAccumulatedBlock>,
+  toolResults: IToolCallResult[]
+): IAiClientToolContinuation {
+  // Reconstruct the assistant turn from the ordered accumulation buffer.
+  // Sort by buffer key (SSE index) to restore original stream order.
+  const sortedKeys = Array.from(accBuffer.keys()).sort((a, b) => a - b);
+  const assistantContent: JsonObject[] = [];
+
+  for (const key of sortedKeys) {
+    const block = accBuffer.get(key);
+    /* c8 ignore next 1 - defensive: key always exists in map since we iterate its keys */
+    if (!block) continue;
+    if (block.type === 'thinking') {
+      assistantContent.push({
+        type: 'thinking',
+        thinking: block.thinking,
+        signature: block.signature
+      });
+    } else if (block.type === 'redacted_thinking') {
+      assistantContent.push({
+        type: 'redacted_thinking',
+        data: block.data
+      });
+    } else if (block.type === 'text') {
+      if (block.text.length > 0) {
+        assistantContent.push({ type: 'text', text: block.text });
+      }
+    } else if (block.type === 'tool_use') {
+      let parsedInput: JsonObject;
+      try {
+        /* c8 ignore next 1 - defensive: argsBuffer is JSON-parsed in the adapter before emitting client-tool-call-done */
+        parsedInput = JSON.parse(block.argsBuffer || '{}') as JsonObject;
+        /* c8 ignore start - defensive: malformed argsBuffer defaults to empty object */
+      } catch {
+        parsedInput = {};
+      }
+      /* c8 ignore stop */
+      assistantContent.push({
+        type: 'tool_use',
+        id: block.id,
+        name: block.name,
+        input: parsedInput
+      });
+    }
+  }
+
+  // Build user turn with tool_result blocks for each tool call.
+  const userContent: JsonObject[] = toolResults.map((r) => {
+    const block: Record<string, unknown> = {
+      type: 'tool_result',
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      tool_use_id: r.callId ?? r.toolName,
+      content: r.result
+    };
+    if (r.isError) {
+      block.is_error = true;
+    }
+    return block as JsonObject;
+  });
+
+  const assistantMessage: JsonObject = {
+    role: 'assistant',
+    content: assistantContent as unknown as JsonObject
+  };
+  const userMessage: JsonObject = {
+    role: 'user',
+    content: userContent as unknown as JsonObject
+  };
+
+  return {
+    messages: [assistantMessage, userMessage],
+    toolCallsSummary: toolResults.map((r) => ({
+      toolName: r.toolName,
+      callId: r.callId,
+      args: r.args,
+      result: r.result,
+      isError: r.isError
+    }))
+  };
+}
+
+// ============================================================================
+// OpenAI / xAI Responses API continuation builder
+// ============================================================================
+
+/**
+ * Builds the OpenAI / xAI Responses API follow-up input items for a
+ * client-tool round-trip.
+ *
+ * Emits `function_call` items (the model's call) followed by
+ * `function_call_output` items (the harness execution result), one pair
+ * per executed tool call.
+ *
+ * @internal
+ */
+export function buildOpenAiContinuation(
+  calls: Map<string, IAccumulatedFunctionCall>,
+  toolResults: IToolCallResult[]
+): IAiClientToolContinuation {
+  const items: JsonObject[] = [];
+
+  // Emit function_call items for each call (model's side).
+  for (const [callId, call] of calls) {
+    items.push({
+      type: 'function_call',
+      id: callId,
+      name: call.name,
+      arguments: call.argsBuffer
+    });
+  }
+
+  // Emit function_call_output items (harness execution results).
+  for (const r of toolResults) {
+    items.push({
+      type: 'function_call_output',
+      call_id: r.callId ?? r.toolName,
+      output: r.result
+    });
+  }
+
+  return {
+    messages: items,
+    toolCallsSummary: toolResults.map((r) => ({
+      toolName: r.toolName,
+      callId: r.callId,
+      args: r.args,
+      result: r.result,
+      isError: r.isError
+    }))
+  };
+}
+
+// ============================================================================
+// Gemini continuation builder
+// ============================================================================
+
+/**
+ * Builds the Gemini follow-up contents for a client-tool round-trip.
+ *
+ * Emits a model turn with `functionCall` parts (one per tool call) and a
+ * user turn with `functionResponse` parts (correlation by tool name, since
+ * Gemini does not assign call IDs).
+ *
+ * @internal
+ */
+export function buildGeminiContinuation(
+  calls: IAccumulatedGeminiFunctionCall[],
+  toolResults: IToolCallResult[]
+): IAiClientToolContinuation {
+  // Model turn: functionCall parts for each call.
+  const modelParts: JsonObject[] = calls.map((call) => ({
+    functionCall: {
+      name: call.name,
+      args: call.args
+    }
+  }));
+
+  // User turn: functionResponse parts for each executed result.
+  // Correlation is by name since Gemini has no call IDs.
+  const userParts: JsonObject[] = toolResults.map((r) => ({
+    functionResponse: {
+      name: r.toolName,
+      response: {
+        content: r.result,
+        ...(r.isError ? { error: true } : {})
+      }
+    }
+  }));
+
+  const modelMessage: JsonObject = {
+    role: 'model',
+    parts: modelParts as unknown as JsonObject
+  };
+  const userMessage: JsonObject = {
+    role: 'user',
+    parts: userParts as unknown as JsonObject
+  };
+
+  return {
+    messages: [modelMessage, userMessage],
+    toolCallsSummary: toolResults.map((r) => ({
+      toolName: r.toolName,
+      callId: r.callId,
+      args: r.args,
+      result: r.result,
+      isError: r.isError
+    }))
+  };
+}
+
+// ============================================================================
+// executeClientToolTurn parameters
+// ============================================================================
+
+/**
+ * Parameters for {@link executeClientToolTurn}.
+ * @public
+ */
+export interface IExecuteClientToolTurnParams {
+  /** The provider descriptor for routing (Anthropic / OpenAI / Gemini). */
+  readonly descriptor: IAiProviderDescriptor;
+  /** API key for authentication. */
+  readonly apiKey: string;
+  /** The structured prompt. */
+  readonly prompt: AiPrompt;
+  /** Prior conversation history (excluding the current turn). */
+  readonly messagesBefore?: ReadonlyArray<IChatMessage>;
+  /** Temperature (default: 0.7). */
+  readonly temperature?: number;
+  /** Server-side tools to include. */
+  readonly tools?: ReadonlyArray<AiServerToolConfig>;
+  /** Client-defined tools available for the model to call. */
+  readonly clientTools: ReadonlyArray<IAiClientTool>;
+  /** Optional abort signal. */
+  readonly signal?: AbortSignal;
+  /** Optional logger for diagnostics. */
+  readonly logger?: Logging.ILogger;
+  /** Optional resolved thinking config (pre-resolved by the caller). */
+  readonly resolvedThinking?: IResolvedThinkingConfig;
+  /** Resolved model string (pre-resolved by the caller). */
+  readonly model: string;
+}
+
+/**
+ * Return value of {@link executeClientToolTurn}.
+ * @public
+ */
+export interface IExecuteClientToolTurnResult {
+  /**
+   * The unified-event iterable. Callers iterate this to drive the streaming UI.
+   * The iterable forwards `text-delta`, `tool-event`, `client-tool-call-start`,
+   * `client-tool-call-done`, and `client-tool-result` events through.
+   */
+  readonly events: AsyncIterable<IAiStreamEvent>;
+  /**
+   * Resolves when the stream terminates. On success, carries the
+   * {@link IAiClientToolTurnResult} with the optional continuation for the
+   * next round. On failure, carries the error message.
+   */
+  readonly nextTurn: Promise<Result<IAiClientToolTurnResult>>;
+}
+
+// ============================================================================
+// executeClientToolTurn
+// ============================================================================
+
+/**
+ * Orchestrates a single client-tool streaming turn for any supported provider.
+ *
+ * Starts a streaming request, iterates the underlying provider stream, and:
+ * - Forwards `text-delta`, `tool-event`, `client-tool-call-start`, and
+ *   `client-tool-call-done` events through to the consumer.
+ * - For each `client-tool-call-done` event: validates the raw args against the
+ *   tool's `parametersSchema`, invokes `execute(typedArgs)`, and emits a
+ *   `client-tool-result` event.
+ * - After stream completion: builds the per-provider continuation (or
+ *   `{ continuation: undefined }` when no tool calls occurred) and resolves
+ *   `nextTurn`.
+ *
+ * **Anthropic constraint (E3):** The continuation for Anthropic does not set
+ * a forced `tool_choice`. Only `tool_choice: 'auto'` (the default, i.e.
+ * omitted) is compatible with extended thinking.
+ *
+ * @param params - Turn parameters
+ * @returns `{ events, nextTurn }` — stream iterable + completion promise
+ * @public
+ */
+export function executeClientToolTurn(
+  params: IExecuteClientToolTurnParams
+): Result<IExecuteClientToolTurnResult> {
+  const {
+    descriptor,
+    apiKey,
+    prompt,
+    messagesBefore,
+    temperature,
+    tools,
+    clientTools,
+    signal,
+    logger,
+    resolvedThinking,
+    model
+  } = params;
+
+  // Build a lookup map of client tools by name for fast access.
+  const toolsByName = new Map<string, IAiClientTool>();
+  for (const tool of clientTools) {
+    toolsByName.set(tool.config.name, tool);
+  }
+
+  const effectiveTemperature = temperature ?? 0.7;
+  const config: IStreamApiConfig = {
+    baseUrl: descriptor.baseUrl,
+    apiKey,
+    model
+  };
+
+  // Accumulation buffers — populated by the adapter, read by the builder.
+  const anthropicBuffer = new Map<number, IAccumulatedBlock>();
+  const openAiCallMap = new Map<string, IAccumulatedFunctionCall>();
+  const geminiCalls: IAccumulatedGeminiFunctionCall[] = [];
+
+  // Collected tool results, populated as each client-tool-call-done is processed.
+  const toolResults: IToolCallResult[] = [];
+
+  // Stream start: open the underlying adapter stream.
+  const streamPromise: Promise<Result<AsyncIterable<IAiStreamEvent>>> = (() => {
+    switch (descriptor.apiFormat) {
+      case 'anthropic':
+        return callAnthropicStream(
+          config,
+          prompt,
+          messagesBefore,
+          effectiveTemperature,
+          tools,
+          logger,
+          signal,
+          resolvedThinking,
+          anthropicBuffer
+        );
+      case 'openai':
+        return callOpenAiResponsesStream(
+          config,
+          prompt,
+          /* c8 ignore next 1 - defensive: openai path requires tools; empty array fallback unreachable in practice */
+          tools ?? [],
+          messagesBefore,
+          effectiveTemperature,
+          logger,
+          signal,
+          resolvedThinking,
+          openAiCallMap
+        );
+      case 'gemini':
+        return callGeminiStream(
+          config,
+          prompt,
+          messagesBefore,
+          effectiveTemperature,
+          tools,
+          logger,
+          signal,
+          resolvedThinking,
+          geminiCalls
+        );
+      /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
+      default: {
+        const _exhaustive: never = descriptor.apiFormat;
+        return Promise.resolve(fail(`unsupported API format: ${String(_exhaustive)}`));
+      }
+    }
+  })();
+
+  // Resolve controls for `nextTurn`.
+  let resolveNextTurn!: (result: Result<IAiClientToolTurnResult>) => void;
+  const nextTurn = new Promise<Result<IAiClientToolTurnResult>>((resolve) => {
+    resolveNextTurn = resolve;
+  });
+
+  // The unified-event generator: opens the stream, proxies events, executes tools.
+  async function* eventGenerator(): AsyncGenerator<IAiStreamEvent> {
+    const streamResult = await streamPromise;
+    if (streamResult.isFailure()) {
+      resolveNextTurn(fail(streamResult.message));
+      yield { type: 'error', message: streamResult.message };
+      return;
+    }
+
+    let truncated = false;
+    let fullText = '';
+    let streamError: string | undefined;
+
+    for await (const event of streamResult.value) {
+      if (event.type === 'done') {
+        truncated = event.truncated;
+        fullText = event.fullText;
+        yield event;
+        continue;
+      }
+
+      if (event.type === 'error') {
+        streamError = event.message;
+        yield event;
+        continue;
+      }
+
+      if (event.type === 'text-delta') {
+        yield event;
+        continue;
+      }
+
+      if (event.type === 'tool-event') {
+        yield event;
+        continue;
+      }
+
+      if (event.type === 'client-tool-call-start') {
+        yield event;
+        continue;
+      }
+
+      if (event.type === 'client-tool-call-done') {
+        yield event;
+
+        const { toolName, callId, args } = event;
+        const tool = toolsByName.get(toolName);
+
+        if (!tool) {
+          const errMsg = `model called unknown tool: ${toolName}`;
+          const resultEvent: IAiStreamEvent = {
+            type: 'client-tool-result',
+            toolName,
+            callId,
+            result: errMsg,
+            isError: true
+          };
+          yield resultEvent;
+          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
+          resolveNextTurn(fail(errMsg));
+          return;
+        }
+
+        const validationResult = tool.config.parametersSchema.validate(args);
+        if (validationResult.isFailure()) {
+          const errMsg = validationResult.message;
+          const resultEvent: IAiStreamEvent = {
+            type: 'client-tool-result',
+            toolName,
+            callId,
+            result: errMsg,
+            isError: true
+          };
+          yield resultEvent;
+          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
+          continue;
+        }
+
+        const executeResult = await captureAsyncResult(async () => tool.execute(validationResult.value));
+        const executionResult: Result<unknown> = executeResult.isSuccess()
+          ? executeResult.value
+          : executeResult;
+
+        if (executionResult.isFailure()) {
+          const errMsg = executionResult.message;
+          const resultEvent: IAiStreamEvent = {
+            type: 'client-tool-result',
+            toolName,
+            callId,
+            result: errMsg,
+            isError: true
+          };
+          yield resultEvent;
+          toolResults.push({ toolName, callId, args, result: errMsg, isError: true });
+          continue;
+        }
+
+        const resultStr = JSON.stringify(executionResult.value);
+        const resultEvent: IAiStreamEvent = {
+          type: 'client-tool-result',
+          toolName,
+          callId,
+          result: resultStr,
+          isError: false
+        };
+        yield resultEvent;
+        toolResults.push({ toolName, callId, args, result: resultStr, isError: false });
+        continue;
+      }
+
+      // client-tool-result events are emitted by this layer, not the adapters — no passthrough needed.
+    }
+
+    // Stream has ended. Build the continuation.
+    if (streamError !== undefined) {
+      resolveNextTurn(fail(streamError));
+      return;
+    }
+
+    if (toolResults.length === 0) {
+      resolveNextTurn(succeed({ continuation: undefined, truncated, fullText }));
+      return;
+    }
+
+    let continuation: IAiClientToolContinuation;
+    switch (descriptor.apiFormat) {
+      case 'anthropic':
+        continuation = buildAnthropicContinuation(anthropicBuffer, toolResults);
+        break;
+      case 'openai':
+        continuation = buildOpenAiContinuation(openAiCallMap, toolResults);
+        break;
+      case 'gemini':
+        continuation = buildGeminiContinuation(geminiCalls, toolResults);
+        break;
+      /* c8 ignore next 5 - defensive coding: exhaustive switch guaranteed by TypeScript */
+      default: {
+        const _exhaustive: never = descriptor.apiFormat;
+        resolveNextTurn(fail(`unsupported API format: ${String(_exhaustive)}`));
+        return;
+      }
+    }
+
+    resolveNextTurn(succeed({ continuation, truncated, fullText }));
+  }
+
+  return succeed({
+    events: { [Symbol.asyncIterator]: () => eventGenerator() },
+    nextTurn
+  });
+}
