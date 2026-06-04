@@ -79,7 +79,7 @@ export function providerDiscriminatorForId(providerId: string): ThinkingProvider
  * @public
  */
 export interface IResolvedThinkingConfig {
-  /** Anthropic: effort level; emit-site converts to `thinking.budget_tokens` via {@link anthropicEffortToBudgetTokens}. */
+  /** Anthropic: effort level; emit-site converts to `thinking.budget_tokens` via `anthropicEffortToBudgetTokens`. */
   readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
   /** OpenAI Chat: reasoning_effort value; OpenAI Responses: reasoning.effort */
   readonly openAiEffort?: IOpenAiThinkingConfig['effort'];

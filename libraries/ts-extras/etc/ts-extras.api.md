@@ -1694,7 +1694,6 @@ interface IResolvedImageOptions {
 
 // @public
 interface IResolvedThinkingConfig {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-extras" does not have an export "anthropicEffortToBudgetTokens"
     readonly anthropicEffort?: IAnthropicThinkingConfig['effort'];
     readonly geminiThinkingBudget?: number;
     readonly openAiEffort?: IOpenAiThinkingConfig['effort'];
