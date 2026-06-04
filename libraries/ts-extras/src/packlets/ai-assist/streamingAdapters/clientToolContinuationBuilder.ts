@@ -409,7 +409,7 @@ export function executeClientToolTurn(
 
   // Merge server tools and client tool configs into a single array for the provider.
   // This is the fix for P1-1: client tools were never sent to the provider because
-  // the adapters only received `tools` (server tools). Both must be coexist per design §2.5.
+  // the adapters only received `tools` (server tools). Both must coexist per design §2.5.
   const effectiveTools: ReadonlyArray<AiToolConfig> | undefined =
     clientTools.length > 0 ? [...(tools ?? []), ...clientTools.map((t) => t.config)] : tools;
 

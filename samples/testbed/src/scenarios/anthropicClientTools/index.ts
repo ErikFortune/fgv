@@ -74,13 +74,16 @@ const MEMORY_STORE: Record<string, string> = {
 // Memory tool schema and implementation
 // ---------------------------------------------------------------------------
 
-/** The validated args type for the memory tool. */
-interface IMemoryToolArgs {
-  readonly key: string;
-}
-
-/** Typed schema for the memory tool's parameters. */
-const memoryToolSchema: JsonSchema.ISchemaValidator<IMemoryToolArgs> = JsonSchema.object({
+/**
+ * Typed schema for the memory tool's parameters. The schema is the single
+ * source of truth — the static argument type is derived via `JsonSchema.Static`
+ * so there's no separate interface to drift. The const's inferred type is
+ * `JsonSchema.ISchemaValidator<{ readonly key: string }>`; we omit the
+ * annotation so `JsonSchema.Static<typeof memoryToolSchema>` can extract
+ * the validated argument shape without parameter duplication.
+ */
+// eslint-disable-next-line @rushstack/typedef-var
+const memoryToolSchema = JsonSchema.object({
   key: JsonSchema.string({ description: 'The preference key to look up' })
 });
 

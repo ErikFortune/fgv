@@ -195,9 +195,9 @@ export interface IAiToolEnablement {
  * The `parametersSchema` is the single source of truth for both the wire-format
  * JSON Schema sent to the provider (via `.toJson()`) and the runtime argument
  * validation (via `.validate(rawArgs)`). Use `JsonSchema.object(...)` from
- * `@fgv/ts-json-base` to author the schema; the static type `TParams` is derived
- * via `JsonSchema.Static<typeof parametersSchema>` — no drift between wire schema
- * and runtime validation.
+ * `@fgv/ts-json-base` to author the schema as a const (e.g. `const mySchema = JsonSchema.object({...})`);
+ * the static type `TParams` is then derived via `JsonSchema.Static<typeof mySchema>` —
+ * no drift between wire schema and runtime validation.
  *
  * @public
  */
