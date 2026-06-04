@@ -33,6 +33,7 @@ import {
   ConvertingCollector,
   IReadOnlyResultMap,
   ResultMap,
+  RetainingRingBuffer,
   ValidatingCollector,
   ValidatingConvertingCollector,
   ValidatingResultMap
@@ -55,6 +56,7 @@ export {
   Logging,
   ObjectConverter,
   ResultMap,
+  RetainingRingBuffer,
   StringConverter,
   ValidatingCollector,
   ValidatingConvertingCollector,
