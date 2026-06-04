@@ -127,10 +127,6 @@ class SlowObserver implements IPromptObserver {
   }
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 describe('PromptLibrary observability wiring', () => {
   describe('firing surface', () => {
     test('resolve() fires exactly one success resolve record', async () => {
@@ -342,31 +338,43 @@ describe('PromptLibrary observability wiring', () => {
     });
   });
 
+  // Fake timers make the awaited-vs-fire-and-forget contract deterministic:
+  // resolve()'s settling is gated on the observer's (faked) setTimeout rather
+  // than on real wall-clock thresholds (which flake on loaded CI runners).
   describe('OQ-3: awaited default vs fire-and-forget opt-in', () => {
-    test('a slow awaited observer extends resolve() (awaited is the default)', async () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    test('a slow awaited observer blocks resolve() until it completes (awaited is the default)', async () => {
       const slow = new SlowObserver(60);
       const lib = await buildLib([freeTextRecord()], { observers: [slow] });
-      const startedAt = Date.now();
-      const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} });
-      const elapsed = Date.now() - startedAt;
-      expect(result).toSucceed();
-      // resolve() waited for the observer (positive evidence of awaited-by-default).
-      expect(elapsed).toBeGreaterThanOrEqual(50);
+      jest.useFakeTimers();
+      let settled = false;
+      const pending = lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} }).then((r) => {
+        settled = true;
+        return r;
+      });
+      // Drain microtasks (ts-res resolve + fan-out) up to the observer's timer.
+      await jest.advanceTimersByTimeAsync(0);
+      expect(settled).toBe(false); // resolve() is parked on the observer's 60ms timer
+      expect(slow.observed).toHaveLength(0);
+      await jest.advanceTimersByTimeAsync(60);
+      expect(await pending).toSucceed();
+      expect(settled).toBe(true);
       expect(slow.observed).toHaveLength(1);
     });
 
-    test('a fire-and-forget observer does NOT extend resolve() and records after the call returns', async () => {
+    test('a fire-and-forget observer does NOT block resolve(); it records after the call returns', async () => {
       const slow = new SlowObserver(60, true);
       const lib = await buildLib([freeTextRecord()], { observers: [slow] });
-      const startedAt = Date.now();
-      const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} });
-      const elapsed = Date.now() - startedAt;
-      expect(result).toSucceed();
-      // resolve() returned BEFORE the slow observer completed (negative evidence).
-      expect(elapsed).toBeLessThan(40);
+      jest.useFakeTimers();
+      // resolve() does not await the detached observer, so it settles without
+      // advancing the observer's timer.
+      expect(await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} })).toSucceed();
       expect(slow.observed).toHaveLength(0);
-      // the observer completes afterward.
-      await delay(90);
+      // the detached observer completes once its timer fires.
+      await jest.advanceTimersByTimeAsync(60);
       expect(slow.observed).toHaveLength(1);
     });
 
@@ -374,18 +382,21 @@ describe('PromptLibrary observability wiring', () => {
       const awaited = new SlowObserver(50);
       const detached = new SlowObserver(200, true);
       const lib = await buildLib([freeTextRecord()], { observers: [awaited, detached] });
-      const startedAt = Date.now();
-      const result = await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} });
-      const elapsed = Date.now() - startedAt;
-      expect(result).toSucceed();
-      // resolve() waited for the awaited observer (~50ms) but NOT the much
-      // slower detached one (~200ms): it completed and the detached is pending.
-      expect(elapsed).toBeGreaterThanOrEqual(40);
-      expect(elapsed).toBeLessThan(150);
+      jest.useFakeTimers();
+      let settled = false;
+      const pending = lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} }).then((r) => {
+        settled = true;
+        return r;
+      });
+      await jest.advanceTimersByTimeAsync(0);
+      expect(settled).toBe(false); // parked on the awaited observer's 50ms timer
+      await jest.advanceTimersByTimeAsync(50);
+      expect(await pending).toSucceed();
+      expect(settled).toBe(true);
       expect(awaited.observed).toHaveLength(1);
+      // resolve() did NOT wait for the detached observer's 200ms timer.
       expect(detached.observed).toHaveLength(0);
-      // the detached observer completes afterward.
-      await delay(220);
+      await jest.advanceTimersByTimeAsync(200);
       expect(detached.observed).toHaveLength(1);
     });
   });
@@ -396,6 +407,24 @@ describe('PromptLibrary observability wiring', () => {
       expect(await lib.resolve({ id: PROMPT, chain: [SCOPE], qualifiers: {} })).toSucceedAndSatisfy((r) => {
         expect(r.body).toBe('hello');
       });
+    });
+
+    test('resolveFreeTextOutput works with no observers', async () => {
+      const lib = await buildLib([freeTextRecord()]);
+      expect(
+        await lib.resolveFreeTextOutput({ id: PROMPT, chain: [SCOPE], qualifiers: {} }, 'raw')
+      ).toSucceedWith('raw');
+    });
+
+    test('resolveJsonOutput works with no observers', async () => {
+      const lib = await buildLib([jsonRecord()], { registry: classifierRegistry() });
+      expect(
+        await lib.resolveJsonOutput(
+          { id: PROMPT, chain: [SCOPE], qualifiers: {} },
+          '{"kind":"classifier","label":"spam"}',
+          'classifier'
+        )
+      ).toSucceed();
     });
   });
 });

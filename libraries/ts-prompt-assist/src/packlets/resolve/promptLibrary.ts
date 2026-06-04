@@ -304,11 +304,6 @@ export class PromptLibrary<
    */
   private _nextObservationSeq: number;
   /**
-   * CRC32 hasher for observation records' `contentHash` (RFC 8785 canonical
-   * over `{ promptId, chain, qualifierContext, substitutions }`).
-   */
-  private readonly _observationHasher: Hash.Crc32Normalizer;
-  /**
    * Injected clock stamping observation records. Private (not a `create`
    * param) so the additive DI surface stays a single `observers?` field.
    */
@@ -370,7 +365,6 @@ export class PromptLibrary<
     this._validatedRegistryKeys = new Set();
     this._observers = params.observers;
     this._nextObservationSeq = 0;
-    this._observationHasher = new Hash.Crc32Normalizer();
     this._observationNow = () => Date.now();
   }
 
@@ -515,9 +509,12 @@ export class PromptLibrary<
   private async _resolveObserved(
     req: IPromptResolveRequest<string>
   ): Promise<{ readonly result: Result<IResolvedPrompt>; readonly resolveSeq: number }> {
-    const startedAt = this._observationNow();
+    // Pay nothing in the additive-default (no-observers) path: skip the clock
+    // reads and record build entirely.
+    const observing = this._observers.length > 0;
+    const startedAt = observing ? this._observationNow() : 0;
     const result = await this._resolveInternal(req, 0, []);
-    if (this._observers.length === 0) {
+    if (!observing) {
       return { result, resolveSeq: 0 };
     }
     const record = this._buildResolveObservation(req, result, this._observationNow() - startedAt);
@@ -663,7 +660,8 @@ export class PromptLibrary<
     rawOutput: string,
     expectedKind: K
   ): Promise<Result<Extract<TResponse, { kind: K }>>> {
-    const startedAt = this._observationNow();
+    const observing = this._observers.length > 0;
+    const startedAt = observing ? this._observationNow() : 0;
     const { result: resolveResult, resolveSeq } = await this._resolveObserved(req);
     const outcome = resolveResult.onSuccess((resolved) => {
       const output = resolved.descriptor.output;
@@ -707,14 +705,16 @@ export class PromptLibrary<
           });
         });
     });
-    await this._observeOutput(
-      req,
-      'json-output',
-      rawOutput,
-      outcome,
-      resolveSeq,
-      this._observationNow() - startedAt
-    );
+    if (observing) {
+      await this._observeOutput(
+        req,
+        'json-output',
+        rawOutput,
+        outcome,
+        resolveSeq,
+        this._observationNow() - startedAt
+      );
+    }
     return outcome;
   }
 
@@ -744,7 +744,8 @@ export class PromptLibrary<
     req: IPromptResolveRequest<TQualifierNames>,
     rawOutput: string
   ): Promise<Result<string>> {
-    const startedAt = this._observationNow();
+    const observing = this._observers.length > 0;
+    const startedAt = observing ? this._observationNow() : 0;
     const { result: resolveResult, resolveSeq } = await this._resolveObserved(req);
     const outcome = resolveResult.onSuccess((resolved) => {
       const output = resolved.descriptor.output;
@@ -755,14 +756,16 @@ export class PromptLibrary<
       }
       return succeed(rawOutput);
     });
-    await this._observeOutput(
-      req,
-      'free-text-output',
-      rawOutput,
-      outcome,
-      resolveSeq,
-      this._observationNow() - startedAt
-    );
+    if (observing) {
+      await this._observeOutput(
+        req,
+        'free-text-output',
+        rawOutput,
+        outcome,
+        resolveSeq,
+        this._observationNow() - startedAt
+      );
+    }
     return outcome;
   }
 
@@ -1093,9 +1096,9 @@ export class PromptLibrary<
   }
 
   /**
-   * Fires an output-round-trip observation (skipped when no observers are
-   * wired). `outcome` carries the output method's `Result`; its success /
-   * message become the record's `outcome` / `error`.
+   * Fires an output-round-trip observation. Callers gate this on whether any
+   * observers are wired. `outcome` carries the output method's `Result`; its
+   * success / message become the record's `outcome` / `error`.
    */
   private async _observeOutput(
     req: IPromptResolveRequest<string>,
@@ -1105,9 +1108,6 @@ export class PromptLibrary<
     resolveSeq: number,
     durationMs: number
   ): Promise<void> {
-    if (this._observers.length === 0) {
-      return;
-    }
     await this._observe(this._buildOutputObservation(req, phase, rawOutput, outcome, resolveSeq, durationMs));
   }
 
@@ -1218,8 +1218,8 @@ export class PromptLibrary<
   }
 
   /**
-   * CRC32 over RFC 8785 canonical JSON of the request's identity tuple.
-   * Best-effort — never throws (degrades to `''`).
+   * CRC32 over the RFC 8785 canonical JSON string of the request's identity
+   * tuple. Best-effort — never throws (degrades to `''`).
    */
   private _observationContentHash(req: IPromptResolveRequest<string>): string {
     return sanitizeJsonObject({
@@ -1228,7 +1228,8 @@ export class PromptLibrary<
       qualifierContext: req.qualifiers,
       substitutions: req.substitutions ?? {}
     })
-      .onSuccess((sanitized) => this._observationHasher.computeHash(sanitized))
+      .onSuccess((sanitized) => this._normalizer.canonicalize(sanitized))
+      .onSuccess((canonical) => succeed(Hash.Crc32Normalizer.crc32Hash([canonical])))
       .orDefault('');
   }
 }
