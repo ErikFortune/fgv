@@ -24,7 +24,7 @@
  */
 
 import { type Result } from '@fgv/ts-utils';
-import { type JsonObject } from '@fgv/ts-json-base';
+import { type JsonObject, type JsonSchema } from '@fgv/ts-json-base';
 
 // ============================================================================
 // Image Data
@@ -182,6 +182,190 @@ export interface IAiToolEnablement {
   readonly enabled: boolean;
   /** Optional tool-specific configuration. */
   readonly config?: AiServerToolConfig;
+}
+
+// ============================================================================
+// Client-Defined Tools
+// ============================================================================
+
+/**
+ * Configuration for a client-defined (harness-supplied) tool.
+ *
+ * @remarks
+ * The `parametersSchema` is the single source of truth for both the wire-format
+ * JSON Schema sent to the provider (via `.toJson()`) and the runtime argument
+ * validation (via `.validate(rawArgs)`). Use `JsonSchema.object(...)` from
+ * `@fgv/ts-json-base` to author the schema as a const (e.g. `const mySchema = JsonSchema.object({...})`);
+ * the static type `TParams` is then derived via `JsonSchema.Static<typeof mySchema>` —
+ * no drift between wire schema and runtime validation.
+ *
+ * @public
+ */
+export interface IAiClientToolConfig<TParams = unknown> {
+  /** Discriminator — always `'client_tool'`. */
+  readonly type: 'client_tool';
+  /** Tool name sent to the model (must be unique within a call). */
+  readonly name: string;
+  /** Human-readable description of what the tool does, shown to the model. */
+  readonly description: string;
+  /**
+   * JSON Schema validator for the tool's parameters. Emits wire format via
+   * `.toJson()` and validates model-returned args via `.validate(rawArgs)`.
+   */
+  readonly parametersSchema: JsonSchema.ISchemaValidator<TParams>;
+}
+
+/**
+ * A client-defined tool: configuration + execution callback pair.
+ *
+ * @remarks
+ * The `execute` callback receives typed `TParams` (already validated by
+ * `config.parametersSchema.validate()`) and returns a `Promise<Result<unknown>>`.
+ * Thrown errors are caught via `captureAsyncResult` in the round-trip helper.
+ *
+ * @public
+ */
+export interface IAiClientTool<TParams = unknown> {
+  /** The tool's configuration (name, description, parameters schema). */
+  readonly config: IAiClientToolConfig<TParams>;
+  /**
+   * Execute the tool with validated parameters.
+   * @param args - Typed arguments, already validated against `config.parametersSchema`.
+   * @returns A `Promise<Result<unknown>>` — the result is stringified and sent back to the model.
+   */
+  readonly execute: (args: TParams) => Promise<Result<unknown>>;
+}
+
+/**
+ * Union of all tool configurations: server-side or client-defined.
+ * Discriminated on `type`.
+ * @public
+ */
+export type AiToolConfig = AiServerToolConfig | IAiClientToolConfig;
+
+// ============================================================================
+// Client Tool Streaming Events
+// ============================================================================
+
+/**
+ * Emitted when a client-defined tool call begins streaming. Carries the tool name
+ * and optional provider-assigned call ID (Anthropic / OpenAI Responses API; absent
+ * for Gemini which does not assign call IDs).
+ * @public
+ */
+export interface IAiStreamToolUseStart {
+  readonly type: 'client-tool-call-start';
+  /** The name of the client tool being called. */
+  readonly toolName: string;
+  /**
+   * Provider-assigned call identifier (Anthropic: `toolu_*`; OpenAI: `call_*`).
+   * Absent for Gemini (correlation by name).
+   */
+  readonly callId?: string;
+}
+
+/**
+ * Emitted when a client-defined tool call is complete and its arguments are fully
+ * accumulated. The `args` object is the fully parsed JSON object — no further
+ * streaming deltas follow for this call.
+ * @public
+ */
+export interface IAiStreamToolUseDelta {
+  readonly type: 'client-tool-call-done';
+  /** The name of the client tool being called. */
+  readonly toolName: string;
+  /**
+   * Provider-assigned call identifier. Absent for Gemini.
+   */
+  readonly callId?: string;
+  /** The fully accumulated and parsed tool arguments. */
+  readonly args: JsonObject;
+}
+
+/**
+ * Emitted after a client-defined tool has been executed and the result is ready
+ * to be fed back to the model in the round-trip continuation.
+ * @public
+ */
+export interface IAiStreamToolUseComplete {
+  readonly type: 'client-tool-result';
+  /** The name of the client tool that was executed. */
+  readonly toolName: string;
+  /**
+   * Provider-assigned call identifier. Absent for Gemini.
+   */
+  readonly callId?: string;
+  /** The stringified result returned by the tool's execute callback. */
+  readonly result: string;
+  /** Whether the tool execution failed (schema validation failure, execute error, or unknown tool). */
+  readonly isError: boolean;
+}
+
+// ============================================================================
+// Client Tool Round-Trip Types
+// ============================================================================
+
+/**
+ * Summary of a single client tool call within a turn: the tool name, call ID,
+ * raw arguments, execution result, and whether the execution was an error.
+ * @public
+ */
+export interface IAiClientToolCallSummary {
+  /** The name of the tool that was called. */
+  readonly toolName: string;
+  /** Provider-assigned call identifier (absent for Gemini). */
+  readonly callId?: string;
+  /** The fully accumulated raw arguments object as parsed JSON. */
+  readonly args: JsonObject;
+  /** The stringified result (success value or error message). */
+  readonly result: string;
+  /** Whether execution failed (schema validation failure, execute error, or unknown tool). */
+  readonly isError: boolean;
+}
+
+/**
+ * The provider-specific continuation data needed to build the follow-up request
+ * for the next round of the conversation.
+ *
+ * @remarks
+ * `messages` are provider-native request objects (Anthropic: content-block arrays,
+ * OpenAI Responses API: input items, Gemini: content parts). The continuation
+ * builder in `clientToolContinuationBuilder.ts` populates this.
+ *
+ * @public
+ */
+export interface IAiClientToolContinuation {
+  /**
+   * Provider-native wire-format message objects to supply back on the next
+   * streaming call via `IExecuteClientToolTurnParams.continuationMessages`
+   * (which is forwarded as `rawTail` to the underlying call). The exact
+   * shape depends on the provider format and may contain provider-specific
+   * blocks (e.g. Anthropic thinking/redacted_thinking/tool_use). These are
+   * NOT `IChatMessage[]` and must not be prepended via `messagesBefore` —
+   * the normalized-message path would strip the provider-native fields
+   * (signatures, redacted thinking) that the server requires for
+   * continuation validation.
+   */
+  readonly messages: ReadonlyArray<JsonObject>;
+  /** Summary of each tool call that was executed in this turn. */
+  readonly toolCallsSummary: ReadonlyArray<IAiClientToolCallSummary>;
+}
+
+/**
+ * The result of a single client-tool turn: the optional continuation for the next
+ * call (absent when no tool calls occurred) and whether the stream was truncated.
+ * @public
+ */
+export interface IAiClientToolTurnResult {
+  /**
+   * The continuation data for the next round-trip. `undefined` when the model
+   * completed without invoking any client tools.
+   */
+  readonly continuation: IAiClientToolContinuation | undefined;
+  /** Whether the stream was truncated (token limit or stop reason). */
+  readonly truncated: boolean;
+  /** The full concatenated text from all `text-delta` events in this turn. */
+  readonly fullText: string;
 }
 
 // ============================================================================
@@ -405,9 +589,22 @@ export interface IAiStreamError {
 
 /**
  * Discriminated union of events emitted by a streaming completion.
+ *
+ * @remarks
+ * **Exhaustive-switch consumers must handle all variants.** The three
+ * `client-tool-*` variants were added when client-tool support shipped;
+ * update every exhaustive switch over this union in lockstep.
+ *
  * @public
  */
-export type IAiStreamEvent = IAiStreamTextDelta | IAiStreamToolEvent | IAiStreamDone | IAiStreamError;
+export type IAiStreamEvent =
+  | IAiStreamTextDelta
+  | IAiStreamToolEvent
+  | IAiStreamToolUseStart
+  | IAiStreamToolUseDelta
+  | IAiStreamToolUseComplete
+  | IAiStreamDone
+  | IAiStreamError;
 
 /**
  * Thinking/reasoning mode support for a provider.
@@ -946,7 +1143,9 @@ export type XAiThinkingModelNames = 'grok-3-mini' | 'grok-4.3' | 'grok-4';
  */
 export interface IAnthropicThinkingConfig {
   /**
-   * Anthropic effort level. Maps 1:1 to `output_config.effort` on the wire.
+   * Anthropic effort level. The emit-site converts to `thinking.budget_tokens`
+   * (the integer budget the Anthropic API requires). Mapping policy: low = 2048,
+   * medium = 8192, high = 24000, max = 32000.
    * - 'low' | 'medium' | 'high': all thinking-capable models
    * - 'max': Opus 4.6 only
    */

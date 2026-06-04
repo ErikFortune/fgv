@@ -23,7 +23,8 @@
  * @packageDocumentation
  */
 
-import { type Converter, Converters } from '@fgv/ts-utils';
+import { type Converter, Converters, type Validator, Validators } from '@fgv/ts-utils';
+import { type JsonSchema } from '@fgv/ts-json-base';
 
 import {
   type AiProviderId,
@@ -31,6 +32,7 @@ import {
   type AiServerToolType,
   type IAiAssistProviderConfig,
   type IAiAssistSettings,
+  type IAiClientToolConfig,
   type IAiToolEnablement,
   type IAiWebSearchToolConfig,
   type ModelSpec,
@@ -87,6 +89,45 @@ export const aiServerToolConfig: Converter<AiServerToolConfig> =
   Converters.discriminatedObject<AiServerToolConfig>('type', {
     web_search: aiWebSearchToolConfig
   });
+
+// ============================================================================
+// Client-Defined Tool Converters
+// ============================================================================
+
+/**
+ * Validator for the `parametersSchema` field of a client tool config.
+ * Checks that the value is a non-null object exposing both `validate` and `toJson`
+ * as callable functions — the runtime presence check for {@link JsonSchema.ISchemaValidator}.
+ * Does not inspect the inner JSON Schema structure.
+ * @internal
+ */
+const parametersSchemaValidator: Validator<JsonSchema.ISchemaValidator<unknown>> = Validators.isA<
+  JsonSchema.ISchemaValidator<unknown>
+>(
+  'ISchemaValidator (must expose .validate() and .toJson())',
+  (v): v is JsonSchema.ISchemaValidator<unknown> =>
+    v !== null &&
+    v !== undefined &&
+    typeof v === 'object' &&
+    typeof (v as Record<string, unknown>).validate === 'function' &&
+    typeof (v as Record<string, unknown>).toJson === 'function'
+);
+
+/**
+ * Converter for {@link AiAssist.IAiClientToolConfig}. Validates the wrapper shape: `type`,
+ * `name`, `description`, and the presence of a usable `parametersSchema`.
+ * Does not inspect the inner JSON Schema structure — `JsonSchema.object(...)` already
+ * guarantees the schema is valid.
+ * @public
+ */
+export const aiClientToolConfig: Converter<IAiClientToolConfig> = Converters.object<IAiClientToolConfig>({
+  type: Converters.enumeratedValue<'client_tool'>(['client_tool']),
+  name: Converters.string.withConstraint((s) => s.length > 0, {
+    description: 'name must be a non-empty string'
+  }),
+  description: Converters.string,
+  parametersSchema: parametersSchemaValidator
+});
 
 /**
  * Converter for {@link IAiToolEnablement}.

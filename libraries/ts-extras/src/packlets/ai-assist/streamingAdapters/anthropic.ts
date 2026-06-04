@@ -19,51 +19,141 @@
 // SOFTWARE.
 
 /**
- * Streaming adapter for the Anthropic Messages API. Surfaces server tool
- * use (e.g. `web_search`) as unified `tool-event` markers based on the
- * `content_block_start` / `content_block_stop` lifecycle.
+ * Streaming adapter for the Anthropic Messages API. Handles server tool
+ * use (e.g. `web_search`) as unified `tool-event` markers and client-defined
+ * tool calls (type `tool_use`) with B4 thinking-block accumulation.
+ *
+ * The ordered accumulation buffer preserves all content blocks from the
+ * assistant turn in their original stream positions. The C3 continuation
+ * builder reads this buffer to reconstruct the assistant turn for the
+ * follow-up request.
  *
  * @packageDocumentation
  */
 
 import { type Logging, Result, succeed, type Validator, Validators } from '@fgv/ts-utils';
+import { type JsonObject } from '@fgv/ts-json-base';
 
 import { buildAnthropicMessages } from '../chatRequestBuilders';
-import { AiPrompt, type AiServerToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
+import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } from '../model';
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toAnthropicTools } from '../toolFormats';
-import { type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
+import { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
 import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
+
+// ============================================================================
+// Accumulated block types (internal — used by C3 continuation builder)
+// ============================================================================
+
+/**
+ * An accumulated `thinking` block from the assistant turn. The `thinking` text
+ * and `signature` are both concatenated across their respective delta events.
+ * The full block is passed to the C3 continuation builder for round-trip preservation.
+ * @internal
+ */
+export interface IAccumulatedThinkingBlock {
+  readonly type: 'thinking';
+  thinking: string;
+  signature: string;
+}
+
+/**
+ * An accumulated `redacted_thinking` block from the assistant turn. The `data`
+ * field is opaque and arrives complete in the `content_block_start` event — no
+ * delta events follow. Passed through unmodified to the C3 continuation builder.
+ * @internal
+ */
+export interface IAccumulatedRedactedThinkingBlock {
+  readonly type: 'redacted_thinking';
+  readonly data: string;
+}
+
+/**
+ * An accumulated `text` block from the assistant turn.
+ * @internal
+ */
+export interface IAccumulatedTextBlock {
+  readonly type: 'text';
+  text: string;
+}
+
+/**
+ * An accumulated `tool_use` block from the assistant turn (client-defined tool call).
+ * The `argsBuffer` is the concatenation of all `input_json_delta` chunks.
+ * @internal
+ */
+export interface IAccumulatedToolUseBlock {
+  readonly type: 'tool_use';
+  readonly id: string;
+  readonly name: string;
+  argsBuffer: string;
+}
+
+/**
+ * Discriminated union of all accumulated Anthropic content block types.
+ * The ordered accumulation buffer is a `Map<number, IAccumulatedBlock>` keyed
+ * by the SSE `index` field from `content_block_start` events.
+ * @internal
+ */
+export type IAccumulatedBlock =
+  | IAccumulatedThinkingBlock
+  | IAccumulatedRedactedThinkingBlock
+  | IAccumulatedTextBlock
+  | IAccumulatedToolUseBlock;
 
 // ============================================================================
 // Event payload shapes
 // ============================================================================
 
 /**
- * Payload of a `content_block_start` SSE event. The `type` discriminator
- * tells us whether the block is text, a server-tool invocation, or a
- * tool result.
- *
+ * Payload of a `content_block_start` SSE event with the `index` field.
+ * The `index` field is optional for backward compatibility with providers that
+ * omit it; absent index defaults to 0 in the stream translator.
  * @internal
  */
 interface IAnthropicContentBlockStartPayload {
-  readonly content_block: { readonly type?: string; readonly name?: string };
+  readonly index?: number;
+  readonly content_block: {
+    readonly type?: string;
+    readonly name?: string;
+    readonly id?: string;
+    readonly data?: string;
+  };
 }
 
 /**
- * Payload of a `content_block_delta` SSE event. The inner `delta.type`
- * discriminator is `text_delta` for the text we care about; other values
- * (e.g. `input_json_delta` for tool args) are ignored.
+ * Payload of a `content_block_delta` SSE event. Various delta types are
+ * discriminated on `delta.type`:
+ * - `text_delta`: text content
+ * - `input_json_delta`: tool argument accumulation
+ * - `thinking_delta`: thinking text accumulation
+ * - `signature_delta`: thinking signature accumulation (MUST be appended, not overwritten)
  *
+ * The `index` field is optional; absent index defaults to 0 in the stream translator.
  * @internal
  */
 interface IAnthropicContentBlockDeltaPayload {
-  readonly delta: { readonly type?: string; readonly text?: string };
+  readonly index?: number;
+  readonly delta: {
+    readonly type?: string;
+    readonly text?: string;
+    readonly partial_json?: string;
+    readonly thinking?: string;
+    readonly signature?: string;
+  };
+}
+
+/**
+ * Payload of a `content_block_stop` SSE event.
+ * The `index` field is optional; absent index defaults to 0 in the stream translator.
+ * @internal
+ */
+interface IAnthropicContentBlockStopPayload {
+  readonly index?: number;
 }
 
 /**
  * Payload of a `message_delta` SSE event carrying the final stop reason.
- *
  * @internal
  */
 interface IAnthropicMessageDeltaPayload {
@@ -72,44 +162,73 @@ interface IAnthropicMessageDeltaPayload {
 
 /**
  * Payload of an `error` SSE event.
- *
  * @internal
  */
 interface IAnthropicErrorPayload {
   readonly error?: { readonly message?: string };
 }
 
-const anthropicContentBlockInner: Validator<{ type?: string; name?: string }> = Validators.object<{
+const anthropicContentBlockInner: Validator<{
   type?: string;
   name?: string;
-}>(
+  id?: string;
+  data?: string;
+}> = Validators.object<{ type?: string; name?: string; id?: string; data?: string }>(
   {
     type: Validators.string.optional(),
-    name: Validators.string.optional()
+    name: Validators.string.optional(),
+    id: Validators.string.optional(),
+    data: Validators.string.optional()
   },
-  { options: { optionalFields: ['type', 'name'] } }
+  { options: { optionalFields: ['type', 'name', 'id', 'data'] } }
 );
 
 const anthropicContentBlockStartPayload: Validator<IAnthropicContentBlockStartPayload> =
-  Validators.object<IAnthropicContentBlockStartPayload>({
-    content_block: anthropicContentBlockInner
-  });
+  Validators.object<IAnthropicContentBlockStartPayload>(
+    {
+      index: Validators.number.optional(),
+      content_block: anthropicContentBlockInner
+    },
+    { options: { optionalFields: ['index'] } }
+  );
 
-const anthropicContentBlockDeltaInner: Validator<{ type?: string; text?: string }> = Validators.object<{
+const anthropicContentBlockDeltaInner: Validator<{
   type?: string;
   text?: string;
+  partial_json?: string;
+  thinking?: string;
+  signature?: string;
+}> = Validators.object<{
+  type?: string;
+  text?: string;
+  partial_json?: string;
+  thinking?: string;
+  signature?: string;
 }>(
   {
     type: Validators.string.optional(),
-    text: Validators.string.optional()
+    text: Validators.string.optional(),
+    partial_json: Validators.string.optional(),
+    thinking: Validators.string.optional(),
+    signature: Validators.string.optional()
   },
-  { options: { optionalFields: ['type', 'text'] } }
+  { options: { optionalFields: ['type', 'text', 'partial_json', 'thinking', 'signature'] } }
 );
 
 const anthropicContentBlockDeltaPayload: Validator<IAnthropicContentBlockDeltaPayload> =
-  Validators.object<IAnthropicContentBlockDeltaPayload>({
-    delta: anthropicContentBlockDeltaInner
-  });
+  Validators.object<IAnthropicContentBlockDeltaPayload>(
+    {
+      index: Validators.number.optional(),
+      delta: anthropicContentBlockDeltaInner
+    },
+    { options: { optionalFields: ['index'] } }
+  );
+
+const anthropicContentBlockStopPayload: Validator<IAnthropicContentBlockStopPayload> =
+  Validators.object<IAnthropicContentBlockStopPayload>(
+    { index: Validators.number.optional() },
+    { options: { optionalFields: ['index'] } }
+  );
 
 const anthropicMessageDeltaInner: Validator<{ stop_reason?: string }> = Validators.object<{
   stop_reason?: string;
@@ -137,9 +256,16 @@ const anthropicErrorPayload: Validator<IAnthropicErrorPayload> = Validators.obje
 /**
  * Translates an Anthropic Messages API SSE stream into unified events.
  *
+ * Maintains an ordered accumulation buffer (keyed by SSE `index`) for all
+ * content blocks: `thinking`, `redacted_thinking`, `text`, and `tool_use`.
+ * The buffer is available on the returned generator via `.accumulationBuffer`.
+ *
  * @internal
  */
-async function* translateAnthropicStream(response: Response): AsyncGenerator<IAiStreamEvent> {
+async function* translateAnthropicStream(
+  response: Response,
+  accumulationBuffer: Map<number, IAccumulatedBlock>
+): AsyncGenerator<IAiStreamEvent> {
   let fullText = '';
   let truncated = false;
   let stopped = false;
@@ -149,16 +275,38 @@ async function* translateAnthropicStream(response: Response): AsyncGenerator<IAi
     if (!response.body) return;
     for await (const message of readSseEvents(response.body)) {
       const eventName = message.event;
+
       if (eventName === 'content_block_start') {
         const payload = validateEventPayload(
           parseSseEventJson(message.data),
           anthropicContentBlockStartPayload
         );
-        /* c8 ignore next 6 - defensive: block?.type optional chaining null branches are unreachable */
-        const block = payload?.content_block;
-        if (block?.type === 'server_tool_use' && block.name === 'web_search') {
+        /* c8 ignore next 1 - defensive: payload null branch unreachable after validation */
+        if (!payload) continue;
+        const { index: rawIndex, content_block: block } = payload;
+        const index = rawIndex ?? 0;
+
+        if (block.type === 'thinking') {
+          accumulationBuffer.set(index, { type: 'thinking', thinking: '', signature: '' });
+        } else if (block.type === 'redacted_thinking') {
+          accumulationBuffer.set(index, {
+            type: 'redacted_thinking',
+            /* c8 ignore next 1 - defensive: Anthropic always provides data for redacted_thinking */
+            data: block.data ?? ''
+          });
+        } else if (block.type === 'text') {
+          accumulationBuffer.set(index, { type: 'text', text: '' });
+        } else if (block.type === 'tool_use' && block.id && block.name) {
+          accumulationBuffer.set(index, {
+            type: 'tool_use',
+            id: block.id,
+            name: block.name,
+            argsBuffer: ''
+          });
+          yield { type: 'client-tool-call-start', toolName: block.name, callId: block.id };
+        } else if (block.type === 'server_tool_use' && block.name === 'web_search') {
           yield { type: 'tool-event', toolType: 'web_search', phase: 'started' };
-        } else if (block?.type === 'web_search_tool_result') {
+        } else if (block.type === 'web_search_tool_result') {
           yield { type: 'tool-event', toolType: 'web_search', phase: 'completed' };
         }
       } else if (eventName === 'content_block_delta') {
@@ -166,13 +314,65 @@ async function* translateAnthropicStream(response: Response): AsyncGenerator<IAi
           parseSseEventJson(message.data),
           anthropicContentBlockDeltaPayload
         );
-        /* c8 ignore next 1 - defensive: payload?.delta.type null branch unreachable after validation */
-        if (payload?.delta.type === 'text_delta' && typeof payload.delta.text === 'string') {
-          const delta = payload.delta.text;
-          if (delta.length > 0) {
-            fullText += delta;
-            yield { type: 'text-delta', delta };
+        /* c8 ignore next 1 - defensive: payload null branch unreachable after validation */
+        if (!payload) continue;
+        const { index: rawDeltaIndex, delta } = payload;
+        const index = rawDeltaIndex ?? 0;
+        const block = accumulationBuffer.get(index);
+
+        if (delta.type === 'text_delta' && typeof delta.text === 'string') {
+          /* c8 ignore next 1 - defensive: delta arrives only after block_start sets buffer entry */
+          if (block?.type === 'text') {
+            block.text += delta.text;
           }
+          if (delta.text.length > 0) {
+            fullText += delta.text;
+            yield { type: 'text-delta', delta: delta.text };
+          }
+        } else if (delta.type === 'input_json_delta' && typeof delta.partial_json === 'string') {
+          /* c8 ignore next 1 - defensive: delta arrives only after block_start sets buffer entry */
+          if (block?.type === 'tool_use') {
+            block.argsBuffer += delta.partial_json;
+          }
+        } else if (delta.type === 'thinking_delta' && typeof delta.thinking === 'string') {
+          /* c8 ignore next 1 - defensive: delta arrives only after block_start sets buffer entry */
+          if (block?.type === 'thinking') {
+            block.thinking += delta.thinking;
+          }
+        } else if (delta.type === 'signature_delta' && typeof delta.signature === 'string') {
+          // CRITICAL (E5): signature must be APPENDED, not overwritten.
+          // The signature is base64 arriving in multiple chunks.
+          // Overwriting produces a truncated signature that Anthropic rejects with HTTP 400.
+          /* c8 ignore next 1 - defensive: delta arrives only after block_start sets buffer entry */
+          if (block?.type === 'thinking') {
+            block.signature += delta.signature;
+          }
+        }
+      } else if (eventName === 'content_block_stop') {
+        const payload = validateEventPayload(
+          parseSseEventJson(message.data),
+          anthropicContentBlockStopPayload
+        );
+        /* c8 ignore next 1 - defensive: payload null branch unreachable after validation */
+        if (!payload) continue;
+        /* c8 ignore next 1 - defensive: payload.index ?? 0 null branch is unreachable */
+        const block = accumulationBuffer.get(payload.index ?? 0);
+        /* c8 ignore next 1 - defensive: block always exists when block_stop follows block_start */
+        if (block?.type === 'tool_use') {
+          let args: JsonObject;
+          try {
+            /* c8 ignore next 1 - defensive: argsBuffer || '{}' empty-string branch unreachable in tests */
+            const parsed = JSON.parse(block.argsBuffer || '{}') as unknown;
+            /* c8 ignore start - defensive: non-object/malformed parse defaults to empty object */
+            args =
+              parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+                ? (parsed as JsonObject)
+                : {};
+          } catch {
+            args = {};
+          }
+          /* c8 ignore stop */
+          yield { type: 'client-tool-call-done', toolName: block.name, callId: block.id, args };
         }
       } else if (eventName === 'message_delta') {
         const payload = validateEventPayload(parseSseEventJson(message.data), anthropicMessageDeltaPayload);
@@ -219,13 +419,18 @@ export async function callAnthropicStream(
   prompt: AiPrompt,
   messagesBefore: ReadonlyArray<IChatMessage> | undefined,
   temperature: number,
-  tools: ReadonlyArray<AiServerToolConfig> | undefined,
+  tools: ReadonlyArray<AiToolConfig> | undefined,
   logger?: Logging.ILogger,
   signal?: AbortSignal,
-  resolvedThinking?: IResolvedThinkingConfig
+  resolvedThinking?: IResolvedThinkingConfig,
+  accumulationBuffer?: Map<number, IAccumulatedBlock>,
+  continuationMessages?: ReadonlyArray<JsonObject>
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/messages`;
-  const messages = buildAnthropicMessages(prompt, { head: messagesBefore });
+  const messages = buildAnthropicMessages(prompt, {
+    head: messagesBefore,
+    rawTail: continuationMessages
+  });
   // When thinking is active, temperature is rejected by Anthropic (validated upstream).
   const body: Record<string, unknown> = {
     model: config.model,
@@ -236,8 +441,10 @@ export async function callAnthropicStream(
     stream: true
   };
   if (resolvedThinking?.anthropicEffort !== undefined) {
-    body.thinking = { type: 'enabled' };
-    body.output_config = { effort: resolvedThinking.anthropicEffort };
+    body.thinking = {
+      type: 'enabled',
+      budget_tokens: anthropicEffortToBudgetTokens(resolvedThinking.anthropicEffort)
+    };
   }
   if (resolvedThinking?.otherParams !== undefined) {
     Object.assign(body, resolvedThinking.otherParams);
@@ -255,6 +462,7 @@ export async function callAnthropicStream(
     const toolTypes = tools && tools.length > 0 ? tools.map((t) => t.type).join(',') : 'none';
     logger.info(`Anthropic streaming: model=${config.model}, tools=${toolTypes}`);
   }
+  const buffer = accumulationBuffer ?? new Map<number, IAccumulatedBlock>();
   const conn = await openSseConnection(url, headers, body, logger, signal);
-  return conn.onSuccess((response) => succeed(translateAnthropicStream(response)));
+  return conn.onSuccess((response) => succeed(translateAnthropicStream(response, buffer)));
 }

@@ -866,8 +866,8 @@ describe('callProviderCompletionStream', () => {
         thinking: { effort: 'high' }
       });
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-      expect(body.thinking).toEqual({ type: 'enabled' });
-      expect(body.output_config).toEqual({ effort: 'high' });
+      expect(body.thinking).toEqual({ type: 'enabled', budget_tokens: 24000 });
+      expect(body.output_config).toBeUndefined();
       expect(body.temperature).toBeUndefined();
     });
 
