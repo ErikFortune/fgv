@@ -132,6 +132,8 @@ const SYSTEM_PROMPT: string =
   "You are a helpful assistant with access to the user's stored preferences via the " +
   '`recall_memory` tool and up-to-date information via the `web_search` tool. ' +
   'When the user asks about their preferences, always use `recall_memory` to retrieve them. ' +
+  'Memory keys are lowercase-hyphenated (e.g. `display-mode`, `preferred-language`, ' +
+  '`favorite-color`) — use that exact convention when calling `recall_memory`. ' +
   'When the user asks about current facts, use `web_search` to look them up. ' +
   'Combine both sources when the question spans both.';
 
