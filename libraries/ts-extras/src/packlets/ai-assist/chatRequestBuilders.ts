@@ -55,9 +55,15 @@ const rawTailMessageConverter: Converter<{ role: 'user' | 'assistant'; content: 
  * Converter for an OpenAI / xAI Responses API `rawTail` item. These are
  * provider-native input items (`function_call`, `function_call_output`) whose
  * fields differ per item type, so — unlike the Anthropic `{ role, content }`
- * projection — the whole object is preserved verbatim. The converter only
- * guards that each entry is a JSON object; malformed (non-object) entries fail
- * conversion and are skipped by the caller.
+ * projection — the whole object is preserved verbatim.
+ *
+ * The static input is already typed `JsonObject`, so the `isJsonObject` guard
+ * is a runtime backstop, not a compile-time narrowing: continuation messages
+ * originate from a prior turn's `IAiClientToolContinuation.messages` and a
+ * consumer may persist and reload them through untyped JSON before passing them
+ * back. The guard preserves the same "a malformed continuation message is
+ * better omitted than transmitted verbatim" posture as the Anthropic path —
+ * non-object entries fail conversion and are skipped by the caller.
  * @internal
  */
 const openAiRawTailItemConverter: Converter<JsonObject> = Converters.isA<JsonObject>(
@@ -75,11 +81,14 @@ const openAiRawTailItemConverter: Converter<JsonObject> = Converters.isA<JsonObj
  */
 const geminiRawTailMessageConverter: Converter<{
   role: 'user' | 'model';
-  parts: Array<Record<string, unknown>>;
-}> = Converters.object<{ role: 'user' | 'model'; parts: Array<Record<string, unknown>> }>(
+  parts: unknown[];
+}> = Converters.object<{ role: 'user' | 'model'; parts: unknown[] }>(
   {
     role: Converters.enumeratedValue<'user' | 'model'>(['user', 'model']),
-    parts: Converters.isA('array', (v): v is Array<Record<string, unknown>> => Array.isArray(v))
+    // `parts` is preserved verbatim and serialized into the request body, so the
+    // element shape is not narrowed here — `Array.isArray` soundly guarantees
+    // `unknown[]` (narrowing to `Record<string, unknown>[]` would be an unchecked cast).
+    parts: Converters.isA('array', (v): v is unknown[] => Array.isArray(v))
   },
   { strict: false }
 );
@@ -125,6 +134,13 @@ export interface IBuildMessagesOptions {
  * Builds the messages array from prompt + optional head/tail messages.
  * The caller supplies the user content (string for text-only, parts array
  * for vision prompts) since the parts shape differs by format.
+ *
+ * `rawTail` items (OpenAI / xAI Responses `function_call` /
+ * `function_call_output` continuation items) are appended verbatim after the
+ * user message — their fields differ per item `type`, so they are preserved
+ * rather than projected. The return type is `Array<Record<string, unknown>>`
+ * to accommodate both `{ role, content }` messages and these heterogeneous
+ * input items.
  *
  * @internal
  */
@@ -293,8 +309,8 @@ export function buildAnthropicMessages(
 export function buildGeminiContents(
   prompt: AiPrompt,
   options?: IBuildMessagesOptions
-): Array<{ role: string; parts: Array<Record<string, unknown>> }> {
-  const contents: Array<{ role: string; parts: Array<Record<string, unknown>> }> = [];
+): Array<{ role: string; parts: unknown[] }> {
+  const contents: Array<{ role: string; parts: unknown[] }> = [];
   /* c8 ignore next 7 - head branch: options?.head short-circuit not reached from current call sites */
   if (options?.head) {
     for (const msg of options.head) {

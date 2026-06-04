@@ -312,10 +312,15 @@ export interface IExecuteClientToolTurnParams {
    * message. Used to supply the output of {@link AiAssist.IAiClientToolContinuation}'s
    * `messages` field from a prior turn back to the provider in the follow-up request.
    *
-   * Each message is projected to `{ role, content }` — fields beyond `role` and
-   * `content` are dropped, and entries missing either field are skipped. This is
-   * sufficient for Anthropic thinking blocks and `tool_result` arrays, which
-   * carry all meaningful content in those two fields.
+   * Each provider applies its own shape guard to the supplied wire objects:
+   * - Anthropic: projects each entry to `{ role, content }` (sufficient for
+   *   thinking blocks and `tool_result` arrays).
+   * - OpenAI / xAI Responses: passes each item verbatim (`function_call` /
+   *   `function_call_output` items carry distinct fields per `type`); only guards
+   *   that each entry is a JSON object.
+   * - Gemini: projects each entry to `{ role, parts }`.
+   *
+   * Entries that fail their provider's shape check are silently skipped.
    */
   readonly continuationMessages?: ReadonlyArray<JsonObject>;
   /** Temperature (default: 0.7). */

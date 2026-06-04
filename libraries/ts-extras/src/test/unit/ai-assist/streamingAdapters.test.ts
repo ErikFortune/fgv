@@ -1533,3 +1533,28 @@ describe('cross-provider client-tool continuation wire forwarding', () => {
     });
   });
 });
+
+// ============================================================================
+// Tests — chatRequestBuilders rawTail short-circuit (no options supplied)
+//
+// Exercises the `options === undefined` branch of the `options?.rawTail`
+// optional chain in buildMessages / buildGeminiContents — the path where no
+// continuation messages (and no head/tail) are woven around the user message.
+// ============================================================================
+
+describe('chatRequestBuilders — builders called without options', () => {
+  test('buildMessages emits only system + user when no options are supplied', async () => {
+    const { buildMessages } = await import('../../../packlets/ai-assist/chatRequestBuilders');
+    const messages = buildMessages('system prompt', 'user text');
+    expect(messages).toEqual([
+      { role: 'system', content: 'system prompt' },
+      { role: 'user', content: 'user text' }
+    ]);
+  });
+
+  test('buildGeminiContents emits only the user turn when no options are supplied', async () => {
+    const { buildGeminiContents } = await import('../../../packlets/ai-assist/chatRequestBuilders');
+    const contents = buildGeminiContents(TEST_PROMPT);
+    expect(contents).toEqual([{ role: 'user', parts: [{ text: 'hello' }] }]);
+  });
+});
