@@ -76,3 +76,20 @@ Phase C ships a testbed scenario demonstrating the end-to-end consumer flow. Opt
 ## Decisions log will track resolutions here
 
 (populated as decisions land)
+
+### Locked 2026-06-03
+
+| # | Decision | Lock |
+|---|---|---|
+| B1 | Event type naming `IAiStreamToolUseStart` / `IAiStreamToolUseDelta` / `IAiStreamToolUseComplete` | Confirmed as-recommended |
+| B2 | Extend `IAiStreamEvent` directly (no additive union) | Resolved 2026-06-02 |
+| B3 | Round-trip helper API: `executeClientToolTurn({events, nextTurn})` | Confirmed as-recommended |
+| B4 | **Anthropic thinking + tools required simultaneously** | **YES — personaility's near-term roadmap needs both.** Empirical spike commissioned to verify Anthropic's documented round-trip continuation requirements (does the follow-up assistant turn need thinking-block accumulation from the original turn?). Output: `b4-spike-findings.md` on this branch. Phase C C3 continuation builder must absorb thinking-block handling per the spike's findings. |
+| B5 | `maxRoundTrips` default = 10 (in `runToolUseConversation` layer-2 helper) | Confirmed as-recommended |
+| B6 | Testbed scenario scope: **(b) memory tool + chained example with `web_search` server tool** | Confirmed. Phase C testbed work expands from a single-tool demo to a two-tool demo showing client-tool and server-tool coexistence per design §2.5. Adds testbed-scenario lines to C4; otherwise no impact on C1-C3. |
+
+### Next steps after locks
+
+- B4 spike completes → orchestrator integrates findings into Phase C C3 design notes.
+- Orchestrator produces Phase C kickoff brief on this integration branch.
+- Phase C implementation agent commissions against the integration branch.
