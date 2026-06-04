@@ -22,6 +22,7 @@ import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import {
+  anthropicEffortToBudgetTokens,
   checkTemperatureConflict,
   mergeThinkingConfig,
   providerDiscriminatorForId
@@ -700,6 +701,21 @@ describe('checkTemperatureConflict', () => {
     test('xAI error message mentions provider xai', () => {
       const result = checkTemperatureConflict({ xaiEffort: 'high' }, 'xai', 0.7);
       expect(result).toFailWith(/provider xai/i);
+    });
+  });
+
+  describe('anthropicEffortToBudgetTokens', () => {
+    test('low effort maps to 2048', () => {
+      expect(anthropicEffortToBudgetTokens('low')).toBe(2048);
+    });
+    test('medium effort maps to 8192', () => {
+      expect(anthropicEffortToBudgetTokens('medium')).toBe(8192);
+    });
+    test('high effort maps to 24000', () => {
+      expect(anthropicEffortToBudgetTokens('high')).toBe(24000);
+    });
+    test('max effort maps to 32000', () => {
+      expect(anthropicEffortToBudgetTokens('max')).toBe(32000);
     });
   });
 });
