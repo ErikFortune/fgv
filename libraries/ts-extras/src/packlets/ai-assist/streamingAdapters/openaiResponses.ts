@@ -320,11 +320,13 @@ export async function callOpenAiResponsesStream(
   logger?: Logging.ILogger,
   signal?: AbortSignal,
   resolvedThinking?: IResolvedThinkingConfig,
-  functionCallMap?: Map<string, IAccumulatedFunctionCall>
+  functionCallMap?: Map<string, IAccumulatedFunctionCall>,
+  continuationMessages?: ReadonlyArray<JsonObject>
 ): Promise<Result<AsyncIterable<IAiStreamEvent>>> {
   const url = `${config.baseUrl}/responses`;
   const input = buildMessages(prompt.system, buildOpenAiResponsesUserContent(prompt), {
-    head: messagesBefore
+    head: messagesBefore,
+    rawTail: continuationMessages
   });
   const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
   const supportsReasoning = config.model !== 'grok-4';

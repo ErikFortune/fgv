@@ -456,7 +456,8 @@ export function executeClientToolTurn(
           logger,
           signal,
           resolvedThinking,
-          openAiCallMap
+          openAiCallMap,
+          continuationMessages
         );
       case 'gemini':
         return callGeminiStream(
@@ -468,7 +469,8 @@ export function executeClientToolTurn(
           logger,
           signal,
           resolvedThinking,
-          geminiCalls
+          geminiCalls,
+          continuationMessages
         );
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
