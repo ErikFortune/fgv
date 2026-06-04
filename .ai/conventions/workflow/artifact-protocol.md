@@ -60,7 +60,12 @@ This is the load-bearing rule. The two ways it can go wrong:
   effort.
 - **Migration in a separate follow-up PR.** Splits a coherent unit
   across two PRs, complicates review, and introduces a window where
-  active still exists but is stale.
+  active still exists but is stale. Observed again on the
+  `ai-assist-client-tools` cluster close (2026-06-04, PR #451 →
+  PR #452 follow-up). The codified rule existed; the failure was
+  the orchestrator's pre-promotion checklist not gating on it.
+  Fixed by adding gate #4 to the orchestrator agent's "Before
+  advancing the workflow" checklist (`.claude/agents/orchestrator.md`).
 
 The convention is unambiguous: **the migration ships in the same PR
 as the work**.
