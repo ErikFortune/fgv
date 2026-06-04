@@ -80,3 +80,22 @@ Today ai-assist supports **server-side tools only, and only `web_search`** (`AiS
 **Dependencies**: phase A design doc landed and reviewed; sprint-window commitment.
 
 **Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/active/ai-assist-client-tools/`.
+
+
+---
+
+## Live-wire-shape verification testbed scenarios per provider
+
+The `ai-assist-client-tools` cluster surfaced three consecutive bugs (PR #447 P1-1, PR #448 missing-browser-export, PR #449 thinking-config wire shape + dated-snapshot model) where unit tests passed because they mocked the response side and never validated the request body against the provider's documented contract. The codified L37 discipline (`code-reviewer` runs before 100%-coverage closure) covers the principle; the structural fix is **per-provider live testbed scenarios** that exercise the full wire shape against a real API.
+
+**Shape (Erik 2026-06-04):** one scenario per provider, each exercising that provider's full feature surface — Anthropic (thinking + client tools + server tools, already exists as `anthropicClientTools`), OpenAI (thinking + client tools + server tools + Responses API), Gemini (thinking + client tools + server tools), xAI (thinking + client tools). ~4 scenarios total, each gated on the relevant `<PROVIDER>_API_KEY` env var, each emitting a clear PASS/FAIL summary with a request-shape breakdown.
+
+**Companion concern (Erik 2026-06-04):** generic-version-alias library support — Anthropic's latest SDK accepts version-pinned aliases like `'claude-sonnet-4-6'` (no dated suffix, no `-latest` suffix — the alias resolves to the current 4-6 dated snapshot server-side). The bare family alias (`'sonnet'`) also resolves to always-latest. OpenAI / Gemini / xAI use different conventions and may or may not publish equivalent aliases; best practice per provider needs research. The registry's `defaultModel` per provider currently pins a specific dated snapshot that goes stale (e.g. `claude-sonnet-4-5-20250929` while Sonnet is on 4.8). The two concerns interact: the per-provider testbed scenarios should themselves use version-pinned aliases (`'claude-sonnet-4-6'` for the Anthropic scenario, equivalents for the others once researched) so they don't bake in snapshot drift.
+
+**Library surface (Erik 2026-06-04):** `<provider>:<family>-<major>-<minor>`-style canonical aliases resolving to the current dated snapshot via a registry-maintained mapping. The exact alias syntax should match the underlying SDK / API conventions per provider (e.g. Anthropic accepts `'claude-sonnet-4-6'` directly per the latest SDK; OpenAI's pattern is different). Provider-specific subaliases stay. Roughly 1-2 days of implementation work alongside the testbed-scenarios stream.
+
+**Why deferred (to a sprint, not indefinite):** the ai-assist-client-tools cluster is mid-promotion; queuing this after the cluster closes keeps the cluster-close prep clean. Once the cluster lands, this should commission as a stream of its own.
+
+**Dependencies:** ai-assist-client-tools cluster closed to release. Per-provider API key availability (Anthropic confirmed; OpenAI / Gemini / xAI need confirmation).
+
+**Reference:** 2026-06-04 conversation; PR #447 P1-1 + PR #449 thinking-wire-shape + PR #448 browser-export demonstrate the failure mode; L37 codification (PR #445) is the principle; `samples/testbed/src/scenarios/anthropicClientTools/` is the shape template.
