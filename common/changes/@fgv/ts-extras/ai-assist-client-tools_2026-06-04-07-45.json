@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "comment": "Phase C — client-defined (harness) tools for ai-assist; Anthropic thinking wire shape fix (thinking.budget_tokens); typed schema authoring via parametersSchema; executeClientToolTurn primitive; per-provider continuation builders; B-6 live testbed scenario",
+      "type": "none",
+      "packageName": "@fgv/ts-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
