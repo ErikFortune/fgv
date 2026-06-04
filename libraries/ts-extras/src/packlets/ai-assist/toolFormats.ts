@@ -130,7 +130,7 @@ export function toResponsesApiTools(tools: ReadonlyArray<AiToolConfig>): Readonl
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
         const _exhaustive: never = t;
-        return { type: String((_exhaustive as AiToolConfig).type) } as JsonObject;
+        return { type: `unknown:${JSON.stringify(_exhaustive)}` } as JsonObject;
       }
     }
   });
@@ -192,7 +192,7 @@ export function toAnthropicTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyAr
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
         const _exhaustive: never = t;
-        return { type: String((_exhaustive as AiToolConfig).type) } as JsonObject;
+        return { type: `unknown:${JSON.stringify(_exhaustive)}` } as JsonObject;
       }
     }
   });
@@ -232,7 +232,7 @@ export function toGeminiTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
       default: {
         const _exhaustive: never = t;
-        result.push({ type: String((_exhaustive as AiToolConfig).type) } as JsonObject);
+        result.push({ type: `unknown:${JSON.stringify(_exhaustive)}` } as JsonObject);
       }
     }
   }

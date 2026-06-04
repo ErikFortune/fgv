@@ -39,19 +39,17 @@ import { AiPrompt, type IAiImageAttachment, type IChatMessage, toDataUrl } from 
  * better omitted than transmitted verbatim.
  * @internal
  */
-const rawTailMessageConverter: Converter<{ role: string; content: string | unknown[] }> = Converters.object<{
-  role: string;
-  content: string | unknown[];
-}>(
-  {
-    role: Converters.string,
-    content: Converters.oneOf<string | unknown[]>([
-      Converters.string,
-      Converters.isA('array', (v): v is unknown[] => Array.isArray(v))
-    ])
-  },
-  { strict: false }
-);
+const rawTailMessageConverter: Converter<{ role: 'user' | 'assistant'; content: string | unknown[] }> =
+  Converters.object<{ role: 'user' | 'assistant'; content: string | unknown[] }>(
+    {
+      role: Converters.enumeratedValue<'user' | 'assistant'>(['user', 'assistant']),
+      content: Converters.oneOf<string | unknown[]>([
+        Converters.string,
+        Converters.isA('array', (v): v is unknown[] => Array.isArray(v))
+      ])
+    },
+    { strict: false }
+  );
 
 /**
  * Optional head/tail messages to weave around the prompt's user message.
