@@ -79,8 +79,25 @@ The cluster's empirical loop surfaced that the streaming adapters silently drop 
 - [x] `etc/ts-extras.api.md` — unchanged (no public API surface change; logger was already wired)
 - [x] Finding docs disposition-updated
 - [x] `result.md` records per-scenario live-run outcomes + drift-instrument behavior + "cluster ready for close-out PR"
-- [ ] PR opens against `per-provider-testbed-scenarios` integration branch — **next**
-- [ ] Copilot loop driven; stopped on diminishing returns or 10-round cap — **next**
+- [x] PR opens against `per-provider-testbed-scenarios` integration branch — **PR #458**
+- [x] Copilot loop driven; stopped on **convergence (no new comments after round 3)**
+
+### Phase 10 — Copilot review loop (converged after 3 rounds)
+- [x] **Round 1** on `c358e64ee` (initial commit): 3 substantive findings — all addressed in `47fe1a738`
+  1. `openaiResponses.ts:206` — doc cited `@anthropic-ai` SDK as source for OpenAI events (copy-paste error); corrected to `openai-node`
+  2. `openaiResponses.ts:422` — warning missing stable `ai-assist:unrecognized-event` filter prefix
+  3. `anthropic.ts:431` — same missing prefix
+  - Resolution: shared `UNRECOGNIZED_EVENT_WARN_TAG` constant in `common.ts`; both adapters use it
+- [x] **Round 2** on `47fe1a738`: 1 substantive doc finding — addressed in `03e6da5e8`
+  - `anthropic.ts:276` — allowlist TSDoc + const got inserted between translator function's TSDoc and the function, orphaning the doc; cross-file `{@link RECOGNIZED_OPENAI_RESPONSES_EVENTS}` pointed at module-internal unexported symbol
+  - Resolution: reordered (allowlist before translator function); cross-file `@link` replaced with plain-text reference; in-file `@link` to `RECOGNIZED_ANTHROPIC_EVENTS` now resolves
+- [x] **Round 3** on `03e6da5e8`: 2 substantive findings (same issue in both adapters) — addressed in `68361acf1`
+  - `openaiResponses.ts:427` + `anthropic.ts:440` — warning includes event name but not payload data; drift triage requires re-running under debugger
+  - Resolution: new `formatUnrecognizedEventPayloadPreview()` helper in `common.ts`; 200-char cap, newlines collapsed, `<no payload>` for empty; both adapters embed preview between event name and remediation guidance
+- [x] **Round 4** on `68361acf1`: **no new comments — converged**
+  - Stop signal: zero new findings. Not the cap (10-round); the loop converged naturally.
+
+**Total Copilot rounds: 3 substantive + 1 convergence check = 4. Findings progression: 3 → 1 → 2 → 0. Every finding across all rounds was substantive (no nitpicks); the loop genuinely added value at each round.**
 
 ---
 
