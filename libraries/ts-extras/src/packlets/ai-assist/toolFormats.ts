@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { type JsonObject } from '@fgv/ts-json-base';
+import { type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 
 import {
   type AiServerToolConfig,
@@ -203,11 +203,64 @@ export function toAnthropicTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyAr
 // ============================================================================
 
 /**
+ * Sanitizes a draft-07 JSON Schema (as emitted by `JsonSchema.object(...).toJson()`)
+ * into the OpenAPI 3.0 Schema Object subset that Gemini's `function_declarations[].parameters`
+ * accepts.
+ *
+ * @remarks
+ * Gemini's function-declaration schema is **not** full JSON Schema — it is a subset of
+ * the OpenAPI 3.0 Schema Object and **rejects** (rather than ignores) draft-07-only
+ * keywords. `JsonSchema` objects are strict-by-default, so `.toJson()` emits
+ * `additionalProperties: false` on every object node, which 400s the whole request on
+ * Gemini. This helper recursively strips the unsupported keywords so any
+ * `JsonSchema`-authored client tool works on Gemini without consumer awareness of the
+ * dialect difference. Stripping is infallible, so it returns a plain value rather than a
+ * `Result`.
+ *
+ * `additionalProperties` and `$schema` are stripped only where they appear as schema
+ * *keywords* (siblings of `type`/`properties`/etc.). Inside a `properties` map the keys
+ * are user-defined parameter names, not keywords, so they are preserved verbatim while
+ * each property's subschema value is still recursively sanitized — a tool parameter
+ * legitimately named `additionalProperties` survives.
+ *
+ * @internal
+ */
+export function toGeminiParameterSchema(schema: JsonValue): JsonValue {
+  if (Array.isArray(schema)) {
+    return schema.map(toGeminiParameterSchema);
+  }
+  if (schema !== null && typeof schema === 'object') {
+    const out: JsonObject = {};
+    for (const [key, value] of Object.entries(schema)) {
+      if (key === 'additionalProperties' || key === '$schema') {
+        continue;
+      }
+      if (key === 'properties' && value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        // `properties` maps user-defined parameter names to subschemas: recurse each
+        // subschema value but never treat a parameter name as a strippable keyword.
+        const properties: JsonObject = {};
+        for (const [name, propSchema] of Object.entries(value)) {
+          properties[name] = toGeminiParameterSchema(propSchema);
+        }
+        out[key] = properties;
+      } else {
+        out[key] = toGeminiParameterSchema(value);
+      }
+    }
+    return out;
+  }
+  return schema;
+}
+
+/**
  * Formats tool configs for the Gemini generateContent API.
  *
  * @remarks
  * Gemini uses `google_search` for search grounding (no per-tool config).
  * Client-defined tools are accumulated into a single `function_declarations` entry.
+ * Each client tool's parameters schema is sanitized to Gemini's OpenAPI-subset
+ * dialect via {@link toGeminiParameterSchema} (the raw draft-07 `.toJson()` output
+ * carries `additionalProperties`, which Gemini rejects).
  *
  * @param tools - The resolved tool configs (server-side and/or client-defined)
  * @returns Provider-native tool objects for the `tools` request field
@@ -226,7 +279,7 @@ export function toGeminiTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyArray
         functionDeclarations.push({
           name: t.name,
           description: t.description,
-          parameters: t.parametersSchema.toJson()
+          parameters: toGeminiParameterSchema(t.parametersSchema.toJson())
         } as JsonObject);
         break;
       /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */

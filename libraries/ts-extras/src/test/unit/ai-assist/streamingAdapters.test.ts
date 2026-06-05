@@ -1149,6 +1149,135 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     expect(entry).toBeDefined();
     expect(entry?.argsBuffer).toBe('{"answer":42}');
   });
+
+  test('surfaces incompleteReason on the done event when status is incomplete', async () => {
+    const sseChunks: string[] = [
+      `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'partial' })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({
+        response: { status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' } }
+      })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(done.type).toBe('done');
+    expect(done.truncated).toBe(true);
+    expect(done.incompleteReason).toBe('max_output_tokens');
+  });
+
+  test('leaves incompleteReason undefined on a normally completed response', async () => {
+    const sseChunks: string[] = [
+      `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'all done' })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(done.type).toBe('done');
+    expect(done.truncated).toBe(false);
+    expect(done.incompleteReason).toBeUndefined();
+  });
+
+  test('does not leak incompleteReason when status is not incomplete but details are present', async () => {
+    // Defensive: a provider should never send incomplete_details on a completed payload,
+    // but if it does, the reason must not leak through (contract: meaningful only when truncated).
+    const sseChunks: string[] = [
+      `event: response.completed\ndata: ${JSON.stringify({
+        response: { status: 'completed', incomplete_details: { reason: 'max_output_tokens' } }
+      })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(done.type).toBe('done');
+    expect(done.truncated).toBe(false);
+    expect(done.incompleteReason).toBeUndefined();
+  });
+
+  test('clears a stale incompleteReason if a later completed event reports not-incomplete', async () => {
+    // Defensive: the Responses API sends exactly one completed event, but if a duplicate
+    // arrived (first incomplete, then completed), truncated and incompleteReason must move
+    // together so the done event never reports truncated:false with a stale reason.
+    const sseChunks: string[] = [
+      `event: response.completed\ndata: ${JSON.stringify({
+        response: { status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' } }
+      })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(done.type).toBe('done');
+    expect(done.truncated).toBe(false);
+    expect(done.incompleteReason).toBeUndefined();
+  });
+
+  test('leaves incompleteReason undefined when status is incomplete but no details are present', async () => {
+    const sseChunks: string[] = [
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'incomplete' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(done.type).toBe('done');
+    expect(done.truncated).toBe(true);
+    expect(done.incompleteReason).toBeUndefined();
+  });
 });
 
 // ============================================================================

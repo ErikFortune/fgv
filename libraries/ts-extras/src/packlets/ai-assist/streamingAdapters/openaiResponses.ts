@@ -105,7 +105,10 @@ interface IResponsesFunctionCallArgsDonePayload {
  * @internal
  */
 interface IResponsesCompletedPayload {
-  readonly response: { readonly status?: string };
+  readonly response: {
+    readonly status?: string;
+    readonly incomplete_details?: { readonly reason?: string };
+  };
 }
 
 /**
@@ -159,11 +162,19 @@ const responsesFunctionCallArgsDonePayload: Validator<IResponsesFunctionCallArgs
     { options: { optionalFields: ['item_id', 'call_id'] } }
   );
 
+const responsesIncompleteDetails: Validator<{ reason?: string }> = Validators.object<{ reason?: string }>(
+  { reason: Validators.string.optional() },
+  { options: { optionalFields: ['reason'] } }
+);
+
 const responsesCompletedPayload: Validator<IResponsesCompletedPayload> =
   Validators.object<IResponsesCompletedPayload>({
-    response: Validators.object<{ status?: string }>(
-      { status: Validators.string.optional() },
-      { options: { optionalFields: ['status'] } }
+    response: Validators.object<{ status?: string; incomplete_details?: { reason?: string } }>(
+      {
+        status: Validators.string.optional(),
+        incomplete_details: responsesIncompleteDetails.optional()
+      },
+      { options: { optionalFields: ['status', 'incomplete_details'] } }
     )
   });
 
@@ -200,6 +211,7 @@ async function* translateOpenAiResponsesStream(
   let fullText = '';
   let truncated = false;
   let completed = false;
+  let incompleteReason: string | undefined;
 
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
@@ -277,8 +289,15 @@ async function* translateOpenAiResponsesStream(
         }
       } else if (eventName === 'response.completed') {
         const payload = validateEventPayload(parseSseEventJson(message.data), responsesCompletedPayload);
-        /* c8 ignore next 1 - defensive: payload?.response null branch unreachable after validation */
-        truncated = payload?.response.status === 'incomplete';
+        /* c8 ignore next 1 - defensive: payload null branch unreachable after validation */
+        if (payload) {
+          truncated = payload.response.status === 'incomplete';
+          // Per IAiStreamDone.incompleteReason's contract, the reason is meaningful only
+          // when the response was truncated. Move both fields together on every completed
+          // event so a stray incomplete_details on a non-incomplete payload never leaks
+          // through, and a later (defensive) completed event can't leave a stale reason.
+          incompleteReason = truncated ? payload.response.incomplete_details?.reason : undefined;
+        }
         completed = true;
         /* c8 ignore next 1 - defensive: eventName === 'error' alternative not exercised in tests */
       } else if (eventName === 'response.failed' || eventName === 'error') {
@@ -295,7 +314,7 @@ async function* translateOpenAiResponsesStream(
   } /* c8 ignore stop */
 
   if (completed) {
-    yield { type: 'done', truncated, fullText };
+    yield { type: 'done', truncated, fullText, incompleteReason };
   } else {
     yield { type: 'error', message: 'Responses API stream ended without a completed event' };
   }
