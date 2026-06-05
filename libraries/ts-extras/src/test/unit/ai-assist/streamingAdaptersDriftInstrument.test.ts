@@ -41,6 +41,8 @@ import { AiAssist } from '../../..';
 import { Logging, type MessageLogLevel, type Success, succeed } from '@fgv/ts-utils';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import type { IAiProviderDescriptor } from '../../../packlets/ai-assist/model';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { formatUnrecognizedEventPayloadPreview } from '../../../packlets/ai-assist/streamingAdapters/common';
 
 // ============================================================================
 // Test helpers
@@ -192,9 +194,13 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
       expect(w.message).toContain('payload preview:');
     }
     // First warning fires on the first occurrence of `totally_new_event_type` with foo:1
-    // (the second occurrence is deduped). Its preview reflects that payload.
-    expect(warnings[0].message).toContain('"foo":1');
-    expect(warnings[1].message).toContain('"bar":3');
+    // (the second occurrence is deduped). Default-safe preview is structural-only:
+    // top-level keys + length. Field values are NEVER emitted by default (raw preview is
+    // opt-in via AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD env var; see below).
+    expect(warnings[0].message).toContain('keys: [foo]');
+    expect(warnings[1].message).toContain('keys: [bar]');
+    expect(warnings[0].message).not.toContain('"foo":1');
+    expect(warnings[1].message).not.toContain('"bar":3');
   });
 
   test('does not warn for recognized-but-silently-handled lifecycle, reasoning, and content-part events', async () => {
@@ -256,9 +262,10 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
     expect(doneEvent.type).toBe('done');
   });
 
-  test('drift warning truncates verbose payloads with an ellipsis (log-volume bound)', async () => {
-    // Build a payload longer than the 200-char preview cap so the warning's preview gets
-    // truncated. Truncation must produce a stable suffix (ellipsis) and stay on one line.
+  test('default-safe preview emits structural info only (no payload values), regardless of payload size', async () => {
+    // Build a payload longer than the 200-char raw-preview cap. The default-safe path
+    // never emits payload content — only top-level keys + byte length — so the verbose
+    // string never lands in the warn message, and no ellipsis truncation occurs.
     const longString = 'x'.repeat(500);
     const sseChunks: string[] = [
       `event: response.verbose_unknown\ndata: ${JSON.stringify({ huge: longString })}\n\n`,
@@ -284,16 +291,63 @@ describe('OpenAI Responses streaming adapter — unrecognized-event drift instru
     expect(warnings).toHaveLength(1);
     const msg = warnings[0].message;
     expect(msg).toContain('payload preview:');
-    // Truncation marker present.
-    expect(msg).toContain('…');
-    // The preview substring sits between the "payload preview: " marker and the trailing
-    // ". This may indicate" sentence; verify it's bounded.
-    const previewStart = msg.indexOf('payload preview: ') + 'payload preview: '.length;
-    const previewEnd = msg.indexOf('. This may indicate', previewStart);
-    expect(previewEnd).toBeGreaterThan(previewStart);
-    const preview = msg.slice(previewStart, previewEnd);
-    // 200-char cap + 1 ellipsis character = 201 chars max in the preview substring.
-    expect(preview.length).toBeLessThanOrEqual(201);
+    // Structural form: keys + length, no field values, no truncation needed.
+    expect(msg).toContain('keys: [huge]');
+    expect(msg).not.toContain('xxx');
+    expect(msg).not.toContain('…');
+  });
+
+  test('AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD env var opt-in widens preview to raw payload with truncation', async () => {
+    // Ops triage scenario: deployment investigating an active drift signal sets the
+    // env var to see actual payload values. The raw preview applies the 200-char cap
+    // with an ellipsis on truncation (the log-volume bound that the default-safe path
+    // gets for free via structural info).
+    const longString = 'x'.repeat(500);
+    const sseChunks: string[] = [
+      `event: response.verbose_unknown\ndata: ${JSON.stringify({ huge: longString })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const logger = new RecordingLogger();
+    const originalEnv = process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD;
+    process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD = '1';
+    try {
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeOpenAiResponsesDescriptor(),
+        apiKey: 'sk',
+        prompt: TEST_PROMPT,
+        tools: OPENAI_TOOLS,
+        logger
+      });
+
+      expect(result).toSucceed();
+      if (!result.isSuccess()) return;
+      await collect(result.value);
+
+      const warnings = logger.entries.filter((e) => e.level === 'warning');
+      expect(warnings).toHaveLength(1);
+      const msg = warnings[0].message;
+      expect(msg).toContain('payload preview:');
+      // Raw payload IS included now — `huge` field value visible.
+      expect(msg).toContain('xxx');
+      // Truncation marker present (payload exceeds 200-char cap).
+      expect(msg).toContain('…');
+      // The preview substring sits between the "payload preview: " marker and the trailing
+      // ". This may indicate" sentence; verify it's bounded.
+      const previewStart = msg.indexOf('payload preview: ') + 'payload preview: '.length;
+      const previewEnd = msg.indexOf('. This may indicate', previewStart);
+      expect(previewEnd).toBeGreaterThan(previewStart);
+      const preview = msg.slice(previewStart, previewEnd);
+      // 200-char cap + 1 ellipsis character = 201 chars max in the preview substring.
+      expect(preview.length).toBeLessThanOrEqual(201);
+    } finally {
+      if (originalEnv === undefined) {
+        delete process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD;
+      } else {
+        process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD = originalEnv;
+      }
+    }
   });
 
   test('drift warning includes `<no payload>` marker when an unknown event arrives with no data', async () => {
@@ -376,8 +430,14 @@ describe('Anthropic streaming adapter — unrecognized-event drift instrument', 
       // that arrived without re-running the scenario under a debugger.
       expect(w.message).toContain('payload preview:');
     }
-    expect(warnings[0].message).toContain('"foo":1');
-    expect(warnings[1].message).toContain('"bar":3');
+    // Default-safe preview is structural-only: top-level keys + length. Field values
+    // are NEVER emitted by default (raw preview is opt-in via the
+    // AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD env var; coverage of that path is in
+    // the OpenAI Responses section).
+    expect(warnings[0].message).toContain('keys: [foo]');
+    expect(warnings[1].message).toContain('keys: [bar]');
+    expect(warnings[0].message).not.toContain('"foo":1');
+    expect(warnings[1].message).not.toContain('"bar":3');
   });
 
   test('does not warn for recognized-but-silently-handled Anthropic lifecycle events (message_start, ping)', async () => {
@@ -426,5 +486,100 @@ describe('Anthropic streaming adapter — unrecognized-event drift instrument', 
     const events = await collect(result.value);
     const doneEvent = events[events.length - 1] as AiAssist.IAiStreamDone;
     expect(doneEvent.type).toBe('done');
+  });
+});
+
+// ============================================================================
+// formatUnrecognizedEventPayloadPreview — non-object JSON / non-JSON branches
+// ============================================================================
+
+describe('formatUnrecognizedEventPayloadPreview — default-safe structural shapes', () => {
+  test('JSON array payload renders as `<array payload, length=N>`', () => {
+    const data = JSON.stringify([1, 2, 3]);
+    expect(formatUnrecognizedEventPayloadPreview(data)).toBe(`<array payload, length=${data.length}>`);
+  });
+
+  test('JSON primitive payload (number) renders as `<number payload, length=N>`', () => {
+    const data = '42';
+    expect(formatUnrecognizedEventPayloadPreview(data)).toBe(`<number payload, length=${data.length}>`);
+  });
+
+  test('JSON primitive payload (boolean) renders as `<boolean payload, length=N>`', () => {
+    const data = 'true';
+    expect(formatUnrecognizedEventPayloadPreview(data)).toBe(`<boolean payload, length=${data.length}>`);
+  });
+
+  test('JSON null payload renders as `<object payload, length=N>` (typeof null === object)', () => {
+    // `typeof null === 'object'` but `null !== null` short-circuit means the structural
+    // path falls through to the `<{type} payload>` branch. The preview is unambiguous
+    // (length 4 = the literal `null` string).
+    const data = 'null';
+    expect(formatUnrecognizedEventPayloadPreview(data)).toBe(`<object payload, length=${data.length}>`);
+  });
+
+  test('non-JSON payload renders as `<non-JSON payload, length=N>`', () => {
+    const data = 'this is not JSON at all';
+    expect(formatUnrecognizedEventPayloadPreview(data)).toBe(`<non-JSON payload, length=${data.length}>`);
+  });
+
+  test('empty payload renders as `<no payload>`', () => {
+    expect(formatUnrecognizedEventPayloadPreview('')).toBe('<no payload>');
+  });
+
+  test('opt-in env var with `0` value stays default-safe (does not activate raw preview)', () => {
+    // The env var check explicitly rejects '0' so that `EXPORT VAR=0` reads naturally
+    // as "off" without surprising raw-preview activation.
+    const originalEnv = process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD;
+    process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD = '0';
+    try {
+      const data = JSON.stringify({ secret: 'should-not-leak' });
+      const preview = formatUnrecognizedEventPayloadPreview(data);
+      expect(preview).toBe(`{ keys: [secret], length: ${data.length} }`);
+      expect(preview).not.toContain('should-not-leak');
+    } finally {
+      if (originalEnv === undefined) {
+        delete process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD;
+      } else {
+        process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD = originalEnv;
+      }
+    }
+  });
+
+  test('opt-in env var with truthy value AND short payload emits raw preview without truncation', () => {
+    // The short-payload-with-opt-in branch — raw preview applies but the payload is
+    // under the 200-char cap so no ellipsis truncation occurs.
+    const originalEnv = process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD;
+    process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD = '1';
+    try {
+      const data = JSON.stringify({ shortKey: 'shortValue' });
+      const preview = formatUnrecognizedEventPayloadPreview(data);
+      // Raw preview: payload visible verbatim (no truncation, no ellipsis).
+      expect(preview).toContain('shortKey');
+      expect(preview).toContain('shortValue');
+      expect(preview).not.toContain('…');
+    } finally {
+      if (originalEnv === undefined) {
+        delete process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD;
+      } else {
+        process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD = originalEnv;
+      }
+    }
+  });
+
+  test('opt-in env var with empty string value stays default-safe', () => {
+    const originalEnv = process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD;
+    process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD = '';
+    try {
+      const data = JSON.stringify({ secret: 'should-not-leak' });
+      const preview = formatUnrecognizedEventPayloadPreview(data);
+      expect(preview).toBe(`{ keys: [secret], length: ${data.length} }`);
+      expect(preview).not.toContain('should-not-leak');
+    } finally {
+      if (originalEnv === undefined) {
+        delete process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD;
+      } else {
+        process.env.AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD = originalEnv;
+      }
+    }
   });
 });
