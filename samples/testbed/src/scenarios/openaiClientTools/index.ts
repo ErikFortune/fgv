@@ -244,6 +244,10 @@ const cliImpl: ICliScenarioImpl = {
     context.logger.info(`  continuation present: ${String(firstTurnOutcome.continuation !== undefined)}`);
 
     let finalResponse = firstTurnText;
+    // If a continuation turn runs, its outcome can independently report `truncated: true`
+    // (e.g. the follow-up response also exhausted the output budget). Capture it so the
+    // verdict folds in both turns rather than only the first.
+    let continuationTurnTruncated = false;
 
     // If the model issued client-tool calls, the continuation contains the reconstructed
     // assistant turn and the function-call outputs. Send the follow-up request.
@@ -290,6 +294,8 @@ const cliImpl: ICliScenarioImpl = {
         return fail(`Continuation nextTurn failed: ${continuationCompletion.message}`);
       }
 
+      continuationTurnTruncated = continuationCompletion.value.truncated;
+
       context.logger.info('Continuation turn complete.');
 
       if (continuationText.length > 0) {
@@ -310,7 +316,9 @@ const cliImpl: ICliScenarioImpl = {
     //     before emitting the visible message).
     //   - `finalResponse` — the accumulated assistant text (empty if the model produced none).
     const toolCallsSummary = firstTurnOutcome.continuation?.toolCallsSummary ?? [];
-    const truncated = firstTurnOutcome.truncated;
+    // Fold both turns' truncation into the verdict. If the continuation turn ran and
+    // truncated, the user-visible answer was cut short regardless of the first turn's status.
+    const truncated = firstTurnOutcome.truncated || continuationTurnTruncated;
     const hasResponseText = finalResponse.trim().length > 0;
     const continuationPresent = firstTurnOutcome.continuation !== undefined;
 
