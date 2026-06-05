@@ -2,7 +2,7 @@
 
 **Stream:** `ts-prompt-assist-observability`
 **Integration branch:** `ts-prompt-assist-observability`
-**Status:** Phase B complete; Phase C ready to commission (2026-06-04)
+**Status:** Phase C COMPLETE — cluster ready to close (2026-06-04). Artifacts migrated to `completed/2026-06/` in PR #456.
 
 ---
 

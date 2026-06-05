@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "comment": "Add prompt-observability surface (new `observe` packlet). `IPromptObserver` is a single async `observe(record): Promise<Result<unknown>>` hook with an optional `fireAndForget` flag; `IPromptObservationRecord` is a `phase`-discriminated union ('resolve' | 'json-output' | 'free-text-output') over `IPromptObservationBase` + `IPromptResolveObservation` + `IPromptOutputObservation`; `IPromptObservationQuery` is the schema-aware filter; `PromptObservationStore` implements `IPromptObserver`, composes `RetainingRingBuffer`, and answers `query(criteria)`. `IPromptLibraryCreateParams` gains an additive `observers?: ReadonlyArray<IPromptObserver>` field; the fan-out fires once per public resolve / resolveJsonOutput / resolveFreeTextOutput call (never for nested resource-binding resolves). seq + timestamp are library-assigned (consistent across observers, so output records cross-link to their resolve record via linkedResolveSeq); contentHash is CRC32 over the RFC 8785 canonical JSON of { promptId, chain, qualifierContext, substitutions }. Observer errors never affect resolve() — swallowed and logged to the injected logger at warn. PromptObservationStore is most-permissive (stores body/rawOutput/substitutions verbatim); redaction + retention are deployment policy.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "noreply@anthropic.com"
+}
