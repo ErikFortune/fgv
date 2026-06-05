@@ -88,7 +88,7 @@ export interface IRetainingRingBufferCreateParams {
  * buffers consistently (e.g. an observability layer that assigns a library-global
  * `seq` and fans the same record out to multiple retaining stores), and lets a
  * single-authority consumer (e.g. a logger) own its own `seq` counter. It is the
- * shared mechanism beneath {@link Logging.RetainingLogger | RetainingLogger} and
+ * shared mechanism beneath `RetainingLogger` and
  * any schema-aware observation store.
  *
  * @public

@@ -19,7 +19,7 @@ import {
   SlotBinding,
   SlotName
 } from '../../../index';
-import { Converters, Logging, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converters, Hash, Logging, Result, fail, succeed } from '@fgv/ts-utils';
 import { QualifierTypes, Qualifiers } from '@fgv/ts-res';
 
 const QUALIFIER_TYPES = QualifierTypes.QualifierTypeCollector.create({
@@ -276,7 +276,15 @@ describe('PromptLibrary observability wiring', () => {
       expect(a.query().map((r) => r.seq)).toEqual([1, 2]);
       // both observers saw the same records with the same seq values.
       expect(b.query().map((r) => r.seq)).toEqual([1, 2]);
-      expect(b.query()[0]).toBe(a.query()[0]);
+      // Both observers received structurally-identical records (same values,
+      // same seq across observers). Use the normalizing hash to compare on
+      // structural equality without coupling to whether the implementation
+      // shares one reference or clones per observer — the public contract is
+      // identical values, not identical references.
+      const normalizer = new Hash.Crc32Normalizer();
+      const hashA = normalizer.computeHash(a.query()[0]).orThrow();
+      const hashB = normalizer.computeHash(b.query()[0]).orThrow();
+      expect(hashB).toBe(hashA);
     });
 
     test('the same request produces a stable contentHash; a different request differs', async () => {

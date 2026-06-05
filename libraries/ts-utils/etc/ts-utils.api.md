@@ -2649,8 +2649,6 @@ class RetainingLogger extends LoggerBase {
     get records(): ReadonlyArray<ILogRecord>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
 export class RetainingRingBuffer<T extends IRetainedRecord> {
     constructor(params?: IRetainingRingBufferCreateParams);
