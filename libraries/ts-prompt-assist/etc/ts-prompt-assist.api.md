@@ -92,6 +92,9 @@ export function defaultScopeDecoding(encoded: string): Result<ScopeKey>;
 export function defaultScopeEncoding(scope: ScopeKey): Result<string>;
 
 // @public
+export const defaultStringEqualityQualifierResolver: IQualifierResolver;
+
+// @public
 export const descriptorConverter: Converter<IPromptDescriptor>;
 
 // @public
@@ -359,6 +362,7 @@ export type IPromptObservationRecord = IPromptResolveObservation | IPromptOutput
 // @public
 export interface IPromptObservationStoreCreateParams {
     readonly maxRecords?: number;
+    readonly qualifierResolver?: IQualifierResolver;
 }
 
 // @public
@@ -543,6 +547,11 @@ export interface IPromptStoreListFilter {
 
 // @public
 export type IQualifierContext = Readonly<Partial<Record<string, string>>>;
+
+// @public
+export interface IQualifierResolver {
+    matches(recordContext: IQualifierContext, queryContext: IQualifierContext): boolean;
+}
 
 // @public
 export interface IQualifiersFileContents {

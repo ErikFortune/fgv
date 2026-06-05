@@ -199,8 +199,12 @@ export interface IPromptObservationQuery {
    */
   readonly scope?: ScopeKey;
   /**
-   * Partial qualifier match: every supplied key must equal the record's
-   * qualifier-context value for that key.
+   * Partial qualifier match: matched via the store's injected
+   * {@link IQualifierResolver}. The default resolver does naive string
+   * equality on the supplied (defined) axes — entries with `undefined` values
+   * are skipped (no constraint on that axis). Production deployments needing
+   * ts-res-equivalent similarity matching (e.g. BCP47 language-tag matches)
+   * inject their own resolver at store creation time.
    */
   readonly qualifiers?: IQualifierContext;
   /** Only success resolve records with this `output.kind`. */
@@ -215,4 +219,39 @@ export interface IPromptObservationQuery {
   readonly safeguardDisposition?: SafeguardDisposition;
   /** Arbitrary escape-hatch predicate, applied after all other criteria. */
   readonly filter?: (record: IPromptObservationRecord) => boolean;
+}
+
+/**
+ * Strategy for matching an {@link IPromptObservationQuery}'s `qualifiers`
+ * criteria against an observation record's `qualifierContext`. Injected on
+ * {@link PromptObservationStore.create} via
+ * {@link IPromptObservationStoreCreateParams.qualifierResolver}.
+ *
+ * @remarks
+ * The store ships with a default {@link defaultStringEqualityQualifierResolver}
+ * that does naive string equality on the supplied (defined) axes. This is
+ * intentionally a **narrower contract** than `PromptLibrary.resolve`'s
+ * ts-res-driven candidate selection, which uses qualifier types (e.g. BCP47
+ * language-tag similarity), priority ordering, and type-specific match
+ * semantics: a record produced under `lang=fr-CA` will NOT be returned by a
+ * `qualifiers: { lang: 'fr' }` query against the default resolver, even
+ * though `PromptLibrary` would have considered them a match.
+ *
+ * Production deployments needing ts-res-equivalent semantics inject their own
+ * `IQualifierResolver` implementation (e.g. one wrapping ts-res's
+ * `ValidatingSimpleContextQualifierProvider` + `ResourceResolver` match path).
+ * The injection point is locked here so the future swap is a pure
+ * implementation-of-interface change rather than an API surface change.
+ *
+ * @public
+ */
+export interface IQualifierResolver {
+  /**
+   * Returns `true` iff the record's `qualifierContext` satisfies the query's
+   * `qualifiers` criteria under this resolver's matching semantics.
+   *
+   * @param recordContext - The qualifier context the record was resolved under.
+   * @param queryContext - The qualifier criteria from the consumer's query.
+   */
+  matches(recordContext: IQualifierContext, queryContext: IQualifierContext): boolean;
 }

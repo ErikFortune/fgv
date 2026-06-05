@@ -4,8 +4,38 @@
  */
 
 import { Collections, Result, fail, succeed } from '@fgv/ts-utils';
-import { ISafeguardFinding, SafeguardDisposition, ScopeKey } from '../types';
-import { IPromptObservationQuery, IPromptObservationRecord, IPromptObserver } from './types';
+import { IQualifierContext, ISafeguardFinding, SafeguardDisposition, ScopeKey } from '../types';
+import {
+  IPromptObservationQuery,
+  IPromptObservationRecord,
+  IPromptObserver,
+  IQualifierResolver
+} from './types';
+
+/**
+ * Default {@link IQualifierResolver} — naive string equality on the supplied
+ * (defined) axes. Records resolved under a richer ts-res match (e.g. BCP47
+ * `lang=fr-CA` matching a candidate gated on `lang=fr`) will NOT be returned
+ * by a query asking for the broader axis value under this resolver. See
+ * {@link IQualifierResolver} for the broader contract and the rationale for
+ * the divergence.
+ *
+ * @public
+ */
+export const defaultStringEqualityQualifierResolver: IQualifierResolver = {
+  matches(recordContext: IQualifierContext, queryContext: IQualifierContext): boolean {
+    for (const key of Object.keys(queryContext)) {
+      const value: string | undefined = queryContext[key];
+      if (value === undefined) {
+        continue;
+      }
+      if (recordContext[key] !== value) {
+        return false;
+      }
+    }
+    return true;
+  }
+};
 
 /**
  * Construction options for {@link PromptObservationStore.create}.
@@ -17,6 +47,15 @@ export interface IPromptObservationStoreCreateParams {
    * overwritten. Defaults to `1000`. Must be a positive integer if supplied.
    */
   readonly maxRecords?: number;
+  /**
+   * Optional {@link IQualifierResolver} that decides whether a record's
+   * `qualifierContext` matches a query's `qualifiers` criteria. Defaults to
+   * {@link defaultStringEqualityQualifierResolver} (naive string equality on
+   * supplied axes). Injected here so deployments needing ts-res-equivalent
+   * similarity matching can swap the implementation without an API change on
+   * the store.
+   */
+  readonly qualifierResolver?: IQualifierResolver;
 }
 
 /**
@@ -52,11 +91,24 @@ export class PromptObservationStore implements IPromptObserver {
   private readonly _buffer: Collections.RetainingRingBuffer<IPromptObservationRecord>;
 
   /**
-   * @param buffer - The pre-constructed backing ring buffer.
+   * Strategy for matching query `qualifiers` against record `qualifierContext`.
+   * Injected at construction; defaults to
+   * {@link defaultStringEqualityQualifierResolver}.
    * @internal
    */
-  private constructor(buffer: Collections.RetainingRingBuffer<IPromptObservationRecord>) {
+  private readonly _qualifierResolver: IQualifierResolver;
+
+  /**
+   * @param buffer - The pre-constructed backing ring buffer.
+   * @param qualifierResolver - The qualifier-match strategy for `query`.
+   * @internal
+   */
+  private constructor(
+    buffer: Collections.RetainingRingBuffer<IPromptObservationRecord>,
+    qualifierResolver: IQualifierResolver
+  ) {
     this._buffer = buffer;
+    this._qualifierResolver = qualifierResolver;
   }
 
   /**
@@ -87,9 +139,11 @@ export class PromptObservationStore implements IPromptObserver {
     if (maxRecords !== undefined && (!Number.isInteger(maxRecords) || maxRecords < 1)) {
       return fail(`PromptObservationStore: maxRecords must be a positive integer (got ${maxRecords})`);
     }
+    const qualifierResolver = params?.qualifierResolver ?? defaultStringEqualityQualifierResolver;
     return succeed(
       new PromptObservationStore(
-        new Collections.RetainingRingBuffer<IPromptObservationRecord>({ maxRecords })
+        new Collections.RetainingRingBuffer<IPromptObservationRecord>({ maxRecords }),
+        qualifierResolver
       )
     );
   }
@@ -192,22 +246,7 @@ export class PromptObservationStore implements IPromptObserver {
     record: IPromptObservationRecord,
     qualifiers: IPromptObservationQuery['qualifiers'] & object
   ): boolean {
-    // Contract: partial match on DEFINED qualifier values. Since
-    // `IQualifierContext` is `Partial<Record<string, string>>`, it's natural for
-    // callers to pass `{ lang: maybeLang }` where `maybeLang` could be
-    // `undefined`. Treating `undefined` as an explicit equality constraint
-    // would exclude every record (since `'fr' !== undefined`), which is the
-    // opposite of "no filter on this axis."
-    for (const key of Object.keys(qualifiers)) {
-      const value: string | undefined = qualifiers[key];
-      if (value === undefined) {
-        continue;
-      }
-      if (record.qualifierContext[key] !== value) {
-        return false;
-      }
-    }
-    return true;
+    return this._qualifierResolver.matches(record.qualifierContext, qualifiers);
   }
 
   /**

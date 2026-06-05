@@ -6,6 +6,7 @@ import {
   IPromptObservationRecord,
   IPromptOutputObservation,
   IPromptResolveObservation,
+  IQualifierResolver,
   ISafeguardFinding,
   PromptId,
   PromptObservationStore,
@@ -118,6 +119,60 @@ describe('PromptObservationStore', () => {
       expect(PromptObservationStore.create({ maxRecords })).toFailWith(
         /maxRecords must be a positive integer/
       );
+    });
+
+    test('accepts a custom qualifierResolver', () => {
+      const customResolver: IQualifierResolver = {
+        matches: () => true
+      };
+      expect(PromptObservationStore.create({ qualifierResolver: customResolver })).toSucceed();
+    });
+  });
+
+  describe('qualifierResolver injection', () => {
+    test('default resolver is used when none is supplied', async () => {
+      // Default resolver is the exported defaultStringEqualityQualifierResolver;
+      // a naive-string-equality assertion is enough to prove the default path.
+      const store = PromptObservationStore.create().orThrow();
+      await seed(store, [
+        resolveRec(1, { qualifierContext: { lang: 'fr' } }),
+        resolveRec(2, { qualifierContext: { lang: 'fr-CA' } })
+      ]);
+      // Default resolver is string-equality, so 'fr' does NOT match 'fr-CA'.
+      // (A ts-res-driven resolver would consider them a similarity match.)
+      expect(store.query({ qualifiers: { lang: 'fr' } }).map((r) => r.seq)).toEqual([1]);
+    });
+
+    test('injected resolver receives the record + query contexts and overrides the default match', async () => {
+      // A spy resolver that records the (record, query) pairs it sees, then
+      // returns a custom verdict — proves the store delegates to the injected
+      // resolver and surfaces its result.
+      const calls: Array<{
+        record: Readonly<Record<string, string | undefined>>;
+        query: Readonly<Record<string, string | undefined>>;
+      }> = [];
+      const customResolver: IQualifierResolver = {
+        matches(
+          recordContext: Readonly<Record<string, string | undefined>>,
+          queryContext: Readonly<Record<string, string | undefined>>
+        ): boolean {
+          calls.push({ record: { ...recordContext }, query: { ...queryContext } });
+          // Match if EITHER side carries the test key — a deliberately non-default semantic.
+          return recordContext.test === 'yes' || queryContext.test === 'yes';
+        }
+      };
+      const store = PromptObservationStore.create({ qualifierResolver: customResolver }).orThrow();
+      await seed(store, [
+        resolveRec(1, { qualifierContext: { test: 'yes', other: 'a' } }),
+        resolveRec(2, { qualifierContext: { test: 'no', other: 'b' } })
+      ]);
+      const out = store.query({ qualifiers: { other: 'unused' } });
+      // The custom matcher returns true for record 1 (it has test=yes), false for record 2.
+      expect(out.map((r) => r.seq)).toEqual([1]);
+      // Resolver was called once per record with the right contexts.
+      expect(calls.length).toBe(2);
+      expect(calls[0]).toEqual({ record: { test: 'yes', other: 'a' }, query: { other: 'unused' } });
+      expect(calls[1]).toEqual({ record: { test: 'no', other: 'b' }, query: { other: 'unused' } });
     });
   });
 
