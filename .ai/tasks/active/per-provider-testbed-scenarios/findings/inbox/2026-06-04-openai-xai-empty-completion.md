@@ -4,7 +4,7 @@
 **Surfaced by:** `per-provider-testbed-scenarios` stream — live runs of `openai-client-tools` and `xai-client-tools`
 **Library:** `@fgv/ts-extras/ai-assist` (suspected) — possibly consumer-side config
 **Severity:** P1 if confirmed — the scenarios never reach a usable answer; client tools do not fire
-**Disposition:** OPEN — root cause is a **leading hypothesis pending one re-run** with the new reporting (see "Confirming step"). Filed alongside the Gemini `additionalProperties` finding for the orchestrator triage.
+**Disposition:** **RESOLVED** by the `ai-assist-responses-reasoning-events` stream (closeout PR on `chore/ai-assist-reasoning-events-and-closeout`, 2026-06-05). Root cause was NOT budget exhaustion — it was an `item_id ↔ call_id` correlation bug in the OpenAI Responses streaming adapter (delta/done events carry only `item_id`; the adapter looked up by `call_id` and silently no-op'd). The leading "incomplete completion" hypothesis was wrong: live captures confirmed `status: 'completed'`, not `'incomplete'`. A latent second bug in the continuation builder (emitting `id` instead of required `call_id` on function_call input items) surfaced live the moment the adapter fix made function_call events flow through; both were fixed together in the closeout PR. All four scenarios (Anthropic / OpenAI / xAI / Gemini) now PASS on live re-run.
 
 ---
 

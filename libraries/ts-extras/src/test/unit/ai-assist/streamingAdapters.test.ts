@@ -271,6 +271,16 @@ function anthropicRedactedThinkingSse(parts: {
 
 /**
  * Builds an OpenAI Responses API SSE stream with a function_call item.
+ *
+ * Wire-shape note: the live Responses API uses two distinct identifiers per
+ * function_call — the output-item id (`fc_*`, surfaced as `item.id` and the
+ * `item_id` on subsequent argument events) and the call id (`call_*`, surfaced
+ * as `item.call_id` and used in continuation input items). The
+ * `function_call_arguments.{delta,done}` events carry **only** `item_id`; the
+ * adapter must correlate `item_id` → `call_id` via the earlier
+ * `response.output_item.added` event. The fixture mirrors that — if the test
+ * caller does not supply an explicit `itemId`, it defaults to the `callId`
+ * so the existing C2 tests keep their original ids.
  */
 function responsesApiFunctionCallSse(parts: {
   callId: string;
@@ -278,32 +288,33 @@ function responsesApiFunctionCallSse(parts: {
   argChunks: ReadonlyArray<string>;
   fullArgs?: string;
   textDeltas?: ReadonlyArray<string>;
+  itemId?: string;
 }): string[] {
-  const { callId, name, argChunks, fullArgs, textDeltas = [] } = parts;
+  const { callId, name, argChunks, fullArgs, textDeltas = [], itemId = callId } = parts;
   const concatenated = argChunks.join('');
   const events: string[] = [];
 
-  // function_call output item added
+  // function_call output item added: item.id is the item_id (fc_*); item.call_id is the call_id (call_*).
   events.push(
     `event: response.output_item.added\ndata: ${JSON.stringify({
-      item: { type: 'function_call', id: callId, call_id: callId, name }
+      item: { type: 'function_call', id: itemId, call_id: callId, name }
     })}\n\n`
   );
 
-  // arg delta events
+  // arg delta events — keyed by item_id (the live wire shape).
   for (const chunk of argChunks) {
     events.push(
       `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
-        call_id: callId,
+        item_id: itemId,
         delta: chunk
       })}\n\n`
     );
   }
 
-  // args done event
+  // args done event — keyed by item_id.
   events.push(
     `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
-      call_id: callId,
+      item_id: itemId,
       arguments: fullArgs ?? concatenated
     })}\n\n`
   );
@@ -980,10 +991,10 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
       })}\n\n`
     );
 
-    // Args deltas for fc_A
+    // Args deltas for fc_A — keyed by item_id (matches the live wire shape).
     events.push(
       `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
-        call_id: 'fc_A',
+        item_id: 'fc_A',
         delta: '{"p":1}'
       })}\n\n`
     );
@@ -991,7 +1002,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     // Args deltas for fc_B
     events.push(
       `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
-        call_id: 'fc_B',
+        item_id: 'fc_B',
         delta: '{"q":2}'
       })}\n\n`
     );
@@ -999,7 +1010,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     // Done for fc_A
     events.push(
       `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
-        call_id: 'fc_A',
+        item_id: 'fc_A',
         arguments: '{"p":1}'
       })}\n\n`
     );
@@ -1007,7 +1018,7 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     // Done for fc_B
     events.push(
       `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
-        call_id: 'fc_B',
+        item_id: 'fc_B',
         arguments: '{"q":2}'
       })}\n\n`
     );
@@ -1102,9 +1113,10 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
       `event: response.output_item.added\ndata: ${JSON.stringify({
         item: { type: 'function_call', id: 'fc_nodelta', call_id: 'fc_nodelta', name: 'nodelta_tool' }
       })}\n\n`,
-      // No function_call_arguments.delta events — provider delivered nothing before .done
+      // No function_call_arguments.delta events — provider delivered nothing before .done.
+      // .done is keyed by item_id, matching the live wire shape.
       `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
-        call_id: 'fc_nodelta',
+        item_id: 'fc_nodelta',
         arguments: '{"answer":42}'
       })}\n\n`,
       `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
@@ -1277,6 +1289,210 @@ describe('OpenAI Responses API streaming adapter — C2 client tool extensions',
     expect(done.type).toBe('done');
     expect(done.truncated).toBe(true);
     expect(done.incompleteReason).toBeUndefined();
+  });
+
+  // ========================================================================
+  // Reasoning-model wire-shape tests
+  // ========================================================================
+  //
+  // Live OpenAI / xAI captures (2026-06) showed reasoning-capable models emit
+  // a leading reasoning output_item.{added,done} pair before the function_call
+  // item, AND the subsequent function_call_arguments.{delta,done} events are
+  // keyed by `item_id` (the fc_*/output-item id) rather than `call_id` (the
+  // call_*/continuation id). The adapter must:
+  //   1. Skip reasoning items without yielding events for them (reasoning
+  //      content is discarded by design — separate `ai-assist-thinking-events`
+  //      follow-up stream owns surfacing reasoning to callers).
+  //   2. Correlate item_id → call_id via the function_call output_item.added
+  //      event so the arg-accumulation handlers can resolve the call.
+  //
+  // These tests assert the actual IAiStreamEvent sequence produced from
+  // realistic SSE fixtures that mirror live captures — per the L37 reference
+  // observation, tests must verify emitted events from real wire shapes,
+  // not call success.
+
+  test('reasoning models: skips leading reasoning items and correctly correlates item_id → call_id for function calls', async () => {
+    // Mirrors the live OpenAI gpt-5.1 capture: reasoning item added+done, then
+    // function_call output_item.added with item.id !== item.call_id, then
+    // arguments.{delta,done} events carrying only item_id.
+    const reasoningItemId = 'rs_0bc550c3652817eb006a2258f29810819b8547b089f4772919';
+    const fcItemId = 'fc_0352bf740c76b6d0006a22591d70c0819b8124c7544b233685';
+    const fcCallId = 'call_m3NwZgvp5ZHRgtV3EHYHqIJX';
+    const sseChunks: string[] = [
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: reasoningItemId, content: [], summary: [] }
+      })}\n\n`,
+      `event: response.output_item.done\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: reasoningItemId, content: [], summary: [] }
+      })}\n\n`,
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: {
+          type: 'function_call',
+          id: fcItemId,
+          call_id: fcCallId,
+          name: 'recall_memory',
+          status: 'in_progress',
+          arguments: ''
+        }
+      })}\n\n`,
+      `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
+        item_id: fcItemId,
+        delta: '{"key":'
+      })}\n\n`,
+      `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
+        item_id: fcItemId,
+        delta: '"display-mode"}'
+      })}\n\n`,
+      `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
+        item_id: fcItemId,
+        arguments: '{"key":"display-mode"}'
+      })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    // No events should fire for the reasoning item (discarded by design).
+    const start = events.find((e) => e.type === 'client-tool-call-start') as
+      | AiAssist.IAiStreamToolUseStart
+      | undefined;
+    expect(start?.toolName).toBe('recall_memory');
+    // client-tool-call-start carries the call_id (continuation id), NOT the item_id.
+    expect(start?.callId).toBe(fcCallId);
+
+    const done = events.find((e) => e.type === 'client-tool-call-done') as
+      | AiAssist.IAiStreamToolUseDelta
+      | undefined;
+    expect(done?.toolName).toBe('recall_memory');
+    // Critical: done.callId is the call_* id even though the delta/done SSE events
+    // carry only item_id — adapter correlates them.
+    expect(done?.callId).toBe(fcCallId);
+    expect(done?.args).toEqual({ key: 'display-mode' });
+
+    const doneEvent = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(doneEvent.type).toBe('done');
+    expect(doneEvent.truncated).toBe(false);
+  });
+
+  test('reasoning models: text-delta events still fire when the model produces a final answer', async () => {
+    // Mirrors the simple gpt-5.1 capture: reasoning item, then a message item with text deltas.
+    const sseChunks: string[] = [
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: 'rs_1', content: [], summary: [] }
+      })}\n\n`,
+      `event: response.output_item.done\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: 'rs_1', content: [], summary: [] }
+      })}\n\n`,
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: { type: 'message', id: 'msg_1', role: 'assistant', status: 'in_progress' }
+      })}\n\n`,
+      `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'Hi' })}\n\n`,
+      `event: response.output_text.delta\ndata: ${JSON.stringify({ delta: ' there.' })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    const textDeltas = events.filter((e) => e.type === 'text-delta');
+    expect(textDeltas).toHaveLength(2);
+    expect((textDeltas[0] as AiAssist.IAiStreamTextDelta).delta).toBe('Hi');
+    expect((textDeltas[1] as AiAssist.IAiStreamTextDelta).delta).toBe(' there.');
+
+    const doneEvent = events[events.length - 1] as AiAssist.IAiStreamDone;
+    expect(doneEvent.fullText).toBe('Hi there.');
+  });
+
+  test('reasoning models: reasoning_summary_* events from xAI/grok are ignored without disrupting downstream function-call flow', async () => {
+    // Mirrors the live xAI grok-4.3 capture: reasoning_summary text streams while the
+    // reasoning item is open, then a function_call follows.
+    const reasoningId = 'rs_82d9f851-a8e0-4054-b2b0-4ceb5e1d077e';
+    const fcItemId = 'fc_82d9f851-a8e0-4054-b2b0-4ceb5e1d077e_0';
+    const fcCallId = 'call-f3e96b46-b07a-484e-b1c6-426e37271e79-0';
+    const sseChunks: string[] = [
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: reasoningId, summary: [], status: 'in_progress' }
+      })}\n\n`,
+      `event: response.reasoning_summary_part.added\ndata: ${JSON.stringify({
+        item_id: reasoningId,
+        part: { type: 'summary_text', text: '' }
+      })}\n\n`,
+      `event: response.reasoning_summary_text.delta\ndata: ${JSON.stringify({
+        item_id: reasoningId,
+        delta: 'Thinking about preferences...'
+      })}\n\n`,
+      `event: response.reasoning_summary_text.done\ndata: ${JSON.stringify({
+        item_id: reasoningId,
+        text: 'Thinking about preferences...'
+      })}\n\n`,
+      `event: response.reasoning_summary_part.done\ndata: ${JSON.stringify({
+        item_id: reasoningId
+      })}\n\n`,
+      `event: response.output_item.done\ndata: ${JSON.stringify({
+        item: { type: 'reasoning', id: reasoningId, status: 'completed' }
+      })}\n\n`,
+      `event: response.output_item.added\ndata: ${JSON.stringify({
+        item: {
+          type: 'function_call',
+          id: fcItemId,
+          call_id: fcCallId,
+          name: 'recall_memory',
+          status: 'in_progress',
+          arguments: ''
+        }
+      })}\n\n`,
+      `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
+        item_id: fcItemId,
+        delta: '{"key":"display-mode"}'
+      })}\n\n`,
+      `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
+        item_id: fcItemId,
+        arguments: '{"key":"display-mode"}'
+      })}\n\n`,
+      `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`
+    ];
+    mockSseResponse(sseChunks);
+
+    const result = await AiAssist.callProviderCompletionStream({
+      descriptor: makeOpenAiResponsesDescriptor(),
+      apiKey: 'sk',
+      prompt: TEST_PROMPT,
+      tools
+    });
+
+    expect(result).toSucceed();
+    if (!result.isSuccess()) return;
+    const events = await collect(result.value);
+
+    // No text-delta events for reasoning summary content (reasoning is discarded).
+    expect(events.some((e) => e.type === 'text-delta')).toBe(false);
+
+    // Function-call flow still surfaces correctly after the reasoning items.
+    const done = events.find((e) => e.type === 'client-tool-call-done') as
+      | AiAssist.IAiStreamToolUseDelta
+      | undefined;
+    expect(done?.toolName).toBe('recall_memory');
+    expect(done?.callId).toBe(fcCallId);
+    expect(done?.args).toEqual({ key: 'display-mode' });
   });
 });
 
