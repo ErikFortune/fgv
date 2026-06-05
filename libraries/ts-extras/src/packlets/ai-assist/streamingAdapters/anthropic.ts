@@ -39,7 +39,13 @@ import { AiPrompt, type AiToolConfig, type IAiStreamEvent, type IChatMessage } f
 import { parseSseEventJson, readSseEvents } from '../sseParser';
 import { toAnthropicTools } from '../toolFormats';
 import { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from '../thinkingOptionsResolver';
-import { IStreamApiConfig, openSseConnection, validateEventPayload } from './common';
+import {
+  IStreamApiConfig,
+  UNRECOGNIZED_EVENT_WARN_TAG,
+  formatUnrecognizedEventPayloadPreview,
+  openSseConnection,
+  validateEventPayload
+} from './common';
 
 // ============================================================================
 // Accumulated block types (internal — used by C3 continuation builder)
@@ -254,21 +260,49 @@ const anthropicErrorPayload: Validator<IAnthropicErrorPayload> = Validators.obje
 // ============================================================================
 
 /**
+ * Recognized Anthropic Messages API SSE event names. Anything not in this set surfaces a
+ * one-time `logger.warn` per stream — same rationale as the OpenAI Responses adapter's
+ * `RECOGNIZED_OPENAI_RESPONSES_EVENTS` allowlist in `openaiResponses.ts`. Add to this set
+ * when a new event type is observed and confirmed safe to ignore.
+ *
+ * @internal
+ */
+const RECOGNIZED_ANTHROPIC_EVENTS: ReadonlySet<string> = new Set<string>([
+  // ---- handled by the translator ----
+  'content_block_start',
+  'content_block_delta',
+  'content_block_stop',
+  'message_delta',
+  'message_stop',
+  'error',
+  // ---- lifecycle / heartbeats: intentionally silent ----
+  'message_start',
+  'ping'
+]);
+
+/**
  * Translates an Anthropic Messages API SSE stream into unified events.
  *
  * Maintains an ordered accumulation buffer (keyed by SSE `index`) for all
  * content blocks: `thinking`, `redacted_thinking`, `text`, and `tool_use`.
  * The buffer is available on the returned generator via `.accumulationBuffer`.
  *
+ * Unrecognized event names are reported once per stream via `logger?.warn` —
+ * see {@link RECOGNIZED_ANTHROPIC_EVENTS}.
+ *
  * @internal
  */
 async function* translateAnthropicStream(
   response: Response,
-  accumulationBuffer: Map<number, IAccumulatedBlock>
+  accumulationBuffer: Map<number, IAccumulatedBlock>,
+  logger?: Logging.ILogger
 ): AsyncGenerator<IAiStreamEvent> {
   let fullText = '';
   let truncated = false;
   let stopped = false;
+  // Track unrecognized event names we have already warned about, so a hot stream of
+  // an unknown event type produces exactly one log line per name per stream.
+  const warnedEvents = new Set<string>();
 
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
@@ -390,6 +424,23 @@ async function* translateAnthropicStream(
           message: payload?.error?.message ?? 'Anthropic stream returned an error event'
         };
         return;
+      } else if (
+        typeof eventName === 'string' &&
+        !RECOGNIZED_ANTHROPIC_EVENTS.has(eventName) &&
+        !warnedEvents.has(eventName)
+      ) {
+        // Empirical drift instrument: an unrecognized Anthropic event surfaces as a one-time
+        // warning per stream. Update RECOGNIZED_ANTHROPIC_EVENTS once the new event is either
+        // handled or confirmed safe to ignore.
+        warnedEvents.add(eventName);
+        logger?.warn(
+          `${UNRECOGNIZED_EVENT_WARN_TAG} Anthropic streaming adapter: unrecognized SSE event ` +
+            `'${eventName}'. ` +
+            `payload preview: ${formatUnrecognizedEventPayloadPreview(message.data)}. ` +
+            `This may indicate provider drift — if the new event carries data the adapter ` +
+            `should surface, add a handler; otherwise add the name to ` +
+            `RECOGNIZED_ANTHROPIC_EVENTS.`
+        );
       }
     }
   } catch (err: unknown) /* c8 ignore start - defensive: stream errors are always Error instances */ {
@@ -464,5 +515,5 @@ export async function callAnthropicStream(
   }
   const buffer = accumulationBuffer ?? new Map<number, IAccumulatedBlock>();
   const conn = await openSseConnection(url, headers, body, logger, signal);
-  return conn.onSuccess((response) => succeed(translateAnthropicStream(response, buffer)));
+  return conn.onSuccess((response) => succeed(translateAnthropicStream(response, buffer, logger)));
 }

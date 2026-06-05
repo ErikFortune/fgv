@@ -426,8 +426,12 @@ describe('buildOpenAiContinuation', () => {
 
     const cont = buildOpenAiContinuation(calls, results);
     expect(cont.messages).toHaveLength(2);
+    // Per ResponseFunctionToolCall spec, call_id is the required correlation field
+    // and must match the matching function_call_output's call_id below. The optional
+    // `id` (output-item id) is omitted for input items.
     expect(cont.messages[0].type).toBe('function_call');
-    expect(cont.messages[0].id).toBe('call_abc');
+    expect(cont.messages[0].call_id).toBe('call_abc');
+    expect(cont.messages[0].id).toBeUndefined();
     expect(cont.messages[0].name).toBe('recall_memory');
     expect(cont.messages[0].arguments).toBe('{"query":"test"}');
 
@@ -452,6 +456,12 @@ describe('buildOpenAiContinuation', () => {
     const outputItems = cont.messages.filter((m) => m.type === 'function_call_output');
     expect(functionCallItems).toHaveLength(2);
     expect(outputItems).toHaveLength(2);
+    // Each function_call item must carry call_id (the required correlation field) — the
+    // call_id pairs the function_call to its matching function_call_output by spec.
+    const functionCallCallIds = functionCallItems.map((m) => m.call_id).sort();
+    const outputCallIds = outputItems.map((m) => m.call_id).sort();
+    expect(functionCallCallIds).toEqual(['call_1', 'call_2']);
+    expect(outputCallIds).toEqual(['call_1', 'call_2']);
   });
 
   test('includes correct toolCallsSummary', () => {
@@ -1309,20 +1319,22 @@ describe('executeClientToolTurn', () => {
 
   describe('OpenAI provider routing', () => {
     test('routes to OpenAI Responses adapter and builds function_call continuation', async () => {
+      // Live wire shape: function_call_arguments.{delta,done} carry item_id (the fc_*/output-item id),
+      // NOT call_id. The adapter correlates item_id → call_id via the earlier output_item.added event.
       const openAiSse = [
         `event: response.output_item.added\ndata: ${JSON.stringify({
-          item: { type: 'function_call', id: 'call_oi1', name: 'recall_memory', call_id: 'call_oi1' }
+          item: { type: 'function_call', id: 'fc_oi1', name: 'recall_memory', call_id: 'call_oi1' }
         })}\n\n`,
         `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
-          call_id: 'call_oi1',
+          item_id: 'fc_oi1',
           delta: '{"query"'
         })}\n\n`,
         `event: response.function_call_arguments.delta\ndata: ${JSON.stringify({
-          call_id: 'call_oi1',
+          item_id: 'fc_oi1',
           delta: ':"x"}'
         })}\n\n`,
         `event: response.function_call_arguments.done\ndata: ${JSON.stringify({
-          call_id: 'call_oi1',
+          item_id: 'fc_oi1',
           arguments: '{"query":"x"}'
         })}\n\n`,
         `event: response.completed\ndata: ${JSON.stringify({ response: { status: 'completed' } })}\n\n`

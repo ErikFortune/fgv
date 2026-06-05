@@ -26,7 +26,7 @@
  * @packageDocumentation
  */
 
-import type { JsonObject } from '@fgv/ts-json-base';
+import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
 import { type Converter, Converters } from '@fgv/ts-utils';
 
 import { AiPrompt, type IAiImageAttachment, type IChatMessage, toDataUrl } from './model';
@@ -52,6 +52,48 @@ const rawTailMessageConverter: Converter<{ role: 'user' | 'assistant'; content: 
   );
 
 /**
+ * Converter for an OpenAI / xAI Responses API `rawTail` item. These are
+ * provider-native input items (`function_call`, `function_call_output`) whose
+ * fields differ per item type, so — unlike the Anthropic `{ role, content }`
+ * projection — the whole object is preserved verbatim.
+ *
+ * The static input is already typed `JsonObject`, so the `isJsonObject` guard
+ * is a runtime backstop, not a compile-time narrowing: continuation messages
+ * originate from a prior turn's `IAiClientToolContinuation.messages` and a
+ * consumer may persist and reload them through untyped JSON before passing them
+ * back. The guard preserves the same "a malformed continuation message is
+ * better omitted than transmitted verbatim" posture as the Anthropic path —
+ * non-object entries fail conversion and are skipped by the caller.
+ * @internal
+ */
+const openAiRawTailItemConverter: Converter<JsonObject> = Converters.isA<JsonObject>(
+  'JsonObject',
+  (v): v is JsonObject => isJsonObject(v)
+);
+
+/**
+ * Converter for a Gemini `rawTail` item. Gemini continuation messages are
+ * `{ role, parts }` turns (a model turn with `functionCall` parts followed by a
+ * user turn with `functionResponse` parts). Narrows a `JsonObject` to
+ * `{ role: 'user' | 'model'; parts: Array<Record<string, unknown>> }`; entries
+ * that fail validation are skipped by the caller.
+ * @internal
+ */
+const geminiRawTailMessageConverter: Converter<{
+  role: 'user' | 'model';
+  parts: unknown[];
+}> = Converters.object<{ role: 'user' | 'model'; parts: unknown[] }>(
+  {
+    role: Converters.enumeratedValue<'user' | 'model'>(['user', 'model']),
+    // `parts` is preserved verbatim and serialized into the request body, so the
+    // element shape is not narrowed here — `Array.isArray` soundly guarantees
+    // `unknown[]` (narrowing to `Record<string, unknown>[]` would be an unchecked cast).
+    parts: Converters.isA('array', (v): v is unknown[] => Array.isArray(v))
+  },
+  { strict: false }
+);
+
+/**
  * Optional head/tail messages to weave around the prompt's user message.
  *
  * @internal
@@ -70,12 +112,18 @@ export interface IBuildMessagesOptions {
   /**
    * Raw JSON objects appended after the prompt's user message. Used to
    * inject provider-specific continuation messages (e.g. Anthropic assistant
-   * turns with thinking blocks) that cannot be expressed as plain
-   * {@link IChatMessage} objects.
+   * turns with thinking blocks, OpenAI Responses `function_call` /
+   * `function_call_output` items, Gemini `functionCall` / `functionResponse`
+   * turns) that cannot be expressed as plain {@link IChatMessage} objects.
    *
-   * Each element is validated against a `{ role: string, content: string | unknown[] }`
-   * shape and projected to those two fields; any additional fields on the input
-   * are dropped. Entries that fail the shape check are silently skipped (the
+   * Each builder applies its own provider-specific shape guard:
+   * - {@link buildAnthropicMessages} projects each entry to `{ role, content }`.
+   * - {@link buildMessages} (OpenAI / xAI Responses) preserves each item
+   *   verbatim (item fields differ per `type`), guarding only that it is a
+   *   JSON object.
+   * - {@link buildGeminiContents} projects each entry to `{ role, parts }`.
+   *
+   * Entries that fail their builder's shape check are silently skipped (the
    * caller is responsible for supplying well-formed continuation messages).
    * Takes precedence over (and is appended after) `tail`.
    */
@@ -87,16 +135,21 @@ export interface IBuildMessagesOptions {
  * The caller supplies the user content (string for text-only, parts array
  * for vision prompts) since the parts shape differs by format.
  *
+ * `rawTail` items (OpenAI / xAI Responses `function_call` /
+ * `function_call_output` continuation items) are appended verbatim after the
+ * user message — their fields differ per item `type`, so they are preserved
+ * rather than projected. The return type is `Array<Record<string, unknown>>`
+ * to accommodate both `{ role, content }` messages and these heterogeneous
+ * input items.
+ *
  * @internal
  */
 export function buildMessages(
   systemPrompt: string,
   userContent: string | unknown[],
   options?: IBuildMessagesOptions
-): Array<{ role: string; content: string | unknown[] }> {
-  const messages: Array<{ role: string; content: string | unknown[] }> = [
-    { role: 'system', content: systemPrompt }
-  ];
+): Array<Record<string, unknown>> {
+  const messages: Array<Record<string, unknown>> = [{ role: 'system', content: systemPrompt }];
   /* c8 ignore next 4 - head branch: options?.head short-circuit not reached from current call sites */
   if (options?.head) {
     for (const msg of options.head) {
@@ -108,6 +161,17 @@ export function buildMessages(
   if (options?.tail) {
     for (const msg of options.tail) {
       messages.push({ role: msg.role, content: msg.content });
+    }
+  }
+  // OpenAI / xAI Responses continuation items (function_call /
+  // function_call_output) are appended verbatim — their field set differs per
+  // item type, so the whole object is preserved rather than projected.
+  if (options?.rawTail) {
+    for (const item of options.rawTail) {
+      const converted = openAiRawTailItemConverter.convert(item);
+      if (converted.isSuccess()) {
+        messages.push(converted.value);
+      }
     }
   }
   return messages;
@@ -245,8 +309,8 @@ export function buildAnthropicMessages(
 export function buildGeminiContents(
   prompt: AiPrompt,
   options?: IBuildMessagesOptions
-): Array<{ role: string; parts: Array<Record<string, unknown>> }> {
-  const contents: Array<{ role: string; parts: Array<Record<string, unknown>> }> = [];
+): Array<{ role: string; parts: unknown[] }> {
+  const contents: Array<{ role: string; parts: unknown[] }> = [];
   /* c8 ignore next 7 - head branch: options?.head short-circuit not reached from current call sites */
   if (options?.head) {
     for (const msg of options.head) {
@@ -267,6 +331,16 @@ export function buildGeminiContents(
           role: msg.role === 'assistant' ? 'model' : msg.role,
           parts: [{ text: msg.content }]
         });
+      }
+    }
+  }
+  // Gemini continuation turns (model `functionCall` parts + user
+  // `functionResponse` parts) are projected to `{ role, parts }`.
+  if (options?.rawTail) {
+    for (const item of options.rawTail) {
+      const converted = geminiRawTailMessageConverter.convert(item);
+      if (converted.isSuccess()) {
+        contents.push(converted.value);
       }
     }
   }

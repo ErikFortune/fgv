@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { JsonSchema } from '@fgv/ts-json-base';
+import { JsonSchema, type JsonValue } from '@fgv/ts-json-base';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import type {
@@ -34,6 +34,7 @@ import type {
 import {
   resolveEffectiveTools,
   toAnthropicTools,
+  toGeminiParameterSchema,
   toGeminiTools,
   toResponsesApiTools
 } from '../../../packlets/ai-assist/toolFormats';
@@ -93,6 +94,48 @@ const weatherTool: IAiClientToolConfig = {
 const memoryWireSchema = memorySchema.toJson();
 // The expected wire schema from the weather tool's parametersSchema.toJson()
 const weatherWireSchema = weatherSchema.toJson();
+
+// A client tool whose parameters schema nests an object property, so the recursive
+// Gemini sanitizer must strip `additionalProperties` at more than the top level.
+const nestedSchema = JsonSchema.object({
+  filter: JsonSchema.object({
+    field: JsonSchema.string({ description: 'Field to match' })
+  })
+});
+
+const nestedTool: IAiClientToolConfig = {
+  type: 'client_tool',
+  name: 'search',
+  description: 'Search with a nested filter',
+  parametersSchema: nestedSchema
+};
+
+// Expected Gemini-sanitized parameters (draft-07 `additionalProperties` stripped at
+// every nesting level). Authored explicitly — not derived from the function under test.
+const memoryGeminiParams = {
+  type: 'object',
+  properties: { query: { type: 'string', description: 'What to recall' } },
+  required: ['query']
+};
+const weatherGeminiParams = {
+  type: 'object',
+  properties: {
+    location: { type: 'string', description: 'City name' },
+    units: { type: 'string', enum: ['celsius', 'fahrenheit'], description: 'Temperature units' }
+  },
+  required: ['location']
+};
+const nestedGeminiParams = {
+  type: 'object',
+  properties: {
+    filter: {
+      type: 'object',
+      properties: { field: { type: 'string', description: 'Field to match' } },
+      required: ['field']
+    }
+  },
+  required: ['filter']
+};
 
 function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProviderDescriptor {
   return {
@@ -355,7 +398,7 @@ describe('toGeminiTools', () => {
           {
             name: 'recall_memory',
             description: 'Recall stored user context',
-            parameters: memoryWireSchema
+            parameters: memoryGeminiParams
           }
         ]
       }
@@ -369,12 +412,12 @@ describe('toGeminiTools', () => {
           {
             name: 'recall_memory',
             description: 'Recall stored user context',
-            parameters: memoryWireSchema
+            parameters: memoryGeminiParams
           },
           {
             name: 'get_weather',
             description: 'Get current weather for a location',
-            parameters: weatherWireSchema
+            parameters: weatherGeminiParams
           }
         ]
       }
@@ -391,9 +434,126 @@ describe('toGeminiTools', () => {
         {
           name: 'recall_memory',
           description: 'Recall stored user context',
-          parameters: memoryWireSchema
+          parameters: memoryGeminiParams
         }
       ]
     });
+  });
+
+  test('strips additionalProperties from a client tool parameters schema (top level)', () => {
+    // The raw draft-07 schema carries `additionalProperties: false`, which Gemini rejects.
+    expect(memoryWireSchema).toHaveProperty('additionalProperties', false);
+
+    const result = toGeminiTools([memoryTool]);
+    const declarations = (result[0] as { function_declarations: Array<{ parameters: object }> })
+      .function_declarations;
+    const params = declarations[0].parameters as Record<string, unknown>;
+    expect(params).not.toHaveProperty('additionalProperties');
+  });
+
+  test('strips additionalProperties at every nesting level', () => {
+    // Sanity-check the fixture: the raw schema carries additionalProperties on both the
+    // outer object and the nested `filter` object.
+    const rawParams = nestedSchema.toJson() as {
+      additionalProperties?: unknown;
+      properties: { filter: { additionalProperties?: unknown } };
+    };
+    expect(rawParams).toHaveProperty('additionalProperties', false);
+    expect(rawParams.properties.filter).toHaveProperty('additionalProperties', false);
+
+    const result = toGeminiTools([nestedTool]);
+    const declarations = (result[0] as { function_declarations: Array<{ parameters: object }> })
+      .function_declarations;
+    const params = declarations[0].parameters as {
+      additionalProperties?: unknown;
+      properties: { filter: { additionalProperties?: unknown } };
+    };
+    expect(params).not.toHaveProperty('additionalProperties');
+    expect(params.properties.filter).not.toHaveProperty('additionalProperties');
+    // Full-shape check: only the stripped keys are removed; nothing else drops.
+    expect(params).toEqual(nestedGeminiParams);
+  });
+});
+
+// ============================================================================
+// toGeminiParameterSchema (Gemini schema sanitizer)
+// ============================================================================
+
+describe('toGeminiParameterSchema', () => {
+  test('strips additionalProperties recursively through properties and items', () => {
+    const input: JsonValue = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        nested: { type: 'object', additionalProperties: false, properties: {} }
+      },
+      items: { type: 'object', additionalProperties: false, properties: {} }
+    };
+    expect(toGeminiParameterSchema(input)).toEqual({
+      type: 'object',
+      properties: { nested: { type: 'object', properties: {} } },
+      items: { type: 'object', properties: {} }
+    });
+  });
+
+  test('strips $schema (defensive — draft-07 emitters may include it)', () => {
+    const input: JsonValue = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      properties: { nested: { $schema: 'x', type: 'string' } }
+    };
+    expect(toGeminiParameterSchema(input)).toEqual({
+      type: 'object',
+      properties: { nested: { type: 'string' } }
+    });
+  });
+
+  test('sanitizes schema nodes nested inside arrays', () => {
+    const input: JsonValue = {
+      anyOf: [{ type: 'object', additionalProperties: false, properties: {} }, { type: 'string' }]
+    };
+    expect(toGeminiParameterSchema(input)).toEqual({
+      anyOf: [{ type: 'object', properties: {} }, { type: 'string' }]
+    });
+  });
+
+  test('preserves a parameter literally named additionalProperties or $schema', () => {
+    // Inside a `properties` map the keys are user-defined parameter names, not schema
+    // keywords — they must survive even when they collide with a stripped keyword.
+    const input: JsonValue = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        additionalProperties: { type: 'string', description: 'a real param' },
+        $schema: { type: 'string' },
+        nested: { type: 'object', additionalProperties: false, properties: {} }
+      },
+      required: ['additionalProperties']
+    };
+    expect(toGeminiParameterSchema(input)).toEqual({
+      type: 'object',
+      properties: {
+        additionalProperties: { type: 'string', description: 'a real param' },
+        $schema: { type: 'string' },
+        nested: { type: 'object', properties: {} }
+      },
+      required: ['additionalProperties']
+    });
+  });
+
+  test('passes through a schema with none of the stripped keys unchanged', () => {
+    const clean: JsonValue = {
+      type: 'object',
+      properties: { name: { type: 'string', description: 'A name' } },
+      required: ['name']
+    };
+    expect(toGeminiParameterSchema(clean)).toEqual(clean);
+  });
+
+  test('returns primitive values unchanged', () => {
+    expect(toGeminiParameterSchema('hello')).toBe('hello');
+    expect(toGeminiParameterSchema(42)).toBe(42);
+    expect(toGeminiParameterSchema(true)).toBe(true);
+    expect(toGeminiParameterSchema(null)).toBeNull();
   });
 });
