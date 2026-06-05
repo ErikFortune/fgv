@@ -506,20 +506,28 @@ export class PromptLibrary<
    * `trace.resourceBindingResolutions[].innerTrace` rather than firing their
    * own observation.
    */
-  private async _resolveObserved(
-    req: IPromptResolveRequest<string>
-  ): Promise<{ readonly result: Result<IResolvedPrompt>; readonly resolveSeq: number }> {
+  private async _resolveObserved(req: IPromptResolveRequest<string>): Promise<{
+    readonly result: Result<IResolvedPrompt>;
+    readonly resolveSeq: number;
+    readonly resolveDurationMs: number;
+  }> {
     // Pay nothing in the additive-default (no-observers) path: skip the clock
     // reads and record build entirely.
     const observing = this._observers.length > 0;
     const startedAt = observing ? this._observationNow() : 0;
     const result = await this._resolveInternal(req, 0, []);
     if (!observing) {
-      return { result, resolveSeq: 0 };
+      return { result, resolveSeq: 0, resolveDurationMs: 0 };
     }
-    const record = this._buildResolveObservation(req, result, this._observationNow() - startedAt);
+    // Capture the resolve-computation duration BEFORE awaiting observer
+    // dispatch, so the reported `durationMs` reflects only the computation
+    // (matching the documented `IPromptObservationBase.durationMs` semantic).
+    // Output observations downstream fold this duration into their own
+    // duration without double-counting observer-dispatch latency.
+    const resolveDurationMs = this._observationNow() - startedAt;
+    const record = this._buildResolveObservation(req, result, resolveDurationMs);
     await this._observe(record);
-    return { result, resolveSeq: record.seq };
+    return { result, resolveSeq: record.seq, resolveDurationMs };
   }
 
   /**
@@ -661,8 +669,13 @@ export class PromptLibrary<
     expectedKind: K
   ): Promise<Result<Extract<TResponse, { kind: K }>>> {
     const observing = this._observers.length > 0;
-    const startedAt = observing ? this._observationNow() : 0;
-    const { result: resolveResult, resolveSeq } = await this._resolveObserved(req);
+    const { result: resolveResult, resolveSeq, resolveDurationMs } = await this._resolveObserved(req);
+    // Output-phase timer starts AFTER _resolveObserved returns so the resolve
+    // record's observer-dispatch latency doesn't leak into the output record's
+    // durationMs. The output record's reported duration is resolveDurationMs +
+    // (now - outputStartedAt) — the computation time across both phases,
+    // excluding observer dispatch.
+    const outputStartedAt = observing ? this._observationNow() : 0;
     const outcome = resolveResult.onSuccess((resolved) => {
       const output = resolved.descriptor.output;
       if (output.kind !== 'json') {
@@ -712,7 +725,7 @@ export class PromptLibrary<
         rawOutput,
         outcome,
         resolveSeq,
-        this._observationNow() - startedAt
+        resolveDurationMs + (this._observationNow() - outputStartedAt)
       );
     }
     return outcome;
@@ -745,8 +758,10 @@ export class PromptLibrary<
     rawOutput: string
   ): Promise<Result<string>> {
     const observing = this._observers.length > 0;
-    const startedAt = observing ? this._observationNow() : 0;
-    const { result: resolveResult, resolveSeq } = await this._resolveObserved(req);
+    const { result: resolveResult, resolveSeq, resolveDurationMs } = await this._resolveObserved(req);
+    // Output-phase timer starts AFTER _resolveObserved returns; see the
+    // matching block in `resolveJsonOutput` for the durationMs semantic.
+    const outputStartedAt = observing ? this._observationNow() : 0;
     const outcome = resolveResult.onSuccess((resolved) => {
       const output = resolved.descriptor.output;
       if (output.kind !== 'free-text') {
@@ -763,7 +778,7 @@ export class PromptLibrary<
         rawOutput,
         outcome,
         resolveSeq,
-        this._observationNow() - startedAt
+        resolveDurationMs + (this._observationNow() - outputStartedAt)
       );
     }
     return outcome;
