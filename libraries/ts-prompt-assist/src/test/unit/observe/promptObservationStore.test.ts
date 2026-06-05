@@ -226,6 +226,18 @@ describe('PromptObservationStore', () => {
       expect(store.query({ qualifiers: { lang: 'de' } })).toEqual([]);
     });
 
+    test('qualifier-axis with undefined value is ignored (no filter on that axis)', async () => {
+      // Contract: callers naturally pass `{ lang: maybeLang }` where the value
+      // might be `undefined`. The store treats undefined as "no constraint on
+      // this axis" rather than "must equal undefined", so records with any
+      // defined value on that axis still match.
+      const store = await seeded();
+      // No constraints — same as no qualifiers filter — all records match.
+      expect(store.query({ qualifiers: { lang: undefined } }).map((r) => r.seq)).toEqual([1, 2, 3, 4, 5]);
+      // Mixed: one defined constraint + one undefined; only the defined constraint applies.
+      expect(store.query({ qualifiers: { lang: 'fr', tone: undefined } }).map((r) => r.seq)).toEqual([2]);
+    });
+
     test('filters by hasSafeguardFindings', async () => {
       const store = await seeded();
       expect(store.query({ hasSafeguardFindings: true }).map((r) => r.seq)).toEqual([3]);

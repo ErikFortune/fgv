@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Hash, Logging, Normalizer, Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Hash, Logging, Normalizer, Result, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
 import { sanitizeJsonObject } from '@fgv/ts-json-base';
 import {
   QualifierTypes,
@@ -1244,7 +1244,7 @@ export class PromptLibrary<
       substitutions: req.substitutions ?? {}
     })
       .onSuccess((sanitized) => this._normalizer.canonicalize(sanitized))
-      .onSuccess((canonical) => succeed(Hash.Crc32Normalizer.crc32Hash([canonical])))
+      .onSuccess((canonical) => captureResult(() => Hash.Crc32Normalizer.crc32Hash([canonical])))
       .orDefault('');
   }
 }

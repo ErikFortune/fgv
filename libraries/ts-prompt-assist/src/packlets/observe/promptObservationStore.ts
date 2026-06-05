@@ -192,7 +192,17 @@ export class PromptObservationStore implements IPromptObserver {
     record: IPromptObservationRecord,
     qualifiers: IPromptObservationQuery['qualifiers'] & object
   ): boolean {
-    for (const [key, value] of Object.entries(qualifiers)) {
+    // Contract: partial match on DEFINED qualifier values. Since
+    // `IQualifierContext` is `Partial<Record<string, string>>`, it's natural for
+    // callers to pass `{ lang: maybeLang }` where `maybeLang` could be
+    // `undefined`. Treating `undefined` as an explicit equality constraint
+    // would exclude every record (since `'fr' !== undefined`), which is the
+    // opposite of "no filter on this axis."
+    for (const key of Object.keys(qualifiers)) {
+      const value: string | undefined = qualifiers[key];
+      if (value === undefined) {
+        continue;
+      }
       if (record.qualifierContext[key] !== value) {
         return false;
       }
