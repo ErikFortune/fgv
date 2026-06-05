@@ -30,9 +30,12 @@
  */
 export interface IRetainedRecord {
   /**
-   * Monotonic sequence number, assigned by the caller. The buffer assumes
-   * non-decreasing `seq` across successive {@link RetainingRingBuffer.push | push}
-   * calls and uses it for `sinceSeq` cursor paging and {@link RetainingRingBuffer.lastSeq | lastSeq}.
+   * Monotonic sequence number, assigned by the caller. The buffer requires
+   * **strictly increasing** `seq` across successive {@link RetainingRingBuffer.push | push}
+   * calls — `sinceSeq` cursor paging uses a strict `seq > sinceSeq` filter, so
+   * duplicate `seq` values held by a consumer cursor would never be re-yielded
+   * if pushed afterward. {@link RetainingRingBuffer.lastSeq | lastSeq} likewise
+   * advances only past values strictly greater than its current value.
    */
   readonly seq: number;
 }

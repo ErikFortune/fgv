@@ -239,7 +239,10 @@ export class PromptObservationStore implements IPromptObserver {
   }
 
   /**
-   * Partial qualifier match: every supplied key must equal the record's value.
+   * Delegates to the injected {@link IQualifierResolver}. The default
+   * ({@link defaultStringEqualityQualifierResolver}) does naive string
+   * equality on supplied (defined) axes; a consumer-supplied resolver may
+   * implement different semantics (e.g. ts-res-style similarity matching).
    * @internal
    */
   private _matchesQualifiers(
