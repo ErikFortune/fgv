@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * Gemini client tools + grounding + thinking (empirical wire-shape verification).
+ * Gemini client tools + thinking (empirical wire-shape verification).
  *
  * Parallels the `anthropicClientTools` scenario for Google Gemini. It exercises the complete
  * client-tool round-trip on a live Gemini call with:
@@ -33,12 +33,18 @@
  *
  * ## Server-tool note (gate matrix divergence)
  *
- * Gemini's `web_search` support is **Google Search grounding**, not an explicit tool-progress
- * protocol. The streaming adapter (`gemini.ts`) documents that grounding metadata arrives
- * attached to text chunks and that the adapter therefore **never yields `tool-event`s**.
- * Consequently the "Server tool events emitted" gate is **N/A for Gemini** — grounding is
- * still requested (verifying server + client coexistence at the request layer), but the
- * scenario does not assert `tool-event` emission because the wire shape does not produce them.
+ * Gemini's `generateContent` API rejects requests that combine the `google_search` /
+ * `web_search` grounding tool with `function` (client) tools — the live 400 response is
+ * literally "Built-in tools (google_search) and Function Calling cannot be combined in the
+ * same request. Please choose one to continue."
+ *
+ * This is a provider-side constraint, not a library bug. Consequently this scenario
+ * exercises **client tool only** — `web_search` is intentionally not included in the request.
+ * Two gates are therefore N/A for Gemini:
+ *
+ * - "Server tool events emitted" — grounding metadata is attached to text chunks (not its
+ *   own event stream), and grounding is not requested at all in this scenario.
+ * - "Server + client tool coexistence" — Gemini's API forbids the combination.
  *
  * The scenario is CLI-only — it requires a live `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) in the
  * environment. If neither is set, the scenario fails immediately with a clear diagnostic
@@ -117,19 +123,20 @@ const memoryTool: AiAssist.IAiClientTool = {
 // Scenario prompt
 // ---------------------------------------------------------------------------
 
-/** The user question that exercises memory recall and (optionally) grounding. */
-const USER_QUESTION: string =
-  'What display mode do I prefer? Also, what is the latest stable version of TypeScript as of today?';
+/**
+ * The user question that exercises memory recall. The question is scoped to a preference
+ * lookup only — Gemini's API forbids combining grounding (`web_search`) with function
+ * calling, so this scenario exercises client tool only (see the module header).
+ */
+const USER_QUESTION: string = 'What display mode do I prefer?';
 
-/** System prompt that instructs the model to use both the memory and search tools. */
+/** System prompt that instructs the model to use the memory tool. */
 const SYSTEM_PROMPT: string =
   "You are a helpful assistant with access to the user's stored preferences via the " +
-  '`recall_memory` tool and up-to-date information via Google Search. ' +
+  '`recall_memory` tool. ' +
   'When the user asks about their preferences, always use `recall_memory` to retrieve them. ' +
   'Memory keys are lowercase-hyphenated (e.g. `display-mode`, `preferred-language`, ' +
-  '`favorite-color`) — use that exact convention when calling `recall_memory`. ' +
-  'When the user asks about current facts, search for them. ' +
-  'Combine both sources when the question spans both.';
+  '`favorite-color`) — use that exact convention when calling `recall_memory`.';
 
 // ---------------------------------------------------------------------------
 // CLI implementation
@@ -147,7 +154,7 @@ const cliImpl: ICliScenarioImpl = {
       );
     }
 
-    context.logger.info('Gemini scenario: client tools + grounding + thinking');
+    context.logger.info('Gemini scenario: client tools + thinking (no grounding — provider constraint)');
     context.logger.info(`User question: ${USER_QUESTION}`);
 
     // Resolve the Gemini provider descriptor.
@@ -170,12 +177,12 @@ const cliImpl: ICliScenarioImpl = {
     // analog of the other providers' effort=low.
     const resolvedThinking: AiAssist.IResolvedThinkingConfig = { geminiThinkingBudget: 1024 };
 
-    // Server tool: web_search (Google Search grounding). Grounding does NOT emit tool-events
-    // (see the module header); it is included to exercise server + client coexistence.
-    const serverTools: AiAssist.AiServerToolConfig[] = [{ type: 'web_search' }];
+    // No server tools — Gemini's generateContent forbids combining `web_search` grounding
+    // with function calling (see module header). This scenario exercises client tool only.
+    const serverTools: AiAssist.AiServerToolConfig[] = [];
 
-    // First turn: execute with client tools + grounding + thinking.
-    context.logger.info('Starting first turn (client tools + grounding + thinking)...');
+    // First turn: execute with client tool + thinking.
+    context.logger.info('Starting first turn (client tool + thinking)...');
 
     const turnResult = AiAssist.executeClientToolTurn({
       descriptor,
@@ -213,7 +220,7 @@ const cliImpl: ICliScenarioImpl = {
             `result=${event.result.slice(0, 80)}`
         );
       } else if (event.type === 'tool-event') {
-        // Not expected for Gemini grounding, but surfaced if the adapter ever emits one.
+        // Not expected for this scenario (no server tools requested); surfaced defensively.
         serverToolEventCount++;
         context.logger.info(
           `  [tool-event] toolType=${event.toolType} phase=${event.phase}` +
@@ -234,7 +241,9 @@ const cliImpl: ICliScenarioImpl = {
     context.logger.info('');
     context.logger.info('First turn complete.');
     context.logger.info(`  client-tool-call-done events: ${clientToolCallCount}`);
-    context.logger.info(`  server tool-event events: ${serverToolEventCount} (expected 0 for grounding)`);
+    context.logger.info(
+      `  server tool-event events: ${serverToolEventCount} (expected 0 — no server tools requested)`
+    );
     context.logger.info(`  continuation present: ${String(firstTurnOutcome.continuation !== undefined)}`);
 
     let finalResponse = firstTurnText;
@@ -308,7 +317,7 @@ const cliImpl: ICliScenarioImpl = {
 
     const diagnosis = truncated
       ? 'DIAGNOSIS: response completed incomplete (truncated) — the model likely exhausted its ' +
-        'output-token budget (thinking + any grounding) before emitting the visible answer. ' +
+        'output-token budget (thinking) before emitting the visible answer. ' +
         'Retry with a higher token budget via resolvedThinking.otherParams.'
       : !hasResponseText
       ? 'DIAGNOSIS: the stream completed normally but the model produced no visible text and ' +
@@ -322,7 +331,7 @@ const cliImpl: ICliScenarioImpl = {
       `Model: ${model}`,
       'Thinking: enabled (thinkingBudget=1024)',
       `Client tools invoked: ${clientToolCallCount}`,
-      `Server tool events: ${serverToolEventCount} (grounding emits none — N/A gate)`,
+      `Server tool events: ${serverToolEventCount} (none requested — provider forbids grounding + function calling)`,
       `Continuation present: ${String(continuationPresent)}`,
       `Response truncated (incomplete): ${String(truncated)}`,
       `Final response length: ${finalResponse.length} chars`,
@@ -346,8 +355,8 @@ const cliImpl: ICliScenarioImpl = {
       `  [${clientToolCallCount > 0 ? 'PASS' : 'SKIP'}] Client tool (recall_memory) invoked: ${
         clientToolCallCount > 0 ? 'YES' : 'not triggered in this run'
       }`,
-      '  [N/A] Server tool events: Gemini grounding does not emit tool-events (by design)',
-      '  [PASS] Server + client tool coexistence: grounding + client tool present in request',
+      '  [N/A] Server tool events: no server tools requested (Gemini API forbids grounding + function calling)',
+      '  [N/A] Server + client tool coexistence: Gemini API forbids the combination (HTTP 400)',
       ...(diagnosis ? ['', diagnosis] : []),
       '',
       'Final response (first 300 chars):',
@@ -364,14 +373,16 @@ const cliImpl: ICliScenarioImpl = {
 // ---------------------------------------------------------------------------
 
 /**
- * Gemini client tools + grounding + thinking scenario.
+ * Gemini client tools + thinking scenario.
  *
  * Empirical verification that:
- * - `executeClientToolTurn` routes to the Gemini generateContent API correctly with both
- *   client tools and Google Search grounding.
+ * - `executeClientToolTurn` routes to the Gemini generateContent API correctly with a
+ *   client tool and thinking enabled.
  * - The continuation (reconstructed turn + functionResponse parts) survives a live round-trip.
- * - Server + client tool coexistence works end-to-end (grounding emits no tool-events; see
- *   the module header).
+ *
+ * Grounding (`web_search`) is intentionally not requested — Gemini's generateContent API
+ * forbids combining grounding with function calling (HTTP 400). The "Server tool events
+ * emitted" and "Server + client tool coexistence" gates are therefore N/A for Gemini.
  *
  * Requires `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) in the environment. CLI-only (live API key
  * cannot be embedded in the web bundle).
@@ -382,10 +393,10 @@ export const geminiClientToolsScenario: IScenario = {
   id: 'gemini-client-tools',
   title: 'Gemini Client Tools + Thinking',
   description:
-    'Live-wire verification of client tools + grounding on Google Gemini. ' +
-    'Exercises a memory tool (client) coexisting with Google Search grounding and thinking ' +
-    'enabled. Requires GEMINI_API_KEY (or GOOGLE_API_KEY). Grounding does not emit ' +
-    'tool-events (by design), so that gate is N/A for Gemini.',
+    'Live-wire verification of a client tool on Google Gemini with thinking enabled. ' +
+    "Grounding is omitted because Gemini's API forbids combining it with function calling. " +
+    'Requires GEMINI_API_KEY (or GOOGLE_API_KEY). Server-tool and coexistence gates are ' +
+    'N/A for Gemini.',
   category: 'ai',
   tags: ['gemini', 'client-tools', 'thinking', 'tool-use', 'live-api'],
   requiredSecrets: [

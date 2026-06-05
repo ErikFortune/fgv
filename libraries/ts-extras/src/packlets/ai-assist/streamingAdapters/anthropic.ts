@@ -262,13 +262,37 @@ const anthropicErrorPayload: Validator<IAnthropicErrorPayload> = Validators.obje
  *
  * @internal
  */
+/**
+ * Recognized Anthropic Messages API SSE event names. Anything not in this set surfaces a
+ * one-time `logger.warn` per stream — see {@link RECOGNIZED_OPENAI_RESPONSES_EVENTS} in
+ * `openaiResponses.ts` for the rationale and the workflow for updating the allowlist.
+ *
+ * @internal
+ */
+const RECOGNIZED_ANTHROPIC_EVENTS: ReadonlySet<string> = new Set<string>([
+  // ---- handled by the translator ----
+  'content_block_start',
+  'content_block_delta',
+  'content_block_stop',
+  'message_delta',
+  'message_stop',
+  'error',
+  // ---- lifecycle / heartbeats: intentionally silent ----
+  'message_start',
+  'ping'
+]);
+
 async function* translateAnthropicStream(
   response: Response,
-  accumulationBuffer: Map<number, IAccumulatedBlock>
+  accumulationBuffer: Map<number, IAccumulatedBlock>,
+  logger?: Logging.ILogger
 ): AsyncGenerator<IAiStreamEvent> {
   let fullText = '';
   let truncated = false;
   let stopped = false;
+  // Track unrecognized event names we have already warned about, so a hot stream of
+  // an unknown event type produces exactly one log line per name per stream.
+  const warnedEvents = new Set<string>();
 
   try {
     /* c8 ignore next - body is non-null at this point per openSseConnection */
@@ -390,6 +414,21 @@ async function* translateAnthropicStream(
           message: payload?.error?.message ?? 'Anthropic stream returned an error event'
         };
         return;
+      } else if (
+        typeof eventName === 'string' &&
+        !RECOGNIZED_ANTHROPIC_EVENTS.has(eventName) &&
+        !warnedEvents.has(eventName)
+      ) {
+        // Empirical drift instrument: an unrecognized Anthropic event surfaces as a one-time
+        // warning per stream. Update RECOGNIZED_ANTHROPIC_EVENTS once the new event is either
+        // handled or confirmed safe to ignore.
+        warnedEvents.add(eventName);
+        logger?.warn(
+          `Anthropic streaming adapter: unrecognized SSE event '${eventName}'. ` +
+            `This may indicate provider drift — if the new event carries data the adapter ` +
+            `should surface, add a handler; otherwise add the name to ` +
+            `RECOGNIZED_ANTHROPIC_EVENTS.`
+        );
       }
     }
   } catch (err: unknown) /* c8 ignore start - defensive: stream errors are always Error instances */ {
@@ -464,5 +503,5 @@ export async function callAnthropicStream(
   }
   const buffer = accumulationBuffer ?? new Map<number, IAccumulatedBlock>();
   const conn = await openSseConnection(url, headers, body, logger, signal);
-  return conn.onSuccess((response) => succeed(translateAnthropicStream(response, buffer)));
+  return conn.onSuccess((response) => succeed(translateAnthropicStream(response, buffer, logger)));
 }

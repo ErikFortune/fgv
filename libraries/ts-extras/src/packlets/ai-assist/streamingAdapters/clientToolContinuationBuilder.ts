@@ -197,11 +197,15 @@ export function buildOpenAiContinuation(
 ): IAiClientToolContinuation {
   const items: JsonObject[] = [];
 
-  // Emit function_call items for each call (model's side).
+  // Emit function_call items for each call (model's side). Per the Responses API spec
+  // (ResponseFunctionToolCall), `call_id` is the required correlation field — it must
+  // match the matching function_call_output's `call_id` below. The optional `id` field
+  // is the output-item id (`fc_*`) used to reference the streamed item; we omit it
+  // because it is not load-bearing for input items.
   for (const [callId, call] of calls) {
     items.push({
       type: 'function_call',
-      id: callId,
+      call_id: callId,
       name: call.name,
       arguments: call.argsBuffer
     });
