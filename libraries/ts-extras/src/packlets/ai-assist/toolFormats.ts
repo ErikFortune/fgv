@@ -217,6 +217,12 @@ export function toAnthropicTools(tools: ReadonlyArray<AiToolConfig>): ReadonlyAr
  * dialect difference. Stripping is infallible, so it returns a plain value rather than a
  * `Result`.
  *
+ * `additionalProperties` and `$schema` are stripped only where they appear as schema
+ * *keywords* (siblings of `type`/`properties`/etc.). Inside a `properties` map the keys
+ * are user-defined parameter names, not keywords, so they are preserved verbatim while
+ * each property's subschema value is still recursively sanitized — a tool parameter
+ * legitimately named `additionalProperties` survives.
+ *
  * @internal
  */
 export function toGeminiParameterSchema(schema: JsonValue): JsonValue {
@@ -225,11 +231,21 @@ export function toGeminiParameterSchema(schema: JsonValue): JsonValue {
   }
   if (schema !== null && typeof schema === 'object') {
     const out: JsonObject = {};
-    for (const [k, v] of Object.entries(schema)) {
-      if (k === 'additionalProperties' || k === '$schema') {
+    for (const [key, value] of Object.entries(schema)) {
+      if (key === 'additionalProperties' || key === '$schema') {
         continue;
       }
-      out[k] = toGeminiParameterSchema(v);
+      if (key === 'properties' && value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        // `properties` maps user-defined parameter names to subschemas: recurse each
+        // subschema value but never treat a parameter name as a strippable keyword.
+        const properties: JsonObject = {};
+        for (const [name, propSchema] of Object.entries(value)) {
+          properties[name] = toGeminiParameterSchema(propSchema);
+        }
+        out[key] = properties;
+      } else {
+        out[key] = toGeminiParameterSchema(value);
+      }
     }
     return out;
   }

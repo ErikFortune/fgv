@@ -517,6 +517,30 @@ describe('toGeminiParameterSchema', () => {
     });
   });
 
+  test('preserves a parameter literally named additionalProperties or $schema', () => {
+    // Inside a `properties` map the keys are user-defined parameter names, not schema
+    // keywords — they must survive even when they collide with a stripped keyword.
+    const input: JsonValue = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        additionalProperties: { type: 'string', description: 'a real param' },
+        $schema: { type: 'string' },
+        nested: { type: 'object', additionalProperties: false, properties: {} }
+      },
+      required: ['additionalProperties']
+    };
+    expect(toGeminiParameterSchema(input)).toEqual({
+      type: 'object',
+      properties: {
+        additionalProperties: { type: 'string', description: 'a real param' },
+        $schema: { type: 'string' },
+        nested: { type: 'object', properties: {} }
+      },
+      required: ['additionalProperties']
+    });
+  });
+
   test('passes through a schema with none of the stripped keys unchanged', () => {
     const clean: JsonValue = {
       type: 'object',
