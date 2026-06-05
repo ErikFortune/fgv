@@ -3,7 +3,9 @@
 **Stream:** `ai-assist-cross-provider-fixes`
 **Parent cluster:** `per-provider-testbed-scenarios`
 **Work branch:** `chore/ai-assist-cross-provider-fixes-impl`
-**PR target:** `per-provider-testbed-scenarios` (integration — NOT `release`)
+**PR:** [#457](https://github.com/ErikFortune/fgv/pull/457) → `per-provider-testbed-scenarios` (integration — NOT `release`)
+**Final commit:** `ef8e4ea2`
+**Status:** ready to merge — gates green, Copilot loop converged at 3 rounds, all threads resolved
 
 ---
 
@@ -15,7 +17,7 @@ Two additive `@fgv/ts-extras/ai-assist` fixes, both in one PR.
 
 `JsonSchema.object(...).toJson()` is strict-by-default and emits `additionalProperties: false` on every object node. Gemini's `function_declarations[].parameters` is an OpenAPI 3.0 Schema Object subset that **rejects** (does not ignore) `additionalProperties`, so every `JsonSchema`-authored client tool 400'd on Gemini.
 
-- New `@internal` helper `toGeminiParameterSchema(schema: JsonValue): JsonValue` — recursively strips `additionalProperties` (the confirmed P1 trigger) and `$schema` (defensive). Recurses through arrays and object values, so nested object schemas are sanitized at every level. Infallible → returns a plain value, no `Result`.
+- New `@internal` helper `toGeminiParameterSchema(schema: JsonValue): JsonValue` — recursively strips `additionalProperties` (the confirmed P1 trigger) and `$schema` (defensive) **only where they appear as schema keywords**. `properties` is treated as a name→subschema bag: parameter names are preserved verbatim (a parameter literally named `additionalProperties`/`$schema` survives — Copilot R1) while each subschema value is still recursively sanitized. Recurses through arrays and object values, so nested object schemas are sanitized at every level. Infallible → returns a plain value, no `Result`.
 - Applied at the `case 'client_tool':` arm of `toGeminiTools`.
 - Exported from the module (not the packlet barrel) so it stays out of `.api.md` while remaining unit-testable.
 
@@ -29,7 +31,7 @@ Two additive `@fgv/ts-extras/ai-assist` fixes, both in one PR.
 The OpenAI/xAI Responses `response.completed` payload carries `incomplete_details: { reason }` when `status === 'incomplete'`. The adapter already reported `truncated` but discarded the reason, making the "completed but empty" failure mode invisible.
 
 - Extended `IResponsesCompletedPayload` + `responsesCompletedPayload` validator to optionally capture `incomplete_details.reason` (infallible — absent → undefined).
-- Threaded the captured value to the `done` event.
+- Captured the reason in lockstep with `truncated` (`incompleteReason = truncated ? reason : undefined`) so the field never leaks on a non-incomplete payload and never goes stale under a duplicate completed event (Copilot R2/R3), then threaded it to the `done` event.
 - New `@public` optional field `incompleteReason?: string` on `IAiStreamDone`, documented as meaningful only when `truncated === true`.
 
 **Files:**
@@ -78,6 +80,20 @@ Run on the cumulative diff **before** coverage-gap closure (L37). No P1. Finding
 - Other P3 (test early-return pattern, `@internal` placement) — confirmed consistent with existing file conventions; no action.
 
 Recommendation: Approved with advisory; advisories actioned.
+
+---
+
+## Copilot review loop (layer 2)
+
+Implementer-driven; **stopped at 3 rounds on diminishing returns** (under the 10-round cap). All threads resolved.
+
+| Round | Finding | Substance | Fix |
+|---|---|---|---|
+| 1 | `toGeminiParameterSchema` stripped keyword-named keys (`additionalProperties`/`$schema`) at all depths — would corrupt a real tool schema with a parameter literally named that | Substantive (real bug) | `a73a1f5f` — keyword-aware (`properties` treated as a name→subschema bag) + regression test. (Copilot's secondary "`Object.entries` loses typing → `any`" claim was unfounded — narrowed `JsonObject` index signature is `JsonValue`; the strict `no-explicit-any` build gate proves it. Replied, no change.) |
+| 2 | `incompleteReason` not gated on `truncated` — runtime could carry a stray reason on a non-incomplete payload, mismatching the TSDoc contract | Borderline (defensive) | `62f2631b` — gated capture + regression test |
+| 3 | Stale `incompleteReason` possible if a duplicate `response.completed` event reports not-incomplete after an incomplete one | Hardening (Responses API contract precludes the stream) | `ef8e4ea2` — `truncated ? reason : undefined` lockstep assignment + regression test |
+
+**Stop rationale:** the finding profile bent down cleanly — R2 and R3 were progressively more contrived hardening of the same `incompleteReason` capture against provider streams the API contract precludes; R4 would be deeper nitpicks.
 
 ---
 

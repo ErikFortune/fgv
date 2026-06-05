@@ -4,7 +4,8 @@
 **Parent cluster:** `per-provider-testbed-scenarios`
 **Integration branch (shared with cluster):** `per-provider-testbed-scenarios`
 **Work branch:** `chore/ai-assist-cross-provider-fixes-impl`
-**Status:** implementation complete — gates green, PR open against integration
+**Status:** complete — gates green, PR #457 open against integration, Copilot loop converged (3 rounds), ready to merge
+**Final commit:** `ef8e4ea2`
 
 ---
 
@@ -43,7 +44,7 @@
 - [x] `etc/ts-extras.api.md` regenerated and committed (diff: one new `incompleteReason?` field)
 - [x] PR opens against `per-provider-testbed-scenarios` integration branch
 - [~] Finding docs updated with disposition — see Decisions: docs live on `claude/magical-newton-S53ZO`, not on integration; disposition recorded in `result.md` + PR description instead of cross-branch edit
-- [ ] Copilot loop driven; stopped on diminishing returns or 10-round cap
+- [x] Copilot loop driven; stopped at 3 rounds on diminishing returns (under 10-round cap). All threads resolved. See `result.md` for the per-round record.
 
 ---
 
