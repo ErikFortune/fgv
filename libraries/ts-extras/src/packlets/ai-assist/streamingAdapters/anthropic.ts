@@ -259,18 +259,10 @@ const anthropicErrorPayload: Validator<IAnthropicErrorPayload> = Validators.obje
 // ============================================================================
 
 /**
- * Translates an Anthropic Messages API SSE stream into unified events.
- *
- * Maintains an ordered accumulation buffer (keyed by SSE `index`) for all
- * content blocks: `thinking`, `redacted_thinking`, `text`, and `tool_use`.
- * The buffer is available on the returned generator via `.accumulationBuffer`.
- *
- * @internal
- */
-/**
  * Recognized Anthropic Messages API SSE event names. Anything not in this set surfaces a
- * one-time `logger.warn` per stream — see {@link RECOGNIZED_OPENAI_RESPONSES_EVENTS} in
- * `openaiResponses.ts` for the rationale and the workflow for updating the allowlist.
+ * one-time `logger.warn` per stream — same rationale as the OpenAI Responses adapter's
+ * `RECOGNIZED_OPENAI_RESPONSES_EVENTS` allowlist in `openaiResponses.ts`. Add to this set
+ * when a new event type is observed and confirmed safe to ignore.
  *
  * @internal
  */
@@ -287,6 +279,18 @@ const RECOGNIZED_ANTHROPIC_EVENTS: ReadonlySet<string> = new Set<string>([
   'ping'
 ]);
 
+/**
+ * Translates an Anthropic Messages API SSE stream into unified events.
+ *
+ * Maintains an ordered accumulation buffer (keyed by SSE `index`) for all
+ * content blocks: `thinking`, `redacted_thinking`, `text`, and `tool_use`.
+ * The buffer is available on the returned generator via `.accumulationBuffer`.
+ *
+ * Unrecognized event names are reported once per stream via `logger?.warn` —
+ * see {@link RECOGNIZED_ANTHROPIC_EVENTS}.
+ *
+ * @internal
+ */
 async function* translateAnthropicStream(
   response: Response,
   accumulationBuffer: Map<number, IAccumulatedBlock>,
